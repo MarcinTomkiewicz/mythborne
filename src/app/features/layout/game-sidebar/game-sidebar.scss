@@ -1,0 +1,88 @@
+@use 'abstracts/variables' as *;
+
+.sidebar {
+  width: 260px;
+  height: 100%;
+  background: linear-gradient(to bottom, $color-bg-light, $color-bg-dark);
+  color: $color-muted;
+  padding: 1rem;
+  border-right: 1px solid $color-border;
+  transition: width 0.3s ease;
+
+  &.collapsed {
+    width: 64px;
+
+    .sidebar-header div:not(.zap-icon),
+    .sidebar-menu span {
+      display: none;
+    }
+  }
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid $color-border;
+
+    .zap-icon {
+      background: linear-gradient(to bottom right, $color-secondary, $color-primary);
+      color: $color-bg-light;
+      border-radius: 9999px;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .title {
+      font-weight: 600;
+      color: $color-secondary;
+      font-size: 0.875rem;
+    }
+
+    .level {
+      color: $color-primary;
+      font-size: 0.75rem;
+    }
+  }
+
+  .menu-label {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    color: $color-secondary;
+    margin: 1rem 0 0.5rem 0;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+
+    li {
+      margin-bottom: 0.5rem;
+
+      a {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        color: $color-text;
+        transition: background 0.2s;
+
+        &:hover {
+          background: $color-glow;
+        }
+
+        &.active {
+          background: rgba($color-primary, 0.2);
+          border: 1px solid rgba($color-primary, 0.3);
+          font-weight: 600;
+          color: $color-secondary;
+        }
+      }
+    }
+  }
+}

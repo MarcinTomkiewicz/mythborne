@@ -1,0 +1,35 @@
+// 🎨 Kolory (ciemniejszy, chłodniejszy styl fantasy + grecki)
+$color-bg: #0f172a;
+$color-bg-light: #1e293b;
+$color-bg-dark: #0e1a2b;
+
+$color-primary: #facc15;     // główne akcenty (np. Level, aktywne linki)
+$color-secondary: #fde68a;   // jaśniejszy akcent
+$color-accent: #60a5fa;      // XP
+$color-success: #4ade80;     // HP
+$color-danger: #f87171;      // niski HP
+$color-muted: #cbd5e1;       // tekst drugorzędny
+
+$color-text: #f8fafc;        // neutralny jasny tekst (pasuje do ciemnego tła)
+
+// UI Border / Shadow
+$color-border: rgba(251, 191, 36, 0.2);
+$color-glow: rgba(255, 255, 255, 0.05);
+
+// 🔤 Fonty
+$font-body: 'Inter', sans-serif;
+$font-display: 'Cinzel', serif;
+$font-size-base: 16px;
+$font-size-lg: 20px;
+$font-size-sm: 14px;
+
+// 📐 Spacings
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 32px;
+$spacing-xl: 64px;
+
+// 📏 Layout
+$container-width: 1200px;
+$border-radius: 8px;

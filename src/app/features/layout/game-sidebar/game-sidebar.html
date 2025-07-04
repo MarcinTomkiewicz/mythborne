@@ -1,0 +1,33 @@
+<aside [ngClass]="{ collapsed: collapsed }" class="sidebar">
+  <div class="sidebar-header">
+    <div class="zap-icon">
+      <i class="pi pi-bolt"></i>
+    </div>
+    @if (!collapsed) {
+    <div>
+      <p class="title">Hero</p>
+      <p class="level">Level 1</p>
+    </div>
+    }
+  </div>
+
+  <nav class="sidebar-menu">
+    <p class="menu-label">Game Menu</p>
+    <ul>
+      @for (item of menuItems; track item.title) {
+      <li>
+        <a
+          [routerLink]="item.url"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <img [src]="item.icon" [alt]="item.title" class="icon" />
+          @if (!collapsed) {
+          <span>{{ item.title }}</span>
+          }
+        </a>
+      </li>
+      }
+    </ul>
+  </nav>
+</aside>

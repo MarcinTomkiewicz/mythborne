@@ -1,0 +1,93 @@
+@use 'abstracts/variables' as *;
+@use 'abstracts/mixins' as *;
+
+.dashboard-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+
+ .hero-meta {
+    display: flex;
+    gap: $spacing-md;
+    align-items: center;
+
+    .hero-avatar {
+      width: 128px;
+      height: 128px;
+      border-radius: 50%;
+      background-color: $color-muted;
+    }
+
+    h2 {
+      font-size: $font-size-lg;
+      color: $color-secondary;
+      margin: 0;
+    }
+
+    .subtitle {
+      font-size: $font-size-sm;
+      color: $color-muted;
+    }
+
+    .bars {
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-xs;
+      margin-top: $spacing-sm;
+    }
+  }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: $spacing-lg;
+
+    ul {
+      list-style: none;
+      padding: 0;
+
+      li {
+        margin-bottom: $spacing-xs;
+        display: flex;
+        justify-content: space-between;
+        color: $color-muted;
+
+        strong {
+          color: $color-primary;
+        }
+      }
+    }
+  }
+
+  .equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: $spacing-md;
+
+    .equipment-card {
+      @include panel-box;
+      text-align: center;
+      color: $color-text;
+      transition: transform 0.2s ease;
+
+      .slot {
+        font-weight: bold;
+        color: $color-primary;
+      }
+
+      .name {
+        margin: $spacing-xs 0;
+      }
+
+      .bonus {
+        font-size: $font-size-sm;
+        color: $color-muted;
+      }
+
+      &:hover {
+        transform: scale(1.02);
+        border-color: $color-accent;
+      }
+    }
+  }
+}
