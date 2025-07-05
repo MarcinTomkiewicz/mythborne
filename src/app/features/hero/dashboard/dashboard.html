@@ -28,16 +28,16 @@
       </ul>
     </p-fieldset>
 
-    <p-fieldset legend="Hero Stats">
-      <ul>
-        @for (stat of stats | keyvalue; track stat) {
-          <li>
-            <strong>{{ stat.key | titlecase }}</strong>
-            <span>{{ stat.value }}</span>
-          </li>
-        }
-      </ul>
-    </p-fieldset>
+<p-fieldset legend="Hero Stats">
+  <ul>
+    @for (stat of statsDisplay(); track stat.label) {
+      <li>
+        <strong>{{ stat.label }}</strong>
+        <span>{{ stat.value }}</span>
+      </li>
+    }
+  </ul>
+</p-fieldset>
   </div>
 
   <!-- Equipment -->

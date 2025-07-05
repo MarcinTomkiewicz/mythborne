@@ -1,0 +1,14 @@
+<div class="create-character">
+    
+    @switch (step()) {
+        @case (0) {  
+  <app-step-account [form]="accountForm" (next)="nextStep()" />
+    }
+    @case (1) {
+      <app-step-user
+        [form]="userForm"
+        (back)="prevStep()"
+        (submit)="submit()" />
+    }
+    }
+</div>
