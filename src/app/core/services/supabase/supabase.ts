@@ -10,8 +10,10 @@ export class SupabaseService {
   getAll<T extends TableName>(
     table: T,
     options?: IQueryOptions<Row<T>>
-  ): Observable<Row<T>[]> {
+  ): Observable<Row<T>[]> {    
     const selectedColumns = options?.select ?? '*';
+console.log(selectedColumns, 'Selected columns for Supabase query:', table, selectedColumns);
+
     let query = supabase.from(table).select(selectedColumns);
 
     if (options?.filters) {
@@ -33,7 +35,7 @@ export class SupabaseService {
 
     return from(query).pipe(
       map(({ data, error }) => {
-        if (error) throw error;
+        if (error) throw error;        
         return data as unknown as Row<T>[];
       })
     );
@@ -57,46 +59,7 @@ export class SupabaseService {
       })
     );
   }
-
-  // create<T extends TableName>(
-  //   table: T,
-  //   payload: Insert<T>
-  // ): Observable<Row<T>> {
-  //   return from(
-  //     supabase
-  //       .from(table)
-  //       .insert([payload]) // 👈️ ważne: jako tablica
-  //       .select()
-  //       .single()
-  //   ).pipe(
-  //     map(({ data, error }) => {
-  //       if (error) throw error;
-  //       return data as Row<T>;
-  //     })
-  //   );
-  // }
-
-
-  // updateById<T extends TableName>(
-  //   table: TableName,
-  //   id: string | number,
-  //   payload: Update<T>
-  // ): Observable<Row<T>> {
-  //   return from(
-  //     supabase
-  //       .from(table)
-  //       .update(payload)
-  //       .eq('id', id as any)
-  //       .select()
-  //       .single()
-  //   ).pipe(
-  //     map(({ data, error }) => {
-  //       if (error) throw error;
-  //       return data as unknown as Row<T>;
-  //     })
-  //   );
-  // }
-
+  
   deleteById<T extends TableName>(
     table: T,
     id: string | number

@@ -1,8 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { forkJoin, map, Observable } from 'rxjs';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import { SupabaseService } from '../supabase/supabase';
-import { TableName } from '../../types/supabase.types';
 import { TABLES } from '../../constants/tables.const';
 
 
@@ -15,4 +14,35 @@ export class StatsService {
       orderBy: { column: 'order', ascending: true },
     });
   }
+
+  getStatsLabels(): Observable<Record<string, string>> {
+  return this.getStats().pipe(
+    map((stats) =>
+      stats.reduce((acc, stat) => {
+        acc[stat.key] = stat.label;
+        return acc;
+      }, {} as Record<string, string>)
+    )
+  );
+}
+
+getDerivedStats(): Observable<IStat[]> {
+  return this.supabase.getAll<'stats_derived'>('stats_derived', {
+    orderBy: { column: 'order', ascending: true },
+  });
+}
+
+getAllStatLabels(): Observable<Record<string, string>> {
+  return forkJoin({
+    base: this.getStats(),
+    derived: this.getDerivedStats()
+  }).pipe(
+    map(({ base, derived }) => {
+      const baseMap = Object.fromEntries(base.map(stat => [stat.key, stat.label]));
+      const derivedMap = Object.fromEntries(derived.map(stat => [stat.key, stat.label]));
+      return { ...baseMap, ...derivedMap };
+    })
+  );
+}
+
 }

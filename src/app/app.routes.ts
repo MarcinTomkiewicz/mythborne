@@ -5,7 +5,7 @@ import { authRoutes } from './auth/auth.routes';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'game',
+    redirectTo: 'game/dashboard',
     pathMatch: 'full'
   },
   {

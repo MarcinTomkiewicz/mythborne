@@ -13,6 +13,16 @@ import { CommonModule } from '@angular/common';
       <h2 class="text-xl font-semibold mb-2">Create your account</h2>
 
       <div class="flex flex-col gap-1">
+        <label for="characterName">Hero Name</label>
+        <input
+          id="characterName"
+          type="text"
+          formControlName="characterName"
+          pInputText
+        />
+      </div>
+
+      <div class="flex flex-col gap-1">
         <label for="email">Email</label>
         <input id="email" type="email" formControlName="email" pInputText />
       </div>
@@ -27,18 +37,7 @@ import { CommonModule } from '@angular/common';
         />
       </div>
 
-      <div class="flex flex-col gap-1">
-        <label for="characterName">Hero Name</label>
-        <input
-          id="characterName"
-          type="text"
-          formControlName="characterName"
-          pInputText
-        />
-      </div>
-
       <p-button type="button" label="Next" (onClick)="next.emit()"></p-button>
-
     </div>
   `,
 })
