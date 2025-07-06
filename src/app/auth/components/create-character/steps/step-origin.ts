@@ -14,7 +14,10 @@ import { Carousel } from '../../../../shared/carousel/carousel';
 import { Origins } from '../../../../core/services/origins/origins';
 import { StatsService } from '../../../../core/services/stats/stats';
 
-import { Origin, OriginBonus } from '../../../../core/domain/origin/origin.model';
+import {
+  Origin,
+  OriginBonus,
+} from '../../../../core/domain/origin/origin.model';
 
 @Component({
   selector: 'app-step-origin',
@@ -22,38 +25,40 @@ import { Origin, OriginBonus } from '../../../../core/domain/origin/origin.model
   imports: [CommonModule, Carousel, ButtonModule],
   template: `
     @if (origins().length > 0) {
-      <section>
-        <app-carousel
-          [origins]="origins()"
-          [bonuses]="currentBonuses()"
-          [statLabels]="statLabels()"
-          [indexInput]="selectedIndex()"
-          (indexChange)="onIndexChange($event)"
-        />
+    <section>
+      <app-carousel
+        [origins]="origins()"
+        [bonuses]="currentBonuses()"
+        [statLabels]="statLabels()"
+        [indexInput]="selectedIndex()"
+        (indexChange)="onIndexChange($event)"
+      />
 
-        <div class="actions mt-6 flex gap-2 justify-end">
-          <p-button
-            type="button"
-            label="Back"
-            severity="secondary"
-            (click)="back.emit()"
-          />
-          <p-button
-            type="button"
-            label="Next"
-            severity="success"
-            (click)="next.emit(origins()[selectedIndex()])"
-          />
-        </div>
-      </section>
+      <div class="actions mt-6 flex gap-2 justify-end">
+        <p-button
+          type="button"
+          label="Back"
+          severity="secondary"
+          (click)="back.emit()"
+        />
+        <p-button
+          type="button"
+          label="Next"
+          severity="success"
+          (click)="next.emit(origins()[selectedIndex()])"
+        />
+      </div>
+    </section>
     } @else {
-      <p>Loading origins...</p>
+    <p>Loading origins...</p>
     }
   `,
 })
 export class StepOrigin implements OnInit {
   private readonly originService = inject(Origins);
   private readonly statsService = inject(StatsService);
+
+  readonly selectedOrigin = input<Origin | null>(null);
 
   readonly origins = signal<Origin[]>([]);
   readonly bonusesMap = signal<Record<string, OriginBonus[]>>({});
@@ -72,13 +77,22 @@ export class StepOrigin implements OnInit {
     this.originService.getOrigins().subscribe((list) => {
       this.origins.set(list);
 
+      const originId = this.selectedOrigin()?.id;
+      if (originId) {
+        const index = list.findIndex((o) => o.id === originId);
+        if (index >= 0) this.selectedIndex.set(index);
+      }
+
+      // załaduj bonusy
       for (const origin of list) {
-        this.originService.getBonusesForOrigin(origin.id).subscribe((bonuses) => {
-          this.bonusesMap.update((prev) => ({
-            ...prev,
-            [origin.id]: bonuses,
-          }));
-        });
+        this.originService
+          .getBonusesForOrigin(origin.id)
+          .subscribe((bonuses) => {
+            this.bonusesMap.update((prev) => ({
+              ...prev,
+              [origin.id]: bonuses,
+            }));
+          });
       }
     });
 

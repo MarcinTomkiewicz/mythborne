@@ -30,9 +30,9 @@ export class Origins {
       );
   }
 
-getAllOriginBonuses(): Observable<any[]> {
-  return this.supabase.getAll('origin_bonuses');
-}
+  getAllOriginBonuses(): Observable<any[]> {
+    return this.supabase.getAll('origin_bonuses');
+  }
 
   getOriginWithBonuses(originId: string): Observable<{
     origin: Origin;

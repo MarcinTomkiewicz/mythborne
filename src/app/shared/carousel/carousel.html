@@ -28,7 +28,8 @@
       <div class="bonuses mt-4 flex flex-wrap gap-2 justify-center">
         @for (bonus of bonuses(); track bonus.id) {
         <span class="bg-surface-200 text-sm px-2 py-1 rounded">
-          <strong>{{ statLabels()?.[bonus.target] ?? bonus.target }}</strong>:
+          <strong>{{ statLabels()?.[bonus.target] ?? bonus.target }}</strong
+          >:
           {{ bonus.value > 0 ? "+" + bonus.value : bonus.value }}
         </span>
         }

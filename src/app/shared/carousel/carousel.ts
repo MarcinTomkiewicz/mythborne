@@ -1,4 +1,11 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { OriginBonus } from '../../core/domain/origin/origin.model';
 
 @Component({
@@ -8,16 +15,22 @@ import { OriginBonus } from '../../core/domain/origin/origin.model';
   styleUrl: './carousel.scss',
 })
 export class Carousel {
-  origins = input.required<any[]>(); // dane wejściowe
-  indexInput = input(0); // input readonly
+  origins = input.required<any[]>();
+  indexInput = input(0);
   bonuses = input<OriginBonus[]>();
-  statLabels = input<Record<string, string>>()
+  statLabels = input<Record<string, string>>();
 
   indexChange = output<number>();
 
-  private selectedIndex = signal(this.indexInput()); // lokalny signal do obsługi
+  private selectedIndex = signal(this.indexInput());
 
   index = computed(() => this.selectedIndex());
+
+  constructor() {
+    effect(() => {
+      this.selectedIndex.set(this.indexInput());
+    });
+  }
 
   prev() {
     const newIndex =

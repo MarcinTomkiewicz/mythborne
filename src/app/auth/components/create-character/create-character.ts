@@ -15,7 +15,13 @@ import { Origin } from '../../../core/domain/origin/origin.model';
 @Component({
   selector: 'app-create-character',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, StepAccount, StepUser, StepOrigin],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    StepAccount,
+    StepUser,
+    StepOrigin,
+  ],
   templateUrl: './create-character.html',
 })
 export class CreateCharacter {
@@ -62,7 +68,6 @@ export class CreateCharacter {
 
   onOriginNext(origin: Origin) {
     this.selectedOrigin.set(origin);
-    console.log('Selected origin:', this.selectedOrigin());
     this.nextStep();
   }
 

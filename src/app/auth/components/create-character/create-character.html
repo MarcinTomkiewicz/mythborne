@@ -3,9 +3,10 @@
   <app-step-account [form]="accountForm" (next)="nextStep()" />
   } @case (1) {
   <app-step-origin
+    [selectedOrigin]="selectedOrigin()"
     (next)="onOriginNext($event)"
     (back)="prevStep()"
-  ></app-step-origin>
+  />
   } @case (2) {
   <app-step-user [form]="userForm" (back)="prevStep()" (submit)="submit()" />
   } }

@@ -10,9 +10,8 @@ export class SupabaseService {
   getAll<T extends TableName>(
     table: T,
     options?: IQueryOptions<Row<T>>
-  ): Observable<Row<T>[]> {    
+  ): Observable<Row<T>[]> {
     const selectedColumns = options?.select ?? '*';
-console.log(selectedColumns, 'Selected columns for Supabase query:', table, selectedColumns);
 
     let query = supabase.from(table).select(selectedColumns);
 
@@ -23,10 +22,9 @@ console.log(selectedColumns, 'Selected columns for Supabase query:', table, sele
     }
 
     if (options?.orderBy) {
-      query = query.order(
-        options.orderBy.column as string,
-        { ascending: options.orderBy.ascending ?? true }
-      );
+      query = query.order(options.orderBy.column as string, {
+        ascending: options.orderBy.ascending ?? true,
+      });
     }
 
     if (options?.range) {
@@ -35,7 +33,7 @@ console.log(selectedColumns, 'Selected columns for Supabase query:', table, sele
 
     return from(query).pipe(
       map(({ data, error }) => {
-        if (error) throw error;        
+        if (error) throw error;
         return data as unknown as Row<T>[];
       })
     );
@@ -59,7 +57,7 @@ console.log(selectedColumns, 'Selected columns for Supabase query:', table, sele
       })
     );
   }
-  
+
   deleteById<T extends TableName>(
     table: T,
     id: string | number
