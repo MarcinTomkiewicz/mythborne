@@ -11,6 +11,11 @@ import { StepAccount } from './steps/step-account';
 import { StepUser } from './steps/step-user';
 import { StepOrigin } from './steps/step-origin';
 import { Origin } from '../../../core/domain/origin/origin.model';
+import { Auth } from '../../services/auth';
+import { SupabaseService } from '../../../core/services/supabase/supabase';
+import { HeroFactory } from '../../../core/services/hero-factory/hero-factory';
+import { forkJoin, from, map, switchMap } from 'rxjs';
+import { supabase } from '../../../core/supabase/supabase';
 
 @Component({
   selector: 'app-create-character',
@@ -81,13 +86,85 @@ export class CreateCharacter {
       return;
     }
 
-    const payload = {
-      ...account,
-      ...user,
-      originId: origin.id,
+    const auth = inject(Auth);
+    const supabaseService = inject(SupabaseService);
+    const heroFactory = inject(HeroFactory);
+
+    const userData = {
+      email: account.email,
+      name: user.name,
+      birthday: user.birthday,
+      city: user.city,
+      facebook: user.facebook,
+      twitter: user.twitter,
+      linkedin: user.linkedin,
+      instagram: user.instagram,
+      bio: user.bio,
     };
 
-    console.log('🚀 Final payload to submit:', payload);
-    // TODO: submit to Supabase
+    auth
+      .register(account.email, account.password, userData)
+      .pipe(
+        switchMap((userRow) => {
+          const heroId = userRow.id;
+
+          const heroPayload = {
+            id: heroId,
+            name: account.characterName,
+            level: 1,
+            xp: 0,
+            hp: 1000,
+            origin_id: origin.id,
+            rank: 1,
+            created_at: new Date().toISOString(),
+            profile_picture: null,
+          };
+
+          return forkJoin([
+            from(supabase.from('hero').insert([heroPayload])),
+            from(
+              supabase
+                .from('hero_stats')
+                .insert(heroFactory.createStats(heroId))
+            ),
+            from(
+              supabase
+                .from('hero_derived')
+                .insert([heroFactory.createDerived(heroId)])
+            ),
+            from(
+              supabase
+                .from('hero_resources')
+                .insert(heroFactory.createResources(heroId))
+            ),
+          ]).pipe(map(() => heroId));
+        }),
+        switchMap((heroId) =>
+          supabaseService
+            .getAll('estates', {
+              filters: { hero_id: null, rank: 1 },
+              range: { from: 0, to: 0 },
+            })
+            .pipe(
+              switchMap(([estate]) => {
+                if (!estate) throw new Error('No free estate available');
+                return from(
+                  supabase
+                    .from('estates')
+                    .update({ hero_id: heroId })
+                    .eq('id', estate.id)
+                );
+              })
+            )
+        )
+      )
+      .subscribe({
+        next: () => {
+          console.log('🎉 Hero created successfully!');
+        },
+        error: (err) => {
+          console.error('🚨 Error during hero creation:', err);
+        },
+      });
   }
 }
