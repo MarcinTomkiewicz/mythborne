@@ -9,41 +9,44 @@ import { Insert } from '../../core/types/supabase.types';
 export class Auth {
   private supabase = supabase;
 
-  register(
-    email: string,
-    password: string,
-    userData: Omit<IUserData, 'id'>
-  ) {
-    return from(
-      this.supabase.auth.signUp({ email, password })
-    ).pipe(
+  register(email: string, password: string, userData: Omit<IUserData, 'id'>) {
+    return from(this.supabase.auth.signUp({ email, password })).pipe(
       switchMap(({ data, error }) => {
         if (error || !data.user) throw error ?? new Error('User not created');
 
-        const id = data.user.id;
-        const payload: Insert<'user_data'> = { ...userData, id };
-
+        // 👇 Logujemy od razu po rejestracji
         return from(
-          this.supabase
-            .from(TABLES.user_data)
-            .insert([payload])
-            .select()
-            .single()
+          this.supabase.auth.signInWithPassword({ email, password })
         ).pipe(
-          switchMap(({ data: userRow, error: insertError }) => {
-            if (insertError || !userRow) {
-              throw insertError ?? new Error('User profile not inserted');
+          switchMap(({ data: loginData, error: loginError }) => {
+            if (loginError || !loginData.session) {
+              throw (
+                loginError ?? new Error('Auto-login failed after registration')
+              );
             }
 
-            // Opcjonalnie — ponowny login (jeśli nie jesteśmy zalogowani automatycznie)
+            const id = loginData.user.id; // teraz mamy poprawne UID
+
+            const payload: Insert<'user_data'> = { ...userData, id };
+
+            console.log(
+              '[auth.register] ✅ Logged in, inserting user_data:',
+              payload
+            );
+
             return from(
-              this.supabase.auth.signInWithPassword({ email, password })
+              this.supabase
+                .from(TABLES.user_data)
+                .insert([payload])
+                .select()
+                .single()
             ).pipe(
-              map(({ data: loginData, error: loginError }) => {
-                if (loginError || !loginData.session) {
-                  throw loginError ?? new Error('Auto-login failed after registration');
+              map(({ data: userRow, error: insertError }) => {
+                if (insertError || !userRow) {
+                  throw insertError ?? new Error('User profile not inserted');
                 }
-                return userRow; // zwracamy user_data rekord
+
+                return userRow;
               })
             );
           })

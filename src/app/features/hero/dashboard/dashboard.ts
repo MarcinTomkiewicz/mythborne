@@ -5,6 +5,7 @@ import { FieldsetModule } from 'primeng/fieldset';
 import { Bar } from '../../../shared/bar/bar';
 import { StatsService } from '../../../core/services/stats/stats';
 import { IStat } from '../../../core/interfaces/i-stats/i-stats';
+import { Hero } from '../../../core/services/hero/hero';
 
 @Component({
   selector: 'app-dashboard',
@@ -18,7 +19,9 @@ export class Dashboard implements OnInit {
   experience = 52; // procentowo
   health = 100;
 
-private statsService = inject(StatsService);
+  private readonly heroService = inject(Hero);
+
+  private statsService = inject(StatsService);
 
   statsList = signal<IStat[]>([]); // nazwy i kolejność
   statsValues = signal<IHeroStats>({
@@ -34,36 +37,45 @@ private statsService = inject(StatsService);
   });
 
   statsDisplay = computed(() =>
-    this.statsList().map(stat => ({
+    this.statsList().map((stat) => ({
       label: stat.label,
-      value: this.statsValues()[stat.key as keyof IHeroStats] ?? '?'
+      value: this.statsValues()[stat.key as keyof IHeroStats] ?? '?',
     }))
   );
 
   ngOnInit() {
-    this.statsService.getStats().subscribe((data) => this.statsList.set(data));
+    this.statsService.getStats().subscribe((list) => this.statsList.set(list));
+
+    this.heroService.getHeroData().subscribe((hero) => {
+console.log('Hero data:', hero);
+
+    });
+
+    this.heroService.getHeroStats().subscribe((stats) => {
+      this.statsValues.set(stats);
+    });
   }
 
   equipment = [
     {
       slot: 'Helmet',
       name: 'Bronze Helm',
-      bonus: '+5 Defense'
+      bonus: '+5 Defense',
     },
     {
       slot: 'Weapon',
       name: 'Bronze Spear',
-      bonus: '+10 Attack'
+      bonus: '+10 Attack',
     },
     {
       slot: 'Armor',
       name: 'Leather Cuirass',
-      bonus: '+8 Defense'
+      bonus: '+8 Defense',
     },
     {
       slot: 'Shield',
       name: 'Round Shield',
-      bonus: '+6 Defense'
-    }
+      bonus: '+6 Defense',
+    },
   ];
 }

@@ -15,11 +15,15 @@ export class SupabaseService {
 
     let query = supabase.from(table).select(selectedColumns);
 
-    if (options?.filters) {
-      for (const [key, value] of Object.entries(options.filters)) {
-        query = query.eq(key as string, value as any);
+  if (options?.filters) {
+    Object.entries(options.filters).forEach(([key, value]) => {
+      if (value === null) {
+        query = query.is(key, null); // 👈 to dodajemy!
+      } else {
+        query = query.eq(key, value as any);
       }
-    }
+    });
+  }
 
     if (options?.orderBy) {
       query = query.order(options.orderBy.column as string, {

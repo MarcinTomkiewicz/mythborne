@@ -10,7 +10,7 @@ export interface IUserData {
   twitter?: string;
   linkedin?: string;
   instagram?: string;
-  is_admin?: boolean;
+  role_id?: number;
   is_online?: boolean;
   created_at?: string;
   updated_at?: string;
