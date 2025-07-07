@@ -7,4 +7,5 @@ export const TABLES = {
   hero: 'hero',
   hero_stats: 'hero_stats',
   hero_resources: 'hero_resources',
+  hero_derived: 'hero_derived',
 } as const;

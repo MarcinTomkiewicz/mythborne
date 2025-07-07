@@ -32,6 +32,8 @@ export class HeroFactory {
       luck: 0,
       critical: 0,
       evasion: 0,
+      hp: 1000,
+      health: 100,
     };
   }
 

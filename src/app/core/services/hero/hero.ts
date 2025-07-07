@@ -3,6 +3,7 @@ import { from, map, switchMap } from 'rxjs';
 import { supabase } from '../../../core/supabase/supabase';
 import { IHeroStats } from '../../../core/interfaces/hero/i-hero-stats';
 import { TABLES } from '../../../core/constants/tables.const';
+import { mapHeroDerived } from '../../domain/hero/hero-derived.mapper';
 
 @Injectable({
   providedIn: 'root'
@@ -43,4 +44,23 @@ getHeroData() {
       })
     );
   }
+
+  getHeroDerived() {
+  return from(supabase.auth.getUser()).pipe(
+    switchMap(({ data, error }) => {
+      if (error || !data.user) throw error ?? new Error('No user');
+      return from(
+        supabase
+          .from(TABLES.hero_derived)
+          .select('*')
+          .eq('hero_id', data.user.id)
+          .single()
+      );
+    }),
+    map(({ data, error }) => {
+      if (error || !data) throw error ?? new Error('No derived stats');
+      return mapHeroDerived(data);
+    })
+  );
+}
 }
