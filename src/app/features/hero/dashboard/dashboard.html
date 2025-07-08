@@ -2,17 +2,13 @@
   <!-- Hero Summary -->
   <p-fieldset legend="Hero Summary">
     <div class="hero-meta">
-      <img
-        src="assets/avatars/hero-default.png"
-        alt="Hero Avatar"
-        class="hero-avatar"
-      />
+      <img src="assets/avatars/hero-default.png" alt="Hero Avatar" class="hero-avatar" />
       <div>
         <h2>Welcome back, {{ heroName }}</h2>
         <p class="subtitle">Level {{ level }} Hero</p>
         <div class="bars">
-          <app-bar label="HP" [value]="derived()?.health ?? 0" [max]="derived()?.health ?? 1000" type="hp"></app-bar>
-          <app-bar label="XP" [value]="experiencePercent" [max]="100" type="xp"></app-bar>
+          <app-bar label="HP" [value]="derivedDisplay()['health'] " [max]="derivedDisplay()['health']" type="hp" />
+          <app-bar label="XP" [value]="experiencePercent" [max]="100" type="xp" />
         </div>
       </div>
     </div>
@@ -24,16 +20,16 @@
       <ul>
         <li><strong>Origin:</strong> {{ origin()?.name ?? 'Unknown' }}</li>
         <li><strong>Guild:</strong> None</li>
-        <li><strong>Hero Points:</strong> {{ developmentPoints }}</li>
+        <li><strong>Hero Points:</strong> {{ derivedDisplay()['hp'] }}</li>
       </ul>
     </p-fieldset>
 
     <p-fieldset legend="Hero Stats">
       <ul>
-        @for (stat of statsDisplay(); track stat.label) {
+        @for (stat of statsList(); track stat.key) {
           <li>
             <strong>{{ stat.label }}</strong>
-            <span>{{ stat.value }}</span>
+            <span>{{ statsDisplay()[stat.key] }}</span>
           </li>
         }
       </ul>
@@ -41,15 +37,15 @@
   </div>
 
   <!-- Derived Stats -->
-  <p-fieldset legend="Derived Stats">
-    <ul>
-      <li><strong>DEF:</strong> {{ derived()?.def ?? '?' }}</li>
-      <li><strong>DMG:</strong> {{ derived()?.minDmg ?? '?' }} – {{ derived()?.maxDmg ?? '?' }}</li>
-      <li><strong>Luck:</strong> {{ derived()?.luck ?? '?' }}</li>
-      <li><strong>Critical:</strong> {{ derived()?.critical ?? '?' }}</li>
-      <li><strong>Evasion:</strong> {{ derived()?.evasion ?? '?' }}</li>
-    </ul>
-  </p-fieldset>
+<p-fieldset legend="Derived Stats">
+  <ul>
+    <li><strong>DEF:</strong> {{ derivedDisplay()['def'] }}</li>
+    <li><strong>DMG:</strong> {{ derivedDisplay()['minDmg'] }} – {{ derivedDisplay()['maxDmg'] }}</li>
+    <li><strong>Luck:</strong> {{ derivedDisplay()['luck'] }}</li>
+    <li><strong>Critical:</strong> {{ derivedDisplay()['critical'] }}</li>
+    <li><strong>Evasion:</strong> {{ derivedDisplay()['evasion'] }}</li>
+  </ul>
+</p-fieldset>
 
   <!-- Equipment -->
   <p-fieldset legend="Equipment">

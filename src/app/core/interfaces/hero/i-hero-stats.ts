@@ -1,4 +1,4 @@
-export interface IHeroStats {
+export interface IHeroStats extends Record<string, number> {
   strength: number;
   dexterity: number;
   endurance: number;

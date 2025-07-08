@@ -3,6 +3,8 @@ import { forkJoin, map, Observable } from 'rxjs';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import { SupabaseService } from '../supabase/supabase';
 import { TABLES } from '../../constants/tables.const';
+import { BonusSource } from '../../domain/bonus/bonus.model';
+import { finalStatValue } from '../../domain/bonus/bonus-calculator';
 
 @Injectable({ providedIn: 'root' })
 export class StatsService {
@@ -47,4 +49,19 @@ export class StatsService {
       })
     );
   }
+
+getFinalStats<T extends Record<string, number>>(
+  baseStats: T,
+  sources: BonusSource[]
+): Record<keyof T, number> {
+  const result: Partial<Record<keyof T, number>> = {};
+
+  for (const key in baseStats) {
+    const baseValue = baseStats[key];
+    result[key] = finalStatValue(baseValue, key, sources);
+  }
+
+  return result as Record<keyof T, number>;
+}
+
 }

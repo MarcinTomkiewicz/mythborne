@@ -5,7 +5,6 @@ export type HeroDerivedRow = Row<'hero_derived'>;
 
 export function mapHeroDerived(row: HeroDerivedRow): IHeroDerived {
   return {
-    heroId: row.hero_id,
     hp: row.hp,
     def: row.def,
     minDmg: row.min_dmg,

@@ -4,12 +4,14 @@ import { FieldsetModule } from 'primeng/fieldset';
 import { Bar } from '../../../shared/bar/bar';
 
 import { StatsService } from '../../../core/services/stats/stats';
-import { IStat } from '../../../core/interfaces/i-stats/i-stats';
-import { IHeroStats } from '../../../core/interfaces/hero/i-hero-stats';
 import { Hero } from '../../../core/services/hero/hero';
 import { Origins } from '../../../core/services/origins/origins';
-import { Origin } from '../../../core/domain/origin/origin.model';
+
+import { IStat } from '../../../core/interfaces/i-stats/i-stats';
+import { IHeroStats } from '../../../core/interfaces/hero/i-hero-stats';
 import { IHeroDerived } from '../../../core/domain/hero/hero-derived.model';
+import { OriginBonus, Origin } from '../../../core/domain/origin/origin.model';
+import { BonusSource } from '../../../core/domain/bonus/bonus.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -26,49 +28,39 @@ export class Dashboard implements OnInit {
   heroName = '';
   level = 1;
   experiencePercent = 0;
-  developmentPoints = 0;
 
   origin = signal<Origin | null>(null);
-  derived = signal<IHeroDerived | null>(null);
+  originBonuses = signal<OriginBonus[]>([]);
+  derivedFull = signal<IHeroDerived | null>(null); // zawiera też heroId
 
   statsList = signal<IStat[]>([]);
   statsValues = signal<IHeroStats>({} as IHeroStats);
+  derivedStatsList = signal<IStat[]>([]);
+  derivedValues = signal<IHeroDerived>({} as IHeroDerived);
 
   statsDisplay = computed(() =>
-    this.statsList().map((stat) => ({
-      label: stat.label,
-      value: this.statsValues()[stat.key as keyof IHeroStats] ?? '?',
-    }))
+    this.statsService.getFinalStats(this.statsValues(), [
+      this.originBonusSource(),
+    ])
+  );
+
+  derivedDisplay = computed(() =>
+    this.statsService.getFinalStats(this.derivedValues(), [
+      this.originBonusSource(),
+    ])
   );
 
   equipment = [
-    {
-      slot: 'Helmet',
-      name: null,
-      bonus: null,
-    },
-    {
-      slot: 'Weapon',
-      name: null,
-      bonus: null,
-    },
-    {
-      slot: 'Armor',
-      name: null,
-      bonus: null,
-    },
-    {
-      slot: 'Shield',
-      name: null,
-      bonus: null,
-    },
+    { slot: 'Helmet', name: null, bonus: null },
+    { slot: 'Weapon', name: null, bonus: null },
+    { slot: 'Armor', name: null, bonus: null },
+    { slot: 'Shield', name: null, bonus: null },
   ];
 
   ngOnInit() {
-    // Pobranie stat labels
-    this.statsService.getStats().subscribe((list) => this.statsList.set(list));
+    this.statsService.getStats().subscribe(this.statsList.set);
+    this.statsService.getDerivedStats().subscribe(this.derivedStatsList.set);
 
-    // Pobranie hero danych podstawowych
     this.heroService.getHeroData().subscribe((hero) => {
       this.heroName = hero.name;
       this.level = hero.level ?? 1;
@@ -77,30 +69,34 @@ export class Dashboard implements OnInit {
       if (hero.origin_id) {
         this.originsService
           .getOriginWithBonuses(hero.origin_id)
-          .subscribe(({ origin }) => {
+          .subscribe(({ origin, bonuses }) => {
             this.origin.set(origin);
-            console.log('[Dashboard] Origin loaded:', origin);
-            
+            this.originBonuses.set(bonuses);
           });
       }
     });
 
-    // Statystyki
-    this.heroService.getHeroStats().subscribe((stats) => {
-      this.statsValues.set(stats);
-    });
+    this.heroService.getHeroStats().subscribe(this.statsValues.set);
 
-    // Derived stats
     this.heroService.getHeroDerived().subscribe((derived) => {
-      this.derived.set(derived);
-      this.developmentPoints = this.derived()?.hp ?? 0;
+      this.derivedValues.set(derived);
     });
   }
 
   private calculateExperiencePercent(xp: number | null): number {
     if (!xp) return 0;
-    // TODO: podmień, jeśli masz inne wyliczanie poziomu
-    const levelCap = 1000; // np. stały próg lub pobrany z configu
+    const levelCap = 1000;
     return Math.min(Math.round((xp / levelCap) * 100), 100);
+  }
+
+  private originBonusSource(): BonusSource {
+    return {
+      name: 'origin',
+      bonuses: this.originBonuses().map((b) => ({
+        target: b.target ?? '',
+        value: b.value,
+        type: b.type,
+      })),
+    };
   }
 }

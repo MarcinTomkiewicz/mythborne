@@ -1,11 +1,10 @@
-export interface IHeroDerived {
-  heroId: string;
+export interface IHeroDerived extends Record<string, number> {
   hp: number;
   def: number;
   minDmg: number;
   maxDmg: number;
   luck: number;
-  critical: number | null;
-  evasion: number | null;
-  health: number | null;
+  critical: number;
+  evasion: number;
+  health: number;
 }
