@@ -1,20 +1,29 @@
-<aside [ngClass]="{ collapsed: collapsed }" class="sidebar">
+<aside [ngClass]="{ collapsed: collapsed() }" class="sidebar">
   <div class="sidebar-header">
     <div class="zap-icon">
       <i class="pi pi-bolt"></i>
     </div>
-    @if (!collapsed) {
+    @if (!collapsed()) { @if (isLoggedIn()) {
     <div>
-      <p class="title">Hero</p>
-      <p class="level">Level 1</p>
+      <p class="title">{{ hero()?.name || "Hero" }}</p>
+      <p class="level">Level {{ hero()?.level || 1 }}</p>
     </div>
-    }
+    } @else {
+      <app-login
+      [layout]="'vertical'"
+      [showHeader]="false"
+      (login)="handleLogin($event)"
+    ></app-login>
+    } }
   </div>
 
   <nav class="sidebar-menu">
-    <p class="menu-label">Game Menu</p>
+    <p class="menu-label">
+      {{ isLoggedIn() ? "Game Menu" : "Explore" }}
+    </p>
+
     <ul>
-      @for (item of menuItems; track item.title) {
+      @for (item of menuItems(); track item.title) {
       <li>
         <a
           [routerLink]="item.url"
@@ -22,7 +31,7 @@
           [routerLinkActiveOptions]="{ exact: true }"
         >
           <img [src]="item.icon" [alt]="item.title" class="icon" />
-          @if (!collapsed) {
+          @if (!collapsed()) {
           <span>{{ item.title }}</span>
           }
         </a>
@@ -30,4 +39,10 @@
       }
     </ul>
   </nav>
+
+  @if (!isLoggedIn()) {
+  <div class="login-panel">
+    <a routerLink="/login" class="login-link">Log in</a>
+  </div>
+  }
 </aside>

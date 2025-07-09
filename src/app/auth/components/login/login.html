@@ -1,0 +1,22 @@
+<div [formGroup]="form" class="w-full" [ngClass]="{ 'flex flex-row gap-4 items-end': isHorizontal(), 'flex flex-col gap-4': !isHorizontal() }">
+  @if (showHeader()) {
+    <h2 class="text-xl font-semibold mb-2">Log in</h2>
+  }
+
+  <div class="flex flex-col gap-1 flex-1">
+    <label for="email">Email</label>
+    <input id="email" type="email" formControlName="email" pInputText />
+  </div>
+
+  <div class="flex flex-col gap-1 flex-1">
+    <label for="password">Password</label>
+    <input id="password" type="password" formControlName="password" pInputText />
+  </div>
+
+  <p-button
+    type="button"
+    label="Log in"
+    (onClick)="submit()"
+    [disabled]="form.invalid"
+  ></p-button>
+</div>

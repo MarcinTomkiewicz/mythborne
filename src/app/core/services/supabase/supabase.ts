@@ -1,29 +1,44 @@
-import { Injectable } from '@angular/core';
-import { from, map, Observable } from 'rxjs';
-
+import { Injectable, inject } from '@angular/core';
+import { from, map, Observable, throwError, of } from 'rxjs';
 import { IQueryOptions } from '../../interfaces/i-query/i-query';
-import { supabase } from '../../supabase/supabase';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Insert, Row, TableName, Update } from '../../types/supabase.types';
+import { Platform } from '../platform/platform';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
+  private readonly platform = inject(Platform);
+  private readonly supabase: SupabaseClient | null = this.platform.isBrowser
+    ? createClient(environment.supabaseUrl, environment.supabaseKey)
+    : null;
+
+  private ensureClient(): SupabaseClient {
+    if (!this.supabase) {
+      throw new Error('[Supabase] Tried to access client on server-side.');
+    }
+    return this.supabase;
+  }
+
   getAll<T extends TableName>(
     table: T,
     options?: IQueryOptions<Row<T>>
   ): Observable<Row<T>[]> {
+    if (!this.supabase) return of([]); // SSR-safe fallback
+
     const selectedColumns = options?.select ?? '*';
 
-    let query = supabase.from(table).select(selectedColumns);
+    let query = this.supabase.from(table).select(selectedColumns);
 
-  if (options?.filters) {
-    Object.entries(options.filters).forEach(([key, value]) => {
-      if (value === null) {
-        query = query.is(key, null); // 👈 to dodajemy!
-      } else {
-        query = query.eq(key, value as any);
-      }
-    });
-  }
+    if (options?.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value === null) {
+          query = query.is(key, null);
+        } else {
+          query = query.eq(key, value as any);
+        }
+      });
+    }
 
     if (options?.orderBy) {
       query = query.order(options.orderBy.column as string, {
@@ -48,8 +63,10 @@ export class SupabaseService {
     id: string | number,
     select: string = '*'
   ): Observable<Row<T>> {
+    if (!this.supabase) return throwError(() => new Error('Supabase not available on server'));
+
     return from(
-      supabase
+      this.supabase
         .from(table)
         .select(select)
         .eq('id', id as any)
@@ -66,8 +83,10 @@ export class SupabaseService {
     table: T,
     id: string | number
   ): Observable<boolean> {
+    if (!this.supabase) return throwError(() => new Error('Supabase not available on server'));
+
     return from(
-      supabase
+      this.supabase
         .from(table)
         .delete()
         .eq('id', id as any)

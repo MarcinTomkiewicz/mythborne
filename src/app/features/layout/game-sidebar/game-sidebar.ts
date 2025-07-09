@@ -1,6 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthState } from '../../../auth/services/auth-state';
+import { MENU_GUEST, MENU_LOGGED_IN } from '../../../core/config/menu-config';
+import { Login } from '../../../auth/components/login/login';
+import { Auth } from '../../../auth/services/auth';
 
 interface MenuItem {
   title: string;
@@ -10,25 +14,30 @@ interface MenuItem {
 
 @Component({
   selector: 'app-game-sidebar',
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, Login],
   templateUrl: './game-sidebar.html',
   styleUrl: './game-sidebar.scss'
 })
 export class GameSidebar {
-  collapsed = false;
+  collapsed = input<boolean>(false);
 
-menuItems: MenuItem[] = [
-  { title: 'Dashboard', url: '/game/dashboard', icon: 'assets/icons/spartan-helmet.svg' },
-  { title: 'Attributes', url: '/game/attributes', icon: 'assets/icons/skills.svg' },
-  { title: 'Challenges', url: '/game/challenges', icon: 'assets/icons/hydra.svg' },
-  { title: 'Combat', url: '/game/combat', icon: 'assets/icons/swordman.svg' },
-  { title: 'Armory', url: '/game/armory', icon: 'assets/icons/battle-gear.svg' },
-  { title: 'Mansion', url: '/game/mansion', icon: 'assets/icons/capitol.svg' },
-  { title: 'Trade', url: '/game/trade', icon: 'assets/icons/trade.svg' }
-];
+  private authState = inject(AuthState);
+  private auth = inject(Auth);
 
-log(data: any): void {
-  console.log(data);      
+  readonly user = this.authState.user;
+  readonly hero = this.authState.hero;
+
+  readonly isLoggedIn = computed(() => !!this.user());
+
+  readonly menuItems = computed(() =>
+    this.isLoggedIn() ? MENU_LOGGED_IN : MENU_GUEST
+  );
+
+  handleLogin({ email, password }: { email: string; password: string }) {
+  this.auth.login(email, password).subscribe({
+    next: () => console.log('[Sidebar] ✅ Zalogowano'),
+    error: (err) => console.error('[Sidebar] ❌ Login error', err),
+  });
+}
 }
 
-}
