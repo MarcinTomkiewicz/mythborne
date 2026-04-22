@@ -1,60 +1,52 @@
-@use 'abstracts/variables' as *;
-@use 'abstracts/mixins' as *;
+@use "sass:map";
+@use "abstracts/variables" as v;
 
-.layout {
-  display: flex;
-  flex-direction: column;
+.app-shell {
   min-height: 100vh;
-  background: linear-gradient(to bottom right, $color-bg-dark, $color-bg);
-  font-family: $font-body;
-  color: $color-text;
+  color: v.$color-text;
 }
 
-.app-header {
+.app-shell__header {
   height: 4rem;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(to right, rgba(30, 41, 59, 0.5), rgba(30, 58, 138, 0.5));
-  border-bottom: 1px solid $color-border;
+  border-bottom: 1px solid v.$color-border;
   backdrop-filter: blur(6px);
-  text-align: center;
-
-  h1 {
-    font-family: $font-display;
-    color: $color-secondary;
-    font-size: $font-size-lg;
-    letter-spacing: 1px;
-    margin: 0;
-  }
 }
 
-.app-body {
-  flex: 1;
-  display: flex;
+.app-shell__title {
+  margin: 0;
+  font-family: v.$font-family-display;
+  font-size: map.get(v.$font-sizes, "lg");
+  letter-spacing: 1px;
+  color: v.$color-secondary;
+}
+
+.app-shell__body {
   overflow: hidden;
 }
 
-.app-sidebar {
-  width: 260px;
-  background: linear-gradient(to bottom, $color-bg-light, $color-bg-dark);
-  color: $color-muted;
-  padding: $spacing-md;
-  border-right: 1px solid $color-border;
-}
-
-.app-content {
-  flex: 1;
-  padding: $spacing-lg;
+.app-shell__content {
+  padding: map.get(v.$spacings, "xl");
   overflow-y: auto;
-  background-color: $color-bg;
+  background: transparent;
 }
 
-.app-footer {
-  background-color: $color-bg-light;
-  border-top: 1px solid $color-border;
-  color: $color-muted;
-  text-align: center;
-  padding: $spacing-sm;
-  font-size: $font-size-sm;
+.app-shell__footer {
+  border-top: 1px solid v.$color-border;
+  background: color-mix(in srgb, v.$color-bg-surface 94%, transparent);
+  color: v.$color-text-muted;
+  padding: map.get(v.$spacings, "sm");
+}
+
+@media (max-width: 767px) {
+  .app-shell__body {
+    flex-direction: column;
+  }
+
+  .app-shell__content {
+    padding: map.get(v.$spacings, "lg");
+  }
 }

@@ -7,7 +7,7 @@ import {
   signal,
   OnInit,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ButtonModule } from 'primeng/button';
 
 import { Carousel } from '../../../../shared/carousel/carousel';
@@ -22,10 +22,10 @@ import {
 @Component({
   selector: 'app-step-origin',
   standalone: true,
-  imports: [CommonModule, Carousel, ButtonModule],
+  imports: [Carousel, ButtonModule],
   template: `
     @if (origins().length > 0) {
-    <section>
+    <section class="flex-col gap-lg">
       <app-carousel
         [origins]="origins()"
         [bonuses]="currentBonuses()"
@@ -34,7 +34,7 @@ import {
         (indexChange)="onIndexChange($event)"
       />
 
-      <div class="actions mt-6 flex gap-2 justify-end">
+      <div class="flex-row-end-center gap-sm mt-xl">
         <p-button
           type="button"
           label="Back"
@@ -50,7 +50,7 @@ import {
       </div>
     </section>
     } @else {
-    <p>Loading origins...</p>
+    <p class="mb-0 muted-text">Loading origins...</p>
     }
   `,
 })

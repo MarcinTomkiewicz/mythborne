@@ -1,22 +1,26 @@
-<div [formGroup]="form" class="w-full" [ngClass]="{ 'flex flex-row gap-4 items-end': isHorizontal(), 'flex flex-col gap-4': !isHorizontal() }">
+<form
+  [formGroup]="form"
+  class="mg-form w-100"
+  [ngClass]="isHorizontal() ? 'flex-row-start-end gap-md' : 'flex-col gap-md'"
+  (ngSubmit)="submit()"
+>
   @if (showHeader()) {
-    <h2 class="text-xl font-semibold mb-2">Log in</h2>
+    <h2 class="mg-section__title mg-section__title--xs mb-sm">Log in</h2>
   }
 
-  <div class="flex flex-col gap-1 flex-1">
+  <div class="flex-col gap-xs flex-1">
     <label for="email">Email</label>
     <input id="email" type="email" formControlName="email" pInputText />
   </div>
 
-  <div class="flex flex-col gap-1 flex-1">
+  <div class="flex-col gap-xs flex-1">
     <label for="password">Password</label>
     <input id="password" type="password" formControlName="password" pInputText />
   </div>
 
   <p-button
-    type="button"
+    type="submit"
     label="Log in"
-    (onClick)="submit()"
     [disabled]="form.invalid"
   ></p-button>
-</div>
+</form>

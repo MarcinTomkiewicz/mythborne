@@ -1,12 +1,12 @@
-<aside [ngClass]="{ collapsed: collapsed() }" class="sidebar">
-  <div class="sidebar-header">
-    <div class="zap-icon">
+<aside [ngClass]="{ 'sidebar-shell--collapsed': collapsed() }" class="sidebar-shell transition-width">
+  <div class="sidebar-shell__header flex-row-start-center gap-md">
+    <div class="sidebar-shell__brand">
       <i class="pi pi-bolt"></i>
     </div>
     @if (!collapsed()) { @if (isLoggedIn()) {
-    <div>
-      <p class="title">{{ hero()?.name || "Hero" }}</p>
-      <p class="level">Level {{ hero()?.level || 1 }}</p>
+    <div class="flex-col gap-xs">
+      <p class="sidebar-shell__title mb-0">{{ hero()?.name || "Hero" }}</p>
+      <p class="sidebar-shell__level mb-0">Level {{ hero()?.level || 1 }}</p>
     </div>
     } @else {
       <app-login
@@ -17,20 +17,21 @@
     } }
   </div>
 
-  <nav class="sidebar-menu">
-    <p class="menu-label">
+  <nav class="sidebar-shell__nav">
+    <p class="sidebar-shell__label mb-sm">
       {{ isLoggedIn() ? "Game Menu" : "Explore" }}
     </p>
 
-    <ul>
+    <ul class="sidebar-shell__list">
       @for (item of menuItems(); track item.title) {
-      <li>
+      <li class="sidebar-shell__item">
         <a
+          class="sidebar-shell__link"
           [routerLink]="item.url"
           routerLinkActive="active"
           [routerLinkActiveOptions]="{ exact: true }"
         >
-          <img [src]="item.icon" [alt]="item.title" class="icon" />
+          <img [src]="item.icon" [alt]="item.title" class="sidebar-shell__icon" />
           @if (!collapsed()) {
           <span>{{ item.title }}</span>
           }
@@ -41,8 +42,8 @@
   </nav>
 
   @if (!isLoggedIn()) {
-  <div class="login-panel">
-    <a routerLink="/login" class="login-link">Log in</a>
+  <div class="mt-lg">
+    <a routerLink="/auth/create-character" class="sidebar-shell__login-link">Create character</a>
   </div>
   }
 </aside>

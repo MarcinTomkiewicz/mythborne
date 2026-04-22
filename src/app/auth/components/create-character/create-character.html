@@ -1,4 +1,5 @@
-<div class="create-character">
+<section class="mg-card mg-card--legend">
+  <p class="card-legend">Create Character</p>
   @switch (step()) { @case (0) {
   <app-step-account [form]="accountForm" (next)="nextStep()" />
   } @case (1) {
@@ -10,4 +11,4 @@
   } @case (2) {
   <app-step-user [form]="userForm" (back)="prevStep()" (submit)="submit()" />
   } }
-</div>
+</section>

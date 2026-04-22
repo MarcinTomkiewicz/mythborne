@@ -1,16 +1,17 @@
 import { Injectable, inject } from '@angular/core';
 import { from, map, Observable, throwError, of } from 'rxjs';
 import { IQueryOptions } from '../../interfaces/i-query/i-query';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Insert, Row, TableName, Update } from '../../types/supabase.types';
 import { Platform } from '../platform/platform';
-import { environment } from '../../../../environments/environment';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '../../supabase/database.types';
+import { SupabaseClientService } from './supabase-client';
 
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   private readonly platform = inject(Platform);
-  private readonly supabase: SupabaseClient | null = this.platform.isBrowser
-    ? createClient(environment.supabaseUrl, environment.supabaseKey)
+  private readonly supabase: SupabaseClient<Database> | null = this.platform.isBrowser
+    ? inject(SupabaseClientService).client
     : null;
 
   private ensureClient(): SupabaseClient {
@@ -33,9 +34,9 @@ export class SupabaseService {
     if (options?.filters) {
       Object.entries(options.filters).forEach(([key, value]) => {
         if (value === null) {
-          query = query.is(key, null);
+          query = (query as any).is(key, null);
         } else {
-          query = query.eq(key, value as any);
+          query = (query as any).eq(key, value);
         }
       });
     }
@@ -65,14 +66,15 @@ export class SupabaseService {
   ): Observable<Row<T>> {
     if (!this.supabase) return throwError(() => new Error('Supabase not available on server'));
 
-    return from(
-      this.supabase
-        .from(table)
-        .select(select)
-        .eq('id', id as any)
-        .single()
-    ).pipe(
-      map(({ data, error }) => {
+    const query: Promise<any> = (this.supabase as any)
+      .from(table)
+      .select(select)
+      .eq('id', id)
+      .single();
+
+    return from(query).pipe(
+      map((result: any) => {
+        const { data, error } = result;
         if (error) throw error;
         return data as unknown as Row<T>;
       })
@@ -85,13 +87,14 @@ export class SupabaseService {
   ): Observable<boolean> {
     if (!this.supabase) return throwError(() => new Error('Supabase not available on server'));
 
-    return from(
-      this.supabase
-        .from(table)
-        .delete()
-        .eq('id', id as any)
-    ).pipe(
-      map(({ error }) => {
+    const query: Promise<any> = (this.supabase as any)
+      .from(table)
+      .delete()
+      .eq('id', id);
+
+    return from(query).pipe(
+      map((result: any) => {
+        const { error } = result;
         if (error) throw error;
         return true;
       })

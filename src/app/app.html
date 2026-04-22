@@ -1,17 +1,17 @@
-<div class="layout">
-  <header class="app-header">
-    <h1>Mythos Hunter</h1>
+<div class="app-shell flex-col">
+  <header class="app-shell__header">
+    <h1 class="app-shell__title">Mythos Hunter</h1>
   </header>
 
-  <div class="app-body">
-  <app-game-sidebar></app-game-sidebar>
+  <div class="app-shell__body flex-row-start-stretch flex-1">
+    <app-game-sidebar></app-game-sidebar>
 
-    <main class="app-content">
+    <main class="app-shell__content flex-1">
       <router-outlet></router-outlet>
     </main>
   </div>
 
-  <footer class="app-footer">
-    <p>&copy; 2025 Mythos Hunter</p>
+  <footer class="app-shell__footer text-center">
+    <p class="mb-0">&copy; 2025 Mythos Hunter</p>
   </footer>
 </div>

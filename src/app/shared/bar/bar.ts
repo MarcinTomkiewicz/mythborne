@@ -1,9 +1,9 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, computed, input, Input } from '@angular/core';
 
 @Component({
   selector: 'app-bar',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './bar.html',
   styleUrl: './bar.scss',
 })

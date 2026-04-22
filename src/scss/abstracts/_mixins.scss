@@ -1,0 +1,255 @@
+@use "sass:map";
+@use "sass:math";
+@use "./variables" as v;
+
+/* Media queries */
+@mixin up($bp) {
+  @media (min-width: map.get(v.$breakpoints, $bp)) {
+    @content;
+  }
+}
+
+@mixin down($bp) {
+  @media (max-width: map.get(v.$breakpoints, $bp)) {
+    @content;
+  }
+}
+
+/* Flex helpers */
+@mixin flex(
+  $direction: row,
+  $justify: space-between,
+  $align: center,
+  $gap: null,
+  $inline: false,
+  $self: null,
+  $flex: null
+) {
+  @if $inline {
+    display: inline-flex;
+  } @else {
+    display: flex;
+  }
+
+  flex-direction: $direction;
+  justify-content: $justify;
+  align-items: $align;
+
+  @if $gap != null {
+    gap: $gap;
+  }
+
+  @if $self != null {
+    align-self: $self;
+  }
+
+  @if $flex != null {
+    flex: $flex;
+  }
+}
+
+@mixin center($inline: false) {
+  @if $inline {
+    display: inline-flex;
+  } @else {
+    display: flex;
+  }
+
+  justify-content: center;
+  align-items: center;
+}
+
+/* Grid helpers */
+@mixin grid($columns, $gap: map.get(v.$spacings, "md"), $align: center) {
+  display: grid;
+  grid-template-columns: $columns;
+  gap: $gap;
+  align-items: $align;
+}
+
+@mixin mg-grid(
+  $columns: 3,
+  $gap: map.get(v.$spacings, "xl"),
+  $mt: 0,
+  $responsive: true,
+  $md-columns: 2,
+  $sm-columns: 1,
+  $xs-columns: null,
+  $align: stretch
+) {
+  display: grid;
+  grid-template-columns: repeat($columns, minmax(0, 1fr));
+  gap: $gap;
+  align-items: $align;
+
+  @if $mt != null and $mt != 0 {
+    margin-top: $mt;
+  }
+
+  @if $responsive == true {
+    @if $md-columns != null {
+      @include down("md") {
+        grid-template-columns: repeat($md-columns, minmax(0, 1fr));
+      }
+    }
+
+    @if $sm-columns != null {
+      @include down("sm") {
+        grid-template-columns: repeat($sm-columns, minmax(0, 1fr));
+      }
+    }
+
+    @if $xs-columns != null {
+      @include down("xs") {
+        grid-template-columns: repeat($xs-columns, minmax(0, 1fr));
+      }
+    }
+  }
+}
+
+/* Data grid */
+@mixin data-grid($gap: map.get(v.$spacings, "sm")) {
+  display: grid;
+  gap: $gap;
+}
+
+@mixin data-grid-row(
+  $columns,
+  $pad: map.get(v.$spacings, "md"),
+  $bg: v.$color-bg-surface,
+  $radius: v.$radius-md,
+  $gap: map.get(v.$spacings, "sm")
+) {
+  display: grid;
+  grid-template-columns: $columns;
+  align-items: center;
+  padding: $pad;
+  background-color: $bg;
+  border-radius: $radius;
+  gap: $gap;
+  border: 1px solid v.$color-border;
+  box-shadow: v.$shadow-soft;
+}
+
+@mixin data-grid-row-divider($border-color: v.$color-secondary) {
+  background: transparent;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px dashed $border-color;
+}
+
+@mixin cell-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin collapse-grid-2cols(
+  $row-gap: map.get(v.$spacings, "sm"),
+  $pad-y: map.get(v.$spacings, "md")
+) {
+  @include down("sm") {
+    grid-template-columns: 1fr 1fr;
+    row-gap: $row-gap;
+    padding-top: $pad-y;
+    padding-bottom: $pad-y;
+  }
+}
+
+/* Text truncation */
+@mixin truncate($lines: 1) {
+  @if $lines == 1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Bronze gradient text – wersja pod CSS vars (bez sass:color) */
+@mixin bronze-gradient-text {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, v.$color-secondary 85%, white) 0%,
+    v.$color-secondary 60%,
+    color-mix(in srgb, v.$color-secondary 85%, black) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* =========================================================
+   GOLDEN – LEGACY (FIXED COLORS, INTENTIONAL EXCEPTION)
+   ========================================================= */
+@mixin gold-gradient-text {
+  background: linear-gradient(
+    90deg,
+    #f6e27a 0%,
+    #e8bc5a 18%,
+    #c9982f 32%,
+    #7b4f22 45%,
+    #c9982f 60%,
+    #e8bc5a 75%,
+    #f6e27a 100%
+  );
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow: 0 0 5px rgba(232, 188, 90, 0.15);
+}
+
+/* Badge: golden – bez sassowych operacji na var() */
+@mixin badge-golden {
+  @include gold-gradient-text;
+  border-color: color-mix(in srgb, v.$color-bronze 80%, white);
+  box-shadow: 0 0 8px color-mix(in srgb, v.$color-secondary 35%, transparent);
+}
+
+/* Form control – OK (nie ma color.scale) */
+@mixin form-control(
+  $bg: v.$color-bg,
+  $border: v.$color-border,
+  $text: v.$color-text,
+  $radius: v.$radius-sm,
+  $pad: 0.5rem,
+  $font-size: map.get(v.$font-sizes, "md")
+) {
+  background-color: $bg;
+  border: 1px solid $border;
+  color: $text;
+  padding: $pad;
+  font-size: $font-size;
+  border-radius: $radius;
+  transition: border-color v.$transition-fast;
+
+  &:focus {
+    border-color: v.$color-primary;
+    box-shadow: none;
+    outline: none;
+  }
+
+  &.is-invalid {
+    border-color: v.$color-danger;
+  }
+
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus,
+  &:-webkit-autofill:active {
+    box-shadow: 0 0 0px 1000px $bg inset !important;
+    -webkit-text-fill-color: $text !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+}
+
+/* Badge variant helper – bez color.scale */
+@mixin badge-variant($c, $bg-alpha: 0.12, $border-lightness: 10%) {
+  color: color-mix(in srgb, $c 85%, white);
+  border-color: color-mix(in srgb, $c 75%, white);
+  box-shadow: 0 0 6px color-mix(in srgb, $c 25%, transparent);
+}

@@ -1,6 +1,4 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FieldsetModule } from 'primeng/fieldset';
 import { Bar } from '../../../shared/bar/bar';
 
 import { StatsService } from '../../../core/services/stats/stats';
@@ -16,7 +14,7 @@ import { BonusSource } from '../../../core/domain/bonus/bonus.model';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, Bar, FieldsetModule],
+  imports: [Bar],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })

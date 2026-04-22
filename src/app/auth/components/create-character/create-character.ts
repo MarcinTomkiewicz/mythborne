@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject, signal } from '@angular/core';
 import {
   FormBuilder,
@@ -19,12 +19,11 @@ import { StepUser } from './steps/step-user';
   selector: 'app-create-character',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     StepAccount,
     StepUser,
-    StepOrigin,
-  ],
+    StepOrigin
+],
   templateUrl: './create-character.html',
 })
 export class CreateCharacter {

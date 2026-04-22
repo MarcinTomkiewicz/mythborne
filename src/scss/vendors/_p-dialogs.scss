@@ -1,0 +1,143 @@
+@use "sass:map";
+@use "../abstracts/variables" as v;
+@use "abstracts/mixins" as m;
+
+/* =========================================================
+   PrimeNG — Dialog (MG)
+   ========================================================= */
+
+@mixin dialog-semantic-variant($bg-color) {
+  .p-dialog-header {
+    background: $bg-color;
+    color: v.$color-white;
+    border-bottom-color: color-mix(in srgb, $bg-color 55%, v.$color-border);
+
+    :is(
+      .p-dialog-close-button,
+      .p-dialog-maximize-button,
+      .p-dialog-minimize-button
+    ) {
+      color: v.$color-white;
+      opacity: 0.9;
+      background: transparent;
+
+      &:hover {
+        opacity: 1;
+        background: color-mix(in srgb, white 78%, transparent);
+        color: v.$color-ink;
+      }
+
+      &:active {
+        background: color-mix(in srgb, white 70%, transparent);
+        color: v.$color-ink;
+      }
+
+      &:focus-visible {
+        outline: 0;
+        box-shadow: 0 0 0 2px color-mix(in srgb, white 55%, transparent);
+      }
+    }
+  }
+}
+
+.p-dialog.mg-dialog {
+  width: min(95vw, 40rem);
+
+  border-radius: v.$radius-lg;
+  border: 1px solid v.$color-border;
+  box-shadow: v.$shadow-soft;
+  background: v.$color-bg-surface;
+  color: v.$color-text;
+  
+
+  &.mg-dialog--sm {
+    width: min(95vw, 32rem);
+  }
+
+  &.mg-dialog--md {
+    width: min(95vw, 40rem);
+  }
+
+  &.mg-dialog--lg {
+    width: min(95vw, 56rem);
+  }
+
+  &.mg-dialog--xl {
+    width: min(95vw, 72rem);
+  }
+
+  .p-dialog-header {
+    border-bottom: 1px solid v.$color-border;
+    background: v.$color-bg-surface;
+    color: v.$color-text;
+    border-top-left-radius: v.$radius-lg;
+    border-top-right-radius: v.$radius-lg;
+    padding: map.get(v.$spacings, "sm") map.get(v.$spacings, "md");
+
+    :is(
+      .p-dialog-close-button,
+      .p-dialog-maximize-button,
+      .p-dialog-minimize-button
+    ) {
+      color: inherit;
+      opacity: 0.85;
+      transition:
+        opacity v.$transition-fast,
+        background-color v.$transition-fast,
+        color v.$transition-fast;
+
+      &:hover {
+        opacity: 1;
+        color: v.$heading-color;
+      }
+    }
+
+    .p-dialog-close-button:focus-visible,
+    .p-dialog-maximize-button:focus-visible,
+    .p-dialog-minimize-button:focus-visible {
+      outline: 0;
+      box-shadow: 0 0 0 2px
+        color-mix(in srgb, v.$color-secondary 35%, transparent);
+    }
+  }
+
+  .p-dialog-title {
+    font-family: v.$font-family-display;
+  }
+
+  .p-dialog-content {
+    background: v.$color-bg-surface;
+    color: v.$color-text;
+
+    @include m.down("xs") {
+      padding: map.get(v.$spacings, "sm");
+    }
+  }
+
+  .p-dialog-footer {
+    border-top: 1px solid v.$color-border;
+    background: v.$color-bg-surface;
+    border-bottom-left-radius: v.$radius-lg;
+    border-bottom-right-radius: v.$radius-lg;
+  }
+
+  &.mg-dialog--info {
+    @include dialog-semantic-variant(v.$color-info);
+  }
+
+  &.mg-dialog--success {
+    @include dialog-semantic-variant(v.$color-success);
+  }
+
+  &.mg-dialog--danger {
+    @include dialog-semantic-variant(v.$color-danger);
+  }
+
+  &.mg-dialog--arcane {
+    @include dialog-semantic-variant(v.$color-arcane);
+  }
+}
+
+.p-dialog-mask {
+  background: rgba(0, 0, 0, 0.55);
+}

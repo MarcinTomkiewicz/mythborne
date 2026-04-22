@@ -1,93 +1,72 @@
-@use 'abstracts/variables' as *;
-@use 'abstracts/mixins' as *;
+@use "sass:map";
+@use "abstracts/variables" as v;
 
-.dashboard-wrapper {
+.dashboard-stack {
+  min-width: 0;
+}
+
+.dashboard-legend {
+  margin-bottom: 0;
+  font-size: map.get(v.$font-sizes, "xs");
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: v.$color-secondary;
+}
+
+.dashboard-hero {
+  align-items: center;
+}
+
+.dashboard-hero__title {
+  margin-bottom: 0;
+  font-size: map.get(v.$font-sizes, "xl");
+  color: v.$color-secondary;
+}
+
+.dashboard-stat-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-stat-list li {
   display: flex;
-  flex-direction: column;
-  gap: $spacing-lg;
+  justify-content: space-between;
+  gap: map.get(v.$spacings, "md");
+  padding: map.get(v.$spacings, "xs") 0;
+  color: v.$color-text-muted;
+  border-bottom: 1px dashed color-mix(in srgb, v.$color-border 60%, transparent);
+}
 
- .hero-meta {
-    display: flex;
-    gap: $spacing-md;
-    align-items: center;
+.dashboard-stat-list li:last-child {
+  border-bottom: 0;
+}
 
-    .hero-avatar {
-      width: 128px;
-      height: 128px;
-      border-radius: 50%;
-      background-color: $color-muted;
-    }
+.dashboard-stat-list strong {
+  color: v.$color-primary;
+}
 
-    h2 {
-      font-size: $font-size-lg;
-      color: $color-secondary;
-      margin: 0;
-    }
+.dashboard-equipment-card {
+  text-align: center;
+  transition:
+    transform v.$transition-fast,
+    border-color v.$transition-fast;
+}
 
-    .subtitle {
-      font-size: $font-size-sm;
-      color: $color-muted;
-    }
+.dashboard-equipment-card:hover {
+  transform: translateY(-2px);
+  border-color: v.$color-info;
+}
 
-    .bars {
-      display: flex;
-      flex-direction: column;
-      gap: $spacing-xs;
-      margin-top: $spacing-sm;
-    }
-  }
+.dashboard-equipment-card__slot {
+  font-weight: 700;
+  color: v.$color-primary;
+}
 
-  .dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: $spacing-lg;
-
-    ul {
-      list-style: none;
-      padding: 0;
-
-      li {
-        margin-bottom: $spacing-xs;
-        display: flex;
-        justify-content: space-between;
-        color: $color-muted;
-
-        strong {
-          color: $color-primary;
-        }
-      }
-    }
-  }
-
-  .equipment-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: $spacing-md;
-
-    .equipment-card {
-      @include panel-box;
-      text-align: center;
-      color: $color-text;
-      transition: transform 0.2s ease;
-
-      .slot {
-        font-weight: bold;
-        color: $color-primary;
-      }
-
-      .name {
-        margin: $spacing-xs 0;
-      }
-
-      .bonus {
-        font-size: $font-size-sm;
-        color: $color-muted;
-      }
-
-      &:hover {
-        transform: scale(1.02);
-        border-color: $color-accent;
-      }
-    }
+@media (max-width: 767px) {
+  .dashboard-hero {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

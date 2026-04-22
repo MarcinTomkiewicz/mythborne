@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { filter, from, map, switchMap, take, throwError } from 'rxjs';
+import { EMPTY, filter, from, map, switchMap, take } from 'rxjs';
 
-import { supabase } from '../../../core/supabase/supabase';
 import { TABLES } from '../../../core/constants/tables.const';
 
 import { IHeroStats } from '../../../core/interfaces/hero/i-hero-stats';
@@ -9,17 +8,17 @@ import { AuthState } from '../../../auth/services/auth-state';
 import { mapHeroDerived } from '../../domain/hero/hero-derived.mapper';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { User } from '@supabase/supabase-js';
+import { SupabaseClientService } from '../supabase/supabase-client';
 
 @Injectable({ providedIn: 'root' })
 export class Hero {
   private readonly authState = inject(AuthState);
+  private readonly supabase = inject(SupabaseClientService).client;
 
   private user$ = toObservable(this.authState.user);
 
-  private get userIdOrThrow(): string {
-    const user = this.authState.user();
-    if (!user) throw new Error('[HeroService] No user in auth state');
-    return user.id;
+  private get userId(): string | null {
+    return this.authState.user()?.id ?? null;
   }
 
   /**
@@ -31,7 +30,7 @@ export class Hero {
       take(1),
       switchMap((user) =>
         from(
-          supabase.from(TABLES.hero).select('*').eq('id', user.id).single()
+          this.supabase.from(TABLES.hero).select('*').eq('id', user.id).single()
         ).pipe(
           map(({ data, error }) => {
             if (error || !data) throw error ?? new Error('No hero');
@@ -46,10 +45,14 @@ export class Hero {
    * Fetches base stats like strength, agility, etc.
    */
   getHeroStats() {
-    const id = this.userIdOrThrow;
+    const id = this.userId;
+
+    if (!id) {
+      return EMPTY;
+    }
 
     return from(
-      supabase
+      this.supabase
         .from(TABLES.hero_stats)
         .select('stat_key, value')
         .eq('hero_id', id)
@@ -69,10 +72,14 @@ export class Hero {
    * Fetches derived stats (like dmg, hp, crit, etc.)
    */
   getHeroDerived() {
-    const id = this.userIdOrThrow;
+    const id = this.userId;
+
+    if (!id) {
+      return EMPTY;
+    }
 
     return from(
-      supabase.from(TABLES.hero_derived).select('*').eq('hero_id', id).single()
+      this.supabase.from(TABLES.hero_derived).select('*').eq('hero_id', id).single()
     ).pipe(
       map(({ data, error }) => {
         if (error || !data) throw error ?? new Error('No derived stats');

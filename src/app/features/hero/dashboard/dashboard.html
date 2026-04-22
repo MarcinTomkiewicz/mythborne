@@ -1,31 +1,50 @@
-<div class="dashboard-wrapper">
-  <!-- Hero Summary -->
-  <p-fieldset legend="Hero Summary">
-    <div class="hero-meta">
-      <img src="assets/avatars/hero-default.png" alt="Hero Avatar" class="hero-avatar" />
-      <div>
-        <h2>Welcome back, {{ heroName }}</h2>
-        <p class="subtitle">Level {{ level }} Hero</p>
-        <div class="bars">
-          <app-bar label="HP" [value]="derivedDisplay()['health'] " [max]="derivedDisplay()['health']" type="hp" />
-          <app-bar label="XP" [value]="experiencePercent" [max]="100" type="xp" />
+<div class="dashboard-stack flex-col gap-xl">
+  <section class="mg-card mg-card--legend">
+    <p class="card-legend dashboard-legend">Hero Summary</p>
+
+    <div class="dashboard-hero flex-row-start-center gap-md">
+      <span class="image__preview image__preview--circle w-px-150 h-px-150">
+        <img
+          src="assets/avatars/hero-default.png"
+          alt="Hero Avatar"
+          class="image__preview-image"
+        />
+      </span>
+
+      <div class="flex-col gap-xs">
+        <h2 class="dashboard-hero__title mb-0">Welcome back, {{ heroName }}</h2>
+        <p class="muted-text mb-0">Level {{ level }} Hero</p>
+        <div class="flex-col gap-xs mt-sm">
+          <app-bar
+            label="HP"
+            [value]="derivedDisplay()['health'] "
+            [max]="derivedDisplay()['health']"
+            type="hp"
+          />
+          <app-bar
+            label="XP"
+            [value]="experiencePercent"
+            [max]="100"
+            type="xp"
+          />
         </div>
       </div>
     </div>
-  </p-fieldset>
+  </section>
 
-  <!-- Grid: Details + Stats -->
-  <div class="dashboard-grid">
-    <p-fieldset legend="Hero Details">
-      <ul>
+  <div class="mg-grid-auto-fit">
+    <section class="mg-card mg-card--legend">
+      <p class="card-legend dashboard-legend">Hero Details</p>
+      <ul class="dashboard-stat-list">
         <li><strong>Origin:</strong> {{ origin()?.name ?? 'Unknown' }}</li>
         <li><strong>Guild:</strong> None</li>
         <li><strong>Hero Points:</strong> {{ derivedDisplay()['hp'] }}</li>
       </ul>
-    </p-fieldset>
+    </section>
 
-    <p-fieldset legend="Hero Stats">
-      <ul>
+    <section class="mg-card mg-card--legend">
+      <p class="card-legend dashboard-legend">Hero Stats</p>
+      <ul class="dashboard-stat-list">
         @for (stat of statsList(); track stat.key) {
           <li>
             <strong>{{ stat.label }}</strong>
@@ -33,32 +52,35 @@
           </li>
         }
       </ul>
-    </p-fieldset>
+    </section>
   </div>
 
-  <!-- Derived Stats -->
-<p-fieldset legend="Derived Stats">
-  <ul>
-    <li><strong>DEF:</strong> {{ derivedDisplay()['def'] }}</li>
-    <li><strong>DMG:</strong> {{ derivedDisplay()['minDmg'] }} – {{ derivedDisplay()['maxDmg'] }}</li>
-    <li><strong>Luck:</strong> {{ derivedDisplay()['luck'] }}</li>
-    <li><strong>Critical:</strong> {{ derivedDisplay()['critical'] }}</li>
-    <li><strong>Evasion:</strong> {{ derivedDisplay()['evasion'] }}</li>
-  </ul>
-</p-fieldset>
+  <section class="mg-card mg-card--legend">
+    <p class="card-legend dashboard-legend">Derived Stats</p>
+    <ul class="dashboard-stat-list">
+      <li><strong>DEF:</strong> {{ derivedDisplay()['def'] }}</li>
+      <li>
+        <strong>DMG:</strong> {{ derivedDisplay()['minDmg'] }} -
+        {{ derivedDisplay()['maxDmg'] }}
+      </li>
+      <li><strong>Luck:</strong> {{ derivedDisplay()['luck'] }}</li>
+      <li><strong>Critical:</strong> {{ derivedDisplay()['critical'] }}</li>
+      <li><strong>Evasion:</strong> {{ derivedDisplay()['evasion'] }}</li>
+    </ul>
+  </section>
 
-  <!-- Equipment -->
-  <p-fieldset legend="Equipment">
-    <div class="equipment-grid">
+  <section class="mg-card mg-card--legend">
+    <p class="card-legend dashboard-legend">Equipment</p>
+    <div class="mg-grid-auto-fit gap-md">
       @for (item of equipment; track item.slot) {
-        <div class="equipment-card">
-          <div class="slot">{{ item.slot }}</div>
-          <div class="name">{{ item.name || 'None' }}</div>
+        <div class="mg-card dashboard-equipment-card">
+          <div class="dashboard-equipment-card__slot">{{ item.slot }}</div>
+          <div class="my-xs">{{ item.name || 'None' }}</div>
           @if (item.bonus) {
-            <div class="bonus">{{ item.bonus }}</div>
+            <div class="muted-text">{{ item.bonus }}</div>
           }
         </div>
       }
     </div>
-  </p-fieldset>
+  </section>
 </div>

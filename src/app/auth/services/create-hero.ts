@@ -11,12 +11,13 @@ import {
 import { HeroFactory } from '../../core/services/hero-factory/hero-factory';
 import { SupabaseService } from '../../core/services/supabase/supabase';
 import { Insert } from '../../core/types/supabase.types';
-import { supabase } from '../../core/supabase/supabase';
+import { SupabaseClientService } from '../../core/services/supabase/supabase-client';
 
 @Injectable({ providedIn: 'root' })
 export class createHero {
   private heroFactory = inject(HeroFactory);
   private supabaseService = inject(SupabaseService);
+  private supabase = inject(SupabaseClientService).client;
 
   createHero(
     heroId: string,
@@ -27,7 +28,7 @@ export class createHero {
       id: heroId,
       name: characterName,
       level: 1,
-      experience: 0, // ✅ zgodnie z Twoją definicją
+      experience: 0,
       origin_id: originId,
       rank: 1,
       created_at: new Date().toISOString(),
@@ -44,10 +45,10 @@ export class createHero {
     console.log('[HeroService] 💰 Resources:', resources);
 
     return concat(
-      from(supabase.from('hero').insert([heroPayload])),
-      from(supabase.from('hero_stats').insert(stats)),
-      from(supabase.from('hero_derived').insert([derived])),
-      from(supabase.from('hero_resources').insert(resources))
+      from(this.supabase.from('hero').insert([heroPayload])),
+      from(this.supabase.from('hero_stats').insert(stats)),
+      from(this.supabase.from('hero_derived').insert([derived])),
+      from(this.supabase.from('hero_resources').insert(resources))
     ).pipe(
       toArray(),
       map((results) => {
@@ -101,7 +102,7 @@ assignFreeEstate(heroId: string): Observable<void> {
       // Reuse
       if (existing && existing.hero_id === null) {
         return from(
-          supabase.from('estates').update({ hero_id: heroId }).eq('id', existing.id)
+          this.supabase.from('estates').update({ hero_id: heroId }).eq('id', existing.id)
         ).pipe(
           map(({ error }) => {
             if (error) throw error;
@@ -112,7 +113,7 @@ assignFreeEstate(heroId: string): Observable<void> {
 
       // Create new estate
       return from(
-        supabase.from('estates').insert([{
+        this.supabase.from('estates').insert([{
           address,
           rank,
           hero_id: heroId,
@@ -137,7 +138,7 @@ assignFreeEstate(heroId: string): Observable<void> {
               }));
 
               return from(
-                supabase.from('estate_buildings').insert(insertPayload)
+                this.supabase.from('estate_buildings').insert(insertPayload)
               ).pipe(
                 map(({ error }) => {
                   if (error) throw error;

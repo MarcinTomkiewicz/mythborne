@@ -68,11 +68,10 @@
   text-align: center;
 }
 
-.bonuses {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+.origin-info__description {
+  max-width: 70ch;
+  font-style: italic;
+  color: var(--mg-color-text-muted);
 }
 
 .nav {
@@ -84,6 +83,7 @@
   border: none;
   cursor: pointer;
   z-index: 3;
+  color: var(--mg-color-secondary);
 }
 
 .nav.prev {

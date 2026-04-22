@@ -1,0 +1,35 @@
+
+
+/* ===========================
+   THEMES
+   =========================== */
+@use "themes/themes";
+
+/* ===========================
+   BASE
+   =========================== */
+@use "base/base";
+
+/* ===========================
+   LAYOUTS
+   =========================== */
+@use "layouts/layouts";
+
+/* ===========================
+   UTILITIES
+   =========================== */
+@use "utilities/utilities";
+
+/* ===========================
+   COMPONENTS (globalne, jeśli będą)
+   =========================== */
+// @use "components/buttons";
+// @use "components/forms";
+// @use "components/nav";
+
+/* ===========================
+VENDORS OVERRIDES
+=========================== */
+@use "vendors/primeng";
+/* vendors */
+@use "vendors/primeicons-local";

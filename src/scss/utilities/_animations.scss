@@ -1,0 +1,79 @@
+@use "../abstracts/variables" as v;
+
+.animate-duration-800 {
+  animation-duration: 800ms !important;
+}
+
+.animate-duration-1000 {
+  animation-duration: 1000ms !important;
+}
+
+.animate-ease-out {
+  animation-timing-function: ease-out !important;
+}
+
+.animate-fill-both {
+  animation-fill-mode: both !important;
+}
+
+.animate-enter-fade-up {
+  animation-name: mg-enter-fade-up;
+}
+
+.animate-enter-fade-up-soft {
+  animation-name: mg-enter-fade-up-soft;
+}
+
+.floating-dragon {
+  animation: mg-floating-dragon 3s ease-in-out infinite;
+}
+
+@keyframes mg-enter-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes mg-enter-fade-up-soft {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes mg-floating-dragon {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.mg-spin-cw {
+  display: inline-block;
+  animation: mg-spin-cw 1s linear infinite;
+}
+
+@keyframes mg-spin-cw {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

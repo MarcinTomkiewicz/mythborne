@@ -1,5 +1,7 @@
 import {
   ApplicationConfig,
+  inject,
+  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
@@ -12,24 +14,26 @@ import {
   withEventReplay,
 } from '@angular/platform-browser';
 import { providePrimeNG } from 'primeng/config';
-import { provideAnimations } from '@angular/platform-browser/animations';
-import Aura from '@primeuix/themes/aura';
+import { MgPrimePreset } from './primeng/mg-primeng.preset';
+import { Auth } from './auth/services/auth';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
+    provideAppInitializer(() => inject(Auth).initialize()),
     provideRouter(routes),
     provideClientHydration(withEventReplay()),
     provideAnimationsAsync(),
-    provideAnimations(),
     providePrimeNG({
       theme: {
-        preset: Aura,
+        preset: MgPrimePreset,
         options: {
-          prefix: 'p',
-          darkModeSelector: 'system',
-          cssLayer: false,
+          darkModeSelector: 'html:not([data-theme="light"])',
+          cssLayer: {
+            name: 'primeng',
+            order: 'app-styles, primeng',
+          },
         },
       },
     }),

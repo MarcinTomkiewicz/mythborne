@@ -1,0 +1,143 @@
+@use "sass:map";
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+/* =========================================================
+   LAYOUT PRIMITIVES / SHELL
+   - section + container + section header
+   - bez stylowania “komponentów” typu button/form
+   ========================================================= */
+
+/* Container */
+.mg-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: v.$container-padding;
+  padding-right: v.$container-padding;
+}
+
+.mg-section {
+  color: v.$color-text;
+  padding: map.get(v.$spacings, "xxl") 0;
+
+  @include m.down("md") {
+    padding: map.get(v.$spacings, "xl") 0;
+  }
+}
+
+.mg-section--full {
+  min-height: 100vh;
+  display: grid;
+  align-items: center;
+}
+
+.mg-section--center {
+  text-align: center;
+}
+
+.mg-section__header {
+  text-align: center;
+  margin-bottom: map.get(v.$spacings, "xl");
+}
+
+.mg-section__title {
+  margin: 0 0 map.get(v.$spacings, "sm");
+  font-family: v.$font-family-display;
+  font-size: map.get(v.$font-sizes, "xxl");
+  font-weight: 700;
+  color: v.$heading-color;
+
+  @include m.down('md') {
+    font-size: map.get(v.$font-sizes, "xl");
+  }
+}
+
+.mg-section__title--md {
+  font-size: map.get(v.$font-sizes, "xl");
+    @include m.down('md') {
+    font-size: map.get(v.$font-sizes, "lg");
+  }
+}
+
+.mg-section__title--sm {
+  font-size: map.get(v.$font-sizes, "lg");
+    @include m.down('md') {
+    font-size: map.get(v.$font-sizes, "md");
+  }
+}
+
+.mg-section__title--xs {
+  font-size: map.get(v.$font-sizes, "md");
+    @include m.down('md') {
+    font-size: map.get(v.$font-sizes, "sm");
+  }
+}
+.mg-section__title--no-margin {
+  margin-bottom: 0;
+}
+
+:root .mg-section__title {
+  @include m.gold-gradient-text;
+}
+
+:root[data-theme="light"] .mg-section__title {
+  background: none;
+  background-clip: initial;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: currentColor;
+  color: v.$heading-color;
+}
+
+.mg-section__subtitle {
+  margin: 0 auto;
+  max-width: 80ch;
+  font-size: map.get(v.$font-sizes, "sm");
+  line-height: 1.6;
+  color: v.$color-text-muted;
+}
+
+.mg-section__subtitle--no-margin {
+  margin: 0;
+}
+
+.mg-section__subtitle--full {
+  max-width: unset;
+}
+
+.image__preview {
+  display: block;
+  overflow: hidden;
+  border: 1px solid v.$color-border;
+  background: v.$color-bg-surface;
+}
+
+.image__preview-image,
+.image__preview > img,
+.image__preview > .p-image,
+.image__preview > .p-image .p-image-original {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image__preview--circle {
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.image__preview--circle .image__preview-image,
+.image__preview-image--circle {
+  border-radius: 50%;
+}
+
+.image__preview--square {
+  aspect-ratio: 1;
+  border-radius: v.$radius-md;
+}
+
+.image__preview--landscape {
+  aspect-ratio: 16 / 9;
+  border-radius: v.$radius-md;
+}

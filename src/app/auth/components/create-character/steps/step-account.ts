@@ -2,17 +2,17 @@ import { Component, input, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-step-account',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputTextModule, ButtonModule],
+  imports: [ReactiveFormsModule, InputTextModule, ButtonModule],
   template: `
-    <div [formGroup]="form()" class="flex flex-col gap-4 w-full">
-      <h2 class="text-xl font-semibold mb-2">Create your account</h2>
+    <div [formGroup]="form()" class="mg-form flex-col gap-md w-100">
+      <h2 class="mg-section__title mg-section__title--xs mb-sm">Create your account</h2>
 
-      <div class="flex flex-col gap-1">
+      <div class="flex-col gap-xs">
         <label for="characterName">Hero Name</label>
         <input
           id="characterName"
@@ -22,12 +22,12 @@ import { CommonModule } from '@angular/common';
         />
       </div>
 
-      <div class="flex flex-col gap-1">
+      <div class="flex-col gap-xs">
         <label for="email">Email</label>
         <input id="email" type="email" formControlName="email" pInputText />
       </div>
 
-      <div class="flex flex-col gap-1">
+      <div class="flex-col gap-xs">
         <label for="password">Password</label>
         <input
           id="password"

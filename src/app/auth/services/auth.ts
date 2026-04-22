@@ -1,50 +1,68 @@
 import { inject, Injectable } from '@angular/core';
-import { from, map, of, switchMap, tap } from 'rxjs';
+import { firstValueFrom, from, map, of, switchMap, tap } from 'rxjs';
 import { TABLES } from '../../core/constants/tables.const';
 import { IUserData } from '../../core/interfaces/i-user-data/i-user-data';
-import { supabase } from '../../core/supabase/supabase';
 import { Insert } from '../../core/types/supabase.types';
 import { AuthState } from './auth-state';
 import { mapHero } from '../../core/domain/hero/hero.mapper';
+import { Platform } from '../../core/services/platform/platform';
+import { SupabaseClientService } from '../../core/services/supabase/supabase-client';
 
 @Injectable({ providedIn: 'root' })
 export class Auth {
-  private supabase = supabase;
-  private authState = inject(AuthState);
+  private readonly supabase = inject(SupabaseClientService).client;
+  private readonly authState = inject(AuthState);
+  private readonly platform = inject(Platform);
+  private initializationPromise: Promise<void> | null = null;
+
+  initialize(): Promise<void> {
+    if (!this.initializationPromise) {
+      this.initializationPromise = firstValueFrom(this.initializeAuthState());
+    }
+
+    return this.initializationPromise;
+  }
 
   initializeAuthState() {
-  return from(this.supabase.auth.getSession()).pipe(
-    switchMap(({ data, error }) => {
-      if (error || !data.session) {
-        this.authState.setUser(null);
-        this.authState.setHero(null);
-        return of(null);
-      }
+    const authSource$ = this.platform.isServer
+      ? from(this.supabase.auth.getUser()).pipe(
+          map(({ data, error }) => ({
+            error,
+            user: data.user,
+          }))
+        )
+      : from(this.supabase.auth.getSession()).pipe(
+          map(({ data, error }) => ({
+            error,
+            user: data.session?.user ?? null,
+          }))
+        );
 
-      const user = data.session.user;
-      this.authState.setUser(user);
+    return authSource$.pipe(
+      switchMap(({ error, user }) => {
+        if (error || !user) {
+          this.authState.setUser(null);
+          this.authState.setHero(null);
+          return of(void 0);
+        }
 
-      return from(
-        this.supabase
-          .from(TABLES.hero)
-          .select('*')
-          .eq('id', user.id)
-          .single()
-      ).pipe(
-        map(({ data: heroRow, error: heroError }) => {
-          if (heroError || !heroRow) {
-            console.warn('[Auth] Hero not found for logged in user.');
-            this.authState.setHero(null);
-            return null;
-          }
+        this.authState.setUser(user);
 
-          this.authState.setHero(mapHero(heroRow));
-          return heroRow;
-        })
-      );
-    })
-  );
-}
+        return from(
+          this.supabase.from(TABLES.hero).select('*').eq('id', user.id).single()
+        ).pipe(
+          map(({ data: heroRow, error: heroError }) => {
+            if (heroError || !heroRow) {
+              this.authState.setHero(null);
+              return;
+            }
+
+            this.authState.setHero(mapHero(heroRow));
+          })
+        );
+      })
+    );
+  }
 
 
   register(email: string, password: string, userData: Omit<IUserData, 'id'>) {

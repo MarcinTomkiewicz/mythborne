@@ -1,0 +1,137 @@
+@use "sass:map";
+
+/* =========================================================
+   TYPOGRAPHY (Brand Board)
+   ========================================================= */
+$font-family-body: "Inter", system-ui, sans-serif;
+$font-family-display: "Cinzel", Georgia, serif;
+
+$line-height-base: 1.5;
+
+$font-sizes: (
+  "xs": 0.75rem,
+  "sm": 0.875rem,
+  "md": 1rem,
+  "lg": 1.25rem,
+  "xl": 1.5rem,
+  "xxl": 2rem,
+  "hero": 3rem,
+);
+
+/* =========================================================
+   BREAKPOINTS / SPACING
+   ========================================================= */
+$breakpoints: (
+  "xs": 479px,
+  "sm": 767px,
+  "md": 1023px,
+  "lg": 1270px,
+  "xl": 1440px,
+);
+
+$spacings: (
+  "xs": 0.25rem,
+  "sm": 0.5rem,
+  "md": 1rem,
+  "lg": 1.5rem,
+  "xl": 2rem,
+  "xxl": 3rem,
+);
+
+$navbar-height: 60px;
+$container-padding: 1.5rem;
+
+/* =========================================================
+   RADII / SHADOWS / TRANSITIONS
+   ========================================================= */
+$radius-sm: 6px;
+$radius-md: 8px;
+$radius-lg: 12px;
+
+$shadow-sm: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
+$shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.25);
+$shadow-lg: 0 0.75rem 2rem rgba(15, 23, 42, 0.12);
+$transition-fast: 0.2s ease-in-out;
+$transition-slow: 0.5s ease;
+
+/* =========================================================
+   COLOR TOKENS (CSS Variables)
+   - UWAGA: to są "wartości runtime"
+   - Realne liczby siedzą w src/scss/themes/*
+   ========================================================= */
+
+/* brand (opcjonalnie — czasem przydaje się w CSS) */
+$color-ink: var(--mg-color-ink);
+$color-crimson: var(--mg-color-crimson);
+$color-graphite: var(--mg-color-graphite);
+$color-bronze: var(--mg-color-bronze);
+$color-white: var(--mg-color-white);
+$color-black: var(--mg-color-black);
+
+/* theme tokens (UI) */
+$color-primary: var(--mg-color-primary);
+$color-secondary: var(--mg-color-secondary);
+
+$color-bg: var(--mg-color-bg);
+$color-bg-surface: var(--mg-color-bg-surface);
+$color-border: var(--mg-color-border);
+
+$heading-color: var(--mg-heading-color);
+$heading-style: var(--mg-heading-style);
+
+$color-text: var(--mg-color-text);
+$color-text-muted: var(--mg-color-text-muted);
+
+$color-link: var(--mg-color-link);
+$color-link-hover: var(--mg-color-link-hover);
+
+/* paper tokens (alt/demo) */
+$color-paper-bg: var(--mg-color-paper-bg);
+$color-paper-overlay-1: var(--mg-color-paper-overlay-1);
+$color-paper-overlay-2: var(--mg-color-paper-overlay-2);
+$color-paper-text: var(--mg-color-paper-text);
+$color-paper-muted: var(--mg-color-paper-muted);
+$color-paper-border: var(--mg-color-paper-border);
+$color-antique: var(--mg-color-antique);
+
+/* =========================================================
+   SEMANTIC COLORS (Warhammer Chaos) — wspólne
+   - trzymamy jako CSS vars (bo je ustawiamy w theme-common)
+   - plus mapka dla ewentualnych generatorów
+   ========================================================= */
+$color-info: var(--mg-color-info);
+$color-danger: var(--mg-color-danger);
+$color-success: var(--mg-color-success);
+$color-warn: var(--mg-color-warn);
+$color-arcane: var(--mg-color-arcane);
+
+$semantic-colors: (
+  "info": $color-info,
+  "danger": $color-danger,
+  "success": $color-success,
+  "warn": $color-warn,
+  "arcane": $color-arcane,
+);
+
+/* forms */
+$color-form-bg: var(--mg-form-bg);
+$color-form-bg-hover: var(--mg-form-bg-hover);
+$color-form-bg-focus: var(--mg-form-bg-focus);
+
+$color-form-text: var(--mg-form-text);
+$color-form-placeholder: var(--mg-form-placeholder);
+$color-form-label: var(--mg-form-label);
+
+$color-form-border: var(--mg-form-border);
+$color-form-border-hover: var(--mg-form-border-hover);
+$color-form-border-focus: var(--mg-form-border-focus);
+$color-form-ring: var(--mg-form-ring);
+
+$color-form-error: var(--mg-form-error);
+$color-form-success: var(--mg-form-success);
+
+$color-form-disabled-bg: var(--mg-form-disabled-bg);
+$color-form-disabled-text: var(--mg-form-disabled-text);
+
+$color-form-autofill-bg: var(--mg-form-autofill-bg);
+$color-form-autofill-text: var(--mg-form-autofill-text);

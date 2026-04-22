@@ -23,14 +23,20 @@
             "assets": [
               "src/assets",
               "src/favicon.ico",
-              "src/manifest.webmanifest"
+              "src/manifest.webmanifest",
+              {
+                "glob": "**/*",
+                "input": "public",
+                "output": "/"
+              }
             ],
             "styles": [
-              "node_modules/primeicons/primeicons.css",
-              "src/styles/main.scss"
+              "src/scss/main.scss"
             ],
             "stylePreprocessorOptions": {
-              "includePaths": ["src/styles"]
+              "includePaths": [
+                "src/scss"
+              ]
             },
             "server": "src/main.server.ts",
             "outputMode": "server",
@@ -38,7 +44,6 @@
               "entry": "src/server.ts"
             }
           },
-          
           "configurations": {
             "production": {
               "budgets": [
@@ -86,11 +91,20 @@
             "assets": [
               "src/assets",
               "src/favicon.ico",
-              "src/manifest.webmanifest"
+              "src/manifest.webmanifest",
+              {
+                "glob": "**/*",
+                "input": "public",
+                "output": "/"
+              }
             ],
-            "styles": ["src/styles/main.scss"],
+            "styles": [
+              "src/scss/main.scss"
+            ],
             "stylePreprocessorOptions": {
-              "includePaths": ["src/styles"]
+              "includePaths": [
+                "src/scss"
+              ]
             }
           }
         }

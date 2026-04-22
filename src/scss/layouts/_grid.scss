@@ -1,0 +1,224 @@
+@use "sass:map";
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+$grid-breakpoints: ("xl", "lg", "md", "sm", "xs");
+
+$grid-columns-values: (
+  1: 1,
+  2: 2,
+  3: 3,
+  4: 4,
+  5: 5,
+  6: 6,
+  7: 7,
+  8: 8
+);
+
+$grid-layouts: (
+  2: (
+    columns: 2,
+    gap: map.get(v.$spacings, "xl"),
+    mt: 0,
+    responsive: true,
+    md-columns: 2,
+    sm-columns: 1,
+    xs-columns: 1,
+    align: stretch
+  ),
+  3: (
+    columns: 3,
+    gap: map.get(v.$spacings, "xl"),
+    mt: 0,
+    responsive: true,
+    md-columns: 2,
+    sm-columns: 1,
+    xs-columns: 1,
+    align: stretch
+  ),
+  4: (
+    columns: 4,
+    gap: map.get(v.$spacings, "xl"),
+    mt: 0,
+    responsive: true,
+    md-columns: 2,
+    sm-columns: 1,
+    xs-columns: 1,
+    align: stretch
+  ),
+  "4-soft": (
+    columns: 4,
+    gap: map.get(v.$spacings, "xl"),
+    mt: 0,
+    responsive: true,
+    md-columns: 3,
+    sm-columns: 2,
+    xs-columns: 1,
+    align: stretch
+  )
+);
+
+$grid-items-map: (
+  start: start,
+  center: center,
+  end: end,
+  stretch: stretch
+);
+
+$grid-content-map: (
+  start: start,
+  center: center,
+  end: end,
+  stretch: stretch
+);
+
+$grid-common-patterns: (
+  "2-1": (
+    columns: minmax(0, 2fr) minmax(0, 1fr),
+    collapse-bp: "md"
+  ),
+  "1-2": (
+    columns: minmax(0, 1fr) minmax(0, 2fr),
+    collapse-bp: "md"
+  ),
+  "1-1": (
+    columns: repeat(2, minmax(0, 1fr)),
+    collapse-bp: "sm"
+  )
+);
+
+@mixin _emit-grid-layout($name, $config) {
+  .mg-grid-#{$name} {
+    @include m.mg-grid(
+      map.get($config, columns),
+      map.get($config, gap),
+      map.get($config, mt),
+      map.get($config, responsive),
+      map.get($config, md-columns),
+      map.get($config, sm-columns),
+      map.get($config, xs-columns),
+      map.get($config, align)
+    );
+  }
+}
+
+@mixin _emit-grid-prop-map($prefix, $values, $property) {
+  @each $name, $value in $values {
+    .#{$prefix}-#{$name} {
+      #{$property}: $value;
+    }
+  }
+}
+
+@mixin _emit-grid-common-pattern($name, $config) {
+  .grid-#{$name} {
+    @include m.grid(
+      map.get($config, columns),
+      map.get(v.$spacings, "xl"),
+      stretch
+    );
+
+    @include m.down(map.get($config, collapse-bp)) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+/* =========================================================
+   BASE GRID HELPERS
+   ========================================================= */
+
+.mg-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: map.get(v.$spacings, "xl");
+  align-items: stretch;
+}
+
+.mg-inline-grid {
+  display: inline-grid;
+  grid-template-columns: repeat(1, minmax(0, max-content));
+  gap: map.get(v.$spacings, "xl");
+  align-items: stretch;
+}
+
+.mg-grid-auto-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: map.get(v.$spacings, "xl");
+  align-items: stretch;
+}
+
+.mg-grid-auto-fill {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: map.get(v.$spacings, "xl");
+  align-items: stretch;
+}
+
+/* =========================================================
+   READY-TO-USE LAYOUTS
+   ========================================================= */
+
+@each $name, $config in $grid-layouts {
+  @include _emit-grid-layout($name, $config);
+}
+
+/* =========================================================
+   COLUMN COUNT UTILITIES
+   ========================================================= */
+
+@each $name, $value in $grid-columns-values {
+  .grid-cols-#{$name} {
+    grid-template-columns: repeat($value, minmax(0, 1fr));
+  }
+
+  .grid-#{$name}-cols {
+    grid-template-columns: repeat($value, minmax(0, 1fr));
+  }
+
+  .grid-cols-max-#{$name} {
+    grid-template-columns: repeat($value, max-content);
+  }
+
+  .grid-max-#{$name}-cols {
+    grid-template-columns: repeat($value, max-content);
+  }
+}
+
+@each $bp in $grid-breakpoints {
+  @include m.down($bp) {
+    @each $name, $value in $grid-columns-values {
+      .grid-cols-#{$name}-#{$bp} {
+        grid-template-columns: repeat($value, minmax(0, 1fr));
+      }
+
+      .grid-#{$name}-cols-#{$bp} {
+        grid-template-columns: repeat($value, minmax(0, 1fr));
+      }
+
+      .grid-cols-max-#{$name}-#{$bp} {
+        grid-template-columns: repeat($value, max-content);
+      }
+
+      .grid-max-#{$name}-cols-#{$bp} {
+        grid-template-columns: repeat($value, max-content);
+      }
+    }
+  }
+}
+
+/* =========================================================
+   ALIGNMENT
+   ========================================================= */
+
+@include _emit-grid-prop-map(grid-items, $grid-items-map, align-items);
+@include _emit-grid-prop-map(grid-content, $grid-content-map, justify-items);
+
+/* =========================================================
+   COMMON PATTERNS
+   ========================================================= */
+
+@each $name, $config in $grid-common-patterns {
+  @include _emit-grid-common-pattern($name, $config);
+}
