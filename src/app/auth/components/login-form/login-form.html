@@ -1,0 +1,26 @@
+<form
+  [formGroup]="form"
+  class="mg-form w-100"
+  [ngClass]="isHorizontal() ? 'flex-row-start-end gap-md' : 'flex-col gap-md'"
+  (ngSubmit)="submit()"
+>
+  @if (showHeader()) {
+    <h2 class="mg-section__title mg-section__title--xs mb-sm">Log in</h2>
+  }
+
+  <div class="flex-col gap-xs flex-1">
+    <label for="email">Email</label>
+    <input id="email" type="email" formControlName="email" pInputText />
+  </div>
+
+  <div class="flex-col gap-xs flex-1">
+    <label for="password">Password</label>
+    <input id="password" type="password" formControlName="password" pInputText />
+  </div>
+
+  @if (errorMessage()) {
+    <p class="login-form__error mb-0">{{ errorMessage() }}</p>
+  }
+
+  <p-button type="submit" label="Log in" [disabled]="form.invalid"></p-button>
+</form>

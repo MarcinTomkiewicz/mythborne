@@ -15,7 +15,7 @@ import {
 } from '@angular/platform-browser';
 import { providePrimeNG } from 'primeng/config';
 import { MgPrimePreset } from './primeng/mg-primeng.preset';
-import { Auth } from './auth/services/auth';
+import { Auth } from './core/services/auth/auth';
 
 export const appConfig: ApplicationConfig = {
   providers: [

@@ -1,13 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 import { EMPTY, filter, from, map, switchMap, take } from 'rxjs';
-
 import { TABLES } from '../../../core/constants/tables.const';
-
 import { IHeroStats } from '../../../core/interfaces/hero/i-hero-stats';
-import { AuthState } from '../../../auth/services/auth-state';
 import { mapHeroDerived } from '../../domain/hero/hero-derived.mapper';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { User } from '@supabase/supabase-js';
+import { AuthState } from '../auth/auth-state';
 import { SupabaseClientService } from '../supabase/supabase-client';
 
 @Injectable({ providedIn: 'root' })

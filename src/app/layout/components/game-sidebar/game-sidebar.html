@@ -1,0 +1,57 @@
+<aside
+  [ngClass]="{ 'sidebar-shell--collapsed': collapsed() }"
+  class="sidebar-shell transition-width"
+>
+  <div class="sidebar-shell__header flex-row-start-center gap-md">
+    <div class="sidebar-shell__brand">
+      <i class="pi pi-bolt"></i>
+    </div>
+
+    @if (!collapsed()) {
+      @if (isLoggedIn()) {
+        <div class="flex-col gap-xs">
+          <p class="sidebar-shell__title mb-0">{{ hero()?.name || 'Hero' }}</p>
+          <p class="sidebar-shell__level mb-0">Level {{ hero()?.level || 1 }}</p>
+        </div>
+      } @else {
+        <app-login-form
+          [layout]="'vertical'"
+          [showHeader]="false"
+          (login)="handleLogin($event)"
+        />
+      }
+    }
+  </div>
+
+  <nav class="sidebar-shell__nav">
+    <p class="sidebar-shell__label mb-sm">
+      {{ isLoggedIn() ? 'Game Menu' : 'Explore' }}
+    </p>
+
+    <ul class="sidebar-shell__list">
+      @for (item of menuItems(); track item.title) {
+        <li class="sidebar-shell__item">
+          <a
+            class="sidebar-shell__link"
+            [routerLink]="item.url"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            <img [src]="item.icon" [alt]="item.title" class="sidebar-shell__icon" />
+            @if (!collapsed()) {
+              <span>{{ item.title }}</span>
+            }
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  @if (!isLoggedIn()) {
+    <div class="mt-lg">
+      <a routerLink="/auth/create-character" class="sidebar-shell__login-link">
+        Create character
+      </a>
+    </div>
+  }
+</aside>

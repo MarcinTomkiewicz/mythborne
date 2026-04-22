@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { GameSidebar } from './features/layout/game-sidebar/game-sidebar';
+import { GameSidebar } from './layout/components/game-sidebar/game-sidebar';
 
 @Component({
   selector: 'app-root',

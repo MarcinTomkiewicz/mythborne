@@ -1,22 +1,41 @@
 import { Routes } from '@angular/router';
+import { adminRoutes } from './admin/admin.routes';
 import { authRoutes } from './auth/auth.routes';
-
+import { gameRoutes } from './game/game.routes';
+import { heroRoutes } from './hero/hero.routes';
+import { publicRoutes } from './public/public.routes';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'game/dashboard',
+    redirectTo: 'public',
     pathMatch: 'full'
+  },
+  {
+    path: 'public',
+    children: publicRoutes
+  },
+  {
+    path: 'hero',
+    children: heroRoutes
   },
   {
     path: 'game',
-    redirectTo: 'game/dashboard',
-    pathMatch: 'full'
+    children: gameRoutes
+  },
+  {
+    path: 'admin',
+    children: adminRoutes
   },
   {
     path: 'game/dashboard',
-    loadComponent: () =>
-      import('./features/hero/dashboard/dashboard').then((m) => m.Dashboard)
+    redirectTo: 'hero/dashboard',
+    pathMatch: 'full'
+  },
+  {
+    path: 'game/attributes',
+    redirectTo: 'hero/attributes',
+    pathMatch: 'full'
   },
   {
     path: 'register',
@@ -25,7 +44,7 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    redirectTo: 'game/dashboard',
+    redirectTo: 'auth/login',
     pathMatch: 'full'
   },
   {
@@ -34,6 +53,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'game/dashboard'
+    redirectTo: 'public'
   }
 ];
