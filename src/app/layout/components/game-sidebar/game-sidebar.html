@@ -1,17 +1,17 @@
 <aside
-  [ngClass]="{ 'sidebar-shell--collapsed': collapsed() }"
-  class="sidebar-shell transition-width"
+  [ngClass]="collapsed() ? 'w-px-50 p-sm' : 'w-px-250 w-100-sm p-md'"
+  class="mg-card flex-col gap-md min-h-full"
 >
-  <div class="sidebar-shell__header flex-row-start-center gap-md">
-    <div class="sidebar-shell__brand">
-      <i class="pi pi-bolt"></i>
+  <div class="flex-row-start-center gap-md">
+    <div class="mg-surface-card flex-row-center-center w-px-50 h-px-50">
+      <i class="pi pi-bolt heading-color"></i>
     </div>
 
     @if (!collapsed()) {
       @if (isLoggedIn()) {
         <div class="flex-col gap-xs">
-          <p class="sidebar-shell__title mb-0">{{ hero()?.name || 'Hero' }}</p>
-          <p class="sidebar-shell__level mb-0">Level {{ hero()?.level || 1 }}</p>
+          <p class="heading-color mb-0"><strong>{{ hero()?.name || 'Hero' }}</strong></p>
+          <p class="muted-text mb-0">Level {{ hero()?.level || 1 }}</p>
         </div>
       } @else {
         <app-login-form
@@ -23,33 +23,34 @@
     }
   </div>
 
-  <nav class="sidebar-shell__nav">
-    <p class="sidebar-shell__label mb-sm">
+  <nav class="flex-col gap-xs">
+    <p class="card-legend mb-sm">
       {{ isLoggedIn() ? 'Game Menu' : 'Explore' }}
     </p>
 
-    <ul class="sidebar-shell__list">
+    <div class="flex-col gap-xs">
       @for (item of menuItems(); track item.title) {
-        <li class="sidebar-shell__item">
-          <a
-            class="sidebar-shell__link"
-            [routerLink]="item.url"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: true }"
-          >
-            <img [src]="item.icon" [alt]="item.title" class="sidebar-shell__icon" />
-            @if (!collapsed()) {
-              <span>{{ item.title }}</span>
-            }
-          </a>
-        </li>
+        <a
+          class="mg-surface-card flex-row-start-center gap-sm p-sm"
+          [routerLink]="item.url"
+          routerLinkActive="heading-color"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <img [src]="item.icon" [alt]="item.title" class="w-px-20 h-px-20" />
+          @if (!collapsed()) {
+            <span>{{ item.title }}</span>
+          }
+        </a>
       }
-    </ul>
+    </div>
   </nav>
 
   @if (!isLoggedIn()) {
     <div class="mt-lg">
-      <a routerLink="/auth/create-character" class="sidebar-shell__login-link">
+      <a
+        routerLink="/auth/create-character"
+        class="mg-surface-card flex-row-center-center p-sm heading-color"
+      >
         Create character
       </a>
     </div>

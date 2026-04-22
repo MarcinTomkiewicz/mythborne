@@ -4,14 +4,15 @@
 
 $c: common.$common;
 
-$bg: map.get($c, "color-ink");
-$surface: map.get($c, "color-graphite");
-$border: color.scale(map.get($c, "color-graphite"), $lightness: 12%);
-$text: map.get($c, "color-white");
-$text-muted: color.scale(map.get($c, "color-white"), $alpha: -20%);
-$secondary: map.get($c, "color-antique");
+$bg: #121b27;
+$surface: #1d2a39;
+$border: rgba(213, 191, 150, 0.16);
+$text: #f1e7d4;
+$text-muted: rgba(241, 231, 212, 0.72);
+$secondary: #d8b878;
 $danger: map.get($c, "color-danger");
 $success: map.get($c, "color-success");
+$link: #89a8bb;
 
 $dark: (
   "color-primary": map.get($c, "color-crimson"),
@@ -21,13 +22,13 @@ $dark: (
   "color-border": $border,
   "color-text": $text,
   "color-text-muted": $text-muted,
-  "color-link": $text,
-  "color-link-hover": color.scale(map.get($c, "color-bronze"), $lightness: 10%),
+  "color-link": $link,
+  "color-link-hover": color.scale($link, $lightness: 18%),
   "color-paper-bg": linear-gradient(
       180deg,
-      #f0e2c4 0%,
-      #e4d2ae 35%,
-      #d8c29a 100%
+      #efe1c0 0%,
+      #e0ceaa 35%,
+      #cfb58a 100%
     ),
   "color-paper-overlay-1": rgba(255, 255, 255, 0.08),
   "color-paper-overlay-2": rgba(255, 255, 255, 0.06),
@@ -35,23 +36,23 @@ $dark: (
   "color-paper-muted": rgba(map.get($c, "color-ink"), 0.75),
   "color-paper-border": rgba(map.get($c, "color-ink"), 0.25),
   "heading-color": $secondary,
-  "heading-mode": gold,
+  "heading-mode": solid,
 
   "form-bg": $surface,
-  "form-bg-hover": color.scale($surface, $lightness: 8%),
-  "form-bg-focus": color.scale($surface, $lightness: 14%),
+  "form-bg-hover": color.scale($surface, $lightness: 7%),
+  "form-bg-focus": color.scale($surface, $lightness: 13%),
   "form-text": $text,
   "form-placeholder": $text-muted,
   "form-label": $text-muted,
   "form-border": $border,
-  "form-border-hover": color.scale($secondary, $alpha: -25%),
+  "form-border-hover": rgba($secondary, 0.72),
   "form-border-focus": $secondary,
-  "form-ring": rgba($secondary, 0.32),
+  "form-ring": rgba($secondary, 0.28),
   "form-error": $danger,
   "form-error-ring": rgba($danger, 0.28),
   "form-success": $success,
   "form-disabled-bg": color.scale($surface, $lightness: -6%),
   "form-disabled-text": color.scale($text, $alpha: -50%),
-  "form-autofill-bg": color.scale($surface, $lightness: 10%),
+  "form-autofill-bg": color.scale($surface, $lightness: 9%),
   "form-autofill-text": $text,
 );

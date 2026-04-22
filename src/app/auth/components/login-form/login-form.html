@@ -19,7 +19,7 @@
   </div>
 
   @if (errorMessage()) {
-    <p class="login-form__error mb-0">{{ errorMessage() }}</p>
+    <p class="error-text mb-0">{{ errorMessage() }}</p>
   }
 
   <p-button type="submit" label="Log in" [disabled]="form.invalid"></p-button>

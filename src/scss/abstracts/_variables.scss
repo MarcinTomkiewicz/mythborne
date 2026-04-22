@@ -1,7 +1,7 @@
 @use "sass:map";
 
 /* =========================================================
-   TYPOGRAPHY (Brand Board)
+   TYPOGRAPHY
    ========================================================= */
 $font-family-body: "Inter", system-ui, sans-serif;
 $font-family-display: "Cinzel", Georgia, serif;
@@ -55,12 +55,8 @@ $transition-fast: 0.2s ease-in-out;
 $transition-slow: 0.5s ease;
 
 /* =========================================================
-   COLOR TOKENS (CSS Variables)
-   - UWAGA: to są "wartości runtime"
-   - Realne liczby siedzą w src/scss/themes/*
+   COLOR TOKENS (runtime values from themes/*)
    ========================================================= */
-
-/* brand (opcjonalnie — czasem przydaje się w CSS) */
 $color-ink: var(--mg-color-ink);
 $color-crimson: var(--mg-color-crimson);
 $color-graphite: var(--mg-color-graphite);
@@ -68,7 +64,6 @@ $color-bronze: var(--mg-color-bronze);
 $color-white: var(--mg-color-white);
 $color-black: var(--mg-color-black);
 
-/* theme tokens (UI) */
 $color-primary: var(--mg-color-primary);
 $color-secondary: var(--mg-color-secondary);
 
@@ -85,7 +80,6 @@ $color-text-muted: var(--mg-color-text-muted);
 $color-link: var(--mg-color-link);
 $color-link-hover: var(--mg-color-link-hover);
 
-/* paper tokens (alt/demo) */
 $color-paper-bg: var(--mg-color-paper-bg);
 $color-paper-overlay-1: var(--mg-color-paper-overlay-1);
 $color-paper-overlay-2: var(--mg-color-paper-overlay-2);
@@ -95,21 +89,21 @@ $color-paper-border: var(--mg-color-paper-border);
 $color-antique: var(--mg-color-antique);
 
 /* =========================================================
-   SEMANTIC COLORS (Warhammer Chaos) — wspólne
-   - trzymamy jako CSS vars (bo je ustawiamy w theme-common)
-   - plus mapka dla ewentualnych generatorów
+   SEMANTIC COLORS
    ========================================================= */
 $color-info: var(--mg-color-info);
 $color-danger: var(--mg-color-danger);
 $color-success: var(--mg-color-success);
 $color-warn: var(--mg-color-warn);
-$color-arcane: var(--mg-color-arcane);
+$color-help: var(--mg-color-help);
+$color-arcane: var(--mg-color-help); // legacy alias
 
 $semantic-colors: (
   "info": $color-info,
   "danger": $color-danger,
   "success": $color-success,
   "warn": $color-warn,
+  "help": $color-help,
   "arcane": $color-arcane,
 );
 

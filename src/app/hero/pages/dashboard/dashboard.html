@@ -1,8 +1,8 @@
-<div class="dashboard-stack flex-col gap-xl">
+<div class="flex-col gap-xl min-w-0">
   <section class="mg-card mg-card--legend">
-    <p class="card-legend dashboard-legend">Hero Summary</p>
+    <p class="card-legend mb-0">Hero Summary</p>
 
-    <div class="dashboard-hero flex-row-start-center gap-md">
+    <div class="flex-row-start-center flex-col-sm gap-md">
       <span class="image__preview image__preview--circle w-px-150 h-px-150">
         <img
           src="assets/avatars/hero-default.png"
@@ -12,7 +12,9 @@
       </span>
 
       <div class="flex-col gap-xs">
-        <h2 class="dashboard-hero__title mb-0">Welcome back, {{ heroName }}</h2>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">
+          Welcome back, {{ heroName }}
+        </h2>
         <p class="muted-text mb-0">Level {{ level }} Hero</p>
 
         <div class="flex-col gap-xs mt-sm">
@@ -30,47 +32,70 @@
 
   <div class="mg-grid-auto-fit">
     <section class="mg-card mg-card--legend">
-      <p class="card-legend dashboard-legend">Hero Details</p>
-      <ul class="dashboard-stat-list">
-        <li><strong>Origin:</strong> {{ origin()?.name ?? 'Unknown' }}</li>
-        <li><strong>Guild:</strong> None</li>
-        <li><strong>Hero Points:</strong> {{ derivedDisplay()['hp'] }}</li>
-      </ul>
+      <p class="card-legend mb-0">Hero Details</p>
+      <div class="flex-col gap-xs mt-md">
+        <div class="flex-row-between-center gap-md muted-text">
+          <strong class="heading-color">Origin:</strong>
+          <span>{{ origin()?.name ?? 'Unknown' }}</span>
+        </div>
+        <div class="flex-row-between-center gap-md muted-text">
+          <strong class="heading-color">Guild:</strong>
+          <span>None</span>
+        </div>
+        <div class="flex-row-between-center gap-md muted-text">
+          <strong class="heading-color">Hero Points:</strong>
+          <span>{{ derivedDisplay()['hp'] }}</span>
+        </div>
+      </div>
     </section>
 
     <section class="mg-card mg-card--legend">
-      <p class="card-legend dashboard-legend">Hero Stats</p>
-      <ul class="dashboard-stat-list">
+      <p class="card-legend mb-0">Hero Stats</p>
+      <div class="flex-col gap-xs mt-md">
         @for (stat of statsList(); track stat.key) {
-          <li>
-            <strong>{{ stat.label }}</strong>
+          <div class="flex-row-between-center gap-md muted-text">
+            <strong class="heading-color">{{ stat.label }}</strong>
             <span>{{ statsDisplay()[stat.key] }}</span>
-          </li>
+          </div>
         }
-      </ul>
+      </div>
     </section>
   </div>
 
   <section class="mg-card mg-card--legend">
-    <p class="card-legend dashboard-legend">Derived Stats</p>
-    <ul class="dashboard-stat-list">
-      <li><strong>DEF:</strong> {{ derivedDisplay()['def'] }}</li>
-      <li>
-        <strong>DMG:</strong> {{ derivedDisplay()['minDmg'] }} -
-        {{ derivedDisplay()['maxDmg'] }}
-      </li>
-      <li><strong>Luck:</strong> {{ derivedDisplay()['luck'] }}</li>
-      <li><strong>Critical:</strong> {{ derivedDisplay()['critical'] }}</li>
-      <li><strong>Evasion:</strong> {{ derivedDisplay()['evasion'] }}</li>
-    </ul>
+    <p class="card-legend mb-0">Derived Stats</p>
+    <div class="flex-col gap-xs mt-md">
+      <div class="flex-row-between-center gap-md muted-text">
+        <strong class="heading-color">DEF:</strong>
+        <span>{{ derivedDisplay()['def'] }}</span>
+      </div>
+      <div class="flex-row-between-center gap-md muted-text">
+        <strong class="heading-color">DMG:</strong>
+        <span>
+          {{ derivedDisplay()['minDmg'] }} - {{ derivedDisplay()['maxDmg'] }}
+        </span>
+      </div>
+      <div class="flex-row-between-center gap-md muted-text">
+        <strong class="heading-color">Luck:</strong>
+        <span>{{ derivedDisplay()['luck'] }}</span>
+      </div>
+      <div class="flex-row-between-center gap-md muted-text">
+        <strong class="heading-color">Critical:</strong>
+        <span>{{ derivedDisplay()['critical'] }}</span>
+      </div>
+      <div class="flex-row-between-center gap-md muted-text">
+        <strong class="heading-color">Evasion:</strong>
+        <span>{{ derivedDisplay()['evasion'] }}</span>
+      </div>
+    </div>
   </section>
 
   <section class="mg-card mg-card--legend">
-    <p class="card-legend dashboard-legend">Equipment</p>
+    <p class="card-legend mb-0">Equipment</p>
     <div class="mg-grid-auto-fit gap-md">
       @for (item of equipment; track item.slot) {
-        <div class="mg-card dashboard-equipment-card">
-          <div class="dashboard-equipment-card__slot">{{ item.slot }}</div>
+        <div class="mg-surface-card flex-col-center-center gap-xs p-md text-center">
+          <div class="heading-color"><strong>{{ item.slot }}</strong></div>
           <div class="my-xs">{{ item.name || 'None' }}</div>
 
           @if (item.bonus) {

@@ -1,17 +1,6 @@
 import { definePreset } from '@primeuix/themes';
 import Aura from '@primeuix/themes/aura';
 
-/**
- * MG preset dla PrimeNG (styled mode).
- *
- * Założenia:
- * - Źródłem prawdy o kolorach są Wasze CSS vars: --mg-*
- * - Prime generuje swoje CSS vars (--p-*) z design tokenów.
- * - My ustawiamy design tokeny tak, aby wskazywały na --mg-* (lub color-mix wokół nich).
- *
- * Uwaga: część tokenów w Aura jest definiowana pod semantic.colorScheme.light/dark.
- * Jeśli tego nie zachowasz, override bywa ignorowany (priorytet ma colorScheme). (PrimeNG docs)
- */
 const mg = {
   primary: 'var(--mg-color-primary)',
   secondary: 'var(--mg-color-secondary)',
@@ -27,24 +16,17 @@ const mg = {
   success: 'var(--mg-color-success)',
   danger: 'var(--mg-color-danger)',
   warn: 'var(--mg-color-warn)',
-  arcane: 'var(--mg-color-arcane)',
+  help: 'var(--mg-color-help)',
 };
 
 function tint(color: string, percentToWhite: number): string {
-  // percentToWhite: 0..100
   return `color-mix(in srgb, ${color} ${100 - percentToWhite}%, white)`;
 }
 
 function shade(color: string, percentToBlack: number): string {
-  // percentToBlack: 0..100
   return `color-mix(in srgb, ${color} ${100 - percentToBlack}%, black)`;
 }
 
-/**
- * Skala 50..950 dla "primary".
- * Prime bardzo często używa primary.500 jako "primary.color".
- * Wartości są runtime (color-mix + var()) więc kompatybilne z Waszym podejściem.
- */
 const primaryScale = {
   50: tint(mg.primary, 92),
   100: tint(mg.primary, 84),
@@ -59,9 +41,6 @@ const primaryScale = {
   950: shade(mg.primary, 70),
 };
 
-/**
- * Surface skala w Prime ma znaczenie semantyczne i bywa używana na tekst również.
- */
 const surfaceScaleLight = {
   0: mg.surface,
   50: tint(mg.surface, 65),
@@ -94,10 +73,8 @@ const surfaceScaleDark = {
 
 export const MgPrimePreset = definePreset(Aura, {
   semantic: {
-    // Primary palette — globalnie
     primary: primaryScale,
 
-    // Focus ring — spójnie z Waszym secondary/primary
     focusRing: {
       width: '2px',
       style: 'solid',
@@ -105,27 +82,19 @@ export const MgPrimePreset = definePreset(Aura, {
       offset: '2px',
     },
 
-    /**
-     * Najważniejsze: zachowujemy strukturę colorScheme, żeby override nie był ignorowany.
-     */
     colorScheme: {
       light: {
         semantic: {
-          // Surface palette
           surface: surfaceScaleLight,
-
-          // Tekst / border / tła - spinamy pod Wasze tokeny
           textColor: mg.text,
           textMutedColor: mg.textMuted,
           borderColor: mg.border,
 
-          // Highlight
           highlight: {
             background: tint(mg.primary, 88),
             color: mg.ink,
           },
 
-          // FormField
           formField: {
             background: mg.bg,
             borderColor: mg.border,
@@ -135,15 +104,11 @@ export const MgPrimePreset = definePreset(Aura, {
             placeholderColor: mg.textMuted,
           },
 
-          /**
-           * SEMANTICS — TU MUSZĄ SIEDZIEĆ, żeby Aura ich nie nadpisała.
-           * PROJECT RULE: warn = arcane
-           */
           info: { color: mg.info },
           success: { color: mg.success },
           danger: { color: mg.danger },
           warn: { color: mg.warn },
-          help: { color: mg.arcane },
+          help: { color: mg.help },
         },
       },
 
@@ -168,32 +133,22 @@ export const MgPrimePreset = definePreset(Aura, {
             placeholderColor: mg.textMuted,
           },
 
-          /**
-           * SEMANTICS — jw.
-           * PROJECT RULE: warn = arcane
-           */
           info: { color: mg.info },
           success: { color: mg.success },
           danger: { color: mg.danger },
           warn: { color: mg.warn },
-          help: { color: mg.arcane },
+          help: { color: mg.help },
         },
       },
     },
 
-    // Zostawiamy też na top-level jako “belt & suspenders”.
-    // Jeśli Aura nie definiuje któregoś semantyka w colorScheme, to i tak zadziała.
     info: { color: mg.info },
     success: { color: mg.success },
     danger: { color: mg.danger },
     warn: { color: mg.warn },
-    help: { color: mg.arcane },
+    help: { color: mg.help },
   },
 
-  /**
-   * Opcjonalnie: component tokens.
-   * Radii zostawiam jak było.
-   */
   components: {
     button: {
       root: {
