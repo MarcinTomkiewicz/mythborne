@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { LoginForm } from '../../../auth/components/login-form/login-form';
 import { MENU_GUEST, MENU_LOGGED_IN } from '../../../core/config/menu-config';
 import { Auth } from '../../../core/services/auth/auth';
@@ -17,6 +17,7 @@ export class GameSidebar {
 
   private readonly authState = inject(AuthState);
   private readonly auth = inject(Auth);
+  private readonly router = inject(Router);
 
   readonly user = this.authState.user;
   readonly hero = this.authState.hero;
@@ -27,6 +28,11 @@ export class GameSidebar {
 
   handleLogin({ email, password }: { email: string; password: string }) {
     this.auth.login(email, password).subscribe({
+      next: () => {
+        void this.router.navigateByUrl(
+          this.authState.hero() ? '/hero/dashboard' : '/auth/create-character'
+        );
+      },
       error: (error) => console.error('[Sidebar] Login error', error),
     });
   }

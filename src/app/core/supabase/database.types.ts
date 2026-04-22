@@ -354,6 +354,216 @@ export type Database = {
           },
         ]
       }
+      item_generation_affix_bonuses: {
+        Row: {
+          affix_id: string
+          id: string
+          template_id: string
+          value: number
+        }
+        Insert: {
+          affix_id: string
+          id?: string
+          template_id: string
+          value: number
+        }
+        Update: {
+          affix_id?: string
+          id?: string
+          template_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_generation_affix_bonuses_affix_id_fkey"
+            columns: ["affix_id"]
+            isOneToOne: false
+            referencedRelation: "item_generation_affixes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_generation_affix_bonuses_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      item_generation_affixes: {
+        Row: {
+          created_at: string
+          description: string | null
+          gold_value: number
+          id: string
+          key: string
+          kind: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          gold_value: number
+          id?: string
+          key: string
+          kind: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          gold_value?: number
+          id?: string
+          key?: string
+          kind?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      item_generation_base_bonuses: {
+        Row: {
+          base_id: string
+          id: string
+          template_id: string
+          value: number
+        }
+        Insert: {
+          base_id: string
+          id?: string
+          template_id: string
+          value: number
+        }
+        Update: {
+          base_id?: string
+          id?: string
+          template_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_generation_base_bonuses_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "item_generation_bases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_generation_base_bonuses_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      item_generation_bases: {
+        Row: {
+          base_value: number
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          name: string
+          slot: string
+        }
+        Insert: {
+          base_value: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          name: string
+          slot: string
+        }
+        Update: {
+          base_value?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          name?: string
+          slot?: string
+        }
+        Relationships: []
+      }
+      item_generation_bucket_profiles: {
+        Row: {
+          base_value: number
+          bucket_count: number
+          created_at: string
+          description: string | null
+          growth_factor: number
+          id: string
+          is_active: boolean
+          key: string
+          linear_growth: number
+          min_increment: number
+          name: string
+          rounding_step: number
+        }
+        Insert: {
+          base_value: number
+          bucket_count: number
+          created_at?: string
+          description?: string | null
+          growth_factor: number
+          id?: string
+          is_active?: boolean
+          key: string
+          linear_growth?: number
+          min_increment: number
+          name: string
+          rounding_step: number
+        }
+        Update: {
+          base_value?: number
+          bucket_count?: number
+          created_at?: string
+          description?: string | null
+          growth_factor?: number
+          id?: string
+          is_active?: boolean
+          key?: string
+          linear_growth?: number
+          min_increment?: number
+          name?: string
+          rounding_step?: number
+        }
+        Relationships: []
+      }
+      item_generation_qualities: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          key: string
+          label: string
+          multiplier: number
+          sort_order: number
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          key: string
+          label: string
+          multiplier: number
+          sort_order?: number
+          weight: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          key?: string
+          label?: string
+          multiplier?: number
+          sort_order?: number
+          weight?: number
+        }
+        Relationships: []
+      }
       item_bonuses: {
         Row: {
           id: string

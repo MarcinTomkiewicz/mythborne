@@ -1,4 +1,9 @@
 :where(.mg-form, form, .mg-card form) {
+  label {
+    color: var(--mg-form-text);
+    font-weight: 600;
+  }
+
   .p-iftalabel,
   .p-floatlabel {
     label {

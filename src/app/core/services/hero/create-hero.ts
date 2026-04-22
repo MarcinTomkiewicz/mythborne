@@ -1,12 +1,15 @@
 import { inject, Injectable } from '@angular/core';
-import { from, map, Observable, switchMap, concat, toArray } from 'rxjs';
+import { concat, from, map, Observable, switchMap, toArray } from 'rxjs';
+import { IHero } from '../../domain/hero/hero.model';
 import { Insert } from '../../types/supabase.types';
+import { AuthState } from '../auth/auth-state';
 import { HeroFactory } from '../hero-factory/hero-factory';
 import { SupabaseClientService } from '../supabase/supabase-client';
 import { SupabaseService } from '../supabase/supabase';
 
 @Injectable({ providedIn: 'root' })
 export class CreateHero {
+  private readonly authState = inject(AuthState);
   private readonly heroFactory = inject(HeroFactory);
   private readonly supabaseService = inject(SupabaseService);
   private readonly supabase = inject(SupabaseClientService).client;
@@ -15,7 +18,7 @@ export class CreateHero {
     heroId: string,
     characterName: string,
     originId: string
-  ): Observable<void> {
+  ): Observable<IHero> {
     const heroPayload: Insert<'hero'> = {
       id: heroId,
       name: characterName,
@@ -31,19 +34,41 @@ export class CreateHero {
     const derived = this.heroFactory.createDerived(heroId);
     const resources = this.heroFactory.createResources(heroId);
 
-    return concat(
-      from(this.supabase.from('hero').insert([heroPayload])),
-      from(this.supabase.from('hero_stats').insert(stats)),
-      from(this.supabase.from('hero_derived').insert([derived])),
-      from(this.supabase.from('hero_resources').insert(resources))
-    ).pipe(
-      toArray(),
-      map((results) => {
-        const errors = results.map((result) => result.error).filter(Boolean);
-
-        if (errors.length > 0) {
-          throw new Error('Failed to create hero and related records.');
+    return from(this.supabase.from('hero').insert([heroPayload])).pipe(
+      switchMap(({ error }) => {
+        if (error) {
+          throw error;
         }
+
+        return concat(
+          from(this.supabase.from('hero_stats').insert(stats)),
+          from(this.supabase.from('hero_derived').insert([derived])),
+          from(this.supabase.from('hero_resources').insert(resources))
+        ).pipe(
+          toArray(),
+          map((results) => {
+            const errors = results.map((result) => result.error).filter(Boolean);
+
+            if (errors.length > 0) {
+              throw errors[0];
+            }
+
+            const hero: IHero = {
+              id: heroPayload.id,
+              name: heroPayload.name,
+              level: heroPayload.level ?? 1,
+              rank: heroPayload.rank ?? 1,
+              experience: heroPayload.experience ?? 0,
+              originId: heroPayload.origin_id ?? null,
+              estateId: heroPayload.estate_id ?? null,
+              profilePicture: heroPayload.profile_picture ?? null,
+              createdAt: heroPayload.created_at ?? null,
+            };
+
+            this.authState.setHero(hero);
+            return hero;
+          })
+        );
       })
     );
   }
@@ -51,7 +76,7 @@ export class CreateHero {
   assignFreeEstate(heroId: string): Observable<void> {
     const districtCode = 'A';
     const rank = 1;
-    const maxAddresses = 10000;
+    const maxAddresses = 5000;
 
     return this.supabaseService.getAll('estates', {
       filters: { district_code: districtCode, rank },
@@ -87,31 +112,34 @@ export class CreateHero {
           return from(
             this.supabase.from('estates').update({ hero_id: heroId }).eq('id', existing.id)
           ).pipe(
-            map(({ error }) => {
+            switchMap(({ error }) => {
               if (error) {
                 throw error;
               }
+
+              return this.linkEstateToHero(heroId, existing.id);
             })
           );
         }
+
+        const estateId = crypto.randomUUID();
 
         return from(
           this.supabase
             .from('estates')
             .insert([
               {
+                id: estateId,
                 address,
                 rank,
                 hero_id: heroId,
                 district_code: districtCode,
               },
             ])
-            .select()
-            .single()
         ).pipe(
-          switchMap(({ data: estate, error }) => {
-            if (error || !estate) {
-              throw error ?? new Error('Failed to create estate');
+          switchMap(({ error }) => {
+            if (error) {
+              throw error;
             }
 
             return this.supabaseService.getAll('buildings', {
@@ -120,24 +148,49 @@ export class CreateHero {
             }).pipe(
               switchMap((buildings) => {
                 const insertPayload = buildings.map((building) => ({
-                  estate_id: estate.id,
+                  estate_id: estateId,
                   building_id: building.id,
                   level: 1,
                 }));
 
-                return from(
-                  this.supabase.from('estate_buildings').insert(insertPayload)
-                ).pipe(
-                  map(({ error: insertError }) => {
+                if (insertPayload.length === 0) {
+                  return this.linkEstateToHero(heroId, estateId);
+                }
+
+                return from(this.supabase.from('estate_buildings').insert(insertPayload)).pipe(
+                  switchMap(({ error: insertError }) => {
                     if (insertError) {
                       throw insertError;
                     }
+
+                    return this.linkEstateToHero(heroId, estateId);
                   })
                 );
               })
             );
           })
         );
+      })
+    );
+  }
+
+  private linkEstateToHero(heroId: string, estateId: string): Observable<void> {
+    return from(
+      this.supabase.from('hero').update({ estate_id: estateId }).eq('id', heroId)
+    ).pipe(
+      map(({ error }) => {
+        if (error) {
+          throw error;
+        }
+
+        const hero = this.authState.hero();
+
+        if (hero?.id === heroId) {
+          this.authState.setHero({
+            ...hero,
+            estateId,
+          });
+        }
       })
     );
   }

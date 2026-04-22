@@ -7,7 +7,8 @@ export const MENU_LOGGED_IN: MenuItem[] = [
   { title: 'Combat', url: '/game/combat', icon: '/assets/icons/swordman.svg' },
   { title: 'Armory', url: '/game/armory', icon: '/assets/icons/battle-gear.svg' },
   { title: 'Mansion', url: '/game/mansion', icon: '/assets/icons/capitol.svg' },
-  { title: 'Trade', url: '/game/trade', icon: '/assets/icons/trade.svg' }
+  { title: 'Trade', url: '/game/trade', icon: '/assets/icons/trade.svg' },
+  { title: 'Admin', url: '/admin', icon: '/assets/icons/capitol.svg' }
 ];
 
 export const MENU_GUEST: MenuItem[] = [

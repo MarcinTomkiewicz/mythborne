@@ -1,8 +1,9 @@
 import { Component, input, output } from '@angular/core';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputTextModule } from 'primeng/inputtext';
+import { CreateCharacterProfileForm } from '../../../../../core/factories/forms/create-character-form.factory';
 
 @Component({
   selector: 'app-step-user',
@@ -23,7 +24,7 @@ import { InputTextModule } from 'primeng/inputtext';
       </div>
 
       <div class="flex-col gap-xs">
-        <label for="birthday">Birthday</label>
+        <label for="birthday">Birthday (optional)</label>
         <p-datepicker id="birthday" formControlName="birthday" dateFormat="yy-mm-dd" showIcon />
       </div>
 
@@ -58,13 +59,20 @@ import { InputTextModule } from 'primeng/inputtext';
 
       <div class="flex-row-end-center gap-sm mt-xl">
         <p-button type="button" label="Back" (click)="back.emit()" severity="secondary" />
-        <p-button type="submit" label="Submit" (click)="submit.emit()" severity="success" />
+        <p-button
+          type="submit"
+          [label]="submitting() ? 'Creating...' : 'Create character'"
+          [disabled]="submitting()"
+          (click)="submit.emit()"
+          severity="success"
+        />
       </div>
     </div>
   `,
 })
 export class StepUser {
-  form = input.required<FormGroup>();
-  back = output<void>();
-  submit = output<void>();
+  readonly form = input.required<CreateCharacterProfileForm>();
+  readonly submitting = input(false);
+  readonly back = output<void>();
+  readonly submit = output<void>();
 }

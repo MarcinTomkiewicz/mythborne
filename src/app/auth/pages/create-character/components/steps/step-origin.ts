@@ -29,7 +29,9 @@ import { Carousel } from '../../../../../shared/carousel/carousel';
         />
 
         <div class="flex-row-end-center gap-sm mt-xl">
-          <p-button type="button" label="Back" severity="secondary" (click)="back.emit()" />
+          @if (showBack()) {
+            <p-button type="button" label="Back" severity="secondary" (click)="back.emit()" />
+          }
           <p-button
             type="button"
             label="Next"
@@ -48,6 +50,7 @@ export class StepOrigin implements OnInit {
   private readonly statsService = inject(StatsService);
 
   readonly selectedOrigin = input<Origin | null>(null);
+  readonly showBack = input(true);
   readonly origins = signal<Origin[]>([]);
   readonly bonusesMap = signal<Record<string, OriginBonus[]>>({});
   readonly selectedIndex = signal(0);

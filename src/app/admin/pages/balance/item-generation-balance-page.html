@@ -1,0 +1,217 @@
+<div class="flex-col gap-xl min-w-0">
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Admin</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">Item Generation Balance</h2>
+        <p class="muted-text mb-0">
+          Quality tiers i profile bucketow sa edytowane przez formularze reaktywne i zapisywane bezposrednio do Supabase.
+        </p>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <a routerLink="/admin/item-catalog" class="tag-badge tag-badge--muted">Item catalog</a>
+        <a routerLink="/game/armory" class="tag-badge tag-badge--muted">Go to armory</a>
+      </div>
+    </div>
+  </section>
+
+  @if (errorMessage(); as error) {
+    <section class="mg-card p-lg w-100">
+      <p class="card-legend mb-0">Error</p>
+      <p class="mb-0 muted-text">{{ error }}</p>
+    </section>
+  }
+
+  @if (successMessage(); as success) {
+    <section class="mg-card p-lg w-100">
+      <p class="card-legend mb-0">Saved</p>
+      <p class="mb-0 muted-text">{{ success }}</p>
+    </section>
+  }
+
+  <div class="flex-col w-100 gap-xl">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Balance</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Quality tiers</h3>
+        </div>
+
+        <p-button label="New quality" [text]="true" (onClick)="newQuality()" />
+      </div>
+
+      <form [formGroup]="qualitySelectorForm" class="mb-lg">
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Edited quality</span>
+          <select class="w-100 p-inputtext" formControlName="selectedId">
+            <option value="">Create new quality</option>
+            @for (quality of qualities(); track quality.id ?? quality.key) {
+              <option [value]="quality.id ?? ''">
+                {{ quality.label }} ({{ quality.key }})
+              </option>
+            }
+          </select>
+        </label>
+      </form>
+
+      <form [formGroup]="qualityEditorForm" class="mg-surface-card flex-col gap-md p-lg">
+        <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Key</span>
+            <select class="w-100 p-inputtext" formControlName="key">
+              <option value="normal">normal</option>
+              <option value="quality">quality</option>
+              <option value="outstanding">outstanding</option>
+            </select>
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Label</span>
+            <input pInputText class="w-100" formControlName="label" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Multiplier</span>
+            <input pInputText type="number" step="0.01" class="w-100" formControlName="multiplier" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Weight</span>
+            <input pInputText type="number" step="1" class="w-100" formControlName="weight" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Sort order</span>
+            <input pInputText type="number" step="1" class="w-100" formControlName="sortOrder" />
+          </label>
+
+          <label class="flex-row-start-center gap-sm mt-lg">
+            <input type="checkbox" formControlName="isEnabled" />
+            <span class="muted-text">Enabled</span>
+          </label>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <p-button
+            label="Save quality"
+            [loading]="isSaving()"
+            [disabled]="isLoading() || isSaving()"
+            (onClick)="saveQuality()"
+          />
+          <p-button
+            label="Delete"
+            severity="danger"
+            [text]="true"
+            [disabled]="!qualityEditorForm.controls.id.value || isSaving()"
+            (onClick)="deleteQuality()"
+          />
+        </div>
+      </form>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Curve</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Bucket profiles</h3>
+        </div>
+
+        <p-button label="New profile" [text]="true" (onClick)="newProfile()" />
+      </div>
+
+      <form [formGroup]="profileSelectorForm" class="mb-lg">
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Edited bucket profile</span>
+          <select class="w-100 p-inputtext" formControlName="selectedId">
+            <option value="">Create new profile</option>
+            @for (profile of bucketProfiles(); track profile.id ?? profile.key) {
+              <option [value]="profile.id ?? ''">
+                {{ profile.name }} ({{ profile.key }})
+              </option>
+            }
+          </select>
+        </label>
+      </form>
+
+      <form [formGroup]="profileEditorForm" class="mg-surface-card flex-col gap-md p-lg">
+        <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Key</span>
+            <input pInputText class="w-100" formControlName="key" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Name</span>
+            <input pInputText class="w-100" formControlName="name" />
+          </label>
+
+          <label class="flex-col gap-sm grid-col-span-2">
+            <span class="muted-text">Description</span>
+            <textarea pInputText rows="3" class="w-100" formControlName="description"></textarea>
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Bucket count</span>
+            <input pInputText type="number" class="w-100" formControlName="bucketCount" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Base value</span>
+            <input pInputText type="number" class="w-100" formControlName="baseValue" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Linear growth</span>
+            <input pInputText type="number" class="w-100" formControlName="linearGrowth" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Growth factor</span>
+            <input pInputText type="number" step="0.01" class="w-100" formControlName="growthFactor" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Rounding step</span>
+            <input pInputText type="number" class="w-100" formControlName="roundingStep" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Minimum increment</span>
+            <input pInputText type="number" class="w-100" formControlName="minIncrement" />
+          </label>
+
+          <label class="flex-row-start-center gap-sm mt-lg">
+            <input type="checkbox" formControlName="isActive" />
+            <span class="muted-text">Active profile</span>
+          </label>
+        </div>
+
+        <div class="mg-surface-card flex-col gap-sm p-md">
+          <p class="card-legend mb-0">Preview</p>
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            @for (bucket of bucketPreview(); track bucket) {
+              <span class="tag-badge tag-badge--muted">{{ bucket }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <p-button
+            label="Save profile"
+            [loading]="isSaving()"
+            [disabled]="isLoading() || isSaving()"
+            (onClick)="saveProfile()"
+          />
+          <p-button
+            label="Delete"
+            severity="danger"
+            [text]="true"
+            [disabled]="!profileEditorForm.controls.id.value || isSaving()"
+            (onClick)="deleteProfile()"
+          />
+        </div>
+      </form>
+    </section>
+  </div>
+</div>

@@ -19,6 +19,12 @@
   left: 0.9rem;
   transform: translateY(-50%);
   padding: 0 0.45rem;
-  background: v.$color-bg-surface;
+  background: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 50%,
+    v.$color-bg-surface 50%,
+    v.$color-bg-surface 100%
+  );
   line-height: 1;
 }

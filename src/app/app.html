@@ -1,15 +1,21 @@
 <div class="flex-col min-h-full">
+  <p-toast key="global" position="top-right" />
+
   <header class="mg-card flex-row-center-center py-md px-lg">
     <h1 class="mg-section__title mg-section__title--sm mg-section__title--no-margin">
       Mythos Hunter
     </h1>
   </header>
 
-  <div class="flex-row-start-stretch flex-col-md flex-1 overflow-hidden">
-    <app-game-sidebar></app-game-sidebar>
+  <div class="flex-row-start-stretch flex-col-md flex-1 overflow-hidden w-100">
+    <div class="w-px-200 w-100-md min-w-200 min-w-auto-md">
+      <app-game-sidebar></app-game-sidebar>
+    </div>
 
-    <main class="flex-1 overflow-y-auto p-xl">
-      <router-outlet></router-outlet>
+    <main class="flex-1 overflow-y-auto p-lg">
+      <div class="mg-container py-lg">
+        <router-outlet></router-outlet>
+      </div>
     </main>
   </div>
 

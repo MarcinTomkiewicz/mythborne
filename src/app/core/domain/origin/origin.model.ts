@@ -3,7 +3,7 @@ export interface Origin {
   key: string;
   name: string;
   description: string | null;
-//   imageUrl: string | null;
+  imageUrl: string | null;
   createdAt: string | null;
 }
 

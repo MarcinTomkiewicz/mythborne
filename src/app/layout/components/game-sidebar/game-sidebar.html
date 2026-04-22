@@ -1,17 +1,21 @@
 <aside
-  [ngClass]="collapsed() ? 'w-px-50 p-sm' : 'w-px-250 w-100-sm p-md'"
+  [ngClass]="collapsed() ? 'w-px-50 p-sm' : 'w-100 p-md'"
   class="mg-card flex-col gap-md min-h-full"
 >
   <div class="flex-row-start-center gap-md">
-    <div class="mg-surface-card flex-row-center-center w-px-50 h-px-50">
+    <div class="mg-card flex-row-center-center w-px-50 h-px-50">
       <i class="pi pi-bolt heading-color"></i>
     </div>
 
     @if (!collapsed()) {
       @if (isLoggedIn()) {
         <div class="flex-col gap-xs">
-          <p class="heading-color mb-0"><strong>{{ hero()?.name || 'Hero' }}</strong></p>
-          <p class="muted-text mb-0">Level {{ hero()?.level || 1 }}</p>
+          <p class="heading-color mb-0">
+            <strong>{{ hero()?.name || user()?.email || 'Account' }}</strong>
+          </p>
+          <p class="muted-text mb-0">
+            {{ hero() ? 'Level ' + (hero()?.level || 1) : 'Character creation required' }}
+          </p>
         </div>
       } @else {
         <app-login-form
@@ -31,7 +35,7 @@
     <div class="flex-col gap-xs">
       @for (item of menuItems(); track item.title) {
         <a
-          class="mg-surface-card flex-row-start-center gap-sm p-sm"
+          class="mg-card flex-row-start-center gap-sm p-sm"
           [routerLink]="item.url"
           routerLinkActive="heading-color"
           [routerLinkActiveOptions]="{ exact: true }"
@@ -49,7 +53,7 @@
     <div class="mt-lg">
       <a
         routerLink="/auth/create-character"
-        class="mg-surface-card flex-row-center-center p-sm heading-color"
+        class="mg-card flex-row-center-center p-sm heading-color"
       >
         Create character
       </a>

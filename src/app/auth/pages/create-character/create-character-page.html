@@ -1,19 +1,92 @@
-<section class="mg-card mg-card--legend">
-  <p class="card-legend">Create Character</p>
-
-  @switch (step()) {
-    @case (0) {
-      <app-step-account [form]="accountForm" (next)="nextStep()" />
-    }
-    @case (1) {
-      <app-step-origin
-        [selectedOrigin]="selectedOrigin()"
-        (next)="onOriginNext($event)"
-        (back)="prevStep()"
-      />
-    }
-    @case (2) {
-      <app-step-user [form]="userForm" (back)="prevStep()" (submit)="submit()" />
-    }
+<section class="mg-card mg-card--legend flex-col gap-lg w-100">
+  @if (isSubmitting()) {
+    <div class="create-character-overlay">
+      <div class="mg-card create-character-overlay__card flex-col gap-md">
+        <p-progress-spinner
+          ariaLabel="Creating character"
+          strokeWidth="4"
+          styleClass="create-character-overlay__spinner"
+        />
+        <div class="flex-col gap-xs text-center">
+          <p class="heading-color mb-0"><strong>Creating character...</strong></p>
+          <p class="mb-0 text-muted">
+            Saving account profile, hero, estate and starting resources.
+          </p>
+        </div>
+      </div>
+    </div>
   }
+
+  <div class="flex-col gap-xs">
+    <p class="card-legend mb-0">Create Character</p>
+    <h1 class="mg-section__title mb-0">Forge your hunter</h1>
+    <p class="mb-0 text-muted">
+      Complete the onboarding flow to unlock the game, estate and stat assignment.
+    </p>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="mg-card border-danger bg-danger-soft flex-col gap-xs w-100">
+      <p class="mb-0 text-danger">{{ errorMessage() }}</p>
+    </div>
+  }
+
+  <p-stepper
+    class="w-100"
+    [value]="step()"
+    [linear]="true"
+    (valueChange)="onStepChange($event)"
+  >
+    <p-step-list>
+      <p-step [value]="1">Account</p-step>
+      <p-step [value]="2" [disabled]="!canOpenStep(2)">Hero</p-step>
+      <p-step [value]="3" [disabled]="!canOpenStep(3)">Origin</p-step>
+      <p-step [value]="4" [disabled]="!canOpenStep(4)">Profile</p-step>
+    </p-step-list>
+
+    <p-step-panels>
+      <p-step-panel [value]="1">
+        <ng-template #content>
+          <app-step-account
+            [form]="accountForm"
+            [isExistingAccount]="hasExistingAccount()"
+            [existingEmail]="user()?.email ?? ''"
+            (next)="nextFromAccount()"
+          />
+        </ng-template>
+      </p-step-panel>
+
+      <p-step-panel [value]="2">
+        <ng-template #content>
+          <app-step-hero
+            [form]="heroForm"
+            (back)="prevStep(1)"
+            (next)="nextFromHero()"
+          />
+        </ng-template>
+      </p-step-panel>
+
+      <p-step-panel [value]="3">
+        <ng-template #content>
+          <app-step-origin
+            [selectedOrigin]="selectedOrigin()"
+            [showBack]="true"
+            (back)="prevStep(2)"
+            (next)="onOriginNext($event)"
+          />
+        </ng-template>
+      </p-step-panel>
+
+      <p-step-panel [value]="4">
+        <ng-template #content>
+          <app-step-user
+            [form]="profileForm"
+            [submitting]="isSubmitting()"
+            (back)="prevStep(3)"
+            (submit)="submit()"
+          />
+        </ng-template>
+      </p-step-panel>
+    </p-step-panels>
+  </p-stepper>
 </section>

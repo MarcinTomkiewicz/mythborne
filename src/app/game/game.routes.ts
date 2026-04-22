@@ -12,7 +12,7 @@ export const gameRoutes: Routes = [
       import('./pages/section-placeholder/section-placeholder').then((m) => m.GameSectionPlaceholderPage),
     data: {
       sectionTitle: 'Challenges',
-      sectionDescription: 'Tutaj trafią polowania, zadania i przebieg wypraw.',
+      sectionDescription: 'Tutaj trafia polowania, zadania i przebieg wypraw.',
     },
   },
   {
@@ -21,17 +21,13 @@ export const gameRoutes: Routes = [
       import('./pages/section-placeholder/section-placeholder').then((m) => m.GameSectionPlaceholderPage),
     data: {
       sectionTitle: 'Combat',
-      sectionDescription: 'Tutaj trafi PVP, walka z potworami i logika starć.',
+      sectionDescription: 'Tutaj trafia PVP, walka z potworami i logika starc.',
     },
   },
   {
     path: 'armory',
     loadComponent: () =>
-      import('./pages/section-placeholder/section-placeholder').then((m) => m.GameSectionPlaceholderPage),
-    data: {
-      sectionTitle: 'Armory',
-      sectionDescription: 'Tutaj trafi ekwipunek, crafting, jakość przedmiotów i bonusy.',
-    },
+      import('./pages/armory/armory-page').then((m) => m.ArmoryPage),
   },
   {
     path: 'mansion',
@@ -39,7 +35,7 @@ export const gameRoutes: Routes = [
       import('./pages/section-placeholder/section-placeholder').then((m) => m.GameSectionPlaceholderPage),
     data: {
       sectionTitle: 'Mansion',
-      sectionDescription: 'Tutaj trafią budynki, estate, produkcja surowców i rozwój bazy.',
+      sectionDescription: 'Tutaj trafia budynki, estate, produkcja surowcow i rozwoj bazy.',
     },
   },
   {
@@ -48,7 +44,7 @@ export const gameRoutes: Routes = [
       import('./pages/section-placeholder/section-placeholder').then((m) => m.GameSectionPlaceholderPage),
     data: {
       sectionTitle: 'Trade',
-      sectionDescription: 'Tutaj trafi handel, gospodarka, drachmy i wymiana między graczami.',
+      sectionDescription: 'Tutaj trafia handel, gospodarka, drachmy i wymiana miedzy graczami.',
     },
   },
 ];

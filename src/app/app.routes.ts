@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { adminRoutes } from './admin/admin.routes';
 import { authRoutes } from './auth/auth.routes';
+import { requireOnboardedHeroGuard } from './core/guards/hero-onboarding.guard';
 import { gameRoutes } from './game/game.routes';
 import { heroRoutes } from './hero/hero.routes';
 import { publicRoutes } from './public/public.routes';
@@ -17,10 +18,12 @@ export const routes: Routes = [
   },
   {
     path: 'hero',
+    canActivateChild: [requireOnboardedHeroGuard],
     children: heroRoutes
   },
   {
     path: 'game',
+    canActivateChild: [requireOnboardedHeroGuard],
     children: gameRoutes
   },
   {

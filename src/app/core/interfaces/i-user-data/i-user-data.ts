@@ -2,7 +2,7 @@ export interface IUserData {
   id?: string;
   name: string;
   email: string;
-  birthday: string;
+  birthday?: string | null;
   city: string;
   photo_url?: string;
   bio?: string;

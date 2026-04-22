@@ -7,7 +7,7 @@ export function mapOrigin(row: Row<'origin'>): Origin {
     key: row.key,
     name: row.name,
     description: row.description ?? null,
-    // imageUrl: row.image_url ?? null,
+    imageUrl: `/images/origins/${row.key.toLowerCase()}.png`,
     createdAt: row.created_at ?? null,
   };
 }

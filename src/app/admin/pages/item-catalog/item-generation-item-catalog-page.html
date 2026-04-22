@@ -1,0 +1,296 @@
+<div class="flex-col gap-xl min-w-0">
+  <datalist id="bonus-target-options">
+    @for (template of catalogData().bonusTemplates; track template.id) {
+      <option [value]="template.target">{{ template.target }}</option>
+    }
+  </datalist>
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Admin</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">Item Catalog</h2>
+        <p class="muted-text mb-0">
+          Edycja bazowych itemow, prefixow i suffixow jest teraz oparta o Reactive Forms i selektor wpisu zamiast listy przyciskow.
+        </p>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <a routerLink="/admin/balance" class="tag-badge tag-badge--muted">Balance</a>
+        <a routerLink="/game/armory" class="tag-badge tag-badge--muted">Go to armory</a>
+      </div>
+    </div>
+  </section>
+
+  @if (errorMessage(); as error) {
+    <section class="mg-card p-lg w-100">
+      <p class="card-legend mb-0">Error</p>
+      <p class="mb-0 muted-text">{{ error }}</p>
+    </section>
+  }
+
+  @if (successMessage(); as success) {
+    <section class="mg-card p-lg w-100">
+      <p class="card-legend mb-0">Saved</p>
+      <p class="mb-0 muted-text">{{ success }}</p>
+    </section>
+  }
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button
+        label="Base items"
+        [outlined]="activeSection() !== 'base'"
+        (onClick)="setSection('base')"
+      />
+      <p-button
+        label="Prefixes"
+        [outlined]="activeSection() !== 'prefix'"
+        (onClick)="setSection('prefix')"
+      />
+      <p-button
+        label="Suffixes"
+        [outlined]="activeSection() !== 'suffix'"
+        (onClick)="setSection('suffix')"
+      />
+      <p-button
+        label="New entry"
+        [text]="true"
+        (onClick)="createNewEntity()"
+      />
+    </div>
+  </section>
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-col gap-xs mb-lg">
+      <p class="card-legend mb-0">Selector</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">{{ activeEditorTitle() }}</h3>
+    </div>
+
+    <form [formGroup]="selectorForm">
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Edited entry</span>
+        <select class="w-full p-inputtext" formControlName="selectedId">
+          <option value="">Create new {{ activeSection() }}</option>
+          @for (entity of activeEntities(); track entity.id ?? entity.key) {
+            <option [value]="entity.id ?? ''">
+              {{ optionLabel(entity) }}
+            </option>
+          }
+        </select>
+      </label>
+    </form>
+  </section>
+
+  @if (activeSection() === 'base') {
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Editor</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Base item</h3>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <p-button
+            label="Save"
+            [loading]="isSaving()"
+            [disabled]="isLoading() || isSaving()"
+            (onClick)="saveCurrent()"
+          />
+          <p-button
+            label="Delete"
+            severity="danger"
+            [text]="true"
+            [disabled]="!baseEditorForm.controls.id.value || isSaving()"
+            (onClick)="deleteCurrent()"
+          />
+        </div>
+      </div>
+
+      <form [formGroup]="baseEditorForm" class="flex-col gap-md">
+        <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Key</span>
+            <input pInputText class="w-full" formControlName="key" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Name</span>
+            <input pInputText class="w-full" formControlName="name" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Slot</span>
+            <select class="w-full p-inputtext" formControlName="slot">
+              <option value="weapon">weapon</option>
+              <option value="trinket">trinket</option>
+              <option value="armor">armor</option>
+              <option value="shield">shield</option>
+            </select>
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Base value</span>
+            <input pInputText type="number" class="w-full" formControlName="baseValue" />
+          </label>
+
+          <label class="flex-col gap-sm grid-col-span-2">
+            <span class="muted-text">Description</span>
+            <textarea pInputText rows="3" class="w-full" formControlName="description"></textarea>
+          </label>
+        </div>
+
+        <div class="mg-surface-card flex-col gap-md p-lg" formArrayName="bonuses">
+          <div class="flex-row-between-center flex-col-sm gap-md">
+            <div class="flex-col gap-xs">
+              <p class="card-legend mb-0">Bonuses</p>
+              <h4 class="mg-section__title mg-section__title--xs mb-0">Base bonuses</h4>
+            </div>
+
+            <p-button label="Add bonus" [text]="true" (onClick)="addBonus()" />
+          </div>
+
+          <div class="flex-col gap-md">
+            @for (bonusGroup of baseBonuses.controls; track $index) {
+              <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
+                <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Target</span>
+                    <input pInputText list="bonus-target-options" class="w-full" formControlName="target" />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Type</span>
+                    <select class="w-full p-inputtext" formControlName="type">
+                      <option value="flat">flat</option>
+                      <option value="percent">percent</option>
+                    </select>
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Value</span>
+                    <input pInputText type="number" class="w-full" formControlName="value" />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Template description</span>
+                    <input pInputText class="w-full" formControlName="description" />
+                  </label>
+                </div>
+
+                <div class="flex-row-start-center gap-sm">
+                  <p-button label="Remove bonus" severity="danger" [text]="true" (onClick)="removeBonus($index)" />
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </form>
+    </section>
+  } @else {
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Editor</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            {{ activeSection() === 'prefix' ? 'Prefix' : 'Suffix' }}
+          </h3>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <p-button
+            label="Save"
+            [loading]="isSaving()"
+            [disabled]="isLoading() || isSaving()"
+            (onClick)="saveCurrent()"
+          />
+          <p-button
+            label="Delete"
+            severity="danger"
+            [text]="true"
+            [disabled]="!affixEditorForm.controls.id.value || isSaving()"
+            (onClick)="deleteCurrent()"
+          />
+        </div>
+      </div>
+
+      <form [formGroup]="affixEditorForm" class="flex-col gap-md">
+        <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Key</span>
+            <input pInputText class="w-full" formControlName="key" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Name</span>
+            <input pInputText class="w-full" formControlName="name" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Kind</span>
+            <select class="w-full p-inputtext" formControlName="kind">
+              <option value="prefix">prefix</option>
+              <option value="suffix">suffix</option>
+            </select>
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Gold value</span>
+            <input pInputText type="number" class="w-full" formControlName="goldValue" />
+          </label>
+
+          <label class="flex-col gap-sm grid-col-span-2">
+            <span class="muted-text">Description</span>
+            <textarea pInputText rows="3" class="w-full" formControlName="description"></textarea>
+          </label>
+        </div>
+
+        <div class="mg-card flex-col gap-md p-lg" formArrayName="bonuses">
+          <div class="flex-row-between-center flex-col-sm gap-md">
+            <div class="flex-col gap-xs">
+              <p class="card-legend mb-0">Bonuses</p>
+              <h4 class="mg-section__title mg-section__title--xs mb-0">Affix bonuses</h4>
+            </div>
+
+            <p-button label="Add bonus" [text]="true" (onClick)="addBonus()" />
+          </div>
+
+          <div class="flex-col gap-md">
+            @for (bonusGroup of affixBonuses.controls; track $index) {
+              <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
+                <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Target</span>
+                    <input pInputText list="bonus-target-options" class="w-full" formControlName="target" />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Type</span>
+                    <select class="w-full p-inputtext" formControlName="type">
+                      <option value="flat">flat</option>
+                      <option value="percent">percent</option>
+                    </select>
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Value</span>
+                    <input pInputText type="number" class="w-full" formControlName="value" />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Template description</span>
+                    <input pInputText class="w-full" formControlName="description" />
+                  </label>
+                </div>
+
+                <div class="flex-row-start-center gap-sm">
+                  <p-button label="Remove bonus" severity="danger" [text]="true" (onClick)="removeBonus($index)" />
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </form>
+    </section>
+  }
+</div>

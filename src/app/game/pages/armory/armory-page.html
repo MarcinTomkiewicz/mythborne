@@ -1,0 +1,25 @@
+<div class="flex-col gap-xl min-w-0">
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Game</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">Armory</h2>
+        <p class="muted-text mb-0">
+          Ekwipunek, crafting, jakość przedmiotów i generowanie dropów należą do warstwy gry.
+        </p>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <span class="tag-badge tag-badge--info">Hero luck: {{ heroLuck() }}</span>
+        <a routerLink="/admin/item-catalog" class="tag-badge tag-badge--muted">
+          Admin item catalog
+        </a>
+        <a routerLink="/admin/balance" class="tag-badge tag-badge--muted">
+          Admin balance
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <app-item-generator-panel [luck]="heroLuck()" />
+</div>

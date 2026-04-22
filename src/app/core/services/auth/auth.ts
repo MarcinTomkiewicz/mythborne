@@ -14,8 +14,11 @@ export class Auth {
   private readonly authState = inject(AuthState);
   private readonly platform = inject(Platform);
   private initializationPromise: Promise<void> | null = null;
+  private authListenerRegistered = false;
 
   initialize(): Promise<void> {
+    this.registerAuthListener();
+
     if (!this.initializationPromise) {
       this.initializationPromise = firstValueFrom(this.initializeAuthState());
     }
@@ -64,7 +67,19 @@ export class Auth {
     );
   }
 
-  register(email: string, password: string, userData: Omit<IUserData, 'id'>) {
+  private registerAuthListener() {
+    if (!this.platform.isBrowser || this.authListenerRegistered) {
+      return;
+    }
+
+    this.supabase.auth.onAuthStateChange(() => {
+      void firstValueFrom(this.initializeAuthState());
+    });
+
+    this.authListenerRegistered = true;
+  }
+
+  register(email: string, password: string) {
     return from(this.supabase.auth.signUp({ email, password })).pipe(
       switchMap(({ data, error }) => {
         if (error || !data.user) {
@@ -79,28 +94,42 @@ export class Auth {
               throw loginError ?? new Error('Auto-login failed after registration');
             }
 
-            const id = loginData.user.id;
-            const payload: Insert<'hero'> = { ...userData, id };
+            this.authState.setUser(loginData.user);
+            this.authState.setHero(null);
 
-            return from(
-              this.supabase
-                .from(TABLES.hero)
-                .insert([payload])
-                .select()
-                .single()
-            ).pipe(
-              map(({ data: heroRow, error: insertError }) => {
-                if (insertError || !heroRow) {
-                  throw insertError ?? new Error('Hero profile not inserted');
-                }
-
-                this.authState.setUser(loginData.user);
-                this.authState.setHero(mapHero(heroRow));
-                return heroRow;
-              })
-            );
+            return of(loginData.user);
           })
         );
+      })
+    );
+  }
+
+  saveUserData(userId: string, userData: Omit<IUserData, 'id'>) {
+    const payload: Insert<'user_data'> = {
+      id: userId,
+      email: userData.email,
+      name: userData.name,
+      birthday: userData.birthday,
+      city: userData.city,
+      photo_url: userData.photo_url ?? null,
+      bio: userData.bio ?? null,
+      facebook: userData.facebook ?? null,
+      twitter: userData.twitter ?? null,
+      linkedin: userData.linkedin ?? null,
+      instagram: userData.instagram ?? null,
+      role_id: userData.role_id ?? 3,
+      updated_at: new Date().toISOString(),
+    };
+
+    return from(
+      this.supabase.from(TABLES.user_data).upsert([payload], { onConflict: 'id' })
+    ).pipe(
+      map(({ error }) => {
+        if (error) {
+          throw error;
+        }
+
+        return userId;
       })
     );
   }
@@ -125,8 +154,13 @@ export class Auth {
             .single()
         ).pipe(
           map(({ data: heroRow, error: heroError }) => {
-            if (heroError || !heroRow) {
-              throw heroError ?? new Error('No hero data found');
+            if (heroError && heroError.code !== 'PGRST116') {
+              throw heroError;
+            }
+
+            if (!heroRow) {
+              this.authState.setHero(null);
+              return user;
             }
 
             this.authState.setHero(mapHero(heroRow));

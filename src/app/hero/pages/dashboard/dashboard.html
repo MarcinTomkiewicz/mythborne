@@ -1,105 +1,144 @@
-<div class="flex-col gap-xl min-w-0">
-  <section class="mg-card mg-card--legend">
-    <p class="card-legend mb-0">Hero Summary</p>
-
-    <div class="flex-row-start-center flex-col-sm gap-md">
-      <span class="image__preview image__preview--circle w-px-150 h-px-150">
-        <img
-          src="assets/avatars/hero-default.png"
-          alt="Hero Avatar"
-          class="image__preview-image"
-        />
-      </span>
-
+<div class="flex-col gap-xl">
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
       <div class="flex-col gap-xs">
-        <h2 class="mg-section__title mg-section__title--sm mb-0">
-          Welcome back, {{ heroName }}
-        </h2>
-        <p class="muted-text mb-0">Level {{ level }} Hero</p>
+        <p class="card-legend mb-0">Dashboard</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">{{ heroName }}</h2>
+        <p class="muted-text mb-0">Overview of your current hero state</p>
+      </div>
 
-        <div class="flex-col gap-xs mt-sm">
-          <app-bar
-            label="HP"
-            [value]="derivedDisplay()['health']"
-            [max]="derivedDisplay()['health']"
-            type="hp"
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <span class="tag-badge tag-badge--warn">Level {{ level }}</span>
+        <span class="tag-badge tag-badge--info">
+          {{ origin()?.name ?? 'Unknown Origin' }}
+        </span>
+        <span class="tag-badge tag-badge--muted">Guild: None</span>
+      </div>
+    </div>
+
+    <div class="grid-2-1 gap-xl mt-lg">
+      <div class="flex-row-start-center flex-col-sm gap-lg min-w-0">
+        <span class="image__preview image__preview--circle w-px-150 h-px-150">
+          <img
+            src="assets/avatars/hero-default.png"
+            alt="Hero Avatar"
+            class="image__preview-image"
           />
-          <app-bar label="XP" [value]="experiencePercent" [max]="100" type="xp" />
+        </span>
+
+        <div class="flex-col gap-md flex-1 min-w-0">
+          <div class="mg-card flex-col gap-sm p-md">
+            <div class="flex-row-between-center gap-md">
+              <strong class="heading-color">Health</strong>
+              <span class="muted-text">{{ derivedDisplay()['health'] }}</span>
+            </div>
+            <app-bar
+              label="HP"
+              [value]="derivedDisplay()['health']"
+              [max]="derivedDisplay()['health']"
+              type="hp"
+            />
+          </div>
+
+          <div class="mg-card flex-col gap-sm p-md">
+            <div class="flex-row-between-center gap-md">
+              <strong class="heading-color">Experience</strong>
+              <span class="muted-text">{{ experiencePercent }}%</span>
+            </div>
+            <app-bar label="XP" [value]="experiencePercent" [max]="100" type="xp" />
+          </div>
+        </div>
+      </div>
+
+      <div class="mg-card flex-col gap-sm p-md min-w-0">
+        <p class="card-legend mb-0">Hero Details</p>
+
+        <div class="flex-row-between-center gap-md muted-text mt-sm">
+          <strong class="heading-color">Origin</strong>
+          <span>{{ origin()?.name ?? 'Unknown' }}</span>
+        </div>
+        <div class="flex-row-between-center gap-md muted-text">
+          <strong class="heading-color">Guild</strong>
+          <span>None</span>
+        </div>
+        <div class="flex-row-between-center gap-md muted-text">
+          <strong class="heading-color">Hero Points</strong>
+          <span>{{ derivedDisplay()['hp'] }}</span>
         </div>
       </div>
     </div>
   </section>
 
-  <div class="mg-grid-auto-fit">
-    <section class="mg-card mg-card--legend">
-      <p class="card-legend mb-0">Hero Details</p>
-      <div class="flex-col gap-xs mt-md">
-        <div class="flex-row-between-center gap-md muted-text">
-          <strong class="heading-color">Origin:</strong>
-          <span>{{ origin()?.name ?? 'Unknown' }}</span>
-        </div>
-        <div class="flex-row-between-center gap-md muted-text">
-          <strong class="heading-color">Guild:</strong>
-          <span>None</span>
-        </div>
-        <div class="flex-row-between-center gap-md muted-text">
-          <strong class="heading-color">Hero Points:</strong>
-          <span>{{ derivedDisplay()['hp'] }}</span>
+  <div class="grid-2-1 gap-xl">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center gap-md mb-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Primary</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Hero Stats</h3>
         </div>
       </div>
-    </section>
 
-    <section class="mg-card mg-card--legend">
-      <p class="card-legend mb-0">Hero Stats</p>
-      <div class="flex-col gap-xs mt-md">
+      <div class="mg-grid grid-cols-3 grid-cols-2-md grid-cols-1-sm gap-md">
         @for (stat of statsList(); track stat.key) {
-          <div class="flex-row-between-center gap-md muted-text">
-            <strong class="heading-color">{{ stat.label }}</strong>
-            <span>{{ statsDisplay()[stat.key] }}</span>
+          <div class="mg-card flex-col gap-xs p-md">
+            <span class="muted-text">{{ stat.label }}</span>
+            <strong class="mg-section__title mg-section__title--xs mb-0">
+              {{ statsDisplay()[stat.key] }}
+            </strong>
           </div>
         }
       </div>
     </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-xs mb-md">
+        <p class="card-legend mb-0">Secondary</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Derived Stats</h3>
+      </div>
+
+      <div class="flex-col gap-sm mt-md">
+        <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
+          <strong class="heading-color">DEF:</strong>
+          <span>{{ derivedDisplay()['def'] }}</span>
+        </div>
+        <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
+          <strong class="heading-color">DMG:</strong>
+          <span>
+            {{ derivedDisplay()['minDmg'] }} - {{ derivedDisplay()['maxDmg'] }}
+          </span>
+        </div>
+        <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
+          <strong class="heading-color">Luck:</strong>
+          <span>{{ derivedDisplay()['luck'] }}</span>
+        </div>
+        <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
+          <strong class="heading-color">Critical:</strong>
+          <span>{{ derivedDisplay()['critical'] }}</span>
+        </div>
+        <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
+          <strong class="heading-color">Evasion:</strong>
+          <span>{{ derivedDisplay()['evasion'] }}</span>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <section class="mg-card mg-card--legend">
-    <p class="card-legend mb-0">Derived Stats</p>
-    <div class="flex-col gap-xs mt-md">
-      <div class="flex-row-between-center gap-md muted-text">
-        <strong class="heading-color">DEF:</strong>
-        <span>{{ derivedDisplay()['def'] }}</span>
-      </div>
-      <div class="flex-row-between-center gap-md muted-text">
-        <strong class="heading-color">DMG:</strong>
-        <span>
-          {{ derivedDisplay()['minDmg'] }} - {{ derivedDisplay()['maxDmg'] }}
-        </span>
-      </div>
-      <div class="flex-row-between-center gap-md muted-text">
-        <strong class="heading-color">Luck:</strong>
-        <span>{{ derivedDisplay()['luck'] }}</span>
-      </div>
-      <div class="flex-row-between-center gap-md muted-text">
-        <strong class="heading-color">Critical:</strong>
-        <span>{{ derivedDisplay()['critical'] }}</span>
-      </div>
-      <div class="flex-row-between-center gap-md muted-text">
-        <strong class="heading-color">Evasion:</strong>
-        <span>{{ derivedDisplay()['evasion'] }}</span>
-      </div>
+  <section class="mg-card p-lg w-100">
+    <div class="flex-col gap-xs mb-md">
+      <p class="card-legend mb-0">Loadout</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Equipment</h3>
     </div>
-  </section>
 
-  <section class="mg-card mg-card--legend">
-    <p class="card-legend mb-0">Equipment</p>
-    <div class="mg-grid-auto-fit gap-md">
+    <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md mt-md">
       @for (item of equipment; track item.slot) {
-        <div class="mg-surface-card flex-col-center-center gap-xs p-md text-center">
+        <div class="mg-card flex-col-center-center gap-sm p-md text-center">
           <div class="heading-color"><strong>{{ item.slot }}</strong></div>
-          <div class="my-xs">{{ item.name || 'None' }}</div>
+          <div class="my-xs">{{ item.name || 'Empty slot' }}</div>
 
           @if (item.bonus) {
             <div class="muted-text">{{ item.bonus }}</div>
+          } @else {
+            <div class="muted-text">No bonus equipped</div>
           }
         </div>
       }

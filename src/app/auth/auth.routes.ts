@@ -1,3 +1,4 @@
+import { createCharacterEntryGuard } from '../core/guards/hero-onboarding.guard';
 import { Routes } from '@angular/router';
 
 export const authRoutes: Routes = [
@@ -13,6 +14,7 @@ export const authRoutes: Routes = [
   },
   {
     path: 'create-character',
+    canActivate: [createCharacterEntryGuard],
     loadComponent: () =>
       import('./pages/create-character/create-character-page').then(
         (m) => m.CreateCharacterPage
