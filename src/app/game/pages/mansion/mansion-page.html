@@ -1,0 +1,138 @@
+<app-loading-overlay
+  [visible]="page.isLoading() && page.error() === null"
+  label="Loading estate..."
+  description="Loading estate buildings and progression data."
+/>
+
+@if (page.error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ page.error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Estate</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">Buildings</h2>
+          <p class="muted-text mb-0">
+            District {{ page.currentDistrictCode() ?? 'A' }}{{ page.currentDistrictName() ? ' - ' + page.currentDistrictName() : '' }}
+            @if (page.currentAddress()) {
+              <span> | {{ page.currentAddress() }}</span>
+            }
+          </p>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <a routerLink="/admin/buildings" class="tag-badge tag-badge--muted">Admin buildings</a>
+          <a routerLink="/admin/balance" class="tag-badge tag-badge--muted">Formulas</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-xl w-100">
+      @for (building of page.visibleBuildings(); track page.trackByBuilding($index, building)) {
+        <section class="mg-card flex-col gap-md p-lg w-100">
+          <div class="flex-row-start-center flex-col-sm gap-md">
+            <span class="image__preview image__preview--square w-px-200 w-100-sm">
+              <img
+                [src]="building.imagePath"
+                [alt]="building.name"
+                class="image__preview-image"
+                (error)="page.handleImageError($event)"
+              />
+            </span>
+
+            <div class="flex-col gap-sm flex-1">
+              <div class="flex-row-between-center flex-col-sm gap-sm">
+                <div class="flex-col gap-xs">
+                  <h3 class="mg-section__title mg-section__title--xs mb-0">{{ building.name }}</h3>
+                  <p class="muted-text mb-0">{{ building.description || 'No description yet.' }}</p>
+                </div>
+
+                <div class="flex-row-start-center flex-wrap gap-sm">
+                  <span class="tag-badge tag-badge--warn">Level {{ building.currentLevel }}</span>
+                  @if (building.maxLevel > 0) {
+                    <span class="tag-badge tag-badge--muted">Max {{ building.maxLevel }}</span>
+                  } @else {
+                    <span class="tag-badge tag-badge--muted">No cap</span>
+                  }
+                </div>
+              </div>
+
+              <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+                <div class="mg-card flex-col gap-xs p-md">
+                  <span class="muted-text">Next build cost</span>
+                  <div class="flex-col gap-xs">
+                    @for (cost of building.nextUpgradeCosts; track cost.resourceType) {
+                      <div class="flex-row-start-center gap-sm">
+                        @switch (cost.resourceType) {
+                          @case ('drachma') {
+                            <i class="pi pi-cash"></i>
+                          }
+                          @case ('materials') {
+                            <i class="pi pi-marble"></i>
+                          }
+                          @case ('workforce') {
+                            <i class="pi pi-workforce"></i>
+                          }
+                        }
+                        <strong class="heading-color">{{ cost.amount }}</strong>
+                        <span class="muted-text">{{ page.resourceLabel(cost.resourceType) }}</span>
+                      </div>
+                    } @empty {
+                      <span class="muted-text">No resource cost defined.</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="mg-card flex-col gap-xs p-md">
+                  <span class="muted-text">Next build time</span>
+                  <strong class="heading-color">
+                    {{ page.toDurationLabel(building.nextUpgradeTimeMinutes) }}
+                  </strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+            <div class="mg-card flex-col gap-sm p-md">
+              <p class="card-legend mb-0">Bonuses</p>
+              @for (bonus of building.bonuses; track bonus.target + bonus.templateId) {
+                <div class="flex-row-between-center gap-md muted-text">
+                  <strong class="heading-color">{{ page.toBonusLabel(bonus.target) }}</strong>
+                  <span>
+                    {{ page.toBonusValue(bonus.currentValue, bonus.type) }} ->
+                    {{ page.toBonusValue(bonus.nextValue, bonus.type) }}
+                  </span>
+                </div>
+              } @empty {
+                <p class="mb-0 muted-text">No bonuses defined for this building.</p>
+              }
+            </div>
+
+            <div class="mg-card flex-col gap-sm p-md">
+              <p class="card-legend mb-0">Requirements</p>
+              @for (requirement of building.activeRequirements; track requirement.type + (requirement.statKey ?? '') + requirement.appliesFromLevel) {
+                <div class="flex-row-between-center gap-md muted-text">
+                  <strong class="heading-color">{{ page.toRequirementLabel(requirement) }}</strong>
+                  <span>{{ page.toRequirementValue(requirement) }}</span>
+                </div>
+              } @empty {
+                <p class="mb-0 muted-text">No additional requirements.</p>
+              }
+              <p-button
+                label="Build"
+                [disabled]="true"
+                styleClass="mt-md"
+              />
+            </div>
+          </div>
+        </section>
+      }
+    </div>
+  </div>
+}
+

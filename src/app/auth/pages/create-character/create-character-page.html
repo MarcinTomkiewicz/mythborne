@@ -1,21 +1,9 @@
 <section class="mg-card mg-card--legend flex-col gap-lg w-100">
-  @if (isSubmitting()) {
-    <div class="create-character-overlay">
-      <div class="mg-card create-character-overlay__card flex-col gap-md">
-        <p-progress-spinner
-          ariaLabel="Creating character"
-          strokeWidth="4"
-          styleClass="create-character-overlay__spinner"
-        />
-        <div class="flex-col gap-xs text-center">
-          <p class="heading-color mb-0"><strong>Creating character...</strong></p>
-          <p class="mb-0 text-muted">
-            Saving account profile, hero, estate and starting resources.
-          </p>
-        </div>
-      </div>
-    </div>
-  }
+  <app-loading-overlay
+    [visible]="page.isSubmitting()"
+    label="Creating character..."
+    description="Saving account profile, hero, estate and starting resources."
+  />
 
   <div class="flex-col gap-xs">
     <p class="card-legend mb-0">Create Character</p>
@@ -25,33 +13,33 @@
     </p>
   </div>
 
-  @if (errorMessage()) {
+  @if (page.errorMessage()) {
     <div class="mg-card border-danger bg-danger-soft flex-col gap-xs w-100">
-      <p class="mb-0 text-danger">{{ errorMessage() }}</p>
+      <p class="mb-0 text-danger">{{ page.errorMessage() }}</p>
     </div>
   }
 
   <p-stepper
     class="w-100"
-    [value]="step()"
+    [value]="page.step()"
     [linear]="true"
-    (valueChange)="onStepChange($event)"
+    (valueChange)="page.onStepChange($event)"
   >
     <p-step-list>
       <p-step [value]="1">Account</p-step>
-      <p-step [value]="2" [disabled]="!canOpenStep(2)">Hero</p-step>
-      <p-step [value]="3" [disabled]="!canOpenStep(3)">Origin</p-step>
-      <p-step [value]="4" [disabled]="!canOpenStep(4)">Profile</p-step>
+      <p-step [value]="2" [disabled]="!page.canOpenStep(2)">Hero</p-step>
+      <p-step [value]="3" [disabled]="!page.canOpenStep(3)">Origin</p-step>
+      <p-step [value]="4" [disabled]="!page.canOpenStep(4)">Profile</p-step>
     </p-step-list>
 
     <p-step-panels>
       <p-step-panel [value]="1">
         <ng-template #content>
           <app-step-account
-            [form]="accountForm"
-            [isExistingAccount]="hasExistingAccount()"
-            [existingEmail]="user()?.email ?? ''"
-            (next)="nextFromAccount()"
+            [form]="page.accountForm"
+            [isExistingAccount]="page.hasExistingAccount()"
+            [existingEmail]="page.user()?.email ?? ''"
+            (next)="page.nextFromAccount()"
           />
         </ng-template>
       </p-step-panel>
@@ -59,9 +47,9 @@
       <p-step-panel [value]="2">
         <ng-template #content>
           <app-step-hero
-            [form]="heroForm"
-            (back)="prevStep(1)"
-            (next)="nextFromHero()"
+            [form]="page.heroForm"
+            (back)="page.prevStep(1)"
+            (next)="page.nextFromHero()"
           />
         </ng-template>
       </p-step-panel>
@@ -69,10 +57,10 @@
       <p-step-panel [value]="3">
         <ng-template #content>
           <app-step-origin
-            [selectedOrigin]="selectedOrigin()"
+            [selectedOrigin]="page.selectedOrigin()"
             [showBack]="true"
-            (back)="prevStep(2)"
-            (next)="onOriginNext($event)"
+            (back)="page.prevStep(2)"
+            (next)="page.onOriginNext($event)"
           />
         </ng-template>
       </p-step-panel>
@@ -80,13 +68,14 @@
       <p-step-panel [value]="4">
         <ng-template #content>
           <app-step-user
-            [form]="profileForm"
-            [submitting]="isSubmitting()"
-            (back)="prevStep(3)"
-            (submit)="submit()"
+            [form]="page.profileForm"
+            [submitting]="page.isSubmitting()"
+            (back)="page.prevStep(3)"
+            (submit)="page.submit()"
           />
         </ng-template>
       </p-step-panel>
     </p-step-panels>
   </p-stepper>
 </section>
+

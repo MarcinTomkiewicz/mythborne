@@ -5,14 +5,16 @@ import {
   Router,
   UrlTree,
 } from '@angular/router';
+import { map, from } from 'rxjs';
 import { AuthState } from '../services/auth/auth-state';
+import { Auth } from '../services/auth/auth';
 
-function requireOnboardedHero(): true | UrlTree {
-  const authState = inject(AuthState);
-  const router = inject(Router);
-
+function resolveOnboardedHeroRedirect(
+  authState: AuthState,
+  router: Router
+): true | UrlTree {
   if (!authState.user()) {
-    return router.parseUrl('/auth/login');
+    return router.parseUrl('/public');
   }
 
   if (!authState.hero()) {
@@ -22,16 +24,48 @@ function requireOnboardedHero(): true | UrlTree {
   return true;
 }
 
-export const requireOnboardedHeroGuard: CanActivateChildFn = () =>
-  requireOnboardedHero();
-
-export const createCharacterEntryGuard: CanActivateFn = () => {
+export const requireOnboardedHeroGuard: CanActivateChildFn = () => {
+  const auth = inject(Auth);
   const authState = inject(AuthState);
   const router = inject(Router);
 
-  if (authState.user() && authState.hero()) {
-    return router.parseUrl('/hero/dashboard');
-  }
+  return from(auth.initialize()).pipe(
+    map(() => resolveOnboardedHeroRedirect(authState, router))
+  );
+};
 
-  return true;
+export const createCharacterEntryGuard: CanActivateFn = () => {
+  const auth = inject(Auth);
+  const authState = inject(AuthState);
+  const router = inject(Router);
+
+  return from(auth.initialize()).pipe(
+    map(() => {
+      if (authState.user() && authState.hero()) {
+        return router.parseUrl('/hero/dashboard');
+      }
+
+      return true;
+    })
+  );
+};
+
+export const authEntryGuard: CanActivateFn = () => {
+  const auth = inject(Auth);
+  const authState = inject(AuthState);
+  const router = inject(Router);
+
+  return from(auth.initialize()).pipe(
+    map(() => {
+      if (authState.user() && authState.hero()) {
+        return router.parseUrl('/hero/dashboard');
+      }
+
+      if (authState.user()) {
+        return router.parseUrl('/auth/create-character');
+      }
+
+      return true;
+    })
+  );
 };

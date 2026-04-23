@@ -1,0 +1,440 @@
+<app-loading-overlay
+  [visible]="page.isLoading() && page.error() === null"
+  label="Loading buildings..."
+  description="Loading building definitions, districts, costs and formulas."
+/>
+
+@if (page.error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ page.error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Admin</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">Buildings</h2>
+          <p class="muted-text mb-0">
+            Building definitions, district placement, costs, requirements and progression formulas.
+          </p>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <a routerLink="/admin/balance" class="tag-badge tag-badge--muted">Formulas</a>
+          <a routerLink="/game/mansion" class="tag-badge tag-badge--muted">Mansion view</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Formulas</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Building progression</h3>
+          <p class="mb-0 muted-text">
+            Cost, build time and bonus growth are global formulas assigned to building targets.
+          </p>
+        </div>
+
+        <p-button
+          label="Apply formulas"
+          [loading]="page.formulas.isSaving()"
+          [disabled]="page.isLoading() || page.isSaving() || page.formulas.isSaving()"
+          (onClick)="page.formulas.applyAssignments()"
+        />
+      </div>
+
+      <form [formGroup]="page.formulas.assignmentForm" class="mg-surface-card flex-col gap-md p-lg">
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+          @for (target of page.formulas.targets(); track target.id) {
+            <label class="flex-col gap-sm">
+              <span class="muted-text">{{ target.label }}</span>
+              <select
+                class="w-100 p-inputtext"
+                [formControlName]="page.formulas.toControlName(target.key)"
+              >
+                <option value="">Choose formula</option>
+                @for (formula of page.formulas.formulasFor(target.key); track formula.id) {
+                  <option [value]="formula.id">{{ formula.label }}</option>
+                }
+              </select>
+            </label>
+          }
+        </div>
+      </form>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Selector</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Edited building</h3>
+        </div>
+
+        <p-button label="New building" [text]="true" (onClick)="page.building.new()" />
+      </div>
+
+      <form [formGroup]="page.building.selectorForm" class="mb-lg">
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Building</span>
+          <select class="w-100 p-inputtext" formControlName="selectedId">
+            <option value="">Create new building</option>
+            @for (building of page.building.items(); track building.id ?? building.key) {
+              <option [value]="building.id ?? ''">
+                {{ building.name }} ({{ building.key }})
+              </option>
+            }
+          </select>
+        </label>
+      </form>
+
+      <form [formGroup]="page.building.editorForm" class="mg-surface-card flex-col gap-lg p-lg">
+        <div class="flex-row-start-center flex-col-sm gap-lg">
+          <span class="image__preview image__preview--square w-px-200 w-100-sm">
+            <img
+              [src]="page.imagePreviewPath()"
+              [alt]="page.editorValue().name || 'Building preview'"
+              class="image__preview-image"
+              (error)="page.handleImageError($event)"
+            />
+          </span>
+
+          <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+            <label class="flex-col gap-sm">
+              <span class="muted-text">Key</span>
+              <input pInputText class="w-100" formControlName="key" />
+            </label>
+
+            <label class="flex-col gap-sm">
+              <span class="muted-text">Name</span>
+              <input pInputText class="w-100" formControlName="name" />
+            </label>
+
+            <label class="flex-col gap-sm grid-col-span-2">
+              <span class="muted-text">Description</span>
+              <textarea pInputText rows="3" class="w-100" formControlName="description"></textarea>
+            </label>
+
+            <label class="flex-col gap-sm">
+              <span class="muted-text">District</span>
+              <select class="w-100 p-inputtext" formControlName="districtCode">
+                @for (district of page.adminData().districts; track district.code) {
+                  <option [value]="district.code">
+                    {{ district.code }} - {{ district.name }}
+                  </option>
+                }
+              </select>
+            </label>
+
+            <label class="flex-col gap-sm">
+              <span class="muted-text">Image path</span>
+              <input pInputText class="w-100" [value]="page.imagePreviewPath()" readonly />
+            </label>
+          </div>
+        </div>
+
+        <div class="mg-grid grid-cols-4 grid-cols-2-sm grid-cols-1-xs gap-md w-100">
+          <label class="flex-col gap-sm">
+            <span class="muted-text">District unlock rank</span>
+            <input pInputText type="number" class="w-100" formControlName="rankRequired" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Sort order</span>
+            <input pInputText type="number" class="w-100" formControlName="sortOrder" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Base build time (min)</span>
+            <input pInputText type="number" class="w-100" formControlName="baseBuildTimeMinutes" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Max level</span>
+            <input pInputText type="number" class="w-100" formControlName="maxLevel" />
+          </label>
+        </div>
+
+        <div class="mg-surface-card flex-col gap-md p-md">
+          <div class="flex-row-between-center flex-col-sm gap-md">
+            <div class="flex-col gap-xs">
+              <p class="card-legend mb-0">Resource costs</p>
+              <p class="mb-0 muted-text">
+                Each row uses the global building cost formula and can start from a chosen building level.
+              </p>
+            </div>
+
+            <p-button label="Add cost" [text]="true" (onClick)="page.addCost()" />
+          </div>
+
+          <div class="flex-col gap-md">
+            @for (costGroup of page.costGroups(); track $index) {
+              <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="costGroup">
+                <div class="mg-grid grid-cols-4 grid-cols-1-sm gap-md w-100">
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Resource</span>
+                    <select class="w-100 p-inputtext" formControlName="resourceType">
+                      <option value="drachma">Drachma</option>
+                      <option value="materials">Materials</option>
+                      <option value="workforce">Workforce</option>
+                    </select>
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Base value</span>
+                    <input pInputText type="number" class="w-100" formControlName="baseValue" />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">From building level</span>
+                    <input pInputText type="number" class="w-100" formControlName="appliesFromLevel" />
+                  </label>
+
+                  <div class="flex-row-start-center">
+                    <p-button
+                      label="Remove"
+                      severity="danger"
+                      [text]="true"
+                      (onClick)="page.removeCost($index)"
+                    />
+                  </div>
+                </div>
+              </div>
+            } @empty {
+              <p class="mb-0 muted-text">No resource costs configured yet.</p>
+            }
+          </div>
+        </div>
+
+        <div class="mg-surface-card flex-col gap-md p-md">
+          <div class="flex-row-between-center flex-col-sm gap-md">
+            <div class="flex-col gap-xs">
+              <p class="card-legend mb-0">Requirements</p>
+              <p class="mb-0 muted-text">
+                Add hero level, hero rank or hero stat requirements and choose from which building level they apply.
+              </p>
+            </div>
+
+            <p-button label="Add requirement" [text]="true" (onClick)="page.addRequirement()" />
+          </div>
+
+          <div class="flex-col gap-md">
+            @for (requirementGroup of page.requirementGroups(); track $index) {
+              <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="requirementGroup">
+                <div class="mg-grid grid-cols-5 grid-cols-1-sm gap-md w-100">
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Type</span>
+                    <select
+                      class="w-100 p-inputtext"
+                      formControlName="type"
+                      (change)="page.updateRequirementType($index, $any($event.target).value)"
+                    >
+                      <option value="hero_level">Hero level</option>
+                      <option value="hero_stat">Hero stat</option>
+                    </select>
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Stat</span>
+                    <select class="w-100 p-inputtext" formControlName="statKey">
+                      <option [ngValue]="null">Not used</option>
+                      @for (stat of page.adminData().stats; track stat.key) {
+                        <option [value]="stat.key">{{ stat.label }}</option>
+                      }
+                    </select>
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Minimum value</span>
+                    <input pInputText type="number" class="w-100" formControlName="minValue" />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">From building level</span>
+                    <input pInputText type="number" class="w-100" formControlName="appliesFromLevel" />
+                  </label>
+
+                  <div class="flex-row-start-center">
+                    <p-button
+                      label="Remove"
+                      severity="danger"
+                      [text]="true"
+                      (onClick)="page.removeRequirement($index)"
+                    />
+                  </div>
+                </div>
+              </div>
+            } @empty {
+              <p class="mb-0 muted-text">No requirements configured yet.</p>
+            }
+          </div>
+        </div>
+
+        <div class="mg-surface-card flex-col gap-md p-md">
+          <div class="flex-row-between-center flex-col-sm gap-md">
+            <div class="flex-col gap-xs">
+              <p class="card-legend mb-0">Bonuses</p>
+              <p class="mb-0 muted-text">Base bonus values used by the global building bonus formula.</p>
+            </div>
+
+            <p-button label="Add bonus" [text]="true" (onClick)="page.addBonus()" />
+          </div>
+
+          <div class="flex-col gap-md">
+            @for (bonusGroup of page.bonusGroups(); track $index) {
+              <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
+                <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Template</span>
+                    <select
+                      class="w-100 p-inputtext"
+                      formControlName="templateId"
+                      (change)="page.applyTemplate($index, $any($event.target).value)"
+                    >
+                      <option [ngValue]="null">Custom bonus</option>
+                      @for (template of page.adminData().bonusTemplates; track template.templateId) {
+                        <option [value]="template.templateId ?? ''">
+                          {{ template.target }} ({{ template.type }})
+                        </option>
+                      }
+                    </select>
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Target</span>
+                    <input pInputText class="w-100" formControlName="target" />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Type</span>
+                    <select class="w-100 p-inputtext" formControlName="type">
+                      <option value="flat">flat</option>
+                      <option value="percent">percent</option>
+                    </select>
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Base value</span>
+                    <input pInputText type="number" class="w-100" formControlName="value" />
+                  </label>
+
+                  <label class="flex-col gap-sm grid-col-span-2">
+                    <span class="muted-text">Description</span>
+                    <input pInputText class="w-100" formControlName="description" />
+                  </label>
+                </div>
+
+                <div class="flex-row-start-center">
+                  <p-button
+                    label="Remove"
+                    severity="danger"
+                    [text]="true"
+                    (onClick)="page.removeBonus($index)"
+                  />
+                </div>
+              </div>
+            } @empty {
+              <p class="mb-0 muted-text">No bonuses configured yet.</p>
+            }
+          </div>
+        </div>
+
+        <div class="mg-surface-card flex-col gap-md p-md">
+          <div class="flex-row-between-center flex-col-sm gap-md">
+            <div class="flex-col gap-xs">
+              <p class="card-legend mb-0">Preview</p>
+              <p class="mb-0 muted-text">Current formula output for the provided building level.</p>
+            </div>
+
+            <label class="flex-row-start-center gap-sm">
+              <span class="muted-text">Level</span>
+              <input
+                pInputText
+                type="number"
+                class="w-px-100"
+                [value]="page.previewLevel()"
+                (input)="page.updatePreviewLevel($any($event.target).value)"
+              />
+            </label>
+          </div>
+
+          <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+            <div class="mg-card flex-col gap-xs p-md">
+              <span class="muted-text">Next level costs</span>
+              <div class="flex-col gap-xs">
+                @for (cost of page.preview().nextCosts; track cost.resourceType) {
+                  <div class="flex-row-start-center gap-sm">
+                    @switch (cost.resourceType) {
+                      @case ('drachma') {
+                        <i class="pi pi-cash"></i>
+                      }
+                      @case ('materials') {
+                        <i class="pi pi-marble"></i>
+                      }
+                      @case ('workforce') {
+                        <i class="pi pi-workforce"></i>
+                      }
+                    }
+                    <strong class="heading-color">{{ cost.amount }}</strong>
+                    <span class="muted-text">{{ page.resourceLabel(cost.resourceType) }}</span>
+                  </div>
+                } @empty {
+                  <span class="muted-text">No resource cost defined.</span>
+                }
+              </div>
+            </div>
+
+            <div class="mg-card flex-col gap-xs p-md">
+              <span class="muted-text">Next level time</span>
+              <strong class="heading-color">{{ page.toDurationLabel(page.preview().nextTime) }}</strong>
+            </div>
+          </div>
+
+          <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+            <div class="flex-col gap-sm">
+              @for (bonus of page.preview().bonuses; track bonus.target + bonus.type) {
+                <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
+                  <strong class="heading-color">{{ page.toBonusLabel(bonus.target) }}</strong>
+                  <span>
+                    {{ page.toBonusValue(bonus.current, bonus.type) }} ->
+                    {{ page.toBonusValue(bonus.next, bonus.type) }}
+                  </span>
+                </div>
+              } @empty {
+                <p class="mb-0 muted-text">Add a bonus to see progression preview.</p>
+              }
+            </div>
+
+            <div class="flex-col gap-sm">
+              @for (requirement of page.preview().requirements; track requirement.type + (requirement.statKey ?? '') + requirement.appliesFromLevel) {
+                <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
+                  <strong class="heading-color">{{ page.requirementTypeLabel(requirement.type) }}</strong>
+                  <span>
+                    {{ page.requirementSummary(requirement) }}
+                    @if (requirement.appliesFromLevel > 1) {
+                      <span> from level {{ requirement.appliesFromLevel }}</span>
+                    }
+                  </span>
+                </div>
+              } @empty {
+                <p class="mb-0 muted-text">No active requirements for the preview level.</p>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <p-button
+            label="Save building"
+            [loading]="page.isSaving()"
+            [disabled]="page.isLoading() || page.isSaving()"
+            (onClick)="page.saveBuilding()"
+          />
+        </div>
+      </form>
+    </section>
+  </div>
+}
+

@@ -141,3 +141,15 @@
   aspect-ratio: 16 / 9;
   border-radius: v.$radius-md;
 }
+
+.mg-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1290;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: map.get(v.$spacings, "lg");
+  background: rgb(0 0 0 / 0.42);
+  backdrop-filter: blur(4px);
+}

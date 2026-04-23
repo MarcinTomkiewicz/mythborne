@@ -32,11 +32,7 @@ export const gameRoutes: Routes = [
   {
     path: 'mansion',
     loadComponent: () =>
-      import('./pages/section-placeholder/section-placeholder').then((m) => m.GameSectionPlaceholderPage),
-    data: {
-      sectionTitle: 'Mansion',
-      sectionDescription: 'Tutaj trafia budynki, estate, produkcja surowcow i rozwoj bazy.',
-    },
+      import('./pages/mansion/mansion-page').then((m) => m.MansionPage),
   },
   {
     path: 'trade',

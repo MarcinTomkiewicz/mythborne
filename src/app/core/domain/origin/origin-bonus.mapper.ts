@@ -1,9 +1,5 @@
-import { Row } from '../../types/supabase.types';
+import { OriginBonusWithTemplate } from '../../types/domain-row.types';
 import { OriginBonus } from './origin-bonus.model';
-
-export interface OriginBonusWithTemplate extends Row<'origin_bonuses'> {
-  bonus_templates: Row<'bonus_templates'>;
-}
 
 const validTypes = ['flat', 'percent'] as const;
 

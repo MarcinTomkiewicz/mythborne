@@ -6,7 +6,7 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { routes } from './app.routes';
 import {
@@ -25,7 +25,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(Auth).initialize()),
     provideRouter(routes),
     provideClientHydration(withEventReplay()),
-    provideAnimationsAsync(),
+    provideAnimations(),
     MessageService,
     providePrimeNG({
       theme: {

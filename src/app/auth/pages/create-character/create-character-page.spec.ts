@@ -5,10 +5,10 @@ describe('CreateCharacterPage', () => {
   let component: CreateCharacterPage;
   let fixture: ComponentFixture<CreateCharacterPage>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
+  beforeEach(() => {
+    TestBed.configureTestingModule({
       imports: [CreateCharacterPage],
-    }).compileComponents();
+    });
 
     fixture = TestBed.createComponent(CreateCharacterPage);
     component = fixture.componentInstance;

@@ -1,0 +1,58 @@
+insert into public.balance_formula_blocks (
+  scope_key,
+  category,
+  label,
+  token,
+  helper_text,
+  sort_order
+)
+values
+  ('hero_progression', 'variables', 'level', 'level', 'Current tested level.', 10),
+  ('hero_progression', 'variables', 'heroLevel', 'heroLevel', 'Current hero level.', 20),
+  ('hero_progression', 'operators', '+', ' + ', 'Addition.', 30),
+  ('hero_progression', 'operators', '-', ' - ', 'Subtraction.', 40),
+  ('hero_progression', 'operators', '*', ' * ', 'Multiplication.', 50),
+  ('hero_progression', 'operators', '/', ' / ', 'Division.', 60),
+  ('hero_progression', 'functions', 'roundUp()', 'roundUp()', 'Rounds up with optional step.', 70),
+  ('hero_progression', 'functions', 'roundDown()', 'roundDown()', 'Rounds down with optional step.', 80),
+  ('hero_progression', 'functions', 'pow()', 'pow()', 'Power function.', 90),
+  ('hero_progression', 'literals', '1', '1', 'Numeric literal.', 100),
+  ('hero_progression', 'literals', '5', '5', 'Numeric literal.', 110),
+  ('hero_progression', 'literals', '10', '10', 'Numeric literal.', 120),
+
+  ('building_balance', 'variables', 'level', 'level', 'Current tested building level.', 10),
+  ('building_balance', 'variables', 'rank', 'rank', 'Building rank weight.', 20),
+  ('building_balance', 'variables', 'baseCost', 'baseCost', 'Base resource cost for the selected row.', 30),
+  ('building_balance', 'variables', 'baseTime', 'baseTime', 'Base building time in minutes.', 40),
+  ('building_balance', 'variables', 'baseBonus', 'baseBonus', 'Base bonus value.', 50),
+  ('building_balance', 'operators', '+', ' + ', 'Addition.', 60),
+  ('building_balance', 'operators', '-', ' - ', 'Subtraction.', 70),
+  ('building_balance', 'operators', '*', ' * ', 'Multiplication.', 80),
+  ('building_balance', 'operators', '/', ' / ', 'Division.', 90),
+  ('building_balance', 'functions', 'roundUp()', 'roundUp()', 'Rounds up with optional step.', 100),
+  ('building_balance', 'functions', 'roundDown()', 'roundDown()', 'Rounds down with optional step.', 110),
+  ('building_balance', 'functions', 'round()', 'round()', 'Standard rounding.', 120),
+  ('building_balance', 'functions', 'pow()', 'pow()', 'Power function.', 130),
+  ('building_balance', 'functions', 'max()', 'max()', 'Maximum of values.', 140),
+  ('building_balance', 'functions', 'min()', 'min()', 'Minimum of values.', 150),
+  ('building_balance', 'literals', '1', '1', 'Numeric literal.', 160),
+  ('building_balance', 'literals', '5', '5', 'Numeric literal.', 170),
+  ('building_balance', 'literals', '10', '10', 'Numeric literal.', 180),
+  ('building_balance', 'literals', '0.1', '0.1', 'Numeric literal.', 190),
+
+  ('item_balance', 'variables', 'itemPower', 'itemPower', 'Current item power.', 10),
+  ('item_balance', 'operators', '+', ' + ', 'Addition.', 20),
+  ('item_balance', 'operators', '-', ' - ', 'Subtraction.', 30),
+  ('item_balance', 'operators', '*', ' * ', 'Multiplication.', 40),
+  ('item_balance', 'operators', '/', ' / ', 'Division.', 50),
+  ('item_balance', 'functions', 'floor()', 'floor()', 'Rounds down to integer.', 60),
+  ('item_balance', 'functions', 'round()', 'round()', 'Standard rounding.', 70),
+  ('item_balance', 'functions', 'max()', 'max()', 'Maximum of values.', 80),
+  ('item_balance', 'literals', '1', '1', 'Numeric literal.', 90),
+  ('item_balance', 'literals', '100', '100', 'Numeric literal.', 100)
+on conflict (scope_key, token) do update
+set
+  category = excluded.category,
+  label = excluded.label,
+  helper_text = excluded.helper_text,
+  sort_order = excluded.sort_order;

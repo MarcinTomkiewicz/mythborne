@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { MessageService } from 'primeng/api';
-
-type ToastSeverity = 'info' | 'success' | 'warn' | 'error';
+import { ToastSeverity } from '../../types/toast.types';
 
 @Injectable({ providedIn: 'root' })
 export class ToastService {

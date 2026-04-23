@@ -1,18 +1,19 @@
 import { inject, Injectable } from '@angular/core';
-import { concat, from, map, Observable, switchMap, toArray } from 'rxjs';
+import { forkJoin, map, Observable, switchMap } from 'rxjs';
+import { TABLES } from '../../constants/tables.const';
 import { IHero } from '../../domain/hero/hero.model';
 import { Insert } from '../../types/supabase.types';
+import { FilterOperator } from '../../enums/filter-operators';
+import { EstateAddressRow } from '../../types/hero-service.types';
 import { AuthState } from '../auth/auth-state';
+import { Backend } from '../backend/backend';
 import { HeroFactory } from '../hero-factory/hero-factory';
-import { SupabaseClientService } from '../supabase/supabase-client';
-import { SupabaseService } from '../supabase/supabase';
 
 @Injectable({ providedIn: 'root' })
 export class CreateHero {
   private readonly authState = inject(AuthState);
   private readonly heroFactory = inject(HeroFactory);
-  private readonly supabaseService = inject(SupabaseService);
-  private readonly supabase = inject(SupabaseClientService).client;
+  private readonly backend = inject(Backend);
 
   createHero(
     heroId: string,
@@ -34,41 +35,29 @@ export class CreateHero {
     const derived = this.heroFactory.createDerived(heroId);
     const resources = this.heroFactory.createResources(heroId);
 
-    return from(this.supabase.from('hero').insert([heroPayload])).pipe(
-      switchMap(({ error }) => {
-        if (error) {
-          throw error;
-        }
+    return this.backend.create<Insert<'hero'>>(TABLES.hero, heroPayload).pipe(
+      switchMap(() =>
+        forkJoin([
+          this.backend.createMany(TABLES.hero_stats, stats),
+          this.backend.create(TABLES.hero_derived, derived),
+          this.backend.createMany(TABLES.hero_resources, resources),
+        ])
+      ),
+      map(() => {
+        const hero: IHero = {
+          id: heroPayload.id,
+          name: heroPayload.name,
+          level: heroPayload.level ?? 1,
+          rank: heroPayload.rank ?? 1,
+          experience: heroPayload.experience ?? 0,
+          originId: heroPayload.origin_id ?? null,
+          estateId: heroPayload.estate_id ?? null,
+          profilePicture: heroPayload.profile_picture ?? null,
+          createdAt: heroPayload.created_at ?? null,
+        };
 
-        return concat(
-          from(this.supabase.from('hero_stats').insert(stats)),
-          from(this.supabase.from('hero_derived').insert([derived])),
-          from(this.supabase.from('hero_resources').insert(resources))
-        ).pipe(
-          toArray(),
-          map((results) => {
-            const errors = results.map((result) => result.error).filter(Boolean);
-
-            if (errors.length > 0) {
-              throw errors[0];
-            }
-
-            const hero: IHero = {
-              id: heroPayload.id,
-              name: heroPayload.name,
-              level: heroPayload.level ?? 1,
-              rank: heroPayload.rank ?? 1,
-              experience: heroPayload.experience ?? 0,
-              originId: heroPayload.origin_id ?? null,
-              estateId: heroPayload.estate_id ?? null,
-              profilePicture: heroPayload.profile_picture ?? null,
-              createdAt: heroPayload.created_at ?? null,
-            };
-
-            this.authState.setHero(hero);
-            return hero;
-          })
-        );
+        this.authState.setHero(hero);
+        return hero;
       })
     );
   }
@@ -78,9 +67,14 @@ export class CreateHero {
     const rank = 1;
     const maxAddresses = 5000;
 
-    return this.supabaseService.getAll('estates', {
-      filters: { district_code: districtCode, rank },
+    return this.backend.getAll<EstateAddressRow>({
+      table: TABLES.estates,
+      filters: {
+        districtCode: { operator: FilterOperator.EQ, value: districtCode },
+        rank: { operator: FilterOperator.EQ, value: rank },
+      },
       select: 'id, address, hero_id',
+      camelCase: false,
     }).pipe(
       switchMap((estates) => {
         const existingMap = new Map<number, { id: string; hero_id: string | null }>();
@@ -109,89 +103,80 @@ export class CreateHero {
         const existing = existingMap.get(random);
 
         if (existing && existing.hero_id === null) {
-          return from(
-            this.supabase.from('estates').update({ hero_id: heroId }).eq('id', existing.id)
-          ).pipe(
-            switchMap(({ error }) => {
-              if (error) {
-                throw error;
-              }
+          return this.backend
+            .updateWhere(
+              TABLES.estates,
+              { id: { operator: FilterOperator.EQ, value: existing.id } },
+              { heroId }
+            )
+            .pipe(
+              switchMap((rows) => {
+                if (rows.length === 0) {
+                  throw new Error('Estate assignment did not affect any row.');
+                }
 
-              return this.linkEstateToHero(heroId, existing.id);
-            })
-          );
+                return this.linkEstateToHero(heroId, existing.id);
+              })
+            );
         }
 
         const estateId = crypto.randomUUID();
 
-        return from(
-          this.supabase
-            .from('estates')
-            .insert([
-              {
-                id: estateId,
-                address,
-                rank,
-                hero_id: heroId,
-                district_code: districtCode,
-              },
-            ])
-        ).pipe(
-          switchMap(({ error }) => {
-            if (error) {
-              throw error;
-            }
-
-            return this.supabaseService.getAll('buildings', {
-              filters: { rank_required: rank },
-              select: 'id',
-            }).pipe(
-              switchMap((buildings) => {
-                const insertPayload = buildings.map((building) => ({
-                  estate_id: estateId,
-                  building_id: building.id,
-                  level: 1,
-                }));
-
-                if (insertPayload.length === 0) {
-                  return this.linkEstateToHero(heroId, estateId);
-                }
-
-                return from(this.supabase.from('estate_buildings').insert(insertPayload)).pipe(
-                  switchMap(({ error: insertError }) => {
-                    if (insertError) {
-                      throw insertError;
-                    }
-
-                    return this.linkEstateToHero(heroId, estateId);
-                  })
-                );
-              })
-            );
+        return this.backend
+          .create(TABLES.estates, {
+            id: estateId,
+            address,
+            rank,
+            heroId,
+            districtCode,
           })
-        );
+          .pipe(
+            switchMap(() =>
+              this.backend.getAll<{ id: string }>({
+                table: TABLES.buildings,
+                filters: { rankRequired: { operator: FilterOperator.EQ, value: rank } },
+                select: 'id',
+              }).pipe(
+                switchMap((buildings) => {
+                  const insertPayload = buildings.map((building) => ({
+                    estateId,
+                    buildingId: building.id,
+                    level: 1,
+                  }));
+
+                  if (insertPayload.length === 0) {
+                    return this.linkEstateToHero(heroId, estateId);
+                  }
+
+                  return this.backend
+                    .createMany(TABLES.estate_buildings, insertPayload)
+                    .pipe(switchMap(() => this.linkEstateToHero(heroId, estateId)));
+                })
+              )
+            )
+          );
       })
     );
   }
 
   private linkEstateToHero(heroId: string, estateId: string): Observable<void> {
-    return from(
-      this.supabase.from('hero').update({ estate_id: estateId }).eq('id', heroId)
-    ).pipe(
-      map(({ error }) => {
-        if (error) {
-          throw error;
-        }
+    return this.backend
+      .updateWhere(TABLES.hero, { id: { operator: FilterOperator.EQ, value: heroId } }, { estateId })
+      .pipe(
+        map((rows) => {
+          if (rows.length === 0) {
+            throw new Error('Hero estate update did not affect any row.');
+          }
 
-        const hero = this.authState.hero();
+          const hero = this.authState.hero();
 
-        if (hero?.id === heroId) {
-          this.authState.setHero({
-            ...hero,
-            estateId,
-          });
-        }
-      })
-    );
+          if (hero?.id === heroId) {
+            this.authState.setHero({
+              ...hero,
+              estateId,
+            });
+          }
+        })
+      );
   }
 }

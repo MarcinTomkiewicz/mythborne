@@ -1,17 +1,18 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable } from 'rxjs';
 import { IStat } from '../../interfaces/i-stats/i-stats';
-import { SupabaseService } from '../supabase/supabase';
 import { TABLES } from '../../constants/tables.const';
 import { BonusSource } from '../../domain/bonus/bonus.model';
 import { finalStatValue } from '../../domain/bonus/bonus-calculator';
+import { Backend } from '../backend/backend';
 
 @Injectable({ providedIn: 'root' })
 export class StatsService {
-  private supabase = inject(SupabaseService);
+  private backend = inject(Backend);
 
   getStats(): Observable<IStat[]> {
-    return this.supabase.getAll<'stats'>(TABLES.stats, {
+    return this.backend.getAll<IStat>({
+      table: TABLES.stats,
       orderBy: { column: 'order', ascending: true },
     });
   }
@@ -28,7 +29,8 @@ export class StatsService {
   }
 
   getDerivedStats(): Observable<IStat[]> {
-    return this.supabase.getAll<'stats_derived'>('stats_derived', {
+    return this.backend.getAll<IStat>({
+      table: 'stats_derived',
       orderBy: { column: 'order', ascending: true },
     });
   }

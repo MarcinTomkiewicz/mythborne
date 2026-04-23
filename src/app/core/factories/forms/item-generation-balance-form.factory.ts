@@ -1,46 +1,25 @@
 import { Injectable, inject } from '@angular/core';
-import {
-  FormControl,
-  FormGroup,
-  NonNullableFormBuilder,
-} from '@angular/forms';
+import { NonNullableFormBuilder } from '@angular/forms';
 import {
   EditableItemGenerationBucketProfile,
   EditableItemGenerationQuality,
 } from '../../domain/item/item-generation-admin.model';
 import { ItemQualityKey } from '../../domain/item/item-generation.model';
-
-export type QualitySelectorForm = FormGroup<{
-  selectedId: FormControl<string>;
-}>;
-
-export type QualityEditorForm = FormGroup<{
-  id: FormControl<string>;
-  key: FormControl<ItemQualityKey>;
-  label: FormControl<string>;
-  multiplier: FormControl<number>;
-  weight: FormControl<number>;
-  sortOrder: FormControl<number>;
-  isEnabled: FormControl<boolean>;
-}>;
-
-export type BucketProfileSelectorForm = FormGroup<{
-  selectedId: FormControl<string>;
-}>;
-
-export type BucketProfileEditorForm = FormGroup<{
-  id: FormControl<string>;
-  key: FormControl<string>;
-  name: FormControl<string>;
-  description: FormControl<string>;
-  bucketCount: FormControl<number>;
-  baseValue: FormControl<number>;
-  linearGrowth: FormControl<number>;
-  growthFactor: FormControl<number>;
-  roundingStep: FormControl<number>;
-  minIncrement: FormControl<number>;
-  isActive: FormControl<boolean>;
-}>;
+import {
+  BalanceFormula,
+  EditableBalanceFormula,
+} from '../../domain/formula/formula.model';
+import {
+  BucketProfileEditorForm,
+  BucketProfileSelectorForm,
+  FormulaAssignmentForm,
+  FormulaEditorForm,
+  FormulaSelectorForm,
+  QualityEditorForm,
+  QualitySelectorForm,
+} from '../../types/forms/item-generation-balance-form.types';
+import { integerAtLeast, nonNegativeInteger, roundedNumber } from '../../utils/number';
+import { trimText } from '../../utils/normalize-text';
 
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationBalanceFormFactory {
@@ -90,16 +69,81 @@ export class ItemGenerationBalanceFormFactory {
     });
   }
 
+  createFormulaSelectorForm(): FormulaSelectorForm {
+    return this.fb.group({
+      selectedId: this.fb.control(''),
+    });
+  }
+
+  createFormulaEditorForm(draft?: EditableBalanceFormula): FormulaEditorForm {
+    return this.fb.group({
+      id: this.fb.control(draft?.id ?? ''),
+      key: this.fb.control(draft?.key ?? ''),
+      scopeKey: this.fb.control(draft?.scopeKey ?? 'hero_progression'),
+      label: this.fb.control(draft?.label ?? ''),
+      expression: this.fb.control(draft?.expression ?? ''),
+      description: this.fb.control(draft?.description ?? ''),
+      isEnabled: this.fb.control(draft?.isEnabled ?? true),
+    });
+  }
+
+  createFormulaAssignmentForm(): FormulaAssignmentForm {
+    return this.fb.group({
+      targetId: this.fb.control(''),
+      formulaId: this.fb.control(''),
+    });
+  }
+
+  createQualityDraft(): EditableItemGenerationQuality {
+    return {
+      id: null,
+      key: 'normal',
+      label: 'Normal',
+      multiplier: 1,
+      weight: 10,
+      sortOrder: 10,
+      isEnabled: true,
+    };
+  }
+
+  createBucketProfileDraft(): EditableItemGenerationBucketProfile {
+    return {
+      id: null,
+      key: '',
+      name: '',
+      description: '',
+      bucketCount: 6,
+      baseValue: 300,
+      linearGrowth: 120,
+      growthFactor: 1.43,
+      roundingStep: 50,
+      minIncrement: 50,
+      isActive: false,
+    };
+  }
+
+  createFormulaDraft(scopeKey = 'hero_progression'): EditableBalanceFormula {
+    return {
+      id: null,
+      key: '',
+      scopeKey,
+      label: '',
+      expression: '',
+      description: '',
+      isEnabled: true,
+    };
+  }
+
   toQuality(form: QualityEditorForm): EditableItemGenerationQuality {
     const value = form.getRawValue();
 
     return {
       id: value.id || null,
       key: value.key,
-      label: value.label.trim(),
+      label: trimText(value.label),
       multiplier: Number(value.multiplier),
-      weight: Math.max(0, Math.round(Number(value.weight))),
-      sortOrder: Math.round(Number(value.sortOrder)),
+      weight: nonNegativeInteger(value.weight),
+      sortOrder: roundedNumber(value.sortOrder),
       isEnabled: value.isEnabled,
     };
   }
@@ -111,16 +155,30 @@ export class ItemGenerationBalanceFormFactory {
 
     return {
       id: value.id || null,
-      key: value.key.trim(),
-      name: value.name.trim(),
-      description: value.description.trim(),
-      bucketCount: Math.max(1, Math.round(Number(value.bucketCount))),
-      baseValue: Math.max(1, Math.round(Number(value.baseValue))),
-      linearGrowth: Math.max(0, Math.round(Number(value.linearGrowth))),
+      key: trimText(value.key),
+      name: trimText(value.name),
+      description: trimText(value.description),
+      bucketCount: integerAtLeast(value.bucketCount, 1),
+      baseValue: integerAtLeast(value.baseValue, 1),
+      linearGrowth: nonNegativeInteger(value.linearGrowth),
       growthFactor: Math.max(1, Number(value.growthFactor)),
-      roundingStep: Math.max(1, Math.round(Number(value.roundingStep))),
-      minIncrement: Math.max(1, Math.round(Number(value.minIncrement))),
+      roundingStep: integerAtLeast(value.roundingStep, 1),
+      minIncrement: integerAtLeast(value.minIncrement, 1),
       isActive: value.isActive,
+    };
+  }
+
+  toFormula(form: FormulaEditorForm): EditableBalanceFormula {
+    const value = form.getRawValue();
+
+    return {
+      id: value.id || null,
+      key: trimText(value.key),
+      scopeKey: trimText(value.scopeKey),
+      label: trimText(value.label),
+      expression: trimText(value.expression),
+      description: trimText(value.description),
+      isEnabled: value.isEnabled,
     };
   }
 
@@ -152,6 +210,21 @@ export class ItemGenerationBalanceFormFactory {
       roundingStep: draft.roundingStep,
       minIncrement: draft.minIncrement,
       isActive: draft.isActive,
+    });
+  }
+
+  patchFormula(
+    form: FormulaEditorForm,
+    draft: EditableBalanceFormula | BalanceFormula
+  ) {
+    form.reset({
+      id: draft.id ?? '',
+      key: draft.key,
+      scopeKey: draft.scopeKey,
+      label: draft.label,
+      expression: draft.expression,
+      description: draft.description ?? '',
+      isEnabled: draft.isEnabled,
     });
   }
 }

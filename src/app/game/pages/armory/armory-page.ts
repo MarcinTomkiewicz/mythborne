@@ -1,22 +1,19 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Hero } from '../../../core/services/hero/hero';
+import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { ItemGeneratorPanel } from '../../components/item-generator-panel/item-generator-panel';
 
 @Component({
   selector: 'app-armory-page',
   standalone: true,
   imports: [RouterLink, ItemGeneratorPanel],
+  providers: [ArmoryPageFacade],
   templateUrl: './armory-page.html',
 })
 export class ArmoryPage implements OnInit {
-  private readonly heroService = inject(Hero);
-
-  readonly heroLuck = signal(0);
+  readonly page = inject(ArmoryPageFacade);
 
   ngOnInit(): void {
-    this.heroService.getHeroDerived().subscribe((derived) => {
-      this.heroLuck.set(derived.luck ?? 0);
-    });
+    this.page.loadData();
   }
 }

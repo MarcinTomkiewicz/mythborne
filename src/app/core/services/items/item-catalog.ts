@@ -2,8 +2,6 @@ import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable, shareReplay } from 'rxjs';
 import { ItemGenerationBucketsFactory } from '../../factories/item-generation/item-generation-buckets.factory';
 import {
-  ItemGenerationAffixBonusRow,
-  ItemGenerationBaseBonusRow,
   mapBonusTemplateValue,
   mapItemGenerationAffix,
   mapItemGenerationBase,
@@ -11,12 +9,17 @@ import {
   mapItemGenerationQuality,
 } from '../../domain/item/item-generation.mapper';
 import { ItemGenerationCatalog } from '../../domain/item/item-generation.model';
+import {
+  ItemGenerationAffixBonusRow,
+  ItemGenerationBaseBonusRow,
+} from '../../types/domain-row.types';
 import { Row } from '../../types/supabase.types';
-import { SupabaseService } from '../supabase/supabase';
+import { Backend } from '../backend/backend';
+import { FilterOperator } from '../../enums/filter-operators';
 
 @Injectable({ providedIn: 'root' })
 export class ItemCatalogService {
-  private readonly supabase = inject(SupabaseService);
+  private readonly backend = inject(Backend);
   private readonly bucketFactory = inject(ItemGenerationBucketsFactory);
 
   private catalog$?: Observable<ItemGenerationCatalog>;
@@ -24,26 +27,38 @@ export class ItemCatalogService {
   getCatalog(): Observable<ItemGenerationCatalog> {
     if (!this.catalog$) {
       this.catalog$ = forkJoin({
-        qualities: this.supabase.getAll('item_generation_qualities', {
-          filters: { is_enabled: true },
+        qualities: this.backend.getAll<Row<'item_generation_qualities'>>({
+          table: 'item_generation_qualities',
+          filters: { isEnabled: { operator: FilterOperator.EQ, value: true } },
           orderBy: { column: 'sort_order' },
+          camelCase: false,
         }),
-        bucketProfiles: this.supabase.getAll('item_generation_bucket_profiles', {
-          filters: { is_active: true },
+        bucketProfiles: this.backend.getAll<Row<'item_generation_bucket_profiles'>>({
+          table: 'item_generation_bucket_profiles',
+          filters: { isActive: { operator: FilterOperator.EQ, value: true } },
           orderBy: { column: 'created_at', ascending: false },
           range: { from: 0, to: 0 },
+          camelCase: false,
         }),
-        bases: this.supabase.getAll('item_generation_bases', {
+        bases: this.backend.getAll<Row<'item_generation_bases'>>({
+          table: 'item_generation_bases',
           orderBy: { column: 'base_value' },
+          camelCase: false,
         }),
-        baseBonuses: this.supabase.getAll('item_generation_base_bonuses', {
+        baseBonuses: this.backend.getAll<ItemGenerationBaseBonusRow>({
+          table: 'item_generation_base_bonuses',
           select: '*, bonus_templates (*)',
+          camelCase: false,
         }),
-        affixes: this.supabase.getAll('item_generation_affixes', {
+        affixes: this.backend.getAll<Row<'item_generation_affixes'>>({
+          table: 'item_generation_affixes',
           orderBy: { column: 'gold_value' },
+          camelCase: false,
         }),
-        affixBonuses: this.supabase.getAll('item_generation_affix_bonuses', {
+        affixBonuses: this.backend.getAll<ItemGenerationAffixBonusRow>({
+          table: 'item_generation_affix_bonuses',
           select: '*, bonus_templates (*)',
+          camelCase: false,
         }),
       }).pipe(
         map(({ qualities, bucketProfiles, bases, baseBonuses, affixes, affixBonuses }) =>

@@ -1,4 +1,7 @@
-import { createCharacterEntryGuard } from '../core/guards/hero-onboarding.guard';
+import {
+  authEntryGuard,
+  createCharacterEntryGuard,
+} from '../core/guards/hero-onboarding.guard';
 import { Routes } from '@angular/router';
 
 export const authRoutes: Routes = [
@@ -9,6 +12,7 @@ export const authRoutes: Routes = [
   },
   {
     path: 'login',
+    canActivate: [authEntryGuard],
     loadComponent: () =>
       import('./pages/login/login-page').then((m) => m.LoginPage)
   },

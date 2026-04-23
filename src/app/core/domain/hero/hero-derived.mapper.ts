@@ -1,7 +1,5 @@
-import { Row } from '../../types/supabase.types';
+import { HeroDerivedRow } from '../../types/domain-row.types';
 import { IHeroDerived } from './hero-derived.model';
-
-export type HeroDerivedRow = Row<'hero_derived'>;
 
 export function mapHeroDerived(row: HeroDerivedRow): IHeroDerived {
   return {

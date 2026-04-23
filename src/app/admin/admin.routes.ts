@@ -20,4 +20,9 @@ export const adminRoutes: Routes = [
         (m) => m.ItemGenerationItemCatalogPage
       ),
   },
+  {
+    path: 'buildings',
+    loadComponent: () =>
+      import('./pages/buildings/buildings-page').then((m) => m.BuildingsPage),
+  },
 ];

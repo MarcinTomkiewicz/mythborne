@@ -1,47 +1,20 @@
 import { Injectable, inject } from '@angular/core';
-import {
-  FormArray,
-  FormControl,
-  FormGroup,
-  NonNullableFormBuilder,
-} from '@angular/forms';
+import { FormArray, NonNullableFormBuilder } from '@angular/forms';
 import {
   EditableItemGenerationAffix,
   EditableItemGenerationBase,
   EditableItemGenerationBonus,
+  CatalogSection,
 } from '../../domain/item/item-generation-admin.model';
-
-export type CatalogEntitySelectorForm = FormGroup<{
-  selectedId: FormControl<string>;
-}>;
-
-export type BonusForm = FormGroup<{
-  templateId: FormControl<string>;
-  target: FormControl<string>;
-  type: FormControl<'flat' | 'percent'>;
-  value: FormControl<number>;
-  description: FormControl<string>;
-}>;
-
-export type BaseEditorForm = FormGroup<{
-  id: FormControl<string>;
-  key: FormControl<string>;
-  name: FormControl<string>;
-  slot: FormControl<'weapon' | 'trinket' | 'armor' | 'shield'>;
-  baseValue: FormControl<number>;
-  description: FormControl<string>;
-  bonuses: FormArray<BonusForm>;
-}>;
-
-export type AffixEditorForm = FormGroup<{
-  id: FormControl<string>;
-  key: FormControl<string>;
-  kind: FormControl<'prefix' | 'suffix'>;
-  name: FormControl<string>;
-  goldValue: FormControl<number>;
-  description: FormControl<string>;
-  bonuses: FormArray<BonusForm>;
-}>;
+import {
+  AffixEditorForm,
+  BaseEditorForm,
+  BonusForm,
+  CatalogEntitySelectorForm,
+} from '../../types/forms/item-generation-item-catalog-form.types';
+import { replaceFormArray } from '../../utils/form-controls';
+import { integerAtLeast, nonNegativeInteger, roundedNumber } from '../../utils/number';
+import { trimText } from '../../utils/normalize-text';
 
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationItemCatalogFormFactory {
@@ -91,15 +64,38 @@ export class ItemGenerationItemCatalogFormFactory {
     });
   }
 
+  createBaseDraft(): EditableItemGenerationBase {
+    return {
+      id: null,
+      key: '',
+      name: '',
+      slot: 'weapon',
+      baseValue: 100,
+      description: '',
+      bonuses: [],
+    };
+  }
+
+  createAffixDraft(kind: Extract<CatalogSection, 'prefix' | 'suffix'>): EditableItemGenerationAffix {
+    return {
+      id: null,
+      key: '',
+      kind,
+      name: '',
+      goldValue: 100,
+      description: '',
+      bonuses: [],
+    };
+  }
+
   replaceBonuses(
     target: FormArray<BonusForm>,
     bonuses: EditableItemGenerationBonus[]
   ) {
-    while (target.length) {
-      target.removeAt(0);
-    }
-
-    bonuses.forEach((bonus) => target.push(this.createBonusForm(bonus)));
+    replaceFormArray(
+      target,
+      bonuses.map((bonus) => this.createBonusForm(bonus))
+    );
   }
 
   patchBase(form: BaseEditorForm, draft: EditableItemGenerationBase) {
@@ -131,11 +127,11 @@ export class ItemGenerationItemCatalogFormFactory {
 
     return {
       id: value.id || null,
-      key: value.key.trim(),
-      name: value.name.trim(),
+      key: trimText(value.key),
+      name: trimText(value.name),
       slot: value.slot,
-      baseValue: Math.max(1, Math.round(Number(value.baseValue))),
-      description: value.description.trim(),
+      baseValue: integerAtLeast(value.baseValue, 1),
+      description: trimText(value.description),
       bonuses: value.bonuses
         .map((bonus) => this.normalizeBonus(bonus))
         .filter((bonus) => bonus.target.length > 0),
@@ -147,11 +143,11 @@ export class ItemGenerationItemCatalogFormFactory {
 
     return {
       id: value.id || null,
-      key: value.key.trim(),
+      key: trimText(value.key),
       kind: value.kind,
-      name: value.name.trim(),
-      goldValue: Math.max(0, Math.round(Number(value.goldValue))),
-      description: value.description.trim(),
+      name: trimText(value.name),
+      goldValue: nonNegativeInteger(value.goldValue),
+      description: trimText(value.description),
       bonuses: value.bonuses
         .map((bonus) => this.normalizeBonus(bonus))
         .filter((bonus) => bonus.target.length > 0),
@@ -163,10 +159,10 @@ export class ItemGenerationItemCatalogFormFactory {
   ): EditableItemGenerationBonus {
     return {
       templateId: bonus.templateId || null,
-      target: bonus.target.trim(),
+      target: trimText(bonus.target),
       type: bonus.type,
-      value: Math.round(Number(bonus.value)),
-      description: bonus.description.trim(),
+      value: roundedNumber(bonus.value),
+      description: trimText(bonus.description),
     };
   }
 }

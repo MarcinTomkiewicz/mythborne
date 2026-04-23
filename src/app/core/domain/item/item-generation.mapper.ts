@@ -1,6 +1,10 @@
 import { Bonus } from '../bonus/bonus.model';
 import { Row } from '../../types/supabase.types';
 import {
+  ItemGenerationAffixBonusRow,
+  ItemGenerationBaseBonusRow,
+} from '../../types/domain-row.types';
+import {
   ItemAffixDefinition,
   ItemAffixKind,
   ItemBaseDefinition,
@@ -8,14 +12,6 @@ import {
   ItemQualityDefinition,
   ItemSlot,
 } from './item-generation.model';
-
-export type ItemGenerationBaseBonusRow = Row<'item_generation_base_bonuses'> & {
-  bonus_templates: Row<'bonus_templates'>;
-};
-
-export type ItemGenerationAffixBonusRow = Row<'item_generation_affix_bonuses'> & {
-  bonus_templates: Row<'bonus_templates'>;
-};
 
 export function mapItemGenerationBase(
   row: Row<'item_generation_bases'>,

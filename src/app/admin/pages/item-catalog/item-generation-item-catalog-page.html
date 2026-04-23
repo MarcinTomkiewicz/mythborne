@@ -1,6 +1,6 @@
 <div class="flex-col gap-xl min-w-0">
   <datalist id="bonus-target-options">
-    @for (template of catalogData().bonusTemplates; track template.id) {
+    @for (template of page.catalogData().bonusTemplates; track template.id) {
       <option [value]="template.target">{{ template.target }}</option>
     }
   </datalist>
@@ -22,14 +22,14 @@
     </div>
   </section>
 
-  @if (errorMessage(); as error) {
+  @if (page.errorMessage(); as error) {
     <section class="mg-card p-lg w-100">
       <p class="card-legend mb-0">Error</p>
       <p class="mb-0 muted-text">{{ error }}</p>
     </section>
   }
 
-  @if (successMessage(); as success) {
+  @if (page.successMessage(); as success) {
     <section class="mg-card p-lg w-100">
       <p class="card-legend mb-0">Saved</p>
       <p class="mb-0 muted-text">{{ success }}</p>
@@ -40,23 +40,23 @@
     <div class="flex-row-start-center flex-wrap gap-sm">
       <p-button
         label="Base items"
-        [outlined]="activeSection() !== 'base'"
-        (onClick)="setSection('base')"
+        [outlined]="page.activeSection() !== 'base'"
+        (onClick)="page.setSection('base')"
       />
       <p-button
         label="Prefixes"
-        [outlined]="activeSection() !== 'prefix'"
-        (onClick)="setSection('prefix')"
+        [outlined]="page.activeSection() !== 'prefix'"
+        (onClick)="page.setSection('prefix')"
       />
       <p-button
         label="Suffixes"
-        [outlined]="activeSection() !== 'suffix'"
-        (onClick)="setSection('suffix')"
+        [outlined]="page.activeSection() !== 'suffix'"
+        (onClick)="page.setSection('suffix')"
       />
       <p-button
         label="New entry"
         [text]="true"
-        (onClick)="createNewEntity()"
+        (onClick)="page.createNewEntity()"
       />
     </div>
   </section>
@@ -64,17 +64,17 @@
   <section class="mg-card p-lg w-100">
     <div class="flex-col gap-xs mb-lg">
       <p class="card-legend mb-0">Selector</p>
-      <h3 class="mg-section__title mg-section__title--xs mb-0">{{ activeEditorTitle() }}</h3>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">{{ page.activeEditorTitle() }}</h3>
     </div>
 
-    <form [formGroup]="selectorForm">
+    <form [formGroup]="page.selectorForm">
       <label class="flex-col gap-sm">
         <span class="muted-text">Edited entry</span>
         <select class="w-full p-inputtext" formControlName="selectedId">
-          <option value="">Create new {{ activeSection() }}</option>
-          @for (entity of activeEntities(); track entity.id ?? entity.key) {
+          <option value="">Create new {{ page.activeSection() }}</option>
+          @for (entity of page.activeEntities(); track entity.id ?? entity.key) {
             <option [value]="entity.id ?? ''">
-              {{ optionLabel(entity) }}
+              {{ page.optionLabel(entity) }}
             </option>
           }
         </select>
@@ -82,7 +82,7 @@
     </form>
   </section>
 
-  @if (activeSection() === 'base') {
+  @if (page.activeSection() === 'base') {
     <section class="mg-card p-lg w-100">
       <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
         <div class="flex-col gap-xs">
@@ -93,21 +93,21 @@
         <div class="flex-row-start-center flex-wrap gap-sm">
           <p-button
             label="Save"
-            [loading]="isSaving()"
-            [disabled]="isLoading() || isSaving()"
-            (onClick)="saveCurrent()"
+            [loading]="page.isSaving()"
+            [disabled]="page.isLoading() || page.isSaving()"
+            (onClick)="page.saveCurrent()"
           />
           <p-button
             label="Delete"
             severity="danger"
             [text]="true"
-            [disabled]="!baseEditorForm.controls.id.value || isSaving()"
-            (onClick)="deleteCurrent()"
+            [disabled]="!page.baseEditorForm.controls.id.value || page.isSaving()"
+            (onClick)="page.deleteCurrent()"
           />
         </div>
       </div>
 
-      <form [formGroup]="baseEditorForm" class="flex-col gap-md">
+      <form [formGroup]="page.baseEditorForm" class="flex-col gap-md">
         <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
           <label class="flex-col gap-sm">
             <span class="muted-text">Key</span>
@@ -147,11 +147,11 @@
               <h4 class="mg-section__title mg-section__title--xs mb-0">Base bonuses</h4>
             </div>
 
-            <p-button label="Add bonus" [text]="true" (onClick)="addBonus()" />
+            <p-button label="Add bonus" [text]="true" (onClick)="page.addBonus()" />
           </div>
 
           <div class="flex-col gap-md">
-            @for (bonusGroup of baseBonuses.controls; track $index) {
+            @for (bonusGroup of page.baseBonuses.controls; track $index) {
               <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
                 <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
                   <label class="flex-col gap-sm">
@@ -179,7 +179,7 @@
                 </div>
 
                 <div class="flex-row-start-center gap-sm">
-                  <p-button label="Remove bonus" severity="danger" [text]="true" (onClick)="removeBonus($index)" />
+                  <p-button label="Remove bonus" severity="danger" [text]="true" (onClick)="page.removeBonus($index)" />
                 </div>
               </div>
             }
@@ -193,28 +193,28 @@
         <div class="flex-col gap-xs">
           <p class="card-legend mb-0">Editor</p>
           <h3 class="mg-section__title mg-section__title--xs mb-0">
-            {{ activeSection() === 'prefix' ? 'Prefix' : 'Suffix' }}
+            {{ page.activeSection() === 'prefix' ? 'Prefix' : 'Suffix' }}
           </h3>
         </div>
 
         <div class="flex-row-start-center flex-wrap gap-sm">
           <p-button
             label="Save"
-            [loading]="isSaving()"
-            [disabled]="isLoading() || isSaving()"
-            (onClick)="saveCurrent()"
+            [loading]="page.isSaving()"
+            [disabled]="page.isLoading() || page.isSaving()"
+            (onClick)="page.saveCurrent()"
           />
           <p-button
             label="Delete"
             severity="danger"
             [text]="true"
-            [disabled]="!affixEditorForm.controls.id.value || isSaving()"
-            (onClick)="deleteCurrent()"
+            [disabled]="!page.affixEditorForm.controls.id.value || page.isSaving()"
+            (onClick)="page.deleteCurrent()"
           />
         </div>
       </div>
 
-      <form [formGroup]="affixEditorForm" class="flex-col gap-md">
+      <form [formGroup]="page.affixEditorForm" class="flex-col gap-md">
         <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
           <label class="flex-col gap-sm">
             <span class="muted-text">Key</span>
@@ -252,11 +252,11 @@
               <h4 class="mg-section__title mg-section__title--xs mb-0">Affix bonuses</h4>
             </div>
 
-            <p-button label="Add bonus" [text]="true" (onClick)="addBonus()" />
+            <p-button label="Add bonus" [text]="true" (onClick)="page.addBonus()" />
           </div>
 
           <div class="flex-col gap-md">
-            @for (bonusGroup of affixBonuses.controls; track $index) {
+            @for (bonusGroup of page.affixBonuses.controls; track $index) {
               <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
                 <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
                   <label class="flex-col gap-sm">
@@ -284,7 +284,7 @@
                 </div>
 
                 <div class="flex-row-start-center gap-sm">
-                  <p-button label="Remove bonus" severity="danger" [text]="true" (onClick)="removeBonus($index)" />
+                  <p-button label="Remove bonus" severity="danger" [text]="true" (onClick)="page.removeBonus($index)" />
                 </div>
               </div>
             }
@@ -294,3 +294,4 @@
     </section>
   }
 </div>
+

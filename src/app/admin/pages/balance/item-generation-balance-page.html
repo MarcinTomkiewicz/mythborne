@@ -1,17 +1,16 @@
-@if (isLoading() && loadError() === null) {
-  <section class="mg-card flex-col gap-sm p-lg w-100">
-    <p class="card-legend mb-0">Loading</p>
-    <p class="mb-0 muted-text">
-      Loading qualities, bucket profiles and balance formulas from Supabase.
-    </p>
-  </section>
-} @else if (loadError()) {
+<app-loading-overlay
+  [visible]="page.isLoading() && page.loadError() === null"
+  label="Loading balance data..."
+  description="Loading qualities, bucket profiles and balance formulas from Supabase."
+/>
+
+@if (page.loadError()) {
   <section class="mg-card flex-col gap-sm p-lg w-100">
     <p class="card-legend mb-0">Error</p>
-    <p class="mb-0 muted-text">{{ loadError() }}</p>
+    <p class="mb-0 muted-text">{{ page.loadError() }}</p>
   </section>
 } @else {
-  <div class="flex-col gap-xl min-w-0">
+  <div class="flex-col gap-xl w-100">
     <section class="mg-card p-lg w-100">
       <div class="flex-row-between-center flex-col-sm gap-md">
         <div class="flex-col gap-xs">
@@ -24,6 +23,7 @@
 
         <div class="flex-row-start-center flex-wrap gap-sm">
           <a routerLink="/admin/item-catalog" class="tag-badge tag-badge--muted">Item catalog</a>
+          <a routerLink="/admin/buildings" class="tag-badge tag-badge--muted">Buildings</a>
           <a routerLink="/game/armory" class="tag-badge tag-badge--muted">Go to armory</a>
         </div>
       </div>
@@ -37,15 +37,15 @@
             <h3 class="mg-section__title mg-section__title--xs mb-0">Quality tiers</h3>
           </div>
 
-          <p-button label="New quality" [text]="true" (onClick)="newQuality()" />
+          <p-button label="New quality" [text]="true" (onClick)="page.quality.new()" />
         </div>
 
-        <form [formGroup]="qualitySelectorForm" class="mb-lg">
+        <form [formGroup]="page.quality.selectorForm" class="mb-lg">
           <label class="flex-col gap-sm">
             <span class="muted-text">Edited quality</span>
             <select class="w-100 p-inputtext" formControlName="selectedId">
               <option value="">Create new quality</option>
-              @for (quality of qualities(); track quality.id ?? quality.key) {
+              @for (quality of page.quality.items(); track quality.id ?? quality.key) {
                 <option [value]="quality.id ?? ''">
                   {{ quality.label }} ({{ quality.key }})
                 </option>
@@ -54,7 +54,7 @@
           </label>
         </form>
 
-        <form [formGroup]="qualityEditorForm" class="mg-surface-card flex-col gap-md p-lg">
+        <form [formGroup]="page.quality.editorForm" class="mg-surface-card flex-col gap-md p-lg">
           <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
             <label class="flex-col gap-sm">
               <span class="muted-text">Key</span>
@@ -94,16 +94,16 @@
           <div class="flex-row-start-center flex-wrap gap-sm">
             <p-button
               label="Save quality"
-              [loading]="isSaving()"
-              [disabled]="isLoading() || isSaving()"
-              (onClick)="saveQuality()"
+              [loading]="page.isSaving()"
+              [disabled]="page.isLoading() || page.isBusy()"
+              (onClick)="page.saveQuality()"
             />
             <p-button
               label="Delete"
               severity="danger"
               [text]="true"
-              [disabled]="!qualityEditorForm.controls.id.value || isSaving()"
-              (onClick)="deleteQuality()"
+              [disabled]="!page.quality.editorForm.controls.id.value || page.isBusy()"
+              (onClick)="page.deleteQuality()"
             />
           </div>
         </form>
@@ -116,15 +116,15 @@
             <h3 class="mg-section__title mg-section__title--xs mb-0">Bucket profiles</h3>
           </div>
 
-          <p-button label="New profile" [text]="true" (onClick)="newProfile()" />
+          <p-button label="New profile" [text]="true" (onClick)="page.profile.new()" />
         </div>
 
-        <form [formGroup]="profileSelectorForm" class="mb-lg">
+        <form [formGroup]="page.profile.selectorForm" class="mb-lg">
           <label class="flex-col gap-sm">
             <span class="muted-text">Edited bucket profile</span>
             <select class="w-100 p-inputtext" formControlName="selectedId">
               <option value="">Create new profile</option>
-              @for (profile of bucketProfiles(); track profile.id ?? profile.key) {
+              @for (profile of page.profile.items(); track profile.id ?? profile.key) {
                 <option [value]="profile.id ?? ''">
                   {{ profile.name }} ({{ profile.key }})
                 </option>
@@ -133,7 +133,7 @@
           </label>
         </form>
 
-        <form [formGroup]="profileEditorForm" class="mg-surface-card flex-col gap-md p-lg">
+        <form [formGroup]="page.profile.editorForm" class="mg-surface-card flex-col gap-md p-lg">
           <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
             <label class="flex-col gap-sm">
               <span class="muted-text">Key</span>
@@ -189,7 +189,7 @@
           <div class="mg-surface-card flex-col gap-sm p-md">
             <p class="card-legend mb-0">Preview</p>
             <div class="flex-row-start-center flex-wrap gap-sm">
-              @for (bucket of bucketPreview(); track bucket) {
+              @for (bucket of page.bucketPreview(); track bucket) {
                 <span class="tag-badge tag-badge--muted">{{ bucket }}</span>
               }
             </div>
@@ -198,16 +198,16 @@
           <div class="flex-row-start-center flex-wrap gap-sm">
             <p-button
               label="Save profile"
-              [loading]="isSaving()"
-              [disabled]="isLoading() || isSaving()"
-              (onClick)="saveProfile()"
+              [loading]="page.isSaving()"
+              [disabled]="page.isLoading() || page.isBusy()"
+              (onClick)="page.saveProfile()"
             />
             <p-button
               label="Delete"
               severity="danger"
               [text]="true"
-              [disabled]="!profileEditorForm.controls.id.value || isSaving()"
-              (onClick)="deleteProfile()"
+              [disabled]="!page.profile.editorForm.controls.id.value || page.isBusy()"
+              (onClick)="page.deleteProfile()"
             />
           </div>
         </form>
@@ -225,21 +225,21 @@
 
           <p-button
             label="Apply assignment"
-            [loading]="isSaving()"
-            [disabled]="isLoading() || isSaving() || !selectedTarget() || !selectedAssignedFormula()"
-            (onClick)="applyFormulaAssignment()"
+            [loading]="page.formulas.isSaving()"
+            [disabled]="page.isLoading() || page.isBusy() || !page.formulas.selectedTarget() || !page.formulas.selectedAssignedFormula()"
+            (onClick)="page.formulas.applyAssignment()"
           />
         </div>
 
-        <form [formGroup]="formulaAssignmentForm" class="mg-surface-card flex-col gap-md p-lg">
+        <form [formGroup]="page.formulas.assignmentForm" class="mg-surface-card flex-col gap-md p-lg">
           <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
             <label class="flex-col gap-sm">
               <span class="muted-text">Target</span>
               <select class="w-100 p-inputtext" formControlName="targetId">
                 <option value="">Choose target</option>
-                @for (target of formulaAdminData().targets; track target.id) {
+                @for (target of page.formulas.data().targets; track target.id) {
                   <option [value]="target.id">
-                    {{ target.label }} ({{ humanizeScope(target.scopeKey) }})
+                    {{ target.label }} ({{ page.formulas.humanizeScope(target.scopeKey) }})
                   </option>
                 }
               </select>
@@ -249,7 +249,7 @@
               <span class="muted-text">Assigned formula</span>
               <select class="w-100 p-inputtext" formControlName="formulaId">
                 <option value="">Choose formula</option>
-                @for (formula of formulasForSelectedTarget(); track formula.id) {
+                @for (formula of page.formulas.formulasForSelectedTarget(); track formula.id) {
                   <option [value]="formula.id">
                     {{ formula.label }}
                   </option>
@@ -258,7 +258,7 @@
             </label>
           </div>
 
-          @if (selectedTarget(); as target) {
+          @if (page.formulas.selectedTarget(); as target) {
             <div class="mg-surface-card flex-col gap-sm p-md">
               <p class="card-legend mb-0">Target details</p>
               <p class="mb-0 muted-text">{{ target.description }}</p>
@@ -282,24 +282,24 @@
             </p>
           </div>
 
-          <p-button label="New formula" [text]="true" (onClick)="newFormula()" />
+          <p-button label="New formula" [text]="true" (onClick)="page.formulas.newFormula()" />
         </div>
 
-        <form [formGroup]="formulaSelectorForm" class="mb-lg">
+        <form [formGroup]="page.formulas.selectorForm" class="mb-lg">
           <label class="flex-col gap-sm">
             <span class="muted-text">Edited formula</span>
             <select class="w-100 p-inputtext" formControlName="selectedId">
               <option value="">Create new formula</option>
-              @for (formula of formulaAdminData().formulas; track formula.id) {
+              @for (formula of page.formulas.data().formulas; track formula.id) {
                 <option [value]="formula.id">
-                  {{ formula.label }} ({{ humanizeScope(formula.scopeKey) }})
+                  {{ formula.label }} ({{ page.formulas.humanizeScope(formula.scopeKey) }})
                 </option>
               }
             </select>
           </label>
         </form>
 
-        <form [formGroup]="formulaEditorForm" class="mg-surface-card flex-col gap-md p-lg">
+        <form [formGroup]="page.formulas.editorForm" class="mg-surface-card flex-col gap-md p-lg">
           <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
             <label class="flex-col gap-sm">
               <span class="muted-text">Key</span>
@@ -314,8 +314,8 @@
             <label class="flex-col gap-sm">
               <span class="muted-text">Scope</span>
               <select class="w-100 p-inputtext" formControlName="scopeKey">
-                @for (scope of availableFormulaScopes(); track scope) {
-                  <option [value]="scope">{{ humanizeScope(scope) }}</option>
+                @for (scope of page.formulas.availableScopes(); track scope) {
+                  <option [value]="scope">{{ page.formulas.humanizeScope(scope) }}</option>
                 }
               </select>
             </label>
@@ -340,37 +340,59 @@
             <div class="flex-col gap-xs">
               <p class="card-legend mb-0">Tester</p>
               <p class="muted-text mb-0">
-                Zmieniasz target albo wartosci zmiennych i od razu widzisz wynik aktualnie edytowanej formuly.
+                Zmieniasz wartosci zmiennych i od razu widzisz wynik aktualnie edytowanej formuly.
               </p>
             </div>
 
-            @if (selectedTarget(); as target) {
+            @if (page.formulas.testerVariables().length > 0) {
               <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
-                @for (variable of target.allowedVariables; track variable) {
+                @for (variable of page.formulas.testerVariables(); track variable) {
                   <label class="flex-col gap-sm">
                     <span class="muted-text">{{ variable }}</span>
                     <input
                       pInputText
                       type="number"
                       class="w-100"
-                      [value]="getTesterValue(variable)"
-                      (input)="updateTesterContext(variable, $any($event.target).value)"
+                      [value]="page.formulas.getTesterValue(variable)"
+                      (input)="page.formulas.updateTesterContext(variable, $any($event.target).value)"
                     />
                   </label>
                 }
               </div>
             } @else {
-              <p class="mb-0 muted-text">Choose a target to unlock the tester.</p>
+              <p class="mb-0 muted-text">Current formula does not use any variables yet.</p>
             }
+
+            <div class="flex-col gap-sm">
+              <p class="card-legend mb-0">Builder</p>
+              @for (category of page.formulas.blockCategories(); track category) {
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">{{ category }}</span>
+                  <div class="flex-row-start-center flex-wrap gap-sm">
+                    @for (block of page.formulas.blocksFor(category); track block.id) {
+                      <button
+                        type="button"
+                        class="tag-badge tag-badge--muted"
+                        (click)="page.formulas.appendBlock(block.token)"
+                      >
+                        {{ block.label }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              } @empty {
+                <p class="mb-0 muted-text">No formula blocks defined for this scope.</p>
+              }
+            </div>
 
             <div class="mg-surface-card flex-col gap-xs p-md">
               <span class="muted-text">Preview result</span>
-              @if (formulaPreview().error) {
+              @if (page.formulas.preview().error) {
                 <strong class="heading-color">Formula error</strong>
-                <span class="muted-text">{{ formulaPreview().error }}</span>
+                <span class="muted-text">{{ page.formulas.preview().error }}</span>
               } @else {
                 <strong class="mg-section__title mg-section__title--xs mb-0">
-                  {{ formulaPreview().value }}
+                  {{ page.formulas.preview().value }}
                 </strong>
                 <span class="muted-text">
                   Result of the current formula for the chosen target context.
@@ -382,16 +404,16 @@
           <div class="flex-row-start-center flex-wrap gap-sm">
             <p-button
               label="Save formula"
-              [loading]="isSaving()"
-              [disabled]="isLoading() || isSaving()"
-              (onClick)="saveFormula()"
+              [loading]="page.formulas.isSaving()"
+              [disabled]="page.isLoading() || page.isBusy() || !!page.formulas.preview().error"
+              (onClick)="page.formulas.saveFormula()"
             />
             <p-button
               label="Delete"
               severity="danger"
               [text]="true"
-              [disabled]="!formulaEditorForm.controls.id.value || isSaving()"
-              (onClick)="deleteFormula()"
+              [disabled]="!page.formulas.editorForm.controls.id.value || page.isBusy()"
+              (onClick)="page.formulas.deleteFormula()"
             />
           </div>
         </form>
@@ -399,3 +421,4 @@
     </div>
   </div>
 }
+

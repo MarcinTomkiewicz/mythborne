@@ -5,33 +5,9 @@ import {
   NonNullableFormBuilder,
   Validators,
 } from '@angular/forms';
-
-export type CreateCharacterAccountForm = FormGroup<{
-  email: FormControl<string>;
-  password: FormControl<string>;
-}>;
-
-export type CreateCharacterHeroForm = FormGroup<{
-  characterName: FormControl<string>;
-}>;
-
-export type CreateCharacterProfileForm = FormGroup<{
-  name: FormControl<string>;
-  birthday: FormControl<Date | null>;
-  city: FormControl<string>;
-  facebook: FormControl<string>;
-  twitter: FormControl<string>;
-  linkedin: FormControl<string>;
-  instagram: FormControl<string>;
-  bio: FormControl<string>;
-}>;
-
-export type CreateCharacterForm = FormGroup<{
-  account: CreateCharacterAccountForm;
-  hero: CreateCharacterHeroForm;
-  originId: FormControl<string>;
-  profile: CreateCharacterProfileForm;
-}>;
+import { IUserData } from '../../interfaces/i-user-data/i-user-data';
+import { CreateCharacterForm } from '../../types/forms/create-character-form.types';
+import { trimText } from '../../utils/normalize-text';
 
 @Injectable({ providedIn: 'root' })
 export class CreateCharacterFormFactory {
@@ -64,5 +40,34 @@ export class CreateCharacterFormFactory {
         bio: this.fb.control(''),
       }),
     });
+  }
+
+  buildUserData(form: CreateCharacterForm, email: string): Omit<IUserData, 'id'> {
+    const profile = form.controls.profile.getRawValue();
+
+    return {
+      email,
+      name: trimText(profile.name),
+      birthday: this.formatBirthday(profile.birthday),
+      city: trimText(profile.city),
+      facebook: trimText(profile.facebook),
+      twitter: trimText(profile.twitter),
+      linkedin: trimText(profile.linkedin),
+      instagram: trimText(profile.instagram),
+      bio: trimText(profile.bio),
+      role_id: 3,
+    };
+  }
+
+  private formatBirthday(value: Date | null): string | null {
+    if (!value) {
+      return null;
+    }
+
+    const year = value.getFullYear();
+    const month = `${value.getMonth() + 1}`.padStart(2, '0');
+    const day = `${value.getDate()}`.padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   }
 }

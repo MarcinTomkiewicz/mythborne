@@ -18,11 +18,10 @@
           </p>
         </div>
       } @else {
-        <app-login-form
-          [layout]="'vertical'"
-          [showHeader]="false"
-          (login)="handleLogin($event)"
-        />
+        <div class="flex-col gap-xs">
+          <p class="heading-color mb-0"><strong>Guest</strong></p>
+          <p class="muted-text mb-0">Login is available only on the dedicated auth page.</p>
+        </div>
       }
     }
   </div>
@@ -51,12 +50,14 @@
 
   @if (!isLoggedIn()) {
     <div class="mt-lg">
-      <a
-        routerLink="/auth/create-character"
-        class="mg-card flex-row-center-center p-sm heading-color"
-      >
-        Create character
-      </a>
+      <div class="flex-col gap-sm">
+        <button type="button" class="mg-card flex-row-center-center p-sm heading-color" (click)="goToLogin()">
+          Login
+        </button>
+        <a routerLink="/auth/create-character" class="mg-card flex-row-center-center p-sm">
+          Create character
+        </a>
+      </div>
     </div>
   }
 </aside>

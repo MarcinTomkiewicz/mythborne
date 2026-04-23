@@ -1,0 +1,63 @@
+@if (isVisible()) {
+  <section class="mg-card position-sticky top-0 z-sticky p-sm w-100">
+    <div class="flex-row-between-center flex-wrap gap-md w-100">
+      <div class="flex-row-start-center flex-wrap gap-md">
+        <div class="flex-row-start-center gap-sm">
+          <span class="muted-text">Address</span>
+          <strong class="heading-color">{{ currentAddress() ?? 'Address unavailable' }}</strong>
+        </div>
+
+        <div class="flex-row-start-center gap-sm w-px-250 w-100-lg">
+          <span class="muted-text">Health</span>
+          <div class="flex-1">
+            <app-game-bar
+              [value]="healthValue()"
+              [max]="healthMax()"
+              type="hp"
+              [segments]="14"
+              [compact]="true"
+              [showLabel]="false"
+              [showValue]="false"
+            />
+          </div>
+        </div>
+
+        <div class="flex-row-start-center gap-sm w-px-250 w-100-lg">
+          <span class="muted-text">Experience</span>
+          <div class="flex-1">
+            <app-game-bar
+              [value]="experienceValue()"
+              [max]="experienceMax()"
+              type="xp"
+              [segments]="14"
+              [compact]="true"
+              [showLabel]="false"
+              [showValue]="false"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-md">
+        @for (resource of resourceDisplay(); track resource.type) {
+          <div class="flex-row-start-center gap-xs">
+            @switch (resource.type) {
+              @case ('drachma') {
+                <i class="pi pi-cash"></i>
+              }
+              @case ('materials') {
+                <i class="pi pi-marble"></i>
+              }
+              @case ('workforce') {
+                <i class="pi pi-workforce"></i>
+              }
+            }
+
+            <strong class="heading-color">{{ resource.amount }}</strong>
+            <span class="muted-text">+{{ resource.perHour }}/h</span>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+}

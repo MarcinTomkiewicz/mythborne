@@ -10,7 +10,7 @@
       </div>
 
       <div class="flex-row-start-center flex-wrap gap-sm">
-        <span class="tag-badge tag-badge--info">Hero luck: {{ heroLuck() }}</span>
+        <span class="tag-badge tag-badge--info">Hero luck: {{ page.heroLuck() }}</span>
         <a routerLink="/admin/item-catalog" class="tag-badge tag-badge--muted">
           Admin item catalog
         </a>
@@ -21,5 +21,6 @@
     </div>
   </section>
 
-  <app-item-generator-panel [luck]="heroLuck()" />
+  <app-item-generator-panel [luck]="page.heroLuck()" />
 </div>
+

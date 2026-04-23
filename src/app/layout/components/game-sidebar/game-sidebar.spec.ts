@@ -5,10 +5,10 @@ describe('GameSidebar', () => {
   let component: GameSidebar;
   let fixture: ComponentFixture<GameSidebar>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
+  beforeEach(() => {
+    TestBed.configureTestingModule({
       imports: [GameSidebar],
-    }).compileComponents();
+    });
 
     fixture = TestBed.createComponent(GameSidebar);
     component = fixture.componentInstance;

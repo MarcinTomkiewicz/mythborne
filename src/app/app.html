@@ -12,9 +12,15 @@
       <app-game-sidebar></app-game-sidebar>
     </div>
 
-    <main class="flex-1 overflow-y-auto p-lg">
-      <div class="mg-container py-lg">
-        <router-outlet></router-outlet>
+    <main class="flex-1 overflow-y-auto w-100">
+      <div class="p-lg w-100">
+        <app-game-topbar></app-game-topbar>
+      </div>
+
+      <div class="mg-container py-lg w-100">
+        <div class="w-100">
+          <router-outlet></router-outlet>
+        </div>
       </div>
     </main>
   </div>

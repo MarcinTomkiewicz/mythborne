@@ -1,27 +1,32 @@
 import { inject, Injectable } from '@angular/core';
-import { SupabaseService } from '../supabase/supabase';
-import { map, Observable, switchMap, tap } from 'rxjs';
+import { map, Observable, switchMap } from 'rxjs';
 import { Origin, OriginBonus } from '../../domain/origin/origin.model';
 import { mapOrigin, mapOriginBonus } from '../../domain/origin/origin.mapper';
-import { OriginBonusWithTemplate } from '../../domain/origin/origin-bonus.mapper';
+import { OriginBonusWithTemplate } from '../../types/domain-row.types';
+import { Backend } from '../backend/backend';
+import { FilterOperator } from '../../enums/filter-operators';
 
 @Injectable({ providedIn: 'root' })
 export class Origins {
-  private supabase = inject(SupabaseService);
+  private backend = inject(Backend);
 
   getOrigins(): Observable<Origin[]> {
-    return this.supabase
-      .getAll('origin', {
+    return this.backend
+      .getAll<any>({
+        table: 'origin',
         orderBy: { column: 'name' },
+        camelCase: false,
       })
       .pipe(map((rows) => rows.map(mapOrigin)));
   }
 
   getBonusesForOrigin(originId: string): Observable<OriginBonus[]> {
-    return this.supabase
-      .getAll('origin_bonuses', {
-        filters: { origin_id: originId },
+    return this.backend
+      .getAll<OriginBonusWithTemplate>({
+        table: 'origin_bonuses',
+        filters: { originId: { operator: FilterOperator.EQ, value: originId } },
         select: '*, bonus_templates (*)',
+        camelCase: false,
       })
       .pipe(
         map((rows) => {
@@ -31,15 +36,26 @@ export class Origins {
   }
 
   getAllOriginBonuses(): Observable<any[]> {
-    return this.supabase.getAll('origin_bonuses');
+    return this.backend.getAll({ table: 'origin_bonuses', camelCase: false });
   }
 
   getOriginWithBonuses(originId: string): Observable<{
     origin: Origin;
     bonuses: OriginBonus[];
   }> {
-    return this.supabase.getById('origin', originId).pipe(
-      map(mapOrigin),
+    return this.backend.getAll<any>({
+      table: 'origin',
+      filters: { id: { operator: FilterOperator.EQ, value: originId } },
+      range: { from: 0, to: 0 },
+      camelCase: false,
+    }).pipe(
+      map((rows) => {
+        if (!rows[0]) {
+          throw new Error('Origin not found.');
+        }
+
+        return mapOrigin(rows[0]);
+      }),
       switchMap((origin) =>
         this.getBonusesForOrigin(originId).pipe(
           map((bonuses) => ({ origin, bonuses }))

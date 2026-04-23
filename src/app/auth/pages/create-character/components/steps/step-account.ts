@@ -2,7 +2,7 @@ import { Component, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { CreateCharacterAccountForm } from '../../../../../core/factories/forms/create-character-form.factory';
+import { CreateCharacterAccountForm } from '../../../../../core/types/forms/create-character-form.types';
 
 @Component({
   selector: 'app-step-account',

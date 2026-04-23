@@ -6,11 +6,10 @@ describe('Carousel', () => {
   let component: Carousel;
   let fixture: ComponentFixture<Carousel>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
+  beforeEach(() => {
+    TestBed.configureTestingModule({
       imports: [Carousel]
-    })
-    .compileComponents();
+    });
 
     fixture = TestBed.createComponent(Carousel);
     component = fixture.componentInstance;

@@ -1,29 +1,33 @@
 import { inject, Injectable } from '@angular/core';
-import { firstValueFrom, from, map, of, switchMap, tap } from 'rxjs';
+import { from, map, of, switchMap, take, tap } from 'rxjs';
 import { mapHero } from '../../domain/hero/hero.mapper';
 import { TABLES } from '../../constants/tables.const';
 import { IUserData } from '../../interfaces/i-user-data/i-user-data';
-import { Insert } from '../../types/supabase.types';
+import { Insert, Row } from '../../types/supabase.types';
 import { Platform } from '../platform/platform';
 import { SupabaseClientService } from '../supabase/supabase-client';
 import { AuthState } from './auth-state';
+import { Backend } from '../backend/backend';
+import { FilterOperator } from '../../enums/filter-operators';
 
 @Injectable({ providedIn: 'root' })
 export class Auth {
   private readonly supabase = inject(SupabaseClientService).client;
+  private readonly backend = inject(Backend);
   private readonly authState = inject(AuthState);
   private readonly platform = inject(Platform);
-  private initializationPromise: Promise<void> | null = null;
+  private initializationStarted = false;
   private authListenerRegistered = false;
 
-  initialize(): Promise<void> {
+  initialize() {
     this.registerAuthListener();
 
-    if (!this.initializationPromise) {
-      this.initializationPromise = firstValueFrom(this.initializeAuthState());
+    if (!this.initializationStarted) {
+      this.initializationStarted = true;
+      return this.initializeAuthState().pipe(take(1));
     }
 
-    return this.initializationPromise;
+    return of(void 0);
   }
 
   initializeAuthState() {
@@ -51,11 +55,9 @@ export class Auth {
 
         this.authState.setUser(user);
 
-        return from(
-          this.supabase.from(TABLES.hero).select('*').eq('id', user.id).single()
-        ).pipe(
-          map(({ data: heroRow, error: heroError }) => {
-            if (heroError || !heroRow) {
+        return this.getHeroRow(user.id).pipe(
+          map((heroRow) => {
+            if (!heroRow) {
               this.authState.setHero(null);
               return;
             }
@@ -73,7 +75,7 @@ export class Auth {
     }
 
     this.supabase.auth.onAuthStateChange(() => {
-      void firstValueFrom(this.initializeAuthState());
+      this.initializeAuthState().pipe(take(1)).subscribe();
     });
 
     this.authListenerRegistered = true;
@@ -121,17 +123,9 @@ export class Auth {
       updated_at: new Date().toISOString(),
     };
 
-    return from(
-      this.supabase.from(TABLES.user_data).upsert([payload], { onConflict: 'id' })
-    ).pipe(
-      map(({ error }) => {
-        if (error) {
-          throw error;
-        }
-
-        return userId;
-      })
-    );
+    return this.backend
+      .upsert<Insert<'user_data'>>(TABLES.user_data, payload, 'id')
+      .pipe(map(() => userId));
   }
 
   login(email: string, password: string) {
@@ -146,18 +140,8 @@ export class Auth {
         const user = data.user;
         this.authState.setUser(user);
 
-        return from(
-          this.supabase
-            .from(TABLES.hero)
-            .select('*')
-            .eq('id', user.id)
-            .single()
-        ).pipe(
-          map(({ data: heroRow, error: heroError }) => {
-            if (heroError && heroError.code !== 'PGRST116') {
-              throw heroError;
-            }
-
+        return this.getHeroRow(user.id).pipe(
+          map((heroRow) => {
             if (!heroRow) {
               this.authState.setHero(null);
               return user;
@@ -169,6 +153,17 @@ export class Auth {
         );
       })
     );
+  }
+
+  private getHeroRow(userId: string) {
+    return this.backend
+      .getAll<Row<'hero'>>({
+        table: TABLES.hero,
+        filters: { id: { operator: FilterOperator.EQ, value: userId } },
+        range: { from: 0, to: 0 },
+        camelCase: false,
+      })
+      .pipe(map((rows) => rows[0] ?? null));
   }
 
   logout() {

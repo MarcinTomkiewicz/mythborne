@@ -91,7 +91,7 @@ values
     'building-upgrade-cost-default',
     'building_balance',
     'Building upgrade cost / default',
-    'roundUp(baseCost + pow(level + rank, 1.8) * 25, 10)',
+    'roundUp(baseCost + level * max(5, roundUp(baseCost * 0.1, 5)) + (rank - 1) * 5, 5)',
     'Default cost curve for building upgrades.',
     true
   ),
@@ -99,7 +99,7 @@ values
     'building-bonus-growth-default',
     'building_balance',
     'Building bonus growth / default',
-    'round(baseBonus + level * 1.5)',
+    'round(baseBonus + level * max(1, baseBonus * 0.15))',
     'Default bonus growth per building level.',
     true
   ),

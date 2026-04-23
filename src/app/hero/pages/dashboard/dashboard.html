@@ -3,57 +3,61 @@
     <div class="flex-row-between-center flex-col-sm gap-md">
       <div class="flex-col gap-xs">
         <p class="card-legend mb-0">Dashboard</p>
-        <h2 class="mg-section__title mg-section__title--sm mb-0">{{ heroName }}</h2>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">{{ page.heroName }}</h2>
         <p class="muted-text mb-0">Overview of your current hero state</p>
       </div>
 
       <div class="flex-row-start-center flex-wrap gap-sm">
-        <span class="tag-badge tag-badge--warn">Level {{ level }}</span>
+        <span class="tag-badge tag-badge--warn">Level {{ page.level }}</span>
         <span class="tag-badge tag-badge--info">
-          {{ origin()?.name ?? 'Unknown Origin' }}
+          {{ page.origin()?.name ?? 'Unknown Origin' }}
         </span>
         <span class="tag-badge tag-badge--muted">Guild: None</span>
       </div>
     </div>
 
     <div class="grid-2-1 gap-xl mt-lg">
-      <div class="flex-row-start-center flex-col-sm gap-lg min-w-0">
+      <div class="flex-row-start-center flex-col-sm gap-lg">
         <span class="image__preview image__preview--circle w-px-150 h-px-150">
           <img
-            src="assets/avatars/hero-default.png"
+            [src]="page.origin()?.imageUrl || 'assets/avatars/hero-default.png'"
             alt="Hero Avatar"
             class="image__preview-image"
           />
         </span>
 
-        <div class="flex-col gap-md flex-1 min-w-0">
+        <div class="flex-col gap-md flex-1">
           <div class="mg-card flex-col gap-sm p-md w-100">
             <div class="flex-row-between-center gap-md">
               <strong class="heading-color">Health</strong>
             </div>
-            <app-bar
-              label="HP"
-              [value]="derivedDisplay()['health']"
-              [max]="derivedDisplay()['health']"
-              type="hp"
-            />
+            <div class="w-100">
+              <app-game-bar
+                label="HP"
+                [value]="page.derivedDisplay()['health']"
+                [max]="page.derivedDisplay()['health']"
+                type="hp"
+              />
+            </div>
           </div>
 
           <div class="mg-card flex-col gap-sm p-md w-100">
             <div class="flex-row-between-center gap-md">
               <strong class="heading-color">Experience</strong>
             </div>
-            <app-bar label="XP" [value]="experiencePercent" [max]="100" type="xp" />
+            <div class="w-100">
+              <app-game-bar label="XP" [value]="page.experiencePercent" [max]="100" type="xp" />
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="mg-card flex-col gap-sm p-md min-w-0">
+      <div class="mg-card flex-col gap-sm p-md">
         <p class="card-legend mb-0">Hero Details</p>
 
         <div class="flex-row-between-center gap-md muted-text mt-sm">
           <strong class="heading-color">Origin</strong>
-          <span>{{ origin()?.name ?? 'Unknown' }}</span>
+          <span>{{ page.origin()?.name ?? 'Unknown' }}</span>
         </div>
         <div class="flex-row-between-center gap-md muted-text">
           <strong class="heading-color">Guild</strong>
@@ -61,7 +65,7 @@
         </div>
         <div class="flex-row-between-center gap-md muted-text">
           <strong class="heading-color">Hero Points</strong>
-          <span>{{ derivedDisplay()['hp'] }}</span>
+          <span>{{ page.derivedDisplay()['hp'] }}</span>
         </div>
       </div>
     </div>
@@ -77,11 +81,11 @@
       </div>
 
       <div class="mg-grid grid-cols-3 grid-cols-2-md grid-cols-1-sm gap-md">
-        @for (stat of statsList(); track stat.key) {
+        @for (stat of page.statsList(); track stat.key) {
           <div class="mg-card flex-col gap-xs p-md">
             <span class="muted-text">{{ stat.label }}</span>
             <strong class="mg-section__title mg-section__title--xs mb-0">
-              {{ statsDisplay()[stat.key] }}
+              {{ page.statsDisplay()[stat.key] }}
             </strong>
           </div>
         }
@@ -97,25 +101,25 @@
       <div class="flex-col gap-sm mt-md">
         <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
           <strong class="heading-color">DEF:</strong>
-          <span>{{ derivedDisplay()['def'] }}</span>
+          <span>{{ page.derivedDisplay()['def'] }}</span>
         </div>
         <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
           <strong class="heading-color">DMG:</strong>
           <span>
-            {{ derivedDisplay()['minDmg'] }} - {{ derivedDisplay()['maxDmg'] }}
+            {{ page.derivedDisplay()['minDmg'] }} - {{ page.derivedDisplay()['maxDmg'] }}
           </span>
         </div>
         <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
           <strong class="heading-color">Luck:</strong>
-          <span>{{ derivedDisplay()['luck'] }}</span>
+          <span>{{ page.derivedDisplay()['luck'] }}</span>
         </div>
         <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
           <strong class="heading-color">Critical:</strong>
-          <span>{{ derivedDisplay()['critical'] }}</span>
+          <span>{{ page.derivedDisplay()['critical'] }}</span>
         </div>
         <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
           <strong class="heading-color">Evasion:</strong>
-          <span>{{ derivedDisplay()['evasion'] }}</span>
+          <span>{{ page.derivedDisplay()['evasion'] }}</span>
         </div>
       </div>
     </section>
@@ -128,7 +132,7 @@
     </div>
 
     <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md mt-md">
-      @for (item of equipment; track item.slot) {
+      @for (item of page.equipment; track item.slot) {
         <div class="mg-card flex-col-center-center gap-sm p-md text-center">
           <div class="heading-color"><strong>{{ item.slot }}</strong></div>
           <div class="my-xs">{{ item.name || 'Empty slot' }}</div>
@@ -143,3 +147,4 @@
     </div>
   </section>
 </div>
+

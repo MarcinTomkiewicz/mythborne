@@ -1,0 +1,31 @@
+<div class="flex-col gap-xs w-100">
+  @if (showLabel() || showValue()) {
+    <div class="flex-row-between-center gap-sm muted-text">
+      @if (showLabel()) {
+        <span>{{ label() }}</span>
+      } @else {
+        <span></span>
+      }
+
+      @if (showValue()) {
+        <span class="heading-color">{{ value() }} / {{ max() }}</span>
+      }
+    </div>
+  }
+
+  <div class="flex-row-start-center gap-xs w-100">
+    @for (_ of steps(); let index = $index; track $index) {
+      <div
+        class="flex-1 overflow-hidden"
+        [style.height]="getStepHeight()"
+        style="border-radius: 6px; border: 1px solid var(--mg-color-border); background: var(--mg-color-bg-surface);"
+      >
+        <div
+          [style.width.%]="getStepFill(index)"
+          [style.background]="fillColor()"
+          style="height: 100%; border-radius: 6px;"
+        ></div>
+      </div>
+    }
+  </div>
+</div>

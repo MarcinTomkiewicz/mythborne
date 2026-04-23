@@ -3,7 +3,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputTextModule } from 'primeng/inputtext';
-import { CreateCharacterProfileForm } from '../../../../../core/factories/forms/create-character-form.factory';
+import { CreateCharacterProfileForm } from '../../../../../core/types/forms/create-character-form.types';
 
 @Component({
   selector: 'app-step-user',

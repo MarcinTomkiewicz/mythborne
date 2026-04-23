@@ -1,9 +1,6 @@
 import { Injectable } from '@angular/core';
 import { FormulaEvaluationResult } from '../../domain/progression/stat-progression.model';
-
-type FormulaContext = Record<string, number>;
-
-type FormulaFn = (...args: number[]) => number;
+import { FormulaContext, FormulaFn } from '../../types/formula-runtime.types';
 
 @Injectable({ providedIn: 'root' })
 export class FormulaRuntimeService {
@@ -43,7 +40,7 @@ export class FormulaRuntimeService {
       };
     }
 
-    const identifiers = normalizedExpression.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? [];
+    const identifiers = this.extractIdentifiers(normalizedExpression);
     const allowedIdentifiers = new Set([
       ...Object.keys(context),
       ...Object.keys(this.allowedFunctions),
@@ -87,5 +84,21 @@ export class FormulaRuntimeService {
         error: 'Formula could not be evaluated.',
       };
     }
+  }
+
+  getVariables(expression: string): string[] {
+    const normalizedExpression = expression.trim();
+
+    if (!normalizedExpression) {
+      return [];
+    }
+
+    return this.extractIdentifiers(normalizedExpression).filter(
+      (identifier) => !Object.hasOwn(this.allowedFunctions, identifier)
+    );
+  }
+
+  private extractIdentifiers(expression: string): string[] {
+    return expression.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? [];
   }
 }

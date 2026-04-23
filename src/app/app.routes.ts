@@ -1,7 +1,9 @@
+import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 import { adminRoutes } from './admin/admin.routes';
 import { authRoutes } from './auth/auth.routes';
 import { requireOnboardedHeroGuard } from './core/guards/hero-onboarding.guard';
+import { AuthState } from './core/services/auth/auth-state';
 import { gameRoutes } from './game/game.routes';
 import { heroRoutes } from './hero/hero.routes';
 import { publicRoutes } from './public/public.routes';
@@ -9,7 +11,19 @@ import { publicRoutes } from './public/public.routes';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'public',
+    redirectTo: () => {
+      const authState = inject(AuthState);
+
+      if (authState.hero()) {
+        return '/hero/dashboard';
+      }
+
+      if (authState.user()) {
+        return '/auth/create-character';
+      }
+
+      return '/public';
+    },
     pathMatch: 'full'
   },
   {

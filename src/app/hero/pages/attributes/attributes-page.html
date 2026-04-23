@@ -1,20 +1,16 @@
-@if (isLoading()) {
-  <section class="mg-card flex-col-center-center gap-md p-xl w-100 text-center">
-    <p-progress-spinner ariaLabel="Loading attributes" strokeWidth="4" />
-    <div class="flex-col gap-xs">
-      <p class="heading-color mb-0"><strong>Loading attribute allocation...</strong></p>
-      <p class="muted-text mb-0">
-        Fetching hero stats, available hP and active progression formulas.
-      </p>
-    </div>
-  </section>
-} @else if (loadError()) {
+<app-loading-overlay
+  [visible]="page.isLoading() && page.loadError() === null"
+  label="Loading attribute allocation..."
+  description="Fetching hero stats, available hP and active progression formulas."
+/>
+
+@if (page.loadError()) {
   <section class="mg-card flex-col gap-sm p-lg w-100">
     <p class="card-legend mb-0">Error</p>
-    <p class="mb-0 muted-text">{{ loadError() }}</p>
+    <p class="mb-0 muted-text">{{ page.loadError() }}</p>
   </section>
 } @else {
-  <div class="flex-col gap-xl min-w-0">
+  <div class="flex-col gap-xl w-100">
     <section class="mg-card p-lg w-100">
       <div class="flex-row-between-center flex-col-sm gap-md">
         <div class="flex-col gap-xs">
@@ -26,12 +22,12 @@
         </div>
 
         <div class="flex-row-start-center flex-wrap gap-sm">
-          <span class="tag-badge tag-badge--warn">Level {{ heroLevel() }}</span>
-          <span class="tag-badge tag-badge--golden">Available hP: {{ remainingHeroPoints() }}</span>
-          <span class="tag-badge tag-badge--muted">Spent: {{ spentHeroPoints() }}</span>
+          <span class="tag-badge tag-badge--warn">Level {{ page.heroLevel() }}</span>
+          <span class="tag-badge tag-badge--golden">Available hP: {{ page.remainingHeroPoints() }}</span>
+          <span class="tag-badge tag-badge--muted">Spent: {{ page.spentHeroPoints() }}</span>
           <span class="tag-badge tag-badge--info">
             Project cap:
-            {{ capPreview().error ? 'Formula error' : (capPreview().value ?? 0) }}
+            {{ page.capPreview().error ? 'Formula error' : (page.capPreview().value ?? 0) }}
           </span>
         </div>
       </div>
@@ -51,19 +47,19 @@
           <p-button
             label="Reset"
             [text]="true"
-            [disabled]="!hasPendingChanges() || isSaving()"
-            (onClick)="resetDraft()"
+            [disabled]="!page.hasPendingChanges() || page.isSaving()"
+            (onClick)="page.resetDraft()"
           />
           <p-button
             label="Save allocation"
-            [loading]="isSaving()"
-            [disabled]="isSaving() || !hasPendingChanges() || remainingHeroPoints() < 0"
-            (onClick)="saveDraft()"
+            [loading]="page.isSaving()"
+            [disabled]="page.isSaving() || !page.hasPendingChanges() || page.remainingHeroPoints() < 0"
+            (onClick)="page.saveDraft()"
           />
         </div>
       </div>
 
-      <p-table [value]="statRows()" responsiveLayout="scroll">
+      <p-table [value]="page.statRows()" responsiveLayout="scroll">
         <ng-template pTemplate="header">
           <tr>
             <th>Stat</th>
@@ -82,7 +78,7 @@
                 <strong class="heading-color">{{ row.label }}</strong>
                 <i
                   class="pi pi-info-circle muted-text"
-                  [pTooltip]="row.description || tooltipFallback"
+                  [pTooltip]="row.description || page.tooltipFallback"
                   tooltipPosition="top"
                 ></i>
               </div>
@@ -130,14 +126,14 @@
                   [text]="true"
                   severity="secondary"
                   [rounded]="true"
-                  [disabled]="!row.canDecrease || isSaving()"
-                  (onClick)="decrementStat(row.key)"
+                  [disabled]="!row.canDecrease || page.isSaving()"
+                  (onClick)="page.decrementStat(row.key)"
                 />
                 <p-button
                   icon="pi pi-plus"
                   [rounded]="true"
-                  [disabled]="!row.canIncrease || isSaving()"
-                  (onClick)="incrementStat(row.key)"
+                  [disabled]="!row.canIncrease || page.isSaving()"
+                  (onClick)="page.incrementStat(row.key)"
                 />
               </div>
             </td>
@@ -147,3 +143,4 @@
     </section>
   </div>
 }
+

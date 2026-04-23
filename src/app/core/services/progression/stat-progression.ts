@@ -6,6 +6,7 @@ import {
   STAT_PROGRESSION_TARGET_KEYS,
   StatProgressionRules,
 } from '../../domain/progression/stat-progression.model';
+import { nonNegativeInteger, positiveInteger } from '../../utils/number';
 import { FormulaRuntimeService } from './formula-runtime';
 
 @Injectable({ providedIn: 'root' })
@@ -76,7 +77,7 @@ export class StatProgressionService {
       return null;
     }
 
-    return Math.max(0, Math.round(result.value));
+    return nonNegativeInteger(result.value);
   }
 
   getStatCap(heroLevel: number, capFormula: string): number | null {
@@ -86,7 +87,7 @@ export class StatProgressionService {
       return null;
     }
 
-    return Math.max(1, Math.round(result.value));
+    return positiveInteger(result.value);
   }
 
   private evaluateFormula(
@@ -101,6 +102,6 @@ export class StatProgressionService {
       return fallback;
     }
 
-    return Math.max(0, Math.round(value));
+    return nonNegativeInteger(value);
   }
 }
