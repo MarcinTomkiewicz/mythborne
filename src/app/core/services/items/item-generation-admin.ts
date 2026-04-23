@@ -179,21 +179,25 @@ export class ItemGenerationAdminService {
     };
 
     if (draft.id) {
-      const { error } = await this.supabase
+      const { data, error } = await this.supabase
         .from('item_generation_qualities')
         .update(payload)
-        .eq('id', draft.id);
+        .eq('id', draft.id)
+        .select('id')
+        .single();
 
-      if (error) {
-        throw error;
+      if (error || !data) {
+        throw error ?? new Error('Quality update did not affect any row.');
       }
     } else {
-      const { error } = await this.supabase
+      const { data, error } = await this.supabase
         .from('item_generation_qualities')
-        .insert(payload);
+        .insert(payload)
+        .select('id')
+        .single();
 
-      if (error) {
-        throw error;
+      if (error || !data) {
+        throw error ?? new Error('Quality insert failed.');
       }
     }
 
@@ -228,21 +232,25 @@ export class ItemGenerationAdminService {
     }
 
     if (draft.id) {
-      const { error } = await this.supabase
+      const { data, error } = await this.supabase
         .from('item_generation_bucket_profiles')
         .update(payload)
-        .eq('id', draft.id);
+        .eq('id', draft.id)
+        .select('id')
+        .single();
 
-      if (error) {
-        throw error;
+      if (error || !data) {
+        throw error ?? new Error('Bucket profile update did not affect any row.');
       }
     } else {
-      const { error } = await this.supabase
+      const { data, error } = await this.supabase
         .from('item_generation_bucket_profiles')
-        .insert(payload);
+        .insert(payload)
+        .select('id')
+        .single();
 
-      if (error) {
-        throw error;
+      if (error || !data) {
+        throw error ?? new Error('Bucket profile insert failed.');
       }
     }
 
@@ -294,13 +302,15 @@ export class ItemGenerationAdminService {
     }
   ): Promise<string> {
     if (id) {
-      const { error } = await this.supabase
+      const { data, error } = await this.supabase
         .from('item_generation_bases')
         .update(payload)
-        .eq('id', id);
+        .eq('id', id)
+        .select('id')
+        .single();
 
-      if (error) {
-        throw error;
+      if (error || !data) {
+        throw error ?? new Error('Base update did not affect any row.');
       }
 
       return id;
@@ -330,13 +340,15 @@ export class ItemGenerationAdminService {
     }
   ): Promise<string> {
     if (id) {
-      const { error } = await this.supabase
+      const { data, error } = await this.supabase
         .from('item_generation_affixes')
         .update(payload)
-        .eq('id', id);
+        .eq('id', id)
+        .select('id')
+        .single();
 
-      if (error) {
-        throw error;
+      if (error || !data) {
+        throw error ?? new Error('Affix update did not affect any row.');
       }
 
       return id;

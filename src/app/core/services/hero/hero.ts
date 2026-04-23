@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { EMPTY, filter, from, map, switchMap, take } from 'rxjs';
+import { EMPTY, filter, from, map, switchMap, take, throwError } from 'rxjs';
 import { TABLES } from '../../../core/constants/tables.const';
 import { IHeroStats } from '../../../core/interfaces/hero/i-hero-stats';
 import { mapHeroDerived } from '../../domain/hero/hero-derived.mapper';
@@ -82,6 +82,44 @@ export class Hero {
       map(({ data, error }) => {
         if (error || !data) throw error ?? new Error('No derived stats');
         return mapHeroDerived(data);
+      })
+    );
+  }
+
+  saveProgressionDraft(stats: Record<string, number>, heroPoints: number) {
+    const id = this.userId;
+
+    if (!id) {
+      return throwError(() => new Error('Hero is not authenticated.'));
+    }
+
+    const statRows = Object.entries(stats).map(([statKey, value]) => ({
+      hero_id: id,
+      stat_key: statKey,
+      value: Math.max(0, Math.round(value)),
+    }));
+
+    return from(
+      Promise.all([
+        this.supabase
+          .from(TABLES.hero_stats)
+          .upsert(statRows, { onConflict: 'hero_id,stat_key' }),
+        this.supabase
+          .from(TABLES.hero_derived)
+          .update({ hp: Math.max(0, Math.round(heroPoints)) })
+          .eq('hero_id', id)
+          .select('hero_id')
+          .single(),
+      ])
+    ).pipe(
+      map(([statsResult, derivedResult]) => {
+        if (statsResult.error) {
+          throw statsResult.error;
+        }
+
+        if (derivedResult.error || !derivedResult.data) {
+          throw derivedResult.error ?? new Error('Hero points update did not affect any row.');
+        }
       })
     );
   }

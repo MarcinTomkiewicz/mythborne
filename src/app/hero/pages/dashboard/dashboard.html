@@ -27,10 +27,9 @@
         </span>
 
         <div class="flex-col gap-md flex-1 min-w-0">
-          <div class="mg-card flex-col gap-sm p-md">
+          <div class="mg-card flex-col gap-sm p-md w-100">
             <div class="flex-row-between-center gap-md">
               <strong class="heading-color">Health</strong>
-              <span class="muted-text">{{ derivedDisplay()['health'] }}</span>
             </div>
             <app-bar
               label="HP"
@@ -40,10 +39,9 @@
             />
           </div>
 
-          <div class="mg-card flex-col gap-sm p-md">
+          <div class="mg-card flex-col gap-sm p-md w-100">
             <div class="flex-row-between-center gap-md">
               <strong class="heading-color">Experience</strong>
-              <span class="muted-text">{{ experiencePercent }}%</span>
             </div>
             <app-bar label="XP" [value]="experiencePercent" [max]="100" type="xp" />
           </div>

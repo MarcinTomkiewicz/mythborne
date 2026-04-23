@@ -35,6 +35,117 @@ export type Database = {
         }
         Relationships: []
       }
+      balance_formula_assignments: {
+        Row: {
+          created_at: string
+          formula_id: string
+          id: string
+          target_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          formula_id: string
+          id?: string
+          target_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          formula_id?: string
+          id?: string
+          target_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "balance_formula_assignments_formula_id_fkey"
+            columns: ["formula_id"]
+            isOneToOne: false
+            referencedRelation: "balance_formulas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "balance_formula_assignments_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: true
+            referencedRelation: "balance_formula_targets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      balance_formula_targets: {
+        Row: {
+          allowed_variables: string[]
+          created_at: string
+          default_test_context: Json
+          description: string | null
+          id: string
+          key: string
+          label: string
+          scope_key: string
+          sort_order: number
+        }
+        Insert: {
+          allowed_variables?: string[]
+          created_at?: string
+          default_test_context?: Json
+          description?: string | null
+          id?: string
+          key: string
+          label: string
+          scope_key: string
+          sort_order?: number
+        }
+        Update: {
+          allowed_variables?: string[]
+          created_at?: string
+          default_test_context?: Json
+          description?: string | null
+          id?: string
+          key?: string
+          label?: string
+          scope_key?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      balance_formulas: {
+        Row: {
+          created_at: string
+          description: string | null
+          expression: string
+          id: string
+          is_enabled: boolean
+          key: string
+          label: string
+          scope_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          expression: string
+          id?: string
+          is_enabled?: boolean
+          key: string
+          label: string
+          scope_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          expression?: string
+          id?: string
+          is_enabled?: boolean
+          key?: string
+          label?: string
+          scope_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       building_bonuses: {
         Row: {
           building_id: string | null

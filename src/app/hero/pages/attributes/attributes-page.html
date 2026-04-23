@@ -1,8 +1,149 @@
-<section class="mg-card mg-card--legend flex-col gap-md">
-  <p class="mg-section__eyebrow mb-0">Hero</p>
-  <h2 class="mg-section__title mb-0">Attributes</h2>
-  <p class="mb-0">
-    Ten obszar będzie przeznaczony na rozwój postaci, rozdział punktów,
-    podgląd statystyk bazowych i pochodnych oraz przyszłe panele progresji.
-  </p>
-</section>
+@if (isLoading()) {
+  <section class="mg-card flex-col-center-center gap-md p-xl w-100 text-center">
+    <p-progress-spinner ariaLabel="Loading attributes" strokeWidth="4" />
+    <div class="flex-col gap-xs">
+      <p class="heading-color mb-0"><strong>Loading attribute allocation...</strong></p>
+      <p class="muted-text mb-0">
+        Fetching hero stats, available hP and active progression formulas.
+      </p>
+    </div>
+  </section>
+} @else if (loadError()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ loadError() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl min-w-0">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Hero</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">Attribute Allocation</h2>
+          <p class="muted-text mb-0">
+            Rozdysponuj hP pomiedzy statystyki. Koszt kolejnego poziomu liczony jest osobno dla kazdej cechy, a zejscie ponizej wartosci z bazy jest zablokowane.
+          </p>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <span class="tag-badge tag-badge--warn">Level {{ heroLevel() }}</span>
+          <span class="tag-badge tag-badge--golden">Available hP: {{ remainingHeroPoints() }}</span>
+          <span class="tag-badge tag-badge--muted">Spent: {{ spentHeroPoints() }}</span>
+          <span class="tag-badge tag-badge--info">
+            Project cap:
+            {{ capPreview().error ? 'Formula error' : (capPreview().value ?? 0) }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Progression</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Primary stats</h3>
+          <p class="muted-text mb-0">
+            Limit statystyki i koszt kolejnego poziomu sa liczone z aktywnych formul przypietych w panelu admina.
+          </p>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <p-button
+            label="Reset"
+            [text]="true"
+            [disabled]="!hasPendingChanges() || isSaving()"
+            (onClick)="resetDraft()"
+          />
+          <p-button
+            label="Save allocation"
+            [loading]="isSaving()"
+            [disabled]="isSaving() || !hasPendingChanges() || remainingHeroPoints() < 0"
+            (onClick)="saveDraft()"
+          />
+        </div>
+      </div>
+
+      <p-table [value]="statRows()" responsiveLayout="scroll">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Stat</th>
+            <th>Current</th>
+            <th>Planned</th>
+            <th>Next level cost</th>
+            <th>Level cap</th>
+            <th>Controls</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+          <tr>
+            <td>
+              <div class="flex-row-start-center gap-sm">
+                <strong class="heading-color">{{ row.label }}</strong>
+                <i
+                  class="pi pi-info-circle muted-text"
+                  [pTooltip]="row.description || tooltipFallback"
+                  tooltipPosition="top"
+                ></i>
+              </div>
+            </td>
+
+            <td>
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="tag-badge tag-badge--muted">{{ row.currentValue }}</span>
+                @if (row.pendingLevels > 0) {
+                  <span class="tag-badge tag-badge--success">+{{ row.pendingLevels }}</span>
+                }
+              </div>
+            </td>
+
+            <td>
+              <strong class="heading-color">{{ row.plannedValue }}</strong>
+            </td>
+
+            <td>
+              <div class="flex-col gap-xs">
+                @if (row.nextLevelCost !== null) {
+                  <span class="tag-badge tag-badge--golden">{{ row.nextLevelCost }} hP</span>
+                } @else {
+                  <span class="tag-badge tag-badge--danger">Unavailable</span>
+                }
+
+                @if (row.increaseReason; as reason) {
+                  <span class="muted-text">{{ reason }}</span>
+                }
+              </div>
+            </td>
+
+            <td>
+              @if (row.maxAllowedValue !== null) {
+                <span class="tag-badge tag-badge--info">{{ row.maxAllowedValue }}</span>
+              } @else {
+                <span class="tag-badge tag-badge--danger">Formula error</span>
+              }
+            </td>
+
+            <td>
+              <div class="flex-row-start-center gap-sm">
+                <p-button
+                  icon="pi pi-minus"
+                  [text]="true"
+                  severity="secondary"
+                  [rounded]="true"
+                  [disabled]="!row.canDecrease || isSaving()"
+                  (onClick)="decrementStat(row.key)"
+                />
+                <p-button
+                  icon="pi pi-plus"
+                  [rounded]="true"
+                  [disabled]="!row.canIncrease || isSaving()"
+                  (onClick)="incrementStat(row.key)"
+                />
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </section>
+  </div>
+}
