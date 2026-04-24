@@ -28,10 +28,22 @@
             [class]="'p-inputtext ' + widthClass()"
             [formControlName]="field.controlName"
           >
-            @for (option of field.options ?? []; track option.value) {
-              <option [value]="option.value">{{ option.label }}</option>
+            @for (option of field.options ?? []; track option.label + ':' + option.value) {
+              <option [ngValue]="option.value">{{ option.label }}</option>
             }
           </select>
+        </label>
+      }
+
+      @case (fieldType.Date) {
+        <label [class]="fieldClass(field)">
+          <span class="muted-text">{{ field.label }}</span>
+          <p-datepicker
+            [formControlName]="field.controlName"
+            [dateFormat]="field.dateFormat ?? 'yy-mm-dd'"
+            [showIcon]="field.showIcon ?? true"
+            [styleClass]="widthClass()"
+          />
         </label>
       }
 
@@ -40,11 +52,12 @@
           <span class="muted-text">{{ field.label }}</span>
           <input
             pInputText
-            [type]="field.type === fieldType.Number ? 'number' : 'text'"
+            [type]="field.inputType ?? (field.type === fieldType.Number ? 'number' : 'text')"
             [class]="widthClass()"
             [formControlName]="field.controlName"
             [attr.step]="field.step ?? null"
             [readOnly]="field.readonly ?? false"
+            [attr.autocomplete]="field.autocomplete ?? null"
           />
         </label>
       }

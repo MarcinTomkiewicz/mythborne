@@ -13,8 +13,8 @@ values
     'hero_progression',
     'Hero stat upgrade cost',
     'Cost in hero points required to raise one primary stat by one level.',
-    array['level'],
-    '{"level": 1}'::jsonb,
+    array['heroLevel', 'level', 'statLevel'],
+    '{"heroLevel": 1, "level": 1, "statLevel": 1}'::jsonb,
     10
   ),
   (

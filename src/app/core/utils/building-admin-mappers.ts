@@ -12,6 +12,7 @@ import {
   EditableBuildingRow,
 } from '../types/building-admin-row.types';
 import { Row } from '../types/supabase.types';
+import { normalizeBonusTarget, normalizeBonusType } from './bonus';
 
 export function mapEditableBuilding(row: EditableBuildingRow): EditableBuilding {
   return {
@@ -27,8 +28,8 @@ export function mapEditableBuilding(row: EditableBuildingRow): EditableBuilding 
     maxLevel: row.max_level ?? 0,
     bonuses: (row.building_bonuses ?? []).map((bonus) => ({
       templateId: bonus.template_id,
-      target: bonus.bonus_templates.target,
-      type: bonus.bonus_templates.type === 'percent' ? 'percent' : 'flat',
+      target: normalizeBonusTarget(bonus.bonus_templates.target),
+      type: normalizeBonusType(bonus.bonus_templates.type),
       value: bonus.value,
       description: bonus.bonus_templates.description ?? '',
     })),
@@ -53,8 +54,8 @@ export function mapBuildingBonusTemplates(
 ): BuildingAdminData['bonusTemplates'] {
   return rows.map((row) => ({
     templateId: row.id,
-    target: row.target,
-    type: row.type === 'percent' ? 'percent' : 'flat',
+    target: normalizeBonusTarget(row.target),
+    type: normalizeBonusType(row.type),
     value: 0,
     description: row.description ?? '',
   }));

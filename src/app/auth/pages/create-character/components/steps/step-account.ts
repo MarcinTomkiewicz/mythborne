@@ -3,11 +3,13 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { CreateCharacterAccountForm } from '../../../../../core/types/forms/create-character-form.types';
+import { CREATE_CHARACTER_ACCOUNT_FIELDS } from '../../../../../core/config/forms/auth-form.config';
+import { FormFields } from '../../../../../shared/form-fields/form-fields';
 
 @Component({
   selector: 'app-step-account',
   standalone: true,
-  imports: [ReactiveFormsModule, InputTextModule, ButtonModule],
+  imports: [ReactiveFormsModule, InputTextModule, ButtonModule, FormFields],
   template: `
     <div [formGroup]="form()" class="mg-form flex-col gap-md w-100">
       <h2 class="mg-section__title mg-section__title--xs mb-sm">Create your account</h2>
@@ -21,15 +23,7 @@ import { CreateCharacterAccountForm } from '../../../../../core/types/forms/crea
           </div>
         </div>
       } @else {
-        <div class="flex-col gap-xs">
-          <label for="email">Email</label>
-          <input id="email" type="email" formControlName="email" pInputText />
-        </div>
-
-        <div class="flex-col gap-xs">
-          <label for="password">Password</label>
-          <input id="password" type="password" formControlName="password" pInputText />
-        </div>
+        <app-form-fields [form]="form()" [fields]="fields" />
       }
 
       <p-button type="button" label="Next" (onClick)="next.emit()"></p-button>
@@ -40,5 +34,6 @@ export class StepAccount {
   readonly form = input.required<CreateCharacterAccountForm>();
   readonly isExistingAccount = input(false);
   readonly existingEmail = input('');
+  readonly fields = CREATE_CHARACTER_ACCOUNT_FIELDS;
   readonly next = output<void>();
 }

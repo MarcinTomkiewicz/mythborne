@@ -8,15 +8,7 @@
     <h2 class="mg-section__title mg-section__title--xs mb-sm">Log in</h2>
   }
 
-  <div class="flex-col gap-xs flex-1">
-    <label for="email">Email</label>
-    <input id="email" type="email" formControlName="email" pInputText />
-  </div>
-
-  <div class="flex-col gap-xs flex-1">
-    <label for="password">Password</label>
-    <input id="password" type="password" formControlName="password" pInputText />
-  </div>
+  <app-form-fields [form]="form" [fields]="fields" />
 
   @if (errorMessage()) {
     <p class="error-text mb-0">{{ errorMessage() }}</p>

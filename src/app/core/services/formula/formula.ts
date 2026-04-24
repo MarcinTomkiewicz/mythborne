@@ -3,6 +3,7 @@ import { forkJoin, map, Observable, shareReplay, switchMap, tap } from 'rxjs';
 import {
   BalanceFormula,
   EditableBalanceFormula,
+  FormulaVariableDefinition,
   FormulaAdminData,
   FormulaTarget,
 } from '../../domain/formula/formula.model';
@@ -107,6 +108,30 @@ export class FormulaService {
       map(() => void 0),
       tap(() => this.clearCache())
     );
+  }
+
+  saveTargetVariables(
+    targetId: string,
+    variables: readonly FormulaVariableDefinition[]
+  ): Observable<void> {
+    const allowedVariables = variables.map((variable) => variable.key);
+    const defaultTestContext = variables.reduce(
+      (acc, variable) => {
+        acc[variable.key] = variable.defaultValue;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    return this.backend
+      .update('balance_formula_targets', targetId, {
+        allowedVariables,
+        defaultTestContext,
+      })
+      .pipe(
+        map(() => void 0),
+        tap(() => this.clearCache())
+      );
   }
 
   deleteFormula(id: string): Observable<void> {

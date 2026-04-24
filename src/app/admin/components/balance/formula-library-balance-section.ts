@@ -2,71 +2,169 @@ import { Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { AdminFormFieldsComponent } from '../admin-form-fields/admin-form-fields';
-import { AdminFormFieldType } from '../../../core/enums/admin-form-field-type';
-import { AdminFormFieldConfig } from '../../../core/types/admin-ui.types';
+import { FormFields } from '../../../shared/form-fields/form-fields';
 import { ItemGenerationBalancePageFacade } from '../../../core/services/items/item-generation-balance-page.facade';
+import {
+  createFormulaEditorMetaFields,
+  createFormulaSelectorFields,
+  FORMULA_DESCRIPTION_FIELD,
+  FORMULA_EXPRESSION_FIELD,
+} from '../../../core/config/forms/balance-form.config';
+import { FormulaActionGroup, FormulaActionViewItem } from './formula-action-group';
+import { FormulaExpressionPreview } from './formula-expression-preview';
+import { FormulaBlock, FormulaTemplateGuide } from '../../../core/domain/formula/formula.model';
+
+interface FormulaActionSection {
+  key: string;
+  title: string;
+  appearance: 'tag' | 'card';
+  tone?: 'muted' | 'warn';
+  items: readonly FormulaActionViewItem[];
+}
 
 @Component({
   selector: 'app-formula-library-balance-section',
   standalone: true,
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, AdminFormFieldsComponent],
+  imports: [
+    ReactiveFormsModule,
+    ButtonModule,
+    InputTextModule,
+    FormFields,
+    FormulaActionGroup,
+    FormulaExpressionPreview,
+  ],
   templateUrl: './formula-library-balance-section.html',
+  host: { style: 'display:block;width:100%;' },
 })
-export class FormulaLibraryBalanceSectionComponent {
+export class FormulaLibraryBalanceSection {
   readonly page = inject(ItemGenerationBalancePageFacade);
-  readonly selectorFields = computed<readonly AdminFormFieldConfig[]>(() => [
-    {
-      type: AdminFormFieldType.Select,
-      controlName: 'selectedId',
-      label: 'Edited formula',
-      options: [
-        { label: 'Create new formula', value: '' },
-        ...this.page.formulas.data().formulas.map((formula) => ({
-          label: `${formula.label} (${this.page.formulas.humanizeScope(formula.scopeKey)})`,
-          value: formula.id,
-        })),
-      ],
-    },
-  ]);
-  readonly editorFields = computed<readonly AdminFormFieldConfig[]>(() => [
-    {
-      type: AdminFormFieldType.Text,
-      controlName: 'key',
-      label: 'Key',
-    },
-    {
-      type: AdminFormFieldType.Text,
-      controlName: 'label',
-      label: 'Label',
-    },
-    {
-      type: AdminFormFieldType.Select,
-      controlName: 'scopeKey',
-      label: 'Scope',
-      options: this.page.formulas.availableScopes().map((scope) => ({
-        label: this.page.formulas.humanizeScope(scope),
-        value: scope,
-      })),
-    },
-    {
-      type: AdminFormFieldType.Checkbox,
-      controlName: 'isEnabled',
-      label: 'Enabled',
-    },
-    {
-      type: AdminFormFieldType.Textarea,
-      controlName: 'expression',
-      label: 'Expression',
-      className: 'grid-col-span-2',
-      rows: 3,
-    },
-    {
-      type: AdminFormFieldType.Textarea,
-      controlName: 'description',
-      label: 'Description',
-      className: 'grid-col-span-2',
-      rows: 3,
-    },
-  ]);
+  readonly selectorFields = computed(() =>
+    createFormulaSelectorFields(
+      this.page.formulas.data(),
+      (scope) => this.page.formulas.humanizeScope(scope)
+    )
+  );
+  readonly editorMetaFields = computed(() =>
+    createFormulaEditorMetaFields(
+      this.page.formulas.availableScopes(),
+      (scope) => this.page.formulas.humanizeScope(scope)
+    )
+  );
+  readonly descriptionFields = [FORMULA_DESCRIPTION_FIELD] as const;
+  readonly expressionField = FORMULA_EXPRESSION_FIELD;
+  readonly operatorLiteralSections = computed(() =>
+    [
+      this.createBlockSection('operators', 'Operators'),
+      this.createBlockSection('literals', 'Literals'),
+    ].filter((section): section is FormulaActionSection => section !== null)
+  );
+  readonly helperSections = computed(() =>
+    [
+      this.createVariableSection(),
+      this.createFunctionSection(),
+      this.createTemplateSection(),
+    ].filter((section): section is FormulaActionSection => section !== null)
+  );
+
+  handleBlockAction(action: FormulaActionViewItem) {
+    const block = this.findBlock(action.id);
+    block && this.page.formulas.appendBlockTemplate(block);
+  }
+
+  handleVariableAction(action: FormulaActionViewItem) {
+    this.page.formulas.appendBlock(action.id);
+  }
+
+  handleTemplateAction(action: FormulaActionViewItem) {
+    const template = this.findTemplate(action.id);
+    template && this.page.formulas.applyTemplate(template);
+  }
+
+  handleSectionAction(sectionKey: string, action: FormulaActionViewItem) {
+    switch (sectionKey) {
+      case 'variables':
+        this.handleVariableAction(action);
+        return;
+      case 'templates':
+        this.handleTemplateAction(action);
+        return;
+      default:
+        this.handleBlockAction(action);
+    }
+  }
+
+  private createBlockSection(category: string, title: string): FormulaActionSection | null {
+    const items = this.page.formulas.blocksFor(category).map((block) => ({
+      id: block.id,
+      label: block.label,
+      tooltip: category === 'functions' ? this.page.formulas.blockTooltip(block) : block.helperText ?? '',
+      secondaryLabel:
+        category === 'functions'
+          ? this.page.formulas.functionGuide(block)?.friendlySyntax ?? block.token
+          : undefined,
+    }));
+
+    if (items.length === 0) {
+      return null;
+    }
+
+    return {
+      key: category,
+      title,
+      appearance: category === 'functions' ? 'card' : 'tag',
+      tone: 'muted',
+      items,
+    };
+  }
+
+  private createVariableSection(): FormulaActionSection | null {
+    const items = this.page.formulas.testerVariables().map((variable) => ({
+      id: variable,
+      label: variable,
+    }));
+
+    if (items.length === 0) {
+      return null;
+    }
+
+    return {
+      key: 'variables',
+      title: 'Variables',
+      appearance: 'tag',
+      tone: 'muted',
+      items,
+    };
+  }
+
+  private createFunctionSection(): FormulaActionSection | null {
+    return this.createBlockSection('functions', 'Functions');
+  }
+
+  private createTemplateSection(): FormulaActionSection | null {
+    const items = this.page.formulas.formulaTemplates().map((template) => ({
+      id: template.key,
+      label: template.label,
+      tooltip: this.page.formulas.templateTooltip(template),
+    }));
+
+    if (items.length === 0) {
+      return null;
+    }
+
+    return {
+      key: 'templates',
+      title: 'Templates',
+      appearance: 'tag',
+      tone: 'warn',
+      items,
+    };
+  }
+
+  private findBlock(id: string): FormulaBlock | null {
+    return this.page.formulas.blocks().find((block) => block.id === id) ?? null;
+  }
+
+  private findTemplate(key: string): FormulaTemplateGuide | null {
+    return this.page.formulas.formulaTemplates().find((template) => template.key === key) ?? null;
+  }
 }

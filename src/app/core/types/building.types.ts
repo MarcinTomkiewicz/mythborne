@@ -1,10 +1,12 @@
+import { BonusType } from './bonus.types';
+
 export type BuildingResourceType = 'drachma' | 'materials' | 'workforce';
 export type BuildingRequirementType = 'hero_level' | 'hero_rank' | 'hero_stat';
 
 export interface BuildingBonusPreview {
   templateId: string | null;
   target: string;
-  type: 'flat' | 'percent';
+  type: BonusType;
   description: string | null;
   baseValue: number;
   currentValue: number;
@@ -57,7 +59,7 @@ export interface MansionBuilding {
 export interface EditableBuildingBonus {
   templateId: string | null;
   target: string;
-  type: 'flat' | 'percent';
+  type: BonusType;
   value: number;
   description: string;
 }

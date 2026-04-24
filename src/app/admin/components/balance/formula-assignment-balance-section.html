@@ -18,17 +18,82 @@
 
   <form [formGroup]="page.formulas.assignmentForm" class="mg-surface-card flex-col gap-md p-lg">
     <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
-      <app-admin-form-fields [form]="page.formulas.assignmentForm" [fields]="fields()" />
+      <app-form-fields [form]="page.formulas.assignmentForm" [fields]="fields()" />
     </div>
 
     @if (page.formulas.selectedTarget(); as target) {
-      <div class="mg-surface-card flex-col gap-sm p-md">
+      <div class="mg-surface-card flex-col gap-md p-md">
         <p class="card-legend mb-0">Target details</p>
         <p class="mb-0 muted-text">{{ target.description }}</p>
         <div class="flex-row-start-center flex-wrap gap-sm">
-          @for (variable of target.allowedVariables; track variable) {
-            <span class="tag-badge tag-badge--muted">{{ variable }}</span>
+          @for (variable of page.formulas.selectedTargetVariablesDraft(); track variable.key + ':' + $index) {
+            <span class="tag-badge tag-badge--muted">{{ variable.key }}</span>
           }
+        </div>
+
+        <div class="flex-col gap-md">
+          <div class="flex-row-between-center flex-col-sm gap-md">
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Variables define which names the formula may use.</span>
+              <span class="muted-text">
+                If you add <code>statLevel</code> here, the formula editor and runtime will treat it as a valid variable.
+              </span>
+            </div>
+
+            <div class="flex-row-start-center flex-wrap gap-sm">
+              <p-button label="Add variable" [text]="true" (onClick)="page.formulas.addSelectedTargetVariable()" />
+              <p-button
+                label="Save variables"
+                [loading]="page.formulas.isSaving()"
+                [disabled]="page.isLoading() || page.isBusy() || !!page.formulas.selectedTargetVariablesError()"
+                (onClick)="page.formulas.saveSelectedTargetVariables()"
+              />
+            </div>
+          </div>
+
+          @if (page.formulas.selectedTargetVariablesError(); as targetVariableError) {
+            <p class="mb-0 muted-text">{{ targetVariableError }}</p>
+          }
+
+          <div class="flex-col gap-md">
+            @for (variable of page.formulas.selectedTargetVariablesDraft(); track $index) {
+              <div class="mg-surface-card flex-col gap-md p-md">
+                <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100 align-items-center">
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Variable key</span>
+                    <input
+                      pInputText
+                      class="w-100"
+                      [value]="variable.key"
+                      (input)="page.formulas.updateSelectedTargetVariableKey($index, $any($event.target).value)"
+                    />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Default value</span>
+                    <input
+                      pInputText
+                      type="number"
+                      class="w-100"
+                      [value]="variable.defaultValue"
+                      (input)="page.formulas.updateSelectedTargetVariableDefault($index, $any($event.target).value)"
+                    />
+                  </label>
+
+                  <div class="flex-row-start-center">
+                    <p-button
+                      label="Remove"
+                      severity="danger"
+                      [text]="true"
+                      (onClick)="page.formulas.removeSelectedTargetVariable($index)"
+                    />
+                  </div>
+                </div>
+              </div>
+            } @empty {
+              <p class="mb-0 muted-text">This target has no variables yet.</p>
+            }
+          </div>
         </div>
       </div>
     }

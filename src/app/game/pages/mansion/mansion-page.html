@@ -88,7 +88,10 @@
                 </div>
 
                 <div class="mg-card flex-col gap-xs p-md">
-                  <span class="muted-text">Next build time</span>
+                  <div class="flex-row-start-center gap-sm">
+                    <i class="pi pi-sundial muted-text"></i>
+                    <span class="muted-text">Next build time</span>
+                  </div>
                   <strong class="heading-color">
                     {{ page.toDurationLabel(building.nextUpgradeTimeMinutes) }}
                   </strong>

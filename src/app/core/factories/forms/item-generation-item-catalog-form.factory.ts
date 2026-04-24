@@ -13,6 +13,7 @@ import {
   CatalogEntitySelectorForm,
 } from '../../types/forms/item-generation-item-catalog-form.types';
 import { replaceFormArray } from '../../utils/form-controls';
+import { normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
 import { integerAtLeast, nonNegativeInteger, roundedNumber } from '../../utils/number';
 import { trimText } from '../../utils/normalize-text';
 
@@ -30,7 +31,7 @@ export class ItemGenerationItemCatalogFormFactory {
     return this.fb.group({
       templateId: this.fb.control(draft?.templateId ?? ''),
       target: this.fb.control(draft?.target ?? ''),
-      type: this.fb.control<'flat' | 'percent'>(draft?.type ?? 'flat'),
+      type: this.fb.control(normalizeBonusType(draft?.type)),
       value: this.fb.control(draft?.value ?? 1),
       description: this.fb.control(draft?.description ?? ''),
     });
@@ -159,8 +160,8 @@ export class ItemGenerationItemCatalogFormFactory {
   ): EditableItemGenerationBonus {
     return {
       templateId: bonus.templateId || null,
-      target: trimText(bonus.target),
-      type: bonus.type,
+      target: normalizeBonusTarget(trimText(bonus.target)),
+      type: normalizeBonusType(bonus.type),
       value: roundedNumber(bonus.value),
       description: trimText(bonus.description),
     };

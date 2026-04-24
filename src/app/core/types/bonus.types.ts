@@ -1,4 +1,4 @@
-export type BonusType = 'flat' | 'percent';
+export type BonusType = 'flat' | 'percent' | 'per_4_levels';
 
 export interface Bonus {
   target: string;

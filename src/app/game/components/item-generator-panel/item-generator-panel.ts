@@ -1,9 +1,12 @@
-import { Component, effect, inject, input, signal } from '@angular/core';
-import { finalize, take } from 'rxjs';
+import { Component, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { GeneratedItemResult } from '../../../core/domain/item/item-generation.model';
 import { ItemGeneratorService } from '../../../core/services/items/item-generator';
+import { BonusType } from '../../../core/types/bonus.types';
+import { formatBonusValue } from '../../../core/utils/bonus';
 
 @Component({
   selector: 'app-item-generator-panel',
@@ -14,6 +17,7 @@ import { ItemGeneratorService } from '../../../core/services/items/item-generato
 export class ItemGeneratorPanel {
   readonly luck = input(0);
 
+  private readonly destroyRef = inject(DestroyRef);
   private readonly itemGenerator = inject(ItemGeneratorService);
 
   readonly generatedItem = signal<GeneratedItemResult | null>(null);
@@ -38,7 +42,7 @@ export class ItemGeneratorPanel {
     this.itemGenerator
       .generateItem(this.editableLuck())
       .pipe(
-        take(1),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isGenerating.set(false))
       )
       .subscribe({
@@ -63,6 +67,10 @@ export class ItemGeneratorPanel {
   resetLuck() {
     this.hasManualLuck.set(false);
     this.editableLuck.set(this.clampLuck(this.luck()));
+  }
+
+  toBonusValue(value: number, type: BonusType): string {
+    return formatBonusValue(value, type);
   }
 
   private clampLuck(value: number): number {

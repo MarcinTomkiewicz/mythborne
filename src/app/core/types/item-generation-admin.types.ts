@@ -4,13 +4,14 @@ import {
   ItemQualityDefinition,
   ItemSlot,
 } from './item-generation.types';
+import { BonusType } from './bonus.types';
 
 export type CatalogSection = 'base' | 'prefix' | 'suffix';
 
 export interface EditableItemGenerationBonus {
   templateId: string | null;
   target: string;
-  type: 'flat' | 'percent';
+  type: BonusType;
   value: number;
   description: string;
 }
@@ -54,7 +55,7 @@ export interface ItemGenerationAdminCatalogData {
   bonusTemplates: {
     id: string;
     target: string;
-    type: 'flat' | 'percent';
+    type: BonusType;
     description: string;
   }[];
 }

@@ -14,6 +14,7 @@ import {
   mapEditableAffix,
   mapEditableBase,
 } from '../../utils/item-generation-admin-mappers';
+import { normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
 import { Backend } from '../backend/backend';
 import { ItemGenerationAffixAdminService } from './item-generation-affix-admin';
 import { ItemGenerationBaseAdminService } from './item-generation-base-admin';
@@ -65,8 +66,8 @@ export class ItemGenerationCatalogAdminService {
           suffixes: editableAffixes.filter((affix) => affix.kind === 'suffix'),
           bonusTemplates: templates.map((row) => ({
             id: row.id,
-            target: row.target,
-            type: row.type === 'percent' ? 'percent' : 'flat',
+            target: normalizeBonusTarget(row.target),
+            type: normalizeBonusType(row.type),
             description: row.description ?? '',
           })),
         };

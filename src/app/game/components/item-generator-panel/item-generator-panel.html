@@ -117,9 +117,7 @@
             @for (bonus of item.combinedBonuses; track bonus.target + ':' + bonus.type) {
               <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
                 <strong class="heading-color">{{ bonus.target }}</strong>
-                <span>
-                  {{ bonus.type === 'percent' ? bonus.value + '%' : bonus.value > 0 ? '+' + bonus.value : bonus.value }}
-                </span>
+                <span>{{ toBonusValue(bonus.value, bonus.type) }}</span>
               </div>
             }
           </div>
@@ -131,8 +129,7 @@
                 <div class="flex-row-start-center flex-wrap gap-sm mt-xs ">
                   @for (bonus of part.bonuses; track bonus.target + ':' + bonus.value) {
                     <span class="tag-badge tag-badge--muted">
-                      {{ bonus.target }}:
-                      {{ bonus.type === 'percent' ? bonus.value + '%' : bonus.value > 0 ? '+' + bonus.value : bonus.value }}
+                      {{ bonus.target }}: {{ toBonusValue(bonus.value, bonus.type) }}
                     </span>
                   }
                 </div>

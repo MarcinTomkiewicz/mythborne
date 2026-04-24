@@ -1,0 +1,51 @@
+<div class="mg-surface-card flex-col gap-md p-md h-100">
+  <p class="mb-0 muted-text">
+    Use plain math with variables from the selected target. Example:
+    <code>roundUp(4 + level * 2 + pow(level, 1.45), 5)</code>
+  </p>
+
+  @if (humanExpression()) {
+    <div class="flex-col gap-xs">
+      <span class="muted-text">Human preview</span>
+      <strong class="heading-color">{{ humanExpression() }}</strong>
+    </div>
+  }
+
+  <div class="mg-surface-card flex-col gap-sm p-md">
+    <p class="card-legend mb-0">Curve</p>
+    <span class="muted-text">
+      @if (chartVariable()) {
+        Plot for <strong>{{ chartVariable() }}</strong>
+        from {{ chartState().firstX }} to {{ chartState().lastX }}.
+      } @else {
+        No numeric variable available for plotting yet.
+      }
+    </span>
+
+    @if (chartState().canPlot) {
+      <div class="w-100 overflow-x-auto">
+        <svg viewBox="0 0 520 180" class="w-100" preserveAspectRatio="none">
+          <line x1="16" y1="164" x2="504" y2="164" stroke="currentColor" opacity="0.2" />
+          <line x1="16" y1="16" x2="16" y2="164" stroke="currentColor" opacity="0.2" />
+          <polyline
+            [attr.points]="chartState().points"
+            fill="none"
+            stroke="var(--color-accent, #c97a49)"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+
+      <div class="flex-row-between-center flex-wrap gap-sm">
+        <span class="muted-text">Min: {{ chartState().minY }}</span>
+        <span class="muted-text">Max: {{ chartState().maxY }}</span>
+      </div>
+    } @else {
+      <p class="mb-0 muted-text">
+        The current expression cannot be plotted yet. Add at least one numeric variable and a valid formula.
+      </p>
+    }
+  </div>
+</div>

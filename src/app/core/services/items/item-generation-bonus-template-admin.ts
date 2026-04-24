@@ -3,6 +3,7 @@ import { map, Observable, of, switchMap } from 'rxjs';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
 import { EditableBonusTemplateDraft } from '../../types/item-generation-admin-service.types';
+import { normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
 import { trimText, trimToNull } from '../../utils/normalize-text';
 
 @Injectable({ providedIn: 'root' })
@@ -14,8 +15,8 @@ export class ItemGenerationBonusTemplateAdminService {
       return of(bonus.templateId);
     }
 
-    const target = trimText(bonus.target);
-    const type = bonus.type;
+    const target = normalizeBonusTarget(trimText(bonus.target));
+    const type = normalizeBonusType(bonus.type);
     const description = trimToNull(bonus.description);
 
     return this.backend
@@ -28,15 +29,15 @@ export class ItemGenerationBonusTemplateAdminService {
         range: { from: 0, to: 0 },
       })
       .pipe(
-      switchMap((existing) => {
-        if (existing.length) {
-          return of(existing[0].id);
-        }
+        switchMap((existing) => {
+          if (existing.length) {
+            return of(existing[0].id);
+          }
 
-        return this.backend
-          .create<{ id: string }>('bonus_templates', { target, type, description })
-          .pipe(map((created) => created.id));
-      })
-    );
+          return this.backend
+            .create<{ id: string }>('bonus_templates', { target, type, description })
+            .pipe(map((created) => created.id));
+        })
+      );
   }
 }

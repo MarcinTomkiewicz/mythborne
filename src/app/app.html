@@ -17,7 +17,7 @@
         <app-game-topbar></app-game-topbar>
       </div>
 
-      <div class="mg-container py-lg w-100">
+      <div class="mg-container py-lg w-100" [class.max-w-none]="isWideContent()">
         <div class="w-100">
           <router-outlet></router-outlet>
         </div>

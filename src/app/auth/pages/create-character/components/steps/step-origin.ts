@@ -1,12 +1,14 @@
 import {
   Component,
   computed,
+  DestroyRef,
   inject,
   input,
   OnInit,
   output,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { Origin, OriginBonus } from '../../../../../core/domain/origin/origin.model';
 import { Origins } from '../../../../../core/services/origins/origins';
@@ -46,6 +48,7 @@ import { Carousel } from '../../../../../shared/carousel/carousel';
   `,
 })
 export class StepOrigin implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly originService = inject(Origins);
   private readonly statsService = inject(StatsService);
 
@@ -64,7 +67,7 @@ export class StepOrigin implements OnInit {
   });
 
   ngOnInit(): void {
-    this.originService.getOrigins().subscribe((list) => {
+    this.originService.getOrigins().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((list) => {
       this.origins.set(list);
 
       const originId = this.selectedOrigin()?.id;
@@ -76,16 +79,19 @@ export class StepOrigin implements OnInit {
       }
 
       for (const origin of list) {
-        this.originService.getBonusesForOrigin(origin.id).subscribe((bonuses) => {
-          this.bonusesMap.update((previous) => ({
-            ...previous,
-            [origin.id]: bonuses,
-          }));
-        });
+        this.originService
+          .getBonusesForOrigin(origin.id)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe((bonuses) => {
+            this.bonusesMap.update((previous) => ({
+              ...previous,
+              [origin.id]: bonuses,
+            }));
+          });
       }
     });
 
-    this.statsService.getAllStatLabels().subscribe((labels) => {
+    this.statsService.getAllStatLabels().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((labels) => {
       this.statLabels.set(labels);
     });
   }

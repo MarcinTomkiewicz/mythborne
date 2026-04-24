@@ -10,6 +10,7 @@ import {
   ItemGenerationBaseBonusRow,
 } from '../types/domain-row.types';
 import { Row } from '../types/supabase.types';
+import { normalizeBonusTarget, normalizeBonusType } from './bonus';
 
 export function mapEditableQuality(
   row: Row<'item_generation_qualities'>
@@ -80,8 +81,8 @@ export function mapEditableBonus(
 ): EditableItemGenerationBonus {
   return {
     templateId: row.template_id,
-    target: row.bonus_templates.target,
-    type: row.bonus_templates.type === 'percent' ? 'percent' : 'flat',
+    target: normalizeBonusTarget(row.bonus_templates.target),
+    type: normalizeBonusType(row.bonus_templates.type),
     value: row.value,
     description: row.bonus_templates.description ?? '',
   };

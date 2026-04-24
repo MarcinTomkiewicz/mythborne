@@ -2,12 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
+import { LOGIN_FIELDS } from '../../../core/config/forms/auth-form.config';
+import { FormFields } from '../../../shared/form-fields/form-fields';
 
 @Component({
   selector: 'app-login-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputTextModule, ButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, ButtonModule, FormFields],
   templateUrl: './login-form.html',
   styleUrl: './login-form.scss',
 })
@@ -24,6 +25,7 @@ export class LoginForm {
   });
 
   readonly isHorizontal = computed(() => this.layout() === 'horizontal');
+  readonly fields = LOGIN_FIELDS;
 
   setError(message: string | null) {
     this.errorMessage.set(message);

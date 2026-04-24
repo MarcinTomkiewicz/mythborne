@@ -19,6 +19,7 @@ import {
   BuildingSelectorForm,
 } from '../../types/forms/building-admin-form.types';
 import { replaceFormArray } from '../../utils/form-controls';
+import { normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
 import { trimText } from '../../utils/normalize-text';
 import { roundedNumber } from '../../utils/number';
 
@@ -87,7 +88,7 @@ export class BuildingAdminFormFactory {
     return this.fb.group({
       templateId: this.fb.control<string | null>(bonus?.templateId ?? null),
       target: this.fb.control(bonus?.target ?? ''),
-      type: this.fb.control<'flat' | 'percent'>(bonus?.type ?? 'flat'),
+      type: this.fb.control(normalizeBonusType(bonus?.type)),
       value: this.fb.control(bonus?.value ?? 0),
       description: this.fb.control(bonus?.description ?? ''),
     });
@@ -158,8 +159,8 @@ export class BuildingAdminFormFactory {
       maxLevel: roundedNumber(value.maxLevel),
       bonuses: value.bonuses.map((bonus) => ({
         templateId: bonus.templateId,
-        target: trimText(bonus.target),
-        type: bonus.type,
+        target: normalizeBonusTarget(trimText(bonus.target)),
+        type: normalizeBonusType(bonus.type),
         value: roundedNumber(bonus.value),
         description: trimText(bonus.description),
       })),

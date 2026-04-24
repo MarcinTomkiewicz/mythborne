@@ -1,5 +1,6 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { finalize, forkJoin, take } from 'rxjs';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize, forkJoin } from 'rxjs';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import { Hero } from '../hero/hero';
 import { StatProgressionService } from './stat-progression';
@@ -14,6 +15,7 @@ import { nonNegativeInteger, positiveInteger } from '../../utils/number';
 
 @Injectable()
 export class AttributeAllocationPageFacade {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly heroService = inject(Hero);
   private readonly statsService = inject(StatsService);
   private readonly statProgression = inject(StatProgressionService);
@@ -45,7 +47,8 @@ export class AttributeAllocationPageFacade {
 
     return this.statProgression.evaluateStatCap(
       this.heroLevel(),
-      rules.capFormula.expression
+      rules.capFormula.expression,
+      rules.capTarget
     );
   });
 
@@ -93,7 +96,12 @@ export class AttributeAllocationPageFacade {
       const pendingLevels = Math.max(0, plannedValue - currentValue);
       const nextLevelCostResult = this.statProgression.evaluateNextLevelCost(
         plannedValue,
-        rules.costFormula.expression
+        rules.costFormula.expression,
+        {
+          heroLevel: this.heroLevel(),
+          statLevel: plannedValue,
+          target: rules.costTarget,
+        }
       );
       const nextLevelCost =
         nextLevelCostResult.error || nextLevelCostResult.value === null
@@ -184,7 +192,7 @@ export class AttributeAllocationPageFacade {
     this.heroService
       .saveProgressionDraft(nextStats, nextHeroPoints)
       .pipe(
-        take(1),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isSaving.set(false))
       )
       .subscribe({
@@ -218,7 +226,7 @@ export class AttributeAllocationPageFacade {
       rules: this.statProgression.getRules(),
     })
       .pipe(
-        take(1),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoading.set(false))
       )
       .subscribe({
@@ -254,7 +262,11 @@ export class AttributeAllocationPageFacade {
     let total = 0;
 
     for (let level = currentValue; level < plannedValue; level += 1) {
-      const cost = this.statProgression.getNextLevelCost(level, costFormula);
+      const cost = this.statProgression.getNextLevelCost(level, costFormula, {
+        heroLevel: this.heroLevel(),
+        statLevel: level,
+        target: this.progressionRules()?.costTarget ?? undefined,
+      });
 
       if (cost === null) {
         return Number.POSITIVE_INFINITY;

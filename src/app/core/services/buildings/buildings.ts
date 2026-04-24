@@ -16,6 +16,7 @@ import { BuildingProgressionService } from '../progression/building-progression'
 import { Hero } from '../hero/hero';
 import { resourceOrder } from '../../utils/building-display';
 import { normalizeBuildingRequirementType, normalizeBuildingResourceType } from '../../utils/building-admin-mappers';
+import { normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
 import {
@@ -202,8 +203,8 @@ export class BuildingsService {
   ): BuildingBonusPreview[] {
     return rows.map((row) => ({
       templateId: row.template_id,
-      target: row.bonus_templates.target,
-      type: row.bonus_templates.type === 'percent' ? 'percent' : 'flat',
+      target: normalizeBonusTarget(row.bonus_templates.target),
+      type: normalizeBonusType(row.bonus_templates.type),
       description: row.bonus_templates.description ?? null,
       baseValue: row.value,
       currentValue:

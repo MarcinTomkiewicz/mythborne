@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable, switchMap } from 'rxjs';
 import { Origin, OriginBonus } from '../../domain/origin/origin.model';
-import { mapOrigin, mapOriginBonus } from '../../domain/origin/origin.mapper';
 import { OriginBonusWithTemplate } from '../../types/domain-row.types';
+import { mapOrigin, mapOriginBonus } from '../../utils/origin-mappers';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
 

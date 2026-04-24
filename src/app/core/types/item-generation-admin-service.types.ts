@@ -1,3 +1,5 @@
+import { BonusType } from './bonus.types';
+
 export type BucketProfilePayload = {
   key: string;
   name: string;
@@ -14,6 +16,6 @@ export type BucketProfilePayload = {
 export type EditableBonusTemplateDraft = {
   templateId: string | null;
   target: string;
-  type: 'flat' | 'percent';
+  type: BonusType;
   description: string;
 };

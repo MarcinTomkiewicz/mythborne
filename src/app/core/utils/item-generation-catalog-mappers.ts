@@ -1,9 +1,4 @@
-import { Bonus } from '../bonus/bonus.model';
-import { Row } from '../../types/supabase.types';
-import {
-  ItemGenerationAffixBonusRow,
-  ItemGenerationBaseBonusRow,
-} from '../../types/domain-row.types';
+import { Bonus } from '../domain/bonus/bonus.model';
 import {
   ItemAffixDefinition,
   ItemAffixKind,
@@ -11,7 +6,13 @@ import {
   ItemGenerationBucketProfile,
   ItemQualityDefinition,
   ItemSlot,
-} from './item-generation.model';
+} from '../domain/item/item-generation.model';
+import {
+  ItemGenerationAffixBonusRow,
+  ItemGenerationBaseBonusRow,
+} from '../types/domain-row.types';
+import { Row } from '../types/supabase.types';
+import { normalizeBonusTarget, normalizeBonusType } from './bonus';
 
 export function mapItemGenerationBase(
   row: Row<'item_generation_bases'>,
@@ -47,9 +48,9 @@ export function mapBonusTemplateValue(
   row: ItemGenerationBaseBonusRow | ItemGenerationAffixBonusRow
 ): Bonus {
   return {
-    target: row.bonus_templates.target,
+    target: normalizeBonusTarget(row.bonus_templates.target),
     value: row.value,
-    type: row.bonus_templates.type === 'percent' ? 'percent' : 'flat',
+    type: normalizeBonusType(row.bonus_templates.type),
   };
 }
 

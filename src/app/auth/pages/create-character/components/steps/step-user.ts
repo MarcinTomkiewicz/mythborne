@@ -1,60 +1,25 @@
 import { Component, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { DatePickerModule } from 'primeng/datepicker';
-import { InputTextModule } from 'primeng/inputtext';
 import { CreateCharacterProfileForm } from '../../../../../core/types/forms/create-character-form.types';
+import {
+  CREATE_CHARACTER_PROFILE_MAIN_FIELDS,
+  CREATE_CHARACTER_PROFILE_SOCIAL_FIELDS,
+} from '../../../../../core/config/forms/auth-form.config';
+import { FormFields } from '../../../../../shared/form-fields/form-fields';
 
 @Component({
   selector: 'app-step-user',
   standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    InputTextModule,
-    DatePickerModule,
-    ButtonModule,
-  ],
+  imports: [ReactiveFormsModule, ButtonModule, FormFields],
   template: `
     <div [formGroup]="form()" class="mg-form flex-col gap-md">
       <h2 class="mg-section__title mg-section__title--xs mb-sm">Tell us about yourself</h2>
 
-      <div class="flex-col gap-xs">
-        <label for="name">Name</label>
-        <input id="name" pInputText type="text" formControlName="name" />
-      </div>
-
-      <div class="flex-col gap-xs">
-        <label for="birthday">Birthday (optional)</label>
-        <p-datepicker id="birthday" formControlName="birthday" dateFormat="yy-mm-dd" showIcon />
-      </div>
-
-      <div class="flex-col gap-xs">
-        <label for="city">City</label>
-        <input id="city" pInputText type="text" formControlName="city" />
-      </div>
-
-      <div class="flex-col gap-xs">
-        <label for="bio">Bio</label>
-        <textarea id="bio" pInputText formControlName="bio" rows="3"></textarea>
-      </div>
+      <app-form-fields [form]="form()" [fields]="mainFields" />
 
       <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md mt-lg">
-        <div class="flex-col gap-xs">
-          <label for="facebook">Facebook</label>
-          <input id="facebook" pInputText type="text" formControlName="facebook" />
-        </div>
-        <div class="flex-col gap-xs">
-          <label for="twitter">Twitter</label>
-          <input id="twitter" pInputText type="text" formControlName="twitter" />
-        </div>
-        <div class="flex-col gap-xs">
-          <label for="linkedin">LinkedIn</label>
-          <input id="linkedin" pInputText type="text" formControlName="linkedin" />
-        </div>
-        <div class="flex-col gap-xs">
-          <label for="instagram">Instagram</label>
-          <input id="instagram" pInputText type="text" formControlName="instagram" />
-        </div>
+        <app-form-fields [form]="form()" [fields]="socialFields" />
       </div>
 
       <div class="flex-row-end-center gap-sm mt-xl">
@@ -73,6 +38,8 @@ import { CreateCharacterProfileForm } from '../../../../../core/types/forms/crea
 export class StepUser {
   readonly form = input.required<CreateCharacterProfileForm>();
   readonly submitting = input(false);
+  readonly mainFields = CREATE_CHARACTER_PROFILE_MAIN_FIELDS;
+  readonly socialFields = CREATE_CHARACTER_PROFILE_SOCIAL_FIELDS;
   readonly back = output<void>();
   readonly submit = output<void>();
 }

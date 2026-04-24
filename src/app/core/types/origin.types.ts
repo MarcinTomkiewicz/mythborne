@@ -1,3 +1,5 @@
+import { BonusType } from './bonus.types';
+
 export interface Origin {
   id: string;
   key: string;
@@ -12,6 +14,6 @@ export interface OriginBonus {
   originId: string;
   value: number;
   target: string;
-  type: 'flat' | 'percent';
+  type: BonusType;
   description: string | null;
 }

@@ -12,24 +12,69 @@
   </div>
 
   <form [formGroup]="page.formulas.selectorForm" class="mb-lg">
-    <app-admin-form-fields [form]="page.formulas.selectorForm" [fields]="selectorFields()" />
+    <app-form-fields [form]="page.formulas.selectorForm" [fields]="selectorFields()" />
   </form>
 
-  <form [formGroup]="page.formulas.editorForm" class="mg-surface-card flex-col gap-md p-lg">
-    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
-      <app-admin-form-fields [form]="page.formulas.editorForm" [fields]="editorFields()" />
+  <form [formGroup]="page.formulas.editorForm" class="mg-surface-card flex-col gap-lg p-lg">
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100 grid-items-start">
+      <app-form-fields [form]="page.formulas.editorForm" [fields]="editorMetaFields()" />
+      <app-form-fields [form]="page.formulas.editorForm" [fields]="descriptionFields" />
+    </div>
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-lg w-100 grid-items-start">
+      <label class="flex-col gap-sm">
+        <span class="muted-text">{{ expressionField.label }}</span>
+        <textarea
+          pInputText
+          [rows]="expressionField.rows ?? 3"
+          class="w-100"
+          formControlName="expression"
+        ></textarea>
+      </label>
+
+      <app-formula-expression-preview
+        [humanExpression]="page.formulas.humanExpression()"
+        [chartVariable]="page.formulas.chartVariable()"
+        [chartState]="page.formulas.chartState()"
+      />
     </div>
 
     <div class="mg-surface-card flex-col gap-md p-md">
-      <div class="flex-col gap-xs">
-        <p class="card-legend mb-0">Tester</p>
-        <p class="muted-text mb-0">
-          Zmieniasz wartosci zmiennych i od razu widzisz wynik aktualnie edytowanej formuly.
-        </p>
+      @if (page.formulas.formulaValidationError(); as formulaError) {
+        <p class="mb-0 muted-text">{{ formulaError }}</p>
+      }
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-xs gap-md w-100 grid-items-start">
+        @for (section of operatorLiteralSections(); track section.key) {
+          <app-formula-action-group
+            [title]="section.title"
+            [items]="section.items"
+            [appearance]="section.appearance"
+            [tone]="section.tone ?? 'muted'"
+            (selected)="handleBlockAction($event)"
+          />
+        }
       </div>
 
+      @for (section of helperSections(); track section.key) {
+        <app-formula-action-group
+          [title]="section.title"
+          [items]="section.items"
+          [appearance]="section.appearance"
+          [tone]="section.tone ?? 'muted'"
+          (selected)="handleSectionAction(section.key, $event)"
+        />
+      }
+    </div>
+
+    <div class="mg-surface-card flex-col gap-md p-md">
+      <p class="card-legend mb-0">Tester</p>
+      <p class="muted-text mb-0">
+        Zmieniasz wartosci zmiennych i od razu widzisz wynik aktualnie edytowanej formuly.
+      </p>
+
       @if (page.formulas.testerVariables().length > 0) {
-        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100 align-items-center">
           @for (variable of page.formulas.testerVariables(); track variable) {
             <label class="flex-col gap-sm">
               <span class="muted-text">{{ variable }}</span>
@@ -46,43 +91,21 @@
       } @else {
         <p class="mb-0 muted-text">Current formula does not use any variables yet.</p>
       }
+    </div>
 
-      <div class="flex-col gap-sm">
-        <p class="card-legend mb-0">Builder</p>
-        @for (category of page.formulas.blockCategories(); track category) {
-          <div class="flex-col gap-xs">
-            <span class="muted-text">{{ category }}</span>
-            <div class="flex-row-start-center flex-wrap gap-sm">
-              @for (block of page.formulas.blocksFor(category); track block.id) {
-                <button
-                  type="button"
-                  class="tag-badge tag-badge--muted"
-                  (click)="page.formulas.appendBlock(block.token)"
-                >
-                  {{ block.label }}
-                </button>
-              }
-            </div>
-          </div>
-        } @empty {
-          <p class="mb-0 muted-text">No formula blocks defined for this scope.</p>
-        }
-      </div>
-
-      <div class="mg-surface-card flex-col gap-xs p-md">
-        <span class="muted-text">Preview result</span>
-        @if (page.formulas.preview().error) {
-          <strong class="heading-color">Formula error</strong>
-          <span class="muted-text">{{ page.formulas.preview().error }}</span>
-        } @else {
-          <strong class="mg-section__title mg-section__title--xs mb-0">
-            {{ page.formulas.preview().value }}
-          </strong>
-          <span class="muted-text">
-            Result of the current formula for the chosen target context.
-          </span>
-        }
-      </div>
+    <div class="mg-surface-card flex-col gap-xs p-md">
+      <span class="muted-text">Preview result</span>
+      @if (page.formulas.preview().error) {
+        <strong class="heading-color">Formula error</strong>
+        <span class="muted-text">{{ page.formulas.preview().error }}</span>
+      } @else {
+        <strong class="mg-section__title mg-section__title--xs mb-0">
+          {{ page.formulas.preview().value }}
+        </strong>
+        <span class="muted-text">
+          Result of the current formula for the chosen target context.
+        </span>
+      }
     </div>
 
     <div class="flex-row-start-center flex-wrap gap-sm">

@@ -1,7 +1,6 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormArray } from '@angular/forms';
-import { finalize, take } from 'rxjs';
+import { finalize } from 'rxjs';
 import {
   CatalogSection,
   EditableItemGenerationAffix,
@@ -12,7 +11,6 @@ import { ItemGenerationItemCatalogFormFactory } from '../../factories/forms/item
 import {
   AffixEditorForm,
   BaseEditorForm,
-  BonusForm,
   CatalogEntitySelectorForm,
 } from '../../types/forms/item-generation-item-catalog-form.types';
 import { ItemGenerationAdminService } from './item-generation-admin';
@@ -24,10 +22,12 @@ import {
   firstCatalogEntity,
   resolveCatalogBonusTemplates,
 } from '../../utils/item-catalog-admin';
+import { createFormArrayEditor } from '../../utils/form-array-editor';
 import { CatalogEntity } from '../../types/item-catalog-admin.types';
 
 @Injectable()
 export class ItemGenerationItemCatalogPageFacade {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly adminService = inject(ItemGenerationAdminService);
   private readonly formFactory = inject(ItemGenerationItemCatalogFormFactory);
 
@@ -50,6 +50,14 @@ export class ItemGenerationItemCatalogPageFacade {
     this.formFactory.createBaseEditorForm();
   readonly affixEditorForm: AffixEditorForm =
     this.formFactory.createAffixEditorForm();
+  readonly baseBonusEditor = createFormArrayEditor(
+    this.baseEditorForm.controls.bonuses,
+    () => this.formFactory.createBonusForm()
+  );
+  readonly affixBonusEditor = createFormArrayEditor(
+    this.affixEditorForm.controls.bonuses,
+    () => this.formFactory.createBonusForm()
+  );
 
   readonly activeEntities = computed(() => {
     const data = this.catalogData();
@@ -75,14 +83,6 @@ export class ItemGenerationItemCatalogPageFacade {
       });
   }
 
-  get baseBonuses(): FormArray<BonusForm> {
-    return this.baseEditorForm.controls.bonuses;
-  }
-
-  get affixBonuses(): FormArray<BonusForm> {
-    return this.affixEditorForm.controls.bonuses;
-  }
-
   loadData(preferred?: { section?: CatalogSection; key?: string }) {
     this.isLoading.set(true);
     this.errorMessage.set(null);
@@ -90,7 +90,7 @@ export class ItemGenerationItemCatalogPageFacade {
     this.adminService
       .getCatalogData()
       .pipe(
-        take(1),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoading.set(false))
       )
       .subscribe({
@@ -144,22 +144,8 @@ export class ItemGenerationItemCatalogPageFacade {
     this.resetEditorForSection(this.activeSection());
   }
 
-  addBonus() {
-    if (this.activeSection() === 'base') {
-      this.baseBonuses.push(this.formFactory.createBonusForm());
-      return;
-    }
-
-    this.affixBonuses.push(this.formFactory.createBonusForm());
-  }
-
-  removeBonus(index: number) {
-    if (this.activeSection() === 'base') {
-      this.baseBonuses.removeAt(index);
-      return;
-    }
-
-    this.affixBonuses.removeAt(index);
+  bonusEditor() {
+    return this.activeSection() === 'base' ? this.baseBonusEditor : this.affixBonusEditor;
   }
 
   saveCurrent() {
@@ -178,7 +164,7 @@ export class ItemGenerationItemCatalogPageFacade {
       this.adminService
         .saveBase(draft)
         .pipe(
-          take(1),
+          takeUntilDestroyed(this.destroyRef),
           finalize(() => this.isSaving.set(false))
         )
         .subscribe({
@@ -204,7 +190,7 @@ export class ItemGenerationItemCatalogPageFacade {
     this.adminService
       .saveAffix(draft)
       .pipe(
-        take(1),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isSaving.set(false))
       )
       .subscribe({
@@ -243,7 +229,7 @@ export class ItemGenerationItemCatalogPageFacade {
 
     request
       .pipe(
-        take(1),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isSaving.set(false))
       )
       .subscribe({

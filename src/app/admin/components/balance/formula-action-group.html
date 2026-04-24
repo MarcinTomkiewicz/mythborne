@@ -1,0 +1,26 @@
+<div class="flex-col gap-xs">
+  <span class="muted-text">{{ title() }}</span>
+
+  <div class="flex-row-start-center flex-wrap gap-sm">
+    @for (item of items(); track item.id) {
+      <button
+        type="button"
+        [class]="
+          appearance() === 'card'
+            ? 'mg-card flex-col gap-xs p-sm text-left cursor-pointer'
+            : tone() === 'warn'
+              ? 'tag-badge tag-badge--warn cursor-pointer'
+              : 'tag-badge tag-badge--muted cursor-pointer'
+        "
+        [pTooltip]="item.tooltip ?? ''"
+        tooltipPosition="top"
+        (click)="selected.emit(item)"
+      >
+        <strong [class]="appearance() === 'card' ? 'heading-color' : ''">{{ item.label }}</strong>
+        @if (item.secondaryLabel && appearance() === 'card') {
+          <span class="muted-text">{{ item.secondaryLabel }}</span>
+        }
+      </button>
+    }
+  </div>
+</div>

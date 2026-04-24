@@ -52,7 +52,7 @@ export class MansionPageFacade {
     return toBuildingBonusLabel(target);
   }
 
-  toBonusValue(value: number, type: 'flat' | 'percent'): string {
+  toBonusValue(value: number, type: MansionBuilding['bonuses'][number]['type']): string {
     return toBuildingBonusValue(value, type);
   }
 

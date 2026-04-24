@@ -45,7 +45,7 @@
 
       <form [formGroup]="page.formulas.assignmentForm" class="mg-surface-card flex-col gap-md p-lg">
         <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
-          <app-admin-form-fields [form]="page.formulas.assignmentForm" [fields]="formulaFields()" />
+          <app-form-fields [form]="page.formulas.assignmentForm" [fields]="formulaFields()" />
         </div>
       </form>
     </section>
@@ -61,11 +61,11 @@
       </div>
 
       <form [formGroup]="page.building.selectorForm" class="mb-lg">
-        <app-admin-form-fields [form]="page.building.selectorForm" [fields]="selectorFields()" />
+        <app-form-fields [form]="page.building.selectorForm" [fields]="selectorFields()" />
       </form>
 
       <form [formGroup]="page.building.editorForm" class="mg-surface-card flex-col gap-lg p-lg">
-        <div class="flex-row-start-center flex-col-sm gap-lg">
+        <div class="flex-row-start-center flex-col-sm gap-lg align-items-center">
           <span class="image__preview image__preview--square w-px-200 w-100-sm">
             <img
               [src]="page.imagePreviewPath()"
@@ -76,7 +76,7 @@
           </span>
 
           <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
-            <app-admin-form-fields [form]="page.building.editorForm" [fields]="primaryEditorFields()" />
+            <app-form-fields [form]="page.building.editorForm" [fields]="primaryEditorFields()" />
 
             <label class="flex-col gap-sm">
               <span class="muted-text">Image path</span>
@@ -86,7 +86,7 @@
         </div>
 
         <div class="mg-grid grid-cols-4 grid-cols-2-sm grid-cols-1-xs gap-md w-100">
-          <app-admin-form-fields [form]="page.building.editorForm" [fields]="progressionFields" />
+          <app-form-fields [form]="page.building.editorForm" [fields]="progressionFields" />
         </div>
 
         <div class="mg-surface-card flex-col gap-md p-md">
@@ -98,13 +98,13 @@
               </p>
             </div>
 
-            <p-button label="Add cost" [text]="true" (onClick)="page.addCost()" />
+            <p-button label="Add cost" [text]="true" (onClick)="page.costEditor.add()" />
           </div>
 
           <div class="flex-col gap-md">
-            @for (costGroup of page.costGroups(); track $index) {
+            @for (costGroup of page.costEditor.controls; track $index) {
               <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="costGroup">
-                <div class="mg-grid grid-cols-4 grid-cols-1-sm gap-md w-100">
+                <div class="mg-grid grid-cols-4 grid-cols-1-sm gap-md w-100 align-items-center">
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Resource</span>
                     <select class="w-100 p-inputtext" formControlName="resourceType">
@@ -129,7 +129,7 @@
                       label="Remove"
                       severity="danger"
                       [text]="true"
-                      (onClick)="page.removeCost($index)"
+                      (onClick)="page.costEditor.remove($index)"
                     />
                   </div>
                 </div>
@@ -149,13 +149,13 @@
               </p>
             </div>
 
-            <p-button label="Add requirement" [text]="true" (onClick)="page.addRequirement()" />
+            <p-button label="Add requirement" [text]="true" (onClick)="page.requirementEditor.add()" />
           </div>
 
           <div class="flex-col gap-md">
-            @for (requirementGroup of page.requirementGroups(); track $index) {
+            @for (requirementGroup of page.requirementEditor.controls; track $index) {
               <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="requirementGroup">
-                <div class="mg-grid grid-cols-5 grid-cols-1-sm gap-md w-100">
+                <div class="mg-grid grid-cols-5 grid-cols-1-sm gap-md w-100 align-items-center">
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Type</span>
                     <select
@@ -194,7 +194,7 @@
                       label="Remove"
                       severity="danger"
                       [text]="true"
-                      (onClick)="page.removeRequirement($index)"
+                      (onClick)="page.requirementEditor.remove($index)"
                     />
                   </div>
                 </div>
@@ -212,13 +212,13 @@
               <p class="mb-0 muted-text">Base bonus values used by the global building bonus formula.</p>
             </div>
 
-            <p-button label="Add bonus" [text]="true" (onClick)="page.addBonus()" />
+            <p-button label="Add bonus" [text]="true" (onClick)="page.bonusEditor.add()" />
           </div>
 
           <div class="flex-col gap-md">
-            @for (bonusGroup of page.bonusGroups(); track $index) {
+            @for (bonusGroup of page.bonusEditor.controls; track $index) {
               <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
-                <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+                <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100 align-items-center">
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Template</span>
                     <select
@@ -265,7 +265,7 @@
                     label="Remove"
                     severity="danger"
                     [text]="true"
-                    (onClick)="page.removeBonus($index)"
+                    (onClick)="page.bonusEditor.remove($index)"
                   />
                 </div>
               </div>
@@ -312,7 +312,7 @@
                       }
                     }
                     <strong class="heading-color">{{ cost.amount }}</strong>
-                    <span class="muted-text">{{ page.resourceLabel(cost.resourceType) }}</span>
+                    <span class="muted-text">{{ page.format.resource(cost.resourceType) }}</span>
                   </div>
                 } @empty {
                   <span class="muted-text">No resource cost defined.</span>
@@ -321,8 +321,11 @@
             </div>
 
             <div class="mg-card flex-col gap-xs p-md">
-              <span class="muted-text">Next level time</span>
-              <strong class="heading-color">{{ page.toDurationLabel(page.preview().nextTime) }}</strong>
+              <div class="flex-row-start-center gap-sm">
+                <i class="pi pi-sundial muted-text"></i>
+                <span class="muted-text">Next level time</span>
+              </div>
+              <strong class="heading-color">{{ page.format.duration(page.preview().nextTime) }}</strong>
             </div>
           </div>
 
@@ -330,10 +333,10 @@
             <div class="flex-col gap-sm">
               @for (bonus of page.preview().bonuses; track bonus.target + bonus.type) {
                 <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
-                  <strong class="heading-color">{{ page.toBonusLabel(bonus.target) }}</strong>
+                  <strong class="heading-color">{{ page.format.bonusLabel(bonus.target) }}</strong>
                   <span>
-                    {{ page.toBonusValue(bonus.current, bonus.type) }} ->
-                    {{ page.toBonusValue(bonus.next, bonus.type) }}
+                    {{ page.format.bonusValue(bonus.current, bonus.type) }} ->
+                    {{ page.format.bonusValue(bonus.next, bonus.type) }}
                   </span>
                 </div>
               } @empty {
@@ -344,9 +347,9 @@
             <div class="flex-col gap-sm">
               @for (requirement of page.preview().requirements; track requirement.type + (requirement.statKey ?? '') + requirement.appliesFromLevel) {
                 <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
-                  <strong class="heading-color">{{ page.requirementTypeLabel(requirement.type) }}</strong>
+                  <strong class="heading-color">{{ page.format.requirementType(requirement.type) }}</strong>
                   <span>
-                    {{ page.requirementSummary(requirement) }}
+                    {{ page.format.requirementSummary(requirement) }}
                     @if (requirement.appliesFromLevel > 1) {
                       <span> from level {{ requirement.appliesFromLevel }}</span>
                     }

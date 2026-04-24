@@ -53,7 +53,7 @@
     </div>
 
     <form [formGroup]="page.selectorForm">
-      <app-admin-form-fields
+      <app-form-fields
         [form]="page.selectorForm"
         [fields]="selectorFields()"
         widthClass="w-full"
@@ -88,7 +88,7 @@
 
       <form [formGroup]="page.baseEditorForm" class="flex-col gap-md">
         <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
-          <app-admin-form-fields
+          <app-form-fields
             [form]="page.baseEditorForm"
             [fields]="baseEditorFields"
             widthClass="w-full"
@@ -102,11 +102,11 @@
               <h4 class="mg-section__title mg-section__title--xs mb-0">Base bonuses</h4>
             </div>
 
-            <p-button label="Add bonus" [text]="true" (onClick)="page.addBonus()" />
+            <p-button label="Add bonus" [text]="true" (onClick)="page.bonusEditor().add()" />
           </div>
 
           <div class="flex-col gap-md">
-            @for (bonusGroup of page.baseBonuses.controls; track $index) {
+            @for (bonusGroup of page.baseBonusEditor.controls; track $index) {
               <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
                 <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
                   <label class="flex-col gap-sm">
@@ -135,7 +135,7 @@
                 </div>
 
                 <div class="flex-row-start-center gap-sm">
-                  <p-button label="Remove bonus" severity="danger" [text]="true" (onClick)="page.removeBonus($index)" />
+                  <p-button label="Remove bonus" severity="danger" [text]="true" (onClick)="page.baseBonusEditor.remove($index)" />
                 </div>
               </div>
             }
@@ -172,7 +172,7 @@
 
       <form [formGroup]="page.affixEditorForm" class="flex-col gap-md">
         <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
-          <app-admin-form-fields
+          <app-form-fields
             [form]="page.affixEditorForm"
             [fields]="affixEditorFields"
             widthClass="w-full"
@@ -186,11 +186,11 @@
               <h4 class="mg-section__title mg-section__title--xs mb-0">Affix bonuses</h4>
             </div>
 
-            <p-button label="Add bonus" [text]="true" (onClick)="page.addBonus()" />
+            <p-button label="Add bonus" [text]="true" (onClick)="page.bonusEditor().add()" />
           </div>
 
           <div class="flex-col gap-md">
-            @for (bonusGroup of page.affixBonuses.controls; track $index) {
+            @for (bonusGroup of page.affixBonusEditor.controls; track $index) {
               <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
                 <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
                   <label class="flex-col gap-sm">
@@ -219,7 +219,7 @@
                 </div>
 
                 <div class="flex-row-start-center gap-sm">
-                  <p-button label="Remove bonus" severity="danger" [text]="true" (onClick)="page.removeBonus($index)" />
+                  <p-button label="Remove bonus" severity="danger" [text]="true" (onClick)="page.affixBonusEditor.remove($index)" />
                 </div>
               </div>
             }

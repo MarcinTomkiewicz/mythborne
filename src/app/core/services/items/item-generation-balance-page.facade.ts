@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, finalize, forkJoin, take } from 'rxjs';
+import { Observable, finalize, forkJoin } from 'rxjs';
 import {
   EditableItemGenerationBucketProfile,
   EditableItemGenerationQuality,
@@ -70,6 +70,25 @@ export class ItemGenerationBalancePageFacade {
       ? this.bucketFactory.buildBuckets(profile)
       : [];
   });
+  readonly qualityWeightState = computed(() => {
+    const draft = this.quality.draft();
+    const currentId = this.quality.id();
+    const mergedQualities = this.quality
+      .items()
+      .filter((item) => item.id !== currentId && item.key !== draft.key);
+
+    mergedQualities.push(draft);
+
+    const activeWeights = mergedQualities
+      .filter((quality) => quality.isEnabled)
+      .reduce((sum, quality) => sum + quality.weight, 0);
+
+    return {
+      total: activeWeights,
+      remaining: 100 - activeWeights,
+      isValid: activeWeights === 100,
+    };
+  });
 
   constructor() {
     this.profile.editorForm.controls.name.valueChanges
@@ -92,7 +111,7 @@ export class ItemGenerationBalancePageFacade {
       formulaData: this.formulaService.refreshAdminData(),
     })
       .pipe(
-        take(1),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoading.set(false))
       )
       .subscribe({
@@ -112,6 +131,16 @@ export class ItemGenerationBalancePageFacade {
 
   saveQuality() {
     const draft = this.quality.draft();
+
+    if (!this.qualityWeightState().isValid) {
+      this.toast.show(
+        'error',
+        'Weight total invalid',
+        'Active quality tier weights must sum to exactly 100.'
+      );
+      return;
+    }
+
     this.persist(
       this.adminService.saveQuality(draft),
       'Quality saved',
@@ -171,7 +200,7 @@ export class ItemGenerationBalancePageFacade {
     this.isSaving.set(true);
     operation
       .pipe(
-        take(1),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isSaving.set(false))
       )
       .subscribe({

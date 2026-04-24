@@ -8,6 +8,6 @@ import { AdminTagLink } from '../../../core/types/admin-ui.types';
   imports: [RouterLink],
   templateUrl: './admin-tag-links.html',
 })
-export class AdminTagLinksComponent {
+export class AdminTagLinks {
   readonly links = input.required<readonly AdminTagLink[]>();
 }

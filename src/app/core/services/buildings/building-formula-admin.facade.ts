@@ -1,5 +1,6 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, finalize, forkJoin, take } from 'rxjs';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable, finalize, forkJoin } from 'rxjs';
 import { FormulaAdminData, FormulaTarget } from '../../domain/formula/formula.model';
 import {
   BUILDING_PROGRESSION_TARGET_KEYS,
@@ -20,6 +21,7 @@ const EMPTY_FORMULA_DATA: FormulaAdminData = {
 
 @Injectable()
 export class BuildingFormulaAdminFacade {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly formulaService = inject(FormulaService);
   private readonly progression = inject(BuildingProgressionService);
   private readonly formFactory = inject(BuildingAdminFormFactory);
@@ -71,7 +73,7 @@ export class BuildingFormulaAdminFacade {
   refresh() {
     this.formulaService
       .refreshAdminData()
-      .pipe(take(1))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((data) => this.setData(data));
   }
 
@@ -91,7 +93,7 @@ export class BuildingFormulaAdminFacade {
     this.isSaving.set(true);
     forkJoin(operations)
       .pipe(
-        take(1),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isSaving.set(false))
       )
       .subscribe({

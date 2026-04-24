@@ -9,19 +9,44 @@
   </div>
 
   <form [formGroup]="page.quality.selectorForm" class="mb-lg">
-    <app-admin-form-fields [form]="page.quality.selectorForm" [fields]="selectorFields()" />
+    <app-form-fields [form]="page.quality.selectorForm" [fields]="selectorFields()" />
   </form>
 
   <form [formGroup]="page.quality.editorForm" class="mg-surface-card flex-col gap-md p-lg">
-    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
-      <app-admin-form-fields [form]="page.quality.editorForm" [fields]="editorFields" />
+    <div class="mg-card flex-row-between-center flex-col-sm gap-md p-md">
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Active weight total</span>
+        <strong class="heading-color">{{ page.qualityWeightState().total }} / 100</strong>
+      </div>
+
+      <span
+        class="tag-badge"
+        [class.tag-badge--success]="page.qualityWeightState().isValid"
+        [class.tag-badge--danger]="!page.qualityWeightState().isValid"
+      >
+        @if (page.qualityWeightState().isValid) {
+          Balanced
+        } @else {
+          Missing {{ page.qualityWeightState().remaining > 0 ? page.qualityWeightState().remaining : page.qualityWeightState().remaining * -1 }}
+        }
+      </span>
     </div>
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100 grid-items-start">
+      <app-form-fields [form]="page.quality.editorForm" [fields]="editorFields" />
+    </div>
+
+    @if (!page.qualityWeightState().isValid) {
+      <p class="mb-0 muted-text">
+        Enabled quality tiers should add up to exactly 100, because they represent exclusive roll chances.
+      </p>
+    }
 
     <div class="flex-row-start-center flex-wrap gap-sm">
       <p-button
         label="Save quality"
         [loading]="page.isSaving()"
-        [disabled]="page.isLoading() || page.isBusy()"
+        [disabled]="page.isLoading() || page.isBusy() || !page.qualityWeightState().isValid"
         (onClick)="page.saveQuality()"
       />
       <p-button

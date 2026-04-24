@@ -16,6 +16,7 @@ export class DashboardPageFacade {
 
   heroName = '';
   level = 1;
+  readonly heroLevel = signal(1);
   experiencePercent = 0;
 
   origin = signal<Origin | null>(null);
@@ -28,11 +29,15 @@ export class DashboardPageFacade {
   derivedValues = signal<IHeroDerived>({} as IHeroDerived);
 
   statsDisplay = computed(() =>
-    this.statsService.getFinalStats(this.statsValues(), [this.originBonusSource()])
+    this.statsService.getFinalStats(this.statsValues(), [this.originBonusSource()], {
+      heroLevel: this.heroLevel(),
+    })
   );
 
   derivedDisplay = computed(() =>
-    this.statsService.getFinalStats(this.derivedValues(), [this.originBonusSource()])
+    this.statsService.getFinalStats(this.derivedValues(), [this.originBonusSource()], {
+      heroLevel: this.heroLevel(),
+    })
   );
 
   equipment = [
@@ -49,6 +54,7 @@ export class DashboardPageFacade {
     this.heroService.getHeroData().subscribe((hero) => {
       this.heroName = hero.name;
       this.level = hero.level ?? 1;
+      this.heroLevel.set(hero.level ?? 1);
       this.experiencePercent = this.calculateExperiencePercent(hero.experience);
 
       if (hero.origin_id) {

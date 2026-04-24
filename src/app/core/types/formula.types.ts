@@ -10,6 +10,11 @@ export interface FormulaTarget {
   createdAt: string | null;
 }
 
+export interface FormulaVariableDefinition {
+  key: string;
+  defaultValue: number;
+}
+
 export interface BalanceFormula {
   id: string;
   key: string;
@@ -39,6 +44,27 @@ export interface FormulaBlock {
   helperText: string | null;
   sortOrder: number;
   createdAt: string | null;
+}
+
+export interface FormulaFunctionGuide {
+  key: string;
+  label: string;
+  syntax: string;
+  friendlySyntax: string;
+  humanSyntax: string;
+  description: string;
+  example: string;
+  exampleHuman: string;
+  insertTemplate: string;
+}
+
+export interface FormulaTemplateGuide {
+  key: string;
+  label: string;
+  expressionTemplate: string;
+  humanTemplate: string;
+  summary: string;
+  effect: string;
 }
 
 export interface FormulaAdminData {

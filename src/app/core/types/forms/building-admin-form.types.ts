@@ -3,6 +3,7 @@ import {
   BuildingResourceType,
   EditableBuildingRequirement,
 } from '../building.types';
+import { BonusType } from '../bonus.types';
 
 export type BuildingFormulaControlName =
   | 'upgradeCostFormulaId'
@@ -22,7 +23,7 @@ export type BuildingFormulaAssignmentForm = FormGroup<{
 export type BuildingBonusForm = FormGroup<{
   templateId: FormControl<string | null>;
   target: FormControl<string>;
-  type: FormControl<'flat' | 'percent'>;
+  type: FormControl<BonusType>;
   value: FormControl<number>;
   description: FormControl<string>;
 }>;

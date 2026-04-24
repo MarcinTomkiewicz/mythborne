@@ -3,6 +3,8 @@ import {
   BuildingStatOption,
   EditableBuildingRequirement,
 } from '../domain/building/building.model';
+import { BonusType } from '../types/bonus.types';
+import { formatBonusValue } from './bonus';
 
 export function toBuildingBonusLabel(target: string): string {
   return target
@@ -10,8 +12,8 @@ export function toBuildingBonusLabel(target: string): string {
     .replace(/^./, (value) => value.toUpperCase());
 }
 
-export function toBuildingBonusValue(value: number, type: 'flat' | 'percent'): string {
-  return type === 'percent' ? `${value}%` : `${value}`;
+export function toBuildingBonusValue(value: number, type: BonusType): string {
+  return formatBonusValue(value, type, { includePlus: false });
 }
 
 export function toBuildingDurationLabel(minutes: number | null): string {

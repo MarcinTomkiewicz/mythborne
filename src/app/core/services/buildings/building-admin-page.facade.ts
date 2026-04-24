@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { finalize, forkJoin, startWith, take } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { finalize, forkJoin, startWith } from 'rxjs';
 import {
   BuildingResourceType,
   EditableBuildingBonus,
@@ -10,12 +10,7 @@ import {
 } from '../../domain/building/building.model';
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
 import { BuildingAdminFormFactory } from '../../factories/forms/building-admin-form.factory';
-import {
-  BuildingBonusForm,
-  BuildingEditorForm,
-  BuildingRequirementForm,
-  BuildingResourceCostForm,
-} from '../../types/forms/building-admin-form.types';
+import { BuildingEditorForm } from '../../types/forms/building-admin-form.types';
 import {
   resourceOrder,
   toBuildingBonusLabel,
@@ -27,6 +22,7 @@ import {
 } from '../../utils/building-display';
 import { createEntityEditorState } from '../../utils/entity-editor-state';
 import { getErrorMessage } from '../../utils/error-message';
+import { createFormArrayEditor } from '../../utils/form-array-editor';
 import { trimText } from '../../utils/normalize-text';
 import { nonNegativeInteger } from '../../utils/number';
 import { FormulaService } from '../formula/formula';
@@ -57,6 +53,15 @@ export class BuildingsPageFacade {
   readonly error = signal<string | null>(null);
   readonly adminData = signal<BuildingAdminData>(EMPTY_ADMIN_DATA);
   readonly previewLevel = signal(1);
+  readonly format = {
+    bonusLabel: toBuildingBonusLabel,
+    bonusValue: toBuildingBonusValue,
+    duration: toBuildingDurationLabel,
+    requirementType: toBuildingRequirementTypeLabel,
+    resource: toResourceLabel,
+    requirementSummary: (requirement: EditableBuildingRequirement) =>
+      toBuildingRequirementSummary(requirement, this.adminData().stats),
+  };
 
   readonly building = createEntityEditorState<EditableBuilding, BuildingEditorForm>({
     destroyRef: this.destroyRef,
@@ -74,6 +79,18 @@ export class BuildingsPageFacade {
       startWith(this.building.editorForm.getRawValue())
     ),
     { initialValue: this.building.editorForm.getRawValue() }
+  );
+  readonly bonusEditor = createFormArrayEditor(
+    this.building.editorForm.controls.bonuses,
+    () => this.formFactory.createBonusGroup()
+  );
+  readonly costEditor = createFormArrayEditor(
+    this.building.editorForm.controls.resourceCosts,
+    () => this.formFactory.createCostGroup()
+  );
+  readonly requirementEditor = createFormArrayEditor(
+    this.building.editorForm.controls.requirements,
+    () => this.formFactory.createRequirementGroup()
   );
 
   readonly imagePreviewPath = computed(() => {
@@ -95,7 +112,7 @@ export class BuildingsPageFacade {
       return { nextCosts: [], nextTime: null, bonuses: [], requirements: [] };
     }
 
-    const nextCosts = this.resourceCostsArray.controls
+    const nextCosts = this.costEditor.controls
       .map((control) => control.getRawValue())
       .filter((cost) => Number(cost.appliesFromLevel) <= level + 1)
       .reduce((acc, cost) => {
@@ -117,7 +134,7 @@ export class BuildingsPageFacade {
         rank,
         rules
       ),
-      bonuses: this.bonusesArray.controls.map((control) => {
+      bonuses: this.bonusEditor.controls.map((control) => {
         const bonus = control.getRawValue() as EditableBuildingBonus;
         return {
           target: bonus.target,
@@ -126,35 +143,11 @@ export class BuildingsPageFacade {
           next: this.progression.getBonusValue(level + 1, Number(bonus.value), rules) ?? 0,
         };
       }),
-      requirements: this.requirementsArray.controls
+      requirements: this.requirementEditor.controls
         .map((control) => control.getRawValue() as EditableBuildingRequirement)
         .filter((requirement) => Number(requirement.appliesFromLevel) <= level + 1),
     };
   });
-
-  get bonusesArray() {
-    return this.building.editorForm.controls.bonuses;
-  }
-
-  get resourceCostsArray() {
-    return this.building.editorForm.controls.resourceCosts;
-  }
-
-  get requirementsArray() {
-    return this.building.editorForm.controls.requirements;
-  }
-
-  bonusGroups(): BuildingBonusForm[] {
-    return this.bonusesArray.controls;
-  }
-
-  costGroups(): BuildingResourceCostForm[] {
-    return this.resourceCostsArray.controls;
-  }
-
-  requirementGroups(): BuildingRequirementForm[] {
-    return this.requirementsArray.controls;
-  }
 
   loadData(preferredKey?: string) {
     this.isLoading.set(true);
@@ -165,7 +158,7 @@ export class BuildingsPageFacade {
       formulaData: this.formulaService.refreshAdminData(),
     })
       .pipe(
-        take(1),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoading.set(false))
       )
       .subscribe({
@@ -182,39 +175,15 @@ export class BuildingsPageFacade {
       });
   }
 
-  addBonus() {
-    this.bonusesArray.push(this.formFactory.createBonusGroup());
-  }
-
-  removeBonus(index: number) {
-    this.bonusesArray.removeAt(index);
-  }
-
-  addCost() {
-    this.resourceCostsArray.push(this.formFactory.createCostGroup());
-  }
-
-  removeCost(index: number) {
-    this.resourceCostsArray.removeAt(index);
-  }
-
-  addRequirement() {
-    this.requirementsArray.push(this.formFactory.createRequirementGroup());
-  }
-
-  removeRequirement(index: number) {
-    this.requirementsArray.removeAt(index);
-  }
-
   applyTemplate(index: number, templateId: string) {
     const template = this.adminData().bonusTemplates.find(
       (entry) => entry.templateId === templateId
     );
-    template && this.bonusesArray.at(index).patchValue(template);
+    template && this.bonusEditor.at(index).patchValue(template);
   }
 
   updateRequirementType(index: number, type: string) {
-    type !== 'hero_stat' && this.requirementsArray.at(index).patchValue({ statKey: null });
+    type !== 'hero_stat' && this.requirementEditor.at(index).patchValue({ statKey: null });
   }
 
   saveBuilding() {
@@ -223,7 +192,7 @@ export class BuildingsPageFacade {
     this.adminService
       .saveBuilding(draft)
       .pipe(
-        take(1),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isSaving.set(false))
       )
       .subscribe({
@@ -243,30 +212,6 @@ export class BuildingsPageFacade {
 
   updatePreviewLevel(value: string) {
     this.previewLevel.set(nonNegativeInteger(value));
-  }
-
-  toBonusLabel(target: string): string {
-    return toBuildingBonusLabel(target);
-  }
-
-  toBonusValue(value: number, type: 'flat' | 'percent'): string {
-    return toBuildingBonusValue(value, type);
-  }
-
-  toDurationLabel(minutes: number | null): string {
-    return toBuildingDurationLabel(minutes);
-  }
-
-  requirementTypeLabel(type: EditableBuildingRequirement['type']): string {
-    return toBuildingRequirementTypeLabel(type);
-  }
-
-  requirementSummary(requirement: EditableBuildingRequirement): string {
-    return toBuildingRequirementSummary(requirement, this.adminData().stats);
-  }
-
-  resourceLabel(type: BuildingResourceType): string {
-    return toResourceLabel(type);
   }
 
   handleImageError(event: Event) {

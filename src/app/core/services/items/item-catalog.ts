@@ -7,7 +7,7 @@ import {
   mapItemGenerationBase,
   mapItemGenerationBucketProfile,
   mapItemGenerationQuality,
-} from '../../domain/item/item-generation.mapper';
+} from '../../utils/item-generation-catalog-mappers';
 import { ItemGenerationCatalog } from '../../domain/item/item-generation.model';
 import {
   ItemGenerationAffixBonusRow,
