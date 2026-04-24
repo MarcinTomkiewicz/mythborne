@@ -1,0 +1,104 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Formulas</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Library</h3>
+      <p class="muted-text mb-0">
+        Tu tworzysz lub edytujesz formule. Zakres jest definiowany z gory, a przypiecie do targetu robisz osobno.
+      </p>
+    </div>
+
+    <p-button label="New formula" [text]="true" (onClick)="page.formulas.newFormula()" />
+  </div>
+
+  <form [formGroup]="page.formulas.selectorForm" class="mb-lg">
+    <app-admin-form-fields [form]="page.formulas.selectorForm" [fields]="selectorFields()" />
+  </form>
+
+  <form [formGroup]="page.formulas.editorForm" class="mg-surface-card flex-col gap-md p-lg">
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+      <app-admin-form-fields [form]="page.formulas.editorForm" [fields]="editorFields()" />
+    </div>
+
+    <div class="mg-surface-card flex-col gap-md p-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Tester</p>
+        <p class="muted-text mb-0">
+          Zmieniasz wartosci zmiennych i od razu widzisz wynik aktualnie edytowanej formuly.
+        </p>
+      </div>
+
+      @if (page.formulas.testerVariables().length > 0) {
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+          @for (variable of page.formulas.testerVariables(); track variable) {
+            <label class="flex-col gap-sm">
+              <span class="muted-text">{{ variable }}</span>
+              <input
+                pInputText
+                type="number"
+                class="w-100"
+                [value]="page.formulas.getTesterValue(variable)"
+                (input)="page.formulas.updateTesterContext(variable, $any($event.target).value)"
+              />
+            </label>
+          }
+        </div>
+      } @else {
+        <p class="mb-0 muted-text">Current formula does not use any variables yet.</p>
+      }
+
+      <div class="flex-col gap-sm">
+        <p class="card-legend mb-0">Builder</p>
+        @for (category of page.formulas.blockCategories(); track category) {
+          <div class="flex-col gap-xs">
+            <span class="muted-text">{{ category }}</span>
+            <div class="flex-row-start-center flex-wrap gap-sm">
+              @for (block of page.formulas.blocksFor(category); track block.id) {
+                <button
+                  type="button"
+                  class="tag-badge tag-badge--muted"
+                  (click)="page.formulas.appendBlock(block.token)"
+                >
+                  {{ block.label }}
+                </button>
+              }
+            </div>
+          </div>
+        } @empty {
+          <p class="mb-0 muted-text">No formula blocks defined for this scope.</p>
+        }
+      </div>
+
+      <div class="mg-surface-card flex-col gap-xs p-md">
+        <span class="muted-text">Preview result</span>
+        @if (page.formulas.preview().error) {
+          <strong class="heading-color">Formula error</strong>
+          <span class="muted-text">{{ page.formulas.preview().error }}</span>
+        } @else {
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ page.formulas.preview().value }}
+          </strong>
+          <span class="muted-text">
+            Result of the current formula for the chosen target context.
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button
+        label="Save formula"
+        [loading]="page.formulas.isSaving()"
+        [disabled]="page.isLoading() || page.isBusy() || !!page.formulas.preview().error"
+        (onClick)="page.formulas.saveFormula()"
+      />
+      <p-button
+        label="Delete"
+        severity="danger"
+        [text]="true"
+        [disabled]="!page.formulas.editorForm.controls.id.value || page.isBusy()"
+        (onClick)="page.formulas.deleteFormula()"
+      />
+    </div>
+  </form>
+</section>

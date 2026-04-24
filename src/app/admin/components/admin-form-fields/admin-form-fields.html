@@ -1,0 +1,53 @@
+<ng-container [formGroup]="form()">
+  @for (field of fields(); track field.controlName) {
+    @switch (field.type) {
+      @case (fieldType.Checkbox) {
+        <label [class]="fieldClass(field, 'flex-row-start-center gap-sm mt-lg')">
+          <input type="checkbox" [formControlName]="field.controlName" />
+          <span class="muted-text">{{ field.label }}</span>
+        </label>
+      }
+
+      @case (fieldType.Textarea) {
+        <label [class]="fieldClass(field)">
+          <span class="muted-text">{{ field.label }}</span>
+          <textarea
+            pInputText
+            [rows]="field.rows ?? 3"
+            [class]="widthClass()"
+            [formControlName]="field.controlName"
+            [readOnly]="field.readonly ?? false"
+          ></textarea>
+        </label>
+      }
+
+      @case (fieldType.Select) {
+        <label [class]="fieldClass(field)">
+          <span class="muted-text">{{ field.label }}</span>
+          <select
+            [class]="'p-inputtext ' + widthClass()"
+            [formControlName]="field.controlName"
+          >
+            @for (option of field.options ?? []; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+      }
+
+      @default {
+        <label [class]="fieldClass(field)">
+          <span class="muted-text">{{ field.label }}</span>
+          <input
+            pInputText
+            [type]="field.type === fieldType.Number ? 'number' : 'text'"
+            [class]="widthClass()"
+            [formControlName]="field.controlName"
+            [attr.step]="field.step ?? null"
+            [readOnly]="field.readonly ?? false"
+          />
+        </label>
+      }
+    }
+  }
+</ng-container>

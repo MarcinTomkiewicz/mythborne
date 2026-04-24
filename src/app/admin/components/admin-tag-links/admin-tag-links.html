@@ -1,0 +1,5 @@
+<div class="flex-row-start-center flex-wrap gap-sm">
+  @for (link of links(); track link.routerLink) {
+    <a [routerLink]="link.routerLink" class="tag-badge tag-badge--muted">{{ link.label }}</a>
+  }
+</div>

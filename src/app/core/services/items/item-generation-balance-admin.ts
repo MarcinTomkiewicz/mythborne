@@ -134,7 +134,7 @@ export class ItemGenerationBalanceAdminService {
                   map((rowsByKey) => {
                     if (!rowsByKey.length) {
                       throw new Error(
-                        `Bucket profile "${key}" update did not affect any row. Check item-generation grants and update RLS policies.`
+                        `Bucket profile "${key}" update did not affect any row. Apply database/item-generation/009_item_generation_balance_write_policy_repair.sql in Supabase and verify RLS policies plus grants for item_generation_bucket_profiles.`
                       );
                     }
 

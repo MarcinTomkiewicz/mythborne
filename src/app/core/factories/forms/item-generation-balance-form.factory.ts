@@ -20,6 +20,7 @@ import {
 } from '../../types/forms/item-generation-balance-form.types';
 import { integerAtLeast, nonNegativeInteger, roundedNumber } from '../../utils/number';
 import { trimText } from '../../utils/normalize-text';
+import { toSlug } from '../../utils/slug';
 
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationBalanceFormFactory {
@@ -155,7 +156,7 @@ export class ItemGenerationBalanceFormFactory {
 
     return {
       id: value.id || null,
-      key: trimText(value.key),
+      key: toSlug(value.key),
       name: trimText(value.name),
       description: trimText(value.description),
       bucketCount: integerAtLeast(value.bucketCount, 1),

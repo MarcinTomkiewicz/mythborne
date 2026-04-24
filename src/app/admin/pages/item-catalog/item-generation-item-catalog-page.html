@@ -15,10 +15,7 @@
         </p>
       </div>
 
-      <div class="flex-row-start-center flex-wrap gap-sm">
-        <a routerLink="/admin/balance" class="tag-badge tag-badge--muted">Balance</a>
-        <a routerLink="/game/armory" class="tag-badge tag-badge--muted">Go to armory</a>
-      </div>
+      <app-admin-tag-links [links]="links" />
     </div>
   </section>
 
@@ -38,26 +35,14 @@
 
   <section class="mg-card p-lg w-100">
     <div class="flex-row-start-center flex-wrap gap-sm">
-      <p-button
-        label="Base items"
-        [outlined]="page.activeSection() !== 'base'"
-        (onClick)="page.setSection('base')"
-      />
-      <p-button
-        label="Prefixes"
-        [outlined]="page.activeSection() !== 'prefix'"
-        (onClick)="page.setSection('prefix')"
-      />
-      <p-button
-        label="Suffixes"
-        [outlined]="page.activeSection() !== 'suffix'"
-        (onClick)="page.setSection('suffix')"
-      />
-      <p-button
-        label="New entry"
-        [text]="true"
-        (onClick)="page.createNewEntity()"
-      />
+      @for (button of sectionButtons; track button.section) {
+        <p-button
+          [label]="button.label"
+          [outlined]="page.activeSection() !== button.section"
+          (onClick)="page.setSection(button.section)"
+        />
+      }
+      <p-button label="New entry" [text]="true" (onClick)="page.createNewEntity()" />
     </div>
   </section>
 
@@ -68,17 +53,11 @@
     </div>
 
     <form [formGroup]="page.selectorForm">
-      <label class="flex-col gap-sm">
-        <span class="muted-text">Edited entry</span>
-        <select class="w-full p-inputtext" formControlName="selectedId">
-          <option value="">Create new {{ page.activeSection() }}</option>
-          @for (entity of page.activeEntities(); track entity.id ?? entity.key) {
-            <option [value]="entity.id ?? ''">
-              {{ page.optionLabel(entity) }}
-            </option>
-          }
-        </select>
-      </label>
+      <app-admin-form-fields
+        [form]="page.selectorForm"
+        [fields]="selectorFields()"
+        widthClass="w-full"
+      />
     </form>
   </section>
 
@@ -109,35 +88,11 @@
 
       <form [formGroup]="page.baseEditorForm" class="flex-col gap-md">
         <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Key</span>
-            <input pInputText class="w-full" formControlName="key" />
-          </label>
-
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Name</span>
-            <input pInputText class="w-full" formControlName="name" />
-          </label>
-
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Slot</span>
-            <select class="w-full p-inputtext" formControlName="slot">
-              <option value="weapon">weapon</option>
-              <option value="trinket">trinket</option>
-              <option value="armor">armor</option>
-              <option value="shield">shield</option>
-            </select>
-          </label>
-
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Base value</span>
-            <input pInputText type="number" class="w-full" formControlName="baseValue" />
-          </label>
-
-          <label class="flex-col gap-sm grid-col-span-2">
-            <span class="muted-text">Description</span>
-            <textarea pInputText rows="3" class="w-full" formControlName="description"></textarea>
-          </label>
+          <app-admin-form-fields
+            [form]="page.baseEditorForm"
+            [fields]="baseEditorFields"
+            widthClass="w-full"
+          />
         </div>
 
         <div class="mg-surface-card flex-col gap-md p-lg" formArrayName="bonuses">
@@ -162,8 +117,9 @@
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Type</span>
                     <select class="w-full p-inputtext" formControlName="type">
-                      <option value="flat">flat</option>
-                      <option value="percent">percent</option>
+                      @for (option of bonusTypeOptions; track option.value) {
+                        <option [value]="option.value">{{ option.label }}</option>
+                      }
                     </select>
                   </label>
 
@@ -216,33 +172,11 @@
 
       <form [formGroup]="page.affixEditorForm" class="flex-col gap-md">
         <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Key</span>
-            <input pInputText class="w-full" formControlName="key" />
-          </label>
-
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Name</span>
-            <input pInputText class="w-full" formControlName="name" />
-          </label>
-
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Kind</span>
-            <select class="w-full p-inputtext" formControlName="kind">
-              <option value="prefix">prefix</option>
-              <option value="suffix">suffix</option>
-            </select>
-          </label>
-
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Gold value</span>
-            <input pInputText type="number" class="w-full" formControlName="goldValue" />
-          </label>
-
-          <label class="flex-col gap-sm grid-col-span-2">
-            <span class="muted-text">Description</span>
-            <textarea pInputText rows="3" class="w-full" formControlName="description"></textarea>
-          </label>
+          <app-admin-form-fields
+            [form]="page.affixEditorForm"
+            [fields]="affixEditorFields"
+            widthClass="w-full"
+          />
         </div>
 
         <div class="mg-card flex-col gap-md p-lg" formArrayName="bonuses">
@@ -267,8 +201,9 @@
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Type</span>
                     <select class="w-full p-inputtext" formControlName="type">
-                      <option value="flat">flat</option>
-                      <option value="percent">percent</option>
+                      @for (option of bonusTypeOptions; track option.value) {
+                        <option [value]="option.value">{{ option.label }}</option>
+                      }
                     </select>
                   </label>
 

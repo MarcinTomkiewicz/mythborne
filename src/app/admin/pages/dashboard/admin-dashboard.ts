@@ -1,11 +1,19 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AdminTagLinksComponent } from '../../components/admin-tag-links/admin-tag-links';
+import {
+  ADMIN_DASHBOARD_CARDS,
+  ADMIN_DASHBOARD_LINKS,
+} from '../../admin-navigation.config';
 
 @Component({
   selector: 'app-admin-dashboard-page',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, AdminTagLinksComponent],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
-export class AdminDashboardPage {}
+export class AdminDashboardPage {
+  readonly cards = ADMIN_DASHBOARD_CARDS;
+  readonly links = ADMIN_DASHBOARD_LINKS;
+}

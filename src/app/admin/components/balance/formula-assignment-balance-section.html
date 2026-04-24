@@ -1,0 +1,36 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Formulas</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Assignments</h3>
+      <p class="muted-text mb-0">
+        Target jest predefiniowany, formula jest wybierana z biblioteki i dopiero potem przypinana do konkretnego zastosowania.
+      </p>
+    </div>
+
+    <p-button
+      label="Apply assignment"
+      [loading]="page.formulas.isSaving()"
+      [disabled]="page.isLoading() || page.isBusy() || !page.formulas.selectedTarget() || !page.formulas.selectedAssignedFormula()"
+      (onClick)="page.formulas.applyAssignment()"
+    />
+  </div>
+
+  <form [formGroup]="page.formulas.assignmentForm" class="mg-surface-card flex-col gap-md p-lg">
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+      <app-admin-form-fields [form]="page.formulas.assignmentForm" [fields]="fields()" />
+    </div>
+
+    @if (page.formulas.selectedTarget(); as target) {
+      <div class="mg-surface-card flex-col gap-sm p-md">
+        <p class="card-legend mb-0">Target details</p>
+        <p class="mb-0 muted-text">{{ target.description }}</p>
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          @for (variable of target.allowedVariables; track variable) {
+            <span class="tag-badge tag-badge--muted">{{ variable }}</span>
+          }
+        </div>
+      </div>
+    }
+  </form>
+</section>

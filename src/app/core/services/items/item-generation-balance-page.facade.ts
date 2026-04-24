@@ -1,4 +1,5 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, finalize, forkJoin, take } from 'rxjs';
 import {
   EditableItemGenerationBucketProfile,
@@ -17,6 +18,7 @@ import { FormulaService } from '../formula/formula';
 import { ToastService } from '../ui/toast';
 import { ItemGenerationAdminService } from './item-generation-admin';
 import { ItemGenerationFormulaBalanceFacade } from './item-generation-formula-balance.facade';
+import { toSlug } from '../../utils/slug';
 
 @Injectable()
 export class ItemGenerationBalancePageFacade {
@@ -68,6 +70,18 @@ export class ItemGenerationBalancePageFacade {
       ? this.bucketFactory.buildBuckets(profile)
       : [];
   });
+
+  constructor() {
+    this.profile.editorForm.controls.name.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((name) => {
+        const nextKey = toSlug(name);
+
+        if (this.profile.editorForm.controls.key.value !== nextKey) {
+          this.profile.editorForm.controls.key.setValue(nextKey, { emitEvent: false });
+        }
+      });
+  }
 
   loadData(preferred?: BalanceSelection) {
     this.isLoading.set(true);

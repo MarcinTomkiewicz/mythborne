@@ -1,0 +1,36 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Balance</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Quality tiers</h3>
+    </div>
+
+    <p-button label="New quality" [text]="true" (onClick)="page.quality.new()" />
+  </div>
+
+  <form [formGroup]="page.quality.selectorForm" class="mb-lg">
+    <app-admin-form-fields [form]="page.quality.selectorForm" [fields]="selectorFields()" />
+  </form>
+
+  <form [formGroup]="page.quality.editorForm" class="mg-surface-card flex-col gap-md p-lg">
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+      <app-admin-form-fields [form]="page.quality.editorForm" [fields]="editorFields" />
+    </div>
+
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button
+        label="Save quality"
+        [loading]="page.isSaving()"
+        [disabled]="page.isLoading() || page.isBusy()"
+        (onClick)="page.saveQuality()"
+      />
+      <p-button
+        label="Delete"
+        severity="danger"
+        [text]="true"
+        [disabled]="!page.quality.editorForm.controls.id.value || page.isBusy()"
+        (onClick)="page.deleteQuality()"
+      />
+    </div>
+  </form>
+</section>

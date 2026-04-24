@@ -10,37 +10,16 @@
   </section>
 
   <div class="grid-2-1 gap-xl">
-    <a routerLink="/admin/balance" class="mg-card flex-col gap-md p-lg">
-      <p class="card-legend mb-0">Balance</p>
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Balance and formulas</h3>
-      <p class="muted-text mb-0">
-        Edycja quality tiers, bucket profiles oraz globalnych formul przypinanych do konkretnych targetow balansu.
-      </p>
-    </a>
-
-    <a routerLink="/admin/item-catalog" class="mg-card flex-col gap-md p-lg">
-      <p class="card-legend mb-0">Catalog</p>
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Items, prefixes and suffixes</h3>
-      <p class="muted-text mb-0">
-        Dodawanie i edycja bazowych przedmiotow, prefixow, suffixow i ich bonusow.
-      </p>
-    </a>
+    @for (card of cards; track card.routerLink) {
+      <a [routerLink]="card.routerLink" class="mg-card flex-col gap-md p-lg">
+        <p class="card-legend mb-0">{{ card.legend }}</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">{{ card.title }}</h3>
+        <p class="muted-text mb-0">{{ card.description }}</p>
+      </a>
+    }
   </div>
 
   <section class="mg-card p-lg w-100">
-    <a routerLink="/admin/buildings" class="flex-col gap-md">
-      <p class="card-legend mb-0">Buildings</p>
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Estate buildings</h3>
-      <p class="muted-text mb-0">
-        Edycja definicji budynkow, ich bonusow, wymagan, bazowych kosztow i czasu budowy.
-      </p>
-    </a>
-  </section>
-
-  <section class="mg-card p-lg w-100">
-    <div class="flex-row-start-center flex-wrap gap-sm">
-      <a routerLink="/game/armory" class="tag-badge tag-badge--muted">Open armory</a>
-      <a routerLink="/hero/dashboard" class="tag-badge tag-badge--muted">Hero dashboard</a>
-    </div>
+    <app-admin-tag-links [links]="links" />
   </section>
 </div>

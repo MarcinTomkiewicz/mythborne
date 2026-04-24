@@ -21,10 +21,7 @@
           </p>
         </div>
 
-        <div class="flex-row-start-center flex-wrap gap-sm">
-          <a routerLink="/admin/balance" class="tag-badge tag-badge--muted">Formulas</a>
-          <a routerLink="/game/mansion" class="tag-badge tag-badge--muted">Mansion view</a>
-        </div>
+        <app-admin-tag-links [links]="links" />
       </div>
     </section>
 
@@ -48,20 +45,7 @@
 
       <form [formGroup]="page.formulas.assignmentForm" class="mg-surface-card flex-col gap-md p-lg">
         <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
-          @for (target of page.formulas.targets(); track target.id) {
-            <label class="flex-col gap-sm">
-              <span class="muted-text">{{ target.label }}</span>
-              <select
-                class="w-100 p-inputtext"
-                [formControlName]="page.formulas.toControlName(target.key)"
-              >
-                <option value="">Choose formula</option>
-                @for (formula of page.formulas.formulasFor(target.key); track formula.id) {
-                  <option [value]="formula.id">{{ formula.label }}</option>
-                }
-              </select>
-            </label>
-          }
+          <app-admin-form-fields [form]="page.formulas.assignmentForm" [fields]="formulaFields()" />
         </div>
       </form>
     </section>
@@ -77,17 +61,7 @@
       </div>
 
       <form [formGroup]="page.building.selectorForm" class="mb-lg">
-        <label class="flex-col gap-sm">
-          <span class="muted-text">Building</span>
-          <select class="w-100 p-inputtext" formControlName="selectedId">
-            <option value="">Create new building</option>
-            @for (building of page.building.items(); track building.id ?? building.key) {
-              <option [value]="building.id ?? ''">
-                {{ building.name }} ({{ building.key }})
-              </option>
-            }
-          </select>
-        </label>
+        <app-admin-form-fields [form]="page.building.selectorForm" [fields]="selectorFields()" />
       </form>
 
       <form [formGroup]="page.building.editorForm" class="mg-surface-card flex-col gap-lg p-lg">
@@ -102,31 +76,7 @@
           </span>
 
           <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
-            <label class="flex-col gap-sm">
-              <span class="muted-text">Key</span>
-              <input pInputText class="w-100" formControlName="key" />
-            </label>
-
-            <label class="flex-col gap-sm">
-              <span class="muted-text">Name</span>
-              <input pInputText class="w-100" formControlName="name" />
-            </label>
-
-            <label class="flex-col gap-sm grid-col-span-2">
-              <span class="muted-text">Description</span>
-              <textarea pInputText rows="3" class="w-100" formControlName="description"></textarea>
-            </label>
-
-            <label class="flex-col gap-sm">
-              <span class="muted-text">District</span>
-              <select class="w-100 p-inputtext" formControlName="districtCode">
-                @for (district of page.adminData().districts; track district.code) {
-                  <option [value]="district.code">
-                    {{ district.code }} - {{ district.name }}
-                  </option>
-                }
-              </select>
-            </label>
+            <app-admin-form-fields [form]="page.building.editorForm" [fields]="primaryEditorFields()" />
 
             <label class="flex-col gap-sm">
               <span class="muted-text">Image path</span>
@@ -136,25 +86,7 @@
         </div>
 
         <div class="mg-grid grid-cols-4 grid-cols-2-sm grid-cols-1-xs gap-md w-100">
-          <label class="flex-col gap-sm">
-            <span class="muted-text">District unlock rank</span>
-            <input pInputText type="number" class="w-100" formControlName="rankRequired" />
-          </label>
-
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Sort order</span>
-            <input pInputText type="number" class="w-100" formControlName="sortOrder" />
-          </label>
-
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Base build time (min)</span>
-            <input pInputText type="number" class="w-100" formControlName="baseBuildTimeMinutes" />
-          </label>
-
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Max level</span>
-            <input pInputText type="number" class="w-100" formControlName="maxLevel" />
-          </label>
+          <app-admin-form-fields [form]="page.building.editorForm" [fields]="progressionFields" />
         </div>
 
         <div class="mg-surface-card flex-col gap-md p-md">
@@ -176,9 +108,9 @@
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Resource</span>
                     <select class="w-100 p-inputtext" formControlName="resourceType">
-                      <option value="drachma">Drachma</option>
-                      <option value="materials">Materials</option>
-                      <option value="workforce">Workforce</option>
+                      @for (option of resourceTypeOptions; track option.value) {
+                        <option [value]="option.value">{{ option.label }}</option>
+                      }
                     </select>
                   </label>
 
@@ -231,8 +163,9 @@
                       formControlName="type"
                       (change)="page.updateRequirementType($index, $any($event.target).value)"
                     >
-                      <option value="hero_level">Hero level</option>
-                      <option value="hero_stat">Hero stat</option>
+                      @for (option of requirementTypeOptions; track option.value) {
+                        <option [value]="option.value">{{ option.label }}</option>
+                      }
                     </select>
                   </label>
 
@@ -310,8 +243,9 @@
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Type</span>
                     <select class="w-100 p-inputtext" formControlName="type">
-                      <option value="flat">flat</option>
-                      <option value="percent">percent</option>
+                      @for (option of bonusTypeOptions; track option.value) {
+                        <option [value]="option.value">{{ option.label }}</option>
+                      }
                     </select>
                   </label>
 

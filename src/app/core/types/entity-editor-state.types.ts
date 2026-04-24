@@ -1,4 +1,4 @@
-import { DestroyRef, WritableSignal } from '@angular/core';
+import { DestroyRef, Signal, WritableSignal } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 
 export type EntitySelectorForm = FormGroup<{
@@ -22,6 +22,6 @@ export interface EntityEditorState<T, TForm extends FormGroup> {
   editorForm: TForm;
   setItems: (items: T[], preferredKey?: string) => void;
   new: () => void;
-  draft: () => T;
-  id: () => string | null;
+  draft: Signal<T>;
+  id: Signal<string | null>;
 }

@@ -1,0 +1,49 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Curve</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Bucket profiles</h3>
+    </div>
+
+    <p-button label="New profile" [text]="true" (onClick)="page.profile.new()" />
+  </div>
+
+  <form [formGroup]="page.profile.selectorForm" class="mb-lg">
+    <app-admin-form-fields [form]="page.profile.selectorForm" [fields]="selectorFields()" />
+  </form>
+
+  <form [formGroup]="page.profile.editorForm" class="mg-surface-card flex-col gap-md p-lg">
+    <p class="mb-0 muted-text">Key is generated from the profile name.</p>
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+      <app-admin-form-fields [form]="page.profile.editorForm" [fields]="editorFields" />
+    </div>
+
+    <div class="mg-surface-card flex-col gap-sm p-md">
+      <p class="card-legend mb-0">Preview</p>
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        @for (bucket of page.bucketPreview(); track bucket) {
+          <span class="tag-badge tag-badge--muted">{{ bucket }}</span>
+        } @empty {
+          <span class="muted-text">Fill the profile to preview generated drop buckets.</span>
+        }
+      </div>
+    </div>
+
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button
+        label="Save profile"
+        [loading]="page.isSaving()"
+        [disabled]="page.isLoading() || page.isBusy()"
+        (onClick)="page.saveProfile()"
+      />
+      <p-button
+        label="Delete"
+        severity="danger"
+        [text]="true"
+        [disabled]="!page.profile.editorForm.controls.id.value || page.isBusy()"
+        (onClick)="page.deleteProfile()"
+      />
+    </div>
+  </form>
+</section>

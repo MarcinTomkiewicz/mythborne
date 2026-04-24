@@ -1,3 +1,5 @@
+import { toSlug } from './slug';
+
 export function toCamelCase<T>(value: unknown): T {
   if (Array.isArray(value)) {
     return value.map((entry) => toCamelCase(entry)) as T;
@@ -33,26 +35,7 @@ export function toSnakeKey(key: string): string {
 }
 
 export function stringToSlug(value: string): string {
-  const polishMap: Record<string, string> = {
-    ą: 'a',
-    ć: 'c',
-    ę: 'e',
-    ł: 'l',
-    ń: 'n',
-    ó: 'o',
-    ś: 's',
-    ż: 'z',
-    ź: 'z',
-  };
-
-  return value
-    .toLowerCase()
-    .replace(/[ąćęłńóśżź]/g, (match) => polishMap[match])
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-');
+  return toSlug(value);
 }
 
 function toCamelKey(key: string): string {
