@@ -132,6 +132,8 @@ Global Codex rules:
 
 ## Task B3 — Standardize active hero resolver
 
+**Status:** Done / confirmed 2026-04-26.
+
 **Goal:** Provide one reliable way to load active hero for selected server.
 
 **Scope:**
@@ -147,6 +149,8 @@ Global Codex rules:
 ---
 
 ## Task B4 — Migrate stats/resources/progression to active hero id
+
+**Status:** Done / confirmed 2026-04-26.
 
 **Goal:** Fix critical hero-owned flows.
 

@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { EMPTY, forkJoin, map, of, switchMap, throwError } from 'rxjs';
+import { forkJoin, map, switchMap } from 'rxjs';
 import { TABLES } from '../../../core/constants/tables.const';
 import { Row } from '../../../core/types/supabase.types';
 import { IHeroStats } from '../../../core/interfaces/hero/i-hero-stats';
@@ -16,10 +16,6 @@ export class Hero {
   private readonly backend = inject(Backend);
   private readonly activeHero = inject(ActiveHero);
 
-  private get userId(): string | null {
-    return this.authState.user()?.id ?? null;
-  }
-
   /**
    * Fetches base hero data (id, name, level, etc.)
    */
@@ -33,12 +29,6 @@ export class Hero {
    * Fetches base stats like strength, agility, etc.
    */
   getHeroStats() {
-    const id = this.userId;
-
-    if (!id) {
-      return EMPTY;
-    }
-
     return this.getHeroData()
       .pipe(
         switchMap((hero) =>
@@ -62,12 +52,6 @@ export class Hero {
    * Fetches derived stats (like dmg, health, crit, etc.)
    */
   getHeroDerived() {
-    const id = this.userId;
-
-    if (!id) {
-      return EMPTY;
-    }
-
     return this.getHeroData()
       .pipe(
         switchMap((hero) =>
@@ -91,12 +75,6 @@ export class Hero {
   }
 
   getHeroEstateAddress() {
-    const id = this.userId;
-
-    if (!id) {
-      return of<string | null>(null);
-    }
-
     return this.getHeroData()
       .pipe(
         switchMap((hero) =>
@@ -126,12 +104,6 @@ export class Hero {
   }
 
   getHeroResources() {
-    const id = this.userId;
-
-    if (!id) {
-      return of<Row<'hero_resources'>[]>([]);
-    }
-
     return this.getHeroData().pipe(
       switchMap((hero) =>
         this.backend.getAll<Row<'hero_resources'>>({
@@ -144,12 +116,6 @@ export class Hero {
   }
 
   saveProgressionDraft(stats: Record<string, number>, characterPoints: number) {
-    const id = this.userId;
-
-    if (!id) {
-      return throwError(() => new Error('Hero is not authenticated.'));
-    }
-
     return this.getHeroData().pipe(
       switchMap((hero) => {
         const statRows = Object.entries(stats).map(([statKey, value]) => ({
@@ -170,6 +136,15 @@ export class Hero {
       map(({ heroResult }) => {
         if (heroResult.length === 0) {
           throw new Error('Character Points update did not affect any row.');
+        }
+
+        const hero = this.authState.hero();
+
+        if (hero) {
+          this.authState.setHero({
+            ...hero,
+            characterPoints: nonNegativeInteger(characterPoints),
+          });
         }
       })
     );

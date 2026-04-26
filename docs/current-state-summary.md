@@ -58,9 +58,15 @@ This is an operational estimate, not a formal audit.
 - Task A2 has been applied for A1 by updating this state summary and `docs/current-todo.md`.
 - Task B1 is confirmed complete as of 2026-04-26. The audit report is stored in `docs/b1-identity-assumptions-audit.md`.
 - B1 confirmed that RLS/onboarding SQL is a separate required database task before the project can fully rely on `hero.id != auth.uid()` in production.
-- Task B2 is confirmed complete as of 2026-04-26. The app now has a shared active server resolver in `ServerContext`.
-- Active server context loads accessible game servers, respects global roles/staff visibility, chooses a default sandbox/live/scheduled server, exposes selected server data, and provides access flags for downstream UI/domain code.
-- Server context domain rules were moved out of the Angular service into `core/utils/server-context.ts`; enums live in `core/enums/server-context.enum.ts`, and related interfaces live in `core/interfaces/server/server-context.interface.ts`.
+- Task B2 is confirmed complete as of 2026-04-26. The app now has a shared active server resolver in `ActiveServer`.
+- Active server state loads accessible game servers, respects global roles/staff visibility, chooses a default sandbox/live/scheduled server, exposes selected server data, and provides access flags for downstream UI/domain code.
+- Active server domain rules live in `core/utils/active-server.ts`; enums live in `core/enums/active-server.enum.ts`, and related interfaces live in `core/interfaces/server/active-server.interface.ts`.
+- Task B3 is confirmed complete as of 2026-04-26. The app now has a shared active hero resolver in `ActiveHero`.
+- Active hero state loads the current hero by authenticated `user_id` plus selected `server_id`, exposes `userId`, `serverId`, `heroId`, `server`, `hero`, and `heroRow`, and handles the no-hero-yet onboarding state.
+- Auth bootstrap and the legacy `Hero.getHeroData()` path now use `ActiveHero`, so gameplay-owned reads can continue from the selected server's `hero.id` instead of assuming `hero.id === auth.uid()`.
+- Task B4 is confirmed complete as of 2026-04-26. Stats, derived stats, resources, and progression save now use the active hero row as the source of `hero.id`.
+- The legacy `Hero` service no longer gates these flows through a separate `authState.user()` check before querying hero-owned tables.
+- Progression save refreshes `AuthState.hero().characterPoints` after the Character Points update succeeds.
 
 ### Canonical stats and derived stats
 - Base stats are loaded from canonical stat definitions.

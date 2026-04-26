@@ -15,7 +15,9 @@ Order reflects implementation priority, not final business priority.
 - Current documentation sync applied: A2 - this TODO and `current-state-summary.md` were updated after A1 confirmation.
 - Completed and confirmed: B1 - audit old identity assumptions.
 - Completed and confirmed: B2 - standardize active server resolver.
-- Current backlog task: B3 - standardize active hero resolver.
+- Completed and confirmed: B3 - standardize active hero resolver.
+- Completed and confirmed: B4 - migrate stats/resources/progression to active hero id.
+- Current backlog task: B5 - migrate estate/building/item/combat reads to active hero id.
 
 ## Codex Backlog Workflow
 
