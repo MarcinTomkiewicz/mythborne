@@ -3,6 +3,12 @@ import {
 } from '../enums/config-governance.enum';
 import {
   ConfigDefinition,
+  ConfigChangeEntry,
+  ConfigChangeEntryRow,
+  ConfigChangeSet,
+  ConfigChangeSetRow,
+  ConfigChangeStatus,
+  ConfigChangeVisibility,
   EffectiveConfigValue,
   ConfigGovernanceScope,
   ConfigManagedEntityType,
@@ -58,6 +64,45 @@ export function mapServerConfigValue(row: ServerConfigValueRow): ServerConfigVal
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     lockedAt: row.locked_at,
+  };
+}
+
+export function mapConfigChangeSet(row: ConfigChangeSetRow): ConfigChangeSet {
+  return {
+    id: row.id,
+    title: row.title,
+    reason: row.reason,
+    status: row.status,
+    changelogVisibility: row.changelog_visibility,
+    changelogTitle: row.changelog_title,
+    changelogBody: row.changelog_body,
+    requestedBy: row.requested_by,
+    readyAt: row.ready_at,
+    appliedBy: row.applied_by,
+    appliedAt: row.applied_at,
+    cancelledBy: row.cancelled_by,
+    cancelledAt: row.cancelled_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapConfigChangeEntry(row: ConfigChangeEntryRow): ConfigChangeEntry {
+  return {
+    id: row.id,
+    changeSetId: row.change_set_id,
+    changeKind: row.change_kind,
+    configDefinitionId: row.config_definition_id,
+    serverId: row.server_id,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    fieldPath: row.field_path,
+    oldScope: row.old_scope,
+    newScope: row.new_scope,
+    oldValue: row.old_value_json,
+    newValue: row.new_value_json,
+    metadata: row.metadata_json,
+    createdAt: row.created_at,
   };
 }
 
@@ -154,6 +199,32 @@ export function filterConfigDefinitions(
   });
 }
 
+export function filterConfigChangeSets(
+  changeSets: readonly ConfigChangeSet[],
+  filters: {
+    query: string;
+    status: ConfigChangeStatus | '';
+    changelogVisibility: ConfigChangeVisibility | '';
+  },
+): ConfigChangeSet[] {
+  const query = filters.query.trim().toLowerCase();
+
+  return changeSets.filter((changeSet) => {
+    const matchesQuery =
+      !query ||
+      changeSet.title.toLowerCase().includes(query) ||
+      changeSet.reason.toLowerCase().includes(query) ||
+      (changeSet.changelogTitle ?? '').toLowerCase().includes(query) ||
+      (changeSet.changelogBody ?? '').toLowerCase().includes(query);
+    const matchesStatus = !filters.status || changeSet.status === filters.status;
+    const matchesVisibility =
+      !filters.changelogVisibility ||
+      changeSet.changelogVisibility === filters.changelogVisibility;
+
+    return matchesQuery && matchesStatus && matchesVisibility;
+  });
+}
+
 export function uniqueConfigDefinitionScopes(
   definitions: readonly ConfigDefinition[],
 ): ConfigGovernanceScope[] {
@@ -164,6 +235,18 @@ export function uniqueConfigDefinitionManagedEntityTypes(
   definitions: readonly ConfigDefinition[],
 ): ConfigManagedEntityType[] {
   return uniqueSorted(definitions.map((definition) => definition.managedEntityType));
+}
+
+export function uniqueConfigChangeSetStatuses(
+  changeSets: readonly ConfigChangeSet[],
+): ConfigChangeStatus[] {
+  return uniqueSorted(changeSets.map((changeSet) => changeSet.status));
+}
+
+export function uniqueConfigChangeSetVisibilities(
+  changeSets: readonly ConfigChangeSet[],
+): ConfigChangeVisibility[] {
+  return uniqueSorted(changeSets.map((changeSet) => changeSet.changelogVisibility));
 }
 
 function uniqueSorted<T extends string>(values: readonly T[]): T[] {

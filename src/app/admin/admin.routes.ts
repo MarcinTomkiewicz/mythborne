@@ -32,4 +32,11 @@ export const adminRoutes: Routes = [
         (m) => m.ConfigDefinitionsPage
       ),
   },
+  {
+    path: 'config-change-sets',
+    loadComponent: () =>
+      import('./pages/config-change-sets/config-change-sets-page').then(
+        (m) => m.ConfigChangeSetsPage
+      ),
+  },
 ];

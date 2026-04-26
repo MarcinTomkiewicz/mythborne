@@ -291,6 +291,8 @@ Global Codex rules:
 
 ## Task D3 — Config change-set list/detail
 
+**Status:** Done / confirmed 2026-04-26.
+
 **Goal:** Staff/admin can inspect config change history.
 
 **Scope:**

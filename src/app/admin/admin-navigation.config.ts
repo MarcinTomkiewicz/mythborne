@@ -29,6 +29,13 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
       'Podglad rejestru konfigurowalnych wartosci i encji zarzadzanych przez governance.',
     routerLink: '/admin/config-definitions',
   },
+  {
+    legend: 'Governance',
+    title: 'Config changes',
+    description:
+      'Podglad historii change-setow konfiguracji, statusow, powodow oraz wpisow zmian.',
+    routerLink: '/admin/config-change-sets',
+  },
 ];
 
 export const ADMIN_DASHBOARD_LINKS: readonly AdminTagLink[] = [
@@ -54,6 +61,14 @@ export const BUILDINGS_PAGE_LINKS: readonly AdminTagLink[] = [
 
 export const CONFIG_DEFINITIONS_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin' },
+  { label: 'Config changes', routerLink: '/admin/config-change-sets' },
+  { label: 'Formulas', routerLink: '/admin/balance' },
+  { label: 'Buildings', routerLink: '/admin/buildings' },
+];
+
+export const CONFIG_CHANGE_SETS_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin' },
+  { label: 'Config definitions', routerLink: '/admin/config-definitions' },
   { label: 'Formulas', routerLink: '/admin/balance' },
   { label: 'Buildings', routerLink: '/admin/buildings' },
 ];

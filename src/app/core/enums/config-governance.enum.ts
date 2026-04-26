@@ -20,3 +20,13 @@ export enum EffectiveConfigValueSource {
   Default = 'default',
   None = 'none',
 }
+
+export enum ConfigChangeSetOrderColumn {
+  UpdatedAt = 'updated_at',
+  CreatedAt = 'created_at',
+  Title = 'title',
+}
+
+export enum ConfigChangeEntryOrderColumn {
+  CreatedAt = 'created_at',
+}

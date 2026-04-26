@@ -1,0 +1,275 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading config changes..."
+  description="Loading config governance change history."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Governance</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">Config Change Sets</h2>
+          <p class="muted-text mb-0">
+            Read-only history of requested, applied, and cancelled config governance changes.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Change history</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            {{ filteredChangeSets().length }} / {{ changeSets().length }} change sets
+          </h3>
+        </div>
+      </div>
+
+      <form [formGroup]="filterForm" class="mg-surface-card p-md mb-lg">
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Search</span>
+            <input
+              pInputText
+              class="w-100"
+              formControlName="query"
+              placeholder="Title, reason or changelog"
+            />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Status</span>
+            <p-select
+              class="w-100"
+              formControlName="status"
+              [options]="statusOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="All statuses"
+              [showClear]="true"
+            />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Changelog visibility</span>
+            <p-select
+              class="w-100"
+              formControlName="changelogVisibility"
+              [options]="visibilityOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="All visibilities"
+              [showClear]="true"
+            />
+          </label>
+        </div>
+      </form>
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-lg w-100">
+        <div class="flex-col gap-md">
+          @for (changeSet of filteredChangeSets(); track changeSet.id) {
+            <article class="mg-surface-card p-md flex-col gap-sm">
+              <div class="flex-row-between-center flex-col-sm gap-sm">
+                <div class="flex-col gap-xs">
+                  <p class="card-legend mb-0">{{ changeSet.updatedAt }}</p>
+                  <h4 class="mg-section__title mg-section__title--xs mb-0">
+                    {{ changeSet.title }}
+                  </h4>
+                </div>
+
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  <span class="mg-tag">{{ changeSet.status }}</span>
+                  <span class="mg-tag">{{ changeSet.changelogVisibility }}</span>
+                </div>
+              </div>
+
+              <p class="muted-text mb-0">{{ changeSet.reason }}</p>
+
+              <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Requested by</span>
+                  <strong class="heading-color">{{ changeSet.requestedBy ?? '-' }}</strong>
+                </div>
+
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Applied</span>
+                  <strong class="heading-color">{{ changeSet.appliedAt ?? '-' }}</strong>
+                </div>
+
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Cancelled</span>
+                  <strong class="heading-color">{{ changeSet.cancelledAt ?? '-' }}</strong>
+                </div>
+              </div>
+
+              @if (changeSet.changelogTitle || changeSet.changelogBody) {
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Changelog</span>
+                  <strong class="heading-color">{{ changeSet.changelogTitle ?? '-' }}</strong>
+                  @if (changeSet.changelogBody) {
+                    <p class="muted-text mb-0">{{ changeSet.changelogBody }}</p>
+                  }
+                </div>
+              }
+
+              <p-button
+                type="button"
+                [label]="isSelected(changeSet) ? 'Selected' : 'Show detail'"
+                [outlined]="!isSelected(changeSet)"
+                severity="secondary"
+                (onClick)="selectChangeSet(changeSet)"
+              />
+            </article>
+          } @empty {
+            <p class="muted-text mb-0">No config change sets registered.</p>
+          }
+        </div>
+
+        <aside class="mg-surface-card p-md flex-col gap-md">
+          @if (selectedChangeSet(); as changeSet) {
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">Selected change set</p>
+                <h4 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ changeSet.title }}
+                </h4>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="mg-tag">{{ changeSet.status }}</span>
+                <span class="mg-tag">{{ changeSet.changelogVisibility }}</span>
+              </div>
+            </div>
+
+            <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Created</span>
+                <strong class="heading-color">{{ changeSet.createdAt }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Ready</span>
+                <strong class="heading-color">{{ changeSet.readyAt ?? '-' }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Applied by</span>
+                <strong class="heading-color">{{ changeSet.appliedBy ?? '-' }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Cancelled by</span>
+                <strong class="heading-color">{{ changeSet.cancelledBy ?? '-' }}</strong>
+              </div>
+            </div>
+
+            @if (detailError()) {
+              <p class="muted-text mb-0">{{ detailError() }}</p>
+            } @else if (isDetailLoading()) {
+              <p class="muted-text mb-0">Loading entries...</p>
+            } @else {
+              <div class="flex-col gap-md">
+                <div class="flex-row-between-center flex-col-sm gap-sm">
+                  <p class="card-legend mb-0">Entries</p>
+                  <span class="mg-tag">{{ entries().length }}</span>
+                </div>
+
+                @for (entry of entries(); track entry.id) {
+                  <article class="p-md flex-col gap-sm">
+                    <div class="flex-row-between-center flex-col-sm gap-sm">
+                      <div class="flex-col gap-xs">
+                        <p class="card-legend mb-0">{{ entry.changeKind }}</p>
+                        <h5 class="mg-section__title mg-section__title--xs mb-0">
+                          {{ definitionLabel(entry) }}
+                        </h5>
+                      </div>
+
+                      <div class="flex-row-start-center flex-wrap gap-xs">
+                        @if (entry.entityType) {
+                          <span class="mg-tag">{{ entry.entityType }}</span>
+                        }
+                        @if (entry.serverId) {
+                          <span class="mg-tag">server</span>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+                      <div class="flex-col gap-xs">
+                        <span class="muted-text">Server id</span>
+                        <strong class="heading-color">{{ entry.serverId ?? '-' }}</strong>
+                      </div>
+
+                      <div class="flex-col gap-xs">
+                        <span class="muted-text">Entity type</span>
+                        <strong class="heading-color">{{ entry.entityType ?? '-' }}</strong>
+                      </div>
+
+                      <div class="flex-col gap-xs">
+                        <span class="muted-text">Entity id</span>
+                        <strong class="heading-color">{{ entry.entityId ?? '-' }}</strong>
+                      </div>
+                    </div>
+
+                    <div class="mg-grid grid-cols-4 grid-cols-1-md gap-md w-100">
+                      <div class="flex-col gap-xs">
+                        <span class="muted-text">Field path</span>
+                        <strong class="heading-color">{{ entry.fieldPath ?? '-' }}</strong>
+                      </div>
+
+                      <div class="flex-col gap-xs">
+                        <span class="muted-text">Old scope</span>
+                        <strong class="heading-color">{{ entry.oldScope ?? '-' }}</strong>
+                      </div>
+
+                      <div class="flex-col gap-xs">
+                        <span class="muted-text">New scope</span>
+                        <strong class="heading-color">{{ entry.newScope ?? '-' }}</strong>
+                      </div>
+
+                      <div class="flex-col gap-xs">
+                        <span class="muted-text">Created</span>
+                        <strong class="heading-color">{{ entry.createdAt }}</strong>
+                      </div>
+                    </div>
+
+                    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+                      <div class="flex-col gap-xs min-w-0">
+                        <span class="muted-text">Old value</span>
+                        <pre class="mb-0 text-break"><code>{{ jsonPreview(entry.oldValue) }}</code></pre>
+                      </div>
+
+                      <div class="flex-col gap-xs min-w-0">
+                        <span class="muted-text">New value</span>
+                        <pre class="mb-0 text-break"><code>{{ jsonPreview(entry.newValue) }}</code></pre>
+                      </div>
+                    </div>
+
+                    <div class="flex-col gap-xs min-w-0">
+                      <span class="muted-text">Metadata</span>
+                      <pre class="mb-0 text-break"><code>{{ jsonPreview(entry.metadata) }}</code></pre>
+                    </div>
+                  </article>
+                } @empty {
+                  <p class="muted-text mb-0">No entries for this change set.</p>
+                }
+              </div>
+            }
+          } @else {
+            <p class="muted-text mb-0">Select a change set to inspect entries.</p>
+          }
+        </aside>
+      </div>
+    </section>
+  </div>
+}

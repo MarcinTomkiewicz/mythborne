@@ -23,7 +23,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: C3 - membership status UI handling.
 - Completed and confirmed: D1 - config definitions read model.
 - Completed and confirmed: D2 - config values read model.
-- Current backlog task: D3 - config change-set list/detail.
+- Completed and confirmed: D3 - config change-set list/detail.
+- Current backlog task: D4 - config edit draft flow.
 
 ## Codex Backlog Workflow
 

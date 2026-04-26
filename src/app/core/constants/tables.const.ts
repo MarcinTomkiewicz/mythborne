@@ -26,4 +26,6 @@ export const TABLES = {
   config_definitions: 'config_definitions',
   global_config_values: 'global_config_values',
   server_config_values: 'server_config_values',
+  config_change_sets: 'config_change_sets',
+  config_change_entries: 'config_change_entries',
 } as const;

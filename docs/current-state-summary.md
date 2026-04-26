@@ -86,6 +86,9 @@ This is an operational estimate, not a formal audit.
 - Task D2 is confirmed complete as of 2026-04-26. The frontend now has typed read models and mappers for active `global_config_values` and selected-server `server_config_values`.
 - The config definitions admin view resolves and displays an effective value for each definition using the current D2 read-model order: selected server value, active global value, definition default, then no value.
 - Effective config values show their source label as server source, global version, default, or no value. Later config governance tasks still need to enforce `governance_scope` more strictly when editing or applying config changes.
+- Task D3 is confirmed complete as of 2026-04-26. Admin now has a read-only `/admin/config-change-sets` view for config governance change history.
+- The config change-set view lists titles, reasons, statuses, changelog visibility/content, requested/applied/cancelled actors, and created/updated/ready/applied/cancelled timestamps.
+- Selecting a change set loads its `config_change_entries` detail with change kind, config definition label, server/entity identifiers, field path, old/new scopes, old/new values, metadata, and entry creation time.
 
 ### Canonical stats and derived stats
 - Base stats are loaded from canonical stat definitions.
