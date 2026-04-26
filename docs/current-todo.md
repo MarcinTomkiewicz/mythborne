@@ -19,7 +19,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: B4 - migrate stats/resources/progression to active hero id.
 - Completed and confirmed: B5 - migrate estate/building/item/combat reads to active hero id.
 - Completed and confirmed: C1 - add role/membership read layer.
-- Current backlog task: C2 - staff server switcher.
+- Completed and confirmed: C2 - staff server switcher.
+- Current backlog task: C3 - membership status UI handling.
 
 ## Codex Backlog Workflow
 

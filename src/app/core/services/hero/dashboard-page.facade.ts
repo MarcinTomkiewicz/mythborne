@@ -14,11 +14,11 @@ export class DashboardPageFacade {
   private readonly statsService = inject(StatsService);
   private readonly originsService = inject(Origins);
 
-  heroName = '';
-  level = 1;
-  characterPoints = 0;
+  heroName = signal('');
+  level = signal(1);
+  characterPoints = signal(0);
   readonly heroLevel = signal(1);
-  experiencePercent = 0;
+  experiencePercent = signal(0);
 
   origin = signal<Origin | null>(null);
   originBonuses = signal<OriginBonus[]>([]);
@@ -53,11 +53,11 @@ export class DashboardPageFacade {
     this.statsService.getDerivedStats().subscribe(this.derivedStatsList.set);
 
     this.heroService.getHeroData().subscribe((hero) => {
-      this.heroName = hero.name;
-      this.level = hero.level ?? 1;
-      this.characterPoints = hero.character_points ?? 0;
+      this.heroName.set(hero.name);
+      this.level.set(hero.level ?? 1);
+      this.characterPoints.set(hero.character_points ?? 0);
       this.heroLevel.set(hero.level ?? 1);
-      this.experiencePercent = this.calculateExperiencePercent(hero.experience);
+      this.experiencePercent.set(this.calculateExperiencePercent(hero.experience));
 
       if (hero.origin_id) {
         this.originsService
@@ -83,18 +83,18 @@ export class DashboardPageFacade {
   }
 
   private originBonusSource(): BonusSource {
-      return {
-        name: 'origin',
-        bonuses: this.originBonuses().map((bonus) => ({
-          target: bonus.target ?? '',
-          value: bonus.baseValue,
-          type: bonus.type,
-          context: bonus.context,
-          levelsStep: bonus.levelsStep,
-          sourceStat: bonus.sourceStat,
-          scalingFactor: bonus.scalingFactor,
-        })),
-      };
-    }
+    return {
+      name: 'origin',
+      bonuses: this.originBonuses().map((bonus) => ({
+        target: bonus.target ?? '',
+        value: bonus.baseValue,
+        type: bonus.type,
+        context: bonus.context,
+        levelsStep: bonus.levelsStep,
+        sourceStat: bonus.sourceStat,
+        scalingFactor: bonus.scalingFactor,
+      })),
+    };
+  }
 }
 

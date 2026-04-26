@@ -3,6 +3,7 @@ import { ItemGenerationBalancePageFacade } from '../../../core/services/items/it
 import { ItemGenerationFormulaBalanceFacade } from '../../../core/services/items/item-generation-formula-balance.facade';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
+import { AdminServerSwitcher } from '../../components/admin-server-switcher/admin-server-switcher';
 import { BucketProfileBalanceSection } from '../../components/balance/bucket-profile-balance-section';
 import { BonusTemplateBalanceSection } from '../../components/balance/bonus-template-balance-section';
 import { FormulaAssignmentBalanceSection } from '../../components/balance/formula-assignment-balance-section';
@@ -16,6 +17,7 @@ import { BALANCE_PAGE_LINKS } from '../../admin-navigation.config';
   imports: [
     LoadingOverlay,
     AdminTagLinks,
+    AdminServerSwitcher,
     QualityBalanceSection,
     BucketProfileBalanceSection,
     BonusTemplateBalanceSection,

@@ -1,0 +1,41 @@
+@if (selectedServer(); as server) {
+  <div class="mg-surface-card flex-col gap-md p-md">
+    <div class="flex-row-between-end flex-wrap gap-md">
+      <div class="flex-col gap-xs min-w-200 mb-sm">
+        <p class="card-legend mb-0">Server</p>
+        <strong class="heading-color">{{ server.name }}</strong>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-sm mb-sm">
+        <span class="tag-badge tag-badge--muted">{{ server.kind }}</span>
+        <span class="tag-badge tag-badge--muted">{{ server.status }}</span>
+        @if (access().serverStaffRole) {
+          <span class="tag-badge tag-badge--warn">{{ access().serverStaffRole }}</span>
+        }
+        @if (access().globalRoleKey) {
+          <span class="tag-badge tag-badge--muted">{{ access().globalRoleKey }}</span>
+        }
+      </div>
+
+      @if (canSwitchServer()) {
+        <form [formGroup]="form" class="min-w-250 max-w-full">
+          <label class="flex-col gap-xs">
+            <span class="muted-text">Selected server</span>
+            <p-select
+              class="w-100"
+              formControlName="selectedServerId"
+              [options]="serverOptions()"
+              optionLabel="label"
+              optionValue="value"
+              (onChange)="selectServerFromChange($event)"
+            />
+          </label>
+        </form>
+      }
+    </div>
+  </div>
+} @else if (isLoading()) {
+  <div class="mg-surface-card p-md muted-text">Loading active server...</div>
+} @else if (error()) {
+  <div class="mg-surface-card p-md muted-text">{{ error() }}</div>
+}

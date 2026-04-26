@@ -19,23 +19,19 @@ export function resolveActiveServerState(
   userId: string | null,
   currentServer: SelectedGameServer | null,
 ): ResolvedActiveServerState {
-  const globalRoleKey = resolveGlobalRoleKey(
-    rows.userData[0]?.role_id ?? null,
-    rows.roles,
-  );
   const selectedServers = toAccessibleServers(
     rows.servers,
     rows.memberships,
     rows.staffAssignments,
     userId,
-    globalRoleKey,
+    rows.globalRoleKey,
   );
   const selectedServer = resolveSelectedServer(selectedServers, currentServer);
 
   return {
     selectedServers,
     selectedServer,
-    access: toAccessState(userId, globalRoleKey, selectedServer),
+    access: toAccessState(userId, rows.globalRoleKey, selectedServer),
   };
 }
 
@@ -165,25 +161,6 @@ function resolveSelectedServer(
     servers[0] ??
     null
   );
-}
-
-function resolveGlobalRoleKey(
-  roleId: number | null,
-  roles: Row<'roles'>[],
-): GlobalRoleKey | null {
-  if (roleId === null) {
-    return null;
-  }
-
-  const roleKey = roles.find((role) => role.id === roleId)?.key;
-
-  return isGlobalRoleKey(roleKey) ? roleKey : null;
-}
-
-function isGlobalRoleKey(
-  value: string | null | undefined,
-): value is GlobalRoleKey {
-  return Object.values(GlobalRoleKey).includes(value as GlobalRoleKey);
 }
 
 function toGlobalAccess(globalRoleKey: GlobalRoleKey | null): {

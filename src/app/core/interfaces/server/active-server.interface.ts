@@ -40,10 +40,9 @@ export interface ServerAccessState {
 
 export interface ActiveServerRows {
   servers: Row<'game_servers'>[];
-  userData: Array<Pick<Row<'user_data'>, 'role_id'>>;
-  roles: Row<'roles'>[];
   memberships: Row<'server_memberships'>[];
   staffAssignments: Row<'server_staff_assignments'>[];
+  globalRoleKey: GlobalRoleKey | null;
 }
 
 export interface ResolvedActiveServerState {

@@ -7,6 +7,7 @@ import { BuildingsPageFacade } from '../../../core/services/buildings/building-a
 import { BuildingFormulaAdminFacade } from '../../../core/services/buildings/building-formula-admin.facade';
 import { FormFields } from '../../../shared/form-fields/form-fields';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
+import { AdminServerSwitcher } from '../../components/admin-server-switcher/admin-server-switcher';
 import { BUILDINGS_PAGE_LINKS } from '../../admin-navigation.config';
 import {
   BUILDING_BONUS_TYPE_OPTIONS,
@@ -28,6 +29,7 @@ import {
     LoadingOverlay,
     FormFields,
     AdminTagLinks,
+    AdminServerSwitcher,
   ],
   providers: [BuildingFormulaAdminFacade, BuildingsPageFacade],
   templateUrl: './buildings-page.html',

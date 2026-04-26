@@ -213,6 +213,8 @@ Global Codex rules:
 
 ## Task C2 — Staff server switcher
 
+**Status:** Done / confirmed 2026-04-26.
+
 **Goal:** Operators/admins can choose relevant server context.
 
 **Scope:**

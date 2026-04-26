@@ -6,6 +6,14 @@ export enum GlobalRoleKey {
   Tester = 'tester',
 }
 
+export const GLOBAL_ROLE_PRIORITY = [
+  GlobalRoleKey.Admin,
+  GlobalRoleKey.Operator,
+  GlobalRoleKey.Tester,
+  GlobalRoleKey.Moderator,
+  GlobalRoleKey.Player,
+] as const;
+
 export enum GameServerKind {
   Sandbox = 'sandbox',
   Standard = 'standard',
@@ -43,4 +51,3 @@ export enum ServerSortRank {
 }
 
 export const SERVER_SANDBOX_KEY = 'sandbox';
-export const USER_ROLE_SELECT = 'role_id';

@@ -97,6 +97,15 @@ export class Backend {
     );
   }
 
+  rpc<T>(functionName: string, args: Record<string, unknown> = {}): Observable<T> {
+    return from((this.supabase as any).rpc(functionName, args)).pipe(
+      map((response: any) => {
+        this.throwIfError(response);
+        return response.data as T;
+      })
+    );
+  }
+
   getByIds<T extends object>(table: string, ids: Array<string | number>): Observable<T[]> {
     if (!ids.length) {
       return of([]);

@@ -1,10 +1,11 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { forkJoin, map, Observable, of, tap } from 'rxjs';
+import { catchError, forkJoin, map, Observable, of, tap } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
 import { FilterOperator } from '../../enums/filter-operators';
 import {
   GameServerOrderColumn,
-  USER_ROLE_SELECT,
+  GLOBAL_ROLE_PRIORITY,
+  GlobalRoleKey,
 } from '../../enums/active-server.enum';
 import {
   SelectedGameServer,
@@ -93,10 +94,9 @@ export class ActiveServer {
   ): Observable<ActiveServerRows> {
     return forkJoin({
       servers: this.loadServers(),
-      userData: this.loadUserData(userId),
-      roles: this.loadRoles(userId),
       memberships: this.loadMemberships(userId),
       staffAssignments: this.loadStaffAssignments(userId),
+      globalRoleKey: this.loadGlobalRoleKey(userId),
     });
   }
 
@@ -112,29 +112,25 @@ export class ActiveServer {
     });
   }
 
-  private loadUserData(
-    userId: string | null,
-  ): Observable<Array<Pick<Row<'user_data'>, 'role_id'>>> {
+  private loadGlobalRoleKey(userId: string | null): Observable<ActiveServerRows['globalRoleKey']> {
     if (!userId) {
-      return of([]);
+      return of(null);
     }
 
-    return this.backend.getAll<Pick<Row<'user_data'>, 'role_id'>>({
-      table: TABLES.user_data,
-      select: USER_ROLE_SELECT,
-      filters: { id: { operator: FilterOperator.EQ, value: userId } },
-      range: { from: 0, to: 0 },
-      camelCase: false,
-    });
+    return forkJoin(
+      GLOBAL_ROLE_PRIORITY.map((roleKey) =>
+        this.hasGlobalRole(roleKey).pipe(map((hasRole) => ({ roleKey, hasRole }))),
+      ),
+    ).pipe(
+      map((entries) => entries.find((entry) => entry.hasRole)?.roleKey ?? null),
+    );
   }
 
-  private loadRoles(userId: string | null): Observable<Row<'roles'>[]> {
-    return userId
-      ? this.backend.getAll<Row<'roles'>>({
-          table: TABLES.roles,
-          camelCase: false,
-        })
-      : of([]);
+  private hasGlobalRole(roleKey: GlobalRoleKey): Observable<boolean> {
+    return this.backend.rpc<boolean>('has_global_role', { required_keys: [roleKey] }).pipe(
+      map((hasRole) => hasRole ?? false),
+      catchError(() => of(false)),
+    );
   }
 
   private loadMemberships(

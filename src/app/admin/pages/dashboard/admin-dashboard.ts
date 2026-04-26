@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
+import { AdminServerSwitcher } from '../../components/admin-server-switcher/admin-server-switcher';
 import {
   ADMIN_DASHBOARD_CARDS,
   ADMIN_DASHBOARD_LINKS,
@@ -9,7 +10,7 @@ import {
 @Component({
   selector: 'app-admin-dashboard-page',
   standalone: true,
-  imports: [RouterLink, AdminTagLinks],
+  imports: [RouterLink, AdminTagLinks, AdminServerSwitcher],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })

@@ -3,12 +3,12 @@
     <div class="flex-row-between-center flex-col-sm gap-md">
       <div class="flex-col gap-xs">
         <p class="card-legend mb-0">Dashboard</p>
-        <h2 class="mg-section__title mg-section__title--sm mb-0">{{ page.heroName }}</h2>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">{{ page.heroName() }}</h2>
         <p class="muted-text mb-0">Overview of your current hero state</p>
       </div>
 
       <div class="flex-row-start-center flex-wrap gap-sm">
-        <span class="tag-badge tag-badge--warn">Level {{ page.level }}</span>
+        <span class="tag-badge tag-badge--warn">Level {{ page.level() }}</span>
         <span class="tag-badge tag-badge--info">
           {{ page.origin()?.name ?? 'Unknown Origin' }}
         </span>
@@ -46,7 +46,7 @@
               <strong class="heading-color">Experience</strong>
             </div>
             <div class="w-100">
-              <app-game-bar label="XP" [value]="page.experiencePercent" [max]="100" type="xp" />
+              <app-game-bar label="XP" [value]="page.experiencePercent()" [max]="100" type="xp" />
             </div>
           </div>
         </div>
@@ -65,7 +65,7 @@
         </div>
         <div class="flex-row-between-center gap-md muted-text">
           <strong class="heading-color">Character Points</strong>
-          <span>{{ page.characterPoints }}</span>
+          <span>{{ page.characterPoints() }}</span>
         </div>
       </div>
     </div>

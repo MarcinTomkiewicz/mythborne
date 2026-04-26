@@ -4,6 +4,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { FormFields } from '../../../shared/form-fields/form-fields';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
+import { AdminServerSwitcher } from '../../components/admin-server-switcher/admin-server-switcher';
 import { ITEM_CATALOG_PAGE_LINKS } from '../../admin-navigation.config';
 import { ItemGenerationItemCatalogPageFacade } from '../../../core/services/items/item-generation-item-catalog-page.facade';
 import {
@@ -22,6 +23,7 @@ import {
     InputTextModule,
     FormFields,
     AdminTagLinks,
+    AdminServerSwitcher,
   ],
   providers: [ItemGenerationItemCatalogPageFacade],
   templateUrl: './item-generation-item-catalog-page.html',

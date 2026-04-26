@@ -1,796 +1,59 @@
-# Mythborne — Database Current Notes
+# Monster Hunt — Database Current Notes
 
-This file is not a full schema dump.
+Updated: 2026-04-26
 
-It is a lightweight semantic and architectural guide for the most important domain tables and rules.
+This file is the curated semantic index of the current database state.
 
-If this file conflicts with migrations, prefer migrations and update this file later.
+It is not a full `pg_dump`, but it must contain the important tables, enums, helper functions, RPCs, legacy warnings, and gameplay/database semantics that Codex needs without rediscovering everything from scratch.
 
-Priority order:
+If this file conflicts with the actual database or generated `database.types.ts`, prefer the actual database/generated types and update this file.
 
-1. explicit user instruction,
-2. current database schema / migrations,
-3. `current-decisions.md`,
-4. this file.
+## Source-of-truth order
+
+For schema-sensitive implementation, use this order:
+
+1. current live database / generated `database.types.ts`
+2. current migrations / SQL that have been applied
+3. this file as the semantic index
+4. `current-decisions.md`
+5. `project-context.md`
+6. `codex-mythborne-backlog.md`
+7. `current-state-summary.md` and `current-todo.md` only as Codex progress/status files
+
+Important: `current-state-summary.md`, `current-todo.md`, and task statuses in the backlog are owned by Codex/user-confirmed implementation progress. Do not use them as the main schema source.
 
 ---
 
-## General Rules
+# General database rules
 
 - PostgreSQL / Supabase.
-- Relational modeling is preferred.
-- RLS-enabled user data.
-- Explicit keys and constraints preferred.
-- Central bonus-template model preferred over hardcoded stat columns everywhere.
-- Database schema and migrations are the technical source of truth.
-- This file explains intended meaning and design direction, not every physical column.
-
-Important naming note:
-
-- Current canonical project/game name is **Mythborne**.
-- Older names such as Monster Hunt may remain in legacy files until cleaned up.
+- Prefer relational modeling over hidden JSON blobs.
+- Prefer explicit constraints, dictionary tables, helper text, descriptions, and status reasons.
+- Do not duplicate role/access logic if canonical helper functions exist.
+- Critical gameplay/economy mutations should go through RPC/domain operations, not direct frontend table writes.
+- Preserve `reason`, `description`, `status_reason`, `helper_text`, and `admin_description` wherever applicable.
+- Metadata JSON should be lightweight and contextual, not a place to hide core fields.
+- Legacy/transitional tables and fields may remain for compatibility, but new systems should use the current central models.
 
 ---
 
-## Server / World Model
-
-### `game_servers`
-
-Purpose:
-
-- stores logical game worlds / realms inside the same database and application.
-
-A game server is:
-
-- a logical world,
-- not a separate machine,
-- not a separate deployment,
-- not a separate database,
-- not a separate Supabase project.
-
-Important intended columns:
-
-- `id uuid`
-- `key text`
-- `name text`
-- `kind public.game_server_kind`
-- `status public.game_server_status`
-- lifecycle timestamps such as `created_at`, `updated_at`, `launched_at`, `archived_at`.
-
-### `game_server_kind`
-
-PostgreSQL enum.
-
-Current values:
-
-- `sandbox`
-- `standard`
-
-No `seasonal` or `event` value for now.
-
-If those are needed later, add them deliberately through a later migration and design decision.
-
-### `game_server_status`
-
-PostgreSQL enum.
-
-Current values:
-
-- `draft`
-- `testing`
-- `scheduled`
-- `live`
-- `archived`
-
-Meaning:
-
-- `draft` — server/world is being prepared.
-- `testing` — specific server configuration is being tested before public availability.
-- `scheduled` — server is configured and waiting for launch.
-- `live` — active playable server.
-- `archived` — closed historical server. Archiving should be treated as a very final operation.
-
-### Default sandbox server
-
-Initial server/world migration creates a default sandbox.
-
-Current intended values:
-
-- `key = sandbox`
-- `name = Sandbox`
-- `kind = sandbox`
-- `status = live`
-
-This sandbox is a permanent internal test world, not a normal production server.
-
-### Sandbox access
-
-Sandbox should not be treated as a normal public server.
-
-Normal players should see/use standard scheduled/live servers.
-
-Admin/operator/tester or assigned server staff may see and use sandbox/testing environments according to access policies.
-
----
-
-## Global Account / Hero Model
-
-### Global account
-
-User account is global.
-
-Global account identity comes from:
-
-- `auth.users`
-- `user_data`
-
-Do not treat user account as server-specific.
-
-### `hero`
-
-Purpose:
-
-- stores server-specific player characters.
-
-After the server/hero migration:
-
-- `hero.id` is the character id,
-- `hero.user_id` references the global account,
-- `hero.server_id` references the game server/world.
-
-Critical rule:
-
-**Do not assume `hero.id = auth.uid()` after the server/hero migration.**
-
-Correct identity model:
-
-- `auth.uid()` / `user_data.id` = global account id,
-- `hero.id` = specific character id,
-- `hero.user_id` = owner account id,
-- `hero.server_id` = game server id.
-
-Correct loading flow:
-
-1. authenticate user,
-2. determine accessible / selected server,
-3. load hero for `user_id + server_id`,
-4. use `hero.id` for gameplay-owned data.
-
-Any code, RLS policy, mapper, facade, query or service that assumes `hero.id === auth.uid()` must be updated.
-
-### Hero uniqueness
-
-Hero name:
-
-- must be unique within a server.
-- preferred constraint: `unique(server_id, name)`.
-
-Normal non-sandbox servers:
-
-- one account should have at most one hero on a given server.
-
-Sandbox servers:
-
-- privileged accounts may have multiple heroes for testing.
-
-Because sandbox has an intentional exception, do not enforce one-hero-per-server with a simple unconditional `unique(user_id, server_id)` constraint.
-
-Preferred enforcement:
-
-- `unique(server_id, name)` for names,
-- trigger/domain policy for one hero per account per non-sandbox server,
-- sandbox exception for admin/operator/tester/server staff.
-
----
-
-## Roles / Membership / Staff Tables
-
-### `roles`
-
-Purpose:
-
-- global account-level roles.
-
-Current design:
-
-- keep `roles` as a table,
-- use stable technical `key`.
-
-Known role keys:
-
-- `admin`
-- `moderator`
-- `player`
-- `operator`
-- `tester`
-
-Role meaning:
-
-- global role describes account-level capability,
-- global role does not automatically mean authority on every game server,
-- server-specific authority should be represented through `server_staff_assignments`.
-
-Do not replace global roles with a plain text field.
-
-### `server_memberships`
-
-Purpose:
-
-- stores user participation state on a specific game server.
-
-This is a table.
-
-Its `status` is a PostgreSQL enum: `server_membership_status`.
-
-Current values:
-
-- `active`
-- `suspended`
-- `banned`
-
-Meaning:
-
-- `active` — user participates normally on that server.
-- `suspended` — temporary server-specific ban/suspension.
-- `banned` — permanent server-specific ban, with possible manual admin reversal.
-
-No `left` status for now.
-
-Characters are not deleted simply because a user stops playing.
-
-Important:
-
-- membership is administrative participation state,
-- hero is the actual playable character.
-
-### `server_staff_assignments`
-
-Purpose:
-
-- stores server-specific staff rights.
-
-This is a table.
-
-Its `role` is a PostgreSQL enum: `server_staff_role`.
-
-Current values:
-
-- `owner`
-- `operator`
-- `moderator`
-- `tester`
-
-Use cases:
-
-- user may be global `operator`,
-- assigned as `operator` on one server,
-- and play normally on another server.
-
-This avoids making global operator/moderator role automatically powerful everywhere.
-
----
-
-## Configuration Governance Tables
-
-Configuration governance is now represented in the database.
-
-Important rule:
-
-**Config governance is a governance layer, not a replacement for existing relational systems.**
-
-It should not flatten formulas, item generation, buildings, or bonus templates into generic JSON if those systems already have proper relational tables.
-
-### `config_governance_scope`
-
-PostgreSQL enum.
-
-Current values:
-
-- `product_global`
-- `global_balance`
-- `server_launch`
-- `live_server`
-- `test_override`
-
-Meaning:
-
-- `product_global` — product-level rule / core game rhythm.
-- `global_balance` — shared balance/configuration that may be patched through controlled change.
-- `server_launch` — chosen before server launch and locked after server goes live.
-- `live_server` — server-specific live config that can change during server life, but should be controlled.
-- `test_override` — sandbox/testing-only override.
-
-### `config_managed_entity_type`
-
-PostgreSQL enum.
-
-Current values:
-
-- `scalar_config`
-- `json_config`
-- `balance_formula`
-- `balance_formula_assignment`
-- `entity_formula_assignment`
-- `bonus_template`
-- `building_definition`
-- `item_generation_base`
-- `item_generation_affix`
-- `item_generation_quality`
-- `item_generation_bucket_profile`
-- `server_setting`
-
-Meaning:
-
-- defines what kind of thing a config definition governs.
-- may point to a simple scalar/json config.
-- may point to an existing relational domain entity type.
-
-### `config_value_type`
-
-PostgreSQL enum.
-
-Current values:
-
-- `integer`
-- `decimal`
-- `boolean`
-- `string`
-- `json`
-- `formula_ref`
-- `enum_ref`
-- `entity_ref`
-
-Meaning:
-
-- describes the value/reference type for a config definition.
-- `formula_ref` and `entity_ref` are especially important for relational systems.
-
-### `config_value_status`
-
-PostgreSQL enum.
-
-Current values:
-
-- `draft`
-- `active`
-- `archived`
-
-Used by `global_config_values`.
-
-### `config_change_status`
-
-PostgreSQL enum.
-
-Current values:
-
-- `draft`
-- `ready`
-- `applied`
-- `cancelled`
-
-Used by `config_change_sets`.
-
-### `config_change_visibility`
-
-PostgreSQL enum.
-
-Current values:
-
-- `none`
-- `internal`
-- `public`
-
-Meaning:
-
-- `none` — no changelog entry; still preserved internally.
-- `internal` — visible in admin/operator changelog.
-- `public` — intended for player-facing changelog.
-
-Public changelog text should not automatically expose technical values.
-
-### `config_change_kind`
-
-PostgreSQL enum.
-
-Current values:
-
-- `scope_change`
-- `global_value_change`
-- `server_value_change`
-- `definition_change`
-- `activation_change`
-- `entity_field_change`
-
-Used by `config_change_entries`.
-
-### `server_config_value_source`
-
-PostgreSQL enum.
-
-Current values:
-
-- `manual_server_launch`
-- `global_snapshot`
-- `live_override`
-- `test_override`
-- `migration`
-
-Used by `server_config_values`.
-
----
-
-## `config_definitions`
-
-Purpose:
-
-- registry of things governed by configuration/change policy.
-
-Important:
-
-- this is not only a key-value config table,
-- this table can govern existing relational systems,
-- this table should not replace `balance_formulas`, `item_generation_*`, `buildings`, etc.
-
-Important intended columns:
-
-- `id`
-- `key`
-- `label`
-- `description`
-- `governance_scope`
-- `managed_entity_type`
-- `managed_entity_key`
-- `value_type`
-- `value_schema_json`
-- `default_value_json`
-- `is_active`
-- `sort_order`
-- timestamps.
-
-Examples of existing seeded definitions:
-
-- `formula_assignment_building_upgrade_cost`
-- `formula_assignment_building_upgrade_time`
-- `formula_assignment_building_bonus_growth`
-- `formula_assignment_combat_hit_green_zone`
-- `formula_assignment_combat_evasion_chance`
-- `formula_assignment_combat_critical_chance`
-- `formula_assignment_combat_final_damage`
-- `formula_assignment_hero_stat_upgrade_cost`
-- `formula_assignment_hero_stat_level_cap`
-- `formula_assignment_item_requirement_level`
-- `item_generation_qualities`
-- `item_generation_bucket_profiles`
-- `item_generation_bases`
-- `item_generation_affixes`
-- `building_definitions`
-- `bonus_templates`
-
-### Meaning of `managed_entity_key`
-
-`managed_entity_key` is a stable pointer/key to the governed domain area.
-
-Examples:
-
-- for formula assignments, it should match `balance_formula_targets.key`,
-- for item generation quality governance, it may point at `item_generation_qualities`,
-- for building definition governance, it may point at `buildings`.
-
-### Important rule
-
-For existing relational entities, use governance records to describe scope and change policy.
-
-Do not duplicate relational rows into `value_json` unless the thing is naturally scalar/json/profile-like.
-
----
-
-## `global_config_values`
-
-Purpose:
-
-- stores scalar/json/profile-like global config values.
-
-Use for:
-
-- simple global config values,
-- global JSON profiles,
-- future product/global config where no better relational model exists.
-
-Do not use for:
-
-- `balance_formulas`,
-- `balance_formula_assignments`,
-- item generation tables,
-- building definitions,
-- bonus templates,
-
-unless there is a deliberate design decision to represent a given thing as scalar/json config.
-
-Important columns:
-
-- `config_definition_id`
-- `value_json`
-- `status`
-- `version`
-- `created_by`
-- timestamps including activation/archive timestamps.
-
-Constraint:
-
-- one active global value per config definition.
-
----
-
-## `server_config_values`
-
-Purpose:
-
-- stores server-specific scalar/json/profile-like config values,
-- stores launch snapshots,
-- stores live server overrides,
-- stores test overrides.
-
-Use for:
-
-- server launch config values,
-- server-specific snapshots of previously global config,
-- live server config,
-- sandbox/testing overrides.
-
-Important columns:
-
-- `server_id`
-- `config_definition_id`
-- `value_json`
-- `source`
-- `locked_at`
-- `created_by`
-- timestamps.
-
-Constraint:
-
-- one value per server/config definition.
-
-Important:
-
-- `server_config_values` is not a replacement for all server-scoped relational data.
-- Use it where scalar/json/profile config makes sense.
-
----
-
-## `config_change_sets`
-
-Purpose:
-
-- groups related configuration/governance/balance changes.
-
-Important columns:
-
-- `title`
-- `reason`
-- `status`
-- `changelog_visibility`
-- `changelog_title`
-- `changelog_body`
-- `requested_by`
-- `applied_by`
-- `cancelled_by`
-- timestamps.
-
-Important rules:
-
-- `reason` is mandatory and must not be blank.
-- public changelog visibility requires title and body.
-- this table describes intent and publication metadata.
-- this table does not itself apply changes unless application/runtime logic implements applying.
-
-Status values:
-
-- `draft`
-- `ready`
-- `applied`
-- `cancelled`
-
-### Changelog rule
-
-Public changelog text is separate from technical changes.
-
-Example:
-
-- technical: drop bucket values changed from one numeric profile to another,
-- public: “Adjusted reward distribution in trials.”
-
----
-
-## `config_change_entries`
-
-Purpose:
-
-- stores concrete technical changes inside a config change set.
-
-Important columns:
-
-- `change_set_id`
-- `config_definition_id`
-- `change_kind`
-- `server_id`
-- `entity_type`
-- `entity_id`
-- `field_path`
-- `old_scope`
-- `new_scope`
-- `old_value_json`
-- `new_value_json`
-- `metadata_json`
-
-Important rules:
-
-- `scope_change` requires `old_scope` and `new_scope`, and they must differ.
-- `entity_field_change` requires `entity_type`, `entity_id`, and `field_path`.
-
-For existing relational entities, use:
-
-    entity_type = balance_formula_assignment
-    entity_id = <row id>
-    field_path = formula_id
-
-or similar.
-
-This records technical detail without flattening the relational model into a generic config JSON.
-
----
-
-## Formula System
-
-The project already has a relational formula system.
-
-Important tables:
-
-- `balance_formula_targets`
-- `balance_formulas`
-- `balance_formula_assignments`
-- `balance_formula_blocks`
-- `entity_formula_assignments`
-
-Do not replace this system with generic JSON configs.
-
-### `balance_formula_targets`
-
-Purpose:
-
-- defines where formulas are used.
-
-Examples:
-
-- `building_upgrade_cost`
-- `building_upgrade_time`
-- `building_bonus_growth`
-- `combat_hit_green_zone`
-- `combat_evasion_chance`
-- `combat_critical_chance`
-- `combat_final_damage`
-- `hero_stat_upgrade_cost`
-- `hero_stat_level_cap`
-- `item_requirement_level`
-
-Important semantic columns include:
-
-- `key`
-- `scope_key`
-- `label`
-- `description`
-- `allowed_variables`
-- `default_test_context`
-- `sort_order`
-
-### `balance_formulas`
-
-Purpose:
-
-- stores concrete formula expressions.
-
-Examples:
-
-- `building-upgrade-cost-default`
-- `combat-hit-green-zone-default`
-- `hero-stat-upgrade-cost-default`
-
-Important columns include:
-
-- `key`
-- `scope_key`
-- `label`
-- `expression`
-- `description`
-- `is_enabled`
-- timestamps.
-
-### `balance_formula_assignments`
-
-Purpose:
-
-- global/default assignment of a formula target to a formula.
-
-Current model:
-
-- one assignment per target.
-
-This is the global fallback used when no local entity override exists.
-
-### `entity_formula_assignments`
-
-Purpose:
-
-- local formula override assignment for a specific entity.
-
-Current supported entity kind:
-
-- `building`
-
-Important columns:
-
-- `entity_kind`
-- `entity_id`
-- `target_id`
-- `formula_id`
-- timestamps.
-
-Constraint:
-
-- unique `(entity_kind, entity_id, target_id)`.
-
-Current usage:
-
-- local formula override per building.
-
-Expected runtime lookup order:
-
-1. look for local `entity_formula_assignments` for entity + target,
-2. if present, use assigned formula,
-3. if absent, use global `balance_formula_assignments`,
-4. if neither exists, treat as configuration error or explicit technical fallback.
-
-Important:
-
-- this table is structural support only.
-- runtime/frontend still needs implementation of fallback logic.
-
-### `balance_formula_blocks`
-
-Purpose:
-
-- stores formula editor blocks/tokens.
-
-Includes:
-
-- variables,
-- operators,
-- functions,
-- literals,
-
-grouped by formula scope.
-
----
-
-## Canonical Base Stats
+# Canonical stats
 
 Base stats come from the `stats` table and should be treated as canonical.
 
-Current canonical set:
+Current canonical base stat keys:
 
-- strength
-- dexterity
-- endurance
-- agility
-- cunning
-- charisma
-- wisdom
-- intelligence
-- spirituality
+- `strength`
+- `dexterity`
+- `endurance`
+- `agility`
+- `cunning`
+- `charisma`
+- `wisdom`
+- `intelligence`
+- `spirituality`
 
 Do not hardcode old stat lists from outdated concept docs.
-
----
 
 ## `hero_stats`
 
@@ -798,683 +61,607 @@ Purpose:
 
 - stores base stat values for a hero.
 
-Notes:
+Important semantics:
 
-- keyed by hero and stat key,
-- should align with the canonical `stats` table,
-- after server/hero migration, `hero_id` references character id, not auth user id.
-
-Important:
-
-- do not query `hero_stats` by assuming `hero_id = auth.uid()`.
-- first load active hero, then use `hero.id`.
+- keyed by hero and stat key;
+- should align with the canonical `stats` table;
+- stat allocation should spend Character Points through proper domain/RPC flow, not direct UI balance mutation.
 
 ---
 
-## `hero_derived`
+# Hero, account, server and identity model
 
-Purpose:
+## `hero`
 
-- stores derived/special values such as:
-  - health
-  - defense
-  - min damage
-  - max damage
-  - luck
+Current hero identity model:
 
-Notes:
+- `hero.id` is the character id.
+- `hero.user_id` is the owning account id.
+- `hero.server_id` is the server/world id.
+- Do not assume `hero.id = auth.uid()`.
 
-- Health is the preferred user-facing term for hit points.
-- Luck is treated as a special derived/equipment-sensitive stat, not a normal point-investment stat.
-- After server/hero migration, `hero_id` references character id, not auth user id.
+Current important columns include:
 
-Important:
+- `id`
+- `name`
+- `level`
+- `origin_id`
+- `rank`
+- `experience`
+- `profile_picture`
+- `created_at`
+- `estate_id`
+- `user_id`
+- `server_id`
+- `character_points`
+- `total_character_points_earned`
 
-- do not query `hero_derived` by assuming `hero_id = auth.uid()`.
+Important constraints:
+
+- `character_points >= 0`
+- `total_character_points_earned >= 0`
+- hero names are server-scoped.
+
+## Hero loading rule
+
+Any hero-owned query should resolve:
+
+1. current authenticated user;
+2. selected/current server;
+3. active hero on that server;
+4. then use `hero.id` for hero-owned tables.
+
+Do not use `auth.uid()` as `hero_id`.
+
+## Character creation / onboarding warning
+
+Old onboarding code/RLS may still assume `hero.id = auth.uid()`.
+
+Before fully relying on multiple heroes per account or sandbox multi-hero flows, audit and fix:
+
+- character creation using user id as hero id;
+- onboarding RLS comparing `hero.id` or `hero_id` directly to `auth.uid()`;
+- estate/stat/resource creation using account id as hero id.
 
 ---
+
+# Server/world access and staff access
+
+## Core tables
+
+Important server/access tables include:
+
+- `game_servers`
+- `server_memberships`
+- `server_staff_assignments`
+
+Known conceptual columns:
+
+`game_servers`:
+
+- `id`
+- `key`
+- `name`
+- `kind`
+- `status`
+- `description`
+- `launched_at`
+- `archived_at`
+
+Enums include:
+
+- `game_server_kind`
+- `game_server_status`
+- `server_membership_status`
+- `server_staff_role`
+
+## Canonical access helpers
+
+Current DB/RLS logic uses helper functions for role/staff checks. New SQL/RPC should use these instead of duplicating role joins.
+
+Known helper functions:
+
+- `has_global_role(text[])`
+- `has_server_staff_role(uuid, server_staff_role[])`
+
+`is_admin()` may exist as a compatibility wrapper. If it exists or is needed, prefer implementing it as:
+
+```sql
+select public.has_global_role(array['admin']);
+```
+
+Do not create a second independent standard for checking admin/operator/tester roles by manually joining `roles`, unless the helper layer is missing.
+
+## Role table caveat
+
+Older schema snapshots used `roles.name`.
+
+Some newer code may expect `roles.key`.
+
+Before referencing either column directly, inspect the current generated types/schema. Prefer `has_global_role(...)` where possible.
+
+## Access semantics
+
+`can_manage` and `can_use_as_sandbox` are different concepts.
+
+Recommended meaning:
+
+- `can_manage`:
+  - global admin;
+  - or server staff role in `owner`, `operator`, `moderator`.
+- `can_use_as_sandbox`:
+  - sandbox server;
+  - and global role in `admin`, `operator`, `tester`;
+  - or assigned server staff role on that sandbox, including tester where appropriate.
+
+Tester visibility is not automatically management permission.
+
+## Server switcher / accessible servers
+
+For staff server switcher and accessible server RPCs:
+
+- admin can see all relevant servers;
+- normal authenticated players can see standard scheduled/live servers where appropriate;
+- assigned server staff can see their assigned servers;
+- operator/tester can see sandbox/testing according to global role policy;
+- returned rows should distinguish membership status, staff role, manage permission, and sandbox-use permission.
+
+If `get_accessible_game_servers()` is created/updated, it should use `has_global_role(...)` and `has_server_staff_role(...)` where possible.
+
+---
+
+# Character Points
+
+## `hero.character_points`
+
+Character Points are the canonical spendable/progression currency.
+
+Rules:
+
+- stored on `hero.character_points`;
+- lifetime baseline stored on `hero.total_character_points_earned`;
+- earned alongside experience unless a later explicit rule overrides it;
+- used for stat allocation, trade, auctions, fines/sanctions, and future economy sinks;
+- not stored in `hero_resources`;
+- not stored in `hero_derived`.
+
+## `character_point_ledger`
+
+Append-only history of Character Point balance changes.
+
+Important fields:
+
+- `server_id`
+- `hero_id`
+- `amount_delta`
+- `balance_after`
+- `reason`
+- `related_entity_type`
+- `related_entity_id`
+- `description`
+- `created_by`
+- `created_at`
+
+Ledger is separate from audit logs.
+
+Audit describes important domain/admin actions.
+Ledger explains Character Point balance movement.
+
+## Character Point helper/RPC functions
+
+Known important helpers include:
+
+- `get_hero_active_character_point_locks(hero_id)`
+- `get_hero_available_character_points(hero_id)`
+- `apply_character_points_delta(...)`
+
+Rules:
+
+- use domain/RPC operations for persistent Character Point changes;
+- do not update `hero.character_points` directly from UI click handlers;
+- do not write CP ledger rows directly from generic UI components;
+- final stat allocation save, trade, auction, fines/penalties should use domain/RPC paths.
+
+---
+
+# Hero resources
 
 ## `hero_resources`
 
 Purpose:
 
-- stores resources owned by a hero.
+- stores regular resources, not Character Points.
 
-Expected resource types include:
+Current core resources:
 
-- drachmas,
-- materials,
-- workforce.
+- `drachma`
+- `materials`
+- `workforce`
 
-After server/hero migration:
+Rules:
 
-- `hero_id` references character id,
-- not auth user id.
-
-Important:
-
-- do not query `hero_resources` by assuming `hero_id = auth.uid()`.
+- drachmas are system/vendor/building economy resource;
+- materials and workforce support construction/economy;
+- Character Points are not a `hero_resources` row;
+- vendor scrap gives drachmas, not Character Points.
 
 ---
 
-## Combat-related Semantic Rules
+# Derived stats
 
-These are system rules, even if not yet fully materialized as columns:
+## `hero_derived`
 
-- Dexterity is offensive hit control.
-- Agility is defensive anti-hit + evasion.
-- Endurance is defense / damage reduction.
-- Cunning is crit-related.
-- Luck lightly supports evasion and crit.
-- Weapon damage should support min/max ranges.
-- Number of attacks should come from weapon/equipment logic rather than raw stat points.
+`hero_derived` is transitional/legacy.
 
-Combat should not assume that all needed derived values are hardcoded columns forever.
+`hero_derived.hp` has been removed.
 
-Use bonus/equipment/formula systems where appropriate.
+`hero_derived.health` remains combat Health while the transition is ongoing.
+
+Remaining values such as defense, damage range, luck, critical, evasion may still be read by existing screens, but new systems should not treat `hero_derived` as authoritative source of truth.
+
+Current direction:
+
+- derived values should be calculated from base stats, equipment, bonuses, formulas and context;
+- frontend may calculate previews;
+- backend/RPC/domain actions should calculate authoritative runtime values;
+- combat/trials/reports should store snapshots of values used at the time.
+
+Do not add new persistent dependencies on `hero_derived`.
 
 ---
 
-## Bonus System Semantic Notes
+# Items and item lifecycle
 
-The intended bonus/template system should support at least:
+## `items`
+
+Current item model supports ownership and lifecycle.
+
+Important fields include:
+
+- `id`
+- `server_id`
+- `hero_id`
+- `name`
+- `description`
+- `created_at`
+- `status`
+- `scrapped_at`
+- `recoverable_until`
+- `updated_at`
+
+Current `item_status` values:
+
+- `active`
+- `scrapped`
+- `locked_trade`
+- `locked_auction`
+
+Rules:
+
+- player-to-player trade and auctions do not copy item rows;
+- item ownership changes by updating `items.hero_id`;
+- direct trade locks items as `locked_trade`;
+- auctions lock listed item as `locked_auction`;
+- normal player inventory/armory should hide or disable locked/scrapped items;
+- staff/admin views may need access to scrapped/recoverable items for anti-abuse/case resolution.
+
+## Scrapping
+
+Vendor scrap is not player trade.
+
+Rules:
+
+- vendor scrap gives drachmas;
+- vendor scrap does not use Character Points;
+- trivial/no-affix items may be permanently removed;
+- affix-bearing or important items should become `scrapped` and recoverable for a retention window;
+- `scrapped_at` and `recoverable_until` identify recovery lifecycle.
+
+---
+
+# Item generation
+
+Current item generation layers:
+
+- quality;
+- optional prefix;
+- base item;
+- optional suffix.
+
+Important tables:
+
+- `item_generation_bases`
+- `item_generation_affixes`
+- `item_generation_qualities`
+- `item_generation_bucket_profiles`
+- legacy item generation bonus join tables, now mirrored into `entity_bonuses`
+
+## Item qualities
+
+`item_generation_qualities` stores quality definitions.
+
+Important fields:
+
+- `key`
+- `label`
+- `multiplier`
+- `weight`
+- `sort_order`
+- `is_enabled`
+
+Rules:
+
+- frontend/admin preview should not hardcode exactly three qualities;
+- preview should read active qualities from `item_generation_qualities`;
+- quality multiplier scales generated item bonus values where `entity_bonuses.quality_scales_value = true`;
+- quality does not scale `level_interval`;
+- real runtime/resolver and frontend preview must use the same quality data.
+
+Current conceptual examples:
+
+- normal × 1.0
+- quality × 1.5
+- outstanding × 2.0
+
+Future qualities may be added without code hardcoding.
+
+---
+
+# Bonus system
+
+## Current direction
+
+The old bonus system was based on `bonus_templates.target`, `bonus_templates.type`, and separate source-specific join tables.
+
+The current refactor introduces dictionary-driven bonus semantics and central `entity_bonuses`.
+
+## Dictionary tables
+
+Current bonus dictionaries:
+
+- `bonus_types`
+- `bonus_contexts`
+- `bonus_target_categories`
+- `bonus_targets`
+
+## Extended `bonus_templates`
+
+`bonus_templates` now keeps legacy columns and also has new semantic columns.
+
+Legacy columns:
+
+- `target`
+- `type`
+- `description`
+
+New semantic columns include:
+
+- `key`
+- `label`
+- `type_key`
+- `target_key`
+- `context_key`
+- `level_interval`
+- `formula_id`
+- `formula_target_id`
+- `scaling_stat_key`
+- `params_json`
+- `is_active`
+- `sort_order`
+- `updated_at`
+
+Legacy mappings:
+
+- `def` → `defense`
+- `minDmg` → `min_damage`
+- `maxDmg` → `max_damage`
+- `critical` → `critical_chance`
+- `evasion` → `evasion_chance`
+- `per_4_levels` → `per_levels` with `level_interval = 4`
+
+## `entity_bonuses`
+
+Central table for attaching bonus instances to any supported entity.
+
+Important fields:
+
+- `entity_type`
+- `entity_id`
+- `bonus_template_id`
+- `value`
+- `level_interval_override`
+- `formula_id_override`
+- `formula_target_id_override`
+- `scaling_stat_key_override`
+- `context_key_override`
+- `quality_scales_value`
+- `quality_scales_level_interval`
+- `params_json`
+- `is_active`
+- `description`
+- `sort_order`
+- `legacy_source_table`
+- `legacy_source_id`
+
+Current migrated entity types:
+
+- `origin`
+- `item_generation_base`
+- `item_generation_affix`
+
+Existing legacy rows from these tables were backfilled:
+
+- `origin_bonuses`
+- `item_generation_base_bonuses`
+- `item_generation_affix_bonuses`
+
+`building_bonuses` and `item_bonuses` were structurally supported but had no current data at the time of backfill.
+
+## Legacy bonus tables
+
+Legacy/transitional:
+
+- `origin_bonuses`
+- `building_bonuses`
+- `item_bonuses`
+- `item_generation_base_bonuses`
+- `item_generation_affix_bonuses`
+
+These should not be expanded as the main future model. New systems should read/write through `bonus_templates` + `entity_bonuses`.
+
+## Quality scaling rules for item bonuses
+
+Quality scaling is instance/source-specific and stored on `entity_bonuses`.
+
+Rules:
+
+- origin bonuses: `quality_scales_value = false`;
+- item generation base bonuses: `quality_scales_value = true`;
+- item generation affix bonuses: `quality_scales_value = true`;
+- `quality_scales_level_interval` must remain false;
+- quality scaling multiplies `value`;
+- quality scaling never multiplies `level_interval`.
+
+Preview rule:
+
+```text
+scaled_value = entity_bonuses.value * item_generation_qualities.multiplier
+```
+
+No database-level rounding is applied.
+
+Runtime/resolver decides how to project decimals:
+
+- integer stats may round/floor/ceil according to resolver rules;
+- percent/chance values may remain decimal;
+- requirement reductions may remain decimal until the final comparison.
+
+Admin UI should show raw decimal preview and, where useful, projected integer preview by target/resolver rule.
+
+## Bonus types
+
+Known seeded bonus types include:
 
 - `flat`
 - `percent`
 - `per_levels`
+- `formula_bonus`
 - `scaled_stat_bonus`
 - `resource_flat`
 - `resource_percent`
 - `capacity_flat`
 - `unlock_feature`
+- `requirement_flat_reduction`
+- `requirement_percent_reduction`
 
-Bonus definitions should conceptually support:
+## Bonus contexts
 
-- `target`
-- `context`
-- `category`
-- type-specific parameters such as:
-  - base value
-  - levels step
-  - source stat
-  - scaling factor
-  - etc.
-
-Current intended contexts include:
+Known seeded bonus contexts include:
 
 - `global`
+- `combat`
 - `pvp_attack`
 - `pvp_defense`
 - `exploration`
 - `trial`
-- `combat`
 - `economy`
+- `resource_production`
 - `building_management`
+- `trade`
+- `auction`
+- `requirements`
+- `item_equip`
 
-Important:
+## Bonus target categories
 
-- `per_4_levels` should be generalized into `per_levels`.
+Known seeded categories include:
 
----
+- `base_stat`
+- `derived_stat`
+- `combat`
+- `resource_production`
+- `capacity`
+- `feature`
+- `requirement`
+- `economy`
 
-## `bonus_templates`
+## Bonus targets
 
-Purpose:
+Known seeded targets include:
 
-- central definition of bonuses.
+Base stats:
 
-Desired/future pattern:
+- `strength`
+- `dexterity`
+- `endurance`
+- `agility`
+- `cunning`
+- `charisma`
+- `wisdom`
+- `intelligence`
+- `spirituality`
 
-- template identity,
-- target,
-- type,
-- context,
-- category,
-- description,
-- extended type-specific parameters as the system evolves.
+Derived / combat:
+
+- `health`
+- `defense`
+- `min_damage`
+- `max_damage`
+- `damage`
+- `luck`
+- `critical_chance`
+- `evasion_chance`
+
+Resource/production:
+
+- `drachmas_production`
+- `materials_production`
+- `workforce_production`
+- `all_resource_production`
+
+Capacity:
+
+- `max_active_trade_offers`
+- `visible_item_capacity`
+
+Feature:
+
+- `player_trade`
+- `player_auction`
+
+Requirement:
+
+- `all_requirements`
+- `item_requirements`
+- `building_requirements`
+- `hero_level_requirements`
+- `hero_stat_requirements`
+- `wisdom_requirements`
+- `prestige_rank_requirements`
+
+## Formula-based bonus rules
+
+Formula-based bonuses should reference real formula rows, not hardcoded expression text.
 
 Use:
 
-- origins,
-- items,
-- buildings,
-- other modular bonus systems.
+- `bonus_templates.formula_id` / `entity_bonuses.formula_id_override`
+- optionally `bonus_templates.formula_target_id` / `entity_bonuses.formula_target_id_override`
 
-Design rule:
+Building bonuses such as:
 
-- prefer modular bonus linking over hardcoded effect columns across many domain entities.
+- Barracks: Health in PvP attack from building level × selected stat;
+- Fortress: Health in PvP defense from building level × selected stat;
 
-Important current implementation note:
-
-- observed `bonus_templates` may still be in the old shape,
-- old shape includes only `id`, `target`, `type`, `description`,
-- old `bonus_type` may still include `per_4_levels`,
-- the broader intended model may not yet be implemented in the current database.
-
-Therefore:
-
-- do not assume `category`, `context`, `base_value`, `levels_step`, `source_stat`, `scaling_factor` exist unless current schema confirms it,
-- bonus template refactor should be a separate controlled migration/task,
-- config governance has a registry marker for `bonus_templates`, but does not by itself refactor the table.
+should be modeled as formula/scaled bonuses, not hardcoded exceptions.
 
 ---
 
-## Item Generation Tables
+# Requirements system
 
-The project already has relational item generation tables.
+## Tables
 
-Known tables include:
-
-- `item_generation_affixes`
-- `item_generation_affix_bonuses`
-- `item_generation_bases`
-- `item_generation_base_bonuses`
-- `item_generation_bucket_profiles`
-- `item_generation_qualities`
-
-Important rule:
-
-- do not flatten item generation into generic JSON config if relational tables already represent it.
-
-Config governance may govern these tables through `config_definitions` and `config_change_entries`.
-
-Examples:
-
-- `item_generation_qualities` is governed as `item_generation_quality`.
-- `item_generation_bucket_profiles` is governed as `item_generation_bucket_profile`.
-- `item_generation_bases` is governed as `item_generation_base`.
-- `item_generation_affixes` is governed as `item_generation_affix`.
-
----
-
-## `buildings`
-
-Purpose:
-
-- stores building definitions.
-
-Important columns:
-
-- `key`: canonical technical identifier,
-- `name`,
-- `description`,
-- `rank_required`,
-- `district_code`,
-- `image_path`,
-- `sort_order`,
-- `base_cost`,
-- `base_build_time_minutes`,
-- `max_level`,
-- `requirements` (`jsonb`).
-
-Important semantics:
-
-- `district_code` links building availability to estate/district logic.
-- `rank_required` is a progression gate, but should not be simplistically treated as the same thing as district.
-- `requirements` is a flexible extension point for future gating.
-- `max_level = 0` may mean unlimited, depending on feature logic.
-- building descriptions may still be conceptual, not final effect specs.
-- buildings should support global formula fallback plus optional local formula overrides.
-
-Known current state:
-
-- many building rows may still use placeholder cost/time values,
-- building effects/bonuses may not yet be fully defined.
-
----
-
-## Building Formula Assignment
-
-Buildings support or should support:
-
-- global default formulas by formula target,
-- optional local formula overrides per building via `entity_formula_assignments`.
-
-This should cover at least:
-
-- upgrade cost,
-- upgrade time,
-- bonus growth,
-- other building-related formula scopes where needed.
-
-If no local formula is assigned:
-
-- fallback to global/default formula assignment.
-
-Formula assignment is conceptually separate from the building definition itself.
-
----
-
-## Building Costs / Requirements
-
-Current related tables may include:
-
-- `building_resource_costs`
-- `building_requirements`
-- `building_bonuses`
-
-Important notes:
-
-- `building_resource_costs` may use `base_value`, not `base_amount`.
-- `building_bonuses` may currently be empty.
-- `building_requirements` may currently have only minimal placeholder rows.
-
-These systems are still early and should be checked against current schema before implementation.
-
----
-
-## Estate / District Layer
-
-The game has a separate estate/district system.
-
-Important conceptual distinction:
-
-- district / estate access,
-- building availability,
-- player level,
-- prestige,
-- council/governance access.
-
-These are related but not identical systems.
-
-Do not collapse them into one variable unless explicitly instructed.
-
----
-
-## `estates`
-
-Purpose:
-
-- stores occupied estates only.
-
-Important post-server-migration model:
-
-- estate belongs to a hero,
-- estate belongs to a server,
-- estate address is unique inside a server,
-- empty estates are not stored as rows.
-
-Expected important columns:
-
-- `id`
-- `server_id`
-- `hero_id`
-- `district_code`
-- `address`
-- other estate metadata as needed.
-
-After server/hero migration:
-
-- `hero_id` references `hero.id`,
-- `server_id` references `game_servers.id`.
-
-Important:
-
-- `hero_id` must not be treated as `auth.uid()`.
-- use `hero.user_id` to identify owner account.
-- use `hero.id` for gameplay ownership.
-
-### Estate address uniqueness
-
-Old global uniqueness of `address` is not enough for multi-server.
-
-Preferred/current constraint:
-
-- `unique(server_id, address)`
-
-If `address` already contains district prefix, e.g. `A-0001`, then `district_code` does not need to be part of the uniqueness constraint.
-
-### Empty estate rule
-
-Do not pre-create all empty estate/address records.
-
-The database should store occupied estates, not every possible empty address:
-
-- district capacity defines possible addresses,
-- occupied estates are rows,
-- empty addresses are derived from capacity minus occupied addresses,
-- abandoning/relocating from an estate can delete the estate row and dependent building state.
-
-Important distinction:
-
-- address label, e.g. `A-0001`, is stable as a possible address slot,
-- estate row id is the id of a specific occupation instance,
-- if the same address is claimed later, it should create a new estate row/id.
-
-This supports the intended relocation model:
-
-- moving to an empty estate destroys old buildings by deleting old occupied estate state,
-- the old address becomes empty again,
-- if someone later claims that address, it is a new estate instance.
-
-Frontend may generate the full address list for display using district capacity, then overlay occupied addresses queried from the database.
-
-### District E
-
-District E always has exactly one address/seat.
-
-This should not vary per server unless explicitly redesigned later.
-
----
-
-## `estate_buildings`
-
-Purpose:
-
-- stores built/upgraded building state for an occupied estate.
-
-Important:
-
-- building state belongs to an estate row,
-- if estate row is deleted during relocation/abandonment, estate building state should be deleted through FK cascade or equivalent cleanup,
-- this is how building loss is enforced when moving to an empty estate.
-
-Do not treat buildings as globally owned by user account.
-
----
-
-## Exploration Persistence Notes
-
-Exploration should be modeled as temporary session/path state, not as a full permanent world map.
-
-Important conceptual requirements:
-
-- active exploration sessions,
-- discovered/visited nodes,
-- remembered exits/branches for backtracking,
-- lightweight storage per visited node,
-- important reports stored separately from temporary exploration path state.
-
-Exploration runtime data should be server/hero scoped.
-
-Important:
-
-- if exploration tables are added later, they should generally reference `hero.id` and/or `server_id`,
-- not `auth.uid()` directly.
-
----
-
-## Reports / Snapshots
-
-Important events should support snapshot-style reports.
-
-Reports should:
-
-- be based on historical snapshot data,
-- not depend only on current live values,
-- support public/shareable access,
-- preserve tooltip-relevant entity data where needed.
-
-Important report types:
-
-- `trial`
-- `encounter`
-- `pvp_combat`
-- `siege`
-
-Report payload should reflect the original in-game view of the event.
-
-If an in-game trial view includes drop/reward, the report should show it too.
-
-Reports should not expose private account data.
-
-Reports may reference public hero/profile information, but should snapshot event-critical data.
-
----
-
-## PvP / Siege Persistence Direction
-
-Future PvP and siege tables should be server-scoped.
-
-Expected direction:
-
-- PvP attack records reference attacker hero and defender hero/estate.
-- Siege records reference attacking estate/hero and defending estate/hero.
-- Server id should be present directly where useful for querying and constraints.
-- Do not infer everything through multiple joins if direct `server_id` materially simplifies queries and constraints.
-
-Regular PvP attacks should have a travel timer.
-
-Siege should be longer-running and may involve guild support.
-
-Exact PvP/siege schema is still provisional.
-
----
-
-## Product-level Cadence / Config Scope
-
-Some values are likely better treated as product-level constants than per-server editable config:
-
-- daily trial count,
-- daily attack count,
-- base exploration step timing,
-- manual siege action timer,
-- base PvP travel-time minimum/model,
-- possibly base siege preparation duration.
-
-These values define the game rhythm and should not casually differ per server unless intentionally redesigned.
-
-Other systems may be data-driven or patchable:
-
-- item balance,
-- affix/prefix values,
-- building effects,
-- drop tables,
-- combat formulas,
-- event effects,
-- test/admin overrides.
-
-Guiding rule:
-
-**Configurable does not mean freely changeable at any time.**
-
-Config governance now represents this distinction through:
-
-- `product_global`
-- `global_balance`
-- `server_launch`
-- `live_server`
-- `test_override`
-
----
-
-## Balance / Formula / Patch Governance
-
-The system distinguishes or should distinguish:
-
-- product-level/global rules,
-- global balance configuration,
-- server launch configuration,
-- live server operations,
-- test/admin overrides.
-
-Live balance changes should not necessarily apply immediately to production servers when edited.
-
-Current config governance supports:
-
-- config definitions,
-- governance scopes,
-- change sets,
-- change entries,
-- internal/public changelog visibility.
-
-Future intended direction:
-
-- testing on sandbox/testing environments,
-- explicit activation for production/live servers,
-- audit log,
-- player-facing changelog support,
-- possible admin preview of affected servers/values before applying changes.
-
-This is only partially implemented.
-
-The current database supports governance structures, but application logic still needs to implement actual workflows.
-
----
-
-## Audit / Logging Direction
-
-Full audit logging is not yet finalized.
-
-Audit log should eventually support:
-
-- moderation,
-- debugging,
-- anti-abuse,
-- admin accountability,
-- balance/config accountability,
-- evidence for sanctions.
-
-Do not log meaningless UI clicks by default.
-
-Prefer logging important domain events, including:
-
-- item trade completed,
-- item transferred,
-- item scrapped/sold,
-- PvP attack created/resolved,
-- siege created/resolved,
-- trial completed,
-- report generated,
-- admin changed config,
-- operator suspended/banned a user on a server,
-- balance/config change set applied.
-
-Config governance stores reasons/change sets/change entries, but full audit log remains a separate future system.
-
----
-
-## Anti-Abuse Database Direction
-
-Database constraints can prevent some abuse:
-
-- one account creating multiple heroes on one normal server.
-
-They cannot prevent:
-
-- one real person creating multiple accounts.
-
-Future anti-abuse may require:
-
-- access/login event logs,
-- hashed IP signals,
-- user-agent/device signals,
-- suspicious trade detection,
-- suspicious item transfer detection,
-- PvP feeding detection,
-- admin review tools,
-- shared-household declarations.
-
-IP/device-like signals may be personal data and must be treated carefully with privacy/legal requirements in mind.
-
-Do not implement broad anti-abuse logging without deliberate design and privacy review.
-
----
-
-## Localization Rule
-
-Core in-world names may remain in Greek across all language versions.
-
-Descriptions and explanatory text are localized separately.
-
-This applies to:
-
-- prestige ranks,
-- building names where intended,
-- similar core world proper nouns.
-
----
-
-## Migrations as Source of Truth
-
-When implementing schema-sensitive features:
-
-1. read relevant migrations,
-2. read current seed data if needed,
-3. use this file as a semantic shortcut only.
-
-This file should be updated when:
-
-- a table meaning changes,
-- a key relation changes,
-- a gameplay-relevant column is added,
-- major naming decision changes,
-- server/account/hero ownership model changes,
-- config governance or audit/logging model changes.
-
----
-
-## Codex Warning: Server/Hero Migration
-
-After the server/hero migration, Codex must not write code that assumes:
-
-    hero.id === authUser.id
-    hero.id === auth.uid()
-
-Correct model:
-
-    auth.uid()      // global account id
-    hero.user_id    // global account id
-    hero.id         // character id
-    hero.server_id  // game server id
-
-Gameplay-owned tables should normally reference `hero.id`.
-
-User/account-owned administration should reference `user_data.id` / `auth.users.id`.
-
-Server/world-specific data should reference `game_servers.id` where applicable.
-
-Frontend/backend code should load selected/active server and active hero before querying gameplay-owned state.
-
----
-
-## Codex Warning: Config Governance
-
-After the config governance migration, Codex must not treat `config_definitions` as a simple key-value table.
-
-Correct model:
-
-    config_definitions = registry of governed configuration/domain areas
-
-It may govern:
-
-- scalar/json config,
-- existing relational formula assignments,
-- item generation tables,
-- building definitions,
-- bonus templates,
-- server settings,
-- test overrides.
-
-Do not flatten existing relational systems into JSON unless explicitly instructed.
-
-For existing relational entities, config change entries should point to:
-
-    entity_type
-    entity_id
-    field_path
-
-Examples:
-
-    entity_type = balance_formula_assignment
-    field_path = formula_id
-
-Use `global_config_values` / `server_config_values` mainly for scalar/json/profile-like values where no better relational table exists.
-
-Formula runtime should continue to use:
-
-- `entity_formula_assignments` for local overrides,
-- `balance_formula_assignments` for global fallback,
-- `balance_formulas` for expressions.
----
-
-# Update 2026-04-26 — requirements and building district caps
-
-## Requirements foundation
-
-The database now has a central requirements foundation.
-
-Tables:
+Central requirements foundation:
 
 - `requirement_definitions`
 - `entity_requirements`
@@ -1483,11 +670,6 @@ Enums:
 
 - `requirement_value_type`
 - `requirement_entity_type`
-
-Purpose:
-
-- `requirement_definitions` defines reusable requirement types.
-- `entity_requirements` attaches requirements to concrete entities such as building definitions, items, trade features or future trial definitions.
 
 Current seeded requirement definitions:
 
@@ -1499,75 +681,583 @@ Current seeded requirement definitions:
 - `district_access`
 - `trade_routes_access`
 
-Important semantic rules:
+Rules:
 
 - requirements are not costs;
 - requirements are not bonuses;
 - new systems should not add fresh requirement JSON fields;
-- old `building_requirements` is legacy/transitional;
-- old `buildings.requirements` JSONB is legacy/transitional.
+- `building_requirements` is legacy/transitional;
+- `buildings.requirements` JSONB is legacy/transitional.
 
 Existing legacy building requirements were migrated additively into `entity_requirements` where possible.
 
 `buildings.rank_required > 1` was migrated additively into `entity_requirements` as `prestige_rank`, but the old column remains transitional for compatibility.
 
-## Building district max-level caps
+## Requirement modifier bonuses
 
-The database now has:
+Requirement modifiers are bonuses, not requirements.
 
-- `building_district_level_caps`
+Examples:
 
-Purpose:
+- `requirement_percent_reduction` targeting `item_requirements`;
+- `requirement_percent_reduction` targeting `all_requirements`;
+- `requirement_flat_reduction` targeting `wisdom_requirements`.
 
-- stores district-specific max-level overrides for buildings.
+A bonus reducing requirements works while the bonus source is active, e.g. an equipped item. It does not reduce the source item’s own requirement retroactively unless a future explicit rule says so.
 
-Semantics:
+---
 
-- `buildings.max_level` = global/default max level for a building;
-- `buildings.max_level = 0` means unlimited;
+# Buildings, estates and districts
+
+## `buildings`
+
+Important fields:
+
+- `key`
+- `name`
+- `description`
+- `district_code`
+- `rank_required`
+- `base_cost`
+- `base_build_time_minutes`
+- `max_level`
+- `requirements`
+- `sort_order`
+- `image_path`
+
+Important semantics:
+
+- `district_code` is the minimum district where the building can be built;
+- building is available in that district and every higher district;
+- `rank_required` is legacy/transitional and should not be the primary availability rule;
+- prestige/rank gates should use central `entity_requirements`;
+- `requirements` JSONB is legacy/transitional;
+- `max_level = 0` means unlimited global/default cap.
+
+## `building_district_level_caps`
+
+Stores district-specific max-level overrides for buildings.
+
+Rules:
+
+- `buildings.max_level` = global/default cap;
+- `0` means unlimited;
 - `building_district_level_caps` stores overrides only;
-- missing override means fallback to `buildings.max_level`.
+- missing override means fallback to `buildings.max_level`;
+- do not generate full building × district matrix unless each row is a real override;
+- cap override cannot be below building minimum district.
 
-Do not populate a full building × district matrix unless each row is a real override.
+## Building helper functions
 
-## Building district availability
-
-`buildings.district_code` is the minimum district where the building can be built.
-
-A building can be built in its `district_code` and every district with higher rank.
-
-Helper functions:
+Known helper functions:
 
 - `get_building_max_level_for_district(building_id, district_code)`
 - `is_building_available_in_district(building_id, district_code)`
 
-Validation:
+Use these or equivalent logic when checking building availability / effective max level.
 
-- district cap overrides cannot be inserted for districts below the building’s minimum district.
+## Estates
 
-## Config governance integration
+Rules:
 
-The following config definitions are registered:
+- occupied estates are rows;
+- do not pre-create all empty estates;
+- address availability can be derived from district capacity plus occupied estate rows;
+- relocation to a new empty estate should be operationally simple but strategically expensive;
+- relocation can delete/abandon old estate/building state;
+- siege takeover will later swap addresses/estates according to combat/siege rules.
 
-- `requirement_definitions`
-- `entity_requirements`
-- `building_district_level_caps`
+---
 
-They are global-balance governed entity references.
+# Formula governance
 
-Related `config_managed_entity_type` values include:
+Important formula tables include:
+
+- `balance_formula_targets`
+- `balance_formulas`
+- `balance_formula_assignments`
+- `balance_formula_blocks`
+- `entity_formula_assignments`
+
+Important rules:
+
+- formula targets define allowed variables;
+- formulas should be validated against target variables/functions;
+- local entity formula assignment should override global/default where applicable;
+- building-specific formula overrides use `entity_formula_assignments`;
+- do not replace relational formula system with generic JSON.
+
+Formula-related runtime should follow:
+
+1. local entity assignment;
+2. global/default assignment;
+3. explicit fallback/error.
+
+---
+
+# Config governance
+
+Important config tables include:
+
+- `config_definitions`
+- `global_config_values`
+- `server_config_values`
+- `config_change_sets`
+- `config_change_entries`
+
+Important enums include:
+
+- `config_governance_scope`
+- `config_managed_entity_type`
+- `config_value_status`
+- `config_value_type`
+- `server_config_value_source`
+
+Known helper functions:
+
+- `get_server_config_integer(server_id, config_key, fallback)`
+- `get_server_config_boolean(server_id, config_key, fallback)`
+
+Config values should not be hardcoded where server/product balance says they are governed.
+
+Config change sets preserve:
+
+- title;
+- reason;
+- status;
+- changelog visibility;
+- requested/applied/cancelled user;
+- timestamps.
+
+## Config-managed entities added by recent foundations
+
+Known managed entity types/definitions include:
+
+Requirements/building caps:
 
 - `requirement_definition`
 - `entity_requirement`
 - `building_district_level_cap`
 
-## Implementation notes for Codex
+Bonus system:
 
-Codex should:
+- bonus dictionaries and `entity_bonuses` should be registered/managed through config governance in the next bonus stage.
 
-- regenerate database types after this schema change;
-- add domain models/mappers for requirements and district cap overrides;
-- expose requirements and caps through building/admin config UI;
-- treat district caps as building balance configuration;
-- keep old `building_requirements` and `buildings.requirements` available only for transition/backward compatibility;
-- avoid assuming explicit district cap rows exist for every building/district pair.
+Anti-abuse configs exist for trade/abuse thresholds and should be server-specific where defined.
+
+---
+
+# Direct trade
+
+## Core tables
+
+Direct trade foundation uses:
+
+- `player_trade_offers`
+- `player_trade_offer_items`
+- `player_trade_transactions`
+- `player_trade_transaction_items`
+- `character_point_locks`
+
+## Direct trade rules
+
+- private between two heroes;
+- server-scoped;
+- both heroes must be on same server;
+- both sides must be able to use player trade;
+- each side only selects their own items;
+- no access to another hero’s private inventory;
+- each side must offer item(s) and/or Character Points;
+- CP-only-for-CP-only exchange is blocked at finalization;
+- offered CP is locked with `character_point_locks`;
+- offered items are locked as `locked_trade`;
+- cancel/reject/expiry releases CP locks and returns items to `active`;
+- finalization is transactional.
+
+## Direct trade RPC/functions
+
+Known important functions:
+
+- `create_player_direct_trade_offer(...)`
+- `respond_player_direct_trade_offer(...)`
+- `cancel_player_direct_trade_offer(...)`
+- `reject_player_direct_trade_offer(...)`
+- `confirm_player_direct_trade_offer(...)`
+
+Trade-slot helper functions include:
+
+- `hero_can_use_player_trade(hero_id)`
+- `hero_has_free_trade_slot(hero_id)`
+- `get_hero_trade_slot_limit(hero_id)`
+- `get_hero_active_trade_slot_count(hero_id)`
+
+`trade_active_offer_limit_fallback` is temporary until Trade Routes/building bonus runtime is connected.
+
+---
+
+# Auctions
+
+## Core tables
+
+Auction foundation uses:
+
+- `player_auction_listings`
+- `player_auction_bids`
+- `character_point_locks`
+- `player_trade_transactions` with `transaction_type = auction_sale`
+- `player_trade_transaction_items`
+
+## Auction rules
+
+- public server-scoped listing;
+- exactly one item per auction;
+- no bundle/set auction support for now;
+- allowed modes:
+  - bidding,
+  - buy now,
+  - bidding with buy now;
+- auction duration is server-configured, not player-selected;
+- listed item is locked as `locked_auction`;
+- bids lock Character Points;
+- outbid bids release prior CP lock;
+- buy now completes immediately;
+- seller can cancel only before any bid exists;
+- auction without bids after `ends_at` becomes `expired` and item returns to `active`;
+- auction with winning bid completes into a trade transaction and CP ledger rows.
+
+## Auction RPC/functions
+
+Known important functions:
+
+- `create_player_auction_listing(...)`
+- `place_player_auction_bid(...)`
+- `buy_now_player_auction(...)`
+- `cancel_player_auction_listing(...)`
+- `close_player_auction_listing(...)`
+
+Internal/helper functions created for auction runtime include:
+
+- `create_character_point_lock_for_auction_bid(...)`
+- `create_character_point_lock_for_auction_buy_now(...)`
+- `release_auction_character_point_locks(...)`
+- `unlock_auction_item(...)`
+- `finalize_player_auction_sale(...)`
+
+Frontend should use public RPCs, not internal helpers.
+
+---
+
+# Trade / auction configs
+
+Server config keys added for trade/auction runtime:
+
+- `trade_direct_offer_expiration_hours`
+- `trade_max_items_per_direct_offer`
+- `auction_duration_hours`
+- `auction_min_bid_increment_character_points`
+- `trade_active_offer_limit_fallback`
+
+`trade_active_offer_limit_fallback` is temporary.
+
+Final active trade/auction slot limit should come from Trade Routes/building bonus runtime.
+
+Direct trade offers and active auctions currently share the active-offer slot pool unless a later explicit config changes that.
+
+---
+
+# Anti-abuse foundation
+
+## Core tables
+
+Important anti-abuse tables include:
+
+- `anti_abuse_signal_types`
+- `anti_abuse_signals`
+- `anti_abuse_cases`
+- `anti_abuse_case_signals`
+- `anti_abuse_case_participants`
+- `anti_abuse_case_declarations`
+- `anti_abuse_case_audit_logs`
+- `anti_abuse_sanction_types`
+- `anti_abuse_sanctions`
+- `anti_abuse_sanction_items`
+- `character_point_penalties`
+- `player_relationship_declaration_types`
+- `player_relationship_declarations`
+- `player_relationship_declaration_participants`
+- `player_relationship_declaration_items`
+- `player_relationship_declaration_trades`
+- `player_abuse_report_types`
+- `player_abuse_reports`
+
+## Signal types currently implemented
+
+- `trade.high_cp_direct_trade`
+- `auction.high_cp_sale`
+- `trade.repeated_pair_transfers`
+
+## Anti-abuse rules
+
+- anti-abuse signals/cases are review aids, not automatic guilt;
+- sanctions are not automatically applied by detection;
+- signals use lightweight `metadata_json`;
+- signals use `grouping_key` for case grouping;
+- automatic case creation is controlled by `anti_abuse_auto_case_creation_enabled`;
+- active cases are grouped by `server_id + grouping_key`;
+- active statuses for grouping:
+  - `open`
+  - `in_review`
+  - `waiting_for_player`
+- `resolved` and `cancelled` cases are historical and are not reopened automatically;
+- a new signal after resolved/cancelled creates a new case if auto-case is enabled;
+- signal actor/target are added as participants.
+
+## Case enums
+
+Known case statuses:
+
+- `open`
+- `in_review`
+- `waiting_for_player`
+- `resolved`
+- `cancelled`
+
+Known verdicts:
+
+- `no_abuse`
+- `insufficient_evidence`
+- `abuse_confirmed`
+- `resolved_by_voluntary_return`
+
+Known sources:
+
+- `system_signal`
+- `player_report`
+- `manual`
+
+## Anti-abuse functions
+
+Known signal/case helper functions include:
+
+- `build_anti_abuse_hero_pair_grouping_key(server_id, hero_a, hero_b)`
+- `generate_trade_transaction_anti_abuse_signals(transaction_id)`
+- `insert_trade_transaction_anti_abuse_signal(...)` internal/helper
+- `trigger_generate_trade_transaction_anti_abuse_signals()` trigger function
+- `create_or_link_anti_abuse_case_for_signal(signal_id)`
+- `trigger_create_or_link_anti_abuse_case_for_signal()` trigger function
+- `refresh_anti_abuse_case_signal_stats(case_id)` internal/helper
+- `add_anti_abuse_case_participant_if_missing(...)` internal/helper
+
+Player report/declaration functions created earlier include:
+
+- `create_player_abuse_report(...)` if present in generated types/schema;
+- declaration/report creation should prefer RPC where available.
+
+Codex must inspect current generated DB types for exact signatures before calling.
+
+## Sanctions and CP penalties
+
+Sanctions are separate records linked to cases.
+
+A case can have multiple sanctions.
+
+Sanction status should track lifecycle such as:
+
+- pending;
+- applied;
+- completed;
+- cancelled;
+- forgiven;
+- failed.
+
+CP fines should use `character_point_penalties`.
+
+Do not hide core sanction data in metadata JSON.
+
+---
+
+# Player relationship declarations and abuse reports
+
+## Relationship declarations
+
+Used to provide context for anti-abuse review.
+
+Examples:
+
+- shared IP;
+- loan;
+- group purchase;
+- shared item pool;
+- item lending;
+- group settlement.
+
+Declaration types are dictionary/config-driven, not hardcoded.
+
+Declaration does not disable anti-abuse. It provides context for case review.
+
+## Abuse reports
+
+Player abuse reports create or link cases.
+
+Report types are dictionary/config-driven.
+
+Examples:
+
+- scam;
+- stolen item;
+- unreturned loan;
+- suspicious trade;
+- multi-accounting;
+- harassment;
+- other.
+
+Report status/reason should be visible to relevant players where allowed.
+
+---
+
+# Audit foundation
+
+Important tables include:
+
+- `audit_action_types`
+- `audit_entity_types`
+- `audit_logs`
+
+Audit is for important domain/admin actions, not every UI click.
+
+Good audit targets:
+
+- config changes;
+- anti-abuse case decisions;
+- sanctions;
+- stat allocation final save;
+- major item operations;
+- trade/auction operations;
+- estate/building irreversible changes.
+
+Audit metadata should be lightweight and should not replace event/report snapshots.
+
+---
+
+# Reports and snapshots
+
+Reports are not audit logs.
+
+Future report/snapshot system should support:
+
+- trial reports;
+- encounter reports;
+- PvP combat reports;
+- siege reports.
+
+Rule:
+
+- public report reproduces the event view using historical snapshot data;
+- it must not recalculate from current live state;
+- tooltips in public reports use snapshot values;
+- public reports must not expose private account data.
+
+---
+
+# Notifications
+
+Notification module is future work, but domain operations should preserve enough data to emit notifications later.
+
+Important future notification events:
+
+- declaration accepted/rejected/revoked/expired;
+- report linked/dismissed/resolved;
+- case status/verdict involving player;
+- sanction status changes;
+- item confiscation/return;
+- CP fine/debt changes;
+- trade/auction state changes where relevant.
+
+Notifications should include relevant reason/status reason.
+
+---
+
+# Legacy / transitional warnings
+
+## Hero identity
+
+Legacy assumption:
+
+- `hero.id = auth.uid()`
+
+Current rule:
+
+- `hero.user_id = auth.uid()`;
+- `hero.id` is character id;
+- `hero.server_id` selects server/world.
+
+## `hero_derived`
+
+Legacy/transitional.
+
+Do not add new dependencies.
+
+## `bonus_templates` old shape
+
+Legacy columns remain:
+
+- `target`
+- `type`
+
+Current code should migrate toward:
+
+- `type_key`
+- `target_key`
+- `context_key`
+- `entity_bonuses`
+
+## Old bonus relation tables
+
+Legacy/transitional:
+
+- `origin_bonuses`
+- `building_bonuses`
+- `item_bonuses`
+- `item_generation_base_bonuses`
+- `item_generation_affix_bonuses`
+
+Use `entity_bonuses` for the central future model.
+
+## Old requirements tables/fields
+
+Legacy/transitional:
+
+- `building_requirements`
+- `buildings.requirements`
+- `buildings.rank_required`
+
+Use central `entity_requirements`.
+
+## Trade active slot fallback
+
+`trade_active_offer_limit_fallback` is temporary.
+
+Use Trade Routes/building bonus runtime when implemented.
+
+## Vendor scrap
+
+Vendor scrap is not trade.
+
+Vendor scrap gives drachmas and does not use Character Points.
+
+---
+
+# Current completed database/runtime foundations
+
+The following foundations were designed and rollback-tested in SQL editor:
+
+- item ownership / lifecycle foundation;
+- Character Points balance and ledger foundation;
+- direct trade schema and RPC runtime;
+- auction schema and RPC runtime;
+- trade/auction anti-abuse signal generation;
+- automatic anti-abuse case grouping;
+- requirements foundation and building district cap overrides;
+- bonus dictionary/entity bonus foundation and legacy bonus backfill.
+
+Codex must regenerate database types after schema changes before implementing affected frontend/domain code.

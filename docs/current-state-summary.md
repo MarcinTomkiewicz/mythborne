@@ -72,6 +72,9 @@ This is an operational estimate, not a formal audit.
 - Current armory and combat prototype surfaces already consume hero-derived data through the shared `Hero` service; no separate auth uid based item/combat reads were found in this slice.
 - Task C1 is confirmed complete as of 2026-04-26. `ActiveServer.access` exposes global role flags, server membership status, server staff role, staff flag, sandbox access, and selected-server management capability.
 - Global role (`globalRoleKey`) and server staff role (`serverStaffRole`) are represented separately, so UI can distinguish global admin/operator/tester access from server-specific staff assignment.
+- Task C2 is confirmed complete as of 2026-04-26. Staff/admin pages now share an admin server switcher backed by `ActiveServer`, so dashboard, item balance, item catalog, and building admin views operate against the selected server context.
+- The server switcher uses Reactive Forms through a core form factory and PrimeNG `p-select`; it avoids `ngModel`, local component styling, temporary debug output, and direct ad hoc RPC calls from the component.
+- Current global role checks use the existing `has_global_role` RPC through the backend layer, while direct `roles` table reads remain avoided because RLS may hide those rows.
 
 ### Canonical stats and derived stats
 - Base stats are loaded from canonical stat definitions.
