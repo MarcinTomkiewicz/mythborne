@@ -117,7 +117,7 @@ export class AttributeAllocationPageFacade {
       } else if (nextLevelCostResult.error) {
         increaseReason = nextLevelCostResult.error;
       } else if (nextLevelCost !== null && nextLevelCost > remainingHeroPoints) {
-        increaseReason = 'Not enough hP for the next level.';
+              increaseReason = 'Not enough Character Points for the next level.';
       }
 
       return {
@@ -232,7 +232,7 @@ export class AttributeAllocationPageFacade {
       .subscribe({
         next: ({ hero, derived, stats, definitions, rules }) => {
           this.heroLevel.set(positiveInteger(hero.level ?? 1));
-          this.heroPoints.set(nonNegativeInteger(derived.hp ?? 0));
+          this.heroPoints.set(nonNegativeInteger(hero.character_points ?? 0));
           this.statsList.set(definitions);
           this.baseStats.set({
             ...stats,

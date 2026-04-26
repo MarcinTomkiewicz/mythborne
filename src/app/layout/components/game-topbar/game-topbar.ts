@@ -137,10 +137,14 @@ export class GameTopbar implements OnInit, OnDestroy {
   private mapAuthHeroToRow(hero: ReturnType<AuthState['hero']>): Row<'hero'> {
     return {
       id: hero!.id,
+      user_id: hero!.userId,
+      server_id: hero!.serverId,
       name: hero!.name,
       level: hero!.level,
       rank: hero!.rank,
       experience: hero!.experience,
+      character_points: hero!.characterPoints,
+      total_character_points_earned: hero!.totalCharacterPointsEarned,
       estate_id: hero!.estateId,
       origin_id: hero!.originId,
       profile_picture: hero!.profilePicture,

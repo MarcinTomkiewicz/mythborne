@@ -14,7 +14,7 @@ import {
   EditableBuildingRow,
 } from '../types/building-admin-row.types';
 import { Row } from '../types/supabase.types';
-import { normalizeBonusTarget, normalizeBonusType } from './bonus';
+import { normalizeBonusTarget, normalizeBonusTemplate, normalizeBonusType } from './bonus';
 import { FormulaAdminData } from '../domain/formula/formula.model';
 
 export function mapEditableBuilding(
@@ -33,13 +33,17 @@ export function mapEditableBuilding(
     baseBuildTimeMinutes: row.base_build_time_minutes ?? 0,
     maxLevel: row.max_level ?? 0,
     formulaOverrides: mapBuildingFormulaOverrides(row.id, formulaData),
-    bonuses: (row.building_bonuses ?? []).map((bonus) => ({
-      templateId: bonus.template_id,
-      target: normalizeBonusTarget(bonus.bonus_templates.target),
-      type: normalizeBonusType(bonus.bonus_templates.type),
-      value: Number(bonus.value ?? bonus.base_value ?? 0),
-      description: bonus.bonus_templates.description ?? '',
-    })),
+    bonuses: (row.building_bonuses ?? []).map((bonus) => {
+      const template = normalizeBonusTemplate(bonus.bonus_templates);
+
+      return {
+        templateId: bonus.template_id,
+        target: template.target,
+        type: template.type,
+        value: Number(bonus.value ?? 0),
+        description: template.description,
+      };
+    }),
     resourceCosts: sortBuildingRules(row.building_resource_costs ?? []).map((cost) => ({
       id: cost.id,
       resourceType: normalizeBuildingResourceType(cost.resource_type),

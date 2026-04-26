@@ -18,4 +18,5 @@ export const TABLES = {
   hero_resources: 'hero_resources',
   hero_derived: 'hero_derived',
   entity_formula_assignments: 'entity_formula_assignments',
+  game_servers: 'game_servers',
 } as const;

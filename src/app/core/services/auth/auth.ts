@@ -159,7 +159,7 @@ export class Auth {
     return this.backend
       .getAll<Row<'hero'>>({
         table: TABLES.hero,
-        filters: { id: { operator: FilterOperator.EQ, value: userId } },
+        filters: { userId: { operator: FilterOperator.EQ, value: userId } },
         range: { from: 0, to: 0 },
         camelCase: false,
       })

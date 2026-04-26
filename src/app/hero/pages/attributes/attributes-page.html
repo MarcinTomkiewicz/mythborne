@@ -1,7 +1,7 @@
 <app-loading-overlay
   [visible]="page.isLoading() && page.loadError() === null"
   label="Loading attribute allocation..."
-  description="Fetching hero stats, available hP and active progression formulas."
+  description="Fetching hero stats, available Character Points and active progression formulas."
 />
 
 @if (page.loadError()) {
@@ -17,13 +17,13 @@
           <p class="card-legend mb-0">Hero</p>
           <h2 class="mg-section__title mg-section__title--sm mb-0">Attribute Allocation</h2>
           <p class="muted-text mb-0">
-            Rozdysponuj hP pomiedzy statystyki. Koszt kolejnego poziomu liczony jest osobno dla kazdej cechy, a zejscie ponizej wartosci z bazy jest zablokowane.
+            Rozdysponuj Character Points pomiedzy statystyki. Koszt kolejnego poziomu liczony jest osobno dla kazdej cechy, a zejscie ponizej wartosci z bazy jest zablokowane.
           </p>
         </div>
 
         <div class="flex-row-start-center flex-wrap gap-sm">
           <span class="tag-badge tag-badge--warn">Level {{ page.heroLevel() }}</span>
-          <span class="tag-badge tag-badge--golden">Available hP: {{ page.remainingHeroPoints() }}</span>
+          <span class="tag-badge tag-badge--golden">Available CP: {{ page.remainingHeroPoints() }}</span>
           <span class="tag-badge tag-badge--muted">Spent: {{ page.spentHeroPoints() }}</span>
           <span class="tag-badge tag-badge--info">
             Project cap:
@@ -100,7 +100,7 @@
             <td>
               <div class="flex-col gap-xs">
                 @if (row.nextLevelCost !== null) {
-                  <span class="tag-badge tag-badge--golden">{{ row.nextLevelCost }} hP</span>
+                  <span class="tag-badge tag-badge--golden">{{ row.nextLevelCost }} CP</span>
                 } @else {
                   <span class="tag-badge tag-badge--danger">Unavailable</span>
                 }

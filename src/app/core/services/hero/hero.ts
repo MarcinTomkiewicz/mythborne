@@ -33,7 +33,7 @@ export class Hero {
         this.backend
           .getAll<Row<'hero'>>({
             table: TABLES.hero,
-            filters: { id: { operator: FilterOperator.EQ, value: user.id } },
+            filters: { userId: { operator: FilterOperator.EQ, value: user.id } },
             range: { from: 0, to: 0 },
             camelCase: false,
           })
@@ -60,13 +60,17 @@ export class Hero {
       return EMPTY;
     }
 
-    return this.backend
-      .getAll<Pick<Row<'hero_stats'>, 'stat_key' | 'value'>>({
-        table: TABLES.hero_stats,
-        select: 'stat_key, value',
-        filters: { heroId: { operator: FilterOperator.EQ, value: id } },
-        camelCase: false,
-      })
+    return this.getHeroData()
+      .pipe(
+        switchMap((hero) =>
+          this.backend.getAll<Pick<Row<'hero_stats'>, 'stat_key' | 'value'>>({
+            table: TABLES.hero_stats,
+            select: 'stat_key, value',
+            filters: { heroId: { operator: FilterOperator.EQ, value: hero.id } },
+            camelCase: false,
+          })
+        )
+      )
       .pipe(
         map((rows) => rows.reduce((acc, row) => {
           acc[row.stat_key as keyof IHeroStats] = row.value;
@@ -76,7 +80,7 @@ export class Hero {
   }
 
   /**
-   * Fetches derived stats (like dmg, hp, crit, etc.)
+   * Fetches derived stats (like dmg, health, crit, etc.)
    */
   getHeroDerived() {
     const id = this.userId;
@@ -85,13 +89,17 @@ export class Hero {
       return EMPTY;
     }
 
-    return this.backend
-      .getAll<Row<'hero_derived'>>({
-        table: TABLES.hero_derived,
-        filters: { heroId: { operator: FilterOperator.EQ, value: id } },
-        range: { from: 0, to: 0 },
-        camelCase: false,
-      })
+    return this.getHeroData()
+      .pipe(
+        switchMap((hero) =>
+          this.backend.getAll<Row<'hero_derived'>>({
+            table: TABLES.hero_derived,
+            filters: { heroId: { operator: FilterOperator.EQ, value: hero.id } },
+            range: { from: 0, to: 0 },
+            camelCase: false,
+          })
+        )
+      )
       .pipe(
         map((rows) => {
           if (!rows[0]) {
@@ -110,14 +118,18 @@ export class Hero {
       return of<string | null>(null);
     }
 
-    return this.backend
-      .getAll<Pick<Row<'estates'>, 'address' | 'district_code'>>({
-        table: TABLES.estates,
-        select: 'address, district_code',
-        filters: { heroId: { operator: FilterOperator.EQ, value: id } },
-        range: { from: 0, to: 0 },
-        camelCase: false,
-      })
+    return this.getHeroData()
+      .pipe(
+        switchMap((hero) =>
+          this.backend.getAll<Pick<Row<'estates'>, 'address' | 'district_code'>>({
+            table: TABLES.estates,
+            select: 'address, district_code',
+            filters: { heroId: { operator: FilterOperator.EQ, value: hero.id } },
+            range: { from: 0, to: 0 },
+            camelCase: false,
+          })
+        )
+      )
       .pipe(
         map((rows) => {
         const data = rows[0];
@@ -141,37 +153,44 @@ export class Hero {
       return of<Row<'hero_resources'>[]>([]);
     }
 
-    return this.backend.getAll<Row<'hero_resources'>>({
-      table: TABLES.hero_resources,
-      filters: { heroId: { operator: FilterOperator.EQ, value: id } },
-      camelCase: false,
-    });
+    return this.getHeroData().pipe(
+      switchMap((hero) =>
+        this.backend.getAll<Row<'hero_resources'>>({
+          table: TABLES.hero_resources,
+          filters: { heroId: { operator: FilterOperator.EQ, value: hero.id } },
+          camelCase: false,
+        })
+      )
+    );
   }
 
-  saveProgressionDraft(stats: Record<string, number>, heroPoints: number) {
+  saveProgressionDraft(stats: Record<string, number>, characterPoints: number) {
     const id = this.userId;
 
     if (!id) {
       return throwError(() => new Error('Hero is not authenticated.'));
     }
 
-    const statRows = Object.entries(stats).map(([statKey, value]) => ({
-      heroId: id,
-      statKey,
-      value: nonNegativeInteger(value),
-    }));
+    return this.getHeroData().pipe(
+      switchMap((hero) => {
+        const statRows = Object.entries(stats).map(([statKey, value]) => ({
+          heroId: hero.id,
+          statKey,
+          value: nonNegativeInteger(value),
+        }));
 
-    return forkJoin({
-      statsResult: this.backend.upsertMany(TABLES.hero_stats, statRows, 'hero_id,stat_key'),
-      derivedResult: this.backend.updateWhere<{ heroId: string; hp: number }>(
-        TABLES.hero_derived,
-        { heroId: { operator: FilterOperator.EQ, value: id } },
-        { hp: nonNegativeInteger(heroPoints) }
-      ),
-    }).pipe(
-      map(({ derivedResult }) => {
-        if (derivedResult.length === 0) {
-          throw new Error('Hero points update did not affect any row.');
+        return forkJoin({
+          statsResult: this.backend.upsertMany(TABLES.hero_stats, statRows, 'hero_id,stat_key'),
+          heroResult: this.backend.updateWhere<Pick<Row<'hero'>, 'id' | 'character_points'>>(
+            TABLES.hero,
+            { id: { operator: FilterOperator.EQ, value: hero.id } },
+            { characterPoints: nonNegativeInteger(characterPoints) }
+          ),
+        });
+      }),
+      map(({ heroResult }) => {
+        if (heroResult.length === 0) {
+          throw new Error('Character Points update did not affect any row.');
         }
       })
     );

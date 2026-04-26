@@ -1,6 +1,6 @@
 # Monster Hunt - Current State Summary
 
-Updated: 2026-04-24
+Updated: 2026-04-26
 
 This file summarizes the current implementation state against:
 - `docs/project-context.md`
@@ -27,7 +27,8 @@ This is an operational estimate, not a formal audit.
 | Exploration / trials / encounters | 5% | Documented conceptually, not implemented as a real loop yet. |
 | Prestige / reputation | 0% | Not implemented yet. |
 | Guilds / politics / sieges | 0% | Not implemented yet. |
-| Trade / economy gameplay loop | 10% | Resources and some building/resource groundwork exist, but the real system is not built. |
+| Trade / economy gameplay loop | 35% | Database/RPC foundation for Character Points, direct trade, auctions, item locks, and anti-abuse signals exists. Frontend gameplay surfaces and Trade Routes/building integration are still pending. |
+| Generated database types | 100% | Task A1 confirmed. `src/app/core/types/database.types.ts` has been regenerated against the current schema and includes the latest trade, auction, anti-abuse, item lifecycle, server/config/formula/audit, and hero tables/functions/enums. |
 
 ## What Is Implemented
 
@@ -36,6 +37,25 @@ This is an operational estimate, not a formal audit.
 - Current feature work follows zoneless and signals-first patterns.
 - Shared non-component form/config logic has been moved toward `core`.
 - Reusable UI helpers such as form field renderers and tag-link components are in shared UI.
+- Generated Supabase types are kept in `src/app/core/types/database.types.ts`; domain models should continue to map from DB rows rather than being replaced by raw generated row types.
+
+### Database types / task tracking
+- Task A1 is confirmed complete as of 2026-04-26.
+- `database.types.ts` includes the current public schema for:
+  - game servers, memberships, staff assignments,
+  - config governance,
+  - formula governance,
+  - audit and anti-abuse foundations,
+  - item lifecycle and locks,
+  - Character Points ledger/locks,
+  - direct trade and auction runtime,
+  - existing hero, stats, resources, estate, building, and item tables.
+- Frontend compile fixes from the regenerated types are applied:
+  - `hero_derived.hp` is no longer read or written,
+  - Character Points are read from `hero.character_points`,
+  - generated bonus-template rows are mapped through defaults instead of legacy removed columns,
+  - hero loading now filters by `hero.user_id` instead of assuming `hero.id === auth.uid()`.
+- Task A2 has been applied for A1 by updating this state summary and `docs/current-todo.md`.
 
 ### Canonical stats and derived stats
 - Base stats are loaded from canonical stat definitions.
@@ -91,6 +111,15 @@ This is an operational estimate, not a formal audit.
   - preview of next level costs/time/bonuses/requirements
 - Mansion page displays current building state and formula-based next-step previews.
 - This is currently preview/admin heavy. Real construction execution is not implemented yet.
+
+### Trade / auctions / Character Points
+- Character Points are stored on `hero.character_points` with lifetime baseline in `hero.total_character_points_earned`.
+- `character_point_ledger` is the append-only balance history.
+- `items` has lifecycle/ownership fields for active, scrapped, trade-locked, and auction-locked states.
+- Direct trade backend/RPC runtime exists for private same-server hero trades with Character Point locks and item locks.
+- Auction backend/RPC runtime exists for one-item server-scoped auctions with bidding, buy now, and bid escrow through Character Point locks.
+- Completed trade/auction transactions can generate anti-abuse signals and grouped review cases.
+- Frontend trade/auction gameplay surfaces are still pending.
 
 ### Combat
 - `/game/combat` is no longer a placeholder.
@@ -172,11 +201,16 @@ Aligned with `docs/database-current.md`:
 - central `bonus_templates` model
 - building definitions with progression-related metadata
 - formula targets with `allowed_variables` and `default_test_context`
+- Character Points on `hero` plus append-only `character_point_ledger`
+- item lifecycle statuses for active/scrapped/trade-locked/auction-locked items
+- direct trade, auction, Character Point lock, transaction, anti-abuse signal, and anti-abuse case grouping foundations
+- generated Supabase types synchronized with the current schema
 
 Still pending at the gameplay level even if partially supported in schema:
 - trials / encounters / manifestation-specific storage and runtime flow
 - estate conflict / siege persistence
 - reputation / prestige persistence and scoring
+- frontend trade/auction UX and Trade Routes/building bonus integration
 
 ## Important Notes For Next Work
 
@@ -189,3 +223,4 @@ Still pending at the gameplay level even if partially supported in schema:
 - New gameplay systems should be split into small vertical slices.
 - Combat should now evolve from the sandbox slice into reusable domain pieces, not a giant monolithic combat engine.
 - Exploration, encounter, and trial logic should be built on top of the current formula/stat/bonus foundation instead of bypassing it.
+- Use RPC/domain operations for critical economy mutations such as direct trade, auctions, Character Point balance changes, and item lock transitions.

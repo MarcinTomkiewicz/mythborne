@@ -210,17 +210,17 @@ export class BuildingsService {
       target: normalizeBonusTarget(row.bonus_templates.target),
       type: normalizeBonusType(row.bonus_templates.type),
       description: row.bonus_templates.description ?? null,
-      baseValue: Number(row.value ?? row.base_value ?? 0),
+      baseValue: Number(row.value ?? 0),
       currentValue:
         this.progression.getBonusValue(
           currentLevel,
-          Number(row.value ?? row.base_value ?? 0),
+          Number(row.value ?? 0),
           rules
         ) ?? 0,
       nextValue:
         this.progression.getBonusValue(
           currentLevel + 1,
-          Number(row.value ?? row.base_value ?? 0),
+          Number(row.value ?? 0),
           rules
         ) ?? 0,
     }));

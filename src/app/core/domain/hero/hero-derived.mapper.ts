@@ -3,7 +3,6 @@ import { IHeroDerived } from './hero-derived.model';
 
 export function mapHeroDerived(row: HeroDerivedRow): IHeroDerived {
   return {
-    hp: row.hp,
     def: row.def,
     minDmg: row.min_dmg,
     maxDmg: row.max_dmg,

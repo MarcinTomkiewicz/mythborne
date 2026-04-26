@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-04-24
+Updated: 2026-04-26
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -8,6 +8,12 @@ This file lists pending work derived from:
 - `docs/current-decisions.md`
 
 Order reflects implementation priority, not final business priority.
+
+## Current Codex Backlog Position
+
+- Completed and confirmed: A1 - regenerate/update Supabase database types.
+- Current documentation sync applied: A2 - this TODO and `current-state-summary.md` were updated after A1 confirmation.
+- Next backlog task after this sync: A3 - add the backlog tracking convention to project docs.
 
 ## Highest Priority Gameplay TODO
 
@@ -103,10 +109,24 @@ Order reflects implementation priority, not final business priority.
 
 ## Economy TODO
 
-### Trade
-- Replace trade placeholder with the first real trade slice.
-- Define how drachmas, materials, workforce, and hero-point-adjacent systems interact with markets.
-- Decide what parts of the economy are player-to-player versus system sinks/sources.
+### Trade / auctions frontend
+- Build frontend gameplay/admin surfaces for direct trade offers.
+- Build frontend gameplay/admin surfaces for auction listings, bids, buy now, cancellation, and closing.
+- Use existing RPC/domain operations for trade and auction mutations instead of direct table writes.
+- Keep player-to-player trade based on Character Points.
+- Keep drachmas as system/vendor currency/resource unless a later decision changes that.
+- Hide or block trade/auction locked items from usable/equippable armory views.
+
+### Trade Routes integration
+- Replace `trade_active_offer_limit_fallback` with real Trade Routes/building bonus runtime.
+- Decide how Trade Routes level affects active direct offers and other market limits.
+- Keep the first Trade Routes integration simple and configurable.
+
+### Character Points economy
+- Connect Character Point earning to experience gain paths where appropriate.
+- Use `character_point_ledger` for all persistent Character Point balance changes.
+- Replace the current attribute-allocation direct balance update with the proper Character Point ledger/RPC flow.
+- Keep vendor scrap outside player trade and Character Points.
 
 ## Formula / Admin TODO
 
@@ -133,8 +153,6 @@ Order reflects implementation priority, not final business priority.
 - Continue splitting large admin screens into smaller components and facades where it improves clarity without over-engineering.
 
 ### Database/documentation sync
-- Keep `docs/database-current.md` and `docs/current-decisions.md` updated when migrations materially change semantics.
-- Apply pending SQL files in Supabase when a feature depends on them:
-  - `database/item-generation/010_bonus_template_type_enum_and_cleanup.sql`
-  - `database/formulas/012_stat_progression_target_variables.sql`
-  - `database/formulas/013_combat_formula_seed.sql`
+- Keep `docs/database-current.md`, `docs/current-decisions.md`, `current-state-summary.md`, and this TODO updated when migrations or confirmed implementation materially change semantics.
+- Regenerate/update `src/app/core/types/database.types.ts` whenever schema changes require it.
+- Do not mark backlog tasks complete in state docs until the user confirms the task works.

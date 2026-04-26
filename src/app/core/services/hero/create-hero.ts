@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable, switchMap } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
 import { IHero } from '../../domain/hero/hero.model';
-import { Insert } from '../../types/supabase.types';
+import { Insert, Row } from '../../types/supabase.types';
 import { FilterOperator } from '../../enums/filter-operators';
 import { EstateAddressRow } from '../../types/hero-service.types';
 import { AuthState } from '../auth/auth-state';
@@ -20,44 +20,61 @@ export class CreateHero {
     characterName: string,
     originId: string
   ): Observable<IHero> {
-    const heroPayload: Insert<'hero'> = {
-      id: heroId,
-      name: characterName,
-      level: 1,
-      experience: 0,
-      origin_id: originId,
-      rank: 1,
-      created_at: new Date().toISOString(),
-      profile_picture: null,
-    };
+    const userId = this.authState.user()?.id;
 
-    const stats = this.heroFactory.createStats(heroId);
-    const derived = this.heroFactory.createDerived(heroId);
-    const resources = this.heroFactory.createResources(heroId);
+    if (!userId) {
+      throw new Error('Cannot create a hero without an authenticated user.');
+    }
 
-    return this.backend.create<Insert<'hero'>>(TABLES.hero, heroPayload).pipe(
-      switchMap(() =>
-        forkJoin([
-          this.backend.createMany(TABLES.hero_stats, stats),
-          this.backend.create(TABLES.hero_derived, derived),
-          this.backend.createMany(TABLES.hero_resources, resources),
-        ])
-      ),
-      map(() => {
-        const hero: IHero = {
-          id: heroPayload.id,
-          name: heroPayload.name,
-          level: heroPayload.level ?? 1,
-          rank: heroPayload.rank ?? 1,
-          experience: heroPayload.experience ?? 0,
-          originId: heroPayload.origin_id ?? null,
-          estateId: heroPayload.estate_id ?? null,
-          profilePicture: heroPayload.profile_picture ?? null,
-          createdAt: heroPayload.created_at ?? null,
+    return this.getDefaultServerId().pipe(
+      switchMap((serverId) => {
+        const heroPayload: Insert<'hero'> = {
+          id: heroId,
+          user_id: userId,
+          server_id: serverId,
+          name: characterName,
+          level: 1,
+          experience: 0,
+          character_points: 0,
+          total_character_points_earned: 0,
+          origin_id: originId,
+          rank: 1,
+          created_at: new Date().toISOString(),
+          profile_picture: null,
         };
+        const stats = this.heroFactory.createStats(heroId);
+        const derived = this.heroFactory.createDerived(heroId);
+        const resources = this.heroFactory.createResources(heroId);
 
-        this.authState.setHero(hero);
-        return hero;
+        return this.backend.create<Insert<'hero'>>(TABLES.hero, heroPayload).pipe(
+          switchMap(() =>
+            forkJoin([
+              this.backend.createMany(TABLES.hero_stats, stats),
+              this.backend.create(TABLES.hero_derived, derived),
+              this.backend.createMany(TABLES.hero_resources, resources),
+            ])
+          ),
+          map(() => {
+            const hero: IHero = {
+              id: heroPayload.id ?? heroId,
+              userId,
+              serverId,
+              name: heroPayload.name,
+              level: heroPayload.level ?? 1,
+              rank: heroPayload.rank ?? 1,
+              experience: heroPayload.experience ?? 0,
+              characterPoints: heroPayload.character_points ?? 0,
+              totalCharacterPointsEarned: heroPayload.total_character_points_earned ?? 0,
+              originId: heroPayload.origin_id ?? null,
+              estateId: heroPayload.estate_id ?? null,
+              profilePicture: heroPayload.profile_picture ?? null,
+              createdAt: heroPayload.created_at ?? null,
+            };
+
+            this.authState.setHero(hero);
+            return hero;
+          })
+        );
       })
     );
   }
@@ -67,11 +84,28 @@ export class CreateHero {
     const rank = 1;
     const maxAddresses = 5000;
 
-    return this.backend.getAll<EstateAddressRow>({
+    return this.backend.getAll<Pick<Row<'hero'>, 'server_id'>>({
+      table: TABLES.hero,
+      filters: {
+        id: { operator: FilterOperator.EQ, value: heroId },
+      },
+      select: 'server_id',
+      range: { from: 0, to: 0 },
+      camelCase: false,
+    }).pipe(
+      switchMap((heroRows) => {
+        const serverId = heroRows[0]?.server_id;
+
+        if (!serverId) {
+          throw new Error('Cannot assign estate without a hero server.');
+        }
+
+        return this.backend.getAll<EstateAddressRow>({
       table: TABLES.estates,
       filters: {
         districtCode: { operator: FilterOperator.EQ, value: districtCode },
         rank: { operator: FilterOperator.EQ, value: rank },
+        serverId: { operator: FilterOperator.EQ, value: serverId },
       },
       select: 'id, address, hero_id',
       camelCase: false,
@@ -128,6 +162,7 @@ export class CreateHero {
             address,
             rank,
             heroId,
+            serverId,
             districtCode,
           })
           .pipe(
@@ -155,8 +190,30 @@ export class CreateHero {
               )
             )
           );
+      }));
       })
     );
+  }
+
+  private getDefaultServerId(): Observable<string> {
+    return this.backend
+      .getAll<Row<'game_servers'>>({
+        table: TABLES.game_servers,
+        orderBy: { column: 'created_at' },
+        range: { from: 0, to: 0 },
+        camelCase: false,
+      })
+      .pipe(
+        map((servers) => {
+          const serverId = servers[0]?.id;
+
+          if (!serverId) {
+            throw new Error('No game server is configured for hero creation.');
+          }
+
+          return serverId;
+        })
+      );
   }
 
   private linkEstateToHero(heroId: string, estateId: string): Observable<void> {

@@ -66,10 +66,6 @@ export class ItemGenerationAffixAdminService {
             affix_id: affixId,
             template_id: bonus.templateId,
             value: bonus.baseValue,
-            base_value: bonus.baseValue,
-            levels_step: bonus.levelsStep,
-            source_stat: bonus.sourceStat,
-            scaling_factor: bonus.scalingFactor,
           }));
 
         return rows.length

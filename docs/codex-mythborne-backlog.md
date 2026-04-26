@@ -33,6 +33,8 @@ Global Codex rules:
 
 ## Task A1 — Regenerate Supabase database types
 
+**Status:** Done / confirmed 2026-04-26.
+
 **Goal:** Synchronize frontend generated types with current schema.
 
 **Scope:**
@@ -54,6 +56,8 @@ Global Codex rules:
 ---
 
 ## Task A2 — Update implementation state docs after confirmed work
+
+**Status:** Applied for Task A1 on 2026-04-26. Keep repeating after each confirmed task.
 
 **Goal:** Keep working documentation accurate.
 

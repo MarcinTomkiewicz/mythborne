@@ -16,6 +16,7 @@ export class DashboardPageFacade {
 
   heroName = '';
   level = 1;
+  characterPoints = 0;
   readonly heroLevel = signal(1);
   experiencePercent = 0;
 
@@ -54,6 +55,7 @@ export class DashboardPageFacade {
     this.heroService.getHeroData().subscribe((hero) => {
       this.heroName = hero.name;
       this.level = hero.level ?? 1;
+      this.characterPoints = hero.character_points ?? 0;
       this.heroLevel.set(hero.level ?? 1);
       this.experiencePercent = this.calculateExperiencePercent(hero.experience);
 
