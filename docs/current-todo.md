@@ -22,7 +22,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: C2 - staff server switcher.
 - Completed and confirmed: C3 - membership status UI handling.
 - Completed and confirmed: D1 - config definitions read model.
-- Current backlog task: D2 - config values read model.
+- Completed and confirmed: D2 - config values read model.
+- Current backlog task: D3 - config change-set list/detail.
 
 ## Codex Backlog Workflow
 

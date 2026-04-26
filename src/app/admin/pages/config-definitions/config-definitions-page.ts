@@ -1,18 +1,23 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
-import { finalize, map, startWith } from 'rxjs';
+import { finalize, map, startWith, switchMap } from 'rxjs';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
 import { CONFIG_DEFINITIONS_PAGE_LINKS } from '../../admin-navigation.config';
 import { ConfigDefinitions } from '../../../core/services/config/config-definitions';
-import { ConfigDefinition } from '../../../core/types/config-governance.types';
+import { ConfigValues } from '../../../core/services/config/config-values';
+import {
+  ConfigDefinition,
+  EffectiveConfigValue,
+} from '../../../core/types/config-governance.types';
 import { ConfigDefinitionsFormFactory } from '../../../core/factories/forms/config-definitions-form.factory';
 import {
   filterConfigDefinitions,
   formatConfigJsonPreview,
+  formatConfigValuePreview,
   uniqueConfigDefinitionManagedEntityTypes,
   uniqueConfigDefinitionScopes,
 } from '../../../core/utils/config-governance';
@@ -31,11 +36,13 @@ import {
 })
 export class ConfigDefinitionsPage implements OnInit {
   private readonly configDefinitions = inject(ConfigDefinitions);
+  private readonly configValues = inject(ConfigValues);
   private readonly formFactory = inject(ConfigDefinitionsFormFactory);
 
   readonly links = CONFIG_DEFINITIONS_PAGE_LINKS;
   readonly filterForm = this.formFactory.createFilterForm();
   readonly definitions = signal<ConfigDefinition[]>([]);
+  readonly effectiveValues = signal(new Map<string, EffectiveConfigValue>());
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly filters = toSignal(
@@ -63,6 +70,14 @@ export class ConfigDefinitionsPage implements OnInit {
     return formatConfigJsonPreview(value);
   }
 
+  valuePreview(value: EffectiveConfigValue['value']): string {
+    return formatConfigValuePreview(value);
+  }
+
+  effectiveValue(definition: ConfigDefinition): EffectiveConfigValue | null {
+    return this.effectiveValues().get(definition.id) ?? null;
+  }
+
   private toOptions<T extends string>(values: T[]): Array<{ label: string; value: T }> {
     return values.map((value) => ({
       label: value,
@@ -76,9 +91,19 @@ export class ConfigDefinitionsPage implements OnInit {
 
     this.configDefinitions
       .getDefinitions()
-      .pipe(finalize(() => this.isLoading.set(false)))
+      .pipe(
+        switchMap((definitions) =>
+          this.configValues.getEffectiveValuesForSelectedServer(definitions).pipe(
+            map((effectiveValues) => ({ definitions, effectiveValues })),
+          ),
+        ),
+        finalize(() => this.isLoading.set(false)),
+      )
       .subscribe({
-        next: (definitions) => this.definitions.set(definitions),
+        next: ({ definitions, effectiveValues }) => {
+          this.definitions.set(definitions);
+          this.effectiveValues.set(effectiveValues);
+        },
         error: (error: unknown) =>
           this.error.set(
             error instanceof Error

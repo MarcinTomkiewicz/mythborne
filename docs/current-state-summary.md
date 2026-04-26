@@ -83,6 +83,9 @@ This is an operational estimate, not a formal audit.
 - Task D1 is confirmed complete as of 2026-04-26. The frontend now has a typed `config_definitions` read model, mapper, service, and `/admin/config-definitions` read-only admin view.
 - Config definition rows are mapped to domain fields for key, label, description, governance scope, managed entity type/key, value type, schema, default value, active flag, sort order, and timestamps.
 - The config definitions admin view displays technical fields as chips, pretty-prints JSON schema/default previews, shows `No default` for null defaults, and supports Reactive Forms filtering by search text, governance scope, and managed entity type.
+- Task D2 is confirmed complete as of 2026-04-26. The frontend now has typed read models and mappers for active `global_config_values` and selected-server `server_config_values`.
+- The config definitions admin view resolves and displays an effective value for each definition using the current D2 read-model order: selected server value, active global value, definition default, then no value.
+- Effective config values show their source label as server source, global version, default, or no value. Later config governance tasks still need to enforce `governance_scope` more strictly when editing or applying config changes.
 
 ### Canonical stats and derived stats
 - Base stats are loaded from canonical stat definitions.

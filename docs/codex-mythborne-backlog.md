@@ -274,6 +274,8 @@ Global Codex rules:
 
 ## Task D2 — Config values read model
 
+**Status:** Done / confirmed 2026-04-26.
+
 **Goal:** Typed read model for global/server config values.
 
 **Scope:**

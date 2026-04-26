@@ -78,6 +78,8 @@
       <div class="flex-col gap-md">
         @for (definition of filteredDefinitions(); track definition.id) {
           <article class="mg-surface-card p-md flex-col gap-sm">
+            @let effective = effectiveValue(definition);
+
             <div class="flex-row-between-center flex-col-sm gap-sm">
               <div class="flex-col gap-xs">
                 <p class="card-legend mb-0">{{ definition.key }}</p>
@@ -88,6 +90,9 @@
                 <span class="mg-tag">{{ definition.governanceScope }}</span>
                 <span class="mg-tag">{{ definition.managedEntityType }}</span>
                 <span class="mg-tag">{{ definition.valueType }}</span>
+                @if (effective) {
+                  <span class="mg-tag">{{ effective.sourceLabel }}</span>
+                }
                 <span class="mg-tag">{{ definition.isActive ? 'active' : 'inactive' }}</span>
               </div>
             </div>
@@ -115,10 +120,17 @@
 
             <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
               <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Effective value</span>
+                <pre class="mb-0 text-break"><code>{{ valuePreview(effective?.value ?? null) }}</code></pre>
+              </div>
+
+              <div class="flex-col gap-xs min-w-0">
                 <span class="muted-text">Default value</span>
                 <pre class="mb-0 text-break"><code>{{ jsonPreview(definition.defaultValue) }}</code></pre>
               </div>
+            </div>
 
+            <div class="mg-grid grid-cols-1 gap-md w-100">
               <div class="flex-col gap-xs min-w-0">
                 <span class="muted-text">Value schema</span>
                 <pre class="mb-0 text-break"><code>{{ jsonPreview(definition.valueSchema) }}</code></pre>
