@@ -70,6 +70,8 @@ This is an operational estimate, not a formal audit.
 - Task B5 is confirmed complete as of 2026-04-26. Estate/building/combat/armory reads in the current prototype now flow through `ActiveHero` and use the selected server's active `hero.id` for hero-owned data.
 - Estate reads used by mansion preview and hero address display are additionally constrained by `server_id`, so occupied estate data stays server-scoped.
 - Current armory and combat prototype surfaces already consume hero-derived data through the shared `Hero` service; no separate auth uid based item/combat reads were found in this slice.
+- Task C1 is confirmed complete as of 2026-04-26. `ActiveServer.access` exposes global role flags, server membership status, server staff role, staff flag, sandbox access, and selected-server management capability.
+- Global role (`globalRoleKey`) and server staff role (`serverStaffRole`) are represented separately, so UI can distinguish global admin/operator/tester access from server-specific staff assignment.
 
 ### Canonical stats and derived stats
 - Base stats are loaded from canonical stat definitions.

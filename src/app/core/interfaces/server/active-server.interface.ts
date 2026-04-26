@@ -27,6 +27,8 @@ export interface SelectedGameServer extends GameServerSummary {
 export interface ServerAccessState {
   userId: string | null;
   globalRoleKey: GlobalRoleKey | null;
+  membershipStatus: ServerMembershipStatus | null;
+  serverStaffRole: ServerStaffRoleValue | null;
   isAdmin: boolean;
   isOperator: boolean;
   isTester: boolean;

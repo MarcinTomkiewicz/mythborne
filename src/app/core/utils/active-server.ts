@@ -53,6 +53,8 @@ export function toAccessState(
   return {
     userId,
     globalRoleKey,
+    membershipStatus: selectedServer?.membershipStatus ?? null,
+    serverStaffRole: selectedServer?.staffRole ?? null,
     isAdmin,
     isOperator,
     isTester,
@@ -71,6 +73,8 @@ export function emptyServerAccessState(): ServerAccessState {
   return {
     userId: null,
     globalRoleKey: null,
+    membershipStatus: null,
+    serverStaffRole: null,
     isAdmin: false,
     isOperator: false,
     isTester: false,

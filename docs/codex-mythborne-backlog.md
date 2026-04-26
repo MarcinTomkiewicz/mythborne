@@ -189,6 +189,8 @@ Global Codex rules:
 
 ## Task C1 — Add role/membership read layer
 
+**Status:** Done / confirmed 2026-04-26.
+
 **Goal:** Frontend can understand global and server-specific access.
 
 **Scope:**
