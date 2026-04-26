@@ -5,23 +5,37 @@ export function finalStatValue(
   base: number,
   key: string,
   sources: BonusSource[],
-  context?: { heroLevel?: number }
+  context?: {
+    heroLevel?: number;
+    bonusContext?: string;
+    sourceStats?: Record<string, number>;
+  }
 ): number {
   let flat = 0;
   let percent = 0;
+  const activeContext = context?.bonusContext ?? 'global';
 
   for (const source of sources) {
     for (const bonus of source.bonuses) {
-      if (bonus.target !== key) {
+      const matchesTarget = bonus.target === key;
+      const matchesContext = bonus.context === 'global' || bonus.context === activeContext;
+
+      if (!matchesTarget || !matchesContext) {
         continue;
       }
 
       if (bonus.type === 'percent') {
-        percent += resolveBonusValue(bonus.value, bonus.type, context);
+        percent += resolveBonusValue(bonus, context);
         continue;
       }
 
-      flat += resolveBonusValue(bonus.value, bonus.type, context);
+      if (
+        bonus.type === 'flat' ||
+        bonus.type === 'per_levels' ||
+        bonus.type === 'scaled_stat_bonus'
+      ) {
+        flat += resolveBonusValue(bonus, context);
+      }
     }
   }
 

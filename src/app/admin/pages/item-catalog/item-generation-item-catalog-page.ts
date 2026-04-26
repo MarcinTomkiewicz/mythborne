@@ -10,7 +10,6 @@ import {
   createItemCatalogSelectorFields,
   ITEM_CATALOG_AFFIX_EDITOR_FIELDS,
   ITEM_CATALOG_BASE_EDITOR_FIELDS,
-  ITEM_CATALOG_BONUS_TYPE_OPTIONS,
   ITEM_CATALOG_SECTION_BUTTONS,
 } from '../../../core/config/forms/item-catalog-form.config';
 
@@ -31,7 +30,6 @@ export class ItemGenerationItemCatalogPage implements OnInit {
   readonly page = inject(ItemGenerationItemCatalogPageFacade);
   readonly links = ITEM_CATALOG_PAGE_LINKS;
   readonly sectionButtons = ITEM_CATALOG_SECTION_BUTTONS;
-  readonly bonusTypeOptions = ITEM_CATALOG_BONUS_TYPE_OPTIONS;
   readonly selectorFields = computed(() =>
     createItemCatalogSelectorFields(
       this.page.activeSection(),

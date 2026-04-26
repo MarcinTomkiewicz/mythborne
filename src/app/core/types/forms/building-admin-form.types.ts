@@ -54,6 +54,11 @@ export type BuildingEditorForm = FormGroup<{
   sortOrder: FormControl<number>;
   baseBuildTimeMinutes: FormControl<number>;
   maxLevel: FormControl<number>;
+  formulaOverrides: FormGroup<{
+    upgradeCostFormulaId: FormControl<string | null>;
+    upgradeTimeFormulaId: FormControl<string | null>;
+    bonusGrowthFormulaId: FormControl<string | null>;
+  }>;
   bonuses: FormArray<BuildingBonusForm>;
   resourceCosts: FormArray<BuildingResourceCostForm>;
   requirements: FormArray<BuildingRequirementForm>;

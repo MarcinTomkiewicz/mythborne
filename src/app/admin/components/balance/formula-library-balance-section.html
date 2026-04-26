@@ -15,6 +15,11 @@
     <app-form-fields [form]="page.formulas.selectorForm" [fields]="selectorFields()" />
   </form>
 
+  <p class="muted-text mb-lg">
+    Selector pokazuje wszystkie formule ze wszystkich scope. Ponizej masz caly katalog funkcji z runtime, variables
+    dla biezacego scope i variables dostepne dla wybranego targetu testowego.
+  </p>
+
   <form [formGroup]="page.formulas.editorForm" class="mg-surface-card flex-col gap-lg p-lg">
     <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100 grid-items-start">
       <app-form-fields [form]="page.formulas.editorForm" [fields]="editorMetaFields()" />
@@ -70,8 +75,24 @@
     <div class="mg-surface-card flex-col gap-md p-md">
       <p class="card-legend mb-0">Tester</p>
       <p class="muted-text mb-0">
-        Zmieniasz wartosci zmiennych i od razu widzisz wynik aktualnie edytowanej formuly.
+        Najpierw wybierasz target testowy dla aktualnego scope, a potem zmieniasz wartosci zmiennych i od razu widzisz
+        wynik formuly. Jesli formula uzywa np. <code>baseBonus</code>, tester target musi wystawiac te zmienna.
       </p>
+
+      @if (page.formulas.targetsForCurrentScope().length > 0) {
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Tester target</span>
+          <select
+            class="w-100"
+            [value]="page.formulas.testerTargetId()"
+            (change)="page.formulas.selectTesterTarget($any($event.target).value)"
+          >
+            @for (target of page.formulas.targetsForCurrentScope(); track target.id) {
+              <option [value]="target.id">{{ target.label }}</option>
+            }
+          </select>
+        </label>
+      }
 
       @if (page.formulas.testerVariables().length > 0) {
         <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100 align-items-center">

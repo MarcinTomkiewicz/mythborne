@@ -5,10 +5,14 @@ import {
   EditableItemGenerationBucketProfile,
   EditableItemGenerationQuality,
 } from '../../domain/item/item-generation-admin.model';
+import { BonusAdminData } from '../../domain/bonus/bonus.model';
+import { BonusTemplate } from '../../domain/bonus/bonus.model';
 import { ItemGenerationBucketsFactory } from '../../factories/item-generation/item-generation-buckets.factory';
 import { ItemGenerationBalanceFormFactory } from '../../factories/forms/item-generation-balance-form.factory';
 import {
   BucketProfileEditorForm,
+  BonusTemplateEditorForm,
+  BonusTemplateSelectorForm,
   QualityEditorForm,
 } from '../../types/forms/item-generation-balance-form.types';
 import { createEntityEditorState } from '../../utils/entity-editor-state';
@@ -19,6 +23,7 @@ import { ToastService } from '../ui/toast';
 import { ItemGenerationAdminService } from './item-generation-admin';
 import { ItemGenerationFormulaBalanceFacade } from './item-generation-formula-balance.facade';
 import { toSlug } from '../../utils/slug';
+import { BonusTemplateAdminService } from '../bonus/bonus-template-admin';
 
 @Injectable()
 export class ItemGenerationBalancePageFacade {
@@ -28,12 +33,18 @@ export class ItemGenerationBalancePageFacade {
   private readonly formFactory = inject(ItemGenerationBalanceFormFactory);
   private readonly formulaService = inject(FormulaService);
   private readonly toast = inject(ToastService);
+  private readonly bonusTemplateService = inject(BonusTemplateAdminService);
 
   readonly formulas = inject(ItemGenerationFormulaBalanceFacade);
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly isBusy = computed(() => this.isSaving() || this.formulas.isSaving());
+  readonly bonusAdminData = signal<BonusAdminData>({
+    templates: [],
+    targets: [],
+    categories: [],
+  });
 
   readonly quality = createEntityEditorState<
     EditableItemGenerationQuality,
@@ -59,6 +70,19 @@ export class ItemGenerationBalancePageFacade {
     createDraft: () => this.formFactory.createBucketProfileDraft(),
     patch: (form, draft) => this.formFactory.patchBucketProfile(form, draft),
     toDraft: (form) => this.formFactory.toBucketProfile(form),
+    idOf: (item) => item.id,
+    keyOf: (item) => item.key,
+  });
+  readonly bonusTemplate = createEntityEditorState<
+    BonusTemplate,
+    BonusTemplateEditorForm
+  >({
+    destroyRef: this.destroyRef,
+    selectorForm: this.formFactory.createBonusTemplateSelectorForm(),
+    editorForm: this.formFactory.createBonusTemplateEditorForm(),
+    createDraft: () => this.formFactory.createBonusTemplateDraft(),
+    patch: (form, draft) => this.formFactory.patchBonusTemplate(form, draft),
+    toDraft: (form) => this.formFactory.toBonusTemplate(form),
     idOf: (item) => item.id,
     keyOf: (item) => item.key,
   });
@@ -100,6 +124,16 @@ export class ItemGenerationBalancePageFacade {
           this.profile.editorForm.controls.key.setValue(nextKey, { emitEvent: false });
         }
       });
+
+    this.bonusTemplate.editorForm.controls.label.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((label) => {
+        const nextKey = toSlug(label);
+
+        if (this.bonusTemplate.editorForm.controls.key.value !== nextKey) {
+          this.bonusTemplate.editorForm.controls.key.setValue(nextKey, { emitEvent: false });
+        }
+      });
   }
 
   loadData(preferred?: BalanceSelection) {
@@ -109,16 +143,19 @@ export class ItemGenerationBalancePageFacade {
     forkJoin({
       balanceData: this.adminService.getBalanceData(),
       formulaData: this.formulaService.refreshAdminData(),
+      bonusData: this.bonusTemplateService.getAdminData(),
     })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoading.set(false))
       )
       .subscribe({
-        next: ({ balanceData, formulaData }) => {
+        next: ({ balanceData, formulaData, bonusData }) => {
           this.quality.setItems(balanceData.qualities, preferred?.qualityKey);
           this.profile.setItems(balanceData.bucketProfiles, preferred?.profileKey);
           this.formulas.setData(formulaData, preferred);
+          this.bonusAdminData.set(bonusData);
+          this.bonusTemplate.setItems(bonusData.templates);
         },
         error: (error: unknown) => {
           const message = getErrorMessage(error, 'Failed to load balance data.');
@@ -188,6 +225,32 @@ export class ItemGenerationBalancePageFacade {
       'Bucket profile deleted',
       'The bucket profile was deleted.',
       this.selection({ profileKey: undefined })
+    );
+  }
+
+  saveBonusTemplate() {
+    const draft = this.bonusTemplate.draft();
+    this.persist(
+      this.bonusTemplateService.saveTemplate(draft),
+      'Bonus template saved',
+      `${draft.label} was saved.`,
+      this.selection()
+    );
+  }
+
+  deleteBonusTemplate() {
+    const id = this.bonusTemplate.id();
+
+    if (!id) {
+      this.bonusTemplate.new();
+      return;
+    }
+
+    this.persist(
+      this.bonusTemplateService.deleteTemplate(id),
+      'Bonus template deleted',
+      'The bonus template was deleted.',
+      this.selection()
     );
   }
 

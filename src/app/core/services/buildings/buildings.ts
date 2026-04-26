@@ -12,7 +12,9 @@ import {
 } from '../../domain/building/building.model';
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
 import { BuildingProgressionRules } from '../../domain/progression/building-progression.model';
+import { FormulaAdminData } from '../../domain/formula/formula.model';
 import { BuildingProgressionService } from '../progression/building-progression';
+import { FormulaService } from '../formula/formula';
 import { Hero } from '../hero/hero';
 import { resourceOrder } from '../../utils/building-display';
 import { normalizeBuildingRequirementType, normalizeBuildingResourceType } from '../../utils/building-admin-mappers';
@@ -35,12 +37,13 @@ export class BuildingsService {
   private readonly backend = inject(Backend);
   private readonly heroService = inject(Hero);
   private readonly progression = inject(BuildingProgressionService);
+  private readonly formulaService = inject(FormulaService);
 
   getMansionEstateView(): Observable<MansionEstateView> {
     return this.heroService.getHeroData().pipe(
       switchMap((hero) =>
         forkJoin({
-          rules: this.progression.getRules(),
+          formulaData: this.formulaService.getAdminData(),
           buildings: this.backend.getAll<
             MansionBuildingRow & {
               building_bonuses: MansionBuildingBonusRow[];
@@ -93,7 +96,7 @@ export class BuildingsService {
             camelCase: false,
           }),
         }).pipe(
-          map(({ rules, buildings, estate, estateBuildings, districts, stats }) => {
+          map(({ formulaData, buildings, estate, estateBuildings, districts, stats }) => {
             const currentDistrictCode = estate?.district_code ?? 'A';
             const currentDistrict = districts.find(
               (district) => district.code === currentDistrictCode
@@ -113,7 +116,7 @@ export class BuildingsService {
                   ownedMap,
                   statLabelMap,
                   currentDistrictRank,
-                  rules
+                  formulaData
                 )
               )
               .filter((building) => building.rankRequired <= currentDistrictRank);
@@ -139,12 +142,13 @@ export class BuildingsService {
     ownedMap: Map<string, number>,
     statLabelMap: Map<string, string>,
     currentDistrictRank: number,
-    rules: BuildingProgressionRules
+    formulaData: FormulaAdminData
   ): MansionBuilding {
     const currentLevel = ownedMap.get(building.id) ?? 0;
     const nextLevel = currentLevel + 1;
     const hasLimit = (building.max_level ?? 0) > 0;
     const canUpgrade = !hasLimit || currentLevel < (building.max_level ?? 0);
+    const rules = this.progression.resolveRulesForBuilding(building.id, formulaData);
     const activeCostRules = canUpgrade
       ? this.mapActiveCostRules(
           building.building_resource_costs ?? [],
@@ -206,11 +210,19 @@ export class BuildingsService {
       target: normalizeBonusTarget(row.bonus_templates.target),
       type: normalizeBonusType(row.bonus_templates.type),
       description: row.bonus_templates.description ?? null,
-      baseValue: row.value,
+      baseValue: Number(row.value ?? row.base_value ?? 0),
       currentValue:
-        this.progression.getBonusValue(currentLevel, row.value, rules) ?? 0,
+        this.progression.getBonusValue(
+          currentLevel,
+          Number(row.value ?? row.base_value ?? 0),
+          rules
+        ) ?? 0,
       nextValue:
-        this.progression.getBonusValue(currentLevel + 1, row.value, rules) ?? 0,
+        this.progression.getBonusValue(
+          currentLevel + 1,
+          Number(row.value ?? row.base_value ?? 0),
+          rules
+        ) ?? 0,
     }));
   }
 

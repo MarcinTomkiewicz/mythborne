@@ -11,7 +11,7 @@ import { createFormulaAssignmentFields } from '../../../core/config/forms/balanc
   standalone: true,
   imports: [ReactiveFormsModule, ButtonModule, InputTextModule, FormFields],
   templateUrl: './formula-assignment-balance-section.html',
-  host: { style: 'display:block;width:100%;' },
+  host: { class: 'd-block w-100' },
 })
 export class FormulaAssignmentBalanceSection {
   readonly page = inject(ItemGenerationBalancePageFacade);

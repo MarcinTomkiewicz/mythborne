@@ -7,6 +7,7 @@ import {
   BuildingProgressionRules,
 } from '../../domain/progression/building-progression.model';
 import { BuildingAdminFormFactory } from '../../factories/forms/building-admin-form.factory';
+import { BuildingFormulaOverrides } from '../../domain/building/building.model';
 import { getErrorMessage } from '../../utils/error-message';
 import { FormulaService } from '../formula/formula';
 import { BuildingProgressionService } from '../progression/building-progression';
@@ -16,6 +17,7 @@ const EMPTY_FORMULA_DATA: FormulaAdminData = {
   targets: [],
   formulas: [],
   assignments: [],
+  entityAssignments: [],
   blocks: [],
 };
 
@@ -43,18 +45,7 @@ export class BuildingFormulaAdminFacade {
   );
 
   readonly rules = computed<BuildingProgressionRules>(() => {
-    const value = this.assignmentForm.getRawValue();
-    const expressionFor = (targetKey: string) =>
-      this.data().formulas.find(
-        (formula) =>
-          formula.id === value[this.formFactory.toFormulaControlName(targetKey)]
-      )?.expression ?? '';
-
-    return {
-      costExpression: expressionFor(BUILDING_PROGRESSION_TARGET_KEYS.upgradeCost),
-      timeExpression: expressionFor(BUILDING_PROGRESSION_TARGET_KEYS.upgradeTime),
-      bonusExpression: expressionFor(BUILDING_PROGRESSION_TARGET_KEYS.bonusGrowth),
-    };
+    return this.resolveRules();
   });
 
   setData(data: FormulaAdminData) {
@@ -121,6 +112,24 @@ export class BuildingFormulaAdminFacade {
 
   toControlName(targetKey: string) {
     return this.formFactory.toFormulaControlName(targetKey);
+  }
+
+  resolveRules(overrides?: BuildingFormulaOverrides): BuildingProgressionRules {
+    const globalValue = this.assignmentForm.getRawValue();
+    const formulaIdFor = (targetKey: string) =>
+      overrides?.[this.toControlName(targetKey)] ??
+      globalValue[this.formFactory.toFormulaControlName(targetKey)];
+    const expressionFor = (targetKey: string) =>
+      this.data().formulas.find((formula) => formula.id === formulaIdFor(targetKey))?.expression ?? '';
+
+    return {
+      costFormulaId: formulaIdFor(BUILDING_PROGRESSION_TARGET_KEYS.upgradeCost),
+      timeFormulaId: formulaIdFor(BUILDING_PROGRESSION_TARGET_KEYS.upgradeTime),
+      bonusFormulaId: formulaIdFor(BUILDING_PROGRESSION_TARGET_KEYS.bonusGrowth),
+      costExpression: expressionFor(BUILDING_PROGRESSION_TARGET_KEYS.upgradeCost),
+      timeExpression: expressionFor(BUILDING_PROGRESSION_TARGET_KEYS.upgradeTime),
+      bonusExpression: expressionFor(BUILDING_PROGRESSION_TARGET_KEYS.bonusGrowth),
+    };
   }
 
   private findAssignedFormulaId(data: FormulaAdminData, targetKey: string): string {

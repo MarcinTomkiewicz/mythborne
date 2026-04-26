@@ -2,15 +2,21 @@ import { Injectable, inject } from '@angular/core';
 import { map, Observable, of, switchMap } from 'rxjs';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
-import { EditableBonusTemplateDraft } from '../../types/item-generation-admin-service.types';
 import { normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
 import { trimText, trimToNull } from '../../utils/normalize-text';
+
+type BonusTemplateDraft = {
+  templateId: string | null;
+  target: string;
+  type: string;
+  description: string;
+};
 
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationBonusTemplateAdminService {
   private readonly backend = inject(Backend);
 
-  ensureTemplateId(bonus: EditableBonusTemplateDraft): Observable<string> {
+  ensureTemplateId(bonus: BonusTemplateDraft): Observable<string> {
     if (bonus.templateId) {
       return of(bonus.templateId);
     }

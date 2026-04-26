@@ -1,35 +1,30 @@
 # Monster Hunt — Project Context for Codex
 
 ## Purpose
-This file is the short, operational context document for implementation work.
+This is the short operational context file for implementation work.
 Use it as the primary high-level source of truth when generating code, scaffolding features, or proposing architecture.
 
-This document is intentionally shorter than the full design documents.
-If something here conflicts with a newer migration, seed, or explicit user instruction, prefer:
-1. explicit user instruction,
-2. current database schema / migrations,
-3. this document.
+If something here conflicts with:
+1. an explicit user instruction,
+2. current database schema or migrations,
+3. newer seed data,
+then prefer those over this file.
 
 ## Game Overview
 Monster Hunt is a browser RPG inspired by ancient Greece.
 
 The game combines:
 - character progression,
-- item generation and loot variance,
+- layered item generation and loot variance,
 - exploration plus trials,
-- estate and district progression,
+- estates, districts, and buildings,
 - PvP conflict,
 - guild-supported sieges,
-- long-term prestige / reputation systems,
-- and later server-level political / event systems.
+- reputation / prestige progression,
+- and later server-level politics and global events.
 
 The game is not meant to be a pure action game or a passive idle game.
-It should reward:
-- planning,
-- adaptation,
-- execution,
-- meaningful risk,
-- and long-term strategic progression.
+It should reward planning, adaptation, execution, meaningful risk, and long-term strategic progression.
 
 Failure is allowed.
 RNG is allowed.
@@ -39,61 +34,52 @@ High value does not always mean high usefulness.
 
 ### Character Power Axes
 - Level: main character progression level.
-- Stats: canonical base stats from the database.
-- Derived stats: HP, defense, damage ranges, luck, etc.
+- Base stats: canonical stats from the database.
+- Derived stats: health, defense, damage ranges, luck, etc.
 - Gear / equipment: modifies build capability and challenge success.
 
 ### Estate / World Axes
 - Estate / Possession: the player's current property.
 - Address: district-coded address such as `A-2374`.
-- District: world/estate layer (A, B, C, D, E).
+- District: world / estate layer such as A, B, C, D, E.
 - Buildings: infrastructure attached to an estate, not just to the player.
 
 ### Social / Server Axes
 - Guild: social structure that can support sieges and coordinated progression.
 - Reputation / Prestige: social-world standing; not the same as level.
-- Server governance: later political / voting / event layer.
+- Server governance: later political, voting, and global-event layer.
 
 ### PvE Terminology
-Do not call the main PvE loop “monster hunt” in implementation language unless the user explicitly wants that wording.
+Do not describe the main PvE loop as a plain “monster hunt” unless the user explicitly wants that wording.
 
 Preferred terms:
 - Exploration
 - Trials
-- Exploration + Trials loop
 - Encounter
-- Trial chance
+- Exploration + Trials loop
+- Trial appearance
+- Trial manifestation
+- Trial completion
 
-Reason: the PvE loop is no longer just a single hunt/combat activity. It is a text-driven exploration shell with encounters and limited trials.
+Reason: the PvE loop is a text-driven exploration shell with encounters and limited trials, not a single repeated combat-only hunt.
 
-## Current PvE Model (Important)
+## Current PvE Model
 The main PvE loop is:
 1. The player moves through a text-described virtual exploration space.
 2. Each movement step takes time.
-3. A step may result in:
-   - nothing,
-   - a light encounter,
-   - a small reward,
-   - combat-style fluff event,
-   - or a proper trial.
-4. The number of actual trials per day is limited.
-5. Trial chance increases after consecutive steps without a trial.
-6. When a trial occurs, that progressive trial chance resets.
-7. A normal encounter does not reset the trial progression counter.
+3. A step first checks for a trial.
+4. If no trial appears, the system checks for encounter or nothing.
+5. Encounter and trial cannot happen at the same time.
+6. Normal encounters do not reset the progressive chance of the next trial.
+7. Trials are limited per day.
+8. The player's daily goal is generally to complete as many available trials as possible.
 
-### Key design rule
-Encounters exist partly to prevent the loop from feeling like:
-- empty location,
-- empty location,
-- empty location,
-- trial.
+### Encounter Types
+Current minimal encounter model:
+- light combat encounter,
+- small resource encounter.
 
-Instead it should feel more like:
-- movement,
-- something happens,
-- movement,
-- something happens,
-- trial.
+Encounters exist partly so exploration does not feel like empty step, empty step, empty step, trial.
 
 ### Trial Chance Rule
 Flat independent RNG alone is not enough.
@@ -101,10 +87,52 @@ Flat independent RNG alone is not enough.
 Use a progressive trial chance model:
 - initial chance is low,
 - each non-trial step increases the chance,
-- trial resets it,
-- encounter does not reset it.
+- a trial resets it,
+- a normal encounter does not reset it.
 
-This is an anti-dry-streak system, not a guarantee system.
+This is an anti-dry-streak pacing system, not a guarantee system.
+
+### Trial Manifestation Rule
+A trial appearing is not the same as a trial fully happening.
+
+After a trial appears, the system should still check whether the trial truly manifests / proceeds.
+This chance depends on:
+- difficulty,
+- the relevant stat for that trial,
+- and to a smaller degree luck.
+
+This supports flavor such as “the gods did not answer” or the ritual / omen / invocation failing to produce the real challenge.
+
+### Trial Completion Rule
+If a trial manifests, the player must still complete it.
+A manifested trial is not a guaranteed success.
+
+## Difficulty Philosophy for Trials
+There are three main trial difficulty tiers:
+- easy,
+- medium,
+- hard.
+
+Difficulty affects:
+- trial manifestation reliability,
+- trial execution difficulty,
+- encounter difficulty,
+- encounter rewards,
+- movement time between locations,
+- and accessible item-quality ceilings.
+
+### Important quality gate
+The highest item quality (`Outstanding`) should only be obtainable from the highest difficulty tier.
+
+Lower tiers may still give useful loot, but not the top quality tier.
+
+### Intended progression balance
+- Easy should be stable and accessible.
+- Medium should usually be the best all-around progression tier for most players.
+- Hard should be the highest-ceiling tier, not the universally best farming tier at every stage of progression.
+
+Trials also matter for XP progression.
+A player who over-forces hard content too early may fall behind in XP efficiency even while chasing better theoretical drops.
 
 ## Daily Trials and Premium
 The daily cap applies to trials, not necessarily to raw movement steps.
@@ -116,9 +144,9 @@ Premium should not directly improve:
 - trial success chance,
 - or luck outcomes.
 
-It only increases the number of attempts/opportunities.
+It only increases the number of attempts / opportunities.
 
-## Luck (Critical Design Rule)
+## Luck
 Luck is a special stat.
 It should not be treated as a normal combat stat.
 
@@ -127,13 +155,15 @@ It should not be treated as a normal combat stat.
 - improve bucket quality,
 - improve chance of affixes / quality rolls,
 - reduce frequency of the worst outcomes at high values,
-- increase variance in an interesting way.
+- increase variance in an interesting way,
+- slightly help trial manifestation in relevant places.
 
 ### Luck should not do
 - guarantee success,
 - guarantee best-in-slot items,
 - guarantee universally useful drops,
-- replace the need for combat-ready or challenge-ready stats.
+- replace the need for combat-ready or challenge-ready stats,
+- guarantee that a high-difficulty trial will manifest or be completed.
 
 ### Important constraints
 - Luck has no hard system-wide cap by default.
@@ -141,7 +171,7 @@ It should not be treated as a normal combat stat.
 - It should be constrained by slot economy and opportunity cost.
 - Diminishing returns are expected.
 - High luck should still feel worth maximizing.
-- High luck should improve the distribution of opportunities, not guarantee satisfaction.
+- High luck improves the distribution of opportunities, not the certainty of satisfaction.
 
 ### Emotional design rule
 A player with high luck may still say:
@@ -153,10 +183,10 @@ The system must feel consistent, but it does not need to guarantee emotionally s
 
 ## Item Philosophy
 Items follow layered generation:
-- quality
-- optional prefix
-- base item
-- optional suffix
+- quality,
+- optional prefix,
+- base item,
+- optional suffix.
 
 High economic value is not always equal to high direct usability.
 
@@ -169,23 +199,18 @@ Allowed item categories include:
 ### Requirements
 Items may have level/stat requirements.
 A powerful early drop should not always be immediately usable or immediately monetizable.
-
 This is a major anti-skip safeguard.
 
 ## Resources
-Important distinction:
-
 ### Economic resources
 - Drachmas
-- materials (final construction resource)
+- Materials
+- Workforce
 
-### Production sources / profiles
-Wood and marble are not necessarily two equally separate final economy layers.
-
-Current interpretation:
-- they are production inputs / profiles that effectively feed one broader construction-materials economy,
-- wood is earlier / less efficient,
-- marble is later / more efficient.
+### Current resource interpretation
+- Agora: produces drachmas.
+- Lumber Mill and similar building-material sources feed `materials`.
+- Farm produces `workforce` as a normal stockpilable construction resource.
 
 ### Progression currency
 - Hero Points / PR
@@ -194,7 +219,6 @@ Current interpretation:
 
 ## Buildings
 Buildings are attached to estates / addresses / districts.
-
 They are not just a generic personal upgrade tree.
 
 ### Important design assumptions
@@ -204,6 +228,20 @@ They are not just a generic personal upgrade tree.
 - current building descriptions are still partly conceptual,
 - building effects are subject to balancing/admin control.
 
+### Current first-wave building intent
+- Farm: produces workforce.
+- Lumber Mill: produces materials.
+- Agora: produces drachmas.
+- Barracks: PvP attack-side building; primarily health scaling in attack based on building level and one chosen stat such as cunning; may also add one small offensive-stat bonus.
+- Fortress: PvP defense-side building; primarily health scaling in defense based on building level and one chosen stat such as wisdom; may also add one small defensive or combat-related bonus.
+- Trade Routes: unlock trade and should remain functionally simple at first.
+- Armory: increases visible / directly manageable item capacity. Items are not deleted just because they are not visible.
+
+### Armory rule
+Armory is a visibility / access management system, not an auto-delete storage cap.
+Items may still exist even if not currently visible on the active shelves.
+Selling / scrapping should remove items from the database and reduce item clutter.
+
 ## Districts, Estates and Relocation
 District progression is one of the core world systems.
 
@@ -211,7 +249,7 @@ The player has an address in a district.
 
 Moving to a new empty estate should be operationally simple:
 - choose address,
-- click claim/occupy,
+- click claim / occupy,
 - confirm,
 - understand that existing buildings are lost,
 - rebuild from zero.
@@ -261,7 +299,7 @@ Use the term reputation or prestige rather than generic `rank` unless the user e
 
 ## Guilds and Server Politics
 Guilds are not optional fluff.
-They are becoming part of the logic of:
+They are part of the logic of:
 - sieges,
 - support,
 - alliance-building,
@@ -276,7 +314,7 @@ Long-term direction includes:
 
 Political coordination, negotiated support, and social power are part of the design fantasy, not accidental side effects.
 
-## Frontend / Technical Rules (Very Important)
+## Frontend / Technical Rules
 The stack is:
 - Angular 21
 - zoneless
@@ -290,14 +328,14 @@ Prefer:
 - effect where appropriate,
 - RxJS only when genuinely needed for stream-based integration,
 - typed domain models,
-- mappers from backend data to domain/UI models,
+- mappers from backend data to domain / UI models,
 - modular feature structure.
 
 Avoid:
 - promises as a default architectural pattern,
 - outdated Angular patterns,
 - zone-dependent assumptions,
-- legacy state management habits,
+- legacy state-management habits,
 - ad hoc imperative UI logic when signal-driven composition fits better.
 
 When generating Angular code:
@@ -305,7 +343,7 @@ When generating Angular code:
 - assume zoneless change detection,
 - prefer signals-first APIs,
 - do not introduce promise-heavy flows unless explicitly required,
-- do not reintroduce old-school Angular practices “for compatibility” without being asked.
+- do not reintroduce old Angular practices “for compatibility” without being asked.
 
 ## Repository Organization
 Use these broad feature boundaries:
@@ -319,15 +357,15 @@ Use these broad feature boundaries:
 - `src/app/core`
 
 `core` is for:
-- services
-- domain models
-- mappers
-- interfaces/types
-- config/constants
-- enums
-- validators
-- helpers/utils
-- reusable technical infrastructure
+- services,
+- domain models,
+- mappers,
+- interfaces / types,
+- config / constants,
+- enums,
+- validators,
+- helpers / utils,
+- reusable technical infrastructure.
 
 Feature folders should contain feature-local composition, pages, components, and routes.
 
@@ -339,7 +377,9 @@ Unless explicitly confirmed elsewhere, these areas are still subject to change:
 - exact building effects,
 - exact premium numbers,
 - exact trial progression curve,
-- exact final names for some systems.
+- exact final names for some systems,
+- exact encounter reward tables,
+- exact manifestation probabilities per difficulty.
 
 Do not over-freeze provisional gameplay values into code without leaving room for balancing/admin control.
 
@@ -352,3 +392,50 @@ When implementing a feature:
 5. note when a feature depends on still-provisional design decisions.
 
 If a design decision is ambiguous, keep the implementation extensible rather than guessing hard in one direction.
+
+---
+
+# Update 2026-04-26 — Runtime economy decisions
+
+## Character Points
+
+Character Points are the canonical spendable/progression currency.
+
+- Stored on `hero.character_points`.
+- Lifetime generated baseline is stored on `hero.total_character_points_earned`.
+- Changes are recorded in `character_point_ledger`.
+- Character Points are earned alongside experience.
+- Experience mainly drives level/progression thresholds; Character Points are spent/traded.
+- Character Points are not a `hero_resources` row and are not `hero_derived`.
+
+## Health and derived stats
+
+Use **Health** for combat hit points in UI and implementation language.
+
+`hero_derived.hp` no longer exists. Remaining `hero_derived` fields are transitional and must not be treated as authoritative source of truth for new systems.
+
+New domain work should calculate derived values from base stats, equipment, bonuses, formulas and context. Frontend may preview values; backend/RPC/domain actions must calculate authoritative values.
+
+## Player economy
+
+Player-to-player trade uses Character Points.
+
+Drachmas are system/vendor currency/resource. Vendor scrap gives drachmas and is not a player trade.
+
+Implemented foundation supports:
+
+- direct private trade between two heroes;
+- public server-scoped auctions for one item;
+- Character Point locks;
+- item locks for trade/auction;
+- completed transaction records;
+- Character Point ledger entries;
+- anti-abuse signals and automatic case grouping.
+
+Trade Routes/building bonus integration is still pending. Current DB runtime uses fallback active-offer config until building bonus runtime is connected.
+
+## Anti-abuse review principle
+
+Anti-abuse signals/cases are evidence and review workflow, not automatic guilt.
+
+Suspicious trade/auction signals should be reviewed with context such as declarations, repeated patterns, item history, server market conditions and operator judgment.

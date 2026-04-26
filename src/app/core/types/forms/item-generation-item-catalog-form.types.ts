@@ -1,15 +1,21 @@
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
-import { BonusType } from '../bonus.types';
+import { BonusContext, BonusType } from '../bonus.types';
 
 export type CatalogEntitySelectorForm = FormGroup<{
   selectedId: FormControl<string>;
 }>;
 
 export type BonusForm = FormGroup<{
-  templateId: FormControl<string>;
+  templateId: FormControl<string | null>;
+  category: FormControl<string>;
+  templateLabel: FormControl<string>;
   target: FormControl<string>;
   type: FormControl<BonusType>;
-  value: FormControl<number>;
+  context: FormControl<BonusContext>;
+  baseValue: FormControl<number>;
+  levelsStep: FormControl<number | null>;
+  sourceStat: FormControl<string | null>;
+  scalingFactor: FormControl<number | null>;
   description: FormControl<string>;
 }>;
 

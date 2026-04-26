@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { forkJoin, map, Observable, shareReplay, switchMap, tap } from 'rxjs';
+import { forkJoin, map, Observable, of, shareReplay, switchMap, tap } from 'rxjs';
 import {
   BalanceFormula,
   EditableBalanceFormula,
@@ -9,11 +9,13 @@ import {
 } from '../../domain/formula/formula.model';
 import {
   mapBalanceFormula,
+  mapEntityFormulaAssignment,
   mapFormulaAssignment,
   mapFormulaBlock,
   mapFormulaTarget,
 } from '../../utils/formula-admin-mappers';
 import { trimText, trimToNull } from '../../utils/normalize-text';
+import { FilterOperator } from '../../enums/filter-operators';
 import { Backend } from '../backend/backend';
 
 @Injectable({ providedIn: 'root' })
@@ -34,8 +36,13 @@ export class FormulaService {
           orderBy: { column: 'scope_key' },
           camelCase: false,
         }),
-        assignments: this.backend.getAll<any>({
+      assignments: this.backend.getAll<any>({
           table: 'balance_formula_assignments',
+          orderBy: { column: 'created_at' },
+          camelCase: false,
+        }),
+        entityAssignments: this.backend.getAll<any>({
+          table: 'entity_formula_assignments',
           orderBy: { column: 'created_at' },
           camelCase: false,
         }),
@@ -45,10 +52,11 @@ export class FormulaService {
           camelCase: false,
         }),
       }).pipe(
-        map(({ targets, formulas, assignments, blocks }) => ({
+        map(({ targets, formulas, assignments, entityAssignments, blocks }) => ({
           targets: targets.map(mapFormulaTarget),
           formulas: formulas.map(mapBalanceFormula),
           assignments: assignments.map(mapFormulaAssignment),
+          entityAssignments: entityAssignments.map(mapEntityFormulaAssignment),
           blocks: blocks.map(mapFormulaBlock),
         })),
         shareReplay(1)
@@ -161,5 +169,51 @@ export class FormulaService {
       map(() => void 0),
       tap(() => this.clearCache())
     );
+  }
+
+  assignFormulaToEntity(
+    entityKind: string,
+    entityId: string,
+    targetId: string,
+    formulaId: string | null
+  ): Observable<void> {
+    const updatedAt = new Date().toISOString();
+
+    return this.backend
+      .getAll<{ id: string }>({
+        table: 'entity_formula_assignments',
+        filters: {
+          entityKind: { value: entityKind, operator: FilterOperator.EQ },
+          entityId: { value: entityId, operator: FilterOperator.EQ },
+          targetId: { value: targetId, operator: FilterOperator.EQ },
+        },
+        range: { from: 0, to: 0 },
+      })
+      .pipe(
+        switchMap((rows) => {
+          const existing = rows[0] ?? null;
+
+          if (!formulaId) {
+            return existing
+              ? this.backend.delete('entity_formula_assignments', existing.id)
+              : of(void 0);
+          }
+
+          return existing
+            ? this.backend.update('entity_formula_assignments', existing.id, {
+                formulaId,
+                updatedAt,
+              })
+            : this.backend.create('entity_formula_assignments', {
+                entityKind,
+                entityId,
+                targetId,
+                formulaId,
+                updatedAt,
+              });
+        }),
+        map(() => void 0),
+        tap(() => this.clearCache())
+      );
   }
 }

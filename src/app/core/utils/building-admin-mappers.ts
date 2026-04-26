@@ -1,5 +1,7 @@
 import {
   BuildingAdminData,
+  BuildingFormulaOverrides,
+  EditableBuildingBonus,
   EditableBuilding,
   EditableBuildingRequirement,
   EditableBuildingResourceCost,
@@ -13,8 +15,12 @@ import {
 } from '../types/building-admin-row.types';
 import { Row } from '../types/supabase.types';
 import { normalizeBonusTarget, normalizeBonusType } from './bonus';
+import { FormulaAdminData } from '../domain/formula/formula.model';
 
-export function mapEditableBuilding(row: EditableBuildingRow): EditableBuilding {
+export function mapEditableBuilding(
+  row: EditableBuildingRow,
+  formulaData?: FormulaAdminData
+): EditableBuilding {
   return {
     id: row.id,
     key: row.key,
@@ -26,11 +32,12 @@ export function mapEditableBuilding(row: EditableBuildingRow): EditableBuilding 
     sortOrder: row.sort_order ?? 0,
     baseBuildTimeMinutes: row.base_build_time_minutes ?? 0,
     maxLevel: row.max_level ?? 0,
+    formulaOverrides: mapBuildingFormulaOverrides(row.id, formulaData),
     bonuses: (row.building_bonuses ?? []).map((bonus) => ({
       templateId: bonus.template_id,
       target: normalizeBonusTarget(bonus.bonus_templates.target),
       type: normalizeBonusType(bonus.bonus_templates.type),
-      value: bonus.value,
+      value: Number(bonus.value ?? bonus.base_value ?? 0),
       description: bonus.bonus_templates.description ?? '',
     })),
     resourceCosts: sortBuildingRules(row.building_resource_costs ?? []).map((cost) => ({
@@ -52,7 +59,7 @@ export function mapEditableBuilding(row: EditableBuildingRow): EditableBuilding 
 export function mapBuildingBonusTemplates(
   rows: Row<'bonus_templates'>[]
 ): BuildingAdminData['bonusTemplates'] {
-  return rows.map((row) => ({
+  return rows.map((row): EditableBuildingBonus => ({
     templateId: row.id,
     target: normalizeBonusTarget(row.target),
     type: normalizeBonusType(row.type),
@@ -101,4 +108,29 @@ function sortBuildingRules<T extends { sort_order: number; applies_from_level: n
       ? left.sort_order - right.sort_order
       : left.applies_from_level - right.applies_from_level
   );
+}
+
+function mapBuildingFormulaOverrides(
+  buildingId: string,
+  formulaData?: FormulaAdminData
+): BuildingFormulaOverrides {
+  const overrideFor = (targetKey: string) => {
+    const target = formulaData?.targets.find((entry) => entry.key === targetKey);
+    const assignment = target
+      ? formulaData?.entityAssignments.find(
+          (entry) =>
+            entry.entityKind === 'building' &&
+            entry.entityId === buildingId &&
+            entry.targetId === target.id
+        )
+      : null;
+
+    return assignment?.formulaId ?? null;
+  };
+
+  return {
+    upgradeCostFormulaId: overrideFor('building_upgrade_cost'),
+    upgradeTimeFormulaId: overrideFor('building_upgrade_time'),
+    bonusGrowthFormulaId: overrideFor('building_bonus_growth'),
+  };
 }

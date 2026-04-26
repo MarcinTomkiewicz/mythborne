@@ -16,22 +16,85 @@ export type Database = {
     Tables: {
       bonus_templates: {
         Row: {
+          base_value: number
+          category: string
+          context: string
           description: string | null
           id: string
+          is_active: boolean
+          key: string
+          label: string
+          levels_step: number | null
+          scaling_factor: number | null
+          sort_order: number
+          source_stat: string | null
           target: string
-          type: string | null
+          type: string
         }
         Insert: {
+          base_value?: number
+          category?: string
+          context?: string
           description?: string | null
           id?: string
+          is_active?: boolean
+          key: string
+          label: string
+          levels_step?: number | null
+          scaling_factor?: number | null
+          sort_order?: number
+          source_stat?: string | null
           target: string
-          type?: string | null
+          type?: string
         }
         Update: {
+          base_value?: number
+          category?: string
+          context?: string
           description?: string | null
           id?: string
+          is_active?: boolean
+          key?: string
+          label?: string
+          levels_step?: number | null
+          scaling_factor?: number | null
+          sort_order?: number
+          source_stat?: string | null
           target?: string
-          type?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
+      bonus_targets: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          key: string
+          kind: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          kind: string
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          kind?: string
+          label?: string
+          sort_order?: number
         }
         Relationships: []
       }
@@ -110,6 +173,51 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_formula_assignments: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_kind: string
+          formula_id: string
+          id: string
+          target_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_kind: string
+          formula_id: string
+          id?: string
+          target_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_kind?: string
+          formula_id?: string
+          id?: string
+          target_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_formula_assignments_formula_id_fkey"
+            columns: ["formula_id"]
+            isOneToOne: false
+            referencedRelation: "balance_formulas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_formula_assignments_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "balance_formula_targets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       balance_formula_blocks: {
         Row: {
           category: string
@@ -181,20 +289,32 @@ export type Database = {
       }
       building_bonuses: {
         Row: {
+          base_value: number
           building_id: string | null
           id: string
+          levels_step: number | null
+          scaling_factor: number | null
+          source_stat: string | null
           template_id: string | null
           value: number
         }
         Insert: {
+          base_value?: number
           building_id?: string | null
           id?: string
+          levels_step?: number | null
+          scaling_factor?: number | null
+          source_stat?: string | null
           template_id?: string | null
           value: number
         }
         Update: {
+          base_value?: number
           building_id?: string | null
           id?: string
+          levels_step?: number | null
+          scaling_factor?: number | null
+          source_stat?: string | null
           template_id?: string | null
           value?: number
         }
@@ -619,19 +739,31 @@ export type Database = {
       item_generation_affix_bonuses: {
         Row: {
           affix_id: string
+          base_value: number
           id: string
+          levels_step: number | null
+          scaling_factor: number | null
+          source_stat: string | null
           template_id: string
           value: number
         }
         Insert: {
           affix_id: string
+          base_value?: number
           id?: string
+          levels_step?: number | null
+          scaling_factor?: number | null
+          source_stat?: string | null
           template_id: string
           value: number
         }
         Update: {
           affix_id?: string
+          base_value?: number
           id?: string
+          levels_step?: number | null
+          scaling_factor?: number | null
+          source_stat?: string | null
           template_id?: string
           value?: number
         }
@@ -685,19 +817,31 @@ export type Database = {
       item_generation_base_bonuses: {
         Row: {
           base_id: string
+          base_value: number
           id: string
+          levels_step: number | null
+          scaling_factor: number | null
+          source_stat: string | null
           template_id: string
           value: number
         }
         Insert: {
           base_id: string
+          base_value?: number
           id?: string
+          levels_step?: number | null
+          scaling_factor?: number | null
+          source_stat?: string | null
           template_id: string
           value: number
         }
         Update: {
           base_id?: string
+          base_value?: number
           id?: string
+          levels_step?: number | null
+          scaling_factor?: number | null
+          source_stat?: string | null
           template_id?: string
           value?: number
         }
@@ -828,20 +972,32 @@ export type Database = {
       }
       item_bonuses: {
         Row: {
+          base_value: number
           id: string
           item_id: string | null
+          levels_step: number | null
+          scaling_factor: number | null
+          source_stat: string | null
           template_id: string | null
           value: number
         }
         Insert: {
+          base_value?: number
           id?: string
           item_id?: string | null
+          levels_step?: number | null
+          scaling_factor?: number | null
+          source_stat?: string | null
           template_id?: string | null
           value: number
         }
         Update: {
+          base_value?: number
           id?: string
           item_id?: string | null
+          levels_step?: number | null
+          scaling_factor?: number | null
+          source_stat?: string | null
           template_id?: string | null
           value?: number
         }
@@ -909,20 +1065,32 @@ export type Database = {
       }
       origin_bonuses: {
         Row: {
+          base_value: number
           id: string
+          levels_step: number | null
           origin_id: string | null
+          scaling_factor: number | null
+          source_stat: string | null
           template_id: string | null
           value: number
         }
         Insert: {
+          base_value?: number
           id?: string
+          levels_step?: number | null
           origin_id?: string | null
+          scaling_factor?: number | null
+          source_stat?: string | null
           template_id?: string | null
           value: number
         }
         Update: {
+          base_value?: number
           id?: string
+          levels_step?: number | null
           origin_id?: string | null
+          scaling_factor?: number | null
+          source_stat?: string | null
           template_id?: string | null
           value?: number
         }

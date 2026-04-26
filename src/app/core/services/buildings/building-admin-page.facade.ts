@@ -3,6 +3,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { finalize, forkJoin, startWith } from 'rxjs';
 import {
   BuildingResourceType,
+  BuildingFormulaOverrides,
   EditableBuildingBonus,
   EditableBuildingRequirement,
   EditableBuilding,
@@ -103,8 +104,8 @@ export class BuildingsPageFacade {
   });
 
   readonly preview = computed(() => {
-    const rules = this.formulas.rules();
     const value = this.editorValue();
+    const rules = this.formulas.resolveRules(value.formulaOverrides as BuildingFormulaOverrides);
     const level = nonNegativeInteger(this.previewLevel());
     const rank = Number(value.rankRequired ?? 1);
 
@@ -137,6 +138,7 @@ export class BuildingsPageFacade {
       bonuses: this.bonusEditor.controls.map((control) => {
         const bonus = control.getRawValue() as EditableBuildingBonus;
         return {
+          ...bonus,
           target: bonus.target,
           type: bonus.type,
           current: this.progression.getBonusValue(level, Number(bonus.value), rules) ?? 0,

@@ -18,11 +18,7 @@ export const gameRoutes: Routes = [
   {
     path: 'combat',
     loadComponent: () =>
-      import('./pages/section-placeholder/section-placeholder').then((m) => m.GameSectionPlaceholderPage),
-    data: {
-      sectionTitle: 'Combat',
-      sectionDescription: 'Tutaj trafia PVP, walka z potworami i logika starc.',
-    },
+      import('./pages/combat/combat-page').then((m) => m.CombatPage),
   },
   {
     path: 'armory',

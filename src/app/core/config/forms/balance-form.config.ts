@@ -1,5 +1,6 @@
 import { FormFieldType } from '../../enums/form-field-type';
 import { FormulaAdminData } from '../../domain/formula/formula.model';
+import { BonusTargetDefinition, BonusTemplate } from '../../domain/bonus/bonus.model';
 import { FormFieldConfig } from '../../types/form-field.types';
 import {
   EditableItemGenerationBucketProfile,
@@ -109,14 +110,20 @@ export function createFormulaSelectorFields(
   data: FormulaAdminData,
   humanizeScope: (scopeKey: string) => string
 ): readonly FormFieldConfig[] {
+  const formulas = [...data.formulas].sort((left, right) =>
+    `${humanizeScope(left.scopeKey)}:${left.label}`.localeCompare(
+      `${humanizeScope(right.scopeKey)}:${right.label}`
+    )
+  );
+
   return [
     {
       type: FormFieldType.Select,
       controlName: 'selectedId',
-      label: 'Edited formula',
+      label: 'Edited formula (all scopes)',
       options: [
         { label: 'Create new formula', value: '' },
-        ...data.formulas.map((formula) => ({
+        ...formulas.map((formula) => ({
           label: `${formula.label} (${humanizeScope(formula.scopeKey)})`,
           value: formula.id,
         })),
@@ -157,3 +164,41 @@ export const FORMULA_DESCRIPTION_FIELD: FormFieldConfig = {
   className: 'grid-col-span-2',
   rows: 3,
 };
+
+export function createBonusTemplateSelectorFields(
+  templates: readonly BonusTemplate[]
+): readonly FormFieldConfig[] {
+  return [
+    {
+      type: FormFieldType.Select,
+      controlName: 'selectedId',
+      label: 'Edited bonus template',
+      options: [
+        { label: 'Create new template', value: '' },
+        ...templates.map((template) => ({
+          label: `${template.label} (${template.category})`,
+          value: template.id,
+        })),
+      ],
+    },
+  ];
+}
+
+export function createBonusTemplateEditorFields(
+  targets: readonly BonusTargetDefinition[],
+  _categories: readonly string[]
+): readonly FormFieldConfig[] {
+  return [
+    { type: FormFieldType.Text, controlName: 'label', label: 'Label' },
+    { type: FormFieldType.Text, controlName: 'key', label: 'Key' },
+    { type: FormFieldType.Text, controlName: 'category', label: 'Category' },
+    {
+      type: FormFieldType.Select,
+      controlName: 'target',
+      label: 'Target',
+      options: targets.map((target) => ({ label: target.label, value: target.key })),
+    },
+    { type: FormFieldType.Number, controlName: 'sortOrder', label: 'Sort order' },
+    { type: FormFieldType.Checkbox, controlName: 'isActive', label: 'Enabled' },
+  ];
+}

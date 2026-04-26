@@ -8,7 +8,7 @@ export class FormulaRuntimeService {
   private readonly allowedFunctions: Record<string, FormulaFn> = {
     abs: Math.abs,
     ceil: Math.ceil,
-    clamp: (value, min, max) => Math.min(Math.max(value, min), max),
+    clamp: (min, max, value) => Math.min(Math.max(value, min), max),
     floor: Math.floor,
     max: Math.max,
     min: Math.min,
@@ -115,13 +115,13 @@ export class FormulaRuntimeService {
     {
       key: 'clamp',
       label: 'clamp()',
-      syntax: 'clamp(value, min, max)',
-      friendlySyntax: 'clamp(value, min, max)',
+      syntax: 'clamp(min, max, value)',
+      friendlySyntax: 'clamp(min, max, value)',
       humanSyntax: 'keep value between min and max',
       description: 'Useful when a formula should never go below or above a limit.',
-      example: 'clamp(level * 4, 10, 80)',
+      example: 'clamp(10, 80, level * 4)',
       exampleHuman: 'keep level * 4 between 10 and 80',
-      insertTemplate: 'clamp(level * 4, 10, 80)',
+      insertTemplate: 'clamp(10, 80, level * 4)',
     },
     {
       key: 'abs',
@@ -370,7 +370,7 @@ export class FormulaRuntimeService {
       case 'max':
         return `larger of ${first} and ${second}`;
       case 'clamp':
-        return `keep ${first} between ${second} and ${third}`;
+        return `keep ${third} between ${first} and ${second}`;
       case 'abs':
         return `absolute value of ${first}`;
       default:

@@ -1,4 +1,4 @@
-import { BonusType } from './bonus.types';
+import { BonusContext, BonusType } from './bonus.types';
 
 export interface Origin {
   id: string;
@@ -12,8 +12,14 @@ export interface Origin {
 export interface OriginBonus {
   id: string;
   originId: string;
-  value: number;
+  templateId: string | null;
+  category: string;
   target: string;
   type: BonusType;
+  context: BonusContext;
   description: string | null;
+  baseValue: number;
+  levelsStep: number | null;
+  sourceStat: string | null;
+  scalingFactor: number | null;
 }

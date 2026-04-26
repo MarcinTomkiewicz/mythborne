@@ -42,6 +42,8 @@ export class ItemGenerationItemCatalogPageFacade {
     prefixes: [],
     suffixes: [],
     bonusTemplates: [],
+    bonusTargets: [],
+    bonusCategories: [],
   });
 
   readonly selectorForm: CatalogEntitySelectorForm =
@@ -146,6 +148,45 @@ export class ItemGenerationItemCatalogPageFacade {
 
   bonusEditor() {
     return this.activeSection() === 'base' ? this.baseBonusEditor : this.affixBonusEditor;
+  }
+
+  bonusTemplatesForCategory(category: string) {
+    return this.catalogData().bonusTemplates.filter((template) => template.category === category);
+  }
+
+  applyBonusCategory(index: number, category: string) {
+    this.bonusEditor().at(index).patchValue({
+      category,
+      templateId: null,
+      templateLabel: '',
+      target: '',
+      type: 'flat',
+      context: 'global',
+      baseValue: 0,
+      levelsStep: null,
+      sourceStat: null,
+      scalingFactor: null,
+      description: '',
+    });
+  }
+
+  applyBonusTemplate(index: number, templateId: string) {
+    const template = this.catalogData().bonusTemplates.find((entry) => entry.id === templateId);
+
+    template &&
+      this.bonusEditor().at(index).patchValue({
+        templateId: template.id,
+        category: template.category,
+        templateLabel: template.label,
+        target: template.target,
+        type: template.type,
+        context: template.context,
+        baseValue: template.baseValue,
+        levelsStep: template.levelsStep,
+        sourceStat: template.sourceStat,
+        scalingFactor: template.scalingFactor,
+        description: template.description,
+      });
   }
 
   saveCurrent() {

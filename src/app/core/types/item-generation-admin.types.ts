@@ -1,20 +1,18 @@
 import {
+  BonusTargetDefinition,
+  BonusTemplate,
+  EditableAppliedBonus,
+} from './bonus.types';
+import {
   ItemAffixKind,
   ItemGenerationBucketProfile,
   ItemQualityDefinition,
   ItemSlot,
 } from './item-generation.types';
-import { BonusType } from './bonus.types';
 
 export type CatalogSection = 'base' | 'prefix' | 'suffix';
 
-export interface EditableItemGenerationBonus {
-  templateId: string | null;
-  target: string;
-  type: BonusType;
-  value: number;
-  description: string;
-}
+export interface EditableItemGenerationBonus extends EditableAppliedBonus {}
 
 export interface EditableItemGenerationBase {
   id: string | null;
@@ -52,12 +50,9 @@ export interface ItemGenerationAdminCatalogData {
   bases: EditableItemGenerationBase[];
   prefixes: EditableItemGenerationAffix[];
   suffixes: EditableItemGenerationAffix[];
-  bonusTemplates: {
-    id: string;
-    target: string;
-    type: BonusType;
-    description: string;
-  }[];
+  bonusTemplates: BonusTemplate[];
+  bonusTargets: BonusTargetDefinition[];
+  bonusCategories: string[];
 }
 
 export interface ItemGenerationAdminBalanceData {

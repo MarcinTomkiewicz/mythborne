@@ -5,6 +5,7 @@ export const TABLES = {
   heroes: 'heroes',
   user_data: 'user_data',
   bonus_templates: 'bonus_templates',
+  bonus_targets: 'bonus_targets',
   buildings: 'buildings',
   building_bonuses: 'building_bonuses',
   building_requirements: 'building_requirements',
@@ -16,4 +17,5 @@ export const TABLES = {
   hero_stats: 'hero_stats',
   hero_resources: 'hero_resources',
   hero_derived: 'hero_derived',
+  entity_formula_assignments: 'entity_formula_assignments',
 } as const;

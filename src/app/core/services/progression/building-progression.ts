@@ -1,9 +1,10 @@
 import { inject, Injectable } from '@angular/core';
-import { forkJoin, map, Observable, shareReplay } from 'rxjs';
+import { map, Observable, shareReplay } from 'rxjs';
 import {
   BUILDING_PROGRESSION_TARGET_KEYS,
   BuildingProgressionRules,
 } from '../../domain/progression/building-progression.model';
+import { FormulaAdminData } from '../../domain/formula/formula.model';
 import { nonNegativeInteger } from '../../utils/number';
 import { FormulaService } from '../formula/formula';
 import { FormulaRuntimeService } from './formula-runtime';
@@ -17,22 +18,8 @@ export class BuildingProgressionService {
 
   getRules(): Observable<BuildingProgressionRules> {
     if (!this.rules$) {
-      this.rules$ = forkJoin({
-        cost: this.formulaService.getAssignedFormula(
-          BUILDING_PROGRESSION_TARGET_KEYS.upgradeCost
-        ),
-        time: this.formulaService.getAssignedFormula(
-          BUILDING_PROGRESSION_TARGET_KEYS.upgradeTime
-        ),
-        bonus: this.formulaService.getAssignedFormula(
-          BUILDING_PROGRESSION_TARGET_KEYS.bonusGrowth
-        ),
-      }).pipe(
-        map(({ cost, time, bonus }) => ({
-          costExpression: cost.formula.expression,
-          timeExpression: time.formula.expression,
-          bonusExpression: bonus.formula.expression,
-        })),
+      this.rules$ = this.formulaService.getAdminData().pipe(
+        map((data) => this.resolveRulesForBuilding(null, data)),
         shareReplay(1)
       );
     }
@@ -75,11 +62,53 @@ export class BuildingProgressionService {
     baseBonus: number,
     rules: BuildingProgressionRules
   ): number | null {
-    return this.evaluateNumeric(
-      rules.bonusExpression,
-      { level, baseBonus },
-      false
-    );
+    return this.evaluateNumeric(rules.bonusExpression, { level, baseBonus }, false);
+  }
+
+  resolveRulesForBuilding(
+    buildingId: string | null,
+    data: FormulaAdminData
+  ): BuildingProgressionRules {
+    const formulaFor = (targetKey: string) => {
+      const target = data.targets.find((entry) => entry.key === targetKey);
+
+      if (!target) {
+        throw new Error(`Building formula target "${targetKey}" is not defined.`);
+      }
+
+      const localAssignment = buildingId
+        ? data.entityAssignments.find(
+            (entry) =>
+              entry.entityKind === 'building' &&
+              entry.entityId === buildingId &&
+              entry.targetId === target.id
+          ) ?? null
+        : null;
+      const globalAssignment =
+        data.assignments.find((entry) => entry.targetId === target.id) ?? null;
+      const assignment = localAssignment ?? globalAssignment;
+      const formula =
+        data.formulas.find((entry) => entry.id === assignment?.formulaId && entry.isEnabled) ?? null;
+
+      if (!formula) {
+        throw new Error(`Building formula target "${target.label}" has no enabled formula.`);
+      }
+
+      return formula;
+    };
+
+    const cost = formulaFor(BUILDING_PROGRESSION_TARGET_KEYS.upgradeCost);
+    const time = formulaFor(BUILDING_PROGRESSION_TARGET_KEYS.upgradeTime);
+    const bonus = formulaFor(BUILDING_PROGRESSION_TARGET_KEYS.bonusGrowth);
+
+    return {
+      costFormulaId: cost.id,
+      timeFormulaId: time.id,
+      bonusFormulaId: bonus.id,
+      costExpression: cost.expression,
+      timeExpression: time.expression,
+      bonusExpression: bonus.expression,
+    };
   }
 
   private evaluateNumeric(

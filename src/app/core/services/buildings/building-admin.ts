@@ -2,11 +2,11 @@ import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable, of, switchMap, tap } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
 import {
+  BuildingAdminData,
   EditableBuilding,
   EditableBuildingBonus,
   EditableBuildingRequirement,
   EditableBuildingResourceCost,
-  BuildingAdminData,
 } from '../../domain/building/building.model';
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
 import {
@@ -20,15 +20,18 @@ import { trimText, trimToNull } from '../../utils/normalize-text';
 import { BuildingProgressionService } from '../progression/building-progression';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
-import { ItemGenerationBonusTemplateAdminService } from '../items/item-generation-bonus-template-admin';
 import { EditableBuildingRow } from '../../types/building-admin-row.types';
 import { BuildingPayload } from '../../types/building-service.types';
+import { ItemGenerationBonusTemplateAdminService } from '../items/item-generation-bonus-template-admin';
+import { FormulaService } from '../formula/formula';
+import { BUILDING_PROGRESSION_TARGET_KEYS } from '../../domain/progression/building-progression.model';
 
 @Injectable({ providedIn: 'root' })
 export class BuildingAdminService {
   private readonly backend = inject(Backend);
   private readonly progression = inject(BuildingProgressionService);
   private readonly bonusTemplates = inject(ItemGenerationBonusTemplateAdminService);
+  private readonly formulaService = inject(FormulaService);
 
   getAdminData(): Observable<BuildingAdminData> {
     return forkJoin({
@@ -55,15 +58,14 @@ export class BuildingAdminService {
         orderBy: { column: 'order' },
         camelCase: false,
       }),
+      formulaData: this.formulaService.getAdminData(),
     }).pipe(
-      map(({ buildings, templates, districts, stats }) => ({
-          buildings: buildings.map((row) =>
-            mapEditableBuilding(row as EditableBuildingRow)
-          ),
-          bonusTemplates: mapBuildingBonusTemplates(templates),
-          districts: mapBuildingDistricts(districts),
-          stats: mapBuildingStats(stats),
-        }))
+      map(({ buildings, templates, districts, stats, formulaData }) => ({
+        buildings: buildings.map((row) => mapEditableBuilding(row as EditableBuildingRow, formulaData)),
+        bonusTemplates: mapBuildingBonusTemplates(templates),
+        districts: mapBuildingDistricts(districts),
+        stats: mapBuildingStats(stats),
+      }))
     );
   }
 
@@ -89,10 +91,14 @@ export class BuildingAdminService {
           this.syncBuildingBonuses(buildingId, draft.bonuses),
           this.syncBuildingCosts(buildingId, draft.resourceCosts),
           this.syncBuildingRequirements(buildingId, draft.requirements),
+          this.syncFormulaOverrides(buildingId, draft),
         ])
       ),
       map(() => void 0),
-      tap(() => this.progression.clearCache())
+      tap(() => {
+        this.progression.clearCache();
+        this.formulaService.clearCache();
+      })
     );
   }
 
@@ -128,6 +134,41 @@ export class BuildingAdminService {
           : of([])
       ),
       switchMap((rows) => this.insertRows(TABLES.building_bonuses, rows))
+    );
+  }
+
+  private syncFormulaOverrides(buildingId: string, draft: EditableBuilding): Observable<void> {
+    return this.formulaService.getAdminData().pipe(
+      switchMap((formulaData) => {
+        const targetIdFor = (targetKey: string) =>
+          formulaData.targets.find((target) => target.key === targetKey)?.id ?? null;
+
+        const operations = [
+          {
+            targetId: targetIdFor(BUILDING_PROGRESSION_TARGET_KEYS.upgradeCost),
+            formulaId: draft.formulaOverrides.upgradeCostFormulaId,
+          },
+          {
+            targetId: targetIdFor(BUILDING_PROGRESSION_TARGET_KEYS.upgradeTime),
+            formulaId: draft.formulaOverrides.upgradeTimeFormulaId,
+          },
+          {
+            targetId: targetIdFor(BUILDING_PROGRESSION_TARGET_KEYS.bonusGrowth),
+            formulaId: draft.formulaOverrides.bonusGrowthFormulaId,
+          },
+        ]
+          .filter((entry) => !!entry.targetId)
+          .map((entry) =>
+            this.formulaService.assignFormulaToEntity(
+              'building',
+              buildingId,
+              entry.targetId as string,
+              entry.formulaId
+            )
+          );
+
+        return operations.length ? forkJoin(operations).pipe(map(() => void 0)) : of(void 0);
+      })
     );
   }
 

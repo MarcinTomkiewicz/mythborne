@@ -1,5 +1,6 @@
 import {
   BalanceFormula,
+  EntityFormulaAssignment,
   FormulaAssignment,
   FormulaBlock,
   FormulaTarget,
@@ -62,6 +63,26 @@ export function mapFormulaAssignment(row: {
 }): FormulaAssignment {
   return {
     id: row.id,
+    targetId: row.target_id,
+    formulaId: row.formula_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapEntityFormulaAssignment(row: {
+  id: string;
+  entity_kind: string;
+  entity_id: string;
+  target_id: string;
+  formula_id: string;
+  created_at: string | null;
+  updated_at: string | null;
+}): EntityFormulaAssignment {
+  return {
+    id: row.id,
+    entityKind: row.entity_kind,
+    entityId: row.entity_id,
     targetId: row.target_id,
     formulaId: row.formula_id,
     createdAt: row.created_at,

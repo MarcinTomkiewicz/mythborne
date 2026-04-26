@@ -1,0 +1,108 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Bonuses</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Templates</h3>
+      <p class="mb-0 muted-text">
+        Centralna biblioteka bonus presetow. Budynki i itemy wybieraja potem tylko kategorie, preset i ewentualne
+        parametry wymagane przez typ bonusu.
+      </p>
+    </div>
+
+    <p-button label="New template" [text]="true" (onClick)="page.bonusTemplate.new()" />
+  </div>
+
+  <form [formGroup]="page.bonusTemplate.selectorForm" class="mb-lg">
+    <app-form-fields [form]="page.bonusTemplate.selectorForm" [fields]="selectorFields()" />
+  </form>
+
+  <form [formGroup]="page.bonusTemplate.editorForm" class="mg-surface-card flex-col gap-lg p-lg">
+    <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+      <app-form-fields [form]="page.bonusTemplate.editorForm" [fields]="editorFields()" />
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Type</span>
+        <select class="w-100 p-inputtext" formControlName="type">
+          <option value="flat">flat</option>
+          <option value="percent">percent</option>
+          <option value="per_levels">per_levels</option>
+          <option value="scaled_stat_bonus">scaled_stat_bonus</option>
+          <option value="resource_flat">resource_flat</option>
+          <option value="resource_percent">resource_percent</option>
+          <option value="capacity_flat">capacity_flat</option>
+          <option value="unlock_feature">unlock_feature</option>
+        </select>
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Context</span>
+        <select class="w-100 p-inputtext" formControlName="context">
+          <option value="global">global</option>
+          <option value="pvp_attack">pvp_attack</option>
+          <option value="pvp_defense">pvp_defense</option>
+          <option value="exploration">exploration</option>
+          <option value="trial">trial</option>
+          <option value="combat">combat</option>
+          <option value="economy">economy</option>
+          <option value="building_management">building_management</option>
+        </select>
+      </label>
+
+      <label class="flex-col gap-sm grid-col-span-3">
+        <span class="muted-text">Description</span>
+        <textarea pInputText rows="3" class="w-100" formControlName="description"></textarea>
+      </label>
+    </div>
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+      @if (page.bonusTemplate.editorForm.controls.type.value !== 'unlock_feature') {
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Base value</span>
+          <input pInputText type="number" class="w-100" formControlName="baseValue" />
+        </label>
+      }
+
+      @if (page.bonusTemplate.editorForm.controls.type.value === 'per_levels') {
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Levels step</span>
+          <input pInputText type="number" class="w-100" formControlName="levelsStep" />
+        </label>
+      }
+
+      @if (page.bonusTemplate.editorForm.controls.type.value === 'scaled_stat_bonus') {
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Source stat</span>
+          <select class="w-100 p-inputtext" formControlName="sourceStat">
+            <option [ngValue]="null">Choose source stat</option>
+            @for (target of page.bonusAdminData().targets; track target.key) {
+              <option [value]="target.key">{{ target.label }}</option>
+            }
+          </select>
+        </label>
+      }
+
+      @if (page.bonusTemplate.editorForm.controls.type.value === 'scaled_stat_bonus') {
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Scaling factor</span>
+          <input pInputText type="number" step="0.01" class="w-100" formControlName="scalingFactor" />
+        </label>
+      }
+    </div>
+
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button
+        label="Save template"
+        [loading]="page.isSaving()"
+        [disabled]="page.isLoading() || page.isBusy()"
+        (onClick)="page.saveBonusTemplate()"
+      />
+      <p-button
+        label="Delete"
+        severity="danger"
+        [text]="true"
+        [disabled]="!page.bonusTemplate.editorForm.controls.id.value || page.isBusy()"
+        (onClick)="page.deleteBonusTemplate()"
+      />
+    </div>
+  </form>
+</section>

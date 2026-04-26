@@ -35,6 +35,16 @@ export interface FormulaAssignment {
   updatedAt: string | null;
 }
 
+export interface EntityFormulaAssignment {
+  id: string;
+  entityKind: string;
+  entityId: string;
+  targetId: string;
+  formulaId: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
 export interface FormulaBlock {
   id: string;
   scopeKey: string;
@@ -71,6 +81,7 @@ export interface FormulaAdminData {
   targets: FormulaTarget[];
   formulas: BalanceFormula[];
   assignments: FormulaAssignment[];
+  entityAssignments: EntityFormulaAssignment[];
   blocks: FormulaBlock[];
 }
 

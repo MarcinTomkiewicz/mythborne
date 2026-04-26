@@ -13,7 +13,7 @@ import {
   standalone: true,
   imports: [ReactiveFormsModule, ButtonModule, FormFields],
   templateUrl: './quality-balance-section.html',
-  host: { style: 'display:block;width:100%;' },
+  host: { class: 'd-block w-100' },
 })
 export class QualityBalanceSection {
   readonly page = inject(ItemGenerationBalancePageFacade);

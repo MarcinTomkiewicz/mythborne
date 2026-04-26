@@ -10,7 +10,7 @@ import { FormFieldConfig } from '../../core/types/form-field.types';
   standalone: true,
   imports: [ReactiveFormsModule, InputTextModule, DatePickerModule],
   templateUrl: './form-fields.html',
-  host: { style: 'display: contents;' },
+  host: { class: 'd-contents' },
 })
 export class FormFields {
   readonly form = input.required<FormGroup>();

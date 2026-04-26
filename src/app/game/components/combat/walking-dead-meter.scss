@@ -1,0 +1,24 @@
+.walking-dead-meter__field:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.walking-dead-meter__svg {
+  height: 56px;
+}
+
+.walking-dead-meter__track {
+  fill: rgba(255, 255, 255, 0.05);
+}
+
+.walking-dead-meter__zone {
+  fill: rgba(140, 201, 120, 0.22);
+  stroke: rgba(140, 201, 120, 0.8);
+  stroke-width: 3;
+}
+
+.walking-dead-meter__indicator {
+  stroke: var(--color-accent, #c97a49);
+  stroke-width: 6;
+  stroke-linecap: round;
+}

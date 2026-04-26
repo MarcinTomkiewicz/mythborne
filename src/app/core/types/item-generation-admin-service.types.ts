@@ -1,4 +1,4 @@
-import { BonusType } from './bonus.types';
+import { BonusContext, BonusType } from './bonus.types';
 
 export type BucketProfilePayload = {
   key: string;
@@ -13,9 +13,18 @@ export type BucketProfilePayload = {
   isActive: boolean;
 };
 
-export type EditableBonusTemplateDraft = {
-  templateId: string | null;
+export type BonusTemplatePayload = {
+  key: string;
+  label: string;
+  category: string;
   target: string;
   type: BonusType;
-  description: string;
+  context: BonusContext;
+  description: string | null;
+  baseValue: number;
+  levelsStep: number | null;
+  sourceStat: string | null;
+  scalingFactor: number | null;
+  sortOrder: number;
+  isActive: boolean;
 };

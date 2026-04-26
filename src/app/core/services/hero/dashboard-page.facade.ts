@@ -81,14 +81,18 @@ export class DashboardPageFacade {
   }
 
   private originBonusSource(): BonusSource {
-    return {
-      name: 'origin',
-      bonuses: this.originBonuses().map((bonus) => ({
-        target: bonus.target ?? '',
-        value: bonus.value,
-        type: bonus.type,
-      })),
-    };
-  }
+      return {
+        name: 'origin',
+        bonuses: this.originBonuses().map((bonus) => ({
+          target: bonus.target ?? '',
+          value: bonus.baseValue,
+          type: bonus.type,
+          context: bonus.context,
+          levelsStep: bonus.levelsStep,
+          sourceStat: bonus.sourceStat,
+          scalingFactor: bonus.scalingFactor,
+        })),
+      };
+    }
 }
 

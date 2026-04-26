@@ -14,16 +14,17 @@ import {
   mapEditableAffix,
   mapEditableBase,
 } from '../../utils/item-generation-admin-mappers';
-import { normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
 import { Backend } from '../backend/backend';
 import { ItemGenerationAffixAdminService } from './item-generation-affix-admin';
 import { ItemGenerationBaseAdminService } from './item-generation-base-admin';
+import { BonusTemplateAdminService } from '../bonus/bonus-template-admin';
 
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationCatalogAdminService {
   private readonly backend = inject(Backend);
   private readonly bases = inject(ItemGenerationBaseAdminService);
   private readonly affixes = inject(ItemGenerationAffixAdminService);
+  private readonly bonusTemplates = inject(BonusTemplateAdminService);
 
   getData(): Observable<ItemGenerationAdminCatalogData> {
     return forkJoin({
@@ -39,13 +40,9 @@ export class ItemGenerationCatalogAdminService {
         orderBy: { column: 'kind' },
         camelCase: false,
       }),
-      templates: this.backend.getAll<any>({
-        table: 'bonus_templates',
-        orderBy: { column: 'target' },
-        camelCase: false,
-      }),
+      bonusData: this.bonusTemplates.getAdminData(),
     }).pipe(
-      map(({ bases, affixes, templates }) => {
+      map(({ bases, affixes, bonusData }) => {
         const editableAffixes = affixes.map((row) =>
           mapEditableAffix(
             row as Row<'item_generation_affixes'> & {
@@ -64,12 +61,9 @@ export class ItemGenerationCatalogAdminService {
           ),
           prefixes: editableAffixes.filter((affix) => affix.kind === 'prefix'),
           suffixes: editableAffixes.filter((affix) => affix.kind === 'suffix'),
-          bonusTemplates: templates.map((row) => ({
-            id: row.id,
-            target: normalizeBonusTarget(row.target),
-            type: normalizeBonusType(row.type),
-            description: row.description ?? '',
-          })),
+          bonusTemplates: bonusData.templates,
+          bonusTargets: bonusData.targets,
+          bonusCategories: bonusData.categories,
         };
       })
     );

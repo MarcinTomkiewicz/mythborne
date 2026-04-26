@@ -13,7 +13,7 @@ import {
   standalone: true,
   imports: [ReactiveFormsModule, ButtonModule, FormFields],
   templateUrl: './bucket-profile-balance-section.html',
-  host: { style: 'display:block;width:100%;' },
+  host: { class: 'd-block w-100' },
 })
 export class BucketProfileBalanceSection {
   readonly page = inject(ItemGenerationBalancePageFacade);

@@ -1,10 +1,4 @@
 <div class="flex-col gap-xl min-w-0">
-  <datalist id="bonus-target-options">
-    @for (template of page.catalogData().bonusTemplates; track template.id) {
-      <option [value]="template.target">{{ template.target }}</option>
-    }
-  </datalist>
-
   <section class="mg-card p-lg w-100">
     <div class="flex-row-between-center flex-col-sm gap-md">
       <div class="flex-col gap-xs">
@@ -110,28 +104,92 @@
               <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
                 <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
                   <label class="flex-col gap-sm">
-                    <span class="muted-text">Target</span>
-                    <input pInputText list="bonus-target-options" class="w-full" formControlName="target" />
-                  </label>
-
-                  <label class="flex-col gap-sm">
-                    <span class="muted-text">Type</span>
-                    <select class="w-full p-inputtext" formControlName="type">
-                      @for (option of bonusTypeOptions; track option.value) {
-                        <option [value]="option.value">{{ option.label }}</option>
+                    <span class="muted-text">Category</span>
+                    <select
+                      class="w-full p-inputtext"
+                      formControlName="category"
+                      (change)="page.applyBonusCategory($index, $any($event.target).value)"
+                    >
+                      <option value="">Choose category</option>
+                      @for (category of page.catalogData().bonusCategories; track category) {
+                        <option [value]="category">{{ category }}</option>
                       }
                     </select>
                   </label>
 
                   <label class="flex-col gap-sm">
-                    <span class="muted-text">Value</span>
-                    <input pInputText type="number" class="w-full" formControlName="value" />
+                    <span class="muted-text">Template</span>
+                    <select
+                      class="w-full p-inputtext"
+                      formControlName="templateId"
+                      (change)="page.applyBonusTemplate($index, $any($event.target).value)"
+                    >
+                      <option [ngValue]="null">Choose template</option>
+                      @for (template of page.bonusTemplatesForCategory(bonusGroup.controls.category.value); track template.id) {
+                        <option [value]="template.id">{{ template.label }}</option>
+                      }
+                    </select>
                   </label>
 
                   <label class="flex-col gap-sm">
-                    <span class="muted-text">Template description</span>
-                    <input pInputText class="w-full" formControlName="description" />
+                    <span class="muted-text">Target</span>
+                    <input pInputText class="w-full" formControlName="target" readonly />
                   </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Type</span>
+                    <input pInputText class="w-full" formControlName="type" readonly />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Context</span>
+                    <input pInputText class="w-full" formControlName="context" readonly />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Template label</span>
+                    <input pInputText class="w-full" formControlName="templateLabel" readonly />
+                  </label>
+
+                  <label class="flex-col gap-sm grid-col-span-2">
+                    <span class="muted-text">Description</span>
+                    <input pInputText class="w-full" formControlName="description" readonly />
+                  </label>
+                </div>
+
+                <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+                  @if (bonusGroup.controls.type.value !== 'unlock_feature') {
+                    <label class="flex-col gap-sm">
+                      <span class="muted-text">Base value</span>
+                      <input pInputText type="number" class="w-full" formControlName="baseValue" />
+                    </label>
+                  }
+
+                  @if (bonusGroup.controls.type.value === 'per_levels') {
+                    <label class="flex-col gap-sm">
+                      <span class="muted-text">Levels step</span>
+                      <input pInputText type="number" class="w-full" formControlName="levelsStep" />
+                    </label>
+                  }
+
+                  @if (bonusGroup.controls.type.value === 'scaled_stat_bonus') {
+                    <label class="flex-col gap-sm">
+                      <span class="muted-text">Source stat</span>
+                      <select class="w-full p-inputtext" formControlName="sourceStat">
+                        <option [ngValue]="null">Choose source stat</option>
+                        @for (target of page.catalogData().bonusTargets; track target.key) {
+                          <option [value]="target.key">{{ target.label }}</option>
+                        }
+                      </select>
+                    </label>
+                  }
+
+                  @if (bonusGroup.controls.type.value === 'scaled_stat_bonus') {
+                    <label class="flex-col gap-sm">
+                      <span class="muted-text">Scaling factor</span>
+                      <input pInputText type="number" step="0.01" class="w-full" formControlName="scalingFactor" />
+                    </label>
+                  }
                 </div>
 
                 <div class="flex-row-start-center gap-sm">
@@ -194,28 +252,92 @@
               <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
                 <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
                   <label class="flex-col gap-sm">
-                    <span class="muted-text">Target</span>
-                    <input pInputText list="bonus-target-options" class="w-full" formControlName="target" />
-                  </label>
-
-                  <label class="flex-col gap-sm">
-                    <span class="muted-text">Type</span>
-                    <select class="w-full p-inputtext" formControlName="type">
-                      @for (option of bonusTypeOptions; track option.value) {
-                        <option [value]="option.value">{{ option.label }}</option>
+                    <span class="muted-text">Category</span>
+                    <select
+                      class="w-full p-inputtext"
+                      formControlName="category"
+                      (change)="page.applyBonusCategory($index, $any($event.target).value)"
+                    >
+                      <option value="">Choose category</option>
+                      @for (category of page.catalogData().bonusCategories; track category) {
+                        <option [value]="category">{{ category }}</option>
                       }
                     </select>
                   </label>
 
                   <label class="flex-col gap-sm">
-                    <span class="muted-text">Value</span>
-                    <input pInputText type="number" class="w-full" formControlName="value" />
+                    <span class="muted-text">Template</span>
+                    <select
+                      class="w-full p-inputtext"
+                      formControlName="templateId"
+                      (change)="page.applyBonusTemplate($index, $any($event.target).value)"
+                    >
+                      <option [ngValue]="null">Choose template</option>
+                      @for (template of page.bonusTemplatesForCategory(bonusGroup.controls.category.value); track template.id) {
+                        <option [value]="template.id">{{ template.label }}</option>
+                      }
+                    </select>
                   </label>
 
                   <label class="flex-col gap-sm">
-                    <span class="muted-text">Template description</span>
-                    <input pInputText class="w-full" formControlName="description" />
+                    <span class="muted-text">Target</span>
+                    <input pInputText class="w-full" formControlName="target" readonly />
                   </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Type</span>
+                    <input pInputText class="w-full" formControlName="type" readonly />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Context</span>
+                    <input pInputText class="w-full" formControlName="context" readonly />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Template label</span>
+                    <input pInputText class="w-full" formControlName="templateLabel" readonly />
+                  </label>
+
+                  <label class="flex-col gap-sm grid-col-span-2">
+                    <span class="muted-text">Description</span>
+                    <input pInputText class="w-full" formControlName="description" readonly />
+                  </label>
+                </div>
+
+                <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+                  @if (bonusGroup.controls.type.value !== 'unlock_feature') {
+                    <label class="flex-col gap-sm">
+                      <span class="muted-text">Base value</span>
+                      <input pInputText type="number" class="w-full" formControlName="baseValue" />
+                    </label>
+                  }
+
+                  @if (bonusGroup.controls.type.value === 'per_levels') {
+                    <label class="flex-col gap-sm">
+                      <span class="muted-text">Levels step</span>
+                      <input pInputText type="number" class="w-full" formControlName="levelsStep" />
+                    </label>
+                  }
+
+                  @if (bonusGroup.controls.type.value === 'scaled_stat_bonus') {
+                    <label class="flex-col gap-sm">
+                      <span class="muted-text">Source stat</span>
+                      <select class="w-full p-inputtext" formControlName="sourceStat">
+                        <option [ngValue]="null">Choose source stat</option>
+                        @for (target of page.catalogData().bonusTargets; track target.key) {
+                          <option [value]="target.key">{{ target.label }}</option>
+                        }
+                      </select>
+                    </label>
+                  }
+
+                  @if (bonusGroup.controls.type.value === 'scaled_stat_bonus') {
+                    <label class="flex-col gap-sm">
+                      <span class="muted-text">Scaling factor</span>
+                      <input pInputText type="number" step="0.01" class="w-full" formControlName="scalingFactor" />
+                    </label>
+                  }
                 </div>
 
                 <div class="flex-row-start-center gap-sm">

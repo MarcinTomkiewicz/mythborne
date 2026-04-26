@@ -13,7 +13,7 @@ import {
   CatalogEntitySelectorForm,
 } from '../../types/forms/item-generation-item-catalog-form.types';
 import { replaceFormArray } from '../../utils/form-controls';
-import { normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
+import { normalizeBonusContext, normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
 import { integerAtLeast, nonNegativeInteger, roundedNumber } from '../../utils/number';
 import { trimText } from '../../utils/normalize-text';
 
@@ -29,10 +29,16 @@ export class ItemGenerationItemCatalogFormFactory {
 
   createBonusForm(draft?: EditableItemGenerationBonus): BonusForm {
     return this.fb.group({
-      templateId: this.fb.control(draft?.templateId ?? ''),
+      templateId: this.fb.control<string | null>(draft?.templateId ?? null),
+      category: this.fb.control(draft?.category ?? ''),
+      templateLabel: this.fb.control(draft?.templateLabel ?? ''),
       target: this.fb.control(draft?.target ?? ''),
       type: this.fb.control(normalizeBonusType(draft?.type)),
-      value: this.fb.control(draft?.value ?? 1),
+      context: this.fb.control(normalizeBonusContext(draft?.context)),
+      baseValue: this.fb.control(draft?.baseValue ?? 1),
+      levelsStep: this.fb.control<number | null>(draft?.levelsStep ?? null),
+      sourceStat: this.fb.control<string | null>(draft?.sourceStat ?? null),
+      scalingFactor: this.fb.control<number | null>(draft?.scalingFactor ?? null),
       description: this.fb.control(draft?.description ?? ''),
     });
   }
@@ -160,9 +166,16 @@ export class ItemGenerationItemCatalogFormFactory {
   ): EditableItemGenerationBonus {
     return {
       templateId: bonus.templateId || null,
+      category: trimText(bonus.category),
+      templateLabel: trimText(bonus.templateLabel),
       target: normalizeBonusTarget(trimText(bonus.target)),
       type: normalizeBonusType(bonus.type),
-      value: roundedNumber(bonus.value),
+      context: normalizeBonusContext(bonus.context),
+      baseValue: roundedNumber(bonus.baseValue),
+      levelsStep: bonus.levelsStep === null ? null : roundedNumber(bonus.levelsStep),
+      sourceStat: bonus.sourceStat,
+      scalingFactor:
+        bonus.scalingFactor === null ? null : roundedNumber(bonus.scalingFactor),
       description: trimText(bonus.description),
     };
   }

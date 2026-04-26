@@ -52,6 +52,42 @@ values
     array['itemPower'],
     '{"itemPower": 300}'::jsonb,
     50
+  ),
+  (
+    'combat_hit_green_zone',
+    'combat_balance',
+    'Combat hit green zone',
+    'Walking Dead green zone width for the active attack.',
+    array['attackerDexterity', 'defenderAgility', 'hitBonusFromItems'],
+    '{"attackerDexterity": 8, "defenderAgility": 6, "hitBonusFromItems": 0}'::jsonb,
+    60
+  ),
+  (
+    'combat_evasion_chance',
+    'combat_balance',
+    'Combat evasion chance',
+    'Chance to evade after a successful timing hit.',
+    array['defenderAgility', 'defenderLuck', 'evasionBonusFromItems'],
+    '{"defenderAgility": 6, "defenderLuck": 5, "evasionBonusFromItems": 0}'::jsonb,
+    70
+  ),
+  (
+    'combat_critical_chance',
+    'combat_balance',
+    'Combat critical chance',
+    'Chance for a successful attack to become critical.',
+    array['attackerCunning', 'attackerLuck', 'critBonusFromItems'],
+    '{"attackerCunning": 7, "attackerLuck": 5, "critBonusFromItems": 0}'::jsonb,
+    80
+  ),
+  (
+    'combat_final_damage',
+    'combat_balance',
+    'Combat final damage',
+    'Final damage after crit multiplier and defender mitigation.',
+    array['rolledDamage', 'critMultiplier', 'defenderDefense'],
+    '{"rolledDamage": 12, "critMultiplier": 1, "defenderDefense": 5}'::jsonb,
+    90
   )
 on conflict (key) do update
 set
@@ -110,6 +146,38 @@ values
     'max(1, floor(itemPower / 120))',
     'Default level requirement based on item power.',
     true
+  ),
+  (
+    'combat-hit-green-zone-default',
+    'combat_balance',
+    'Combat hit green zone / default',
+    'clamp(12, 75, 45 + (attackerDexterity - defenderAgility) * 1.5 + hitBonusFromItems)',
+    'Default Walking Dead green-zone width.',
+    true
+  ),
+  (
+    'combat-evasion-chance-default',
+    'combat_balance',
+    'Combat evasion chance / default',
+    'clamp(0, 35, defenderAgility * 0.8 + defenderLuck * 0.2 + evasionBonusFromItems)',
+    'Default chance to evade after a successful timing hit.',
+    true
+  ),
+  (
+    'combat-critical-chance-default',
+    'combat_balance',
+    'Combat critical chance / default',
+    'clamp(0, 40, attackerCunning * 0.8 + attackerLuck * 0.2 + critBonusFromItems)',
+    'Default critical strike chance.',
+    true
+  ),
+  (
+    'combat-final-damage-default',
+    'combat_balance',
+    'Combat final damage / default',
+    'max(1, round(rolledDamage * critMultiplier) - defenderDefense)',
+    'Default final damage after crit multiplier and defense.',
+    true
   )
 on conflict (key) do update
 set
@@ -132,6 +200,10 @@ join public.balance_formulas formula
     or (target.key = 'building_upgrade_cost' and formula.key = 'building-upgrade-cost-default')
     or (target.key = 'building_bonus_growth' and formula.key = 'building-bonus-growth-default')
     or (target.key = 'item_requirement_level' and formula.key = 'item-requirement-level-default')
+    or (target.key = 'combat_hit_green_zone' and formula.key = 'combat-hit-green-zone-default')
+    or (target.key = 'combat_evasion_chance' and formula.key = 'combat-evasion-chance-default')
+    or (target.key = 'combat_critical_chance' and formula.key = 'combat-critical-chance-default')
+    or (target.key = 'combat_final_damage' and formula.key = 'combat-final-damage-default')
   )
 on conflict (target_id) do update
 set

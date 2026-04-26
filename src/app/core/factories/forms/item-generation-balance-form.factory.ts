@@ -4,6 +4,7 @@ import {
   EditableItemGenerationBucketProfile,
   EditableItemGenerationQuality,
 } from '../../domain/item/item-generation-admin.model';
+import { BonusTemplate } from '../../domain/bonus/bonus.model';
 import { ItemQualityKey } from '../../domain/item/item-generation.model';
 import {
   BalanceFormula,
@@ -12,6 +13,8 @@ import {
 import {
   BucketProfileEditorForm,
   BucketProfileSelectorForm,
+  BonusTemplateEditorForm,
+  BonusTemplateSelectorForm,
   FormulaAssignmentForm,
   FormulaEditorForm,
   FormulaSelectorForm,
@@ -21,6 +24,7 @@ import {
 import { integerAtLeast, nonNegativeInteger, roundedNumber } from '../../utils/number';
 import { trimText } from '../../utils/normalize-text';
 import { toSlug } from '../../utils/slug';
+import { normalizeBonusContext, normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
 
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationBalanceFormFactory {
@@ -95,6 +99,31 @@ export class ItemGenerationBalanceFormFactory {
     });
   }
 
+  createBonusTemplateSelectorForm(): BonusTemplateSelectorForm {
+    return this.fb.group({
+      selectedId: this.fb.control(''),
+    });
+  }
+
+  createBonusTemplateEditorForm(draft?: BonusTemplate): BonusTemplateEditorForm {
+    return this.fb.group({
+      id: this.fb.control(draft?.id ?? ''),
+      key: this.fb.control(draft?.key ?? ''),
+      label: this.fb.control(draft?.label ?? ''),
+      category: this.fb.control(draft?.category ?? 'general'),
+      target: this.fb.control(draft?.target ?? ''),
+      type: this.fb.control(normalizeBonusType(draft?.type)),
+      context: this.fb.control(normalizeBonusContext(draft?.context)),
+      description: this.fb.control(draft?.description ?? ''),
+      baseValue: this.fb.control(draft?.baseValue ?? 0),
+      levelsStep: this.fb.control<number | null>(draft?.levelsStep ?? null),
+      sourceStat: this.fb.control<string | null>(draft?.sourceStat ?? null),
+      scalingFactor: this.fb.control<number | null>(draft?.scalingFactor ?? null),
+      sortOrder: this.fb.control(draft?.sortOrder ?? 0),
+      isActive: this.fb.control(draft?.isActive ?? true),
+    });
+  }
+
   createQualityDraft(): EditableItemGenerationQuality {
     return {
       id: null,
@@ -132,6 +161,25 @@ export class ItemGenerationBalanceFormFactory {
       expression: '',
       description: '',
       isEnabled: true,
+    };
+  }
+
+  createBonusTemplateDraft(): BonusTemplate {
+    return {
+      id: '',
+      key: '',
+      label: '',
+      category: 'general',
+      target: '',
+      type: 'flat',
+      context: 'global',
+      description: '',
+      baseValue: 0,
+      levelsStep: null,
+      sourceStat: null,
+      scalingFactor: null,
+      sortOrder: 0,
+      isActive: true,
     };
   }
 
@@ -183,6 +231,28 @@ export class ItemGenerationBalanceFormFactory {
     };
   }
 
+  toBonusTemplate(form: BonusTemplateEditorForm): BonusTemplate {
+    const value = form.getRawValue();
+
+    return {
+      id: value.id || '',
+      key: toSlug(value.key || value.label),
+      label: trimText(value.label),
+      category: trimText(value.category),
+      target: normalizeBonusTarget(trimText(value.target)),
+      type: normalizeBonusType(value.type),
+      context: normalizeBonusContext(value.context),
+      description: trimText(value.description),
+      baseValue: Number(value.baseValue ?? 0),
+      levelsStep: value.levelsStep === null ? null : roundedNumber(value.levelsStep),
+      sourceStat: value.sourceStat,
+      scalingFactor:
+        value.scalingFactor === null ? null : roundedNumber(value.scalingFactor),
+      sortOrder: roundedNumber(value.sortOrder),
+      isActive: value.isActive,
+    };
+  }
+
   patchQuality(form: QualityEditorForm, draft: EditableItemGenerationQuality) {
     form.reset({
       id: draft.id ?? '',
@@ -226,6 +296,25 @@ export class ItemGenerationBalanceFormFactory {
       expression: draft.expression,
       description: draft.description ?? '',
       isEnabled: draft.isEnabled,
+    });
+  }
+
+  patchBonusTemplate(form: BonusTemplateEditorForm, draft: BonusTemplate) {
+    form.reset({
+      id: draft.id ?? '',
+      key: draft.key,
+      label: draft.label,
+      category: draft.category,
+      target: draft.target,
+      type: draft.type,
+      context: draft.context,
+      description: draft.description,
+      baseValue: draft.baseValue,
+      levelsStep: draft.levelsStep,
+      sourceStat: draft.sourceStat,
+      scalingFactor: draft.scalingFactor,
+      sortOrder: draft.sortOrder,
+      isActive: draft.isActive,
     });
   }
 }

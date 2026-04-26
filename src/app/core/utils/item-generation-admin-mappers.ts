@@ -10,7 +10,13 @@ import {
   ItemGenerationBaseBonusRow,
 } from '../types/domain-row.types';
 import { Row } from '../types/supabase.types';
-import { normalizeBonusTarget, normalizeBonusType } from './bonus';
+import {
+  normalizeBonusContext,
+  normalizeBonusTarget,
+  normalizeBonusTemplate,
+  normalizeBonusType,
+  toEditableAppliedBonus,
+} from './bonus';
 
 export function mapEditableQuality(
   row: Row<'item_generation_qualities'>
@@ -79,11 +85,20 @@ export function mapEditableAffix(
 export function mapEditableBonus(
   row: ItemGenerationBaseBonusRow | ItemGenerationAffixBonusRow
 ): EditableItemGenerationBonus {
-  return {
+  const template = normalizeBonusTemplate(row.bonus_templates);
+
+  return toEditableAppliedBonus(template, {
+    id: row.id,
     templateId: row.template_id,
+    category: row.bonus_templates.category ?? template.category,
+    templateLabel: row.bonus_templates.label ?? template.label,
     target: normalizeBonusTarget(row.bonus_templates.target),
     type: normalizeBonusType(row.bonus_templates.type),
-    value: row.value,
+    context: normalizeBonusContext(row.bonus_templates.context),
     description: row.bonus_templates.description ?? '',
-  };
+    baseValue: Number(row.base_value ?? row.value ?? template.baseValue),
+    levelsStep: row.levels_step ?? template.levelsStep,
+    sourceStat: row.source_stat ?? template.sourceStat,
+    scalingFactor: row.scaling_factor ?? template.scalingFactor,
+  });
 }

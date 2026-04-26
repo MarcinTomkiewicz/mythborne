@@ -1,0 +1,140 @@
+# Monster Hunt - Current TODO
+
+Updated: 2026-04-24
+
+This file lists pending work derived from:
+- `docs/project-context.md`
+- `docs/database-current.md`
+- `docs/current-decisions.md`
+
+Order reflects implementation priority, not final business priority.
+
+## Highest Priority Gameplay TODO
+
+### Exploration + trials loop
+- Create a real exploration step loop instead of placeholders.
+- Implement step outcomes:
+  - nothing
+  - light combat encounter
+  - small resource encounter
+  - trial appearance
+- Implement progressive anti-dry-streak trial chance.
+- Ensure normal encounters do not reset trial progression.
+
+### Trial lifecycle
+- Implement trial appearance separately from trial manifestation.
+- Implement manifestation chance based on:
+  - difficulty
+  - relevant stat
+  - smaller luck contribution
+- Implement trial completion logic after manifestation.
+- Add daily trial caps.
+- Add premium-based attempt increase without changing quality/luck odds.
+
+### Combat evolution
+- Reuse the current Walking Dead duel slice in broader combat contexts:
+  - light encounter combat
+  - trial combat
+  - future PvP combat
+- Extend the formula-driven combat layer beyond the current targets:
+  - initiative / turn order
+  - multi-attack / weapon profiles
+  - ranged specifics
+- Decide which combat stats are purely derived and which can be modified directly.
+- Add reward/death/outcome hooks for encounters and trials.
+
+## Item and Reward TODO
+
+### Difficulty-tier reward model
+- Implement easy / medium / hard difficulty loop.
+- Gate `Outstanding` item quality to the highest difficulty tier in actual reward generation.
+- Preserve medium as the best all-around progression tier for many players.
+- Prevent hard from becoming the always-correct farm mode too early.
+
+### Luck integration
+- Use luck in opportunity shaping, not guaranteed outcomes.
+- Integrate luck into:
+  - trial manifestation support
+  - item bucket shaping
+  - affix / quality variance
+  - worst-outcome suppression at very high values
+- Keep diminishing returns and opportunity-cost constraints.
+
+### Item gameplay loop
+- Connect generated items to exploration/trials.
+- Expand item requirement consequences in live gameplay.
+- Implement selling / scrapping effects on real item cleanup and economy.
+
+## Buildings / Estates TODO
+
+### Building execution
+- Implement real building upgrades instead of preview-only UX.
+- Add cost spending, build-time progression, and resulting level changes.
+- Define how build timers are stored and resolved.
+
+### Estate progression
+- Implement claiming / occupying a new empty estate.
+- Enforce relocation consequences:
+  - current buildings lost
+  - strategic but easy-to-execute UX
+
+### Siege and takeover
+- Design staged siege flow:
+  - preparation
+  - participation
+  - resolution
+- Implement address swap logic for successful takeover.
+- Define how guild support affects siege resolution.
+
+## Social Systems TODO
+
+### Prestige / reputation
+- Create schema and runtime rules for prestige / reputation.
+- Keep it separate from character level.
+- Reward meaningful victories more than farming weak targets.
+
+### Guilds / politics
+- Add guild domain model and basic membership logic.
+- Later add:
+  - support structures
+  - coalitions
+  - district influence
+  - leadership / voting systems
+
+## Economy TODO
+
+### Trade
+- Replace trade placeholder with the first real trade slice.
+- Define how drachmas, materials, workforce, and hero-point-adjacent systems interact with markets.
+- Decide what parts of the economy are player-to-player versus system sinks/sources.
+
+## Formula / Admin TODO
+
+### Formula UX
+- Consider moving function guides and templates to fully data-driven DB-backed configuration if admin ownership of these becomes important.
+- Decide whether charting should stay lightweight SVG or be upgraded later.
+- Add more domain-specific formula targets as gameplay systems come online.
+
+### Balance coverage
+- Continue replacing page-local hardcoded row editors with config-driven patterns where they are repetitive and stable.
+- Keep shared non-component definitions in `core`.
+
+## Technical TODO
+
+### Testing
+- Add targeted tests for:
+  - combat simulator
+  - formula variable validation
+  - item bucket generation
+  - bonus scaling types
+
+### Cleanup
+- Keep pushing mapper/helper logic that is not truly domain-object behavior into `core/utils` or equivalent focused utility folders.
+- Continue splitting large admin screens into smaller components and facades where it improves clarity without over-engineering.
+
+### Database/documentation sync
+- Keep `docs/database-current.md` and `docs/current-decisions.md` updated when migrations materially change semantics.
+- Apply pending SQL files in Supabase when a feature depends on them:
+  - `database/item-generation/010_bonus_template_type_enum_and_cleanup.sql`
+  - `database/formulas/012_stat_progression_target_variables.sql`
+  - `database/formulas/013_combat_formula_seed.sql`

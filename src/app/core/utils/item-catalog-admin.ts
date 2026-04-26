@@ -2,11 +2,9 @@ import {
   CatalogSection,
   EditableItemGenerationAffix,
   EditableItemGenerationBase,
-  EditableItemGenerationBonus,
   ItemGenerationAdminCatalogData,
 } from '../domain/item/item-generation-admin.model';
 import { CatalogEntity } from '../types/item-catalog-admin.types';
-import { trimText } from './normalize-text';
 
 export function catalogEntities(
   data: ItemGenerationAdminCatalogData,
@@ -54,19 +52,6 @@ export function catalogEntityLabel(section: CatalogSection, entity: CatalogEntit
   return `${affix.name} (${affix.key}) - ${affix.kind} - ${affix.goldValue}`;
 }
 
-export function resolveCatalogBonusTemplates<T extends { bonuses: EditableItemGenerationBonus[] }>(
-  data: ItemGenerationAdminCatalogData,
-  entity: T
-): T {
-  return {
-    ...entity,
-    bonuses: entity.bonuses.map((bonus) => ({
-      ...bonus,
-      templateId:
-        data.bonusTemplates.find(
-          (template) =>
-            template.target === trimText(bonus.target) && template.type === bonus.type
-        )?.id ?? bonus.templateId,
-    })),
-  };
+export function resolveCatalogBonusTemplates<T>(_: ItemGenerationAdminCatalogData, entity: T): T {
+  return entity;
 }

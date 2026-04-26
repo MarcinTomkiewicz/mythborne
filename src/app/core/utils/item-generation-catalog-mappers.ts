@@ -12,7 +12,7 @@ import {
   ItemGenerationBaseBonusRow,
 } from '../types/domain-row.types';
 import { Row } from '../types/supabase.types';
-import { normalizeBonusTarget, normalizeBonusType } from './bonus';
+import { normalizeBonusContext, normalizeBonusTarget, normalizeBonusType } from './bonus';
 
 export function mapItemGenerationBase(
   row: Row<'item_generation_bases'>,
@@ -49,8 +49,12 @@ export function mapBonusTemplateValue(
 ): Bonus {
   return {
     target: normalizeBonusTarget(row.bonus_templates.target),
-    value: row.value,
+    value: Number(row.base_value ?? row.value ?? 0),
     type: normalizeBonusType(row.bonus_templates.type),
+    context: normalizeBonusContext(row.bonus_templates.context),
+    levelsStep: row.levels_step ?? row.bonus_templates.levels_step ?? null,
+    sourceStat: row.source_stat ?? row.bonus_templates.source_stat ?? null,
+    scalingFactor: row.scaling_factor ?? row.bonus_templates.scaling_factor ?? null,
   };
 }
 

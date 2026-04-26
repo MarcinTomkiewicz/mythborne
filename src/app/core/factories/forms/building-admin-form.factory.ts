@@ -53,6 +53,11 @@ export class BuildingAdminFormFactory {
       sortOrder: this.fb.control(0),
       baseBuildTimeMinutes: this.fb.control(60),
       maxLevel: this.fb.control(0),
+      formulaOverrides: this.fb.group({
+        upgradeCostFormulaId: this.fb.control<string | null>(null),
+        upgradeTimeFormulaId: this.fb.control<string | null>(null),
+        bonusGrowthFormulaId: this.fb.control<string | null>(null),
+      }),
       bonuses: this.fb.array<BuildingBonusForm>([]),
       resourceCosts: this.fb.array<BuildingResourceCostForm>([]),
       requirements: this.fb.array<BuildingRequirementForm>([]),
@@ -71,6 +76,11 @@ export class BuildingAdminFormFactory {
       sortOrder: 0,
       baseBuildTimeMinutes: 60,
       maxLevel: 0,
+      formulaOverrides: {
+        upgradeCostFormulaId: null,
+        upgradeTimeFormulaId: null,
+        bonusGrowthFormulaId: null,
+      },
       bonuses: [],
       resourceCosts: [
         {
@@ -127,6 +137,7 @@ export class BuildingAdminFormFactory {
       sortOrder: draft.sortOrder,
       baseBuildTimeMinutes: draft.baseBuildTimeMinutes,
       maxLevel: draft.maxLevel,
+      formulaOverrides: draft.formulaOverrides,
     });
 
     replaceFormArray(
@@ -157,6 +168,11 @@ export class BuildingAdminFormFactory {
       sortOrder: roundedNumber(value.sortOrder),
       baseBuildTimeMinutes: roundedNumber(value.baseBuildTimeMinutes),
       maxLevel: roundedNumber(value.maxLevel),
+      formulaOverrides: {
+        upgradeCostFormulaId: value.formulaOverrides.upgradeCostFormulaId,
+        upgradeTimeFormulaId: value.formulaOverrides.upgradeTimeFormulaId,
+        bonusGrowthFormulaId: value.formulaOverrides.bonusGrowthFormulaId,
+      },
       bonuses: value.bonuses.map((bonus) => ({
         templateId: bonus.templateId,
         target: normalizeBonusTarget(trimText(bonus.target)),

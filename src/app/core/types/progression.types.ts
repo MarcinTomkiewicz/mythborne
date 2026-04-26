@@ -1,4 +1,9 @@
-import { BalanceFormula, FormulaTarget } from './formula.types';
+import {
+  BalanceFormula,
+  EntityFormulaAssignment,
+  FormulaAdminData,
+  FormulaTarget,
+} from './formula.types';
 
 export interface FormulaEvaluationResult {
   value: number | null;
@@ -33,6 +38,9 @@ export const STAT_PROGRESSION_TARGET_KEYS = {
 } as const;
 
 export interface BuildingProgressionRules {
+  costFormulaId?: string | null;
+  timeFormulaId?: string | null;
+  bonusFormulaId?: string | null;
   costExpression: string;
   timeExpression: string;
   bonusExpression: string;

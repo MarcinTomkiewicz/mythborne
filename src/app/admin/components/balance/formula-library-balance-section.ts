@@ -12,11 +12,16 @@ import {
 } from '../../../core/config/forms/balance-form.config';
 import { FormulaActionGroup, FormulaActionViewItem } from './formula-action-group';
 import { FormulaExpressionPreview } from './formula-expression-preview';
-import { FormulaBlock, FormulaTemplateGuide } from '../../../core/domain/formula/formula.model';
+import {
+  FormulaBlock,
+  FormulaFunctionGuide,
+  FormulaTemplateGuide,
+} from '../../../core/domain/formula/formula.model';
 
 interface FormulaActionSection {
   key: string;
   title: string;
+  action: 'block' | 'variable' | 'function' | 'template';
   appearance: 'tag' | 'card';
   tone?: 'muted' | 'warn';
   items: readonly FormulaActionViewItem[];
@@ -34,7 +39,7 @@ interface FormulaActionSection {
     FormulaExpressionPreview,
   ],
   templateUrl: './formula-library-balance-section.html',
-  host: { style: 'display:block;width:100%;' },
+  host: { class: 'd-block w-100' },
 })
 export class FormulaLibraryBalanceSection {
   readonly page = inject(ItemGenerationBalancePageFacade);
@@ -61,6 +66,7 @@ export class FormulaLibraryBalanceSection {
   readonly helperSections = computed(() =>
     [
       this.createVariableSection(),
+      this.createTesterVariableSection(),
       this.createFunctionSection(),
       this.createTemplateSection(),
     ].filter((section): section is FormulaActionSection => section !== null)
@@ -80,10 +86,19 @@ export class FormulaLibraryBalanceSection {
     template && this.page.formulas.applyTemplate(template);
   }
 
+  handleFunctionAction(action: FormulaActionViewItem) {
+    const guide = this.findFunctionGuide(action.id);
+    guide && this.page.formulas.appendBlock(guide.insertTemplate);
+  }
+
   handleSectionAction(sectionKey: string, action: FormulaActionViewItem) {
     switch (sectionKey) {
       case 'variables':
+      case 'tester-variables':
         this.handleVariableAction(action);
+        return;
+      case 'functions':
+        this.handleFunctionAction(action);
         return;
       case 'templates':
         this.handleTemplateAction(action);
@@ -111,6 +126,7 @@ export class FormulaLibraryBalanceSection {
     return {
       key: category,
       title,
+      action: 'block',
       appearance: category === 'functions' ? 'card' : 'tag',
       tone: 'muted',
       items,
@@ -118,9 +134,10 @@ export class FormulaLibraryBalanceSection {
   }
 
   private createVariableSection(): FormulaActionSection | null {
-    const items = this.page.formulas.testerVariables().map((variable) => ({
-      id: variable,
-      label: variable,
+    const items = this.page.formulas.scopeVariables().map((variable) => ({
+      id: variable.key,
+      label: variable.label,
+      tooltip: this.page.formulas.variableTooltip(variable.key, variable.helperText),
     }));
 
     if (items.length === 0) {
@@ -129,7 +146,8 @@ export class FormulaLibraryBalanceSection {
 
     return {
       key: 'variables',
-      title: 'Variables',
+      title: 'Scope variables',
+      action: 'variable',
       appearance: 'tag',
       tone: 'muted',
       items,
@@ -137,7 +155,49 @@ export class FormulaLibraryBalanceSection {
   }
 
   private createFunctionSection(): FormulaActionSection | null {
-    return this.createBlockSection('functions', 'Functions');
+    const items = this.page.formulas.functionGuides().map((guide) => ({
+      id: guide.key,
+      label: guide.label,
+      secondaryLabel: guide.friendlySyntax,
+      tooltip: this.page.formulas.functionGuideTooltip(guide),
+    }));
+
+    if (items.length === 0) {
+      return null;
+    }
+
+    return {
+      key: 'functions',
+      title: 'Functions',
+      action: 'function',
+      appearance: 'card',
+      tone: 'muted',
+      items,
+    };
+  }
+
+  private createTesterVariableSection(): FormulaActionSection | null {
+    const items = this.page.formulas.previewVariableDefinitions().map((variable) => ({
+      id: variable.key,
+      label: variable.key,
+      tooltip: this.page.formulas.variableTooltip(
+        variable.key,
+        `Default test value: ${variable.defaultValue}`
+      ),
+    }));
+
+    if (items.length === 0) {
+      return null;
+    }
+
+    return {
+      key: 'tester-variables',
+      title: 'Tester target variables',
+      action: 'variable',
+      appearance: 'tag',
+      tone: 'muted',
+      items,
+    };
   }
 
   private createTemplateSection(): FormulaActionSection | null {
@@ -154,6 +214,7 @@ export class FormulaLibraryBalanceSection {
     return {
       key: 'templates',
       title: 'Templates',
+      action: 'template',
       appearance: 'tag',
       tone: 'warn',
       items,
@@ -166,5 +227,9 @@ export class FormulaLibraryBalanceSection {
 
   private findTemplate(key: string): FormulaTemplateGuide | null {
     return this.page.formulas.formulaTemplates().find((template) => template.key === key) ?? null;
+  }
+
+  private findFunctionGuide(key: string): FormulaFunctionGuide | null {
+    return this.page.formulas.functionGuideByKey(key);
   }
 }

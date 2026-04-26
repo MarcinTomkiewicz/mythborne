@@ -33,6 +33,12 @@ export interface BuildingRequirementPreview {
   appliesFromLevel: number;
 }
 
+export interface BuildingFormulaOverrides {
+  upgradeCostFormulaId: string | null;
+  upgradeTimeFormulaId: string | null;
+  bonusGrowthFormulaId: string | null;
+}
+
 export interface MansionBuilding {
   id: string;
   key: string;
@@ -90,6 +96,7 @@ export interface EditableBuilding {
   sortOrder: number;
   baseBuildTimeMinutes: number;
   maxLevel: number;
+  formulaOverrides: BuildingFormulaOverrides;
   bonuses: EditableBuildingBonus[];
   resourceCosts: EditableBuildingResourceCost[];
   requirements: EditableBuildingRequirement[];
