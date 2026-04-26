@@ -33,8 +33,6 @@ Global Codex rules:
 
 ## Task A1 — Regenerate Supabase database types
 
-**Status:** Done / confirmed 2026-04-26.
-
 **Goal:** Synchronize frontend generated types with current schema.
 
 **Scope:**
@@ -56,8 +54,6 @@ Global Codex rules:
 ---
 
 ## Task A2 — Update implementation state docs after confirmed work
-
-**Status:** Applied for Task A1 on 2026-04-26. Keep repeating after each confirmed task.
 
 **Goal:** Keep working documentation accurate.
 
@@ -94,6 +90,8 @@ Global Codex rules:
 
 ## Task B1 — Audit old identity assumptions
 
+**Status:** Done / confirmed 2026-04-26.
+
 **Goal:** Find old code assuming `hero.id === auth.uid()`.
 
 **Scope:**
@@ -114,6 +112,8 @@ Global Codex rules:
 ---
 
 ## Task B2 — Standardize active server resolver
+
+**Status:** Done / confirmed 2026-04-26.
 
 **Goal:** Provide one reliable way to determine current game server.
 
@@ -1867,3 +1867,82 @@ Current direction:
 - direct private trade is implemented first;
 - auctions are implemented as the public market path;
 - there is no separate public fixed-price listing mode outside auction buy-now.
+
+---
+
+# Epic U — Requirements and building district caps
+
+## Task U1 — Requirements read models
+
+**Goal:** Add typed frontend/domain models for the central requirements foundation.
+
+**Scope:**
+- Add models/mappers/loaders for:
+  - `requirement_definitions`,
+  - `entity_requirements`.
+- Include labels, descriptions, helper text, value type and active/sort fields.
+- Treat old `building_requirements` and `buildings.requirements` as legacy/transitional.
+
+**Acceptance criteria:**
+- Requirements can be listed and attached requirements can be read by entity.
+- New code does not add fresh JSON requirement fields.
+
+---
+
+## Task U2 — Building district cap read model
+
+**Goal:** Make building district max-level overrides available to admin/building logic.
+
+**Scope:**
+- Add models/mappers/loaders for `building_district_level_caps`.
+- Resolve effective max level:
+  1. district override if present,
+  2. otherwise `buildings.max_level`,
+  3. `0` means unlimited.
+- Do not assume every building/district pair has a row.
+
+**Acceptance criteria:**
+- Building admin/preview can show global cap and district-specific overrides.
+- Effective max level calculation matches database semantics.
+
+---
+
+## Task U3 — Building availability and requirement migration cleanup
+
+**Goal:** Align building UI/runtime with the new requirements and district rules.
+
+**Scope:**
+- Treat `buildings.district_code` as the minimum district where the building can be built.
+- A building is available in that district and every higher district.
+- Use central `entity_requirements` for prestige/level/stat/building/resource gates.
+- Do not rely on `rank_required` as the primary availability rule.
+- Keep old fields only for transitional compatibility.
+
+**Acceptance criteria:**
+- Building availability is district-based.
+- Prestige/rank gates come from requirements.
+- No new dependency is introduced on legacy `buildings.requirements` JSON.
+
+---
+
+## Task U4 — Building admin UI for requirements and caps
+
+**Goal:** Expose requirements and district caps as building balance configuration.
+
+**Scope:**
+- In building admin/config UI, show and edit:
+  - global/default `buildings.max_level`,
+  - district cap overrides,
+  - attached `entity_requirements`.
+- Preserve reason/change-set requirements through config governance where applicable.
+- Missing district override should be displayed as “uses global/default”.
+
+**Acceptance criteria:**
+- Admin can manage building requirements and district cap overrides without hardcoding.
+- UI clearly explains `0 = unlimited`.
+
+---
+
+## Recommended order update
+
+Place U1-U4 after config definitions/value read models and before deeper building execution, because building runtime/admin logic now depends on central requirements and district cap semantics.

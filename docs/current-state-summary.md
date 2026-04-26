@@ -56,6 +56,11 @@ This is an operational estimate, not a formal audit.
   - generated bonus-template rows are mapped through defaults instead of legacy removed columns,
   - hero loading now filters by `hero.user_id` instead of assuming `hero.id === auth.uid()`.
 - Task A2 has been applied for A1 by updating this state summary and `docs/current-todo.md`.
+- Task B1 is confirmed complete as of 2026-04-26. The audit report is stored in `docs/b1-identity-assumptions-audit.md`.
+- B1 confirmed that RLS/onboarding SQL is a separate required database task before the project can fully rely on `hero.id != auth.uid()` in production.
+- Task B2 is confirmed complete as of 2026-04-26. The app now has a shared active server resolver in `ServerContext`.
+- Active server context loads accessible game servers, respects global roles/staff visibility, chooses a default sandbox/live/scheduled server, exposes selected server data, and provides access flags for downstream UI/domain code.
+- Server context domain rules were moved out of the Angular service into `core/utils/server-context.ts`; enums live in `core/enums/server-context.enum.ts`, and related interfaces live in `core/interfaces/server/server-context.interface.ts`.
 
 ### Canonical stats and derived stats
 - Base stats are loaded from canonical stat definitions.

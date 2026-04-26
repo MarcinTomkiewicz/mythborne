@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { forkJoin, map, Observable, switchMap } from 'rxjs';
+import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
 import { IHero } from '../../domain/hero/hero.model';
 import { Insert, Row } from '../../types/supabase.types';
@@ -8,12 +8,14 @@ import { EstateAddressRow } from '../../types/hero-service.types';
 import { AuthState } from '../auth/auth-state';
 import { Backend } from '../backend/backend';
 import { HeroFactory } from '../hero-factory/hero-factory';
+import { ServerContext } from '../server/server-context';
 
 @Injectable({ providedIn: 'root' })
 export class CreateHero {
   private readonly authState = inject(AuthState);
   private readonly heroFactory = inject(HeroFactory);
   private readonly backend = inject(Backend);
+  private readonly serverContext = inject(ServerContext);
 
   createHero(
     heroId: string,
@@ -26,7 +28,7 @@ export class CreateHero {
       throw new Error('Cannot create a hero without an authenticated user.');
     }
 
-    return this.getDefaultServerId().pipe(
+    return this.resolveCurrentServerId().pipe(
       switchMap((serverId) => {
         const heroPayload: Insert<'hero'> = {
           id: heroId,
@@ -195,25 +197,24 @@ export class CreateHero {
     );
   }
 
-  private getDefaultServerId(): Observable<string> {
-    return this.backend
-      .getAll<Row<'game_servers'>>({
-        table: TABLES.game_servers,
-        orderBy: { column: 'created_at' },
-        range: { from: 0, to: 0 },
-        camelCase: false,
+  private resolveCurrentServerId(): Observable<string> {
+    const selectedServerId = this.serverContext.selectedServer()?.id ?? null;
+
+    if (selectedServerId) {
+      return of(selectedServerId);
+    }
+
+    return this.serverContext.loadAccessibleServers().pipe(
+      map(() => {
+        const serverId = this.serverContext.selectedServer()?.id ?? null;
+
+        if (!serverId) {
+          throw new Error('No accessible game server is configured for hero creation.');
+        }
+
+        return serverId;
       })
-      .pipe(
-        map((servers) => {
-          const serverId = servers[0]?.id;
-
-          if (!serverId) {
-            throw new Error('No game server is configured for hero creation.');
-          }
-
-          return serverId;
-        })
-      );
+    );
   }
 
   private linkEstateToHero(heroId: string, estateId: string): Observable<void> {

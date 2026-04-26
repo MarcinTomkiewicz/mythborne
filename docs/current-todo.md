@@ -13,7 +13,19 @@ Order reflects implementation priority, not final business priority.
 
 - Completed and confirmed: A1 - regenerate/update Supabase database types.
 - Current documentation sync applied: A2 - this TODO and `current-state-summary.md` were updated after A1 confirmation.
-- Next backlog task after this sync: A3 - add the backlog tracking convention to project docs.
+- Completed and confirmed: B1 - audit old identity assumptions.
+- Completed and confirmed: B2 - standardize active server resolver.
+- Current backlog task: B3 - standardize active hero resolver.
+
+## Codex Backlog Workflow
+
+- Use one backlog task per Codex prompt unless the user explicitly groups tightly related tasks.
+- Codex reads the required project docs before making changes.
+- Codex reports the exact changes, verification result, and acceptance-criteria status after the task.
+- The user confirms whether the task works.
+- Only after user confirmation, Codex updates `current-state-summary.md`, `current-todo.md`, and any relevant task status/docs.
+- Unconfirmed work must stay out of the completed-state summary.
+- After confirmation, Codex prepares a commit message and waits for the next task instruction.
 
 ## Highest Priority Gameplay TODO
 
@@ -156,3 +168,4 @@ Order reflects implementation priority, not final business priority.
 - Keep `docs/database-current.md`, `docs/current-decisions.md`, `current-state-summary.md`, and this TODO updated when migrations or confirmed implementation materially change semantics.
 - Regenerate/update `src/app/core/types/database.types.ts` whenever schema changes require it.
 - Do not mark backlog tasks complete in state docs until the user confirms the task works.
+- Add a dedicated database/RLS task before production reliance on `hero.id != auth.uid()`: update onboarding policies and server-aware hero ownership checks.
