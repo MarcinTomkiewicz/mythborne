@@ -1,7 +1,7 @@
 import { FormControl, FormGroup } from '@angular/forms';
 import { EditableBalanceFormula } from '../formula.types';
 import { ItemQualityKey } from '../item-generation.types';
-import { BonusContext, BonusType } from '../bonus.types';
+import { BonusScope, BonusType } from '../bonus.types';
 
 export type QualitySelectorForm = FormGroup<{
   selectedId: FormControl<string>;
@@ -65,7 +65,7 @@ export type BonusTemplateEditorForm = FormGroup<{
   category: FormControl<string>;
   target: FormControl<string>;
   type: FormControl<BonusType>;
-  context: FormControl<BonusContext>;
+  scope: FormControl<BonusScope>;
   description: FormControl<string>;
   baseValue: FormControl<number>;
   levelsStep: FormControl<number | null>;

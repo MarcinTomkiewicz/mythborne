@@ -10,7 +10,7 @@ import {
   CombatResult,
 } from '../../domain/combat/combat.model';
 import { OriginBonus, Origin } from '../../domain/origin/origin.model';
-import { IHeroDerived } from '../../domain/hero/hero-derived.model';
+import { IHeroDerived } from '../../types/hero.types';
 import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import {
@@ -20,6 +20,7 @@ import {
 } from '../../utils/combat-walking-dead';
 import { getErrorMessage } from '../../utils/error-message';
 import { Hero } from '../hero/hero';
+import { HeroDerivedStats } from '../hero/hero-derived-stats';
 import { Origins } from '../origins/origins';
 import { StatsService } from '../stats/stats';
 import { CombatBalanceService } from './combat-balance';
@@ -32,6 +33,7 @@ type CombatPhase = 'idle' | 'player_turn' | 'finished';
 export class CombatPageFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly heroService = inject(Hero);
+  private readonly heroDerivedStats = inject(HeroDerivedStats);
   private readonly originsService = inject(Origins);
   private readonly statsService = inject(StatsService);
   private readonly balance = inject(CombatBalanceService);
@@ -117,12 +119,11 @@ export class CombatPageFacade {
     forkJoin({
       hero: this.heroService.getHeroData(),
       baseStats: this.heroService.getHeroStats(),
-      derivedStats: this.heroService.getHeroDerived(),
       statsDefinitions: this.statsService.getStats(),
       rules: this.balance.getRules(),
     })
       .pipe(
-        switchMap(({ hero, baseStats, derivedStats, statsDefinitions, rules }) => {
+        switchMap(({ hero, baseStats, statsDefinitions, rules }) => {
           const originRequest$: Observable<{
             origin: Origin | null;
             bonuses: OriginBonus[];
@@ -131,15 +132,19 @@ export class CombatPageFacade {
             : of({ origin: null, bonuses: [] });
 
           return originRequest$.pipe(
-            map(({ origin, bonuses }) => ({
-              hero,
-              baseStats,
-              derivedStats,
-              statsDefinitions,
-              rules,
-              origin,
-              bonuses,
-            }))
+            switchMap(({ origin, bonuses }) =>
+              this.heroDerivedStats.resolveActiveHeroDerivedStats('combat').pipe(
+                map((derivedStats) => ({
+                  hero,
+                  baseStats,
+                  derivedStats,
+                  statsDefinitions,
+                  rules,
+                  origin,
+                  bonuses,
+                })),
+              ),
+            ),
           );
         }),
         takeUntilDestroyed(this.destroyRef),
@@ -353,9 +358,6 @@ export class CombatPageFacade {
     const effectiveBaseStats = this.statsService.getFinalStats(baseStats, [source], {
       heroLevel: level,
     }) as IHeroStats;
-    const effectiveDerivedStats = this.statsService.getFinalStats(derivedStats, [source], {
-      heroLevel: level,
-    }) as IHeroDerived;
 
     return {
       key: 'hero',
@@ -363,13 +365,13 @@ export class CombatPageFacade {
       level,
       baseStats: effectiveBaseStats,
       derived: {
-        health: effectiveDerivedStats.health,
-        def: effectiveDerivedStats.def,
-        luck: effectiveDerivedStats.luck,
-        minDmg: effectiveDerivedStats.minDmg,
-        maxDmg: effectiveDerivedStats.maxDmg,
-        critical: effectiveDerivedStats.critical,
-        evasion: effectiveDerivedStats.evasion,
+        health: derivedStats.health,
+        def: derivedStats.def,
+        luck: derivedStats.luck,
+        minDmg: derivedStats.minDmg,
+        maxDmg: derivedStats.maxDmg,
+        critical: derivedStats.critical,
+        evasion: derivedStats.evasion,
       },
       bonuses: {
         hitBonusFromItems: 0,
@@ -387,7 +389,7 @@ export class CombatPageFacade {
           target: bonus.target ?? '',
           value: bonus.baseValue,
           type: bonus.type,
-          context: bonus.context,
+          scope: bonus.scope,
           levelsStep: bonus.levelsStep,
           sourceStat: bonus.sourceStat,
           scalingFactor: bonus.scalingFactor,

@@ -15,6 +15,15 @@
         @if (access().globalRoleKey) {
           <span class="tag-badge tag-badge--muted">{{ access().globalRoleKey }}</span>
         }
+        @if (access().membershipStatus) {
+          <span
+            class="tag-badge"
+            [class.tag-badge--warn]="access().isMembershipBlocked"
+            [class.tag-badge--muted]="!access().isMembershipBlocked"
+          >
+            Membership {{ membershipStatusLabel() }}
+          </span>
+        }
       </div>
 
       @if (canSwitchServer()) {
@@ -33,6 +42,10 @@
         </form>
       }
     </div>
+
+    @if (membershipStatusReason()) {
+      <p class="muted-text mb-0">{{ membershipStatusReason() }}</p>
+    }
   </div>
 } @else if (isLoading()) {
   <div class="mg-surface-card p-md muted-text">Loading active server...</div>

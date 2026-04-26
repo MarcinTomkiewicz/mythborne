@@ -3,7 +3,6 @@ import { forkJoin, map, switchMap } from 'rxjs';
 import { TABLES } from '../../../core/constants/tables.const';
 import { Row } from '../../../core/types/supabase.types';
 import { IHeroStats } from '../../../core/interfaces/hero/i-hero-stats';
-import { mapHeroDerived } from '../../domain/hero/hero-derived.mapper';
 import { AuthState } from '../auth/auth-state';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
@@ -45,32 +44,6 @@ export class Hero {
           acc[row.stat_key as keyof IHeroStats] = row.value;
           return acc;
         }, {} as IHeroStats))
-      );
-  }
-
-  /**
-   * Fetches derived stats (like dmg, health, crit, etc.)
-   */
-  getHeroDerived() {
-    return this.getHeroData()
-      .pipe(
-        switchMap((hero) =>
-          this.backend.getAll<Row<'hero_derived'>>({
-            table: TABLES.hero_derived,
-            filters: { heroId: { operator: FilterOperator.EQ, value: hero.id } },
-            range: { from: 0, to: 0 },
-            camelCase: false,
-          })
-        )
-      )
-      .pipe(
-        map((rows) => {
-          if (!rows[0]) {
-            throw new Error('No derived stats');
-          }
-
-          return mapHeroDerived(rows[0]);
-        })
       );
   }
 

@@ -230,6 +230,8 @@ Global Codex rules:
 
 ## Task C3 — Membership status UI handling
 
+**Status:** Done / confirmed 2026-04-26.
+
 **Goal:** Handle active/suspended/banned memberships.
 
 **Scope:**

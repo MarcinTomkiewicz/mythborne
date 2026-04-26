@@ -1,16 +1,18 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { BonusSource } from '../../domain/bonus/bonus.model';
-import { IHeroDerived } from '../../domain/hero/hero-derived.model';
+import { IHeroDerived } from '../../types/hero.types';
 import { OriginBonus, Origin } from '../../domain/origin/origin.model';
 import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import { Hero } from './hero';
 import { Origins } from '../origins/origins';
 import { StatsService } from '../stats/stats';
+import { HeroDerivedStats } from './hero-derived-stats';
 
 @Injectable()
 export class DashboardPageFacade {
   private readonly heroService = inject(Hero);
+  private readonly heroDerivedStats = inject(HeroDerivedStats);
   private readonly statsService = inject(StatsService);
   private readonly originsService = inject(Origins);
 
@@ -22,7 +24,6 @@ export class DashboardPageFacade {
 
   origin = signal<Origin | null>(null);
   originBonuses = signal<OriginBonus[]>([]);
-  derivedFull = signal<IHeroDerived | null>(null);
 
   statsList = signal<IStat[]>([]);
   statsValues = signal<IHeroStats>({} as IHeroStats);
@@ -36,9 +37,7 @@ export class DashboardPageFacade {
   );
 
   derivedDisplay = computed(() =>
-    this.statsService.getFinalStats(this.derivedValues(), [this.originBonusSource()], {
-      heroLevel: this.heroLevel(),
-    })
+    this.derivedValues()
   );
 
   equipment = [
@@ -70,7 +69,9 @@ export class DashboardPageFacade {
     });
 
     this.heroService.getHeroStats().subscribe(this.statsValues.set);
-    this.heroService.getHeroDerived().subscribe(this.derivedValues.set);
+    this.heroDerivedStats
+      .resolveActiveHeroDerivedStats()
+      .subscribe(this.derivedValues.set);
   }
 
   private calculateExperiencePercent(xp: number | null): number {
@@ -89,7 +90,7 @@ export class DashboardPageFacade {
         target: bonus.target ?? '',
         value: bonus.baseValue,
         type: bonus.type,
-        context: bonus.context,
+        scope: bonus.scope,
         levelsStep: bonus.levelsStep,
         sourceStat: bonus.sourceStat,
         scalingFactor: bonus.scalingFactor,

@@ -23,19 +23,6 @@ export class HeroFactory {
     }));
   }
 
-  createDerived(heroId: string): Insert<'hero_derived'> {
-    return {
-      hero_id: heroId,
-      def: 10,
-      min_dmg: 1,
-      max_dmg: 2,
-      luck: 0,
-      critical: 0,
-      evasion: 0,
-      health: 100,
-    };
-  }
-
   createResources(heroId: string): Insert<'hero_resources'>[] {
     return [
       { hero_id: heroId, resource_type: 'drachma', amount: 100, per_hour: 10 },

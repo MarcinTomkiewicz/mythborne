@@ -5,6 +5,10 @@ import { finalize } from 'rxjs';
 import { ActiveServerFormFactory } from '../../../core/factories/forms/active-server-form.factory';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveServer } from '../../../core/services/server/active-server';
+import {
+  membershipStatusLabel,
+  membershipStatusReason,
+} from '../../../core/utils/server-membership';
 
 @Component({
   selector: 'app-admin-server-switcher',
@@ -31,6 +35,12 @@ export class AdminServerSwitcher implements OnInit {
   );
   readonly selectedServerId = computed(() => this.selectedServer()?.id ?? '');
   readonly isSelectDisabled = computed(() => this.isLoading() || this.isSwitching());
+  readonly membershipStatusLabel = computed(() =>
+    membershipStatusLabel(this.access().membershipStatus),
+  );
+  readonly membershipStatusReason = computed(() =>
+    membershipStatusReason(this.access().membership),
+  );
   readonly serverOptions = computed(() =>
     this.servers().map((server) => ({
       label: `${server.name} (${server.kind} / ${server.status})`,

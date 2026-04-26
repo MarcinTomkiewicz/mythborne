@@ -8,13 +8,16 @@ export type BonusType =
   | 'capacity_flat'
   | 'unlock_feature';
 
-export type BonusContext =
+export type BonusScope =
   | 'global'
+  | 'combat'
   | 'pvp_attack'
   | 'pvp_defense'
-  | 'exploration'
   | 'trial'
-  | 'combat'
+  | 'exploration'
+  | 'requirements'
+  | 'trade'
+  | 'auction'
   | 'economy'
   | 'building_management';
 
@@ -35,7 +38,7 @@ export interface BonusTemplate {
   category: string;
   target: string;
   type: BonusType;
-  context: BonusContext;
+  scope: BonusScope;
   description: string;
   baseValue: number;
   levelsStep: number | null;
@@ -58,7 +61,7 @@ export interface EditableAppliedBonus {
   templateLabel: string;
   target: string;
   type: BonusType;
-  context: BonusContext;
+  scope: BonusScope;
   description: string;
   baseValue: number;
   levelsStep: number | null;
@@ -70,7 +73,7 @@ export interface Bonus {
   target: string;
   value: number;
   type: BonusType;
-  context: BonusContext;
+  scope: BonusScope;
   sourceStat?: string | null;
   scalingFactor?: number | null;
   levelsStep?: number | null;

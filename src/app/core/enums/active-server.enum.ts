@@ -34,6 +34,12 @@ export enum ServerStaffRole {
   Tester = 'tester',
 }
 
+export enum ServerMembershipStatus {
+  Active = 'active',
+  Banned = 'banned',
+  Suspended = 'suspended',
+}
+
 export enum GameServerOrderColumn {
   Kind = 'kind',
   Name = 'name',

@@ -1,0 +1,17 @@
+<section class="mg-card flex-col gap-md p-lg w-100">
+  <div class="flex-row-start-center flex-wrap gap-sm">
+    <span class="tag-badge tag-badge--warn">Membership {{ statusLabel() }}</span>
+  </div>
+
+  <div class="flex-col gap-xs">
+    <h2 class="mg-section__title mg-section__title--sm mb-0">{{ title() }}</h2>
+
+    @if (isSuspended() && suspendedUntil()) {
+      <p class="muted-text mb-0">Suspended until {{ suspendedUntil() }}</p>
+    }
+
+    @if (reason()) {
+      <p class="muted-text mb-0">{{ reason() }}</p>
+    }
+  </div>
+</section>

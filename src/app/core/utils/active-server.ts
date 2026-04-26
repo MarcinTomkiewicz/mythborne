@@ -13,6 +13,13 @@ import {
   ActiveServerRows,
 } from '../interfaces/server/active-server.interface';
 import { Row } from '../types/supabase.types';
+import {
+  isMembershipActive,
+  isMembershipBanned,
+  isMembershipBlocked,
+  isMembershipSuspended,
+  toServerMembershipState,
+} from './server-membership';
 
 export function resolveActiveServerState(
   rows: ActiveServerRows,
@@ -45,17 +52,23 @@ export function toAccessState(
   const isTester = globalRoleKey === GlobalRoleKey.Tester;
   const isModerator = globalRoleKey === GlobalRoleKey.Moderator;
   const isServerStaff = !!selectedServer?.staffRole;
+  const membershipStatus = selectedServer?.membershipStatus ?? null;
 
   return {
     userId,
     globalRoleKey,
-    membershipStatus: selectedServer?.membershipStatus ?? null,
+    membershipStatus,
+    membership: selectedServer?.membership ?? null,
     serverStaffRole: selectedServer?.staffRole ?? null,
     isAdmin,
     isOperator,
     isTester,
     isModerator,
     isServerStaff,
+    isMembershipActive: isMembershipActive(membershipStatus),
+    isMembershipSuspended: isMembershipSuspended(membershipStatus),
+    isMembershipBanned: isMembershipBanned(membershipStatus),
+    isMembershipBlocked: isMembershipBlocked(membershipStatus),
     canAccessSandbox:
       isAdmin ||
       isOperator ||
@@ -70,12 +83,17 @@ export function emptyServerAccessState(): ServerAccessState {
     userId: null,
     globalRoleKey: null,
     membershipStatus: null,
+    membership: null,
     serverStaffRole: null,
     isAdmin: false,
     isOperator: false,
     isTester: false,
     isModerator: false,
     isServerStaff: false,
+    isMembershipActive: false,
+    isMembershipSuspended: false,
+    isMembershipBanned: false,
+    isMembershipBlocked: false,
     canAccessSandbox: false,
     canManageSelectedServer: false,
   };
@@ -128,6 +146,7 @@ function toAccessibleServers(
       return {
         ...toGameServerSummary(server),
         membershipStatus: membership?.status ?? null,
+        membership: membership ? toServerMembershipState(membership) : null,
         staffRole: staff?.role ?? null,
         canManage,
         canUseAsSandbox,

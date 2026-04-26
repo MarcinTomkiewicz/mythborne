@@ -75,6 +75,11 @@ This is an operational estimate, not a formal audit.
 - Task C2 is confirmed complete as of 2026-04-26. Staff/admin pages now share an admin server switcher backed by `ActiveServer`, so dashboard, item balance, item catalog, and building admin views operate against the selected server context.
 - The server switcher uses Reactive Forms through a core form factory and PrimeNG `p-select`; it avoids `ngModel`, local component styling, temporary debug output, and direct ad hoc RPC calls from the component.
 - Current global role checks use the existing `has_global_role` RPC through the backend layer, while direct `roles` table reads remain avoided because RLS may hide those rows.
+- Task C3 is confirmed complete as of 2026-04-26. Active server access now exposes membership status details and gameplay routes are blocked for suspended or banned selected-server memberships while admin/staff visibility remains available.
+- Suspended/banned membership messaging lives in a dedicated layout component and shows the status, suspension end where available, and stored reason text.
+- The game topbar now loads from active hero state without repeatedly resetting active hero loading, so address, health, experience, and resources stay visible.
+- Runtime derived stats no longer read or write `hero_derived`. Frontend derived stats are resolved from active hero base stats, derived stat definitions, origin/hero entity bonuses, bonus scopes, and health formula assignment/fallback; `hero_derived` remains only in generated database types until the physical DB table is removed and types are regenerated.
+- Bonus terminology in frontend models/forms has moved from old bonus `context` naming to `scope`; unrelated formula/runtime context naming remains separate.
 
 ### Canonical stats and derived stats
 - Base stats are loaded from canonical stat definitions.

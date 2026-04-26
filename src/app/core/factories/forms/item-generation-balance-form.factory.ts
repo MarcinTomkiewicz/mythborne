@@ -24,7 +24,7 @@ import {
 import { integerAtLeast, nonNegativeInteger, roundedNumber } from '../../utils/number';
 import { trimText } from '../../utils/normalize-text';
 import { toSlug } from '../../utils/slug';
-import { normalizeBonusContext, normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
+import { normalizeBonusScope, normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
 
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationBalanceFormFactory {
@@ -113,7 +113,7 @@ export class ItemGenerationBalanceFormFactory {
       category: this.fb.control(draft?.category ?? 'general'),
       target: this.fb.control(draft?.target ?? ''),
       type: this.fb.control(normalizeBonusType(draft?.type)),
-      context: this.fb.control(normalizeBonusContext(draft?.context)),
+      scope: this.fb.control(normalizeBonusScope(draft?.scope)),
       description: this.fb.control(draft?.description ?? ''),
       baseValue: this.fb.control(draft?.baseValue ?? 0),
       levelsStep: this.fb.control<number | null>(draft?.levelsStep ?? null),
@@ -172,7 +172,7 @@ export class ItemGenerationBalanceFormFactory {
       category: 'general',
       target: '',
       type: 'flat',
-      context: 'global',
+      scope: 'global',
       description: '',
       baseValue: 0,
       levelsStep: null,
@@ -234,6 +234,8 @@ export class ItemGenerationBalanceFormFactory {
   toBonusTemplate(form: BonusTemplateEditorForm): BonusTemplate {
     const value = form.getRawValue();
 
+    const scope = normalizeBonusScope(value.scope);
+
     return {
       id: value.id || '',
       key: toSlug(value.key || value.label),
@@ -241,7 +243,7 @@ export class ItemGenerationBalanceFormFactory {
       category: trimText(value.category),
       target: normalizeBonusTarget(trimText(value.target)),
       type: normalizeBonusType(value.type),
-      context: normalizeBonusContext(value.context),
+      scope,
       description: trimText(value.description),
       baseValue: Number(value.baseValue ?? 0),
       levelsStep: value.levelsStep === null ? null : roundedNumber(value.levelsStep),
@@ -307,7 +309,7 @@ export class ItemGenerationBalanceFormFactory {
       category: draft.category,
       target: draft.target,
       type: draft.type,
-      context: draft.context,
+      scope: draft.scope,
       description: draft.description,
       baseValue: draft.baseValue,
       levelsStep: draft.levelsStep,

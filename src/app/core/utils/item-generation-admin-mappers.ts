@@ -11,7 +11,6 @@ import {
 } from '../types/domain-row.types';
 import { Row } from '../types/supabase.types';
 import {
-  normalizeBonusContext,
   normalizeBonusTarget,
   normalizeBonusTemplate,
   normalizeBonusType,
@@ -94,7 +93,7 @@ export function mapEditableBonus(
     templateLabel: template.label,
     target: template.target,
     type: template.type,
-    context: template.context,
+    scope: template.scope,
     description: template.description,
     baseValue: Number(row.value ?? template.baseValue),
     levelsStep: template.levelsStep,

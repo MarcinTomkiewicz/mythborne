@@ -220,7 +220,6 @@ export class AttributeAllocationPageFacade {
 
     forkJoin({
       hero: this.heroService.getHeroData(),
-      derived: this.heroService.getHeroDerived(),
       stats: this.heroService.getHeroStats(),
       definitions: this.statsService.getStats(),
       rules: this.statProgression.getRules(),
@@ -230,7 +229,7 @@ export class AttributeAllocationPageFacade {
         finalize(() => this.isLoading.set(false))
       )
       .subscribe({
-        next: ({ hero, derived, stats, definitions, rules }) => {
+        next: ({ hero, stats, definitions, rules }) => {
           this.heroLevel.set(positiveInteger(hero.level ?? 1));
           this.heroPoints.set(nonNegativeInteger(hero.character_points ?? 0));
           this.statsList.set(definitions);

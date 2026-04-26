@@ -53,7 +53,7 @@ export function mapBonusTemplateValue(
     target: template.target,
     value: Number(row.value ?? template.baseValue),
     type: template.type,
-    context: template.context,
+    scope: template.scope,
     levelsStep: template.levelsStep,
     sourceStat: template.sourceStat,
     scalingFactor: template.scalingFactor,

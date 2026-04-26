@@ -45,14 +45,12 @@ export class CreateHero {
           profile_picture: null,
         };
         const stats = this.heroFactory.createStats(heroId);
-        const derived = this.heroFactory.createDerived(heroId);
         const resources = this.heroFactory.createResources(heroId);
 
         return this.backend.create<Insert<'hero'>>(TABLES.hero, heroPayload).pipe(
           switchMap(() =>
             forkJoin([
               this.backend.createMany(TABLES.hero_stats, stats),
-              this.backend.create(TABLES.hero_derived, derived),
               this.backend.createMany(TABLES.hero_resources, resources),
             ])
           ),

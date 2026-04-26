@@ -59,6 +59,17 @@ export class ActiveHero {
   }
 
   requireActiveHero(): Observable<RequiredActiveHeroState> {
+    const state = this._state();
+
+    if (state?.hero && state.heroRow && state.heroId) {
+      return of({
+        ...state,
+        hero: state.hero,
+        heroId: state.heroId,
+        heroRow: state.heroRow,
+      });
+    }
+
     return this.loadActiveHero().pipe(
       map((state) => {
         if (!state?.hero || !state.heroRow || !state.heroId) {

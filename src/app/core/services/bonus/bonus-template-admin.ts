@@ -47,7 +47,7 @@ export class BonusTemplateAdminService {
       category: trimText(draft.category),
       target: trimText(draft.target),
       type: draft.type,
-      context: draft.context,
+      scope: draft.scope,
       description: trimToNull(draft.description),
       baseValue: Number(draft.baseValue ?? 0),
       levelsStep: draft.levelsStep,

@@ -26,7 +26,7 @@ export function mapOriginBonus(row: OriginBonusWithTemplate): OriginBonus {
     category: template.category,
     target: template.target,
     type: template.type,
-    context: template.context,
+    scope: template.scope,
     description: template.description,
     baseValue: Number(row.value ?? template.baseValue),
     levelsStep: template.levelsStep,

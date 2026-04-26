@@ -1,4 +1,4 @@
-import { BonusContext, BonusType } from './bonus.types';
+import { BonusScope, BonusType } from './bonus.types';
 
 export type BucketProfilePayload = {
   key: string;
@@ -19,7 +19,7 @@ export type BonusTemplatePayload = {
   category: string;
   target: string;
   type: BonusType;
-  context: BonusContext;
+  scope: BonusScope;
   description: string | null;
   baseValue: number;
   levelsStep: number | null;

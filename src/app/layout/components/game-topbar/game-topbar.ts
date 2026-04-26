@@ -9,9 +9,11 @@ import {
   signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { forkJoin, of, Subscription } from 'rxjs';
+import { forkJoin, Observable, of, Subscription } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
-import { IHeroDerived } from '../../../core/domain/hero/hero-derived.model';
+import { IHeroDerived } from '../../../core/types/hero.types';
+import { FilterOperator } from '../../../core/enums/filter-operators';
+import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { Row } from '../../../core/types/supabase.types';
 import {
   GameTopbarResourceDefinition,
@@ -19,7 +21,10 @@ import {
   HeroResourceRow,
 } from '../../../core/types/game-topbar.types';
 import { AuthState } from '../../../core/services/auth/auth-state';
-import { Hero } from '../../../core/services/hero/hero';
+import { Backend } from '../../../core/services/backend/backend';
+import { ActiveHero } from '../../../core/services/hero/active-hero';
+import { HeroDerivedStats } from '../../../core/services/hero/hero-derived-stats';
+import { TABLES } from '../../../core/constants/tables.const';
 import { GameBar } from '../../../shared/game-bar/game-bar';
 
 const RESOURCE_DEFINITIONS: GameTopbarResourceDefinition[] = [
@@ -35,9 +40,11 @@ const RESOURCE_DEFINITIONS: GameTopbarResourceDefinition[] = [
 })
 export class GameTopbar implements OnInit, OnDestroy {
   private readonly authState = inject(AuthState);
-  private readonly heroService = inject(Hero);
+  private readonly activeHero = inject(ActiveHero);
+  private readonly heroDerivedStats = inject(HeroDerivedStats);
+  private readonly backend = inject(Backend);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly authHero$ = toObservable(this.authState.hero);
+  private readonly activeHeroState$ = toObservable(this.activeHero.state);
 
   private heroSubscription?: Subscription;
   private tickHandle: number | null = null;
@@ -70,28 +77,9 @@ export class GameTopbar implements OnInit, OnDestroy {
   });
 
   ngOnInit() {
-    this.heroSubscription = this.authHero$
+    this.heroSubscription = this.activeHeroState$
       .pipe(
-        switchMap((authHero) => {
-          if (!authHero) {
-            this.hero.set(null);
-            this.derived.set(null);
-            this.currentAddress.set(null);
-            this.resources.set([]);
-            return of(null);
-          }
-
-          return forkJoin({
-            hero: this.heroService
-              .getHeroData()
-              .pipe(catchError(() => of(this.mapAuthHeroToRow(authHero)))),
-            derived: this.heroService.getHeroDerived().pipe(catchError(() => of(null))),
-            currentAddress: this.heroService
-              .getHeroEstateAddress()
-              .pipe(catchError(() => of(null))),
-            resources: this.heroService.getHeroResources().pipe(catchError(() => of([]))),
-          });
-        })
+        switchMap((state) => this.loadTopbarState(state)),
       )
       .subscribe((payload) => {
         if (!payload) {
@@ -108,6 +96,10 @@ export class GameTopbar implements OnInit, OnDestroy {
       this.tickHandle = window.setInterval(() => {
         this.currentTime.set(Date.now());
       }, 1000);
+    }
+
+    if (this.authState.user() && !this.activeHero.state()) {
+      this.activeHero.loadActiveHero().subscribe();
     }
   }
 
@@ -134,21 +126,66 @@ export class GameTopbar implements OnInit, OnDestroy {
     return Math.floor(resource.amount + grownAmount);
   }
 
-  private mapAuthHeroToRow(hero: ReturnType<AuthState['hero']>): Row<'hero'> {
-    return {
-      id: hero!.id,
-      user_id: hero!.userId,
-      server_id: hero!.serverId,
-      name: hero!.name,
-      level: hero!.level,
-      rank: hero!.rank,
-      experience: hero!.experience,
-      character_points: hero!.characterPoints,
-      total_character_points_earned: hero!.totalCharacterPointsEarned,
-      estate_id: hero!.estateId,
-      origin_id: hero!.originId,
-      profile_picture: hero!.profilePicture,
-      created_at: hero!.createdAt,
-    };
+  private loadTopbarState(state: ActiveHeroState | null): Observable<{
+    hero: Row<'hero'>;
+    derived: IHeroDerived | null;
+    currentAddress: string | null;
+    resources: HeroResourceRow[];
+  } | null> {
+    if (!state?.heroRow || !state.heroId) {
+      this.hero.set(null);
+      this.derived.set(null);
+      this.currentAddress.set(null);
+      this.resources.set([]);
+      return of(null);
+    }
+
+    return forkJoin({
+      hero: of(state.heroRow),
+      derived: this.heroDerivedStats
+        .resolveActiveHeroDerivedStats()
+        .pipe(catchError(() => of(null))),
+      currentAddress: this.loadHeroEstateAddress(state.heroRow).pipe(
+        catchError(() => of(null)),
+      ),
+      resources: this.loadHeroResources(state.heroId).pipe(catchError(() => of([]))),
+    });
+  }
+
+  private loadHeroEstateAddress(hero: Row<'hero'>): Observable<string | null> {
+    return this.backend
+      .getAll<Pick<Row<'estates'>, 'address' | 'district_code'>>({
+        table: TABLES.estates,
+        select: 'address, district_code',
+        filters: {
+          heroId: { operator: FilterOperator.EQ, value: hero.id },
+          serverId: { operator: FilterOperator.EQ, value: hero.server_id },
+        },
+        range: { from: 0, to: 0 },
+        camelCase: false,
+      })
+      .pipe(
+        switchMap((rows) => {
+          const estate = rows[0];
+
+          if (!estate?.address) {
+            return of(null);
+          }
+
+          if (estate.district_code) {
+            return of(`${estate.district_code} | ${estate.address}`);
+          }
+
+          return of(estate.address);
+        }),
+      );
+  }
+
+  private loadHeroResources(heroId: string): Observable<HeroResourceRow[]> {
+    return this.backend.getAll<HeroResourceRow>({
+      table: TABLES.hero_resources,
+      filters: { heroId: { operator: FilterOperator.EQ, value: heroId } },
+      camelCase: false,
+    });
   }
 }

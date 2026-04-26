@@ -1,7 +1,6 @@
 import { Row } from './supabase.types';
 
 export type HeroRow = Row<'hero'>;
-export type HeroDerivedRow = Row<'hero_derived'>;
 
 export type OriginBonusWithTemplate = Row<'origin_bonuses'> & {
   bonus_templates: Row<'bonus_templates'>;

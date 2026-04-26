@@ -55,13 +55,17 @@ export class StatsService {
   getFinalStats<T extends Record<string, number>>(
     baseStats: T,
     sources: BonusSource[],
-    context?: { heroLevel?: number }
+    options?: {
+      heroLevel?: number;
+      bonusScope?: string;
+      sourceStats?: Record<string, number>;
+    }
   ): Record<keyof T, number> {
     const result: Partial<Record<keyof T, number>> = {};
 
     for (const key in baseStats) {
       const baseValue = baseStats[key];
-      result[key] = finalStatValue(baseValue, key, sources, context);
+      result[key] = finalStatValue(baseValue, key, sources, options);
     }
 
     return result as Record<keyof T, number>;

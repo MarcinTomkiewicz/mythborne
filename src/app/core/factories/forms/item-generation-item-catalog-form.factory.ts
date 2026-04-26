@@ -13,7 +13,7 @@ import {
   CatalogEntitySelectorForm,
 } from '../../types/forms/item-generation-item-catalog-form.types';
 import { replaceFormArray } from '../../utils/form-controls';
-import { normalizeBonusContext, normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
+import { normalizeBonusScope, normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
 import { integerAtLeast, nonNegativeInteger, roundedNumber } from '../../utils/number';
 import { trimText } from '../../utils/normalize-text';
 
@@ -34,7 +34,7 @@ export class ItemGenerationItemCatalogFormFactory {
       templateLabel: this.fb.control(draft?.templateLabel ?? ''),
       target: this.fb.control(draft?.target ?? ''),
       type: this.fb.control(normalizeBonusType(draft?.type)),
-      context: this.fb.control(normalizeBonusContext(draft?.context)),
+      scope: this.fb.control(normalizeBonusScope(draft?.scope)),
       baseValue: this.fb.control(draft?.baseValue ?? 1),
       levelsStep: this.fb.control<number | null>(draft?.levelsStep ?? null),
       sourceStat: this.fb.control<string | null>(draft?.sourceStat ?? null),
@@ -164,13 +164,15 @@ export class ItemGenerationItemCatalogFormFactory {
   private normalizeBonus(
     bonus: EditableItemGenerationBonus
   ): EditableItemGenerationBonus {
+    const scope = normalizeBonusScope(bonus.scope);
+
     return {
       templateId: bonus.templateId || null,
       category: trimText(bonus.category),
       templateLabel: trimText(bonus.templateLabel),
       target: normalizeBonusTarget(trimText(bonus.target)),
       type: normalizeBonusType(bonus.type),
-      context: normalizeBonusContext(bonus.context),
+      scope,
       baseValue: roundedNumber(bonus.baseValue),
       levelsStep: bonus.levelsStep === null ? null : roundedNumber(bonus.levelsStep),
       sourceStat: bonus.sourceStat,

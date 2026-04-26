@@ -1,4 +1,4 @@
-import { BonusContext, BonusType } from './bonus.types';
+import { BonusScope, BonusType } from './bonus.types';
 
 export interface Origin {
   id: string;
@@ -16,7 +16,7 @@ export interface OriginBonus {
   category: string;
   target: string;
   type: BonusType;
-  context: BonusContext;
+  scope: BonusScope;
   description: string | null;
   baseValue: number;
   levelsStep: number | null;

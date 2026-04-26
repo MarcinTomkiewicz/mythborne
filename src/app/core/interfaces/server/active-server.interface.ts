@@ -3,8 +3,15 @@ import { Row } from '../../types/supabase.types';
 
 export type GameServerKindValue = Row<'game_servers'>['kind'];
 export type GameServerStatusValue = Row<'game_servers'>['status'];
-export type ServerMembershipStatus = Row<'server_memberships'>['status'];
+export type ServerMembershipStatusValue = Row<'server_memberships'>['status'];
 export type ServerStaffRoleValue = Row<'server_staff_assignments'>['role'];
+
+export interface ServerMembershipState {
+  status: ServerMembershipStatusValue;
+  suspendedUntil: string | null;
+  suspensionReason: string | null;
+  banReason: string | null;
+}
 
 export interface GameServerSummary {
   id: string;
@@ -18,7 +25,8 @@ export interface GameServerSummary {
 }
 
 export interface SelectedGameServer extends GameServerSummary {
-  membershipStatus: ServerMembershipStatus | null;
+  membershipStatus: ServerMembershipStatusValue | null;
+  membership: ServerMembershipState | null;
   staffRole: ServerStaffRoleValue | null;
   canManage: boolean;
   canUseAsSandbox: boolean;
@@ -27,13 +35,18 @@ export interface SelectedGameServer extends GameServerSummary {
 export interface ServerAccessState {
   userId: string | null;
   globalRoleKey: GlobalRoleKey | null;
-  membershipStatus: ServerMembershipStatus | null;
+  membershipStatus: ServerMembershipStatusValue | null;
+  membership: ServerMembershipState | null;
   serverStaffRole: ServerStaffRoleValue | null;
   isAdmin: boolean;
   isOperator: boolean;
   isTester: boolean;
   isModerator: boolean;
   isServerStaff: boolean;
+  isMembershipActive: boolean;
+  isMembershipSuspended: boolean;
+  isMembershipBanned: boolean;
+  isMembershipBlocked: boolean;
   canAccessSandbox: boolean;
   canManageSelectedServer: boolean;
 }
