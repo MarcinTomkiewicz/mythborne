@@ -5,29 +5,29 @@ import { FilterOperator } from '../../enums/filter-operators';
 import {
   GameServerOrderColumn,
   USER_ROLE_SELECT,
-} from '../../enums/server-context.enum';
+} from '../../enums/active-server.enum';
 import {
   SelectedGameServer,
-  ServerAccessContext,
-  ServerContextRows,
-} from '../../interfaces/server/server-context.interface';
+  ServerAccessState,
+  ActiveServerRows,
+} from '../../interfaces/server/active-server.interface';
 import { Row } from '../../types/supabase.types';
 import {
-  emptyServerAccessContext,
-  resolveServerContext,
-  toAccessContext,
-} from '../../utils/server-context';
+  emptyServerAccessState,
+  resolveActiveServerState,
+  toAccessState,
+} from '../../utils/active-server';
 import { AuthState } from '../auth/auth-state';
 import { Backend } from '../backend/backend';
 
 @Injectable({ providedIn: 'root' })
-export class ServerContext {
+export class ActiveServer {
   private readonly authState = inject(AuthState);
   private readonly backend = inject(Backend);
   private readonly _servers = signal<SelectedGameServer[]>([]);
   private readonly _selectedServer = signal<SelectedGameServer | null>(null);
-  private readonly _access = signal<ServerAccessContext>(
-    emptyServerAccessContext(),
+  private readonly _access = signal<ServerAccessState>(
+    emptyServerAccessState(),
   );
   private readonly _isLoading = signal(false);
   private readonly _error = signal<string | null>(null);
@@ -44,9 +44,9 @@ export class ServerContext {
     this._isLoading.set(true);
     this._error.set(null);
 
-    return this.loadContextRows(user?.id ?? null).pipe(
+    return this.loadActiveServerRows(user?.id ?? null).pipe(
       map((rows) =>
-        resolveServerContext(rows, user?.id ?? null, this._selectedServer()),
+        resolveActiveServerState(rows, user?.id ?? null, this._selectedServer()),
       ),
       tap({
         next: ({ selectedServers, selectedServer, access }) => {
@@ -59,7 +59,7 @@ export class ServerContext {
           this._error.set(
             error instanceof Error
               ? error.message
-              : 'Failed to load server context.',
+              : 'Failed to load active server state.',
           );
           this._isLoading.set(false);
         },
@@ -78,7 +78,7 @@ export class ServerContext {
 
     this._selectedServer.set(server);
     this._access.set(
-      toAccessContext(
+      toAccessState(
         this.authState.user()?.id ?? null,
         this._access().globalRoleKey,
         server,
@@ -88,9 +88,9 @@ export class ServerContext {
     return true;
   }
 
-  private loadContextRows(
+  private loadActiveServerRows(
     userId: string | null,
-  ): Observable<ServerContextRows> {
+  ): Observable<ActiveServerRows> {
     return forkJoin({
       servers: this.loadServers(),
       userData: this.loadUserData(userId),

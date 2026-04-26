@@ -1,4 +1,4 @@
-import { GlobalRoleKey } from '../../enums/server-context.enum';
+import { GlobalRoleKey } from '../../enums/active-server.enum';
 import { Row } from '../../types/supabase.types';
 
 export type GameServerKindValue = Row<'game_servers'>['kind'];
@@ -24,7 +24,7 @@ export interface SelectedGameServer extends GameServerSummary {
   canUseAsSandbox: boolean;
 }
 
-export interface ServerAccessContext {
+export interface ServerAccessState {
   userId: string | null;
   globalRoleKey: GlobalRoleKey | null;
   isAdmin: boolean;
@@ -36,7 +36,7 @@ export interface ServerAccessContext {
   canManageSelectedServer: boolean;
 }
 
-export interface ServerContextRows {
+export interface ActiveServerRows {
   servers: Row<'game_servers'>[];
   userData: Array<Pick<Row<'user_data'>, 'role_id'>>;
   roles: Row<'roles'>[];
@@ -44,8 +44,8 @@ export interface ServerContextRows {
   staffAssignments: Row<'server_staff_assignments'>[];
 }
 
-export interface ResolvedServerContext {
+export interface ResolvedActiveServerState {
   selectedServers: SelectedGameServer[];
   selectedServer: SelectedGameServer | null;
-  access: ServerAccessContext;
+  access: ServerAccessState;
 }

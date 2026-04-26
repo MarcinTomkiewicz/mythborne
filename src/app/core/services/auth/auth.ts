@@ -1,20 +1,20 @@
 import { inject, Injectable } from '@angular/core';
 import { from, map, of, switchMap, take, tap } from 'rxjs';
-import { mapHero } from '../../domain/hero/hero.mapper';
 import { TABLES } from '../../constants/tables.const';
 import { IUserData } from '../../interfaces/i-user-data/i-user-data';
-import { Insert, Row } from '../../types/supabase.types';
+import { Insert } from '../../types/supabase.types';
 import { Platform } from '../platform/platform';
 import { SupabaseClientService } from '../supabase/supabase-client';
 import { AuthState } from './auth-state';
 import { Backend } from '../backend/backend';
-import { FilterOperator } from '../../enums/filter-operators';
+import { ActiveHero } from '../hero/active-hero';
 
 @Injectable({ providedIn: 'root' })
 export class Auth {
   private readonly supabase = inject(SupabaseClientService).client;
   private readonly backend = inject(Backend);
   private readonly authState = inject(AuthState);
+  private readonly activeHero = inject(ActiveHero);
   private readonly platform = inject(Platform);
   private initializationStarted = false;
   private authListenerRegistered = false;
@@ -49,22 +49,13 @@ export class Auth {
       switchMap(({ error, user }) => {
         if (error || !user) {
           this.authState.setUser(null);
-          this.authState.setHero(null);
+          this.activeHero.clear();
           return of(void 0);
         }
 
         this.authState.setUser(user);
 
-        return this.getHeroRow(user.id).pipe(
-          map((heroRow) => {
-            if (!heroRow) {
-              this.authState.setHero(null);
-              return;
-            }
-
-            this.authState.setHero(mapHero(heroRow));
-          })
-        );
+        return this.activeHero.loadActiveHero().pipe(map(() => void 0));
       })
     );
   }
@@ -97,7 +88,7 @@ export class Auth {
             }
 
             this.authState.setUser(loginData.user);
-            this.authState.setHero(null);
+            this.activeHero.clear();
 
             return of(loginData.user);
           })
@@ -140,37 +131,16 @@ export class Auth {
         const user = data.user;
         this.authState.setUser(user);
 
-        return this.getHeroRow(user.id).pipe(
-          map((heroRow) => {
-            if (!heroRow) {
-              this.authState.setHero(null);
-              return user;
-            }
-
-            this.authState.setHero(mapHero(heroRow));
-            return user;
-          })
-        );
+        return this.activeHero.loadActiveHero().pipe(map(() => user));
       })
     );
-  }
-
-  private getHeroRow(userId: string) {
-    return this.backend
-      .getAll<Row<'hero'>>({
-        table: TABLES.hero,
-        filters: { userId: { operator: FilterOperator.EQ, value: userId } },
-        range: { from: 0, to: 0 },
-        camelCase: false,
-      })
-      .pipe(map((rows) => rows[0] ?? null));
   }
 
   logout() {
     return from(this.supabase.auth.signOut()).pipe(
       tap(() => {
         this.authState.setUser(null);
-        this.authState.setHero(null);
+        this.activeHero.clear();
       })
     );
   }

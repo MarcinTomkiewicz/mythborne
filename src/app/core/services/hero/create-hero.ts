@@ -8,14 +8,14 @@ import { EstateAddressRow } from '../../types/hero-service.types';
 import { AuthState } from '../auth/auth-state';
 import { Backend } from '../backend/backend';
 import { HeroFactory } from '../hero-factory/hero-factory';
-import { ServerContext } from '../server/server-context';
+import { ActiveServer } from '../server/active-server';
 
 @Injectable({ providedIn: 'root' })
 export class CreateHero {
   private readonly authState = inject(AuthState);
   private readonly heroFactory = inject(HeroFactory);
   private readonly backend = inject(Backend);
-  private readonly serverContext = inject(ServerContext);
+  private readonly activeServer = inject(ActiveServer);
 
   createHero(
     heroId: string,
@@ -198,15 +198,15 @@ export class CreateHero {
   }
 
   private resolveCurrentServerId(): Observable<string> {
-    const selectedServerId = this.serverContext.selectedServer()?.id ?? null;
+    const selectedServerId = this.activeServer.selectedServer()?.id ?? null;
 
     if (selectedServerId) {
       return of(selectedServerId);
     }
 
-    return this.serverContext.loadAccessibleServers().pipe(
+    return this.activeServer.loadAccessibleServers().pipe(
       map(() => {
-        const serverId = this.serverContext.selectedServer()?.id ?? null;
+        const serverId = this.activeServer.selectedServer()?.id ?? null;
 
         if (!serverId) {
           throw new Error('No accessible game server is configured for hero creation.');

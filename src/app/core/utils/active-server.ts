@@ -4,21 +4,21 @@ import {
   GlobalRoleKey,
   SERVER_SANDBOX_KEY,
   ServerSortRank,
-} from '../enums/server-context.enum';
+} from '../enums/active-server.enum';
 import {
   GameServerSummary,
-  ResolvedServerContext,
+  ResolvedActiveServerState,
   SelectedGameServer,
-  ServerAccessContext,
-  ServerContextRows,
-} from '../interfaces/server/server-context.interface';
+  ServerAccessState,
+  ActiveServerRows,
+} from '../interfaces/server/active-server.interface';
 import { Row } from '../types/supabase.types';
 
-export function resolveServerContext(
-  rows: ServerContextRows,
+export function resolveActiveServerState(
+  rows: ActiveServerRows,
   userId: string | null,
   currentServer: SelectedGameServer | null,
-): ResolvedServerContext {
+): ResolvedActiveServerState {
   const globalRoleKey = resolveGlobalRoleKey(
     rows.userData[0]?.role_id ?? null,
     rows.roles,
@@ -35,15 +35,15 @@ export function resolveServerContext(
   return {
     selectedServers,
     selectedServer,
-    access: toAccessContext(userId, globalRoleKey, selectedServer),
+    access: toAccessState(userId, globalRoleKey, selectedServer),
   };
 }
 
-export function toAccessContext(
+export function toAccessState(
   userId: string | null,
   globalRoleKey: GlobalRoleKey | null,
   selectedServer: SelectedGameServer | null,
-): ServerAccessContext {
+): ServerAccessState {
   const isAdmin = globalRoleKey === GlobalRoleKey.Admin;
   const isOperator = globalRoleKey === GlobalRoleKey.Operator;
   const isTester = globalRoleKey === GlobalRoleKey.Tester;
@@ -67,7 +67,7 @@ export function toAccessContext(
   };
 }
 
-export function emptyServerAccessContext(): ServerAccessContext {
+export function emptyServerAccessState(): ServerAccessState {
   return {
     userId: null,
     globalRoleKey: null,
