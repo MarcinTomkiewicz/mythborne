@@ -249,6 +249,8 @@ Global Codex rules:
 
 ## Task D1 — Config definitions read model
 
+**Status:** Done / confirmed 2026-04-26.
+
 **Goal:** Typed frontend read model for config definitions.
 
 **Scope:**

@@ -22,6 +22,13 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
       'Edycja definicji budynkow, ich bonusow, wymagan, bazowych kosztow i czasu budowy.',
     routerLink: '/admin/buildings',
   },
+  {
+    legend: 'Governance',
+    title: 'Config definitions',
+    description:
+      'Podglad rejestru konfigurowalnych wartosci i encji zarzadzanych przez governance.',
+    routerLink: '/admin/config-definitions',
+  },
 ];
 
 export const ADMIN_DASHBOARD_LINKS: readonly AdminTagLink[] = [
@@ -43,4 +50,10 @@ export const ITEM_CATALOG_PAGE_LINKS: readonly AdminTagLink[] = [
 export const BUILDINGS_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Formulas', routerLink: '/admin/balance' },
   { label: 'Mansion view', routerLink: '/game/mansion' },
+];
+
+export const CONFIG_DEFINITIONS_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin' },
+  { label: 'Formulas', routerLink: '/admin/balance' },
+  { label: 'Buildings', routerLink: '/admin/buildings' },
 ];

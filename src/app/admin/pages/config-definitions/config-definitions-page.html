@@ -1,0 +1,134 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading config definitions..."
+  description="Loading config governance registry."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Governance</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">Config Definitions</h2>
+          <p class="muted-text mb-0">
+            Registry of configurable values and governed relational balance entities.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Definitions</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            {{ filteredDefinitions().length }} / {{ definitions().length }} registered entries
+          </h3>
+        </div>
+      </div>
+
+      <form [formGroup]="filterForm" class="mg-surface-card p-md mb-lg">
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Search</span>
+            <input
+              pInputText
+              class="w-100"
+              formControlName="query"
+              placeholder="Key, label, scope or managed entity"
+            />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Governance scope</span>
+            <p-select
+              class="w-100"
+              formControlName="governanceScope"
+              [options]="governanceScopeOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="All scopes"
+              [showClear]="true"
+            />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Managed entity type</span>
+            <p-select
+              class="w-100"
+              formControlName="managedEntityType"
+              [options]="managedEntityTypeOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="All managed entities"
+              [showClear]="true"
+            />
+          </label>
+        </div>
+      </form>
+
+      <div class="flex-col gap-md">
+        @for (definition of filteredDefinitions(); track definition.id) {
+          <article class="mg-surface-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">{{ definition.key }}</p>
+                <h4 class="mg-section__title mg-section__title--xs mb-0">{{ definition.label }}</h4>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="mg-tag">{{ definition.governanceScope }}</span>
+                <span class="mg-tag">{{ definition.managedEntityType }}</span>
+                <span class="mg-tag">{{ definition.valueType }}</span>
+                <span class="mg-tag">{{ definition.isActive ? 'active' : 'inactive' }}</span>
+              </div>
+            </div>
+
+            @if (definition.description) {
+              <p class="muted-text mb-0">{{ definition.description }}</p>
+            }
+
+            <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Managed entity key</span>
+                <strong class="heading-color">{{ definition.managedEntityKey ?? '-' }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Sort order</span>
+                <strong class="heading-color">{{ definition.sortOrder }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Updated</span>
+                <strong class="heading-color">{{ definition.updatedAt }}</strong>
+              </div>
+            </div>
+
+            <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Default value</span>
+                <pre class="mb-0 text-break"><code>{{ jsonPreview(definition.defaultValue) }}</code></pre>
+              </div>
+
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Value schema</span>
+                <pre class="mb-0 text-break"><code>{{ jsonPreview(definition.valueSchema) }}</code></pre>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">No config definitions registered.</p>
+        }
+      </div>
+    </section>
+  </div>
+}

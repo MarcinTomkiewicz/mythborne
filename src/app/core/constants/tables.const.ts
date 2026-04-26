@@ -23,4 +23,5 @@ export const TABLES = {
   roles: 'roles',
   server_memberships: 'server_memberships',
   server_staff_assignments: 'server_staff_assignments',
+  config_definitions: 'config_definitions',
 } as const;

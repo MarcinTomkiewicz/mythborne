@@ -80,6 +80,9 @@ This is an operational estimate, not a formal audit.
 - The game topbar now loads from active hero state without repeatedly resetting active hero loading, so address, health, experience, and resources stay visible.
 - Runtime derived stats no longer read or write `hero_derived`. Frontend derived stats are resolved from active hero base stats, derived stat definitions, origin/hero entity bonuses, bonus scopes, and health formula assignment/fallback; `hero_derived` remains only in generated database types until the physical DB table is removed and types are regenerated.
 - Bonus terminology in frontend models/forms has moved from old bonus `context` naming to `scope`; unrelated formula/runtime context naming remains separate.
+- Task D1 is confirmed complete as of 2026-04-26. The frontend now has a typed `config_definitions` read model, mapper, service, and `/admin/config-definitions` read-only admin view.
+- Config definition rows are mapped to domain fields for key, label, description, governance scope, managed entity type/key, value type, schema, default value, active flag, sort order, and timestamps.
+- The config definitions admin view displays technical fields as chips, pretty-prints JSON schema/default previews, shows `No default` for null defaults, and supports Reactive Forms filtering by search text, governance scope, and managed entity type.
 
 ### Canonical stats and derived stats
 - Base stats are loaded from canonical stat definitions.

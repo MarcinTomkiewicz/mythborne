@@ -25,4 +25,11 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./pages/buildings/buildings-page').then((m) => m.BuildingsPage),
   },
+  {
+    path: 'config-definitions',
+    loadComponent: () =>
+      import('./pages/config-definitions/config-definitions-page').then(
+        (m) => m.ConfigDefinitionsPage
+      ),
+  },
 ];
