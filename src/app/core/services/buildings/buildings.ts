@@ -69,6 +69,8 @@ export class BuildingsService {
                   select: 'address, district_code',
                   filters: {
                     id: { operator: FilterOperator.EQ, value: hero.estate_id },
+                    heroId: { operator: FilterOperator.EQ, value: hero.id },
+                    serverId: { operator: FilterOperator.EQ, value: hero.server_id },
                   },
                   range: { from: 0, to: 0 },
                   camelCase: false,

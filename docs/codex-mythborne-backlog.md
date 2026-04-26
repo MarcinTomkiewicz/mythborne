@@ -168,6 +168,8 @@ Global Codex rules:
 
 ## Task B5 — Migrate estate/building/item/combat reads to active hero id
 
+**Status:** Done / confirmed 2026-04-26.
+
 **Goal:** Continue model migration.
 
 **Scope:**

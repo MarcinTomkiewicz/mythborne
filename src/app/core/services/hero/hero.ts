@@ -81,7 +81,10 @@ export class Hero {
           this.backend.getAll<Pick<Row<'estates'>, 'address' | 'district_code'>>({
             table: TABLES.estates,
             select: 'address, district_code',
-            filters: { heroId: { operator: FilterOperator.EQ, value: hero.id } },
+            filters: {
+              heroId: { operator: FilterOperator.EQ, value: hero.id },
+              serverId: { operator: FilterOperator.EQ, value: hero.server_id },
+            },
             range: { from: 0, to: 0 },
             camelCase: false,
           })
