@@ -24,7 +24,7 @@ import {
 import { integerAtLeast, nonNegativeInteger, roundedNumber } from '../../utils/number';
 import { trimText } from '../../utils/normalize-text';
 import { toSlug } from '../../utils/slug';
-import { normalizeBonusScope, normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
+import { BonusScope, BonusType } from '../../types/bonus.types';
 
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationBalanceFormFactory {
@@ -112,8 +112,8 @@ export class ItemGenerationBalanceFormFactory {
       label: this.fb.control(draft?.label ?? ''),
       category: this.fb.control(draft?.category ?? 'general'),
       target: this.fb.control(draft?.target ?? ''),
-      type: this.fb.control(normalizeBonusType(draft?.type)),
-      scope: this.fb.control(normalizeBonusScope(draft?.scope)),
+      type: this.fb.control(draft?.type ?? 'flat'),
+      scope: this.fb.control(draft?.scope ?? 'global'),
       description: this.fb.control(draft?.description ?? ''),
       baseValue: this.fb.control(draft?.baseValue ?? 0),
       levelsStep: this.fb.control<number | null>(draft?.levelsStep ?? null),
@@ -234,16 +234,14 @@ export class ItemGenerationBalanceFormFactory {
   toBonusTemplate(form: BonusTemplateEditorForm): BonusTemplate {
     const value = form.getRawValue();
 
-    const scope = normalizeBonusScope(value.scope);
-
     return {
       id: value.id || '',
       key: toSlug(value.key || value.label),
       label: trimText(value.label),
       category: trimText(value.category),
-      target: normalizeBonusTarget(trimText(value.target)),
-      type: normalizeBonusType(value.type),
-      scope,
+      target: trimText(value.target),
+      type: trimText(value.type) as BonusType,
+      scope: trimText(value.scope) as BonusScope,
       description: trimText(value.description),
       baseValue: Number(value.baseValue ?? 0),
       levelsStep: value.levelsStep === null ? null : roundedNumber(value.levelsStep),

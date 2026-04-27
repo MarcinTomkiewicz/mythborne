@@ -77,6 +77,20 @@ export interface CanonicalBonusTemplate {
   isActive: boolean;
 }
 
+export interface SemanticBonusTemplatePayload {
+  key: string;
+  label: string;
+  description: string | null;
+  typeKey: string;
+  targetKey: string;
+  scopeKey: string;
+  levelInterval: number | null;
+  scalingStatKey: string | null;
+  paramsJson: Json;
+  sortOrder: number;
+  isActive: boolean;
+}
+
 export interface CanonicalEntityBonus {
   id: string;
   entityType: BonusEntityType;

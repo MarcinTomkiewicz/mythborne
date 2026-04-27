@@ -529,6 +529,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F5 — Bonus template write path migration
 
+**Status:** Done / confirmed.
+
 **Goal:** Move template writes to semantic `bonus_templates` columns.
 
 **Scope:**

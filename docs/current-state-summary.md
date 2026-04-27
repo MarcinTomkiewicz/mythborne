@@ -1,6 +1,6 @@
 # Monster Hunt - Current State Summary
 
-Updated: 2026-04-26
+Updated: 2026-04-27
 
 This file summarizes the current implementation state against:
 - `docs/project-context.md`
@@ -278,6 +278,9 @@ Still pending at the gameplay level even if partially supported in schema:
 - F3 deliberately did not rewire UI/runtime/write paths; `mapCanonicalBonusTemplate()` treats missing `type_key`, `target_key`, or `scope_key` as configuration errors and does not fall back to legacy `bonus_templates.target/type`.
 - F3 mapper tests cover new-only template mapping, resolved `entity_bonuses` overrides, value-only quality scaling projection, and unsupported entity type rejection.
 - F4 accepted on 2026-04-27: bonus admin read data now loads `bonus_types`, `bonus_scopes`, `bonus_target_categories`, `bonus_targets`, and semantic `bonus_templates`; `/admin/balance` no longer depends on `bonus_templates.category`, and template editing is read-only until F5 semantic write migration.
+- F5 accepted on 2026-04-27: bonus template admin writes now use a semantic payload for `type_key`, `target_key`, `scope_key`, `level_interval`, `scaling_stat_key`, `params_json`, `sort_order`, and `is_active`.
+- F5 no longer sends legacy `bonus_templates.category`, `target`, `type`, `scope`, `base_value`, `levels_step`, `source_stat`, or `scaling_factor`; `Backend.create/update` converts the camelCase payload to DB snake_case before Supabase writes.
+- `/admin/balance` template editing is unlocked again for semantic template fields. Template `baseValue` is intentionally not edited there because bonus values belong to `entity_bonuses.value`.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

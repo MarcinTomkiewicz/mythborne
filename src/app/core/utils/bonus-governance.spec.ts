@@ -3,11 +3,13 @@ import {
   mapResolvedBonus,
   projectQualityScaledValue,
   toBonusTemplateAdminView,
+  toSemanticBonusTemplatePayload,
 } from './bonus-governance';
 import {
   CanonicalBonusTemplateRow,
   CanonicalEntityBonusWithTemplateRow,
 } from '../types/bonus-governance.types';
+import { toSnakeCase } from './type-mappings';
 
 describe('bonus governance mappers', () => {
   it('maps a canonical bonus template from semantic columns only', () => {
@@ -64,6 +66,77 @@ describe('bonus governance mappers', () => {
     expect(view.target).toBe('strength');
     expect(view.type).toBe('flat');
     expect(view.scope).toBe('global');
+  });
+
+  it('creates semantic template write payload without legacy columns', () => {
+    const payload = toSemanticBonusTemplatePayload({
+      id: '',
+      key: 'hero-strength-scaled',
+      label: 'Hero strength scaled',
+      category: 'legacy-category',
+      target: 'strength',
+      type: 'scaled_stat_bonus',
+      scope: 'combat',
+      description: 'Scaled strength bonus.',
+      baseValue: 123,
+      levelsStep: 4,
+      sourceStat: 'hero_level',
+      scalingFactor: 0.25,
+      sortOrder: 30,
+      isActive: true,
+    });
+
+    expect(payload.key).toBe('hero-strength-scaled');
+    expect(payload.label).toBe('Hero strength scaled');
+    expect(payload.description).toBe('Scaled strength bonus.');
+    expect(payload.typeKey).toBe('scaled_stat_bonus');
+    expect(payload.targetKey).toBe('strength');
+    expect(payload.scopeKey).toBe('combat');
+    expect(payload.levelInterval).toBe(4);
+    expect(payload.scalingStatKey).toBe('hero_level');
+    expect(JSON.stringify(payload.paramsJson)).toBe('{"scalingFactor":0.25}');
+    expect(payload.sortOrder).toBe(30);
+    expect(payload.isActive).toBeTrue();
+    expect(Object.hasOwn(payload, 'category')).toBeFalse();
+    expect(Object.hasOwn(payload, 'target')).toBeFalse();
+    expect(Object.hasOwn(payload, 'type')).toBeFalse();
+    expect(Object.hasOwn(payload, 'scope')).toBeFalse();
+    expect(Object.hasOwn(payload, 'formulaId')).toBeFalse();
+    expect(Object.hasOwn(payload, 'formulaTargetId')).toBeFalse();
+    expect(Object.hasOwn(payload, 'baseValue')).toBeFalse();
+    expect(Object.hasOwn(payload, 'levelsStep')).toBeFalse();
+    expect(Object.hasOwn(payload, 'sourceStat')).toBeFalse();
+    expect(Object.hasOwn(payload, 'scalingFactor')).toBeFalse();
+  });
+
+  it('serializes semantic template payload to database snake_case columns', () => {
+    const payload = toSemanticBonusTemplatePayload({
+      id: '',
+      key: 'hero-strength-flat',
+      label: 'Hero strength flat',
+      category: 'legacy-category',
+      target: 'strength',
+      type: 'flat',
+      scope: 'global',
+      description: '',
+      baseValue: 0,
+      levelsStep: null,
+      sourceStat: null,
+      scalingFactor: null,
+      sortOrder: 10,
+      isActive: true,
+    });
+    const databasePayload = toSnakeCase<Record<string, unknown>>(payload);
+
+    expect(databasePayload['type_key']).toBe('flat');
+    expect(databasePayload['target_key']).toBe('strength');
+    expect(databasePayload['scope_key']).toBe('global');
+    expect(databasePayload['level_interval']).toBeNull();
+    expect(JSON.stringify(databasePayload['params_json'])).toBe('{}');
+    expect(databasePayload['is_active']).toBeTrue();
+    expect(Object.hasOwn(databasePayload, 'typeKey')).toBeFalse();
+    expect(Object.hasOwn(databasePayload, 'targetKey')).toBeFalse();
+    expect(Object.hasOwn(databasePayload, 'scopeKey')).toBeFalse();
   });
 
   it('maps a resolved entity bonus with override fields', () => {

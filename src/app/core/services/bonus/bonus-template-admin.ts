@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { forkJoin, map, Observable } from 'rxjs';
+import { defer, forkJoin, map, Observable } from 'rxjs';
 import { BonusAdminData, BonusTemplate } from '../../domain/bonus/bonus.model';
 import { TABLES } from '../../constants/tables.const';
 import {
@@ -12,10 +12,9 @@ import {
   mapCanonicalBonusTemplate,
   mapCanonicalBonusType,
   toBonusTemplateAdminView,
+  toSemanticBonusTemplatePayload,
 } from '../../utils/bonus-governance';
 import { Backend } from '../backend/backend';
-import { trimText, trimToNull } from '../../utils/normalize-text';
-import { BonusTemplatePayload } from '../../types/item-generation-admin-service.types';
 import { Row } from '../../types/supabase.types';
 
 @Injectable({ providedIn: 'root' })
@@ -85,26 +84,14 @@ export class BonusTemplateAdminService {
   }
 
   saveTemplate(draft: BonusTemplate): Observable<void> {
-    const payload: BonusTemplatePayload = {
-      key: trimText(draft.key),
-      label: trimText(draft.label),
-      category: trimText(draft.category),
-      target: trimText(draft.target),
-      type: draft.type,
-      scope: draft.scope,
-      description: trimToNull(draft.description),
-      baseValue: Number(draft.baseValue ?? 0),
-      levelsStep: draft.levelsStep,
-      sourceStat: draft.sourceStat,
-      scalingFactor: draft.scalingFactor,
-      sortOrder: Number(draft.sortOrder ?? 0),
-      isActive: draft.isActive,
-    };
-    const request$ = draft.id
-      ? this.backend.update('bonus_templates', draft.id, payload)
-      : this.backend.create('bonus_templates', payload);
+    return defer(() => {
+      const payload = toSemanticBonusTemplatePayload(draft);
+      const request$ = draft.id
+        ? this.backend.update('bonus_templates', draft.id, payload)
+        : this.backend.create('bonus_templates', payload);
 
-    return request$.pipe(map(() => void 0));
+      return request$.pipe(map(() => void 0));
+    });
   }
 
   deleteTemplate(id: string): Observable<void> {

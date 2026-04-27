@@ -15,8 +15,10 @@ import {
   CanonicalEntityBonusRow,
   CanonicalEntityBonusWithTemplateRow,
   ResolvedBonus,
+  SemanticBonusTemplatePayload,
 } from '../types/bonus-governance.types';
 import { Row } from '../types/supabase.types';
+import { trimText, trimToNull } from './normalize-text';
 
 export function mapCanonicalBonusType(row: Row<'bonus_types'>): CanonicalBonusType {
   return {
@@ -177,6 +179,26 @@ export function toBonusTemplateAdminView(
   };
 }
 
+export function toSemanticBonusTemplatePayload(
+  draft: BonusTemplate,
+): SemanticBonusTemplatePayload {
+  const scalingFactor = readFiniteNumber(draft.scalingFactor);
+
+  return {
+    key: requiredPayloadString(draft.key, 'bonus_templates.key'),
+    label: requiredPayloadString(draft.label, 'bonus_templates.label'),
+    description: trimToNull(draft.description),
+    typeKey: requiredPayloadString(draft.type, 'bonus_templates.type_key'),
+    targetKey: requiredPayloadString(draft.target, 'bonus_templates.target_key'),
+    scopeKey: requiredPayloadString(draft.scope, 'bonus_templates.scope_key'),
+    levelInterval: draft.levelsStep === null ? null : readFiniteNumber(draft.levelsStep),
+    scalingStatKey: trimToNull(draft.sourceStat),
+    paramsJson: scalingFactor === null ? {} : { scalingFactor },
+    sortOrder: readFiniteNumber(draft.sortOrder) ?? 0,
+    isActive: draft.isActive,
+  };
+}
+
 export function projectQualityScaledValue(
   bonus: Pick<ResolvedBonus, 'value' | 'qualityScalesValue'>,
   qualityMultiplier: number,
@@ -194,6 +216,28 @@ function requiredString(
   }
 
   return value;
+}
+
+function requiredPayloadString(
+  value: string | null | undefined,
+  field: string,
+): string {
+  const normalized = trimText(value);
+
+  if (!normalized) {
+    throw new Error(`${field} is required for semantic bonus template writes.`);
+  }
+
+  return normalized;
+}
+
+function readFiniteNumber(value: number | null | undefined): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const normalized = Number(value);
+  return Number.isFinite(normalized) ? normalized : null;
 }
 
 function toBonusEntityType(value: string): BonusEntityType {

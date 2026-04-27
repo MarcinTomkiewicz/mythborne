@@ -9,12 +9,8 @@
       </p>
     </div>
 
-    <p-button label="New template" [text]="true" [disabled]="true" />
+    <p-button label="New template" [text]="true" (onClick)="page.bonusTemplate.new()" />
   </div>
-
-  <p class="mb-lg muted-text">
-    Template editing is read-only until F5 semantic write migration is completed.
-  </p>
 
   <form [formGroup]="page.bonusTemplate.selectorForm" class="mb-lg">
     <app-form-fields [form]="page.bonusTemplate.selectorForm" [fields]="selectorFields()" />
@@ -49,16 +45,9 @@
     </div>
 
     <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
-      @if (page.bonusTemplate.editorForm.controls.type.value !== 'unlock_feature') {
-        <label class="flex-col gap-sm">
-          <span class="muted-text">Base value</span>
-          <input pInputText type="number" class="w-100" formControlName="baseValue" />
-        </label>
-      }
-
       @if (page.bonusTemplate.editorForm.controls.type.value === 'per_levels') {
         <label class="flex-col gap-sm">
-          <span class="muted-text">Levels step</span>
+          <span class="muted-text">Level interval</span>
           <input pInputText type="number" class="w-100" formControlName="levelsStep" />
         </label>
       }
@@ -86,13 +75,16 @@
     <div class="flex-row-start-center flex-wrap gap-sm">
       <p-button
         label="Save template"
-        [disabled]="true"
+        [loading]="page.isSaving()"
+        [disabled]="page.isLoading() || page.isBusy()"
+        (onClick)="page.saveBonusTemplate()"
       />
       <p-button
         label="Delete"
         severity="danger"
         [text]="true"
-        [disabled]="true"
+        [disabled]="!page.bonusTemplate.editorForm.controls.id.value || page.isBusy()"
+        (onClick)="page.deleteBonusTemplate()"
       />
     </div>
   </form>
