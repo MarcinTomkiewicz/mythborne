@@ -191,7 +191,6 @@ export function createBonusTemplateEditorFields(
   return [
     { type: FormFieldType.Text, controlName: 'label', label: 'Label' },
     { type: FormFieldType.Text, controlName: 'key', label: 'Key' },
-    { type: FormFieldType.Text, controlName: 'category', label: 'Category' },
     {
       type: FormFieldType.Select,
       controlName: 'target',

@@ -52,6 +52,9 @@ export interface BonusAdminData {
   templates: BonusTemplate[];
   targets: BonusTargetDefinition[];
   categories: string[];
+  types: CanonicalBonusType[];
+  scopes: CanonicalBonusScope[];
+  targetCategories: CanonicalBonusTargetCategory[];
 }
 
 export interface EditableAppliedBonus {
@@ -83,3 +86,8 @@ export interface BonusSource {
   name: string;
   bonuses: Bonus[];
 }
+import type {
+  CanonicalBonusScope,
+  CanonicalBonusTargetCategory,
+  CanonicalBonusType,
+} from './bonus-governance.types';

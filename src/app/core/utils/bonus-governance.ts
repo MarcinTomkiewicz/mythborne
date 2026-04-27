@@ -1,3 +1,8 @@
+import type {
+  BonusTemplate,
+  BonusType,
+  BonusScope,
+} from '../types/bonus.types';
 import {
   BonusEntityType,
   CanonicalBonusScope,
@@ -148,6 +153,30 @@ export function mapResolvedBonus(row: CanonicalEntityBonusWithTemplateRow): Reso
   };
 }
 
+export function toBonusTemplateAdminView(
+  template: CanonicalBonusTemplate,
+  targetByKey: ReadonlyMap<string, CanonicalBonusTarget>,
+): BonusTemplate {
+  const target = targetByKey.get(template.targetKey);
+
+  return {
+    id: template.id,
+    key: template.key,
+    label: template.label,
+    category: target?.categoryKey ?? '',
+    target: template.targetKey,
+    type: template.typeKey as BonusType,
+    scope: template.scopeKey as BonusScope,
+    description: template.description ?? '',
+    baseValue: 0,
+    levelsStep: template.levelInterval,
+    sourceStat: template.scalingStatKey,
+    scalingFactor: readParamNumber(template.paramsJson, 'scalingFactor'),
+    sortOrder: template.sortOrder,
+    isActive: template.isActive,
+  };
+}
+
 export function projectQualityScaledValue(
   bonus: Pick<ResolvedBonus, 'value' | 'qualityScalesValue'>,
   qualityMultiplier: number,
@@ -197,4 +226,13 @@ function mergeParams(
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function readParamNumber(params: unknown, key: string): number | null {
+  if (!isPlainObject(params)) {
+    return null;
+  }
+
+  const value = Number(params[key]);
+  return Number.isFinite(value) ? value : null;
 }

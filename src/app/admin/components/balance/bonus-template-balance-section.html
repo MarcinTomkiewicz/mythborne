@@ -9,8 +9,12 @@
       </p>
     </div>
 
-    <p-button label="New template" [text]="true" (onClick)="page.bonusTemplate.new()" />
+    <p-button label="New template" [text]="true" [disabled]="true" />
   </div>
+
+  <p class="mb-lg muted-text">
+    Template editing is read-only until F5 semantic write migration is completed.
+  </p>
 
   <form [formGroup]="page.bonusTemplate.selectorForm" class="mb-lg">
     <app-form-fields [form]="page.bonusTemplate.selectorForm" [fields]="selectorFields()" />
@@ -23,28 +27,18 @@
       <label class="flex-col gap-sm">
         <span class="muted-text">Type</span>
         <select class="w-100 p-inputtext" formControlName="type">
-          <option value="flat">flat</option>
-          <option value="percent">percent</option>
-          <option value="per_levels">per_levels</option>
-          <option value="scaled_stat_bonus">scaled_stat_bonus</option>
-          <option value="resource_flat">resource_flat</option>
-          <option value="resource_percent">resource_percent</option>
-          <option value="capacity_flat">capacity_flat</option>
-          <option value="unlock_feature">unlock_feature</option>
+          @for (type of page.bonusAdminData().types; track type.key) {
+            <option [value]="type.key">{{ type.label }}</option>
+          }
         </select>
       </label>
 
       <label class="flex-col gap-sm">
         <span class="muted-text">Scope</span>
         <select class="w-100 p-inputtext" formControlName="scope">
-          <option value="global">global</option>
-          <option value="pvp_attack">pvp_attack</option>
-          <option value="pvp_defense">pvp_defense</option>
-          <option value="exploration">exploration</option>
-          <option value="trial">trial</option>
-          <option value="combat">combat</option>
-          <option value="economy">economy</option>
-          <option value="building_management">building_management</option>
+          @for (scope of page.bonusAdminData().scopes; track scope.key) {
+            <option [value]="scope.key">{{ scope.label }}</option>
+          }
         </select>
       </label>
 
@@ -92,16 +86,13 @@
     <div class="flex-row-start-center flex-wrap gap-sm">
       <p-button
         label="Save template"
-        [loading]="page.isSaving()"
-        [disabled]="page.isLoading() || page.isBusy()"
-        (onClick)="page.saveBonusTemplate()"
+        [disabled]="true"
       />
       <p-button
         label="Delete"
         severity="danger"
         [text]="true"
-        [disabled]="!page.bonusTemplate.editorForm.controls.id.value || page.isBusy()"
-        (onClick)="page.deleteBonusTemplate()"
+        [disabled]="true"
       />
     </div>
   </form>

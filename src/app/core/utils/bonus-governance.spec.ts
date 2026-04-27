@@ -2,6 +2,7 @@ import {
   mapCanonicalBonusTemplate,
   mapResolvedBonus,
   projectQualityScaledValue,
+  toBonusTemplateAdminView,
 } from './bonus-governance';
 import {
   CanonicalBonusTemplateRow,
@@ -34,6 +35,35 @@ describe('bonus governance mappers', () => {
     expect(() => mapCanonicalBonusTemplate(row)).toThrowError(
       'bonus_templates.type_key is required for canonical bonus row "template-1".',
     );
+  });
+
+  it('creates admin template view category from target dictionary', () => {
+    const template = mapCanonicalBonusTemplate(createTemplateRow());
+    const view = toBonusTemplateAdminView(
+      template,
+      new Map([
+        [
+          'strength',
+          {
+            id: 'target-1',
+            key: 'strength',
+            label: 'Strength',
+            categoryKey: 'base_stats',
+            valueKind: 'number',
+            description: 'Strength target.',
+            helperText: null,
+            isStackable: true,
+            sortOrder: 1,
+            isActive: true,
+          },
+        ],
+      ]),
+    );
+
+    expect(view.category).toBe('base_stats');
+    expect(view.target).toBe('strength');
+    expect(view.type).toBe('flat');
+    expect(view.scope).toBe('global');
   });
 
   it('maps a resolved entity bonus with override fields', () => {

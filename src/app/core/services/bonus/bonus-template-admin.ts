@@ -1,10 +1,22 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable } from 'rxjs';
-import { BonusAdminData, BonusTargetDefinition, BonusTemplate } from '../../domain/bonus/bonus.model';
+import { BonusAdminData, BonusTemplate } from '../../domain/bonus/bonus.model';
+import { TABLES } from '../../constants/tables.const';
+import {
+  CanonicalBonusTemplateRow,
+} from '../../domain/bonus/bonus-governance.model';
+import {
+  mapCanonicalBonusScope,
+  mapCanonicalBonusTarget,
+  mapCanonicalBonusTargetCategory,
+  mapCanonicalBonusTemplate,
+  mapCanonicalBonusType,
+  toBonusTemplateAdminView,
+} from '../../utils/bonus-governance';
 import { Backend } from '../backend/backend';
-import { uniqueBonusCategories, normalizeBonusTemplate } from '../../utils/bonus';
 import { trimText, trimToNull } from '../../utils/normalize-text';
 import { BonusTemplatePayload } from '../../types/item-generation-admin-service.types';
+import { Row } from '../../types/supabase.types';
 
 @Injectable({ providedIn: 'root' })
 export class BonusTemplateAdminService {
@@ -12,29 +24,61 @@ export class BonusTemplateAdminService {
 
   getAdminData(): Observable<BonusAdminData> {
     return forkJoin({
-      templates: this.backend.getAll<any>({
-        table: 'bonus_templates',
+      types: this.backend.getAll<Row<'bonus_types'>>({
+        table: TABLES.bonus_types,
+        orderBy: { column: 'sort_order' },
+        camelCase: false,
+      }),
+      scopes: this.backend.getAll<Row<'bonus_scopes'>>({
+        table: TABLES.bonus_scopes,
+        orderBy: { column: 'sort_order' },
+        camelCase: false,
+      }),
+      targetCategories: this.backend.getAll<Row<'bonus_target_categories'>>({
+        table: TABLES.bonus_target_categories,
+        orderBy: { column: 'sort_order' },
+        camelCase: false,
+      }),
+      targets: this.backend.getAll<Row<'bonus_targets'>>({
+        table: TABLES.bonus_targets,
+        orderBy: { column: 'sort_order' },
+        camelCase: false,
+      }),
+      templates: this.backend.getAll<CanonicalBonusTemplateRow>({
+        table: TABLES.bonus_templates,
         orderBy: [
-          { column: 'category' },
+          { column: 'target_key' },
           { column: 'sort_order' },
           { column: 'label' },
         ],
         camelCase: false,
       }),
-      targets: this.backend.getAll<any>({
-        table: 'bonus_targets',
-        orderBy: { column: 'sort_order' },
-        camelCase: false,
-      }),
     }).pipe(
-      map(({ templates, targets }) => {
-        const normalizedTemplates = templates.map(normalizeBonusTemplate);
-        const normalizedTargets = targets.map((row) => this.mapTarget(row));
+      map(({ types, scopes, targetCategories, targets, templates }) => {
+        const bonusTypes = types.map(mapCanonicalBonusType);
+        const bonusScopes = scopes.map(mapCanonicalBonusScope);
+        const bonusTargetCategories = targetCategories.map(mapCanonicalBonusTargetCategory);
+        const bonusTargets = targets.map(mapCanonicalBonusTarget);
+        const targetByKey = new Map(bonusTargets.map((target) => [target.key, target]));
+        const normalizedTemplates = templates
+          .map(mapCanonicalBonusTemplate)
+          .map((template) => toBonusTemplateAdminView(template, targetByKey));
 
         return {
           templates: normalizedTemplates,
-          targets: normalizedTargets,
-          categories: uniqueBonusCategories(normalizedTemplates),
+          targets: bonusTargets.map((target) => ({
+            id: target.id,
+            key: target.key,
+            label: target.label,
+            kind: target.valueKind,
+            description: target.description,
+            sortOrder: target.sortOrder,
+            isActive: target.isActive,
+          })),
+          categories: bonusTargetCategories.map((category) => category.key),
+          types: bonusTypes,
+          scopes: bonusScopes,
+          targetCategories: bonusTargetCategories,
         };
       })
     );
@@ -65,25 +109,5 @@ export class BonusTemplateAdminService {
 
   deleteTemplate(id: string): Observable<void> {
     return this.backend.delete('bonus_templates', id);
-  }
-
-  private mapTarget(row: {
-    id: string;
-    key: string;
-    label: string;
-    kind: string;
-    description: string | null;
-    sort_order: number;
-    is_active: boolean;
-  }): BonusTargetDefinition {
-    return {
-      id: row.id,
-      key: row.key,
-      label: row.label,
-      kind: row.kind,
-      description: row.description,
-      sortOrder: row.sort_order,
-      isActive: row.is_active,
-    };
   }
 }

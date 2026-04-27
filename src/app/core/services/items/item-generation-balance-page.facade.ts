@@ -44,6 +44,9 @@ export class ItemGenerationBalancePageFacade {
     templates: [],
     targets: [],
     categories: [],
+    types: [],
+    scopes: [],
+    targetCategories: [],
   });
 
   readonly quality = createEntityEditorState<

@@ -492,6 +492,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F3 — Canonical bonus domain models and mappers
 
+**Status:** Done / confirmed.
+
 **Goal:** Add new-only domain/types/mappers for canonical bonus models.
 
 **Scope:**
@@ -508,6 +510,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 ---
 
 ## Task F4 — Bonus dictionary/admin read service
+
+**Status:** Done / confirmed.
 
 **Goal:** Load dictionaries and template read model for admin UI.
 
