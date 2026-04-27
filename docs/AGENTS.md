@@ -14,7 +14,7 @@ For next conversation and Codex review:
 - For D4 review, see handoff sections in backlog/todo/state files.
 <!-- HANDOFF_OVERRIDE_END -->
 
-# AGENTS.md — Monster Hunt implementation guidance
+# AGENTS.md — Mythborne implementation guidance
 
 ## Purpose
 This file is the short execution-oriented guide for coding agents working on Monster Hunt.
@@ -213,7 +213,7 @@ Current intended bonus types:
 - `capacity_flat`
 - `unlock_feature`
 
-Current intended contexts:
+Current intended scopes:
 - `global`
 - `pvp_attack`
 - `pvp_defense`
@@ -226,7 +226,7 @@ Current intended contexts:
 Important:
 - `per_4_levels` should be generalized into `per_levels`
 - target is separate from type
-- context is separate from type
+- scope is separate from type
 - category is an organizational/filter field
 - bonus templates should be centrally managed in the database
 - buildings should support local formula overrides with fallback to global defaults
@@ -359,3 +359,29 @@ When something is ambiguous:
 - keep implementation extensible
 - do not guess aggressively
 - call out assumptions clearly
+
+---
+
+## Update 2026-04-27 — item generation/equipment DB contract
+
+Codex must treat the current item generation/equipment database model as authoritative:
+
+- base item types are in `item_generation_base_types`;
+- required/optional native target rules are in `item_generation_base_type_targets`;
+- concrete base item native values are in `entity_bonuses` with `entity_type = item_generation_base`;
+- `item_generation_bases.base_type_key` is the source of truth;
+- `item_generation_bases.slot` is legacy/deprecated;
+- equipment state is in `hero_equipment`, not on `items.status`;
+- Armory shelf names are in `hero_armory_shelves`;
+- item shelf position is `items.armory_shelf_position` and transfers with item ownership;
+- visible Armory capacity uses existing bonus target `visible_item_capacity`;
+- do not invent `armory_visible_capacity`;
+- `attack_count` and `critical_damage` are bonus targets;
+- no equip/unequip RPC is currently approved/documented yet.
+
+Before coding against these structures:
+
+1. read `database-current.md`;
+2. regenerate `database.types.ts` if the local generated types do not include the new schema;
+3. do not create alternative table/RPC names;
+4. report missing DB contracts as blockers instead of inventing them.

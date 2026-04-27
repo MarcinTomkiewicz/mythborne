@@ -154,6 +154,10 @@ This is an operational estimate, not a formal audit.
 - Building entity assignments are labelled with building name/key where available through `FormulaEntityLabels`.
 - The E3 view model documents the runtime lookup expectation in code: local entity assignment first, global/default assignment after removal.
 - Shared E3 row/reference types live in `core/types/formula-admin-view.types.ts`, and local override/global fallback mapping stays in `core/utils/formula-assignment-view.ts`.
+- Task E4 is confirmed complete as of 2026-04-27. Formula runtime lookup now uses a shared resolver for local entity assignment, global/default assignment, and configuration-error handling.
+- Building progression runtime now respects building-specific local formula overrides before global/default building formulas.
+- Stat progression and `FormulaService.getAssignedFormula()` use the same assignment resolver for global/default formula lookup.
+- A local entity assignment that references a missing or disabled formula is treated as a configuration error, not silently hidden by falling back to the global/default assignment.
 
 ### Buildings / estate layer
 - Building admin supports:

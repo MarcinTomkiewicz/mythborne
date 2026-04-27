@@ -1,4 +1,4 @@
-import { FormulaTarget, FormulaVariableDefinition } from '../types/formula.types';
+import { FormulaTarget, FormulaVariableDefinition } from '../domain/formula/formula.model';
 
 export function toFormulaVariableKey(value: string): string {
   const normalized = (value ?? '').trim().replace(/[^A-Za-z0-9_]/g, '');

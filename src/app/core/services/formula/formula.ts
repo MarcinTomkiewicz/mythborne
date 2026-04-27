@@ -5,13 +5,15 @@ import {
   BalanceFormulaRow,
   EditableBalanceFormula,
   EntityFormulaAssignmentRow,
+  FormulaAssignmentResolution,
   FormulaVariableDefinition,
   FormulaAssignmentRow,
   FormulaAdminData,
   FormulaBlockRow,
-  FormulaTarget,
   FormulaTargetRow,
+  FormulaEntityAssignmentLookup,
 } from '../../domain/formula/formula.model';
+import { resolveAssignedFormula } from '../../utils/formula-assignment-resolution';
 import {
   mapBalanceFormula,
   mapEntityFormulaAssignment,
@@ -81,26 +83,12 @@ export class FormulaService {
     return this.getAdminData();
   }
 
-  getAssignedFormula(targetKey: string): Observable<{ target: FormulaTarget; formula: BalanceFormula }> {
+  getAssignedFormula(
+    targetKey: string,
+    entity?: FormulaEntityAssignmentLookup
+  ): Observable<FormulaAssignmentResolution> {
     return this.getAdminData().pipe(
-      map((data) => {
-        const target = data.targets.find((entry) => entry.key === targetKey);
-
-        if (!target) {
-          throw new Error(`Formula target "${targetKey}" is not defined in Supabase.`);
-        }
-
-        const assignment = data.assignments.find((entry) => entry.targetId === target.id);
-        const formula = data.formulas.find(
-          (entry) => entry.id === assignment?.formulaId && entry.isEnabled
-        );
-
-        if (!assignment || !formula) {
-          throw new Error(`Formula target "${target.label}" has no enabled assigned formula.`);
-        }
-
-        return { target, formula };
-      })
+      map((data) => resolveAssignedFormula(data, targetKey, entity))
     );
   }
 

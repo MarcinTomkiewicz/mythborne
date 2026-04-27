@@ -6,6 +6,7 @@ import {
 } from '../../domain/progression/building-progression.model';
 import { FormulaAdminData } from '../../domain/formula/formula.model';
 import { nonNegativeInteger } from '../../utils/number';
+import { resolveAssignedFormula } from '../../utils/formula-assignment-resolution';
 import { FormulaService } from '../formula/formula';
 import { FormulaRuntimeService } from './formula-runtime';
 
@@ -70,31 +71,11 @@ export class BuildingProgressionService {
     data: FormulaAdminData
   ): BuildingProgressionRules {
     const formulaFor = (targetKey: string) => {
-      const target = data.targets.find((entry) => entry.key === targetKey);
-
-      if (!target) {
-        throw new Error(`Building formula target "${targetKey}" is not defined.`);
-      }
-
-      const localAssignment = buildingId
-        ? data.entityAssignments.find(
-            (entry) =>
-              entry.entityKind === 'building' &&
-              entry.entityId === buildingId &&
-              entry.targetId === target.id
-          ) ?? null
-        : null;
-      const globalAssignment =
-        data.assignments.find((entry) => entry.targetId === target.id) ?? null;
-      const assignment = localAssignment ?? globalAssignment;
-      const formula =
-        data.formulas.find((entry) => entry.id === assignment?.formulaId && entry.isEnabled) ?? null;
-
-      if (!formula) {
-        throw new Error(`Building formula target "${target.label}" has no enabled formula.`);
-      }
-
-      return formula;
+      return resolveAssignedFormula(
+        data,
+        targetKey,
+        buildingId ? { entityKind: 'building', entityId: buildingId } : undefined
+      ).formula;
     };
 
     const cost = formulaFor(BUILDING_PROGRESSION_TARGET_KEYS.upgradeCost);

@@ -1,41 +1,4 @@
-<!-- HANDOFF_OVERRIDE_START -->
-# Handoff project context — 2026-04-27
 
-## Project name
-
-Canonical current project/game name: **Mythborne**. Legacy docs may say Monster Hunt; treat that as historical naming unless the user explicitly discusses old documents.
-
-## Current work mode
-
-This project is currently in a split track:
-1. Codex executes frontend/backlog tasks.
-2. The conversation reviews Codex output, database/concept changes, and schema fixes.
-3. Important database/concept changes must be reflected in MD files.
-
-## Current Codex location
-
-Epic D — Configuration Governance.
-
-Accepted:
-- D1 config definitions read model.
-- D2 config values/effective values read model.
-- D3 change-set list/detail.
-
-Current:
-- D4 config edit draft flow. Codex reported fixes; next step is verify/accept.
-
-## D4 acceptance focus for next conversation
-
-Confirm build and UI; ensure draft change set creation, reason/title trim validation, public changelog validation, scalar entry creation, unsupported entity/formula/enum refs, no direct config mutation, no misuse of `entity_id` or old/new scope, and effective values refresh after server changes.
-
-## Near-term after D4
-
-D5 apply/cancel flow, D6 anti-abuse config admin, then audit/logging integration and anti-abuse UI/read models. Separate later work: equipment model, trade/auction UI, PvE/trials.
-
-## Review style
-
-When reviewing Codex code: distinguish blockers from polish, give direct Polish feedback, do not accept if DB semantics are wrong, and do not ask Codex to update status until user confirms.
-<!-- HANDOFF_OVERRIDE_END -->
 
 # Mythborne — Project Context for Codex
 
@@ -1064,11 +1027,11 @@ Important notes:
 
 - `per_4_levels` should be generalized into `per_levels`
 - bonus `target` is a separate field
-- bonus `context` is a separate field
+- bonus `scope` is a separate field
 - bonus `category` is an organizational/filter field
-- no dedicated `conditional_bonus` type is needed if context exists
+- no dedicated `conditional_bonus` type is needed if scope exists
 
-Current intended contexts include:
+Current intended scopes include:
 
 - `global`
 - `pvp_attack`
@@ -1085,7 +1048,7 @@ Important current implementation note:
 
 - the desired bonus model is broader than the currently observed old table shape in some database dumps,
 - `bonus_templates` may still require a separate refactor/migration,
-- do not assume the intended `category/context/per_levels/scaled_stat_bonus` model is fully implemented unless confirmed by the current schema.
+- do not assume the intended `category/scope/per_levels/scaled_stat_bonus` model is fully implemented unless confirmed by the current schema.
 
 ---
 
@@ -1677,144 +1640,188 @@ Do not rebuild the old model where `rank_required` alone determines building ava
 
 ---
 
-# Update 2026-04-27 — equipment, Armory and item lifecycle context
+## Equipment and generated item requirements
 
-## Equipment state and slots
+### Equipment scope
 
-Equipment state is a hero-level relation, not an item lifecycle status. The item row tracks ownership, lifecycle and market state. A separate hero-equipment relation should track which owned item is currently equipped in which slot.
+Mythborne intentionally keeps the equipment model limited to avoid a large slot-combinatorics system.
 
-The current conceptual slot model is:
+Current wearable model:
 
-- `main_hand`;
-- `off_hand`;
-- `helmet`;
-- `armor`;
-- `pants`;
-- `boots`;
-- `amulet`;
-- `ring_1`;
-- `ring_2`.
+- hands / weapon profile:
+  - one-handed weapon;
+  - one-handed weapon + shield where supported;
+  - two-handed melee weapon;
+  - ranged weapon;
+- helmet;
+- armor;
+- pants;
+- boots;
+- amulet;
+- ring 1;
+- ring 2.
 
-The hand model must support one-handed weapon, one-handed weapon plus shield, dual wield where allowed, two-handed melee weapon, and ranged weapon. Ranged weapons are treated as two-handed unless explicitly redesigned later.
+Boots are intentionally included as a normal slot. Do not remove them or recreate a “no boots” meta.
 
-Equipped items should be automatically removed from equipment when ownership changes, when the item is deleted, or when it becomes scrapped. Do not rely on every market/scrap/admin operation remembering to manually unequip the item.
+### Item component model
 
-## Equip, unequip and replacement UX
+Generated items use this layer model:
 
-Equip and unequip are immediate actions. There is no timer, cooldown, cursed-item behavior or default equip/unequip cost.
+```text
+quality + optional prefix + base item + optional suffix
+```
 
-If a player equips an item into an occupied compatible slot, the new item replaces the current item in that slot. The player should not have to manually unequip first.
+Admins/balancers define content for qualities, base items, prefixes and suffixes. They do not manually define every possible final generated item combination.
 
-For ambiguous single-equip cases such as rings or compatible one-handed weapon slots, a single equip action may replace a random compatible occupied slot unless a more explicit UI flow is implemented.
+### Requirements philosophy
 
-Bulk equip and saved equipment sets provide more controlled alternatives.
+Equipment requirements use the same central requirement philosophy as buildings and other systems. Avoid hardcoded, feature-specific requirement logic.
 
-## Equip requirements
+For equipment:
 
-Requirements are checked when equipping.
+- requirements are attached to item generation components: base items, prefixes and suffixes;
+- final generated item requirements are calculated from those component requirements;
+- final generated item combinations do not receive manually authored requirement rows;
+- the system remains configurable through component data and global aggregation settings, not through exceptions per generated combination.
 
-The candidate item’s own bonuses do not help satisfy its own requirements. Already active bonuses from other equipped items or other active sources may help.
+### Base items and affixes
 
-If the candidate item would replace another equipped item, validation should use the state after removing the replaced item, but before applying the candidate item’s bonuses.
+Base item rule:
 
-After an item is equipped, it may remain equipped even if the hero later stops meeting its requirements. If unequipped, requirements must be met again to equip it later.
+- every base item must define at least one item-equip level requirement;
+- base items may optionally define additional requirements when the item naturally demands them, such as heavy/two-handed weapons requiring Strength.
 
-The equipment UI should disable Equip when requirements are not met and should show the final item requirement list with clear met/unmet indicators.
+Affix rule:
 
-## Bulk equip
+- every prefix and every suffix must define at least one item-equip requirement;
+- affixes are expected to be the primary source of stat requirements;
+- affixes may technically use any central requirement type allowed for item equip, but early itemization should primarily use hero level and hero stats.
 
-Bulk equip means equipping two or more selected items without using a saved set.
+### Requirement aggregation
 
-Bulk equip may equip only the selected items that are legal according to the progressing equipment state. It is not all-or-nothing.
+Final generated item requirements are aggregated by requirement key. Same-key requirements are not summed linearly.
 
-Bulk equip does not solve circular dependencies. If two unequipped selected items only satisfy each other, neither should be equipped.
+The intended model is:
 
-If one selected item can be legally equipped first and then makes another selected item legal, the system may equip both in sequence.
+```text
+dominant requirement + partial contribution from lower same-key requirements
+```
 
-Bulk equip should be deterministic when practical. Selecting two rings should equip those rings into the ring slots if legal, rather than using random single-equip replacement behavior.
+For each requirement key, component requirement values are sorted descending. The highest value contributes fully. Lower values contribute according to global stack weights.
 
-## Saved equipment sets
+Example conceptual weights:
 
-A saved equipment set stores exact item IDs from a legal equipped state.
+```text
+level_stack_weights = [1.0, 0.5, 0.25, 0.1]
+stat_stack_weights  = [1.0, 0.35, 0.15, 0.05]
+```
 
-Re-equipping a saved set should not require re-solving the individual item requirement path. The set represents a previously legal configuration.
+These values are tuning examples. The important project rule is that the aggregation model is global and system-driven, not manually authored per item combination.
 
-A saved set does not accept equivalent replacements. If the saved set contains a specific item ID and that item is sold, scrapped, confiscated, deleted or otherwise unavailable, another item with the same visible name/prefix/suffix does not count.
+### Quality and requirements
 
-Saved set equip is all-or-nothing. If any item in the set is unavailable, no part of the set is equipped.
+Quality scales requirements through requirement-specific quality parameters. Quality requirement scaling is separate from quality value/power scaling.
 
-## Market-listed and locked items
+This allows high-quality items to become harder to equip without making all high-quality items absurdly inaccessible.
 
-A listed, `locked_trade`, or `locked_auction` item may remain equipped and active while still owned by the hero.
+### Economy vs equip difficulty
 
-Market locks prevent scrapping and prevent using the same item in another market channel. They do not disable equipment effects by themselves.
+Drachma value and equip difficulty are related but separate axes.
 
-If the item is sold, transferred, bought through buy now, confiscated or otherwise removed from the hero’s ownership, it should be automatically unequipped and later actions should use the updated equipment state.
+Drachma value affects drop buckets and vendor scrap/sell value. Equip requirements affect whether and when a hero can equip the item.
 
-## Armory visibility and shelves
+Current conceptual sell/scrap baseline: vendor scrap/sell returns 50% of the item's drachma value.
 
-There is no hard owned-item limit. Armory limits visible / operational access, not ownership.
+### Equip-time check
 
-Armory visible capacity should come from the normal bonus system, not from hardcoded Armory-specific capacity logic. A future or existing bonus target such as `visible_item_capacity` / `armory_visible_capacity` may be used depending on final naming.
+Item requirements are checked when equipping. Equipped items should not continuously unequip because requirements later change, unless a future explicit decision changes this rule.
 
-Armory UI should show owned item count versus resolved visible capacity, for example `76/80` or overloaded `251/100`.
+---
 
-Visibility order:
+# Update 2026-04-27 — item generation/equipment foundation
 
-1. equipped items;
-2. listed / market-locked items;
-3. higher shelf / visibility tier;
-4. lower shelf / visibility tier.
+## Base item type model
 
-Within the same priority and shelf group, items are ordered by generation time from oldest to newest. Newer and lower-priority items are hidden first when capacity is exceeded.
+Mythborne now uses explicit item generation base types in the `item_generation_*` namespace.
 
-“Shelf” is the current working term. The final UI name may change later.
+Current base item types:
 
-Shelf / visibility tier is item state and transfers with the item when ownership changes.
+- `one_handed_weapon`
+- `two_handed_weapon`
+- `ranged_weapon`
+- `shield`
+- `helmet`
+- `armor`
+- `pants`
+- `boots`
+- `amulet`
+- `ring`
 
-## Scrap and database hygiene
+The game intentionally does not use additional wearable slots such as gloves, belts, cloaks, capes, caps, bracers or shoulders.
 
-The game should not limit drops simply because the player owns many items. Instead, Armory visibility pressure should encourage players to clean up low-value items.
+`item_generation_bases.base_type_key` is the source of truth. The older `slot` field is deprecated legacy.
 
-Items without prefix and suffix are permanently removed immediately when scrapped, regardless of quality or drachma value.
+## Native item parameters
 
-Items with prefix and/or suffix enter `scrapped` / recoverable state and may be permanently removed after up to 30 days.
+Base item native values should use the central bonus system through `entity_bonuses` where practical.
 
-Quality alone does not make a no-affix item recoverable.
+`item_generation_base_type_targets` defines which native targets are required or optional for each base item type. This lets admin UI avoid hardcoded field lists.
 
-This model pushes item cleanup pressure to the player without blocking drops or requiring broad manual database cleanup.
+Examples:
 
-## No durability
+- one-handed weapons require min/max damage, attack count, critical chance and critical damage;
+- two-handed weapons require the same but must have positive critical chance and critical damage;
+- ranged weapons default to attack count 2;
+- shields require defense and may provide evasion chance;
+- armor pieces require defense;
+- amulets require charisma;
+- rings require charisma or cunning as their identity target.
 
-Mythborne does not use item durability by default. Durability would mostly create a routine drachma/material sink rather than an interesting decision. Resource sinks should primarily live in buildings, estate progression and strategic systems.
+## Equipment state
 
-## Duplicate items, affix variants and set direction
+Equipped state is stored in `hero_equipment`, not as an item status.
 
-Duplicate equipped items are allowed where slots allow them. Two rings with the same prefix/suffix may be equipped at the same time.
+Equipment slots:
 
-Affix-family set bonuses are allowed as a future direction. Example: `Glowing Amulet` plus two `Glowing Rings` may contribute to a `Glowing` set bonus.
+- `main_hand`
+- `off_hand`
+- `helmet`
+- `armor`
+- `pants`
+- `boots`
+- `amulet`
+- `ring_1`
+- `ring_2`
 
-The same affix family/name may have different bonus profiles by item slot, category or weapon profile. Example: `Demonic` may be weaker on a one-handed weapon than on a two-handed weapon.
+`items.status` remains lifecycle/market state: active, scrapped, locked trade, locked auction.
 
-Do not introduce unique items, special base variants, or hidden item layers as part of the default item model.
+Locked trade/auction items may remain equipped while still owned by the hero.
 
-## Future super-quality direction
+If item owner changes or item becomes scrapped, DB trigger clears stale equipment rows.
 
-A separate super-quality layer such as `Mythic` may be considered much later, after the game and economy mature. This would be an additional layer above normal quality, not a replacement for normal qualities.
+## Armory organization
 
-Example future distinction:
+Armory visible capacity is resolved through the existing bonus target `visible_item_capacity`.
 
-- `Mythic Demonic Sword`;
-- `Mythic Quality Demonic Sword`.
+Items store `armory_shelf_position`. This integer transfers with the item. Shelf names are hero-local and live in `hero_armory_shelves`.
 
-These would be different item outputs because `Mythic` would provide its own super-multiplier while `Quality` remains the normal quality layer. This is a future expansion direction, not part of launch scope.
+A hero may name shelf positions, for example for trials, attack, defense, selling or scrap planning. Shelf names are not transferred; only the item shelf position transfers.
 
-## Manual combat/trial fallback direction
+Armory visibility should prefer equipped/listed items, then higher shelf position, then older generated items within the same group.
 
-Manual combat and trials should eventually have resilience against disconnects, tab closes and intentional exits.
+## Generated item identity
 
-A manual fight should not disappear when the player disconnects or leaves. It should auto-complete with reduced player agency and worse expected control/outcome than competent manual play.
+Items now have explicit generated-layer fields:
 
-A trial should likewise resolve automatically/proportionally with lower expected success or control than manual play. Auto-resolve is a safety fallback, not an optimal strategy.
+- quality key;
+- base item id;
+- optional prefix affix id;
+- optional suffix affix id;
+- drachma value;
+- generated timestamp.
 
-Combat/trial systems should allow dynamic equipment state. If equipment changes during an activity, later resolved actions should use the updated equipment-derived values. Reports should snapshot the values actually used at each step.
+The generated item model remains quality + optional prefix + base item + optional suffix.
+
+## Implementation caution
+
+This DB foundation does not yet define final equip/unequip RPCs or full gameplay flows. Codex must not invent those database contracts. Future equip/unequip, bulk equip, saved equipment set and scrap operations should be designed in the conceptual/database track first, then documented in `database-current.md`.

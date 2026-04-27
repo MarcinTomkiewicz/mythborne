@@ -75,6 +75,7 @@ describe('StatProgressionService', () => {
             updatedAt: null,
           },
         ],
+        entityAssignments: [],
         blocks: [],
       };
     formulaService.getAdminData.and.returnValue(of(adminData));

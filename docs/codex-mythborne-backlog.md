@@ -424,6 +424,8 @@ Global Codex rules:
 
 ## Task E4 — Formula runtime integration cleanup
 
+**Status:** Done / confirmed 2026-04-27.
+
 **Goal:** Ensure runtime uses proper assignment order.
 
 **Scope:**
@@ -473,7 +475,7 @@ Global Codex rules:
     - resource_percent,
     - capacity_flat,
     - unlock_feature.
-  - contexts:
+  - scopes:
     - global,
     - pvp_attack,
     - pvp_defense,
@@ -1976,3 +1978,151 @@ Current direction:
 ## Recommended order update
 
 Place U1-U4 after config definitions/value read models and before deeper building execution, because building runtime/admin logic now depends on central requirements and district cap semantics.
+
+---
+
+# Epic V — Item generation and equipment foundation integration
+
+## Task V1 — Regenerate database types after item generation/equipment migration
+
+**Goal:** Synchronize frontend generated Supabase types with the newly migrated item generation and equipment schema.
+
+**Scope:**
+- Regenerate/update `src/app/core/types/database.types.ts`.
+- Confirm generated types include:
+  - `item_generation_base_types`,
+  - `item_generation_base_type_targets`,
+  - `item_generation_bases.base_type_key`,
+  - generated item columns on `items`,
+  - `hero_equipment`,
+  - `hero_armory_shelves`,
+  - newly available combat targets such as `attack_count` and `critical_damage` where applicable.
+
+**Acceptance criteria:**
+- App compiles.
+- No domain model is replaced by raw DB rows.
+- No existing backlog task status is changed unless user confirms it.
+
+---
+
+## Task V2 — Update item generation domain models and mappers
+
+**Goal:** Teach frontend item-generation code the new base type model.
+
+**Scope:**
+- Add typed models/mappers for `item_generation_base_types` and `item_generation_base_type_targets`.
+- Update `item_generation_bases` domain model to use `baseTypeKey` as source of truth.
+- Keep old `slot` as legacy/deprecated only if generated types still expose it.
+- Do not hardcode the required target list in Angular.
+
+**Acceptance criteria:**
+- Item generation admin/read models expose base type information.
+- UI/domain code no longer treats old `slot` as semantic source of truth.
+- Required/optional native target information comes from DB dictionaries.
+
+---
+
+## Task V3 — Update base item admin form to use DB-defined native targets
+
+**Goal:** Base item creation/editing should be driven by `item_generation_base_type_targets`.
+
+**Scope:**
+- When admin selects a base type, show required and optional native targets from DB.
+- Required targets must be present before save.
+- Support grouped requirement for ring identity: `charisma OR cunning` through `required_group_key` / `min_required_in_group` semantics.
+- Store concrete values through the central bonus model for `entity_type = item_generation_base`.
+- Preserve quality scaling semantics for generated item native values.
+
+**Acceptance criteria:**
+- Admin cannot save a weapon without min/max damage and attack count.
+- Admin cannot save armor pieces without defense.
+- Ring requires at least one identity target from the DB-defined group.
+- No hardcoded required field list in component code.
+
+---
+
+## Task V4 — Update item generation preview to use new native bonus model
+
+**Goal:** Generated item preview should read base item native values from `entity_bonuses` and base type metadata.
+
+**Scope:**
+- Resolve base item native values from `entity_bonuses`.
+- Use quality scaling where `quality_scales_value = true`.
+- Include `attack_count` and `critical_damage` in preview where present.
+- Continue reading qualities from `item_generation_qualities`, not hardcoded quality names/count.
+
+**Acceptance criteria:**
+- Preview shows correct base item combat/defense/jewelry values.
+- Existing quality scaling remains consistent.
+- No reliance on old `item_generation_base_bonuses` as the main model.
+
+---
+
+## Task V5 — Add Armory shelf read/edit UI foundation
+
+**Goal:** Allow player/admin-facing code to display and edit hero-local Armory shelf names.
+
+**Scope:**
+- Add typed read/write models for `hero_armory_shelves`.
+- Support shelf name max 30 trimmed characters.
+- Show item `armory_shelf_position` as the transferred item-owned shelf position.
+- Do not model item shelf as FK to `hero_armory_shelves`.
+
+**Acceptance criteria:**
+- Hero has default shelf position `0` named `Default`.
+- User can rename shelf positions without changing item ownership.
+- Item transfer semantics remain position-based, not FK-based.
+
+---
+
+## Task V6 — Add hero equipment read model
+
+**Goal:** Frontend can read current equipment from `hero_equipment`.
+
+**Scope:**
+- Add domain model/mapper for `hero_equipment`.
+- Join or aggregate item details where needed for display.
+- Respect active hero context (`hero.id`, not `auth.uid()`).
+- Treat `hero_equipment` as source of equipped state.
+- Do not use `items.status = equipped`; such status does not exist.
+
+**Acceptance criteria:**
+- Equipped items can be displayed by slot.
+- `locked_trade` / `locked_auction` items may still display as equipped.
+- Scrapped items cannot appear as equipped if DB lifecycle triggers are functioning.
+
+---
+
+## Task V7 — Prepare equip/unequip DB workflow design, do not implement ad hoc
+
+**Goal:** Before coding equip/unequip gameplay, identify required RPC/domain operations and ask for DB contract if missing.
+
+**Scope:**
+- Review current docs for equip/unequip, single equip, bulk equip, saved equipment sets.
+- Do not directly implement critical equipment mutations from generic UI table writes.
+- Report missing RPC/domain contract as blocker if needed.
+
+**Acceptance criteria:**
+- Codex does not invent equip/unequip RPC names.
+- Any required DB mutations are proposed for conceptual/database-track approval first.
+- No critical equipment workflow bypasses the approved DB/domain contract.
+
+---
+
+## Task V8 — Update Armory visible filtering to use capacity, shelf position and generation time
+
+**Goal:** Align Armory item visibility with the new DB-backed visibility model.
+
+**Scope:**
+- Use resolved `visible_item_capacity` from the bonus/runtime model as visible capacity.
+- Display owned item count / visible capacity.
+- Use item priority rules:
+  - equipped and market-locked/listed items first,
+  - higher `armory_shelf_position` next,
+  - within a priority/shelf group, older `generated_at` first.
+- Treat hidden items as still owned; hidden does not mean deleted.
+
+**Acceptance criteria:**
+- Armory can show overloaded state such as `251/100`.
+- Newer/lower-priority items are hidden first when capacity is exceeded.
+- Visibility/access is not confused with ownership.

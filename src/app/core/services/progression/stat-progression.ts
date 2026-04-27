@@ -8,7 +8,8 @@ import {
 } from '../../domain/progression/stat-progression.model';
 import { nonNegativeInteger, positiveInteger } from '../../utils/number';
 import { FormulaRuntimeService } from './formula-runtime';
-import { FormulaTarget } from '../../types/formula.types';
+import { FormulaTarget } from '../../domain/formula/formula.model';
+import { resolveAssignedFormula } from '../../utils/formula-assignment-resolution';
 
 @Injectable({ providedIn: 'root' })
 export class StatProgressionService {
@@ -18,42 +19,14 @@ export class StatProgressionService {
   getRules(): Observable<StatProgressionRules> {
     return this.formulaService.getAdminData().pipe(
       map((data) => {
-        const costTarget = data.targets.find(
-          (entry) => entry.key === STAT_PROGRESSION_TARGET_KEYS.cost
-        );
-        const capTarget = data.targets.find(
-          (entry) => entry.key === STAT_PROGRESSION_TARGET_KEYS.cap
-        );
-
-        if (!costTarget || !capTarget) {
-          throw new Error('Stat progression targets are missing in the formulas catalog.');
-        }
-
-        const costAssignment = data.assignments.find(
-          (entry) => entry.targetId === costTarget.id
-        );
-        const capAssignment = data.assignments.find((entry) => entry.targetId === capTarget.id);
-
-        if (!costAssignment || !capAssignment) {
-          throw new Error('Stat progression targets do not have assigned formulas.');
-        }
-
-        const costFormula = data.formulas.find(
-          (entry) => entry.id === costAssignment.formulaId && entry.isEnabled
-        );
-        const capFormula = data.formulas.find(
-          (entry) => entry.id === capAssignment.formulaId && entry.isEnabled
-        );
-
-        if (!costFormula || !capFormula) {
-          throw new Error('Assigned stat progression formulas are missing or disabled.');
-        }
+        const cost = resolveAssignedFormula(data, STAT_PROGRESSION_TARGET_KEYS.cost);
+        const cap = resolveAssignedFormula(data, STAT_PROGRESSION_TARGET_KEYS.cap);
 
         return {
-          costTarget,
-          capTarget,
-          costFormula,
-          capFormula,
+          costTarget: cost.target,
+          capTarget: cap.target,
+          costFormula: cost.formula,
+          capFormula: cap.formula,
         };
       })
     );

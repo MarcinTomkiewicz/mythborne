@@ -30,7 +30,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: E1 - formula targets/formulas read layer.
 - Completed and confirmed: E2 - formula assignment viewer.
 - Completed and confirmed: E3 - local entity formula assignment support.
-- Current backlog task: E4 - formula runtime integration cleanup.
+- Completed and confirmed: E4 - formula runtime integration cleanup.
+- Current backlog task: F1 - inspect current bonus template usage.
 
 ## Codex Backlog Workflow
 

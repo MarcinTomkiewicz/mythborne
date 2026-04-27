@@ -53,6 +53,20 @@ export interface EntityFormulaAssignment {
   updatedAt: string | null;
 }
 
+export type FormulaAssignmentSource = 'entity' | 'global';
+
+export interface FormulaEntityAssignmentLookup {
+  entityKind: string;
+  entityId: string;
+}
+
+export interface FormulaAssignmentResolution {
+  target: FormulaTarget;
+  formula: BalanceFormula;
+  assignment: FormulaAssignment | EntityFormulaAssignment;
+  source: FormulaAssignmentSource;
+}
+
 export interface FormulaBlock {
   id: string;
   scopeKey: string;
