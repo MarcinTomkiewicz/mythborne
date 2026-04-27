@@ -150,7 +150,10 @@ This is an operational estimate, not a formal audit.
 - Assignment status now distinguishes `no assignment`, `missing assigned formula`, `disabled assigned formula`, and `enabled assigned formula`.
 - Formula assignment view models and status mapping live in `core/types/formula-admin-view.types.ts` and `core/utils/formula-assignment-view.ts`, keeping page/component files focused on UI orchestration.
 - Project convention reinforced: exported/shared types, interfaces, constants, view models, and mapping rules should live in `core/domain`, `core/types`, `core/interfaces`, `core/constants`, or `core/utils`, not inside component/service/facade files.
-- Remaining E3 follow-up: show local entity override next to the global/default fallback for the same target.
+- Task E3 is confirmed complete as of 2026-04-27. `/admin/formulas` now shows local entity formula overrides next to the global/default fallback for the same target.
+- Building entity assignments are labelled with building name/key where available through `FormulaEntityLabels`.
+- The E3 view model documents the runtime lookup expectation in code: local entity assignment first, global/default assignment after removal.
+- Shared E3 row/reference types live in `core/types/formula-admin-view.types.ts`, and local override/global fallback mapping stays in `core/utils/formula-assignment-view.ts`.
 
 ### Buildings / estate layer
 - Building admin supports:

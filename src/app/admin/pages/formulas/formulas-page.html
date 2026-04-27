@@ -101,6 +101,9 @@
       <div class="flex-col gap-xs mb-lg">
         <p class="card-legend mb-0">Local overrides</p>
         <h3 class="mg-section__title mg-section__title--xs mb-0">Entity formula assignments</h3>
+        <p class="muted-text mb-0">
+          Local override is used first for the entity and target; global/default is the fallback if the local override is removed.
+        </p>
       </div>
 
       <div class="flex-col gap-md">
@@ -109,19 +112,24 @@
             <div class="flex-row-between-center flex-col-sm gap-sm">
               <div class="flex-col gap-xs">
                 <p class="card-legend mb-0">{{ row.assignment.entityKind }}</p>
-                <h4 class="mg-section__title mg-section__title--xs mb-0">{{ row.target?.label ?? row.assignment.targetId }}</h4>
+                <h4 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ row.entityLabel ?? row.assignment.entityId }}
+                </h4>
+                @if (row.entityKey) {
+                  <span class="muted-text">{{ row.entityKey }}</span>
+                }
               </div>
 
               <div class="flex-row-start-center flex-wrap gap-xs">
                 <span class="mg-tag">{{ row.target?.scopeKey ?? 'unknown scope' }}</span>
-                <span class="mg-tag">{{ row.formula?.label ?? 'missing formula' }}</span>
+                <span class="mg-tag">{{ row.resolutionLabel }}</span>
               </div>
             </div>
 
-            <div class="mg-grid grid-cols-4 grid-cols-1-md gap-md w-100">
+            <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
               <div class="flex-col gap-xs">
-                <span class="muted-text">Entity id</span>
-                <strong class="heading-color">{{ row.assignment.entityId }}</strong>
+                <span class="muted-text">Target</span>
+                <strong class="heading-color">{{ row.target?.label ?? row.assignment.targetId }}</strong>
               </div>
 
               <div class="flex-col gap-xs">
@@ -130,14 +138,40 @@
               </div>
 
               <div class="flex-col gap-xs">
-                <span class="muted-text">Formula key</span>
-                <strong class="heading-color">{{ row.formula?.key ?? '-' }}</strong>
-              </div>
-
-              <div class="flex-col gap-xs">
                 <span class="muted-text">Updated</span>
                 <strong class="heading-color">{{ row.assignment.updatedAt ?? '-' }}</strong>
               </div>
+            </div>
+
+            <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Local override formula</span>
+                <strong class="heading-color">{{ row.formula?.label ?? 'Missing formula' }}</strong>
+                <span class="muted-text">{{ row.formula?.key ?? row.assignment.formulaId }}</span>
+                @if (row.formula?.description) {
+                  <span class="muted-text">{{ row.formula?.description }}</span>
+                }
+                @if (row.formula?.expression) {
+                  <pre class="mb-0 text-break"><code>{{ row.formula?.expression }}</code></pre>
+                }
+              </div>
+
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Global/default fallback</span>
+                <strong class="heading-color">{{ row.globalFormula?.label ?? '-' }}</strong>
+                <span class="muted-text">{{ row.globalFormula?.key ?? row.globalAssignment?.formulaId ?? '-' }}</span>
+                @if (row.globalFormula?.description) {
+                  <span class="muted-text">{{ row.globalFormula?.description }}</span>
+                }
+                @if (row.globalFormula?.expression) {
+                  <pre class="mb-0 text-break"><code>{{ row.globalFormula?.expression }}</code></pre>
+                }
+              </div>
+            </div>
+
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Entity id</span>
+              <strong class="heading-color">{{ row.assignment.entityId }}</strong>
             </div>
           </article>
         } @empty {

@@ -1,16 +1,21 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { finalize } from 'rxjs';
+import { finalize, map, switchMap } from 'rxjs';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { FormulaService } from '../../../core/services/formula/formula';
+import { FormulaEntityLabels } from '../../../core/services/formula/formula-entity-labels';
 import { FORMULAS_PAGE_LINKS } from '../../admin-navigation.config';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
 import {
   EMPTY_FORMULA_ADMIN_DATA,
   EntityFormulaInspectionRow,
+  FormulaEntityReference,
   FormulaScopeInspectionRow,
   FormulaTargetAssignmentRow,
 } from '../../../core/types/formula-admin-view.types';
-import { toFormulaTargetAssignmentRow } from '../../../core/utils/formula-assignment-view';
+import {
+  toEntityFormulaInspectionRow,
+  toFormulaTargetAssignmentRow,
+} from '../../../core/utils/formula-assignment-view';
 import { FormulaAssignmentViewer } from '../../components/formulas/formula-assignment-viewer';
 
 @Component({
@@ -21,9 +26,11 @@ import { FormulaAssignmentViewer } from '../../components/formulas/formula-assig
 })
 export class FormulasPage implements OnInit {
   private readonly formulaService = inject(FormulaService);
+  private readonly formulaEntityLabels = inject(FormulaEntityLabels);
 
   readonly links = FORMULAS_PAGE_LINKS;
   readonly data = signal(EMPTY_FORMULA_ADMIN_DATA);
+  readonly entityReferences = signal(new Map<string, FormulaEntityReference>());
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly formulaById = computed(
@@ -41,6 +48,7 @@ export class FormulasPage implements OnInit {
         ]),
       ),
   );
+  readonly entityReferenceByKey = computed(() => this.entityReferences());
   readonly targetRows = computed<FormulaTargetAssignmentRow[]>(() =>
     this.data().targets.map((target) => {
       const assignment = this.assignmentByTargetId().get(target.id) ?? null;
@@ -51,11 +59,31 @@ export class FormulasPage implements OnInit {
     }),
   );
   readonly entityAssignmentRows = computed<EntityFormulaInspectionRow[]>(() =>
-    this.data().entityAssignments.map((assignment) => ({
-      assignment,
-      target: this.targetById().get(assignment.targetId) ?? null,
-      formula: this.formulaById().get(assignment.formulaId) ?? null,
-    })),
+    this.data().entityAssignments.map((assignment) => {
+      const target = this.targetById().get(assignment.targetId) ?? null;
+      const localFormula = this.formulaById().get(assignment.formulaId) ?? null;
+      const globalAssignment =
+        this.assignmentByTargetId().get(assignment.targetId) ?? null;
+      const globalFormula = globalAssignment
+        ? this.formulaById().get(globalAssignment.formulaId) ?? null
+        : null;
+      const entityReference =
+        this.entityReferenceByKey().get(
+          this.formulaEntityLabels.referenceKey(
+            assignment.entityKind,
+            assignment.entityId,
+          ),
+        ) ?? null;
+
+      return toEntityFormulaInspectionRow({
+        assignment,
+        target,
+        localFormula,
+        globalAssignment,
+        globalFormula,
+        entityReference,
+      });
+    }),
   );
   readonly scopes = computed(() =>
     Array.from(
@@ -88,9 +116,19 @@ export class FormulasPage implements OnInit {
 
     this.formulaService
       .getAdminData()
-      .pipe(finalize(() => this.isLoading.set(false)))
+      .pipe(
+        switchMap((data) =>
+          this.formulaEntityLabels.getEntityLabels(data.entityAssignments).pipe(
+            map((entityReferences) => ({ data, entityReferences })),
+          ),
+        ),
+        finalize(() => this.isLoading.set(false)),
+      )
       .subscribe({
-        next: (data) => this.data.set(data),
+        next: ({ data, entityReferences }) => {
+          this.data.set(data);
+          this.entityReferences.set(entityReferences);
+        },
         error: (error: unknown) =>
           this.error.set(
             error instanceof Error

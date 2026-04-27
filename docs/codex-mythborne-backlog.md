@@ -407,6 +407,8 @@ Global Codex rules:
 
 ## Task E3 — Local entity formula assignment support
 
+**Status:** Done / confirmed 2026-04-27.
+
 **Goal:** Support per-entity formula override inspection.
 
 **Scope:**

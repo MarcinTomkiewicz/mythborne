@@ -1,5 +1,12 @@
-import { BalanceFormula, FormulaAssignment } from '../domain/formula/formula.model';
 import {
+  BalanceFormula,
+  EntityFormulaAssignment,
+  FormulaAssignment,
+  FormulaTarget,
+} from '../domain/formula/formula.model';
+import {
+  EntityFormulaInspectionRow,
+  FormulaEntityReference,
   FormulaAssignmentStatus,
   FormulaTargetAssignmentRow,
 } from '../types/formula-admin-view.types';
@@ -50,5 +57,29 @@ export function toFormulaTargetAssignmentRow(
     formula,
     status,
     statusLabel: formulaAssignmentStatusLabel(status),
+  };
+}
+
+export function toEntityFormulaInspectionRow(input: {
+  assignment: EntityFormulaAssignment;
+  target: FormulaTarget | null;
+  localFormula: BalanceFormula | null;
+  globalAssignment: FormulaAssignment | null;
+  globalFormula: BalanceFormula | null;
+  entityReference: FormulaEntityReference | null;
+}): EntityFormulaInspectionRow {
+  // Runtime lookup uses local entity assignment first; if it is removed,
+  // the same target falls back to its global/default formula assignment.
+  return {
+    assignment: input.assignment,
+    target: input.target,
+    formula: input.localFormula,
+    globalAssignment: input.globalAssignment,
+    globalFormula: input.globalFormula,
+    entityLabel: input.entityReference?.label ?? null,
+    entityKey: input.entityReference?.key ?? null,
+    resolutionLabel: input.localFormula
+      ? 'local override active'
+      : 'local override references missing formula',
   };
 }

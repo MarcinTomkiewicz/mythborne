@@ -29,7 +29,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: D6 - anti-abuse config admin section.
 - Completed and confirmed: E1 - formula targets/formulas read layer.
 - Completed and confirmed: E2 - formula assignment viewer.
-- Current backlog task: E3 - local entity formula assignment support.
+- Completed and confirmed: E3 - local entity formula assignment support.
+- Current backlog task: E4 - formula runtime integration cleanup.
 
 ## Codex Backlog Workflow
 
