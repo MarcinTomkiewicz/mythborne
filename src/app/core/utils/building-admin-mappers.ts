@@ -8,17 +8,20 @@ import {
 } from '../domain/building/building.model';
 import { resolveBuildingImagePath } from '../domain/building/building-image-paths';
 import {
-  BuildingBonusAdminRow,
   BuildingRequirementAdminRow,
   BuildingResourceCostAdminRow,
   EditableBuildingRow,
 } from '../types/building-admin-row.types';
+import { BonusTemplate } from '../types/bonus.types';
+import { CanonicalEntityBonusWithTemplateRow } from '../types/bonus-governance.types';
 import { Row } from '../types/supabase.types';
-import { normalizeBonusTarget, normalizeBonusTemplate, normalizeBonusType } from './bonus';
+import { mapResolvedBonus } from './bonus-governance';
+import { normalizeBonusType } from './bonus';
 import { FormulaAdminData } from '../domain/formula/formula.model';
 
 export function mapEditableBuilding(
   row: EditableBuildingRow,
+  bonuses: EditableBuildingBonus[],
   formulaData?: FormulaAdminData
 ): EditableBuilding {
   return {
@@ -33,17 +36,7 @@ export function mapEditableBuilding(
     baseBuildTimeMinutes: row.base_build_time_minutes ?? 0,
     maxLevel: row.max_level ?? 0,
     formulaOverrides: mapBuildingFormulaOverrides(row.id, formulaData),
-    bonuses: (row.building_bonuses ?? []).map((bonus) => {
-      const template = normalizeBonusTemplate(bonus.bonus_templates);
-
-      return {
-        templateId: bonus.template_id,
-        target: template.target,
-        type: template.type,
-        value: Number(bonus.value ?? 0),
-        description: template.description,
-      };
-    }),
+    bonuses,
     resourceCosts: sortBuildingRules(row.building_resource_costs ?? []).map((cost) => ({
       id: cost.id,
       resourceType: normalizeBuildingResourceType(cost.resource_type),
@@ -61,15 +54,36 @@ export function mapEditableBuilding(
 }
 
 export function mapBuildingBonusTemplates(
-  rows: Row<'bonus_templates'>[]
+  rows: BonusTemplate[]
 ): BuildingAdminData['bonusTemplates'] {
-  return rows.map((row): EditableBuildingBonus => ({
-    templateId: row.id,
-    target: normalizeBonusTarget(row.target),
-    type: normalizeBonusType(row.type),
+  return rows.map((template): EditableBuildingBonus => ({
+    templateId: template.id,
+    target: template.target,
+    type: normalizeBonusType(template.type),
     value: 0,
-    description: row.description ?? '',
+    description: template.description ?? '',
   }));
+}
+
+export function mapEditableBuildingEntityBonus(
+  row: CanonicalEntityBonusWithTemplateRow,
+  templateById: ReadonlyMap<string, BonusTemplate>
+): EditableBuildingBonus {
+  const resolved = mapResolvedBonus(row);
+
+  if (resolved.qualityScalesLevelInterval) {
+    throw new Error('entity_bonuses.quality_scales_level_interval must remain false.');
+  }
+
+  const template = requiredTemplate(templateById, resolved.templateId);
+
+  return {
+    templateId: resolved.templateId,
+    target: resolved.targetKey,
+    type: normalizeBonusType(resolved.typeKey),
+    value: resolved.value,
+    description: row.description ?? template.description ?? '',
+  };
 }
 
 export function mapBuildingDistricts(
@@ -137,4 +151,19 @@ function mapBuildingFormulaOverrides(
     upgradeTimeFormulaId: overrideFor('building_upgrade_time'),
     bonusGrowthFormulaId: overrideFor('building_bonus_growth'),
   };
+}
+
+function requiredTemplate(
+  templateById: ReadonlyMap<string, BonusTemplate>,
+  templateId: string
+): BonusTemplate {
+  const template = templateById.get(templateId);
+
+  if (!template) {
+    throw new Error(
+      `bonus_templates entry "${templateId}" is required for building entity bonus admin view.`
+    );
+  }
+
+  return template;
 }

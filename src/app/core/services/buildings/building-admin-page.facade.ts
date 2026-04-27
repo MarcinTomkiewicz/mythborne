@@ -26,6 +26,7 @@ import { getErrorMessage } from '../../utils/error-message';
 import { createFormArrayEditor } from '../../utils/form-array-editor';
 import { trimText } from '../../utils/normalize-text';
 import { nonNegativeInteger } from '../../utils/number';
+import { toSlug } from '../../utils/slug';
 import { FormulaService } from '../formula/formula';
 import { BuildingProgressionService } from '../progression/building-progression';
 import { ToastService } from '../ui/toast';
@@ -63,6 +64,12 @@ export class BuildingsPageFacade {
     requirementSummary: (requirement: EditableBuildingRequirement) =>
       toBuildingRequirementSummary(requirement, this.adminData().stats),
   };
+  readonly bonusTemplateOptions = computed(() =>
+    this.adminData().bonusTemplates.map((template) => ({
+      label: `${template.target} (${template.type})`,
+      value: template.templateId ?? '',
+    }))
+  );
 
   readonly building = createEntityEditorState<EditableBuilding, BuildingEditorForm>({
     destroyRef: this.destroyRef,
@@ -151,6 +158,23 @@ export class BuildingsPageFacade {
     };
   });
 
+  constructor() {
+    this.building.editorForm.controls.name.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((name) => {
+        const id = this.building.editorForm.controls.id.value;
+        const key = this.building.editorForm.controls.key.value;
+
+        if (id && key) {
+          return;
+        }
+
+        this.building.editorForm.controls.key.setValue(toSlug(name), {
+          emitEvent: false,
+        });
+      });
+  }
+
   loadData(preferredKey?: string) {
     this.isLoading.set(true);
     this.error.set(null);
@@ -177,7 +201,7 @@ export class BuildingsPageFacade {
       });
   }
 
-  applyTemplate(index: number, templateId: string) {
+  applyTemplate(index: number, templateId: string | null) {
     const template = this.adminData().bonusTemplates.find(
       (entry) => entry.templateId === templateId
     );

@@ -1,0 +1,86 @@
+<div class="mg-surface-card flex-col gap-md p-md">
+  <div class="flex-row-between-center flex-col-sm gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Preview</p>
+      <p class="mb-0 muted-text">Current formula output for the provided building level.</p>
+    </div>
+
+    <label class="flex-row-start-center gap-sm">
+      <span class="muted-text">Level</span>
+      <input
+        pInputText
+        type="number"
+        class="w-px-100"
+        [value]="page().previewLevel()"
+        (input)="page().updatePreviewLevel($any($event.target).value)"
+      />
+    </label>
+  </div>
+
+  <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+    <div class="mg-card flex-col gap-xs p-md">
+      <span class="muted-text">Next level costs</span>
+      <div class="flex-col gap-xs">
+        @for (cost of page().preview().nextCosts; track cost.resourceType) {
+          <div class="flex-row-start-center gap-sm">
+            @switch (cost.resourceType) {
+              @case ('drachma') {
+                <i class="pi pi-cash"></i>
+              }
+              @case ('materials') {
+                <i class="pi pi-marble"></i>
+              }
+              @case ('workforce') {
+                <i class="pi pi-workforce"></i>
+              }
+            }
+            <strong class="heading-color">{{ cost.amount }}</strong>
+            <span class="muted-text">{{ page().format.resource(cost.resourceType) }}</span>
+          </div>
+        } @empty {
+          <span class="muted-text">No resource cost defined.</span>
+        }
+      </div>
+    </div>
+
+    <div class="mg-card flex-col gap-xs p-md">
+      <div class="flex-row-start-center gap-sm">
+        <i class="pi pi-sundial muted-text"></i>
+        <span class="muted-text">Next level time</span>
+      </div>
+      <strong class="heading-color">{{ page().format.duration(page().preview().nextTime) }}</strong>
+    </div>
+  </div>
+
+  <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+    <div class="flex-col gap-sm">
+      @for (bonus of page().preview().bonuses; track bonus.target + bonus.type) {
+        <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
+          <strong class="heading-color">{{ page().format.bonusLabel(bonus.target) }}</strong>
+          <span>
+            {{ page().format.bonusValue(bonus.current, bonus.type) }} ->
+            {{ page().format.bonusValue(bonus.next, bonus.type) }}
+          </span>
+        </div>
+      } @empty {
+        <p class="mb-0 muted-text">Add a bonus to see progression preview.</p>
+      }
+    </div>
+
+    <div class="flex-col gap-sm">
+      @for (requirement of page().preview().requirements; track requirement.type + (requirement.statKey ?? '') + requirement.appliesFromLevel) {
+        <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
+          <strong class="heading-color">{{ page().format.requirementType(requirement.type) }}</strong>
+          <span>
+            {{ page().format.requirementSummary(requirement) }}
+            @if (requirement.appliesFromLevel > 1) {
+              <span> from level {{ requirement.appliesFromLevel }}</span>
+            }
+          </span>
+        </div>
+      } @empty {
+        <p class="mb-0 muted-text">No active requirements for the preview level.</p>
+      }
+    </div>
+  </div>
+</div>

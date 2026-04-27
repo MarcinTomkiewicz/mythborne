@@ -1,0 +1,64 @@
+<div class="mg-surface-card flex-col gap-md p-md">
+  <div class="flex-row-between-center flex-col-sm gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Requirements</p>
+      <p class="mb-0 muted-text">
+        Add hero level, hero rank or hero stat requirements and choose from which building level they apply.
+      </p>
+    </div>
+
+    <p-button label="Add requirement" [text]="true" (onClick)="page().requirementEditor.add()" />
+  </div>
+
+  <div class="flex-col gap-md">
+    @for (requirementGroup of page().requirementEditor.controls; track $index) {
+      <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="requirementGroup">
+        <div class="mg-grid grid-cols-5 grid-cols-1-sm gap-md w-100 align-items-center">
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Type</span>
+            <p-select
+              formControlName="type"
+              [options]="requirementTypeOptions"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-100"
+              (onChange)="page().updateRequirementType($index, $event.value)"
+            />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Stat</span>
+            <p-select
+              formControlName="statKey"
+              [options]="statOptions()"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-100"
+            />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Minimum value</span>
+            <input pInputText type="number" class="w-100" formControlName="minValue" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">From building level</span>
+            <input pInputText type="number" class="w-100" formControlName="appliesFromLevel" />
+          </label>
+
+          <div class="flex-row-start-center">
+            <p-button
+              label="Remove"
+              severity="danger"
+              [text]="true"
+              (onClick)="page().requirementEditor.remove($index)"
+            />
+          </div>
+        </div>
+      </div>
+    } @empty {
+      <p class="mb-0 muted-text">No requirements configured yet.</p>
+    }
+  </div>
+</div>

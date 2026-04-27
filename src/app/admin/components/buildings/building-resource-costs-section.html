@@ -1,0 +1,52 @@
+<div class="mg-surface-card flex-col gap-md p-md">
+  <div class="flex-row-between-center flex-col-sm gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Resource costs</p>
+      <p class="mb-0 muted-text">
+        Each row uses the global building cost formula and can start from a chosen building level.
+      </p>
+    </div>
+
+    <p-button label="Add cost" [text]="true" (onClick)="page().costEditor.add()" />
+  </div>
+
+  <div class="flex-col gap-md">
+    @for (costGroup of page().costEditor.controls; track $index) {
+      <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="costGroup">
+        <div class="mg-grid grid-cols-4 grid-cols-1-sm gap-md w-100 align-items-center">
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Resource</span>
+            <p-select
+              formControlName="resourceType"
+              [options]="resourceTypeOptions"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-100"
+            />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Base value</span>
+            <input pInputText type="number" class="w-100" formControlName="baseValue" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">From building level</span>
+            <input pInputText type="number" class="w-100" formControlName="appliesFromLevel" />
+          </label>
+
+          <div class="flex-row-start-center">
+            <p-button
+              label="Remove"
+              severity="danger"
+              [text]="true"
+              (onClick)="page().costEditor.remove($index)"
+            />
+          </div>
+        </div>
+      </div>
+    } @empty {
+      <p class="mb-0 muted-text">No resource costs configured yet.</p>
+    }
+  </div>
+</div>

@@ -622,6 +622,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F10 — Building entity bonuses
 
+**Status:** Done / confirmed.
+
 **Goal:** Building bonuses use `entity_bonuses(entity_type = building)`.
 
 **Scope:**
@@ -633,7 +635,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 - Build passes.
 
 **Blocker:**
-- If building bonuses are not backfilled in `entity_bonuses`, stop and report SQL/backfill blocker. Do not add permanent fallback to legacy `building_bonuses`.
+- If expected building bonus rows are missing from `entity_bonuses`, stop and report SQL/backfill blocker. Do not add permanent fallback to legacy `building_bonuses`.
+- If buildings legitimately have no bonus rows, treat that as an empty canonical `entity_bonuses` state and keep the page/runtime loading without legacy fallback.
 
 ---
 

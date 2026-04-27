@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
+import { BONUS_ENTITY_TYPES } from '../../constants/bonus-entity-types.const';
 import { TABLES } from '../../constants/tables.const';
 import {
   BuildingBonusPreview,
@@ -18,14 +19,15 @@ import { FormulaService } from '../formula/formula';
 import { Hero } from '../hero/hero';
 import { resourceOrder } from '../../utils/building-display';
 import { normalizeBuildingRequirementType, normalizeBuildingResourceType } from '../../utils/building-admin-mappers';
-import { normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
+import { normalizeBonusType } from '../../utils/bonus';
+import { mapResolvedBonus } from '../../utils/bonus-governance';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
+import { CanonicalEntityBonusWithTemplateRow } from '../../types/bonus-governance.types';
 import {
   DistrictRow,
   EstateBuildingRow,
   EstateRow,
-  MansionBuildingBonusRow,
   MansionBuildingRequirementRow,
   MansionBuildingResourceCostRow,
   MansionBuildingRow,
@@ -46,20 +48,30 @@ export class BuildingsService {
           formulaData: this.formulaService.getAdminData(),
           buildings: this.backend.getAll<
             MansionBuildingRow & {
-              building_bonuses: MansionBuildingBonusRow[];
               building_requirements: MansionBuildingRequirementRow[];
               building_resource_costs: MansionBuildingResourceCostRow[];
             }
           >({
             table: TABLES.buildings,
-            select:
-              '*, building_bonuses(*, bonus_templates(*)), building_requirements(*), building_resource_costs(*)',
+            select: '*, building_requirements(*), building_resource_costs(*)',
             orderBy: [
               { column: 'district_code' },
               { column: 'sort_order' },
               { column: 'rank_required' },
               { column: 'name' },
             ],
+            camelCase: false,
+          }),
+          entityBonuses: this.backend.getAll<CanonicalEntityBonusWithTemplateRow>({
+            table: TABLES.entity_bonuses,
+            select: '*, bonus_templates (*)',
+            filters: {
+              entityType: {
+                operator: FilterOperator.EQ,
+                value: BONUS_ENTITY_TYPES.Building,
+              },
+            },
+            orderBy: { column: 'sort_order' },
             camelCase: false,
           }),
           estate: hero.estate_id
@@ -98,7 +110,7 @@ export class BuildingsService {
             camelCase: false,
           }),
         }).pipe(
-          map(({ formulaData, buildings, estate, estateBuildings, districts, stats }) => {
+          map(({ formulaData, buildings, entityBonuses, estate, estateBuildings, districts, stats }) => {
             const currentDistrictCode = estate?.district_code ?? 'A';
             const currentDistrict = districts.find(
               (district) => district.code === currentDistrictCode
@@ -110,11 +122,13 @@ export class BuildingsService {
             const statLabelMap = new Map(
               stats.map((stat) => [stat.key, stat.label])
             );
+            const bonusesByBuildingId = this.groupBonusesByEntityId(entityBonuses);
 
             const districtBuildings = buildings
               .map((row) =>
                 this.mapMansionBuilding(
                   row,
+                  bonusesByBuildingId.get(row.id) ?? [],
                   ownedMap,
                   statLabelMap,
                   currentDistrictRank,
@@ -137,10 +151,10 @@ export class BuildingsService {
 
   private mapMansionBuilding(
     building: MansionBuildingRow & {
-      building_bonuses: MansionBuildingBonusRow[];
       building_requirements: MansionBuildingRequirementRow[];
       building_resource_costs: MansionBuildingResourceCostRow[];
     },
+    bonuses: CanonicalEntityBonusWithTemplateRow[],
     ownedMap: Map<string, number>,
     statLabelMap: Map<string, string>,
     currentDistrictRank: number,
@@ -194,38 +208,34 @@ export class BuildingsService {
         statLabelMap,
         nextLevel
       ),
-      bonuses: this.mapBonuses(
-        building.building_bonuses ?? [],
-        currentLevel,
-        rules
-      ),
+      bonuses: this.mapBonuses(bonuses, currentLevel, rules),
     };
   }
 
   private mapBonuses(
-    rows: MansionBuildingBonusRow[],
+    rows: CanonicalEntityBonusWithTemplateRow[],
     currentLevel: number,
     rules: BuildingProgressionRules
   ): BuildingBonusPreview[] {
-    return rows.map((row) => ({
-      templateId: row.template_id,
-      target: normalizeBonusTarget(row.bonus_templates.target),
-      type: normalizeBonusType(row.bonus_templates.type),
-      description: row.bonus_templates.description ?? null,
-      baseValue: Number(row.value ?? 0),
-      currentValue:
-        this.progression.getBonusValue(
-          currentLevel,
-          Number(row.value ?? 0),
-          rules
-        ) ?? 0,
-      nextValue:
-        this.progression.getBonusValue(
-          currentLevel + 1,
-          Number(row.value ?? 0),
-          rules
-        ) ?? 0,
-    }));
+    return rows.map((row) => {
+      const resolved = mapResolvedBonus(row);
+
+      if (resolved.qualityScalesLevelInterval) {
+        throw new Error('entity_bonuses.quality_scales_level_interval must remain false.');
+      }
+
+      return {
+        templateId: resolved.templateId,
+        target: resolved.targetKey,
+        type: normalizeBonusType(resolved.typeKey),
+        description: row.description ?? row.bonus_templates?.description ?? null,
+        baseValue: resolved.value,
+        currentValue:
+          this.progression.getBonusValue(currentLevel, resolved.value, rules) ?? 0,
+        nextValue:
+          this.progression.getBonusValue(currentLevel + 1, resolved.value, rules) ?? 0,
+      };
+    });
   }
 
   private mapActiveCostRules(
@@ -296,4 +306,17 @@ export class BuildingsService {
       }));
   }
 
+  private groupBonusesByEntityId(
+    rows: CanonicalEntityBonusWithTemplateRow[]
+  ): Map<string, CanonicalEntityBonusWithTemplateRow[]> {
+    const mapById = new Map<string, CanonicalEntityBonusWithTemplateRow[]>();
+
+    for (const row of rows) {
+      const existing = mapById.get(row.entity_id) ?? [];
+      existing.push(row);
+      mapById.set(row.entity_id, existing);
+    }
+
+    return mapById;
+  }
 }

@@ -2,7 +2,6 @@ import { FormFieldType } from '../../enums/form-field-type';
 import { FormFieldConfig } from '../../types/form-field.types';
 import { BuildingAdminData } from '../../domain/building/building.model';
 import { FormulaTarget } from '../../domain/formula/formula.model';
-import { BONUS_TYPE_OPTIONS } from '../../utils/bonus';
 
 export const BUILDING_RESOURCE_TYPE_OPTIONS = [
   { label: 'Drachma', value: 'drachma' },
@@ -14,8 +13,6 @@ export const BUILDING_REQUIREMENT_TYPE_OPTIONS = [
   { label: 'Hero level', value: 'hero_level' },
   { label: 'Hero stat', value: 'hero_stat' },
 ] as const;
-
-export const BUILDING_BONUS_TYPE_OPTIONS = BONUS_TYPE_OPTIONS;
 
 export function createBuildingFormulaFields(
   targets: readonly FormulaTarget[],
@@ -53,7 +50,7 @@ export function createBuildingPrimaryEditorFields(
   adminData: BuildingAdminData
 ): readonly FormFieldConfig[] {
   return [
-    { type: FormFieldType.Text, controlName: 'key', label: 'Key' },
+    { type: FormFieldType.Text, controlName: 'key', label: 'Key', readonly: true },
     { type: FormFieldType.Text, controlName: 'name', label: 'Name' },
     {
       type: FormFieldType.Textarea,

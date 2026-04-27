@@ -17,7 +17,6 @@ export const TABLES = {
   item_generation_bucket_profiles: 'item_generation_bucket_profiles',
   item_generation_qualities: 'item_generation_qualities',
   buildings: 'buildings',
-  building_bonuses: 'building_bonuses',
   building_requirements: 'building_requirements',
   building_resource_costs: 'building_resource_costs',
   estate_buildings: 'estate_buildings',

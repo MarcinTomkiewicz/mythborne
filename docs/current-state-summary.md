@@ -293,6 +293,11 @@ Still pending at the gameplay level even if partially supported in schema:
 - F9 removed app-code usage of `item_generation_base_bonuses` and `item_generation_affix_bonuses`; those names remain only in generated database types.
 - F9 item quality scaling uses `entity_bonuses.quality_scales_value` to scale only bonus value. `quality_scales_level_interval = true` is rejected because `level_interval` must never be quality-scaled.
 - `/admin/item-catalog` now keeps base/affix `key` readonly and generated from `name`, and bonus rows use PrimeNG/shared form controls for select/checkbox inputs.
+- F10 accepted on 2026-04-27: building admin read/write and mansion/building preview now use `entity_bonuses` with `entity_type = building`.
+- F10 removed app-code usage of `building_bonuses`; that legacy table remains only in generated database types.
+- F10 building bonus writes do a controlled replace for the concrete `entity_type = building` and `entity_id = buildingId`, require semantic bonus templates, and never fall back to legacy `building_bonuses`.
+- Empty building `entity_bonuses` is allowed when buildings legitimately have no configured bonus rows; missing expected rows should still be treated as a SQL/backfill blocker.
+- `/admin/buildings` was split into smaller building section components, building form selects in the touched sections use PrimeNG/shared controls, and building `key` is readonly/generated from `name` only for new or empty-key records.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { forkJoin, map, Observable, of, switchMap, tap } from 'rxjs';
+import { forkJoin, map, Observable, of, switchMap, tap, throwError } from 'rxjs';
+import { BONUS_ENTITY_TYPES } from '../../constants/bonus-entity-types.const';
 import { TABLES } from '../../constants/tables.const';
 import {
   BuildingAdminData,
@@ -10,6 +11,7 @@ import {
 } from '../../domain/building/building.model';
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
 import {
+  mapEditableBuildingEntityBonus,
   mapBuildingBonusTemplates,
   mapBuildingDistricts,
   mapBuildingStats,
@@ -22,7 +24,10 @@ import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
 import { EditableBuildingRow } from '../../types/building-admin-row.types';
 import { BuildingPayload } from '../../types/building-service.types';
-import { ItemGenerationBonusTemplateAdminService } from '../items/item-generation-bonus-template-admin';
+import { CanonicalEntityBonusWithTemplateRow } from '../../types/bonus-governance.types';
+import { Row } from '../../types/supabase.types';
+import { toEntityBonusPayload } from '../../utils/entity-bonus-governance';
+import { BonusTemplateAdminService } from '../bonus/bonus-template-admin';
 import { FormulaService } from '../formula/formula';
 import { BUILDING_PROGRESSION_TARGET_KEYS } from '../../domain/progression/building-progression.model';
 
@@ -30,29 +35,33 @@ import { BUILDING_PROGRESSION_TARGET_KEYS } from '../../domain/progression/build
 export class BuildingAdminService {
   private readonly backend = inject(Backend);
   private readonly progression = inject(BuildingProgressionService);
-  private readonly bonusTemplates = inject(ItemGenerationBonusTemplateAdminService);
+  private readonly bonusTemplates = inject(BonusTemplateAdminService);
   private readonly formulaService = inject(FormulaService);
 
   getAdminData(): Observable<BuildingAdminData> {
     return forkJoin({
-      buildings: this.backend.getAll<any>({
+      buildings: this.backend.getAll<EditableBuildingRow>({
         table: TABLES.buildings,
-        select:
-          '*, building_bonuses(*, bonus_templates(*)), building_requirements(*), building_resource_costs(*)',
+        select: '*, building_requirements(*), building_resource_costs(*)',
         orderBy: { column: 'sort_order' },
         camelCase: false,
       }),
-      templates: this.backend.getAll<any>({
-        table: TABLES.bonus_templates,
-        orderBy: { column: 'target' },
+      entityBonuses: this.backend.getAll<CanonicalEntityBonusWithTemplateRow>({
+        table: TABLES.entity_bonuses,
+        select: '*, bonus_templates (*)',
+        filters: {
+          entityType: { operator: FilterOperator.EQ, value: BONUS_ENTITY_TYPES.Building },
+        },
+        orderBy: { column: 'sort_order' },
         camelCase: false,
       }),
-      districts: this.backend.getAll<any>({
+      bonusData: this.bonusTemplates.getAdminData(),
+      districts: this.backend.getAll<Row<'estate_districts'>>({
         table: TABLES.estate_districts,
         orderBy: { column: 'rank' },
         camelCase: false,
       }),
-      stats: this.backend.getAll<any>({
+      stats: this.backend.getAll<Pick<Row<'stats'>, 'key' | 'label'>>({
         table: TABLES.stats,
         select: 'key, label',
         orderBy: { column: 'order' },
@@ -60,12 +69,28 @@ export class BuildingAdminService {
       }),
       formulaData: this.formulaService.getAdminData(),
     }).pipe(
-      map(({ buildings, templates, districts, stats, formulaData }) => ({
-        buildings: buildings.map((row) => mapEditableBuilding(row as EditableBuildingRow, formulaData)),
-        bonusTemplates: mapBuildingBonusTemplates(templates),
-        districts: mapBuildingDistricts(districts),
-        stats: mapBuildingStats(stats),
-      }))
+      map(({ buildings, entityBonuses, bonusData, districts, stats, formulaData }) => {
+        const bonusTemplateById = new Map(
+          bonusData.templates.map((template) => [template.id, template])
+        );
+        const bonusesByBuildingId = this.groupEditableBonusesByEntityId(
+          entityBonuses,
+          bonusTemplateById
+        );
+
+        return {
+          buildings: buildings.map((row) =>
+            mapEditableBuilding(
+              row,
+              bonusesByBuildingId.get(row.id) ?? [],
+              formulaData
+            )
+          ),
+          bonusTemplates: mapBuildingBonusTemplates(bonusData.templates),
+          districts: mapBuildingDistricts(districts),
+          stats: mapBuildingStats(stats),
+        };
+      })
     );
   }
 
@@ -117,23 +142,33 @@ export class BuildingAdminService {
     buildingId: string,
     bonuses: EditableBuildingBonus[]
   ): Observable<void> {
-    return this.deleteChildren(TABLES.building_bonuses, 'building_id', buildingId).pipe(
-      switchMap(() =>
-        bonuses.length
-          ? forkJoin(
-              bonuses.map((bonus) =>
-                this.bonusTemplates.ensureTemplateId(bonus).pipe(
-                  map((templateId) => ({
-                    buildingId,
-                    templateId,
-                    value: roundedNumber(bonus.value),
-                  }))
-                )
-              )
-            )
-          : of([])
-      ),
-      switchMap((rows) => this.insertRows(TABLES.building_bonuses, rows))
+    const missingTemplate = bonuses.some((bonus) => !bonus.templateId);
+
+    if (missingTemplate) {
+      return throwError(
+        () => new Error('Building bonuses require a semantic bonus template.')
+      );
+    }
+
+    return this.backend.delete(TABLES.entity_bonuses, {
+      entityType: { operator: FilterOperator.EQ, value: BONUS_ENTITY_TYPES.Building },
+      entityId: { operator: FilterOperator.EQ, value: buildingId },
+    }).pipe(
+      switchMap(() => {
+        const rows = bonuses.map((bonus, index) =>
+          toEntityBonusPayload({
+            entityType: BONUS_ENTITY_TYPES.Building,
+            entityId: buildingId,
+            bonusTemplateId: bonus.templateId ?? '',
+            value: roundedNumber(bonus.value),
+            description: bonus.description,
+            sortOrder: index,
+            isActive: true,
+          })
+        );
+
+        return this.insertRows(TABLES.entity_bonuses, rows);
+      })
     );
   }
 
@@ -219,5 +254,20 @@ export class BuildingAdminService {
     }
 
     return this.backend.createMany(table, rows as object[]).pipe(map(() => void 0));
+  }
+
+  private groupEditableBonusesByEntityId(
+    rows: CanonicalEntityBonusWithTemplateRow[],
+    bonusTemplateById: Parameters<typeof mapEditableBuildingEntityBonus>[1]
+  ): Map<string, EditableBuildingBonus[]> {
+    const mapById = new Map<string, EditableBuildingBonus[]>();
+
+    for (const row of rows) {
+      const existing = mapById.get(row.entity_id) ?? [];
+      existing.push(mapEditableBuildingEntityBonus(row, bonusTemplateById));
+      mapById.set(row.entity_id, existing);
+    }
+
+    return mapById;
   }
 }
