@@ -1,6 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { catchError, forkJoin, map, Observable, of, tap } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
+import { RPC } from '../../constants/rpc.const';
 import { FilterOperator } from '../../enums/filter-operators';
 import {
   GameServerOrderColumn,
@@ -127,10 +128,12 @@ export class ActiveServer {
   }
 
   private hasGlobalRole(roleKey: GlobalRoleKey): Observable<boolean> {
-    return this.backend.rpc<boolean>('has_global_role', { required_keys: [roleKey] }).pipe(
-      map((hasRole) => hasRole ?? false),
-      catchError(() => of(false)),
-    );
+    return this.backend
+      .rpc<boolean>(RPC.has_global_role, { required_keys: [roleKey] })
+      .pipe(
+        map((hasRole) => hasRole ?? false),
+        catchError(() => of(false)),
+      );
   }
 
   private loadMemberships(

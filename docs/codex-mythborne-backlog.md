@@ -333,6 +333,8 @@ Global Codex rules:
 
 ## Task D5 — Config apply/cancel flow
 
+**Status:** Done / confirmed 2026-04-27.
+
 **Goal:** Apply/cancel config changes through governed workflow.
 
 **Scope:**

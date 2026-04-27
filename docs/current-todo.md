@@ -25,7 +25,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: D2 - config values read model.
 - Completed and confirmed: D3 - config change-set list/detail.
 - Completed and confirmed: D4 - config edit draft flow.
-- Current backlog task: D5 - config apply/cancel flow.
+- Completed and confirmed: D5 - config apply/cancel flow.
+- Current backlog task: D6 - anti-abuse config admin section.
 
 ## Codex Backlog Workflow
 

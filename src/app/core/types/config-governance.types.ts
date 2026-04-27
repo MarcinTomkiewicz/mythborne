@@ -1,6 +1,9 @@
 import { Enums, Json } from './database.types';
 import { Row } from './supabase.types';
-import { EffectiveConfigValueSource } from '../enums/config-governance.enum';
+import {
+  ConfigChangeKindKey,
+  EffectiveConfigValueSource,
+} from '../enums/config-governance.enum';
 
 export type ConfigGovernanceScope = Enums<'config_governance_scope'>;
 export type ConfigManagedEntityType = Enums<'config_managed_entity_type'>;
@@ -77,11 +80,13 @@ export interface ConfigChangeSet {
   changelogTitle: string | null;
   changelogBody: string | null;
   requestedBy: string | null;
+  readyBy: string | null;
   readyAt: string | null;
   appliedBy: string | null;
   appliedAt: string | null;
   cancelledBy: string | null;
   cancelledAt: string | null;
+  cancelledReason: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -101,4 +106,26 @@ export interface ConfigChangeEntry {
   newValue: Json | null;
   metadata: Json;
   createdAt: string;
+}
+
+export interface CreateConfigChangeSetDraftInput {
+  title: string;
+  reason: string;
+  changelogVisibility: ConfigChangeVisibility;
+  changelogTitle: string | null;
+  changelogBody: string | null;
+  requestedBy: string | null;
+}
+
+export interface CreateConfigValueChangeEntryInput {
+  changeSetId: string;
+  changeKind:
+    | ConfigChangeKindKey.GlobalValueChange
+    | ConfigChangeKindKey.ServerValueChange;
+  definition: ConfigDefinition;
+  serverId: string | null;
+  oldValue: Json | null;
+  newValue: Json;
+  oldSource: string | null;
+  oldSourceLabel: string | null;
 }

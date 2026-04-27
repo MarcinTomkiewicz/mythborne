@@ -14,10 +14,9 @@ import {
   ConfigChangeEntryRow,
   ConfigChangeSet,
   ConfigChangeSetRow,
-  ConfigChangeVisibility,
-  ConfigDefinition,
+  CreateConfigChangeSetDraftInput,
+  CreateConfigValueChangeEntryInput,
 } from '../../types/config-governance.types';
-import { Json } from '../../types/database.types';
 import {
   mapConfigChangeEntry,
   mapConfigChangeSet,
@@ -55,14 +54,9 @@ export class ConfigChangeSets {
       .pipe(map((rows) => rows.map(mapConfigChangeEntry)));
   }
 
-  createDraftChangeSet(input: {
-    title: string;
-    reason: string;
-    changelogVisibility: ConfigChangeVisibility;
-    changelogTitle: string | null;
-    changelogBody: string | null;
-    requestedBy: string | null;
-  }): Observable<ConfigChangeSet> {
+  createDraftChangeSet(
+    input: CreateConfigChangeSetDraftInput,
+  ): Observable<ConfigChangeSet> {
     return this.backend.create<ConfigChangeSet>(TABLES.config_change_sets, {
       title: input.title,
       reason: input.reason,
@@ -74,18 +68,9 @@ export class ConfigChangeSets {
     });
   }
 
-  createConfigValueChangeEntry(input: {
-    changeSetId: string;
-    changeKind:
-      | ConfigChangeKindKey.GlobalValueChange
-      | ConfigChangeKindKey.ServerValueChange;
-    definition: ConfigDefinition;
-    serverId: string | null;
-    oldValue: Json | null;
-    newValue: Json;
-    oldSource: string | null;
-    oldSourceLabel: string | null;
-  }): Observable<ConfigChangeEntry[]> {
+  createConfigValueChangeEntry(
+    input: CreateConfigValueChangeEntryInput,
+  ): Observable<ConfigChangeEntry[]> {
     return this.backend
       .create<object>(TABLES.config_change_entries, {
         changeSetId: input.changeSetId,

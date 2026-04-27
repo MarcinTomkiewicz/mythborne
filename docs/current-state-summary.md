@@ -92,6 +92,10 @@ This is an operational estimate, not a formal audit.
 - Task D4 is confirmed complete as of 2026-04-27. Admin can create draft config change sets with mandatory trim-validated title and reason.
 - Draft change sets can receive value-change entries for `scalar_config` and `json_config` definitions with value types `integer`, `decimal`, `boolean`, `string`, and `json`.
 - D4 records only draft `global_value_change` / `server_value_change` entries and does not apply or silently mutate `global_config_values` or `server_config_values`; relational config changes remain reserved for future `entity_field_change` flows.
+- Task D5 is confirmed complete as of 2026-04-27. Config change sets can now be marked ready, applied, or cancelled through the accepted DB/RPC workflow instead of frontend-side table mutation.
+- D5 frontend workflow calls `mark_config_change_set_ready`, `apply_config_change_set`, and `cancel_config_change_set` through the shared backend RPC layer; cancellation requires and sends `cancelledReason`.
+- Config change-set models/mappers include `readyBy` and `cancelledReason`, and the admin change-set UI shows/validates cancellation reason while preserving the original change-set reason.
+- The config change-set page has been refactored into page-local list/detail state, effective-values state, draft actions, entry-draft state, and workflow actions; the page facade now acts as a small orchestration shell.
 
 ### Canonical stats and derived stats
 - Base stats are loaded from canonical stat definitions.

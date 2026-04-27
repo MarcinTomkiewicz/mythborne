@@ -24,3 +24,7 @@ export type ConfigChangeEntryDraftForm = FormGroup<{
   valueTarget: FormControl<ConfigChangeValueTarget>;
   newValue: FormControl<string>;
 }>;
+
+export type ConfigChangeSetCancelForm = FormGroup<{
+  cancelledReason: FormControl<string>;
+}>;

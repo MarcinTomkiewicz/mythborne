@@ -11,7 +11,9 @@ export enum ConfigValueOrderColumn {
 }
 
 export enum ConfigValueStatusKey {
+  Draft = 'draft',
   Active = 'active',
+  Archived = 'archived',
 }
 
 export enum EffectiveConfigValueSource {
@@ -76,4 +78,12 @@ export enum ConfigChangeFieldPath {
 export enum ConfigManagedEntityTypeKey {
   ScalarConfig = 'scalar_config',
   JsonConfig = 'json_config',
+}
+
+export enum ServerConfigValueSourceKey {
+  ManualServerLaunch = 'manual_server_launch',
+  GlobalSnapshot = 'global_snapshot',
+  LiveOverride = 'live_override',
+  TestOverride = 'test_override',
+  Migration = 'migration',
 }

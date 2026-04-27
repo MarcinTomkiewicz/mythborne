@@ -6,6 +6,7 @@ import {
 } from '../../enums/config-governance.enum';
 import {
   ConfigChangeEntryDraftForm,
+  ConfigChangeSetCancelForm,
   ConfigChangeSetDraftForm,
   ConfigChangeSetFilterForm,
 } from '../../types/forms/config-change-sets-form.types';
@@ -54,6 +55,12 @@ export class ConfigChangeSetsFormFactory {
       configDefinitionId: this.fb.control('', Validators.required),
       valueTarget: this.fb.control(ConfigChangeValueTarget.Global),
       newValue: this.fb.control('', trimRequiredValidator()),
+    });
+  }
+
+  createCancelForm(): ConfigChangeSetCancelForm {
+    return this.fb.group({
+      cancelledReason: this.fb.control('', trimRequiredValidator()),
     });
   }
 }
