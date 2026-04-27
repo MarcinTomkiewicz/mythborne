@@ -371,6 +371,8 @@ Global Codex rules:
 
 ## Task E1 — Formula targets/formulas read layer
 
+**Status:** Done / confirmed 2026-04-27.
+
 **Goal:** Make formula system visible to admin tooling.
 
 **Scope:**

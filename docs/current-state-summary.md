@@ -142,6 +142,10 @@ This is an operational estimate, not a formal audit.
   - evasion chance
   - critical chance
   - final damage
+- Task E1 is confirmed complete as of 2026-04-27. Formula governance now has a typed read layer for formula targets, formulas, global assignments, formula blocks, and entity formula assignments.
+- `/admin/formulas` provides a read-only admin inspection view for formula targets, grouped formula library entries, global/default assignments, formula blocks, and local entity assignments.
+- `FormulaService.getAdminData()` now reads formula governance tables through generated DB row types and maps them into domain models instead of untyped `any` rows.
+- Follow-up quality notes for E2/E3: split the growing formulas page into focused sections if expanded, use computed maps for per-scope formulas/blocks, distinguish no assignment vs disabled assigned formula vs enabled assigned formula, and show local override next to global/default fallback in E3.
 
 ### Buildings / estate layer
 - Building admin supports:

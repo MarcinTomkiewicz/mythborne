@@ -37,6 +37,13 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     routerLink: '/admin/config-change-sets',
   },
   {
+    legend: 'Formulas',
+    title: 'Formula read model',
+    description:
+      'Podglad formula targets, formula library, global assignments, blocks i lokalnych overrideow.',
+    routerLink: '/admin/formulas',
+  },
+  {
     legend: 'Anti-abuse',
     title: 'Anti-abuse config',
     description:
@@ -51,6 +58,7 @@ export const ADMIN_DASHBOARD_LINKS: readonly AdminTagLink[] = [
 ];
 
 export const BALANCE_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Formula read model', routerLink: '/admin/formulas' },
   { label: 'Item catalog', routerLink: '/admin/item-catalog' },
   { label: 'Buildings', routerLink: '/admin/buildings' },
   { label: 'Go to armory', routerLink: '/game/armory' },
@@ -70,7 +78,7 @@ export const CONFIG_DEFINITIONS_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin' },
   { label: 'Config changes', routerLink: '/admin/config-change-sets' },
   { label: 'Anti-abuse config', routerLink: '/admin/anti-abuse-config' },
-  { label: 'Formulas', routerLink: '/admin/balance' },
+  { label: 'Formulas', routerLink: '/admin/formulas' },
   { label: 'Buildings', routerLink: '/admin/buildings' },
 ];
 
@@ -78,7 +86,7 @@ export const CONFIG_CHANGE_SETS_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin' },
   { label: 'Config definitions', routerLink: '/admin/config-definitions' },
   { label: 'Anti-abuse config', routerLink: '/admin/anti-abuse-config' },
-  { label: 'Formulas', routerLink: '/admin/balance' },
+  { label: 'Formulas', routerLink: '/admin/formulas' },
   { label: 'Buildings', routerLink: '/admin/buildings' },
 ];
 
@@ -86,4 +94,11 @@ export const ANTI_ABUSE_CONFIG_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin' },
   { label: 'Config changes', routerLink: '/admin/config-change-sets' },
   { label: 'Config definitions', routerLink: '/admin/config-definitions' },
+];
+
+export const FORMULAS_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin' },
+  { label: 'Balance editor', routerLink: '/admin/balance' },
+  { label: 'Config definitions', routerLink: '/admin/config-definitions' },
+  { label: 'Config changes', routerLink: '/admin/config-change-sets' },
 ];

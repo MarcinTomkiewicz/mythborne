@@ -27,7 +27,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: D4 - config edit draft flow.
 - Completed and confirmed: D5 - config apply/cancel flow.
 - Completed and confirmed: D6 - anti-abuse config admin section.
-- Current backlog task: E1 - formula targets/formulas read layer.
+- Completed and confirmed: E1 - formula targets/formulas read layer.
+- Current backlog task: E2 - formula assignment viewer.
 
 ## Codex Backlog Workflow
 

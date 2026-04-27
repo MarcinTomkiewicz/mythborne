@@ -46,4 +46,9 @@ export const adminRoutes: Routes = [
         (m) => m.AntiAbuseConfigPage
       ),
   },
+  {
+    path: 'formulas',
+    loadComponent: () =>
+      import('./pages/formulas/formulas-page').then((m) => m.FormulasPage),
+  },
 ];

@@ -28,4 +28,8 @@ export const TABLES = {
   server_config_values: 'server_config_values',
   config_change_sets: 'config_change_sets',
   config_change_entries: 'config_change_entries',
+  balance_formula_targets: 'balance_formula_targets',
+  balance_formulas: 'balance_formulas',
+  balance_formula_assignments: 'balance_formula_assignments',
+  balance_formula_blocks: 'balance_formula_blocks',
 } as const;

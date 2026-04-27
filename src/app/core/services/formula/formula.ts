@@ -2,10 +2,15 @@ import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable, of, shareReplay, switchMap, tap } from 'rxjs';
 import {
   BalanceFormula,
+  BalanceFormulaRow,
   EditableBalanceFormula,
+  EntityFormulaAssignmentRow,
   FormulaVariableDefinition,
+  FormulaAssignmentRow,
   FormulaAdminData,
+  FormulaBlockRow,
   FormulaTarget,
+  FormulaTargetRow,
 } from '../../domain/formula/formula.model';
 import {
   mapBalanceFormula,
@@ -16,6 +21,7 @@ import {
 } from '../../utils/formula-admin-mappers';
 import { trimText, trimToNull } from '../../utils/normalize-text';
 import { FilterOperator } from '../../enums/filter-operators';
+import { TABLES } from '../../constants/tables.const';
 import { Backend } from '../backend/backend';
 
 @Injectable({ providedIn: 'root' })
@@ -26,28 +32,28 @@ export class FormulaService {
   getAdminData(): Observable<FormulaAdminData> {
     if (!this.adminData$) {
       this.adminData$ = forkJoin({
-        targets: this.backend.getAll<any>({
-          table: 'balance_formula_targets',
+        targets: this.backend.getAll<FormulaTargetRow>({
+          table: TABLES.balance_formula_targets,
           orderBy: { column: 'sort_order' },
           camelCase: false,
         }),
-        formulas: this.backend.getAll<any>({
-          table: 'balance_formulas',
+        formulas: this.backend.getAll<BalanceFormulaRow>({
+          table: TABLES.balance_formulas,
           orderBy: { column: 'scope_key' },
           camelCase: false,
         }),
-      assignments: this.backend.getAll<any>({
-          table: 'balance_formula_assignments',
+        assignments: this.backend.getAll<FormulaAssignmentRow>({
+          table: TABLES.balance_formula_assignments,
           orderBy: { column: 'created_at' },
           camelCase: false,
         }),
-        entityAssignments: this.backend.getAll<any>({
-          table: 'entity_formula_assignments',
+        entityAssignments: this.backend.getAll<EntityFormulaAssignmentRow>({
+          table: TABLES.entity_formula_assignments,
           orderBy: { column: 'created_at' },
           camelCase: false,
         }),
-        blocks: this.backend.getAll<any>({
-          table: 'balance_formula_blocks',
+        blocks: this.backend.getAll<FormulaBlockRow>({
+          table: TABLES.balance_formula_blocks,
           orderBy: { column: 'scope_key' },
           camelCase: false,
         }),
@@ -109,8 +115,8 @@ export class FormulaService {
       updatedAt: new Date().toISOString(),
     };
     const request$ = draft.id
-      ? this.backend.update('balance_formulas', draft.id, payload)
-      : this.backend.create('balance_formulas', payload);
+      ? this.backend.update(TABLES.balance_formulas, draft.id, payload)
+      : this.backend.create(TABLES.balance_formulas, payload);
 
     return request$.pipe(
       map(() => void 0),
@@ -132,7 +138,7 @@ export class FormulaService {
     );
 
     return this.backend
-      .update('balance_formula_targets', targetId, {
+      .update(TABLES.balance_formula_targets, targetId, {
         allowedVariables,
         defaultTestContext,
       })
@@ -143,7 +149,7 @@ export class FormulaService {
   }
 
   deleteFormula(id: string): Observable<void> {
-    return this.backend.delete('balance_formulas', id).pipe(
+    return this.backend.delete(TABLES.balance_formulas, id).pipe(
       tap(() => this.clearCache())
     );
   }
@@ -152,15 +158,15 @@ export class FormulaService {
     const updatedAt = new Date().toISOString();
 
     return this.backend
-      .getOneByFields<{ id: string }>('balance_formula_assignments', { targetId })
+      .getOneByFields<{ id: string }>(TABLES.balance_formula_assignments, { targetId })
       .pipe(
       switchMap((existing) =>
         existing?.id
-          ? this.backend.update('balance_formula_assignments', existing.id, {
+          ? this.backend.update(TABLES.balance_formula_assignments, existing.id, {
               formulaId,
               updatedAt,
             })
-          : this.backend.create('balance_formula_assignments', {
+          : this.backend.create(TABLES.balance_formula_assignments, {
               targetId,
               formulaId,
               updatedAt,
@@ -181,7 +187,7 @@ export class FormulaService {
 
     return this.backend
       .getAll<{ id: string }>({
-        table: 'entity_formula_assignments',
+        table: TABLES.entity_formula_assignments,
         filters: {
           entityKind: { value: entityKind, operator: FilterOperator.EQ },
           entityId: { value: entityId, operator: FilterOperator.EQ },
@@ -195,16 +201,16 @@ export class FormulaService {
 
           if (!formulaId) {
             return existing
-              ? this.backend.delete('entity_formula_assignments', existing.id)
+              ? this.backend.delete(TABLES.entity_formula_assignments, existing.id)
               : of(void 0);
           }
 
           return existing
-            ? this.backend.update('entity_formula_assignments', existing.id, {
+            ? this.backend.update(TABLES.entity_formula_assignments, existing.id, {
                 formulaId,
                 updatedAt,
               })
-            : this.backend.create('entity_formula_assignments', {
+            : this.backend.create(TABLES.entity_formula_assignments, {
                 entityKind,
                 entityId,
                 targetId,

@@ -1,3 +1,11 @@
+import { Row } from './supabase.types';
+
+export type FormulaTargetRow = Row<'balance_formula_targets'>;
+export type BalanceFormulaRow = Row<'balance_formulas'>;
+export type FormulaAssignmentRow = Row<'balance_formula_assignments'>;
+export type FormulaBlockRow = Row<'balance_formula_blocks'>;
+export type EntityFormulaAssignmentRow = Row<'entity_formula_assignments'>;
+
 export interface FormulaTarget {
   id: string;
   key: string;
