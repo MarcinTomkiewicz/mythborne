@@ -19,6 +19,7 @@ import {
   normalizeRuntimeDerivedStats,
   resolveAdditiveDerivedStats,
   resolveDerivedStatHealth,
+  resolveEffectiveBaseStatsForDerived,
   toHeroDerived,
 } from '../../utils/hero-derived-stats';
 import { Backend } from '../backend/backend';
@@ -57,14 +58,20 @@ export class HeroDerivedStats {
     scope: BonusScope = DEFAULT_DERIVED_STAT_SCOPE,
   ): Observable<IHeroDerived> {
     const activeBonuses = filterBonusesForScope(bonuses, scope);
-    const additiveStats = resolveAdditiveDerivedStats(
+    const effectiveBaseStats = resolveEffectiveBaseStatsForDerived(
       baseStats,
+      activeBonuses,
+      heroLevel,
+      scope,
+    );
+    const additiveStats = resolveAdditiveDerivedStats(
+      effectiveBaseStats,
       definitions,
       activeBonuses,
       heroLevel,
     );
 
-    return this.resolveBaseHealth(baseStats, definitions, heroLevel).pipe(
+    return this.resolveBaseHealth(effectiveBaseStats, definitions, heroLevel).pipe(
       map((baseHealth) =>
         toHeroDerived(
           normalizeRuntimeDerivedStats({
@@ -72,7 +79,7 @@ export class HeroDerivedStats {
             [DerivedStatKey.Health]: resolveDerivedStatHealth(
               baseHealth,
               findDerivedDefinition(DerivedStatKey.Health, definitions),
-              baseStats,
+              effectiveBaseStats,
               activeBonuses,
               heroLevel,
             ),

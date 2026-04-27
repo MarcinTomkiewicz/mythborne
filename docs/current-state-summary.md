@@ -302,6 +302,11 @@ Still pending at the gameplay level even if partially supported in schema:
 - F11 applies item quality scaling through the existing value-only quality scaling helper, then maps combat-scope equipment bonuses into `hitBonusFromItems`, `critBonusFromItems`, `evasionBonusFromItems`, and `damageBonusFromItems`.
 - F11 does not add a dependency on `hero_derived`; missing legacy/null equipped item generation fields remain data cleanup blockers rather than a reason to fall back to legacy item bonus paths.
 - `hitBonusFromItems` remains zero until the DB dictionary gets a canonical hit/accuracy bonus target. No unregistered `accuracy` or `hit_chance` magic target is used in runtime mapping.
+- F12 accepted on 2026-04-27: app code no longer reads/writes legacy bonus join tables, and those table names remain only in generated database types and documentation.
+- F12 removed legacy fallback from derived-stat bonus mapping: runtime entity bonuses require semantic `bonus_templates.type_key`, `target_key`, and `scope_key`; legacy `bonus_templates.target/type` are not used as source of truth.
+- Derived stats now resolve from final/effective base stats: raw `hero_stats` are first adjusted by active base-stat bonuses, then defense, health, damage, and combat inputs derive from those final stat values.
+- Base-stat bonuses are not counted twice for derived stats: if a derived definition uses `base_stat_key = endurance`, an endurance bonus affects the final endurance base and is not also re-added as a defense bonus. Direct `target_key = defense` bonuses still apply to defense.
+- `BONUS_ENTITY_TYPES.Hero` documents the canonical hero entity bonus type used by runtime derived stats through `entity_bonuses(entity_type = hero)`.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

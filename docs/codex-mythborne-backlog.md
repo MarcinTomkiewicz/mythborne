@@ -663,15 +663,19 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F12 — Legacy bonus usage cleanup audit
 
+**Status:** Done / confirmed.
+
 **Goal:** Final repository audit after migration tasks.
 
 **Scope:**
 - Search application code for legacy bonus join tables and legacy semantic columns.
 - Confirm remaining exceptions are limited to docs, generated database types, or explicit transitional adapters.
+- Confirm derived-stat runtime uses canonical `entity_bonuses` and semantic `bonus_templates` without legacy target/type fallback.
 
 **Acceptance criteria:**
 - App code does not read/write legacy bonus join tables.
 - App code does not read/write legacy semantic columns as source of truth.
+- Derived stats calculate from final/effective base stats before deriving defense, health, damage, and combat inputs.
 - Build and targeted tests pass.
 
 ---

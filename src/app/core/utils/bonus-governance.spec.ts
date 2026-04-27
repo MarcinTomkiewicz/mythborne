@@ -176,6 +176,7 @@ describe('bonus governance mappers', () => {
 
   it('maps all planned entity bonus types', () => {
     const entityTypes: BonusEntityType[] = [
+      BONUS_ENTITY_TYPES.Hero,
       BONUS_ENTITY_TYPES.Origin,
       BONUS_ENTITY_TYPES.ItemGenerationBase,
       BONUS_ENTITY_TYPES.ItemGenerationAffix,

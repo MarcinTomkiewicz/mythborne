@@ -20,38 +20,31 @@ export const FALLBACK_BONUS_TYPE_OPTIONS = [
   { label: 'unlock feature', value: 'unlock_feature' },
 ] as const;
 
-export const FALLBACK_BONUS_SCOPE_OPTIONS = [
-  { label: 'global', value: 'global' },
-  { label: 'combat', value: 'combat' },
-  { label: 'pvp attack', value: 'pvp_attack' },
-  { label: 'pvp defense', value: 'pvp_defense' },
-  { label: 'trial', value: 'trial' },
-  { label: 'exploration', value: 'exploration' },
-  { label: 'requirements', value: 'requirements' },
-  { label: 'trade', value: 'trade' },
-  { label: 'auction', value: 'auction' },
-  { label: 'economy', value: 'economy' },
-  { label: 'building management', value: 'building_management' },
-] as const;
-
 // Temporary UI fallback. Runtime/admin data should read dictionary tables.
 export const BONUS_TYPE_OPTIONS = FALLBACK_BONUS_TYPE_OPTIONS;
-export const BONUS_SCOPE_OPTIONS = FALLBACK_BONUS_SCOPE_OPTIONS;
 
 const BONUS_TYPES = new Set<BonusType>(
   FALLBACK_BONUS_TYPE_OPTIONS.map((option) => option.value),
 );
 const BONUS_SCOPES = new Set<BonusScope>(
-  FALLBACK_BONUS_SCOPE_OPTIONS.map((option) => option.value),
+  [
+    'global',
+    'combat',
+    'pvp_attack',
+    'pvp_defense',
+    'trial',
+    'exploration',
+    'requirements',
+    'trade',
+    'auction',
+    'economy',
+    'building_management',
+  ],
 );
 
 export function normalizeBonusType(
   value: string | null | undefined,
 ): BonusType {
-  if (value === 'per_4_levels') {
-    return 'per_levels';
-  }
-
   return BONUS_TYPES.has(value as BonusType) ? (value as BonusType) : 'flat';
 }
 
@@ -64,102 +57,7 @@ export function normalizeBonusScope(
 }
 
 export function normalizeBonusTarget(value: string | null | undefined): string {
-  const normalized = trimText(value);
-
-  if (normalized === 'min_dmg') {
-    return 'min_damage';
-  }
-
-  if (normalized === 'max_dmg') {
-    return 'max_damage';
-  }
-
-  if (normalized === 'defense') {
-    return 'defense';
-  }
-
-  if (normalized === 'min_damage') {
-    return 'min_damage';
-  }
-
-  if (normalized === 'max_damage') {
-    return 'max_damage';
-  }
-
-  if (normalized === 'critical_chance') {
-    return 'critical_chance';
-  }
-
-  if (normalized === 'evasion_chance') {
-    return 'evasion_chance';
-  }
-
-  if (normalized === 'def') {
-    return 'defense';
-  }
-
-  if (normalized === 'minDmg') {
-    return 'min_damage';
-  }
-
-  if (normalized === 'maxDmg') {
-    return 'max_damage';
-  }
-
-  if (normalized === 'critical') {
-    return 'critical_chance';
-  }
-
-  if (normalized === 'evasion') {
-    return 'evasion_chance';
-  }
-
-  return normalized;
-}
-
-export function normalizeBonusTemplate(row: {
-  id: string;
-  key?: string | null;
-  label?: string | null;
-  category?: string | null;
-  target?: string | null;
-  target_key?: string | null;
-  type?: string | null;
-  type_key?: string | null;
-  scope?: string | null;
-  scope_key?: string | null;
-  description?: string | null;
-  base_value?: number | null;
-  value?: number | null;
-  levels_step?: number | null;
-  level_interval?: number | null;
-  source_stat?: string | null;
-  scaling_stat_key?: string | null;
-  scaling_factor?: number | null;
-  params_json?: unknown;
-  sort_order?: number | null;
-  is_active?: boolean | null;
-}): BonusTemplate {
-  const scope = normalizeBonusScope(row.scope_key ?? row.scope);
-  const scalingFactor =
-    row.scaling_factor ?? readParamNumber(row.params_json, 'scalingFactor');
-
-  return {
-    id: row.id,
-    key: row.key ?? '',
-    label: row.label ?? row.key ?? '',
-    category: trimText(row.category ?? 'general') || 'general',
-    target: normalizeBonusTarget(row.target_key ?? row.target),
-    type: normalizeBonusType(row.type_key ?? row.type),
-    scope,
-    description: row.description ?? '',
-    baseValue: Number(row.value ?? row.base_value ?? 0),
-    levelsStep: row.level_interval ?? row.levels_step ?? null,
-    sourceStat: row.scaling_stat_key ?? row.source_stat ?? null,
-    scalingFactor,
-    sortOrder: Number(row.sort_order ?? 0),
-    isActive: row.is_active ?? true,
-  };
+  return trimText(value);
 }
 
 export function toEditableAppliedBonus(
@@ -187,17 +85,6 @@ export function toEditableAppliedBonus(
     sourceStat: overrides?.sourceStat ?? template?.sourceStat ?? null,
     scalingFactor: overrides?.scalingFactor ?? template?.scalingFactor ?? null,
   };
-}
-
-function readParamNumber(params: unknown, key: string): number | null {
-  if (!params || typeof params !== 'object' || Array.isArray(params)) {
-    return null;
-  }
-
-  const value = (params as Record<string, unknown>)[key];
-  const numericValue = Number(value);
-
-  return Number.isFinite(numericValue) ? numericValue : null;
 }
 
 export function bonusTypeUsesBaseValue(type: BonusType): boolean {

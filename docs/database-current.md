@@ -134,6 +134,8 @@ Legacy/transitional bonus tables:
 Rules:
 
 - New code should use `entity_bonuses` as the central relation.
+- Supported application `entity_bonuses.entity_type` values currently used by frontend runtime/admin paths include `hero`, `origin`, `item_generation_base`, `item_generation_affix`, `building`, and `item`.
+- `entity_type = hero` is used by runtime derived stats for hero-local stat/derived-stat bonuses.
 - Legacy bonus join tables may remain for compatibility/migration, but should not be expanded as the future model.
 - Use `bonus_scopes`, `scope_key`, `scope_key_override`, and `BonusScope` naming in frontend/domain code. Do not introduce new `BonusContext` terminology except as a temporary legacy alias.
 - `bonus_templates` is now a hybrid table: old columns remain, new semantic columns exist.
@@ -340,10 +342,12 @@ Seeded definitions:
 
 Resolver semantics:
 
-- `defense = endurance + active defense bonuses`.
+- Derived stat base values use final/effective base stats: raw `hero_stats` are adjusted by active base-stat bonuses first, then derived stats are calculated.
+- `defense = final endurance + active defense bonuses`.
+- A base-stat bonus must not be counted twice for its derived stat; for example, an `endurance` bonus affects final endurance and must not also be re-added as a defense bonus just because a defense definition references `base_stat_key = endurance`.
 - `luck = active luck bonuses`, base 0 unless explicitly changed later.
-- `min_damage = strength + weapon/base min_damage + active min_damage bonuses + active damage bonuses`.
-- `max_damage = strength + weapon/base max_damage + active max_damage bonuses + active damage bonuses`.
+- `min_damage = final strength + weapon/base min_damage + active min_damage bonuses + active damage bonuses`.
+- `max_damage = final strength + weapon/base max_damage + active max_damage bonuses + active damage bonuses`.
 - `damage` target applies to both `min_damage` and `max_damage`.
 - Resolver must ensure `max_damage >= min_damage`.
 - `health` may use a base health formula/fallback, then active health bonuses.

@@ -6,7 +6,7 @@ import {
 } from '../constants/derived-stats.const';
 import { DerivedStatKey, HeroDerivedField } from '../enums/derived-stat.enum';
 import { IHeroStats } from '../interfaces/hero/i-hero-stats';
-import { Bonus, BonusScope } from '../types/bonus.types';
+import { Bonus, BonusScope, BonusType } from '../types/bonus.types';
 import {
   EntityBonusWithTemplateRow,
   RuntimeDerivedStatKey,
@@ -14,34 +14,53 @@ import {
 } from '../types/hero-derived-stats.types';
 import { IHeroDerived } from '../types/hero.types';
 import { Row } from '../types/supabase.types';
-import {
-  normalizeBonusScope,
-  normalizeBonusTarget,
-  normalizeBonusType,
-  resolveBonusValue,
-} from './bonus';
+import { normalizeBonusTarget, resolveBonusValue } from './bonus';
+import { finalStatValue } from './bonus-calculator';
+import { mapResolvedBonus } from './bonus-governance';
 import { nonNegativeInteger } from './number';
+import { readParamNumber } from './params';
 
 export function mapEntityBonus(row: EntityBonusWithTemplateRow): Bonus | null {
-  const template = row.bonus_templates;
-
-  if (!template?.is_active) {
+  if (!row.bonus_templates?.is_active) {
     return null;
   }
 
+  const resolved = mapResolvedBonus(row);
+
   return {
-    target: normalizeBonusTarget(template.target_key ?? template.target),
-    value: Number(row.value ?? 0),
-    type: normalizeBonusType(template.type_key ?? template.type),
-    scope: normalizeBonusScope(row.scope_key_override ?? template.scope_key),
-    levelsStep: row.level_interval_override ?? template.level_interval,
-    sourceStat: row.scaling_stat_key_override ?? template.scaling_stat_key,
-    scalingFactor: readScalingFactor(row.params_json, template.params_json),
+    target: resolved.targetKey,
+    value: resolved.value,
+    type: resolved.typeKey as BonusType,
+    scope: resolved.scopeKey as BonusScope,
+    levelsStep: resolved.levelInterval,
+    sourceStat: resolved.scalingStatKey,
+    scalingFactor: readParamNumber(resolved.paramsJson, 'scalingFactor'),
   };
 }
 
 export function filterBonusesForScope(bonuses: Bonus[], scope: BonusScope): Bonus[] {
   return bonuses.filter((bonus) => DERIVED_STAT_SCOPE_CHAIN[scope].includes(bonus.scope));
+}
+
+export function resolveEffectiveBaseStatsForDerived(
+  baseStats: IHeroStats,
+  activeBonuses: Bonus[],
+  heroLevel: number,
+  scope: BonusScope,
+): IHeroStats {
+  const source = {
+    name: 'derived-base-stats',
+    bonuses: activeBonuses,
+  };
+
+  return Object.keys(baseStats).reduce((acc, key) => {
+    acc[key] = finalStatValue(Number(baseStats[key] ?? 0), key, [source], {
+      heroLevel,
+      bonusScope: scope,
+      sourceStats: baseStats,
+    });
+    return acc;
+  }, {} as IHeroStats);
 }
 
 export function resolveAdditiveDerivedStats(
@@ -105,7 +124,7 @@ export function resolveDerivedStatHealth(
   heroLevel: number,
 ): number {
   const bonusValue = sumBonuses(
-    [definition?.bonus_target_key, definition?.secondary_bonus_target_key, DerivedStatKey.Health],
+    derivedBonusTargets(definition, DerivedStatKey.Health),
     bonuses,
     heroLevel,
     baseStats,
@@ -158,7 +177,7 @@ function resolveDefinitionValue(
   const definition = findDerivedDefinition(key, definitions);
   const baseValue = resolveBaseValue(definition, baseStats, key);
   const bonusValue = sumBonuses(
-    [definition?.bonus_target_key, definition?.secondary_bonus_target_key, key],
+    derivedBonusTargets(definition, key),
     bonuses,
     heroLevel,
     baseStats,
@@ -181,11 +200,7 @@ function resolveDamageValue(
       : TRANSITIONAL_BASE_WEAPON_DAMAGE.max;
   const baseValue = resolveBaseValue(definition, baseStats, key) + fallbackWeaponDamage;
   const bonusValue = sumBonuses(
-    [
-      definition?.bonus_target_key,
-      definition?.secondary_bonus_target_key,
-      ...DERIVED_STAT_DAMAGE_TARGETS,
-    ],
+    derivedBonusTargets(definition, key, DERIVED_STAT_DAMAGE_TARGETS),
     bonuses,
     heroLevel,
     baseStats,
@@ -212,6 +227,20 @@ function resolveBaseValue(
   }
 
   return 0;
+}
+
+function derivedBonusTargets(
+  definition: Row<'derived_stat_definitions'> | null,
+  key: RuntimeDerivedStatKey,
+  extraTargets: readonly string[] = [key],
+): Array<string | null | undefined> {
+  const baseStatKey = normalizeBonusTarget(definition?.base_stat_key);
+
+  return [
+    definition?.bonus_target_key,
+    definition?.secondary_bonus_target_key,
+    ...extraTargets,
+  ].filter((target) => normalizeBonusTarget(target) !== baseStatKey);
 }
 
 function sumBonuses(
@@ -252,25 +281,4 @@ function resolveRuntimeBonusValue(
   }
 
   return resolveBonusValue(bonus, { heroLevel, sourceStats });
-}
-
-function readScalingFactor(overrideParams: unknown, templateParams: unknown): number | null {
-  const overrideValue = readParamNumber(overrideParams, 'scalingFactor');
-
-  if (overrideValue !== null) {
-    return overrideValue;
-  }
-
-  return readParamNumber(templateParams, 'scalingFactor');
-}
-
-function readParamNumber(params: unknown, key: string): number | null {
-  if (!params || typeof params !== 'object' || Array.isArray(params)) {
-    return null;
-  }
-
-  const value = (params as Record<string, unknown>)[key];
-  const numericValue = Number(value);
-
-  return Number.isFinite(numericValue) ? numericValue : null;
 }

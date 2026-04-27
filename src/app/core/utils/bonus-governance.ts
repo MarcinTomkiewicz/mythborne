@@ -245,14 +245,8 @@ function readFiniteNumber(value: number | null | undefined): number | null {
 }
 
 function toBonusEntityType(value: string): BonusEntityType {
-  if (
-    value === BONUS_ENTITY_TYPES.Origin ||
-    value === BONUS_ENTITY_TYPES.ItemGenerationBase ||
-    value === BONUS_ENTITY_TYPES.ItemGenerationAffix ||
-    value === BONUS_ENTITY_TYPES.Building ||
-    value === BONUS_ENTITY_TYPES.Item
-  ) {
-    return value;
+  if (Object.values(BONUS_ENTITY_TYPES).includes(value as BonusEntityType)) {
+    return value as BonusEntityType;
   }
 
   throw new Error(`Unsupported bonus entity type "${value}".`);

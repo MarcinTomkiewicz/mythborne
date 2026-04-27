@@ -1,4 +1,5 @@
 export const BONUS_ENTITY_TYPES = {
+  Hero: 'hero',
   Origin: 'origin',
   ItemGenerationBase: 'item_generation_base',
   ItemGenerationAffix: 'item_generation_affix',
