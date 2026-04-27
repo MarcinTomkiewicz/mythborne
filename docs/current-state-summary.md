@@ -307,6 +307,8 @@ Still pending at the gameplay level even if partially supported in schema:
 - Derived stats now resolve from final/effective base stats: raw `hero_stats` are first adjusted by active base-stat bonuses, then defense, health, damage, and combat inputs derive from those final stat values.
 - Base-stat bonuses are not counted twice for derived stats: if a derived definition uses `base_stat_key = endurance`, an endurance bonus affects the final endurance base and is not also re-added as a defense bonus. Direct `target_key = defense` bonuses still apply to defense.
 - `BONUS_ENTITY_TYPES.Hero` documents the canonical hero entity bonus type used by runtime derived stats through `entity_bonuses(entity_type = hero)`.
+- G1 accepted on 2026-04-27: audit dictionary read layer now loads active `audit_action_types` and `audit_entity_types` through core domain models, mappers, and `AuditDictionaries`.
+- `/admin/audit-dictionaries` provides a read-only admin view of stable audit action/entity keys, labels, categories, default severity, sort order, and update timestamps. Audit log rows remain separate G2 work.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

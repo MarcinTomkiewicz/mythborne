@@ -684,6 +684,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task G1 — Audit dictionary read layer
 
+**Status:** Done / confirmed.
+
 **Goal:** Load audit action/entity dictionaries.
 
 **Scope:**

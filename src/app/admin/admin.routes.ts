@@ -51,4 +51,11 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./pages/formulas/formulas-page').then((m) => m.FormulasPage),
   },
+  {
+    path: 'audit-dictionaries',
+    loadComponent: () =>
+      import('./pages/audit-dictionaries/audit-dictionaries-page').then(
+        (m) => m.AuditDictionariesPage,
+      ),
+  },
 ];

@@ -1,0 +1,133 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading audit dictionaries..."
+  description="Loading audit action and entity type dictionaries."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Audit</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">Audit Dictionaries</h2>
+          <p class="muted-text mb-0">
+            Read-only inspection of stable audit action and entity type keys.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Action types</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ data().actionTypes.length }}
+          </strong>
+        </div>
+
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Entity types</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ data().entityTypes.length }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-xs mb-lg">
+        <p class="card-legend mb-0">Action dictionary</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Audit action types</h3>
+      </div>
+
+      <div class="flex-col gap-md">
+        @for (actionType of data().actionTypes; track actionType.id) {
+          <article class="mg-surface-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">{{ actionType.key }}</p>
+                <h4 class="mg-section__title mg-section__title--xs mb-0">{{ actionType.label }}</h4>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="mg-tag">{{ actionType.category }}</span>
+                <span class="mg-tag">{{ actionType.defaultSeverity }}</span>
+                <span class="mg-tag">active</span>
+              </div>
+            </div>
+
+            @if (actionType.description) {
+              <p class="muted-text mb-0">{{ actionType.description }}</p>
+            }
+
+            <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Sort order</span>
+                <strong class="heading-color">{{ actionType.sortOrder }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Updated</span>
+                <strong class="heading-color">{{ actionType.updatedAt }}</strong>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">No active audit action types registered.</p>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-xs mb-lg">
+        <p class="card-legend mb-0">Entity dictionary</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Audit entity types</h3>
+      </div>
+
+      <div class="flex-col gap-md">
+        @for (entityType of data().entityTypes; track entityType.id) {
+          <article class="mg-surface-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">{{ entityType.key }}</p>
+                <h4 class="mg-section__title mg-section__title--xs mb-0">{{ entityType.label }}</h4>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="mg-tag">{{ entityType.category }}</span>
+                <span class="mg-tag">active</span>
+              </div>
+            </div>
+
+            @if (entityType.description) {
+              <p class="muted-text mb-0">{{ entityType.description }}</p>
+            }
+
+            <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Sort order</span>
+                <strong class="heading-color">{{ entityType.sortOrder }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Updated</span>
+                <strong class="heading-color">{{ entityType.updatedAt }}</strong>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">No active audit entity types registered.</p>
+        }
+      </div>
+    </section>
+  </div>
+}

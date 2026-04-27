@@ -43,7 +43,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: F10 - building entity bonuses.
 - Completed and confirmed: F11 - combat/equipment item bonus inputs.
 - Completed and confirmed: F12 - legacy bonus usage cleanup audit.
-- Current backlog task: G1 - audit dictionary read layer.
+- Completed and confirmed: G1 - audit dictionary read layer.
+- Current backlog task: G2 - audit log read layer.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow

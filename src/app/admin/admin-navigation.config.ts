@@ -50,6 +50,13 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
       'Podglad serwerowych progow i flag anti-abuse zarzadzanych przez config governance.',
     routerLink: '/admin/anti-abuse-config',
   },
+  {
+    legend: 'Audit',
+    title: 'Audit dictionaries',
+    description:
+      'Podglad stabilnych typow akcji i encji uzywanych przez audit log.',
+    routerLink: '/admin/audit-dictionaries',
+  },
 ];
 
 export const ADMIN_DASHBOARD_LINKS: readonly AdminTagLink[] = [
@@ -101,4 +108,10 @@ export const FORMULAS_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Balance editor', routerLink: '/admin/balance' },
   { label: 'Config definitions', routerLink: '/admin/config-definitions' },
   { label: 'Config changes', routerLink: '/admin/config-change-sets' },
+];
+
+export const AUDIT_DICTIONARIES_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin' },
+  { label: 'Config changes', routerLink: '/admin/config-change-sets' },
+  { label: 'Anti-abuse config', routerLink: '/admin/anti-abuse-config' },
 ];
