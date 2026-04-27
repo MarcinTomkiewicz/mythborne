@@ -391,6 +391,8 @@ Global Codex rules:
 
 ## Task E2 — Formula assignment viewer
 
+**Status:** Done / confirmed 2026-04-27.
+
 **Goal:** Show global/default formula assignments.
 
 **Scope:**

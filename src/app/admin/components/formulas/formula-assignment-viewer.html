@@ -1,0 +1,84 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-col gap-xs mb-lg">
+    <p class="card-legend mb-0">Targets</p>
+    <h3 class="mg-section__title mg-section__title--xs mb-0">
+      Global/default assignments
+    </h3>
+    <p class="muted-text mb-0">
+      Each row shows the formula currently assigned as the global/default resolver for a target.
+    </p>
+  </div>
+
+  <div class="flex-col gap-md">
+    @for (row of rows(); track row.target.id) {
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <div class="flex-row-between-center flex-col-sm gap-sm">
+          <div class="flex-col gap-xs">
+            <p class="card-legend mb-0">{{ row.target.key }}</p>
+            <h4 class="mg-section__title mg-section__title--xs mb-0">{{ row.target.label }}</h4>
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            <span class="mg-tag">{{ row.target.scopeKey }}</span>
+            <span class="mg-tag">{{ row.statusLabel }}</span>
+          </div>
+        </div>
+
+        @if (row.target.description) {
+          <p class="muted-text mb-0">{{ row.target.description }}</p>
+        }
+
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Assigned formula</span>
+            <strong class="heading-color">{{ row.formula?.label ?? '-' }}</strong>
+          </div>
+
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Formula key</span>
+            <strong class="heading-color">{{ row.formula?.key ?? '-' }}</strong>
+          </div>
+
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Assignment updated</span>
+            <strong class="heading-color">{{ row.assignment?.updatedAt ?? '-' }}</strong>
+          </div>
+        </div>
+
+        @if (row.formula) {
+          <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+            <div class="flex-col gap-xs min-w-0">
+              <span class="muted-text">Formula description</span>
+              <span class="heading-color">{{ row.formula.description ?? '-' }}</span>
+            </div>
+
+            <div class="flex-col gap-xs min-w-0">
+              <span class="muted-text">Expression</span>
+              <pre class="mb-0 text-break"><code>{{ row.formula.expression }}</code></pre>
+            </div>
+          </div>
+        }
+
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+          <div class="flex-col gap-xs min-w-0">
+            <span class="muted-text">Allowed variables</span>
+            <div class="flex-row-start-center flex-wrap gap-xs">
+              @for (variable of row.target.allowedVariables; track variable) {
+                <span class="mg-tag">{{ variable }}</span>
+              } @empty {
+                <span class="muted-text">No variables</span>
+              }
+            </div>
+          </div>
+
+          <div class="flex-col gap-xs min-w-0">
+            <span class="muted-text">Default test context</span>
+            <pre class="mb-0 text-break"><code>{{ contextPreview(row.target) }}</code></pre>
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <p class="muted-text mb-0">No formula targets registered.</p>
+    }
+  </div>
+</section>

@@ -54,73 +54,7 @@
       </div>
     </section>
 
-    <section class="mg-card p-lg w-100">
-      <div class="flex-col gap-xs mb-lg">
-        <p class="card-legend mb-0">Targets</p>
-        <h3 class="mg-section__title mg-section__title--xs mb-0">
-          Global/default assignments
-        </h3>
-      </div>
-
-      <div class="flex-col gap-md">
-        @for (row of targetRows(); track row.target.id) {
-          <article class="mg-surface-card p-md flex-col gap-sm">
-            <div class="flex-row-between-center flex-col-sm gap-sm">
-              <div class="flex-col gap-xs">
-                <p class="card-legend mb-0">{{ row.target.key }}</p>
-                <h4 class="mg-section__title mg-section__title--xs mb-0">{{ row.target.label }}</h4>
-              </div>
-
-              <div class="flex-row-start-center flex-wrap gap-xs">
-                <span class="mg-tag">{{ row.target.scopeKey }}</span>
-                <span class="mg-tag">{{ row.formula?.isEnabled ? 'enabled formula' : 'no enabled formula' }}</span>
-              </div>
-            </div>
-
-            @if (row.target.description) {
-              <p class="muted-text mb-0">{{ row.target.description }}</p>
-            }
-
-            <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
-              <div class="flex-col gap-xs">
-                <span class="muted-text">Assigned formula</span>
-                <strong class="heading-color">{{ row.formula?.label ?? '-' }}</strong>
-              </div>
-
-              <div class="flex-col gap-xs">
-                <span class="muted-text">Formula key</span>
-                <strong class="heading-color">{{ row.formula?.key ?? '-' }}</strong>
-              </div>
-
-              <div class="flex-col gap-xs">
-                <span class="muted-text">Assignment updated</span>
-                <strong class="heading-color">{{ row.assignment?.updatedAt ?? '-' }}</strong>
-              </div>
-            </div>
-
-            <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
-              <div class="flex-col gap-xs min-w-0">
-                <span class="muted-text">Allowed variables</span>
-                <div class="flex-row-start-center flex-wrap gap-xs">
-                  @for (variable of row.target.allowedVariables; track variable) {
-                    <span class="mg-tag">{{ variable }}</span>
-                  } @empty {
-                    <span class="muted-text">No variables</span>
-                  }
-                </div>
-              </div>
-
-              <div class="flex-col gap-xs min-w-0">
-                <span class="muted-text">Default test context</span>
-                <pre class="mb-0 text-break"><code>{{ contextPreview(row.target) }}</code></pre>
-              </div>
-            </div>
-          </article>
-        } @empty {
-          <p class="muted-text mb-0">No formula targets registered.</p>
-        }
-      </div>
-    </section>
+    <app-formula-assignment-viewer [rows]="targetRows()" />
 
     <section class="mg-card p-lg w-100">
       <div class="flex-col gap-xs mb-lg">
@@ -129,18 +63,18 @@
       </div>
 
       <div class="flex-col gap-lg">
-        @for (scope of scopes(); track scope) {
+        @for (scope of scopeRows(); track scope.scopeKey) {
           <article class="mg-surface-card p-md flex-col gap-md">
             <div class="flex-row-between-center flex-col-sm gap-sm">
-              <h4 class="mg-section__title mg-section__title--xs mb-0">{{ scope }}</h4>
+              <h4 class="mg-section__title mg-section__title--xs mb-0">{{ scope.scopeKey }}</h4>
               <div class="flex-row-start-center flex-wrap gap-xs">
-                <span class="mg-tag">{{ formulasForScope(scope).length }} formulas</span>
-                <span class="mg-tag">{{ blocksForScope(scope).length }} blocks</span>
+                <span class="mg-tag">{{ scope.formulas.length }} formulas</span>
+                <span class="mg-tag">{{ scope.blocks.length }} blocks</span>
               </div>
             </div>
 
             <div class="flex-col gap-sm">
-              @for (formula of formulasForScope(scope); track formula.id) {
+              @for (formula of scope.formulas; track formula.id) {
                 <div class="p-sm flex-col gap-xs">
                   <div class="flex-row-between-center flex-col-sm gap-sm">
                     <strong class="heading-color">{{ formula.label }}</strong>

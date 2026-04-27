@@ -2,49 +2,28 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { finalize } from 'rxjs';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { FormulaService } from '../../../core/services/formula/formula';
-import {
-  BalanceFormula,
-  EntityFormulaAssignment,
-  FormulaAdminData,
-  FormulaAssignment,
-  FormulaBlock,
-  FormulaTarget,
-} from '../../../core/domain/formula/formula.model';
-import { formatConfigJsonPreview } from '../../../core/utils/config-governance';
 import { FORMULAS_PAGE_LINKS } from '../../admin-navigation.config';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
-
-const EMPTY_FORMULA_DATA: FormulaAdminData = {
-  targets: [],
-  formulas: [],
-  assignments: [],
-  entityAssignments: [],
-  blocks: [],
-};
-
-interface FormulaTargetInspectionRow {
-  target: FormulaTarget;
-  assignment: FormulaAssignment | null;
-  formula: BalanceFormula | null;
-}
-
-interface EntityFormulaInspectionRow {
-  assignment: EntityFormulaAssignment;
-  target: FormulaTarget | null;
-  formula: BalanceFormula | null;
-}
+import {
+  EMPTY_FORMULA_ADMIN_DATA,
+  EntityFormulaInspectionRow,
+  FormulaScopeInspectionRow,
+  FormulaTargetAssignmentRow,
+} from '../../../core/types/formula-admin-view.types';
+import { toFormulaTargetAssignmentRow } from '../../../core/utils/formula-assignment-view';
+import { FormulaAssignmentViewer } from '../../components/formulas/formula-assignment-viewer';
 
 @Component({
   selector: 'app-formulas-page',
   standalone: true,
-  imports: [LoadingOverlay, AdminTagLinks],
+  imports: [LoadingOverlay, AdminTagLinks, FormulaAssignmentViewer],
   templateUrl: './formulas-page.html',
 })
 export class FormulasPage implements OnInit {
   private readonly formulaService = inject(FormulaService);
 
   readonly links = FORMULAS_PAGE_LINKS;
-  readonly data = signal<FormulaAdminData>(EMPTY_FORMULA_DATA);
+  readonly data = signal(EMPTY_FORMULA_ADMIN_DATA);
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly formulaById = computed(
@@ -62,17 +41,13 @@ export class FormulasPage implements OnInit {
         ]),
       ),
   );
-  readonly targetRows = computed<FormulaTargetInspectionRow[]>(() =>
+  readonly targetRows = computed<FormulaTargetAssignmentRow[]>(() =>
     this.data().targets.map((target) => {
       const assignment = this.assignmentByTargetId().get(target.id) ?? null;
-
-      return {
-        target,
-        assignment,
-        formula: assignment
-          ? this.formulaById().get(assignment.formulaId) ?? null
-          : null,
-      };
+      const formula = assignment
+        ? this.formulaById().get(assignment.formulaId) ?? null
+        : null;
+      return toFormulaTargetAssignmentRow(target, assignment, formula);
     }),
   );
   readonly entityAssignmentRows = computed<EntityFormulaInspectionRow[]>(() =>
@@ -91,21 +66,20 @@ export class FormulasPage implements OnInit {
       ]),
     ).sort((left, right) => left.localeCompare(right)),
   );
+  readonly formulasByScope = computed(() =>
+    this.groupByScope(this.data().formulas),
+  );
+  readonly blocksByScope = computed(() => this.groupByScope(this.data().blocks));
+  readonly scopeRows = computed<FormulaScopeInspectionRow[]>(() =>
+    this.scopes().map((scopeKey) => ({
+      scopeKey,
+      formulas: this.formulasByScope().get(scopeKey) ?? [],
+      blocks: this.blocksByScope().get(scopeKey) ?? [],
+    })),
+  );
 
   ngOnInit(): void {
     this.loadData();
-  }
-
-  contextPreview(target: FormulaTarget): string {
-    return formatConfigJsonPreview(target.defaultTestContext);
-  }
-
-  blocksForScope(scopeKey: string): FormulaBlock[] {
-    return this.data().blocks.filter((block) => block.scopeKey === scopeKey);
-  }
-
-  formulasForScope(scopeKey: string): BalanceFormula[] {
-    return this.data().formulas.filter((formula) => formula.scopeKey === scopeKey);
   }
 
   private loadData(): void {
@@ -124,5 +98,14 @@ export class FormulasPage implements OnInit {
               : 'Failed to load formula governance data.',
           ),
       });
+  }
+
+  private groupByScope<T extends { scopeKey: string }>(
+    entries: readonly T[],
+  ): Map<string, T[]> {
+    return entries.reduce((acc, entry) => {
+      acc.set(entry.scopeKey, [...(acc.get(entry.scopeKey) ?? []), entry]);
+      return acc;
+    }, new Map<string, T[]>());
   }
 }

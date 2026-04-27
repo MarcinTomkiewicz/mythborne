@@ -145,7 +145,12 @@ This is an operational estimate, not a formal audit.
 - Task E1 is confirmed complete as of 2026-04-27. Formula governance now has a typed read layer for formula targets, formulas, global assignments, formula blocks, and entity formula assignments.
 - `/admin/formulas` provides a read-only admin inspection view for formula targets, grouped formula library entries, global/default assignments, formula blocks, and local entity assignments.
 - `FormulaService.getAdminData()` now reads formula governance tables through generated DB row types and maps them into domain models instead of untyped `any` rows.
-- Follow-up quality notes for E2/E3: split the growing formulas page into focused sections if expanded, use computed maps for per-scope formulas/blocks, distinguish no assignment vs disabled assigned formula vs enabled assigned formula, and show local override next to global/default fallback in E3.
+- Task E2 is confirmed complete as of 2026-04-27. `/admin/formulas` now has a dedicated formula assignment viewer for global/default target-to-formula assignments.
+- The assignment viewer shows target scope, assignment status, assigned formula key/label, formula description, expression, update timestamp, allowed variables, and default test context.
+- Assignment status now distinguishes `no assignment`, `missing assigned formula`, `disabled assigned formula`, and `enabled assigned formula`.
+- Formula assignment view models and status mapping live in `core/types/formula-admin-view.types.ts` and `core/utils/formula-assignment-view.ts`, keeping page/component files focused on UI orchestration.
+- Project convention reinforced: exported/shared types, interfaces, constants, view models, and mapping rules should live in `core/domain`, `core/types`, `core/interfaces`, `core/constants`, or `core/utils`, not inside component/service/facade files.
+- Remaining E3 follow-up: show local entity override next to the global/default fallback for the same target.
 
 ### Buildings / estate layer
 - Building admin supports:
