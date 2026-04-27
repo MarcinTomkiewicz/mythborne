@@ -36,7 +36,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: F3 - canonical bonus domain models and mappers.
 - Completed and confirmed: F4 - bonus dictionary/admin read service.
 - Completed and confirmed: F5 - bonus template write path migration.
-- Current backlog task: F6 - entity bonus read model and payload helpers.
+- Completed and confirmed: F6 - entity bonus read model and payload helpers.
+- Current backlog task: F7 - origin bonus read migration.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow

@@ -91,6 +91,42 @@ export interface SemanticBonusTemplatePayload {
   isActive: boolean;
 }
 
+export interface EntityBonusPayload {
+  entityType: BonusEntityType;
+  entityId: string;
+  bonusTemplateId: string;
+  value: number;
+  description: string | null;
+  levelIntervalOverride: number | null;
+  formulaIdOverride: string | null;
+  formulaTargetIdOverride: string | null;
+  scalingStatKeyOverride: string | null;
+  scopeKeyOverride: string | null;
+  qualityScalesValue: boolean;
+  qualityScalesLevelInterval: false;
+  paramsJson: Json;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface EntityBonusPayloadInput {
+  entityType: BonusEntityType;
+  entityId: string;
+  bonusTemplateId: string;
+  value: number;
+  description?: string | null;
+  levelIntervalOverride?: number | null;
+  formulaIdOverride?: string | null;
+  formulaTargetIdOverride?: string | null;
+  scalingStatKeyOverride?: string | null;
+  scopeKeyOverride?: string | null;
+  qualityScalesValue?: boolean;
+  qualityScalesLevelInterval?: boolean;
+  paramsJson?: Json;
+  sortOrder?: number | null;
+  isActive?: boolean;
+}
+
 export interface CanonicalEntityBonus {
   id: string;
   entityType: BonusEntityType;
@@ -108,6 +144,20 @@ export interface CanonicalEntityBonus {
   paramsJson: Json;
   sortOrder: number;
   isActive: boolean;
+}
+
+export interface BonusDictionarySource {
+  types: CanonicalBonusType[];
+  scopes: CanonicalBonusScope[];
+  targetCategories: CanonicalBonusTargetCategory[];
+  targets: CanonicalBonusTarget[];
+}
+
+export interface BonusDictionaryMaps {
+  types: ReadonlyMap<string, CanonicalBonusType>;
+  scopes: ReadonlyMap<string, CanonicalBonusScope>;
+  targetCategories: ReadonlyMap<string, CanonicalBonusTargetCategory>;
+  targets: ReadonlyMap<string, CanonicalBonusTarget>;
 }
 
 export interface ResolvedBonus {
@@ -130,6 +180,16 @@ export interface ResolvedBonus {
   qualityScalesLevelInterval: boolean;
   sortOrder: number;
   isActive: boolean;
+}
+
+export interface ResolvedBonusView extends ResolvedBonus {
+  type: CanonicalBonusType;
+  scope: CanonicalBonusScope;
+  target: CanonicalBonusTarget;
+  targetCategory: CanonicalBonusTargetCategory;
+  entityDescription: string | null;
+  templateDescription: string | null;
+  description: string | null;
 }
 
 export type CanonicalBonusTemplateRow = Row<'bonus_templates'>;

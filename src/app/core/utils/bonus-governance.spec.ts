@@ -6,6 +6,12 @@ import {
   toSemanticBonusTemplatePayload,
 } from './bonus-governance';
 import {
+  mapResolvedBonusView,
+  toBonusDictionaryMaps,
+  toEntityBonusPayload,
+} from './entity-bonus-governance';
+import {
+  BonusEntityType,
   CanonicalBonusTemplateRow,
   CanonicalEntityBonusWithTemplateRow,
 } from '../types/bonus-governance.types';
@@ -165,6 +171,124 @@ describe('bonus governance mappers', () => {
     expect(resolved.isActive).toBeTrue();
   });
 
+  it('maps all planned entity bonus types', () => {
+    const entityTypes: BonusEntityType[] = [
+      'origin',
+      'item_generation_base',
+      'item_generation_affix',
+      'building',
+      'item',
+    ];
+
+    for (const entityType of entityTypes) {
+      const resolved = mapResolvedBonus(createEntityBonusRow({ entity_type: entityType }));
+
+      expect(resolved.entityType).toBe(entityType);
+    }
+  });
+
+  it('maps resolved bonus view with joined template and dictionaries', () => {
+    const view = mapResolvedBonusView(
+      createEntityBonusRow({
+        description: 'Entity-specific bonus.',
+        scope_key_override: 'combat',
+      }),
+      createDictionaryMaps(),
+    );
+
+    expect(view.type.key).toBe('flat');
+    expect(view.type.label).toBe('Flat value');
+    expect(view.scope.key).toBe('combat');
+    expect(view.scope.label).toBe('Combat');
+    expect(view.target.key).toBe('strength');
+    expect(view.target.label).toBe('Strength');
+    expect(view.targetCategory.key).toBe('base_stats');
+    expect(view.description).toBe('Entity-specific bonus.');
+    expect(view.templateDescription).toBe('Flat strength bonus.');
+    expect(view.entityDescription).toBe('Entity-specific bonus.');
+  });
+
+  it('fails resolved bonus view when required dictionary entry is missing', () => {
+    const dictionaries = createDictionaryMaps();
+
+    expect(() =>
+      mapResolvedBonusView(
+        createEntityBonusRow({
+          bonus_templates: createTemplateRow({ type_key: 'missing_type' }),
+        }),
+        dictionaries,
+      ),
+    ).toThrowError('bonus_types entry "missing_type" is required for resolved bonus view.');
+  });
+
+  it('creates a single entity bonus payload without legacy metadata', () => {
+    const payload = toEntityBonusPayload({
+      entityType: 'item_generation_base',
+      entityId: 'base-1',
+      bonusTemplateId: 'template-1',
+      value: 12.5,
+      description: 'Native value.',
+      levelIntervalOverride: 4,
+      formulaIdOverride: 'formula-1',
+      formulaTargetIdOverride: 'target-1',
+      scalingStatKeyOverride: 'hero_level',
+      scopeKeyOverride: 'combat',
+      qualityScalesValue: true,
+      paramsJson: { source: 'admin' },
+      sortOrder: 30,
+      isActive: true,
+    });
+
+    expect(payload.entityType).toBe('item_generation_base');
+    expect(payload.entityId).toBe('base-1');
+    expect(payload.bonusTemplateId).toBe('template-1');
+    expect(payload.value).toBe(12.5);
+    expect(payload.description).toBe('Native value.');
+    expect(payload.levelIntervalOverride).toBe(4);
+    expect(payload.formulaIdOverride).toBe('formula-1');
+    expect(payload.formulaTargetIdOverride).toBe('target-1');
+    expect(payload.scalingStatKeyOverride).toBe('hero_level');
+    expect(payload.scopeKeyOverride).toBe('combat');
+    expect(payload.qualityScalesValue).toBeTrue();
+    expect(payload.qualityScalesLevelInterval).toBeFalse();
+    expect(JSON.stringify(payload.paramsJson)).toBe('{"source":"admin"}');
+    expect(payload.sortOrder).toBe(30);
+    expect(payload.isActive).toBeTrue();
+    expect(Object.hasOwn(payload, 'legacySourceId')).toBeFalse();
+    expect(Object.hasOwn(payload, 'legacySourceTable')).toBeFalse();
+  });
+
+  it('serializes entity bonus payload to database snake_case columns', () => {
+    const payload = toEntityBonusPayload({
+      entityType: 'building',
+      entityId: 'building-1',
+      bonusTemplateId: 'template-1',
+      value: 3,
+      qualityScalesValue: false,
+    });
+    const databasePayload = toSnakeCase<Record<string, unknown>>(payload);
+
+    expect(databasePayload['entity_type']).toBe('building');
+    expect(databasePayload['entity_id']).toBe('building-1');
+    expect(databasePayload['bonus_template_id']).toBe('template-1');
+    expect(databasePayload['quality_scales_value']).toBeFalse();
+    expect(databasePayload['quality_scales_level_interval']).toBeFalse();
+    expect(Object.hasOwn(databasePayload, 'entityType')).toBeFalse();
+    expect(Object.hasOwn(databasePayload, 'bonusTemplateId')).toBeFalse();
+  });
+
+  it('rejects level interval quality scaling in entity bonus payloads', () => {
+    expect(() =>
+      toEntityBonusPayload({
+        entityType: 'item_generation_base',
+        entityId: 'base-1',
+        bonusTemplateId: 'template-1',
+        value: 1,
+        qualityScalesLevelInterval: true,
+      }),
+    ).toThrowError('entity_bonuses.quality_scales_level_interval must remain false.');
+  });
+
   it('scales only value in quality projection helper', () => {
     expect(projectQualityScaledValue({ value: 4, qualityScalesValue: true }, 1.5)).toBe(6);
     expect(projectQualityScaledValue({ value: 4, qualityScalesValue: false }, 1.5)).toBe(4);
@@ -200,6 +324,77 @@ function createTemplateRow(
     updated_at: '2026-04-27T00:00:00.000Z',
     ...overrides,
   };
+}
+
+function createDictionaryMaps() {
+  return toBonusDictionaryMaps({
+    types: [
+      {
+        id: 'type-1',
+        key: 'flat',
+        label: 'Flat value',
+        category: 'numeric',
+        valueKind: 'number',
+        description: 'Flat numeric value.',
+        adminDescription: null,
+        helperText: null,
+        requiresValue: true,
+        requiresLevelInterval: false,
+        requiresScalingStat: false,
+        requiresFormula: false,
+        requiresResourceType: false,
+        requiresFeatureTarget: false,
+        sortOrder: 1,
+        isActive: true,
+      },
+    ],
+    scopes: [
+      {
+        id: 'scope-1',
+        key: 'global',
+        label: 'Global',
+        category: 'runtime',
+        description: 'Global scope.',
+        helperText: null,
+        sortOrder: 1,
+        isActive: true,
+      },
+      {
+        id: 'scope-2',
+        key: 'combat',
+        label: 'Combat',
+        category: 'runtime',
+        description: 'Combat scope.',
+        helperText: null,
+        sortOrder: 2,
+        isActive: true,
+      },
+    ],
+    targetCategories: [
+      {
+        id: 'category-1',
+        key: 'base_stats',
+        label: 'Base stats',
+        description: 'Base stat targets.',
+        sortOrder: 1,
+        isActive: true,
+      },
+    ],
+    targets: [
+      {
+        id: 'target-1',
+        key: 'strength',
+        label: 'Strength',
+        categoryKey: 'base_stats',
+        valueKind: 'number',
+        description: 'Strength target.',
+        helperText: null,
+        isStackable: true,
+        sortOrder: 1,
+        isActive: true,
+      },
+    ],
+  });
 }
 
 function createEntityBonusRow(

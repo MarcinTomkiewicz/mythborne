@@ -546,6 +546,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F6 — Entity bonus read model and payload helpers
 
+**Status:** Done / confirmed.
+
 **Goal:** Add shared read model and payload helpers for `entity_bonuses`.
 
 **Scope:**

@@ -281,6 +281,8 @@ Still pending at the gameplay level even if partially supported in schema:
 - F5 accepted on 2026-04-27: bonus template admin writes now use a semantic payload for `type_key`, `target_key`, `scope_key`, `level_interval`, `scaling_stat_key`, `params_json`, `sort_order`, and `is_active`.
 - F5 no longer sends legacy `bonus_templates.category`, `target`, `type`, `scope`, `base_value`, `levels_step`, `source_stat`, or `scaling_factor`; `Backend.create/update` converts the camelCase payload to DB snake_case before Supabase writes.
 - `/admin/balance` template editing is unlocked again for semantic template fields. Template `baseValue` is intentionally not edited there because bonus values belong to `entity_bonuses.value`.
+- F6 accepted on 2026-04-27: shared entity bonus helpers now provide dictionary maps, resolved bonus view mapping, and single-row `entity_bonuses` payload construction for `origin`, `item_generation_base`, `item_generation_affix`, `building`, and `item`.
+- F6 intentionally did not rewire origin/item/building runtime paths and did not introduce a generic save-replace-collection mechanism. `quality_scales_level_interval = true` is rejected in the payload helper.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services
