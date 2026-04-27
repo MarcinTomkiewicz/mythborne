@@ -44,4 +44,5 @@ export const TABLES = {
   balance_formula_blocks: 'balance_formula_blocks',
   audit_action_types: 'audit_action_types',
   audit_entity_types: 'audit_entity_types',
+  audit_logs: 'audit_logs',
 } as const;

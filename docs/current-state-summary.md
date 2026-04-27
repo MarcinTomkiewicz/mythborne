@@ -309,6 +309,8 @@ Still pending at the gameplay level even if partially supported in schema:
 - `BONUS_ENTITY_TYPES.Hero` documents the canonical hero entity bonus type used by runtime derived stats through `entity_bonuses(entity_type = hero)`.
 - G1 accepted on 2026-04-27: audit dictionary read layer now loads active `audit_action_types` and `audit_entity_types` through core domain models, mappers, and `AuditDictionaries`.
 - `/admin/audit-dictionaries` provides a read-only admin view of stable audit action/entity keys, labels, categories, default severity, sort order, and update timestamps. Audit log rows remain separate G2 work.
+- G2 accepted on 2026-04-27: audit log read layer now loads `audit_logs` with joined action/entity dictionaries through core domain models, row types, mappers, and the `AuditLogs` service.
+- `/admin/audit-logs` provides a read-only recent audit log view with exact-match filters for action type, entity type, server id, actor user/hero id, and target user/hero id. Audit writers and domain operation integration remain separate G3+ work.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

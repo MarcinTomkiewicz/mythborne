@@ -57,6 +57,13 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
       'Podglad stabilnych typow akcji i encji uzywanych przez audit log.',
     routerLink: '/admin/audit-dictionaries',
   },
+  {
+    legend: 'Audit',
+    title: 'Audit logs',
+    description:
+      'Podglad ostatnich audit logow z filtrowaniem po akcji, encji, serwerze i aktorze.',
+    routerLink: '/admin/audit-logs',
+  },
 ];
 
 export const ADMIN_DASHBOARD_LINKS: readonly AdminTagLink[] = [
@@ -112,6 +119,14 @@ export const FORMULAS_PAGE_LINKS: readonly AdminTagLink[] = [
 
 export const AUDIT_DICTIONARIES_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin' },
+  { label: 'Audit logs', routerLink: '/admin/audit-logs' },
+  { label: 'Config changes', routerLink: '/admin/config-change-sets' },
+  { label: 'Anti-abuse config', routerLink: '/admin/anti-abuse-config' },
+];
+
+export const AUDIT_LOGS_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin' },
+  { label: 'Audit dictionaries', routerLink: '/admin/audit-dictionaries' },
   { label: 'Config changes', routerLink: '/admin/config-change-sets' },
   { label: 'Anti-abuse config', routerLink: '/admin/anti-abuse-config' },
 ];

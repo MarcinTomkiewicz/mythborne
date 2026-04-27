@@ -702,6 +702,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task G2 — Audit log read layer
 
+**Status:** Done / confirmed.
+
 **Goal:** Read audit logs for admin/case contexts.
 
 **Scope:**

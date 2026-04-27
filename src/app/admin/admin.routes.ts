@@ -58,4 +58,9 @@ export const adminRoutes: Routes = [
         (m) => m.AuditDictionariesPage,
       ),
   },
+  {
+    path: 'audit-logs',
+    loadComponent: () =>
+      import('./pages/audit-logs/audit-logs-page').then((m) => m.AuditLogsPage),
+  },
 ];
