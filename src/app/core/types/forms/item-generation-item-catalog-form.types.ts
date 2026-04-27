@@ -17,13 +17,14 @@ export type BonusForm = FormGroup<{
   sourceStat: FormControl<string | null>;
   scalingFactor: FormControl<number | null>;
   description: FormControl<string>;
+  qualityScalesValue: FormControl<boolean>;
 }>;
 
 export type BaseEditorForm = FormGroup<{
   id: FormControl<string>;
   key: FormControl<string>;
   name: FormControl<string>;
-  slot: FormControl<'weapon' | 'trinket' | 'armor' | 'shield'>;
+  baseTypeKey: FormControl<string>;
   baseValue: FormControl<number>;
   description: FormControl<string>;
   bonuses: FormArray<BonusForm>;

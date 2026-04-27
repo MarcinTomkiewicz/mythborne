@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { map, Observable, of, switchMap, tap } from 'rxjs';
+import { map, Observable, of, switchMap, tap, throwError } from 'rxjs';
 import {
   EditableItemGenerationBase,
   EditableItemGenerationBonus,
@@ -8,6 +8,9 @@ import { ItemCatalogService } from './item-catalog';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
 import { trimText, trimToNull } from '../../utils/normalize-text';
+import { TABLES } from '../../constants/tables.const';
+import { BONUS_ENTITY_TYPES } from '../../constants/bonus-entity-types.const';
+import { toEntityBonusPayload } from '../../utils/entity-bonus-governance';
 
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationBaseAdminService {
@@ -15,10 +18,16 @@ export class ItemGenerationBaseAdminService {
   private readonly itemCatalogService = inject(ItemCatalogService);
 
   save(draft: EditableItemGenerationBase): Observable<void> {
+    const baseTypeKey = trimText(draft.baseTypeKey);
+
+    if (!baseTypeKey) {
+      return throwError(() => new Error('item_generation_bases.base_type_key is required.'));
+    }
+
     const payload = {
       key: trimText(draft.key),
       name: trimText(draft.name),
-      slot: draft.slot,
+      baseTypeKey,
       baseValue: draft.baseValue,
       description: trimToNull(draft.description),
     };
@@ -30,7 +39,7 @@ export class ItemGenerationBaseAdminService {
   }
 
   delete(id: string): Observable<void> {
-    return this.backend.delete('item_generation_bases', id).pipe(
+    return this.backend.delete(TABLES.item_generation_bases, id).pipe(
       tap(() => this.itemCatalogService.clearCache())
     );
   }
@@ -40,14 +49,14 @@ export class ItemGenerationBaseAdminService {
     payload: {
       key: string;
       name: string;
-      slot: EditableItemGenerationBase['slot'];
+      baseTypeKey: string;
       baseValue: number;
       description: string | null;
     }
   ): Observable<string> {
     const request$ = id
-      ? this.backend.update<{ id: string }>('item_generation_bases', id, payload)
-      : this.backend.create<{ id: string }>('item_generation_bases', payload);
+      ? this.backend.update<{ id: string }>(TABLES.item_generation_bases, id, payload)
+      : this.backend.create<{ id: string }>(TABLES.item_generation_bases, payload);
 
     return request$.pipe(map((row) => row.id));
   }
@@ -56,20 +65,34 @@ export class ItemGenerationBaseAdminService {
     baseId: string,
     bonuses: EditableItemGenerationBonus[]
   ): Observable<void> {
-    return this.backend.delete('item_generation_base_bonuses', {
-      baseId: { operator: FilterOperator.EQ, value: baseId },
+    return this.backend.delete(TABLES.entity_bonuses, {
+      entityType: {
+        operator: FilterOperator.EQ,
+        value: BONUS_ENTITY_TYPES.ItemGenerationBase,
+      },
+      entityId: { operator: FilterOperator.EQ, value: baseId },
     }).pipe(
       switchMap(() => {
         const rows = bonuses
           .filter((bonus) => !!bonus.templateId)
-          .map((bonus) => ({
-            base_id: baseId,
-            template_id: bonus.templateId,
-            value: bonus.baseValue,
-          }));
+          .map((bonus, index) =>
+            toEntityBonusPayload({
+              entityType: BONUS_ENTITY_TYPES.ItemGenerationBase,
+              entityId: baseId,
+              bonusTemplateId: bonus.templateId ?? '',
+              value: bonus.baseValue,
+              description: bonus.description,
+              levelIntervalOverride: bonus.levelsStep,
+              scalingStatKeyOverride: bonus.sourceStat,
+              scopeKeyOverride: bonus.scope,
+              qualityScalesValue: bonus.qualityScalesValue ?? false,
+              sortOrder: index,
+              isActive: true,
+            }),
+          );
 
         return rows.length
-          ? this.backend.createMany('item_generation_base_bonuses', rows).pipe(map(() => void 0))
+          ? this.backend.createMany(TABLES.entity_bonuses, rows).pipe(map(() => void 0))
           : of(void 0);
       })
     );

@@ -3,29 +3,71 @@ import {
   ItemAffixDefinition,
   ItemAffixKind,
   ItemBaseDefinition,
+  ItemGenerationBaseType,
+  ItemGenerationBaseTypeTarget,
   ItemGenerationBucketProfile,
   ItemQualityDefinition,
-  ItemSlot,
 } from '../domain/item/item-generation.model';
-import {
-  ItemGenerationAffixBonusRow,
-  ItemGenerationBaseBonusRow,
-} from '../types/domain-row.types';
+import { BonusScope, BonusType } from '../types/bonus.types';
+import { CanonicalEntityBonusWithTemplateRow } from '../types/bonus-governance.types';
 import { Row } from '../types/supabase.types';
-import { normalizeBonusTemplate } from './bonus';
+import {
+  mapResolvedBonus,
+  projectQualityScaledValue,
+} from './bonus-governance';
+import { readParamNumber } from './params';
 
 export function mapItemGenerationBase(
   row: Row<'item_generation_bases'>,
-  bonuses: Bonus[]
+  bonuses: Bonus[],
+  baseTypeByKey: ReadonlyMap<string, ItemGenerationBaseType>
 ): ItemBaseDefinition {
+  const baseType = requiredBaseType(row.base_type_key, row.id, baseTypeByKey);
+
   return {
     id: row.id,
     key: row.key,
     name: row.name,
-    slot: row.slot as ItemSlot,
+    baseTypeKey: baseType.key,
+    baseTypeLabel: baseType.label,
+    equipmentSlotGroup: baseType.equipmentSlotGroup,
+    handUsage: baseType.handUsage,
     baseValue: row.base_value,
     description: row.description ?? '',
     bonuses,
+  };
+}
+
+export function mapItemGenerationBaseType(
+  row: Row<'item_generation_base_types'>
+): ItemGenerationBaseType {
+  return {
+    id: row.id,
+    key: row.key,
+    label: row.label,
+    description: row.description,
+    equipmentSlotGroup: row.equipment_slot_group,
+    handUsage: row.hand_usage,
+    sortOrder: row.sort_order,
+    isActive: row.is_active,
+  };
+}
+
+export function mapItemGenerationBaseTypeTarget(
+  row: Row<'item_generation_base_type_targets'>
+): ItemGenerationBaseTypeTarget {
+  return {
+    id: row.id,
+    baseTypeKey: row.base_type_key,
+    bonusTargetKey: row.bonus_target_key,
+    isRequired: row.is_required,
+    requiredGroupKey: row.required_group_key,
+    minRequiredInGroup: row.min_required_in_group,
+    defaultValue: row.default_value,
+    minValue: row.min_value,
+    maxValue: row.max_value,
+    helperText: row.helper_text,
+    sortOrder: row.sort_order,
   };
 }
 
@@ -44,20 +86,41 @@ export function mapItemGenerationAffix(
   };
 }
 
-export function mapBonusTemplateValue(
-  row: ItemGenerationBaseBonusRow | ItemGenerationAffixBonusRow
+export function mapResolvedItemGenerationBonus(
+  row: CanonicalEntityBonusWithTemplateRow
 ): Bonus {
-  const template = normalizeBonusTemplate(row.bonus_templates);
+  const resolved = mapResolvedBonus(row);
+
+  if (resolved.qualityScalesLevelInterval) {
+    throw new Error('entity_bonuses.quality_scales_level_interval must remain false.');
+  }
 
   return {
-    target: template.target,
-    value: Number(row.value ?? template.baseValue),
-    type: template.type,
-    scope: template.scope,
-    levelsStep: template.levelsStep,
-    sourceStat: template.sourceStat,
-    scalingFactor: template.scalingFactor,
+    target: resolved.targetKey,
+    value: resolved.value,
+    type: resolved.typeKey as BonusType,
+    scope: resolved.scopeKey as BonusScope,
+    levelsStep: resolved.levelInterval,
+    sourceStat: resolved.scalingStatKey,
+    scalingFactor: readParamNumber(resolved.paramsJson, 'scalingFactor'),
+    qualityScalesValue: resolved.qualityScalesValue,
   };
+}
+
+export function applyQualityScaledBonuses(
+  bonuses: readonly Bonus[],
+  qualityMultiplier: number
+): Bonus[] {
+  return bonuses.map((bonus) => ({
+    ...bonus,
+    value: projectQualityScaledValue(
+      {
+        value: bonus.value,
+        qualityScalesValue: bonus.qualityScalesValue ?? false,
+      },
+      qualityMultiplier
+    ),
+  }));
 }
 
 export function mapItemGenerationQuality(
@@ -85,4 +148,26 @@ export function mapItemGenerationBucketProfile(
     roundingStep: row.rounding_step,
     minIncrement: row.min_increment,
   };
+}
+
+export function toBaseTypeByKey(
+  baseTypes: readonly ItemGenerationBaseType[]
+): ReadonlyMap<string, ItemGenerationBaseType> {
+  return new Map(baseTypes.map((baseType) => [baseType.key, baseType]));
+}
+
+function requiredBaseType(
+  baseTypeKey: string,
+  rowId: string,
+  baseTypeByKey: ReadonlyMap<string, ItemGenerationBaseType>
+): ItemGenerationBaseType {
+  const baseType = baseTypeByKey.get(baseTypeKey);
+
+  if (!baseType) {
+    throw new Error(
+      `Item generation base "${rowId}" references missing base_type_key "${baseTypeKey}".`
+    );
+  }
+
+  return baseType;
 }

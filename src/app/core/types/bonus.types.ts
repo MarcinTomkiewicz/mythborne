@@ -70,6 +70,7 @@ export interface EditableAppliedBonus {
   levelsStep: number | null;
   sourceStat: string | null;
   scalingFactor: number | null;
+  qualityScalesValue?: boolean;
 }
 
 export interface Bonus {
@@ -80,6 +81,7 @@ export interface Bonus {
   sourceStat?: string | null;
   scalingFactor?: number | null;
   levelsStep?: number | null;
+  qualityScalesValue?: boolean;
 }
 
 export interface BonusSource {

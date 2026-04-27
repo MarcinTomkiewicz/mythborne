@@ -6,6 +6,7 @@ import {
   ItemGenerationCatalog,
   ItemGenerationStep,
 } from '../../domain/item/item-generation.model';
+import { applyQualityScaledBonuses } from '../../utils/item-generation-catalog-mappers';
 import {
   affixWeight,
   aggregateBonuses,
@@ -73,9 +74,26 @@ export class ItemGenerationFactory {
     const preQualityValue = base.baseValue + (prefix?.goldValue ?? 0) + (suffix?.goldValue ?? 0);
     const finalValue = Math.round(preQualityValue * quality.multiplier);
     const parts: GeneratedItemPart[] = [
-      { label: 'Base item', bonuses: base.bonuses },
-      ...(prefix ? [{ label: `Prefix: ${prefix.name}`, bonuses: prefix.bonuses }] : []),
-      ...(suffix ? [{ label: `Suffix: ${suffix.name}`, bonuses: suffix.bonuses }] : []),
+      {
+        label: 'Base item',
+        bonuses: applyQualityScaledBonuses(base.bonuses, quality.multiplier),
+      },
+      ...(prefix
+        ? [
+            {
+              label: `Prefix: ${prefix.name}`,
+              bonuses: applyQualityScaledBonuses(prefix.bonuses, quality.multiplier),
+            },
+          ]
+        : []),
+      ...(suffix
+        ? [
+            {
+              label: `Suffix: ${suffix.name}`,
+              bonuses: applyQualityScaledBonuses(suffix.bonuses, quality.multiplier),
+            },
+          ]
+        : []),
     ];
 
     process.push({

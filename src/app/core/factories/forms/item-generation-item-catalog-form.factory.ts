@@ -16,6 +16,7 @@ import { replaceFormArray } from '../../utils/form-controls';
 import { normalizeBonusScope, normalizeBonusTarget, normalizeBonusType } from '../../utils/bonus';
 import { integerAtLeast, nonNegativeInteger, roundedNumber } from '../../utils/number';
 import { trimText } from '../../utils/normalize-text';
+import { toSlug } from '../../utils/slug';
 
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationItemCatalogFormFactory {
@@ -40,6 +41,7 @@ export class ItemGenerationItemCatalogFormFactory {
       sourceStat: this.fb.control<string | null>(draft?.sourceStat ?? null),
       scalingFactor: this.fb.control<number | null>(draft?.scalingFactor ?? null),
       description: this.fb.control(draft?.description ?? ''),
+      qualityScalesValue: this.fb.control(draft?.qualityScalesValue ?? false),
     });
   }
 
@@ -48,7 +50,7 @@ export class ItemGenerationItemCatalogFormFactory {
       id: this.fb.control(draft?.id ?? ''),
       key: this.fb.control(draft?.key ?? ''),
       name: this.fb.control(draft?.name ?? ''),
-      slot: this.fb.control(draft?.slot ?? 'weapon'),
+      baseTypeKey: this.fb.control(draft?.baseTypeKey ?? ''),
       baseValue: this.fb.control(draft?.baseValue ?? 100),
       description: this.fb.control(draft?.description ?? ''),
       bonuses: this.fb.array(
@@ -76,7 +78,10 @@ export class ItemGenerationItemCatalogFormFactory {
       id: null,
       key: '',
       name: '',
-      slot: 'weapon',
+      baseTypeKey: '',
+      baseTypeLabel: '',
+      equipmentSlotGroup: '',
+      handUsage: '',
       baseValue: 100,
       description: '',
       bonuses: [],
@@ -110,7 +115,7 @@ export class ItemGenerationItemCatalogFormFactory {
       id: draft.id ?? '',
       key: draft.key,
       name: draft.name,
-      slot: draft.slot,
+      baseTypeKey: draft.baseTypeKey,
       baseValue: draft.baseValue,
       description: draft.description,
     });
@@ -134,9 +139,12 @@ export class ItemGenerationItemCatalogFormFactory {
 
     return {
       id: value.id || null,
-      key: trimText(value.key),
+      key: toSlug(value.key || value.name),
       name: trimText(value.name),
-      slot: value.slot,
+      baseTypeKey: trimText(value.baseTypeKey),
+      baseTypeLabel: '',
+      equipmentSlotGroup: '',
+      handUsage: '',
       baseValue: integerAtLeast(value.baseValue, 1),
       description: trimText(value.description),
       bonuses: value.bonuses
@@ -150,7 +158,7 @@ export class ItemGenerationItemCatalogFormFactory {
 
     return {
       id: value.id || null,
-      key: trimText(value.key),
+      key: toSlug(value.key || value.name),
       kind: value.kind,
       name: trimText(value.name),
       goldValue: nonNegativeInteger(value.goldValue),
@@ -179,6 +187,7 @@ export class ItemGenerationItemCatalogFormFactory {
       scalingFactor:
         bonus.scalingFactor === null ? null : roundedNumber(bonus.scalingFactor),
       description: trimText(bonus.description),
+      qualityScalesValue: bonus.qualityScalesValue ?? false,
     };
   }
 }

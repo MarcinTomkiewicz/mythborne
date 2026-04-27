@@ -92,7 +92,7 @@ export class ItemGenerationUpgradeFactory {
     const baseCandidates = catalog.bases
       .filter(
         (candidate) =>
-          candidate.slot === base.slot &&
+          candidate.baseTypeKey === base.baseTypeKey &&
           candidate.baseValue > base.baseValue &&
           candidate.baseValue - base.baseValue <= remainingBudget
       )

@@ -45,7 +45,7 @@ export function findCatalogEntityByKey(
 export function catalogEntityLabel(section: CatalogSection, entity: CatalogEntity): string {
   if (section === 'base') {
     const base = entity as EditableItemGenerationBase;
-    return `${base.name} (${base.key}) - ${base.slot} - ${base.baseValue}`;
+    return `${base.name} (${base.key}) - ${base.baseTypeLabel} - ${base.baseValue}`;
   }
 
   const affix = entity as EditableItemGenerationAffix;

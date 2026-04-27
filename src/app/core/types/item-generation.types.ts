@@ -2,7 +2,6 @@ import { Bonus } from './bonus.types';
 
 export type ItemQualityKey = 'normal' | 'quality' | 'outstanding';
 export type ItemAffixKind = 'prefix' | 'suffix';
-export type ItemSlot = 'weapon' | 'trinket' | 'armor' | 'shield';
 
 export interface ItemQualityDefinition {
   key: ItemQualityKey;
@@ -23,11 +22,39 @@ export interface ItemGenerationBucketProfile {
   minIncrement: number;
 }
 
+export interface ItemGenerationBaseType {
+  id: string;
+  key: string;
+  label: string;
+  description: string | null;
+  equipmentSlotGroup: string;
+  handUsage: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface ItemGenerationBaseTypeTarget {
+  id: string;
+  baseTypeKey: string;
+  bonusTargetKey: string;
+  isRequired: boolean;
+  requiredGroupKey: string | null;
+  minRequiredInGroup: number | null;
+  defaultValue: number | null;
+  minValue: number | null;
+  maxValue: number | null;
+  helperText: string | null;
+  sortOrder: number;
+}
+
 export interface ItemBaseDefinition {
   id: string;
   key: string;
   name: string;
-  slot: ItemSlot;
+  baseTypeKey: string;
+  baseTypeLabel: string;
+  equipmentSlotGroup: string;
+  handUsage: string;
   baseValue: number;
   description: string;
   bonuses: Bonus[];
@@ -46,6 +73,8 @@ export interface ItemAffixDefinition {
 export interface ItemGenerationCatalog {
   budgetBuckets: number[];
   qualities: ItemQualityDefinition[];
+  baseTypes: ItemGenerationBaseType[];
+  baseTypeTargets: ItemGenerationBaseTypeTarget[];
   bases: ItemBaseDefinition[];
   prefixes: ItemAffixDefinition[];
   suffixes: ItemAffixDefinition[];

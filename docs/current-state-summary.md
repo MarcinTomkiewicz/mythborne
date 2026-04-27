@@ -286,6 +286,13 @@ Still pending at the gameplay level even if partially supported in schema:
 - F7 accepted on 2026-04-27: origin bonus reads now use `entity_bonuses` with `entity_type = origin` and joined semantic `bonus_templates`; app code no longer reads `origin_bonuses`.
 - F7 keeps the existing `OriginBonus` view model as a transitional compatibility bridge for dashboard, combat, and origin selection, while sourcing data from canonical entity bonuses.
 - `BONUS_ENTITY_TYPES` centralizes `entity_bonuses.entity_type` values, and `TABLES.origin` is used instead of raw origin table strings in the origin service.
+- F8 accepted on 2026-04-27: item generation base items now use `item_generation_bases.base_type_key` as the semantic source of truth.
+- F8 loads `item_generation_base_types` and `item_generation_base_type_targets`; runtime/admin base item models expose base type metadata instead of legacy `slot`, and missing base type dictionary entries are configuration errors.
+- F8 does not complete item generation bonus migration: `item_generation_base_bonuses` and `item_generation_affix_bonuses` remain legacy paths to remove in F9 via `entity_bonuses`.
+- F9 accepted on 2026-04-27: item generation base/affix bonus read and write paths now use `entity_bonuses` with `entity_type = item_generation_base` or `item_generation_affix`.
+- F9 removed app-code usage of `item_generation_base_bonuses` and `item_generation_affix_bonuses`; those names remain only in generated database types.
+- F9 item quality scaling uses `entity_bonuses.quality_scales_value` to scale only bonus value. `quality_scales_level_interval = true` is rejected because `level_interval` must never be quality-scaled.
+- `/admin/item-catalog` now keeps base/affix `key` readonly and generated from `name`, and bonus rows use PrimeNG/shared form controls for select/checkbox inputs.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

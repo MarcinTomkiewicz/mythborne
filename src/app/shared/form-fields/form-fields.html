@@ -3,7 +3,10 @@
     @switch (field.type) {
       @case (fieldType.Checkbox) {
         <label [class]="fieldClass(field, 'flex-row-start-center gap-sm mt-lg')">
-          <input type="checkbox" [formControlName]="field.controlName" />
+          <p-checkbox
+            [formControlName]="field.controlName"
+            [binary]="true"
+          />
           <span class="muted-text">{{ field.label }}</span>
         </label>
       }
@@ -24,14 +27,13 @@
       @case (fieldType.Select) {
         <label [class]="fieldClass(field)">
           <span class="muted-text">{{ field.label }}</span>
-          <select
-            [class]="'p-inputtext ' + widthClass()"
+          <p-select
+            [styleClass]="widthClass()"
             [formControlName]="field.controlName"
-          >
-            @for (option of field.options ?? []; track option.label + ':' + option.value) {
-              <option [ngValue]="option.value">{{ option.label }}</option>
-            }
-          </select>
+            [options]="fieldOptions(field)"
+            optionLabel="label"
+            optionValue="value"
+          />
         </label>
       }
 

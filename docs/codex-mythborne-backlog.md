@@ -583,6 +583,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F8 — Item generation base type model migration
 
+**Status:** Done / confirmed.
+
 **Goal:** Replace semantic use of `slot` with `base_type_key`.
 
 **Scope:**
@@ -598,6 +600,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 ---
 
 ## Task F9 — Item generation entity bonuses
+
+**Status:** Done / confirmed.
 
 **Goal:** Base and affix bonus read/write paths use `entity_bonuses`.
 

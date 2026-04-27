@@ -5,9 +5,10 @@ import {
 } from './bonus.types';
 import {
   ItemAffixKind,
+  ItemGenerationBaseType,
+  ItemGenerationBaseTypeTarget,
   ItemGenerationBucketProfile,
   ItemQualityDefinition,
-  ItemSlot,
 } from './item-generation.types';
 
 export type CatalogSection = 'base' | 'prefix' | 'suffix';
@@ -18,7 +19,10 @@ export interface EditableItemGenerationBase {
   id: string | null;
   key: string;
   name: string;
-  slot: ItemSlot;
+  baseTypeKey: string;
+  baseTypeLabel: string;
+  equipmentSlotGroup: string;
+  handUsage: string;
   baseValue: number;
   description: string;
   bonuses: EditableItemGenerationBonus[];
@@ -47,6 +51,8 @@ export interface EditableItemGenerationBucketProfile
 }
 
 export interface ItemGenerationAdminCatalogData {
+  baseTypes: ItemGenerationBaseType[];
+  baseTypeTargets: ItemGenerationBaseTypeTarget[];
   bases: EditableItemGenerationBase[];
   prefixes: EditableItemGenerationAffix[];
   suffixes: EditableItemGenerationAffix[];

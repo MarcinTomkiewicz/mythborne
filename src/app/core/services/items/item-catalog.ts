@@ -1,21 +1,23 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable, shareReplay } from 'rxjs';
+import { BONUS_ENTITY_TYPES } from '../../constants/bonus-entity-types.const';
+import { TABLES } from '../../constants/tables.const';
+import { ItemGenerationCatalog } from '../../domain/item/item-generation.model';
+import { FilterOperator } from '../../enums/filter-operators';
 import { ItemGenerationBucketsFactory } from '../../factories/item-generation/item-generation-buckets.factory';
+import { CanonicalEntityBonusWithTemplateRow } from '../../types/bonus-governance.types';
+import { Row } from '../../types/supabase.types';
 import {
-  mapBonusTemplateValue,
   mapItemGenerationAffix,
   mapItemGenerationBase,
+  mapItemGenerationBaseType,
+  mapItemGenerationBaseTypeTarget,
   mapItemGenerationBucketProfile,
   mapItemGenerationQuality,
+  mapResolvedItemGenerationBonus,
+  toBaseTypeByKey,
 } from '../../utils/item-generation-catalog-mappers';
-import { ItemGenerationCatalog } from '../../domain/item/item-generation.model';
-import {
-  ItemGenerationAffixBonusRow,
-  ItemGenerationBaseBonusRow,
-} from '../../types/domain-row.types';
-import { Row } from '../../types/supabase.types';
 import { Backend } from '../backend/backend';
-import { FilterOperator } from '../../enums/filter-operators';
 
 @Injectable({ providedIn: 'root' })
 export class ItemCatalogService {
@@ -28,50 +30,77 @@ export class ItemCatalogService {
     if (!this.catalog$) {
       this.catalog$ = forkJoin({
         qualities: this.backend.getAll<Row<'item_generation_qualities'>>({
-          table: 'item_generation_qualities',
+          table: TABLES.item_generation_qualities,
           filters: { isEnabled: { operator: FilterOperator.EQ, value: true } },
           orderBy: { column: 'sort_order' },
           camelCase: false,
         }),
         bucketProfiles: this.backend.getAll<Row<'item_generation_bucket_profiles'>>({
-          table: 'item_generation_bucket_profiles',
+          table: TABLES.item_generation_bucket_profiles,
           filters: { isActive: { operator: FilterOperator.EQ, value: true } },
           orderBy: { column: 'created_at', ascending: false },
           range: { from: 0, to: 0 },
           camelCase: false,
         }),
+        baseTypes: this.backend.getAll<Row<'item_generation_base_types'>>({
+          table: TABLES.item_generation_base_types,
+          filters: { isActive: { operator: FilterOperator.EQ, value: true } },
+          orderBy: { column: 'sort_order' },
+          camelCase: false,
+        }),
+        baseTypeTargets: this.backend.getAll<Row<'item_generation_base_type_targets'>>({
+          table: TABLES.item_generation_base_type_targets,
+          orderBy: { column: 'sort_order' },
+          camelCase: false,
+        }),
         bases: this.backend.getAll<Row<'item_generation_bases'>>({
-          table: 'item_generation_bases',
+          table: TABLES.item_generation_bases,
           orderBy: { column: 'base_value' },
           camelCase: false,
         }),
-        baseBonuses: this.backend.getAll<ItemGenerationBaseBonusRow>({
-          table: 'item_generation_base_bonuses',
-          select: '*, bonus_templates (*)',
-          camelCase: false,
-        }),
         affixes: this.backend.getAll<Row<'item_generation_affixes'>>({
-          table: 'item_generation_affixes',
+          table: TABLES.item_generation_affixes,
           orderBy: { column: 'gold_value' },
           camelCase: false,
         }),
-        affixBonuses: this.backend.getAll<ItemGenerationAffixBonusRow>({
-          table: 'item_generation_affix_bonuses',
+        entityBonuses: this.backend.getAll<CanonicalEntityBonusWithTemplateRow>({
+          table: TABLES.entity_bonuses,
           select: '*, bonus_templates (*)',
+          filters: {
+            entityType: {
+              operator: FilterOperator.IN,
+              value: [
+                BONUS_ENTITY_TYPES.ItemGenerationBase,
+                BONUS_ENTITY_TYPES.ItemGenerationAffix,
+              ],
+            },
+            isActive: { operator: FilterOperator.EQ, value: true },
+          },
+          orderBy: { column: 'sort_order' },
           camelCase: false,
         }),
       }).pipe(
-        map(({ qualities, bucketProfiles, bases, baseBonuses, affixes, affixBonuses }) =>
-          this.buildCatalog({
+        map(
+          ({
             qualities,
             bucketProfiles,
+            baseTypes,
+            baseTypeTargets,
             bases,
-            baseBonuses: baseBonuses as ItemGenerationBaseBonusRow[],
             affixes,
-            affixBonuses: affixBonuses as ItemGenerationAffixBonusRow[],
-          })
+            entityBonuses,
+          }) =>
+            this.buildCatalog({
+              qualities,
+              bucketProfiles,
+              baseTypes,
+              baseTypeTargets,
+              bases,
+              affixes,
+              entityBonuses,
+            }),
         ),
-        shareReplay(1)
+        shareReplay(1),
       );
     }
 
@@ -85,28 +114,38 @@ export class ItemCatalogService {
   private buildCatalog(params: {
     qualities: Row<'item_generation_qualities'>[];
     bucketProfiles: Row<'item_generation_bucket_profiles'>[];
+    baseTypes: Row<'item_generation_base_types'>[];
+    baseTypeTargets: Row<'item_generation_base_type_targets'>[];
     bases: Row<'item_generation_bases'>[];
-    baseBonuses: ItemGenerationBaseBonusRow[];
     affixes: Row<'item_generation_affixes'>[];
-    affixBonuses: ItemGenerationAffixBonusRow[];
+    entityBonuses: CanonicalEntityBonusWithTemplateRow[];
   }): ItemGenerationCatalog {
-    const { qualities, bucketProfiles, bases, baseBonuses, affixes, affixBonuses } = params;
+    const {
+      qualities,
+      bucketProfiles,
+      baseTypes,
+      baseTypeTargets,
+      bases,
+      affixes,
+      entityBonuses,
+    } = params;
 
-    const baseBonusesById = this.groupBonusesByForeignKey(
-      baseBonuses,
-      (row) => row.base_id
-    );
-    const affixBonusesById = this.groupBonusesByForeignKey(
-      affixBonuses,
-      (row) => row.affix_id
-    );
+    if ((bases.length > 0 || affixes.length > 0) && entityBonuses.length === 0) {
+      throw new Error(
+        'No entity_bonuses were returned for item generation bases/affixes. Apply the base/affix backfill before using item generation bonuses.',
+      );
+    }
+
+    const bonusesByEntityId = this.groupBonusesByEntityId(entityBonuses);
+    const mappedBaseTypes = baseTypes.map(mapItemGenerationBaseType);
+    const baseTypeByKey = toBaseTypeByKey(mappedBaseTypes);
+    const mappedBaseTypeTargets = baseTypeTargets.map(mapItemGenerationBaseTypeTarget);
 
     const mappedBases = bases.map((row) =>
-      mapItemGenerationBase(row, baseBonusesById.get(row.id) ?? [])
+      mapItemGenerationBase(row, bonusesByEntityId.get(row.id) ?? [], baseTypeByKey),
     );
-
     const mappedAffixes = affixes.map((row) =>
-      mapItemGenerationAffix(row, affixBonusesById.get(row.id) ?? [])
+      mapItemGenerationAffix(row, bonusesByEntityId.get(row.id) ?? []),
     );
     const mappedQualities = qualities.map(mapItemGenerationQuality);
     const activeBucketProfile = bucketProfiles[0]
@@ -115,42 +154,41 @@ export class ItemCatalogService {
 
     if (mappedBases.length === 0) {
       throw new Error(
-        'No item generation bases were returned from Supabase. The browser request succeeded, but the result was empty. Most likely causes: missing SELECT policy (RLS) on public.item_generation_bases, or data was seeded into a different table than public.item_generation_bases.'
+        'No item generation bases were returned from Supabase. The browser request succeeded, but the result was empty. Most likely causes: missing SELECT policy (RLS) on public.item_generation_bases, or data was seeded into a different table than public.item_generation_bases.',
       );
     }
 
     if (mappedQualities.length === 0) {
       throw new Error(
-        'No enabled item generation qualities were found in Supabase. Seed public.item_generation_qualities and make sure at least one row has is_enabled = true.'
+        'No enabled item generation qualities were found in Supabase. Seed public.item_generation_qualities and make sure at least one row has is_enabled = true.',
       );
     }
 
     if (!activeBucketProfile) {
       throw new Error(
-        'No active item generation bucket profile was found in Supabase. Seed public.item_generation_bucket_profiles and make sure one row has is_active = true.'
+        'No active item generation bucket profile was found in Supabase. Seed public.item_generation_bucket_profiles and make sure one row has is_active = true.',
       );
     }
 
     return {
       budgetBuckets: this.bucketFactory.buildBuckets(activeBucketProfile),
       qualities: mappedQualities,
+      baseTypes: mappedBaseTypes,
+      baseTypeTargets: mappedBaseTypeTargets,
       bases: mappedBases,
       prefixes: mappedAffixes.filter((affix) => affix.kind === 'prefix'),
       suffixes: mappedAffixes.filter((affix) => affix.kind === 'suffix'),
     };
   }
 
-  private groupBonusesByForeignKey<
-    TRow extends ItemGenerationBaseBonusRow | ItemGenerationAffixBonusRow
-  >(
-    rows: TRow[],
-    getRelationId: (row: TRow) => string
-  ): Map<string, ReturnType<typeof mapBonusTemplateValue>[]> {
-    const mapById = new Map<string, ReturnType<typeof mapBonusTemplateValue>[]>();
+  private groupBonusesByEntityId(
+    rows: CanonicalEntityBonusWithTemplateRow[],
+  ): Map<string, ReturnType<typeof mapResolvedItemGenerationBonus>[]> {
+    const mapById = new Map<string, ReturnType<typeof mapResolvedItemGenerationBonus>[]>();
 
     for (const row of rows) {
-      const relationId = getRelationId(row);
-      const nextBonus = mapBonusTemplateValue(row);
+      const relationId = row.entity_id;
+      const nextBonus = mapResolvedItemGenerationBonus(row);
       const existing = mapById.get(relationId) ?? [];
       existing.push(nextBonus);
       mapById.set(relationId, existing);

@@ -8,6 +8,9 @@ import { ItemCatalogService } from './item-catalog';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
 import { trimText, trimToNull } from '../../utils/normalize-text';
+import { BONUS_ENTITY_TYPES } from '../../constants/bonus-entity-types.const';
+import { TABLES } from '../../constants/tables.const';
+import { toEntityBonusPayload } from '../../utils/entity-bonus-governance';
 
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationAffixAdminService {
@@ -30,7 +33,7 @@ export class ItemGenerationAffixAdminService {
   }
 
   delete(id: string): Observable<void> {
-    return this.backend.delete('item_generation_affixes', id).pipe(
+    return this.backend.delete(TABLES.item_generation_affixes, id).pipe(
       tap(() => this.itemCatalogService.clearCache())
     );
   }
@@ -46,8 +49,8 @@ export class ItemGenerationAffixAdminService {
     }
   ): Observable<string> {
     const request$ = id
-      ? this.backend.update<{ id: string }>('item_generation_affixes', id, payload)
-      : this.backend.create<{ id: string }>('item_generation_affixes', payload);
+      ? this.backend.update<{ id: string }>(TABLES.item_generation_affixes, id, payload)
+      : this.backend.create<{ id: string }>(TABLES.item_generation_affixes, payload);
 
     return request$.pipe(map((row) => row.id));
   }
@@ -56,20 +59,34 @@ export class ItemGenerationAffixAdminService {
     affixId: string,
     bonuses: EditableItemGenerationBonus[]
   ): Observable<void> {
-    return this.backend.delete('item_generation_affix_bonuses', {
-      affixId: { operator: FilterOperator.EQ, value: affixId },
+    return this.backend.delete(TABLES.entity_bonuses, {
+      entityType: {
+        operator: FilterOperator.EQ,
+        value: BONUS_ENTITY_TYPES.ItemGenerationAffix,
+      },
+      entityId: { operator: FilterOperator.EQ, value: affixId },
     }).pipe(
       switchMap(() => {
         const rows = bonuses
           .filter((bonus) => !!bonus.templateId)
-          .map((bonus) => ({
-            affix_id: affixId,
-            template_id: bonus.templateId,
-            value: bonus.baseValue,
-          }));
+          .map((bonus, index) =>
+            toEntityBonusPayload({
+              entityType: BONUS_ENTITY_TYPES.ItemGenerationAffix,
+              entityId: affixId,
+              bonusTemplateId: bonus.templateId ?? '',
+              value: bonus.baseValue,
+              description: bonus.description,
+              levelIntervalOverride: bonus.levelsStep,
+              scalingStatKeyOverride: bonus.sourceStat,
+              scopeKeyOverride: bonus.scope,
+              qualityScalesValue: bonus.qualityScalesValue ?? false,
+              sortOrder: index,
+              isActive: true,
+            }),
+          );
 
         return rows.length
-          ? this.backend.createMany('item_generation_affix_bonuses', rows).pipe(map(() => void 0))
+          ? this.backend.createMany(TABLES.entity_bonuses, rows).pipe(map(() => void 0))
           : of(void 0);
       })
     );

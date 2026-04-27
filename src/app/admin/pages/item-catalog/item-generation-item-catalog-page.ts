@@ -1,16 +1,18 @@
 import { Component, OnInit, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 import { FormFields } from '../../../shared/form-fields/form-fields';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
 import { AdminServerSwitcher } from '../../components/admin-server-switcher/admin-server-switcher';
 import { ITEM_CATALOG_PAGE_LINKS } from '../../admin-navigation.config';
 import { ItemGenerationItemCatalogPageFacade } from '../../../core/services/items/item-generation-item-catalog-page.facade';
 import {
+  createItemCatalogBaseEditorFields,
   createItemCatalogSelectorFields,
   ITEM_CATALOG_AFFIX_EDITOR_FIELDS,
-  ITEM_CATALOG_BASE_EDITOR_FIELDS,
   ITEM_CATALOG_SECTION_BUTTONS,
 } from '../../../core/config/forms/item-catalog-form.config';
 
@@ -20,7 +22,9 @@ import {
   imports: [
     ReactiveFormsModule,
     ButtonModule,
+    CheckboxModule,
     InputTextModule,
+    SelectModule,
     FormFields,
     AdminTagLinks,
     AdminServerSwitcher,
@@ -39,7 +43,9 @@ export class ItemGenerationItemCatalogPage implements OnInit {
       (entity) => this.page.optionLabel(entity)
     )
   );
-  readonly baseEditorFields = ITEM_CATALOG_BASE_EDITOR_FIELDS;
+  readonly baseEditorFields = computed(() =>
+    createItemCatalogBaseEditorFields(this.page.catalogData().baseTypes)
+  );
   readonly affixEditorFields = ITEM_CATALOG_AFFIX_EDITOR_FIELDS;
 
   ngOnInit(): void {

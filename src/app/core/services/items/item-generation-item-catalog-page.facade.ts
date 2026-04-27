@@ -14,6 +14,7 @@ import {
   CatalogEntitySelectorForm,
 } from '../../types/forms/item-generation-item-catalog-form.types';
 import { ItemGenerationAdminService } from './item-generation-admin';
+import { toSlug } from '../../utils/slug';
 import {
   catalogEntities,
   catalogEntityLabel,
@@ -38,6 +39,8 @@ export class ItemGenerationItemCatalogPageFacade {
 
   readonly activeSection = signal<CatalogSection>('base');
   readonly catalogData = signal<ItemGenerationAdminCatalogData>({
+    baseTypes: [],
+    baseTypeTargets: [],
     bases: [],
     prefixes: [],
     suffixes: [],
@@ -83,6 +86,12 @@ export class ItemGenerationItemCatalogPageFacade {
         this.applySelection(id);
         this.successMessage.set(null);
       });
+    this.baseEditorForm.controls.name.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((name) => this.applyGeneratedKey(this.baseEditorForm, name));
+    this.affixEditorForm.controls.name.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((name) => this.applyGeneratedKey(this.affixEditorForm, name));
   }
 
   loadData(preferred?: { section?: CatalogSection; key?: string }) {
@@ -154,6 +163,27 @@ export class ItemGenerationItemCatalogPageFacade {
     return this.catalogData().bonusTemplates.filter((template) => template.category === category);
   }
 
+  bonusCategoryOptions() {
+    return this.catalogData().bonusCategories.map((category) => ({
+      label: category,
+      value: category,
+    }));
+  }
+
+  bonusTemplateOptionsForCategory(category: string) {
+    return this.bonusTemplatesForCategory(category).map((template) => ({
+      label: template.label,
+      value: template.id,
+    }));
+  }
+
+  bonusTargetOptions() {
+    return this.catalogData().bonusTargets.map((target) => ({
+      label: target.label,
+      value: target.key,
+    }));
+  }
+
   applyBonusCategory(index: number, category: string) {
     this.bonusEditor().at(index).patchValue({
       category,
@@ -167,6 +197,7 @@ export class ItemGenerationItemCatalogPageFacade {
       sourceStat: null,
       scalingFactor: null,
       description: '',
+      qualityScalesValue: false,
     });
   }
 
@@ -186,6 +217,7 @@ export class ItemGenerationItemCatalogPageFacade {
         sourceStat: template.sourceStat,
         scalingFactor: template.scalingFactor,
         description: template.description,
+        qualityScalesValue: false,
       });
   }
 
@@ -319,6 +351,10 @@ export class ItemGenerationItemCatalogPageFacade {
     }
 
     this.formFactory.patchAffix(this.affixEditorForm, this.formFactory.createAffixDraft(section));
+  }
+
+  private applyGeneratedKey(form: BaseEditorForm | AffixEditorForm, name: string) {
+    form.controls.key.setValue(toSlug(name), { emitEvent: false });
   }
 }
 

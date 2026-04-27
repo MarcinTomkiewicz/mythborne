@@ -1,6 +1,7 @@
 import { FormFieldType } from '../../enums/form-field-type';
 import { FormFieldConfig } from '../../types/form-field.types';
 import { CatalogSection } from '../../domain/item/item-generation-admin.model';
+import { ItemGenerationBaseType } from '../../domain/item/item-generation.model';
 import { CatalogEntity } from '../../types/item-catalog-admin.types';
 import { BONUS_TYPE_OPTIONS } from '../../utils/bonus';
 
@@ -11,13 +12,6 @@ export const ITEM_CATALOG_SECTION_BUTTONS = [
 ] as const;
 
 export const ITEM_CATALOG_BONUS_TYPE_OPTIONS = BONUS_TYPE_OPTIONS;
-
-const SLOT_OPTIONS = [
-  { label: 'weapon', value: 'weapon' },
-  { label: 'trinket', value: 'trinket' },
-  { label: 'armor', value: 'armor' },
-  { label: 'shield', value: 'shield' },
-] as const;
 
 const AFFIX_KIND_OPTIONS = [
   { label: 'prefix', value: 'prefix' },
@@ -45,23 +39,38 @@ export function createItemCatalogSelectorFields(
   ];
 }
 
-export const ITEM_CATALOG_BASE_EDITOR_FIELDS: readonly FormFieldConfig[] = [
-  { type: FormFieldType.Text, controlName: 'key', label: 'Key' },
-  { type: FormFieldType.Text, controlName: 'name', label: 'Name' },
-  { type: FormFieldType.Select, controlName: 'slot', label: 'Slot', options: SLOT_OPTIONS },
-  { type: FormFieldType.Number, controlName: 'baseValue', label: 'Base value' },
-  {
-    type: FormFieldType.Textarea,
-    controlName: 'description',
-    label: 'Description',
-    className: 'grid-col-span-2',
-    rows: 3,
-  },
-];
+export function createItemCatalogBaseEditorFields(
+  baseTypes: readonly ItemGenerationBaseType[]
+): readonly FormFieldConfig[] {
+  return [
+    { type: FormFieldType.Text, controlName: 'name', label: 'Name' },
+    { type: FormFieldType.Text, controlName: 'key', label: 'Key', readonly: true },
+    {
+      type: FormFieldType.Select,
+      controlName: 'baseTypeKey',
+      label: 'Base type',
+      options: [
+        { label: 'Choose base type', value: '' },
+        ...baseTypes.map((baseType) => ({
+          label: `${baseType.label} (${baseType.equipmentSlotGroup})`,
+          value: baseType.key,
+        })),
+      ],
+    },
+    { type: FormFieldType.Number, controlName: 'baseValue', label: 'Base value' },
+    {
+      type: FormFieldType.Textarea,
+      controlName: 'description',
+      label: 'Description',
+      className: 'grid-col-span-2',
+      rows: 3,
+    },
+  ];
+}
 
 export const ITEM_CATALOG_AFFIX_EDITOR_FIELDS: readonly FormFieldConfig[] = [
-  { type: FormFieldType.Text, controlName: 'key', label: 'Key' },
   { type: FormFieldType.Text, controlName: 'name', label: 'Name' },
+  { type: FormFieldType.Text, controlName: 'key', label: 'Key', readonly: true },
   { type: FormFieldType.Select, controlName: 'kind', label: 'Kind', options: AFFIX_KIND_OPTIONS },
   { type: FormFieldType.Number, controlName: 'goldValue', label: 'Gold value' },
   {

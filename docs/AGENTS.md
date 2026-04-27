@@ -6,6 +6,7 @@ For next conversation and Codex review:
 - Preserve exact filenames.
 - Do not modify Codex status files unless user asks or confirms task completion.
 - Treat `database-current.md` as the semantic DB/RPC/helper registry.
+- Before starting a new backlog task, run `git status --short`; if the working tree is not clean, report it and wait for the user decision instead of starting the next task.
 - Always check current generated types/schema when implementing schema-sensitive logic.
 - Do not reintroduce `hero_derived` usage.
 - Use `scope`, not `context`, for bonus semantics.

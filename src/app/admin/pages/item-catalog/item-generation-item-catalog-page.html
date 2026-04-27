@@ -87,7 +87,7 @@
         <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
           <app-form-fields
             [form]="page.baseEditorForm"
-            [fields]="baseEditorFields"
+            [fields]="baseEditorFields()"
             widthClass="w-full"
           />
         </div>
@@ -108,30 +108,30 @@
                 <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Category</span>
-                    <select
-                      class="w-full p-inputtext"
+                    <p-select
+                      styleClass="w-full"
                       formControlName="category"
-                      (change)="page.applyBonusCategory($index, $any($event.target).value)"
-                    >
-                      <option value="">Choose category</option>
-                      @for (category of page.catalogData().bonusCategories; track category) {
-                        <option [value]="category">{{ category }}</option>
-                      }
-                    </select>
+                      [options]="page.bonusCategoryOptions()"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Choose category"
+                      [showClear]="true"
+                      (onChange)="page.applyBonusCategory($index, $event.value ?? '')"
+                    />
                   </label>
 
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Template</span>
-                    <select
-                      class="w-full p-inputtext"
+                    <p-select
+                      styleClass="w-full"
                       formControlName="templateId"
-                      (change)="page.applyBonusTemplate($index, $any($event.target).value)"
-                    >
-                      <option [ngValue]="null">Choose template</option>
-                      @for (template of page.bonusTemplatesForCategory(bonusGroup.controls.category.value); track template.id) {
-                        <option [value]="template.id">{{ template.label }}</option>
-                      }
-                    </select>
+                      [options]="page.bonusTemplateOptionsForCategory(bonusGroup.controls.category.value)"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Choose template"
+                      [showClear]="true"
+                      (onChange)="page.applyBonusTemplate($index, $event.value ?? '')"
+                    />
                   </label>
 
                   <label class="flex-col gap-sm">
@@ -158,6 +158,14 @@
                     <span class="muted-text">Description</span>
                     <input pInputText class="w-full" formControlName="description" readonly />
                   </label>
+
+                  <label class="flex-col gap-xs">
+                    <span class="flex-row-start-center gap-sm">
+                      <p-checkbox formControlName="qualityScalesValue" [binary]="true" />
+                      <span class="muted-text">Scale value with item quality</span>
+                    </span>
+                    <small class="muted-text">Only bonus value is scaled; level interval is never scaled.</small>
+                  </label>
                 </div>
 
                 <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
@@ -178,12 +186,15 @@
                   @if (bonusGroup.controls.type.value === 'scaled_stat_bonus') {
                     <label class="flex-col gap-sm">
                       <span class="muted-text">Source stat</span>
-                      <select class="w-full p-inputtext" formControlName="sourceStat">
-                        <option [ngValue]="null">Choose source stat</option>
-                        @for (target of page.catalogData().bonusTargets; track target.key) {
-                          <option [value]="target.key">{{ target.label }}</option>
-                        }
-                      </select>
+                      <p-select
+                        styleClass="w-full"
+                        formControlName="sourceStat"
+                        [options]="page.bonusTargetOptions()"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Choose source stat"
+                        [showClear]="true"
+                      />
                     </label>
                   }
 
@@ -256,30 +267,30 @@
                 <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Category</span>
-                    <select
-                      class="w-full p-inputtext"
+                    <p-select
+                      styleClass="w-full"
                       formControlName="category"
-                      (change)="page.applyBonusCategory($index, $any($event.target).value)"
-                    >
-                      <option value="">Choose category</option>
-                      @for (category of page.catalogData().bonusCategories; track category) {
-                        <option [value]="category">{{ category }}</option>
-                      }
-                    </select>
+                      [options]="page.bonusCategoryOptions()"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Choose category"
+                      [showClear]="true"
+                      (onChange)="page.applyBonusCategory($index, $event.value ?? '')"
+                    />
                   </label>
 
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Template</span>
-                    <select
-                      class="w-full p-inputtext"
+                    <p-select
+                      styleClass="w-full"
                       formControlName="templateId"
-                      (change)="page.applyBonusTemplate($index, $any($event.target).value)"
-                    >
-                      <option [ngValue]="null">Choose template</option>
-                      @for (template of page.bonusTemplatesForCategory(bonusGroup.controls.category.value); track template.id) {
-                        <option [value]="template.id">{{ template.label }}</option>
-                      }
-                    </select>
+                      [options]="page.bonusTemplateOptionsForCategory(bonusGroup.controls.category.value)"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Choose template"
+                      [showClear]="true"
+                      (onChange)="page.applyBonusTemplate($index, $event.value ?? '')"
+                    />
                   </label>
 
                   <label class="flex-col gap-sm">
@@ -306,6 +317,14 @@
                     <span class="muted-text">Description</span>
                     <input pInputText class="w-full" formControlName="description" readonly />
                   </label>
+
+                  <label class="flex-col gap-xs">
+                    <span class="flex-row-start-center gap-sm">
+                      <p-checkbox formControlName="qualityScalesValue" [binary]="true" />
+                      <span class="muted-text">Scale value with item quality</span>
+                    </span>
+                    <small class="muted-text">Only bonus value is scaled; level interval is never scaled.</small>
+                  </label>
                 </div>
 
                 <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
@@ -326,12 +345,15 @@
                   @if (bonusGroup.controls.type.value === 'scaled_stat_bonus') {
                     <label class="flex-col gap-sm">
                       <span class="muted-text">Source stat</span>
-                      <select class="w-full p-inputtext" formControlName="sourceStat">
-                        <option [ngValue]="null">Choose source stat</option>
-                        @for (target of page.catalogData().bonusTargets; track target.key) {
-                          <option [value]="target.key">{{ target.label }}</option>
-                        }
-                      </select>
+                      <p-select
+                        styleClass="w-full"
+                        formControlName="sourceStat"
+                        [options]="page.bonusTargetOptions()"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Choose source stat"
+                        [showClear]="true"
+                      />
                     </label>
                   }
 
