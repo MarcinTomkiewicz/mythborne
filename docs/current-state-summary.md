@@ -298,6 +298,10 @@ Still pending at the gameplay level even if partially supported in schema:
 - F10 building bonus writes do a controlled replace for the concrete `entity_type = building` and `entity_id = buildingId`, require semantic bonus templates, and never fall back to legacy `building_bonuses`.
 - Empty building `entity_bonuses` is allowed when buildings legitimately have no configured bonus rows; missing expected rows should still be treated as a SQL/backfill blocker.
 - `/admin/buildings` was split into smaller building section components, building form selects in the touched sections use PrimeNG/shared controls, and building `key` is readonly/generated from `name` only for new or empty-key records.
+- F11 accepted on 2026-04-27: combat item/equipment bonus inputs now read equipped items from `hero_equipment` and resolve item generation base/prefix/suffix bonuses through the canonical item generation catalog.
+- F11 applies item quality scaling through the existing value-only quality scaling helper, then maps combat-scope equipment bonuses into `hitBonusFromItems`, `critBonusFromItems`, `evasionBonusFromItems`, and `damageBonusFromItems`.
+- F11 does not add a dependency on `hero_derived`; missing legacy/null equipped item generation fields remain data cleanup blockers rather than a reason to fall back to legacy item bonus paths.
+- `hitBonusFromItems` remains zero until the DB dictionary gets a canonical hit/accuracy bonus target. No unregistered `accuracy` or `hit_chance` magic target is used in runtime mapping.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

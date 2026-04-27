@@ -642,6 +642,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F11 — Combat/equipment item bonus inputs
 
+**Status:** Done / confirmed.
+
 **Goal:** Combat formula inputs receive resolved item/equipment bonuses.
 
 **Scope:**

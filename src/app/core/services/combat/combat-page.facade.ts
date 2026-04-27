@@ -19,8 +19,10 @@ import {
   toWalkingDeadZone,
 } from '../../utils/combat-walking-dead';
 import { getErrorMessage } from '../../utils/error-message';
+import { toCombatBonusSnapshotFromEquipment } from '../../utils/combat-equipment-bonuses';
 import { Hero } from '../hero/hero';
 import { HeroDerivedStats } from '../hero/hero-derived-stats';
+import { EquipmentBonusesService } from '../items/equipment-bonuses';
 import { Origins } from '../origins/origins';
 import { StatsService } from '../stats/stats';
 import { CombatBalanceService } from './combat-balance';
@@ -34,6 +36,7 @@ export class CombatPageFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly heroService = inject(Hero);
   private readonly heroDerivedStats = inject(HeroDerivedStats);
+  private readonly equipmentBonuses = inject(EquipmentBonusesService);
   private readonly originsService = inject(Origins);
   private readonly statsService = inject(StatsService);
   private readonly balance = inject(CombatBalanceService);
@@ -133,11 +136,15 @@ export class CombatPageFacade {
 
           return originRequest$.pipe(
             switchMap(({ origin, bonuses }) =>
-              this.heroDerivedStats.resolveActiveHeroDerivedStats('combat').pipe(
-                map((derivedStats) => ({
+              forkJoin({
+                derivedStats: this.heroDerivedStats.resolveActiveHeroDerivedStats('combat'),
+                equipmentBonuses: this.equipmentBonuses.getEquipmentBonusesForHero(hero.id),
+              }).pipe(
+                map(({ derivedStats, equipmentBonuses }) => ({
                   hero,
                   baseStats,
                   derivedStats,
+                  equipmentBonuses,
                   statsDefinitions,
                   rules,
                   origin,
@@ -151,7 +158,16 @@ export class CombatPageFacade {
         finalize(() => this.isLoading.set(false))
       )
       .subscribe({
-        next: ({ hero, baseStats, derivedStats, statsDefinitions, rules, origin, bonuses }) => {
+        next: ({
+          hero,
+          baseStats,
+          derivedStats,
+          equipmentBonuses,
+          statsDefinitions,
+          rules,
+          origin,
+          bonuses,
+        }) => {
           this.origin.set(origin);
           this.originBonuses.set(bonuses);
           this.statsDefinitions.set(statsDefinitions);
@@ -161,7 +177,8 @@ export class CombatPageFacade {
             hero.name,
             hero.level ?? 1,
             baseStats,
-            derivedStats
+            derivedStats,
+            equipmentBonuses
           );
 
           this.hero.set(heroSnapshot);
@@ -352,7 +369,8 @@ export class CombatPageFacade {
     name: string,
     level: number,
     baseStats: IHeroStats,
-    derivedStats: IHeroDerived
+    derivedStats: IHeroDerived,
+    equipmentBonuses: BonusSource['bonuses']
   ): CombatantSnapshot {
     const source = this.originBonusSource();
     const effectiveBaseStats = this.statsService.getFinalStats(baseStats, [source], {
@@ -373,27 +391,26 @@ export class CombatPageFacade {
         critical: derivedStats.critical,
         evasion: derivedStats.evasion,
       },
-      bonuses: {
-        hitBonusFromItems: 0,
-        critBonusFromItems: 0,
-        evasionBonusFromItems: 0,
-        damageBonusFromItems: 0,
-      },
+      bonuses: toCombatBonusSnapshotFromEquipment(
+        equipmentBonuses,
+        level,
+        effectiveBaseStats
+      ),
     };
   }
 
   private originBonusSource(): BonusSource {
-      return {
-        name: 'origin',
-        bonuses: this.originBonuses().map((bonus) => ({
-          target: bonus.target ?? '',
-          value: bonus.baseValue,
-          type: bonus.type,
-          scope: bonus.scope,
-          levelsStep: bonus.levelsStep,
-          sourceStat: bonus.sourceStat,
-          scalingFactor: bonus.scalingFactor,
-        })),
-      };
-    }
+    return {
+      name: 'origin',
+      bonuses: this.originBonuses().map((bonus) => ({
+        target: bonus.target ?? '',
+        value: bonus.baseValue,
+        type: bonus.type,
+        scope: bonus.scope,
+        levelsStep: bonus.levelsStep,
+        sourceStat: bonus.sourceStat,
+        scalingFactor: bonus.scalingFactor,
+      })),
+    };
+  }
 }

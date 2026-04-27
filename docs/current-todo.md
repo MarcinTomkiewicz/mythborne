@@ -41,7 +41,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: F8 - item generation base type model migration.
 - Completed and confirmed: F9 - item generation entity bonuses.
 - Completed and confirmed: F10 - building entity bonuses.
-- Current backlog task: F11 - combat/equipment item bonus inputs.
+- Completed and confirmed: F11 - combat/equipment item bonus inputs.
+- Current backlog task: F12 - legacy bonus usage cleanup audit.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow

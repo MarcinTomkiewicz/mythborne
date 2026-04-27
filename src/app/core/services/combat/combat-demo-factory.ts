@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CombatantSnapshot } from '../../domain/combat/combat.model';
 import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
+import { emptyCombatBonusSnapshot } from '../../utils/combat-equipment-bonuses';
 
 const DEMO_BASE_STATS: IHeroStats = {
   strength: 8,
@@ -36,12 +37,7 @@ export class CombatDemoFactoryService {
         critical: Math.min(30, 4 + Math.floor(baseStats.cunning / 2)),
         evasion: Math.min(30, 3 + Math.floor(baseStats.agility / 2)),
       },
-      bonuses: {
-        hitBonusFromItems: 0,
-        critBonusFromItems: 0,
-        evasionBonusFromItems: 0,
-        damageBonusFromItems: 0,
-      },
+      bonuses: emptyCombatBonusSnapshot(),
     };
   }
 }

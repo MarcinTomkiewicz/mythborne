@@ -22,6 +22,7 @@ export const TABLES = {
   estate_buildings: 'estate_buildings',
   estate_districts: 'estate_districts',
   hero: 'hero',
+  hero_equipment: 'hero_equipment',
   estates: 'estates',
   hero_stats: 'hero_stats',
   hero_resources: 'hero_resources',
