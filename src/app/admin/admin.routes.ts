@@ -39,4 +39,11 @@ export const adminRoutes: Routes = [
         (m) => m.ConfigChangeSetsPage
       ),
   },
+  {
+    path: 'anti-abuse-config',
+    loadComponent: () =>
+      import('./pages/anti-abuse-config/anti-abuse-config-page').then(
+        (m) => m.AntiAbuseConfigPage
+      ),
+  },
 ];

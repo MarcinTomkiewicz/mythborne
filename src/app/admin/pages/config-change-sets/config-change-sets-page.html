@@ -323,6 +323,10 @@
                   This draft editor supports integer, decimal, boolean, string and JSON values.
                 </p>
 
+                @if (entryDefinitionScopeLabel()) {
+                  <p class="muted-text mb-0">{{ entryDefinitionScopeLabel() }}</p>
+                }
+
                 <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Target</span>

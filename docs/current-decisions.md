@@ -1443,3 +1443,190 @@ Codex must:
 - use `get_building_max_level_for_district(building_id, district_code)` or equivalent logic when checking effective building max level;
 - use `is_building_available_in_district(building_id, district_code)` or equivalent logic when checking district availability;
 - never assume every building has explicit cap rows for all districts.
+
+---
+
+# Update 2026-04-27 — equipment, Armory visibility and item lifecycle
+
+## Equipment state model
+
+Equipped state should be represented by a separate hero-equipment relation keyed by hero and slot, not by an `equipped` lifecycle status on the item row.
+
+Reasoning:
+
+- `items` represents ownership, lifecycle and market state.
+- Equipment state represents which owned item is currently worn by a hero in a slot.
+- These are separate concepts and should not be conflated.
+
+Current intended equipment slot model uses explicit hand slots:
+
+- `main_hand`;
+- `off_hand`;
+- `helmet`;
+- `armor`;
+- `pants`;
+- `boots`;
+- `amulet`;
+- `ring_1`;
+- `ring_2`.
+
+The hand model must support:
+
+- one-handed weapon;
+- one-handed weapon + shield;
+- dual wield where allowed;
+- two-handed melee weapon;
+- ranged weapon, always two-handed unless explicitly redesigned later.
+
+If an equipped item stops being owned by the hero, is deleted, or becomes `scrapped`, the equipment relation must be cleared automatically or by the same domain operation. Transfer, scrap, confiscation and similar operations must not leave stale equipped-item references.
+
+## Equip and unequip behavior
+
+Equip and unequip are immediate player actions. There is no equip timer, unequip timer, cooldown, repair ritual, cursed-item lock, or waiting period by default.
+
+Equipping an item into an occupied compatible slot replaces the existing item in that slot. The player should not have to manually unequip the previous item before equipping a replacement.
+
+For ambiguous single-equip cases, such as two rings or one-handed weapon slots, a single item equip may replace a random compatible occupied slot if the UI does not ask for an explicit slot choice.
+
+## Equip requirement validation
+
+Requirements are checked when equipping an item.
+
+An item may remain equipped even if the hero later stops meeting the item’s requirements. If the item is unequipped, the requirements must be met again to equip it later.
+
+An item’s own bonuses do not count toward meeting its own equip requirements. Already active bonuses from other equipped items or other active sources may count.
+
+Equip validation must be evaluated after removing the item or items that the candidate item would replace, but before applying bonuses from the candidate item itself.
+
+Example:
+
+- Hero has Strength 15.
+- Currently equipped Ring A gives Strength +5.
+- Candidate Ring B requires Strength 20.
+- If equipping Ring B would replace Ring A, then the hero would have Strength 15 before Ring B applies.
+- Ring B cannot be equipped.
+
+If an item cannot be equipped, the `Equip` action should be disabled. The UI must show the final generated requirement list for the item and clearly mark each requirement as met or unmet.
+
+## Bulk equip
+
+Bulk equip means equipping two or more selected items without using a saved equipment set.
+
+Bulk equip may equip only a subset of selected items. It is not all-or-nothing.
+
+Bulk equip must not solve circular dependencies between unequipped items. If Item A can only be equipped after Item B, and Item B can only be equipped after Item A, neither should be equipped.
+
+If one selected item is already legal to equip, and equipping it makes another selected item legal, the system may equip both in sequence.
+
+Bulk equip must not equip an item if doing so would remove an already equipped item whose bonuses are required for that candidate item.
+
+Bulk equip should be deterministic where practical. For example, if the player selects two rings, the system should equip the selected rings into the two ring slots if legal, rather than applying random single-equip replacement behavior.
+
+## Saved equipment sets
+
+A saved equipment set stores exact item IDs that were equipped at the time of saving.
+
+A saved set does not store “any equivalent item”. If a saved set contains a specific Glowing Ring ID and that item is sold or scrapped, another identical-looking Glowing Ring with a different ID does not satisfy the saved set.
+
+A saved equipment set can be re-equipped without re-solving the individual item requirement path, because it represents a previously legal equipped state.
+
+Saved set equip is all-or-nothing. If any item in the saved set is missing, no longer owned by the hero, scrapped, transferred, confiscated, deleted, or otherwise unavailable, the saved set equip fails as a whole.
+
+## Market locks and equipped items
+
+An item may remain equipped while listed or market-locked, as long as the hero still owns it.
+
+`locked_trade` and `locked_auction` do not mean that the item is unusable as equipment. They mean that the item cannot be scrapped, listed in another market channel, or used in another trade/auction operation while locked.
+
+When an equipped item is sold, transferred, confiscated, deleted or otherwise stops being owned by the hero, it is automatically unequipped. Subsequent actions use the updated equipment-derived state.
+
+## Armory visibility and shelves
+
+There is no hard limit on the number of owned items.
+
+Armory limits visible / operational item access, not item ownership.
+
+Armory visible capacity is resolved through the central bonus system, for example through a target such as `armory_visible_capacity` or an equivalent final naming. It should not be hardcoded as a special Armory rule.
+
+The UI should show owned item count against current visible capacity, for example:
+
+- `76/80`;
+- overloaded state such as `251/100`, preferably highlighted.
+
+Armory visibility priority:
+
+1. equipped items;
+2. listed / market-locked items;
+3. items on higher Armory shelves / visibility tiers;
+4. items on lower Armory shelves / visibility tiers.
+
+Within the same priority and shelf group, items are ordered by generation time from oldest to newest. Newer and lower-priority items are hidden first when visible capacity is exceeded.
+
+The current working term is “shelf”. The final UI name may change later.
+
+Shelf / visibility tier is part of the item’s own state. It transfers with the item when ownership changes.
+
+## Scrap lifecycle
+
+Vendor scrap is not player trade and gives drachmas, not Character Points.
+
+Items without prefix and without suffix are permanently removed immediately when scrapped, regardless of quality or drachma value.
+
+Items with prefix and/or suffix enter `scrapped` / recoverable state when scrapped. They may be permanently removed after up to 30 days.
+
+Quality alone does not make an item recoverable. An `Outstanding Halberd` without prefix or suffix is still a non-affix item and is permanently removed immediately when scrapped.
+
+## No durability
+
+Mythborne does not use item durability by default.
+
+There is no routine item repair system, no durability decay, and no default repair cost. Resource sinks should primarily come from buildings, estate progression and strategic systems rather than routine equipment maintenance.
+
+## Duplicate items and affix-family sets
+
+The equipment system allows duplicate items and duplicate affix families where slots allow it.
+
+For example, a hero may equip:
+
+- `Glowing Amulet`;
+- `Glowing Ring`;
+- another `Glowing Ring`.
+
+Such combinations may contribute to an affix-family set bonus. Mythborne does not use a default “unique equipped” restriction for normal generated items.
+
+The same prefix or suffix family/name may have different effects depending on item slot, category or profile. For example, `Demonic` may scale differently on one-handed and two-handed weapons, and `Glowing` may behave differently on rings and amulets.
+
+## Item layer boundaries and future super-quality
+
+The default generated item model remains:
+
+```text
+quality + optional prefix + base item + optional suffix
+```
+
+Do not add unique items, magical base variants, hidden extra layers, or “special base item” systems by default.
+
+A separate future super-quality layer may be considered much later in the game lifecycle, for example years after first server launch, if progression and economy need an additional aspirational tier.
+
+Working name for such a future layer: `Mythic`.
+
+In that future model, `Mythic Demonic Sword` and `Mythic Quality Demonic Sword` would be different items, because `Mythic` would be an additional super-quality multiplier above the normal quality layer. This is not part of the launch item system.
+
+## Manual activity fallback direction
+
+Manual combat and trials should eventually have fallback resolution if the player leaves, disconnects, loses network connection or intentionally stops participating.
+
+Combat fallback direction:
+
+- the fight does not disappear;
+- the fight is completed automatically;
+- the player has less agency and a worse expected outcome than competent manual play.
+
+Trial fallback direction:
+
+- the trial does not disappear;
+- the trial is resolved automatically / proportionally;
+- success chance or control is worse than manual play;
+- auto-resolve is a fallback, not an optimal strategy.
+
+Combat/trial resolution should also support dynamic equipment state. If equipment changes during an activity, later resolved actions should use the updated authoritative equipment state, and reports should snapshot the values actually used.

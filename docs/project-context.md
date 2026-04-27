@@ -1674,3 +1674,147 @@ When implementing building availability or upgrade validation:
 5. Keep costs separate from requirements.
 
 Do not rebuild the old model where `rank_required` alone determines building availability.
+
+---
+
+# Update 2026-04-27 — equipment, Armory and item lifecycle context
+
+## Equipment state and slots
+
+Equipment state is a hero-level relation, not an item lifecycle status. The item row tracks ownership, lifecycle and market state. A separate hero-equipment relation should track which owned item is currently equipped in which slot.
+
+The current conceptual slot model is:
+
+- `main_hand`;
+- `off_hand`;
+- `helmet`;
+- `armor`;
+- `pants`;
+- `boots`;
+- `amulet`;
+- `ring_1`;
+- `ring_2`.
+
+The hand model must support one-handed weapon, one-handed weapon plus shield, dual wield where allowed, two-handed melee weapon, and ranged weapon. Ranged weapons are treated as two-handed unless explicitly redesigned later.
+
+Equipped items should be automatically removed from equipment when ownership changes, when the item is deleted, or when it becomes scrapped. Do not rely on every market/scrap/admin operation remembering to manually unequip the item.
+
+## Equip, unequip and replacement UX
+
+Equip and unequip are immediate actions. There is no timer, cooldown, cursed-item behavior or default equip/unequip cost.
+
+If a player equips an item into an occupied compatible slot, the new item replaces the current item in that slot. The player should not have to manually unequip first.
+
+For ambiguous single-equip cases such as rings or compatible one-handed weapon slots, a single equip action may replace a random compatible occupied slot unless a more explicit UI flow is implemented.
+
+Bulk equip and saved equipment sets provide more controlled alternatives.
+
+## Equip requirements
+
+Requirements are checked when equipping.
+
+The candidate item’s own bonuses do not help satisfy its own requirements. Already active bonuses from other equipped items or other active sources may help.
+
+If the candidate item would replace another equipped item, validation should use the state after removing the replaced item, but before applying the candidate item’s bonuses.
+
+After an item is equipped, it may remain equipped even if the hero later stops meeting its requirements. If unequipped, requirements must be met again to equip it later.
+
+The equipment UI should disable Equip when requirements are not met and should show the final item requirement list with clear met/unmet indicators.
+
+## Bulk equip
+
+Bulk equip means equipping two or more selected items without using a saved set.
+
+Bulk equip may equip only the selected items that are legal according to the progressing equipment state. It is not all-or-nothing.
+
+Bulk equip does not solve circular dependencies. If two unequipped selected items only satisfy each other, neither should be equipped.
+
+If one selected item can be legally equipped first and then makes another selected item legal, the system may equip both in sequence.
+
+Bulk equip should be deterministic when practical. Selecting two rings should equip those rings into the ring slots if legal, rather than using random single-equip replacement behavior.
+
+## Saved equipment sets
+
+A saved equipment set stores exact item IDs from a legal equipped state.
+
+Re-equipping a saved set should not require re-solving the individual item requirement path. The set represents a previously legal configuration.
+
+A saved set does not accept equivalent replacements. If the saved set contains a specific item ID and that item is sold, scrapped, confiscated, deleted or otherwise unavailable, another item with the same visible name/prefix/suffix does not count.
+
+Saved set equip is all-or-nothing. If any item in the set is unavailable, no part of the set is equipped.
+
+## Market-listed and locked items
+
+A listed, `locked_trade`, or `locked_auction` item may remain equipped and active while still owned by the hero.
+
+Market locks prevent scrapping and prevent using the same item in another market channel. They do not disable equipment effects by themselves.
+
+If the item is sold, transferred, bought through buy now, confiscated or otherwise removed from the hero’s ownership, it should be automatically unequipped and later actions should use the updated equipment state.
+
+## Armory visibility and shelves
+
+There is no hard owned-item limit. Armory limits visible / operational access, not ownership.
+
+Armory visible capacity should come from the normal bonus system, not from hardcoded Armory-specific capacity logic. A future or existing bonus target such as `visible_item_capacity` / `armory_visible_capacity` may be used depending on final naming.
+
+Armory UI should show owned item count versus resolved visible capacity, for example `76/80` or overloaded `251/100`.
+
+Visibility order:
+
+1. equipped items;
+2. listed / market-locked items;
+3. higher shelf / visibility tier;
+4. lower shelf / visibility tier.
+
+Within the same priority and shelf group, items are ordered by generation time from oldest to newest. Newer and lower-priority items are hidden first when capacity is exceeded.
+
+“Shelf” is the current working term. The final UI name may change later.
+
+Shelf / visibility tier is item state and transfers with the item when ownership changes.
+
+## Scrap and database hygiene
+
+The game should not limit drops simply because the player owns many items. Instead, Armory visibility pressure should encourage players to clean up low-value items.
+
+Items without prefix and suffix are permanently removed immediately when scrapped, regardless of quality or drachma value.
+
+Items with prefix and/or suffix enter `scrapped` / recoverable state and may be permanently removed after up to 30 days.
+
+Quality alone does not make a no-affix item recoverable.
+
+This model pushes item cleanup pressure to the player without blocking drops or requiring broad manual database cleanup.
+
+## No durability
+
+Mythborne does not use item durability by default. Durability would mostly create a routine drachma/material sink rather than an interesting decision. Resource sinks should primarily live in buildings, estate progression and strategic systems.
+
+## Duplicate items, affix variants and set direction
+
+Duplicate equipped items are allowed where slots allow them. Two rings with the same prefix/suffix may be equipped at the same time.
+
+Affix-family set bonuses are allowed as a future direction. Example: `Glowing Amulet` plus two `Glowing Rings` may contribute to a `Glowing` set bonus.
+
+The same affix family/name may have different bonus profiles by item slot, category or weapon profile. Example: `Demonic` may be weaker on a one-handed weapon than on a two-handed weapon.
+
+Do not introduce unique items, special base variants, or hidden item layers as part of the default item model.
+
+## Future super-quality direction
+
+A separate super-quality layer such as `Mythic` may be considered much later, after the game and economy mature. This would be an additional layer above normal quality, not a replacement for normal qualities.
+
+Example future distinction:
+
+- `Mythic Demonic Sword`;
+- `Mythic Quality Demonic Sword`.
+
+These would be different item outputs because `Mythic` would provide its own super-multiplier while `Quality` remains the normal quality layer. This is a future expansion direction, not part of launch scope.
+
+## Manual combat/trial fallback direction
+
+Manual combat and trials should eventually have resilience against disconnects, tab closes and intentional exits.
+
+A manual fight should not disappear when the player disconnects or leaves. It should auto-complete with reduced player agency and worse expected control/outcome than competent manual play.
+
+A trial should likewise resolve automatically/proportionally with lower expected success or control than manual play. Auto-resolve is a safety fallback, not an optimal strategy.
+
+Combat/trial systems should allow dynamic equipment state. If equipment changes during an activity, later resolved actions should use the updated equipment-derived values. Reports should snapshot the values actually used at each step.

@@ -1,4 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { ConfigChangeStatusKey } from '../../../core/enums/config-governance.enum';
 import {
   ConfigChangeEntry,
@@ -15,6 +16,7 @@ import { ConfigValueEntryDraftState } from './config-value-entry-draft.state';
 
 @Injectable()
 export class ConfigChangeSetsPageFacade {
+  private readonly route = inject(ActivatedRoute);
   private readonly configDefinitions = inject(ConfigDefinitions);
   private readonly draft = inject(ConfigChangeSetDraftActions);
   private readonly effectiveValues = inject(ConfigEffectiveValuesState);
@@ -77,6 +79,13 @@ export class ConfigChangeSetsPageFacade {
   readonly definitionOptions = this.entryDraft.definitionOptions;
   readonly selectedEntryDefinition = this.entryDraft.selectedDefinition;
   readonly selectedEffectiveValue = this.entryDraft.selectedEffectiveValue;
+  readonly entryDefinitionScopeLabel = computed(() => {
+    const managedEntityKey = this.entryManagedEntityKey();
+
+    return managedEntityKey
+      ? `Draft editor definitions filtered by managed entity: ${managedEntityKey}.`
+      : null;
+  });
 
   loadData(): void {
     this.loadDefinitions();
@@ -156,9 +165,11 @@ export class ConfigChangeSetsPageFacade {
   private loadDefinitions(): void {
     this.configDefinitions.getDefinitions().subscribe({
       next: (definitions) => {
+        const entryDefinitions = this.filterEntryDefinitions(definitions);
+
         this.definitions.set(definitions);
         this.effectiveValues.setDefinitions(definitions);
-        this.entryDraft.setDefinitions(definitions);
+        this.entryDraft.setDefinitions(entryDefinitions);
       },
       error: (error: unknown) =>
         this.error.set(
@@ -167,5 +178,21 @@ export class ConfigChangeSetsPageFacade {
             : 'Failed to load config definitions.',
         ),
     });
+  }
+
+  private entryManagedEntityKey(): string | null {
+    return this.route.snapshot.queryParamMap.get('managedEntityKey');
+  }
+
+  private filterEntryDefinitions(
+    definitions: readonly ConfigDefinition[],
+  ): ConfigDefinition[] {
+    const managedEntityKey = this.entryManagedEntityKey();
+
+    return managedEntityKey
+      ? definitions.filter(
+          (definition) => definition.managedEntityKey === managedEntityKey,
+        )
+      : [...definitions];
   }
 }

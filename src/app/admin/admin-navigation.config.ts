@@ -36,6 +36,13 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
       'Podglad historii change-setow konfiguracji, statusow, powodow oraz wpisow zmian.',
     routerLink: '/admin/config-change-sets',
   },
+  {
+    legend: 'Anti-abuse',
+    title: 'Anti-abuse config',
+    description:
+      'Podglad serwerowych progow i flag anti-abuse zarzadzanych przez config governance.',
+    routerLink: '/admin/anti-abuse-config',
+  },
 ];
 
 export const ADMIN_DASHBOARD_LINKS: readonly AdminTagLink[] = [
@@ -62,6 +69,7 @@ export const BUILDINGS_PAGE_LINKS: readonly AdminTagLink[] = [
 export const CONFIG_DEFINITIONS_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin' },
   { label: 'Config changes', routerLink: '/admin/config-change-sets' },
+  { label: 'Anti-abuse config', routerLink: '/admin/anti-abuse-config' },
   { label: 'Formulas', routerLink: '/admin/balance' },
   { label: 'Buildings', routerLink: '/admin/buildings' },
 ];
@@ -69,6 +77,13 @@ export const CONFIG_DEFINITIONS_PAGE_LINKS: readonly AdminTagLink[] = [
 export const CONFIG_CHANGE_SETS_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin' },
   { label: 'Config definitions', routerLink: '/admin/config-definitions' },
+  { label: 'Anti-abuse config', routerLink: '/admin/anti-abuse-config' },
   { label: 'Formulas', routerLink: '/admin/balance' },
   { label: 'Buildings', routerLink: '/admin/buildings' },
+];
+
+export const ANTI_ABUSE_CONFIG_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin' },
+  { label: 'Config changes', routerLink: '/admin/config-change-sets' },
+  { label: 'Config definitions', routerLink: '/admin/config-definitions' },
 ];

@@ -33,6 +33,15 @@ export class ConfigDefinitions {
     });
   }
 
+  getActiveDefinitionsByManagedEntityKey(
+    managedEntityKey: string,
+  ): Observable<ConfigDefinition[]> {
+    return this.loadDefinitions({
+      isActive: { operator: FilterOperator.EQ, value: true },
+      managedEntityKey: { operator: FilterOperator.EQ, value: managedEntityKey },
+    });
+  }
+
   private loadDefinitions(filters?: Parameters<Backend['getAll']>[0]['filters']): Observable<ConfigDefinition[]> {
     return this.backend
       .getAll<ConfigDefinitionRow>({

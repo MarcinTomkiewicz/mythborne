@@ -351,6 +351,8 @@ Global Codex rules:
 
 ## Task D6 — Anti-abuse config admin section
 
+**Status:** Done / confirmed 2026-04-27.
+
 **Goal:** Display/edit anti-abuse live-server configs.
 
 **Scope:**

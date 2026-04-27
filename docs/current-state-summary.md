@@ -96,6 +96,10 @@ This is an operational estimate, not a formal audit.
 - D5 frontend workflow calls `mark_config_change_set_ready`, `apply_config_change_set`, and `cancel_config_change_set` through the shared backend RPC layer; cancellation requires and sends `cancelledReason`.
 - Config change-set models/mappers include `readyBy` and `cancelledReason`, and the admin change-set UI shows/validates cancellation reason while preserving the original change-set reason.
 - The config change-set page has been refactored into page-local list/detail state, effective-values state, draft actions, entry-draft state, and workflow actions; the page facade now acts as a small orchestration shell.
+- Task D6 is confirmed complete as of 2026-04-27. Admin now has `/admin/anti-abuse-config` for selected-server anti-abuse governance values.
+- The anti-abuse config page loads active `config_definitions` where `managed_entity_key = anti_abuse`, resolves effective values for the selected server, and displays source/default/value type metadata without hardcoded thresholds.
+- Anti-abuse config edits are routed into the existing config change-set path through `/admin/config-change-sets?managedEntityKey=anti_abuse`; the draft entry selector is filtered to anti-abuse definitions and still uses governed change entries instead of direct config value mutation.
+- D6 was verified with `npm run build`; the build passes with the existing bundle budget and Supabase SSR CommonJS warnings.
 
 ### Canonical stats and derived stats
 - Base stats are loaded from canonical stat definitions.

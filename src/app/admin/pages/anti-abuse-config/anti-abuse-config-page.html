@@ -1,0 +1,99 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading anti-abuse config..."
+  description="Loading selected-server anti-abuse governance values."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Anti-abuse</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">Anti-abuse Config</h2>
+          <p class="muted-text mb-0">
+            Server-scoped thresholds and flags loaded from config governance definitions.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+
+      <app-admin-server-switcher />
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Selected server</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            {{ rows().length }} anti-abuse config entries
+          </h3>
+          @if (selectedServer(); as server) {
+            <p class="muted-text mb-0">{{ server.name }} / {{ server.status }}</p>
+          }
+        </div>
+
+        <a
+          pButton
+          routerLink="/admin/config-change-sets"
+          [queryParams]="{ managedEntityKey: 'anti_abuse' }"
+        >
+          Open governed editor
+        </a>
+      </div>
+
+      <div class="flex-col gap-md">
+        @for (row of rows(); track row.definition.id) {
+          <article class="mg-surface-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">{{ row.definition.key }}</p>
+                <h4 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ row.definition.label }}
+                </h4>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="mg-tag">{{ row.definition.governanceScope }}</span>
+                <span class="mg-tag">{{ row.definition.valueType }}</span>
+                <span class="mg-tag">{{ row.effectiveValue?.sourceLabel ?? 'No value' }}</span>
+                <span class="mg-tag">
+                  {{ row.canUseDraftEditor ? 'draft editor' : 'custom workflow needed' }}
+                </span>
+              </div>
+            </div>
+
+            @if (row.definition.description) {
+              <p class="muted-text mb-0">{{ row.definition.description }}</p>
+            }
+
+            <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Effective value</span>
+                <pre class="mb-0 text-break"><code>{{ valuePreview(row.effectiveValue?.value ?? null) }}</code></pre>
+              </div>
+
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Default value</span>
+                <pre class="mb-0 text-break"><code>{{ jsonPreview(row.definition.defaultValue) }}</code></pre>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Managed entity key</span>
+                <strong class="heading-color">{{ row.definition.managedEntityKey ?? '-' }}</strong>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">No active anti-abuse config definitions found.</p>
+        }
+      </div>
+    </section>
+  </div>
+}
