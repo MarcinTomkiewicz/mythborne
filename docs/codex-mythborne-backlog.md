@@ -314,6 +314,8 @@ Global Codex rules:
 
 ## Task D4 — Config edit draft flow
 
+**Status:** Done / confirmed 2026-04-27.
+
 **Goal:** Create controlled config edits.
 
 **Scope:**

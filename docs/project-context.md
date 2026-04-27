@@ -1,3 +1,42 @@
+<!-- HANDOFF_OVERRIDE_START -->
+# Handoff project context — 2026-04-27
+
+## Project name
+
+Canonical current project/game name: **Mythborne**. Legacy docs may say Monster Hunt; treat that as historical naming unless the user explicitly discusses old documents.
+
+## Current work mode
+
+This project is currently in a split track:
+1. Codex executes frontend/backlog tasks.
+2. The conversation reviews Codex output, database/concept changes, and schema fixes.
+3. Important database/concept changes must be reflected in MD files.
+
+## Current Codex location
+
+Epic D — Configuration Governance.
+
+Accepted:
+- D1 config definitions read model.
+- D2 config values/effective values read model.
+- D3 change-set list/detail.
+
+Current:
+- D4 config edit draft flow. Codex reported fixes; next step is verify/accept.
+
+## D4 acceptance focus for next conversation
+
+Confirm build and UI; ensure draft change set creation, reason/title trim validation, public changelog validation, scalar entry creation, unsupported entity/formula/enum refs, no direct config mutation, no misuse of `entity_id` or old/new scope, and effective values refresh after server changes.
+
+## Near-term after D4
+
+D5 apply/cancel flow, D6 anti-abuse config admin, then audit/logging integration and anti-abuse UI/read models. Separate later work: equipment model, trade/auction UI, PvE/trials.
+
+## Review style
+
+When reviewing Codex code: distinguish blockers from polish, give direct Polish feedback, do not accept if DB semantics are wrong, and do not ask Codex to update status until user confirms.
+<!-- HANDOFF_OVERRIDE_END -->
+
 # Mythborne — Project Context for Codex
 
 ## Purpose

@@ -23,6 +23,72 @@
 
         <app-admin-tag-links [links]="links" />
       </div>
+
+      <app-admin-server-switcher />
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-xs mb-lg">
+        <p class="card-legend mb-0">Draft flow</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Create change set</h3>
+      </div>
+
+      @if (editorError()) {
+        <p class="muted-text mb-md">{{ editorError() }}</p>
+      }
+
+      @if (editorMessage()) {
+        <p class="muted-text mb-md">{{ editorMessage() }}</p>
+      }
+
+      <form [formGroup]="draftForm" class="mg-surface-card p-md flex-col gap-md" (ngSubmit)="createDraftChangeSet()">
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Title</span>
+            <input pInputText class="w-100" formControlName="title" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Changelog visibility</span>
+            <p-select
+              class="w-100"
+              formControlName="changelogVisibility"
+              [options]="draftVisibilityOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Changelog title</span>
+            <input pInputText class="w-100" formControlName="changelogTitle" />
+          </label>
+        </div>
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Reason</span>
+          <textarea pInputText rows="3" class="w-100" formControlName="reason"></textarea>
+        </label>
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Changelog body</span>
+          <textarea pInputText rows="3" class="w-100" formControlName="changelogBody"></textarea>
+        </label>
+
+        @if (draftForm.hasError('publicChangelogRequired')) {
+          <p class="muted-text mb-0">
+            Public changelog requires both title and body.
+          </p>
+        }
+
+        <div class="flex-row-start-center">
+          <p-button
+            type="submit"
+            label="Create draft"
+            [disabled]="draftForm.invalid || isSavingDraft()"
+          />
+        </div>
+      </form>
     </section>
 
     <section class="mg-card p-lg w-100">
@@ -172,6 +238,68 @@
                 <strong class="heading-color">{{ changeSet.cancelledBy ?? '-' }}</strong>
               </div>
             </div>
+
+            @if (canEditSelectedChangeSet()) {
+              <form [formGroup]="entryForm" class="p-md flex-col gap-md" (ngSubmit)="addConfigValueEntry()">
+                <div class="flex-col gap-xs">
+                  <p class="card-legend mb-0">Draft entry</p>
+                  <h5 class="mg-section__title mg-section__title--xs mb-0">
+                    Add scalar config value change
+                  </h5>
+                </div>
+
+                <label class="flex-col gap-sm">
+                  <span class="muted-text">Config definition</span>
+                  <p-select
+                    class="w-100"
+                    formControlName="configDefinitionId"
+                    [options]="definitionOptions()"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select config definition"
+                    [filter]="true"
+                  />
+                </label>
+
+                <p class="muted-text mb-0">
+                  This draft editor supports integer, decimal, boolean, string and JSON values.
+                </p>
+
+                <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">Target</span>
+                    <p-select
+                      class="w-100"
+                      formControlName="valueTarget"
+                      [options]="valueTargetOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </label>
+
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">New value</span>
+                    <input pInputText class="w-100" formControlName="newValue" />
+                  </label>
+                </div>
+
+                @if (selectedEntryDefinition(); as definition) {
+                  <div class="flex-row-start-center flex-wrap gap-xs">
+                    <span class="mg-tag">{{ definition.valueType }}</span>
+                    <span class="mg-tag">{{ definition.governanceScope }}</span>
+                    <span class="mg-tag">{{ selectedEffectiveValue()?.sourceLabel ?? 'No value' }}</span>
+                  </div>
+                }
+
+                <div class="flex-row-start-center">
+                  <p-button
+                    type="submit"
+                    label="Add entry"
+                    [disabled]="entryForm.invalid || isSavingEntry()"
+                  />
+                </div>
+              </form>
+            }
 
             @if (detailError()) {
               <p class="muted-text mb-0">{{ detailError() }}</p>

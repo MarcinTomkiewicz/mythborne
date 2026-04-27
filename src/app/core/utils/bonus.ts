@@ -6,6 +6,8 @@ import {
   BonusType,
   EditableAppliedBonus,
 } from '../types/bonus.types';
+import { uniqueSorted } from './collection';
+import { trimText } from './normalize-text';
 
 export const FALLBACK_BONUS_TYPE_OPTIONS = [
   { label: 'flat', value: 'flat' },
@@ -36,10 +38,16 @@ export const FALLBACK_BONUS_SCOPE_OPTIONS = [
 export const BONUS_TYPE_OPTIONS = FALLBACK_BONUS_TYPE_OPTIONS;
 export const BONUS_SCOPE_OPTIONS = FALLBACK_BONUS_SCOPE_OPTIONS;
 
-const BONUS_TYPES = new Set<BonusType>(FALLBACK_BONUS_TYPE_OPTIONS.map((option) => option.value));
-const BONUS_SCOPES = new Set<BonusScope>(FALLBACK_BONUS_SCOPE_OPTIONS.map((option) => option.value));
+const BONUS_TYPES = new Set<BonusType>(
+  FALLBACK_BONUS_TYPE_OPTIONS.map((option) => option.value),
+);
+const BONUS_SCOPES = new Set<BonusScope>(
+  FALLBACK_BONUS_SCOPE_OPTIONS.map((option) => option.value),
+);
 
-export function normalizeBonusType(value: string | null | undefined): BonusType {
+export function normalizeBonusType(
+  value: string | null | undefined,
+): BonusType {
   if (value === 'per_4_levels') {
     return 'per_levels';
   }
@@ -47,12 +55,16 @@ export function normalizeBonusType(value: string | null | undefined): BonusType 
   return BONUS_TYPES.has(value as BonusType) ? (value as BonusType) : 'flat';
 }
 
-export function normalizeBonusScope(value: string | null | undefined): BonusScope {
-  return BONUS_SCOPES.has(value as BonusScope) ? (value as BonusScope) : 'global';
+export function normalizeBonusScope(
+  value: string | null | undefined,
+): BonusScope {
+  return BONUS_SCOPES.has(value as BonusScope)
+    ? (value as BonusScope)
+    : 'global';
 }
 
 export function normalizeBonusTarget(value: string | null | undefined): string {
-  const normalized = (value ?? '').trim();
+  const normalized = trimText(value);
 
   if (normalized === 'min_dmg') {
     return 'min_damage';
@@ -112,8 +124,8 @@ export function normalizeBonusTemplate(row: {
   category?: string | null;
   target?: string | null;
   target_key?: string | null;
-    type?: string | null;
-    type_key?: string | null;
+  type?: string | null;
+  type_key?: string | null;
   scope?: string | null;
   scope_key?: string | null;
   description?: string | null;
@@ -136,7 +148,7 @@ export function normalizeBonusTemplate(row: {
     id: row.id,
     key: row.key ?? '',
     label: row.label ?? row.key ?? '',
-    category: (row.category ?? 'general').trim() || 'general',
+    category: trimText(row.category ?? 'general') || 'general',
     target: normalizeBonusTarget(row.target_key ?? row.target),
     type: normalizeBonusType(row.type_key ?? row.type),
     scope,
@@ -157,7 +169,7 @@ export function toEditableAppliedBonus(
     levelsStep?: number | null;
     sourceStat?: string | null;
     scalingFactor?: number | null;
-  }
+  },
 ): EditableAppliedBonus {
   const scope = overrides?.scope ?? template?.scope ?? 'global';
 
@@ -212,7 +224,7 @@ export function formatBonusValue(
         'baseValue' | 'type' | 'levelsStep' | 'sourceStat' | 'scalingFactor'
       >,
   typeOrOptions?: BonusType | { includePlus?: boolean },
-  maybeOptions?: { includePlus?: boolean }
+  maybeOptions?: { includePlus?: boolean },
 ): string {
   const bonus =
     typeof bonusOrValue === 'number'
@@ -225,10 +237,13 @@ export function formatBonusValue(
         }
       : bonusOrValue;
   const options =
-    typeof bonusOrValue === 'number' ? maybeOptions : (typeOrOptions as { includePlus?: boolean } | undefined);
+    typeof bonusOrValue === 'number'
+      ? maybeOptions
+      : (typeOrOptions as { includePlus?: boolean } | undefined);
   const includePlus = options?.includePlus ?? true;
   const rawValue = Number(bonus.baseValue ?? 0);
-  const signedValue = includePlus && rawValue > 0 ? `+${rawValue}` : `${rawValue}`;
+  const signedValue =
+    includePlus && rawValue > 0 ? `+${rawValue}` : `${rawValue}`;
 
   switch (bonus.type) {
     case 'percent':
@@ -251,13 +266,18 @@ export function resolveBonusValue(
         EditableAppliedBonus,
         'baseValue' | 'type' | 'levelsStep' | 'sourceStat' | 'scalingFactor'
       >
-    | Pick<Bonus, 'value' | 'type' | 'levelsStep' | 'sourceStat' | 'scalingFactor'>,
+    | Pick<
+        Bonus,
+        'value' | 'type' | 'levelsStep' | 'sourceStat' | 'scalingFactor'
+      >,
   options?: {
     heroLevel?: number;
     sourceStats?: Record<string, number>;
-  }
+  },
 ): number {
-  const baseValue = Number('baseValue' in bonus ? bonus.baseValue : bonus.value ?? 0);
+  const baseValue = Number(
+    'baseValue' in bonus ? bonus.baseValue : (bonus.value ?? 0),
+  );
 
   switch (bonus.type) {
     case 'per_levels': {
@@ -279,21 +299,25 @@ export function resolveBonusValue(
 
 export function filterBonusTemplatesByCategory(
   templates: readonly BonusTemplate[],
-  category: string
+  category: string,
 ): BonusTemplate[] {
   return templates.filter((template) => template.category === category);
 }
 
 export function uniqueBonusCategories(
-  templates: readonly Pick<BonusTemplate, 'category'>[]
+  templates: readonly Pick<BonusTemplate, 'category'>[],
 ): string[] {
-  return Array.from(
-    new Set(templates.map((template) => template.category).filter((category) => !!category))
-  ).sort((left, right) => left.localeCompare(right));
+  return uniqueSorted(
+    templates
+      .map((template) => template.category)
+      .filter((category) => !!category),
+  );
 }
 
 export function statLikeBonusTargets(
-  targets: readonly BonusTargetDefinition[]
+  targets: readonly BonusTargetDefinition[],
 ): BonusTargetDefinition[] {
-  return targets.filter((target) => target.kind === 'stat' || target.kind === 'derived_stat');
+  return targets.filter(
+    (target) => target.kind === 'stat' || target.kind === 'derived_stat',
+  );
 }

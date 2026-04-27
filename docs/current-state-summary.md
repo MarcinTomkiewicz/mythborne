@@ -89,6 +89,9 @@ This is an operational estimate, not a formal audit.
 - Task D3 is confirmed complete as of 2026-04-26. Admin now has a read-only `/admin/config-change-sets` view for config governance change history.
 - The config change-set view lists titles, reasons, statuses, changelog visibility/content, requested/applied/cancelled actors, and created/updated/ready/applied/cancelled timestamps.
 - Selecting a change set loads its `config_change_entries` detail with change kind, config definition label, server/entity identifiers, field path, old/new scopes, old/new values, metadata, and entry creation time.
+- Task D4 is confirmed complete as of 2026-04-27. Admin can create draft config change sets with mandatory trim-validated title and reason.
+- Draft change sets can receive value-change entries for `scalar_config` and `json_config` definitions with value types `integer`, `decimal`, `boolean`, `string`, and `json`.
+- D4 records only draft `global_value_change` / `server_value_change` entries and does not apply or silently mutate `global_config_values` or `server_config_values`; relational config changes remain reserved for future `entity_field_change` flows.
 
 ### Canonical stats and derived stats
 - Base stats are loaded from canonical stat definitions.

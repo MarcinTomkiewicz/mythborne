@@ -1,3 +1,40 @@
+<!-- HANDOFF_OVERRIDE_START -->
+# Handoff decisions — 2026-04-27
+
+## Conversation survival rules
+
+- Prefer current DB/generated types over old concept documents.
+- Treat older DOCX/ODT files as historical unless confirmed by newer MD/database state.
+- Use Polish for prompts/comments to Codex unless user asks otherwise.
+- Do not change Codex task statuses unless the user confirms completion.
+- `current-todo.md`, `current-state-summary.md`, and backlog status fields are Codex/user-confirmed progress files. Update them only after user confirmation.
+
+## Current high-priority implementation flow
+
+- D1 accepted.
+- D2 accepted.
+- D3 accepted.
+- D4 corrections reported; verify and accept/reject next.
+
+After D4: D5 apply/cancel config changes, D6 anti-abuse config admin, then formula governance/audit/anti-abuse frontend according to backlog.
+
+## Key architectural decisions from this conversation
+
+- `hero.id != auth.uid()` is a hard architecture rule.
+- Active flow: auth user -> selected server -> active hero -> hero-owned data.
+- `hero_derived` is no longer frontend source of truth.
+- Runtime derived stats use resolver + `derived_stat_definitions` + central bonus system.
+- Bonus terminology is `scope`, not `context`.
+- `entity_bonuses` is the central future bonus relation.
+- Requirements are central via `requirement_definitions` / `entity_requirements`.
+- Building district caps are overrides only.
+- Config governance edits must be reasoned change sets, not silent direct mutations.
+- Trade uses Character Points, not drachmas.
+- Drachmas are system/vendor/building economy.
+- Vendor scrap is not trade.
+- Anti-abuse creates review signals/cases, not automatic punishment.
+<!-- HANDOFF_OVERRIDE_END -->
+
 # Mythborne — Current Decisions Log
 
 Use this file for recent design and implementation decisions that should override older assumptions.

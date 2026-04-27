@@ -1,9 +1,12 @@
 import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { map, Observable, switchMap } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
 import {
   ConfigChangeEntryOrderColumn,
+  ConfigChangeFieldPath,
+  ConfigChangeKindKey,
   ConfigChangeSetOrderColumn,
+  ConfigChangeStatusKey,
 } from '../../enums/config-governance.enum';
 import { FilterOperator } from '../../enums/filter-operators';
 import {
@@ -11,7 +14,10 @@ import {
   ConfigChangeEntryRow,
   ConfigChangeSet,
   ConfigChangeSetRow,
+  ConfigChangeVisibility,
+  ConfigDefinition,
 } from '../../types/config-governance.types';
+import { Json } from '../../types/database.types';
 import {
   mapConfigChangeEntry,
   mapConfigChangeSet,
@@ -47,5 +53,55 @@ export class ConfigChangeSets {
         camelCase: false,
       })
       .pipe(map((rows) => rows.map(mapConfigChangeEntry)));
+  }
+
+  createDraftChangeSet(input: {
+    title: string;
+    reason: string;
+    changelogVisibility: ConfigChangeVisibility;
+    changelogTitle: string | null;
+    changelogBody: string | null;
+    requestedBy: string | null;
+  }): Observable<ConfigChangeSet> {
+    return this.backend.create<ConfigChangeSet>(TABLES.config_change_sets, {
+      title: input.title,
+      reason: input.reason,
+      changelogVisibility: input.changelogVisibility,
+      changelogTitle: input.changelogTitle,
+      changelogBody: input.changelogBody,
+      requestedBy: input.requestedBy,
+      status: ConfigChangeStatusKey.Draft,
+    });
+  }
+
+  createConfigValueChangeEntry(input: {
+    changeSetId: string;
+    changeKind:
+      | ConfigChangeKindKey.GlobalValueChange
+      | ConfigChangeKindKey.ServerValueChange;
+    definition: ConfigDefinition;
+    serverId: string | null;
+    oldValue: Json | null;
+    newValue: Json;
+    oldSource: string | null;
+    oldSourceLabel: string | null;
+  }): Observable<ConfigChangeEntry[]> {
+    return this.backend
+      .create<object>(TABLES.config_change_entries, {
+        changeSetId: input.changeSetId,
+        changeKind: input.changeKind,
+        configDefinitionId: input.definition.id,
+        serverId: input.serverId,
+        fieldPath: ConfigChangeFieldPath.ValueJson,
+        oldValueJson: input.oldValue,
+        newValueJson: input.newValue,
+        metadataJson: {
+          configKey: input.definition.key,
+          valueType: input.definition.valueType,
+          oldSource: input.oldSource,
+          oldSourceLabel: input.oldSourceLabel,
+        },
+      })
+      .pipe(switchMap(() => this.getChangeEntries(input.changeSetId)));
   }
 }

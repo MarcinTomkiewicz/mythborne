@@ -1,26 +1,34 @@
 import {
+  ConfigManagedEntityTypeKey,
+  ConfigValueTypeKey,
   EffectiveConfigValueSource,
 } from '../enums/config-governance.enum';
 import {
-  ConfigDefinition,
   ConfigChangeEntry,
   ConfigChangeEntryRow,
   ConfigChangeSet,
   ConfigChangeSetRow,
   ConfigChangeStatus,
   ConfigChangeVisibility,
-  EffectiveConfigValue,
+  ConfigDefinition,
+  ConfigDefinitionRow,
   ConfigGovernanceScope,
   ConfigManagedEntityType,
-  ConfigDefinitionRow,
+  ConfigValueType,
+  EffectiveConfigValue,
   GlobalConfigValue,
   GlobalConfigValueRow,
   ServerConfigValue,
   ServerConfigValueRow,
 } from '../types/config-governance.types';
 import { Json } from '../types/database.types';
+import { uniqueSorted } from './collection';
+import { formatJsonPreview, parseJsonInput } from './json-preview';
+import { trimText, trimToLower } from './normalize-text';
 
-export function mapConfigDefinition(row: ConfigDefinitionRow): ConfigDefinition {
+export function mapConfigDefinition(
+  row: ConfigDefinitionRow,
+): ConfigDefinition {
   return {
     id: row.id,
     key: row.key,
@@ -39,7 +47,9 @@ export function mapConfigDefinition(row: ConfigDefinitionRow): ConfigDefinition 
   };
 }
 
-export function mapGlobalConfigValue(row: GlobalConfigValueRow): GlobalConfigValue {
+export function mapGlobalConfigValue(
+  row: GlobalConfigValueRow,
+): GlobalConfigValue {
   return {
     id: row.id,
     configDefinitionId: row.config_definition_id,
@@ -53,7 +63,9 @@ export function mapGlobalConfigValue(row: GlobalConfigValueRow): GlobalConfigVal
   };
 }
 
-export function mapServerConfigValue(row: ServerConfigValueRow): ServerConfigValue {
+export function mapServerConfigValue(
+  row: ServerConfigValueRow,
+): ServerConfigValue {
   return {
     id: row.id,
     configDefinitionId: row.config_definition_id,
@@ -87,7 +99,9 @@ export function mapConfigChangeSet(row: ConfigChangeSetRow): ConfigChangeSet {
   };
 }
 
-export function mapConfigChangeEntry(row: ConfigChangeEntryRow): ConfigChangeEntry {
+export function mapConfigChangeEntry(
+  row: ConfigChangeEntryRow,
+): ConfigChangeEntry {
   return {
     id: row.id,
     changeSetId: row.change_set_id,
@@ -130,30 +144,94 @@ export function resolveEffectiveConfigValues(
 }
 
 export function formatConfigJsonPreview(value: Json | null): string {
-  if (value === null) {
-    return 'No default';
-  }
-
-  if (typeof value !== 'object') {
-    return String(value);
-  }
-
-  return JSON.stringify(value, null, 2);
+  return formatJsonPreview(value, 'No default');
 }
 
 export function formatConfigValuePreview(value: Json | null): string {
-  if (value === null) {
-    return 'No value';
-  }
-
-  if (typeof value !== 'object') {
-    return String(value);
-  }
-
-  return JSON.stringify(value, null, 2);
+  return formatJsonPreview(value, 'No value');
 }
 
-export function sourceLabelForEffectiveConfigValue(value: EffectiveConfigValue): string {
+export function parseConfigValueInput(
+  value: string,
+  valueType: ConfigValueType,
+): Json {
+  const trimmedValue = trimText(value);
+
+  if (valueType === ConfigValueTypeKey.String) {
+    return value;
+  }
+
+  if (valueType === ConfigValueTypeKey.Integer) {
+    const parsedValue = Number(trimmedValue);
+
+    if (trimmedValue === '' || !Number.isInteger(parsedValue)) {
+      throw new Error('Expected integer config value.');
+    }
+
+    return parsedValue;
+  }
+
+  if (valueType === ConfigValueTypeKey.Decimal) {
+    const parsedValue = Number(trimmedValue);
+
+    if (trimmedValue === '' || !Number.isFinite(parsedValue)) {
+      throw new Error('Expected decimal config value.');
+    }
+
+    return parsedValue;
+  }
+
+  if (valueType === ConfigValueTypeKey.Boolean) {
+    if (trimmedValue === 'true') {
+      return true;
+    }
+
+    if (trimmedValue === 'false') {
+      return false;
+    }
+
+    throw new Error('Expected boolean config value: true or false.');
+  }
+
+  if (valueType === ConfigValueTypeKey.Json) {
+    return parseJsonInput(trimmedValue, 'Expected valid JSON config value.');
+  }
+
+  throw new Error(
+    'This config value type is not supported in the draft editor.',
+  );
+}
+
+export function isConfigValueTypeSupportedInDraftEditor(
+  valueType: ConfigValueType,
+): boolean {
+  return (
+    valueType === ConfigValueTypeKey.Integer ||
+    valueType === ConfigValueTypeKey.Decimal ||
+    valueType === ConfigValueTypeKey.Boolean ||
+    valueType === ConfigValueTypeKey.String ||
+    valueType === ConfigValueTypeKey.Json
+  );
+}
+
+export function isConfigDefinitionSupportedInValueDraftEditor(
+  definition: ConfigDefinition,
+): boolean {
+  // D4 handles simple value_json drafts only. server_setting and relational definitions
+  // stay out until they get dedicated entity_field_change flows.
+  const isValueConfig =
+    definition.managedEntityType === ConfigManagedEntityTypeKey.ScalarConfig ||
+    definition.managedEntityType === ConfigManagedEntityTypeKey.JsonConfig;
+
+  return (
+    isValueConfig &&
+    isConfigValueTypeSupportedInDraftEditor(definition.valueType)
+  );
+}
+
+export function sourceLabelForEffectiveConfigValue(
+  value: EffectiveConfigValue,
+): string {
   if (value.source === EffectiveConfigValueSource.Server && value.serverValue) {
     return `Server: ${value.serverValue.source}`;
   }
@@ -177,7 +255,7 @@ export function filterConfigDefinitions(
     managedEntityType: ConfigManagedEntityType | '';
   },
 ): ConfigDefinition[] {
-  const query = filters.query.trim().toLowerCase();
+  const query = trimToLower(filters.query);
 
   return definitions.filter((definition) => {
     const matchesQuery =
@@ -207,7 +285,7 @@ export function filterConfigChangeSets(
     changelogVisibility: ConfigChangeVisibility | '';
   },
 ): ConfigChangeSet[] {
-  const query = filters.query.trim().toLowerCase();
+  const query = trimToLower(filters.query);
 
   return changeSets.filter((changeSet) => {
     const matchesQuery =
@@ -216,7 +294,8 @@ export function filterConfigChangeSets(
       changeSet.reason.toLowerCase().includes(query) ||
       (changeSet.changelogTitle ?? '').toLowerCase().includes(query) ||
       (changeSet.changelogBody ?? '').toLowerCase().includes(query);
-    const matchesStatus = !filters.status || changeSet.status === filters.status;
+    const matchesStatus =
+      !filters.status || changeSet.status === filters.status;
     const matchesVisibility =
       !filters.changelogVisibility ||
       changeSet.changelogVisibility === filters.changelogVisibility;
@@ -228,13 +307,17 @@ export function filterConfigChangeSets(
 export function uniqueConfigDefinitionScopes(
   definitions: readonly ConfigDefinition[],
 ): ConfigGovernanceScope[] {
-  return uniqueSorted(definitions.map((definition) => definition.governanceScope));
+  return uniqueSorted(
+    definitions.map((definition) => definition.governanceScope),
+  );
 }
 
 export function uniqueConfigDefinitionManagedEntityTypes(
   definitions: readonly ConfigDefinition[],
 ): ConfigManagedEntityType[] {
-  return uniqueSorted(definitions.map((definition) => definition.managedEntityType));
+  return uniqueSorted(
+    definitions.map((definition) => definition.managedEntityType),
+  );
 }
 
 export function uniqueConfigChangeSetStatuses(
@@ -246,11 +329,9 @@ export function uniqueConfigChangeSetStatuses(
 export function uniqueConfigChangeSetVisibilities(
   changeSets: readonly ConfigChangeSet[],
 ): ConfigChangeVisibility[] {
-  return uniqueSorted(changeSets.map((changeSet) => changeSet.changelogVisibility));
-}
-
-function uniqueSorted<T extends string>(values: readonly T[]): T[] {
-  return Array.from(new Set(values)).sort((left, right) => left.localeCompare(right));
+  return uniqueSorted(
+    changeSets.map((changeSet) => changeSet.changelogVisibility),
+  );
 }
 
 function resolveEffectiveConfigValue(
@@ -342,7 +423,10 @@ function latestServerValuesByDefinition(
   return values.reduce((acc, value) => {
     const current = acc.get(value.configDefinitionId);
 
-    if (!current || Date.parse(value.updatedAt) > Date.parse(current.updatedAt)) {
+    if (
+      !current ||
+      Date.parse(value.updatedAt) > Date.parse(current.updatedAt)
+    ) {
       acc.set(value.configDefinitionId, value);
     }
 

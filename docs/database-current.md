@@ -1,3 +1,126 @@
+<!-- HANDOFF_OVERRIDE_START -->
+# Handoff override — 2026-04-27
+
+This section is newer than the older body below. Use it as the current operational database/context override for the next conversation.
+
+## Critical DB/application state
+
+- Frontend has been cleaned of runtime references to `hero_derived`; only generated `database.types.ts` may mention it while the physical table exists.
+- Do **not** add new dependencies on `hero_derived`.
+- Runtime derived/special stats are resolved from active hero context, `hero_stats`, `derived_stat_definitions`, `bonus_types`, `bonus_scopes`, `bonus_targets`, `bonus_templates`, `entity_bonuses`, and formula assignments only where genuinely needed.
+- The physical `hero_derived` table may still exist unless explicitly confirmed dropped. Treat it as deprecated DB legacy.
+- If/when `hero_derived` is dropped, regenerate `database.types.ts`.
+
+## Bonus system current truth
+
+Current canonical bonus naming is **scope**, not context.
+
+Use `bonus_scopes`, `scope_key`, `scope_key_override`, and `BonusScope` in frontend/domain code. Do not introduce new `BonusContext` terminology except as temporary legacy alias.
+
+Central bonus foundation:
+- `bonus_types`
+- `bonus_scopes`
+- `bonus_target_categories`
+- `bonus_targets`
+- extended `bonus_templates`
+- `entity_bonuses`
+
+Legacy/transitional bonus tables:
+- `origin_bonuses`
+- `building_bonuses`
+- `item_bonuses`
+- `item_generation_base_bonuses`
+- `item_generation_affix_bonuses`
+
+New code should use `entity_bonuses` as the central relation. Legacy tables may remain only for compatibility/migration.
+
+Quality scaling:
+- `entity_bonuses.quality_scales_value = true` means item quality multiplier scales `value`.
+- `quality_scales_level_interval` must remain false.
+- Quality never scales `level_interval`.
+- No database-level rounding is applied.
+- UI/admin preview should read active rows from `item_generation_qualities`; do not hardcode exactly three qualities.
+
+## Derived stat definitions
+
+`derived_stat_definitions` is the DB-backed semantic dictionary for runtime derived/special stats.
+
+Seeded definitions:
+- `health`
+- `defense`
+- `min_damage`
+- `max_damage`
+- `luck`
+- `critical_chance`
+- `evasion_chance`
+
+Resolver semantics:
+- `defense = endurance + active defense bonuses`.
+- `luck = active luck bonuses`, base 0 unless explicitly changed later.
+- `min_damage = strength + weapon/base min_damage + active min_damage bonuses + active damage bonuses`.
+- `max_damage = strength + weapon/base max_damage + active max_damage bonuses + active damage bonuses`.
+- `damage` target applies to both `min_damage` and `max_damage`.
+- Resolver must ensure `max_damage >= min_damage`.
+- `health` may use a base health formula/fallback, then active health bonuses.
+- `critical_chance` and `evasion_chance` are additive bonus inputs for combat formulas, not necessarily whole final chances.
+
+## Config governance status
+
+Confirmed frontend tasks:
+- D1 config definitions read model: accepted.
+- D2 config values/effective values read model: accepted.
+- D3 change-set list/detail read model: accepted.
+- D4 draft edit flow: Codex reported fixes; next conversation should verify build/UI and user acceptance before marking completed.
+
+D4 expected corrected behavior:
+- create draft change set with mandatory title/reason,
+- trim-required validation for title/reason,
+- public changelog requires title/body after trim,
+- add value change entries without applying config values,
+- scalar editor supports only `integer`, `decimal`, `boolean`, `string`, `json`,
+- `entity_ref`, `formula_ref`, `enum_ref` are unsupported/hidden in this simple editor,
+- `global_value_change` / `server_value_change` must not send `entityType/entityId`,
+- value changes must not set `oldScope/newScope`,
+- selected server changes must refresh effective values,
+- metadata includes `oldSource` / `oldSourceLabel` where available.
+
+## Config change entries
+
+For `global_value_change` / `server_value_change` use `config_definition_id`, `server_id` only for server changes, `field_path = value_json`, old/new value JSON, and lightweight metadata. Do **not** misuse `entity_id`.
+
+For relational entity edits later, use `entity_field_change`, with `entity_type`, UUID `entity_id`, and `field_path`.
+
+## Access helpers
+
+Use canonical helpers when writing SQL/RPC:
+- `has_global_role(text[])`
+- `has_server_staff_role(uuid, server_staff_role[])`
+
+Do not duplicate role logic by joining `roles` unless the helper layer is missing. If `is_admin()` exists or is needed, prefer it as a wrapper around `has_global_role(array['admin'])`.
+
+`can_manage` is not the same as `can_use_as_sandbox`. Tester visibility is not management permission.
+
+## Character Points
+
+Character Points are stored on `hero.character_points` and `hero.total_character_points_earned`. Use `character_point_ledger` for persistent balance history. Do not put Character Points in `hero_resources` or `hero_derived`.
+
+## Trade and auctions
+
+DB/RPC foundation exists for direct trade, one-item auctions, CP locks, item locks, transactions, and anti-abuse signals/case grouping. Frontend gameplay surfaces are still pending.
+
+Trade between players uses Character Points. Drachmas are vendor/system/building currency. Vendor scrap is not trade.
+
+## Requirements/building caps
+
+Central requirement foundation: `requirement_definitions`, `entity_requirements`.
+
+Building availability: `buildings.district_code` is minimum district; available in that district and higher districts. `buildings.max_level = 0` means unlimited. `building_district_level_caps` stores overrides only; missing override falls back to `buildings.max_level`.
+
+## Documentation rule
+
+`database-current.md` should remain a curated semantic DB/RPC/helper registry. It is not a full dump, but it must include important helper functions, RPCs, legacy warnings and domain semantics.
+<!-- HANDOFF_OVERRIDE_END -->
+
 # Monster Hunt — Database Current Notes
 
 Updated: 2026-04-26

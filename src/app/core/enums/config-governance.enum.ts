@@ -30,3 +30,50 @@ export enum ConfigChangeSetOrderColumn {
 export enum ConfigChangeEntryOrderColumn {
   CreatedAt = 'created_at',
 }
+
+export enum ConfigChangeStatusKey {
+  Draft = 'draft',
+  Ready = 'ready',
+  Applied = 'applied',
+  Cancelled = 'cancelled',
+}
+
+export enum ConfigChangeVisibilityKey {
+  None = 'none',
+  Internal = 'internal',
+  Public = 'public',
+}
+
+export enum ConfigChangeKindKey {
+  ScopeChange = 'scope_change',
+  GlobalValueChange = 'global_value_change',
+  ServerValueChange = 'server_value_change',
+  DefinitionChange = 'definition_change',
+  ActivationChange = 'activation_change',
+  EntityFieldChange = 'entity_field_change',
+}
+
+export enum ConfigChangeValueTarget {
+  Global = 'global',
+  Server = 'server',
+}
+
+export enum ConfigValueTypeKey {
+  Integer = 'integer',
+  Decimal = 'decimal',
+  Boolean = 'boolean',
+  String = 'string',
+  Json = 'json',
+  FormulaRef = 'formula_ref',
+  EnumRef = 'enum_ref',
+  EntityRef = 'entity_ref',
+}
+
+export enum ConfigChangeFieldPath {
+  ValueJson = 'value_json',
+}
+
+export enum ConfigManagedEntityTypeKey {
+  ScalarConfig = 'scalar_config',
+  JsonConfig = 'json_config',
+}
