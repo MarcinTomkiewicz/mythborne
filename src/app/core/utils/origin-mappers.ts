@@ -1,9 +1,9 @@
 import { Origin, OriginBonus } from '../domain/origin/origin.model';
-import { OriginBonusWithTemplate } from '../types/domain-row.types';
+import { CanonicalEntityBonusWithTemplateRow } from '../types/bonus-governance.types';
 import { Row } from '../types/supabase.types';
-import {
-  normalizeBonusTemplate,
-} from './bonus';
+import { mapCanonicalBonusTemplate, mapResolvedBonus } from './bonus-governance';
+import { readParamNumber } from './params';
+import { BonusScope, BonusType } from '../types/bonus.types';
 
 export function mapOrigin(row: Row<'origin'>): Origin {
   return {
@@ -16,21 +16,27 @@ export function mapOrigin(row: Row<'origin'>): Origin {
   };
 }
 
-export function mapOriginBonus(row: OriginBonusWithTemplate): OriginBonus {
-  const template = normalizeBonusTemplate(row.bonus_templates);
+export function mapOriginBonus(row: CanonicalEntityBonusWithTemplateRow): OriginBonus {
+  if (!row.bonus_templates) {
+    throw new Error(`Origin entity bonus "${row.id}" has no joined bonus template.`);
+  }
 
+  const resolved = mapResolvedBonus(row);
+  const template = mapCanonicalBonusTemplate(row.bonus_templates);
+
+  // F7 keeps the existing OriginBonus view model stable while sourcing it from entity_bonuses.
   return {
     id: row.id,
-    originId: row.origin_id!,
-    templateId: row.template_id,
-    category: template.category,
-    target: template.target,
-    type: template.type,
-    scope: template.scope,
-    description: template.description,
-    baseValue: Number(row.value ?? template.baseValue),
-    levelsStep: template.levelsStep,
-    sourceStat: template.sourceStat,
-    scalingFactor: template.scalingFactor,
+    originId: resolved.entityId,
+    templateId: resolved.templateId,
+    category: '',
+    target: resolved.targetKey,
+    type: resolved.typeKey as BonusType,
+    scope: resolved.scopeKey as BonusScope,
+    description: row.description ?? template.description,
+    baseValue: resolved.value,
+    levelsStep: resolved.levelInterval,
+    sourceStat: resolved.scalingStatKey,
+    scalingFactor: readParamNumber(resolved.paramsJson, 'scalingFactor'),
   };
 }

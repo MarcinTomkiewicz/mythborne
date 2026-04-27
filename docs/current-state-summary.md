@@ -283,6 +283,9 @@ Still pending at the gameplay level even if partially supported in schema:
 - `/admin/balance` template editing is unlocked again for semantic template fields. Template `baseValue` is intentionally not edited there because bonus values belong to `entity_bonuses.value`.
 - F6 accepted on 2026-04-27: shared entity bonus helpers now provide dictionary maps, resolved bonus view mapping, and single-row `entity_bonuses` payload construction for `origin`, `item_generation_base`, `item_generation_affix`, `building`, and `item`.
 - F6 intentionally did not rewire origin/item/building runtime paths and did not introduce a generic save-replace-collection mechanism. `quality_scales_level_interval = true` is rejected in the payload helper.
+- F7 accepted on 2026-04-27: origin bonus reads now use `entity_bonuses` with `entity_type = origin` and joined semantic `bonus_templates`; app code no longer reads `origin_bonuses`.
+- F7 keeps the existing `OriginBonus` view model as a transitional compatibility bridge for dashboard, combat, and origin selection, while sourcing data from canonical entity bonuses.
+- `BONUS_ENTITY_TYPES` centralizes `entity_bonuses.entity_type` values, and `TABLES.origin` is used instead of raw origin table strings in the origin service.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

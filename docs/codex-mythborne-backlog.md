@@ -566,6 +566,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F7 — Origin bonus read migration
 
+**Status:** Done / confirmed.
+
 **Goal:** Dashboard, combat, and origin display read origin bonuses through `entity_bonuses(entity_type = origin)`.
 
 **Scope:**

@@ -1,12 +1,6 @@
+import { BonusEntityType } from '../constants/bonus-entity-types.const';
 import { Json } from './database.types';
 import { Row } from './supabase.types';
-
-export type BonusEntityType =
-  | 'origin'
-  | 'item_generation_base'
-  | 'item_generation_affix'
-  | 'building'
-  | 'item';
 
 export interface CanonicalBonusType {
   id: string;

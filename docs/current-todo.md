@@ -37,7 +37,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: F4 - bonus dictionary/admin read service.
 - Completed and confirmed: F5 - bonus template write path migration.
 - Completed and confirmed: F6 - entity bonus read model and payload helpers.
-- Current backlog task: F7 - origin bonus read migration.
+- Completed and confirmed: F7 - origin bonus read migration.
+- Current backlog task: F8 - item generation base type model migration.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow

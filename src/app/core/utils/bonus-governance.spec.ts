@@ -11,11 +11,14 @@ import {
   toEntityBonusPayload,
 } from './entity-bonus-governance';
 import {
-  BonusEntityType,
   CanonicalBonusTemplateRow,
   CanonicalEntityBonusWithTemplateRow,
 } from '../types/bonus-governance.types';
 import { toSnakeCase } from './type-mappings';
+import {
+  BONUS_ENTITY_TYPES,
+  BonusEntityType,
+} from '../constants/bonus-entity-types.const';
 
 describe('bonus governance mappers', () => {
   it('maps a canonical bonus template from semantic columns only', () => {
@@ -173,11 +176,11 @@ describe('bonus governance mappers', () => {
 
   it('maps all planned entity bonus types', () => {
     const entityTypes: BonusEntityType[] = [
-      'origin',
-      'item_generation_base',
-      'item_generation_affix',
-      'building',
-      'item',
+      BONUS_ENTITY_TYPES.Origin,
+      BONUS_ENTITY_TYPES.ItemGenerationBase,
+      BONUS_ENTITY_TYPES.ItemGenerationAffix,
+      BONUS_ENTITY_TYPES.Building,
+      BONUS_ENTITY_TYPES.Item,
     ];
 
     for (const entityType of entityTypes) {
@@ -223,7 +226,7 @@ describe('bonus governance mappers', () => {
 
   it('creates a single entity bonus payload without legacy metadata', () => {
     const payload = toEntityBonusPayload({
-      entityType: 'item_generation_base',
+      entityType: BONUS_ENTITY_TYPES.ItemGenerationBase,
       entityId: 'base-1',
       bonusTemplateId: 'template-1',
       value: 12.5,
@@ -260,7 +263,7 @@ describe('bonus governance mappers', () => {
 
   it('serializes entity bonus payload to database snake_case columns', () => {
     const payload = toEntityBonusPayload({
-      entityType: 'building',
+      entityType: BONUS_ENTITY_TYPES.Building,
       entityId: 'building-1',
       bonusTemplateId: 'template-1',
       value: 3,
@@ -280,7 +283,7 @@ describe('bonus governance mappers', () => {
   it('rejects level interval quality scaling in entity bonus payloads', () => {
     expect(() =>
       toEntityBonusPayload({
-        entityType: 'item_generation_base',
+        entityType: BONUS_ENTITY_TYPES.ItemGenerationBase,
         entityId: 'base-1',
         bonusTemplateId: 'template-1',
         value: 1,
@@ -402,7 +405,7 @@ function createEntityBonusRow(
 ): CanonicalEntityBonusWithTemplateRow {
   return {
     id: 'entity-bonus-1',
-    entity_type: 'item_generation_base',
+    entity_type: BONUS_ENTITY_TYPES.ItemGenerationBase,
     entity_id: 'base-1',
     bonus_template_id: 'template-1',
     value: 5,

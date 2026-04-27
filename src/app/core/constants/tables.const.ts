@@ -2,6 +2,7 @@ export const TABLES = {
   stats: 'stats',
   items: 'items',
   monsters: 'monsters',
+  origin: 'origin',
   heroes: 'heroes',
   user_data: 'user_data',
   bonus_templates: 'bonus_templates',

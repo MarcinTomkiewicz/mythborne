@@ -4,7 +4,6 @@ import type {
   BonusScope,
 } from '../types/bonus.types';
 import {
-  BonusEntityType,
   CanonicalBonusScope,
   CanonicalBonusTarget,
   CanonicalBonusTargetCategory,
@@ -17,8 +16,13 @@ import {
   ResolvedBonus,
   SemanticBonusTemplatePayload,
 } from '../types/bonus-governance.types';
+import {
+  BONUS_ENTITY_TYPES,
+  BonusEntityType,
+} from '../constants/bonus-entity-types.const';
 import { Row } from '../types/supabase.types';
 import { trimText, trimToNull } from './normalize-text';
+import { readParamNumber } from './params';
 
 export function mapCanonicalBonusType(row: Row<'bonus_types'>): CanonicalBonusType {
   return {
@@ -242,11 +246,11 @@ function readFiniteNumber(value: number | null | undefined): number | null {
 
 function toBonusEntityType(value: string): BonusEntityType {
   if (
-    value === 'origin' ||
-    value === 'item_generation_base' ||
-    value === 'item_generation_affix' ||
-    value === 'building' ||
-    value === 'item'
+    value === BONUS_ENTITY_TYPES.Origin ||
+    value === BONUS_ENTITY_TYPES.ItemGenerationBase ||
+    value === BONUS_ENTITY_TYPES.ItemGenerationAffix ||
+    value === BONUS_ENTITY_TYPES.Building ||
+    value === BONUS_ENTITY_TYPES.Item
   ) {
     return value;
   }
@@ -270,13 +274,4 @@ function mergeParams(
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-function readParamNumber(params: unknown, key: string): number | null {
-  if (!isPlainObject(params)) {
-    return null;
-  }
-
-  const value = Number(params[key]);
-  return Number.isFinite(value) ? value : null;
 }
