@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-04-26
+Updated: 2026-04-27
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -31,7 +31,10 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: E2 - formula assignment viewer.
 - Completed and confirmed: E3 - local entity formula assignment support.
 - Completed and confirmed: E4 - formula runtime integration cleanup.
-- Current backlog task: F1 - inspect current bonus template usage.
+- Completed and confirmed: F1 - inspect current bonus template usage.
+- Completed and confirmed: F2 - design bonus model legacy retirement plan.
+- Current backlog task: F3 - canonical bonus domain models and mappers.
+- Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow
 

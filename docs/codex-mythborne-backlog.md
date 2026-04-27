@@ -441,69 +441,219 @@ Global Codex rules:
 
 ---
 
-# Epic F — Bonus template refactor
+# Epic F — Bonus model legacy retirement
+
+Epic F retires legacy bonus usage from application code. Legacy bonus join tables and legacy semantic columns may physically remain in the database as transitional debt, but new or changed frontend read/write paths must use:
+- `bonus_types`,
+- `bonus_scopes`,
+- `bonus_target_categories`,
+- `bonus_targets`,
+- semantic `bonus_templates`,
+- `entity_bonuses`.
+
+**Epic rule:** Do not preserve the hybrid model as the target architecture. Legacy model support is transitional only. If required data is missing in `entity_bonuses`, stop and report a SQL/backfill blocker instead of adding a permanent fallback to legacy tables.
 
 ## Task F1 — Inspect current bonus template usage
 
-**Goal:** Understand existing old-shape usage before migration.
+**Status:** Done / confirmed.
+
+**Goal:** Audit current legacy/new/hybrid bonus model usage.
 
 **Scope:**
-- Find all frontend/backend references to `bonus_templates`.
-- Identify expected fields:
-  - old `target/type/description`,
-  - any newer intended fields.
-- Report affected features.
+- Find frontend/backend references to `bonus_templates`, `entity_bonuses`, bonus dictionaries, and legacy bonus join tables.
+- Classify usage as legacy read/write, hybrid fallback, new model usage, or risky/unknown.
+- Report affected flows.
 
 **Acceptance criteria:**
-- Clear impact report.
-- No schema change yet.
+- Impact report is delivered.
+- No code, schema, migration, seed, generated type, or docs change during F1.
 
 ---
 
-## Task F2 — Design implementation migration for bonus templates
+## Task F2 — Design bonus model legacy retirement plan
 
-**Goal:** Prepare controlled migration to intended model.
+**Status:** Done / confirmed.
+
+**Goal:** Plan migration from hybrid bonus usage to canonical dictionaries + semantic `bonus_templates` + `entity_bonuses`.
 
 **Scope:**
-- Compare current schema with desired:
-  - bonus types:
-    - flat,
-    - percent,
-    - per_levels,
-    - scaled_stat_bonus,
-    - resource_flat,
-    - resource_percent,
-    - capacity_flat,
-    - unlock_feature.
-  - scopes:
-    - global,
-    - pvp_attack,
-    - pvp_defense,
-    - exploration,
-    - trial,
-    - combat,
-    - economy,
-    - building_management.
-- Propose SQL migration and FE model changes.
+- Define target frontend/domain models for `BonusType`, `BonusScope`, `BonusTargetCategory`, `BonusTarget`, `BonusTemplate`, `EntityBonus`, and resolved runtime bonus view model.
+- Plan read/write migration order.
+- Identify SQL/backfill blockers.
+- Define test plan.
 
 **Acceptance criteria:**
-- Migration plan is reviewable before execution.
+- Reviewable staged plan exists.
+- Risks and blockers are called out.
+- Test plan is defined.
+- No code, schema, migration, seed, generated type, or docs change during F2 except later backlog/status updates after confirmation.
 
 ---
 
-## Task F3 — Implement bonus template migration after approval
+## Task F3 — Canonical bonus domain models and mappers
 
-**Goal:** Apply approved bonus template refactor.
+**Goal:** Add new-only domain/types/mappers for canonical bonus models.
 
 **Scope:**
-- Apply SQL migration only after user approval.
-- Regenerate DB types.
-- Update mappers/domain models.
-- Preserve existing data where possible.
+- Add domain/types/mappers for `BonusType`, `BonusScope`, `BonusTargetCategory`, `BonusTarget`, `BonusTemplate`, `EntityBonus`, and `ResolvedBonus`.
+- Add focused mapper tests.
+- Do not rewire UI, runtime, or write paths yet.
 
 **Acceptance criteria:**
-- App compiles.
-- Bonus templates use intended shape or documented transitional shape.
+- New-only mappers do not depend on legacy semantic columns.
+- Legacy adapter, if needed, is explicitly transitional.
+- Build passes.
+- No exported types/interfaces/consts are placed in components, services, or facades.
+
+---
+
+## Task F4 — Bonus dictionary/admin read service
+
+**Goal:** Load dictionaries and template read model for admin UI.
+
+**Scope:**
+- Read `bonus_types`, `bonus_scopes`, `bonus_target_categories`, `bonus_targets`, and semantic `bonus_templates`.
+- Provide admin read model.
+- Do not refactor write paths yet.
+
+**Acceptance criteria:**
+- `/admin/balance` does not depend on `bonus_templates.category`.
+- Admin options come from dictionaries.
+- No write refactor is included.
+
+---
+
+## Task F5 — Bonus template write path migration
+
+**Goal:** Move template writes to semantic `bonus_templates` columns.
+
+**Scope:**
+- Update bonus template admin payloads.
+- Persist `type_key`, `target_key`, `scope_key`, `level_interval`, `scaling_stat_key`, `params_json`, `is_active`, and `sort_order`.
+
+**Acceptance criteria:**
+- Semantic bonus type is not written to legacy `bonus_templates.type`.
+- `category` is not sent to `bonus_templates`.
+- Build passes.
+
+---
+
+## Task F6 — Entity bonus read model and payload helpers
+
+**Goal:** Add shared read model and payload helpers for `entity_bonuses`.
+
+**Scope:**
+- Support entity types: origin, item generation base, item generation affix, building, and item.
+- Map joined template/dictionary data.
+- Provide helpers for concrete integrations.
+
+**Important:** Do not introduce an aggressive generic "save replace collection" mechanism without integration-specific control.
+
+**Acceptance criteria:**
+- Mapper handles all planned entity types.
+- Mapper joins template/dictionaries into resolved view model.
+- Write operations stay in concrete integrations or separate tasks.
+
+---
+
+## Task F7 — Origin bonus read migration
+
+**Goal:** Dashboard, combat, and origin display read origin bonuses through `entity_bonuses(entity_type = origin)`.
+
+**Scope:**
+- Replace app read path usage of `origin_bonuses`.
+- Use shared resolved bonus model.
+
+**Acceptance criteria:**
+- App read path does not use `origin_bonuses`.
+- Presentation and runtime use the same resolved bonus model.
+- Build passes.
+
+---
+
+## Task F8 — Item generation base type model migration
+
+**Goal:** Replace semantic use of `slot` with `base_type_key`.
+
+**Scope:**
+- Load and use `item_generation_base_types` and `item_generation_base_type_targets`.
+- Treat `item_generation_bases.base_type_key` as source of truth.
+- Keep `slot` as nullable legacy only.
+
+**Acceptance criteria:**
+- UI does not treat `slot` as source of truth.
+- Slot/display metadata comes from base type metadata.
+- Build passes.
+
+---
+
+## Task F9 — Item generation entity bonuses
+
+**Goal:** Base and affix bonus read/write paths use `entity_bonuses`.
+
+**Scope:**
+- Replace app path usage of `item_generation_base_bonuses` and `item_generation_affix_bonuses`.
+- Apply item quality scaling rules.
+
+**Acceptance criteria:**
+- New app paths do not use `item_generation_base_bonuses` or `item_generation_affix_bonuses`.
+- `quality_scales_value` scales bonus value.
+- `level_interval` is never quality-scaled.
+- Build passes.
+
+**Blocker:**
+- If `entity_bonuses` lacks complete base/affix backfill, stop implementation and report SQL/backfill blocker.
+
+---
+
+## Task F10 — Building entity bonuses
+
+**Goal:** Building bonuses use `entity_bonuses(entity_type = building)`.
+
+**Scope:**
+- Migrate building admin read/write.
+- Migrate building preview/mansion read paths.
+
+**Acceptance criteria:**
+- Building admin, preview, and mansion flows do not use `building_bonuses`.
+- Build passes.
+
+**Blocker:**
+- If building bonuses are not backfilled in `entity_bonuses`, stop and report SQL/backfill blocker. Do not add permanent fallback to legacy `building_bonuses`.
+
+---
+
+## Task F11 — Combat/equipment item bonus inputs
+
+**Goal:** Combat formula inputs receive resolved item/equipment bonuses.
+
+**Scope:**
+- Connect combat item bonus inputs to resolved item/equipment bonus pipeline.
+- Remove hardcoded zero item bonus inputs where appropriate.
+
+**Important:**
+- This depends on item/equipment/resolved bonus pipeline readiness.
+- It may be implemented later after F8/F9 and equipment read model work.
+
+**Acceptance criteria:**
+- Combat does not rely on hardcoded zero item inputs.
+- Combat bonus inputs do not depend on `hero_derived`.
+- Build passes.
+
+---
+
+## Task F12 — Legacy bonus usage cleanup audit
+
+**Goal:** Final repository audit after migration tasks.
+
+**Scope:**
+- Search application code for legacy bonus join tables and legacy semantic columns.
+- Confirm remaining exceptions are limited to docs, generated database types, or explicit transitional adapters.
+
+**Acceptance criteria:**
+- App code does not read/write legacy bonus join tables.
+- App code does not read/write legacy semantic columns as source of truth.
+- Build and targeted tests pass.
 
 ---
 
@@ -1706,7 +1856,7 @@ Start with:
 10. H13-H21 — staff case/sanction UI
 11. D6/H config admin — anti-abuse config UI
 12. I1-I3 — item lifecycle
-13. F1-F3 — bonus template refactor
+13. F1-F12 — bonus model legacy retirement
 14. L/M/N/O/P workstreams as separate feature milestones
 
 # Notes
