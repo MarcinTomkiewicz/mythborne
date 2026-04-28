@@ -48,7 +48,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: G2 - audit log read layer.
 - Completed and confirmed: G3 - audit domain operation helper.
 - Completed and confirmed: G4 - audit config governance changes.
-- Current backlog task: G5 - audit anti-abuse decisions.
+- Completed and confirmed: G5 - audit anti-abuse decisions.
+- Current backlog task: G6 - audit gameplay persistent changes.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow

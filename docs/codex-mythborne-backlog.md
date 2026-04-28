@@ -760,6 +760,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task G5 — Audit anti-abuse decisions
 
+**Status:** Done / confirmed.
+
 **Goal:** Log anti-abuse state changes.
 
 **Scope:**
@@ -774,6 +776,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 **Acceptance criteria:**
 - Important moderation/admin actions leave audit evidence.
 - Full event snapshots are not stored in audit metadata.
+- Frontend anti-abuse decision calls use DB-side audited workflow RPCs, not direct table writes or frontend audit helper calls.
+- Sanction item linking is evidence/context only; real item confiscation/return remains a separate workflow contract.
 
 ---
 

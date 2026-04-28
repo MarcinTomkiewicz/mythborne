@@ -320,6 +320,11 @@ Still pending at the gameplay level even if partially supported in schema:
 - Draft value-entry target is derived from `config_definitions.governance_scope`: global scopes create `global_value_change`, while server-scoped definitions require an active server and create `server_value_change`.
 - `/admin/config-change-sets` now reports operational feedback with toasts and inline PrimeNG messages, and resets the draft value field cleanly after a successful entry add.
 - Non-blocking UI/UX observations now have a dedicated tracking file in `docs/ui-ux-notes.md`.
+- G5 accepted on 2026-04-28: anti-abuse decision workflows now have a typed frontend domain layer over DB-side audited RPCs.
+- `AntiAbuseDecisions` calls the public anti-abuse workflow RPCs for permission checks, case decisions, relationship declaration decisions, abuse report decisions, sanction creation/status changes, Character Point penalty creation/status changes, and sanction item linking.
+- G5 frontend code does not call `write_audit_log` or `try_write_anti_abuse_case_audit` after anti-abuse mutations; audit remains owned by the DB workflow RPCs.
+- G5 adds anti-abuse decision input/output models, generated RPC arg aliases, payload mappers, row-to-domain mappers, and targeted mapper tests.
+- `add_anti_abuse_sanction_item` is modeled as sanction item evidence/context, not item confiscation or return ownership transfer.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

@@ -1,300 +1,6 @@
-<!-- HANDOFF_OVERRIDE_START -->
-# Handoff override — 2026-04-27
-
-This section is newer than the older body below. Use it as the current operational database/context override for the next conversation.
-
-
-## Update 2026-04-28 — G4b config governance create RPCs
-
-Config governance draft creation and draft value-entry creation are now DB/RPC workflows, not direct frontend table writes. This aligns creation with the existing D5 ready/apply/cancel RPC workflow and keeps config audit on the database side.
-
-New frontend/domain RPC contracts:
-
-- `create_config_change_set_draft(text, text, config_change_visibility, text, text)` → returns `config_change_sets`; creates a draft change set, sets `requested_by = auth.uid()`, validates through table constraints, checks `can_manage_config_governance(null)`, and writes best-effort audit through `try_write_config_change_set_audit(...)`.
-- `create_config_value_change_entry(uuid, config_change_kind, uuid, jsonb, uuid, jsonb)` → returns `config_change_entries`; creates a `global_value_change` or `server_value_change` entry only while the change set is `draft`, computes old effective config value DB-side, sets `field_path = value_json`, stores lightweight metadata, and writes best-effort audit through `try_write_config_change_set_audit(...)`.
-
-Audit dictionary additions for this workflow:
-
-- `audit_action_types.key = config.change_set.created`
-- `audit_action_types.key = config.change_set.entry_created`
-- `audit_entity_types.key = config_change_set` must exist.
-
-Rules:
-
-- Frontend must call these RPCs instead of direct inserts into `config_change_sets` and `config_change_entries`.
-- Frontend must not call `try_write_config_change_set_audit(...)`; it remains an internal helper.
-- `create_config_value_change_entry(...)` supports only D4/D5 scalar/json value-entry flow: `scalar_config` / `json_config` definitions and value types `integer`, `decimal`, `boolean`, `string`, `json`.
-- Relational `entity_field_change` creation/application remains a future dedicated workflow.
-- After applying this migration, regenerate `database.types.ts` so the new RPCs are available to typed frontend services.
-
-## Critical DB/application state
-
-- Frontend has been cleaned of runtime references to `hero_derived`; only generated `database.types.ts` may mention it while the physical table exists.
-- Do **not** add new dependencies on `hero_derived`.
-- Runtime derived/special stats are resolved from active hero context, `hero_stats`, `derived_stat_definitions`, `bonus_types`, `bonus_scopes`, `bonus_targets`, `bonus_templates`, `entity_bonuses`, and formula assignments only where genuinely needed.
-- The physical `hero_derived` table may still exist unless explicitly confirmed dropped. Treat it as deprecated DB legacy.
-- If/when `hero_derived` is dropped, regenerate `database.types.ts`.
-
-## Bonus system current truth
-
-Current canonical bonus naming is **scope**, not context.
-
-Use `bonus_scopes`, `scope_key`, `scope_key_override`, and `BonusScope` in frontend/domain code. Do not introduce new `BonusContext` terminology except as temporary legacy alias.
-
-Central bonus foundation:
-- `bonus_types`
-- `bonus_scopes`
-- `bonus_target_categories`
-- `bonus_targets`
-- extended `bonus_templates`
-- `entity_bonuses`
-
-Legacy/transitional bonus tables:
-- `origin_bonuses`
-- `building_bonuses`
-- `item_bonuses`
-- `item_generation_base_bonuses`
-- `item_generation_affix_bonuses`
-
-New code should use `entity_bonuses` as the central relation. Legacy tables may remain only for compatibility/migration.
-
-Quality scaling:
-- `entity_bonuses.quality_scales_value = true` means item quality multiplier scales `value`.
-- `quality_scales_level_interval` must remain false.
-- Quality never scales `level_interval`.
-- No database-level rounding is applied.
-- UI/admin preview should read active rows from `item_generation_qualities`; do not hardcode exactly three qualities.
-
-## Derived stat definitions
-
-`derived_stat_definitions` is the DB-backed semantic dictionary for runtime derived/special stats.
-
-Seeded definitions:
-- `health`
-- `defense`
-- `min_damage`
-- `max_damage`
-- `luck`
-- `critical_chance`
-- `evasion_chance`
-
-Resolver semantics:
-- `defense = endurance + active defense bonuses`.
-- `luck = active luck bonuses`, base 0 unless explicitly changed later.
-- `min_damage = strength + weapon/base min_damage + active min_damage bonuses + active damage bonuses`.
-- `max_damage = strength + weapon/base max_damage + active max_damage bonuses + active damage bonuses`.
-- `damage` target applies to both `min_damage` and `max_damage`.
-- Resolver must ensure `max_damage >= min_damage`.
-- `health` may use a base health formula/fallback, then active health bonuses.
-- `critical_chance` and `evasion_chance` are additive bonus inputs for combat formulas, not necessarily whole final chances.
-
-## Config governance status
-
-Confirmed frontend tasks:
-- D1 config definitions read model: accepted.
-- D2 config values/effective values read model: accepted.
-- D3 change-set list/detail read model: accepted.
-- D4 draft edit flow: Codex reported fixes; next conversation should verify build/UI and user acceptance before marking completed.
-
-D4 expected corrected behavior:
-- create draft change set with mandatory title/reason,
-- trim-required validation for title/reason,
-- public changelog requires title/body after trim,
-- add value change entries without applying config values,
-- scalar editor supports only `integer`, `decimal`, `boolean`, `string`, `json`,
-- `entity_ref`, `formula_ref`, `enum_ref` are unsupported/hidden in this simple editor,
-- `global_value_change` / `server_value_change` must not send `entityType/entityId`,
-- value changes must not set `oldScope/newScope`,
-- selected server changes must refresh effective values,
-- metadata includes `oldSource` / `oldSourceLabel` where available.
-
-## Config change entries
-
-For `global_value_change` / `server_value_change` use `config_definition_id`, `server_id` only for server changes, `field_path = value_json`, old/new value JSON, and lightweight metadata. Do **not** misuse `entity_id`.
-
-For relational entity edits later, use `entity_field_change`, with `entity_type`, UUID `entity_id`, and `field_path`.
-
-## Access helpers
-
-Use canonical helpers when writing SQL/RPC:
-- `has_global_role(text[])`
-- `has_server_staff_role(uuid, server_staff_role[])`
-
-Do not duplicate role logic by joining `roles` unless the helper layer is missing. If `is_admin()` exists or is needed, prefer it as a wrapper around `has_global_role(array['admin'])`.
-
-`can_manage` is not the same as `can_use_as_sandbox`. Tester visibility is not management permission.
-
-## Character Points
-
-Character Points are stored on `hero.character_points` and `hero.total_character_points_earned`. Use `character_point_ledger` for persistent balance history. Do not put Character Points in `hero_resources` or `hero_derived`.
-
-## Trade and auctions
-
-DB/RPC foundation exists for direct trade, one-item auctions, CP locks, item locks, transactions, and anti-abuse signals/case grouping. Frontend gameplay surfaces are still pending.
-
-Trade between players uses Character Points. Drachmas are vendor/system/building currency. Vendor scrap is not trade.
-
-## Requirements/building caps
-
-Central requirement foundation: `requirement_definitions`, `entity_requirements`.
-
-Building availability: `buildings.district_code` is minimum district; available in that district and higher districts. `buildings.max_level = 0` means unlimited. `building_district_level_caps` stores overrides only; missing override falls back to `buildings.max_level`.
-
-## Documentation rule
-
-`database-current.md` should remain a curated semantic DB/RPC/helper registry. It is not a full dump, but it must include important helper functions, RPCs, legacy warnings and domain semantics.
-
-
-## Verified live DB function/RPC inventory — 2026-04-27
-
-This section is based on a direct live database inventory query against `pg_proc` in schema `public`.
-
-Operational rule:
-- Codex must not invent new RPC names, migrations, or database workflow functions when a needed DB contract is missing.
-- If a needed function/RPC is not listed here and is not present in generated database types, the implementation task is blocked by missing database contract.
-- New database RPCs are designed in the conceptual/database track first, then implemented through an approved migration, then documented here and regenerated into `database.types.ts`.
-
-### Config governance functions currently present
-
-Current config helper functions:
-- `get_server_config_integer(uuid, text, integer)` → reads a server config value by config key with integer fallback.
-- `get_server_config_boolean(uuid, text, boolean)` → reads a server config value by config key with boolean fallback.
-- `get_current_global_effective_config_value_json(uuid)` → returns current effective global config value JSON for a config definition.
-- `get_current_server_effective_config_value_json(uuid, uuid)` → returns current effective server config value JSON for a config definition/server pair.
-- `config_json_values_match(jsonb, jsonb)` → null-safe JSONB equality helper used by config apply conflict checks.
-- `server_config_value_source_for_scope(config_governance_scope)` → maps config governance scope to server config value source.
-- `can_manage_config_governance(uuid)` → permission helper for config governance workflows.
-
-Frontend/domain RPC contracts for config governance:
-- `create_config_change_set_draft(text, text, config_change_visibility, text, text)` → returns `config_change_sets`; creates a draft change set, sets `requested_by = auth.uid()`, validates through table constraints, checks `can_manage_config_governance(null)`, and writes best-effort audit through `try_write_config_change_set_audit(...)`.
-- `create_config_value_change_entry(uuid, config_change_kind, uuid, jsonb, uuid, jsonb)` → returns `config_change_entries`; creates a `global_value_change` or `server_value_change` entry only while the change set is `draft`, computes old effective config value DB-side, sets `field_path = value_json`, stores lightweight metadata, and writes best-effort audit through `try_write_config_change_set_audit(...)`.
-- `mark_config_change_set_ready(uuid)` → returns `config_change_sets`; marks a draft config change set ready after DB-side validation.
-- `apply_config_change_set(uuid)` → returns `config_change_sets`; atomically applies a ready config change set. Current D5 scope supports scalar/json `global_value_change` and `server_value_change` entries.
-- `cancel_config_change_set(uuid, text)` → returns `config_change_sets`; cancels a draft/ready change set and requires explicit cancellation reason.
-
-Internal config governance helper functions:
-- `validate_config_change_set_entries_for_d5(uuid)` → validates D5-supported entries before ready/apply.
-- `apply_global_config_value_change_entry(config_change_entries, uuid)` → internal helper used by `apply_config_change_set(...)`.
-- `apply_server_config_value_change_entry(config_change_entries, uuid)` → internal helper used by `apply_config_change_set(...)`.
-- `try_write_config_change_set_audit(...)` → internal/best-effort audit helper. Frontend must not call this helper directly.
-
-Config governance operational rules:
-- Frontend must call `create_config_change_set_draft(...)` instead of direct inserts into `config_change_sets`.
-- Frontend must call `create_config_value_change_entry(...)` instead of direct inserts into `config_change_entries` for governed scalar/json value entries.
-- Frontend must call ready/apply/cancel workflow RPCs instead of direct status updates.
-- Frontend must not call `try_write_config_change_set_audit(...)`; audit for config governance workflow is DB-side.
-- `create_config_value_change_entry(...)` supports only D4/D5 scalar/json value-entry flow: `scalar_config` / `json_config` definitions and value types `integer`, `decimal`, `boolean`, `string`, `json`.
-- Relational `entity_field_change` creation/application remains a future dedicated workflow. Do not invent generic relational apply logic in frontend.
-
-### Access / identity helpers
-
-- `has_global_role(text[])` → checks current authenticated user's global role keys.
-- `user_has_global_role(uuid, text[])` → checks a specific user's global role keys.
-- `has_server_staff_role(uuid, server_staff_role[])` → checks current authenticated user's staff role on a server.
-- `can_read_hero(uuid)` → hero read helper.
-- `can_manage_hero(uuid)` → hero management helper.
-- `estate_matches_hero_server(uuid, uuid)` → validates estate/hero server relationship.
-- `is_admin()` → legacy/compatibility helper using older role naming; prefer `has_global_role(array['admin'])` in new SQL/RPC.
-
-### Character Points helpers / operations
-
-- `get_hero_active_character_point_locks(uuid)` → active CP lock sum for hero.
-- `get_hero_available_character_points(uuid)` → spendable CP after active locks.
-- `apply_character_points_delta(uuid, integer, character_point_ledger_reason, text, uuid, text, uuid)` → applies CP delta and writes `character_point_ledger`.
-- `create_character_point_lock_for_trade(uuid, uuid, integer, uuid, text)` → creates CP lock for direct trade.
-- `create_character_point_lock_for_auction_bid(uuid, uuid, integer, uuid, uuid, text)` → creates CP lock for auction bid.
-- `create_character_point_lock_for_auction_buy_now(uuid, uuid, integer, uuid, text)` → creates CP lock for auction buy-now.
-
-### Player direct trade RPC / operations
-
-- `create_player_direct_trade_offer(uuid, uuid, integer, uuid[], text)` → creates direct trade offer and locks creator-side CP/items.
-- `respond_player_direct_trade_offer(uuid, integer, uuid[], text)` → target response to direct trade offer.
-- `confirm_player_direct_trade_offer(uuid, text)` → creator confirmation and transactional completion.
-- `cancel_player_direct_trade_offer(uuid, text)` → cancels pending direct trade offer.
-- `reject_player_direct_trade_offer(uuid, text)` → rejects pending direct trade offer.
-- `release_trade_offer_character_point_locks(uuid, text)` → releases active CP locks for trade offer.
-- `unlock_trade_offer_items(uuid)` → unlocks trade-locked items for offer.
-
-### Player auction RPC / operations
-
-- `create_player_auction_listing(uuid, uuid, player_auction_mode, integer, integer, text)` → creates one-item auction listing and locks item.
-- `place_player_auction_bid(uuid, uuid, integer)` → places auction bid and locks bidder CP.
-- `buy_now_player_auction(uuid, uuid, text)` → completes buy-now purchase.
-- `close_player_auction_listing(uuid, text)` → closes ended auction, expires if no bids or completes sale.
-- `cancel_player_auction_listing(uuid, text)` → cancels active auction where allowed.
-- `finalize_player_auction_sale(uuid, uuid, integer, text, text, uuid)` → final auction transfer operation.
-- `release_auction_character_point_locks(uuid, text)` → releases active auction CP locks.
-- `unlock_auction_item(uuid)` → unlocks auction-locked item.
-
-### Trade slot / availability helpers
-
-- `get_hero_active_trade_slot_count(uuid)` → active direct-trade + auction slot count.
-- `get_hero_trade_slot_limit(uuid)` → current trade slot limit; transitional fallback uses server config `trade_active_offer_limit_fallback`.
-- `hero_has_free_trade_slot(uuid)` → checks if hero has a free active trade slot.
-- `hero_can_use_player_trade(uuid)` → checks whether hero can use player trade/auctions; transitional fallback uses trade slot config.
-
-### Anti-abuse RPC / operations
-
-- `create_player_abuse_report(uuid, text, text, text, uuid, uuid, uuid, uuid, text)` → creates player abuse report and linked case.
-- `create_or_link_anti_abuse_case_for_signal(uuid)` → creates or links case for signal grouping key.
-- `add_anti_abuse_case_participant_if_missing(uuid, uuid, uuid, text, text, text, uuid)` → idempotent case participant insert.
-- `refresh_anti_abuse_case_signal_stats(uuid)` → refreshes case signal count and last signal timestamp.
-- `generate_trade_transaction_anti_abuse_signals(uuid)` → generates trade/auction-related anti-abuse signals from completed transaction.
-- `insert_trade_transaction_anti_abuse_signal(uuid, text, text, text, text, uuid, uuid, text, integer, numeric, jsonb)` → inserts anti-abuse signal for trade transaction.
-- `build_anti_abuse_hero_pair_grouping_key(uuid, uuid, uuid)` → deterministic same-pair grouping key.
-
-### Audit RPC / operations
-
-- `write_audit_log(text, text, uuid, uuid, uuid, uuid, uuid, audit_severity, text, jsonb, jsonb, jsonb, text)` → writes audit log after validating dictionary keys and actor constraints.
-
-Audit note:
-- Existing audit foundation is present.
-- Config governance apply/cancel audit integration is not yet implemented as a dedicated workflow.
-
-### Building / district helpers
-
-- `is_building_available_in_district(uuid, text)` → checks district availability by comparing district ranks.
-- `get_building_max_level_for_district(uuid, text)` → resolves district-specific cap override with fallback to `buildings.max_level`.
-
-### Trigger / validation functions
-
-These are not frontend RPC contracts. They are database trigger helpers and validation functions:
-
-- `rls_auto_enable()`
-- `audit_dictionary_change()`
-- `audit_set_updated_at()`
-- `prevent_audit_dictionary_key_update()`
-- `prevent_dictionary_key_update()`
-- `set_anti_abuse_dictionary_updated_at()`
-- `set_anti_abuse_sanction_updated_at()`
-- `set_anti_abuse_updated_at()`
-- `set_items_updated_at()`
-- `set_player_relationship_updated_at()`
-- `anti_abuse_case_signal_stats_trigger()`
-- `trigger_create_or_link_anti_abuse_case_for_signal()`
-- `trigger_generate_trade_transaction_anti_abuse_signals()`
-- `enforce_hero_server_policy()`
-- `enforce_item_server_matches_hero()`
-- `enforce_character_point_ledger_server()`
-- `enforce_character_point_lock_server()`
-- `enforce_building_district_cap_is_available()`
-- `enforce_player_trade_offer_server()`
-- `enforce_player_trade_offer_item_valid()`
-- `enforce_player_auction_listing_valid()`
-- `enforce_player_auction_bid_valid()`
-- `validate_anti_abuse_sanction()`
-- `validate_anti_abuse_sanction_item()`
-- `validate_character_point_penalty()`
-
-Documentation debt:
-- Most live DB functions currently have no `COMMENT ON FUNCTION` descriptions.
-- Add comments for critical RPCs in future migrations so function inventory can become self-documenting.
-
-<!-- HANDOFF_OVERRIDE_END -->
-
 # Mythborne — Database Current Notes
 
-Updated: 2026-04-27
+Updated: 2026-04-28
 
 This file is the curated semantic index of the current database state.
 
@@ -734,7 +440,7 @@ New semantic columns include:
 - `label`
 - `type_key`
 - `target_key`
-- `context_key`
+- `scope_key`
 - `level_interval`
 - `formula_id`
 - `formula_target_id`
@@ -767,7 +473,7 @@ Important fields:
 - `formula_id_override`
 - `formula_target_id_override`
 - `scaling_stat_key_override`
-- `context_key_override`
+- `scope_key_override`
 - `quality_scales_value`
 - `quality_scales_level_interval`
 - `params_json`
@@ -848,9 +554,9 @@ Known seeded bonus types include:
 - `requirement_flat_reduction`
 - `requirement_percent_reduction`
 
-## Bonus contexts
+## Bonus scopes
 
-Known seeded bonus contexts include:
+Known seeded bonus scopes include:
 
 - `global`
 - `combat`
@@ -1112,6 +818,42 @@ Known helper functions:
 - `get_server_config_integer(server_id, config_key, fallback)`
 - `get_server_config_boolean(server_id, config_key, fallback)`
 
+
+## Config governance RPC/functions
+
+Current config helper functions:
+
+- `get_server_config_integer(uuid, text, integer)` → reads a server config value by config key with integer fallback.
+- `get_server_config_boolean(uuid, text, boolean)` → reads a server config value by config key with boolean fallback.
+- `get_current_global_effective_config_value_json(uuid)` → returns current effective global config value JSON for a config definition.
+- `get_current_server_effective_config_value_json(uuid, uuid)` → returns current effective server config value JSON for a config definition/server pair.
+- `config_json_values_match(jsonb, jsonb)` → null-safe JSONB equality helper used by config apply conflict checks.
+- `server_config_value_source_for_scope(config_governance_scope)` → maps config governance scope to server config value source.
+- `can_manage_config_governance(uuid)` → permission helper for config governance workflows.
+
+Frontend/domain RPC contracts:
+
+- `create_config_change_set_draft(text, text, config_change_visibility, text, text)` → returns `config_change_sets`; creates a draft change set, sets `requested_by = auth.uid()`, validates through table constraints, checks `can_manage_config_governance(null)`, and writes best-effort audit through `try_write_config_change_set_audit(...)`.
+- `create_config_value_change_entry(uuid, config_change_kind, uuid, jsonb, uuid, jsonb)` → returns `config_change_entries`; creates a `global_value_change` or `server_value_change` entry only while the change set is `draft`, computes old effective config value DB-side, sets `field_path = value_json`, stores lightweight metadata, and writes best-effort audit through `try_write_config_change_set_audit(...)`.
+- `mark_config_change_set_ready(uuid)` → returns `config_change_sets`; marks a draft config change set ready after DB-side validation.
+- `apply_config_change_set(uuid)` → returns `config_change_sets`; atomically applies a ready config change set. Current supported scope is scalar/json `global_value_change` and `server_value_change` entries.
+- `cancel_config_change_set(uuid, text)` → returns `config_change_sets`; cancels a draft/ready change set and requires explicit cancellation reason.
+
+Internal helper functions:
+
+- `validate_config_change_set_entries_for_d5(uuid)` → validates D5-supported entries before ready/apply.
+- `apply_global_config_value_change_entry(config_change_entries, uuid)` → internal helper used by `apply_config_change_set(...)`.
+- `apply_server_config_value_change_entry(config_change_entries, uuid)` → internal helper used by `apply_config_change_set(...)`.
+- `try_write_config_change_set_audit(...)` → internal/best-effort audit helper. Frontend must not call this helper directly.
+
+Operational rules:
+
+- Frontend must call `create_config_change_set_draft(...)` instead of direct inserts into `config_change_sets`.
+- Frontend must call `create_config_value_change_entry(...)` instead of direct inserts into `config_change_entries` for governed scalar/json value entries.
+- Frontend must call ready/apply/cancel workflow RPCs instead of direct status updates.
+- Frontend must not call `try_write_config_change_set_audit(...)`; audit for config governance workflow is DB-side.
+- `create_config_value_change_entry(...)` supports only D4/D5 scalar/json value-entry flow: `scalar_config` / `json_config` definitions and value types `integer`, `decimal`, `boolean`, `string`, `json`.
+- Relational `entity_field_change` creation/application remains a future dedicated workflow. Do not invent generic relational apply logic in frontend.
 Config values should not be hardcoded where server/product balance says they are governed.
 
 Config change sets preserve:
@@ -1329,7 +1071,7 @@ Known sources:
 - `player_report`
 - `manual`
 
-## Anti-abuse functions
+## Anti-abuse functions and RPC contracts
 
 Known signal/case helper functions include:
 
@@ -1342,13 +1084,38 @@ Known signal/case helper functions include:
 - `refresh_anti_abuse_case_signal_stats(case_id)` internal/helper
 - `add_anti_abuse_case_participant_if_missing(...)` internal/helper
 
-Player report/declaration functions created earlier include:
+Player-facing report/declaration creation functions include:
 
 - `create_player_abuse_report(...)` if present in generated types/schema;
 - declaration/report creation should prefer RPC where available.
 
-Codex must inspect current generated DB types for exact signatures before calling.
+G5 anti-abuse decision/audit RPC contracts now present:
 
+- `can_manage_anti_abuse(uuid)` → permission helper for anti-abuse staff/admin workflows.
+- `set_anti_abuse_case_decision(uuid, anti_abuse_case_status, text, anti_abuse_case_verdict, text, boolean, text, text)` → returns `anti_abuse_cases`; updates case status/verdict fields and writes DB-side audit.
+- `set_player_relationship_declaration_decision(uuid, player_relationship_declaration_status, text, text, text)` → returns `player_relationship_declarations`; updates declaration review/status fields and writes DB-side audit.
+- `set_player_abuse_report_decision(uuid, player_abuse_report_status, text, uuid, text, text)` → returns `player_abuse_reports`; updates report status/case/admin notes/player notes and writes DB-side audit.
+- `create_anti_abuse_sanction(uuid, text, uuid, uuid, text, text, integer, integer, uuid, uuid)` → returns `anti_abuse_sanctions`; creates sanction record and writes DB-side audit.
+- `set_anti_abuse_sanction_status(uuid, anti_abuse_sanction_status, text)` → returns `anti_abuse_sanctions`; updates sanction status/timestamps and writes DB-side audit.
+- `create_character_point_penalty_for_sanction(uuid, text, text)` → returns `character_point_penalties`; creates CP penalty record from a sanction and writes DB-side audit.
+- `set_character_point_penalty_status(uuid, anti_abuse_sanction_status, text)` → returns `character_point_penalties`; updates CP penalty status/timestamps and writes DB-side audit.
+- `add_anti_abuse_sanction_item(uuid, uuid, uuid, uuid, text, text)` → returns `anti_abuse_sanction_items`; links an item to a sanction as moderation evidence/decision context and writes DB-side audit.
+
+Internal anti-abuse audit helper:
+
+- `try_write_anti_abuse_case_audit(text, uuid, text, uuid, text, jsonb, jsonb, jsonb)` → internal best-effort audit helper that writes `audit_logs` and links them through `anti_abuse_case_audit_logs`. Frontend must not call it directly.
+
+Anti-abuse workflow operational rules:
+
+- Frontend must call the public anti-abuse workflow RPCs above instead of direct updates/inserts into case/report/declaration/sanction/penalty tables.
+- Frontend must not call `write_audit_log(...)` as a second step after a domain mutation. Audit for these workflows is DB-side.
+- Frontend must not call `try_write_anti_abuse_case_audit(...)`; it is internal.
+- Public/domain RPCs should have `EXECUTE` for `authenticated`; internal helpers should not be granted to `authenticated` or `anon`.
+- `add_anti_abuse_sanction_item(...)` records sanction-item involvement and audit evidence. It does **not** transfer item ownership and does **not** implement full item confiscation/return. A real confiscation/return ownership workflow remains a separate DB/RPC contract.
+
+G5 audit dictionary additions include action keys for case decisions, declaration decisions, report decisions, sanction creation/status changes, CP penalty creation/status changes, and sanction item links. Relevant audit entity keys include `anti_abuse_case`, `player_relationship_declaration`, `player_abuse_report`, `anti_abuse_sanction`, `character_point_penalty`, and `anti_abuse_sanction_item`.
+
+Codex must inspect current generated DB types for exact signatures before calling.
 ## Sanctions and CP penalties
 
 Sanctions are separate records linked to cases.
@@ -1502,7 +1269,7 @@ Current code should migrate toward:
 
 - `type_key`
 - `target_key`
-- `context_key`
+- `scope_key`
 - `entity_bonuses`
 
 ## Old bonus relation tables

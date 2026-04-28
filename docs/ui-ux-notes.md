@@ -11,3 +11,7 @@ This file tracks non-blocking UI/UX findings discovered during backlog work. The
 - `/admin/config-change-sets`: stale success/error state should be cleared when selecting another change set, starting a new draft, adding an entry, or running workflow actions.
 - `/admin/config-change-sets`: sandbox/test draft cleanup may need a later admin UX, but G4 does not require delete/edit support for historical bad draft data.
 
+## Anti-Abuse
+
+- Future anti-abuse decision UI should label `add_anti_abuse_sanction_item` as linking an evidence/context item, not confiscating or returning an item.
+- Real item confiscation/return needs a separate DB/domain workflow and should not be implied by sanction item linking.
