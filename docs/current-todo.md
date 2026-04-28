@@ -55,7 +55,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: U0-C3 - user/staff management UI audit.
 - Completed and confirmed: U0-C4 - moderator scope UI spec.
 - Completed and confirmed: U0-I1 - central staff access policy model.
-- Current backlog task: U0-I2 - staff gameplay boundary implementation.
+- Completed and confirmed: U0-I2 - staff gameplay boundary implementation.
+- Current backlog task: U0-I3 - admin route guard and sidebar boundary.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow

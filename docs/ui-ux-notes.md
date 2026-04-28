@@ -19,6 +19,7 @@ This file tracks non-blocking UI/UX findings discovered during backlog work. The
 ## Role-aware UX and explainability notes — 2026-04-28
 
 - Canonical notes file is `ui-ux-notes.md`. Do not create or maintain a separate `ux-ui-notes.md` file.
+- Root `App` should stay a thin global shell. Route/layout-heavy UI such as sidebar, topbar, gameplay notices and admin/game shells should stay behind lazy route shells so PrimeNG modules used there do not inflate the root initial bundle.
 - User/staff management UI must disable or hide candidates who already have a hero on the selected standard server. Backend/RPC still enforces this.
 - Sandbox/test servers are exceptions: staff/testers may have heroes there to test gameplay, sanctions and moderation flows.
 - Staff assignment UI must show staff-disqualifying history warnings, especially bans and severe suspensions.

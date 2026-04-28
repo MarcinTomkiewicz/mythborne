@@ -1,0 +1,37 @@
+<div class="flex-col min-h-full">
+  <header class="mg-card flex-row-center-center py-md px-lg">
+    <h1 class="mg-section__title mg-section__title--sm mg-section__title--no-margin">
+      Mythos Hunter
+    </h1>
+  </header>
+
+  <div class="flex-row-start-stretch flex-col-md flex-1 overflow-hidden w-100">
+    <div class="w-px-200 w-100-md min-w-200 min-w-auto-md">
+      <app-game-sidebar></app-game-sidebar>
+    </div>
+
+    <main class="flex-1 overflow-y-auto w-100">
+      @if (shouldShowTopbar()) {
+        <div class="p-lg w-100">
+          <app-game-topbar></app-game-topbar>
+        </div>
+      }
+
+      <div class="mg-container py-lg w-100" [class.max-w-none]="isWideContent()">
+        <div class="w-100">
+          @if (isGameplayBlocked()) {
+            <app-membership-blocked-notice />
+          } @else if (isStaffGameplayBlocked()) {
+            <app-staff-gameplay-blocked-notice />
+          } @else {
+            <router-outlet></router-outlet>
+          }
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="mg-card text-center py-sm px-md">
+    <p class="mb-0">&copy; 2025 Mythos Hunter</p>
+  </footer>
+</div>

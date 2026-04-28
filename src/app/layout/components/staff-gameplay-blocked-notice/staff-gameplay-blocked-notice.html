@@ -1,0 +1,17 @@
+<section class="flex-col gap-md w-100">
+  <p-message severity="warn">
+    <ng-template #content>
+      <div class="flex-col gap-xs">
+        <strong>Gameplay is disabled for this staff assignment.</strong>
+        <span>
+          Gameplay is disabled on this standard server because your account is assigned as {{ roleLabel() }} here. Use
+          sandbox/testing servers for gameplay checks.
+        </span>
+      </div>
+    </ng-template>
+  </p-message>
+
+  @if (policy().canAccessAdminShell) {
+    <a pButton routerLink="/admin" label="Open admin tools" class="w-fit"></a>
+  }
+</section>

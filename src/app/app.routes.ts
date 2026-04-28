@@ -8,7 +8,7 @@ import { gameRoutes } from './game/game.routes';
 import { heroRoutes } from './hero/hero.routes';
 import { publicRoutes } from './public/public.routes';
 
-export const routes: Routes = [
+const appShellRoutes: Routes = [
   {
     path: '',
     redirectTo: () => {
@@ -72,4 +72,13 @@ export const routes: Routes = [
     path: '**',
     redirectTo: 'public'
   }
+];
+
+export const routes: Routes = [
+  {
+    path: '',
+    loadComponent: () =>
+      import('./layout/components/app-shell/app-shell').then((m) => m.AppShell),
+    children: appShellRoutes,
+  },
 ];

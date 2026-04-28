@@ -344,6 +344,11 @@ Still pending at the gameplay level even if partially supported in schema:
 - U0-I1 deliberately does not wire policy into guards, sidebar, dashboard cards, or tag-links yet; U0-I2/U0-I3/U0-I4 should consume this helper instead of extending broad `canManageSelectedServer` semantics.
 - Selected-server action flags are gated by an actual selected server context: global admin may access the admin shell without selected server, but `canManageSelectedServer`, `canModerateSelectedServer`, and `canTestSelectedServer` remain false when `selectedServer` is null.
 - Staff gameplay blocking is represented as policy state only for now: assigned staff on standard selected servers is blocked from normal gameplay, while sandbox/testing contexts allow staff gameplay for testing and suspended/banned membership remains a separate gameplay block.
+- U0-I2 accepted on 2026-04-28: `/hero/*` and `/game/*` now respect the staff gameplay boundary through the app shell. Membership suspended/banned notices still take precedence over staff gameplay blocking.
+- U0-I2 moved the visual app layout into a lazy `AppShell`, leaving root `App` as global toast plus router outlet. This keeps sidebar/topbar/notices and PrimeNG notice/button modules out of the root initial bundle.
+- U0-I2 adds a dedicated staff gameplay blocked notice for assigned staff on standard servers, hides normal gameplay topbar context while blocked, and keeps `/admin/*` outside this gameplay boundary.
+- U0-I2 sidebar filtering removes `/hero/*` and `/game/*` links when staff gameplay is blocked, while sandbox/testing contexts preserve gameplay links for staff testing.
+- U0-I2 was verified with targeted staff policy/sidebar tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services
