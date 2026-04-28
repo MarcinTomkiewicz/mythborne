@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-04-27
+Updated: 2026-04-28
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -45,7 +45,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: F12 - legacy bonus usage cleanup audit.
 - Completed and confirmed: G1 - audit dictionary read layer.
 - Completed and confirmed: G2 - audit log read layer.
-- Current backlog task: G3 - audit domain operation helper.
+- Completed and confirmed: G3 - audit domain operation helper.
+- Current backlog task: G4 - audit config governance changes.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow

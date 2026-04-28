@@ -718,6 +718,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task G3 — Audit domain operation helper
 
+**Status:** Done / confirmed.
+
 **Goal:** Provide a reusable way for domain/backend operations to write audit.
 
 **Scope:**
