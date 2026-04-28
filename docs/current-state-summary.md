@@ -349,6 +349,11 @@ Still pending at the gameplay level even if partially supported in schema:
 - U0-I2 adds a dedicated staff gameplay blocked notice for assigned staff on standard servers, hides normal gameplay topbar context while blocked, and keeps `/admin/*` outside this gameplay boundary.
 - U0-I2 sidebar filtering removes `/hero/*` and `/game/*` links when staff gameplay is blocked, while sandbox/testing contexts preserve gameplay links for staff testing.
 - U0-I2 was verified with targeted staff policy/sidebar tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- U0-I3 accepted on 2026-04-28: `/admin/*` now has a route boundary through `requireAdminAccessGuard`, backed by the central staff access policy.
+- U0-I3 adds a lightweight `/admin/access-denied` page for direct denied navigation and keeps it exempt from the admin guard to avoid redirect loops.
+- U0-I3 sidebar filtering hides the `Admin` link for normal logged-in players while keeping it visible for users whose policy allows the admin shell.
+- U0-I3 is intentionally only a shell/menu boundary. Dashboard card filtering, tag-link filtering, and per-tool route metadata remain U0-I4+ work.
+- U0-I3 was verified with targeted admin guard/sidebar/staff-policy tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

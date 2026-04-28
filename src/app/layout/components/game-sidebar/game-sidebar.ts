@@ -30,12 +30,19 @@ export class GameSidebar {
   );
   readonly menuItems = computed(() => {
     const items = this.isLoggedIn() ? MENU_LOGGED_IN : MENU_GUEST;
+    const policy = this.staffAccessPolicy();
 
-    if (!this.staffAccessPolicy().isStaffGameplayBlocked) {
-      return items;
-    }
+    return items.filter((item) => {
+      if (isAdminMenuUrl(item.url)) {
+        return policy.canAccessAdminShell;
+      }
 
-    return items.filter((item) => !isGameplayMenuUrl(item.url));
+      if (policy.isStaffGameplayBlocked && isGameplayMenuUrl(item.url)) {
+        return false;
+      }
+
+      return true;
+    });
   });
 
   goToLogin() {
@@ -45,4 +52,8 @@ export class GameSidebar {
 
 function isGameplayMenuUrl(url: unknown): boolean {
   return typeof url === 'string' && (url.startsWith('/hero') || url.startsWith('/game'));
+}
+
+function isAdminMenuUrl(url: unknown): boolean {
+  return typeof url === 'string' && url.startsWith('/admin');
 }

@@ -2,6 +2,13 @@ import { Routes } from '@angular/router';
 
 export const adminRoutes: Routes = [
   {
+    path: 'access-denied',
+    loadComponent: () =>
+      import('./pages/access-denied/admin-access-denied-page').then(
+        (m) => m.AdminAccessDeniedPage,
+      ),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./pages/dashboard/admin-dashboard').then((m) => m.AdminDashboardPage),

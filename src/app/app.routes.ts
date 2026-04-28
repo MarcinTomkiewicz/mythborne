@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 import { adminRoutes } from './admin/admin.routes';
 import { authRoutes } from './auth/auth.routes';
+import { requireAdminAccessGuard } from './core/guards/admin-access.guard';
 import { requireOnboardedHeroGuard } from './core/guards/hero-onboarding.guard';
 import { AuthState } from './core/services/auth/auth-state';
 import { gameRoutes } from './game/game.routes';
@@ -42,6 +43,7 @@ const appShellRoutes: Routes = [
   },
   {
     path: 'admin',
+    canActivateChild: [requireAdminAccessGuard],
     children: adminRoutes
   },
   {

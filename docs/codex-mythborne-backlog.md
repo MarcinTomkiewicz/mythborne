@@ -833,6 +833,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task U0-I3 — Admin route guard and sidebar boundary
 
+**Status:** Done / confirmed 2026-04-28.
+
 **Goal:** Add route and menu boundaries for admin/staff areas.
 
 **Scope:**
@@ -2236,8 +2238,8 @@ Use this order after the current audit/spec cleanup instead of starting more aud
 
 1. U0-I1 — completed / confirmed: central staff access policy model.
 2. U0-I2 — completed / confirmed: staff gameplay boundary implementation.
-3. U0-I3 — admin route guard and sidebar boundary.
-4. U0-I4 — admin dashboard/cards/tag-link filtering.
+3. U0-I3 — completed / confirmed: admin route guard and sidebar boundary.
+4. U0-I4 — current next task: admin dashboard/cards/tag-link filtering.
 5. U0-I5 — staff management read models and services.
 6. U0-I6 — staff management UI foundation.
 7. U0-I7 — moderator scope assignment UI.

@@ -2,7 +2,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal, WritableSignal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { GameSidebar } from './game-sidebar';
-import { ServerStaffRole } from '../../../core/enums/active-server.enum';
+import {
+  GlobalRoleKey,
+  ServerStaffRole,
+} from '../../../core/enums/active-server.enum';
 import {
   SelectedGameServer,
   ServerAccessState,
@@ -53,6 +56,25 @@ describe('GameSidebar', () => {
 
     expect(urls).toContain('/hero/dashboard');
     expect(urls).toContain('/game/combat');
+  });
+
+  it('hides the admin link for normal logged-in players', () => {
+    const urls = component.menuItems().map((item) => item.url);
+
+    expect(urls).not.toContain('/admin');
+  });
+
+  it('shows the admin link for global admins', () => {
+    accessState.set(
+      createAccess({
+        globalRoleKey: GlobalRoleKey.Admin,
+        isAdmin: true,
+      }),
+    );
+
+    const urls = component.menuItems().map((item) => item.url);
+
+    expect(urls).toContain('/admin');
   });
 
   it('hides gameplay links for staff-blocked standard server context', () => {
