@@ -59,7 +59,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: U0-I3 - admin route guard and sidebar boundary.
 - Completed and confirmed: U0-I4 - admin dashboard cards and tag-link filtering.
 - Completed and confirmed: U0-I5 - staff management read models and services.
-- Current backlog task: U0-I6 - staff management UI foundation.
+- Completed and confirmed: U0-I6 - staff management UI foundation.
+- Current backlog task: U0-I7 - moderator scope assignment UI.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow

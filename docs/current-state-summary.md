@@ -365,6 +365,12 @@ Still pending at the gameplay level even if partially supported in schema:
 - U0-I5 staff mutations remain RPC-only through assign global role, assign server staff, revoke staff, and set scopes workflows; there are no direct writes to staff tables.
 - U0-I5 roles and scopes load from DB dictionaries. Global role keys use `StaffGlobalRoleKey = Row<'roles'>['key']`, while server staff roles use the generated DB enum.
 - U0-I5 was verified with targeted staff-management tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- U0-I6 accepted on 2026-04-28: `/admin/staff-management` is now a lazy admin page for selected-server staff assignment management.
+- U0-I6 staff UI uses the `search_server_staff_candidates` RPC for server-scoped candidate search, shows eligibility messages/flags, and never returns to broad `user_data` pool filtering.
+- U0-I6 assignment and revoke flows use `assign_server_staff` and `revoke_server_staff` through the `StaffManagement` service; reason is required and RPC denials are surfaced through toast/message UI.
+- U0-I6 current staff assignments display technical user ids as secondary data and map assigned scope keys to labels from `staff_permission_scopes` where available.
+- U0-I6 cleanup split the original page facade into focused `StaffCandidateSearchState`, `StaffAssignmentListState`, `StaffAssignmentDraftActions`, `StaffRevokeActions`, and a thin `StaffManagementPageFacade` shell before U0-I7 scope UI work.
+- U0-I6 was verified with targeted staff-management/admin-navigation tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

@@ -58,6 +58,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'Staff',
+    title: 'Staff management',
+    description:
+      'Wyszukiwanie kandydatow, weryfikacja eligibility oraz przypisywanie staffu do wybranego serwera.',
+    routerLink: '/admin/staff-management',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Audit',
     title: 'Audit dictionaries',
     description:
@@ -168,6 +176,11 @@ export const CONFIG_CHANGE_SETS_PAGE_LINKS: readonly AdminTagLink[] = [
 export const ANTI_ABUSE_CONFIG_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
   {
+    label: 'Staff management',
+    routerLink: '/admin/staff-management',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     label: 'Config changes',
     routerLink: '/admin/config-change-sets',
     accessPolicy: 'selectedServerManagement',
@@ -175,6 +188,20 @@ export const ANTI_ABUSE_CONFIG_PAGE_LINKS: readonly AdminTagLink[] = [
   {
     label: 'Config definitions',
     routerLink: '/admin/config-definitions',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const STAFF_MANAGEMENT_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Anti-abuse config',
+    routerLink: '/admin/anti-abuse-config',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Audit logs',
+    routerLink: '/admin/audit-logs',
     accessPolicy: 'selectedServerManagement',
   },
 ];

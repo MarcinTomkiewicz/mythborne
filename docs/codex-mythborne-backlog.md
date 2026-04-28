@@ -902,6 +902,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task U0-I6 — Staff management UI foundation
 
+**Status:** Done / confirmed 2026-04-28.
+
 **Goal:** Build the first role-aware staff management page.
 
 **Scope:**
@@ -2245,8 +2247,8 @@ Use this order after the current audit/spec cleanup instead of starting more aud
 3. U0-I3 — completed / confirmed: admin route guard and sidebar boundary.
 4. U0-I4 — completed / confirmed: admin dashboard/cards/tag-link filtering.
 5. U0-I5 — completed / confirmed: staff management read models and services.
-6. U0-I6 — current next task: staff management UI foundation.
-7. U0-I7 — moderator scope assignment UI.
+6. U0-I6 — completed / confirmed: staff management UI foundation.
+7. U0-I7 — current next task: moderator scope assignment UI.
 8. U0-I8 — moderation actions UI foundation.
 9. U0-I9 — moderation history and disqualification panels.
 10. UX-I1/UX-I2 quick wins may be interleaved when touching the same admin screens.

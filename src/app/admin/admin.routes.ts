@@ -54,6 +54,13 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'staff-management',
+    loadComponent: () =>
+      import('./pages/staff-management/staff-management-page').then(
+        (m) => m.StaffManagementPage,
+      ),
+  },
+  {
     path: 'formulas',
     loadComponent: () =>
       import('./pages/formulas/formulas-page').then((m) => m.FormulasPage),

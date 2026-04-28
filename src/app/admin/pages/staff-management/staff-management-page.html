@@ -1,0 +1,296 @@
+<div class="flex-col gap-xl">
+  <app-loading-overlay
+    [visible]="page.assignmentList.isLoadingAssignments()"
+    title="Loading staff assignments"
+    message="Refreshing selected server staff."
+  />
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-col gap-sm">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Staff</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">Staff management</h2>
+        <p class="muted-text mb-0">
+          Search eligible users and manage staff assignments for the selected server.
+        </p>
+      </div>
+
+      <app-admin-server-switcher />
+    </div>
+  </section>
+
+  @if (!page.selectedServer()) {
+    <p-message severity="warn" text="Select a server before managing staff." />
+  } @else if (!page.canManageStaff()) {
+    <p-message
+      severity="warn"
+      text="This account can open the admin shell, but cannot manage staff for the selected server."
+    />
+  } @else {
+    <p-message severity="info" [text]="page.serverContextMessage()" />
+
+    @if (page.error(); as message) {
+      <p-message severity="error" [text]="message" />
+    }
+
+    <div class="grid-2-1 gap-xl">
+      <section class="mg-card flex-col gap-lg p-lg w-100">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Candidate</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Search user</h3>
+        </div>
+
+        <form
+          [formGroup]="page.candidateSearch.searchForm"
+          class="flex-col gap-md"
+          (ngSubmit)="page.searchCandidates()"
+        >
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Email or name</span>
+            <input
+              pInputText
+              class="w-100"
+              formControlName="query"
+              placeholder="At least 2 characters"
+            />
+          </label>
+
+          <div class="flex-row-start-center">
+            <p-button
+              type="submit"
+              label="Search candidates"
+              [loading]="page.candidateSearch.isSearching()"
+              [disabled]="page.candidateSearch.isSearching()"
+            />
+          </div>
+        </form>
+
+        @if (page.candidateSearch.searchMessage(); as message) {
+          <p-message severity="info" [text]="message" />
+        }
+
+        <div class="flex-col gap-sm">
+          @for (candidate of page.candidateSearch.candidates(); track candidate.userId) {
+            <article
+              class="mg-card flex-col gap-sm p-md"
+              [class.mg-surface-card]="page.candidateSearch.selectedCandidate()?.userId === candidate.userId"
+            >
+              <div class="flex-row-between-center flex-wrap gap-sm">
+                <div class="flex-col gap-xs min-w-0">
+                  <strong class="heading-color">{{ candidate.displayName }}</strong>
+                  <span class="muted-text">{{ candidate.email }}</span>
+                </div>
+
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  @if (candidate.globalRoleKey) {
+                    <span class="mg-tag">global {{ candidate.globalRoleKey }}</span>
+                  }
+                  @if (candidate.existingStaffRole) {
+                    <span class="tag-badge tag-badge--warn">
+                      staff {{ candidate.existingStaffRole }}
+                    </span>
+                  }
+                  <span
+                    class="tag-badge"
+                    [class.tag-badge--success]="candidate.isEligibleForServerStaff"
+                    [class.tag-badge--warn]="!candidate.isEligibleForServerStaff"
+                  >
+                    {{ candidate.isEligibleForServerStaff ? 'eligible' : 'blocked' }}
+                  </span>
+                </div>
+              </div>
+
+              <p class="muted-text mb-0">{{ candidate.eligibilityMessage }}</p>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                @if (candidate.hasHeroOnServer) {
+                  <span class="mg-tag">has hero on server</span>
+                }
+                @if (candidate.hasStaffDisqualifyingHistory) {
+                  <span class="mg-tag">staff-disqualifying history</span>
+                }
+              </div>
+
+              <div class="flex-row-start-center">
+                <p-button
+                  label="Select"
+                  [text]="true"
+                  [disabled]="!candidate.isEligibleForServerStaff"
+                  (onClick)="page.candidateSearch.selectCandidate(candidate)"
+                />
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+
+      <section class="mg-card flex-col gap-lg p-lg w-100">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Assignment</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Assign staff role</h3>
+        </div>
+
+        @if (page.candidateSearch.selectedCandidate(); as candidate) {
+          <div class="mg-surface-card flex-col gap-xs p-md">
+            <strong class="heading-color">{{ candidate.displayName }}</strong>
+            <span class="muted-text">{{ candidate.email }}</span>
+            <span class="muted-text">{{ candidate.eligibilityMessage }}</span>
+          </div>
+        } @else {
+          <p-message severity="info" text="Select an eligible candidate to prepare an assignment." />
+        }
+
+        <form
+          [formGroup]="page.assignmentDraft.assignmentForm"
+          class="flex-col gap-md"
+          (ngSubmit)="page.assignSelectedCandidate()"
+        >
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Staff role</span>
+            <p-select
+              class="w-100"
+              formControlName="role"
+              [options]="page.assignmentDraft.roleOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Reason</span>
+            <input pInputText class="w-100" formControlName="reason" />
+            @if (
+              page.assignmentDraft.assignmentForm.controls.reason.touched &&
+              page.assignmentDraft.assignmentForm.controls.reason.invalid
+            ) {
+              <span class="form-error">Reason is required.</span>
+            }
+            @if (
+              !page.assignmentDraft.assignmentForm.controls.reason.value.trim() &&
+              page.candidateSearch.selectedCandidate()
+            ) {
+              <span class="muted-text">
+                A reason is required before assigning staff access.
+              </span>
+            }
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Notes</span>
+            <textarea pInputText rows="3" class="w-100" formControlName="notes"></textarea>
+          </label>
+
+          <div class="flex-row-start-center">
+            <p-button
+              type="submit"
+              label="Assign staff"
+              [loading]="page.assignmentDraft.isSubmitting()"
+              [disabled]="!page.canSubmitSelectedCandidate()"
+            />
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <section class="mg-card flex-col gap-lg p-lg w-100">
+      <div class="flex-row-between-center flex-wrap gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Current staff</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Selected server assignments</h3>
+        </div>
+
+        <p-button label="Refresh" [text]="true" (onClick)="page.loadAssignments()" />
+      </div>
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
+        @for (assignment of page.assignmentList.assignments(); track assignment.id) {
+          <article class="mg-card flex-col gap-sm p-md">
+            <div class="flex-row-between-center flex-wrap gap-sm">
+              <div class="flex-col gap-xs min-w-0">
+                <strong class="heading-color">Staff user</strong>
+                <span class="muted-text">User id: {{ assignment.userId }}</span>
+                <span class="muted-text">Created {{ assignment.createdAt }}</span>
+              </div>
+              <span class="tag-badge tag-badge--info">{{ assignment.role }}</span>
+            </div>
+
+            @if (assignment.notes) {
+              <p class="muted-text mb-0">{{ assignment.notes }}</p>
+            }
+
+            @if (assignment.scopes.length) {
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                @for (scope of assignment.scopes; track scope.id) {
+                  <span class="mg-tag">{{ page.assignmentList.scopeLabel(scope.scopeKey) }}</span>
+                }
+              </div>
+            }
+
+            <div class="flex-row-start-center">
+              <p-button
+                label="Revoke"
+                severity="danger"
+                [text]="true"
+                (onClick)="page.revoke.startRevoke(assignment)"
+              />
+            </div>
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">No staff assignments for this server yet.</p>
+        }
+      </div>
+    </section>
+
+    @if (page.revoke.selectedRevokeAssignment(); as assignment) {
+      <section class="mg-card flex-col gap-md p-lg w-100">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Revoke</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            Revoke {{ assignment.role }} assignment
+          </h3>
+          <p class="muted-text mb-0">{{ assignment.userId }}</p>
+        </div>
+
+        <form
+          [formGroup]="page.revoke.revokeForm"
+          class="flex-col gap-md"
+          (ngSubmit)="page.revokeSelectedAssignment()"
+        >
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Reason</span>
+            <input pInputText class="w-100" formControlName="reason" />
+            @if (
+              page.revoke.revokeForm.controls.reason.touched &&
+              page.revoke.revokeForm.controls.reason.invalid
+            ) {
+              <span class="form-error">Reason is required.</span>
+            }
+            @if (!page.revoke.revokeForm.controls.reason.value.trim()) {
+              <span class="muted-text">A reason is required before revoking staff access.</span>
+            }
+          </label>
+
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            <p-button
+              type="submit"
+              label="Revoke staff"
+              severity="danger"
+              [loading]="page.revoke.isRevoking()"
+              [disabled]="page.revoke.isRevoking()"
+            />
+            <p-button
+              label="Cancel"
+              severity="secondary"
+              [text]="true"
+              (onClick)="page.revoke.cancelRevoke()"
+            />
+          </div>
+        </form>
+      </section>
+    }
+  }
+
+  <section class="mg-card p-lg w-100">
+    <app-admin-tag-links [links]="links" />
+  </section>
+</div>
