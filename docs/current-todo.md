@@ -49,7 +49,13 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: G3 - audit domain operation helper.
 - Completed and confirmed: G4 - audit config governance changes.
 - Completed and confirmed: G5 - audit anti-abuse decisions.
-- Current backlog task: G6 - audit gameplay persistent changes.
+- Completed and confirmed: U0-C1 - frontend role usage audit.
+- Completed and confirmed: U0-C2 - staff gameplay access audit.
+- Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
+- Completed and confirmed: U0-C3 - user/staff management UI audit.
+- Completed and confirmed: U0-C4 - moderator scope UI spec.
+- Completed and confirmed: U0-I1 - central staff access policy model.
+- Current backlog task: U0-I2 - staff gameplay boundary implementation.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow
@@ -205,3 +211,39 @@ Order reflects implementation priority, not final business priority.
 - Regenerate/update `src/app/core/types/database.types.ts` whenever schema changes require it.
 - Do not mark backlog tasks complete in state docs until the user confirms the task works.
 - Add a dedicated database/RLS task before production reliance on `hero.id != auth.uid()`: update onboarding policies and server-aware hero ownership checks.
+
+---
+
+## Added high-priority preparation track — U0 and UX special tasks
+
+After G-series work and before deeper H/admin/staff UI work, prioritize the following preparation:
+
+1. Regenerate Supabase `database.types.ts` after U0-N4 Stage 1–2 migrations.
+2. Update `database-current.md` with U0 roles/staff/moderation contracts.
+3. Add Codex tasks for U0 role/staff audits and Special UX explainability audits.
+4. Do not ask Codex to build user/staff management UI before regenerated types and `database-current.md` include:
+   - staff scopes;
+   - moderation actions;
+   - staff management RPC;
+   - moderation history RPC;
+   - staff assignment eligibility.
+5. Track non-blocking role-aware UI and explainability findings in `ux-ui-notes` / current UX notes file.
+
+### U0 DB foundation status
+
+U0-N4 Stage 1–2 are structurally implemented in DB:
+
+- staff scopes;
+- moderation actions;
+- warning/restriction/suspension/ban foundation;
+- moderation history RPC;
+- staff/user management RPC;
+- permission helper split;
+- access-control audit action types.
+
+Remaining before frontend implementation:
+
+- regenerate types;
+- update docs;
+- optionally run later behavioral tests with better test harness;
+- implement runtime enforcement of restrictions in trade/auction/gameplay flows later.

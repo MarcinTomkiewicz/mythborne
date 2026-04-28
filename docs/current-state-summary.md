@@ -325,6 +325,25 @@ Still pending at the gameplay level even if partially supported in schema:
 - G5 frontend code does not call `write_audit_log` or `try_write_anti_abuse_case_audit` after anti-abuse mutations; audit remains owned by the DB workflow RPCs.
 - G5 adds anti-abuse decision input/output models, generated RPC arg aliases, payload mappers, row-to-domain mappers, and targeted mapper tests.
 - `add_anti_abuse_sanction_item` is modeled as sanction item evidence/context, not item confiscation or return ownership transfer.
+- U0-C1 accepted on 2026-04-28: frontend role usage audit confirmed that global roles and server staff assignments are already separate data dimensions, but current UI/access affordances are still too broad.
+- U0-C1 identified `/admin` route guards, logged-in menu visibility, static admin navigation, and `ActiveServer.canManageSelectedServer` semantics as the main frontend role-boundary risks.
+- `canManageSelectedServer` must not mean "has any server staff assignment"; future U0 work should split staff access, management authority, moderation authority, test access, and assigned-staff status into separate access flags.
+- U0-C2 accepted on 2026-04-28: staff gameplay access audit confirmed that `/hero/*` and `/game/*` currently check auth/onboarding and membership punishment state, but do not block assigned staff from normal gameplay on standard servers.
+- Future U0-C2 implementation should add a dedicated staff-gameplay boundary for standard servers while preserving sandbox/testing exceptions; this must stay separate from suspended/banned membership blocking and from `/admin/*` route access.
+- Staff gameplay blocking should use explicit access semantics such as assigned staff, gameplay allowed, management authority, moderation authority, and tester/sandbox access rather than extending `canManageSelectedServer`.
+- U0-C6 accepted on 2026-04-28: admin/navigation boundary audit confirmed that `/admin/*`, sidebar `Admin`, dashboard cards, and admin tag-links are still static/prototype-level and not role/scope-aware.
+- Future U0 navigation implementation needs one central access-policy source for routes, sidebar entries, dashboard cards, and tag-links so UI does not advertise links that guards deny.
+- U0 route/navigation policy must distinguish global admin, server operator, scoped moderator, tester, player, and assigned-staff state instead of relying on broad `canManageSelectedServer`.
+- U0-C3 accepted on 2026-04-28: user/staff management UI audit confirmed that frontend has no staff management screens yet, only current-user access context through `ActiveServer`.
+- Generated types now include U0 staff/user management contracts such as `assign_global_role`, `assign_server_staff`, `revoke_server_staff`, `set_server_staff_permission_scopes`, `user_has_staff_disqualifying_history`, `user_has_hero_on_server`, `staff_permission_scopes`, and `server_staff_assignment_scopes`.
+- Future staff management UI must use RPC workflows and stable dictionary keys, not direct writes to `server_staff_assignments`, `server_staff_assignment_scopes`, or `user_data.role_id`.
+- U0-C4 accepted on 2026-04-28: moderator scope UI spec defines staff management flow around server selection, safe user selection, eligibility pre-checks, moderator role assignment, DB-driven scope selection, required reason/notes, and RPC-only submit.
+- Future moderator scope UI should distinguish blocking hero-on-standard-server state, staff-disqualifying history warnings/blocks, and informational sandbox/testing exceptions instead of collapsing eligibility into one boolean.
+- U0-I1 accepted on 2026-04-28: frontend now has a central staff access policy helper in `core/utils/staff-access-policy.ts` with exported policy types in `core/types/staff-access-policy.types.ts`.
+- U0-I1 policy separates global admin/operator/tester/moderator signals from selected-server owner/operator/moderator/tester assignment, assigned-staff state, management authority, moderation authority, testing access, player gameplay access, and staff gameplay blocking.
+- U0-I1 deliberately does not wire policy into guards, sidebar, dashboard cards, or tag-links yet; U0-I2/U0-I3/U0-I4 should consume this helper instead of extending broad `canManageSelectedServer` semantics.
+- Selected-server action flags are gated by an actual selected server context: global admin may access the admin shell without selected server, but `canManageSelectedServer`, `canModerateSelectedServer`, and `canTestSelectedServer` remain false when `selectedServer` is null.
+- Staff gameplay blocking is represented as policy state only for now: assigned staff on standard selected servers is blocked from normal gameplay, while sandbox/testing contexts allow staff gameplay for testing and suspended/banned membership remains a separate gameplay block.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services
@@ -335,3 +354,44 @@ Still pending at the gameplay level even if partially supported in schema:
 - Combat should now evolve from the sandbox slice into reusable domain pieces, not a giant monolithic combat engine.
 - Exploration, encounter, and trial logic should be built on top of the current formula/stat/bonus foundation instead of bypassing it.
 - Use RPC/domain operations for critical economy mutations such as direct trade, auctions, Character Point balance changes, and item lock transitions.
+
+---
+
+## Update 2026-04-28 — U0 roles/staff/moderation DB foundation
+
+U0-N4 Stage 1–2 database foundation has been implemented structurally.
+
+Confirmed by schema/verification:
+
+- `staff_permission_scopes` exists and stores moderator responsibility scopes.
+- `server_staff_assignment_scopes` exists and assigns scopes to staff assignments.
+- `moderation_action_types` exists and defines local/account warnings, restrictions, suspensions and bans.
+- `moderation_actions` exists and stores server-scoped moderation actions with required reason/source fields.
+- `moderation_action_status` enum exists.
+- Validation and after-change triggers exist for moderation actions.
+- Staff assignment eligibility trigger exists on `server_staff_assignments`.
+- Default moderation config values resolve correctly:
+  - warning duration = 30 days;
+  - local restriction duration = 3 days;
+  - auto suspension duration = 3 days;
+  - staff-disqualifying suspension threshold = 15 days.
+- RPC/helper grants are clean: no `PUBLIC`/`anon` execute on U0 mutating RPC/helper functions.
+- Staff/user management RPC exists:
+  - `assign_global_role`
+  - `assign_server_staff`
+  - `revoke_server_staff`
+  - `set_server_staff_permission_scopes`
+  - `user_has_staff_disqualifying_history`
+- Moderation action/history RPC exists:
+  - `create_moderation_action`
+  - `set_moderation_action_status`
+  - `get_user_moderation_history`
+  - `get_hero_moderation_history`
+
+Important remaining work:
+
+- Generated Supabase types have been refreshed after the U0 foundation; future U0 implementation tasks may use the typed contracts where present.
+- Update `database-current.md` and task docs before Codex uses the new schema.
+- Runtime enforcement of restrictions in trade/auction/gameplay is not yet wired.
+- Behavioral tests should be rerun later with a cleaner test harness or real sandbox data.
+- G5 RPC should later be explicitly aligned to dedicated helpers for readability.

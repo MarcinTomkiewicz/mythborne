@@ -27,6 +27,13 @@ Global Codex rules:
 - After each task, summarize exact changes and wait for user confirmation.
 - Do not mark tasks as completed in state docs before user confirms they work.
 
+Implementation backlog discipline:
+- Prefer implementation tasks over repeated audits once schema/contracts are known.
+- Audit/spec tasks should normally be followed by concrete implementation tasks in the same epic.
+- Do not create long audit-only sequences unless user explicitly asks or implementation is blocked.
+- If an audit finds clear work, add/update implementation tasks with acceptance criteria before continuing.
+- UX tasks should produce visible UI/helpers unless explicitly marked as audit/spec.
+
 ---
 
 # Epic A — Documentation, state and generated DB types
@@ -492,8 +499,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F3 — Canonical bonus domain models and mappers
 
-**Status:** Done / confirmed.
-
 **Goal:** Add new-only domain/types/mappers for canonical bonus models.
 
 **Scope:**
@@ -511,8 +516,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F4 — Bonus dictionary/admin read service
 
-**Status:** Done / confirmed.
-
 **Goal:** Load dictionaries and template read model for admin UI.
 
 **Scope:**
@@ -529,8 +532,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F5 — Bonus template write path migration
 
-**Status:** Done / confirmed.
-
 **Goal:** Move template writes to semantic `bonus_templates` columns.
 
 **Scope:**
@@ -545,8 +546,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 ---
 
 ## Task F6 — Entity bonus read model and payload helpers
-
-**Status:** Done / confirmed.
 
 **Goal:** Add shared read model and payload helpers for `entity_bonuses`.
 
@@ -566,8 +565,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F7 — Origin bonus read migration
 
-**Status:** Done / confirmed.
-
 **Goal:** Dashboard, combat, and origin display read origin bonuses through `entity_bonuses(entity_type = origin)`.
 
 **Scope:**
@@ -582,8 +579,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 ---
 
 ## Task F8 — Item generation base type model migration
-
-**Status:** Done / confirmed.
 
 **Goal:** Replace semantic use of `slot` with `base_type_key`.
 
@@ -600,8 +595,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 ---
 
 ## Task F9 — Item generation entity bonuses
-
-**Status:** Done / confirmed.
 
 **Goal:** Base and affix bonus read/write paths use `entity_bonuses`.
 
@@ -622,8 +615,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F10 — Building entity bonuses
 
-**Status:** Done / confirmed.
-
 **Goal:** Building bonuses use `entity_bonuses(entity_type = building)`.
 
 **Scope:**
@@ -635,14 +626,11 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 - Build passes.
 
 **Blocker:**
-- If expected building bonus rows are missing from `entity_bonuses`, stop and report SQL/backfill blocker. Do not add permanent fallback to legacy `building_bonuses`.
-- If buildings legitimately have no bonus rows, treat that as an empty canonical `entity_bonuses` state and keep the page/runtime loading without legacy fallback.
+- If building bonuses are not backfilled in `entity_bonuses`, stop and report SQL/backfill blocker. Do not add permanent fallback to legacy `building_bonuses`.
 
 ---
 
 ## Task F11 — Combat/equipment item bonus inputs
-
-**Status:** Done / confirmed.
 
 **Goal:** Combat formula inputs receive resolved item/equipment bonuses.
 
@@ -663,19 +651,15 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task F12 — Legacy bonus usage cleanup audit
 
-**Status:** Done / confirmed.
-
 **Goal:** Final repository audit after migration tasks.
 
 **Scope:**
 - Search application code for legacy bonus join tables and legacy semantic columns.
 - Confirm remaining exceptions are limited to docs, generated database types, or explicit transitional adapters.
-- Confirm derived-stat runtime uses canonical `entity_bonuses` and semantic `bonus_templates` without legacy target/type fallback.
 
 **Acceptance criteria:**
 - App code does not read/write legacy bonus join tables.
 - App code does not read/write legacy semantic columns as source of truth.
-- Derived stats calculate from final/effective base stats before deriving defense, health, damage, and combat inputs.
 - Build and targeted tests pass.
 
 ---
@@ -683,8 +667,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 # Epic G — Audit/logging foundation integration
 
 ## Task G1 — Audit dictionary read layer
-
-**Status:** Done / confirmed.
 
 **Goal:** Load audit action/entity dictionaries.
 
@@ -702,8 +684,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task G2 — Audit log read layer
 
-**Status:** Done / confirmed.
-
 **Goal:** Read audit logs for admin/case contexts.
 
 **Scope:**
@@ -717,8 +697,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 ---
 
 ## Task G3 — Audit domain operation helper
-
-**Status:** Done / confirmed.
 
 **Goal:** Provide a reusable way for domain/backend operations to write audit.
 
@@ -740,8 +718,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task G4 — Audit config governance changes
 
-**Status:** Done / confirmed.
-
 **Goal:** Log config changes.
 
 **Scope:**
@@ -754,13 +730,10 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 **Acceptance criteria:**
 - Config changes leave audit evidence.
-- Config governance create/add workflows use DB-side audited RPCs, not direct inserts or frontend audit helper calls.
 
 ---
 
 ## Task G5 — Audit anti-abuse decisions
-
-**Status:** Done / confirmed.
 
 **Goal:** Log anti-abuse state changes.
 
@@ -776,8 +749,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 **Acceptance criteria:**
 - Important moderation/admin actions leave audit evidence.
 - Full event snapshots are not stored in audit metadata.
-- Frontend anti-abuse decision calls use DB-side audited workflow RPCs, not direct table writes or frontend audit helper calls.
-- Sanction item linking is evidence/context only; real item confiscation/return remains a separate workflow contract.
 
 ---
 
@@ -797,6 +768,208 @@ Start with:
 - UI-only plus/minus clicks are not logged.
 
 ---
+
+# Special Epic U0 — Roles, permissions and scoped moderation
+
+These tasks are now implementation-oriented. Audit/spec tasks already completed should not keep multiplying unless a concrete implementation is blocked by unknown schema or conflicting requirements.
+
+**Epic rule:** U0 work must not broaden `canManageSelectedServer` into a catch-all permission. Separate global admin, selected-server operator, scoped moderator, tester, assigned staff, and normal player gameplay permissions.
+
+## Completed audit/spec tasks
+
+- **U0-C1 — Frontend role usage audit** — Done / confirmed.
+- **U0-C2 — Staff gameplay access audit** — Done / confirmed.
+- **U0-C3 — User/staff management UI audit** — Done / confirmed.
+- **U0-C4 — Moderator scope UI spec** — Done / confirmed.
+- **U0-C6 — Staff/moderation navigation boundaries audit** — Done / confirmed.
+
+## Task U0-I1 — Central staff access policy model
+
+**Status:** Done / confirmed 2026-04-28.
+
+**Goal:** Create one frontend policy layer for role-aware route, menu, dashboard-card and link visibility decisions.
+
+**Scope:**
+- Add typed access profile helpers for:
+  - global admin,
+  - server operator / owner,
+  - scoped moderator,
+  - tester,
+  - assigned staff,
+  - player.
+- Derive policies from `ActiveServer.access`, selected server kind/status, selected-server staff role and future scope data.
+- Do not use `canManageSelectedServer` as the only permission source.
+- Add tests for standard, sandbox and testing server cases.
+
+**Acceptance criteria:**
+- Policy helpers distinguish management, moderation, testing and gameplay access.
+- Normal players have no admin access.
+- Assigned staff is a technical state, not automatic management authority.
+- Tests cover admin/operator/moderator/tester/player cases.
+
+---
+
+## Task U0-I2 — Staff gameplay boundary implementation
+
+**Goal:** Block normal player gameplay for staff assigned to a standard server while preserving sandbox/testing exceptions.
+
+**Scope:**
+- Add central helper/computed flag for staff gameplay blocked state.
+- Apply it to `/hero/*` and `/game/*` through guard/layout boundary.
+- Add a dedicated staff gameplay blocked notice; do not reuse suspended/banned membership punishment notice.
+- Hide or disable gameplay sidebar links in blocked context.
+- Ensure topbar does not present misleading normal gameplay context when gameplay is staff-blocked.
+
+**Acceptance criteria:**
+- Player on standard live server can access gameplay.
+- Assigned owner/operator/moderator/tester on standard server cannot access normal gameplay.
+- Assigned staff on sandbox/testing can use gameplay for testing.
+- Suspended/banned membership remains a stronger separate block with its own notice.
+- `/admin/*` is not blocked by staff gameplay boundary.
+
+---
+
+## Task U0-I3 — Admin route guard and sidebar boundary
+
+**Goal:** Add route and menu boundaries for admin/staff areas.
+
+**Scope:**
+- Add `/admin/*` guard using the central access policy model.
+- Filter or hide the sidebar `Admin` link for users with no admin/staff/moderation access.
+- Add a clear access denied view/message for direct `/admin` navigation.
+- Preserve backend/RLS/RPC authorization as source of truth; frontend guard is UX/security boundary, not a replacement.
+
+**Acceptance criteria:**
+- Player does not see `Admin` and direct `/admin` is blocked gracefully.
+- Global admin can access admin dashboard.
+- Server operator can access allowed selected-server tools.
+- Scoped moderator can access only moderation surfaces once present.
+- Tester does not receive management tools by default.
+
+---
+
+## Task U0-I4 — Admin dashboard cards and tag-link filtering
+
+**Goal:** Make admin dashboard and cross-page admin links respect access policies.
+
+**Scope:**
+- Add access metadata or a central registry for admin dashboard cards and admin tag links.
+- Filter cards/links from the same policy source used by route guards.
+- Remove stale dashboard copy saying there are no roles/guards.
+- Hide/deactivate gameplay links when staff gameplay boundary blocks the selected server context.
+
+**Acceptance criteria:**
+- UI no longer advertises pages the guard will block.
+- Moderator does not see balance/config/formula/building tools unless explicitly allowed.
+- Admin/operator see relevant tools.
+- Gameplay links respect U0-I2 boundary.
+
+---
+
+## Task U0-I5 — Staff management read models and services
+
+**Goal:** Add typed read/domain layer for staff and role management before building the UI.
+
+**Scope:**
+- Load/search safe user candidates without reading `auth.users` directly from Angular.
+- Load `roles` by stable `key`.
+- Load active `staff_permission_scopes` with label/description/helper text.
+- Load selected-server staff assignments with assigned scopes.
+- Add typed RPC wrappers for:
+  - `assign_global_role`,
+  - `assign_server_staff`,
+  - `revoke_server_staff`,
+  - `set_server_staff_permission_scopes`,
+  - `user_has_hero_on_server`,
+  - `user_has_staff_disqualifying_history`.
+- Add missing `TABLES` constants for read-only dictionaries/tables where needed.
+
+**Acceptance criteria:**
+- No direct writes to staff tables.
+- Roles/scopes come from DB dictionaries.
+- Domain models do not expose raw generated rows directly.
+- Payload mapper tests and build pass.
+
+---
+
+## Task U0-I6 — Staff management UI foundation
+
+**Goal:** Build the first role-aware staff management page.
+
+**Scope:**
+- Server selection / selected server context.
+- User search/selection from safe user read model.
+- Eligibility panel using `user_has_hero_on_server` and `user_has_staff_disqualifying_history`.
+- Staff role selection.
+- Required reason and optional notes.
+- Assign/revoke staff through RPC service.
+- Toast/message handling for RPC denials.
+
+**Acceptance criteria:**
+- Standard server blocks user with hero on that server as staff candidate.
+- Sandbox/testing exception is shown and respected.
+- Staff-disqualifying history is visible before submit.
+- Reason is required.
+- Mutations use RPC only.
+- RPC denial appears as PrimeNG toast/message.
+
+---
+
+## Task U0-I7 — Moderator scope assignment UI
+
+**Goal:** Implement the moderator scope UI designed in U0-C4.
+
+**Scope:**
+- Display active `staff_permission_scopes` as label/description/helper text first, technical key second.
+- Show current assigned scopes for selected staff assignment.
+- Assign/update scopes through `set_server_staff_permission_scopes` only.
+- Optional pre-check with `can_have_moderator_scope(serverId, scopeKey)` where available.
+- Require reason.
+
+**Acceptance criteria:**
+- No hardcoded scope list.
+- Scope checklist is human-readable.
+- Moderator scope mutations use RPC.
+- Scoped moderator does not receive this management UI.
+- Tests cover eligibility mapping and RPC payload.
+
+---
+
+## Task U0-I8 — Moderation actions UI foundation
+
+**Goal:** Build the first usable UI for U0 moderation actions.
+
+**Scope:**
+- Load `moderation_action_types` and allowed `staff_permission_scopes`.
+- Create local warning/account warning/restriction/suspension/ban through `create_moderation_action`.
+- Require reason.
+- Allow source entity id/type where relevant.
+- Show server-scoped moderation history through RPC.
+
+**Acceptance criteria:**
+- No direct writes to `moderation_actions`.
+- UI uses dictionaries, not hardcoded action lists.
+- Moderator only sees actions allowed by scope.
+- Operator/admin can see appropriate history.
+- Denied actions show toast/message.
+
+---
+
+## Task U0-I9 — Moderation history and disqualification panels
+
+**Goal:** Surface prior moderation history where staff decisions require it.
+
+**Scope:**
+- Use `get_user_moderation_history` and `get_hero_moderation_history` where available.
+- Server-scoped by default.
+- Full history only for admin/operator; scoped moderator sees only allowed context.
+- Integrate warnings into staff candidate eligibility and anti-abuse case detail later.
+
+**Acceptance criteria:**
+- Staff-disqualifying history is explainable in UI.
+- Moderator does not get global account history unless policy allows it.
+- History is read-only and does not replace reason-required actions.
+
 
 # Epic H — Anti-abuse foundation integration
 
@@ -1800,6 +1973,158 @@ Start with:
 
 ---
 
+# Special Epic UX — Explainability and impact previews
+
+UX tasks in this epic should produce visible UI improvements or shared implementation helpers. Do not run another audit-only UX task unless a concrete implementation is blocked by unknown screens or missing DB metadata.
+
+## Task UX-I1 — Shared metadata display helpers
+
+**Goal:** Add reusable UI/helpers for showing human-readable label, description/helper text, and technical key as secondary metadata.
+
+**Scope:**
+- Create shared display helper/component pattern usable in admin/config/audit/bonus/formula screens.
+- Label is primary.
+- Description/helper text is visible where available.
+- Technical key is secondary/collapsible/metadata.
+- Raw JSON remains in technical detail blocks.
+
+**Acceptance criteria:**
+- At least one existing admin screen uses the helper.
+- No raw technical key is the only visible primary label where DB metadata exists.
+- Build passes.
+
+---
+
+## Task UX-I2 — Config governance explainability implementation
+
+**Goal:** Make config governance screens understandable to operators before they create/apply changes.
+
+**Scope:**
+- On config definitions/change-entry forms, show what scope means: product global, global balance, server launch, live server, test override.
+- Show whether a value change will be global or selected-server scoped.
+- Show active server context for server-scoped entries.
+- Replace stale success/error text with toast/message behavior where still missing.
+- Use `ui-ux-notes.md` config governance notes as source.
+
+**Acceptance criteria:**
+- User can tell where a config change will apply before submitting.
+- Server-scoped entries show selected server.
+- Global/server target is readonly/explained, not a fake choice.
+- No raw governance scope key as the only explanation.
+
+---
+
+## Task UX-I3 — Audit log readability pass
+
+**Goal:** Replace raw audit keys as primary text in audit views with dictionary labels and helpful metadata.
+
+**Scope:**
+- Use joined `audit_action_types` and `audit_entity_types` labels/descriptions where available.
+- Keep keys visible as secondary technical metadata.
+- Make old/new/metadata JSON easier to scan with collapsible or constrained blocks.
+
+**Acceptance criteria:**
+- Audit log cards primarily show labels, not only keys.
+- Missing dictionary joins fall back gracefully to stable keys.
+- Large JSON does not dominate the page by default.
+
+---
+
+## Task UX-I4 — Formula impact preview calculators
+
+**Goal:** Add practical formula calculators for admin formula/balance work.
+
+**Scope:**
+- Let admin enter example inputs for selected formula targets.
+- Show output and errors clearly.
+- Prioritize building upgrade cost/time/bonus and hero stat cost/cap formulas.
+- Reuse existing formula runtime where possible.
+
+**Acceptance criteria:**
+- Admin can test formula output without editing DB values.
+- Invalid formula/input errors are readable.
+- Build passes.
+
+---
+
+## Task UX-I5 — Item generation quality impact preview
+
+**Goal:** Show how item quality affects generated item values and bonuses.
+
+**Scope:**
+- For selected base/affix/template, show Normal/Quality/Outstanding or current DB-defined quality rows.
+- Use `item_generation_qualities`, not hardcoded exactly three qualities.
+- Show raw value and quality-scaled value where `quality_scales_value` applies.
+
+**Acceptance criteria:**
+- Admin can see quality impact before saving item-generation changes.
+- Quality never scales level interval.
+- UI uses active quality dictionary rows.
+
+---
+
+## Task UX-I6 — Building impact calculator
+
+**Goal:** Show predicted building cost/time/bonus output across levels and selected district context.
+
+**Scope:**
+- Add level range preview for cost/time/bonus formulas.
+- Show district cap / unlimited behavior once U tasks are implemented.
+- Keep existing single-level preview but make multi-level impact easier to understand.
+
+**Acceptance criteria:**
+- Admin can inspect level N -> N+1 and nearby progression values.
+- `0 = unlimited` is clearly explained where relevant.
+- Formula errors are visible.
+
+---
+
+## Task UX-I7 — Bonus and requirement impact preview
+
+**Goal:** Explain resolved bonus/requirement effects in human-readable terms.
+
+**Scope:**
+- Show resolved effect of bonus templates, entity bonuses, quality scaling, per-level intervals and source-stat scaling.
+- Show requirement labels/descriptions once central requirements are in use.
+- Keep technical keys secondary.
+
+**Acceptance criteria:**
+- Admin can understand what a bonus/requirement does without reading raw JSON.
+- Preview uses canonical dictionaries and entity bonuses.
+- Build passes.
+
+---
+
+## Task UX-I8 — Anti-abuse decision explainability pass
+
+**Goal:** Make future anti-abuse case/sanction/declaration/report UI understandable for staff and players.
+
+**Scope:**
+- Use dictionary labels/descriptions for report/declaration/sanction/action types.
+- Explain sanction item links as evidence/context, not item confiscation.
+- Show reason/status reason prominently.
+- Do not expose staff-only technical history to scoped moderators or players.
+
+**Acceptance criteria:**
+- Anti-abuse UI uses labels/helper text from DB dictionaries.
+- Player-facing status views do not leak staff-only metadata.
+- Staff decision UI always requires reason.
+
+---
+
+## Task UX-I9 — Smoke test UX notes integration
+
+**Goal:** Make Codex verification reports include business meaning, not only click paths.
+
+**Scope:**
+- Update workflow docs/templates so smoke tests say what the action means in gameplay/admin terms.
+- Add non-blocking findings to `docs/ui-ux-notes.md`.
+
+**Acceptance criteria:**
+- Future Codex reports include UI path and domain meaning.
+- UX notes are grouped as quick win / DB metadata needed / redesign-needed.
+
+
 # Epic S — Responsibility and Angular 21 cleanup
 
 ## Task S1 — Responsibility audit
@@ -1902,6 +2227,26 @@ Start with:
 - After each completed task, wait for user test/confirmation before updating completed-state docs.
 
 ---
+
+## Current execution order update — U0 and UX implementation
+
+Use this order after the current audit/spec cleanup instead of starting more audit-only tasks:
+
+1. U0-I1 — completed / confirmed: central staff access policy model.
+2. U0-I2 — staff gameplay boundary implementation.
+3. U0-I3 — admin route guard and sidebar boundary.
+4. U0-I4 — admin dashboard/cards/tag-link filtering.
+5. U0-I5 — staff management read models and services.
+6. U0-I6 — staff management UI foundation.
+7. U0-I7 — moderator scope assignment UI.
+8. U0-I8 — moderation actions UI foundation.
+9. U0-I9 — moderation history and disqualification panels.
+10. UX-I1/UX-I2 quick wins may be interleaved when touching the same admin screens.
+
+Operational rule:
+- Do not run U0-C5 or additional UX audits before at least U0-I1 through U0-I4 are implemented unless the user explicitly asks.
+- When a screen is already being changed, include the relevant UX implementation improvement instead of creating a separate audit task.
+
 
 # 2026-04-26 Priority Update — DB foundation after trade/auction/anti-abuse stages
 

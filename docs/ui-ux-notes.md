@@ -15,3 +15,18 @@ This file tracks non-blocking UI/UX findings discovered during backlog work. The
 
 - Future anti-abuse decision UI should label `add_anti_abuse_sanction_item` as linking an evidence/context item, not confiscating or returning an item.
 - Real item confiscation/return needs a separate DB/domain workflow and should not be implied by sanction item linking.
+
+## Role-aware UX and explainability notes — 2026-04-28
+
+- Canonical notes file is `ui-ux-notes.md`. Do not create or maintain a separate `ux-ui-notes.md` file.
+- User/staff management UI must disable or hide candidates who already have a hero on the selected standard server. Backend/RPC still enforces this.
+- Sandbox/test servers are exceptions: staff/testers may have heroes there to test gameplay, sanctions and moderation flows.
+- Staff assignment UI must show staff-disqualifying history warnings, especially bans and severe suspensions.
+- Moderator scope UI must explain each scope in human terms and must not expose only raw scope keys.
+- Moderation action UI must always require a reason.
+- Moderation action UI should auto-fill source references from the place of wrongdoing where possible, e.g. trade transaction id, auction id, report id, message id later.
+- Source reference does not replace reason.
+- Operator/admin moderation history UI should make clear that warning/restriction/suspension/ban history is server-scoped.
+- Player-facing punishment messages need separate UX later.
+- Admin/config/staff UI must show human-readable labels/descriptions and predicted gameplay impact where possible, not only keys/JSON/config values.
+- Future Codex smoke tests should explain what the tested action means in gameplay/admin terms, not only the click path.

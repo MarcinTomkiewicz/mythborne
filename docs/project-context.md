@@ -1825,3 +1825,49 @@ The generated item model remains quality + optional prefix + base item + optiona
 ## Implementation caution
 
 This DB foundation does not yet define final equip/unequip RPCs or full gameplay flows. Codex must not invent those database contracts. Future equip/unequip, bulk equip, saved equipment set and scrap operations should be designed in the conceptual/database track first, then documented in `database-current.md`.
+
+---
+
+## Operational update 2026-04-28 — Role-aware access and explainability
+
+### Role-aware access model
+
+Implementation and UI must distinguish global roles from server-scoped staff assignments.
+
+- Admin has global control.
+- Operator manages assigned servers and handles serious moderation decisions.
+- Moderator is one role with DB-configurable scopes such as chat, DM, trade, auction, reports and anti-abuse triage.
+- Tester grants sandbox/test access.
+- Player receives only player-facing gameplay UI.
+
+Do not infer that a global role automatically grants authority on every server. Use documented helper functions and server staff assignments.
+
+### Staff and gameplay
+
+Normal staff should not play normal gameplay on production-like servers where they are assigned staff. Sandbox/test servers are exceptions and must allow staff/test gameplay.
+
+A user with a hero on a standard server cannot be assigned as staff on that server. This must be enforced in backend/RPC/DB and reflected in UI candidate selection.
+
+### Moderation action model
+
+The database now has a foundation for server-scoped moderation actions:
+
+- local warnings;
+- account warnings within a server;
+- trade/auction restrictions;
+- server suspensions;
+- server bans;
+- moderation history read models.
+
+Moderators may apply light/local actions in their assigned scopes. Operators/admins handle heavy sanctions, appeals, CP penalties and severe punishments.
+
+### Explainability and role-aware UI
+
+Every visible technical/admin/gameplay concept should be explainable at the point of use. Raw keys and JSON may be shown to admins/operators as secondary metadata, but they must not be the only explanation.
+
+- Player UI should show gameplay/lore/effect descriptions, not DB/config internals.
+- Admin UI should show technical purpose, scope, risk and impact.
+- Operator UI should show server-relevant technical details and moderation context.
+- Moderator UI should show only technical metadata useful within assigned scopes.
+
+Admin panels should show predicted gameplay impact, not only editable fields. Examples: item generation previews for Normal/Quality/Outstanding, building formula calculators by level, and formula output previews.
