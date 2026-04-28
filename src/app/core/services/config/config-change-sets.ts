@@ -1,12 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable, switchMap } from 'rxjs';
+import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import {
   ConfigChangeEntryOrderColumn,
-  ConfigChangeFieldPath,
-  ConfigChangeKindKey,
   ConfigChangeSetOrderColumn,
-  ConfigChangeStatusKey,
 } from '../../enums/config-governance.enum';
 import { FilterOperator } from '../../enums/filter-operators';
 import {
@@ -21,6 +19,10 @@ import {
   mapConfigChangeEntry,
   mapConfigChangeSet,
 } from '../../utils/config-governance';
+import {
+  toCreateConfigChangeSetDraftRpcArgs,
+  toCreateConfigValueChangeEntryRpcArgs,
+} from '../../utils/config-governance-rpc';
 import { Backend } from '../backend/backend';
 
 @Injectable({ providedIn: 'root' })
@@ -57,36 +59,22 @@ export class ConfigChangeSets {
   createDraftChangeSet(
     input: CreateConfigChangeSetDraftInput,
   ): Observable<ConfigChangeSet> {
-    return this.backend.create<ConfigChangeSet>(TABLES.config_change_sets, {
-      title: input.title,
-      reason: input.reason,
-      changelogVisibility: input.changelogVisibility,
-      changelogTitle: input.changelogTitle,
-      changelogBody: input.changelogBody,
-      requestedBy: input.requestedBy,
-      status: ConfigChangeStatusKey.Draft,
-    });
+    return this.backend
+      .rpc<ConfigChangeSetRow>(
+        RPC.create_config_change_set_draft,
+        toCreateConfigChangeSetDraftRpcArgs(input),
+      )
+      .pipe(map(mapConfigChangeSet));
   }
 
   createConfigValueChangeEntry(
     input: CreateConfigValueChangeEntryInput,
   ): Observable<ConfigChangeEntry[]> {
     return this.backend
-      .create<object>(TABLES.config_change_entries, {
-        changeSetId: input.changeSetId,
-        changeKind: input.changeKind,
-        configDefinitionId: input.definition.id,
-        serverId: input.serverId,
-        fieldPath: ConfigChangeFieldPath.ValueJson,
-        oldValueJson: input.oldValue,
-        newValueJson: input.newValue,
-        metadataJson: {
-          configKey: input.definition.key,
-          valueType: input.definition.valueType,
-          oldSource: input.oldSource,
-          oldSourceLabel: input.oldSourceLabel,
-        },
-      })
+      .rpc<ConfigChangeEntryRow>(
+        RPC.create_config_value_change_entry,
+        toCreateConfigValueChangeEntryRpcArgs(input),
+      )
       .pipe(switchMap(() => this.getChangeEntries(input.changeSetId)));
   }
 }

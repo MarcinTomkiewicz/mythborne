@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { CONFIG_CHANGE_SETS_PAGE_LINKS } from '../../admin-navigation.config';
@@ -21,6 +22,7 @@ import { ConfigValueEntryDraftState } from './config-value-entry-draft.state';
     ReactiveFormsModule,
     ButtonModule,
     InputTextModule,
+    MessageModule,
     SelectModule,
     AdminTagLinks,
     AdminServerSwitcher,

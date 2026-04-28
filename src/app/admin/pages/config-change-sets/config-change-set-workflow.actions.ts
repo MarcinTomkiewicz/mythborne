@@ -5,11 +5,13 @@ import { ConfigChangeSet } from '../../../core/types/config-governance.types';
 import { trimText } from '../../../core/utils/normalize-text';
 import { runRequest } from '../../../core/utils/request-state';
 import { ConfigChangeSetWorkflow } from '../../../core/services/config/config-change-set-workflow';
+import { ToastService } from '../../../core/services/ui/toast';
 
 @Injectable()
 export class ConfigChangeSetWorkflowActions {
   private readonly workflow = inject(ConfigChangeSetWorkflow);
   private readonly formFactory = inject(ConfigChangeSetsFormFactory);
+  private readonly toast = inject(ToastService);
 
   readonly cancelForm = this.formFactory.createCancelForm();
   readonly isRunning = signal(false);
@@ -23,6 +25,8 @@ export class ConfigChangeSetWorkflowActions {
     this.runWorkflow(
       this.workflow.markReady(changeSet.id),
       'Change set marked ready.',
+      'Change set ready',
+      'Cannot mark change set ready',
       onSuccess,
     );
   }
@@ -34,6 +38,8 @@ export class ConfigChangeSetWorkflowActions {
     this.runWorkflow(
       this.workflow.apply(changeSet.id),
       'Change set applied.',
+      'Change set applied',
+      'Cannot apply change set',
       onSuccess,
     );
   }
@@ -53,6 +59,8 @@ export class ConfigChangeSetWorkflowActions {
         trimText(this.cancelForm.getRawValue().cancelledReason),
       ),
       'Change set cancelled.',
+      'Change set cancelled',
+      'Cannot cancel change set',
       (updatedChangeSet) => {
         this.cancelForm.reset({ cancelledReason: '' });
         onSuccess(updatedChangeSet);
@@ -63,6 +71,8 @@ export class ConfigChangeSetWorkflowActions {
   private runWorkflow(
     request$: Observable<ConfigChangeSet>,
     successMessage: string,
+    successSummary: string,
+    errorSummary: string,
     onSuccess: (changeSet: ConfigChangeSet) => void,
   ): void {
     runRequest({
@@ -72,6 +82,9 @@ export class ConfigChangeSetWorkflowActions {
       message: this.message,
       successMessage,
       errorMessage: 'Failed to update config change set.',
+      onSuccessMessage: (message) =>
+        this.toast.show('success', successSummary, message),
+      onError: (message) => this.toast.show('error', errorSummary, message),
       onSuccess,
     });
   }

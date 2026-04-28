@@ -9,6 +9,8 @@ export interface RequestStateOptions<T> {
   successMessage?: string;
   errorMessage: string;
   onSuccess: (value: T) => void;
+  onSuccessMessage?: (message: string) => void;
+  onError?: (message: string) => void;
   clearMessage?: boolean;
 }
 
@@ -27,13 +29,17 @@ export function runRequest<T>(options: RequestStateOptions<T>): void {
       next: (value) => {
         if (options.successMessage) {
           options.message?.set(options.successMessage);
+          options.onSuccessMessage?.(options.successMessage);
         }
 
         options.onSuccess(value);
       },
-      error: (error: unknown) =>
-        options.error.set(
-          error instanceof Error ? error.message : options.errorMessage,
-        ),
+      error: (error: unknown) => {
+        const message =
+          error instanceof Error ? error.message : options.errorMessage;
+
+        options.error.set(message);
+        options.onError?.(message);
+      },
     });
 }

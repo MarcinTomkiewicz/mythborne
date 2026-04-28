@@ -1,6 +1,6 @@
 # Monster Hunt - Current State Summary
 
-Updated: 2026-04-27
+Updated: 2026-04-28
 
 This file summarizes the current implementation state against:
 - `docs/project-context.md`
@@ -314,6 +314,12 @@ Still pending at the gameplay level even if partially supported in schema:
 - G3 accepted on 2026-04-28: audit domain operations can now use the shared `AuditWriter` service backed by the `write_audit_log` RPC.
 - `AuditWriteRequest` lives in `core/domain/audit`, `toWriteAuditLogRpcArgs()` lives in `core/utils`, and the RPC name is centralized as `RPC.write_audit_log`.
 - G3 intentionally does not log generic UI clicks or attach audit writes to components. Frontend callers pass domain context such as action/entity keys, entity id, optional actor hero context, targets, reason, request id, and lightweight metadata; the RPC/database remains responsible for validating dictionary keys and resolving the authenticated actor user.
+- G4 accepted on 2026-04-28: config governance create/add/workflow operations now use DB-side audited workflow RPCs instead of direct table inserts or frontend audit helper calls.
+- `ConfigChangeSets.createDraftChangeSet()` calls `create_config_change_set_draft`, and `createConfigValueChangeEntry()` calls `create_config_value_change_entry`; frontend no longer calls `try_write_config_change_set_audit`.
+- Config change-set ready/apply/cancel flows continue to call `mark_config_change_set_ready`, `apply_config_change_set`, and `cancel_config_change_set`; DB workflow RPCs own those audit writes.
+- Draft value-entry target is derived from `config_definitions.governance_scope`: global scopes create `global_value_change`, while server-scoped definitions require an active server and create `server_value_change`.
+- `/admin/config-change-sets` now reports operational feedback with toasts and inline PrimeNG messages, and resets the draft value field cleanly after a successful entry add.
+- Non-blocking UI/UX observations now have a dedicated tracking file in `docs/ui-ux-notes.md`.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

@@ -25,8 +25,8 @@ describe('building admin mappers', () => {
       mapEditableBuildingEntityBonus(
         createEntityBonusRow({
           bonus_templates: createTemplateRow({
-            target_key: null,
-            type_key: null,
+            target_key: null as unknown as string,
+            type_key: null as unknown as string,
             target: 'legacy_target',
             type: 'percent',
           }),

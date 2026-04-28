@@ -37,8 +37,8 @@ describe('bonus governance mappers', () => {
 
   it('does not fall back to legacy template target/type columns', () => {
     const row = createTemplateRow({
-      target_key: null,
-      type_key: null,
+      target_key: null as unknown as string,
+      type_key: null as unknown as string,
       target: 'legacy_target',
       type: 'percent',
     });

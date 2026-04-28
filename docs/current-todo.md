@@ -6,6 +6,7 @@ This file lists pending work derived from:
 - `docs/project-context.md`
 - `docs/database-current.md`
 - `docs/current-decisions.md`
+- `docs/ui-ux-notes.md`
 
 Order reflects implementation priority, not final business priority.
 
@@ -46,7 +47,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: G1 - audit dictionary read layer.
 - Completed and confirmed: G2 - audit log read layer.
 - Completed and confirmed: G3 - audit domain operation helper.
-- Current backlog task: G4 - audit config governance changes.
+- Completed and confirmed: G4 - audit config governance changes.
+- Current backlog task: G5 - audit anti-abuse decisions.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow
@@ -58,6 +60,7 @@ Order reflects implementation priority, not final business priority.
 - Only after user confirmation, Codex updates `current-state-summary.md`, `current-todo.md`, and any relevant task status/docs.
 - Unconfirmed work must stay out of the completed-state summary.
 - After confirmation, Codex prepares a commit message and waits for the next task instruction.
+- Non-blocking UI/UX findings should be recorded in `docs/ui-ux-notes.md` unless they are promoted to task acceptance criteria.
 
 ## Highest Priority Gameplay TODO
 

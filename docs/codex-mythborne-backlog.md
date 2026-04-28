@@ -740,6 +740,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task G4 — Audit config governance changes
 
+**Status:** Done / confirmed.
+
 **Goal:** Log config changes.
 
 **Scope:**
@@ -752,6 +754,7 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 **Acceptance criteria:**
 - Config changes leave audit evidence.
+- Config governance create/add workflows use DB-side audited RPCs, not direct inserts or frontend audit helper calls.
 
 ---
 

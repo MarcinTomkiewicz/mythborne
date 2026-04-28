@@ -42,11 +42,7 @@ export class ConfigChangeSetsPageFacade {
     () =>
       this.draft.error() ?? this.entryDraft.error() ?? this.effectiveValues.error(),
   );
-  readonly editorMessage = computed(
-    () => this.draft.message() ?? this.entryDraft.message(),
-  );
   readonly workflowError = this.workflow.error;
-  readonly workflowMessage = this.workflow.message;
   readonly filteredChangeSets = this.listDetail.filteredChangeSets;
   readonly selectedChangeSet = this.listDetail.selectedChangeSet;
   readonly definitionById = computed(
@@ -75,7 +71,8 @@ export class ConfigChangeSetsPageFacade {
   readonly statusOptions = this.listDetail.statusOptions;
   readonly visibilityOptions = this.listDetail.visibilityOptions;
   readonly draftVisibilityOptions = this.draft.visibilityOptions;
-  readonly valueTargetOptions = this.entryDraft.valueTargetOptions;
+  readonly canSubmitConfigValueEntry = this.entryDraft.canSubmitEntry;
+  readonly valueTargetMessage = this.entryDraft.valueTargetMessage;
   readonly definitionOptions = this.entryDraft.definitionOptions;
   readonly selectedEntryDefinition = this.entryDraft.selectedDefinition;
   readonly selectedEffectiveValue = this.entryDraft.selectedEffectiveValue;

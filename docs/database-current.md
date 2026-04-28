@@ -1,337 +1,75 @@
 <!-- HANDOFF_OVERRIDE_START -->
-# Handoff override — 2026-04-27 schema/RPC sync
+# Handoff override — 2026-04-27
 
-This section is newer than the older body below. Use it as the current operational database/context override for Codex and next conversations.
+This section is newer than the older body below. Use it as the current operational database/context override for the next conversation.
 
-This sync is based on the current `database-current.md` body plus the uploaded `mythborne_schema.sql` pg_dump. The goal is **not** to copy every column from the dump, but to document the DB/RPC/helper contracts and domain semantics Codex needs to avoid rediscovering or inventing schema.
 
-## How Codex should use this file
+## Update 2026-04-28 — G4b config governance create RPCs
 
-- Treat `database-current.md` as the curated semantic DB/RPC/helper registry.
-- It is not a full `pg_dump`; when exact column shapes are needed, check current generated `database.types.ts`, current migrations or live DB.
-- For RPC/function-sensitive work, do not rely only on generated Supabase types. Trigger/internal helper functions may not appear as useful frontend contracts there, but they still define DB behavior.
-- Codex must not invent new RPC names, helper functions, migrations or workflow functions when an existing DB contract is listed here.
-- If a required DB workflow is missing from this file and current schema, the implementation task is blocked until the conceptual/database track designs and applies a migration.
-- Preserve exact filenames when updating docs.
-- Use Polish for Codex-facing prompts/comments unless the user requests otherwise.
+Config governance draft creation and draft value-entry creation are now DB/RPC workflows, not direct frontend table writes. This aligns creation with the existing D5 ready/apply/cancel RPC workflow and keeps config audit on the database side.
 
-## Current source-of-truth order
+New frontend/domain RPC contracts:
 
-For schema-sensitive implementation:
+- `create_config_change_set_draft(text, text, config_change_visibility, text, text)` → returns `config_change_sets`; creates a draft change set, sets `requested_by = auth.uid()`, validates through table constraints, checks `can_manage_config_governance(null)`, and writes best-effort audit through `try_write_config_change_set_audit(...)`.
+- `create_config_value_change_entry(uuid, config_change_kind, uuid, jsonb, uuid, jsonb)` → returns `config_change_entries`; creates a `global_value_change` or `server_value_change` entry only while the change set is `draft`, computes old effective config value DB-side, sets `field_path = value_json`, stores lightweight metadata, and writes best-effort audit through `try_write_config_change_set_audit(...)`.
 
-1. current live database / current generated `database.types.ts` / current `pg_dump`;
-2. current migrations / SQL that have been applied;
-3. this file as the semantic index;
-4. `current-decisions.md`;
-5. `project-context.md`;
-6. `codex-mythborne-backlog.md`;
-7. `current-state-summary.md` and `current-todo.md` only as Codex progress/status files.
+Audit dictionary additions for this workflow:
 
-`current-state-summary.md`, `current-todo.md`, and backlog task statuses are progress tracking files. They are not the main schema source.
+- `audit_action_types.key = config.change_set.created`
+- `audit_action_types.key = config.change_set.entry_created`
+- `audit_entity_types.key = config_change_set` must exist.
+
+Rules:
+
+- Frontend must call these RPCs instead of direct inserts into `config_change_sets` and `config_change_entries`.
+- Frontend must not call `try_write_config_change_set_audit(...)`; it remains an internal helper.
+- `create_config_value_change_entry(...)` supports only D4/D5 scalar/json value-entry flow: `scalar_config` / `json_config` definitions and value types `integer`, `decimal`, `boolean`, `string`, `json`.
+- Relational `entity_field_change` creation/application remains a future dedicated workflow.
+- After applying this migration, regenerate `database.types.ts` so the new RPCs are available to typed frontend services.
 
 ## Critical DB/application state
 
 - Frontend has been cleaned of runtime references to `hero_derived`; only generated `database.types.ts` may mention it while the physical table exists.
 - Do **not** add new dependencies on `hero_derived`.
-- Runtime derived/special stats are resolved from active hero context, `hero_stats`, `derived_stat_definitions`, `bonus_types`, `bonus_scopes`, `bonus_targets`, `bonus_templates`, `entity_bonuses`, equipment/item data and formula assignments only where genuinely needed.
+- Runtime derived/special stats are resolved from active hero context, `hero_stats`, `derived_stat_definitions`, `bonus_types`, `bonus_scopes`, `bonus_targets`, `bonus_templates`, `entity_bonuses`, and formula assignments only where genuinely needed.
 - The physical `hero_derived` table may still exist unless explicitly confirmed dropped. Treat it as deprecated DB legacy.
 - If/when `hero_derived` is dropped, regenerate `database.types.ts`.
-- Critical gameplay/economy mutations should go through RPC/domain operations, not direct frontend table writes.
-- Config governance is a governance layer over existing relational systems. It does not replace formulas, item generation, buildings or bonus templates with generic JSON.
 
-## Verified table/domain inventory from current schema
-
-This is a categorized working inventory, not a full column dump.
-
-### Identity, access, server/world
-
-- `game_servers`
-- `server_memberships`
-- `server_staff_assignments`
-- `roles`
-- `user_data`
-- `hero`
-
-Hard rules:
-
-- `hero.id` is the character id.
-- `hero.user_id` is the owning account id.
-- `hero.server_id` is the game server/world id.
-- Never assume `hero.id = auth.uid()`.
-- Hero-owned queries resolve authenticated user → selected/current server → active hero → `hero.id`.
-
-### Stats, progression, resources
-
-- `stats`
-- `hero_stats`
-- `stats_derived` legacy/older dictionary surface
-- `derived_stat_definitions`
-- `hero_resources`
-- `character_point_ledger`
-- `character_point_locks`
-- `character_point_penalties`
-- `ranks` legacy/current prestige-rank dictionary surface
-
-Rules:
-
-- Character Points live on `hero.character_points` and `hero.total_character_points_earned`.
-- Character Points are not `hero_resources` and not `hero_derived`.
-- Persistent CP movements should use `character_point_ledger` and domain/RPC paths.
-
-### Formula governance
-
-- `balance_formula_targets`
-- `balance_formulas`
-- `balance_formula_assignments`
-- `balance_formula_blocks`
-- `entity_formula_assignments`
-
-Rules:
-
-- Formula targets define allowed variables.
-- Global/default assignment uses `balance_formula_assignments`.
-- Local entity override uses `entity_formula_assignments`.
-- Current local entity kind supported in runtime/admin work: `building`.
-- Runtime order: local entity assignment → global/default assignment → explicit config error/fallback.
-- Do not replace relational formula governance with generic JSON config.
-
-### Config governance
-
-- `config_definitions`
-- `global_config_values`
-- `server_config_values`
-- `config_change_sets`
-- `config_change_entries`
-
-Rules:
-
-- `global_value_change` / `server_value_change` entries use `config_definition_id`, `server_id` only for server changes, `field_path = value_json`, old/new JSON values and lightweight metadata. Do **not** misuse `entity_id`.
-- Future relational/entity edits should use `entity_field_change`, with `entity_type`, UUID `entity_id`, and `field_path`.
-- D5 currently applies scalar/json global/server config value changes only.
-- Relational/entity change application remains blocked until a dedicated workflow exists.
-
-### Bonus system
+## Bonus system current truth
 
 Current canonical bonus naming is **scope**, not context.
 
-Central bonus foundation:
+Use `bonus_scopes`, `scope_key`, `scope_key_override`, and `BonusScope` in frontend/domain code. Do not introduce new `BonusContext` terminology except as temporary legacy alias.
 
+Central bonus foundation:
 - `bonus_types`
 - `bonus_scopes`
 - `bonus_target_categories`
 - `bonus_targets`
-- `bonus_templates`
+- extended `bonus_templates`
 - `entity_bonuses`
 
 Legacy/transitional bonus tables:
-
 - `origin_bonuses`
 - `building_bonuses`
 - `item_bonuses`
 - `item_generation_base_bonuses`
 - `item_generation_affix_bonuses`
 
-Rules:
-
-- New code should use `entity_bonuses` as the central relation.
-- Supported application `entity_bonuses.entity_type` values currently used by frontend runtime/admin paths include `hero`, `origin`, `item_generation_base`, `item_generation_affix`, `building`, and `item`.
-- `entity_type = hero` is used by runtime derived stats for hero-local stat/derived-stat bonuses.
-- Legacy bonus join tables may remain for compatibility/migration, but should not be expanded as the future model.
-- Use `bonus_scopes`, `scope_key`, `scope_key_override`, and `BonusScope` naming in frontend/domain code. Do not introduce new `BonusContext` terminology except as a temporary legacy alias.
-- `bonus_templates` is now a hybrid table: old columns remain, new semantic columns exist.
-- Legacy columns on `bonus_templates`: `target`, `type`, `description`.
-- New semantic columns on `bonus_templates` include: `key`, `label`, `type_key`, `target_key`, `scope_key`, `level_interval`, `formula_id`, `formula_target_id`, `scaling_stat_key`, `params_json`, `is_active`, `sort_order`, `updated_at`.
-- PostgreSQL enum `bonus_type` is legacy and still has only `flat`, `percent`, `per_4_levels`.
-- New semantic bonus types are dictionary rows in `bonus_types` and should be addressed through `type_key`.
-- `per_4_levels` maps conceptually to `per_levels` with `level_interval = 4`.
+New code should use `entity_bonuses` as the central relation. Legacy tables may remain only for compatibility/migration.
 
 Quality scaling:
-
 - `entity_bonuses.quality_scales_value = true` means item quality multiplier scales `value`.
 - `quality_scales_level_interval` must remain false.
 - Quality never scales `level_interval`.
 - No database-level rounding is applied.
 - UI/admin preview should read active rows from `item_generation_qualities`; do not hardcode exactly three qualities.
 
-### Requirements and building caps
-
-- `requirement_definitions`
-- `entity_requirements`
-- `building_requirements` legacy/transitional
-- `building_district_level_caps`
-
-Rules:
-
-- Requirements are not costs.
-- Requirements are not bonuses.
-- New systems should not add fresh requirements JSON fields.
-- `buildings.requirements` and `building_requirements` are legacy/transitional.
-- `buildings.district_code` is the minimum district where a building is available.
-- Building is available in that district and higher districts.
-- `buildings.max_level = 0` means unlimited.
-- `building_district_level_caps` stores overrides only; missing override falls back to `buildings.max_level`.
-
-### Buildings, estates and districts
-
-- `buildings`
-- `building_resource_costs`
-- `estate_districts`
-- `estates`
-- `estate_buildings`
-
-Rules:
-
-- Estates belong to hero and server.
-- Empty estates are not pre-created as rows.
-- Address availability is derived from district capacity minus occupied estate rows.
-- Relocation to an empty estate is operationally simple but strategically expensive and may delete old estate/building state.
-
-### Items, item generation, equipment and Armory
-
-Current item lifecycle and generation tables:
-
-- `items`
-- `item_generation_qualities`
-- `item_generation_bucket_profiles`
-- `item_generation_bases`
-- `item_generation_affixes`
-- `item_generation_base_types`
-- `item_generation_base_type_targets`
-- `hero_equipment`
-- `hero_armory_shelves`
-
-Rules:
-
-- Item generation layers are quality + optional prefix + base item + optional suffix.
-- `item_generation_bases.base_type_key` is the current source of truth for base item type.
-- `item_generation_bases.slot` still exists as nullable legacy/transitional data and should not drive new semantics.
-- Concrete native values such as damage, defense, attack count and critical modifiers are stored through `entity_bonuses`, not as special columns on `item_generation_bases`.
-- `items` has lifecycle status values: `active`, `scrapped`, `locked_trade`, `locked_auction`.
-- Equipment state is stored in `hero_equipment`; do not add an `equipped` item status.
-- Locked trade/auction items may remain equipped while still owned by the hero.
-- DB trigger validates broad slot compatibility, ownership, non-scrapped state and generated base/type presence.
-- Hand-pair logic, requirement checks, single/bulk equip and saved loadout behavior remain domain/RPC responsibilities.
-- No equip/unequip gameplay RPC exists yet. Codex must not invent one without an approved conceptual/database migration.
-- `hero_armory_shelves` stores hero-local shelf names; `items.armory_shelf_position` transfers with item ownership.
-
-Current intended base type keys:
-
-- `one_handed_weapon`
-- `two_handed_weapon`
-- `ranged_weapon`
-- `shield`
-- `helmet`
-- `armor`
-- `pants`
-- `boots`
-- `amulet`
-- `ring`
-
-Current equipment slot keys:
-
-- `main_hand`
-- `off_hand`
-- `helmet`
-- `armor`
-- `pants`
-- `boots`
-- `amulet`
-- `ring_1`
-- `ring_2`
-
-Current base type target semantics:
-
-- `one_handed_weapon`: native `min_damage`, `max_damage`, `attack_count`, `critical_chance`, `critical_damage`; default `attack_count = 1`.
-- `two_handed_weapon`: native `min_damage`, `max_damage`, `attack_count`, `critical_chance`, `critical_damage`; default/minimum `attack_count = 1`; critical native values should be meaningful.
-- `ranged_weapon`: native `min_damage`, `max_damage`, `attack_count`, `critical_chance`, `critical_damage`; default `attack_count = 2`.
-- `shield`: native `defense`, optional `evasion_chance`.
-- `helmet`, `armor`: native `defense`.
-- `pants`: native `defense`, optional `dexterity`, `evasion_chance`.
-- `boots`: native `defense`, optional `agility`, `evasion_chance`.
-- `amulet`: native `charisma`.
-- `ring`: at least one target from group `ring_identity`: `charisma` or `cunning`.
-
-### Trade and auctions
-
-Direct trade tables:
-
-- `player_trade_offers`
-- `player_trade_offer_items`
-- `player_trade_transactions`
-- `player_trade_transaction_items`
-
-Auction tables:
-
-- `player_auction_listings`
-- `player_auction_bids`
-
-Rules:
-
-- Player-to-player trade uses Character Points.
-- Drachmas are vendor/system/building currency.
-- Vendor scrap is not trade.
-- Items are not copied on transfer; ownership changes through `items.hero_id`.
-- Direct trade locks items as `locked_trade`.
-- Auctions lock listed item as `locked_auction`.
-- Auctions are one item per auction; no bundle/set auction support yet.
-- Buy now completes immediately.
-- Auction without bids after expiry becomes `expired` and item returns to `active`.
-- Direct trade and auction mutations should use existing RPC/domain operations, not direct UI table writes.
-
-### Anti-abuse and player reports/declarations
-
-Core anti-abuse tables:
-
-- `anti_abuse_signal_types`
-- `anti_abuse_signals`
-- `anti_abuse_cases`
-- `anti_abuse_case_signals`
-- `anti_abuse_case_participants`
-- `anti_abuse_case_audit_logs`
-- `anti_abuse_case_declarations`
-- `anti_abuse_sanction_types`
-- `anti_abuse_sanctions`
-- `anti_abuse_sanction_items`
-- `character_point_penalties`
-
-Player declaration/report tables:
-
-- `player_relationship_declaration_types`
-- `player_relationship_declarations`
-- `player_relationship_declaration_participants`
-- `player_relationship_declaration_items`
-- `player_relationship_declaration_trades`
-- `player_abuse_report_types`
-- `player_abuse_reports`
-
-Rules:
-
-- Anti-abuse never auto-punishes.
-- It creates signals/cases for staff review.
-- Relationship declarations provide context; they do not disable anti-abuse.
-- Sanctions are explicit records and may be multiple per case.
-- Reasons/status reasons are mandatory where decisions are made.
-- IP/device-like detection remains future/privacy-sensitive; do not add broad unsafe logging casually.
-
-### Audit
-
-- `audit_action_types`
-- `audit_entity_types`
-- `audit_logs`
-
-Rules:
-
-- Audit is for important domain/admin actions, not meaningless UI clicks.
-- `write_audit_log(...)` validates active dictionary keys and actor/target constraints.
-- Config governance already stores reason/change-set/change-entry/changelog data; audit integration exists through helper `try_write_config_change_set_audit(...)` and should be used where available.
-- Full event reports/snapshots are separate from audit logs.
-
-## Derived stat definitions current truth
+## Derived stat definitions
 
 `derived_stat_definitions` is the DB-backed semantic dictionary for runtime derived/special stats.
 
 Seeded definitions:
-
 - `health`
 - `defense`
 - `min_damage`
@@ -341,13 +79,10 @@ Seeded definitions:
 - `evasion_chance`
 
 Resolver semantics:
-
-- Derived stat base values use final/effective base stats: raw `hero_stats` are adjusted by active base-stat bonuses first, then derived stats are calculated.
-- `defense = final endurance + active defense bonuses`.
-- A base-stat bonus must not be counted twice for its derived stat; for example, an `endurance` bonus affects final endurance and must not also be re-added as a defense bonus just because a defense definition references `base_stat_key = endurance`.
+- `defense = endurance + active defense bonuses`.
 - `luck = active luck bonuses`, base 0 unless explicitly changed later.
-- `min_damage = final strength + weapon/base min_damage + active min_damage bonuses + active damage bonuses`.
-- `max_damage = final strength + weapon/base max_damage + active max_damage bonuses + active damage bonuses`.
+- `min_damage = strength + weapon/base min_damage + active min_damage bonuses + active damage bonuses`.
+- `max_damage = strength + weapon/base max_damage + active max_damage bonuses + active damage bonuses`.
 - `damage` target applies to both `min_damage` and `max_damage`.
 - Resolver must ensure `max_damage >= min_damage`.
 - `health` may use a base health formula/fallback, then active health bonuses.
@@ -356,221 +91,205 @@ Resolver semantics:
 ## Config governance status
 
 Confirmed frontend tasks:
-
 - D1 config definitions read model: accepted.
 - D2 config values/effective values read model: accepted.
 - D3 change-set list/detail read model: accepted.
-- D4 config edit draft flow: accepted.
-- D5 config apply/cancel flow: accepted.
-- D6 anti-abuse config admin section: accepted.
+- D4 draft edit flow: Codex reported fixes; next conversation should verify build/UI and user acceptance before marking completed.
 
-Config governance operational rule:
+D4 expected corrected behavior:
+- create draft change set with mandatory title/reason,
+- trim-required validation for title/reason,
+- public changelog requires title/body after trim,
+- add value change entries without applying config values,
+- scalar editor supports only `integer`, `decimal`, `boolean`, `string`, `json`,
+- `entity_ref`, `formula_ref`, `enum_ref` are unsupported/hidden in this simple editor,
+- `global_value_change` / `server_value_change` must not send `entityType/entityId`,
+- value changes must not set `oldScope/newScope`,
+- selected server changes must refresh effective values,
+- metadata includes `oldSource` / `oldSourceLabel` where available.
 
-- Frontend must use existing database/RPC contracts for workflow actions.
-- Codex must not invent new config workflow RPC names or migrations.
-- If a needed workflow is missing, the conceptual/database track designs it first, then the DB is migrated and this file is updated.
+## Config change entries
 
-## Verified public schema function/RPC inventory — 2026-04-27 dump sync
+For `global_value_change` / `server_value_change` use `config_definition_id`, `server_id` only for server changes, `field_path = value_json`, old/new value JSON, and lightweight metadata. Do **not** misuse `entity_id`.
 
-This section is based on the uploaded `mythborne_schema.sql` function inventory. It deliberately includes both frontend-callable RPCs and internal trigger/helper functions, because trigger/helper functions define DB behavior Codex must not duplicate or contradict.
+For relational entity edits later, use `entity_field_change`, with `entity_type`, UUID `entity_id`, and `field_path`.
 
-### Frontend/domain RPC contracts
+## Access helpers
 
-These are the functions frontend/domain services may call when implementing their corresponding workflow.
+Use canonical helpers when writing SQL/RPC:
+- `has_global_role(text[])`
+- `has_server_staff_role(uuid, server_staff_role[])`
 
-Config governance workflow:
+Do not duplicate role logic by joining `roles` unless the helper layer is missing. If `is_admin()` exists or is needed, prefer it as a wrapper around `has_global_role(array['admin'])`.
 
-- `mark_config_change_set_ready(uuid)` → returns `config_change_sets`; marks a draft change set ready after DB-side validation.
-- `apply_config_change_set(uuid)` → returns `config_change_sets`; atomically applies a ready change set. Current scope supports scalar/json `global_value_change` and `server_value_change` entries.
+`can_manage` is not the same as `can_use_as_sandbox`. Tester visibility is not management permission.
+
+## Character Points
+
+Character Points are stored on `hero.character_points` and `hero.total_character_points_earned`. Use `character_point_ledger` for persistent balance history. Do not put Character Points in `hero_resources` or `hero_derived`.
+
+## Trade and auctions
+
+DB/RPC foundation exists for direct trade, one-item auctions, CP locks, item locks, transactions, and anti-abuse signals/case grouping. Frontend gameplay surfaces are still pending.
+
+Trade between players uses Character Points. Drachmas are vendor/system/building currency. Vendor scrap is not trade.
+
+## Requirements/building caps
+
+Central requirement foundation: `requirement_definitions`, `entity_requirements`.
+
+Building availability: `buildings.district_code` is minimum district; available in that district and higher districts. `buildings.max_level = 0` means unlimited. `building_district_level_caps` stores overrides only; missing override falls back to `buildings.max_level`.
+
+## Documentation rule
+
+`database-current.md` should remain a curated semantic DB/RPC/helper registry. It is not a full dump, but it must include important helper functions, RPCs, legacy warnings and domain semantics.
+
+
+## Verified live DB function/RPC inventory — 2026-04-27
+
+This section is based on a direct live database inventory query against `pg_proc` in schema `public`.
+
+Operational rule:
+- Codex must not invent new RPC names, migrations, or database workflow functions when a needed DB contract is missing.
+- If a needed function/RPC is not listed here and is not present in generated database types, the implementation task is blocked by missing database contract.
+- New database RPCs are designed in the conceptual/database track first, then implemented through an approved migration, then documented here and regenerated into `database.types.ts`.
+
+### Config governance functions currently present
+
+Current config helper functions:
+- `get_server_config_integer(uuid, text, integer)` → reads a server config value by config key with integer fallback.
+- `get_server_config_boolean(uuid, text, boolean)` → reads a server config value by config key with boolean fallback.
+- `get_current_global_effective_config_value_json(uuid)` → returns current effective global config value JSON for a config definition.
+- `get_current_server_effective_config_value_json(uuid, uuid)` → returns current effective server config value JSON for a config definition/server pair.
+- `config_json_values_match(jsonb, jsonb)` → null-safe JSONB equality helper used by config apply conflict checks.
+- `server_config_value_source_for_scope(config_governance_scope)` → maps config governance scope to server config value source.
+- `can_manage_config_governance(uuid)` → permission helper for config governance workflows.
+
+Frontend/domain RPC contracts for config governance:
+- `create_config_change_set_draft(text, text, config_change_visibility, text, text)` → returns `config_change_sets`; creates a draft change set, sets `requested_by = auth.uid()`, validates through table constraints, checks `can_manage_config_governance(null)`, and writes best-effort audit through `try_write_config_change_set_audit(...)`.
+- `create_config_value_change_entry(uuid, config_change_kind, uuid, jsonb, uuid, jsonb)` → returns `config_change_entries`; creates a `global_value_change` or `server_value_change` entry only while the change set is `draft`, computes old effective config value DB-side, sets `field_path = value_json`, stores lightweight metadata, and writes best-effort audit through `try_write_config_change_set_audit(...)`.
+- `mark_config_change_set_ready(uuid)` → returns `config_change_sets`; marks a draft config change set ready after DB-side validation.
+- `apply_config_change_set(uuid)` → returns `config_change_sets`; atomically applies a ready config change set. Current D5 scope supports scalar/json `global_value_change` and `server_value_change` entries.
 - `cancel_config_change_set(uuid, text)` → returns `config_change_sets`; cancels a draft/ready change set and requires explicit cancellation reason.
 
-Character Points:
+Internal config governance helper functions:
+- `validate_config_change_set_entries_for_d5(uuid)` → validates D5-supported entries before ready/apply.
+- `apply_global_config_value_change_entry(config_change_entries, uuid)` → internal helper used by `apply_config_change_set(...)`.
+- `apply_server_config_value_change_entry(config_change_entries, uuid)` → internal helper used by `apply_config_change_set(...)`.
+- `try_write_config_change_set_audit(...)` → internal/best-effort audit helper. Frontend must not call this helper directly.
 
+Config governance operational rules:
+- Frontend must call `create_config_change_set_draft(...)` instead of direct inserts into `config_change_sets`.
+- Frontend must call `create_config_value_change_entry(...)` instead of direct inserts into `config_change_entries` for governed scalar/json value entries.
+- Frontend must call ready/apply/cancel workflow RPCs instead of direct status updates.
+- Frontend must not call `try_write_config_change_set_audit(...)`; audit for config governance workflow is DB-side.
+- `create_config_value_change_entry(...)` supports only D4/D5 scalar/json value-entry flow: `scalar_config` / `json_config` definitions and value types `integer`, `decimal`, `boolean`, `string`, `json`.
+- Relational `entity_field_change` creation/application remains a future dedicated workflow. Do not invent generic relational apply logic in frontend.
+
+### Access / identity helpers
+
+- `has_global_role(text[])` → checks current authenticated user's global role keys.
+- `user_has_global_role(uuid, text[])` → checks a specific user's global role keys.
+- `has_server_staff_role(uuid, server_staff_role[])` → checks current authenticated user's staff role on a server.
+- `can_read_hero(uuid)` → hero read helper.
+- `can_manage_hero(uuid)` → hero management helper.
+- `estate_matches_hero_server(uuid, uuid)` → validates estate/hero server relationship.
+- `is_admin()` → legacy/compatibility helper using older role naming; prefer `has_global_role(array['admin'])` in new SQL/RPC.
+
+### Character Points helpers / operations
+
+- `get_hero_active_character_point_locks(uuid)` → active CP lock sum for hero.
+- `get_hero_available_character_points(uuid)` → spendable CP after active locks.
 - `apply_character_points_delta(uuid, integer, character_point_ledger_reason, text, uuid, text, uuid)` → applies CP delta and writes `character_point_ledger`.
+- `create_character_point_lock_for_trade(uuid, uuid, integer, uuid, text)` → creates CP lock for direct trade.
+- `create_character_point_lock_for_auction_bid(uuid, uuid, integer, uuid, uuid, text)` → creates CP lock for auction bid.
+- `create_character_point_lock_for_auction_buy_now(uuid, uuid, integer, uuid, text)` → creates CP lock for auction buy-now.
 
-Player direct trade:
+### Player direct trade RPC / operations
 
 - `create_player_direct_trade_offer(uuid, uuid, integer, uuid[], text)` → creates direct trade offer and locks creator-side CP/items.
 - `respond_player_direct_trade_offer(uuid, integer, uuid[], text)` → target response to direct trade offer.
 - `confirm_player_direct_trade_offer(uuid, text)` → creator confirmation and transactional completion.
 - `cancel_player_direct_trade_offer(uuid, text)` → cancels pending direct trade offer.
 - `reject_player_direct_trade_offer(uuid, text)` → rejects pending direct trade offer.
+- `release_trade_offer_character_point_locks(uuid, text)` → releases active CP locks for trade offer.
+- `unlock_trade_offer_items(uuid)` → unlocks trade-locked items for offer.
 
-Player auctions:
+### Player auction RPC / operations
 
 - `create_player_auction_listing(uuid, uuid, player_auction_mode, integer, integer, text)` → creates one-item auction listing and locks item.
 - `place_player_auction_bid(uuid, uuid, integer)` → places auction bid and locks bidder CP.
 - `buy_now_player_auction(uuid, uuid, text)` → completes buy-now purchase.
 - `close_player_auction_listing(uuid, text)` → closes ended auction, expires if no bids or completes sale.
 - `cancel_player_auction_listing(uuid, text)` → cancels active auction where allowed.
+- `finalize_player_auction_sale(uuid, uuid, integer, text, text, uuid)` → final auction transfer operation.
+- `release_auction_character_point_locks(uuid, text)` → releases active auction CP locks.
+- `unlock_auction_item(uuid)` → unlocks auction-locked item.
 
-Anti-abuse / player report:
+### Trade slot / availability helpers
 
-- `create_player_abuse_report(uuid, text, text, text, uuid, uuid, uuid, uuid, text)` → creates player abuse report and linked case.
-
-Audit:
-
-- `write_audit_log(text, text, uuid, uuid, uuid, uuid, uuid, audit_severity, text, jsonb, jsonb, jsonb, text)` → writes audit log after validating dictionary keys and actor constraints.
-
-### Read/availability helper functions
-
-These are safe helper contracts used by SQL/RPC, RLS or read services.
-
-Access / identity:
-
-- `has_global_role(text[])` → checks current authenticated user's global role keys.
-- `user_has_global_role(uuid, text[])` → checks a specific user's global role keys.
-- `has_server_staff_role(uuid, server_staff_role[])` → checks current authenticated user's staff role on a server.
-- `can_manage_config_governance(uuid)` → checks whether current user may manage config governance globally or for a server.
-- `can_read_hero(uuid)` → hero read helper.
-- `can_manage_hero(uuid)` → hero management helper.
-- `estate_matches_hero_server(uuid, uuid)` → validates estate/hero server relationship.
-- `is_admin()` → legacy/compatibility helper using older role naming; prefer `has_global_role(array['admin'])` in new SQL/RPC.
-
-Server config / config value resolution:
-
-- `get_server_config_integer(uuid, text, integer)` → reads a server config value by key with integer fallback.
-- `get_server_config_boolean(uuid, text, boolean)` → reads a server config value by key with boolean fallback.
-- `get_current_global_config_value_json(uuid)` → returns current active global config value JSON for a definition.
-- `get_current_global_effective_config_value_json(uuid)` → returns global effective JSON, usually active global value or definition default.
-- `get_current_server_effective_config_value_json(uuid, uuid)` → returns selected-server effective JSON, usually server value/global/default according to governance rules.
-- `config_json_values_match(jsonb, jsonb)` → null-safe JSONB equality helper used by apply conflict checks.
-- `server_config_value_source_for_scope(config_governance_scope)` → maps governance scope to `server_config_value_source` for server value apply.
-
-Character Points / trade slots:
-
-- `get_hero_active_character_point_locks(uuid)` → active CP lock sum for hero.
-- `get_hero_available_character_points(uuid)` → spendable CP after active locks.
 - `get_hero_active_trade_slot_count(uuid)` → active direct-trade + auction slot count.
 - `get_hero_trade_slot_limit(uuid)` → current trade slot limit; transitional fallback uses server config `trade_active_offer_limit_fallback`.
 - `hero_has_free_trade_slot(uuid)` → checks if hero has a free active trade slot.
 - `hero_can_use_player_trade(uuid)` → checks whether hero can use player trade/auctions; transitional fallback uses trade slot config.
 
-Buildings / districts:
+### Anti-abuse RPC / operations
 
-- `is_building_available_in_district(uuid, text)` → checks district availability by comparing district ranks.
-- `get_building_max_level_for_district(uuid, text)` → resolves district-specific cap override with fallback to `buildings.max_level`.
-
-Anti-abuse grouping:
-
-- `build_anti_abuse_hero_pair_grouping_key(uuid, uuid, uuid)` → deterministic same-pair grouping key.
-
-### Internal operation/helper functions
-
-These are mostly called by public RPCs or triggers. Frontend should not treat them as normal UI-call contracts unless a task explicitly designs that.
-
-Config governance internals:
-
-- `validate_config_change_set_entries_for_d5(uuid)` → validates D5-supported entries before mutation.
-- `apply_global_config_value_change_entry(config_change_entries, uuid)` → applies one `global_value_change` entry.
-- `apply_server_config_value_change_entry(config_change_entries, uuid)` → applies one `server_value_change` entry.
-- `try_write_config_change_set_audit(text, uuid, text, jsonb, jsonb, jsonb)` → best-effort config change-set audit writer.
-
-Character Point lock internals:
-
-- `create_character_point_lock_for_trade(uuid, uuid, integer, uuid, text)` → creates CP lock for direct trade.
-- `create_character_point_lock_for_auction_bid(uuid, uuid, integer, uuid, uuid, text)` → creates CP lock for auction bid.
-- `create_character_point_lock_for_auction_buy_now(uuid, uuid, integer, uuid, text)` → creates CP lock for auction buy-now.
-
-Direct trade internals:
-
-- `release_trade_offer_character_point_locks(uuid, text)` → releases active CP locks for trade offer.
-- `unlock_trade_offer_items(uuid)` → unlocks trade-locked items for offer.
-
-Auction internals:
-
-- `finalize_player_auction_sale(uuid, uuid, integer, text, text, uuid)` → final auction transfer operation.
-- `release_auction_character_point_locks(uuid, text)` → releases active auction CP locks.
-- `unlock_auction_item(uuid)` → unlocks auction-locked item.
-
-Anti-abuse internals:
-
+- `create_player_abuse_report(uuid, text, text, text, uuid, uuid, uuid, uuid, text)` → creates player abuse report and linked case.
 - `create_or_link_anti_abuse_case_for_signal(uuid)` → creates or links case for signal grouping key.
 - `add_anti_abuse_case_participant_if_missing(uuid, uuid, uuid, text, text, text, uuid)` → idempotent case participant insert.
 - `refresh_anti_abuse_case_signal_stats(uuid)` → refreshes case signal count and last signal timestamp.
 - `generate_trade_transaction_anti_abuse_signals(uuid)` → generates trade/auction-related anti-abuse signals from completed transaction.
 - `insert_trade_transaction_anti_abuse_signal(uuid, text, text, text, text, uuid, uuid, text, integer, numeric, jsonb)` → inserts anti-abuse signal for trade transaction.
+- `build_anti_abuse_hero_pair_grouping_key(uuid, uuid, uuid)` → deterministic same-pair grouping key.
 
-Armory/equipment defaulting:
+### Audit RPC / operations
 
-- `ensure_default_hero_armory_shelf()` → creates default shelf position `0` for newly created heroes.
+- `write_audit_log(text, text, uuid, uuid, uuid, uuid, uuid, audit_severity, text, jsonb, jsonb, jsonb, text)` → writes audit log after validating dictionary keys and actor constraints.
+
+Audit note:
+- Existing audit foundation is present.
+- Config governance apply/cancel audit integration is not yet implemented as a dedicated workflow.
+
+### Building / district helpers
+
+- `is_building_available_in_district(uuid, text)` → checks district availability by comparing district ranks.
+- `get_building_max_level_for_district(uuid, text)` → resolves district-specific cap override with fallback to `buildings.max_level`.
 
 ### Trigger / validation functions
 
-These are not frontend RPC contracts. They are database trigger helpers and validation functions.
-
-Generic/audit/dictionary:
+These are not frontend RPC contracts. They are database trigger helpers and validation functions:
 
 - `rls_auto_enable()`
 - `audit_dictionary_change()`
 - `audit_set_updated_at()`
 - `prevent_audit_dictionary_key_update()`
 - `prevent_dictionary_key_update()`
-
-Anti-abuse:
-
 - `set_anti_abuse_dictionary_updated_at()`
 - `set_anti_abuse_sanction_updated_at()`
 - `set_anti_abuse_updated_at()`
+- `set_items_updated_at()`
 - `set_player_relationship_updated_at()`
 - `anti_abuse_case_signal_stats_trigger()`
 - `trigger_create_or_link_anti_abuse_case_for_signal()`
 - `trigger_generate_trade_transaction_anti_abuse_signals()`
-- `validate_anti_abuse_sanction()`
-- `validate_anti_abuse_sanction_item()`
-- `validate_character_point_penalty()`
-
-Identity/server ownership:
-
 - `enforce_hero_server_policy()`
 - `enforce_item_server_matches_hero()`
 - `enforce_character_point_ledger_server()`
 - `enforce_character_point_lock_server()`
-
-Items/equipment/Armory:
-
-- `set_items_updated_at()`
-- `set_hero_armory_shelves_updated_at()`
-- `enforce_item_generation_layer_kinds()`
-- `enforce_hero_equipment_item_valid()`
-- `clear_hero_equipment_for_item_lifecycle()`
-
-Building/trade/auction validation:
-
 - `enforce_building_district_cap_is_available()`
 - `enforce_player_trade_offer_server()`
 - `enforce_player_trade_offer_item_valid()`
 - `enforce_player_auction_listing_valid()`
 - `enforce_player_auction_bid_valid()`
+- `validate_anti_abuse_sanction()`
+- `validate_anti_abuse_sanction_item()`
+- `validate_character_point_penalty()`
 
-## Important RPC/function caveats
+Documentation debt:
+- Most live DB functions currently have no `COMMENT ON FUNCTION` descriptions.
+- Add comments for critical RPCs in future migrations so function inventory can become self-documenting.
 
-- `can_manage_config_governance(uuid)` exists and is used by config workflow RPCs. Do not duplicate its role/staff logic in new config SQL.
-- `try_write_config_change_set_audit(...)` exists; config apply/cancel already attempts audit through it where dictionaries are available.
-- `get_current_*_config_value_json(...)`, `config_json_values_match(...)`, and `server_config_value_source_for_scope(...)` exist for DB-side config conflict/effective-value handling. Do not reimplement these ad hoc in apply workflows.
-- `enforce_hero_equipment_item_valid()` validates only broad compatibility. Hand-pair logic and requirement checks still need domain/RPC design.
-- `clear_hero_equipment_for_item_lifecycle()` removes equipped rows when item ownership changes or item is scrapped. Do not assume equipped rows survive item transfer/scrap.
-- `enforce_item_generation_layer_kinds()` validates prefix/suffix affix kinds on `items`.
-- `ensure_default_hero_armory_shelf()` ensures new heroes receive default Armory shelf position 0.
-
-## Known missing/not-yet-created DB contracts
-
-These must not be invented inside frontend tasks:
-
-- No equip/unequip gameplay RPC yet.
-- No full relational `entity_field_change` apply workflow yet for config governance.
-- No real building upgrade execution RPC yet.
-- No estate relocation/claim execution RPC yet.
-- No PvE exploration/trial runtime RPC yet.
-- No public report/snapshot schema/runtime yet.
-- No full notification system yet.
-- No dedicated player trade/auction frontend surfaces yet, even though DB/RPC foundation exists.
-
-## Documentation debt
-
-- The function/RPC inventory should be refreshed whenever migrations add/remove public functions.
-- Many live DB functions have no `COMMENT ON FUNCTION` descriptions. Add comments for critical RPCs in future migrations so function inventory can become self-documenting.
-- Keep `database-current.md`, `current-decisions.md`, and `project-context.md` aligned when schema/semantics change.
 <!-- HANDOFF_OVERRIDE_END -->
 
 # Mythborne — Database Current Notes
@@ -995,7 +714,7 @@ The current refactor introduces dictionary-driven bonus semantics and central `e
 Current bonus dictionaries:
 
 - `bonus_types`
-- `bonus_scopes`
+- `bonus_contexts`
 - `bonus_target_categories`
 - `bonus_targets`
 
@@ -1015,7 +734,7 @@ New semantic columns include:
 - `label`
 - `type_key`
 - `target_key`
-- `scope_key`
+- `context_key`
 - `level_interval`
 - `formula_id`
 - `formula_target_id`
@@ -1048,7 +767,7 @@ Important fields:
 - `formula_id_override`
 - `formula_target_id_override`
 - `scaling_stat_key_override`
-- `scope_key_override`
+- `context_key_override`
 - `quality_scales_value`
 - `quality_scales_level_interval`
 - `params_json`
@@ -1129,9 +848,9 @@ Known seeded bonus types include:
 - `requirement_flat_reduction`
 - `requirement_percent_reduction`
 
-## Bonus scopes
+## Bonus contexts
 
-Known seeded bonus scopes include:
+Known seeded bonus contexts include:
 
 - `global`
 - `combat`
@@ -1783,7 +1502,7 @@ Current code should migrate toward:
 
 - `type_key`
 - `target_key`
-- `scope_key`
+- `context_key`
 - `entity_bonuses`
 
 ## Old bonus relation tables
@@ -1836,277 +1555,3 @@ The following foundations were designed and rollback-tested in SQL editor:
 - bonus dictionary/entity bonus foundation and legacy bonus backfill.
 
 Codex must regenerate database types after schema changes before implementing affected frontend/domain code.
-
----
-
-# Update 2026-04-27 — item generation base types, equipment state and Armory shelves
-
-This section documents the item-generation/equipment foundation migration verified after execution on 2026-04-27. Codex must treat the tables, functions and triggers below as existing database contracts. Do not invent replacement table/RPC/function names for these concepts.
-
-## Item generation base type dictionary
-
-### `item_generation_base_types`
-
-Purpose:
-
-- dictionary of base item types used by the item generation system;
-- replaces the old placeholder `item_generation_bases.slot` semantics;
-- belongs to the `item_generation_*` namespace.
-
-Important columns:
-
-- `id uuid`
-- `key text unique`
-- `label text`
-- `description text`
-- `equipment_slot_group text`
-- `hand_usage text`
-- `sort_order integer`
-- `is_active boolean`
-- `created_at timestamptz`
-- `updated_at timestamptz`
-
-Current seeded keys:
-
-- `one_handed_weapon`
-- `two_handed_weapon`
-- `ranged_weapon`
-- `shield`
-- `helmet`
-- `armor`
-- `pants`
-- `boots`
-- `amulet`
-- `ring`
-
-Current `equipment_slot_group` values:
-
-- `hand`
-- `armor`
-- `jewelry`
-
-Current `hand_usage` values:
-
-- `none`
-- `one_hand`
-- `two_hands`
-- `off_hand_only`
-
-Rules:
-
-- do not add new wearable/base item type keys without explicit design approval;
-- do not reintroduce generic `weapon`, `trinket`, `armor`, `shield` placeholder categories as the source of truth;
-- `item_generation_bases.base_type_key` is now the source of truth for the base item type.
-
-### `item_generation_base_type_targets`
-
-Purpose:
-
-- validation/config table declaring which native bonus targets a concrete base item type requires or suggests;
-- drives admin UI/form validation without hardcoding required fields in Angular;
-- concrete values for a specific base item live in `entity_bonuses` with `entity_type = item_generation_base`.
-
-Important columns:
-
-- `id uuid`
-- `base_type_key text` → `item_generation_base_types.key`
-- `bonus_target_key text` → `bonus_targets.key`
-- `is_required boolean`
-- `required_group_key text`
-- `min_required_in_group integer`
-- `default_value numeric`
-- `min_value numeric`
-- `max_value numeric`
-- `helper_text text`
-- `sort_order integer`
-- `created_at timestamptz`
-- `updated_at timestamptz`
-
-Important semantics:
-
-- `is_required = true` without `required_group_key` means every concrete base item of that type should have an active `entity_bonuses` row resolving to that target.
-- `required_group_key` supports alternatives such as `ring_identity`, where ring requires at least one target from the group.
-- `is_required = false` means optional/suggested native target.
-
-Current target rules:
-
-- `one_handed_weapon` requires `min_damage`, `max_damage`, `attack_count`, `critical_chance`, `critical_damage`.
-  - defaults: `attack_count = 1`, `critical_chance = 0`, `critical_damage = 0`.
-- `two_handed_weapon` requires `min_damage`, `max_damage`, `attack_count`, `critical_chance`, `critical_damage`.
-  - defaults/minima: `attack_count = 1`, `critical_chance > 0`, `critical_damage > 0`.
-- `ranged_weapon` requires `min_damage`, `max_damage`, `attack_count`, `critical_chance`, `critical_damage`.
-  - defaults: `attack_count = 2`, `critical_chance = 0`, `critical_damage = 0`.
-- `shield` requires `defense`; optional: `evasion_chance`.
-- `helmet` requires `defense`.
-- `armor` requires `defense`.
-- `pants` requires `defense`; optional: `dexterity`, `evasion_chance`.
-- `boots` requires `defense`; optional: `agility`, `evasion_chance`.
-- `amulet` requires `charisma`.
-- `ring` requires at least one target from group `ring_identity`: `charisma` or `cunning`.
-
-## `item_generation_bases`
-
-Current source of truth columns include:
-
-- `id`
-- `key`
-- `name`
-- `base_type_key`
-- `base_value`
-- `description`
-- `created_at`
-
-Legacy/transitional column:
-
-- `slot` exists but is deprecated and currently not the semantic source of truth.
-
-Rules:
-
-- `base_type_key` references `item_generation_base_types(key)` and is not nullable for current rows;
-- old prototype seed rows were intentionally cleared and reseeded under the new model;
-- concrete native values such as damage, defense, attack count and critical modifiers are stored through `entity_bonuses`, not as special columns on `item_generation_bases`.
-
-Current seeded base items:
-
-- one-handed: `dagger`, `sword`, `kopis`, `mace`;
-- two-handed: `spear`, `halberd`, `war_hammer`;
-- ranged: `sling`, `javelin`, `throwing_knife`, `throwing_axe`, `short_bow`, `long_bow`;
-- shields: `buckler`, `aspis`, `tower_shield`;
-- helmets: `bronze_helmet`, `corinthian_helmet`;
-- armor: `leather_vest`, `bronze_cuirass`;
-- pants: `linen_greaves`, `bronze_greaves`;
-- boots: `leather_sandals`, `reinforced_sandals`;
-- amulets: `simple_amulet`, `golden_amulet`;
-- rings: `bronze_ring`, `signet_ring`.
-
-## Generated item layer columns on `items`
-
-Current generated item identity/lifecycle columns include:
-
-- `generated_at timestamptz not null default now()` — generation timestamp; Armory ordering uses generation time, not acquisition/transfer time.
-- `generation_quality_key text` → `item_generation_qualities(key)`; nullable only for legacy rows.
-- `generation_base_id uuid` → `item_generation_bases(id)`; nullable only for legacy rows.
-- `prefix_affix_id uuid` → `item_generation_affixes(id)`; must point to `kind = prefix` when present.
-- `suffix_affix_id uuid` → `item_generation_affixes(id)`; must point to `kind = suffix` when present.
-- `drachma_value integer` — final generated item value in drachmas; nullable only for legacy rows.
-- `armory_shelf_position integer not null default 0` — item-owned Armory shelf position.
-
-Rules:
-
-- `armory_shelf_position` transfers with item ownership;
-- shelf names are hero-local and stored in `hero_armory_shelves`;
-- higher `armory_shelf_position` means higher visibility priority;
-- generated item layers remain `quality + optional prefix + base item + optional suffix`.
-
-## `hero_equipment`
-
-Purpose:
-
-- current equipped item relation;
-- equipment state is separate from `items.status`;
-- do not add an `equipped` item status.
-
-Columns:
-
-- `hero_id uuid` → `hero(id)` on delete cascade
-- `slot_key text`
-- `item_id uuid` → `items(id)` on delete cascade
-- `equipped_at timestamptz`
-
-Constraints:
-
-- primary key: `(hero_id, slot_key)`;
-- unique: `(item_id)`;
-- allowed `slot_key` values:
-  - `main_hand`
-  - `off_hand`
-  - `helmet`
-  - `armor`
-  - `pants`
-  - `boots`
-  - `amulet`
-  - `ring_1`
-  - `ring_2`
-
-Rules:
-
-- one hero can have at most one item per slot;
-- one item can be equipped at most once;
-- item must belong to the same hero;
-- `scrapped` items cannot be equipped;
-- `locked_trade` and `locked_auction` items may remain equipped while still owned by the hero;
-- broad slot compatibility is validated by DB trigger;
-- hand-pair logic, requirement checks, single/bulk equip and saved loadout behavior remain domain/RPC responsibilities.
-
-## `hero_armory_shelves`
-
-Purpose:
-
-- hero-specific names for Armory shelf positions;
-- item rows store only `armory_shelf_position`, not FK to a hero shelf row;
-- this allows shelf position to transfer with the item while each hero keeps their own shelf names.
-
-Columns:
-
-- `id uuid`
-- `hero_id uuid` → `hero(id)` on delete cascade
-- `position integer`
-- `name text`
-- `created_at timestamptz`
-- `updated_at timestamptz`
-
-Constraints:
-
-- `unique(hero_id, position)`;
-- `position >= 0`;
-- trimmed `name` length between 1 and 30 characters.
-
-Rules:
-
-- every hero receives default shelf position `0` named `Default`;
-- player may rename shelves, for example for trials, attack, defense, selling or scrap planning;
-- item sorting may combine equipped/listed priority, `armory_shelf_position desc`, and `generated_at asc`.
-
-## Bonus targets added/confirmed for equipment
-
-Confirmed relevant targets:
-
-- `min_damage`
-- `max_damage`
-- `damage`
-- `attack_count`
-- `critical_chance`
-- `critical_damage`
-- `evasion_chance`
-- `defense`
-- `dexterity`
-- `agility`
-- `cunning`
-- `charisma`
-- `visible_item_capacity`
-
-Rules:
-
-- `visible_item_capacity` remains the technical target for Armory visible/directly manageable item capacity;
-- do not create duplicate target `armory_visible_capacity`;
-- `attack_count` and `critical_damage` are combat bonus targets, and their final projection is handled by combat formulas/resolvers.
-
-## Equipment / item generation trigger functions
-
-The following DB functions exist and must be documented for Codex:
-
-- `enforce_item_generation_layer_kinds()` — validates that `items.prefix_affix_id` points to an affix with `kind = prefix` and `items.suffix_affix_id` points to `kind = suffix`.
-- `enforce_hero_equipment_item_valid()` — validates hero equipment rows: item ownership, non-scrapped status, generated base/type presence, and broad slot compatibility.
-- `clear_hero_equipment_for_item_lifecycle()` — clears `hero_equipment` rows when item owner changes or item becomes `scrapped`; item deletion is covered by FK cascade.
-- `set_hero_armory_shelves_updated_at()` — maintains `updated_at` on `hero_armory_shelves`.
-- `ensure_default_hero_armory_shelf()` — creates default shelf position 0 for newly created heroes.
-
-Associated triggers:
-
-- `items_enforce_generation_layer_kinds` on `items` before insert/update of prefix/suffix affix columns.
-- `hero_equipment_enforce_item_valid` on `hero_equipment` before insert/update.
-- `items_clear_hero_equipment_for_lifecycle` on `items` after update of `hero_id` or `status`.
-- `hero_armory_shelves_set_updated_at` on `hero_armory_shelves` before update.
-- `hero_ensure_default_armory_shelf` on `hero` after insert.
-
-No equip/unequip gameplay RPC has been created yet. Codex must not invent one without an approved conceptual/database migration.

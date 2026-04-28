@@ -23,6 +23,14 @@ export enum EffectiveConfigValueSource {
   None = 'none',
 }
 
+export enum ConfigGovernanceScopeKey {
+  ProductGlobal = 'product_global',
+  GlobalBalance = 'global_balance',
+  ServerLaunch = 'server_launch',
+  LiveServer = 'live_server',
+  TestOverride = 'test_override',
+}
+
 export enum ConfigChangeSetOrderColumn {
   UpdatedAt = 'updated_at',
   CreatedAt = 'created_at',

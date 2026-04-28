@@ -114,7 +114,6 @@ export interface CreateConfigChangeSetDraftInput {
   changelogVisibility: ConfigChangeVisibility;
   changelogTitle: string | null;
   changelogBody: string | null;
-  requestedBy: string | null;
 }
 
 export interface CreateConfigValueChangeEntryInput {

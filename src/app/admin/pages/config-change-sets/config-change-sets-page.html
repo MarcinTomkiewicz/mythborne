@@ -33,20 +33,12 @@
         <h3 class="mg-section__title mg-section__title--xs mb-0">Create change set</h3>
       </div>
 
-      @if (editorError()) {
-        <p class="muted-text mb-md">{{ editorError() }}</p>
+      @if (editorError(); as error) {
+        <p-message severity="error" class="mb-md" [text]="error" />
       }
 
-      @if (editorMessage()) {
-        <p class="muted-text mb-md">{{ editorMessage() }}</p>
-      }
-
-      @if (workflowError()) {
-        <p class="muted-text mb-md">{{ workflowError() }}</p>
-      }
-
-      @if (workflowMessage()) {
-        <p class="muted-text mb-md">{{ workflowMessage() }}</p>
+      @if (workflowError(); as error) {
+        <p-message severity="error" class="mb-md" [text]="error" />
       }
 
       <form [formGroup]="draftForm" class="mg-surface-card p-md flex-col gap-md" (ngSubmit)="createDraftChangeSet()">
@@ -323,21 +315,22 @@
                   This draft editor supports integer, decimal, boolean, string and JSON values.
                 </p>
 
+                @if (valueTargetMessage(); as message) {
+                  <p-message
+                    [severity]="canSubmitConfigValueEntry() ? 'info' : 'warn'"
+                    [text]="message"
+                  />
+                }
+
                 @if (entryDefinitionScopeLabel()) {
                   <p class="muted-text mb-0">{{ entryDefinitionScopeLabel() }}</p>
                 }
 
                 <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
-                  <label class="flex-col gap-sm">
+                  <div class="flex-col gap-sm">
                     <span class="muted-text">Target</span>
-                    <p-select
-                      class="w-100"
-                      formControlName="valueTarget"
-                      [options]="valueTargetOptions"
-                      optionLabel="label"
-                      optionValue="value"
-                    />
-                  </label>
+                    <span class="mg-tag">{{ entryForm.controls.valueTarget.value }}</span>
+                  </div>
 
                   <label class="flex-col gap-sm">
                     <span class="muted-text">New value</span>
@@ -357,7 +350,7 @@
                   <p-button
                     type="submit"
                     label="Add entry"
-                    [disabled]="entryForm.invalid || isSavingEntry()"
+                    [disabled]="!canSubmitConfigValueEntry() || isSavingEntry()"
                   />
                 </div>
               </form>

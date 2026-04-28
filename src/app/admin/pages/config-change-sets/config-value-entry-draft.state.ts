@@ -11,14 +11,15 @@ import {
   ConfigChangeSet,
   ConfigDefinition,
 } from '../../../core/types/config-governance.types';
-import { toSelectOptions } from '../../../core/utils/collection';
 import {
   isConfigDefinitionSupportedInValueDraftEditor,
   parseConfigValueInput,
+  valueTargetForConfigDefinition,
 } from '../../../core/utils/config-governance';
 import { runRequest } from '../../../core/utils/request-state';
 import { ConfigChangeSets } from '../../../core/services/config/config-change-sets';
 import { ActiveServer } from '../../../core/services/server/active-server';
+import { ToastService } from '../../../core/services/ui/toast';
 import { ConfigEffectiveValuesState } from './config-effective-values.state';
 
 @Injectable()
@@ -27,15 +28,13 @@ export class ConfigValueEntryDraftState {
   private readonly configChangeSets = inject(ConfigChangeSets);
   private readonly effectiveValues = inject(ConfigEffectiveValuesState);
   private readonly formFactory = inject(ConfigChangeSetsFormFactory);
+  private readonly toast = inject(ToastService);
 
   readonly form = this.formFactory.createEntryDraftForm();
   readonly definitions = signal<ConfigDefinition[]>([]);
   readonly isSaving = signal(false);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
-  readonly valueTargetOptions = toSelectOptions(
-    Object.values(ConfigChangeValueTarget),
-  );
   readonly draft = toSignal(
     this.form.valueChanges.pipe(
       map(() => this.form.getRawValue()),
@@ -66,6 +65,39 @@ export class ConfigValueEntryDraftState {
         value: definition.id,
       })),
   );
+  readonly canSubmitEntry = computed(() => {
+    const definition = this.selectedDefinition();
+
+    if (!definition || this.form.invalid) {
+      return false;
+    }
+
+    return (
+      valueTargetForConfigDefinition(definition) === ConfigChangeValueTarget.Global ||
+      !!this.activeServer.selectedServer()
+    );
+  });
+  readonly valueTargetMessage = computed(() => {
+    const definition = this.selectedDefinition();
+
+    if (!definition) {
+      return null;
+    }
+
+    if (valueTargetForConfigDefinition(definition) === ConfigChangeValueTarget.Global) {
+      return 'This config is governed globally; the entry will change the global value.';
+    }
+
+    return this.activeServer.selectedServer()
+      ? 'This config is governed per server; the entry will change the selected server value.'
+      : 'Select an active server before adding this server-scoped config change.';
+  });
+
+  constructor() {
+    this.form.controls.configDefinitionId.valueChanges.subscribe(() =>
+      this.syncValueTargetWithDefinition(),
+    );
+  }
 
   setDefinitions(definitions: readonly ConfigDefinition[]): void {
     this.definitions.set([...definitions]);
@@ -104,12 +136,14 @@ export class ConfigValueEntryDraftState {
     }
 
     const draft = this.form.getRawValue();
-    const serverId = this.resolveServerId(draft.valueTarget);
+    const valueTarget = valueTargetForConfigDefinition(definition);
+    const serverId = this.resolveServerId(valueTarget);
 
-    if (draft.valueTarget === ConfigChangeValueTarget.Server && !serverId) {
-      this.error.set(
-        'Select an active server before adding a server value change.',
-      );
+    if (valueTarget === ConfigChangeValueTarget.Server && !serverId) {
+      const message = 'Select an active server before adding a server value change.';
+
+      this.error.set(message);
+      this.toast.show('error', 'Cannot add config entry', message);
       return;
     }
 
@@ -123,7 +157,7 @@ export class ConfigValueEntryDraftState {
       request$: this.configChangeSets.createConfigValueChangeEntry({
         changeSetId: changeSet.id,
         changeKind:
-          draft.valueTarget === ConfigChangeValueTarget.Server
+          valueTarget === ConfigChangeValueTarget.Server
             ? ConfigChangeKindKey.ServerValueChange
             : ConfigChangeKindKey.GlobalValueChange,
         definition,
@@ -138,8 +172,12 @@ export class ConfigValueEntryDraftState {
       message: this.message,
       successMessage: 'Draft change entry added.',
       errorMessage: 'Failed to add draft change entry.',
+      onSuccessMessage: (message) =>
+        this.toast.show('success', 'Entry added', message),
+      onError: (message) =>
+        this.toast.show('error', 'Cannot add config entry', message),
       onSuccess: (entries) => {
-        this.form.patchValue({ newValue: '' });
+        this.resetNewValueControl();
         onEntriesLoaded(entries);
       },
     });
@@ -163,5 +201,30 @@ export class ConfigValueEntryDraftState {
     return target === ConfigChangeValueTarget.Global
       ? null
       : (this.activeServer.selectedServer()?.id ?? null);
+  }
+
+  private syncValueTargetWithDefinition(): void {
+    const definitionId = this.form.controls.configDefinitionId.value;
+    const definition =
+      this.definitions().find((entry) => entry.id === definitionId) ?? null;
+
+    if (!definition) {
+      return;
+    }
+
+    const valueTarget = valueTargetForConfigDefinition(definition);
+
+    if (this.form.controls.valueTarget.value !== valueTarget) {
+      this.form.controls.valueTarget.setValue(valueTarget, { emitEvent: false });
+    }
+  }
+
+  private resetNewValueControl(): void {
+    const control = this.form.controls.newValue;
+
+    control.reset('');
+    control.markAsPristine();
+    control.markAsUntouched();
+    control.updateValueAndValidity();
   }
 }

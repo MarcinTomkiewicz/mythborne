@@ -1,4 +1,6 @@
 import {
+  ConfigChangeValueTarget,
+  ConfigGovernanceScopeKey,
   ConfigManagedEntityTypeKey,
   ConfigValueTypeKey,
   EffectiveConfigValueSource,
@@ -121,6 +123,23 @@ export function isConfigDefinitionSupportedInValueDraftEditor(
     isValueConfig &&
     isConfigValueTypeSupportedInDraftEditor(definition.valueType)
   );
+}
+
+export function isGlobalConfigGovernanceScope(
+  definition: Pick<ConfigDefinition, 'governanceScope'>,
+): boolean {
+  return (
+    definition.governanceScope === ConfigGovernanceScopeKey.ProductGlobal ||
+    definition.governanceScope === ConfigGovernanceScopeKey.GlobalBalance
+  );
+}
+
+export function valueTargetForConfigDefinition(
+  definition: Pick<ConfigDefinition, 'governanceScope'>,
+): ConfigChangeValueTarget {
+  return isGlobalConfigGovernanceScope(definition)
+    ? ConfigChangeValueTarget.Global
+    : ConfigChangeValueTarget.Server;
 }
 
 export function sourceLabelForEffectiveConfigValue(
