@@ -874,6 +874,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task U0-I5 — Staff management read models and services
 
+**Status:** Done / confirmed 2026-04-28.
+
 **Goal:** Add typed read/domain layer for staff and role management before building the UI.
 
 **Scope:**
@@ -2242,8 +2244,8 @@ Use this order after the current audit/spec cleanup instead of starting more aud
 2. U0-I2 — completed / confirmed: staff gameplay boundary implementation.
 3. U0-I3 — completed / confirmed: admin route guard and sidebar boundary.
 4. U0-I4 — completed / confirmed: admin dashboard/cards/tag-link filtering.
-5. U0-I5 — current next task: staff management read models and services.
-6. U0-I6 — staff management UI foundation.
+5. U0-I5 — completed / confirmed: staff management read models and services.
+6. U0-I6 — current next task: staff management UI foundation.
 7. U0-I7 — moderator scope assignment UI.
 8. U0-I8 — moderation actions UI foundation.
 9. U0-I9 — moderation history and disqualification panels.

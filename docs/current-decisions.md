@@ -1696,3 +1696,171 @@ Codex must:
 - model `hero_equipment` as the equipment source of truth;
 - model `hero_armory_shelves` and `items.armory_shelf_position` for Armory organization;
 - not invent equip/unequip RPC names until the conceptual/database track defines them.
+
+---
+
+# Update 2026-04-28 — U0 sanctions, staff access and moderation read contracts
+
+## U0 sanction/access database completion
+
+The U0 sanction/access database layer is now treated as contract-complete for Codex-facing frontend work after DB1–DB6.
+
+Implemented scope:
+
+- runtime enforcement for `trade_restriction` and `auction_restriction`;
+- central normal gameplay access helpers;
+- staff gameplay block on normal standard servers;
+- `server_suspension` / `server_ban` synchronization into `server_memberships` runtime state;
+- explicit G5 anti-abuse permission helper contracts;
+- scope-aware moderation-action read model;
+- removal of legacy combined moderation-history RPCs.
+
+Behavioral rollback tests were intentionally not completed in this conversation. Future behavioral tests should use a proper sandbox/harness and should not be treated as missing DB contract.
+
+## Moderation actions vs runtime access state
+
+`moderation_actions` is the canonical server-scoped historical/decision record for moderation actions.
+
+`server_memberships.status` is the fast runtime access state used by gameplay access logic.
+
+For `server_suspension` and `server_ban`:
+
+- active moderation actions remain in `moderation_actions`;
+- membership runtime state is synchronized into `server_memberships.status`;
+- `server_memberships.moderation_block_action_id` links the membership block back to the moderation action;
+- `server_memberships.moderation_block_reason` stores the moderation reason copied for runtime/admin visibility;
+- `server_memberships.moderation_block_expires_at` stores the copied expiry where relevant;
+- `server_memberships.moderation_block_synced_at` records the last sync.
+
+The sync intentionally avoids clobbering manual/non-moderation membership blocks. It restores to `active` only when the current blocked state was driven by a moderation-sync action.
+
+## Normal gameplay access contract
+
+Canonical helper/RPC contracts:
+
+- `hero_is_staff_on_server(p_hero_id uuid)`
+- `hero_is_staff_gameplay_blocked(p_hero_id uuid)`
+- `hero_can_use_normal_gameplay(p_hero_id uuid)`
+- `get_hero_normal_gameplay_block_reason(p_hero_id uuid)`
+- `assert_hero_can_use_normal_gameplay(p_hero_id uuid, p_operation text)`
+
+Rules:
+
+- normal gameplay is allowed only for playable server statuses currently accepted by helper logic (`live`, `testing`);
+- `server_memberships.status in ('suspended', 'banned')` blocks normal gameplay;
+- active `server_suspension` and `server_ban` moderation actions block normal gameplay;
+- staff assigned on the same normal `standard` server is blocked from normal player gameplay;
+- `sandbox` and `testing` contexts are test exceptions for staff gameplay;
+- a global admin/operator/tester without selected-server staff assignment is not automatically blocked from normal player gameplay on a standard server.
+
+Future persistent gameplay RPCs should call `assert_hero_can_use_normal_gameplay(...)` before mutating normal gameplay state.
+
+## Trade and auction restriction enforcement
+
+Canonical helper/RPC contracts:
+
+- `hero_has_active_moderation_action(p_hero_id uuid, p_action_type_key text)`
+- `hero_has_active_trade_restriction(p_hero_id uuid)`
+- `hero_has_active_auction_restriction(p_hero_id uuid)`
+- `hero_has_active_server_play_block(p_hero_id uuid)`
+- `assert_hero_can_use_player_trade_runtime(p_hero_id uuid, p_operation text)`
+- `assert_hero_can_use_player_auction_runtime(p_hero_id uuid, p_operation text)`
+
+Runtime triggers enforce these boundaries on the existing trade/auction tables:
+
+- `trg_enforce_player_trade_runtime_restrictions` on `player_trade_offers`;
+- `trg_enforce_player_auction_listing_runtime_restrictions` on `player_auction_listings`;
+- `trg_enforce_player_auction_bid_runtime_restrictions` on `player_auction_bids`;
+- `trg_enforce_character_point_lock_market_restrictions` on `character_point_locks`.
+
+`trade_restriction` blocks player direct-trade participation. `auction_restriction` blocks auction participation. Server suspension/ban and membership suspension/ban also block market actions through the normal gameplay/access helper layer.
+
+Safe exits and cleanup paths such as cancellation, rejection, expiry and unlock/refund cleanup must not be blocked solely because the user is restricted.
+
+## Staff assignment and staff gameplay boundary
+
+Server staff remains server-scoped through `server_staff_assignments`.
+
+`assign_server_staff(...)` is the canonical audited mutation path. Frontend must not insert/update `server_staff_assignments` directly.
+
+Important rules:
+
+- standard servers cannot receive a staff assignment for a user who already has any hero on that server;
+- sandbox/testing contexts are exceptions for staff/test gameplay;
+- staff-disqualifying moderation history blocks server staff assignment;
+- a user with a server ban anywhere is staff-disqualifying;
+- long operator/manual suspensions above the configured threshold are staff-disqualifying;
+- global role assignment remains separate from server staff assignment.
+
+## Explicit G5 anti-abuse permission helpers
+
+Future G5/H UI must prefer explicit helpers instead of broad `can_manage_anti_abuse(...)`.
+
+Canonical permission/read helpers:
+
+- `can_triage_anti_abuse(p_server_id uuid)`
+- `assert_can_triage_anti_abuse(p_server_id uuid, p_operation text)`
+- `can_decide_anti_abuse(p_server_id uuid)`
+- `assert_can_decide_anti_abuse(p_server_id uuid, p_operation text)`
+- `can_manage_anti_abuse_sanctions(p_server_id uuid)`
+- `assert_can_manage_anti_abuse_sanctions(p_server_id uuid, p_operation text)`
+- `can_read_full_moderation_history(p_server_id uuid)`
+- `assert_can_read_full_moderation_history(p_server_id uuid, p_operation text)`
+
+`can_manage_anti_abuse(...)` remains only as compatibility/broad helper for older paths. New Codex work should not choose it as the primary UI contract.
+
+## Moderation read model contracts
+
+Canonical scoped UI read RPC:
+
+- `get_visible_moderation_actions(p_server_id uuid, p_target_user_id uuid, p_target_hero_id uuid)`
+
+Canonical full-history action-only RPCs:
+
+- `get_full_user_moderation_history(p_server_id uuid, p_user_id uuid)`
+- `get_full_hero_moderation_history(p_server_id uuid, p_hero_id uuid)`
+
+Visibility helper:
+
+- `can_read_moderation_action(p_action moderation_actions)`
+
+Rules:
+
+- admin/operator/full-history authority can read full moderation action history;
+- scoped moderators use `get_visible_moderation_actions(...)`;
+- scoped moderators see only local/scope-relevant moderation actions;
+- heavy account/server punishment history remains full-history authority by default;
+- anti-abuse cases, sanctions and Character Point penalties use dedicated G5 RPC/services, not combined legacy moderation-history feeds.
+
+The legacy combined history RPCs have been removed:
+
+- `get_user_moderation_history(...)` removed;
+- `get_hero_moderation_history(...)` removed.
+
+Codex must not reintroduce those names or create frontend fallbacks to them.
+
+## RLS/read-model direction
+
+`moderation_actions` RLS is enabled.
+
+Current policy direction:
+
+- global admin can manage;
+- admin/operator can select full history;
+- scoped moderator selection is constrained by `scope_key` and moderator scope helper logic;
+- targets can read their own targeted actions where policy allows.
+
+UI should still prefer RPC/read contracts above instead of direct table reads for staff/moderation surfaces.
+
+## Codex implications
+
+Before implementing U0/H frontend tasks, Codex must:
+
+- regenerate and use current `database.types.ts`;
+- use DB dictionaries (`staff_permission_scopes`, `moderation_action_types`, etc.) for labels/options;
+- use explicit G5 permission helpers for future anti-abuse UI;
+- use `get_visible_moderation_actions(...)` for moderator-facing moderation UI;
+- use `get_full_user_moderation_history(...)` / `get_full_hero_moderation_history(...)` for admin/operator full moderation action history;
+- use dedicated G5 RPC/services for anti-abuse cases, sanctions and CP penalties;
+- use `hero_can_use_normal_gameplay(...)` / `get_hero_normal_gameplay_block_reason(...)` / `assert_hero_can_use_normal_gameplay(...)` for normal gameplay access;
+- never reintroduce `get_user_moderation_history(...)` or `get_hero_moderation_history(...)`.

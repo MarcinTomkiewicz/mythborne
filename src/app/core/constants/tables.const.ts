@@ -33,6 +33,8 @@ export const TABLES = {
   roles: 'roles',
   server_memberships: 'server_memberships',
   server_staff_assignments: 'server_staff_assignments',
+  server_staff_assignment_scopes: 'server_staff_assignment_scopes',
+  staff_permission_scopes: 'staff_permission_scopes',
   config_definitions: 'config_definitions',
   global_config_values: 'global_config_values',
   server_config_values: 'server_config_values',

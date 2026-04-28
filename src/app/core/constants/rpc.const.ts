@@ -1,5 +1,12 @@
 export const RPC = {
   has_global_role: 'has_global_role',
+  assign_global_role: 'assign_global_role',
+  assign_server_staff: 'assign_server_staff',
+  revoke_server_staff: 'revoke_server_staff',
+  search_server_staff_candidates: 'search_server_staff_candidates',
+  set_server_staff_permission_scopes: 'set_server_staff_permission_scopes',
+  user_has_hero_on_server: 'user_has_hero_on_server',
+  user_has_staff_disqualifying_history: 'user_has_staff_disqualifying_history',
   create_config_change_set_draft: 'create_config_change_set_draft',
   create_config_value_change_entry: 'create_config_value_change_entry',
   mark_config_change_set_ready: 'mark_config_change_set_ready',

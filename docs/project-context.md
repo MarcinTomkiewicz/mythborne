@@ -1828,7 +1828,7 @@ This DB foundation does not yet define final equip/unequip RPCs or full gameplay
 
 ---
 
-## Operational update 2026-04-28 — Role-aware access and explainability
+## Operational update 2026-04-28 — U0 role-aware access, sanction enforcement and explainability
 
 ### Role-aware access model
 
@@ -1844,22 +1844,61 @@ Do not infer that a global role automatically grants authority on every server. 
 
 ### Staff and gameplay
 
-Normal staff should not play normal gameplay on production-like servers where they are assigned staff. Sandbox/test servers are exceptions and must allow staff/test gameplay.
+Normal staff should not play normal gameplay on production-like standard servers where they are assigned staff. Sandbox/test servers are exceptions and must allow staff/test gameplay.
 
-A user with a hero on a standard server cannot be assigned as staff on that server. This must be enforced in backend/RPC/DB and reflected in UI candidate selection.
+The canonical DB contracts for this are:
+
+- `hero_is_staff_gameplay_blocked(...)`
+- `hero_can_use_normal_gameplay(...)`
+- `get_hero_normal_gameplay_block_reason(...)`
+- `assert_hero_can_use_normal_gameplay(...)`
+
+A user with a hero on a standard server cannot be assigned as staff on that server. This is enforced in backend/RPC/DB and must be reflected in UI candidate selection.
+
+### Sanctions and runtime access
+
+Moderation actions are server-scoped historical/decision records. Runtime access is enforced through helper functions, triggers, and `server_memberships.status`.
+
+- `trade_restriction` blocks player direct-trade participation.
+- `auction_restriction` blocks auction participation.
+- `server_suspension` and `server_ban` synchronize into `server_memberships.status` for fast runtime access checks.
+- `server_memberships.moderation_block_*` columns preserve the moderation action link, reason, expiry and sync timestamp.
+- Future persistent gameplay RPCs should call `assert_hero_can_use_normal_gameplay(...)` before mutating normal gameplay state.
+- Future market mutations should use `assert_hero_can_use_player_trade_runtime(...)` / `assert_hero_can_use_player_auction_runtime(...)`.
+
+Safe exits and cleanup paths such as cancellation, rejection, expiry and unlock/refund cleanup must not be blocked solely because a user is restricted.
 
 ### Moderation action model
 
-The database now has a foundation for server-scoped moderation actions:
+The database now has a contract-complete foundation for server-scoped moderation actions:
 
 - local warnings;
 - account warnings within a server;
 - trade/auction restrictions;
 - server suspensions;
 - server bans;
-- moderation history read models.
+- scoped moderation action visibility;
+- full-history admin/operator moderation action visibility.
 
-Moderators may apply light/local actions in their assigned scopes. Operators/admins handle heavy sanctions, appeals, CP penalties and severe punishments.
+Moderators may apply light/local actions in assigned scopes. Operators/admins handle heavy sanctions, appeals, CP penalties and severe punishments.
+
+Canonical read contracts:
+
+- moderator/scoped UI: `get_visible_moderation_actions(...)`;
+- admin/operator full action history: `get_full_user_moderation_history(...)`, `get_full_hero_moderation_history(...)`.
+
+Legacy combined moderation-history RPCs were removed. Do not reintroduce `get_user_moderation_history(...)` or `get_hero_moderation_history(...)`. Anti-abuse cases, sanctions and Character Point penalties use dedicated G5 RPC/services.
+
+### Explicit anti-abuse permission model
+
+Future G5/H UI should prefer explicit helpers:
+
+- triage/read: `can_triage_anti_abuse(...)` / `assert_can_triage_anti_abuse(...)`;
+- decisions/verdicts: `can_decide_anti_abuse(...)` / `assert_can_decide_anti_abuse(...)`;
+- sanctions/CP penalties/sanction items: `can_manage_anti_abuse_sanctions(...)` / `assert_can_manage_anti_abuse_sanctions(...)`;
+- full moderation history: `can_read_full_moderation_history(...)` / `assert_can_read_full_moderation_history(...)`.
+
+`can_manage_anti_abuse(...)` is a broad compatibility helper and should not be chosen for new UI contracts.
 
 ### Explainability and role-aware UI
 
