@@ -3,9 +3,17 @@ export interface AdminSelectOption {
   value: string | number;
 }
 
+export type AdminNavigationAccessPolicy =
+  | 'adminShell'
+  | 'selectedServerManagement'
+  | 'selectedServerModeration'
+  | 'selectedServerTesting'
+  | 'playerGameplay';
+
 export interface AdminTagLink {
   label: string;
   routerLink: string;
+  accessPolicy?: AdminNavigationAccessPolicy;
 }
 
 export interface AdminDashboardCard {
@@ -13,4 +21,5 @@ export interface AdminDashboardCard {
   title: string;
   description: string;
   routerLink: string;
+  accessPolicy: AdminNavigationAccessPolicy;
 }

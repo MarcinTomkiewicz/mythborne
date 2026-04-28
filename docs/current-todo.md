@@ -57,7 +57,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: U0-I1 - central staff access policy model.
 - Completed and confirmed: U0-I2 - staff gameplay boundary implementation.
 - Completed and confirmed: U0-I3 - admin route guard and sidebar boundary.
-- Current backlog task: U0-I4 - admin dashboard cards and tag-link filtering.
+- Completed and confirmed: U0-I4 - admin dashboard cards and tag-link filtering.
+- Current backlog task: U0-I5 - staff management read models and services.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow

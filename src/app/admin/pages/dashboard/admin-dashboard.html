@@ -4,19 +4,26 @@
       <p class="card-legend mb-0">Admin</p>
       <h2 class="mg-section__title mg-section__title--sm mb-0">Admin Panel</h2>
       <p class="muted-text mb-0">
-        Startowy panel administracyjny dla balansu dropu i katalogu itemow. Bez rol i guardow na tym etapie.
+        Staff and admin tools available for the current server context.
       </p>
     </div>
     <app-admin-server-switcher />
   </section>
 
   <div class="grid-2-1 gap-xl">
-    @for (card of cards; track card.routerLink) {
+    @for (card of cards(); track card.routerLink) {
       <a [routerLink]="card.routerLink" class="mg-card flex-col gap-md p-lg">
         <p class="card-legend mb-0">{{ card.legend }}</p>
         <h3 class="mg-section__title mg-section__title--xs mb-0">{{ card.title }}</h3>
         <p class="muted-text mb-0">{{ card.description }}</p>
       </a>
+    } @empty {
+      <section class="mg-card p-lg w-100">
+        <p class="card-legend mb-0">No tools available</p>
+        <p class="muted-text mb-0">
+          This account can open the admin shell, but no management tools are available for the current context yet.
+        </p>
+      </section>
     }
   </div>
 

@@ -354,6 +354,11 @@ Still pending at the gameplay level even if partially supported in schema:
 - U0-I3 sidebar filtering hides the `Admin` link for normal logged-in players while keeping it visible for users whose policy allows the admin shell.
 - U0-I3 is intentionally only a shell/menu boundary. Dashboard card filtering, tag-link filtering, and per-tool route metadata remain U0-I4+ work.
 - U0-I3 was verified with targeted admin guard/sidebar/staff-policy tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- U0-I4 accepted on 2026-04-28: admin dashboard cards and reusable admin tag-links now filter through a central admin navigation access helper backed by the staff access policy.
+- U0-I4 adds explicit `accessPolicy` metadata for admin dashboard cards and current admin tag-link lists, with a transitional fallback only for compatibility.
+- U0-I4 hides management cards from moderation/testing-only contexts, keeps management tools visible for global admin and selected-server management authority, and hides gameplay links when player gameplay is blocked.
+- U0-I4 removed stale admin dashboard copy about missing roles/guards and adds an empty state for shell access without available tools.
+- U0-I4 was verified with targeted admin navigation/guard/sidebar tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services
