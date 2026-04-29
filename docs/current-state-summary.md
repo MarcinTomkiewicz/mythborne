@@ -397,6 +397,10 @@ Still pending at the gameplay level even if partially supported in schema:
 - UX-I2 added human-readable scope, applies-to, value type, effective source, impact and warning metadata to Config Definitions and Config Change Sets draft entry UI.
 - UX-I2 keeps technical JSON/schema previews as secondary legacy admin previews; no new raw `<pre>` explainability content was introduced.
 - UX-I2 was verified with targeted config-governance RPC tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- UX-I3 accepted on 2026-04-29: Audit logs now show joined audit action/entity labels and descriptions as primary readable content where dictionary metadata exists.
+- UX-I3 keeps stable `audit_action_types` / `audit_entity_types` keys visible only as secondary technical metadata, with graceful fallback to keys when dictionary joins are missing.
+- UX-I3 moved audit metadata/old/new JSON previews into collapsed technical `<details>` blocks so raw JSON no longer dominates audit log cards by default.
+- UX-I3 was verified with targeted audit-log/audit-dictionary tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

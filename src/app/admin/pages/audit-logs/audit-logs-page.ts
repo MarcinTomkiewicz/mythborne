@@ -13,6 +13,7 @@ import { AuditLogs } from '../../../core/services/audit/audit-logs';
 import { AuditLogFilterOptions } from '../../../core/types/audit-log-row.types';
 import { formatAuditJsonPreview } from '../../../core/utils/audit-log';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { MetadataDisplay } from '../../../shared/metadata-display/metadata-display';
 import { AUDIT_LOGS_PAGE_LINKS } from '../../admin-navigation.config';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
 
@@ -26,6 +27,7 @@ import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links'
     SelectModule,
     LoadingOverlay,
     AdminTagLinks,
+    MetadataDisplay,
   ],
   templateUrl: './audit-logs-page.html',
 })

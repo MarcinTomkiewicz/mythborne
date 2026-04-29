@@ -2049,6 +2049,8 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ## Task UX-I3 — Audit log readability pass
 
+**Status:** Done / confirmed 2026-04-29.
+
 **Goal:** Replace raw audit keys as primary text in audit views with dictionary labels and helpful metadata.
 
 **Scope:**

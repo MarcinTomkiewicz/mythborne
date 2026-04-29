@@ -101,17 +101,20 @@
         @for (log of data().logs; track log.id) {
           <article class="mg-surface-card p-md flex-col gap-md">
             <div class="flex-row-between-center flex-col-sm gap-sm">
-              <div class="flex-col gap-xs">
-                <p class="card-legend mb-0">{{ log.actionTypeKey }}</p>
+              <div class="flex-col gap-sm min-w-0">
+                <p class="card-legend mb-0">{{ log.createdAt }}</p>
                 <h4 class="mg-section__title mg-section__title--xs mb-0">
                   {{ log.actionType?.label ?? log.actionTypeKey }}
                 </h4>
+                @if (log.actionType?.description) {
+                  <p class="muted-text mb-0">{{ log.actionType?.description }}</p>
+                }
               </div>
 
               <div class="flex-row-start-center flex-wrap gap-xs">
                 <span class="mg-tag">{{ log.severity }}</span>
-                <span class="mg-tag">{{ log.entityTypeKey }}</span>
-                <span class="mg-tag">{{ log.createdAt }}</span>
+                <span class="mg-tag">action: {{ log.actionTypeKey }}</span>
+                <span class="mg-tag">entity: {{ log.entityTypeKey }}</span>
               </div>
             </div>
 
@@ -120,9 +123,15 @@
             }
 
             <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+              <app-metadata-display
+                [label]="log.entityType?.label ?? log.entityTypeKey"
+                [description]="log.entityType?.description ?? null"
+                [technicalKey]="log.entityTypeKey"
+                technicalLabel="entity type"
+              />
+
               <div class="flex-col gap-xs min-w-0">
-                <span class="muted-text">Entity</span>
-                <strong class="heading-color">{{ log.entityType?.label ?? log.entityTypeKey }}</strong>
+                <span class="muted-text">Entity id</span>
                 <span class="muted-text text-break">{{ log.entityId ?? '-' }}</span>
               </div>
 
@@ -140,20 +149,20 @@
             </div>
 
             <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
-              <div class="flex-col gap-xs min-w-0">
-                <span class="muted-text">Metadata</span>
+              <details class="flex-col gap-xs min-w-0">
+                <summary class="muted-text cursor-pointer">Metadata JSON</summary>
                 <pre class="mb-0 text-break"><code>{{ jsonPreview(log.metadataJson) }}</code></pre>
-              </div>
+              </details>
 
-              <div class="flex-col gap-xs min-w-0">
-                <span class="muted-text">Old value</span>
+              <details class="flex-col gap-xs min-w-0">
+                <summary class="muted-text cursor-pointer">Old value JSON</summary>
                 <pre class="mb-0 text-break"><code>{{ jsonPreview(log.oldValueJson) }}</code></pre>
-              </div>
+              </details>
 
-              <div class="flex-col gap-xs min-w-0">
-                <span class="muted-text">New value</span>
+              <details class="flex-col gap-xs min-w-0">
+                <summary class="muted-text cursor-pointer">New value JSON</summary>
                 <pre class="mb-0 text-break"><code>{{ jsonPreview(log.newValueJson) }}</code></pre>
-              </div>
+              </details>
             </div>
           </article>
         } @empty {
