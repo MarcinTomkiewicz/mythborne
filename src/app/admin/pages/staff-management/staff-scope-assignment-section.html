@@ -11,7 +11,9 @@
     </div>
 
     @if (scopeAssignment().isLoadingScopeAccess()) {
-      <p-message severity="info" text="Checking available moderator scopes for this server." />
+      <p-message severity="info">
+        Checking available moderator scopes for this server.
+      </p-message>
     }
 
     <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
@@ -35,10 +37,9 @@
           <span class="mg-tag">key: {{ scope.key }}</span>
 
           @if (!scopeAssignment().isScopeAllowed(scope.key)) {
-            <p-message
-              severity="warn"
-              text="This scope is not available in the current server context."
-            />
+            <p-message severity="warn">
+              This scope is not available in the current server context.
+            </p-message>
           }
         </article>
       } @empty {

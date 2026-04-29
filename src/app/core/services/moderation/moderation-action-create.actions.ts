@@ -5,6 +5,7 @@ import { finalize } from 'rxjs';
 import { ModerationActionType } from '../../domain/moderation/moderation-action.model';
 import { ToastService } from '../ui/toast';
 import { ModerationActions } from './moderation-actions';
+import { ModerationTargetSearchState } from './moderation-target-search.state';
 
 @Injectable()
 export class ModerationActionCreateActions {
@@ -29,6 +30,28 @@ export class ModerationActionCreateActions {
   readonly selectedActionTypeKey = toSignal(
     this.createForm.controls.actionTypeKey.valueChanges,
     { initialValue: this.createForm.controls.actionTypeKey.value },
+  );
+  readonly targets = new ModerationTargetSearchState(
+    this.moderationActions,
+    this.destroyRef,
+    {
+      setUserTargetId: (userId) => {
+        this.createForm.controls.targetUserId.setValue(userId);
+        this.createForm.controls.targetUserId.markAsDirty();
+      },
+      clearUserTargetId: () => {
+        this.createForm.controls.targetUserId.setValue('');
+      },
+      setHeroTargetIds: (userId, heroId) => {
+        this.createForm.patchValue({ targetUserId: userId, targetHeroId: heroId });
+        this.createForm.controls.targetUserId.markAsDirty();
+        this.createForm.controls.targetHeroId.markAsDirty();
+      },
+      clearHeroTargetId: () => {
+        this.createForm.controls.targetHeroId.setValue('');
+      },
+      setError: (summary, error) => this.handleError(summary, error),
+    },
   );
   readonly isSaving = signal(false);
   readonly error = signal<string | null>(null);
@@ -124,10 +147,13 @@ export class ModerationActionCreateActions {
       sourceSnapshotId: '',
       expiresAt: '',
     });
+    this.targets.reset();
   }
 
   private resetAfterSuccess(): void {
     this.createForm.patchValue({
+      targetUserId: '',
+      targetHeroId: '',
       reason: '',
       operatorNotes: '',
       playerVisibleNote: '',
@@ -136,6 +162,7 @@ export class ModerationActionCreateActions {
       sourceSnapshotId: '',
       expiresAt: '',
     });
+    this.targets.reset();
     this.createForm.markAsPristine();
     this.createForm.markAsUntouched();
   }

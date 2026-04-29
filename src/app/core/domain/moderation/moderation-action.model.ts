@@ -70,3 +70,47 @@ export interface ModerationActionHistoryFilter {
   targetUserId: string | null;
   targetHeroId: string | null;
 }
+
+export type ModerationActionHistoryMode = 'visible' | 'full_user' | 'full_hero';
+
+export interface FullUserModerationHistoryFilter {
+  serverId: string;
+  userId: string;
+}
+
+export interface FullHeroModerationHistoryFilter {
+  serverId: string;
+  heroId: string;
+}
+
+export interface ModerationUserTarget {
+  userId: string;
+  displayName: string;
+  email: string | null;
+  primaryHeroId: string | null;
+  primaryHeroName: string | null;
+  hasVisibleModerationHistory: boolean;
+  matchKind: string;
+  technicalLabel: string;
+  label: string;
+  description: string;
+}
+
+export interface ModerationHeroTarget {
+  heroId: string;
+  heroName: string;
+  userId: string;
+  userDisplayName: string;
+  email: string | null;
+  hasVisibleModerationHistory: boolean;
+  matchKind: string;
+  technicalLabel: string;
+  label: string;
+  description: string;
+}
+
+export interface ModerationTargetSearchInput {
+  serverId: string;
+  query: string;
+  limit: number;
+}

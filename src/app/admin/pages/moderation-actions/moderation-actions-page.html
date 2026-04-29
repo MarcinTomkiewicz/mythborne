@@ -20,15 +20,20 @@
   </section>
 
   @if (!page.selectedServer()) {
-    <p-message severity="warn" text="Select a server before using moderation actions." />
+    <p-message severity="warn">
+      Select a server before using moderation actions.
+    </p-message>
   } @else if (!page.canModerate()) {
     <p-message
       severity="warn"
-      text="This account can open the admin shell, but cannot apply moderation actions in the selected server context."
-    />
+    >
+      This account can open the admin shell, but cannot apply moderation actions in the selected server context.
+    </p-message>
   } @else {
     @if (page.error(); as message) {
-      <p-message severity="error" [text]="message" />
+      <p-message severity="error">
+        {{ message }}
+      </p-message>
     }
 
     <div class="grid-2-1 gap-xl">
@@ -42,6 +47,7 @@
         [page]="page"
         (loadHistory)="page.loadHistory()"
         (resetHistoryFilters)="page.resetHistoryFilters()"
+        (historyModeChange)="page.setHistoryMode($event)"
       />
     </div>
   }

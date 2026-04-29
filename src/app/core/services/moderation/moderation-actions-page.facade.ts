@@ -1,10 +1,19 @@
 import { DestroyRef, Injectable, computed, effect, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  ModerationActionHistoryMode,
+  ModerationActionType,
+} from '../../domain/moderation/moderation-action.model';
 import { resolveStaffAccessPolicy } from '../../utils/staff-access-policy';
 import { ActiveServer } from '../server/active-server';
 import { ModerationActionCreateActions } from './moderation-action-create.actions';
 import { ModerationActionDictionariesState } from './moderation-action-dictionaries.state';
 import { ModerationActionHistoryState } from './moderation-action-history.state';
+
+interface ActionTypeBadge {
+  label: string;
+  className: string;
+}
 
 @Injectable()
 export class ModerationActionsPageFacade {
@@ -31,9 +40,16 @@ export class ModerationActionsPageFacade {
   readonly selectedActionType = computed(() =>
     this.dictionaries.selectedActionType(this.create.selectedActionTypeKey()),
   );
+  readonly actionTypeBadges = computed(() =>
+    toActionTypeBadges(this.selectedActionType()),
+  );
   readonly scopeOptions = computed(() => this.dictionaries.scopeOptions());
   readonly isLoading = computed(
-    () => this.dictionaries.isLoading() || this.history.isLoading(),
+    () =>
+      this.dictionaries.isLoading() ||
+      this.history.isLoading() ||
+      this.history.isLoadingFullHistoryAccess() ||
+      this.history.isLoadingTargetSearchAccess(),
   );
   readonly error = computed(
     () =>
@@ -81,16 +97,27 @@ export class ModerationActionsPageFacade {
       this.selectedServerId(),
       this.canModerate(),
       this.selectedActionType(),
-      () => this.loadHistory(),
+      () => this.refreshHistorySilently(),
     );
   }
 
   loadHistory(): void {
+    this.history.loadHistory(this.selectedServerId(), this.canModerate(), {
+      notifyEmpty: true,
+      showValidation: true,
+    });
+  }
+
+  refreshHistorySilently(): void {
     this.history.loadHistory(this.selectedServerId(), this.canModerate());
   }
 
   resetHistoryFilters(): void {
-    this.history.resetHistoryFilters(this.selectedServerId(), this.canModerate());
+    this.history.resetHistoryFilters();
+  }
+
+  setHistoryMode(mode: ModerationActionHistoryMode): void {
+    this.history.setHistoryMode(mode, this.selectedServerId(), this.canModerate());
   }
 
   actionTypeLabel(key: string): string {
@@ -109,7 +136,24 @@ export class ModerationActionsPageFacade {
       return;
     }
 
+    this.history.loadFullHistoryAccess(this.selectedServerId(), this.canModerate());
+    this.history.loadTargetSearchAccess(this.selectedServerId(), this.canModerate());
     this.dictionaries.load(this.selectedServerId(), this.canModerate());
-    this.loadHistory();
   }
+}
+
+function toActionTypeBadges(actionType: ModerationActionType | null): ActionTypeBadge[] {
+  if (!actionType) {
+    return [];
+  }
+
+  return [
+    actionType.isWarning ? { label: 'warning', className: 'mg-tag' } : null,
+    actionType.isRestriction ? { label: 'restriction', className: 'mg-tag' } : null,
+    actionType.isSuspension ? { label: 'suspension', className: 'mg-tag' } : null,
+    actionType.isBan ? { label: 'ban', className: 'tag-badge tag-badge--warn' } : null,
+    actionType.isStaffDisqualifying
+      ? { label: 'staff-disqualifying', className: 'tag-badge tag-badge--warn' }
+      : null,
+  ].filter((badge): badge is ActionTypeBadge => badge !== null);
 }

@@ -34,11 +34,15 @@
       </div>
 
       @if (editorError(); as error) {
-        <p-message severity="error" class="mb-md" [text]="error" />
+        <p-message severity="error" class="mb-md">
+          {{ error }}
+        </p-message>
       }
 
       @if (workflowError(); as error) {
-        <p-message severity="error" class="mb-md" [text]="error" />
+        <p-message severity="error" class="mb-md">
+          {{ error }}
+        </p-message>
       }
 
       <form [formGroup]="draftForm" class="mg-surface-card p-md flex-col gap-md" (ngSubmit)="createDraftChangeSet()">

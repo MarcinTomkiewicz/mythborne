@@ -1,15 +1,21 @@
 import { Component, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { ModerationActionsPageFacade } from '../../../core/services/moderation/moderation-actions-page.facade';
 
 @Component({
   selector: 'app-moderation-action-create-section',
   standalone: true,
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, MessageModule, SelectModule],
+  imports: [
+    ReactiveFormsModule,
+    AutoCompleteModule,
+    ButtonModule,
+    InputTextModule,
+    SelectModule,
+  ],
   templateUrl: './moderation-action-create-section.html',
 })
 export class ModerationActionCreateSection {

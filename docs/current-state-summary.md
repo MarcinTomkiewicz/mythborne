@@ -383,6 +383,12 @@ Still pending at the gameplay level even if partially supported in schema:
 - U0-I8 reads moderator-facing visible history through `get_visible_moderation_actions` and does not use removed legacy `get_user_moderation_history` / `get_hero_moderation_history` RPC names.
 - U0-I8 splits page logic into `ModerationActionsPageFacade`, `ModerationActionDictionariesState`, `ModerationActionCreateActions`, and `ModerationActionHistoryState`, with create/history UI sections kept as lazy page components.
 - U0-I8 was verified with targeted moderation-action/admin-navigation tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- U0-I9 accepted on 2026-04-29: moderation action create/history target fields now use DB-backed user/account and hero autocompletes through `search_moderation_user_targets` and `search_moderation_hero_targets`.
+- U0-I9 keeps target lookup server-scoped and does not read `auth.users`, use `search_server_staff_candidates`, or add broad `user_data`/hero fetches.
+- U0-I9 history supports visible history and full user/hero history modes through `get_visible_moderation_actions`, `get_full_user_moderation_history`, and `get_full_hero_moderation_history`.
+- U0-I9 requires an explicit user/account or hero target before refreshing moderation history; empty target refresh shows stable inline validation and does not call history RPC.
+- U0-I9 uses shared `ModerationTargetSearchState` for create/history autocomplete state and keeps action-type badges as a small view-model list instead of repeated template conditionals.
+- U0-I9 was verified with targeted moderation-action tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

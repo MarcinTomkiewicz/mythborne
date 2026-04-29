@@ -1944,3 +1944,46 @@ Language should eventually be supported at two levels:
 - private account/user language preference.
 
 This is a remembered future-design note, not a requirement to implement localization in the current DB explainability slice.
+
+---
+
+# Update 2026-04-29 — architecture hygiene and bounded regression review
+
+Architecture hygiene is an active review discipline for Mythborne, but it is not a current MVP blocker by itself.
+
+## Active decision
+
+When reviewing or implementing a task, especially after larger vertical slices or schema/type changes, the project should use bounded regression review to catch duplicated concepts and architectural drift.
+
+This review should check for:
+
+- duplicate helpers/services/types/components representing the same concept;
+- repeated access-policy logic outside central policy/helpers;
+- repeated mapper, payload-builder, request-state, toast or error-handling patterns;
+- direct frontend writes to workflow-owned tables that should use RPC/domain workflows;
+- raw role/status/scope/entity/table/RPC strings where constants, enums, generated types or DB dictionaries exist;
+- route pages accumulating domain/service/facade responsibilities;
+- large flat `core/types`, `core/utils` or `core/services` areas that should be grouped by domain once the area is stable.
+
+Small, local duplication can be cleaned inside the current task when safe. Wider duplication should be recorded as a follow-up instead of triggering broad refactors in the middle of feature work.
+
+## MVP priority rule
+
+Architecture hygiene should support MVP/prototype progress, not replace it.
+
+Do not launch broad repository-wide cleanup while U0, UX explainability, G6 or gameplay foundations are still actively moving unless the architecture issue is blocking the current task or creating a real access/security/data-flow risk.
+
+## Future post-MVP cleanup direction
+
+A dedicated Architecture Hygiene / Regression Review epic should be prepared later, likely after the project reaches a usable prototype/MVP suitable for broader playtesting.
+
+Candidate future tasks:
+
+- `ARCH-P1` — core types/utils/services folder organization audit;
+- `ARCH-P2` — concept duplication audit for item generation;
+- `ARCH-P3` — access-policy duplication audit;
+- `ARCH-P4` — request/toast/error handling duplication audit;
+- `ARCH-P5` — direct-write and workflow-owned table regression scan;
+- `ARCH-P6` — oversized route page/template/facade cleanup plan.
+
+This future epic should be added to the backlog only when the user decides to promote architecture cleanup from parking-lot direction into scheduled work.

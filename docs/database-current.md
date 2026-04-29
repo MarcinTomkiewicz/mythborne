@@ -252,7 +252,26 @@ Moderators may apply light/local actions in assigned scopes. Operators/admins ha
 Canonical read contracts:
 
 - moderator/scoped UI: `get_visible_moderation_actions(...)`;
-- admin/operator full action history: `get_full_user_moderation_history(...)`, `get_full_hero_moderation_history(...)`.
+- admin/operator full action history: `get_full_user_moderation_history(...)`, `get_full_hero_moderation_history(...)`;
+- moderation target autocomplete/search: `search_moderation_user_targets(...)`, `search_moderation_hero_targets(...)`.
+
+Moderation target picker/search contracts:
+
+- `can_search_moderation_targets(p_server_id uuid)` -> boolean. Checks whether the authenticated user may use server-scoped moderation target search. Admin/operator/full server staff can search; scoped moderators with at least one active scope can search without receiving full-history authority.
+- `search_moderation_user_targets(p_server_id uuid, p_query text, p_limit integer)` -> account/user target autocomplete. Returns `user_id`, human display name, email only where policy allows, primary hero id/name, visible-history flag, match kind, and technical label.
+- `search_moderation_hero_targets(p_server_id uuid, p_query text, p_limit integer)` -> hero target autocomplete. Returns `hero_id`, hero name, owning user id/display name, email only where policy allows, visible-history flag, match kind, and technical label.
+
+Rules for moderation target search:
+
+- these RPCs are the canonical read models for moderation action/history target pickers;
+- they are server-scoped and require `can_search_moderation_targets(p_server_id)`;
+- they do not read `auth.users`;
+- they reject/return no broad results for empty or too-short queries;
+- minimum query length is 2 characters unless query is UUID-like;
+- email search and email return are limited to full-history authority via `can_read_full_moderation_history(p_server_id)`;
+- scoped moderators can search by account display name and hero name, but should not receive email;
+- `has_visible_moderation_history` means the current actor can see at least one matching moderation action through `can_read_moderation_action(...)`; it must not be treated as proof of all hidden/full history;
+- `search_server_staff_candidates(...)` must not be reused for moderation target search because it has staff-management semantics and permissions.
 
 Legacy combined moderation-history RPCs were removed:
 
@@ -297,6 +316,8 @@ Before implementing U0/H frontend tasks, Codex must:
 - use explicit G5 permission helpers for future anti-abuse UI;
 - use `get_visible_moderation_actions(...)` for moderator-facing moderation UI;
 - use `get_full_user_moderation_history(...)` / `get_full_hero_moderation_history(...)` for admin/operator full moderation action history;
+- use `search_moderation_user_targets(...)` and `search_moderation_hero_targets(...)` for moderation target picker/autocomplete;
+- do not use `search_server_staff_candidates(...)` for moderation target search;
 - use dedicated G5 RPC/services for anti-abuse cases, sanctions and CP penalties;
 - use `hero_can_use_normal_gameplay(...)` / `get_hero_normal_gameplay_block_reason(...)` / `assert_hero_can_use_normal_gameplay(...)` for normal gameplay access;
 - use `assert_hero_can_use_player_trade_runtime(...)` and `assert_hero_can_use_player_auction_runtime(...)` for future market mutations;
@@ -1103,6 +1124,47 @@ Rules:
 - does not return broad unfiltered results;
 - short/empty search queries should not become a broad user list;
 - frontend should map `eligibility_reason` through DB metadata / human-readable UI, not display raw keys as primary text.
+
+
+### Moderation target search RPCs
+
+U0-I9 moderation history/action UI must not require humans to type raw UUIDs for account/user or hero targets. The database now provides canonical server-scoped target-search RPCs for autocomplete/lazy target pickers.
+
+Contracts:
+
+- `can_search_moderation_targets(p_server_id uuid)` -> boolean. Returns whether the current authenticated user may use moderation target search for the server.
+- `search_moderation_user_targets(p_server_id uuid, p_query text, p_limit integer)` -> table with:
+  - `user_id`
+  - `display_name`
+  - `email`
+  - `primary_hero_id`
+  - `primary_hero_name`
+  - `has_visible_moderation_history`
+  - `match_kind`
+  - `technical_label`
+- `search_moderation_hero_targets(p_server_id uuid, p_query text, p_limit integer)` -> table with:
+  - `hero_id`
+  - `hero_name`
+  - `user_id`
+  - `user_display_name`
+  - `email`
+  - `has_visible_moderation_history`
+  - `match_kind`
+  - `technical_label`
+
+Rules:
+
+- these RPCs are for moderation action/history target pickers, not staff assignment;
+- `search_server_staff_candidates(...)` remains staff-management-only and must not be reused for moderation target search;
+- no frontend read from `auth.users`;
+- no broad client-side fetch from `user_data` or `hero`;
+- queries are server-scoped;
+- empty or too-short queries return no broad result set;
+- minimum query length is 2 characters unless query is UUID-like;
+- primary UI labels should use `display_name`, `primary_hero_name`, `hero_name`, and `user_display_name`;
+- UUIDs belong in secondary technical metadata only;
+- `email` may be null for scoped moderators because email search/return requires full-history authority;
+- `has_visible_moderation_history` is actor-visible history only, not a full hidden-history indicator.
 
 Known eligibility reason keys:
 

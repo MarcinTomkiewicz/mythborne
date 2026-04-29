@@ -20,17 +20,24 @@
   </section>
 
   @if (!page.selectedServer()) {
-    <p-message severity="warn" text="Select a server before managing staff." />
+    <p-message severity="warn">
+      Select a server before managing staff.
+    </p-message>
   } @else if (!page.canManageStaff()) {
     <p-message
       severity="warn"
-      text="This account can open the admin shell, but cannot manage staff for the selected server."
-    />
+    >
+      This account can open the admin shell, but cannot manage staff for the selected server.
+    </p-message>
   } @else {
-    <p-message severity="info" [text]="page.serverContextMessage()" />
+    <p-message severity="info">
+      {{ page.serverContextMessage() }}
+    </p-message>
 
     @if (page.error(); as message) {
-      <p-message severity="error" [text]="message" />
+      <p-message severity="error">
+        {{ message }}
+      </p-message>
     }
 
     <div class="grid-2-1 gap-xl">
@@ -66,7 +73,9 @@
         </form>
 
         @if (page.candidateSearch.searchMessage(); as message) {
-          <p-message severity="info" [text]="message" />
+          <p-message severity="info">
+            {{ message }}
+          </p-message>
         }
 
         <div class="flex-col gap-sm">
@@ -101,6 +110,14 @@
               </div>
 
               <p class="muted-text mb-0">{{ candidate.eligibilityMessage }}</p>
+
+              @if (candidate.hasStaffDisqualifyingHistory) {
+                <p-message
+                  severity="warn"
+                >
+                  Staff-disqualifying moderation history blocks this user from staff assignment. Full-history staff can review the details in Moderation actions.
+                </p-message>
+              }
 
               <div class="flex-row-start-center flex-wrap gap-xs">
                 @if (candidate.hasHeroOnServer) {
@@ -137,7 +154,9 @@
             <span class="muted-text">{{ candidate.eligibilityMessage }}</span>
           </div>
         } @else {
-          <p-message severity="info" text="Select an eligible candidate to prepare an assignment." />
+          <p-message severity="info">
+            Select an eligible candidate to prepare an assignment.
+          </p-message>
         }
 
         <form

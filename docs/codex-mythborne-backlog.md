@@ -971,6 +971,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task U0-I9 — Moderation history and disqualification panels
 
+**Status:** Done / confirmed 2026-04-29.
+
 **Goal:** Surface prior moderation history where staff decisions require it.
 
 **Scope:**
@@ -2267,7 +2269,7 @@ Use this order after the current audit/spec cleanup instead of starting more aud
 6. U0-I6 — completed / confirmed: staff management UI foundation.
 7. U0-I7 — completed / confirmed: moderator scope assignment UI.
 8. U0-I8 — completed / confirmed: moderation actions UI foundation.
-9. U0-I9 — current next task: moderation history and disqualification panels.
+9. U0-I9 - completed / confirmed: moderation history target picker and full-history modes.
 10. UX-I1/UX-I2 quick wins may be interleaved when touching the same admin screens.
 
 Operational rule:

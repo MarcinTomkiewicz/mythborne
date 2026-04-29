@@ -22,25 +22,13 @@
     </label>
 
     @if (page().selectedActionType(); as actionType) {
-      <p-message severity="info" [text]="actionType.description" />
+      <p class="muted-text mb-0">{{ actionType.description }}</p>
       @if (actionType.helperText) {
         <p class="muted-text mb-0">{{ actionType.helperText }}</p>
       }
       <div class="flex-row-start-center flex-wrap gap-xs">
-        @if (actionType.isWarning) {
-          <span class="mg-tag">warning</span>
-        }
-        @if (actionType.isRestriction) {
-          <span class="mg-tag">restriction</span>
-        }
-        @if (actionType.isSuspension) {
-          <span class="mg-tag">suspension</span>
-        }
-        @if (actionType.isBan) {
-          <span class="tag-badge tag-badge--warn">ban</span>
-        }
-        @if (actionType.isStaffDisqualifying) {
-          <span class="tag-badge tag-badge--warn">staff-disqualifying</span>
+        @for (badge of page().actionTypeBadges(); track badge.label) {
+          <span [class]="badge.className">{{ badge.label }}</span>
         }
       </div>
     }
@@ -65,21 +53,65 @@
 
     <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
       <label class="flex-col gap-sm">
-        <span class="muted-text">Target user id</span>
-        <input pInputText class="w-100" formControlName="targetUserId" />
+        <span class="muted-text">Target user/account</span>
+        <p-autocomplete
+          class="w-100"
+          [formControl]="page().create.targets.userTargetControl"
+          [suggestions]="page().create.targets.userTargetSuggestions()"
+          optionLabel="label"
+          [forceSelection]="true"
+          [showClear]="true"
+          [minLength]="2"
+          [delay]="250"
+          placeholder="Search account, hero or technical id"
+          (completeMethod)="page().create.targets.searchUserTargets(
+            $event,
+            page().selectedServerId(),
+            page().history.canSearchTargets()
+          )"
+          (onSelect)="page().create.targets.selectUserTarget($event.value)"
+          (onClear)="page().create.targets.clearUserTarget()"
+        />
+        @if (page().create.targets.userTargetControl.value; as target) {
+          <span class="muted-text">{{ target.description }}</span>
+        }
         @if (
           page().create.createForm.controls.targetUserId.touched &&
           page().create.createForm.controls.targetUserId.invalid
         ) {
-          <span class="form-error">Target user id is required.</span>
+          <span class="form-error">Target user is required.</span>
         }
       </label>
 
       <label class="flex-col gap-sm">
-        <span class="muted-text">Target hero id</span>
-        <input pInputText class="w-100" formControlName="targetHeroId" />
+        <span class="muted-text">Target hero</span>
+        <p-autocomplete
+          class="w-100"
+          [formControl]="page().create.targets.heroTargetControl"
+          [suggestions]="page().create.targets.heroTargetSuggestions()"
+          optionLabel="label"
+          [forceSelection]="true"
+          [showClear]="true"
+          [minLength]="2"
+          [delay]="250"
+          placeholder="Search hero, account or technical id"
+          (completeMethod)="page().create.targets.searchHeroTargets(
+            $event,
+            page().selectedServerId(),
+            page().history.canSearchTargets()
+          )"
+          (onSelect)="page().create.targets.selectHeroTarget($event.value)"
+          (onClear)="page().create.targets.clearHeroTarget()"
+        />
+        @if (page().create.targets.heroTargetControl.value; as target) {
+          <span class="muted-text">{{ target.description }}</span>
+        }
       </label>
     </div>
+
+    @if (page().create.targets.message(); as message) {
+      <span class="muted-text">{{ message }}</span>
+    }
 
     <label class="flex-col gap-sm">
       <span class="muted-text">Reason</span>

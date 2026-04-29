@@ -1,23 +1,112 @@
 <section class="mg-card flex-col gap-lg p-lg w-100">
   <div class="flex-col gap-xs">
     <p class="card-legend mb-0">History</p>
-    <h3 class="mg-section__title mg-section__title--xs mb-0">Visible moderation actions</h3>
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Moderation history</h3>
   </div>
+
+  <div class="flex-row-start-center flex-wrap gap-sm">
+    <p-button
+      label="Visible history"
+      [text]="page().history.historyMode() !== 'visible'"
+      (onClick)="historyModeChange.emit('visible')"
+    />
+
+    @if (page().history.canReadFullHistory()) {
+      <p-button
+        label="Full user history"
+        [text]="page().history.historyMode() !== 'full_user'"
+        (onClick)="historyModeChange.emit('full_user')"
+      />
+      <p-button
+        label="Full hero history"
+        [text]="page().history.historyMode() !== 'full_hero'"
+        (onClick)="historyModeChange.emit('full_hero')"
+      />
+    }
+  </div>
+
+  <p class="muted-text mb-0">
+    @if (page().history.historyMode() === 'visible') {
+      Visible history uses scoped moderation visibility for the selected server.
+    } @else {
+      Full history is available only to accounts with full moderation history access for this server.
+    }
+  </p>
 
   <form
     [formGroup]="page().history.historyFilterForm"
     class="flex-col gap-md"
     (ngSubmit)="loadHistory.emit()"
   >
-    <label class="flex-col gap-sm">
-      <span class="muted-text">Target user id</span>
-      <input pInputText class="w-100" formControlName="targetUserId" />
-    </label>
+    @if (!page().history.isLoadingTargetSearchAccess() && !page().history.canSearchTargets()) {
+      <span class="form-error">Target search is unavailable for the current server context.</span>
+    }
 
-    <label class="flex-col gap-sm">
-      <span class="muted-text">Target hero id</span>
-      <input pInputText class="w-100" formControlName="targetHeroId" />
-    </label>
+    @if (page().history.historyMode() === 'visible') {
+      <p class="muted-text mb-0">
+        Select a user/account or hero target before refreshing visible moderation history.
+      </p>
+    }
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Target user/account</span>
+        <p-autocomplete
+          class="w-100"
+          [formControl]="page().history.targets.userTargetControl"
+          [suggestions]="page().history.targets.userTargetSuggestions()"
+          optionLabel="label"
+          [forceSelection]="true"
+          [showClear]="true"
+          [minLength]="2"
+          [delay]="250"
+          placeholder="Search account, hero or technical id"
+          (completeMethod)="page().history.targets.searchUserTargets(
+            $event,
+            page().selectedServerId(),
+            page().history.canSearchTargets()
+          )"
+          (onSelect)="page().history.targets.selectUserTarget($event.value)"
+          (onClear)="page().history.targets.clearUserTarget()"
+        />
+        @if (page().history.targets.userTargetControl.value; as target) {
+          <span class="muted-text">{{ target.description }}</span>
+        }
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Target hero</span>
+        <p-autocomplete
+          class="w-100"
+          [formControl]="page().history.targets.heroTargetControl"
+          [suggestions]="page().history.targets.heroTargetSuggestions()"
+          optionLabel="label"
+          [forceSelection]="true"
+          [showClear]="true"
+          [minLength]="2"
+          [delay]="250"
+          placeholder="Search hero, account or technical id"
+          (completeMethod)="page().history.targets.searchHeroTargets(
+            $event,
+            page().selectedServerId(),
+            page().history.canSearchTargets()
+          )"
+          (onSelect)="page().history.targets.selectHeroTarget($event.value)"
+          (onClear)="page().history.targets.clearHeroTarget()"
+        />
+        @if (page().history.targets.heroTargetControl.value; as target) {
+          <span class="muted-text">{{ target.description }}</span>
+        }
+      </label>
+    </div>
+
+    @if (page().history.targets.message(); as message) {
+      <span class="muted-text">{{ message }}</span>
+    }
+
+    @if (page().history.warningMessage(); as message) {
+      <span class="form-error">{{ message }}</span>
+    }
 
     <div class="flex-row-start-center flex-wrap gap-sm">
       <p-button type="submit" label="Refresh history" [text]="true" />
@@ -30,33 +119,43 @@
     </div>
   </form>
 
-  <div class="flex-col gap-sm">
-    @for (action of page().history.history(); track action.id) {
-      <article class="mg-card flex-col gap-sm p-md">
-        <div class="flex-row-between-center flex-wrap gap-sm">
-          <div class="flex-col gap-xs min-w-0">
-            <strong class="heading-color">{{ page().actionTypeLabel(action.actionTypeKey) }}</strong>
-            <span class="muted-text">Target user: {{ action.targetUserId }}</span>
-            @if (action.targetHeroId) {
-              <span class="muted-text">Target hero: {{ action.targetHeroId }}</span>
-            }
+  @if (page().history.history().length > 0) {
+    <div class="flex-col gap-sm">
+      @for (action of page().history.history(); track action.id) {
+        <article class="mg-card flex-col gap-sm p-md">
+          <div class="flex-row-between-center flex-wrap gap-sm">
+            <div class="flex-col gap-xs min-w-0">
+              <strong class="heading-color">{{ page().actionTypeLabel(action.actionTypeKey) }}</strong>
+              <span class="muted-text">Target user: {{ action.targetUserId }}</span>
+              @if (action.targetHeroId) {
+                <span class="muted-text">Target hero: {{ action.targetHeroId }}</span>
+              }
+            </div>
+            <div class="flex-row-start-center flex-wrap gap-xs">
+              <span class="tag-badge tag-badge--info">{{ action.status }}</span>
+              @if (action.scopeKey) {
+                <span class="mg-tag">{{ page().scopeLabel(action.scopeKey) }}</span>
+              }
+              @if (action.isStaffDisqualifying) {
+                <span class="tag-badge tag-badge--warn">staff-disqualifying</span>
+              }
+            </div>
           </div>
-          <div class="flex-row-start-center flex-wrap gap-xs">
-            <span class="tag-badge tag-badge--info">{{ action.status }}</span>
-            @if (action.scopeKey) {
-              <span class="mg-tag">{{ page().scopeLabel(action.scopeKey) }}</span>
-            }
-            @if (action.isStaffDisqualifying) {
-              <span class="tag-badge tag-badge--warn">staff-disqualifying</span>
-            }
-          </div>
-        </div>
 
-        <p class="muted-text mb-0">{{ action.reason }}</p>
-        <span class="muted-text">Created {{ action.createdAt }}</span>
-      </article>
-    } @empty {
-      <p class="muted-text mb-0">No visible moderation actions for the current filters.</p>
-    }
-  </div>
+          @if (action.isStaffDisqualifying) {
+            <p-message
+              severity="warn"
+            >
+              This action can disqualify the user from future staff assignment.
+            </p-message>
+          }
+
+          <p class="muted-text mb-0">{{ action.reason }}</p>
+          <span class="muted-text">Created {{ action.createdAt }}</span>
+        </article>
+      }
+    </div>
+  } @else if (page().history.hasLoadedHistory() && !page().history.isLoading()) {
+    <p class="muted-text mb-0">No moderation actions match the current filters.</p>
+  }
 </section>

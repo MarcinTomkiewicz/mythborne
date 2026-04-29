@@ -26,6 +26,12 @@ export const RPC = {
   set_character_point_penalty_status: 'set_character_point_penalty_status',
   add_anti_abuse_sanction_item: 'add_anti_abuse_sanction_item',
   can_apply_local_moderation_action: 'can_apply_local_moderation_action',
+  can_read_full_moderation_history: 'can_read_full_moderation_history',
+  can_search_moderation_targets: 'can_search_moderation_targets',
   create_moderation_action: 'create_moderation_action',
+  get_full_hero_moderation_history: 'get_full_hero_moderation_history',
+  get_full_user_moderation_history: 'get_full_user_moderation_history',
   get_visible_moderation_actions: 'get_visible_moderation_actions',
+  search_moderation_hero_targets: 'search_moderation_hero_targets',
+  search_moderation_user_targets: 'search_moderation_user_targets',
 } as const;

@@ -1979,3 +1979,57 @@ Remembered direction: language should eventually be supported at two levels:
 - private account/user language preference.
 
 Fallback should eventually be designed explicitly, for example user preference → server default → product default.
+
+---
+
+# Update 2026-04-29 — architecture hygiene and bounded regression review
+
+Architecture hygiene is now part of normal review discipline, not a new blocker for MVP work.
+
+## Bounded regression review
+
+After larger vertical slices, generated database type changes, access-control work, workflow/RPC changes, large UI screens or new shared helpers, run a bounded regression review against the touched area.
+
+The goal is to catch architectural drift early without turning every small task into an audit-only task.
+
+Review should check whether the task:
+
+- quietly expanded beyond its requested scope;
+- duplicated an existing helper, service, type, component, mapper, payload builder or access check;
+- introduced local domain logic into route pages instead of `core`;
+- introduced direct writes to workflow-owned tables that should use RPC/domain operations;
+- introduced hardcoded role/status/scope/entity/table/RPC strings where constants, enums, DB dictionaries or generated types already exist;
+- introduced one-off UI patterns, unnecessary wrapper markup, local CSS or repeated request/toast/error handling;
+- created oversized pages, templates, facades, services or unrelated utility files.
+
+This review is a guardrail. It should produce small local cleanups or explicit follow-up notes. It should not stop feature implementation unless the issue creates real current risk: access/security regression, broken workflow contract, direct mutation bypass, duplicated policy logic or a blocker for the current task.
+
+## Domain-oriented `core` organization
+
+`core` remains the place for shared domain and technical logic, but it should not become a flat dumping ground.
+
+When a domain accumulates several related files, prefer domain-oriented grouping, for example:
+
+- `core/types/item-generation/*`
+- `core/utils/item-generation/*`
+- `core/domain/item-generation/*`
+- `core/services/item-generation/*`
+
+Use the same idea for other mature areas such as config governance, staff/moderation, anti-abuse, bonus/entity bonuses, formulas and buildings.
+
+Do not move files only for aesthetics during urgent feature work. Prefer bounded cleanup tasks after a vertical slice or when duplication starts to slow implementation.
+
+## Future architecture hygiene epic
+
+A full architecture-hygiene epic should be prepared later, most likely after the project has a usable MVP/prototype and can support broader playtesting.
+
+Future candidates include:
+
+- `ARCH-P1` — core types/utils/services folder organization audit;
+- `ARCH-P2` — concept duplication audit for item generation;
+- `ARCH-P3` — access-policy duplication audit;
+- `ARCH-P4` — request/toast/error handling duplication audit;
+- `ARCH-P5` — direct-write and workflow-owned table regression scan;
+- `ARCH-P6` — oversized route page/template/facade cleanup plan.
+
+Until that future epic is promoted, use the regression checklist as a lightweight review tool attached to the task being reviewed.

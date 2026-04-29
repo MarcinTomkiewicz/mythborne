@@ -62,7 +62,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: U0-I6 - staff management UI foundation.
 - Completed and confirmed: U0-I7 - moderator scope assignment UI.
 - Completed and confirmed: U0-I8 - moderation actions UI foundation.
-- Current backlog task: U0-I9 - moderation history and disqualification panels.
+- Completed and confirmed: U0-I9 - moderation history target picker and full-history modes.
+- Current backlog task: select the next U0/UX implementation slice.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow

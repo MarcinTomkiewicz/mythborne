@@ -1,10 +1,18 @@
 import { CreateModerationActionInput } from '../domain/moderation/moderation-action.model';
 import { Row } from '../types/supabase.types';
 import {
+  mapModerationHeroTarget,
   mapModerationActionType,
+  mapModerationUserTarget,
   toCanApplyLocalModerationActionRpcArgs,
+  toCanReadFullModerationHistoryRpcArgs,
+  toCanSearchModerationTargetsRpcArgs,
   toCreateModerationActionRpcArgs,
+  toGetFullHeroModerationHistoryRpcArgs,
+  toGetFullUserModerationHistoryRpcArgs,
   toGetVisibleModerationActionsRpcArgs,
+  toSearchModerationHeroTargetsRpcArgs,
+  toSearchModerationUserTargetsRpcArgs,
 } from './moderation-action';
 
 describe('moderation action utils', () => {
@@ -74,15 +82,67 @@ describe('moderation action utils', () => {
     ).toThrowError('reason is required for moderation action workflow.');
   });
 
-  it('builds scope and history RPC args', () => {
+  it('maps moderation target search rows', () => {
+    const userTarget = mapModerationUserTarget({
+      user_id: 'user-1',
+      display_name: 'Alex',
+      email: null as unknown as string,
+      primary_hero_id: 'hero-1',
+      primary_hero_name: 'Aster',
+      has_visible_moderation_history: true,
+      match_kind: 'hero_name',
+      technical_label: 'user-1',
+    });
+    const heroTarget = mapModerationHeroTarget({
+      hero_id: 'hero-1',
+      hero_name: 'Aster',
+      user_id: 'user-1',
+      user_display_name: 'Alex',
+      email: 'alex@example.com',
+      has_visible_moderation_history: false,
+      match_kind: 'hero_name',
+      technical_label: 'hero-1',
+    });
+
+    expect(userTarget.label).toBe('Alex');
+    expect(userTarget.email).toBeNull();
+    expect(userTarget.description).toContain('Primary hero: Aster');
+    expect(heroTarget.label).toBe('Aster');
+    expect(heroTarget.description).toContain('Alex');
+    expect(heroTarget.email).toBe('alex@example.com');
+  });
+
+  it('builds scope, history and target search RPC args', () => {
     const scopeArgs: Record<string, unknown> = toCanApplyLocalModerationActionRpcArgs(
       ' server-1 ',
       ' trade ',
     );
+    const fullAccessArgs: Record<string, unknown> =
+      toCanReadFullModerationHistoryRpcArgs(' server-1 ');
+    const targetSearchAccessArgs: Record<string, unknown> =
+      toCanSearchModerationTargetsRpcArgs(' server-1 ');
     const historyArgs: Record<string, unknown> = toGetVisibleModerationActionsRpcArgs({
       serverId: ' server-1 ',
       targetUserId: ' user-1 ',
       targetHeroId: '',
+    });
+    const fullUserArgs: Record<string, unknown> = toGetFullUserModerationHistoryRpcArgs({
+      serverId: ' server-1 ',
+      userId: ' user-1 ',
+    });
+    const fullHeroArgs: Record<string, unknown> = toGetFullHeroModerationHistoryRpcArgs({
+      serverId: ' server-1 ',
+      heroId: ' hero-1 ',
+    });
+    const userSearchArgs: Record<string, unknown> = toSearchModerationUserTargetsRpcArgs({
+      serverId: ' server-1 ',
+      query: ' alex ',
+      limit: 10,
+    });
+    const heroSearchArgs: Record<string, unknown> = toSearchModerationHeroTargetsRpcArgs({
+      serverId: ' server-1 ',
+      query: ' aster ',
+      limit: 10,
     });
 
     expect(scopeArgs).toEqual({
@@ -90,9 +150,39 @@ describe('moderation action utils', () => {
       p_scope_key: 'trade',
     });
 
+    expect(fullAccessArgs).toEqual({
+      p_server_id: 'server-1',
+    });
+
+    expect(targetSearchAccessArgs).toEqual({
+      p_server_id: 'server-1',
+    });
+
     expect(historyArgs).toEqual({
       p_server_id: 'server-1',
       p_target_user_id: 'user-1',
+    });
+
+    expect(fullUserArgs).toEqual({
+      p_server_id: 'server-1',
+      p_user_id: 'user-1',
+    });
+
+    expect(fullHeroArgs).toEqual({
+      p_server_id: 'server-1',
+      p_hero_id: 'hero-1',
+    });
+
+    expect(userSearchArgs).toEqual({
+      p_server_id: 'server-1',
+      p_query: 'alex',
+      p_limit: 10,
+    });
+
+    expect(heroSearchArgs).toEqual({
+      p_server_id: 'server-1',
+      p_query: 'aster',
+      p_limit: 10,
     });
   });
 });
