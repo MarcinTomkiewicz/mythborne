@@ -754,6 +754,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task G6 — Audit gameplay persistent changes
 
+**Status:** Done / confirmed 2026-04-29 for the stat allocation RPC slice.
+
 **Goal:** Add audit to selected important gameplay state changes.
 
 **Scope:**

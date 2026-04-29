@@ -325,6 +325,9 @@ Still pending at the gameplay level even if partially supported in schema:
 - G5 frontend code does not call `write_audit_log` or `try_write_anti_abuse_case_audit` after anti-abuse mutations; audit remains owned by the DB workflow RPCs.
 - G5 adds anti-abuse decision input/output models, generated RPC arg aliases, payload mappers, row-to-domain mappers, and targeted mapper tests.
 - `add_anti_abuse_sanction_item` is modeled as sanction item evidence/context, not item confiscation or return ownership transfer.
+- G6 accepted on 2026-04-29 for the stat allocation slice: attribute allocation save now uses canonical `save_stat_allocation(...)` instead of direct frontend writes to `hero_stats` or `hero.character_points`.
+- G6 stat allocation audit, Character Point ledger, and spend validation are owned by the DB workflow. The frontend sends normalized stat JSON and a declared `p_character_points_spent` request input, then refreshes local stat/CP state from `stats_json` and `character_points_after` returned by the RPC.
+- G6 frontend code does not call `AuditWriter.write()` for stat allocation saves. UI-only plus/minus clicks remain local draft state and are not audited.
 - U0-C1 accepted on 2026-04-28: frontend role usage audit confirmed that global roles and server staff assignments are already separate data dimensions, but current UI/access affordances are still too broad.
 - U0-C1 identified `/admin` route guards, logged-in menu visibility, static admin navigation, and `ActiveServer.canManageSelectedServer` semantics as the main frontend role-boundary risks.
 - `canManageSelectedServer` must not mean "has any server staff assignment"; future U0 work should split staff access, management authority, moderation authority, test access, and assigned-staff status into separate access flags.

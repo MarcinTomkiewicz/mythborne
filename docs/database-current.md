@@ -34,9 +34,26 @@ Rules:
 - Relational `entity_field_change` creation/application remains a future dedicated workflow.
 - After applying schema/RPC migrations, regenerate `database.types.ts` so the typed frontend services see the current RPCs.
 
+## Update 2026-04-29 — G6 stat allocation workflow
+
+Stat allocation save is now a DB/RPC workflow.
+
+Frontend/domain RPC contract:
+
+- `save_stat_allocation(uuid, jsonb, integer, text, text)` → returns `audit_log_id`, `character_points_after`, `hero_id`, `server_id`, and `stats_json`.
+
+Rules:
+
+- Frontend must call `save_stat_allocation(...)` for attribute allocation saves.
+- Frontend must not directly upsert `hero_stats` for this flow.
+- Frontend must not directly update `hero.character_points` for this flow.
+- Frontend must not call `write_audit_log(...)` / `AuditWriter.write()` separately for this flow.
+- `p_character_points_spent` is a declared request input from the current form state; the DB workflow remains the authority for cost/spend validation, Character Point ledger writes, stat persistence, and audit.
+- UI-only plus/minus draft changes are not audited.
+
 ## Config governance status
 
-Confirmed frontend/admin work currently includes D1–D6 and G1–G5. The current backlog position is G6: audit gameplay persistent changes.
+Confirmed frontend/admin work currently includes D1–D6 and G1–G6 stat allocation RPC slice.
 
 D4/D5 scalar/json config governance rules remain:
 
@@ -1401,3 +1418,4 @@ Admin/config/balance reference search:
 - Treat `total_count` as the backend count of matches for the current query and permissions.
 - Do not implement broad client-side reads from `user_data`, `hero`, `items`, case/sanction/trade/auction tables or admin balance dictionaries for human-facing selectors.
 - After these schema/RPC changes, regenerate `database.types.ts` before implementing affected frontend work.
+

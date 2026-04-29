@@ -49,6 +49,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: G3 - audit domain operation helper.
 - Completed and confirmed: G4 - audit config governance changes.
 - Completed and confirmed: G5 - audit anti-abuse decisions.
+- Completed and confirmed: G6 - audit gameplay persistent changes, stat allocation RPC slice.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
@@ -73,6 +74,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I7b - DB-driven central requirement editor for Buildings admin.
 - Completed and confirmed: UX-I8 - anti-abuse decision explainability pass.
 - Current backlog task: wait for user commit, then continue with the next confirmed backlog slice.
+- G6 follow-up planning note: remaining gameplay audit slices are major item operations, trade operations once frontend flows exist, and estate/building irreversible changes.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow

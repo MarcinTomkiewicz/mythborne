@@ -41,5 +41,6 @@ export const RPC = {
   get_building_progression_preview: 'get_building_progression_preview',
   get_requirement_impact_preview: 'get_requirement_impact_preview',
   reorder_entity_requirements: 'reorder_entity_requirements',
+  save_stat_allocation: 'save_stat_allocation',
   update_entity_requirement: 'update_entity_requirement',
 } as const;

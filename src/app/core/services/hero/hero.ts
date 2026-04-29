@@ -1,12 +1,18 @@
 import { inject, Injectable } from '@angular/core';
-import { forkJoin, map, switchMap } from 'rxjs';
-import { TABLES } from '../../../core/constants/tables.const';
-import { Row } from '../../../core/types/supabase.types';
-import { IHeroStats } from '../../../core/interfaces/hero/i-hero-stats';
+import { map, Observable, switchMap } from 'rxjs';
+import { RPC } from '../../constants/rpc.const';
+import { TABLES } from '../../constants/tables.const';
+import { Row } from '../../types/supabase.types';
+import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
 import { AuthState } from '../auth/auth-state';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
-import { nonNegativeInteger } from '../../utils/number';
+import {
+  mapSaveStatAllocationResult,
+  SaveStatAllocationResult,
+  toSaveStatAllocationRpcArgs,
+} from '../../utils/stat-allocation-rpc';
+import { SaveStatAllocationRpcRow } from '../../types/stat-allocation-rpc.types';
 import { ActiveHero } from './active-hero';
 
 @Injectable({ providedIn: 'root' })
@@ -65,16 +71,16 @@ export class Hero {
       )
       .pipe(
         map((rows) => {
-        const data = rows[0];
-        if (!data?.address) {
-          return null;
-        }
+          const data = rows[0];
+          if (!data?.address) {
+            return null;
+          }
 
-        if (data.district_code) {
-          return `${data.district_code} | ${data.address}`;
-        }
+          if (data.district_code) {
+            return `${data.district_code} | ${data.address}`;
+          }
 
-        return data.address;
+          return data.address;
         })
       );
   }
@@ -91,38 +97,44 @@ export class Hero {
     );
   }
 
-  saveProgressionDraft(stats: Record<string, number>, characterPoints: number) {
+  saveProgressionDraft(
+    stats: Record<string, number>,
+    nextCharacterPoints: number,
+    saveContext: {
+      previousCharacterPoints: number;
+    },
+  ): Observable<SaveStatAllocationResult> {
     return this.getHeroData().pipe(
-      switchMap((hero) => {
-        const statRows = Object.entries(stats).map(([statKey, value]) => ({
-          heroId: hero.id,
-          statKey,
-          value: nonNegativeInteger(value),
-        }));
+      switchMap((hero) =>
+        this.backend.rpc<SaveStatAllocationRpcRow[]>(
+          RPC.save_stat_allocation,
+          toSaveStatAllocationRpcArgs({
+            heroId: hero.id,
+            stats,
+            previousCharacterPoints: saveContext.previousCharacterPoints,
+            nextCharacterPoints,
+          }),
+        ),
+      ),
+      map((rows) => {
+        const row = Array.isArray(rows) ? rows[0] : null;
 
-        return forkJoin({
-          statsResult: this.backend.upsertMany(TABLES.hero_stats, statRows, 'hero_id,stat_key'),
-          heroResult: this.backend.updateWhere<Pick<Row<'hero'>, 'id' | 'character_points'>>(
-            TABLES.hero,
-            { id: { operator: FilterOperator.EQ, value: hero.id } },
-            { characterPoints: nonNegativeInteger(characterPoints) }
-          ),
-        });
-      }),
-      map(({ heroResult }) => {
-        if (heroResult.length === 0) {
-          throw new Error('Character Points update did not affect any row.');
+        if (!row) {
+          throw new Error('Stat allocation save returned no result.');
         }
 
-        const hero = this.authState.hero();
+        const result = mapSaveStatAllocationResult(row);
+        const activeHero = this.authState.hero();
 
-        if (hero) {
+        if (activeHero) {
           this.authState.setHero({
-            ...hero,
-            characterPoints: nonNegativeInteger(characterPoints),
+            ...activeHero,
+            characterPoints: result.characterPointsAfter,
           });
         }
-      })
+
+        return result;
+      }),
     );
   }
 }

@@ -117,7 +117,7 @@ export class AttributeAllocationPageFacade {
       } else if (nextLevelCostResult.error) {
         increaseReason = nextLevelCostResult.error;
       } else if (nextLevelCost !== null && nextLevelCost > remainingHeroPoints) {
-              increaseReason = 'Not enough Character Points for the next level.';
+        increaseReason = 'Not enough Character Points for the next level.';
       }
 
       return {
@@ -186,22 +186,25 @@ export class AttributeAllocationPageFacade {
     const nextStats = {
       ...this.draftStats(),
     };
+    const previousHeroPoints = this.heroPoints();
 
     this.isSaving.set(true);
 
     this.heroService
-      .saveProgressionDraft(nextStats, nextHeroPoints)
+      .saveProgressionDraft(nextStats, nextHeroPoints, {
+        previousCharacterPoints: previousHeroPoints,
+      })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isSaving.set(false))
       )
       .subscribe({
-        next: () => {
-          this.baseStats.set(nextStats);
+        next: (result) => {
+          this.baseStats.set(result.stats);
           this.draftStats.set({
-            ...nextStats,
+            ...result.stats,
           });
-          this.heroPoints.set(nextHeroPoints);
+          this.heroPoints.set(result.characterPointsAfter);
           this.toast.show('success', 'Attributes saved', 'Stat allocation was saved.');
         },
         error: (error: unknown) => {
