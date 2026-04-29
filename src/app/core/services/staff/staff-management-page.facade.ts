@@ -7,6 +7,7 @@ import { StaffAssignmentDraftActions } from './staff-assignment-draft.actions';
 import { StaffAssignmentListState } from './staff-assignment-list.state';
 import { StaffCandidateSearchState } from './staff-candidate-search.state';
 import { StaffRevokeActions } from './staff-revoke.actions';
+import { StaffScopeAssignmentActions } from './staff-scope-assignment.actions';
 
 @Injectable()
 export class StaffManagementPageFacade {
@@ -17,6 +18,7 @@ export class StaffManagementPageFacade {
   readonly assignmentList = inject(StaffAssignmentListState);
   readonly assignmentDraft = inject(StaffAssignmentDraftActions);
   readonly revoke = inject(StaffRevokeActions);
+  readonly scopeAssignment = inject(StaffScopeAssignmentActions);
   readonly selectedServer = this.activeServer.selectedServer;
   readonly access = this.activeServer.access;
   readonly selectedServerId = computed(() => this.selectedServer()?.id ?? null);
@@ -47,7 +49,8 @@ export class StaffManagementPageFacade {
       this.candidateSearch.error() ??
       this.assignmentList.error() ??
       this.assignmentDraft.error() ??
-      this.revoke.error(),
+      this.revoke.error() ??
+      this.scopeAssignment.error(),
   );
 
   private lastServerId: string | null = null;
@@ -64,6 +67,7 @@ export class StaffManagementPageFacade {
       this.candidateSearch.reset();
       this.assignmentList.reset();
       this.revoke.cancelRevoke();
+      this.scopeAssignment.cancelScopeEdit();
 
       if (serverId) {
         this.loadAssignments();
@@ -106,6 +110,10 @@ export class StaffManagementPageFacade {
 
   revokeSelectedAssignment(): void {
     this.revoke.revokeSelectedAssignment(this.selectedServerId(), this.canManageStaff());
+  }
+
+  saveScopes(): void {
+    this.scopeAssignment.saveScopes(this.selectedServerId(), this.canManageStaff());
   }
 
   loadAssignments(): void {

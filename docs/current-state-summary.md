@@ -371,6 +371,12 @@ Still pending at the gameplay level even if partially supported in schema:
 - U0-I6 current staff assignments display technical user ids as secondary data and map assigned scope keys to labels from `staff_permission_scopes` where available.
 - U0-I6 cleanup split the original page facade into focused `StaffCandidateSearchState`, `StaffAssignmentListState`, `StaffAssignmentDraftActions`, `StaffRevokeActions`, and a thin `StaffManagementPageFacade` shell before U0-I7 scope UI work.
 - U0-I6 was verified with targeted staff-management/admin-navigation tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- U0-I7 accepted on 2026-04-29: `/admin/staff-management` now includes moderator permission scope assignment for moderator staff assignments.
+- U0-I7 scope options come from `staff_permission_scopes` and are shown with label/description/helper text first, with technical keys only as metadata.
+- U0-I7 scope updates use `set_server_staff_permission_scopes`; `can_have_moderator_scope` is used as a per-scope pre-check before enabling checkbox controls.
+- U0-I7 scope selection uses Reactive Forms only (`FormRecord<FormControl<boolean>>`), with no `FormsModule`, `ngModel`, per-control subscriptions, or duplicate mutable selected-scope state.
+- U0-I7 split the moderator scope editor into `StaffScopeAssignmentActions` and `StaffScopeAssignmentSection`; empty scope sets are allowed and mean “remove all scopes”.
+- U0-I7 was verified with targeted staff-management/admin-navigation tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

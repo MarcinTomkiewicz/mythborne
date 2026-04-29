@@ -3,6 +3,7 @@ export const RPC = {
   assign_global_role: 'assign_global_role',
   assign_server_staff: 'assign_server_staff',
   revoke_server_staff: 'revoke_server_staff',
+  can_have_moderator_scope: 'can_have_moderator_scope',
   search_server_staff_candidates: 'search_server_staff_candidates',
   set_server_staff_permission_scopes: 'set_server_staff_permission_scopes',
   user_has_hero_on_server: 'user_has_hero_on_server',

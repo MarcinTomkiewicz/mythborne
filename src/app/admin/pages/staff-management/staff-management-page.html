@@ -227,6 +227,17 @@
             }
 
             <div class="flex-row-start-center">
+              @if (page.scopeAssignment.canEditScopes(assignment)) {
+                <p-button
+                  label="Manage scopes"
+                  [text]="true"
+                  (onClick)="page.scopeAssignment.startScopeEdit(
+                    assignment,
+                    page.selectedServerId(),
+                    page.assignmentList.permissionScopes()
+                  )"
+                />
+              }
               <p-button
                 label="Revoke"
                 severity="danger"
@@ -240,6 +251,12 @@
         }
       </div>
     </section>
+
+    <app-staff-scope-assignment-section
+      [scopeAssignment]="page.scopeAssignment"
+      [permissionScopes]="page.assignmentList.permissionScopes()"
+      (saveScopes)="page.saveScopes()"
+    />
 
     @if (page.revoke.selectedRevokeAssignment(); as assignment) {
       <section class="mg-card flex-col gap-md p-lg w-100">

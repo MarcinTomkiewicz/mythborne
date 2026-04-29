@@ -13,6 +13,8 @@ import { StaffAssignmentListState } from '../../../core/services/staff/staff-ass
 import { StaffCandidateSearchState } from '../../../core/services/staff/staff-candidate-search.state';
 import { StaffManagementPageFacade } from '../../../core/services/staff/staff-management-page.facade';
 import { StaffRevokeActions } from '../../../core/services/staff/staff-revoke.actions';
+import { StaffScopeAssignmentActions } from '../../../core/services/staff/staff-scope-assignment.actions';
+import { StaffScopeAssignmentSection } from './staff-scope-assignment-section';
 
 @Component({
   selector: 'app-staff-management-page',
@@ -26,6 +28,7 @@ import { StaffRevokeActions } from '../../../core/services/staff/staff-revoke.ac
     LoadingOverlay,
     AdminServerSwitcher,
     AdminTagLinks,
+    StaffScopeAssignmentSection,
   ],
   providers: [
     StaffManagementPageFacade,
@@ -33,6 +36,7 @@ import { StaffRevokeActions } from '../../../core/services/staff/staff-revoke.ac
     StaffAssignmentListState,
     StaffAssignmentDraftActions,
     StaffRevokeActions,
+    StaffScopeAssignmentActions,
   ],
   templateUrl: './staff-management-page.html',
 })

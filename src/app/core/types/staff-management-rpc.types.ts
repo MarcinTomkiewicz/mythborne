@@ -6,6 +6,8 @@ export type AssignServerStaffRpcArgs =
   Database['public']['Functions']['assign_server_staff']['Args'];
 export type RevokeServerStaffRpcArgs =
   Database['public']['Functions']['revoke_server_staff']['Args'];
+export type CanHaveModeratorScopeRpcArgs =
+  Database['public']['Functions']['can_have_moderator_scope']['Args'];
 export type SearchServerStaffCandidatesRpcArgs =
   Database['public']['Functions']['search_server_staff_candidates']['Args'];
 export type SetServerStaffPermissionScopesRpcArgs =

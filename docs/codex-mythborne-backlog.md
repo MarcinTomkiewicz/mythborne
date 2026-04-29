@@ -927,6 +927,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task U0-I7 — Moderator scope assignment UI
 
+**Status:** Done / confirmed 2026-04-29.
+
 **Goal:** Implement the moderator scope UI designed in U0-C4.
 
 **Scope:**
@@ -2248,8 +2250,8 @@ Use this order after the current audit/spec cleanup instead of starting more aud
 4. U0-I4 — completed / confirmed: admin dashboard/cards/tag-link filtering.
 5. U0-I5 — completed / confirmed: staff management read models and services.
 6. U0-I6 — completed / confirmed: staff management UI foundation.
-7. U0-I7 — current next task: moderator scope assignment UI.
-8. U0-I8 — moderation actions UI foundation.
+7. U0-I7 — completed / confirmed: moderator scope assignment UI.
+8. U0-I8 — current next task: moderation actions UI foundation.
 9. U0-I9 — moderation history and disqualification panels.
 10. UX-I1/UX-I2 quick wins may be interleaved when touching the same admin screens.
 

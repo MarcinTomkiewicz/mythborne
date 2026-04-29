@@ -14,6 +14,7 @@ import {
 import {
   AssignGlobalRoleRpcArgs,
   AssignServerStaffRpcArgs,
+  CanHaveModeratorScopeRpcArgs,
   RevokeServerStaffRpcArgs,
   SearchServerStaffCandidatesRpcArgs,
   SetServerStaffPermissionScopesRpcArgs,
@@ -160,6 +161,16 @@ export function toRevokeServerStaffRpcArgs(
   return {
     p_staff_assignment_id: requiredText(input.staffAssignmentId, 'staffAssignmentId'),
     p_reason: requiredText(input.reason, 'reason'),
+  };
+}
+
+export function toCanHaveModeratorScopeRpcArgs(
+  serverId: string,
+  scopeKey: string,
+): CanHaveModeratorScopeRpcArgs {
+  return {
+    p_server_id: requiredText(serverId, 'serverId'),
+    p_scope_key: requiredText(scopeKey, 'scopeKey'),
   };
 }
 

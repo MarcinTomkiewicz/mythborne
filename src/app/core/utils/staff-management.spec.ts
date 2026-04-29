@@ -7,6 +7,7 @@ import {
   mapStaffRole,
   toAssignGlobalRoleRpcArgs,
   toAssignServerStaffRpcArgs,
+  toCanHaveModeratorScopeRpcArgs,
   toSearchServerStaffCandidatesRpcArgs,
   toSetServerStaffPermissionScopesRpcArgs,
   toUserHasHeroOnServerRpcArgs,
@@ -120,6 +121,13 @@ describe('staff management mappers', () => {
       p_server_id: 'server-1',
       p_query: 'candidate',
       p_limit: 10,
+    });
+  });
+
+  it('maps moderator scope access rpc args', () => {
+    expect(toCanHaveModeratorScopeRpcArgs(' server-1 ', ' trade ')).toEqual({
+      p_server_id: 'server-1',
+      p_scope_key: 'trade',
     });
   });
 

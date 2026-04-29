@@ -1,0 +1,84 @@
+@if (scopeAssignment().selectedScopeAssignment(); as assignment) {
+  <section class="mg-card flex-col gap-lg p-lg w-100">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Moderator scopes</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        Update assigned permission scopes
+      </h3>
+      <p class="muted-text mb-0">
+        Staff user id: {{ assignment.userId }}
+      </p>
+    </div>
+
+    @if (scopeAssignment().isLoadingScopeAccess()) {
+      <p-message severity="info" text="Checking available moderator scopes for this server." />
+    }
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
+      @for (scope of permissionScopes(); track scope.key) {
+        <article class="mg-card flex-col gap-sm p-md">
+          <div class="flex-row-start-center gap-sm">
+            <p-checkbox
+              [binary]="true"
+              [formControl]="scopeAssignment().scopeControl(scope.key)"
+            />
+            <div class="flex-col gap-xs min-w-0">
+              <strong class="heading-color">{{ scope.label }}</strong>
+              <span class="muted-text">{{ scope.description }}</span>
+            </div>
+          </div>
+
+          @if (scope.helperText) {
+            <p class="muted-text mb-0">{{ scope.helperText }}</p>
+          }
+
+          <span class="mg-tag">key: {{ scope.key }}</span>
+
+          @if (!scopeAssignment().isScopeAllowed(scope.key)) {
+            <p-message
+              severity="warn"
+              text="This scope is not available in the current server context."
+            />
+          }
+        </article>
+      } @empty {
+        <p class="muted-text mb-0">No active staff permission scopes are configured.</p>
+      }
+    </div>
+
+    <form
+      [formGroup]="scopeAssignment().scopeForm"
+      class="flex-col gap-md"
+      (ngSubmit)="saveScopes.emit()"
+    >
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Reason</span>
+        <input pInputText class="w-100" formControlName="reason" />
+        @if (
+          scopeAssignment().scopeForm.controls.reason.touched &&
+          scopeAssignment().scopeForm.controls.reason.invalid
+        ) {
+          <span class="form-error">Reason is required.</span>
+        }
+        @if (!scopeAssignment().scopeForm.controls.reason.value.trim()) {
+          <span class="muted-text">A reason is required before saving scope changes.</span>
+        }
+      </label>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <p-button
+          type="submit"
+          label="Save scopes"
+          [loading]="scopeAssignment().isSavingScopes()"
+          [disabled]="scopeAssignment().isSavingScopes()"
+        />
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [text]="true"
+          (onClick)="scopeAssignment().cancelScopeEdit()"
+        />
+      </div>
+    </form>
+  </section>
+}

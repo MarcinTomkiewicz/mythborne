@@ -30,6 +30,7 @@ import {
   mapStaffUserCandidate,
   toAssignGlobalRoleRpcArgs,
   toAssignServerStaffRpcArgs,
+  toCanHaveModeratorScopeRpcArgs,
   toRevokeServerStaffRpcArgs,
   toSearchServerStaffCandidatesRpcArgs,
   toSetServerStaffPermissionScopesRpcArgs,
@@ -131,6 +132,13 @@ export class StaffManagement {
     return this.backend.rpc<string>(
       RPC.revoke_server_staff,
       toRevokeServerStaffRpcArgs(input),
+    );
+  }
+
+  canHaveModeratorScope(serverId: string, scopeKey: string): Observable<boolean> {
+    return this.backend.rpc<boolean>(
+      RPC.can_have_moderator_scope,
+      toCanHaveModeratorScopeRpcArgs(serverId, scopeKey),
     );
   }
 
