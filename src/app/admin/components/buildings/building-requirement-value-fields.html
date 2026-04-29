@@ -1,0 +1,130 @@
+<ng-container [formGroup]="requirementGroup()">
+  @switch (definition()?.valueType) {
+    @case (valueTypes.Integer) {
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Required integer value</span>
+        <input
+          pInputText
+          type="number"
+          class="w-100"
+          formControlName="requiredValueInteger"
+        />
+      </label>
+    }
+    @case (valueTypes.Decimal) {
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Required decimal value</span>
+        <input
+          pInputText
+          type="number"
+          step="any"
+          class="w-100"
+          formControlName="requiredValueDecimal"
+        />
+      </label>
+    }
+    @case (valueTypes.Boolean) {
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Required state</span>
+        <p-select
+          formControlName="requiredValueBoolean"
+          [options]="booleanOptions()"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-100"
+        />
+      </label>
+    }
+    @case (valueTypes.String) {
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Required text value</span>
+        <input pInputText class="w-100" formControlName="requiredValueText" />
+      </label>
+    }
+    @case (valueTypes.StatKey) {
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Stat</span>
+        <p-select
+          formControlName="requiredStatKey"
+          [options]="statOptions()"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-100"
+        />
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Minimum stat value</span>
+        <input
+          pInputText
+          type="number"
+          class="w-100"
+          formControlName="requiredValueInteger"
+        />
+      </label>
+    }
+    @case (valueTypes.BuildingKey) {
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Required building</span>
+        <p-select
+          formControlName="requiredBuildingKey"
+          [options]="buildingOptions()"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-100"
+        />
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Required building level</span>
+        <input
+          pInputText
+          type="number"
+          class="w-100"
+          formControlName="requiredValueInteger"
+        />
+      </label>
+    }
+    @case (valueTypes.ResourceType) {
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Resource</span>
+        <p-select
+          formControlName="requiredResourceType"
+          [options]="resourceOptions()"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-100"
+        />
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Required amount</span>
+        <input
+          pInputText
+          type="number"
+          step="any"
+          class="w-100"
+          formControlName="requiredValueDecimal"
+        />
+      </label>
+    }
+    @case (valueTypes.DistrictCode) {
+      <label class="flex-col gap-sm">
+        <span class="muted-text">District</span>
+        <p-select
+          formControlName="requiredDistrictCode"
+          [options]="districtOptions()"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-100"
+        />
+      </label>
+    }
+    @case (valueTypes.EnumRef) {
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Enum reference</span>
+        <input pInputText class="w-100" formControlName="requiredValueText" />
+      </label>
+    }
+  }
+</ng-container>

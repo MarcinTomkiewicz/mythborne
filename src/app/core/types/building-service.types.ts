@@ -6,7 +6,6 @@ export type BuildingPayload = {
   description: string | null;
   imagePath: string | null;
   districtCode: string;
-  rankRequired: number;
   sortOrder: number;
   baseBuildTimeMinutes: number;
   maxLevel: number;

@@ -46,7 +46,7 @@ export interface MansionBuilding {
   description: string | null;
   imagePath: string | null;
   districtCode: string;
-  rankRequired: number;
+  districtUnlockRank: number;
   sortOrder: number;
   maxLevel: number;
   currentLevel: number;
@@ -77,14 +77,6 @@ export interface EditableBuildingResourceCost {
   appliesFromLevel: number;
 }
 
-export interface EditableBuildingRequirement {
-  id: string | null;
-  type: BuildingRequirementType;
-  statKey: string | null;
-  minValue: number;
-  appliesFromLevel: number;
-}
-
 export interface EditableBuilding {
   id: string | null;
   key: string;
@@ -92,14 +84,12 @@ export interface EditableBuilding {
   description: string;
   imagePath: string;
   districtCode: string;
-  rankRequired: number;
   sortOrder: number;
   baseBuildTimeMinutes: number;
   maxLevel: number;
   formulaOverrides: BuildingFormulaOverrides;
   bonuses: EditableBuildingBonus[];
   resourceCosts: EditableBuildingResourceCost[];
-  requirements: EditableBuildingRequirement[];
 }
 
 export interface BuildingDistrictOption {
@@ -136,6 +126,83 @@ export interface BuildingBonusTemplateMetadata {
   sourceStat: string | null;
   scalingFactor: number | null;
   isActive: boolean;
+}
+
+export type BuildingRequirementEntityType =
+  | 'building_definition'
+  | 'item_generation_base'
+  | 'item_generation_affix'
+  | 'item'
+  | 'trial_definition'
+  | 'trade_feature'
+  | 'auction_feature';
+export type BuildingRequirementValueType =
+  | 'integer'
+  | 'decimal'
+  | 'boolean'
+  | 'string'
+  | 'stat_key'
+  | 'building_key'
+  | 'resource_type'
+  | 'district_code'
+  | 'enum_ref';
+
+export interface BuildingRequirementDefinition {
+  id: string;
+  key: string;
+  label: string;
+  description: string;
+  helperText: string | null;
+  adminDescription: string | null;
+  category: string;
+  valueType: BuildingRequirementValueType;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface BuildingRequirementImpactPreview {
+  entityRequirementId: string;
+  entityType: BuildingRequirementEntityType;
+  entityId: string;
+  requirementDefinitionKey: string;
+  requirementLabel: string;
+  requirementDescription: string;
+  requirementHelperText: string;
+  requirementAdminDescription: string;
+  requirementCategory: string;
+  requirementValueType: BuildingRequirementValueType;
+  resolvedValueLabel: string;
+  appliesFromLevel: number;
+  context: string;
+  description: string;
+  explanation: string;
+  isActive: boolean;
+  sortOrder: number;
+  requiredBuildingKey: string;
+  requiredDistrictCode: string;
+  requiredResourceType: string;
+  requiredStatKey: string;
+  requiredValueBoolean: boolean;
+  requiredValueDecimal: number;
+  requiredValueInteger: number;
+  requiredValueText: string;
+}
+
+export interface BuildingRequirementDraft {
+  id: string | null;
+  requirementDefinitionKey: string;
+  appliesFromLevel: number;
+  description: string;
+  reason: string;
+  sortOrder: number;
+  requiredBuildingKey: string | null;
+  requiredDistrictCode: string | null;
+  requiredResourceType: string | null;
+  requiredStatKey: string | null;
+  requiredValueBoolean: boolean | null;
+  requiredValueDecimal: number | null;
+  requiredValueInteger: number | null;
+  requiredValueText: string | null;
 }
 
 export interface BuildingProgressionPreviewInput {

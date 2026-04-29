@@ -31,7 +31,6 @@ describe('BuildingFormulaPreviewCalculator', () => {
         { id: null, resourceType: 'materials', baseValue: 50, appliesFromLevel: 1 },
       ],
       bonuses: [],
-      requirements: [],
     });
 
     expect(preview.nextCosts).toEqual([
@@ -50,7 +49,6 @@ describe('BuildingFormulaPreviewCalculator', () => {
       },
       costs: [{ id: null, resourceType: 'drachma', baseValue: 100, appliesFromLevel: 5 }],
       bonuses: [],
-      requirements: [],
     });
 
     expect(preview.nextCosts).toEqual([]);
@@ -68,7 +66,6 @@ function createBuilding() {
     description: '',
     imagePath: '',
     districtCode: 'A',
-    rankRequired: 1,
     sortOrder: 1,
     baseBuildTimeMinutes: 10,
     maxLevel: 15,
@@ -79,6 +76,5 @@ function createBuilding() {
     },
     bonuses: [],
     resourceCosts: [],
-    requirements: [],
   };
 }

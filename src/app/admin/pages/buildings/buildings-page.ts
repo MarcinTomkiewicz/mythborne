@@ -8,6 +8,7 @@ import { BuildingFormulaPreviewCalculator } from '../../../core/services/buildin
 import { BuildingFormulaAdminFacade } from '../../../core/services/buildings/building-formula-admin.facade';
 import { BuildingImpactPreviewState } from '../../../core/services/buildings/building-impact-preview.state';
 import { BuildingProgressionPreviewState } from '../../../core/services/buildings/building-progression-preview.state';
+import { BuildingRequirementsState } from '../../../core/services/buildings/building-requirements.state';
 import { FormFields } from '../../../shared/form-fields/form-fields';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
 import { AdminServerSwitcher } from '../../components/admin-server-switcher/admin-server-switcher';
@@ -46,6 +47,7 @@ import {
     BuildingFormulaPreviewCalculator,
     BuildingImpactPreviewState,
     BuildingProgressionPreviewState,
+    BuildingRequirementsState,
     BuildingsPageFacade,
   ],
   templateUrl: './buildings-page.html',

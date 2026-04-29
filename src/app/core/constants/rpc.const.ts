@@ -35,6 +35,11 @@ export const RPC = {
   get_visible_moderation_actions: 'get_visible_moderation_actions',
   search_moderation_hero_targets: 'search_moderation_hero_targets',
   search_moderation_user_targets: 'search_moderation_user_targets',
+  create_entity_requirement: 'create_entity_requirement',
+  deactivate_entity_requirement: 'deactivate_entity_requirement',
   get_bonus_impact_preview: 'get_bonus_impact_preview',
   get_building_progression_preview: 'get_building_progression_preview',
+  get_requirement_impact_preview: 'get_requirement_impact_preview',
+  reorder_entity_requirements: 'reorder_entity_requirements',
+  update_entity_requirement: 'update_entity_requirement',
 } as const;

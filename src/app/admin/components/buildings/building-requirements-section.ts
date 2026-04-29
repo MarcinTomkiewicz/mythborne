@@ -1,33 +1,43 @@
 import { Component, input } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
-import { BUILDING_REQUIREMENT_TYPE_OPTIONS } from '../../../core/config/forms/buildings-form.config';
+import { BUILDING_RESOURCE_TYPE_OPTIONS } from '../../../core/config/forms/buildings-form.config';
+import { REQUIREMENT_BOOLEAN_OPTIONS } from '../../../core/constants/requirement.const';
 import { BuildingsPageFacade } from '../../../core/services/buildings/building-admin-page.facade';
-import { BuildingRequirementExplainabilityCard } from './building-requirement-explainability-card';
+import { BuildingRequirementEditorRow } from './building-requirement-editor-row';
 
 @Component({
   selector: 'app-building-requirements-section',
   standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    ButtonModule,
-    InputTextModule,
-    SelectModule,
-    BuildingRequirementExplainabilityCard,
-  ],
+  imports: [ButtonModule, BuildingRequirementEditorRow],
   templateUrl: './building-requirements-section.html',
 })
 export class BuildingRequirementsSection {
   readonly page = input.required<BuildingsPageFacade>();
-  readonly requirementTypeOptions = [...BUILDING_REQUIREMENT_TYPE_OPTIONS];
+
+  readonly booleanOptions = [...REQUIREMENT_BOOLEAN_OPTIONS];
+  readonly resourceOptions = [...BUILDING_RESOURCE_TYPE_OPTIONS];
 
   readonly statOptions = () => [
-    { label: 'Not used', value: null },
+    { label: 'Select stat', value: null },
     ...this.page().adminData().stats.map((stat) => ({
       label: stat.label,
       value: stat.key,
+    })),
+  ];
+
+  readonly districtOptions = () => [
+    { label: 'Select district', value: null },
+    ...this.page().adminData().districts.map((district) => ({
+      label: `${district.name} (${district.code})`,
+      value: district.code,
+    })),
+  ];
+
+  readonly buildingOptions = () => [
+    { label: 'Select building', value: null },
+    ...this.page().adminData().buildings.map((building) => ({
+      label: `${building.name} (${building.key})`,
+      value: building.key,
     })),
   ];
 }

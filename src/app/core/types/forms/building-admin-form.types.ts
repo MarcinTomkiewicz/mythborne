@@ -1,8 +1,5 @@
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
-import {
-  BuildingResourceType,
-  EditableBuildingRequirement,
-} from '../building.types';
+import { BuildingResourceType } from '../building.types';
 import { BonusType } from '../bonus.types';
 
 export type BuildingFormulaControlName =
@@ -35,12 +32,21 @@ export type BuildingResourceCostForm = FormGroup<{
   appliesFromLevel: FormControl<number>;
 }>;
 
-export type BuildingRequirementForm = FormGroup<{
+export type BuildingCanonicalRequirementForm = FormGroup<{
   id: FormControl<string | null>;
-  type: FormControl<EditableBuildingRequirement['type']>;
-  statKey: FormControl<string | null>;
-  minValue: FormControl<number>;
+  requirementDefinitionKey: FormControl<string>;
   appliesFromLevel: FormControl<number>;
+  description: FormControl<string>;
+  reason: FormControl<string>;
+  sortOrder: FormControl<number>;
+  requiredBuildingKey: FormControl<string | null>;
+  requiredDistrictCode: FormControl<string | null>;
+  requiredResourceType: FormControl<string | null>;
+  requiredStatKey: FormControl<string | null>;
+  requiredValueBoolean: FormControl<boolean | null>;
+  requiredValueDecimal: FormControl<number | null>;
+  requiredValueInteger: FormControl<number | null>;
+  requiredValueText: FormControl<string | null>;
 }>;
 
 export type BuildingEditorForm = FormGroup<{
@@ -50,7 +56,6 @@ export type BuildingEditorForm = FormGroup<{
   description: FormControl<string>;
   imagePath: FormControl<string>;
   districtCode: FormControl<string>;
-  rankRequired: FormControl<number>;
   sortOrder: FormControl<number>;
   baseBuildTimeMinutes: FormControl<number>;
   maxLevel: FormControl<number>;
@@ -61,5 +66,4 @@ export type BuildingEditorForm = FormGroup<{
   }>;
   bonuses: FormArray<BuildingBonusForm>;
   resourceCosts: FormArray<BuildingResourceCostForm>;
-  requirements: FormArray<BuildingRequirementForm>;
 }>;

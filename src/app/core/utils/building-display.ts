@@ -1,7 +1,5 @@
 import {
   BuildingResourceType,
-  BuildingStatOption,
-  EditableBuildingRequirement,
 } from '../domain/building/building.model';
 import { BonusType } from '../types/bonus.types';
 import { formatBonusValue } from './bonus';
@@ -33,36 +31,6 @@ export function toBuildingDurationLabel(minutes: number | null): string {
   }
 
   return `${hours} h ${remainingMinutes} min`;
-}
-
-export function toBuildingRequirementTypeLabel(
-  type: EditableBuildingRequirement['type']
-): string {
-  if (type === 'hero_rank') {
-    return 'Hero rank';
-  }
-
-  if (type === 'hero_stat') {
-    return 'Hero stat';
-  }
-
-  return 'Hero level';
-}
-
-export function toBuildingRequirementSummary(
-  requirement: EditableBuildingRequirement,
-  stats: BuildingStatOption[]
-): string {
-  if (requirement.type === 'hero_stat') {
-    const statLabel =
-      stats.find((stat) => stat.key === requirement.statKey)?.label ??
-      requirement.statKey ??
-      'Stat';
-
-    return `${statLabel} ${requirement.minValue}`;
-  }
-
-  return `${toBuildingRequirementTypeLabel(requirement.type)} ${requirement.minValue}`;
 }
 
 export function toResourceLabel(type: BuildingResourceType): string {

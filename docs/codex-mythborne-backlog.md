@@ -2140,6 +2140,35 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ---
 
+## Task UX-I7b - DB-driven central requirement editor
+
+**Status:** Done / confirmed 2026-04-29.
+
+**Goal:** Replace the Buildings admin legacy requirement editor with a canonical `entity_requirements` editor backed by DB requirement definitions and RPC workflows.
+
+**Scope:**
+- Load active `requirement_definitions` as requirement type options.
+- Create, update, deactivate and reactivate building requirements through canonical RPCs.
+- Use `get_requirement_impact_preview(...)` for saved canonical impact and inactive-row visibility.
+- Render value fields based on `requirement_definitions.value_type`.
+- Keep resource options in central domain config for this slice; they are not DB-driven yet.
+
+**Acceptance criteria:**
+- Buildings admin edit path no longer uses legacy `building_requirements`, `buildings.requirements` or `rank_required`.
+- Frontend does not directly read or write `entity_requirements`.
+- Create/update payloads are `value_type` aware and do not send unrelated technical preview defaults.
+- Deactivate removes rows from the active editor and active saved impact.
+- Inactive rows are visually separate and can be reactivated when returned by the DB read model.
+- Build and targeted tests pass.
+
+**Verification notes:**
+- Manual smoke confirmed create/update/deactivate/reactivate.
+- `get_requirement_impact_preview(...)` returns inactive rows required by the reactivate flow.
+- The previous `Unknown or inactive audit action type: config.entity_requirement.created/updated` failure was a seed/database issue, not a frontend issue.
+- Required audit action types: `config.entity_requirement.created`, `config.entity_requirement.updated`, `config.entity_requirement.deactivated`, `config.entity_requirement.reordered`.
+
+---
+
 ## Task UX-I8 — Anti-abuse decision explainability pass
 
 **Goal:** Make future anti-abuse case/sanction/declaration/report UI understandable for staff and players.

@@ -70,6 +70,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I5 - item generation quality impact preview.
 - Completed and confirmed: UX-I6 - building impact calculator.
 - Completed and confirmed: UX-I7 - building bonus and requirement explainability.
+- Completed and confirmed: UX-I7b - DB-driven central requirement editor for Buildings admin.
 - Current backlog task: select the next U0/UX implementation slice.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 

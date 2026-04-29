@@ -1,14 +1,12 @@
 import { Component, input } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
 import { BuildingsPageFacade } from '../../../core/services/buildings/building-admin-page.facade';
+import { BuildingProgressionRangePreviewSection } from './building-progression-range-preview-section';
+import { BuildingSingleLevelPreviewSection } from './building-single-level-preview-section';
 
 @Component({
   selector: 'app-building-preview-section',
   standalone: true,
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, SelectModule],
+  imports: [BuildingSingleLevelPreviewSection, BuildingProgressionRangePreviewSection],
   templateUrl: './building-preview-section.html',
 })
 export class BuildingPreviewSection {

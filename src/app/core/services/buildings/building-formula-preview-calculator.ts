@@ -4,7 +4,6 @@ import {
   BuildingResourceType,
   EditableBuilding,
   EditableBuildingBonus,
-  EditableBuildingRequirement,
   EditableBuildingResourceCost,
 } from '../../domain/building/building.model';
 import { BuildingProgressionRules } from '../../domain/progression/building-progression.model';
@@ -31,7 +30,6 @@ export interface BuildingFormulaLevelPreview {
     current: number;
     next: number;
   }>;
-  requirements: EditableBuildingRequirement[];
 }
 
 export type BuildingProgressionImpactRow = BuildingProgressionPreview & {
@@ -45,7 +43,6 @@ interface FormulaPreviewInput {
   rules: BuildingProgressionRules;
   costs: readonly EditableBuildingResourceCost[];
   bonuses: readonly EditableBuildingBonus[];
-  requirements: readonly EditableBuildingRequirement[];
 }
 
 interface FormulaRangePreviewInput extends FormulaPreviewInput {
@@ -62,9 +59,7 @@ export class BuildingFormulaPreviewCalculator {
     levelInput: unknown,
     input: FormulaPreviewInput,
   ): BuildingFormulaLevelPreview {
-    return this.previewForLevel(nonNegativeInteger(levelInput), input, {
-      includeRequirements: true,
-    });
+    return this.previewForLevel(nonNegativeInteger(levelInput), input);
   }
 
   rangePreview(input: FormulaRangePreviewInput): BuildingFormulaLevelPreview[] {
@@ -111,9 +106,8 @@ export class BuildingFormulaPreviewCalculator {
   private previewForLevel(
     level: number,
     input: FormulaPreviewInput,
-    options: { includeRequirements?: boolean } = {},
   ): BuildingFormulaLevelPreview {
-    const rank = Number(input.building.rankRequired ?? 1);
+    const rank = 1;
     const costPreview = this.costPreviewForLevel(level, rank, input);
     const timePreview = this.timePreviewForLevel(level, rank, input);
 
@@ -132,9 +126,6 @@ export class BuildingFormulaPreviewCalculator {
         next:
           this.buildingProgression.getBonusValue(level + 1, Number(bonus.value), input.rules) ?? 0,
       })),
-      requirements: options.includeRequirements
-        ? input.requirements.filter((requirement) => Number(requirement.appliesFromLevel) <= level + 1)
-        : [],
     };
   }
 

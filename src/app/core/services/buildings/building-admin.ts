@@ -7,7 +7,6 @@ import {
   BuildingAdminData,
   EditableBuilding,
   EditableBuildingBonus,
-  EditableBuildingRequirement,
   EditableBuildingResourceCost,
   BuildingProgressionPreview,
   BuildingProgressionPreviewInput,
@@ -49,7 +48,7 @@ export class BuildingAdminService {
     return forkJoin({
       buildings: this.backend.getAll<EditableBuildingRow>({
         table: TABLES.buildings,
-        select: '*, building_requirements(*), building_resource_costs(*)',
+        select: '*, building_resource_costs(*)',
         orderBy: { column: 'sort_order' },
         camelCase: false,
       }),
@@ -123,7 +122,6 @@ export class BuildingAdminService {
           trimText(draft.imagePath)) ||
         null,
       districtCode: draft.districtCode,
-      rankRequired: positiveInteger(draft.rankRequired),
       sortOrder: nonNegativeInteger(draft.sortOrder),
       baseBuildTimeMinutes: nonNegativeInteger(draft.baseBuildTimeMinutes),
       maxLevel: nonNegativeInteger(draft.maxLevel),
@@ -134,7 +132,6 @@ export class BuildingAdminService {
         forkJoin([
           this.syncBuildingBonuses(buildingId, draft.bonuses),
           this.syncBuildingCosts(buildingId, draft.resourceCosts),
-          this.syncBuildingRequirements(buildingId, draft.requirements),
           this.syncFormulaOverrides(buildingId, draft),
         ])
       ),
@@ -240,24 +237,6 @@ export class BuildingAdminService {
 
     return this.deleteChildren(TABLES.building_resource_costs, 'building_id', buildingId).pipe(
       switchMap(() => this.insertRows(TABLES.building_resource_costs, rows))
-    );
-  }
-
-  private syncBuildingRequirements(
-    buildingId: string,
-    requirements: EditableBuildingRequirement[]
-  ): Observable<void> {
-    const rows = requirements.map((requirement, index) => ({
-      buildingId,
-      requirementType: requirement.type,
-      statKey: requirement.type === 'hero_stat' ? requirement.statKey : null,
-      minValue: nonNegativeInteger(requirement.minValue),
-      appliesFromLevel: positiveInteger(requirement.appliesFromLevel),
-      sortOrder: (index + 1) * 10,
-    }));
-
-    return this.deleteChildren(TABLES.building_requirements, 'building_id', buildingId).pipe(
-      switchMap(() => this.insertRows(TABLES.building_requirements, rows))
     );
   }
 

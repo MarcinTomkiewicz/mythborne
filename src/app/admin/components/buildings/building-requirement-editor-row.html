@@ -1,0 +1,68 @@
+<div class="mg-surface-card flex-col gap-md p-md" [formGroup]="requirementGroup()">
+  <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+    <div class="flex-col gap-md">
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100 align-items-center">
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Requirement definition</span>
+          <p-select
+            formControlName="requirementDefinitionKey"
+            [options]="page().requirements.definitionOptions()"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-100"
+            (onChange)="page().requirements.onDefinitionChange(index())"
+          />
+        </label>
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">From building level</span>
+          <input pInputText type="number" class="w-100" formControlName="appliesFromLevel" />
+        </label>
+
+        <app-building-requirement-value-fields
+          [requirementGroup]="requirementGroup()"
+          [definition]="definition()"
+          [booleanOptions]="booleanOptions()"
+          [statOptions]="statOptions()"
+          [districtOptions]="districtOptions()"
+          [buildingOptions]="buildingOptions()"
+          [resourceOptions]="resourceOptions()"
+        />
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Admin description</span>
+          <input pInputText class="w-100" formControlName="description" />
+        </label>
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Audit reason</span>
+          <input pInputText class="w-100" formControlName="reason" />
+        </label>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <p-button
+          label="Save requirement"
+          [loading]="page().requirements.isSaving()"
+          [disabled]="page().requirements.isSaving()"
+          (onClick)="page().requirements.save(index(), page().building.editorForm.controls.id.value)"
+        />
+        <p-button
+          label="Deactivate"
+          severity="danger"
+          [text]="true"
+          [disabled]="page().requirements.isSaving()"
+          (onClick)="page().requirements.deactivate(index(), page().building.editorForm.controls.id.value)"
+        />
+      </div>
+    </div>
+
+    <app-building-requirement-explainability-card
+      [requirementGroup]="requirementGroup()"
+      [definition]="definition()"
+      [stats]="page().adminData().stats"
+      [districts]="page().adminData().districts"
+      [buildings]="page().adminData().buildings"
+    />
+  </div>
+</div>

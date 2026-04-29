@@ -418,8 +418,13 @@ Still pending at the gameplay level even if partially supported in schema:
 - UX-I7 keeps saved canonical bonus impact as a separate DB-backed section powered by `get_bonus_impact_preview(...)`; it shows saved canonical bonus rows only and does not imply unsaved editor changes are included.
 - UX-I7 requirement rows now show only local live form-row explainability for Hero level, Hero rank and Hero stat requirements. The saved canonical requirement impact section was removed from Buildings admin to avoid mixing the legacy `building_requirements` editor with canonical `entity_requirements` preview state.
 - UX-I7's `Open bonus templates` link is generic navigation to `/admin/balance`; it is not a selected-template deep link.
-- `get_requirement_impact_preview(...)` remains visible only in generated database types for now; Buildings admin does not call it until a future canonical requirement editor workflow is implemented.
 - UX-I7 was verified with targeted building admin mapper and building progression tests plus `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- UX-I7b accepted on 2026-04-29: Buildings admin now uses a DB-driven central requirement editor backed by `requirement_definitions`, canonical entity requirement RPCs and `get_requirement_impact_preview(...)`.
+- UX-I7b supports create, update, deactivate and reactivate for building requirements through canonical RPCs only; the active editor list is rebuilt from active preview rows and inactive rows are shown separately when the DB read model returns them.
+- UX-I7b smoke confirmed that `get_requirement_impact_preview(...)` returns inactive rows required by the reactivate flow, so no direct `entity_requirements` read is needed.
+- UX-I7b replaced the Buildings admin legacy requirement edit path: the admin editor no longer uses `building_requirements`, `buildings.requirements` or `rank_required`; remaining legacy references are runtime/player read-model or generated-type context only.
+- UX-I7b requirement payloads are `value_type` aware so create/update sends only relevant fields for integer, decimal, boolean, string/enum, stat, building, resource and district requirements.
+- UX-I7b was verified with `npx tsc --noEmit`, `npm run build`, targeted building mapper/progression/formula preview specs and requirement RPC mapper specs; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

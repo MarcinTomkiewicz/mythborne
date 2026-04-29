@@ -1,74 +1,106 @@
 <div class="mg-surface-card flex-col gap-md p-md">
   <div class="flex-row-between-center flex-col-sm gap-md">
     <div class="flex-col gap-xs">
-      <p class="card-legend mb-0">Requirements</p>
+      <p class="card-legend mb-0">Central requirements</p>
       <p class="mb-0 muted-text">
-        Add hero level, hero rank or hero stat requirements and choose from which building level they apply.
+        Requirement types come from DB requirement definitions. Create, update and deactivate
+        building requirements through the central entity requirement RPC workflow.
       </p>
     </div>
 
-    <p-button label="Add requirement" [text]="true" (onClick)="page().requirementEditor.add()" />
+    <p-button
+      label="Add requirement"
+      [text]="true"
+      [disabled]="page().requirements.isLoading()"
+      (onClick)="page().requirements.add()"
+    />
   </div>
 
+  @if (page().requirements.error()) {
+    <p class="form-error mb-0">{{ page().requirements.error() }}</p>
+  }
+
   <div class="flex-col gap-md">
-    @for (requirementGroup of page().requirementEditor.controls; track $index) {
-      <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="requirementGroup">
-        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
-          <div class="flex-col gap-md">
-            <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100 align-items-center">
-              <label class="flex-col gap-sm">
-                <span class="muted-text">Type</span>
-                <p-select
-                  formControlName="type"
-                  [options]="requirementTypeOptions"
-                  optionLabel="label"
-                  optionValue="value"
-                  styleClass="w-100"
-                  (onChange)="page().updateRequirementType($index, $event.value)"
-                />
-              </label>
+    @for (requirementGroup of page().requirements.form.controls; track $index) {
+      @let definition = page().requirements.definitionFor($index);
 
-              <label class="flex-col gap-sm">
-                <span class="muted-text">Stat</span>
-                <p-select
-                  formControlName="statKey"
-                  [options]="statOptions()"
-                  optionLabel="label"
-                  optionValue="value"
-                  styleClass="w-100"
-                />
-              </label>
-
-              <label class="flex-col gap-sm">
-                <span class="muted-text">Minimum value</span>
-                <input pInputText type="number" class="w-100" formControlName="minValue" />
-              </label>
-
-              <label class="flex-col gap-sm">
-                <span class="muted-text">From building level</span>
-                <input pInputText type="number" class="w-100" formControlName="appliesFromLevel" />
-              </label>
-            </div>
-
-            <div class="flex-row-start-center">
-              <p-button
-                label="Remove"
-                severity="danger"
-                [text]="true"
-                (onClick)="page().requirementEditor.remove($index)"
-              />
-            </div>
-          </div>
-
-          <app-building-requirement-explainability-card
-            [requirementGroup]="requirementGroup"
-            [stats]="page().adminData().stats"
-          />
-        </div>
-      </div>
+      <app-building-requirement-editor-row
+        [page]="page()"
+        [index]="$index"
+        [requirementGroup]="requirementGroup"
+        [definition]="definition"
+        [booleanOptions]="booleanOptions"
+        [statOptions]="statOptions()"
+        [districtOptions]="districtOptions()"
+        [buildingOptions]="buildingOptions()"
+        [resourceOptions]="resourceOptions"
+      />
     } @empty {
-      <p class="mb-0 muted-text">No requirements configured yet.</p>
+      <p class="mb-0 muted-text">No central requirements configured yet.</p>
     }
   </div>
 
+  @if (page().requirements.previewRows().length > 0) {
+    <div class="flex-col gap-sm">
+      <p class="card-legend mb-0">Saved requirement impact</p>
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+        @for (row of page().requirements.previewRows(); track row.entityRequirementId) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <strong class="heading-color">{{ row.requirementLabel }}</strong>
+              <span class="mg-tag">saved canonical</span>
+            </div>
+            <span>{{ row.resolvedValueLabel }}</span>
+            <span>{{ row.explanation }}</span>
+            <span class="muted-text">Applies from building level {{ row.appliesFromLevel }}</span>
+            <span class="mg-tag">key: {{ row.requirementDefinitionKey }}</span>
+          </article>
+        }
+      </div>
+    </div>
+  }
+
+  @if (page().requirements.inactivePreviewRows().length > 0) {
+    <div class="flex-col gap-sm">
+      <div class="flex-row-between-center flex-col-sm gap-sm">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Inactive requirements</p>
+          <p class="mb-0 muted-text">
+            Inactive rows are returned by the canonical preview read model and are not part
+            of the active editor list.
+          </p>
+        </div>
+
+        <p-button
+          [label]="page().requirements.showInactive() ? 'Hide inactive requirements' : 'Show inactive requirements'"
+          [text]="true"
+          (onClick)="page().requirements.toggleInactive()"
+        />
+      </div>
+
+      @if (page().requirements.showInactive()) {
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+          @for (row of page().requirements.inactivePreviewRows(); track row.entityRequirementId) {
+            <article class="mg-card p-md flex-col gap-sm">
+              <div class="flex-row-between-center flex-col-sm gap-sm">
+                <strong class="heading-color">{{ row.requirementLabel }}</strong>
+                <span class="tag-badge tag-badge--warn">inactive</span>
+              </div>
+              <span>{{ row.resolvedValueLabel }}</span>
+              <span class="muted-text">{{ row.explanation }}</span>
+              <span class="muted-text">Applies from building level {{ row.appliesFromLevel }}</span>
+              <span class="mg-tag">key: {{ row.requirementDefinitionKey }}</span>
+              <p-button
+                label="Reactivate"
+                [text]="true"
+                [loading]="page().requirements.isSaving()"
+                [disabled]="page().requirements.isSaving()"
+                (onClick)="page().requirements.reactivate(row, page().building.editorForm.controls.id.value)"
+              />
+            </article>
+          }
+        </div>
+      }
+    </div>
+  }
 </div>

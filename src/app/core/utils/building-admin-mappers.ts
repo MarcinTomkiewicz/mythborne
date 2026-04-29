@@ -7,15 +7,10 @@ import {
   BuildingProgressionPreviewInput,
   EditableBuildingBonus,
   EditableBuilding,
-  EditableBuildingRequirement,
   EditableBuildingResourceCost,
 } from '../domain/building/building.model';
 import { resolveBuildingImagePath } from '../domain/building/building-image-paths';
-import {
-  BuildingRequirementAdminRow,
-  BuildingResourceCostAdminRow,
-  EditableBuildingRow,
-} from '../types/building-admin-row.types';
+import { EditableBuildingRow } from '../types/building-admin-row.types';
 import { BonusTemplate } from '../types/bonus.types';
 import { CanonicalEntityBonusWithTemplateRow } from '../types/bonus-governance.types';
 import {
@@ -46,7 +41,6 @@ export function mapEditableBuilding(
     description: row.description ?? '',
     imagePath: resolveBuildingImagePath(row.key, row.district_code) ?? row.image_path ?? '',
     districtCode: row.district_code ?? 'A',
-    rankRequired: row.rank_required,
     sortOrder: row.sort_order ?? 0,
     baseBuildTimeMinutes: row.base_build_time_minutes ?? 0,
     maxLevel: row.max_level ?? 0,
@@ -57,13 +51,6 @@ export function mapEditableBuilding(
       resourceType: normalizeBuildingResourceType(cost.resource_type),
       baseValue: cost.base_value,
       appliesFromLevel: cost.applies_from_level,
-    })),
-    requirements: sortBuildingRules(row.building_requirements ?? []).map((requirement) => ({
-      id: requirement.id,
-      type: normalizeBuildingRequirementType(requirement.requirement_type),
-      statKey: requirement.stat_key,
-      minValue: requirement.min_value,
-      appliesFromLevel: requirement.applies_from_level,
     })),
   };
 }
@@ -236,12 +223,6 @@ export function normalizeBuildingResourceType(
   value: string
 ): EditableBuildingResourceCost['resourceType'] {
   return value === 'materials' || value === 'workforce' ? value : 'drachma';
-}
-
-export function normalizeBuildingRequirementType(
-  value: string
-): EditableBuildingRequirement['type'] {
-  return value === 'hero_rank' || value === 'hero_stat' ? value : 'hero_level';
 }
 
 function sortBuildingRules<T extends { sort_order: number; applies_from_level: number }>(

@@ -1,0 +1,98 @@
+<article class="mg-card p-md flex-col gap-sm">
+  <div class="flex-row-between-center flex-col-sm gap-sm">
+    <div class="flex-col gap-xs">
+      <span class="muted-text">Upgrade step</span>
+      <strong class="heading-color">Level {{ row().previewLevel }} -> {{ row().nextLevel }}</strong>
+    </div>
+
+    <span
+      class="tag-badge"
+      [class.tag-badge--success]="row().status === 'upgradeable'"
+      [class.tag-badge--danger]="row().status !== 'upgradeable'"
+    >
+      {{ row().status }}
+    </span>
+  </div>
+
+  <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+    <div class="flex-col gap-xs">
+      <span class="muted-text">Formula cost</span>
+      @if (row().formula; as formula) {
+        @for (cost of formula.nextCosts; track cost.resourceType) {
+          @if (cost.amount === null) {
+            <div class="flex-col gap-xs">
+              <span class="muted-text">{{ page().format.resource(cost.resourceType) }} unavailable</span>
+              @if (cost.reason) {
+                <small class="form-error">{{ cost.reason }}</small>
+              }
+            </div>
+          } @else {
+            <div>
+              <strong class="heading-color">{{ cost.amount }}</strong>
+              <span class="muted-text"> {{ page().format.resource(cost.resourceType) }}</span>
+            </div>
+          }
+        } @empty {
+          <span class="muted-text">
+            {{ formula.costUnavailableReason || 'Formula cost preview unavailable for this level.' }}
+          </span>
+        }
+      } @else {
+        <span class="muted-text">Formula cost preview unavailable for the current range.</span>
+      }
+    </div>
+
+    <div class="flex-col gap-xs">
+      <span class="muted-text">Formula build time</span>
+      @if (row().formula; as formula) {
+        <strong class="heading-color">{{ page().format.duration(formula.nextTime) }}</strong>
+        @if (formula.timeUnavailableReason) {
+          <small class="form-error">{{ formula.timeUnavailableReason }}</small>
+        }
+      } @else {
+        <span class="muted-text">Unavailable.</span>
+      }
+    </div>
+
+    <div class="flex-col gap-xs">
+      <span class="muted-text">Cap</span>
+      <strong class="heading-color">{{ page().progression.capLabel(row()) }}</strong>
+      <span class="muted-text">{{ row().capSource }}</span>
+    </div>
+  </div>
+
+  @if (row().formula; as formula) {
+    <div class="flex-col gap-xs">
+      <span class="muted-text">Bonus output</span>
+      @for (bonus of formula.bonuses; track $index) {
+        <span>
+          <strong class="heading-color">{{ page().format.bonusLabel(bonus.target) }}</strong>
+          <span>
+            {{ page().format.bonusValue(bonus.current, bonus.type) }} ->
+            {{ page().format.bonusValue(bonus.next, bonus.type) }}
+          </span>
+        </span>
+      } @empty {
+        <span class="muted-text">No active bonuses.</span>
+      }
+    </div>
+  }
+
+  <p class="mb-0 muted-text">
+    {{ row().districtExplanation }} {{ row().capExplanation }}
+  </p>
+
+  <details>
+    <summary class="muted-text">Persisted DB base values</summary>
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-sm mt-sm">
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Persisted base cost</span>
+        <strong class="heading-color">{{ row().baseCost }}</strong>
+      </div>
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Persisted base build time</span>
+        <strong class="heading-color">{{ page().format.duration(row().baseBuildTimeMinutes) }}</strong>
+      </div>
+    </div>
+  </details>
+</article>

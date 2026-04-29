@@ -3,7 +3,6 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { finalize, forkJoin, startWith } from 'rxjs';
 import {
   BuildingFormulaOverrides,
-  EditableBuildingRequirement,
   EditableBuilding,
   BuildingAdminData,
 } from '../../domain/building/building.model';
@@ -14,8 +13,6 @@ import {
   toBuildingBonusLabel,
   toBuildingBonusValue,
   toBuildingDurationLabel,
-  toBuildingRequirementSummary,
-  toBuildingRequirementTypeLabel,
   toResourceLabel,
 } from '../../utils/building-display';
 import { createEntityEditorState } from '../../utils/entity-editor-state';
@@ -31,6 +28,7 @@ import { BuildingFormulaPreviewCalculator } from './building-formula-preview-cal
 import { BuildingFormulaAdminFacade } from './building-formula-admin.facade';
 import { BuildingImpactPreviewState } from './building-impact-preview.state';
 import { BuildingProgressionPreviewState } from './building-progression-preview.state';
+import { BuildingRequirementsState } from './building-requirements.state';
 
 const EMPTY_ADMIN_DATA: BuildingAdminData = {
   buildings: [],
@@ -52,6 +50,7 @@ export class BuildingsPageFacade {
   readonly formulas = inject(BuildingFormulaAdminFacade);
   readonly impact = inject(BuildingImpactPreviewState);
   readonly progression = inject(BuildingProgressionPreviewState);
+  readonly requirements = inject(BuildingRequirementsState);
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
   readonly error = signal<string | null>(null);
@@ -61,10 +60,7 @@ export class BuildingsPageFacade {
     bonusLabel: toBuildingBonusLabel,
     bonusValue: toBuildingBonusValue,
     duration: toBuildingDurationLabel,
-    requirementType: toBuildingRequirementTypeLabel,
     resource: toResourceLabel,
-    requirementSummary: (requirement: EditableBuildingRequirement) =>
-      toBuildingRequirementSummary(requirement, this.adminData().stats),
   };
   readonly bonusTemplateOptions = computed(() =>
     this.adminData().bonusTemplates.map((template) => ({
@@ -104,11 +100,6 @@ export class BuildingsPageFacade {
     this.building.editorForm.controls.resourceCosts,
     () => this.formFactory.createCostGroup()
   );
-  readonly requirementEditor = createFormArrayEditor(
-    this.building.editorForm.controls.requirements,
-    () => this.formFactory.createRequirementGroup()
-  );
-
   readonly imagePreviewPath = computed(() => {
     const value = this.editorValue();
     return (
@@ -163,9 +154,11 @@ export class BuildingsPageFacade {
       .subscribe((id) => {
         this.resetProgressionPreviewForCurrentBuilding();
         this.impact.reset();
+        this.requirements.reset();
 
         if (id) {
           this.impact.load(id, { silent: true });
+          this.requirements.load(id, { silent: true });
         }
       });
   }
@@ -191,6 +184,11 @@ export class BuildingsPageFacade {
 
           if (this.building.editorForm.controls.id.value) {
             this.loadBuildingProgressionPreview({ silent: true });
+            this.requirements.load(this.building.editorForm.controls.id.value, {
+              silent: true,
+            });
+          } else {
+            this.requirements.load(null, { silent: true });
           }
         },
         error: (error: unknown) => {
@@ -206,10 +204,6 @@ export class BuildingsPageFacade {
       (entry) => entry.templateId === templateId
     );
     template && this.bonusEditor.at(index).patchValue(template);
-  }
-
-  updateRequirementType(index: number, type: string) {
-    type !== 'hero_stat' && this.requirementEditor.at(index).patchValue({ statKey: null });
   }
 
   saveBuilding() {
@@ -272,7 +266,6 @@ export class BuildingsPageFacade {
       rules: this.formulas.resolveRules(value.formulaOverrides as BuildingFormulaOverrides),
       costs: this.costEditor.controls.map((control) => control.getRawValue()),
       bonuses: this.bonusEditor.controls.map((control) => control.getRawValue()),
-      requirements: this.requirementEditor.controls.map((control) => control.getRawValue()),
     };
   }
 }

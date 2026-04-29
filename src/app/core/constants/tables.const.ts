@@ -19,6 +19,7 @@ export const TABLES = {
   buildings: 'buildings',
   building_requirements: 'building_requirements',
   building_resource_costs: 'building_resource_costs',
+  requirement_definitions: 'requirement_definitions',
   estate_buildings: 'estate_buildings',
   estate_districts: 'estate_districts',
   hero: 'hero',

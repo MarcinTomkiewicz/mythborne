@@ -4,6 +4,7 @@ import { BONUS_ENTITY_TYPES } from '../../constants/bonus-entity-types.const';
 import { TABLES } from '../../constants/tables.const';
 import {
   BuildingBonusPreview,
+  BuildingRequirementType,
   BuildingRequirementPreview,
   BuildingResourceCostPreview,
   BuildingResourceCostTotal,
@@ -18,7 +19,7 @@ import { BuildingProgressionService } from '../progression/building-progression'
 import { FormulaService } from '../formula/formula';
 import { Hero } from '../hero/hero';
 import { resourceOrder } from '../../utils/building-display';
-import { normalizeBuildingRequirementType, normalizeBuildingResourceType } from '../../utils/building-admin-mappers';
+import { normalizeBuildingResourceType } from '../../utils/building-admin-mappers';
 import { normalizeBonusType } from '../../utils/bonus';
 import { mapResolvedBonus } from '../../utils/bonus-governance';
 import { Backend } from '../backend/backend';
@@ -135,7 +136,7 @@ export class BuildingsService {
                   formulaData
                 )
               )
-              .filter((building) => building.rankRequired <= currentDistrictRank);
+              .filter((building) => building.districtUnlockRank <= currentDistrictRank);
 
             return {
               currentAddress: estate?.address ?? null,
@@ -184,7 +185,7 @@ export class BuildingsService {
         building.image_path ??
         '/assets/icons/capitol.svg',
       districtCode: building.district_code ?? 'A',
-      rankRequired: building.rank_required,
+      districtUnlockRank: building.rank_required,
       sortOrder: building.sort_order ?? 0,
       maxLevel: building.max_level ?? 0,
       currentLevel,
@@ -298,7 +299,7 @@ export class BuildingsService {
         return left.applies_from_level - right.applies_from_level;
       })
       .map((row) => ({
-        type: normalizeBuildingRequirementType(row.requirement_type),
+        type: normalizeRuntimeBuildingRequirementType(row.requirement_type),
         statKey: row.stat_key,
         statLabel: row.stat_key ? statLabelMap.get(row.stat_key) ?? row.stat_key : null,
         minValue: row.min_value,
@@ -319,4 +320,8 @@ export class BuildingsService {
 
     return mapById;
   }
+}
+
+function normalizeRuntimeBuildingRequirementType(value: string): BuildingRequirementType {
+  return value === 'hero_rank' || value === 'hero_stat' ? value : 'hero_level';
 }

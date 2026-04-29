@@ -5,7 +5,6 @@ import {
   BuildingResourceType,
   EditableBuilding,
   EditableBuildingBonus,
-  EditableBuildingRequirement,
   EditableBuildingResourceCost,
 } from '../../domain/building/building.model';
 import { BUILDING_PROGRESSION_TARGET_KEYS } from '../../domain/progression/building-progression.model';
@@ -14,7 +13,6 @@ import {
   BuildingEditorForm,
   BuildingFormulaAssignmentForm,
   BuildingFormulaControlName,
-  BuildingRequirementForm,
   BuildingResourceCostForm,
   BuildingSelectorForm,
 } from '../../types/forms/building-admin-form.types';
@@ -49,7 +47,6 @@ export class BuildingAdminFormFactory {
       description: this.fb.control(''),
       imagePath: this.fb.control(''),
       districtCode: this.fb.control('A'),
-      rankRequired: this.fb.control(1),
       sortOrder: this.fb.control(0),
       baseBuildTimeMinutes: this.fb.control(60),
       maxLevel: this.fb.control(0),
@@ -60,7 +57,6 @@ export class BuildingAdminFormFactory {
       }),
       bonuses: this.fb.array<BuildingBonusForm>([]),
       resourceCosts: this.fb.array<BuildingResourceCostForm>([]),
-      requirements: this.fb.array<BuildingRequirementForm>([]),
     });
   }
 
@@ -72,7 +68,6 @@ export class BuildingAdminFormFactory {
       description: '',
       imagePath: '',
       districtCode: data.districts[0]?.code ?? 'A',
-      rankRequired: 1,
       sortOrder: 0,
       baseBuildTimeMinutes: 60,
       maxLevel: 0,
@@ -90,7 +85,6 @@ export class BuildingAdminFormFactory {
           appliesFromLevel: 1,
         },
       ],
-      requirements: [],
     };
   }
 
@@ -113,18 +107,6 @@ export class BuildingAdminFormFactory {
     });
   }
 
-  createRequirementGroup(requirement?: EditableBuildingRequirement): BuildingRequirementForm {
-    return this.fb.group({
-      id: this.fb.control<string | null>(requirement?.id ?? null),
-      type: this.fb.control<EditableBuildingRequirement['type']>(
-        requirement?.type ?? 'hero_level'
-      ),
-      statKey: this.fb.control<string | null>(requirement?.statKey ?? null),
-      minValue: this.fb.control(requirement?.minValue ?? 1),
-      appliesFromLevel: this.fb.control(requirement?.appliesFromLevel ?? 1),
-    });
-  }
-
   patchEditor(form: BuildingEditorForm, draft: EditableBuilding) {
     form.patchValue({
       id: draft.id ?? '',
@@ -133,7 +115,6 @@ export class BuildingAdminFormFactory {
       description: draft.description,
       imagePath: draft.imagePath,
       districtCode: draft.districtCode,
-      rankRequired: draft.rankRequired,
       sortOrder: draft.sortOrder,
       baseBuildTimeMinutes: draft.baseBuildTimeMinutes,
       maxLevel: draft.maxLevel,
@@ -148,10 +129,6 @@ export class BuildingAdminFormFactory {
       form.controls.resourceCosts,
       draft.resourceCosts.map((cost) => this.createCostGroup(cost))
     );
-    replaceFormArray(
-      form.controls.requirements,
-      draft.requirements.map((requirement) => this.createRequirementGroup(requirement))
-    );
   }
 
   toDraft(form: BuildingEditorForm): EditableBuilding {
@@ -164,7 +141,6 @@ export class BuildingAdminFormFactory {
       description: trimText(value.description),
       imagePath: trimText(value.imagePath),
       districtCode: value.districtCode,
-      rankRequired: roundedNumber(value.rankRequired),
       sortOrder: roundedNumber(value.sortOrder),
       baseBuildTimeMinutes: roundedNumber(value.baseBuildTimeMinutes),
       maxLevel: roundedNumber(value.maxLevel),
@@ -185,13 +161,6 @@ export class BuildingAdminFormFactory {
         resourceType: cost.resourceType,
         baseValue: roundedNumber(cost.baseValue),
         appliesFromLevel: roundedNumber(cost.appliesFromLevel),
-      })),
-      requirements: value.requirements.map((requirement) => ({
-        id: requirement.id,
-        type: requirement.type,
-        statKey: requirement.type === 'hero_stat' ? requirement.statKey : null,
-        minValue: roundedNumber(requirement.minValue),
-        appliesFromLevel: roundedNumber(requirement.appliesFromLevel),
       })),
     };
   }

@@ -1,27 +1,19 @@
 <aside class="mg-card p-md flex-col gap-md">
   <div class="flex-row-between-center flex-col-sm gap-sm">
     <div class="flex-col gap-xs min-w-0">
-      <strong class="heading-color">{{ typeLabel() }}</strong>
-      <span>{{ summary() }}</span>
+      <strong class="heading-color">{{ title() }}</strong>
+      @if (description()) {
+        <span>{{ description() }}</span>
+      }
     </div>
-    <span class="mg-tag">form row preview</span>
+    <span class="mg-tag">live form row</span>
   </div>
 
   <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
     <div class="flex-col gap-xs">
-      <span class="muted-text">Requirement</span>
-      <strong class="heading-color">{{ typeLabel() }}</strong>
-      @if (requirement().type === 'hero_stat') {
-        <span>Stat: {{ statLabel() }}</span>
-      } @else {
-        <span>Applies to the hero account state.</span>
-      }
-    </div>
-
-    <div class="flex-col gap-xs">
-      <span class="muted-text">Minimum</span>
-      <strong class="heading-color">{{ requirement().minValue }}</strong>
-      <span>Required before the relevant upgrade can proceed.</span>
+      <span class="muted-text">Resolved requirement</span>
+      <strong class="heading-color">{{ valueLabel() }}</strong>
+      <span>Current unsaved form values are reflected here.</span>
     </div>
 
     <div class="flex-col gap-xs">
@@ -30,6 +22,14 @@
         Building level {{ requirement().appliesFromLevel }}
       </strong>
       <span>Lower building levels ignore this row.</span>
+    </div>
+
+    <div class="flex-col gap-xs">
+      <span class="muted-text">Value type</span>
+      <strong class="heading-color">{{ definition()?.valueType ?? 'Not selected' }}</strong>
+      @if (definition()?.key) {
+        <span class="mg-tag">key: {{ definition()?.key }}</span>
+      }
     </div>
 
     <div class="flex-col gap-xs">

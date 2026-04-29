@@ -1924,6 +1924,10 @@ Rules:
 - quality may scale bonus value only when `quality_scales_value = true`;
 - quality never scales `level_interval`;
 - requirement preview uses `requirement_definitions` and `entity_requirements`, not legacy requirements JSON.
+- Buildings admin central requirement editing uses canonical RPCs only: `create_entity_requirement(...)`, `update_entity_requirement(...)`, `deactivate_entity_requirement(...)`, `reorder_entity_requirements(...)` and `get_requirement_impact_preview(...)`.
+- Requirement create/update payloads must be `value_type` aware. Frontend must send only fields relevant to the selected `requirement_definitions.value_type` and must not pass through unrelated technical defaults from preview rows.
+- Reactivating a requirement is allowed through `update_entity_requirement(..., p_is_active = true, ...)` when `get_requirement_impact_preview(...)` returns inactive rows. Do not add direct reads from `entity_requirements` to recover inactive rows.
+- Required audit action type keys for central requirement editing are `config.entity_requirement.created`, `config.entity_requirement.updated`, `config.entity_requirement.deactivated` and `config.entity_requirement.reordered`.
 
 ## Staff candidate search read model
 

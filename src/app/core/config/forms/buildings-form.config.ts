@@ -9,11 +9,6 @@ export const BUILDING_RESOURCE_TYPE_OPTIONS = [
   { label: 'Workforce', value: 'workforce' },
 ] as const;
 
-export const BUILDING_REQUIREMENT_TYPE_OPTIONS = [
-  { label: 'Hero level', value: 'hero_level' },
-  { label: 'Hero stat', value: 'hero_stat' },
-] as const;
-
 export function createBuildingFormulaFields(
   targets: readonly FormulaTarget[],
   formulasFor: (targetKey: string) => readonly { value: string; label: string }[],
@@ -56,7 +51,6 @@ export function createBuildingPrimaryEditorFields(
       type: FormFieldType.Textarea,
       controlName: 'description',
       label: 'Description',
-      className: 'grid-col-span-2',
       rows: 3,
     },
     {
@@ -72,7 +66,6 @@ export function createBuildingPrimaryEditorFields(
 }
 
 export const BUILDING_PROGRESSION_FIELDS: readonly FormFieldConfig[] = [
-  { type: FormFieldType.Number, controlName: 'rankRequired', label: 'District unlock rank' },
   { type: FormFieldType.Number, controlName: 'sortOrder', label: 'Sort order' },
   { type: FormFieldType.Number, controlName: 'baseBuildTimeMinutes', label: 'Base build time (min)' },
   { type: FormFieldType.Number, controlName: 'maxLevel', label: 'Max level' },
