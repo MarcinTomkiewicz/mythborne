@@ -80,6 +80,7 @@ Order reflects implementation priority, not final business priority.
 - Use one backlog task per Codex prompt unless the user explicitly groups tightly related tasks.
 - Codex reads the required project docs before making changes.
 - Codex reports the exact changes, verification result, and acceptance-criteria status after the task.
+- For UI/manual smoke reports, Codex includes both the clicked UI path and the domain meaning of the action, following `docs/AGENTS.md`.
 - The user confirms whether the task works.
 - Only after user confirmation, Codex updates `current-state-summary.md`, `current-todo.md`, and any relevant task status/docs.
 - Unconfirmed work must stay out of the completed-state summary.

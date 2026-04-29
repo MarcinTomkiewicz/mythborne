@@ -361,6 +361,37 @@ When something is ambiguous:
 - do not guess aggressively
 - call out assumptions clearly
 
+## Verification and smoke reports
+
+When reporting manual smoke tests, include both the clicked UI path and the domain meaning of the action.
+
+Use this shape for each meaningful smoke path:
+
+```text
+Smoke: <UI path>
+Action: <what was clicked/edited/submitted>
+Domain meaning: <what this proves in gameplay/admin terms>
+Expected result: <the user-visible and data/permission meaning>
+Result: <passed/blocked/deferred, with reason>
+```
+
+Examples:
+
+- `Admin panel -> Buildings -> Requirements -> Add Hero stat`
+  - Domain meaning: central building requirements can express a stat gate from `requirement_definitions` and save it through canonical requirement RPCs.
+- `Admin panel -> Moderation actions -> New moderation action -> Server ban`
+  - Domain meaning: staff creates a server-scoped punishment record that affects moderation history/runtime access, with reason preserved for audit.
+- `Admin panel -> Config changes -> Apply draft`
+  - Domain meaning: a governed configuration change moves through the audited DB workflow instead of mutating live config directly.
+
+Non-blocking findings found during smoke should go to `docs/ui-ux-notes.md` unless the user promotes them into current task acceptance criteria.
+
+Group UX notes as:
+
+- **Quick wins**: copy, spacing, labels, obvious validation, small template/component cleanup.
+- **DB metadata needed**: UI needs labels/descriptions/helper text/read models/options that should come from database contracts.
+- **Redesign needed**: workflow, information architecture, permissions, or domain model mismatch that should not be patched locally.
+
 ---
 
 ## Update 2026-04-27 — item generation/equipment DB contract
