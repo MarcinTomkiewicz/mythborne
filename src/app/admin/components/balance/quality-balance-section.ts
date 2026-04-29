@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
 import { FormFields } from '../../../shared/form-fields/form-fields';
 import { ItemGenerationBalancePageFacade } from '../../../core/services/items/item-generation-balance-page.facade';
 import {
@@ -11,7 +12,7 @@ import {
 @Component({
   selector: 'app-quality-balance-section',
   standalone: true,
-  imports: [ReactiveFormsModule, ButtonModule, FormFields],
+  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, FormFields],
   templateUrl: './quality-balance-section.html',
   host: { class: 'd-block w-100' },
 })

@@ -7,6 +7,8 @@ import {
   EditableItemGenerationQuality,
   ItemGenerationAdminBalanceData,
   ItemGenerationAdminCatalogData,
+  ItemQualityImpactPreview,
+  ItemQualityImpactPreviewInput,
 } from '../../domain/item/item-generation-admin.model';
 import { ItemGenerationBalanceAdminService } from './item-generation-balance-admin';
 import { ItemGenerationCatalogAdminService } from './item-generation-catalog-admin';
@@ -22,6 +24,12 @@ export class ItemGenerationAdminService {
 
   getBalanceData(): Observable<ItemGenerationAdminBalanceData> {
     return this.balance.getData();
+  }
+
+  getQualityImpactPreview(
+    input: ItemQualityImpactPreviewInput,
+  ): Observable<ItemQualityImpactPreview[]> {
+    return this.balance.getQualityImpactPreview(input);
   }
 
   saveQuality(draft: EditableItemGenerationQuality): Observable<void> {

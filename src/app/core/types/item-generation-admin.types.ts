@@ -65,3 +65,23 @@ export interface ItemGenerationAdminBalanceData {
   qualities: EditableItemGenerationQuality[];
   bucketProfiles: EditableItemGenerationBucketProfile[];
 }
+
+export interface ItemQualityImpactPreviewInput {
+  baseValue: number | null;
+  bonusValue: number | null;
+}
+
+export interface ItemQualityImpactPreview {
+  qualityKey: string;
+  qualityLabel: string;
+  multiplier: number;
+  weight: number;
+  isEnabled: boolean;
+  sortOrder: number;
+  sampleBaseValue: number;
+  sampleBonusValue: number;
+  sampleItemValue: number;
+  sampleQualityScaledBonusValue: number;
+  valueMultiplierExplanation: string;
+  bonusScalingExplanation: string;
+}

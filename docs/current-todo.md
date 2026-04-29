@@ -67,6 +67,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I2 - config governance explainability implementation.
 - Completed and confirmed: UX-I3 - audit log readability pass.
 - Completed and confirmed: UX-I4 - formula impact preview calculators.
+- Completed and confirmed: UX-I5 - item generation quality impact preview.
 - Current backlog task: select the next U0/UX implementation slice.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 

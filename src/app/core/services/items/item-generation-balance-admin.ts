@@ -4,15 +4,20 @@ import {
   EditableItemGenerationBucketProfile,
   EditableItemGenerationQuality,
   ItemGenerationAdminBalanceData,
+  ItemQualityImpactPreview,
+  ItemQualityImpactPreviewInput,
 } from '../../domain/item/item-generation-admin.model';
 import {
+  mapItemQualityImpactPreview,
   mapEditableBucketProfile,
   mapEditableQuality,
+  toGetItemQualityImpactPreviewRpcArgs,
 } from '../../utils/item-generation-admin-mappers';
 import { ItemCatalogService } from './item-catalog';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
 import { BucketProfilePayload } from '../../types/item-generation-admin-service.types';
+import { ItemQualityImpactPreviewRpcRow } from '../../types/item-generation-preview-rpc.types';
 import { trimText, trimToNull } from '../../utils/normalize-text';
 
 @Injectable({ providedIn: 'root' })
@@ -38,6 +43,17 @@ export class ItemGenerationBalanceAdminService {
         bucketProfiles: profiles.map(mapEditableBucketProfile),
       }))
     );
+  }
+
+  getQualityImpactPreview(
+    input: ItemQualityImpactPreviewInput,
+  ): Observable<ItemQualityImpactPreview[]> {
+    return this.backend
+      .rpc<ItemQualityImpactPreviewRpcRow[]>(
+        'get_item_quality_impact_preview',
+        toGetItemQualityImpactPreviewRpcArgs(input),
+      )
+      .pipe(map((rows) => rows.map(mapItemQualityImpactPreview)));
   }
 
   saveQuality(draft: EditableItemGenerationQuality): Observable<void> {

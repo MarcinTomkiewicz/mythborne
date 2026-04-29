@@ -4,6 +4,8 @@ import {
   EditableItemGenerationBonus,
   EditableItemGenerationBucketProfile,
   EditableItemGenerationQuality,
+  ItemQualityImpactPreview,
+  ItemQualityImpactPreviewInput,
 } from '../domain/item/item-generation-admin.model';
 import {
   ItemGenerationAffixRow,
@@ -15,6 +17,10 @@ import {
 } from '../types/bonus-governance.types';
 import { ItemGenerationBaseType } from '../types/item-generation.types';
 import { Row } from '../types/supabase.types';
+import {
+  GetItemQualityImpactPreviewRpcArgs,
+  ItemQualityImpactPreviewRpcRow,
+} from '../types/item-generation-preview-rpc.types';
 import { mapResolvedBonus } from './bonus-governance';
 import { toEditableAppliedBonus } from './bonus';
 import { readParamNumber } from './params';
@@ -48,6 +54,34 @@ export function mapEditableBucketProfile(
     roundingStep: row.rounding_step,
     minIncrement: row.min_increment,
     isActive: row.is_active,
+  };
+}
+
+export function mapItemQualityImpactPreview(
+  row: ItemQualityImpactPreviewRpcRow,
+): ItemQualityImpactPreview {
+  return {
+    qualityKey: row.quality_key,
+    qualityLabel: row.quality_label,
+    multiplier: row.multiplier,
+    weight: row.weight,
+    isEnabled: row.is_enabled,
+    sortOrder: row.sort_order,
+    sampleBaseValue: row.sample_base_value,
+    sampleBonusValue: row.sample_bonus_value,
+    sampleItemValue: row.sample_item_value,
+    sampleQualityScaledBonusValue: row.sample_quality_scaled_bonus_value,
+    valueMultiplierExplanation: row.value_multiplier_explanation,
+    bonusScalingExplanation: row.bonus_scaling_explanation,
+  };
+}
+
+export function toGetItemQualityImpactPreviewRpcArgs(
+  input: ItemQualityImpactPreviewInput,
+): GetItemQualityImpactPreviewRpcArgs {
+  return {
+    p_base_value: normalizePreviewNumber(input.baseValue, 'baseValue', { min: 0 }),
+    p_bonus_value: normalizePreviewNumber(input.bonusValue, 'bonusValue'),
   };
 }
 
@@ -145,4 +179,26 @@ function requiredTemplate(
   }
 
   return template;
+}
+
+function normalizePreviewNumber(
+  value: number | null | undefined | '',
+  field: string,
+  options: { min?: number } = {},
+): number {
+  if (value === null || value === undefined || value === '') {
+    throw new Error(`${field} is required for item quality impact preview.`);
+  }
+
+  const normalized = Number(value);
+
+  if (!Number.isFinite(normalized)) {
+    throw new Error(`${field} must be a finite number for item quality impact preview.`);
+  }
+
+  if (options.min !== undefined && normalized < options.min) {
+    throw new Error(`${field} must be zero or greater for item quality impact preview.`);
+  }
+
+  return normalized;
 }

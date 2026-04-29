@@ -2086,6 +2086,8 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ## Task UX-I5 — Item generation quality impact preview
 
+**Status:** Done / confirmed 2026-04-29.
+
 **Goal:** Show how item quality affects generated item values and bonuses.
 
 **Scope:**

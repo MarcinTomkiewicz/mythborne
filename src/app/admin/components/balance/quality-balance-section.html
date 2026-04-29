@@ -58,4 +58,102 @@
       />
     </div>
   </form>
+
+  <section class="mg-surface-card flex-col gap-md p-lg mt-lg">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Impact preview</p>
+        <h4 class="mg-section__title mg-section__title--xs mb-0">
+          Quality value scaling
+        </h4>
+        <p class="muted-text mb-0">
+          Preview uses active quality dictionary rows from the database. Item value scales by quality multiplier; bonus
+          level interval is never scaled. Sample bonus value may be negative to preview a malus.
+        </p>
+      </div>
+
+      <p-button
+        label="Refresh preview"
+        [text]="true"
+        [loading]="page.isLoadingQualityImpactPreview()"
+        (onClick)="page.loadQualityImpactPreview()"
+      />
+    </div>
+
+    <form [formGroup]="page.qualityImpactPreviewForm" class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Sample base value</span>
+        <input pInputText type="number" class="w-100" formControlName="baseValue" />
+        @if (
+          page.qualityImpactPreviewForm.controls.baseValue.touched &&
+          page.qualityImpactPreviewForm.controls.baseValue.invalid
+        ) {
+          <small class="form-error">{{ page.qualityImpactPreviewValidationMessage('baseValue') }}</small>
+        }
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Sample bonus value</span>
+        <input pInputText type="number" class="w-100" formControlName="bonusValue" />
+        @if (
+          page.qualityImpactPreviewForm.controls.bonusValue.touched &&
+          page.qualityImpactPreviewForm.controls.bonusValue.invalid
+        ) {
+          <small class="form-error">{{ page.qualityImpactPreviewValidationMessage('bonusValue') }}</small>
+        }
+      </label>
+    </form>
+
+    @if (page.qualityImpactPreviewError(); as error) {
+      <div class="mg-card p-md flex-col gap-xs">
+        <strong class="heading-color">Preview unavailable</strong>
+        <span class="muted-text">{{ error }}</span>
+      </div>
+    } @else {
+      <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+        @for (quality of page.qualityImpactPreview(); track quality.qualityKey) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Quality</span>
+                <strong class="heading-color">{{ quality.qualityLabel }}</strong>
+                <span class="mg-tag">{{ quality.qualityKey }}</span>
+              </div>
+
+              <span class="tag-badge" [class.tag-badge--success]="quality.isEnabled">
+                {{ quality.isEnabled ? 'enabled' : 'disabled' }}
+              </span>
+            </div>
+
+            <div class="mg-grid grid-cols-2 gap-sm w-100">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Multiplier</span>
+                <strong class="heading-color">x{{ quality.multiplier }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Roll weight</span>
+                <strong class="heading-color">{{ quality.weight }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Item value</span>
+                <strong class="heading-color">{{ quality.sampleItemValue }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Scaled bonus value</span>
+                <strong class="heading-color">{{ quality.sampleQualityScaledBonusValue }}</strong>
+              </div>
+            </div>
+
+            <p class="muted-text mb-0">{{ quality.valueMultiplierExplanation }}</p>
+            <p class="muted-text mb-0">{{ quality.bonusScalingExplanation }}</p>
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">No quality preview rows returned by the database.</p>
+        }
+      </div>
+    }
+  </section>
 </section>

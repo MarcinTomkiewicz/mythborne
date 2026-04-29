@@ -405,6 +405,10 @@ Still pending at the gameplay level even if partially supported in schema:
 - UX-I4 lets admins select a formula target, choose a sweep variable such as `level`/`statLevel`, set an input range and context variables, and inspect output table plus chart without editing database values.
 - UX-I4 reuses the existing formula runtime and expression preview; technical formula expressions remain visible as formula previews, not raw JSON explainability.
 - UX-I4 was verified with targeted formula-runtime tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- UX-I5 accepted on 2026-04-29: Balance quality tiers now include a DB-backed item quality impact preview powered by `get_item_quality_impact_preview(...)`.
+- UX-I5 shows quality rows from `item_generation_qualities`, sample item value after quality multiplier, quality-scaled bonus value and DB-provided explanation text; no hardcoded Normal/Quality/Outstanding list is used.
+- UX-I5 validation keeps sample base/bonus values required, rejects negative sample base values in UI and mapper, and intentionally allows negative bonus values for malus previews.
+- UX-I5 was verified with targeted item-generation admin mapper tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

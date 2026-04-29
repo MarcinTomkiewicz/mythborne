@@ -1,29 +1,29 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, Validators } from '@angular/forms';
 import { Observable, finalize, forkJoin } from 'rxjs';
+import { BonusAdminData, BonusTemplate } from '../../domain/bonus/bonus.model';
 import {
   EditableItemGenerationBucketProfile,
   EditableItemGenerationQuality,
+  ItemQualityImpactPreview,
 } from '../../domain/item/item-generation-admin.model';
-import { BonusAdminData } from '../../domain/bonus/bonus.model';
-import { BonusTemplate } from '../../domain/bonus/bonus.model';
-import { ItemGenerationBucketsFactory } from '../../factories/item-generation/item-generation-buckets.factory';
 import { ItemGenerationBalanceFormFactory } from '../../factories/forms/item-generation-balance-form.factory';
+import { ItemGenerationBucketsFactory } from '../../factories/item-generation/item-generation-buckets.factory';
 import {
-  BucketProfileEditorForm,
   BonusTemplateEditorForm,
-  BonusTemplateSelectorForm,
-  QualityEditorForm,
+  BucketProfileEditorForm,
+  QualityEditorForm
 } from '../../types/forms/item-generation-balance-form.types';
+import { BalanceSelection } from '../../types/item-generation-balance-page.types';
 import { createEntityEditorState } from '../../utils/entity-editor-state';
 import { getErrorMessage } from '../../utils/error-message';
-import { BalanceSelection } from '../../types/item-generation-balance-page.types';
+import { toSlug } from '../../utils/slug';
+import { BonusTemplateAdminService } from '../bonus/bonus-template-admin';
 import { FormulaService } from '../formula/formula';
 import { ToastService } from '../ui/toast';
 import { ItemGenerationAdminService } from './item-generation-admin';
 import { ItemGenerationFormulaBalanceFacade } from './item-generation-formula-balance.facade';
-import { toSlug } from '../../utils/slug';
-import { BonusTemplateAdminService } from '../bonus/bonus-template-admin';
 
 @Injectable()
 export class ItemGenerationBalancePageFacade {
@@ -31,6 +31,7 @@ export class ItemGenerationBalancePageFacade {
   private readonly adminService = inject(ItemGenerationAdminService);
   private readonly bucketFactory = inject(ItemGenerationBucketsFactory);
   private readonly formFactory = inject(ItemGenerationBalanceFormFactory);
+  private readonly formBuilder = inject(FormBuilder);
   private readonly formulaService = inject(FormulaService);
   private readonly toast = inject(ToastService);
   private readonly bonusTemplateService = inject(BonusTemplateAdminService);
@@ -38,8 +39,18 @@ export class ItemGenerationBalancePageFacade {
   readonly formulas = inject(ItemGenerationFormulaBalanceFacade);
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
+  readonly isLoadingQualityImpactPreview = signal(false);
   readonly loadError = signal<string | null>(null);
+  readonly qualityImpactPreviewError = signal<string | null>(null);
+  readonly qualityImpactPreview = signal<ItemQualityImpactPreview[]>([]);
   readonly isBusy = computed(() => this.isSaving() || this.formulas.isSaving());
+  readonly qualityImpactPreviewForm = this.formBuilder.group({
+    baseValue: this.formBuilder.control<number | null>(100, [
+      Validators.required,
+      Validators.min(0),
+    ]),
+    bonusValue: this.formBuilder.control<number | null>(4, [Validators.required]),
+  });
   readonly bonusAdminData = signal<BonusAdminData>({
     templates: [],
     targets: [],
@@ -159,6 +170,7 @@ export class ItemGenerationBalancePageFacade {
           this.formulas.setData(formulaData, preferred);
           this.bonusAdminData.set(bonusData);
           this.bonusTemplate.setItems(bonusData.templates);
+          this.loadQualityImpactPreview();
         },
         error: (error: unknown) => {
           const message = getErrorMessage(error, 'Failed to load balance data.');
@@ -167,6 +179,60 @@ export class ItemGenerationBalancePageFacade {
           this.toast.show('error', 'Balance panel unavailable', message);
         },
       });
+  }
+
+  loadQualityImpactPreview(): void {
+    const input = this.qualityImpactPreviewForm.getRawValue();
+
+    this.qualityImpactPreviewForm.markAllAsTouched();
+
+    if (this.qualityImpactPreviewForm.invalid) {
+      this.qualityImpactPreviewError.set(this.qualityImpactPreviewValidationMessage());
+      return;
+    }
+
+    this.isLoadingQualityImpactPreview.set(true);
+    this.qualityImpactPreviewError.set(null);
+
+    this.adminService
+      .getQualityImpactPreview(input)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isLoadingQualityImpactPreview.set(false)),
+      )
+      .subscribe({
+        next: (preview) => this.qualityImpactPreview.set(preview),
+        error: (error: unknown) => {
+          const message = getErrorMessage(error, 'Failed to load quality impact preview.');
+          this.qualityImpactPreviewError.set(message);
+          this.toast.show('error', 'Quality preview unavailable', message);
+        },
+      });
+  }
+
+  qualityImpactPreviewValidationMessage(
+    field?: keyof typeof this.qualityImpactPreviewForm.controls,
+  ): string {
+    const base = this.qualityImpactPreviewForm.controls.baseValue;
+    const bonus = this.qualityImpactPreviewForm.controls.bonusValue;
+
+    if (!field || field === 'baseValue') {
+      if (base.hasError('required')) {
+        return 'Sample base value is required.';
+      }
+
+      if (base.hasError('min')) {
+        return 'Sample base value must be zero or greater.';
+      }
+    }
+
+    if (!field || field === 'bonusValue') {
+      if (bonus.hasError('required')) {
+        return 'Sample bonus value is required.';
+      }
+    }
+
+    return 'Sample preview values are invalid.';
   }
 
   saveQuality() {
