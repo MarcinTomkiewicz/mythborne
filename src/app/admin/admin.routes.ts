@@ -61,6 +61,13 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'moderation-actions',
+    loadComponent: () =>
+      import('./pages/moderation-actions/moderation-actions-page').then(
+        (m) => m.ModerationActionsPage,
+      ),
+  },
+  {
     path: 'formulas',
     loadComponent: () =>
       import('./pages/formulas/formulas-page').then((m) => m.FormulasPage),

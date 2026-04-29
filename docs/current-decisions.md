@@ -1864,3 +1864,83 @@ Before implementing U0/H frontend tasks, Codex must:
 - use dedicated G5 RPC/services for anti-abuse cases, sanctions and CP penalties;
 - use `hero_can_use_normal_gameplay(...)` / `get_hero_normal_gameplay_block_reason(...)` / `assert_hero_can_use_normal_gameplay(...)` for normal gameplay access;
 - never reintroduce `get_user_moderation_history(...)` or `get_hero_moderation_history(...)`.
+
+---
+
+## DB-backed UI explainability metadata
+
+Admin/staff/config UI must not rely on raw keys or JSON as the only visible explanation when DB metadata exists.
+
+Current decision:
+
+- technical keys remain stable and may be shown as secondary metadata;
+- primary labels, descriptions, helper text, impact summaries and warnings should come from DB-backed metadata where available;
+- Angular should not create permanent hardcoded dictionaries for configurable gameplay/config values when the database exposes a dictionary/read model;
+- `metadata_json` remains lightweight and must not replace relational domain systems.
+
+Canonical metadata contracts:
+
+- `ui_metadata_entries`
+- `get_ui_metadata_entries(...)`
+
+Seeded metadata namespaces include config governance scopes, config change kinds/statuses/visibility, value types, server config sources, gameplay block reasons, staff candidate eligibility reasons, preview kinds, config managed entity types, applies-to kinds and effective value sources.
+
+## Config definition explainability
+
+`config_definition_ui_metadata` is the per-config-definition UI metadata layer.
+
+It stores admin-facing helper text, gameplay impact summary, change warning, preview kind and grouping.
+
+Canonical read contracts:
+
+- `get_config_definition_ui_metadata(...)`
+- `get_config_definition_explainability(...)`
+
+Rules:
+
+- config governance screens should use `get_config_definition_explainability(...)` instead of reconstructing governance semantics in frontend switch statements;
+- `server_required` means a selected server is needed before showing the effective server-scoped value;
+- `not_value_config` means the definition governs a relational system and should use a dedicated read/preview model instead of scalar/json config editing;
+- target/scope in config change entry UI should be derived from DB definition metadata and explained, not presented as a fake editable choice.
+
+## Admin preview contracts
+
+Canonical preview registry:
+
+- `get_admin_preview_contracts()`.
+
+Canonical preview RPCs:
+
+- `get_item_quality_impact_preview(...)`
+- `get_building_progression_preview(...)`
+- `get_bonus_impact_preview(...)`
+- `get_requirement_impact_preview(...)`
+
+Rules:
+
+- item quality preview reads `item_generation_qualities`; do not hardcode exactly three quality rows;
+- building preview explains district availability, effective caps and `0 = unlimited`;
+- bonus preview uses semantic bonus dictionaries and `entity_bonuses`;
+- quality may scale bonus value only when `quality_scales_value = true`;
+- quality never scales `level_interval`;
+- requirement preview uses `requirement_definitions` and `entity_requirements`, not legacy requirements JSON.
+
+## Staff candidate search read model
+
+`search_server_staff_candidates(...)` is the canonical server-scoped staff candidate search RPC.
+
+Rules:
+
+- frontend must not fetch broad `user_data` pools and filter up to large limits client-side for staff candidate search;
+- frontend must not read `auth.users` directly;
+- staff candidate eligibility flags should come from DB-side read model/helper logic;
+- eligibility reasons should be displayed through human-readable DB metadata, not raw keys as primary text.
+
+## Localization note for future design
+
+Language should eventually be supported at two levels:
+
+- server default language;
+- private account/user language preference.
+
+This is a remembered future-design note, not a requirement to implement localization in the current DB explainability slice.

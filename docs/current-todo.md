@@ -61,7 +61,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: U0-I5 - staff management read models and services.
 - Completed and confirmed: U0-I6 - staff management UI foundation.
 - Completed and confirmed: U0-I7 - moderator scope assignment UI.
-- Current backlog task: U0-I8 - moderation actions UI foundation.
+- Completed and confirmed: U0-I8 - moderation actions UI foundation.
+- Current backlog task: U0-I9 - moderation history and disqualification panels.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
 ## Codex Backlog Workflow
@@ -233,7 +234,7 @@ After G-series work and before deeper H/admin/staff UI work, prioritize the foll
    - staff management RPC;
    - moderation history RPC;
    - staff assignment eligibility.
-5. Track non-blocking role-aware UI and explainability findings in `ux-ui-notes` / current UX notes file.
+5. Track non-blocking role-aware UI and explainability findings in `ui-ux-notes` / current UX notes file.
 
 ### U0 DB foundation status
 

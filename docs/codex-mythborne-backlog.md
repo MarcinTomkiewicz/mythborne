@@ -949,6 +949,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task U0-I8 — Moderation actions UI foundation
 
+**Status:** Done / confirmed 2026-04-29.
+
 **Goal:** Build the first usable UI for U0 moderation actions.
 
 **Scope:**
@@ -972,7 +974,9 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 **Goal:** Surface prior moderation history where staff decisions require it.
 
 **Scope:**
-- Use `get_user_moderation_history` and `get_hero_moderation_history` where available.
+- Use `get_visible_moderation_actions(...)` for scoped/moderator-facing moderation action history.
+- Use `get_full_user_moderation_history(...)` and `get_full_hero_moderation_history(...)` only for admin/operator full moderation action history.
+- Do not use or reintroduce removed legacy RPC names `get_user_moderation_history(...)` / `get_hero_moderation_history(...)`.
 - Server-scoped by default.
 - Full history only for admin/operator; scoped moderator sees only allowed context.
 - Integrate warnings into staff candidate eligibility and anti-abuse case detail later.
@@ -981,7 +985,7 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 - Staff-disqualifying history is explainable in UI.
 - Moderator does not get global account history unless policy allows it.
 - History is read-only and does not replace reason-required actions.
-
+- Removed legacy history RPC names are not reintroduced as frontend fallbacks.
 
 # Epic H — Anti-abuse foundation integration
 
@@ -1989,6 +1993,15 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 UX tasks in this epic should produce visible UI improvements or shared implementation helpers. Do not run another audit-only UX task unless a concrete implementation is blocked by unknown screens or missing DB metadata.
 
+Current DB-backed contracts for this epic:
+- `get_ui_metadata_entries(...)` for labels/descriptions/helper text of technical keys and enum-like values.
+- `get_config_definition_ui_metadata(...)` for per-config-definition helper/impact/warning/preview metadata.
+- `get_config_definition_explainability(...)` for config governance explainability screens.
+- `get_admin_preview_contracts()` for canonical preview kind to RPC routing.
+- `get_item_quality_impact_preview(...)`, `get_building_progression_preview(...)`, `get_bonus_impact_preview(...)`, `get_requirement_impact_preview(...)` for preview input data.
+
+Codex must use these DB contracts where relevant instead of creating permanent Angular-side dictionaries for configurable gameplay/config metadata.
+
 ## Task UX-I1 — Shared metadata display helpers
 
 **Goal:** Add reusable UI/helpers for showing human-readable label, description/helper text, and technical key as secondary metadata.
@@ -2017,12 +2030,14 @@ UX tasks in this epic should produce visible UI improvements or shared implement
 - Show active server context for server-scoped entries.
 - Replace stale success/error text with toast/message behavior where still missing.
 - Use `ui-ux-notes.md` config governance notes as source.
+- Use `get_config_definition_explainability(...)` as the canonical DB read model for scope/value/applicability explanations.
 
 **Acceptance criteria:**
 - User can tell where a config change will apply before submitting.
 - Server-scoped entries show selected server.
 - Global/server target is readonly/explained, not a fake choice.
 - No raw governance scope key as the only explanation.
+- Config scope/value/applicability text comes from DB metadata/read models where available.
 
 ---
 
@@ -2065,7 +2080,7 @@ UX tasks in this epic should produce visible UI improvements or shared implement
 
 **Scope:**
 - For selected base/affix/template, show Normal/Quality/Outstanding or current DB-defined quality rows.
-- Use `item_generation_qualities`, not hardcoded exactly three qualities.
+- Use `get_item_quality_impact_preview(...)` / `item_generation_qualities`, not hardcoded exactly three qualities.
 - Show raw value and quality-scaled value where `quality_scales_value` applies.
 
 **Acceptance criteria:**
@@ -2081,7 +2096,7 @@ UX tasks in this epic should produce visible UI improvements or shared implement
 
 **Scope:**
 - Add level range preview for cost/time/bonus formulas.
-- Show district cap / unlimited behavior once U tasks are implemented.
+- Use `get_building_progression_preview(...)` for district cap / unlimited behavior.
 - Keep existing single-level preview but make multi-level impact easier to understand.
 
 **Acceptance criteria:**
@@ -2096,8 +2111,8 @@ UX tasks in this epic should produce visible UI improvements or shared implement
 **Goal:** Explain resolved bonus/requirement effects in human-readable terms.
 
 **Scope:**
-- Show resolved effect of bonus templates, entity bonuses, quality scaling, per-level intervals and source-stat scaling.
-- Show requirement labels/descriptions once central requirements are in use.
+- Use `get_bonus_impact_preview(...)` to show resolved effect of bonus templates, entity bonuses, quality scaling, per-level intervals and source-stat scaling.
+- Use `get_requirement_impact_preview(...)` to show requirement labels/descriptions from central requirements.
 - Keep technical keys secondary.
 
 **Acceptance criteria:**
@@ -2251,8 +2266,8 @@ Use this order after the current audit/spec cleanup instead of starting more aud
 5. U0-I5 — completed / confirmed: staff management read models and services.
 6. U0-I6 — completed / confirmed: staff management UI foundation.
 7. U0-I7 — completed / confirmed: moderator scope assignment UI.
-8. U0-I8 — current next task: moderation actions UI foundation.
-9. U0-I9 — moderation history and disqualification panels.
+8. U0-I8 — completed / confirmed: moderation actions UI foundation.
+9. U0-I9 — current next task: moderation history and disqualification panels.
 10. UX-I1/UX-I2 quick wins may be interleaved when touching the same admin screens.
 
 Operational rule:

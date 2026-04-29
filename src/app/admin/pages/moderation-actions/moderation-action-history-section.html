@@ -1,0 +1,62 @@
+<section class="mg-card flex-col gap-lg p-lg w-100">
+  <div class="flex-col gap-xs">
+    <p class="card-legend mb-0">History</p>
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Visible moderation actions</h3>
+  </div>
+
+  <form
+    [formGroup]="page().history.historyFilterForm"
+    class="flex-col gap-md"
+    (ngSubmit)="loadHistory.emit()"
+  >
+    <label class="flex-col gap-sm">
+      <span class="muted-text">Target user id</span>
+      <input pInputText class="w-100" formControlName="targetUserId" />
+    </label>
+
+    <label class="flex-col gap-sm">
+      <span class="muted-text">Target hero id</span>
+      <input pInputText class="w-100" formControlName="targetHeroId" />
+    </label>
+
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button type="submit" label="Refresh history" [text]="true" />
+      <p-button
+        label="Reset filters"
+        severity="secondary"
+        [text]="true"
+        (onClick)="resetHistoryFilters.emit()"
+      />
+    </div>
+  </form>
+
+  <div class="flex-col gap-sm">
+    @for (action of page().history.history(); track action.id) {
+      <article class="mg-card flex-col gap-sm p-md">
+        <div class="flex-row-between-center flex-wrap gap-sm">
+          <div class="flex-col gap-xs min-w-0">
+            <strong class="heading-color">{{ page().actionTypeLabel(action.actionTypeKey) }}</strong>
+            <span class="muted-text">Target user: {{ action.targetUserId }}</span>
+            @if (action.targetHeroId) {
+              <span class="muted-text">Target hero: {{ action.targetHeroId }}</span>
+            }
+          </div>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            <span class="tag-badge tag-badge--info">{{ action.status }}</span>
+            @if (action.scopeKey) {
+              <span class="mg-tag">{{ page().scopeLabel(action.scopeKey) }}</span>
+            }
+            @if (action.isStaffDisqualifying) {
+              <span class="tag-badge tag-badge--warn">staff-disqualifying</span>
+            }
+          </div>
+        </div>
+
+        <p class="muted-text mb-0">{{ action.reason }}</p>
+        <span class="muted-text">Created {{ action.createdAt }}</span>
+      </article>
+    } @empty {
+      <p class="muted-text mb-0">No visible moderation actions for the current filters.</p>
+    }
+  </div>
+</section>

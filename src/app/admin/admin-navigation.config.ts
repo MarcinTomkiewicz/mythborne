@@ -66,6 +66,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'Moderation',
+    title: 'Moderation actions',
+    description:
+      'Tworzenie serwerowych akcji moderacyjnych i podglad widocznej historii dla wybranego kontekstu.',
+    routerLink: '/admin/moderation-actions',
+    accessPolicy: 'selectedServerModeration',
+  },
+  {
     legend: 'Audit',
     title: 'Audit dictionaries',
     description:
@@ -195,6 +203,11 @@ export const ANTI_ABUSE_CONFIG_PAGE_LINKS: readonly AdminTagLink[] = [
 export const STAFF_MANAGEMENT_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
   {
+    label: 'Moderation actions',
+    routerLink: '/admin/moderation-actions',
+    accessPolicy: 'selectedServerModeration',
+  },
+  {
     label: 'Anti-abuse config',
     routerLink: '/admin/anti-abuse-config',
     accessPolicy: 'selectedServerManagement',
@@ -202,6 +215,25 @@ export const STAFF_MANAGEMENT_PAGE_LINKS: readonly AdminTagLink[] = [
   {
     label: 'Audit logs',
     routerLink: '/admin/audit-logs',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const MODERATION_ACTIONS_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Staff management',
+    routerLink: '/admin/staff-management',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Audit logs',
+    routerLink: '/admin/audit-logs',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Anti-abuse config',
+    routerLink: '/admin/anti-abuse-config',
     accessPolicy: 'selectedServerManagement',
   },
 ];

@@ -1,0 +1,136 @@
+<section class="mg-card flex-col gap-lg p-lg w-100">
+  <div class="flex-col gap-xs">
+    <p class="card-legend mb-0">Create</p>
+    <h3 class="mg-section__title mg-section__title--xs mb-0">New moderation action</h3>
+  </div>
+
+  <form
+    [formGroup]="page().create.createForm"
+    class="flex-col gap-md"
+    (ngSubmit)="createAction.emit()"
+  >
+    <label class="flex-col gap-sm">
+      <span class="muted-text">Action type</span>
+      <p-select
+        class="w-100"
+        formControlName="actionTypeKey"
+        [options]="page().visibleActionTypes()"
+        optionLabel="label"
+        optionValue="key"
+        (onChange)="actionTypeChange.emit()"
+      />
+    </label>
+
+    @if (page().selectedActionType(); as actionType) {
+      <p-message severity="info" [text]="actionType.description" />
+      @if (actionType.helperText) {
+        <p class="muted-text mb-0">{{ actionType.helperText }}</p>
+      }
+      <div class="flex-row-start-center flex-wrap gap-xs">
+        @if (actionType.isWarning) {
+          <span class="mg-tag">warning</span>
+        }
+        @if (actionType.isRestriction) {
+          <span class="mg-tag">restriction</span>
+        }
+        @if (actionType.isSuspension) {
+          <span class="mg-tag">suspension</span>
+        }
+        @if (actionType.isBan) {
+          <span class="tag-badge tag-badge--warn">ban</span>
+        }
+        @if (actionType.isStaffDisqualifying) {
+          <span class="tag-badge tag-badge--warn">staff-disqualifying</span>
+        }
+      </div>
+    }
+
+    @if (page().selectedActionType()?.scopeRequired) {
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Moderation scope</span>
+        <p-select
+          class="w-100"
+          formControlName="scopeKey"
+          [options]="page().scopeOptions()"
+          optionLabel="label"
+          optionValue="key"
+        />
+        @if (!page().scopeOptions().length) {
+          <span class="form-error">
+            No moderation scopes are available for this server context.
+          </span>
+        }
+      </label>
+    }
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Target user id</span>
+        <input pInputText class="w-100" formControlName="targetUserId" />
+        @if (
+          page().create.createForm.controls.targetUserId.touched &&
+          page().create.createForm.controls.targetUserId.invalid
+        ) {
+          <span class="form-error">Target user id is required.</span>
+        }
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Target hero id</span>
+        <input pInputText class="w-100" formControlName="targetHeroId" />
+      </label>
+    </div>
+
+    <label class="flex-col gap-sm">
+      <span class="muted-text">Reason</span>
+      <textarea pInputText rows="3" class="w-100" formControlName="reason"></textarea>
+      @if (
+        page().create.createForm.controls.reason.touched &&
+        page().create.createForm.controls.reason.invalid
+      ) {
+        <span class="form-error">Reason is required.</span>
+      }
+    </label>
+
+    <label class="flex-col gap-sm">
+      <span class="muted-text">Player-visible note</span>
+      <textarea pInputText rows="2" class="w-100" formControlName="playerVisibleNote"></textarea>
+    </label>
+
+    <label class="flex-col gap-sm">
+      <span class="muted-text">Operator notes</span>
+      <textarea pInputText rows="2" class="w-100" formControlName="operatorNotes"></textarea>
+    </label>
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Expires at</span>
+        <input pInputText class="w-100" formControlName="expiresAt" placeholder="ISO timestamp" />
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Source entity type</span>
+        <input pInputText class="w-100" formControlName="sourceEntityType" />
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Source entity id</span>
+        <input pInputText class="w-100" formControlName="sourceEntityId" />
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Source snapshot id</span>
+        <input pInputText class="w-100" formControlName="sourceSnapshotId" />
+      </label>
+    </div>
+
+    <div class="flex-row-start-center">
+      <p-button
+        type="submit"
+        label="Create action"
+        [loading]="page().create.isSaving()"
+        [disabled]="page().create.isSaving()"
+      />
+    </div>
+  </form>
+</section>

@@ -47,4 +47,6 @@ export const TABLES = {
   audit_action_types: 'audit_action_types',
   audit_entity_types: 'audit_entity_types',
   audit_logs: 'audit_logs',
+  moderation_action_types: 'moderation_action_types',
+  moderation_actions: 'moderation_actions',
 } as const;

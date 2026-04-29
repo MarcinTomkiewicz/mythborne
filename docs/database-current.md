@@ -1063,3 +1063,189 @@ The following foundations were designed and rollback-tested in SQL editor:
 - bonus dictionary/entity bonus foundation and legacy bonus backfill.
 
 Codex must regenerate database types after schema changes before implementing affected frontend/domain code.
+
+---
+
+## Update 2026-04-29 — U0 staff candidate search and UX explainability DB contracts
+
+This section documents the DB/RPC contracts added after the U0 sanction/access work, so Codex can build staff-management and admin explainability UI without client-side broad reads or hardcoded labels.
+
+### Staff candidate search RPC
+
+`search_server_staff_candidates(p_server_id uuid, p_query text, p_limit integer)` is the canonical DB-side read model for user/staff candidate search in staff management UI.
+
+Purpose:
+
+- replace frontend fetching broad `user_data` pools and filtering client-side;
+- avoid Angular reads from `auth.users`;
+- keep candidate search server-scoped;
+- expose only limited fields needed for staff assignment UI;
+- return DB-computed eligibility flags using the same DB-side rules as staff assignment.
+
+Return model includes:
+
+- `user_id`
+- `display_name`
+- `email`
+- `global_role_key`
+- `existing_staff_assignment_id`
+- `existing_staff_role`
+- `has_hero_on_server`
+- `has_staff_disqualifying_history`
+- `is_existing_staff_on_server`
+- `is_eligible_for_server_staff`
+- `eligibility_reason`
+
+Rules:
+
+- requires `can_manage_server_staff(p_server_id)`;
+- does not read `auth.users`;
+- does not return broad unfiltered results;
+- short/empty search queries should not become a broad user list;
+- frontend should map `eligibility_reason` through DB metadata / human-readable UI, not display raw keys as primary text.
+
+Known eligibility reason keys:
+
+- `already_staff_on_server`
+- `staff_disqualifying_history`
+- `has_hero_on_standard_server`
+
+### UI metadata registry
+
+`ui_metadata_entries` is the canonical DB-backed metadata registry for enum-like keys, reason keys, config scope names, preview kinds and other technical values that may appear in admin/staff/config UI.
+
+Core columns:
+
+- `namespace`
+- `key`
+- `label`
+- `description`
+- `helper_text`
+- `impact_summary`
+- `warning_text`
+- `ui_group_key`
+- `ui_group_label`
+- `sort_order`
+- `is_active`
+- `metadata_json`
+
+Canonical read RPC:
+
+- `get_ui_metadata_entries(p_namespace text, p_keys text[], p_include_inactive boolean)` → returns `ui_metadata_entries`.
+
+Current seeded namespaces include:
+
+- `config_governance_scope`
+- `config_change_kind`
+- `config_change_status`
+- `config_change_visibility`
+- `config_value_type`
+- `server_config_value_source`
+- `gameplay_block_reason`
+- `staff_candidate_eligibility_reason`
+- `ui_preview_kind`
+- `config_managed_entity_type`
+- `config_applies_to_kind`
+- `config_effective_value_source`
+
+Rules:
+
+- frontend should use this registry instead of hardcoding configurable enum/key labels;
+- raw technical keys may be visible as secondary metadata, but must not be the only explanation when metadata exists;
+- `metadata_json` must remain lightweight and must not replace relational domain systems;
+- labels/descriptions seeded during this work may be Polish-first until a proper localization layer exists.
+
+### Config definition UI metadata
+
+`config_definition_ui_metadata` stores per-config-definition admin explainability metadata.
+
+Purpose:
+
+- avoid hardcoding config helper text and impact descriptions in Angular;
+- describe the admin/operator meaning of a concrete `config_definitions` row;
+- tell UI which preview family to use;
+- group config definitions for readable admin panels.
+
+Core columns:
+
+- `config_definition_id`
+- `admin_label_override`
+- `admin_description_override`
+- `helper_text`
+- `gameplay_impact_summary`
+- `change_warning`
+- `preview_kind`
+- `ui_group_key`
+- `ui_group_label`
+- `sort_order`
+- `metadata_json`
+
+Canonical read RPC:
+
+- `get_config_definition_ui_metadata(p_config_definition_id uuid, p_managed_entity_key text, p_include_inactive boolean)`.
+
+Current preview kind keys include:
+
+- `none`
+- `scalar`
+- `json`
+- `formula`
+- `item_quality`
+- `building_progression`
+- `bonus`
+- `requirement`
+- `anti_abuse_threshold`
+
+### Canonical config explainability read model
+
+`get_config_definition_explainability(p_server_id uuid, p_managed_entity_key text, p_include_inactive boolean)` is the canonical DB-backed read model for config governance explainability UI.
+
+It combines:
+
+- `config_definitions`;
+- `config_definition_ui_metadata`;
+- UI metadata for managed entity type, governance scope, value type, preview kind, applies-to kind, effective value source and expected change kind;
+- effective scalar/json value where applicable;
+- source explanation for server/global/default/missing values;
+- expected change kind for UI/workflow guidance.
+
+Frontend should use this read model for config definitions/change-entry explainability instead of reconstructing scope semantics through Angular switch statements.
+
+Important semantics:
+
+- `server_required` means selected server context is required before showing an effective server-scoped value;
+- `not_value_config` means the definition governs a relational system and should use a dedicated read model/preview instead of pretending to be a scalar/json value;
+- `selected_server_id` is populated only for server-scoped applies-to kinds when a server id was supplied.
+
+### Admin preview input contracts
+
+`get_admin_preview_contracts()` lists canonical preview contract names for UI routing.
+
+Current preview contract RPCs:
+
+- `get_item_quality_impact_preview(p_base_value numeric, p_bonus_value numeric)`
+- `get_building_progression_preview(p_building_id uuid, p_district_code text, p_from_level integer, p_to_level integer)`
+- `get_bonus_impact_preview(p_entity_type text, p_entity_id uuid, p_quality_key text)`
+- `get_requirement_impact_preview(p_entity_type requirement_entity_type, p_entity_id uuid)`
+
+Rules:
+
+- item quality preview reads active `item_generation_qualities`; UI must not hardcode quality rows;
+- bonus preview joins semantic `bonus_templates`, bonus dictionaries and `entity_bonuses`;
+- bonus quality scaling applies only to value when `quality_scales_value = true`;
+- quality never scales `level_interval`;
+- building preview shows district availability, effective cap, cap source and `0 = unlimited` semantics;
+- requirement preview uses central `requirement_definitions` and `entity_requirements`, not legacy `building_requirements` or `buildings.requirements` JSON.
+
+### Codex implications
+
+For UX/admin/config explainability work, Codex must:
+
+- use `get_ui_metadata_entries(...)` for key/enum/reason labels when available;
+- use `get_config_definition_explainability(...)` for config governance screens;
+- use `get_config_definition_ui_metadata(...)` when only per-definition metadata is needed;
+- use `get_admin_preview_contracts()` and the preview RPCs above for preview input data;
+- not hardcode gameplay/config dictionaries in Angular when DB metadata exists;
+- keep raw keys as secondary technical metadata only;
+- keep JSON collapsed/constrained and never as the only explanation;
+- regenerate `database.types.ts` after these schema/RPC changes before implementing affected frontend work.

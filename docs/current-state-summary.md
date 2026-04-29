@@ -377,6 +377,12 @@ Still pending at the gameplay level even if partially supported in schema:
 - U0-I7 scope selection uses Reactive Forms only (`FormRecord<FormControl<boolean>>`), with no `FormsModule`, `ngModel`, per-control subscriptions, or duplicate mutable selected-scope state.
 - U0-I7 split the moderator scope editor into `StaffScopeAssignmentActions` and `StaffScopeAssignmentSection`; empty scope sets are allowed and mean “remove all scopes”.
 - U0-I7 was verified with targeted staff-management/admin-navigation tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- U0-I8 accepted on 2026-04-29: `/admin/moderation-actions` is now a lazy admin page for server-scoped moderation actions.
+- U0-I8 uses DB dictionaries for action labels/options: `moderation_action_types` for action types and `staff_permission_scopes` for moderation scope labels.
+- U0-I8 creates moderation actions only through `create_moderation_action`; there are no direct writes to `moderation_actions` and no frontend audit helper calls.
+- U0-I8 reads moderator-facing visible history through `get_visible_moderation_actions` and does not use removed legacy `get_user_moderation_history` / `get_hero_moderation_history` RPC names.
+- U0-I8 splits page logic into `ModerationActionsPageFacade`, `ModerationActionDictionariesState`, `ModerationActionCreateActions`, and `ModerationActionHistoryState`, with create/history UI sections kept as lazy page components.
+- U0-I8 was verified with targeted moderation-action/admin-navigation tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

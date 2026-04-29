@@ -1,0 +1,52 @@
+<div class="flex-col gap-xl">
+  <app-loading-overlay
+    [visible]="page.isLoading()"
+    title="Loading moderation actions"
+    message="Refreshing moderation dictionaries and visible history."
+  />
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-col gap-sm">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Moderation</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">Moderation actions</h2>
+        <p class="muted-text mb-0">
+          Create server-scoped moderation actions through DB workflow RPC and review visible history.
+        </p>
+      </div>
+
+      <app-admin-server-switcher />
+    </div>
+  </section>
+
+  @if (!page.selectedServer()) {
+    <p-message severity="warn" text="Select a server before using moderation actions." />
+  } @else if (!page.canModerate()) {
+    <p-message
+      severity="warn"
+      text="This account can open the admin shell, but cannot apply moderation actions in the selected server context."
+    />
+  } @else {
+    @if (page.error(); as message) {
+      <p-message severity="error" [text]="message" />
+    }
+
+    <div class="grid-2-1 gap-xl">
+      <app-moderation-action-create-section
+        [page]="page"
+        (actionTypeChange)="page.onActionTypeChange()"
+        (createAction)="page.createAction()"
+      />
+
+      <app-moderation-action-history-section
+        [page]="page"
+        (loadHistory)="page.loadHistory()"
+        (resetHistoryFilters)="page.resetHistoryFilters()"
+      />
+    </div>
+  }
+
+  <section class="mg-card p-lg w-100">
+    <app-admin-tag-links [links]="links" />
+  </section>
+</div>

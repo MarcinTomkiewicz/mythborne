@@ -25,4 +25,7 @@ export const RPC = {
     'create_character_point_penalty_for_sanction',
   set_character_point_penalty_status: 'set_character_point_penalty_status',
   add_anti_abuse_sanction_item: 'add_anti_abuse_sanction_item',
+  can_apply_local_moderation_action: 'can_apply_local_moderation_action',
+  create_moderation_action: 'create_moderation_action',
+  get_visible_moderation_actions: 'get_visible_moderation_actions',
 } as const;

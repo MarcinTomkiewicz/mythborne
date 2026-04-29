@@ -1910,3 +1910,72 @@ Every visible technical/admin/gameplay concept should be explainable at the poin
 - Moderator UI should show only technical metadata useful within assigned scopes.
 
 Admin panels should show predicted gameplay impact, not only editable fields. Examples: item generation previews for Normal/Quality/Outstanding, building formula calculators by level, and formula output previews.
+
+---
+
+# Update 2026-04-29 — DB-backed admin explainability and preview contracts
+
+Admin/config/staff UI should be explainable from the database rather than from ad hoc frontend dictionaries.
+
+Raw technical keys and JSON may remain visible to admins/operators as secondary technical metadata, but they must not be the only explanation when DB metadata exists.
+
+## UI metadata registry
+
+`ui_metadata_entries` is the shared DB-backed metadata registry for technical enum/key/reason/preview values.
+
+It stores:
+
+- human-readable label,
+- description,
+- helper text,
+- impact summary,
+- warning text,
+- grouping metadata,
+- lightweight structured metadata.
+
+Frontend should read it through `get_ui_metadata_entries(...)` rather than hardcoding labels for configurable keys, config scopes, gameplay block reasons, staff candidate eligibility reasons or preview kinds.
+
+## Config explainability
+
+`config_definition_ui_metadata` stores per-config-definition admin explanation metadata:
+
+- helper text,
+- gameplay impact summary,
+- warning text,
+- preview kind,
+- UI grouping.
+
+`get_config_definition_explainability(...)` is the canonical read model for config governance explainability. It combines config definition data, governance scope explanation, value type explanation, applies-to meaning, effective scalar/json value where applicable and preview kind.
+
+Important config UI rules:
+
+- target/scope must be explained and readonly when derived from `config_definitions.governance_scope`;
+- server-scoped entries must show selected server context;
+- `server_required` means selected server context is needed before showing effective value;
+- `not_value_config` means the definition governs a relational system and needs a dedicated read/preview model rather than scalar/json editing.
+
+## Preview contracts
+
+Canonical preview contract registry:
+
+- `get_admin_preview_contracts()`.
+
+Canonical preview input RPCs:
+
+- `get_item_quality_impact_preview(...)` — item quality rows and sample quality scaling;
+- `get_building_progression_preview(...)` — building levels, district availability, district caps and `0 = unlimited` semantics;
+- `get_bonus_impact_preview(...)` — semantic bonus/entity bonus preview with quality scaling rules;
+- `get_requirement_impact_preview(...)` — central requirement preview from `requirement_definitions` and `entity_requirements`.
+
+Frontend should route preview kinds to these contracts instead of hardcoding data sources.
+
+## Localization direction
+
+Current Polish seed text is acceptable as a working prototype layer. Proper localization remains a later system.
+
+Remembered direction: language should eventually be supported at two levels:
+
+- server default language,
+- private account/user language preference.
+
+Fallback should eventually be designed explicitly, for example user preference → server default → product default.
