@@ -2104,6 +2104,8 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ## Task UX-I6 — Building impact calculator
 
+**Status:** Done / confirmed 2026-04-29.
+
 **Goal:** Show predicted building cost/time/bonus output across levels and selected district context.
 
 **Scope:**

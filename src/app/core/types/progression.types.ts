@@ -46,6 +46,11 @@ export interface BuildingProgressionRules {
   bonusExpression: string;
 }
 
+export interface BuildingProgressionFormulaResult {
+  value: number | null;
+  error: string | null;
+}
+
 export const BUILDING_PROGRESSION_TARGET_KEYS = {
   upgradeCost: 'building_upgrade_cost',
   upgradeTime: 'building_upgrade_time',

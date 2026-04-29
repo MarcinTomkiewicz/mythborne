@@ -1,6 +1,8 @@
 import {
   BuildingAdminData,
   BuildingFormulaOverrides,
+  BuildingProgressionPreview,
+  BuildingProgressionPreviewInput,
   EditableBuildingBonus,
   EditableBuilding,
   EditableBuildingRequirement,
@@ -14,10 +16,17 @@ import {
 } from '../types/building-admin-row.types';
 import { BonusTemplate } from '../types/bonus.types';
 import { CanonicalEntityBonusWithTemplateRow } from '../types/bonus-governance.types';
+import {
+  BuildingProgressionPreviewRpcRow,
+  GetBuildingProgressionPreviewRpcArgs,
+} from '../types/building-preview-rpc.types';
+import { FormulaAdminData } from '../domain/formula/formula.model';
 import { Row } from '../types/supabase.types';
 import { mapResolvedBonus } from './bonus-governance';
 import { normalizeBonusType } from './bonus';
-import { FormulaAdminData } from '../domain/formula/formula.model';
+import { trimText } from './normalize-text';
+
+const BUILDING_PROGRESSION_PREVIEW_MAX_LEVEL_RANGE = 50;
 
 export function mapEditableBuilding(
   row: EditableBuildingRow,
@@ -106,6 +115,56 @@ export function mapBuildingStats(
   }));
 }
 
+export function mapBuildingProgressionPreview(
+  row: BuildingProgressionPreviewRpcRow
+): BuildingProgressionPreview {
+  return {
+    buildingId: row.building_id,
+    buildingKey: row.building_key,
+    buildingName: row.building_name,
+    buildingDescription: row.building_description,
+    selectedDistrictCode: row.selected_district_code,
+    minimumDistrictCode: row.minimum_district_code,
+    previewLevel: row.preview_level,
+    nextLevel: row.next_level,
+    baseCost: row.base_cost,
+    baseBuildTimeMinutes: row.base_build_time_minutes,
+    defaultMaxLevel: row.default_max_level,
+    effectiveMaxLevel: row.effective_max_level,
+    isUnlimited: row.is_unlimited,
+    isAvailableInSelectedDistrict: row.is_available_in_selected_district,
+    capSource: row.cap_source,
+    capExplanation: row.cap_explanation,
+    districtExplanation: row.district_explanation,
+  };
+}
+
+export function toGetBuildingProgressionPreviewRpcArgs(
+  input: BuildingProgressionPreviewInput
+): GetBuildingProgressionPreviewRpcArgs {
+  const fromLevel = requiredPositiveInteger(input.fromLevel, 'fromLevel');
+  const toLevel = requiredPositiveInteger(input.toLevel, 'toLevel');
+
+  if (fromLevel > toLevel) {
+    throw new Error(
+      'fromLevel must be less than or equal to toLevel for building progression preview.'
+    );
+  }
+
+  if (toLevel - fromLevel + 1 > BUILDING_PROGRESSION_PREVIEW_MAX_LEVEL_RANGE) {
+    throw new Error(
+      `Building progression preview range cannot exceed ${BUILDING_PROGRESSION_PREVIEW_MAX_LEVEL_RANGE} levels.`
+    );
+  }
+
+  return {
+    p_building_id: requiredText(input.buildingId, 'buildingId'),
+    p_district_code: requiredText(input.districtCode, 'districtCode'),
+    p_from_level: fromLevel,
+    p_to_level: toLevel,
+  };
+}
+
 export function normalizeBuildingResourceType(
   value: string
 ): EditableBuildingResourceCost['resourceType'] {
@@ -166,4 +225,35 @@ function requiredTemplate(
   }
 
   return template;
+}
+
+function requiredText(value: string | null | undefined, field: string): string {
+  const normalized = trimText(value);
+
+  if (!normalized) {
+    throw new Error(`${field} is required for building progression preview.`);
+  }
+
+  return normalized;
+}
+
+function requiredPositiveInteger(
+  value: number | string | null | undefined,
+  field: string
+): number {
+  if (value === null || value === undefined || value === '') {
+    throw new Error(`${field} is required for building progression preview.`);
+  }
+
+  if (typeof value === 'string' && !/^\d+$/.test(value.trim())) {
+    throw new Error(`${field} must be a positive integer level for building progression preview.`);
+  }
+
+  const normalized = Number(value);
+
+  if (!Number.isInteger(normalized) || normalized < 1) {
+    throw new Error(`${field} must be a positive integer level for building progression preview.`);
+  }
+
+  return normalized;
 }

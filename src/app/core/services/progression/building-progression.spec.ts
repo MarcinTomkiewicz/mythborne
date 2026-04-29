@@ -151,4 +151,44 @@ describe('BuildingProgressionService', () => {
     expect(rules.costFormulaId).toBe('formula-global-cost');
     expect(rules.costExpression).toBe('baseCost + level');
   });
+
+  it('calculates upgrade cost from the positive base cost and level', () => {
+    const rules = service.resolveRulesForBuilding('building-without-override', adminData);
+
+    expect(service.getUpgradeCost(3, 100, 1, rules)).toBe(103);
+  });
+
+  it('supports snake_case formula variables used by persisted formula data', () => {
+    const rules = {
+      costFormulaId: 'formula-snake-cost',
+      timeFormulaId: 'formula-snake-time',
+      bonusFormulaId: 'formula-snake-bonus',
+      costExpression: 'base_cost + level',
+      timeExpression: 'base_time + level',
+      bonusExpression: 'base_bonus + level',
+    };
+
+    expect(service.getUpgradeCost(3, 100, 1, rules)).toBe(103);
+    expect(service.getUpgradeTimeMinutes(3, 20, 1, rules)).toBe(23);
+    expect(service.getBonusValue(3, 7, rules)).toBe(10);
+  });
+
+  it('returns formula evaluation errors for invalid local preview formulas', () => {
+    const result = service.getUpgradeCostResult(
+      3,
+      100,
+      1,
+      {
+        costFormulaId: 'formula-invalid-cost',
+        timeFormulaId: null,
+        bonusFormulaId: null,
+        costExpression: 'base_cost + missing_variable',
+        timeExpression: '',
+        bonusExpression: '',
+      },
+    );
+
+    expect(result.value).toBeNull();
+    expect(result.error).toBe('Unknown token in formula: missing_variable.');
+  });
 });

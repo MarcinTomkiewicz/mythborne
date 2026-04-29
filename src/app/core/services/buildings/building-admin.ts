@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable, of, switchMap, tap, throwError } from 'rxjs';
 import { BONUS_ENTITY_TYPES } from '../../constants/bonus-entity-types.const';
+import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import {
   BuildingAdminData,
@@ -8,14 +9,18 @@ import {
   EditableBuildingBonus,
   EditableBuildingRequirement,
   EditableBuildingResourceCost,
+  BuildingProgressionPreview,
+  BuildingProgressionPreviewInput,
 } from '../../domain/building/building.model';
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
 import {
   mapEditableBuildingEntityBonus,
   mapBuildingBonusTemplates,
   mapBuildingDistricts,
+  mapBuildingProgressionPreview,
   mapBuildingStats,
   mapEditableBuilding,
+  toGetBuildingProgressionPreviewRpcArgs,
 } from '../../utils/building-admin-mappers';
 import { nonNegativeInteger, positiveInteger, roundedNumber } from '../../utils/number';
 import { trimText, trimToNull } from '../../utils/normalize-text';
@@ -23,6 +28,7 @@ import { BuildingProgressionService } from '../progression/building-progression'
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
 import { EditableBuildingRow } from '../../types/building-admin-row.types';
+import { BuildingProgressionPreviewRpcRow } from '../../types/building-preview-rpc.types';
 import { BuildingPayload } from '../../types/building-service.types';
 import { CanonicalEntityBonusWithTemplateRow } from '../../types/bonus-governance.types';
 import { Row } from '../../types/supabase.types';
@@ -92,6 +98,17 @@ export class BuildingAdminService {
         };
       })
     );
+  }
+
+  getBuildingProgressionPreview(
+    input: BuildingProgressionPreviewInput
+  ): Observable<BuildingProgressionPreview[]> {
+    return this.backend
+      .rpc<BuildingProgressionPreviewRpcRow[]>(
+        RPC.get_building_progression_preview,
+        toGetBuildingProgressionPreviewRpcArgs(input)
+      )
+      .pipe(map((rows) => rows.map(mapBuildingProgressionPreview)));
   }
 
   saveBuilding(draft: EditableBuilding): Observable<void> {

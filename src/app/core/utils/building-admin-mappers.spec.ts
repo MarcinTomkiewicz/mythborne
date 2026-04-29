@@ -1,7 +1,12 @@
 import { BONUS_ENTITY_TYPES } from '../constants/bonus-entity-types.const';
 import { BonusTemplate } from '../types/bonus.types';
 import { CanonicalEntityBonusWithTemplateRow } from '../types/bonus-governance.types';
-import { mapEditableBuildingEntityBonus } from './building-admin-mappers';
+import { BuildingProgressionPreviewRpcRow } from '../types/building-preview-rpc.types';
+import {
+  mapBuildingProgressionPreview,
+  mapEditableBuildingEntityBonus,
+  toGetBuildingProgressionPreviewRpcArgs,
+} from './building-admin-mappers';
 
 describe('building admin mappers', () => {
   it('maps building bonus from canonical entity bonus rows', () => {
@@ -35,6 +40,99 @@ describe('building admin mappers', () => {
       ),
     ).toThrowError(
       'bonus_templates.type_key is required for canonical bonus row "template-1".',
+    );
+  });
+
+  it('maps building progression preview rows from DB metadata', () => {
+    expect(mapBuildingProgressionPreview(createProgressionPreviewRow())).toEqual(
+      jasmine.objectContaining({
+        buildingId: 'building-1',
+        buildingKey: 'market',
+        buildingName: 'Market',
+        selectedDistrictCode: 'B',
+        previewLevel: 2,
+        nextLevel: 3,
+        baseCost: 250,
+        baseBuildTimeMinutes: 90,
+        effectiveMaxLevel: 0,
+        isUnlimited: true,
+        capExplanation: 'Selected district has unlimited cap. 0 = unlimited.',
+      }),
+    );
+  });
+
+  it('maps building progression preview input to RPC args', () => {
+    expect(
+      toGetBuildingProgressionPreviewRpcArgs({
+        buildingId: ' building-1 ',
+        districtCode: ' B ',
+        fromLevel: 2,
+        toLevel: 5,
+      }),
+    ).toEqual({
+      p_building_id: 'building-1',
+      p_district_code: 'B',
+      p_from_level: 2,
+      p_to_level: 5,
+    });
+  });
+
+  it('rejects invalid building progression preview ranges', () => {
+    expect(() =>
+      toGetBuildingProgressionPreviewRpcArgs({
+        buildingId: 'building-1',
+        districtCode: 'B',
+        fromLevel: 0,
+        toLevel: 5,
+      }),
+    ).toThrowError(
+      'fromLevel must be a positive integer level for building progression preview.',
+    );
+
+    expect(() =>
+      toGetBuildingProgressionPreviewRpcArgs({
+        buildingId: 'building-1',
+        districtCode: 'B',
+        fromLevel: 6,
+        toLevel: 5,
+      }),
+    ).toThrowError(
+      'fromLevel must be less than or equal to toLevel for building progression preview.',
+    );
+  });
+
+  it('rejects decimal building progression preview levels', () => {
+    expect(() =>
+      toGetBuildingProgressionPreviewRpcArgs({
+        buildingId: 'building-1',
+        districtCode: 'B',
+        fromLevel: '1.5',
+        toLevel: 5,
+      }),
+    ).toThrowError(
+      'fromLevel must be a positive integer level for building progression preview.',
+    );
+
+    expect(() =>
+      toGetBuildingProgressionPreviewRpcArgs({
+        buildingId: 'building-1',
+        districtCode: 'B',
+        fromLevel: 1,
+        toLevel: '3.2',
+      }),
+    ).toThrowError(
+      'toLevel must be a positive integer level for building progression preview.',
+    );
+
+    expect(() =>
+      toGetBuildingProgressionPreviewRpcArgs({
+        buildingId: 'building-1',
+        districtCode: 'B',
+        fromLevel: 1.5,
+        toLevel: 3,
+      }),
+    ).toThrowError(
+      'fromLevel must be a positive integer level for building progression preview.',
     );
   });
 });
@@ -109,6 +207,31 @@ function createTemplate(overrides: Partial<BonusTemplate> = {}): BonusTemplate {
     scalingFactor: null,
     sortOrder: 10,
     isActive: true,
+    ...overrides,
+  };
+}
+
+function createProgressionPreviewRow(
+  overrides: Partial<BuildingProgressionPreviewRpcRow> = {},
+): BuildingProgressionPreviewRpcRow {
+  return {
+    building_id: 'building-1',
+    building_key: 'market',
+    building_name: 'Market',
+    building_description: 'Trade building.',
+    selected_district_code: 'B',
+    minimum_district_code: 'A',
+    preview_level: 2,
+    next_level: 3,
+    base_cost: 250,
+    base_build_time_minutes: 90,
+    default_max_level: 0,
+    effective_max_level: 0,
+    is_unlimited: true,
+    is_available_in_selected_district: true,
+    cap_source: 'district',
+    cap_explanation: 'Selected district has unlimited cap. 0 = unlimited.',
+    district_explanation: 'Available in selected district.',
     ...overrides,
   };
 }

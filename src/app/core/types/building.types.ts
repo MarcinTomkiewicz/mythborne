@@ -121,6 +121,33 @@ export interface BuildingAdminData {
   stats: BuildingStatOption[];
 }
 
+export interface BuildingProgressionPreviewInput {
+  buildingId: string;
+  districtCode: string;
+  fromLevel: number | string | null | undefined;
+  toLevel: number | string | null | undefined;
+}
+
+export interface BuildingProgressionPreview {
+  buildingId: string;
+  buildingKey: string;
+  buildingName: string;
+  buildingDescription: string;
+  selectedDistrictCode: string;
+  minimumDistrictCode: string;
+  previewLevel: number;
+  nextLevel: number;
+  baseCost: number;
+  baseBuildTimeMinutes: number;
+  defaultMaxLevel: number;
+  effectiveMaxLevel: number;
+  isUnlimited: boolean;
+  isAvailableInSelectedDistrict: boolean;
+  capSource: string;
+  capExplanation: string;
+  districtExplanation: string;
+}
+
 export interface MansionEstateView {
   currentAddress: string | null;
   currentDistrictCode: string | null;

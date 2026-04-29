@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable, shareReplay } from 'rxjs';
 import {
   BUILDING_PROGRESSION_TARGET_KEYS,
+  BuildingProgressionFormulaResult,
   BuildingProgressionRules,
 } from '../../domain/progression/building-progression.model';
 import { FormulaAdminData } from '../../domain/formula/formula.model';
@@ -38,9 +39,18 @@ export class BuildingProgressionService {
     rank: number,
     rules: BuildingProgressionRules
   ): number | null {
+    return this.getUpgradeCostResult(level, baseCost, rank, rules).value;
+  }
+
+  getUpgradeCostResult(
+    level: number,
+    baseCost: number,
+    rank: number,
+    rules: BuildingProgressionRules
+  ): BuildingProgressionFormulaResult {
     return this.evaluateNumeric(
       rules.costExpression,
-      { level, baseCost, rank },
+      { level, baseCost, base_cost: baseCost, rank },
       true
     );
   }
@@ -51,9 +61,18 @@ export class BuildingProgressionService {
     rank: number,
     rules: BuildingProgressionRules
   ): number | null {
+    return this.getUpgradeTimeMinutesResult(level, baseTime, rank, rules).value;
+  }
+
+  getUpgradeTimeMinutesResult(
+    level: number,
+    baseTime: number,
+    rank: number,
+    rules: BuildingProgressionRules
+  ): BuildingProgressionFormulaResult {
     return this.evaluateNumeric(
       rules.timeExpression,
-      { level, baseTime, rank },
+      { level, baseTime, base_time: baseTime, rank },
       true
     );
   }
@@ -63,7 +82,19 @@ export class BuildingProgressionService {
     baseBonus: number,
     rules: BuildingProgressionRules
   ): number | null {
-    return this.evaluateNumeric(rules.bonusExpression, { level, baseBonus }, false);
+    return this.getBonusValueResult(level, baseBonus, rules).value;
+  }
+
+  getBonusValueResult(
+    level: number,
+    baseBonus: number,
+    rules: BuildingProgressionRules
+  ): BuildingProgressionFormulaResult {
+    return this.evaluateNumeric(
+      rules.bonusExpression,
+      { level, baseBonus, base_bonus: baseBonus },
+      false
+    );
   }
 
   resolveRulesForBuilding(
@@ -96,19 +127,22 @@ export class BuildingProgressionService {
     expression: string,
     context: Record<string, number>,
     integerOnly: boolean
-  ): number | null {
+  ): BuildingProgressionFormulaResult {
     const result = this.runtime.evaluate(expression, context);
 
     if (result.error || result.value === null || result.value === undefined) {
-      return null;
+      return { value: null, error: result.error ?? 'Formula did not return a value.' };
     }
 
     const numeric = Number(result.value);
 
     if (!Number.isFinite(numeric)) {
-      return null;
+      return { value: null, error: 'Formula did not return a finite number.' };
     }
 
-    return integerOnly ? nonNegativeInteger(numeric) : numeric;
+    return {
+      value: integerOnly ? nonNegativeInteger(numeric) : numeric,
+      error: null,
+    };
   }
 }

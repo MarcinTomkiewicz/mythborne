@@ -409,6 +409,11 @@ Still pending at the gameplay level even if partially supported in schema:
 - UX-I5 shows quality rows from `item_generation_qualities`, sample item value after quality multiplier, quality-scaled bonus value and DB-provided explanation text; no hardcoded Normal/Quality/Outstanding list is used.
 - UX-I5 validation keeps sample base/bonus values required, rejects negative sample base values in UI and mapper, and intentionally allows negative bonus values for malus previews.
 - UX-I5 was verified with targeted item-generation admin mapper tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- UX-I6 accepted on 2026-04-29: Building admin now has a separate preview section below the main save flow, combining local editable formula output with DB-backed district/cap progression context.
+- UX-I6 uses `get_building_progression_preview(...)` for district availability, effective max level, cap source, cap explanation, and `0 = unlimited` semantics while keeping persisted DB base values as collapsed technical metadata.
+- UX-I6 local formula preview uses editable resource cost rows for single-level and range previews through `BuildingFormulaPreviewCalculator`; cost errors now show actionable reasons instead of false zeroes or vague unavailable states.
+- UX-I6 validation rejects empty, decimal, inverted, above-range, and too-wide level ranges before RPC, and above-cap rows no longer appear as upgradeable.
+- UX-I6 was verified with targeted building admin mapper, building progression, and building formula preview calculator tests plus `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services
