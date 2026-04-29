@@ -1,18 +1,23 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
-import { finalize, map, startWith, switchMap } from 'rxjs';
+import { finalize, forkJoin, map, startWith, switchMap } from 'rxjs';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { MetadataDisplay } from '../../../shared/metadata-display/metadata-display';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
+import { AdminServerSwitcher } from '../../components/admin-server-switcher/admin-server-switcher';
 import { CONFIG_DEFINITIONS_PAGE_LINKS } from '../../admin-navigation.config';
 import { ConfigDefinitions } from '../../../core/services/config/config-definitions';
 import { ConfigValues } from '../../../core/services/config/config-values';
 import {
   ConfigDefinition,
+  ConfigDefinitionExplainability,
   EffectiveConfigValue,
 } from '../../../core/types/config-governance.types';
+import { ActiveServer } from '../../../core/services/server/active-server';
 import { ConfigDefinitionsFormFactory } from '../../../core/factories/forms/config-definitions-form.factory';
 import {
   filterConfigDefinitions,
@@ -28,9 +33,12 @@ import {
   imports: [
     ReactiveFormsModule,
     InputTextModule,
+    MessageModule,
     SelectModule,
     LoadingOverlay,
     AdminTagLinks,
+    AdminServerSwitcher,
+    MetadataDisplay,
   ],
   templateUrl: './config-definitions-page.html',
 })
@@ -38,10 +46,12 @@ export class ConfigDefinitionsPage implements OnInit {
   private readonly configDefinitions = inject(ConfigDefinitions);
   private readonly configValues = inject(ConfigValues);
   private readonly formFactory = inject(ConfigDefinitionsFormFactory);
+  private readonly activeServer = inject(ActiveServer);
 
   readonly links = CONFIG_DEFINITIONS_PAGE_LINKS;
   readonly filterForm = this.formFactory.createFilterForm();
   readonly definitions = signal<ConfigDefinition[]>([]);
+  readonly explainability = signal(new Map<string, ConfigDefinitionExplainability>());
   readonly effectiveValues = signal(new Map<string, EffectiveConfigValue>());
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
@@ -61,8 +71,20 @@ export class ConfigDefinitionsPage implements OnInit {
   readonly managedEntityTypeOptions = computed(() =>
     this.toOptions(uniqueConfigDefinitionManagedEntityTypes(this.definitions())),
   );
+  private hasLoaded = false;
+
+  constructor() {
+    effect(() => {
+      this.activeServer.selectedServer()?.id;
+
+      if (this.hasLoaded) {
+        this.loadDefinitions();
+      }
+    });
+  }
 
   ngOnInit(): void {
+    this.hasLoaded = true;
     this.loadDefinitions();
   }
 
@@ -76,6 +98,12 @@ export class ConfigDefinitionsPage implements OnInit {
 
   effectiveValue(definition: ConfigDefinition): EffectiveConfigValue | null {
     return this.effectiveValues().get(definition.id) ?? null;
+  }
+
+  definitionExplainability(
+    definition: ConfigDefinition,
+  ): ConfigDefinitionExplainability | null {
+    return this.explainability().get(definition.id) ?? null;
   }
 
   private toOptions<T extends string>(values: T[]): Array<{ label: string; value: T }> {
@@ -93,16 +121,26 @@ export class ConfigDefinitionsPage implements OnInit {
       .getDefinitions()
       .pipe(
         switchMap((definitions) =>
-          this.configValues.getEffectiveValuesForSelectedServer(definitions).pipe(
-            map((effectiveValues) => ({ definitions, effectiveValues })),
-          ),
+          forkJoin({
+            effectiveValues:
+              this.configValues.getEffectiveValuesForSelectedServer(definitions),
+            explainability: this.configDefinitions.getDefinitionExplainability({
+              serverId: this.activeServer.selectedServer()?.id ?? null,
+              includeInactive: true,
+            }),
+          }).pipe(map((data) => ({ definitions, ...data }))),
         ),
         finalize(() => this.isLoading.set(false)),
       )
       .subscribe({
-        next: ({ definitions, effectiveValues }) => {
+        next: ({ definitions, effectiveValues, explainability }) => {
           this.definitions.set(definitions);
           this.effectiveValues.set(effectiveValues);
+          this.explainability.set(
+            new Map(
+              explainability.map((entry) => [entry.configDefinitionId, entry]),
+            ),
+          );
         },
         error: (error: unknown) =>
           this.error.set(

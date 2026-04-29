@@ -393,6 +393,10 @@ Still pending at the gameplay level even if partially supported in schema:
 - UX-I1 is used in Moderation actions action-type details and Staff management moderator scope options.
 - UX-I1 manual smoke confirmed Moderation actions metadata display; Staff management scope metadata smoke is deferred until seeded/pre-alpha data has a practical moderator assignment target.
 - UX-I1 was verified with targeted moderation-action/staff-management tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- UX-I2 accepted on 2026-04-29: config governance screens now consume `get_config_definition_explainability(...)` for DB-backed scope/value/applicability explanations.
+- UX-I2 added human-readable scope, applies-to, value type, effective source, impact and warning metadata to Config Definitions and Config Change Sets draft entry UI.
+- UX-I2 keeps technical JSON/schema previews as secondary legacy admin previews; no new raw `<pre>` explainability content was introduced.
+- UX-I2 was verified with targeted config-governance RPC tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services
@@ -444,3 +448,4 @@ Important remaining work:
 - Runtime enforcement of restrictions in trade/auction/gameplay is not yet wired.
 - Behavioral tests should be rerun later with a cleaner test harness or real sandbox data.
 - G5 RPC should later be explicitly aligned to dedicated helpers for readability.
+

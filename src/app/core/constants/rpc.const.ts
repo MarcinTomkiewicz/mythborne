@@ -10,6 +10,7 @@ export const RPC = {
   user_has_staff_disqualifying_history: 'user_has_staff_disqualifying_history',
   create_config_change_set_draft: 'create_config_change_set_draft',
   create_config_value_change_entry: 'create_config_value_change_entry',
+  get_config_definition_explainability: 'get_config_definition_explainability',
   mark_config_change_set_ready: 'mark_config_change_set_ready',
   apply_config_change_set: 'apply_config_change_set',
   cancel_config_change_set: 'cancel_config_change_set',

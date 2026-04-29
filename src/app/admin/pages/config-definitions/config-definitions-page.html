@@ -23,6 +23,8 @@
 
         <app-admin-tag-links [links]="links" />
       </div>
+
+      <app-admin-server-switcher />
     </section>
 
     <section class="mg-card p-lg w-100">
@@ -79,6 +81,7 @@
         @for (definition of filteredDefinitions(); track definition.id) {
           <article class="mg-surface-card p-md flex-col gap-sm">
             @let effective = effectiveValue(definition);
+            @let explanation = definitionExplainability(definition);
 
             <div class="flex-row-between-center flex-col-sm gap-sm">
               <div class="flex-col gap-xs">
@@ -99,6 +102,50 @@
 
             @if (definition.description) {
               <p class="muted-text mb-0">{{ definition.description }}</p>
+            }
+
+            @if (explanation) {
+              <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+                <app-metadata-display
+                  [label]="explanation.governanceScopeLabel"
+                  [description]="explanation.governanceScopeDescription"
+                  [helperText]="explanation.governanceScopeHelperText"
+                  [technicalKey]="explanation.governanceScope"
+                  technicalLabel="scope"
+                />
+
+                <app-metadata-display
+                  [label]="explanation.appliesToLabel"
+                  [description]="explanation.appliesToDescription"
+                  [helperText]="explanation.appliesToHelperText"
+                  [technicalKey]="explanation.appliesToKind"
+                  technicalLabel="applies to"
+                />
+
+                <app-metadata-display
+                  [label]="explanation.valueTypeLabel"
+                  [description]="explanation.valueTypeDescription"
+                  [technicalKey]="explanation.valueType"
+                  technicalLabel="value type"
+                />
+
+                <app-metadata-display
+                  [label]="explanation.effectiveValueSourceLabel"
+                  [description]="explanation.effectiveValueSourceDescription"
+                  [technicalKey]="explanation.effectiveValueSourceKey"
+                  technicalLabel="source"
+                />
+              </div>
+
+              @if (explanation.gameplayImpactSummary) {
+                <p class="muted-text mb-0">{{ explanation.gameplayImpactSummary }}</p>
+              }
+
+              @if (explanation.changeWarning || explanation.governanceScopeWarningText) {
+                <p-message severity="warn">
+                  {{ explanation.changeWarning || explanation.governanceScopeWarningText }}
+                </p-message>
+              }
             }
 
             <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">

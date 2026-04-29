@@ -75,7 +75,10 @@ export class ConfigChangeSetsPageFacade {
   readonly valueTargetMessage = this.entryDraft.valueTargetMessage;
   readonly definitionOptions = this.entryDraft.definitionOptions;
   readonly selectedEntryDefinition = this.entryDraft.selectedDefinition;
+  readonly selectedEntryDefinitionExplainability =
+    this.entryDraft.selectedDefinitionExplainability;
   readonly selectedEffectiveValue = this.entryDraft.selectedEffectiveValue;
+  readonly selectedServerContext = this.entryDraft.selectedServerContext;
   readonly entryDefinitionScopeLabel = computed(() => {
     const managedEntityKey = this.entryManagedEntityKey();
 
@@ -166,7 +169,7 @@ export class ConfigChangeSetsPageFacade {
 
         this.definitions.set(definitions);
         this.effectiveValues.setDefinitions(definitions);
-        this.entryDraft.setDefinitions(entryDefinitions);
+        this.entryDraft.setDefinitions(entryDefinitions, this.entryManagedEntityKey());
       },
       error: (error: unknown) =>
         this.error.set(

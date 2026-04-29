@@ -1,4 +1,4 @@
-import { Enums, Json } from './database.types';
+import { Database, Enums, Json } from './database.types';
 import { Row } from './supabase.types';
 import {
   ConfigChangeKindKey,
@@ -19,6 +19,8 @@ export type GlobalConfigValueRow = Row<'global_config_values'>;
 export type ServerConfigValueRow = Row<'server_config_values'>;
 export type ConfigChangeSetRow = Row<'config_change_sets'>;
 export type ConfigChangeEntryRow = Row<'config_change_entries'>;
+export type ConfigDefinitionExplainabilityRow =
+  Database['public']['Functions']['get_config_definition_explainability']['Returns'][number];
 
 export interface ConfigDefinition {
   id: string;
@@ -69,6 +71,46 @@ export interface EffectiveConfigValue {
   serverValue: ServerConfigValue | null;
   globalValue: GlobalConfigValue | null;
   defaultValue: Json | null;
+}
+
+export interface ConfigDefinitionExplainability {
+  configDefinitionId: string;
+  configKey: string;
+  label: string;
+  description: string;
+  helperText: string;
+  governanceScope: ConfigGovernanceScope;
+  governanceScopeLabel: string;
+  governanceScopeDescription: string;
+  governanceScopeHelperText: string;
+  governanceScopeWarningText: string;
+  managedEntityType: ConfigManagedEntityType;
+  managedEntityTypeLabel: string;
+  managedEntityTypeDescription: string;
+  managedEntityKey: string;
+  valueType: ConfigValueType;
+  valueTypeLabel: string;
+  valueTypeDescription: string;
+  appliesToKind: string;
+  appliesToLabel: string;
+  appliesToDescription: string;
+  appliesToHelperText: string;
+  expectedChangeKind: ConfigChangeKind;
+  expectedChangeKindLabel: string;
+  effectiveValue: Json;
+  effectiveValueSourceKey: string;
+  effectiveValueSourceLabel: string;
+  effectiveValueSourceDescription: string;
+  gameplayImpactSummary: string;
+  changeWarning: string;
+  previewKind: string;
+  previewLabel: string;
+  previewDescription: string;
+  uiGroupKey: string;
+  uiGroupLabel: string;
+  selectedServerId: string;
+  metadata: Json;
+  sortOrder: number;
 }
 
 export interface ConfigChangeSet {

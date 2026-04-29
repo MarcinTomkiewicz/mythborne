@@ -5,6 +5,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { MetadataDisplay } from '../../../shared/metadata-display/metadata-display';
 import { CONFIG_CHANGE_SETS_PAGE_LINKS } from '../../admin-navigation.config';
 import { AdminServerSwitcher } from '../../components/admin-server-switcher/admin-server-switcher';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
@@ -27,6 +28,7 @@ import { ConfigValueEntryDraftState } from './config-value-entry-draft.state';
     AdminTagLinks,
     AdminServerSwitcher,
     LoadingOverlay,
+    MetadataDisplay,
   ],
   providers: [
     ConfigChangeSetsPageFacade,

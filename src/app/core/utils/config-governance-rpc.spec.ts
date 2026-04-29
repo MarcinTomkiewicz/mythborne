@@ -4,6 +4,7 @@ import {
 } from '../enums/config-governance.enum';
 import {
   ConfigDefinition,
+  ConfigDefinitionExplainabilityRow,
   CreateConfigChangeSetDraftInput,
   CreateConfigValueChangeEntryInput,
 } from '../types/config-governance.types';
@@ -12,6 +13,7 @@ import {
   toCreateConfigValueChangeEntryRpcArgs,
 } from './config-governance-rpc';
 import { valueTargetForConfigDefinition } from './config-governance';
+import { mapConfigDefinitionExplainability } from './config-governance-mappers';
 
 describe('config governance rpc mappers', () => {
   it('maps draft creation input to audited workflow rpc args', () => {
@@ -98,6 +100,24 @@ describe('config governance rpc mappers', () => {
       ),
     ).toBe('server');
   });
+
+  it('maps config definition explainability rows from DB metadata', () => {
+    expect(
+      mapConfigDefinitionExplainability(createExplainabilityRow()),
+    ).toEqual(
+      jasmine.objectContaining({
+        configDefinitionId: 'definition-1',
+        configKey: 'hero.max_level',
+        label: 'Hero max level',
+        governanceScopeLabel: 'Global balance',
+        appliesToLabel: 'Global value',
+        valueTypeLabel: 'Integer',
+        expectedChangeKindLabel: 'Global value change',
+        effectiveValueSourceLabel: 'Global value',
+        gameplayImpactSummary: 'Changes the hero level cap.',
+      }),
+    );
+  });
 });
 
 function createDefinition(
@@ -119,5 +139,47 @@ function createDefinition(
     createdAt: '2026-04-28T00:00:00.000Z',
     updatedAt: '2026-04-28T00:00:00.000Z',
     ...overrides,
+  };
+}
+
+function createExplainabilityRow(): ConfigDefinitionExplainabilityRow {
+  return {
+    config_definition_id: 'definition-1',
+    config_key: 'hero.max_level',
+    label: 'Hero max level',
+    description: 'Maximum hero level.',
+    helper_text: 'Use for global progression tuning.',
+    governance_scope: ConfigGovernanceScopeKey.GlobalBalance,
+    governance_scope_label: 'Global balance',
+    governance_scope_description: 'Applies globally.',
+    governance_scope_helper_text: 'Use for balance-wide values.',
+    governance_scope_warning_text: 'Review carefully.',
+    managed_entity_type: 'scalar_config',
+    managed_entity_type_label: 'Scalar config',
+    managed_entity_type_description: 'Single config value.',
+    managed_entity_key: 'hero',
+    value_type: 'integer',
+    value_type_label: 'Integer',
+    value_type_description: 'Whole number.',
+    applies_to_kind: 'global_value',
+    applies_to_label: 'Global value',
+    applies_to_description: 'Changes the global value.',
+    applies_to_helper_text: 'No server selection is required.',
+    expected_change_kind: ConfigChangeKindKey.GlobalValueChange,
+    expected_change_kind_label: 'Global value change',
+    effective_value_json: 10,
+    effective_value_source_key: 'global',
+    effective_value_source_label: 'Global value',
+    effective_value_source_description: 'Current global version.',
+    gameplay_impact_summary: 'Changes the hero level cap.',
+    change_warning: 'Can affect all servers.',
+    preview_kind: 'scalar',
+    preview_label: 'Scalar',
+    preview_description: 'Simple scalar preview.',
+    ui_group_key: 'progression',
+    ui_group_label: 'Progression',
+    selected_server_id: 'server-1',
+    metadata_json: {},
+    sort_order: 10,
   };
 }

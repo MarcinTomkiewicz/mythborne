@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-04-28
+Updated: 2026-04-29
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -64,6 +64,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: U0-I8 - moderation actions UI foundation.
 - Completed and confirmed: U0-I9 - moderation history target picker and full-history modes.
 - Completed and confirmed: UX-I1 - shared metadata display helper.
+- Completed and confirmed: UX-I2 - config governance explainability implementation.
 - Current backlog task: select the next U0/UX implementation slice.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 
@@ -256,3 +257,4 @@ Remaining before frontend implementation:
 - update docs;
 - optionally run later behavioral tests with better test harness;
 - implement runtime enforcement of restrictions in trade/auction/gameplay flows later.
+

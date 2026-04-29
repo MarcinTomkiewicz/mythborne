@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map, startWith } from 'rxjs';
 import {
@@ -10,6 +10,7 @@ import {
   ConfigChangeEntry,
   ConfigChangeSet,
   ConfigDefinition,
+  ConfigDefinitionExplainability,
 } from '../../../core/types/config-governance.types';
 import {
   isConfigDefinitionSupportedInValueDraftEditor,
@@ -18,6 +19,7 @@ import {
 } from '../../../core/utils/config-governance';
 import { runRequest } from '../../../core/utils/request-state';
 import { ConfigChangeSets } from '../../../core/services/config/config-change-sets';
+import { ConfigDefinitions } from '../../../core/services/config/config-definitions';
 import { ActiveServer } from '../../../core/services/server/active-server';
 import { ToastService } from '../../../core/services/ui/toast';
 import { ConfigEffectiveValuesState } from './config-effective-values.state';
@@ -26,12 +28,15 @@ import { ConfigEffectiveValuesState } from './config-effective-values.state';
 export class ConfigValueEntryDraftState {
   private readonly activeServer = inject(ActiveServer);
   private readonly configChangeSets = inject(ConfigChangeSets);
+  private readonly configDefinitions = inject(ConfigDefinitions);
   private readonly effectiveValues = inject(ConfigEffectiveValuesState);
   private readonly formFactory = inject(ConfigChangeSetsFormFactory);
   private readonly toast = inject(ToastService);
 
   readonly form = this.formFactory.createEntryDraftForm();
   readonly definitions = signal<ConfigDefinition[]>([]);
+  readonly managedEntityKey = signal<string | null>(null);
+  readonly explainability = signal<ConfigDefinitionExplainability[]>([]);
   readonly isSaving = signal(false);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
@@ -50,6 +55,19 @@ export class ConfigValueEntryDraftState {
       null
     );
   });
+  readonly selectedDefinitionExplainability = computed(() => {
+    const definition = this.selectedDefinition();
+
+    if (!definition) {
+      return null;
+    }
+
+    return (
+      this.explainability().find(
+        (entry) => entry.configDefinitionId === definition.id,
+      ) ?? null
+    );
+  });
   readonly selectedEffectiveValue = computed(() => {
     const definition = this.selectedDefinition();
 
@@ -60,10 +78,19 @@ export class ConfigValueEntryDraftState {
   readonly definitionOptions = computed(() =>
     this.definitions()
       .filter(isConfigDefinitionSupportedInValueDraftEditor)
-      .map((definition) => ({
-        label: `${definition.key} (${definition.valueType})`,
+      .map((definition) => {
+        const explainability =
+          this.explainability().find(
+            (entry) => entry.configDefinitionId === definition.id,
+          ) ?? null;
+
+        return {
+          label: explainability
+            ? `${explainability.label} (${explainability.valueTypeLabel})`
+            : `${definition.key} (${definition.valueType})`,
         value: definition.id,
-      })),
+        };
+      }),
   );
   readonly canSubmitEntry = computed(() => {
     const definition = this.selectedDefinition();
@@ -84,23 +111,47 @@ export class ConfigValueEntryDraftState {
       return null;
     }
 
+    const explainability = this.selectedDefinitionExplainability();
+
+    if (explainability) {
+      return `${explainability.expectedChangeKindLabel}: ${explainability.appliesToDescription}`;
+    }
+
     if (valueTargetForConfigDefinition(definition) === ConfigChangeValueTarget.Global) {
-      return 'This config is governed globally; the entry will change the global value.';
+      return 'This config entry will change the global value.';
     }
 
     return this.activeServer.selectedServer()
-      ? 'This config is governed per server; the entry will change the selected server value.'
+      ? 'This config entry will change the selected server value.'
       : 'Select an active server before adding this server-scoped config change.';
+  });
+  readonly selectedServerContext = computed(() => {
+    const server = this.activeServer.selectedServer();
+
+    return server ? `${server.name} (${server.kind} / ${server.status})` : null;
   });
 
   constructor() {
     this.form.controls.configDefinitionId.valueChanges.subscribe(() =>
       this.syncValueTargetWithDefinition(),
     );
+
+    effect(() => {
+      this.activeServer.selectedServer()?.id;
+      this.managedEntityKey();
+
+      if (this.definitions().length) {
+        this.loadExplainability();
+      }
+    });
   }
 
-  setDefinitions(definitions: readonly ConfigDefinition[]): void {
+  setDefinitions(
+    definitions: readonly ConfigDefinition[],
+    managedEntityKey: string | null,
+  ): void {
     this.definitions.set([...definitions]);
+    this.managedEntityKey.set(managedEntityKey);
   }
 
   addEntry(
@@ -217,6 +268,24 @@ export class ConfigValueEntryDraftState {
     if (this.form.controls.valueTarget.value !== valueTarget) {
       this.form.controls.valueTarget.setValue(valueTarget, { emitEvent: false });
     }
+  }
+
+  private loadExplainability(): void {
+    this.configDefinitions
+      .getDefinitionExplainability({
+        serverId: this.activeServer.selectedServer()?.id ?? null,
+        managedEntityKey: this.managedEntityKey(),
+        includeInactive: true,
+      })
+      .subscribe({
+        next: (entries) => this.explainability.set(entries),
+        error: (error: unknown) =>
+          this.error.set(
+            error instanceof Error
+              ? error.message
+              : 'Failed to load config explainability.',
+          ),
+      });
   }
 
   private resetNewValueControl(): void {

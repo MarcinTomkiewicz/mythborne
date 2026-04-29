@@ -5,3 +5,6 @@ export type CreateConfigChangeSetDraftRpcArgs =
 
 export type CreateConfigValueChangeEntryRpcArgs =
   Database['public']['Functions']['create_config_value_change_entry']['Args'];
+
+export type GetConfigDefinitionExplainabilityRpcArgs =
+  Database['public']['Functions']['get_config_definition_explainability']['Args'];

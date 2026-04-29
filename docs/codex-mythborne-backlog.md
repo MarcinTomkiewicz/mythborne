@@ -2026,6 +2026,8 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ## Task UX-I2 — Config governance explainability implementation
 
+**Status:** Done / confirmed 2026-04-29.
+
 **Goal:** Make config governance screens understandable to operators before they create/apply changes.
 
 **Scope:**
@@ -2688,3 +2690,4 @@ Place U1-U4 after config definitions/value read models and before deeper buildin
 - Armory can show overloaded state such as `251/100`.
 - Newer/lower-priority items are hidden first when capacity is exceeded.
 - Visibility/access is not confused with ownership.
+

@@ -322,12 +322,76 @@
                 @if (valueTargetMessage(); as message) {
                   <p-message
                     [severity]="canSubmitConfigValueEntry() ? 'info' : 'warn'"
-                    [text]="message"
-                  />
+                  >
+                    {{ message }}
+                  </p-message>
                 }
 
                 @if (entryDefinitionScopeLabel()) {
                   <p class="muted-text mb-0">{{ entryDefinitionScopeLabel() }}</p>
+                }
+
+                @if (selectedEntryDefinitionExplainability(); as explanation) {
+                  <section class="mg-surface-card p-md flex-col gap-md">
+                    <app-metadata-display
+                      [label]="explanation.label"
+                      [description]="explanation.description"
+                      [helperText]="explanation.helperText"
+                      [technicalKey]="explanation.configKey"
+                      technicalLabel="config"
+                    />
+
+                    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+                      <app-metadata-display
+                        [label]="explanation.governanceScopeLabel"
+                        [description]="explanation.governanceScopeDescription"
+                        [helperText]="explanation.governanceScopeHelperText"
+                        [technicalKey]="explanation.governanceScope"
+                        technicalLabel="scope"
+                      />
+
+                      <app-metadata-display
+                        [label]="explanation.appliesToLabel"
+                        [description]="explanation.appliesToDescription"
+                        [helperText]="explanation.appliesToHelperText"
+                        [technicalKey]="explanation.appliesToKind"
+                        technicalLabel="applies to"
+                      />
+
+                      <app-metadata-display
+                        [label]="explanation.valueTypeLabel"
+                        [description]="explanation.valueTypeDescription"
+                        [technicalKey]="explanation.valueType"
+                        technicalLabel="value type"
+                      />
+
+                      <app-metadata-display
+                        [label]="explanation.effectiveValueSourceLabel"
+                        [description]="explanation.effectiveValueSourceDescription"
+                        [technicalKey]="explanation.effectiveValueSourceKey"
+                        technicalLabel="source"
+                      />
+                    </div>
+
+                    @if (entryForm.controls.valueTarget.value === 'server') {
+                      @if (selectedServerContext(); as serverContext) {
+                        <div class="flex-col gap-xs">
+                          <span class="muted-text">Selected server context</span>
+                          <strong class="heading-color">{{ serverContext }}</strong>
+                        </div>
+                      }
+                    }
+
+                    @if (explanation.gameplayImpactSummary) {
+                      <p class="muted-text mb-0">{{ explanation.gameplayImpactSummary }}</p>
+                    }
+
+                    @if (explanation.changeWarning || explanation.governanceScopeWarningText) {
+                      <p-message severity="warn">
+                        {{ explanation.changeWarning || explanation.governanceScopeWarningText }}
+                      </p-message>
+                    }
+                  </section>
                 }
 
                 <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
