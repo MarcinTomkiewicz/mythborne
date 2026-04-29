@@ -63,6 +63,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: U0-I7 - moderator scope assignment UI.
 - Completed and confirmed: U0-I8 - moderation actions UI foundation.
 - Completed and confirmed: U0-I9 - moderation history target picker and full-history modes.
+- Completed and confirmed: UX-I1 - shared metadata display helper.
 - Current backlog task: select the next U0/UX implementation slice.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 

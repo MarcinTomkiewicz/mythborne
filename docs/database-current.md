@@ -1,6 +1,6 @@
 # Mythborne — Database Current Notes
 
-Updated: 2026-04-28
+Updated: 2026-04-29
 
 This file is the curated semantic index of the current database state.
 
@@ -1311,3 +1311,93 @@ For UX/admin/config explainability work, Codex must:
 - keep raw keys as secondary technical metadata only;
 - keep JSON collapsed/constrained and never as the only explanation;
 - regenerate `database.types.ts` after these schema/RPC changes before implementing affected frontend work.
+
+---
+
+## Update 2026-04-29 — human-readable reference search and paginated target browser contracts
+
+Human-facing admin/staff/moderation/config UI must not require users to type raw UUIDs as the primary workflow for selecting accounts, heroes, items, cases, sanctions, trade offers, auctions, formulas, buildings, config definitions, bonus templates or requirements.
+
+Raw UUIDs may remain visible as secondary technical metadata, but primary UI should show names, titles, labels, statuses and contextual descriptions from DB-backed read models.
+
+### General search contract rule
+
+For human-readable reference selection, the database now provides two related RPC families:
+
+- lightweight autocomplete/search RPCs named `search_*_targets(...)`;
+- paginated target-browser/virtual-scroll RPCs named `search_*_targets_page(...)`.
+
+New UI should prefer `_page` variants whenever it needs lazy lists, target browsers, virtual scroll, or an initial browse view. Autocomplete-only UI may use either the lightweight variant or the `_page` variant with `p_offset = 0`.
+
+Page variant standard:
+
+- `p_query text` may be null/empty for browse mode;
+- `p_limit integer` is capped DB-side, currently max 50;
+- `p_offset integer` enables backend pagination;
+- every `_page` result includes `total_count bigint`;
+- empty query must never cause a broad frontend fetch; it is a backend-paginated browse.
+
+All these RPCs avoid frontend reads from `auth.users`. They expose only fields needed for the specific admin/staff workflow, using `user_data`, `hero`, domain tables and DB permission helpers.
+
+### Current reference-search families
+
+Staff candidate search:
+
+- `search_server_staff_candidates(p_server_id uuid, p_query text, p_limit integer)`;
+- `search_server_staff_candidates_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`.
+
+Moderation user/hero target search:
+
+- `can_search_moderation_targets(p_server_id uuid)`;
+- `search_moderation_user_targets(p_server_id uuid, p_query text, p_limit integer)`;
+- `search_moderation_hero_targets(p_server_id uuid, p_query text, p_limit integer)`;
+- `search_moderation_user_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`;
+- `search_moderation_hero_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`.
+
+Anti-abuse/moderation reference search:
+
+- `search_anti_abuse_case_targets(p_server_id uuid, p_query text, p_limit integer)`;
+- `search_anti_abuse_sanction_targets(p_server_id uuid, p_query text, p_limit integer)`;
+- `search_moderation_item_targets(p_server_id uuid, p_query text, p_limit integer)`;
+- `search_anti_abuse_case_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`;
+- `search_anti_abuse_sanction_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`;
+- `search_moderation_item_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`.
+
+Trade / auction / economy reference search:
+
+- `search_trade_offer_targets(p_server_id uuid, p_query text, p_limit integer)`;
+- `search_trade_transaction_targets(p_server_id uuid, p_query text, p_limit integer)`;
+- `search_auction_listing_targets(p_server_id uuid, p_query text, p_limit integer)`;
+- `search_trade_offer_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`;
+- `search_trade_transaction_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`;
+- `search_auction_listing_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`.
+
+Admin/config/balance reference search:
+
+- `can_search_admin_balance_references()`;
+- `search_config_definition_targets(p_query text, p_limit integer)`;
+- `search_balance_formula_targets(p_query text, p_limit integer)`;
+- `search_balance_formula_target_targets(p_query text, p_limit integer)`;
+- `search_building_targets(p_query text, p_limit integer)`;
+- `search_bonus_template_targets(p_query text, p_limit integer)`;
+- `search_requirement_definition_targets(p_query text, p_limit integer)`;
+- `search_item_generation_entity_targets(p_entity_type config_managed_entity_type, p_query text, p_limit integer)`;
+- `search_config_definition_targets_page(p_query text, p_limit integer, p_offset integer)`;
+- `search_balance_formula_targets_page(p_query text, p_limit integer, p_offset integer)`;
+- `search_balance_formula_target_targets_page(p_query text, p_limit integer, p_offset integer)`;
+- `search_building_targets_page(p_query text, p_limit integer, p_offset integer)`;
+- `search_bonus_template_targets_page(p_query text, p_limit integer, p_offset integer)`;
+- `search_requirement_definition_targets_page(p_query text, p_limit integer, p_offset integer)`;
+- `search_item_generation_entity_targets_page(p_entity_type config_managed_entity_type, p_query text, p_limit integer, p_offset integer)`.
+
+### Rules and Codex implications
+
+- `search_server_staff_candidates(...)` is staff-management-only and must not be reused for moderation target search.
+- Moderation target search is server-scoped and requires `can_search_moderation_targets(p_server_id)`.
+- Email fields are optional; email search/return is limited to full-history authority where the RPC enforces it.
+- Admin/config/balance search is for admin tooling, not player UI, and requires `can_search_admin_balance_references()`.
+- Use names/titles/labels as primary UI labels and UUIDs only as optional technical metadata.
+- Use `_page` variants for virtual scroll, lazy loading, target browsers, or empty-query browse mode.
+- Treat `total_count` as the backend count of matches for the current query and permissions.
+- Do not implement broad client-side reads from `user_data`, `hero`, `items`, case/sanction/trade/auction tables or admin balance dictionaries for human-facing selectors.
+- After these schema/RPC changes, regenerate `database.types.ts` before implementing affected frontend work.

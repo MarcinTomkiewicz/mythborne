@@ -24,17 +24,13 @@
               [binary]="true"
               [formControl]="scopeAssignment().scopeControl(scope.key)"
             />
-            <div class="flex-col gap-xs min-w-0">
-              <strong class="heading-color">{{ scope.label }}</strong>
-              <span class="muted-text">{{ scope.description }}</span>
-            </div>
+            <app-metadata-display
+              [label]="scope.label"
+              [description]="scope.description"
+              [helperText]="scope.helperText"
+              [technicalKey]="scope.key"
+            />
           </div>
-
-          @if (scope.helperText) {
-            <p class="muted-text mb-0">{{ scope.helperText }}</p>
-          }
-
-          <span class="mg-tag">key: {{ scope.key }}</span>
 
           @if (!scopeAssignment().isScopeAllowed(scope.key)) {
             <p-message severity="warn">

@@ -1982,54 +1982,32 @@ Fallback should eventually be designed explicitly, for example user preference �
 
 ---
 
-# Update 2026-04-29 — architecture hygiene and bounded regression review
+# Update 2026-04-29 — human-readable reference selectors and backend pagination
 
-Architecture hygiene is now part of normal review discipline, not a new blocker for MVP work.
+Human-facing operational UI should use DB-backed reference selectors instead of raw UUID entry.
 
-## Bounded regression review
+This affects admin, staff, moderation, anti-abuse, trade/auction investigation and config/balance tooling. If a human is expected to choose a user, hero, item, case, sanction, auction, trade offer, transaction, config definition, formula, building, bonus template, requirement or item-generation entity, the UI should show a human-readable label/title/name as the primary display value.
 
-After larger vertical slices, generated database type changes, access-control work, workflow/RPC changes, large UI screens or new shared helpers, run a bounded regression review against the touched area.
+## Selector rules
 
-The goal is to catch architectural drift early without turning every small task into an audit-only task.
+- UUIDs may appear as secondary technical metadata, not the primary workflow.
+- Use existing `search_*_targets(...)` / `search_*_targets_page(...)` RPCs instead of broad frontend reads.
+- Use `_page` RPCs for virtual scroll, lazy lists, target browsers, or browse mode.
+- `_page` RPCs provide backend pagination with `p_limit`, `p_offset` and `total_count`.
+- Empty query in a target browser is allowed only through backend-paginated RPCs, never by fetching all rows into Angular.
+- Frontend must not read `auth.users` for these selectors.
+- Email is not guaranteed; UI must treat email as optional and show it only when the RPC returns it.
+- Server-scoped selectors must keep selected server context explicit.
 
-Review should check whether the task:
+## Current selector families
 
-- quietly expanded beyond its requested scope;
-- duplicated an existing helper, service, type, component, mapper, payload builder or access check;
-- introduced local domain logic into route pages instead of `core`;
-- introduced direct writes to workflow-owned tables that should use RPC/domain operations;
-- introduced hardcoded role/status/scope/entity/table/RPC strings where constants, enums, DB dictionaries or generated types already exist;
-- introduced one-off UI patterns, unnecessary wrapper markup, local CSS or repeated request/toast/error handling;
-- created oversized pages, templates, facades, services or unrelated utility files.
+The database now provides DB-backed reference search/browser contracts for:
 
-This review is a guardrail. It should produce small local cleanups or explicit follow-up notes. It should not stop feature implementation unless the issue creates real current risk: access/security regression, broken workflow contract, direct mutation bypass, duplicated policy logic or a blocker for the current task.
+- staff candidate search;
+- moderation user/hero target search;
+- moderation/anti-abuse item search;
+- anti-abuse case and sanction search;
+- trade offer, trade/auction transaction and auction listing search;
+- config definition, formula, formula target, building, bonus template, requirement definition and item-generation entity search.
 
-## Domain-oriented `core` organization
-
-`core` remains the place for shared domain and technical logic, but it should not become a flat dumping ground.
-
-When a domain accumulates several related files, prefer domain-oriented grouping, for example:
-
-- `core/types/item-generation/*`
-- `core/utils/item-generation/*`
-- `core/domain/item-generation/*`
-- `core/services/item-generation/*`
-
-Use the same idea for other mature areas such as config governance, staff/moderation, anti-abuse, bonus/entity bonuses, formulas and buildings.
-
-Do not move files only for aesthetics during urgent feature work. Prefer bounded cleanup tasks after a vertical slice or when duplication starts to slow implementation.
-
-## Future architecture hygiene epic
-
-A full architecture-hygiene epic should be prepared later, most likely after the project has a usable MVP/prototype and can support broader playtesting.
-
-Future candidates include:
-
-- `ARCH-P1` — core types/utils/services folder organization audit;
-- `ARCH-P2` — concept duplication audit for item generation;
-- `ARCH-P3` — access-policy duplication audit;
-- `ARCH-P4` — request/toast/error handling duplication audit;
-- `ARCH-P5` — direct-write and workflow-owned table regression scan;
-- `ARCH-P6` — oversized route page/template/facade cleanup plan.
-
-Until that future epic is promoted, use the regression checklist as a lightweight review tool attached to the task being reviewed.
+Codex should treat missing reference selectors as a DB/read-model blocker instead of implementing broad client-side fetches or requiring raw UUID entry.

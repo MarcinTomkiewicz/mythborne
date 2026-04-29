@@ -2006,6 +2006,8 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ## Task UX-I1 — Shared metadata display helpers
 
+**Status:** Done / confirmed 2026-04-29.
+
 **Goal:** Add reusable UI/helpers for showing human-readable label, description/helper text, and technical key as secondary metadata.
 
 **Scope:**

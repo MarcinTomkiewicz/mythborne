@@ -22,10 +22,12 @@
     </label>
 
     @if (page().selectedActionType(); as actionType) {
-      <p class="muted-text mb-0">{{ actionType.description }}</p>
-      @if (actionType.helperText) {
-        <p class="muted-text mb-0">{{ actionType.helperText }}</p>
-      }
+      <app-metadata-display
+        [label]="actionType.label"
+        [description]="actionType.description"
+        [helperText]="actionType.helperText"
+        [technicalKey]="actionType.key"
+      />
       <div class="flex-row-start-center flex-wrap gap-xs">
         @for (badge of page().actionTypeBadges(); track badge.label) {
           <span [class]="badge.className">{{ badge.label }}</span>
@@ -51,11 +53,12 @@
       </label>
     }
 
-    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
-      <label class="flex-col gap-sm">
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
+      <label class="flex-col gap-sm min-w-0">
         <span class="muted-text">Target user/account</span>
         <p-autocomplete
           class="w-100"
+          [fluid]="true"
           [formControl]="page().create.targets.userTargetControl"
           [suggestions]="page().create.targets.userTargetSuggestions()"
           optionLabel="label"
@@ -83,10 +86,11 @@
         }
       </label>
 
-      <label class="flex-col gap-sm">
+      <label class="flex-col gap-sm min-w-0">
         <span class="muted-text">Target hero</span>
         <p-autocomplete
           class="w-100"
+          [fluid]="true"
           [formControl]="page().create.targets.heroTargetControl"
           [suggestions]="page().create.targets.heroTargetSuggestions()"
           optionLabel="label"

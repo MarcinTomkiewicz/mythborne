@@ -389,6 +389,10 @@ Still pending at the gameplay level even if partially supported in schema:
 - U0-I9 requires an explicit user/account or hero target before refreshing moderation history; empty target refresh shows stable inline validation and does not call history RPC.
 - U0-I9 uses shared `ModerationTargetSearchState` for create/history autocomplete state and keeps action-type badges as a small view-model list instead of repeated template conditionals.
 - U0-I9 was verified with targeted moderation-action tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- UX-I1 accepted on 2026-04-29: shared `MetadataDisplay` was added for label/description/helper text plus secondary technical key metadata.
+- UX-I1 is used in Moderation actions action-type details and Staff management moderator scope options.
+- UX-I1 manual smoke confirmed Moderation actions metadata display; Staff management scope metadata smoke is deferred until seeded/pre-alpha data has a practical moderator assignment target.
+- UX-I1 was verified with targeted moderation-action/staff-management tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

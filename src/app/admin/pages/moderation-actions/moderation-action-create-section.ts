@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { ModerationActionsPageFacade } from '../../../core/services/moderation/moderation-actions-page.facade';
+import { MetadataDisplay } from '../../../shared/metadata-display/metadata-display';
 
 @Component({
   selector: 'app-moderation-action-create-section',
@@ -15,6 +16,7 @@ import { ModerationActionsPageFacade } from '../../../core/services/moderation/m
     ButtonModule,
     InputTextModule,
     SelectModule,
+    MetadataDisplay,
   ],
   templateUrl: './moderation-action-create-section.html',
 })

@@ -48,11 +48,12 @@
       </p>
     }
 
-    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
-      <label class="flex-col gap-sm">
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
+      <label class="flex-col gap-sm min-w-0">
         <span class="muted-text">Target user/account</span>
         <p-autocomplete
-          class="w-100"
+          styleClass="w-100"
+          [fluid]="true"
           [formControl]="page().history.targets.userTargetControl"
           [suggestions]="page().history.targets.userTargetSuggestions()"
           optionLabel="label"
@@ -74,10 +75,11 @@
         }
       </label>
 
-      <label class="flex-col gap-sm">
+      <label class="flex-col gap-sm min-w-0">
         <span class="muted-text">Target hero</span>
         <p-autocomplete
-          class="w-100"
+          styleClass="w-100"
+          [fluid]="true"
           [formControl]="page().history.targets.heroTargetControl"
           [suggestions]="page().history.targets.heroTargetSuggestions()"
           optionLabel="label"

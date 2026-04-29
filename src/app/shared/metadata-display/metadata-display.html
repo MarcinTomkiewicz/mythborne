@@ -1,0 +1,15 @@
+<div class="flex-col gap-xs min-w-0">
+  <strong [class]="labelClass()">{{ label() }}</strong>
+
+  @if (description()) {
+    <span class="muted-text">{{ description() }}</span>
+  }
+
+  @if (helperText()) {
+    <p class="muted-text mb-0">{{ helperText() }}</p>
+  }
+
+  @if (technicalKey()) {
+    <span class="mg-tag">{{ technicalLabel() }}: {{ technicalKey() }}</span>
+  }
+</div>

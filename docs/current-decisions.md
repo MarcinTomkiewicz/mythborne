@@ -1947,43 +1947,22 @@ This is a remembered future-design note, not a requirement to implement localiza
 
 ---
 
-# Update 2026-04-29 — architecture hygiene and bounded regression review
+## Human-readable reference selection and paginated target browsers
 
-Architecture hygiene is an active review discipline for Mythborne, but it is not a current MVP blocker by itself.
+Human-facing admin/staff/moderation/config workflows should not require raw UUID entry as the primary UX for selecting domain objects.
 
-## Active decision
+This applies to accounts/users, heroes, items, anti-abuse cases, sanctions, trade offers, trade/auction transactions, auction listings, config definitions, formulas, formula targets, buildings, bonus templates, requirement definitions and item-generation entities.
 
-When reviewing or implementing a task, especially after larger vertical slices or schema/type changes, the project should use bounded regression review to catch duplicated concepts and architectural drift.
+Decision:
 
-This review should check for:
+- raw UUID may remain visible as secondary technical metadata;
+- primary UI should use human-readable names, labels, titles, statuses and contextual descriptions;
+- frontend must use DB-backed search/browser RPCs where available instead of broad client-side fetches;
+- target browsers and virtual-scroll lists must use backend pagination, not local filtering over a broad dataset;
+- `_page` search RPC variants are canonical for lazy lists, target browsers and virtual-scroll UI because they include `p_offset` and `total_count`;
+- non-page `search_*_targets(...)` RPCs may remain useful for autocomplete-only flows, but new work should prefer `_page` variants when a browser/list is possible;
+- frontend must not read `auth.users` for these selectors;
+- server-scoped selectors must keep server context explicit;
+- permission helpers and RPC-specific authority rules remain the backend source of truth.
 
-- duplicate helpers/services/types/components representing the same concept;
-- repeated access-policy logic outside central policy/helpers;
-- repeated mapper, payload-builder, request-state, toast or error-handling patterns;
-- direct frontend writes to workflow-owned tables that should use RPC/domain workflows;
-- raw role/status/scope/entity/table/RPC strings where constants, enums, generated types or DB dictionaries exist;
-- route pages accumulating domain/service/facade responsibilities;
-- large flat `core/types`, `core/utils` or `core/services` areas that should be grouped by domain once the area is stable.
-
-Small, local duplication can be cleaned inside the current task when safe. Wider duplication should be recorded as a follow-up instead of triggering broad refactors in the middle of feature work.
-
-## MVP priority rule
-
-Architecture hygiene should support MVP/prototype progress, not replace it.
-
-Do not launch broad repository-wide cleanup while U0, UX explainability, G6 or gameplay foundations are still actively moving unless the architecture issue is blocking the current task or creating a real access/security/data-flow risk.
-
-## Future post-MVP cleanup direction
-
-A dedicated Architecture Hygiene / Regression Review epic should be prepared later, likely after the project reaches a usable prototype/MVP suitable for broader playtesting.
-
-Candidate future tasks:
-
-- `ARCH-P1` — core types/utils/services folder organization audit;
-- `ARCH-P2` — concept duplication audit for item generation;
-- `ARCH-P3` — access-policy duplication audit;
-- `ARCH-P4` — request/toast/error handling duplication audit;
-- `ARCH-P5` — direct-write and workflow-owned table regression scan;
-- `ARCH-P6` — oversized route page/template/facade cleanup plan.
-
-This future epic should be added to the backlog only when the user decides to promote architecture cleanup from parking-lot direction into scheduled work.
+This is an active implementation rule, not a post-MVP cleanup item. It should be applied whenever a UI asks a human to choose an object that has a human-readable label/name/title.
