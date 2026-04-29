@@ -159,6 +159,63 @@ describe('anti-abuse decision rpc mappers', () => {
         statusReason: 'Missing evidence.',
       }),
     ).toThrowError('declarationId is required for anti-abuse decision workflow.');
-  });
 
+    // Current DB RPC contract requires both target ids for creating a sanction.
+    expect(() =>
+      toCreateAntiAbuseSanctionRpcArgs({
+        caseId: 'case-1',
+        sanctionTypeKey: 'character_point_fine',
+        targetHeroId: '',
+        targetUserId: 'user-1',
+        reason: 'Confirmed abuse.',
+      }),
+    ).toThrowError('targetHeroId is required for anti-abuse decision workflow.');
+
+    expect(() =>
+      toSetAntiAbuseCaseDecisionRpcArgs({
+        caseId: 'case-1',
+        status: 'resolved',
+        statusReason: '',
+      }),
+    ).toThrowError('statusReason is required for anti-abuse decision workflow.');
+
+    expect(() =>
+      toSetPlayerAbuseReportDecisionRpcArgs({
+        reportId: 'report-1',
+        status: 'resolved',
+        statusReason: '',
+      }),
+    ).toThrowError('statusReason is required for anti-abuse decision workflow.');
+
+    expect(() =>
+      toSetAntiAbuseSanctionStatusRpcArgs({
+        sanctionId: 'sanction-1',
+        status: 'cancelled',
+        statusReason: '',
+      }),
+    ).toThrowError('statusReason is required for anti-abuse decision workflow.');
+
+    expect(() =>
+      toCreateCharacterPointPenaltyForSanctionRpcArgs({
+        sanctionId: 'sanction-1',
+        reason: '',
+      }),
+    ).toThrowError('reason is required for anti-abuse decision workflow.');
+
+    expect(() =>
+      toSetCharacterPointPenaltyStatusRpcArgs({
+        penaltyId: 'penalty-1',
+        status: 'cancelled',
+        statusReason: '',
+      }),
+    ).toThrowError('statusReason is required for anti-abuse decision workflow.');
+
+    expect(() =>
+      toAddAntiAbuseSanctionItemRpcArgs({
+        sanctionId: 'sanction-1',
+        itemId: 'item-1',
+        reason: '',
+      }),
+    ).toThrowError('reason is required for anti-abuse decision workflow.');
+  });
 });

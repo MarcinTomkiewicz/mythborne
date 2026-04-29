@@ -1867,6 +1867,22 @@ Before implementing U0/H frontend tasks, Codex must:
 
 ---
 
+## Anti-abuse decision explainability
+
+Future anti-abuse case, sanction, declaration and report UI should separate staff-facing decision context from player-facing status views.
+
+Rules:
+
+- sanction/report/declaration/signal type labels, descriptions, helper text and admin descriptions come from DB dictionary tables where available;
+- anti-abuse enum status labels in Angular are fallback labels only, not DB-backed explainability;
+- technical keys may remain visible as secondary metadata, not primary explanation;
+- player-facing projections must not expose staff-only `operatorNotes`, `adminNotes`, `adminDescription` or staff-only `statusReason`;
+- player-facing copy should prefer explicitly player-visible notes/text, or show no reason when the stored reason is not known to be player-safe;
+- staff-facing decision views should show reason/status reason prominently and require reason/status reason before calling audited workflow RPCs;
+- sanction item links are evidence/context links and do not confiscate, transfer or mutate the item by themselves.
+
+---
+
 ## DB-backed UI explainability metadata
 
 Admin/staff/config UI must not rely on raw keys or JSON as the only visible explanation when DB metadata exists.

@@ -35,9 +35,9 @@ export function toSetAntiAbuseCaseDecisionRpcArgs(
   const args: SetAntiAbuseCaseDecisionRpcArgs = {
     p_case_id: requiredText(input.caseId, 'caseId'),
     p_status: input.status,
+    p_status_reason: requiredText(input.statusReason, 'statusReason'),
   };
 
-  addOptionalText(args, 'p_status_reason', input.statusReason);
   addOptionalText(args, 'p_verdict_reason', input.verdictReason);
   addOptionalText(args, 'p_no_sanction_reason', input.noSanctionReason);
   addOptionalText(args, 'p_operator_notes', input.operatorNotes);
@@ -74,9 +74,9 @@ export function toSetPlayerAbuseReportDecisionRpcArgs(
   const args: SetPlayerAbuseReportDecisionRpcArgs = {
     p_report_id: requiredText(input.reportId, 'reportId'),
     p_status: input.status,
+    p_status_reason: requiredText(input.statusReason, 'statusReason'),
   };
 
-  addOptionalText(args, 'p_status_reason', input.statusReason);
   addOptionalText(args, 'p_case_id', input.caseId);
   addOptionalText(args, 'p_admin_notes', input.adminNotes);
   addOptionalText(args, 'p_player_notes', input.playerNotes);
@@ -110,9 +110,8 @@ export function toSetAntiAbuseSanctionStatusRpcArgs(
   const args: SetAntiAbuseSanctionStatusRpcArgs = {
     p_sanction_id: requiredText(input.sanctionId, 'sanctionId'),
     p_status: input.status,
+    p_status_reason: requiredText(input.statusReason, 'statusReason'),
   };
-
-  addOptionalText(args, 'p_status_reason', input.statusReason);
 
   return args;
 }
@@ -122,9 +121,9 @@ export function toCreateCharacterPointPenaltyForSanctionRpcArgs(
 ): CreateCharacterPointPenaltyForSanctionRpcArgs {
   const args: CreateCharacterPointPenaltyForSanctionRpcArgs = {
     p_sanction_id: requiredText(input.sanctionId, 'sanctionId'),
+    p_reason: requiredText(input.reason, 'reason'),
   };
 
-  addOptionalText(args, 'p_reason', input.reason);
   addOptionalText(args, 'p_operator_notes', input.operatorNotes);
 
   return args;
@@ -136,9 +135,8 @@ export function toSetCharacterPointPenaltyStatusRpcArgs(
   const args: SetCharacterPointPenaltyStatusRpcArgs = {
     p_penalty_id: requiredText(input.penaltyId, 'penaltyId'),
     p_status: input.status,
+    p_status_reason: requiredText(input.statusReason, 'statusReason'),
   };
-
-  addOptionalText(args, 'p_status_reason', input.statusReason);
 
   return args;
 }
@@ -149,9 +147,9 @@ export function toAddAntiAbuseSanctionItemRpcArgs(
   const args: AddAntiAbuseSanctionItemRpcArgs = {
     p_sanction_id: requiredText(input.sanctionId, 'sanctionId'),
     p_item_id: requiredText(input.itemId, 'itemId'),
+    p_reason: requiredText(input.reason, 'reason'),
   };
 
-  addOptionalText(args, 'p_reason', input.reason);
   addOptionalText(args, 'p_operator_notes', input.operatorNotes);
   addOptionalText(args, 'p_source_hero_id', input.sourceHeroId);
   addOptionalText(args, 'p_destination_hero_id', input.destinationHeroId);
@@ -159,7 +157,7 @@ export function toAddAntiAbuseSanctionItemRpcArgs(
   return args;
 }
 
-function requiredText(value: string, field: string): string {
+function requiredText(value: string | null | undefined, field: string): string {
   const normalized = trimText(value);
 
   if (!normalized) {

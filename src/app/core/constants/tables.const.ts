@@ -50,4 +50,8 @@ export const TABLES = {
   audit_logs: 'audit_logs',
   moderation_action_types: 'moderation_action_types',
   moderation_actions: 'moderation_actions',
+  anti_abuse_sanction_types: 'anti_abuse_sanction_types',
+  anti_abuse_signal_types: 'anti_abuse_signal_types',
+  player_abuse_report_types: 'player_abuse_report_types',
+  player_relationship_declaration_types: 'player_relationship_declaration_types',
 } as const;

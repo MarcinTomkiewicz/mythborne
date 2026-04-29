@@ -14,7 +14,7 @@ export type PlayerRelationshipDeclarationStatus =
 export interface AntiAbuseCaseDecisionInput {
   caseId: string;
   status: AntiAbuseCaseStatus;
-  statusReason?: string | null;
+  statusReason: string;
   verdict?: AntiAbuseCaseVerdict | null;
   verdictReason?: string | null;
   sanctionRequired?: boolean | null;
@@ -33,7 +33,7 @@ export interface PlayerRelationshipDeclarationDecisionInput {
 export interface PlayerAbuseReportDecisionInput {
   reportId: string;
   status: PlayerAbuseReportStatus;
-  statusReason?: string | null;
+  statusReason: string;
   caseId?: string | null;
   adminNotes?: string | null;
   playerNotes?: string | null;
@@ -55,25 +55,25 @@ export interface CreateAntiAbuseSanctionInput {
 export interface AntiAbuseSanctionStatusInput {
   sanctionId: string;
   status: AntiAbuseSanctionStatus;
-  statusReason?: string | null;
+  statusReason: string;
 }
 
 export interface CreateCharacterPointPenaltyInput {
   sanctionId: string;
-  reason?: string | null;
+  reason: string;
   operatorNotes?: string | null;
 }
 
 export interface CharacterPointPenaltyStatusInput {
   penaltyId: string;
   status: AntiAbuseSanctionStatus;
-  statusReason?: string | null;
+  statusReason: string;
 }
 
 export interface AddAntiAbuseSanctionItemInput {
   sanctionId: string;
   itemId: string;
-  reason?: string | null;
+  reason: string;
   operatorNotes?: string | null;
   sourceHeroId?: string | null;
   destinationHeroId?: string | null;

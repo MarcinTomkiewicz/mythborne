@@ -425,6 +425,12 @@ Still pending at the gameplay level even if partially supported in schema:
 - UX-I7b replaced the Buildings admin legacy requirement edit path: the admin editor no longer uses `building_requirements`, `buildings.requirements` or `rank_required`; remaining legacy references are runtime/player read-model or generated-type context only.
 - UX-I7b requirement payloads are `value_type` aware so create/update sends only relevant fields for integer, decimal, boolean, string/enum, stat, building, resource and district requirements.
 - UX-I7b was verified with `npx tsc --noEmit`, `npm run build`, targeted building mapper/progression/formula preview specs and requirement RPC mapper specs; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- UX-I8 accepted on 2026-04-29: anti-abuse decision explainability now has DB-backed dictionary loading and mappers for sanction types, player abuse report types, relationship declaration types and anti-abuse signal types.
+- UX-I8 added display/projection helpers for future anti-abuse case, sanction, report and declaration UI. Staff-facing projections can show staff notes/metadata, while player-facing projections omit staff-only `operatorNotes`, `adminNotes`, `adminDescription` and staff-only `statusReason`.
+- UX-I8 keeps anti-abuse status labels as explicit fallback enum labels only; DB-backed explainability comes from the dictionary tables where available.
+- UX-I8 explains sanction item links as evidence/context links and not item confiscation, transfer or mutation by themselves.
+- UX-I8 requires reason/status reason in frontend anti-abuse RPC payload helpers for staff decision workflows before sending audited RPC calls.
+- UX-I8 was verified with `npx tsc --noEmit`, `npm run build`, targeted anti-abuse dictionary/display/RPC specs and grep checks; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

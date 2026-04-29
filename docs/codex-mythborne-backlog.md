@@ -2171,6 +2171,8 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ## Task UX-I8 — Anti-abuse decision explainability pass
 
+**Status:** Accepted 2026-04-29.
+
 **Goal:** Make future anti-abuse case/sanction/declaration/report UI understandable for staff and players.
 
 **Scope:**
@@ -2183,6 +2185,13 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 - Anti-abuse UI uses labels/helper text from DB dictionaries.
 - Player-facing status views do not leak staff-only metadata.
 - Staff decision UI always requires reason.
+
+**Accepted implementation notes:**
+- Added DB-backed dictionary loaders/mappers for anti-abuse sanction types, signal types, player abuse report types and relationship declaration types.
+- Added future-facing display/projection helpers that keep staff-only notes and staff-only status reasons out of player-facing projections.
+- Status labels are explicit fallback enum labels only; DB-backed type explainability remains dictionary-driven.
+- Sanction item links are explained as evidence/context links, not item confiscation or mutation.
+- Anti-abuse decision RPC payload helpers now require reason/status reason before calling audited workflows.
 
 ---
 
