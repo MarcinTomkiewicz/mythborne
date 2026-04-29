@@ -1,0 +1,141 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-col gap-xs mb-lg">
+    <p class="card-legend mb-0">Impact preview</p>
+    <h3 class="mg-section__title mg-section__title--xs mb-0">
+      Formula calculator
+    </h3>
+    <p class="muted-text mb-0">
+      Select an assigned target, choose a variable range and inspect the output without changing database values.
+    </p>
+  </div>
+
+  @if (targetOptions().length > 0) {
+    <form [formGroup]="form" class="flex-col gap-lg">
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100 grid-items-start">
+        <label class="flex-col gap-sm min-w-0">
+          <span class="muted-text">Formula target</span>
+          <p-select
+            formControlName="targetId"
+            [options]="targetOptions()"
+            optionLabel="label"
+            optionValue="value"
+            class="w-100"
+          />
+        </label>
+
+        <label class="flex-col gap-sm min-w-0">
+          <span class="muted-text">Sweep variable</span>
+          <p-select
+            formControlName="sweepVariable"
+            [options]="variableOptions()"
+            optionLabel="label"
+            optionValue="value"
+            class="w-100"
+          />
+        </label>
+      </div>
+
+      @if (selectedRow(); as row) {
+        <div class="mg-surface-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center flex-col-sm gap-sm">
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Assigned formula</span>
+              <strong class="heading-color">{{ row.formula?.label ?? '-' }}</strong>
+              <span class="muted-text">{{ row.formula?.key ?? '-' }}</span>
+            </div>
+
+            <div class="flex-row-start-center flex-wrap gap-xs">
+              <span class="mg-tag">{{ row.target.scopeKey }}</span>
+              <span class="mg-tag">{{ row.target.key }}</span>
+            </div>
+          </div>
+
+          @if (row.target.description) {
+            <p class="muted-text mb-0">{{ row.target.description }}</p>
+          }
+        </div>
+      }
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-lg w-100 grid-items-start">
+        <div class="flex-col gap-md min-w-0">
+          <div class="mg-grid grid-cols-2 grid-cols-1-xs gap-md w-100">
+            <label class="flex-col gap-sm">
+              <span class="muted-text">From</span>
+              <input pInputText type="number" class="w-100" formControlName="fromValue" />
+            </label>
+
+            <label class="flex-col gap-sm">
+              <span class="muted-text">To</span>
+              <input pInputText type="number" class="w-100" formControlName="toValue" />
+            </label>
+          </div>
+
+          @if (editableVariables().length > 0) {
+            <div class="mg-surface-card p-md flex-col gap-md">
+              <p class="card-legend mb-0">Context variables</p>
+              <div class="mg-grid grid-cols-2 grid-cols-1-xs gap-md w-100">
+                @for (variable of editableVariables(); track variable) {
+                  <label class="flex-col gap-sm">
+                    <span class="muted-text">{{ variable }}</span>
+                    <input
+                      pInputText
+                      type="number"
+                      class="w-100"
+                      [formControl]="contextControl(variable)"
+                    />
+                  </label>
+                }
+              </div>
+            </div>
+          } @else {
+            <p class="muted-text mb-0">
+              The selected formula target has no additional context variables beyond the sweep variable.
+            </p>
+          }
+
+          <div class="mg-surface-card p-md flex-col gap-sm">
+            <span class="muted-text">Expression</span>
+            <pre class="mb-0 text-break"><code>{{ selectedRow()?.formula?.expression ?? '-' }}</code></pre>
+          </div>
+        </div>
+
+        <app-formula-expression-preview
+          [humanExpression]="humanExpression()"
+          [chartVariable]="sweepVariable()"
+          [chartState]="chartState()"
+        />
+      </div>
+
+      @if (previewError(); as error) {
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <strong class="heading-color">Preview needs attention</strong>
+          <span class="muted-text">{{ error }}</span>
+        </div>
+      } @else {
+        <div class="mg-surface-card p-md flex-col gap-md">
+          <div class="flex-row-between-center flex-col-sm gap-sm">
+            <div class="flex-col gap-xs">
+              <p class="card-legend mb-0">Output table</p>
+              <strong class="heading-color">
+                {{ sweepVariable() }} {{ formValue().fromValue }} -> {{ formValue().toValue }}
+              </strong>
+            </div>
+          </div>
+
+          <div class="mg-grid grid-cols-4 grid-cols-2-sm gap-sm w-100">
+            @for (row of previewRows(); track row.input) {
+              <div class="p-sm flex-col gap-xs">
+                <span class="muted-text">{{ sweepVariable() }} {{ row.input }}</span>
+                <strong class="heading-color">{{ row.value }}</strong>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </form>
+  } @else {
+    <p class="muted-text mb-0">
+      No enabled global/default formula assignments are available for preview.
+    </p>
+  }
+</section>

@@ -17,11 +17,17 @@ import {
   toFormulaTargetAssignmentRow,
 } from '../../../core/utils/formula-assignment-view';
 import { FormulaAssignmentViewer } from '../../components/formulas/formula-assignment-viewer';
+import { FormulaImpactCalculator } from '../../components/formulas/formula-impact-calculator';
 
 @Component({
   selector: 'app-formulas-page',
   standalone: true,
-  imports: [LoadingOverlay, AdminTagLinks, FormulaAssignmentViewer],
+  imports: [
+    LoadingOverlay,
+    AdminTagLinks,
+    FormulaAssignmentViewer,
+    FormulaImpactCalculator,
+  ],
   templateUrl: './formulas-page.html',
 })
 export class FormulasPage implements OnInit {

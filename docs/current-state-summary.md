@@ -401,6 +401,10 @@ Still pending at the gameplay level even if partially supported in schema:
 - UX-I3 keeps stable `audit_action_types` / `audit_entity_types` keys visible only as secondary technical metadata, with graceful fallback to keys when dictionary joins are missing.
 - UX-I3 moved audit metadata/old/new JSON previews into collapsed technical `<details>` blocks so raw JSON no longer dominates audit log cards by default.
 - UX-I3 was verified with targeted audit-log/audit-dictionary tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- UX-I4 accepted on 2026-04-29: `/admin/formulas` now includes a formula impact calculator for enabled global/default target assignments.
+- UX-I4 lets admins select a formula target, choose a sweep variable such as `level`/`statLevel`, set an input range and context variables, and inspect output table plus chart without editing database values.
+- UX-I4 reuses the existing formula runtime and expression preview; technical formula expressions remain visible as formula previews, not raw JSON explainability.
+- UX-I4 was verified with targeted formula-runtime tests and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

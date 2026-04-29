@@ -2067,6 +2067,8 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ## Task UX-I4 — Formula impact preview calculators
 
+**Status:** Done / confirmed 2026-04-29.
+
 **Goal:** Add practical formula calculators for admin formula/balance work.
 
 **Scope:**
