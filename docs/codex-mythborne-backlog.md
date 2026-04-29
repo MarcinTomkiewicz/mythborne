@@ -995,6 +995,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H1 — Anti-abuse dictionary models
 
+**Status:** Done / confirmed 2026-04-29 through UX-I8.
+
 **Goal:** Add typed models for anti-abuse dictionaries.
 
 **Scope:**
@@ -1009,6 +1011,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 ---
 
 ## Task H2 — Anti-abuse dictionary loaders
+
+**Status:** Done / confirmed 2026-04-29.
 
 **Goal:** Load active dictionary rows.
 

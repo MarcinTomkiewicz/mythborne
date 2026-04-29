@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
+import { FilterOperator } from '../../enums/filter-operators';
 import { Backend } from '../backend/backend';
 import { AntiAbuseDictionaries } from './anti-abuse-dictionaries';
 
@@ -42,6 +43,29 @@ describe('AntiAbuseDictionaries', () => {
     expect(data.declarationTypes[0].label).toBe('Shared household');
     expect(data.signalTypes[0].label).toBe('Trade funnel');
     expect(backend.getAll).toHaveBeenCalledTimes(4);
+  });
+
+  it('loads each dictionary as active rows sorted by sort order and key', async () => {
+    await firstValueFrom(service.getActiveDictionaries());
+
+    const calls = backend.getAll.calls.allArgs().map(([options]) => options);
+
+    expect(calls.map((options) => options.table)).toEqual([
+      TABLES.anti_abuse_sanction_types,
+      TABLES.player_abuse_report_types,
+      TABLES.player_relationship_declaration_types,
+      TABLES.anti_abuse_signal_types,
+    ]);
+
+    for (const options of calls) {
+      expect(options).toEqual(
+        jasmine.objectContaining({
+          filters: { isActive: { operator: FilterOperator.EQ, value: true } },
+          orderBy: [{ column: 'sort_order' }, { column: 'key' }],
+          camelCase: false,
+        }),
+      );
+    }
   });
 });
 

@@ -30,7 +30,7 @@ export class AntiAbuseDictionaries {
       .getAll<Row<'anti_abuse_sanction_types'>>({
         table: TABLES.anti_abuse_sanction_types,
         filters: { isActive: { operator: FilterOperator.EQ, value: true } },
-        orderBy: [{ column: 'category' }, { column: 'sort_order' }, { column: 'label' }],
+        orderBy: [{ column: 'sort_order' }, { column: 'key' }],
         camelCase: false,
       })
       .pipe(map((rows) => rows.map(mapAntiAbuseSanctionType)));
@@ -41,7 +41,7 @@ export class AntiAbuseDictionaries {
       .getAll<Row<'player_abuse_report_types'>>({
         table: TABLES.player_abuse_report_types,
         filters: { isActive: { operator: FilterOperator.EQ, value: true } },
-        orderBy: [{ column: 'category' }, { column: 'sort_order' }, { column: 'label' }],
+        orderBy: [{ column: 'sort_order' }, { column: 'key' }],
         camelCase: false,
       })
       .pipe(map((rows) => rows.map(mapPlayerAbuseReportType)));
@@ -54,7 +54,7 @@ export class AntiAbuseDictionaries {
       .getAll<Row<'player_relationship_declaration_types'>>({
         table: TABLES.player_relationship_declaration_types,
         filters: { isActive: { operator: FilterOperator.EQ, value: true } },
-        orderBy: [{ column: 'category' }, { column: 'sort_order' }, { column: 'label' }],
+        orderBy: [{ column: 'sort_order' }, { column: 'key' }],
         camelCase: false,
       })
       .pipe(map((rows) => rows.map(mapPlayerRelationshipDeclarationType)));
@@ -65,7 +65,7 @@ export class AntiAbuseDictionaries {
       .getAll<Row<'anti_abuse_signal_types'>>({
         table: TABLES.anti_abuse_signal_types,
         filters: { isActive: { operator: FilterOperator.EQ, value: true } },
-        orderBy: [{ column: 'category' }, { column: 'sort_order' }, { column: 'label' }],
+        orderBy: [{ column: 'sort_order' }, { column: 'key' }],
         camelCase: false,
       })
       .pipe(map((rows) => rows.map(mapAntiAbuseSignalType)));
