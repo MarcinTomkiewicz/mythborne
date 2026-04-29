@@ -29,11 +29,13 @@ import { ToastService } from '../ui/toast';
 import { BuildingAdminService } from './building-admin';
 import { BuildingFormulaPreviewCalculator } from './building-formula-preview-calculator';
 import { BuildingFormulaAdminFacade } from './building-formula-admin.facade';
+import { BuildingImpactPreviewState } from './building-impact-preview.state';
 import { BuildingProgressionPreviewState } from './building-progression-preview.state';
 
 const EMPTY_ADMIN_DATA: BuildingAdminData = {
   buildings: [],
   bonusTemplates: [],
+  bonusTemplateMetadata: [],
   districts: [],
   stats: [],
 };
@@ -48,6 +50,7 @@ export class BuildingsPageFacade {
   private readonly toast = inject(ToastService);
 
   readonly formulas = inject(BuildingFormulaAdminFacade);
+  readonly impact = inject(BuildingImpactPreviewState);
   readonly progression = inject(BuildingProgressionPreviewState);
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
@@ -157,7 +160,14 @@ export class BuildingsPageFacade {
 
     this.building.editorForm.controls.id.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.resetProgressionPreviewForCurrentBuilding());
+      .subscribe((id) => {
+        this.resetProgressionPreviewForCurrentBuilding();
+        this.impact.reset();
+
+        if (id) {
+          this.impact.load(id, { silent: true });
+        }
+      });
   }
 
   loadData(preferredKey?: string) {
@@ -232,6 +242,10 @@ export class BuildingsPageFacade {
 
   loadBuildingProgressionPreview(options: { silent?: boolean } = {}): void {
     this.progression.load(this.building.editorForm.controls.id.value, options);
+  }
+
+  loadBuildingImpactPreview(options: { silent?: boolean } = {}): void {
+    this.impact.load(this.building.editorForm.controls.id.value, options);
   }
 
   handleImageError(event: Event) {

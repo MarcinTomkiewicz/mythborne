@@ -1,10 +1,13 @@
 import { BONUS_ENTITY_TYPES } from '../constants/bonus-entity-types.const';
 import { BonusTemplate } from '../types/bonus.types';
 import { CanonicalEntityBonusWithTemplateRow } from '../types/bonus-governance.types';
+import { BonusImpactPreviewRpcRow } from '../types/building-impact-preview-rpc.types';
 import { BuildingProgressionPreviewRpcRow } from '../types/building-preview-rpc.types';
 import {
+  mapBuildingBonusImpactPreview,
   mapBuildingProgressionPreview,
   mapEditableBuildingEntityBonus,
+  toGetBonusImpactPreviewRpcArgs,
   toGetBuildingProgressionPreviewRpcArgs,
 } from './building-admin-mappers';
 
@@ -59,6 +62,28 @@ describe('building admin mappers', () => {
         capExplanation: 'Selected district has unlimited cap. 0 = unlimited.',
       }),
     );
+  });
+
+  it('maps bonus impact preview rows from canonical DB metadata', () => {
+    expect(mapBuildingBonusImpactPreview(createBonusImpactPreviewRow())).toEqual(
+      jasmine.objectContaining({
+        entityBonusId: 'entity-bonus-1',
+        bonusLabel: 'Drachma income',
+        bonusTargetLabel: 'Drachma income',
+        bonusTypeLabel: 'Flat bonus',
+        bonusScopeLabel: 'Building management',
+        value: 10,
+        previewValue: 15,
+        explanation: 'Flat building management bonus.',
+      }),
+    );
+  });
+
+  it('maps bonus impact preview input to RPC args', () => {
+    expect(toGetBonusImpactPreviewRpcArgs(' building-1 ')).toEqual({
+      p_entity_type: 'building',
+      p_entity_id: 'building-1',
+    });
   });
 
   it('maps building progression preview input to RPC args', () => {
@@ -162,6 +187,42 @@ function createEntityBonusRow(
     created_at: '2026-04-27T00:00:00.000Z',
     updated_at: '2026-04-27T00:00:00.000Z',
     bonus_templates: createTemplateRow(),
+    ...overrides,
+  };
+}
+
+function createBonusImpactPreviewRow(
+  overrides: Partial<BonusImpactPreviewRpcRow> = {},
+): BonusImpactPreviewRpcRow {
+  return {
+    entity_bonus_id: 'entity-bonus-1',
+    entity_type: 'building',
+    entity_id: 'building-1',
+    bonus_template_id: 'template-1',
+    bonus_key: 'drachma_income_flat',
+    bonus_label: 'Drachma income',
+    bonus_description: 'Adds drachma income.',
+    bonus_type_key: 'flat',
+    bonus_type_label: 'Flat bonus',
+    bonus_type_description: 'Adds a direct value.',
+    bonus_scope_key: 'building_management',
+    bonus_scope_label: 'Building management',
+    bonus_scope_description: 'Applies to building management.',
+    bonus_target_key: 'drachma_income',
+    bonus_target_label: 'Drachma income',
+    bonus_target_description: 'Increases drachma income.',
+    value: 10,
+    preview_value: 15,
+    quality_key: 'quality',
+    quality_label: 'Quality',
+    quality_multiplier: 1.5,
+    quality_scales_value: true,
+    quality_scales_level_interval: false,
+    level_interval: 0,
+    scaling_stat_key: '',
+    params_json: {},
+    explanation: 'Flat building management bonus.',
+    warning_text: '',
     ...overrides,
   };
 }

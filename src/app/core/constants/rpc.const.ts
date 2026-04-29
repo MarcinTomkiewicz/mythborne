@@ -35,5 +35,6 @@ export const RPC = {
   get_visible_moderation_actions: 'get_visible_moderation_actions',
   search_moderation_hero_targets: 'search_moderation_hero_targets',
   search_moderation_user_targets: 'search_moderation_user_targets',
+  get_bonus_impact_preview: 'get_bonus_impact_preview',
   get_building_progression_preview: 'get_building_progression_preview',
 } as const;

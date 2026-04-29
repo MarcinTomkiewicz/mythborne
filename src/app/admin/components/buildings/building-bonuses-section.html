@@ -11,47 +11,56 @@
   <div class="flex-col gap-md">
     @for (bonusGroup of page().bonusEditor.controls; track $index) {
       <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
-        <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100 align-items-center">
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Template</span>
-            <p-select
-              formControlName="templateId"
-              [options]="page().bonusTemplateOptions()"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Choose template"
-              styleClass="w-100"
-              (onChange)="page().applyTemplate($index, $event.value)"
-            />
-          </label>
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+          <div class="flex-col gap-md">
+            <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100 align-items-center">
+              <label class="flex-col gap-sm">
+                <span class="muted-text">Template</span>
+                <p-select
+                  formControlName="templateId"
+                  [options]="page().bonusTemplateOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Choose template"
+                  styleClass="w-100"
+                  (onChange)="page().applyTemplate($index, $event.value)"
+                />
+              </label>
 
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Target</span>
-            <input pInputText class="w-100" formControlName="target" readonly />
-          </label>
+              <label class="flex-col gap-sm">
+                <span class="muted-text">Base value</span>
+                <input pInputText type="number" class="w-100" formControlName="value" />
+              </label>
 
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Type</span>
-            <input pInputText class="w-100" formControlName="type" readonly />
-          </label>
+              <label class="flex-col gap-sm">
+                <span class="muted-text">Target</span>
+                <input pInputText class="w-100" formControlName="target" readonly />
+              </label>
 
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Base value</span>
-            <input pInputText type="number" class="w-100" formControlName="value" />
-          </label>
+              <label class="flex-col gap-sm">
+                <span class="muted-text">Type</span>
+                <input pInputText class="w-100" formControlName="type" readonly />
+              </label>
 
-          <label class="flex-col gap-sm grid-col-span-3">
-            <span class="muted-text">Description</span>
-            <input pInputText class="w-100" formControlName="description" />
-          </label>
-        </div>
+              <label class="flex-col gap-sm grid-col-span-2">
+                <span class="muted-text">Description</span>
+                <input pInputText class="w-100" formControlName="description" />
+              </label>
+            </div>
 
-        <div class="flex-row-start-center">
-          <p-button
-            label="Remove"
-            severity="danger"
-            [text]="true"
-            (onClick)="page().bonusEditor.remove($index)"
+            <div class="flex-row-start-center">
+              <p-button
+                label="Remove"
+                severity="danger"
+                [text]="true"
+                (onClick)="page().bonusEditor.remove($index)"
+              />
+            </div>
+          </div>
+
+          <app-building-bonus-explainability-card
+            [bonusGroup]="bonusGroup"
+            [templates]="page().adminData().bonusTemplateMetadata"
           />
         </div>
       </div>
@@ -59,4 +68,104 @@
       <p class="mb-0 muted-text">No bonuses configured yet.</p>
     }
   </div>
+
+  <section class="mg-card flex-col gap-md p-md">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <strong class="heading-color">Saved canonical bonus impact</strong>
+        <span>
+          This DB-backed section shows saved canonical entity bonus rows only. It is not a live preview of unsaved editor rows; save the building and refresh impact to include changes.
+        </span>
+      </div>
+
+      <p-button
+        label="Refresh impact"
+        [text]="true"
+        [loading]="page().impact.isLoading()"
+        (onClick)="page().loadBuildingImpactPreview()"
+      />
+    </div>
+
+    @if (page().impact.error(); as error) {
+      <div class="mg-card p-sm flex-col gap-xs">
+        <strong class="heading-color">Impact preview unavailable</strong>
+        <span class="muted-text">{{ error }}</span>
+      </div>
+    }
+
+    <div class="flex-col gap-sm">
+      @for (bonus of page().impact.bonusRows(); track bonus.entityBonusId) {
+        <article class="mg-card p-md flex-col gap-md">
+          <div class="flex-row-between-center flex-col-sm gap-sm">
+            <div class="flex-col gap-xs min-w-0">
+              <strong class="heading-color">{{ bonus.bonusLabel }}</strong>
+              <span>{{ bonus.bonusDescription }}</span>
+            </div>
+            <span class="mg-tag">bonus: {{ bonus.bonusKey }}</span>
+          </div>
+
+          <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Target</span>
+              <strong class="heading-color">{{ bonus.bonusTargetLabel }}</strong>
+              <span>{{ bonus.bonusTargetDescription }}</span>
+              <span class="mg-tag">target: {{ bonus.bonusTargetKey }}</span>
+            </div>
+
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Type</span>
+              <strong class="heading-color">{{ bonus.bonusTypeLabel }}</strong>
+              <span>{{ bonus.bonusTypeDescription }}</span>
+              <span class="mg-tag">type: {{ bonus.bonusTypeKey }}</span>
+            </div>
+
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Scope</span>
+              <strong class="heading-color">{{ bonus.bonusScopeLabel }}</strong>
+              <span>{{ bonus.bonusScopeDescription }}</span>
+              <span class="mg-tag">scope: {{ bonus.bonusScopeKey }}</span>
+            </div>
+          </div>
+
+          <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md w-100">
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Base value</span>
+              <strong class="heading-color">{{ bonus.value }}</strong>
+            </div>
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Preview value</span>
+              <strong class="heading-color">{{ bonus.previewValue }}</strong>
+            </div>
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Quality</span>
+              <strong class="heading-color">{{ bonus.qualityLabel }}</strong>
+              <span>Multiplier {{ bonus.qualityMultiplier }}</span>
+            </div>
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Interval / scaling</span>
+              <strong class="heading-color">
+                {{ bonus.levelInterval || 'No level interval' }}
+              </strong>
+              <span>
+                {{ bonus.scalingStatKey || 'No source stat scaling' }}
+              </span>
+            </div>
+          </div>
+
+          <p class="mb-0">{{ bonus.explanation }}</p>
+
+          @if (bonus.warningText) {
+            <div class="mg-card p-sm flex-col gap-xs">
+              <strong class="heading-color">Warning</strong>
+              <span>{{ bonus.warningText }}</span>
+            </div>
+          }
+        </article>
+      } @empty {
+        <p class="mb-0 muted-text">
+          No saved canonical building bonuses found for this building. Save the building and refresh impact after editing bonus rows.
+        </p>
+      }
+    </div>
+  </section>
 </div>

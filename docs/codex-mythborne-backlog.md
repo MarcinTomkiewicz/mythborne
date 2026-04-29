@@ -2122,16 +2122,20 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ## Task UX-I7 — Bonus and requirement impact preview
 
+**Status:** Done / confirmed 2026-04-29.
+
 **Goal:** Explain resolved bonus/requirement effects in human-readable terms.
 
 **Scope:**
 - Use `get_bonus_impact_preview(...)` to show resolved effect of bonus templates, entity bonuses, quality scaling, per-level intervals and source-stat scaling.
-- Use `get_requirement_impact_preview(...)` to show requirement labels/descriptions from central requirements.
+- Show local live form-row explainability for editable building requirement rows. The saved canonical requirement impact section is intentionally not shown in Buildings admin until canonical requirement editing is available.
 - Keep technical keys secondary.
+- `Open bonus templates` is generic navigation to `/admin/balance`; it is not a selected-template deep link.
 
 **Acceptance criteria:**
 - Admin can understand what a bonus/requirement does without reading raw JSON.
-- Preview uses canonical dictionaries and entity bonuses.
+- Bonus saved impact uses canonical dictionaries and entity bonuses.
+- Requirement rows explain the current form state without presenting partial canonical saved state.
 - Build passes.
 
 ---

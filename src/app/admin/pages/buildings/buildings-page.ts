@@ -6,6 +6,7 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
 import { BuildingsPageFacade } from '../../../core/services/buildings/building-admin-page.facade';
 import { BuildingFormulaPreviewCalculator } from '../../../core/services/buildings/building-formula-preview-calculator';
 import { BuildingFormulaAdminFacade } from '../../../core/services/buildings/building-formula-admin.facade';
+import { BuildingImpactPreviewState } from '../../../core/services/buildings/building-impact-preview.state';
 import { BuildingProgressionPreviewState } from '../../../core/services/buildings/building-progression-preview.state';
 import { FormFields } from '../../../shared/form-fields/form-fields';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
@@ -43,6 +44,7 @@ import {
   providers: [
     BuildingFormulaAdminFacade,
     BuildingFormulaPreviewCalculator,
+    BuildingImpactPreviewState,
     BuildingProgressionPreviewState,
     BuildingsPageFacade,
   ],

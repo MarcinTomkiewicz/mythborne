@@ -13,52 +13,62 @@
   <div class="flex-col gap-md">
     @for (requirementGroup of page().requirementEditor.controls; track $index) {
       <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="requirementGroup">
-        <div class="mg-grid grid-cols-5 grid-cols-1-sm gap-md w-100 align-items-center">
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Type</span>
-            <p-select
-              formControlName="type"
-              [options]="requirementTypeOptions"
-              optionLabel="label"
-              optionValue="value"
-              styleClass="w-100"
-              (onChange)="page().updateRequirementType($index, $event.value)"
-            />
-          </label>
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+          <div class="flex-col gap-md">
+            <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100 align-items-center">
+              <label class="flex-col gap-sm">
+                <span class="muted-text">Type</span>
+                <p-select
+                  formControlName="type"
+                  [options]="requirementTypeOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  styleClass="w-100"
+                  (onChange)="page().updateRequirementType($index, $event.value)"
+                />
+              </label>
 
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Stat</span>
-            <p-select
-              formControlName="statKey"
-              [options]="statOptions()"
-              optionLabel="label"
-              optionValue="value"
-              styleClass="w-100"
-            />
-          </label>
+              <label class="flex-col gap-sm">
+                <span class="muted-text">Stat</span>
+                <p-select
+                  formControlName="statKey"
+                  [options]="statOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  styleClass="w-100"
+                />
+              </label>
 
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Minimum value</span>
-            <input pInputText type="number" class="w-100" formControlName="minValue" />
-          </label>
+              <label class="flex-col gap-sm">
+                <span class="muted-text">Minimum value</span>
+                <input pInputText type="number" class="w-100" formControlName="minValue" />
+              </label>
 
-          <label class="flex-col gap-sm">
-            <span class="muted-text">From building level</span>
-            <input pInputText type="number" class="w-100" formControlName="appliesFromLevel" />
-          </label>
+              <label class="flex-col gap-sm">
+                <span class="muted-text">From building level</span>
+                <input pInputText type="number" class="w-100" formControlName="appliesFromLevel" />
+              </label>
+            </div>
 
-          <div class="flex-row-start-center">
-            <p-button
-              label="Remove"
-              severity="danger"
-              [text]="true"
-              (onClick)="page().requirementEditor.remove($index)"
-            />
+            <div class="flex-row-start-center">
+              <p-button
+                label="Remove"
+                severity="danger"
+                [text]="true"
+                (onClick)="page().requirementEditor.remove($index)"
+              />
+            </div>
           </div>
+
+          <app-building-requirement-explainability-card
+            [requirementGroup]="requirementGroup"
+            [stats]="page().adminData().stats"
+          />
         </div>
       </div>
     } @empty {
       <p class="mb-0 muted-text">No requirements configured yet.</p>
     }
   </div>
+
 </div>

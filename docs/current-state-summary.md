@@ -1,6 +1,6 @@
 # Monster Hunt - Current State Summary
 
-Updated: 2026-04-28
+Updated: 2026-04-29
 
 This file summarizes the current implementation state against:
 - `docs/project-context.md`
@@ -414,6 +414,12 @@ Still pending at the gameplay level even if partially supported in schema:
 - UX-I6 local formula preview uses editable resource cost rows for single-level and range previews through `BuildingFormulaPreviewCalculator`; cost errors now show actionable reasons instead of false zeroes or vague unavailable states.
 - UX-I6 validation rejects empty, decimal, inverted, above-range, and too-wide level ranges before RPC, and above-cap rows no longer appear as upgradeable.
 - UX-I6 was verified with targeted building admin mapper, building progression, and building formula preview calculator tests plus `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- UX-I7 accepted on 2026-04-29: Building admin bonus rows now show local live form-row explainability for the selected bonus template, target, type/scope, value and scaling metadata.
+- UX-I7 keeps saved canonical bonus impact as a separate DB-backed section powered by `get_bonus_impact_preview(...)`; it shows saved canonical bonus rows only and does not imply unsaved editor changes are included.
+- UX-I7 requirement rows now show only local live form-row explainability for Hero level, Hero rank and Hero stat requirements. The saved canonical requirement impact section was removed from Buildings admin to avoid mixing the legacy `building_requirements` editor with canonical `entity_requirements` preview state.
+- UX-I7's `Open bonus templates` link is generic navigation to `/admin/balance`; it is not a selected-template deep link.
+- `get_requirement_impact_preview(...)` remains visible only in generated database types for now; Buildings admin does not call it until a future canonical requirement editor workflow is implemented.
+- UX-I7 was verified with targeted building admin mapper and building progression tests plus `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

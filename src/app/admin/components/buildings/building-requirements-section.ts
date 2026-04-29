@@ -5,11 +5,18 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { BUILDING_REQUIREMENT_TYPE_OPTIONS } from '../../../core/config/forms/buildings-form.config';
 import { BuildingsPageFacade } from '../../../core/services/buildings/building-admin-page.facade';
+import { BuildingRequirementExplainabilityCard } from './building-requirement-explainability-card';
 
 @Component({
   selector: 'app-building-requirements-section',
   standalone: true,
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, SelectModule],
+  imports: [
+    ReactiveFormsModule,
+    ButtonModule,
+    InputTextModule,
+    SelectModule,
+    BuildingRequirementExplainabilityCard,
+  ],
   templateUrl: './building-requirements-section.html',
 })
 export class BuildingRequirementsSection {

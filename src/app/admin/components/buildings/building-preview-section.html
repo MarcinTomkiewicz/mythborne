@@ -68,7 +68,7 @@
 
   <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
     <div class="flex-col gap-sm">
-      @for (bonus of page().preview().bonuses; track bonus.target + bonus.type) {
+      @for (bonus of page().preview().bonuses; track $index) {
         <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
           <strong class="heading-color">{{ page().format.bonusLabel(bonus.target) }}</strong>
           <span>
@@ -82,7 +82,7 @@
     </div>
 
     <div class="flex-col gap-sm">
-      @for (requirement of page().preview().requirements; track requirement.type + (requirement.statKey ?? '') + requirement.appliesFromLevel) {
+      @for (requirement of page().preview().requirements; track $index) {
         <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
           <strong class="heading-color">{{ page().format.requirementType(requirement.type) }}</strong>
           <span>
@@ -301,7 +301,7 @@
           @if (row.formula; as formula) {
             <div class="flex-col gap-xs">
               <span class="muted-text">Bonus output</span>
-              @for (bonus of formula.bonuses; track bonus.target + bonus.type) {
+              @for (bonus of formula.bonuses; track $index) {
                 <span>
                   <strong class="heading-color">{{ page().format.bonusLabel(bonus.target) }}</strong>
                   <span>

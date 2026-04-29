@@ -1,6 +1,8 @@
 import {
   BuildingAdminData,
+  BuildingBonusTemplateMetadata,
   BuildingFormulaOverrides,
+  BuildingBonusImpactPreview,
   BuildingProgressionPreview,
   BuildingProgressionPreviewInput,
   EditableBuildingBonus,
@@ -16,6 +18,10 @@ import {
 } from '../types/building-admin-row.types';
 import { BonusTemplate } from '../types/bonus.types';
 import { CanonicalEntityBonusWithTemplateRow } from '../types/bonus-governance.types';
+import {
+  BonusImpactPreviewRpcRow,
+  GetBonusImpactPreviewRpcArgs,
+} from '../types/building-impact-preview-rpc.types';
 import {
   BuildingProgressionPreviewRpcRow,
   GetBuildingProgressionPreviewRpcArgs,
@@ -71,6 +77,26 @@ export function mapBuildingBonusTemplates(
     type: normalizeBonusType(template.type),
     value: 0,
     description: template.description ?? '',
+  }));
+}
+
+export function mapBuildingBonusTemplateMetadata(
+  rows: BonusTemplate[]
+): BuildingBonusTemplateMetadata[] {
+  return rows.map((template) => ({
+    id: template.id,
+    key: template.key,
+    label: template.label,
+    category: template.category,
+    target: template.target,
+    type: normalizeBonusType(template.type),
+    scope: template.scope,
+    description: template.description ?? '',
+    baseValue: template.baseValue,
+    levelsStep: template.levelsStep,
+    sourceStat: template.sourceStat,
+    scalingFactor: template.scalingFactor,
+    isActive: template.isActive,
   }));
 }
 
@@ -136,6 +162,47 @@ export function mapBuildingProgressionPreview(
     capSource: row.cap_source,
     capExplanation: row.cap_explanation,
     districtExplanation: row.district_explanation,
+  };
+}
+
+export function mapBuildingBonusImpactPreview(
+  row: BonusImpactPreviewRpcRow
+): BuildingBonusImpactPreview {
+  return {
+    entityBonusId: row.entity_bonus_id,
+    bonusTemplateId: row.bonus_template_id,
+    bonusKey: row.bonus_key,
+    bonusLabel: row.bonus_label,
+    bonusDescription: row.bonus_description,
+    bonusTypeKey: row.bonus_type_key,
+    bonusTypeLabel: row.bonus_type_label,
+    bonusTypeDescription: row.bonus_type_description,
+    bonusScopeKey: row.bonus_scope_key,
+    bonusScopeLabel: row.bonus_scope_label,
+    bonusScopeDescription: row.bonus_scope_description,
+    bonusTargetKey: row.bonus_target_key,
+    bonusTargetLabel: row.bonus_target_label,
+    bonusTargetDescription: row.bonus_target_description,
+    value: row.value,
+    previewValue: row.preview_value,
+    qualityKey: row.quality_key,
+    qualityLabel: row.quality_label,
+    qualityMultiplier: row.quality_multiplier,
+    qualityScalesValue: row.quality_scales_value,
+    qualityScalesLevelInterval: row.quality_scales_level_interval,
+    levelInterval: row.level_interval,
+    scalingStatKey: row.scaling_stat_key,
+    explanation: row.explanation,
+    warningText: row.warning_text,
+  };
+}
+
+export function toGetBonusImpactPreviewRpcArgs(
+  buildingId: string
+): GetBonusImpactPreviewRpcArgs {
+  return {
+    p_entity_type: 'building',
+    p_entity_id: requiredText(buildingId, 'buildingId'),
   };
 }
 

@@ -1,4 +1,4 @@
-import { BonusType } from './bonus.types';
+import { BonusScope, BonusType } from './bonus.types';
 
 export type BuildingResourceType = 'drachma' | 'materials' | 'workforce';
 export type BuildingRequirementType = 'hero_level' | 'hero_rank' | 'hero_stat';
@@ -117,8 +117,25 @@ export interface BuildingStatOption {
 export interface BuildingAdminData {
   buildings: EditableBuilding[];
   bonusTemplates: EditableBuildingBonus[];
+  bonusTemplateMetadata: BuildingBonusTemplateMetadata[];
   districts: BuildingDistrictOption[];
   stats: BuildingStatOption[];
+}
+
+export interface BuildingBonusTemplateMetadata {
+  id: string;
+  key: string;
+  label: string;
+  category: string;
+  target: string;
+  type: BonusType;
+  scope: BonusScope;
+  description: string;
+  baseValue: number;
+  levelsStep: number | null;
+  sourceStat: string | null;
+  scalingFactor: number | null;
+  isActive: boolean;
 }
 
 export interface BuildingProgressionPreviewInput {
@@ -146,6 +163,34 @@ export interface BuildingProgressionPreview {
   capSource: string;
   capExplanation: string;
   districtExplanation: string;
+}
+
+export interface BuildingBonusImpactPreview {
+  entityBonusId: string;
+  bonusTemplateId: string;
+  bonusKey: string;
+  bonusLabel: string;
+  bonusDescription: string;
+  bonusTypeKey: string;
+  bonusTypeLabel: string;
+  bonusTypeDescription: string;
+  bonusScopeKey: string;
+  bonusScopeLabel: string;
+  bonusScopeDescription: string;
+  bonusTargetKey: string;
+  bonusTargetLabel: string;
+  bonusTargetDescription: string;
+  value: number;
+  previewValue: number;
+  qualityKey: string;
+  qualityLabel: string;
+  qualityMultiplier: number;
+  qualityScalesValue: boolean;
+  qualityScalesLevelInterval: boolean;
+  levelInterval: number;
+  scalingStatKey: string;
+  explanation: string;
+  warningText: string;
 }
 
 export interface MansionEstateView {

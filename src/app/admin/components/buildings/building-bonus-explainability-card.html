@@ -1,0 +1,51 @@
+<aside class="mg-card p-md flex-col gap-md">
+  @if (selectedTemplate(); as template) {
+    <div class="flex-row-between-center flex-col-sm gap-sm">
+      <div class="flex-col gap-xs min-w-0">
+        <strong class="heading-color">{{ template.label }}</strong>
+        <span>{{ template.description }}</span>
+        <span class="mg-tag">template: {{ template.key }}</span>
+      </div>
+      <a routerLink="/admin/balance" class="mg-link">Open bonus templates</a>
+    </div>
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Target</span>
+        <strong class="heading-color">{{ targetLabel(template.target) }}</strong>
+        <span class="mg-tag">target: {{ template.target }}</span>
+      </div>
+
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Type</span>
+        <strong class="heading-color">{{ template.type }}</strong>
+        <span class="mg-tag">scope: {{ template.scope }}</span>
+      </div>
+
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Template base value</span>
+        <strong class="heading-color">
+          {{ bonusValue(template.baseValue, template.type) }}
+        </strong>
+        <span>Editor row value overrides the saved entity value.</span>
+      </div>
+
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Scaling</span>
+        <strong class="heading-color">
+          {{ template.levelsStep ? 'Every ' + template.levelsStep + ' levels' : 'No level interval' }}
+        </strong>
+        <span>{{ template.sourceStat || 'No source stat scaling' }}</span>
+      </div>
+    </div>
+
+    <p class="mb-0 muted-text">Live form-row explanation. Saved impact is shown separately after refresh.</p>
+  } @else {
+    <div class="flex-col gap-xs">
+      <strong class="heading-color">Select a bonus template</strong>
+      <span>
+        Choose a template to see target, type, scope and scaling metadata for this specific editor row.
+      </span>
+    </div>
+  }
+</aside>

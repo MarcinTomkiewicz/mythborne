@@ -15,6 +15,7 @@ import {
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
 import {
   mapEditableBuildingEntityBonus,
+  mapBuildingBonusTemplateMetadata,
   mapBuildingBonusTemplates,
   mapBuildingDistricts,
   mapBuildingProgressionPreview,
@@ -93,6 +94,7 @@ export class BuildingAdminService {
             )
           ),
           bonusTemplates: mapBuildingBonusTemplates(bonusData.templates),
+          bonusTemplateMetadata: mapBuildingBonusTemplateMetadata(bonusData.templates),
           districts: mapBuildingDistricts(districts),
           stats: mapBuildingStats(stats),
         };
