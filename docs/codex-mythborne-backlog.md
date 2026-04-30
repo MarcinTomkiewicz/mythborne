@@ -1229,6 +1229,8 @@ Status: completed and accepted on 2026-04-30.
 
 ## Task H15 — Case status transition action
 
+Status: completed and accepted on 2026-04-30.
+
 **Goal:** Staff can update process status.
 
 **Scope:**
@@ -1241,6 +1243,7 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - Status transition persists and is visible.
+- Implementation note: status-only updates go through `AntiAbuseDecisions.setCaseDecision(...)` with only `caseId`, `status` and `statusReason`. Technical verification and route smoke passed; full manual smoke on real case/staff data is deferred until representative gameplay cases exist.
 
 ---
 

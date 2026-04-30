@@ -58,6 +58,11 @@
         </div>
       </section>
 
+      <app-anti-abuse-case-status-transition-section
+        [caseItem]="detailModel.case"
+        (decisionSaved)="applyCaseDecision($event)"
+      />
+
       <app-anti-abuse-case-detail-sections [detail]="detailModel" />
     }
   }

@@ -1,44 +1,68 @@
 import { signal, WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of, Subject } from 'rxjs';
 import {
   AntiAbuseCaseDetailReadModel,
 } from '../../../core/domain/anti-abuse/anti-abuse-case.model';
+import { AntiAbuseCaseDecision } from '../../../core/domain/anti-abuse/anti-abuse-decision.model';
 import {
   SelectedGameServer,
   ServerAccessState,
 } from '../../../core/interfaces/server/active-server.interface';
 import { AntiAbuseCaseDetails } from '../../../core/services/anti-abuse/anti-abuse-case-details';
+import { AntiAbuseDecisions } from '../../../core/services/anti-abuse/anti-abuse-decisions';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveServer } from '../../../core/services/server/active-server';
 import { ActiveServerFormFactory } from '../../../core/factories/forms/active-server-form.factory';
 import { AntiAbuseCaseDetailPage } from './anti-abuse-case-detail-page';
+import { AntiAbuseCaseStatusTransitionSection } from './anti-abuse-case-status-transition-section';
 
 describe('AntiAbuseCaseDetailPage', () => {
   let fixture: ComponentFixture<AntiAbuseCaseDetailPage>;
   let caseDetails: jasmine.SpyObj<AntiAbuseCaseDetails>;
+  let decisions: jasmine.SpyObj<AntiAbuseDecisions>;
   let selectedServer: WritableSignal<SelectedGameServer | null>;
   let paramMap: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let firstRequest: Subject<AntiAbuseCaseDetailReadModel>;
   let secondRequest: Subject<AntiAbuseCaseDetailReadModel>;
+  let statusRequest: Subject<AntiAbuseCaseDecision>;
 
   beforeEach(async () => {
     selectedServer = signal(createServer('server-1'));
     paramMap = new BehaviorSubject(convertToParamMap({ caseId: 'case-1' }));
     firstRequest = new Subject<AntiAbuseCaseDetailReadModel>();
     secondRequest = new Subject<AntiAbuseCaseDetailReadModel>();
+    statusRequest = new Subject<AntiAbuseCaseDecision>();
     caseDetails = jasmine.createSpyObj<AntiAbuseCaseDetails>('AntiAbuseCaseDetails', [
       'getCaseDetail',
     ]);
-    caseDetails.getCaseDetail.and.returnValues(firstRequest, secondRequest);
+    caseDetails.getCaseDetail.and.callFake(({ serverId, caseId }) => {
+      const callNumber = caseDetails.getCaseDetail.calls.count();
+
+      if (callNumber === 1) {
+        return firstRequest;
+      }
+
+      if (callNumber === 2) {
+        return secondRequest;
+      }
+
+      return of(createDetail(serverId, caseId));
+    });
+    decisions = jasmine.createSpyObj<AntiAbuseDecisions>('AntiAbuseDecisions', [
+      'setCaseDecision',
+    ]);
+    decisions.setCaseDecision.and.returnValue(statusRequest);
 
     await TestBed.configureTestingModule({
       imports: [AntiAbuseCaseDetailPage],
       providers: [
         provideRouter([]),
         { provide: AntiAbuseCaseDetails, useValue: caseDetails },
+        { provide: AntiAbuseDecisions, useValue: decisions },
         { provide: ActiveServer, useValue: createActiveServer(selectedServer) },
         { provide: ActiveHero, useValue: { loadActiveHero: () => of(null) } },
         {
@@ -126,7 +150,138 @@ describe('AntiAbuseCaseDetailPage', () => {
     expect(text).toContain('Type key: shared_household');
     expect(text).toContain('Type key: character_point_fine');
   });
+
+  it('submits case status transitions through the canonical decision workflow', () => {
+    firstRequest.next(createDetail('server-1', 'case-1', true));
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    const section = fixture.debugElement.query(
+      By.directive(AntiAbuseCaseStatusTransitionSection),
+    ).componentInstance as AntiAbuseCaseStatusTransitionSection;
+
+    section.form.controls.status.setValue('in_review');
+    section.form.controls.statusReason.setValue(' Needs staff review. ');
+    section.submit();
+
+    statusRequest.next(createDecision('case-1', 'server-1'));
+    statusRequest.complete();
+    fixture.detectChanges();
+
+    expect(decisions.setCaseDecision).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        caseId: 'case-1',
+        status: 'in_review',
+        statusReason: 'Needs staff review.',
+      }),
+    );
+    const payload = decisions.setCaseDecision.calls.mostRecent().args[0];
+    expect(payload.verdict).toBeUndefined();
+    expect(payload.verdictReason).toBeUndefined();
+    expect(payload.sanctionRequired).toBeUndefined();
+    expect(payload.noSanctionReason).toBeUndefined();
+    expect(payload.operatorNotes).toBeUndefined();
+    expect(fixture.componentInstance.detail()?.case.status).toBe('in_review');
+    expect(fixture.componentInstance.detail()?.case.statusReason).toBe(
+      'Needs staff review.',
+    );
+  });
+
+  it('syncs status control from current case status without clearing success feedback', () => {
+    firstRequest.next(createDetail('server-1', 'case-1', true));
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    const section = statusSection(fixture);
+    section.form.controls.status.setValue('in_review');
+    section.form.controls.statusReason.setValue('Needs staff review.');
+    section.submit();
+
+    statusRequest.next(createDecision('case-1', 'server-1'));
+    statusRequest.complete();
+    fixture.detectChanges();
+
+    expect(section.successMessage()).toBe('Case status updated.');
+    expect(section.form.controls.status.value).toBe('in_review');
+  });
+
+  it('ignores stale status transition response after selected server changes', () => {
+    firstRequest.next(createDetail('server-1', 'case-1', true));
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    const section = statusSection(fixture);
+    section.form.controls.status.setValue('in_review');
+    section.form.controls.statusReason.setValue('Needs staff review.');
+    section.submit();
+
+    selectedServer.set(createServer('server-2'));
+    fixture.detectChanges();
+
+    statusRequest.next(createDecision('case-1', 'server-1'));
+    statusRequest.complete();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.detail()).toBeNull();
+  });
+
+  it('ignores stale status transition response after route case id changes', () => {
+    firstRequest.next(createDetail('server-1', 'case-1', true));
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    const section = statusSection(fixture);
+    section.form.controls.status.setValue('in_review');
+    section.form.controls.statusReason.setValue('Needs staff review.');
+    section.submit();
+
+    paramMap.next(convertToParamMap({ caseId: 'case-2' }));
+    fixture.detectChanges();
+
+    statusRequest.next(createDecision('case-1', 'server-1'));
+    statusRequest.complete();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.detail()).toBeNull();
+  });
+
+  it('ignores case decisions for another case or server', () => {
+    firstRequest.next(createDetail('server-1', 'case-1', true));
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    fixture.componentInstance.applyCaseDecision(createDecision('case-2', 'server-1'));
+    expect(fixture.componentInstance.detail()?.case.status).toBe('open');
+
+    fixture.componentInstance.applyCaseDecision(createDecision('case-1', 'server-2'));
+    expect(fixture.componentInstance.detail()?.case.status).toBe('open');
+  });
+
+  it('keeps success feedback visible after local detail update', () => {
+    firstRequest.next(createDetail('server-1', 'case-1', true));
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    const section = statusSection(fixture);
+    section.form.controls.status.setValue('in_review');
+    section.form.controls.statusReason.setValue('Needs staff review.');
+    section.submit();
+
+    statusRequest.next(createDecision('case-1', 'server-1'));
+    statusRequest.complete();
+    fixture.detectChanges();
+
+    expect(section.successMessage()).toBe('Case status updated.');
+    expect(fixture.nativeElement.textContent).toContain('Case status updated.');
+  });
 });
+
+function statusSection(
+  fixture: ComponentFixture<AntiAbuseCaseDetailPage>,
+): AntiAbuseCaseStatusTransitionSection {
+  return fixture.debugElement.query(By.directive(AntiAbuseCaseStatusTransitionSection))
+    .componentInstance as AntiAbuseCaseStatusTransitionSection;
+}
 
 function createActiveServer(
   selectedServer: WritableSignal<SelectedGameServer | null>,
@@ -508,4 +663,24 @@ function createDetail(
         ]
       : [],
   };
+}
+
+function createDecision(caseId: string, serverId = 'server-1') {
+  return {
+    id: caseId,
+    serverId,
+    title: 'Case',
+    summary: null,
+    status: 'in_review',
+    statusReason: 'Needs staff review.',
+    verdict: 'abuse_confirmed',
+    verdictReason: 'Verdict reason text.',
+    sanctionRequired: true,
+    noSanctionReason: null,
+    operatorNotes: 'Operator notes text.',
+    resolvedAt: null,
+    resolvedByUserId: null,
+    cancelledAt: null,
+    updatedAt: '2026-04-30T01:00:00.000Z',
+  } as const;
 }
