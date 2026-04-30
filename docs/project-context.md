@@ -99,6 +99,39 @@ Future public/private report rendering is a separate epic, but combat snapshots 
 
 ---
 
+## Progression Current Direction
+
+Epic N covers stats and character progression alignment. It must build on the current DB/RPC foundation instead of re-creating older placeholder workflows.
+
+Current progression expectations:
+
+- stat allocation final save uses canonical `save_stat_allocation(...)`;
+- frontend must not direct-write `hero_stats`, `hero.character_points`, `character_point_ledger` or audit tables;
+- UI plus/minus stat changes are local draft state and should not be audited;
+- final save is the auditable persistent mutation;
+- Character Points are the progression/trade currency stored on `hero.character_points` with lifetime baseline in `hero.total_character_points_earned` and history in `character_point_ledger`;
+- Health is hit points and must not be confused with Character Points.
+
+Progression formulas are DB-backed and configurable:
+
+- `hero_stat_upgrade_cost` controls stat upgrade cost;
+- `hero_stat_level_cap` controls stat cap;
+- `hero_experience_to_next_level` controls XP needed for the next level.
+
+The XP-to-next-level formula is a seed, not a hardcoded frontend rule. Admin/balancer may tune it through the formula system.
+
+Derived/combat stat expectations:
+
+- runtime derived stats are resolved on the fly from base stats, bonuses, derived stat definitions and formulas where applicable;
+- do not reintroduce `hero_derived` as runtime source of truth;
+- `critical_damage` is a derived/combat stat and active bonus target;
+- final critical damage starts from base 50% and adds active `critical_damage` bonuses;
+- combat uses `1 + finalCriticalDamagePercent / 100`, not hardcoded x2.
+
+Level-up persistence is not assumed complete. Codex should inspect current level/experience mutation paths before implementing any level-up workflow, and any persistent level/experience/Character Point mutation should go through a DB/RPC/domain workflow.
+
+---
+
 ## Canonical Terminology
 
 ### Character / Power

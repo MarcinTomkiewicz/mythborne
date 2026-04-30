@@ -1386,13 +1386,6 @@ Status: completed and accepted on 2026-04-30.
 **Blocker rule:**
 If the needed public RPC is missing from generated types or has a different signature than expected, stop and report DB/types blocker. Do not invent a frontend fallback.
 
-**Status:** Accepted 2026-04-30.
-
-- Implementation note: added `/game/trade` as a player-facing direct trade surface for create, respond, confirm, cancel and reject flows. Mutations go through public direct-trade RPCs via `DirectTradeActions`; the UI does not write directly to trade, lock, item status or transaction tables.
-- Architecture note: `TradePage` is a thin route shell. Workflow responsibilities are split into `TradeOverviewState`, `TradeCreateOfferState`, `TradeRespondOfferState`, `TradeOfferActionsState`, `TradeFeedbackState`, `TradeRequestToken` and pure validation/label helpers. `TradePage.providers` supplies the local state graph, and template option getters are kept free of form mutation side effects.
-- Verification: `npx tsc --noEmit` passed; targeted specs passed (`direct-trade-mappers.spec.ts`, `direct-trade-rpc.spec.ts`, `direct-trades.spec.ts`, `direct-trade-actions.spec.ts`, `trade-page.state.spec.ts`, 19 SUCCESS); `npm run build` passed with existing bundle budget/CommonJS warnings; route smoke `/game/trade -> 200`.
-- Manual smoke: create/respond/confirm/cancel/reject remains pending until sandbox data includes two heroes, active items, a valid session and a real trade flow.
-
 ---
 
 ## Task J4 — Auction gameplay UI through existing RPCs
@@ -1419,6 +1412,14 @@ If the needed public RPC is missing from generated types or has a different sign
 
 **Blocker rule:**
 If a required auction RPC/read model is missing or not present in generated types, stop and report DB/types blocker. Do not create a parallel market/listing flow.
+
+**Status:** Accepted 2026-04-30.
+
+- Implementation note: added `/game/auction` as a player-facing one-item auction surface for listing, bidding, buy-now, close and cancel flows. Mutations go through public auction RPCs via `PlayerAuctionActions`; the UI does not write directly to auction, lock, item status or transaction tables.
+- Architecture note: auction UI is split into `AuctionOverviewState`, `AuctionCreateListingState`, `AuctionListingActionsState`, `AuctionFeedbackState`, route-level `AuctionPageState` facade and pure validation/label helpers. The page is reachable from the game sidebar through `/game/auction`.
+- RPC result note: auction mutation results keep per-action semantics: create/cancel return `listingId`, bid returns `bidId`, buy-now returns `transactionId`, and close returns `transactionId | null`. Action guards use request token plus current server/hero/listing context instead of treating every RPC result as a listing id.
+- Verification: `npx tsc --noEmit` passed; targeted auction/sidebar specs passed (`player-auction-rpc.spec.ts`, `player-auction-actions.spec.ts`, `auction-page.state.spec.ts`, `game-sidebar.spec.ts`, 17 SUCCESS); `npm run build` passed with existing bundle budget/CommonJS warnings; route smoke `/game/auction` works through the game sidebar.
+- Manual smoke: create/bid/buy-now/cancel/close remains pending until sandbox data includes an active item, at least two heroes/users, Character Points and a real auction flow.
 
 ---
 
@@ -2221,61 +2222,198 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 
 # Epic N — Stats and progression
 
-## Task N1 — Stat terminology cleanup
+Epic N must follow the current DB/RPC reality, not the old placeholder version.
 
-**Goal:** Normalize HP/CP naming.
+Current source of truth:
+- stat allocation already uses canonical DB/RPC workflow from G6: `save_stat_allocation(...)`;
+- frontend must not write directly to `hero_stats`, `hero.character_points`, `character_point_ledger` or audit tables;
+- stat upgrade cost and stat cap formulas already exist: `hero_stat_upgrade_cost`, `hero_stat_level_cap`;
+- XP to next level is now formula-backed through `hero_experience_to_next_level`;
+- `critical_damage` is now a runtime derived/combat stat and active bonus target;
+- runtime derived/special stats must be resolved on the fly and must not reintroduce `hero_derived`.
+
+**Epic rule:** Do not implement a second stat allocation workflow. Do not hardcode progression formulas. Do not reintroduce `hero_derived`. Treat formula assignments and derived stat definitions as DB-backed balance configuration.
+
+---
+
+## Task N0 — Align generated DB types after Epic N DB foundation
+
+**Goal:** Make frontend aware of current progression DB foundation.
 
 **Scope:**
-- Health = hit points.
-- Character Points = progression/trade currency.
-- Replace legacy Hero Points/PR wording where relevant.
+- Confirm regenerated `database.types.ts` includes:
+  - `hero_experience_to_next_level` target/formula rows through formula read models;
+  - `critical_damage` in `derived_stat_definitions`;
+  - current `save_stat_allocation(...)` RPC signature;
+  - current `hero.character_points` and `hero.total_character_points_earned` fields;
+  - `character_point_ledger` fields used by progression/history UI.
+- Do not edit generated DB types manually.
+
+**Acceptance criteria:**
+- Generated types match current schema.
+- No frontend model uses raw DB rows directly as final domain models.
+- No docs/status files are updated before user confirmation.
+
+---
+
+## Task N1 — Terminology cleanup: Health vs Character Points
+
+**Goal:** Normalize player-facing and domain terminology so Health and Character Points are not confused.
+
+**Scope:**
+- Use `Health` for hit points.
+- Use `Character Points` consistently for progression/trade currency unless final product naming changes.
+- Replace legacy Hero Points / PR wording only where touched and safe.
 
 **Acceptance criteria:**
 - UI/domain terms reduce HP/CP confusion.
+- No schema assumptions are changed.
 
 ---
 
-## Task N2 — Stat allocation save via domain/RPC operation
+## Task N2 — Stat allocation alignment with existing RPC
 
-**Goal:** Make stat allocation save auditable and transactional.
+**Goal:** Ensure stat allocation UI uses the existing canonical DB workflow.
 
 **Scope:**
-- Validate available Character Points.
-- Validate caps.
-- Save stat changes.
-- Update resources.
-- Write audit.
-- Return typed result.
+- Use `save_stat_allocation(...)` for final save.
+- Keep plus/minus draft changes local and unaudited.
+- Map RPC result into an explicit domain result.
+- Refresh hero stats and Character Points after successful save.
+- Surface DB/RPC validation errors as user-readable messages.
 
 **Acceptance criteria:**
-- UI plus/minus clicks are not audited.
-- Final confirm/save is audited.
+- No direct frontend writes to `hero_stats`.
+- No direct frontend writes to `hero.character_points`.
+- No direct frontend writes to `character_point_ledger`.
+- Final save is auditable through DB workflow.
+- UI draft clicks are not audited.
 
 ---
 
-## Task N3 — Stat cap formula integration
+## Task N3 — Stat upgrade cost formula usage audit/fix
 
-**Goal:** Use formula target for stat caps.
-
-**Scope:**
-- `hero_stat_level_cap`.
-- Runtime should use formula assignment.
-
-**Acceptance criteria:**
-- Stat cap is formula-driven.
-
----
-
-## Task N4 — Stat upgrade cost formula integration
-
-**Goal:** Use formula target for stat upgrade cost.
+**Goal:** Ensure stat upgrade costs use the existing DB formula target.
 
 **Scope:**
-- `hero_stat_upgrade_cost`.
-- Runtime should use formula assignment.
+- Use `hero_stat_upgrade_cost` through current formula assignment resolver.
+- Pass the expected variables: `heroLevel`, `level`, `statLevel`.
+- Remove or isolate any old hardcoded cost fallback.
+- Keep formula preview/admin behavior consistent with formula governance.
 
 **Acceptance criteria:**
 - Upgrade costs are formula-driven.
+- Missing/disabled formula assignment is surfaced as configuration error or explicit technical fallback, not silently hidden.
+- Build and focused tests pass.
+
+---
+
+## Task N4 — Stat level cap formula usage audit/fix
+
+**Goal:** Ensure stat caps use the existing DB formula target.
+
+**Scope:**
+- Use `hero_stat_level_cap` through current formula assignment resolver.
+- Pass `heroLevel`.
+- Ensure allocation UI prevents or clearly blocks saves above cap.
+- Ensure DB/RPC validation remains source of truth for final save.
+
+**Acceptance criteria:**
+- Stat cap is formula-driven.
+- UI cap messaging is understandable.
+- Final save cannot bypass DB/RPC cap validation.
+
+---
+
+## Task N5 — XP to next level formula read/use path
+
+**Goal:** Use the new configurable XP-to-next-level formula.
+
+**Scope:**
+- Read assigned formula for `hero_experience_to_next_level`.
+- Evaluate it with `heroLevel`.
+- Use the result for level/progression display where applicable.
+- Do not hardcode XP thresholds in Angular.
+
+**Acceptance criteria:**
+- XP-to-next-level display uses formula assignment.
+- Admin/balancer can change formula without frontend code change.
+- Formula errors are visible and not silently replaced by an unrelated threshold.
+
+---
+
+## Task N6 — Level-up workflow preflight/design
+
+**Goal:** Inspect and define what is needed for actual hero level-up persistence.
+
+**Scope:**
+- Inspect current hero `level`, `experience`, Character Points and ledger handling.
+- Determine whether level-up currently happens anywhere.
+- Define desired DB/RPC workflow for:
+  - adding experience;
+  - checking `hero_experience_to_next_level`;
+  - increasing `hero.level`;
+  - granting Character Points where applicable;
+  - writing ledger/audit.
+- Do not implement schema or workflow in this inspect task unless explicitly assigned.
+
+**Acceptance criteria:**
+- Report identifies current implementation state and blockers.
+- Proposed workflow does not bypass Character Point ledger/audit.
+- No direct frontend level/experience mutation is introduced.
+
+---
+
+## Task N7 — Derived stat resolver cleanup, including critical damage
+
+**Goal:** Align runtime derived/combat stat resolver with current DB dictionaries.
+
+**Scope:**
+- Read `derived_stat_definitions` and active bonuses.
+- Ensure runtime can resolve health, defense, min_damage, max_damage, luck, critical_chance, critical_damage and evasion_chance.
+- `critical_damage` semantics:
+  - base critical damage percent = 50;
+  - plus active `critical_damage` bonuses;
+  - combat multiplier = `1 + finalCriticalDamagePercent / 100`.
+- Do not use `hero_derived`.
+
+**Acceptance criteria:**
+- `critical_damage` is available to combat resolver as percent.
+- Hardcoded crit x2 is not used in final combat path.
+- Derived stat resolver uses DB-backed definitions/bonus targets.
+
+---
+
+## Task N8 — Character Points display and ledger consistency
+
+**Goal:** Keep Character Points display and history consistent with DB truth.
+
+**Scope:**
+- Display current spendable/balance values from `hero.character_points` or approved helper/read model.
+- Use `hero.total_character_points_earned` only as lifetime/baseline where intended.
+- Use `character_point_ledger` for history views.
+- Avoid treating drachmas, resources and Character Points as interchangeable.
+
+**Acceptance criteria:**
+- Character Points UI does not recalculate ledger totals client-side as source of truth.
+- Trade/progression currency language stays clear.
+- History and balance views do not expose staff-only/audit-only fields to player UI.
+
+---
+
+## Task N9 — Progression admin/formula preview alignment
+
+**Goal:** Make progression formulas inspectable and previewable in admin tooling.
+
+**Scope:**
+- Ensure formula admin surfaces show `hero_stat_upgrade_cost`, `hero_stat_level_cap` and `hero_experience_to_next_level`.
+- Ensure allowed variables and default test context are visible.
+- If random is later used in progression formulas, use random preview/reroll behavior from the formula runtime/editor task.
+
+**Acceptance criteria:**
+- Admin can inspect active progression formula assignments.
+- Admin preview uses DB formula target metadata.
+- No hardcoded formula labels/descriptions replace DB labels/descriptions.
 
 ---
 

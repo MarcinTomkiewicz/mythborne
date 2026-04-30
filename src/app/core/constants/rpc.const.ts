@@ -52,6 +52,11 @@ export const RPC = {
   confirm_player_direct_trade_offer: 'confirm_player_direct_trade_offer',
   cancel_player_direct_trade_offer: 'cancel_player_direct_trade_offer',
   reject_player_direct_trade_offer: 'reject_player_direct_trade_offer',
+  create_player_auction_listing: 'create_player_auction_listing',
+  place_player_auction_bid: 'place_player_auction_bid',
+  buy_now_player_auction: 'buy_now_player_auction',
+  close_player_auction_listing: 'close_player_auction_listing',
+  cancel_player_auction_listing: 'cancel_player_auction_listing',
   save_stat_allocation: 'save_stat_allocation',
   update_entity_requirement: 'update_entity_requirement',
 } as const;

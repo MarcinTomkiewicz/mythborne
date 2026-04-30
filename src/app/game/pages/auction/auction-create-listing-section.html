@@ -1,0 +1,62 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-col gap-xs mb-md">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Create auction</h3>
+    <p class="muted-text mb-0">List one active item through the auction workflow.</p>
+  </div>
+
+  <form class="grid-form" [formGroup]="state.form" (ngSubmit)="state.submit()">
+    <label class="form-field">
+      <span>Item</span>
+      <p-autocomplete
+        formControlName="item"
+        [suggestions]="state.itemSuggestions()"
+        optionLabel="label"
+        [forceSelection]="true"
+        [dropdown]="true"
+        (completeMethod)="state.searchItemTargets($event)"
+      ></p-autocomplete>
+    </label>
+
+    <label class="form-field">
+      <span>Mode</span>
+      <p-select
+        formControlName="auctionMode"
+        [options]="state.modeOptions"
+        optionLabel="label"
+        optionValue="value"
+      ></p-select>
+    </label>
+
+    <label class="form-field">
+      <span>Starting bid CP</span>
+      <p-inputnumber
+        formControlName="startingBidCharacterPoints"
+        [min]="0"
+        [showButtons]="true"
+      ></p-inputnumber>
+    </label>
+
+    <label class="form-field">
+      <span>Buy now CP</span>
+      <p-inputnumber
+        formControlName="buyNowCharacterPoints"
+        [min]="0"
+        [showButtons]="true"
+      ></p-inputnumber>
+    </label>
+
+    <label class="form-field grid-col-span-2">
+      <span>Description</span>
+      <input pInputText type="text" formControlName="description" />
+    </label>
+
+    <div class="grid-col-span-2 flex-row-end-center">
+      <button
+        pButton
+        type="submit"
+        label="Create listing"
+        [disabled]="state.isSaving()"
+      ></button>
+    </div>
+  </form>
+</section>

@@ -79,6 +79,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: J1 - align trade/auction frontend plan with existing DB/RPC contract.
 - Completed and confirmed: J2 - direct trade read models and services.
 - Completed and confirmed: J3 - direct trade mutation UI through existing RPCs.
+- Completed and confirmed: J4 - auction gameplay UI through existing RPCs.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
@@ -216,7 +217,7 @@ Order reflects implementation priority, not final business priority.
 
 ### Trade / auctions frontend
 - Build frontend gameplay/admin surfaces for direct trade offers.
-- Build frontend gameplay/admin surfaces for auction listings, bids, buy now, cancellation, and closing.
+- Manual smoke gameplay auction listings, bids, buy now, cancellation, and closing once sandbox data includes active items, at least two heroes/users, Character Points and a real auction flow.
 - Use existing RPC/domain operations for trade and auction mutations instead of direct table writes.
 - Keep player-to-player trade based on Character Points.
 - Keep drachmas as system/vendor currency/resource unless a later decision changes that.

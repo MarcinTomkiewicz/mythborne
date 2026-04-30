@@ -35,4 +35,9 @@ export const gameRoutes: Routes = [
     loadComponent: () =>
       import('./pages/trade/trade-page').then((m) => m.TradePage),
   },
+  {
+    path: 'auction',
+    loadComponent: () =>
+      import('./pages/auction/auction-page').then((m) => m.AuctionPage),
+  },
 ];

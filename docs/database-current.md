@@ -181,6 +181,66 @@ Rules:
 - Relational `entity_field_change` creation/application remains a future dedicated workflow.
 - After applying schema/RPC migrations, regenerate `database.types.ts` so the typed frontend services see the current RPCs.
 
+## Update 2026-04-30 — Epic N progression DB foundation
+
+Epic N now has current DB/balance foundation for stat progression, XP-to-next-level and critical damage semantics. This is schema/config foundation only; frontend/domain implementation still must be done by Codex after type regeneration.
+
+### Existing stat allocation workflow
+
+Stat allocation is not a new Epic N DB task. The canonical workflow already exists from the gameplay audit/stat allocation slice:
+
+- `save_stat_allocation(...)` is the frontend-facing DB/RPC workflow for final stat allocation save.
+- UI plus/minus changes should remain local drafts and unaudited.
+- Final save must go through the RPC/domain workflow.
+- Frontend must not direct-write `hero_stats`, `hero.character_points`, `character_point_ledger`, or audit tables.
+
+### Progression formula targets
+
+Current active progression formula targets:
+
+- `hero_stat_level_cap`
+  - `scope_key = hero_progression`
+  - allowed variables: `heroLevel`
+  - current default formula: `heroLevel + 4`
+- `hero_stat_upgrade_cost`
+  - `scope_key = hero_progression`
+  - allowed variables: `heroLevel`, `level`, `statLevel`
+  - current default formula: `roundUp(4 + level * 2 + pow(level, 1.45), 5)`
+- `hero_experience_to_next_level`
+  - `scope_key = hero_progression`
+  - allowed variables: `heroLevel`
+  - current default formula: `roundUp(100 + heroLevel * 50 + pow(heroLevel, 2.1) * 25, 10)`
+
+`hero_experience_to_next_level` is a configurable formula seed, not a hardcoded frontend threshold table. Admin/balancer may rebalance it through the formula system.
+
+### Critical damage derived stat
+
+`critical_damage` is now present in `derived_stat_definitions` as a runtime combat stat:
+
+- `key = critical_damage`
+- `value_kind = decimal`
+- `calculation_kind = additive`
+- `base_source = zero`
+- `bonus_target_key = critical_damage`
+- `is_combat_stat = true`
+
+Runtime semantic decision:
+
+- base critical damage percent is 50;
+- active `critical_damage` bonuses are added on top;
+- final crit multiplier should be computed by combat runtime as `1 + finalCriticalDamagePercent / 100`.
+
+This replaces the old sandbox hardcoded crit multiplier x2. Do not treat `critical_damage` as a standalone formula target.
+
+### Codex implications for Epic N
+
+- Regenerate `database.types.ts` before implementing N frontend/domain tasks.
+- Do not recreate stat allocation RPC/workflow.
+- Do not hardcode stat cost, cap or XP thresholds in Angular.
+- Use formula assignment resolver for progression formulas.
+- Use `derived_stat_definitions` and active bonuses for runtime derived/combat stats.
+- Do not reintroduce `hero_derived` dependencies.
+
 ## Config governance status
 
 Confirmed frontend/admin work currently includes D1–D6 and G1–G5. The current backlog position is G6: audit gameplay persistent changes.

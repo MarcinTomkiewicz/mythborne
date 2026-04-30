@@ -153,7 +153,87 @@ A combat report should be able to display attack order, source labels, hit/evasi
 Full equipment stays private unless a future explicit UI decision exposes it.
 
 
-### Project name
+### Progression / Epic N Decisions — 2026-04-30
+
+### Scope
+
+Epic N covers stats, Character Points, derived progression values and level progression. It must use the current DB/RPC foundation and must not recreate old placeholder workflows.
+
+### Stat allocation
+
+Stat allocation final save uses canonical `save_stat_allocation(...)`.
+
+Rules:
+
+- plus/minus UI clicks are local draft changes and are not audited;
+- final save is the persistent/auditable mutation;
+- frontend must not direct-write `hero_stats`;
+- frontend must not direct-write `hero.character_points`;
+- frontend must not direct-write `character_point_ledger`;
+- frontend must not call low-level audit helpers for stat allocation.
+
+### Character Points and Health terminology
+
+- Health means hit points.
+- Character Points are progression/trade currency.
+- Character Points are stored on `hero.character_points`.
+- Lifetime total is stored on `hero.total_character_points_earned` where needed.
+- Balance history lives in `character_point_ledger`.
+
+Avoid mixing Character Points with drachmas/resources, and avoid using Health/HP language for Character Points.
+
+### Progression formulas
+
+Progression formulas are DB-backed and configurable through the formula system.
+
+Current formula targets:
+
+- `hero_stat_upgrade_cost`
+  - variables: `heroLevel`, `level`, `statLevel`;
+- `hero_stat_level_cap`
+  - variables: `heroLevel`;
+- `hero_experience_to_next_level`
+  - variables: `heroLevel`.
+
+Do not hardcode stat costs, stat caps or XP thresholds in Angular. Formula assignments are the source of truth.
+
+`hero_experience_to_next_level` is a configurable seed. It may be rebalanced later through admin formula tooling.
+
+### Critical damage
+
+`critical_damage` is a runtime derived/combat value and active bonus target.
+
+Current semantic rule:
+
+- base critical damage percent = 50;
+- active `critical_damage` bonuses add to that value;
+- final crit multiplier = `1 + finalCriticalDamagePercent / 100`.
+
+`critical_damage` is not a standalone formula target. It replaces the old sandbox hardcoded crit multiplier x2.
+
+### Derived stats
+
+Runtime derived/special stats must be resolved on the fly from DB-backed definitions, base stats, bonuses and formula assignments where applicable.
+
+Do not reintroduce `hero_derived` as runtime source of truth.
+
+### Level-up workflow
+
+Level-up persistence is not assumed complete just because XP formula exists.
+
+Before implementing level-up, Codex must inspect current level/experience mutation paths and define the DB/RPC/domain workflow for:
+
+- adding experience;
+- checking `hero_experience_to_next_level`;
+- increasing `hero.level`;
+- granting Character Points where applicable;
+- writing ledger/audit.
+
+Any persistent mutation of level, experience or Character Points should go through a DB/RPC/domain workflow, not direct Angular table writes.
+
+---
+
+## Project name
 
 Current project/game name: **Mythborne**.
 

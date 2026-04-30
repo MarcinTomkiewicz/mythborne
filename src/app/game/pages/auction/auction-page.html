@@ -1,0 +1,24 @@
+<div class="flex-col gap-xl min-w-0">
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Game</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">Auctions</h2>
+        <p class="muted-text mb-0">One-item auctions on the selected server.</p>
+      </div>
+      <span class="tag-badge tag-badge--info">
+        Listings: {{ page.overview.overview().listings.length }}
+      </span>
+    </div>
+  </section>
+
+  @if (page.feedback.error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+  @if (page.feedback.successMessage(); as message) {
+    <p-message severity="success">{{ message }}</p-message>
+  }
+
+  <app-auction-create-listing-section />
+  <app-auction-listings-section />
+</div>

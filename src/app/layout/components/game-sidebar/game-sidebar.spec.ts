@@ -56,6 +56,7 @@ describe('GameSidebar', () => {
 
     expect(urls).toContain('/hero/dashboard');
     expect(urls).toContain('/game/combat');
+    expect(urls).toContain('/game/auction');
   });
 
   it('hides the admin link for normal logged-in players', () => {
@@ -90,6 +91,7 @@ describe('GameSidebar', () => {
 
     expect(urls).not.toContain('/hero/dashboard');
     expect(urls).not.toContain('/game/combat');
+    expect(urls).not.toContain('/game/auction');
     expect(urls).toContain('/admin');
   });
 });
