@@ -76,6 +76,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: I2 - filter scrapped items from normal inventory.
 - Completed and confirmed: I3 - implement safe scrap behavior skeleton.
 - Completed and confirmed: I4 - staff item recovery operation.
+- Completed and confirmed: J1 - align trade/auction frontend plan with existing DB/RPC contract.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.

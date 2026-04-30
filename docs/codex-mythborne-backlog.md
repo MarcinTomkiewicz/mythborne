@@ -1320,6 +1320,8 @@ Known current DB/RPC concepts for this epic:
 
 ## Task J1 — Align trade/auction frontend plan with existing DB/RPC contract
 
+Status: completed and accepted on 2026-04-30.
+
 **Goal:** Replace the older market/listing assumptions with the current direct-trade and one-item auction model.
 
 **Scope:**
@@ -1334,6 +1336,7 @@ Known current DB/RPC concepts for this epic:
 - Report identifies any outdated market/listing assumptions in app code or prompts.
 - No new schema is proposed for player market listings.
 - No code changes unless explicitly requested.
+- Implementation note: inspect confirmed that J2 can proceed on the current direct-trade and one-item auction DB/RPC contract. Generated types include the expected public player RPCs for direct trade and auctions, while helper RPCs such as unlock/release/finalize remain internal and should not be treated as frontend player contracts. No active `market_listings` frontend path was found in `src`, and no new player market schema is required.
 
 ---
 
