@@ -58,6 +58,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: H6 - player relationship declaration form model.
 - Completed and confirmed: H7 - player relationship declaration submission.
 - Completed and confirmed: H8 - player declaration list/status read-model service slice.
+- Completed and confirmed: H9 - staff relationship declaration review service slice.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
@@ -81,7 +82,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I7 - building bonus and requirement explainability.
 - Completed and confirmed: UX-I7b - DB-driven central requirement editor for Buildings admin.
 - Completed and confirmed: UX-I8 - anti-abuse decision explainability pass.
-- Current backlog task: wait for user commit, then continue with H9 - staff declaration review.
+- Current backlog task: wait for user commit, then continue with H10 - player abuse report form model.
 - G6 follow-up planning note: remaining gameplay audit slices are major item operations, trade operations once frontend flows exist, and estate/building irreversible changes.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 

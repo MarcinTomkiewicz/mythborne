@@ -1120,6 +1120,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H9 — Staff declaration review
 
+**Status:** Done / confirmed 2026-04-30 as service/read-model slice. Staff-facing UI remains a later integration step.
+
 **Goal:** Staff can accept/reject/revoke declarations.
 
 **Scope:**
@@ -1129,6 +1131,7 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 **Acceptance criteria:**
 - Staff decision and reason are stored and visible.
+- Service confirms the declaration belongs to the selected server before loading linked rows or sending a decision workflow request.
 
 ---
 
