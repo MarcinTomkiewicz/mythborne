@@ -1867,173 +1867,165 @@ Before implementing U0/H frontend tasks, Codex must:
 
 ---
 
-## Update 2026-04-30 — DB/RPC preflight, G6, H coverage and PvE planning
+## DB-backed UI explainability metadata
 
-### DB/RPC preflight discipline
+Admin/staff/config UI must not rely on raw keys or JSON as the only visible explanation when DB metadata exists.
 
-Before Codex starts a task that mutates persistent state or writes audit, perform a focused DB preflight for that task:
+Current decision:
 
-- required RPC/domain operation exists in live DB and generated `database.types.ts`;
-- frontend is not expected to direct-write critical tables;
-- required dictionary rows exist and are active;
-- required `audit_action_types` and `audit_entity_types` rows exist and are active;
-- search/list UI has a DB-backed read model and does not require broad frontend fetches.
+- technical keys remain stable and may be shown as secondary metadata;
+- primary labels, descriptions, helper text, impact summaries and warnings should come from DB-backed metadata where available;
+- Angular should not create permanent hardcoded dictionaries for configurable gameplay/config values when the database exposes a dictionary/read model;
+- `metadata_json` remains lightweight and must not replace relational domain systems.
 
-This is now an active implementation rule. Do not rely on backlog presence alone as proof that the database contract is complete.
+Canonical metadata contracts:
 
-### G6 stat allocation save
+- `ui_metadata_entries`
+- `get_ui_metadata_entries(...)`
 
-Stat allocation save is a critical gameplay mutation and is now a database-owned workflow.
+Seeded metadata namespaces include config governance scopes, config change kinds/statuses/visibility, value types, server config sources, gameplay block reasons, staff candidate eligibility reasons, preview kinds, config managed entity types, applies-to kinds and effective value sources.
 
-Current DB/RPC contract:
+## Config definition explainability
 
-- `save_stat_allocation(p_hero_id uuid, p_stat_values_json jsonb, p_character_points_spent integer, p_reason text, p_request_id text)` exists in current schema/dump.
-- It updates `hero_stats`, spends Character Points through `apply_character_points_delta(...)` / `character_point_ledger`, and writes `gameplay.stat_allocation.saved` audit atomically.
+`config_definition_ui_metadata` is the per-config-definition UI metadata layer.
 
-Decision:
+It stores admin-facing helper text, gameplay impact summary, change warning, preview kind and grouping.
 
-- frontend must use `save_stat_allocation(...)` for stat allocation save;
-- frontend must not do separate `hero_stats` update + Character Points update + frontend audit write in this flow;
-- `audit_action_types.key = gameplay.stat_allocation.saved` and `audit_entity_types.key = hero` must remain active.
+Canonical read contracts:
 
-Future possible improvement:
+- `get_config_definition_ui_metadata(...)`
+- `get_config_definition_explainability(...)`
 
-- DB-side `calculate_stat_allocation_cost(...)` / formula-backed stat allocation cost resolver.
+Rules:
 
-### Requirement editor DB path
+- config governance screens should use `get_config_definition_explainability(...)` instead of reconstructing governance semantics in frontend switch statements;
+- `server_required` means a selected server is needed before showing the effective server-scoped value;
+- `not_value_config` means the definition governs a relational system and should use a dedicated read/preview model instead of scalar/json config editing;
+- target/scope in config change entry UI should be derived from DB definition metadata and explained, not presented as a fake editable choice.
 
-Central requirements are not only a preview/read system. They now have a canonical mutation path for `entity_requirements`.
+## Admin preview contracts
 
-Current DB/RPC contract:
+Canonical preview registry:
 
-- `create_entity_requirement(...)`;
-- `update_entity_requirement(...)`;
-- `deactivate_entity_requirement(...)`;
-- `reorder_entity_requirements(...)`;
-- `validate_entity_requirement_payload(...)` helper;
-- `assert_can_manage_entity_requirements(...)` helper.
+- `get_admin_preview_contracts()`.
 
-Decision:
+Canonical preview RPCs:
 
-- requirement editor must use DB-backed `requirement_definitions` as the requirement type dictionary;
-- requirement editor must use the canonical RPCs above for create/update/deactivate/reorder;
-- requirement editor must not use legacy `building_requirements`, `buildings.requirements`, or `buildings.rank_required`;
-- requirement mutations are audited through `config.entity_requirement.*` audit actions.
+- `get_item_quality_impact_preview(...)`
+- `get_building_progression_preview(...)`
+- `get_bonus_impact_preview(...)`
+- `get_requirement_impact_preview(...)`
 
-### Relationship declaration DB path
+Rules:
 
-Player relationship declarations provide anti-abuse context and are created through a canonical DB workflow.
+- item quality preview reads `item_generation_qualities`; do not hardcode exactly three quality rows;
+- building preview explains district availability, effective caps and `0 = unlimited`;
+- bonus preview uses semantic bonus dictionaries and `entity_bonuses`;
+- quality may scale bonus value only when `quality_scales_value = true`;
+- quality never scales `level_interval`;
+- requirement preview uses `requirement_definitions` and `entity_requirements`, not legacy requirements JSON.
 
-Current DB/RPC contract:
+## Staff candidate search read model
 
-- `create_player_relationship_declaration(...)`;
-- `set_player_relationship_declaration_decision(...)`.
+`search_server_staff_candidates(...)` is the canonical server-scoped staff candidate search RPC.
 
-Decision:
+Rules:
 
-- frontend must use `create_player_relationship_declaration(...)` instead of direct inserts into declaration/participant/item/trade reference tables;
-- declaration creation is audited as `anti_abuse.declaration.created`;
-- decision/status changes are audited as `anti_abuse.declaration.decision_updated`.
+- frontend must not fetch broad `user_data` pools and filter up to large limits client-side for staff candidate search;
+- frontend must not read `auth.users` directly;
+- staff candidate eligibility flags should come from DB-side read model/helper logic;
+- eligibility reasons should be displayed through human-readable DB metadata, not raw keys as primary text.
 
-### H preflight status
+## Localization note for future design
 
-H-family DB preflight is green for the currently known read/dictionary/create/decision/sanction scope.
+Language should eventually be supported at two levels:
 
-Current coverage:
+- server default language;
+- private account/user language preference.
 
-- dictionary rows exist for anti-abuse signal types, sanction types, player report types, and relationship declaration types;
-- report creation/decision flows exist;
-- relationship declaration creation/decision flows exist;
-- case/sanction target search and paginated browser RPCs exist;
-- moderation visible/full history read RPCs exist;
-- known audit dictionary rows exist for currently identified H workflows.
-
-If a future H task adds a new mutating workflow or a new aggregate read model, it still needs its own focused preflight.
-
-### Epic I item lifecycle DB path
-
-Epic I item lifecycle now has DB-owned mutation and recovery workflows.
-
-Current DB/RPC contract:
-
-- `scrap_hero_item(...)`;
-- `recover_scrapped_item(...)`;
-- `search_recoverable_scrapped_items_page(...)`.
-
-Decision:
-
-- frontend must use `scrap_hero_item(...)` instead of direct `items` update/delete;
-- no-affix active items with no historical references may be hard-deleted by DB workflow;
-- affix-bearing or historically referenced items become `scrapped`/recoverable;
-- recovery is staff/admin-only through `recover_scrapped_item(...)`;
-- lifecycle scrap/recovery is not vendor sell/scrap payout in drachmas; vendor economy remains a separate slice.
-
-### Epic J trade/auction DB path
-
-Epic J must follow the current direct trade / one-item auction model instead of the older generic market-listing concept.
-
-Current DB/RPC contract:
-
-- direct trade and auction runtime already exist;
-- `player_trade_transaction_items` now stores lightweight item snapshots for completed direct trade / auction sale transaction lines;
-- `trade_item_value_bucket(...)` exists for approximate anti-abuse value bucketing;
-- `fill_player_trade_transaction_item_snapshot()` and `trg_fill_player_trade_transaction_item_snapshot` fill snapshots for new transaction item rows;
-- `audit_player_trade_transaction_completed()` and `trg_audit_player_trade_transaction_completed` write completion audit for completed direct trade / auction sale transactions;
-- audit actions `trade.direct_trade.completed` and `trade.auction_sale.completed` are active.
-
-Decision:
-
-- do not introduce a new `market_listings` table unless a later explicit design decision changes the model;
-- Codex must use existing direct trade and auction RPCs, not direct table writes;
-- transaction item snapshots are historical/evidence data for anti-abuse similarity, reporting and debug;
-- snapshots should remain lightweight and must not become a full item copy;
-- monitor growth of `player_trade_transaction_items` because legal repeated lending/shared gear transfers may produce many snapshot rows; consider retention/archiving/partitioning/lighter snapshots later if needed.
-
-### PvE exploration/trials decisions so far
-
-The PvE foundation is being planned before migration. Current decisions:
-
-- PvE is exploration plus trials, not classic “monster hunt” terminology.
-- Daily limit applies to trials, not raw movement steps.
-- Premium increases number of attempts, not quality of trial or drop outcome.
-- Step flow: trial opportunity check first; if no trial opportunity, encounter-or-nothing is checked.
-- Encounter and trial never happen at the same step.
-- Trial flow: opportunity → equal random active trial selection → manifestation → minigame completion.
-- All active trial definitions are selected equally; no trial weights.
-- Dry step count affects trial opportunity only and resets after any trial opportunity attempt, even if manifestation fails.
-- Each base stat should have its own trial definition/archetype.
-- Trial definition points to `minigame_key`; minigame interprets difficulty.
-- Difficulty tiers are `easy`, `medium`, `hard` and are one source of truth for difficulty semantics.
-- Encounter types are `combat`, `resource`, `buff`, `debuff`; `nothing` is a step outcome, not an encounter definition.
-- Encounter definitions are configurable and can have multiple lore/description variants.
-- Encounter selection has no weights at current design stage; selection is equal among active qualified definitions.
-- Buff/debuff does not stack. If an active exploration effect exists, buff/debuff encounters are not eligible. Active effect expires on trial or combat encounter, not resource/nothing.
-- Trial manifestation caps are flat values by `difficulty × district`, not complex formulas.
-- Trial reward item counts are planned as ranges by `difficulty × district`.
-- Item quality remains Luck-driven within allowed caps/profiles. District/difficulty affect reward ranges/profiles/counts, not guaranteed quality.
-- Daily trial count is a critical product-level balance decision and should not be casually changed by live server operators.
-- Exploration graph/current-state model is still being refined; current direction is minimal `hero_explorations` plus nodes/edges/steps/counters/effects, avoiding duplicated state.
-
-### Future content/localization decision
-
-Database-seeded text/content such as descriptions, helper text, encounter/trial lore variants and system messages should eventually be editable, localizable, and reviewable. Do not assume all user-facing content can live permanently only in migrations.
-
-### UX note carried forward
-
-The admin section currently described as “Saved canonical bonus impact” is valid as a DB-backed saved-state preview, but the UI should eventually use human-readable language and likely be collapsed/lightened so it does not look like a technical debug panel.
+This is a remembered future-design note, not a requirement to implement localization in the current DB explainability slice.
 
 ---
 
-## Future notes / memory notes
+# Update 2026-04-30 — Epic K/L DB foundation and working standards
 
-- Language should be supported at two levels later: a default language for a server/world and a private language preference for each account/user.
-- Daily trial count is a critical product-level balance decision. It should require broad acceptance and must not be casually changed by live-server operators.
-- Database-backed text/content such as descriptions, helper text, encounter/trial lore variants, and system messages should eventually be editable, localizable, and reviewable. Migrations may seed initial content, but permanent hardcoded content is not the long-term direction.
-- Admin/test override should eventually cover daily attempt pools in a reusable way: daily trials first, later daily PvP attacks.
-- The intermediate item quality display name is still open. Current `Quality` is not good enough as a final user-facing label; regular/normal may remain hidden as a displayed quality, and `Outstanding` remains the highest tier.
-- Bonus/admin UX note: saved DB-backed bonus impact preview is useful, but should be renamed in human language and likely collapsed/lightened so it does not look like a technical debug panel.
-- Every new audit-writing workflow must preflight `audit_action_types` and `audit_entity_types`.
-- Future stat allocation work may need DB-side `calculate_stat_allocation_cost(...)` or a formula-backed cost resolver.
-- Epic V preflight: before equipment implementation, design canonical equip/unequip/bulk equip/saved loadout RPCs, with requirement check at equip time, hand-pair logic, and audit.
-- Monitor growth of `player_trade_transaction_items` after adding transaction item snapshots; consider retention, archiving, partitioning or lighter snapshots if legal lending/shared gear flows create too much data.
-- Vendor scrap/sell for drachmas is a separate economy workflow and must not be conflated with current lifecycle `scrap_hero_item(...)`.
+## Epic K identity / same-IP-device path
+
+Epic K is DB/backend-ready for the currently agreed scope.
+
+Decisions:
+
+- IP/device signals are review aids, not proof of abuse and not an automatic punishment path.
+- Raw IP must not be stored in the database by default.
+- Identity observations use hashed material produced by trusted backend code, not by Angular payloads.
+- The trusted capture path is Supabase Edge Function `record-identity-observation`, written in backend TypeScript/Deno under `supabase/functions/record-identity-observation/index.ts`.
+- The Edge Function verifies the authenticated user, hashes IP / IP prefix / user-agent / optional device token with `IDENTITY_HASH_PEPPER`, and calls service-role-only `record_anti_abuse_identity_observation(...)`.
+- Deploying the Edge Function does not create observation rows. Rows appear only after authenticated invocation.
+- Shared household / same-IP declarations remain review context. They do not disable signals by themselves.
+
+Current DB/backend foundation:
+
+- `anti_abuse_identity_observations` stores hash-only identity observations with retention.
+- `record_anti_abuse_identity_observation(...)` and `purge_expired_anti_abuse_identity_observations(...)` are service-role-only.
+- `generate_identity_observation_anti_abuse_signals(...)` creates same-IP/login and same-device/multiple-account review signals.
+- `generate_trade_transaction_identity_anti_abuse_signals(...)` creates same-IP/device trade review signals.
+- Trigger wrappers exist and public grants have been removed.
+- Signal types `same_ip_login`, `same_device_multiple_accounts`, and `same_ip_trade` are active.
+
+Codex implications:
+
+- frontend must call the Edge Function, not insert into `anti_abuse_identity_observations`;
+- frontend needs a stable client/device token helper, but the token itself is not a secret;
+- smoke tests should verify rows in `anti_abuse_identity_observations` and generated review signals when hashes match;
+- if Edge Function secrets are missing, report a deployment/config blocker instead of weakening the model.
+
+## Epic L PvE exploration/trials foundation
+
+Epic L has moved from planning into applied DB foundation up to **L-DB4b**.
+
+Applied and verified in conversation:
+
+- **L-DB1** — PvE dictionaries, formula targets, reward foundation.
+- **L-DB2** — exploration runtime state tables.
+- **L-DB3a** — exploration bootstrap / state read / start step timer RPCs.
+- **L-DB3b** — step resolution, trial opportunity, encounter/nothing, challenge attempt creation, district snapshot support.
+- **L-DB3c** — reward grants, real item persistence, challenge completion and auto-resolve helpers.
+- **L-DB4a** — sandbox/admin debug state, add remaining actions, reset exploration, skip timer, test grant reward profile.
+- **L-DB4b** — force next outcome overrides, force challenge result, `items.metadata_json`, and override-aware step resolution.
+
+Not yet applied:
+
+- **L-DB4c** — preview/simulation RPCs. This must be the first DB continuation item in a new conversation, split into small SQL chunks.
+
+Current gameplay decisions now represented by DB foundation:
+
+- exploration is graph-based and server-side;
+- per hero/day/difficulty exploration graphs are allowed, so a hero may have separate easy/medium/hard graphs on the same day;
+- daily action counters are generic for `trial` now and `attack` later;
+- `remaining_trials = 0` blocks starting/continuing real exploration steps but does not block opening the exploration start/status screen;
+- backtracking and known-path travel cost time and do not roll trial/encounter/nothing;
+- unknown discovery steps resolve by trial opportunity first, then encounter/nothing;
+- trial opportunity consumes one daily trial regardless of manifestation or completion result;
+- trial definitions are selected equally among active rows;
+- manifestation fail consumes the trial, resets dry-step count, gives no reward and creates no minigame;
+- manifested trial and combat encounter create `hero_exploration_challenge_attempts` and block further exploration until completed/auto-resolved/admin-forced;
+- auto-resolve is intentionally worse than manual play but is not automatic failure;
+- reward success can create XP, matching CP, resources, real items in `items`, and exploration effects;
+- XP always grants the same amount of Character Points; standalone CP is explicit and separate;
+- reward grants prevent double payout for the same source/profile/hero;
+- item reward persistence is required because sandbox testing must allow the full loop: exploration → trial → item → equip → changed stats/chances → combat/testing.
+
+## Reward and leveling memory note
+
+Leveling remains a separate future system, but the reward foundation must not block it.
+
+Future direction:
+
+- XP required for next level should be formula-driven;
+- level-up may grant rewards, including stat bonuses on selected levels or every N levels;
+- `level_up` should be able to use the generic reward profile system later;
+- this is not implemented in L-DB1..L-DB4b and should be treated as future work.
+
+## Working-standard clarification
+
+“Notatki dla pamięci” are only for cross-cutting or future notes discovered while working on something else. Do not put the current task’s own acceptance criteria into memory notes. When docs are updated, valid memory notes should be moved into `current-decisions.md` or `project-context.md` so they do not remain only in conversation.

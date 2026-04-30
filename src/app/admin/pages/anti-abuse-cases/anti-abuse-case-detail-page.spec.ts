@@ -8,6 +8,7 @@ import {
   AntiAbuseCaseDetailReadModel,
 } from '../../../core/domain/anti-abuse/anti-abuse-case.model';
 import { AntiAbuseCaseDecision } from '../../../core/domain/anti-abuse/anti-abuse-decision.model';
+import { AntiAbuseSanctionDecision } from '../../../core/domain/anti-abuse/anti-abuse-sanction.model';
 import {
   SelectedGameServer,
   ServerAccessState,
@@ -35,6 +36,7 @@ describe('AntiAbuseCaseDetailPage', () => {
   let firstRequest: Subject<AntiAbuseCaseDetailReadModel>;
   let secondRequest: Subject<AntiAbuseCaseDetailReadModel>;
   let statusRequest: Subject<AntiAbuseCaseDecision>;
+  let sanctionStatusRequest: Subject<AntiAbuseSanctionDecision>;
 
   beforeEach(async () => {
     selectedServer = signal(createServer('server-1'));
@@ -42,6 +44,7 @@ describe('AntiAbuseCaseDetailPage', () => {
     firstRequest = new Subject<AntiAbuseCaseDetailReadModel>();
     secondRequest = new Subject<AntiAbuseCaseDetailReadModel>();
     statusRequest = new Subject<AntiAbuseCaseDecision>();
+    sanctionStatusRequest = new Subject<AntiAbuseSanctionDecision>();
     caseDetails = jasmine.createSpyObj<AntiAbuseCaseDetails>('AntiAbuseCaseDetails', [
       'getCaseDetail',
     ]);
@@ -60,11 +63,13 @@ describe('AntiAbuseCaseDetailPage', () => {
     });
     decisions = jasmine.createSpyObj<AntiAbuseDecisions>('AntiAbuseDecisions', [
       'setCaseDecision',
+      'setSanctionStatus',
       'createSanction',
       'createCharacterPointPenalty',
       'addSanctionItem',
     ]);
     decisions.setCaseDecision.and.returnValue(statusRequest);
+    decisions.setSanctionStatus.and.returnValue(sanctionStatusRequest);
     moderationActions = jasmine.createSpyObj<ModerationActions>('ModerationActions', [
       'canSearchTargets',
       'searchHeroTargets',

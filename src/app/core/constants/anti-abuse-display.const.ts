@@ -68,6 +68,11 @@ export const ANTI_ABUSE_SANCTION_STATUS_FALLBACK_LABELS: Record<
   failed: 'Failed',
 };
 
+export const ANTI_ABUSE_SANCTION_STATUS_OPTIONS: SelectOption<AntiAbuseSanctionStatus>[] =
+  Object.entries(ANTI_ABUSE_SANCTION_STATUS_FALLBACK_LABELS).map(
+    ([value, label]) => ({ label, value: value as AntiAbuseSanctionStatus }),
+  );
+
 // Fallback enum labels only. Dictionary-backed type labels/descriptions come from DB.
 export const PLAYER_ABUSE_REPORT_STATUS_FALLBACK_LABELS: Record<
   PlayerAbuseReportStatus,

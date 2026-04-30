@@ -1,0 +1,80 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="flex-col gap-xs min-w-0">
+      <p class="card-legend mb-0">Sanctions</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Update sanction status</h3>
+      <p class="muted-text mb-0">
+        Progress, complete, cancel, forgive or fail an existing sanction through the audited workflow.
+      </p>
+    </div>
+  </div>
+
+  @if (error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  @if (successMessage(); as message) {
+    <p-message severity="success">{{ message }}</p-message>
+  }
+
+  @if (sanctions().length) {
+    <form [formGroup]="form" class="mg-surface-card p-md flex-col gap-md" (ngSubmit)="submit()">
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Sanction</span>
+          <p-select
+            class="w-100"
+            formControlName="sanctionId"
+            [options]="sanctionOptions()"
+            optionLabel="label"
+            optionValue="value"
+            (onChange)="onSanctionChange()"
+          />
+        </label>
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Status</span>
+          <p-select
+            class="w-100"
+            formControlName="status"
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </label>
+      </div>
+
+      @if (selectedSanction(); as sanction) {
+        <div class="flex-row-start-center flex-wrap gap-xs">
+          <span class="mg-tag">type: {{ sanction.sanctionTypeKey }}</span>
+          <span class="mg-tag">current: {{ sanction.status }}</span>
+          <span class="mg-tag">target: {{ sanction.targetHeroId ?? sanction.targetUserId }}</span>
+        </div>
+      }
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Status reason</span>
+        <textarea
+          pInputText
+          rows="3"
+          class="w-100"
+          formControlName="statusReason"
+          placeholder="Required reason for this sanction status change"
+        ></textarea>
+      </label>
+
+      <div class="flex-row-end-center">
+        <p-button
+          type="submit"
+          label="Update sanction status"
+          [loading]="isSaving()"
+          [disabled]="isSaving()"
+        />
+      </div>
+    </form>
+  } @else {
+    <p-message severity="info">
+      Create a sanction before updating sanction status.
+    </p-message>
+  }
+</section>

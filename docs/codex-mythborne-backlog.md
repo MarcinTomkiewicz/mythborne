@@ -1143,6 +1143,8 @@ Status: completed and accepted on 2026-04-30.
 
 ## Task H20 — Sanction status update operation
 
+**Status:** Done / confirmed 2026-04-30.
+
 **Goal:** Staff can progress/cancel/forgive/fail sanctions.
 
 **Scope:**
@@ -1156,6 +1158,7 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - Status updates persist with timestamps/reasons.
+- Implementation note: sanction status updates are wired into selected-server case detail through canonical `AntiAbuseDecisions.setSanctionStatus(...)`. The UI requires status reason, uses central sanction status options, labels sanction choices with type/status/target/reason preview, refreshes detail after success, and guards stale success/error responses against case/server changes and selected-sanction changes. Full manual smoke is deferred until representative gameplay sanctions/cases exist.
 
 ---
 

@@ -76,6 +76,12 @@
         (sanctionCreated)="refresh()"
       />
 
+      <app-anti-abuse-case-sanction-status-section
+        [caseItem]="detailModel.case"
+        [sanctions]="detailModel.sanctions"
+        (sanctionStatusSaved)="refresh()"
+      />
+
       <app-anti-abuse-case-detail-sections [detail]="detailModel" />
     }
   }
