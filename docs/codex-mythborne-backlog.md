@@ -1174,6 +1174,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H12 — Player abuse report list/status view
 
+**Status:** Done / confirmed 2026-04-30 as service/read-model slice. Player-facing UI integration remains a later slice.
+
 **Goal:** Player can see report status.
 
 **Scope:**

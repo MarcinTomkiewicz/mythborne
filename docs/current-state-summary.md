@@ -464,6 +464,10 @@ Still pending at the gameplay level even if partially supported in schema:
 - H11 sends only generated RPC args supported by the current DB contract. The frontend validates `serverId`, `reportTypeKey`, `title`, `description` and `reportingHeroId`; it does not require or send a fake `reportingUserId` because the DB workflow resolves the authenticated user.
 - H11 maps optional accused hero, related item, related trade id and trade reference only when present, requires both returned `report_id` and `case_id`, and does not direct-read/write `player_abuse_reports` or call separate audit helpers.
 - H11 is a service-only slice with no meaningful UI smoke path. Technical verification covered RPC payloads, unsupported user id args, required fields, empty RPC responses, `npx tsc --noEmit`, targeted specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- H12 accepted on 2026-04-30 as a service/read-model slice: player abuse report list loading now requires `serverId`, `heroId` and `userId`, combines hero-owned reports and user-only reports, and defensively filters final rows by `server_id`.
+- H12 loads DB-backed report type labels including inactive/deprecated referenced keys, loads linked case status through server-scoped `anti_abuse_cases` reads, and exposes player-facing status as `playerStatusMessage` plus limited linked case status.
+- H12 player-facing models omit staff-only and global account fields such as `adminNotes`, `adminDescription`, `statusReason`, `reportingUserId`, `accusedUserId`, and linked case `operatorNotes`/`verdictReason`.
+- H12 has no meaningful UI smoke path yet. Technical verification covered mapper and service specs for hero/user reports, server scope, cross-server leakage prevention, inactive report type labels, linked case status, staff-only field privacy, `npx tsc --noEmit` and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services
