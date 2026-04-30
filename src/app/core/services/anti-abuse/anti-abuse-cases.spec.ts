@@ -4,7 +4,11 @@ import { TABLES } from '../../constants/tables.const';
 import { FilterOperator } from '../../enums/filter-operators';
 import { Row } from '../../types/supabase.types';
 import { Backend } from '../backend/backend';
-import { AntiAbuseCases, toCaseListQueryFilters } from './anti-abuse-cases';
+import {
+  AntiAbuseCases,
+  toCaseListQueryFilters,
+  toParticipantQueryFilters,
+} from './anti-abuse-cases';
 
 describe('AntiAbuseCases', () => {
   let backend: jasmine.SpyObj<Backend>;
@@ -12,7 +16,16 @@ describe('AntiAbuseCases', () => {
 
   beforeEach(() => {
     backend = jasmine.createSpyObj<Backend>('Backend', ['getAll']);
-    backend.getAll.and.returnValue(of([caseRow()]));
+    backend.getAll.and.callFake(((opts: { table: string }) => {
+      switch (opts.table) {
+        case TABLES.anti_abuse_case_participants:
+          return of([participantRow()]);
+        case TABLES.anti_abuse_cases:
+          return of([caseRow()]);
+        default:
+          return of([]);
+      }
+    }) as Backend['getAll']);
 
     TestBed.configureTestingModule({
       providers: [
@@ -72,6 +85,61 @@ describe('AntiAbuseCases', () => {
     });
   });
 
+  it('builds participant filters independently from case filters', () => {
+    expect(
+      toParticipantQueryFilters({
+        participantHeroId: ' hero-1 ',
+        participantUserId: ' user-1 ',
+      }),
+    ).toEqual({
+      heroId: { operator: FilterOperator.EQ, value: 'hero-1' },
+      userId: { operator: FilterOperator.EQ, value: 'user-1' },
+    });
+  });
+
+  it('loads participant-matched cases with selected server scope', async () => {
+    await firstValueFrom(
+      service.getCasesForServer({
+        serverId: 'server-1',
+        participantHeroId: 'hero-1',
+      }),
+    );
+
+    expect(backend.getAll.calls.argsFor(0)[0]).toEqual(
+      jasmine.objectContaining({
+        table: TABLES.anti_abuse_case_participants,
+        filters: { heroId: { operator: FilterOperator.EQ, value: 'hero-1' } },
+        camelCase: false,
+      }),
+    );
+    expect(backend.getAll.calls.argsFor(1)[0]).toEqual(
+      jasmine.objectContaining({
+        table: TABLES.anti_abuse_cases,
+        filters: jasmine.objectContaining({
+          serverId: { operator: FilterOperator.EQ, value: 'server-1' },
+          id: { operator: FilterOperator.IN, value: ['case-1'] },
+        }),
+      }),
+    );
+  });
+
+  it('does not load cases when participant filter has no matching case ids', async () => {
+    backend.getAll.and.callFake(((opts: { table: string }) =>
+      opts.table === TABLES.anti_abuse_case_participants
+        ? of([])
+        : of([caseRow()])) as Backend['getAll']);
+
+    const cases = await firstValueFrom(
+      service.getCasesForServer({
+        serverId: 'server-1',
+        participantUserId: 'user-missing',
+      }),
+    );
+
+    expect(cases).toEqual([]);
+    expect(backend.getAll).toHaveBeenCalledTimes(1);
+  });
+
   it('requires server id so staff case lists cannot fall back to global cases', () => {
     expect(() => toCaseListQueryFilters({ serverId: ' ' })).toThrowError(
       'serverId is required for anti-abuse case list.',
@@ -106,5 +174,19 @@ function caseRow(): Row<'anti_abuse_cases'> {
     updated_at: '2026-04-30T09:10:00.000Z',
     verdict: null,
     verdict_reason: null,
+  };
+}
+
+function participantRow(): Row<'anti_abuse_case_participants'> {
+  return {
+    case_id: 'case-1',
+    created_at: '2026-04-30T09:05:00.000Z',
+    created_by_user_id: null,
+    description: null,
+    hero_id: 'hero-1',
+    id: 'participant-1',
+    reason: 'Primary actor.',
+    role_key: 'actor',
+    user_id: 'user-1',
   };
 }

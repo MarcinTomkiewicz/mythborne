@@ -58,6 +58,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'Anti-abuse',
+    title: 'Case list',
+    description:
+      'Server-scoped staff queue for anti-abuse cases, participant filters and status review.',
+    routerLink: '/admin/anti-abuse-cases',
+    accessPolicy: 'selectedServerAntiAbuseTriage',
+  },
+  {
     legend: 'Staff',
     title: 'Staff management',
     description:
@@ -184,6 +192,11 @@ export const CONFIG_CHANGE_SETS_PAGE_LINKS: readonly AdminTagLink[] = [
 export const ANTI_ABUSE_CONFIG_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
   {
+    label: 'Case list',
+    routerLink: '/admin/anti-abuse-cases',
+    accessPolicy: 'selectedServerAntiAbuseTriage',
+  },
+  {
     label: 'Staff management',
     routerLink: '/admin/staff-management',
     accessPolicy: 'selectedServerManagement',
@@ -196,6 +209,25 @@ export const ANTI_ABUSE_CONFIG_PAGE_LINKS: readonly AdminTagLink[] = [
   {
     label: 'Config definitions',
     routerLink: '/admin/config-definitions',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const ANTI_ABUSE_CASES_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Anti-abuse config',
+    routerLink: '/admin/anti-abuse-config',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Moderation actions',
+    routerLink: '/admin/moderation-actions',
+    accessPolicy: 'selectedServerModeration',
+  },
+  {
+    label: 'Audit logs',
+    routerLink: '/admin/audit-logs',
     accessPolicy: 'selectedServerManagement',
   },
 ];
@@ -221,6 +253,11 @@ export const STAFF_MANAGEMENT_PAGE_LINKS: readonly AdminTagLink[] = [
 
 export const MODERATION_ACTIONS_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Anti-abuse cases',
+    routerLink: '/admin/anti-abuse-cases',
+    accessPolicy: 'selectedServerAntiAbuseTriage',
+  },
   {
     label: 'Staff management',
     routerLink: '/admin/staff-management',

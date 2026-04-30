@@ -59,6 +59,8 @@ export function resolveStaffAccessPolicy(
     canManageSelectedServer: hasSelectedServer && hasSelectedServerManagementAuthority,
     canModerateSelectedServer:
       hasSelectedServer && hasSelectedServerModerationAuthority,
+    canTriageAntiAbuseSelectedServer:
+      hasSelectedServer && hasSelectedServerModerationAuthority,
     canTestSelectedServer: hasSelectedServer && hasSelectedServerTestingAccess,
     canAccessPlayerGameplay:
       !access.isMembershipBlocked && !isStaffGameplayBlocked,

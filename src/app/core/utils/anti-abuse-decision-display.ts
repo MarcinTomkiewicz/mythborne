@@ -1,5 +1,7 @@
 import {
   ANTI_ABUSE_CASE_STATUS_FALLBACK_LABELS,
+  ANTI_ABUSE_CASE_SOURCE_FALLBACK_LABELS,
+  ANTI_ABUSE_CASE_VERDICT_FALLBACK_LABELS,
   ANTI_ABUSE_SANCTION_STATUS_FALLBACK_LABELS,
   PLAYER_ABUSE_REPORT_STATUS_FALLBACK_LABELS,
   PLAYER_RELATIONSHIP_DECLARATION_STATUS_FALLBACK_LABELS,
@@ -9,8 +11,12 @@ import {
   AntiAbuseDictionaryEntry,
 } from '../domain/anti-abuse/anti-abuse-dictionary.model';
 import {
+  AntiAbuseCaseSource,
+} from '../domain/anti-abuse/anti-abuse-case.model';
+import {
   AntiAbuseCaseDecision,
   AntiAbuseCaseStatus,
+  AntiAbuseCaseVerdict,
   AntiAbuseSanctionDecision,
   AntiAbuseSanctionItemDecision,
   AntiAbuseSanctionStatus,
@@ -58,6 +64,14 @@ export function declarationTypeMetadata(
 
 export function antiAbuseCaseStatusLabel(status: AntiAbuseCaseStatus): string {
   return ANTI_ABUSE_CASE_STATUS_FALLBACK_LABELS[status] ?? status;
+}
+
+export function antiAbuseCaseSourceLabel(source: AntiAbuseCaseSource): string {
+  return ANTI_ABUSE_CASE_SOURCE_FALLBACK_LABELS[source] ?? source;
+}
+
+export function antiAbuseCaseVerdictLabel(verdict: AntiAbuseCaseVerdict): string {
+  return ANTI_ABUSE_CASE_VERDICT_FALLBACK_LABELS[verdict] ?? verdict;
 }
 
 export function antiAbuseSanctionStatusLabel(

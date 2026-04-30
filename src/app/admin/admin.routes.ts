@@ -54,6 +54,20 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'anti-abuse-cases',
+    loadComponent: () =>
+      import('./pages/anti-abuse-cases/anti-abuse-cases-page').then(
+        (m) => m.AntiAbuseCasesPage,
+      ),
+  },
+  {
+    path: 'anti-abuse-cases/:caseId',
+    loadComponent: () =>
+      import('./pages/anti-abuse-cases/anti-abuse-case-detail-page').then(
+        (m) => m.AntiAbuseCaseDetailPage,
+      ),
+  },
+  {
     path: 'staff-management',
     loadComponent: () =>
       import('./pages/staff-management/staff-management-page').then(

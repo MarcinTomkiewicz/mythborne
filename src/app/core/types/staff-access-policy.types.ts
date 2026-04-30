@@ -26,6 +26,7 @@ export interface StaffAccessPolicy {
   canAccessSelectedServerStaffTools: boolean;
   canManageSelectedServer: boolean;
   canModerateSelectedServer: boolean;
+  canTriageAntiAbuseSelectedServer: boolean;
   canTestSelectedServer: boolean;
   canAccessPlayerGameplay: boolean;
   isStaffGameplayBlocked: boolean;

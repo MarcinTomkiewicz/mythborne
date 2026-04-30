@@ -35,6 +35,8 @@ export function canAccessAdminNavigation(
       return policy.isGlobalAdmin || policy.canManageSelectedServer;
     case 'selectedServerModeration':
       return policy.isGlobalAdmin || policy.canModerateSelectedServer;
+    case 'selectedServerAntiAbuseTriage':
+      return policy.isGlobalAdmin || policy.canTriageAntiAbuseSelectedServer;
     case 'selectedServerTesting':
       return policy.isGlobalAdmin || policy.canTestSelectedServer;
     case 'playerGameplay':

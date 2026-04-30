@@ -1189,6 +1189,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H13 — Staff case list page
 
+Status: completed and accepted on 2026-04-30.
+
 **Goal:** Staff can browse cases.
 
 **Scope:**
@@ -1197,6 +1199,7 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 **Acceptance criteria:**
 - Staff can open case detail from list.
+- Implementation note: full manual data smoke with real case/signal content is deferred until gameplay data exists.
 
 ---
 

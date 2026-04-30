@@ -7,6 +7,7 @@ export type AdminNavigationAccessPolicy =
   | 'adminShell'
   | 'selectedServerManagement'
   | 'selectedServerModeration'
+  | 'selectedServerAntiAbuseTriage'
   | 'selectedServerTesting'
   | 'playerGameplay';
 

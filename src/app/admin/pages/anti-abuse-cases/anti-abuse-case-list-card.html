@@ -1,0 +1,42 @@
+@let item = caseItem();
+
+<article class="mg-surface-card p-md flex-col gap-md">
+  <div class="flex-row-between-center flex-col-sm gap-sm">
+    <div class="flex-col gap-xs min-w-0">
+      <p class="card-legend mb-0">{{ item.updatedAt }}</p>
+      <h4 class="mg-section__title mg-section__title--xs mb-0">
+        {{ item.title }}
+      </h4>
+      @if (item.summary) {
+        <p class="muted-text mb-0">{{ item.summary }}</p>
+      }
+    </div>
+
+    <div class="flex-row-start-center flex-wrap gap-xs">
+      <span class="mg-tag">{{ statusLabel() }}</span>
+      <span class="mg-tag">source: {{ sourceLabel() }}</span>
+      <span class="mg-tag">signals: {{ item.signalCount }}</span>
+      @if (verdictLabel(); as verdict) {
+        <span class="mg-tag">verdict: {{ verdict }}</span>
+      }
+      @if (item.possibleRecidivism) {
+        <span class="mg-tag">possible recidivism</span>
+      }
+    </div>
+  </div>
+
+  <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+    @for (fact of facts(); track fact.label) {
+      <div class="flex-col gap-xs min-w-0">
+        <span class="muted-text">{{ fact.label }}</span>
+        <strong class="heading-color text-break">{{ fact.value }}</strong>
+      </div>
+    }
+  </div>
+
+  <div class="flex-row-end-center">
+    <a pButton [routerLink]="['/admin/anti-abuse-cases', item.id]">
+      Open detail
+    </a>
+  </div>
+</article>

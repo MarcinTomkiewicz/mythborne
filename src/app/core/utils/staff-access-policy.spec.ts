@@ -15,6 +15,7 @@ describe('staff access policy', () => {
     expect(policy.canAccessAdminShell).toBeFalse();
     expect(policy.canManageSelectedServer).toBeFalse();
     expect(policy.canModerateSelectedServer).toBeFalse();
+    expect(policy.canTriageAntiAbuseSelectedServer).toBeFalse();
     expect(policy.canAccessPlayerGameplay).toBeTrue();
   });
 
@@ -28,6 +29,7 @@ describe('staff access policy', () => {
     expect(policy.canAccessAdminShell).toBeTrue();
     expect(policy.canManageSelectedServer).toBeTrue();
     expect(policy.canModerateSelectedServer).toBeTrue();
+    expect(policy.canTriageAntiAbuseSelectedServer).toBeTrue();
     expect(policy.canAccessPlayerGameplay).toBeTrue();
   });
 
@@ -40,6 +42,7 @@ describe('staff access policy', () => {
     expect(policy.canAccessAdminShell).toBeTrue();
     expect(policy.canManageSelectedServer).toBeFalse();
     expect(policy.canModerateSelectedServer).toBeFalse();
+    expect(policy.canTriageAntiAbuseSelectedServer).toBeFalse();
     expect(policy.canTestSelectedServer).toBeFalse();
   });
 
@@ -71,6 +74,7 @@ describe('staff access policy', () => {
     expect(policy.isAssignedStaffOnSelectedServer).toBeTrue();
     expect(policy.canManageSelectedServer).toBeTrue();
     expect(policy.canModerateSelectedServer).toBeTrue();
+    expect(policy.canTriageAntiAbuseSelectedServer).toBeTrue();
     expect(policy.isStaffGameplayBlocked).toBeTrue();
   });
 
@@ -86,6 +90,7 @@ describe('staff access policy', () => {
     expect(policy.canAccessAdminShell).toBeTrue();
     expect(policy.canManageSelectedServer).toBeFalse();
     expect(policy.canModerateSelectedServer).toBeTrue();
+    expect(policy.canTriageAntiAbuseSelectedServer).toBeTrue();
     expect(policy.isStaffGameplayBlocked).toBeTrue();
   });
 

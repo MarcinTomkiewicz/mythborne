@@ -1,0 +1,89 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading anti-abuse case..."
+  description="Loading selected-server case detail."
+/>
+
+<div class="flex-col gap-xl w-100">
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Anti-abuse</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">Case detail</h2>
+        <p class="muted-text mb-0">
+          Minimal route target for the selected-server case detail. Full review layout is covered by H14.
+        </p>
+      </div>
+
+      <app-admin-tag-links [links]="links" />
+    </div>
+
+    <app-admin-server-switcher />
+  </section>
+
+  @if (!selectedServer()) {
+    <p-message severity="warn">
+      Select a server before reviewing anti-abuse cases.
+    </p-message>
+  } @else if (!canTriageAntiAbuse()) {
+    <p-message severity="warn">
+      This account can open the admin shell, but cannot review anti-abuse cases in the selected server context.
+    </p-message>
+  } @else {
+    @if (error(); as message) {
+      <p-message severity="error">
+        {{ message }}
+      </p-message>
+    }
+
+    @if (detail(); as detailModel) {
+      <section class="mg-card p-lg w-100">
+        <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+          <div class="flex-col gap-xs min-w-0">
+            <p class="card-legend mb-0">{{ detailModel.case.updatedAt }}</p>
+            <h3 class="mg-section__title mg-section__title--xs mb-0">
+              {{ detailModel.case.title }}
+            </h3>
+            @if (detailModel.case.summary) {
+              <p class="muted-text mb-0">{{ detailModel.case.summary }}</p>
+            }
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            <p-button label="Refresh" [text]="true" (onClick)="refresh()" />
+            <a pButton severity="secondary" [text]="true" routerLink="/admin/anti-abuse-cases">
+              Back to cases
+            </a>
+          </div>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-xs mb-lg">
+          <span class="mg-tag">{{ detailModel.case.status }}</span>
+          <span class="mg-tag">source: {{ detailModel.case.source }}</span>
+          <span class="mg-tag">signals: {{ detailModel.signals.length }}</span>
+          <span class="mg-tag">participants: {{ detailModel.participants.length }}</span>
+          <span class="mg-tag">reports: {{ detailModel.reports.length }}</span>
+          <span class="mg-tag">declarations: {{ detailModel.declarations.length }}</span>
+          <span class="mg-tag">sanctions: {{ detailModel.sanctions.length }}</span>
+        </div>
+
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+          <div class="flex-col gap-xs min-w-0">
+            <span class="muted-text">Primary hero</span>
+            <strong class="heading-color text-break">{{ detailModel.case.primaryHeroId ?? '-' }}</strong>
+          </div>
+
+          <div class="flex-col gap-xs min-w-0">
+            <span class="muted-text">Primary user</span>
+            <strong class="heading-color text-break">{{ detailModel.case.primaryUserId ?? '-' }}</strong>
+          </div>
+
+          <div class="flex-col gap-xs min-w-0">
+            <span class="muted-text">Assigned staff</span>
+            <strong class="heading-color text-break">{{ detailModel.case.assignedToUserId ?? '-' }}</strong>
+          </div>
+        </div>
+      </section>
+    }
+  }
+</div>

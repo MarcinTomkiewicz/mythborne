@@ -1,0 +1,164 @@
+<app-loading-overlay [visible]="isLoading() && error() === null" label="Loading anti-abuse cases..." description="Refreshing selected-server case list." />
+
+<div class="flex-col gap-xl w-100">
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Anti-abuse</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">Case list</h2>
+        <p class="muted-text mb-0">
+          Server-scoped staff queue for abuse reports, signals and manual review cases.
+        </p>
+      </div>
+
+      <app-admin-tag-links [links]="links" />
+    </div>
+
+    <app-admin-server-switcher />
+  </section>
+
+  @if (!selectedServer()) {
+    <p-message severity="warn">
+      Select a server before reviewing anti-abuse cases.
+    </p-message>
+  } @else if (!canTriageAntiAbuse()) {
+    <p-message severity="warn">
+      This account can open the admin shell, but cannot review anti-abuse cases in the selected server context.
+    </p-message>
+  } @else {
+    @if (error(); as message) {
+      <p-message severity="error">
+        {{ message }}
+      </p-message>
+    }
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Filters</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            {{ cases().length }} selected-server cases
+          </h3>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <p-button label="Apply filters" (onClick)="applyFilters()" />
+          <p-button label="Refresh" [text]="true" (onClick)="refresh()" />
+          <p-button
+            label="Reset filters"
+            severity="secondary"
+            [text]="true"
+            (onClick)="resetFilters()"
+          />
+        </div>
+      </div>
+
+      <form [formGroup]="filterForm" class="mg-surface-card p-md">
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Status</span>
+            <p-select
+              class="w-100"
+              formControlName="status"
+              [options]="statusOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="All statuses"
+              [showClear]="true"
+            />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Verdict</span>
+            <p-select
+              class="w-100"
+              formControlName="verdict"
+              [options]="verdictOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="All verdicts"
+              [showClear]="true"
+            />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Source</span>
+            <p-select
+              class="w-100"
+              formControlName="source"
+              [options]="sourceOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="All sources"
+              [showClear]="true"
+            />
+          </label>
+
+          <label class="flex-col gap-sm min-w-0">
+            <span class="muted-text">Participant hero</span>
+            <p-autocomplete
+              styleClass="w-100"
+              [fluid]="true"
+              [formControl]="targetSearch.heroTargetControl"
+              [suggestions]="targetSearch.heroTargetSuggestions()"
+              optionLabel="label" [forceSelection]="true" [showClear]="true" [minLength]="targetSearch.minQueryLength" [delay]="250"
+              placeholder="Search hero, account or technical id"
+              (completeMethod)="searchHeroTargets($event)"
+              (onSelect)="selectHeroTarget($event.value)"
+              (onClear)="clearHeroTarget()"
+            />
+            @if (targetSearch.heroTargetControl.value; as target) {
+              <span class="muted-text">{{ target.description }}</span>
+            }
+          </label>
+
+          <label class="flex-col gap-sm min-w-0">
+            <span class="muted-text">Participant user/account</span>
+            <p-autocomplete
+              styleClass="w-100"
+              [fluid]="true"
+              [formControl]="targetSearch.userTargetControl"
+              [suggestions]="targetSearch.userTargetSuggestions()"
+              optionLabel="label" [forceSelection]="true" [showClear]="true" [minLength]="targetSearch.minQueryLength" [delay]="250"
+              placeholder="Search account, hero or technical id"
+              (completeMethod)="searchUserTargets($event)"
+              (onSelect)="selectUserTarget($event.value)"
+              (onClear)="clearUserTarget()"
+            />
+            @if (targetSearch.userTargetControl.value; as target) {
+              <span class="muted-text">{{ target.description }}</span>
+            }
+          </label>
+
+          @if (!targetSearch.isLoadingAccess() && !targetSearch.canSearchTargets()) {
+            <span class="muted-text">Target search is unavailable for the current server context.</span>
+          }
+
+          @if (targetSearch.message(); as message) {
+            <span class="muted-text">{{ message }}</span>
+          }
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Created from</span>
+            <input pInputText class="w-100" type="datetime-local" formControlName="createdFrom" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Created to</span>
+            <input pInputText class="w-100" type="datetime-local" formControlName="createdTo" />
+          </label>
+        </div>
+      </form>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-md">
+        @for (caseItem of cases(); track caseItem.id) {
+          <app-anti-abuse-case-list-card [caseItem]="caseItem" />
+        } @empty {
+          <p class="muted-text mb-0">No anti-abuse cases matched the current filters.</p>
+        }
+      </div>
+    </section>
+  }
+</div>

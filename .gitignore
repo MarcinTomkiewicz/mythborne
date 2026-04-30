@@ -40,3 +40,11 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Supabase local/dev artifacts
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+supabase/.env.*
+.env
+.env.*

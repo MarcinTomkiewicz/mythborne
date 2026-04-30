@@ -56,6 +56,33 @@ describe('admin navigation access', () => {
     expect(result.map((card) => card.routerLink)).toEqual(['/admin/moderation']);
   });
 
+  it('shows anti-abuse triage cards only through explicit triage policy', () => {
+    const cards = createCards(
+      'selectedServerAntiAbuseTriage',
+      '/admin/anti-abuse-cases',
+    );
+
+    expect(
+      filterAdminDashboardCards(
+        cards,
+        createPolicy({
+          canAccessAdminShell: true,
+          canModerateSelectedServer: true,
+        }),
+      ),
+    ).toEqual([]);
+    expect(
+      filterAdminDashboardCards(
+        cards,
+        createPolicy({
+          canAccessAdminShell: true,
+          canTriageAntiAbuseSelectedServer: true,
+        }),
+      ).map((card) => card.routerLink),
+    ).toEqual(['/admin/anti-abuse-cases']);
+  });
+
+
   it('shows testing cards to testers without exposing management cards', () => {
     const cards = [
       ...createCards('selectedServerManagement'),
@@ -151,6 +178,7 @@ function createPolicy(overrides: Partial<StaffAccessPolicy> = {}): StaffAccessPo
     canAccessSelectedServerStaffTools: false,
     canManageSelectedServer: false,
     canModerateSelectedServer: false,
+    canTriageAntiAbuseSelectedServer: false,
     canTestSelectedServer: false,
     canAccessPlayerGameplay: true,
     isStaffGameplayBlocked: false,
