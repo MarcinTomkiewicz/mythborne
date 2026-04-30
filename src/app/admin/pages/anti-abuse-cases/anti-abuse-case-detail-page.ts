@@ -12,6 +12,7 @@ import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-polic
 import { ANTI_ABUSE_CASES_PAGE_LINKS } from '../../admin-navigation.config';
 import { AdminServerSwitcher } from '../../components/admin-server-switcher/admin-server-switcher';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
+import { AntiAbuseCaseDetailSections } from './anti-abuse-case-detail-sections';
 
 @Component({
   selector: 'app-anti-abuse-case-detail-page',
@@ -23,6 +24,7 @@ import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links'
     LoadingOverlay,
     AdminServerSwitcher,
     AdminTagLinks,
+    AntiAbuseCaseDetailSections,
   ],
   templateUrl: './anti-abuse-case-detail-page.html',
 })

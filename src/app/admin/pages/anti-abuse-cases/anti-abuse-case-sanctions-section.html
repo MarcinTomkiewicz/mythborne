@@ -1,0 +1,44 @@
+<section class="mg-card p-lg w-100">
+  <h3 class="mg-section__title mg-section__title--xs mb-lg">Sanctions and penalties</h3>
+  <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+    <div class="flex-col gap-md">
+      @for (sanction of sanctions(); track sanction.id) {
+        @let type = sanctionType(sanction);
+        <article class="mg-surface-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center flex-col-sm gap-sm">
+            <strong class="heading-color text-break">{{ type?.label ?? sanction.sanctionTypeKey }}</strong>
+            <span class="mg-tag">{{ sanctionStatusLabel(sanction.status) }}</span>
+          </div>
+          @if (type?.adminDescription) {
+            <span class="muted-text text-break">{{ type?.adminDescription }}</span>
+          }
+          <span class="muted-text text-break">Type key: {{ sanction.sanctionTypeKey }}</span>
+          <span class="heading-color text-break">Reason: {{ sanction.reason }}</span>
+          <span class="heading-color text-break">Status reason: {{ value(sanction.statusReason) }}</span>
+          <span class="heading-color text-break">Operator notes: {{ value(sanction.operatorNotes) }}</span>
+          <span class="text-break">Target: {{ value(sanction.targetHeroId ?? sanction.targetUserId) }}</span>
+          <span class="text-break">CP / duration: {{ value(sanction.amountCharacterPoints) }} / {{ value(sanction.durationDays) }}</span>
+        </article>
+      } @empty {
+        <p class="muted-text mb-0">No sanctions linked to this case.</p>
+      }
+    </div>
+
+    <div class="flex-col gap-md">
+      @for (penalty of penalties(); track penalty.id) {
+        <article class="mg-surface-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center flex-col-sm gap-sm">
+            <strong class="heading-color text-break">{{ penalty.heroId }}</strong>
+            <span class="mg-tag">{{ sanctionStatusLabel(penalty.status) }}</span>
+          </div>
+          <span class="heading-color text-break">Reason: {{ penalty.reason }}</span>
+          <span class="heading-color text-break">Status reason: {{ value(penalty.statusReason) }}</span>
+          <span class="heading-color text-break">Operator notes: {{ value(penalty.operatorNotes) }}</span>
+          <span class="text-break">Total / paid / remaining: {{ penalty.totalAmount }} / {{ penalty.paidAmount }} / {{ penalty.remainingAmount }}</span>
+        </article>
+      } @empty {
+        <p class="muted-text mb-0">No Character Point penalties linked to this case.</p>
+      }
+    </div>
+  </div>
+</section>

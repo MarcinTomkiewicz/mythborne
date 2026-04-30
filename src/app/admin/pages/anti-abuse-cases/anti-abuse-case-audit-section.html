@@ -1,0 +1,33 @@
+<section class="mg-card p-lg w-100">
+  <h3 class="mg-section__title mg-section__title--xs mb-lg">Audit logs</h3>
+  <div class="flex-col gap-md">
+    @for (log of auditLogs(); track log.id) {
+      <article class="mg-surface-card p-md flex-col gap-md">
+        <div class="flex-row-between-center flex-col-sm gap-sm">
+          <div class="flex-col gap-xs min-w-0">
+            <p class="card-legend mb-0">{{ log.createdAt }}</p>
+            <strong class="heading-color text-break">{{ auditActionLabel(log) }}</strong>
+            <span class="heading-color text-break">{{ value(log.reason) }}</span>
+          </div>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            <span class="mg-tag">{{ log.severity }}</span>
+            <span class="mg-tag">entity: {{ auditEntityLabel(log) }}</span>
+          </div>
+        </div>
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md">
+          <span class="text-break">Entity id: {{ value(log.entityId) }}</span>
+          <span class="text-break">Actor: {{ value(log.actorHeroId ?? log.actorUserId) }}</span>
+          <span class="text-break">Target: {{ value(log.targetHeroId ?? log.targetUserId) }}</span>
+          <span class="text-break">Request: {{ value(log.requestId) }}</span>
+        </div>
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md">
+          <app-collapsed-json-preview label="Metadata JSON" [value]="log.metadataJson" />
+          <app-collapsed-json-preview label="Old value JSON" [value]="log.oldValueJson" />
+          <app-collapsed-json-preview label="New value JSON" [value]="log.newValueJson" />
+        </div>
+      </article>
+    } @empty {
+      <p class="muted-text mb-0">No audit logs linked to this case.</p>
+    }
+  </div>
+</section>

@@ -244,3 +244,94 @@ export function sanctionItemRow(): Row<'anti_abuse_sanction_items'> {
     source_hero_id: 'hero-2',
   };
 }
+
+export function sanctionTypeRow(): Row<'anti_abuse_sanction_types'> {
+  return {
+    admin_description: 'Staff sanction description.',
+    category: 'points',
+    created_at: '2026-04-30T08:00:00.000Z',
+    created_by: null,
+    description: 'Removes Character Points.',
+    helper_text: 'Use for confirmed abuse.',
+    id: 'sanction-type-1',
+    is_active: false,
+    key: 'character_point_fine',
+    label: 'Character Point fine',
+    requires_character_points_amount: true,
+    requires_duration_days: false,
+    requires_item_selection: false,
+    requires_reason: true,
+    requires_source_hero: false,
+    requires_target_hero: true,
+    sort_order: 10,
+    updated_at: '2026-04-30T08:00:00.000Z',
+    updated_by: null,
+  };
+}
+
+export function reportTypeRow(): Row<'player_abuse_report_types'> {
+  return {
+    admin_description: 'Staff report description.',
+    category: 'trade',
+    created_at: '2026-04-30T08:00:00.000Z',
+    created_by: null,
+    description: 'Report a trade scam.',
+    helper_text: 'Attach trade context.',
+    id: 'report-type-1',
+    is_active: false,
+    key: 'scam',
+    label: 'Trade scam',
+    requires_accused_hero: true,
+    requires_description: true,
+    requires_item_selection: false,
+    requires_trade_selection: true,
+    sort_order: 10,
+    updated_at: '2026-04-30T08:00:00.000Z',
+    updated_by: null,
+  };
+}
+
+export function declarationTypeRow(): Row<'player_relationship_declaration_types'> {
+  return {
+    admin_description: 'Staff declaration description.',
+    category: 'relationship',
+    created_at: '2026-04-30T08:00:00.000Z',
+    created_by: null,
+    description: 'Shared household declaration.',
+    helper_text: 'Review participant overlap.',
+    id: 'declaration-type-1',
+    is_active: false,
+    key: 'shared_household',
+    label: 'Shared household',
+    max_participants: 4,
+    min_participants: 2,
+    requires_amount: false,
+    requires_expiration: false,
+    requires_item_selection: false,
+    requires_trade_selection: false,
+    sort_order: 10,
+    updated_at: '2026-04-30T08:00:00.000Z',
+    updated_by: null,
+  };
+}
+
+export function signalTypeRow(): Row<'anti_abuse_signal_types'> {
+  return {
+    admin_description: 'Staff signal description.',
+    category: 'trade',
+    created_at: '2026-04-30T08:00:00.000Z',
+    created_by: null,
+    default_confidence: 0.8,
+    default_score: 25,
+    default_severity: 'warning',
+    description: 'Potential trade funnel.',
+    helper_text: 'Review trade graph.',
+    id: 'signal-type-1',
+    is_active: false,
+    key: 'trade_funnel',
+    label: 'Trade funnel signal',
+    sort_order: 10,
+    updated_at: '2026-04-30T08:00:00.000Z',
+    updated_by: null,
+  };
+}

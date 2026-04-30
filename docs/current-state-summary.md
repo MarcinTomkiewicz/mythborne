@@ -1,6 +1,6 @@
 # Monster Hunt - Current State Summary
 
-Updated: 2026-04-29
+Updated: 2026-04-30
 
 This file summarizes the current implementation state against:
 - `docs/project-context.md`
@@ -470,8 +470,13 @@ Still pending at the gameplay level even if partially supported in schema:
 - H12 has no meaningful UI smoke path yet. Technical verification covered mapper and service specs for hero/user reports, server scope, cross-server leakage prevention, inactive report type labels, linked case status, staff-only field privacy, `npx tsc --noEmit` and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - H13 accepted on 2026-04-30: staff can browse selected-server anti-abuse cases at `/admin/anti-abuse-cases`, gated by explicit anti-abuse triage access and linked from the admin navigation.
 - H13 case list filters cover status, verdict, source, created date range and participant target filters. Participant filtering uses existing server-scoped moderation target search autocomplete for hero/account lookup, not UUID-only text fields, while raw technical ids remain searchable through that safe target-search path.
-- H13 list loading is manual through `Apply filters`, guards stale list responses, clears participant target controls/form filters/applied filters on selected-server or access changes, and guards stale autocomplete suggestions. The minimal `/admin/anti-abuse-cases/:caseId` route exists as a stable detail target for opening from the list; full detail UI remains H14.
+- H13 list loading is manual through `Apply filters`, guards stale list responses, clears participant target controls/form filters/applied filters on selected-server or access changes, and guards stale autocomplete suggestions. `/admin/anti-abuse-cases/:caseId` is the staff case detail route implemented by H14.
 - H13 was verified with `npx tsc --noEmit`, targeted H13/admin-access/anti-abuse display specs, `npm run build`, and route smoke for `/admin/anti-abuse-cases` plus `/admin/anti-abuse-cases/:caseId`; build still has the known bundle budget/CommonJS warnings but no hard failure. Full manual data smoke with real case/signal content is deferred until gameplay data exists.
+- H14 accepted on 2026-04-30: staff can review selected-server anti-abuse case details at `/admin/anti-abuse-cases/:caseId`, gated by anti-abuse triage access and backed by the server-scoped `AntiAbuseCaseDetails` aggregate.
+- H14 detail includes staff-facing sections for header/status/verdict/reasons/operator notes, participants, signals, reports, declarations, audit logs, sanctions, Character Point penalties and sanction items. The UI is split into small section components and remains read-only: no mutating RPC, direct writes or separate audit writes are introduced.
+- H14 uses DB-backed anti-abuse dictionary labels as primary staff-facing labels for signal, report, declaration and sanction types. Raw technical keys remain secondary metadata, and referenced inactive/deprecated dictionary rows are loaded through `AntiAbuseReferencedDictionaries`.
+- H14 keeps JSON payloads in a shared collapsed `CollapsedJsonPreview` diagnostic component. Repeated empty-value display uses `displayValue`.
+- H14 was verified with `npx tsc --noEmit`, targeted H14/H5 specs (`anti-abuse-case-detail-page.spec.ts` and `anti-abuse-case-details.spec.ts`), `npm run build`, and route smoke for `/admin/anti-abuse-cases` plus `/admin/anti-abuse-cases/case-1`; build still has the known bundle budget/CommonJS warnings but no hard failure. Full manual smoke of complete case detail on real gameplay case/signal data is explicitly deferred until such data exists.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

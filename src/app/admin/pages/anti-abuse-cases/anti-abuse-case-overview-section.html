@@ -1,0 +1,62 @@
+@let detailModel = detail();
+@let caseItem = detailModel.case;
+
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="flex-col gap-xs min-w-0">
+      <p class="card-legend mb-0">{{ caseItem.updatedAt }}</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        {{ caseItem.title }}
+      </h3>
+      @if (caseItem.summary) {
+        <p class="muted-text mb-0">{{ caseItem.summary }}</p>
+      }
+    </div>
+
+    <div class="flex-row-start-center flex-wrap gap-xs">
+      <span class="mg-tag">{{ statusLabel(caseItem.status) }}</span>
+      <span class="mg-tag">source: {{ sourceLabel(caseItem.source) }}</span>
+      <span class="mg-tag">verdict: {{ verdictLabel(caseItem.verdict) }}</span>
+      <span class="mg-tag">signals: {{ detailModel.signals.length }}</span>
+      <span class="mg-tag">participants: {{ detailModel.participants.length }}</span>
+      <span class="mg-tag">reports: {{ detailModel.reports.length }}</span>
+      <span class="mg-tag">declarations: {{ detailModel.declarations.length }}</span>
+      <span class="mg-tag">sanctions: {{ detailModel.sanctions.length }}</span>
+    </div>
+  </div>
+
+  <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100 mb-lg">
+    @for (fact of overviewFacts(); track fact.label) {
+      <div class="flex-col gap-xs min-w-0">
+        <span class="muted-text">{{ fact.label }}</span>
+        <strong class="heading-color text-break">{{ fact.value }}</strong>
+      </div>
+    }
+  </div>
+
+  <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="muted-text">Status reason</span>
+      <strong class="heading-color text-break">{{ value(caseItem.statusReason) }}</strong>
+    </div>
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="muted-text">Verdict reason</span>
+      <strong class="heading-color text-break">{{ value(caseItem.verdictReason) }}</strong>
+    </div>
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="muted-text">Sanction required</span>
+      <strong class="heading-color text-break">{{ value(caseItem.sanctionRequired) }}</strong>
+    </div>
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="muted-text">No-sanction reason</span>
+      <strong class="heading-color text-break">{{ value(caseItem.noSanctionReason) }}</strong>
+    </div>
+  </div>
+
+  @if (caseItem.operatorNotes) {
+    <div class="mg-surface-card p-md flex-col gap-xs mt-md">
+      <span class="muted-text">Operator notes</span>
+      <strong class="heading-color text-break">{{ caseItem.operatorNotes }}</strong>
+    </div>
+  }
+</section>

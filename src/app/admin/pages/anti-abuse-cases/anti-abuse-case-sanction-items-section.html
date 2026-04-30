@@ -1,0 +1,20 @@
+<section class="mg-card p-lg w-100">
+  <h3 class="mg-section__title mg-section__title--xs mb-lg">Sanction items</h3>
+  <div class="flex-col gap-md">
+    @for (item of sanctionItems(); track item.id) {
+      @let itemDisplay = sanctionItemDisplay(item);
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <div class="flex-row-between-center flex-col-sm gap-sm">
+          <strong class="heading-color text-break">{{ item.itemId }}</strong>
+          <span class="mg-tag">{{ itemDisplay.label }}</span>
+        </div>
+        <span class="heading-color text-break">{{ itemDisplay.description }}</span>
+        <span class="heading-color text-break">{{ itemDisplay.helperText }}</span>
+        <span class="text-break">Source / destination hero: {{ value(item.sourceHeroId) }} / {{ value(item.destinationHeroId) }}</span>
+        <span class="heading-color text-break">Operator notes: {{ value(item.operatorNotes) }}</span>
+      </article>
+    } @empty {
+      <p class="muted-text mb-0">No item evidence linked to this case.</p>
+    }
+  </div>
+</section>

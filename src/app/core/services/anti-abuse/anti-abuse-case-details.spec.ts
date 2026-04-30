@@ -9,12 +9,16 @@ import {
   caseDeclarationRow,
   caseRow,
   caseSignalRow,
+  declarationTypeRow,
   declarationRow,
   participantRow,
   penaltyRow,
+  reportTypeRow,
   reportRow,
   sanctionItemRow,
+  sanctionTypeRow,
   sanctionRow,
+  signalTypeRow,
   signalRow,
 } from './anti-abuse-case-detail-fixtures';
 import { AntiAbuseCaseDetails } from './anti-abuse-case-details';
@@ -51,6 +55,14 @@ describe('AntiAbuseCaseDetails', () => {
           return of([declarationRow()]);
         case TABLES.anti_abuse_sanction_items:
           return of([sanctionItemRow()]);
+        case TABLES.anti_abuse_sanction_types:
+          return of([sanctionTypeRow()]);
+        case TABLES.player_abuse_report_types:
+          return of([reportTypeRow()]);
+        case TABLES.player_relationship_declaration_types:
+          return of([declarationTypeRow()]);
+        case TABLES.anti_abuse_signal_types:
+          return of([signalTypeRow()]);
         default:
           return of([]);
       }
@@ -82,6 +94,10 @@ describe('AntiAbuseCaseDetails', () => {
     expect(detail.sanctions[0].sanctionTypeKey).toBe('character_point_fine');
     expect(detail.characterPointPenalties[0].totalAmount).toBe(15);
     expect(detail.sanctionItems[0].itemId).toBe('item-1');
+    expect(detail.dictionaries.signalTypes[0].label).toBe('Trade funnel signal');
+    expect(detail.dictionaries.reportTypes[0].label).toBe('Trade scam');
+    expect(detail.dictionaries.declarationTypes[0].label).toBe('Shared household');
+    expect(detail.dictionaries.sanctionTypes[0].label).toBe('Character Point fine');
   });
 
   it('loads the base case by id and selected server before linked reads', async () => {

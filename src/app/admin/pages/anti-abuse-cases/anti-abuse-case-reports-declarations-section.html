@@ -1,0 +1,50 @@
+<section class="mg-card p-lg w-100">
+  <h3 class="mg-section__title mg-section__title--xs mb-lg">Reports and declarations</h3>
+  <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+    <div class="flex-col gap-md">
+      @for (report of reports(); track report.id) {
+        @let type = reportType(report);
+        <article class="mg-surface-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center flex-col-sm gap-sm">
+            <strong class="heading-color text-break">{{ type?.label ?? report.title }}</strong>
+            <span class="mg-tag">{{ reportStatusLabel(report.status) }}</span>
+          </div>
+          @if (type?.adminDescription) {
+            <span class="muted-text text-break">{{ type?.adminDescription }}</span>
+          }
+          <span class="text-break">Report: {{ report.title }}</span>
+          <span class="muted-text text-break">Type key: {{ report.reportTypeKey }}</span>
+          <span class="text-break">Case: {{ value(report.caseId) }}</span>
+          <span class="heading-color text-break">Status reason: {{ value(report.statusReason) }}</span>
+          <span class="heading-color text-break">Admin notes: {{ value(report.adminNotes) }}</span>
+          <span class="heading-color text-break">Player notes: {{ value(report.playerNotes) }}</span>
+        </article>
+      } @empty {
+        <p class="muted-text mb-0">No player reports linked to this case.</p>
+      }
+    </div>
+
+    <div class="flex-col gap-md">
+      @for (declaration of declarations(); track declaration.id) {
+        @let type = declarationType(declaration);
+        <article class="mg-surface-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center flex-col-sm gap-sm">
+            <strong class="heading-color text-break">{{ type?.label ?? declaration.title }}</strong>
+            <span class="mg-tag">{{ declarationStatusLabel(declaration.status) }}</span>
+          </div>
+          @if (type?.adminDescription) {
+            <span class="muted-text text-break">{{ type?.adminDescription }}</span>
+          }
+          <span class="text-break">Declaration: {{ declaration.title }}</span>
+          <span class="muted-text text-break">Type key: {{ declaration.declarationTypeKey }}</span>
+          <span class="heading-color text-break">Status reason: {{ value(declaration.statusReason) }}</span>
+          <span class="heading-color text-break">Admin notes: {{ value(declaration.adminNotes) }}</span>
+          <span class="heading-color text-break">Player notes: {{ value(declaration.playerNotes) }}</span>
+          <span class="text-break">Reviewed by: {{ value(declaration.reviewedByUserId) }}</span>
+        </article>
+      } @empty {
+        <p class="muted-text mb-0">No relationship declarations linked to this case.</p>
+      }
+    </div>
+  </div>
+</section>

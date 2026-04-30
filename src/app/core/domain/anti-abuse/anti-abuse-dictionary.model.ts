@@ -47,3 +47,10 @@ export interface AntiAbuseDictionaryData {
   declarationTypes: PlayerRelationshipDeclarationTypeEntry[];
   signalTypes: AntiAbuseSignalTypeEntry[];
 }
+
+export interface AntiAbuseDictionaryReferences {
+  sanctionTypeKeys: readonly string[];
+  reportTypeKeys: readonly string[];
+  declarationTypeKeys: readonly string[];
+  signalTypeKeys: readonly string[];
+}

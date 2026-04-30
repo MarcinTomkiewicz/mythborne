@@ -1205,6 +1205,8 @@ Status: completed and accepted on 2026-04-30.
 
 ## Task H14 — Staff case detail page
 
+Status: completed and accepted on 2026-04-30.
+
 **Goal:** Staff can review complete case.
 
 **Scope:**
@@ -1221,6 +1223,7 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - Staff can understand case context from one screen.
+- Implementation note: technical verification and route smoke passed; full manual smoke with real case/signal/gameplay content is deferred until representative gameplay data exists.
 
 ---
 

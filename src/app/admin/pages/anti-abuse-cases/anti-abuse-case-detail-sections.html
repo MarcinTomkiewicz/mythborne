@@ -1,0 +1,23 @@
+@let detailModel = detail();
+
+<app-anti-abuse-case-overview-section [detail]="detailModel" />
+<app-anti-abuse-case-participants-section [participants]="detailModel.participants" />
+<app-anti-abuse-case-signals-section
+  [signals]="detailModel.signals"
+  [signalTypes]="detailModel.dictionaries.signalTypes"
+/>
+<app-anti-abuse-case-reports-declarations-section
+  [reports]="detailModel.reports"
+  [declarations]="detailModel.declarations"
+  [reportTypes]="detailModel.dictionaries.reportTypes"
+  [declarationTypes]="detailModel.dictionaries.declarationTypes"
+/>
+<app-anti-abuse-case-sanctions-section
+  [sanctions]="detailModel.sanctions"
+  [penalties]="detailModel.characterPointPenalties"
+  [sanctionTypes]="detailModel.dictionaries.sanctionTypes"
+/>
+<app-anti-abuse-case-sanction-items-section
+  [sanctionItems]="detailModel.sanctionItems"
+/>
+<app-anti-abuse-case-audit-section [auditLogs]="detailModel.auditLogs" />

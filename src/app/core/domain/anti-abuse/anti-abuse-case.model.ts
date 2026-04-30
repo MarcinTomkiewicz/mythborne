@@ -1,5 +1,6 @@
 import { Database, Json } from '../../types/database.types';
 import { AuditLogEntry } from '../audit/audit-log.model';
+import { AntiAbuseDictionaryData } from './anti-abuse-dictionary.model';
 import {
   AntiAbuseSanctionDecision,
   AntiAbuseSanctionItemDecision,
@@ -106,6 +107,7 @@ export interface AntiAbuseCaseDeclarationLink {
 
 export interface AntiAbuseCaseDetailReadModel {
   case: AntiAbuseCaseReadModel;
+  dictionaries: AntiAbuseDictionaryData;
   signals: AntiAbuseSignalReadModel[];
   caseSignals: AntiAbuseCaseSignalLink[];
   participants: AntiAbuseCaseParticipant[];

@@ -27,10 +27,12 @@ import {
 import { mapAuditLogEntry } from '../../utils/audit-log';
 import { trimText } from '../../utils/normalize-text';
 import { Backend } from '../backend/backend';
+import { AntiAbuseReferencedDictionaries } from './anti-abuse-referenced-dictionaries';
 
 @Injectable({ providedIn: 'root' })
 export class AntiAbuseCaseDetails {
   private readonly backend = inject(Backend);
+  private readonly dictionaries = inject(AntiAbuseReferencedDictionaries);
 
   getCaseDetail(input: {
     serverId: string;
@@ -81,6 +83,18 @@ export class AntiAbuseCaseDetails {
           ).pipe(map((rows) => rows.map(mapPlayerRelationshipDeclarationDecision))),
           sanctionItems: this.getSanctionItems(base.sanctions.map((entry) => entry.id)),
         }).pipe(map((linked) => ({ ...base, ...linked }))),
+      ),
+      switchMap((detail) =>
+        this.dictionaries.getForReferences({
+          sanctionTypeKeys: detail.sanctions.map((entry) => entry.sanctionTypeKey),
+          reportTypeKeys: detail.reports.map((entry) => entry.reportTypeKey),
+          declarationTypeKeys: detail.declarations.map(
+            (entry) => entry.declarationTypeKey,
+          ),
+          signalTypeKeys: detail.signals.map((entry) => entry.signalTypeKey),
+        }).pipe(
+          map((dictionaries) => ({ ...detail, dictionaries })),
+        ),
       ),
     );
   }

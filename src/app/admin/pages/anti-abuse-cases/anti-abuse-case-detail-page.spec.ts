@@ -89,6 +89,43 @@ describe('AntiAbuseCaseDetailPage', () => {
 
     expect(fixture.componentInstance.detail()?.case.serverId).toBe('server-2');
   });
+
+  it('renders staff-facing case context sections from the detail aggregate', () => {
+    firstRequest.next(createDetail('server-1', 'case-1', true));
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('Status reason');
+    expect(text).toContain('Verdict reason');
+    expect(text).toContain('Operator notes');
+    expect(text).toContain('Participant reason');
+    expect(text).toContain('Trade funnel signal');
+    expect(text).toContain('Player report');
+    expect(text).toContain('Shared household label');
+    expect(text).toContain('Character Point fine');
+    expect(text).toContain('Total / paid / remaining: 25 / 5 / 20');
+    expect(text).toContain('Linked item evidence/context');
+    expect(text).toContain('Stat allocation saved');
+  });
+
+  it('uses DB-backed type labels as primary staff detail labels', () => {
+    firstRequest.next(createDetail('server-1', 'case-1', true));
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('Trade funnel signal');
+    expect(text).toContain('Trade scam label');
+    expect(text).toContain('Shared household label');
+    expect(text).toContain('Character Point fine');
+    expect(text).toContain('Type key: trade_funnel');
+    expect(text).toContain('Type key: scam');
+    expect(text).toContain('Type key: shared_household');
+    expect(text).toContain('Type key: character_point_fine');
+  });
 });
 
 function createActiveServer(
@@ -147,6 +184,7 @@ function createAccess(): ServerAccessState {
 function createDetail(
   serverId: string,
   caseId: string,
+  withLinkedData = false,
 ): AntiAbuseCaseDetailReadModel {
   return {
     case: {
@@ -156,36 +194,318 @@ function createDetail(
       summary: null,
       source: 'manual',
       status: 'open',
-      statusReason: null,
-      verdict: null,
-      verdictReason: null,
-      sanctionRequired: null,
+      statusReason: withLinkedData ? 'Status reason text.' : null,
+      verdict: withLinkedData ? 'abuse_confirmed' : null,
+      verdictReason: withLinkedData ? 'Verdict reason text.' : null,
+      sanctionRequired: withLinkedData ? true : null,
       noSanctionReason: null,
-      operatorNotes: null,
-      groupingKey: null,
-      primaryHeroId: null,
-      primaryUserId: null,
-      assignedToUserId: null,
-      openedByUserId: null,
+      operatorNotes: withLinkedData ? 'Operator notes text.' : null,
+      groupingKey: withLinkedData ? 'group-1' : null,
+      primaryHeroId: withLinkedData ? 'hero-1' : null,
+      primaryUserId: withLinkedData ? 'user-1' : null,
+      assignedToUserId: withLinkedData ? 'staff-1' : null,
+      openedByUserId: withLinkedData ? 'staff-2' : null,
       resolvedByUserId: null,
-      signalCount: 0,
-      lastSignalAt: null,
-      possibleRecidivism: false,
+      signalCount: withLinkedData ? 1 : 0,
+      lastSignalAt: withLinkedData ? '2026-04-30T00:10:00.000Z' : null,
+      possibleRecidivism: withLinkedData,
       createdAt: '2026-04-30T00:00:00.000Z',
       updatedAt: '2026-04-30T00:00:00.000Z',
       resolvedAt: null,
       cancelledAt: null,
     },
-    signals: [],
-    caseSignals: [],
-    participants: [],
-    auditLinks: [],
-    auditLogs: [],
-    declarationLinks: [],
-    declarations: [],
-    reports: [],
-    sanctions: [],
-    characterPointPenalties: [],
-    sanctionItems: [],
+    dictionaries: {
+      sanctionTypes: [
+        {
+          key: 'character_point_fine',
+          label: 'Character Point fine',
+          description: 'Removes Character Points.',
+          helperText: 'Use for confirmed abuse.',
+          adminDescription: 'Staff sanction description.',
+          category: 'points',
+          sortOrder: 10,
+          isActive: true,
+          requiresReason: true,
+          requiresTargetHero: true,
+          requiresSourceHero: false,
+          requiresDurationDays: false,
+          requiresItemSelection: false,
+          requiresCharacterPointsAmount: true,
+        },
+      ],
+      reportTypes: [
+        {
+          key: 'scam',
+          label: 'Trade scam label',
+          description: 'Report a trade scam.',
+          helperText: 'Attach trade context.',
+          adminDescription: 'Staff report description.',
+          category: 'trade',
+          sortOrder: 10,
+          isActive: true,
+          requiresAccusedHero: true,
+          requiresDescription: true,
+          requiresTradeSelection: true,
+          requiresItemSelection: false,
+        },
+      ],
+      declarationTypes: [
+        {
+          key: 'shared_household',
+          label: 'Shared household label',
+          description: 'Shared household declaration.',
+          helperText: 'Review participant overlap.',
+          adminDescription: 'Staff declaration description.',
+          category: 'relationship',
+          sortOrder: 10,
+          isActive: true,
+          minParticipants: 2,
+          maxParticipants: 4,
+          requiresAmount: false,
+          requiresExpiration: false,
+          requiresTradeSelection: false,
+          requiresItemSelection: false,
+        },
+      ],
+      signalTypes: [
+        {
+          key: 'trade_funnel',
+          label: 'Trade funnel signal',
+          description: 'Potential trade funnel.',
+          helperText: 'Review trade graph.',
+          adminDescription: 'Staff signal description.',
+          category: 'trade',
+          sortOrder: 10,
+          isActive: true,
+          defaultSeverity: 'warning',
+          defaultScore: 25,
+          defaultConfidence: 0.8,
+        },
+      ],
+    },
+    signals: withLinkedData
+      ? [
+          {
+            id: 'signal-1',
+            serverId,
+            signalTypeKey: 'trade_funnel',
+            title: 'Trade funnel',
+            description: 'Potential trade funnel.',
+            severity: 'warning',
+            score: 25,
+            confidence: 0.8,
+            reason: 'Signal reason.',
+            groupingKey: 'group-1',
+            actorHeroId: 'hero-1',
+            actorUserId: 'user-1',
+            targetHeroId: 'hero-2',
+            targetUserId: 'user-2',
+            entityTypeKey: 'trade',
+            entityId: 'trade-1',
+            auditLogId: 'audit-1',
+            metadataJson: { score: 25 },
+            isDismissed: false,
+            dismissedAt: null,
+            dismissedByUserId: null,
+            dismissedReason: null,
+            createdAt: '2026-04-30T00:10:00.000Z',
+          },
+        ]
+      : [],
+    caseSignals: withLinkedData
+      ? [
+          {
+            caseId,
+            signalId: 'signal-1',
+            reason: 'Linked by score.',
+            linkedByUserId: 'staff-1',
+            createdAt: '2026-04-30T00:11:00.000Z',
+          },
+        ]
+      : [],
+    participants: withLinkedData
+      ? [
+          {
+            id: 'participant-1',
+            caseId,
+            userId: 'user-1',
+            heroId: 'hero-1',
+            roleKey: 'primary',
+            reason: 'Participant reason',
+            description: 'Participant description',
+            createdByUserId: 'staff-1',
+            createdAt: '2026-04-30T00:12:00.000Z',
+          },
+        ]
+      : [],
+    auditLinks: withLinkedData
+      ? [
+          {
+            caseId,
+            auditLogId: 'audit-1',
+            reason: 'Audit link reason.',
+            linkedByUserId: 'staff-1',
+            createdAt: '2026-04-30T00:13:00.000Z',
+          },
+        ]
+      : [],
+    auditLogs: withLinkedData
+      ? [
+          {
+            id: 'audit-1',
+            actionTypeKey: 'gameplay.stat_allocation.saved',
+            actionType: {
+              id: 'action-1',
+              key: 'gameplay.stat_allocation.saved',
+              label: 'Stat allocation saved',
+              category: 'gameplay',
+              description: null,
+              defaultSeverity: 'notice',
+              sortOrder: 10,
+              isActive: true,
+              createdAt: '2026-04-30T00:00:00.000Z',
+              updatedAt: '2026-04-30T00:00:00.000Z',
+            },
+            entityTypeKey: 'hero',
+            entityType: {
+              id: 'entity-1',
+              key: 'hero',
+              label: 'Hero',
+              category: 'gameplay',
+              description: null,
+              sortOrder: 10,
+              isActive: true,
+              createdAt: '2026-04-30T00:00:00.000Z',
+              updatedAt: '2026-04-30T00:00:00.000Z',
+            },
+            entityId: 'hero-1',
+            severity: 'notice',
+            reason: 'Audit reason.',
+            serverId,
+            actorUserId: 'user-1',
+            actorHeroId: 'hero-1',
+            targetUserId: 'user-1',
+            targetHeroId: 'hero-1',
+            requestId: 'request-1',
+            metadataJson: { source: 'test' },
+            oldValueJson: { characterPoints: 30 },
+            newValueJson: { characterPoints: 5 },
+            createdAt: '2026-04-30T00:14:00.000Z',
+          },
+        ]
+      : [],
+    declarationLinks: withLinkedData
+      ? [
+          {
+            caseId,
+            declarationId: 'declaration-1',
+            reason: 'Declaration link reason.',
+            linkedByUserId: 'staff-1',
+            createdAt: '2026-04-30T00:15:00.000Z',
+          },
+        ]
+      : [],
+    declarations: withLinkedData
+      ? [
+          {
+            id: 'declaration-1',
+            serverId,
+            declarationTypeKey: 'shared_household',
+            title: 'Shared household',
+            status: 'approved',
+            statusReason: 'Declaration status reason.',
+            adminNotes: 'Declaration admin notes.',
+            playerNotes: 'Declaration player notes.',
+            reviewedAt: '2026-04-30T00:16:00.000Z',
+            reviewedByUserId: 'staff-1',
+            updatedAt: '2026-04-30T00:16:00.000Z',
+          },
+        ]
+      : [],
+    reports: withLinkedData
+      ? [
+          {
+            id: 'report-1',
+            serverId,
+            reportTypeKey: 'scam',
+            title: 'Player report',
+            status: 'linked_to_case',
+            statusReason: 'Report status reason.',
+            caseId,
+            adminNotes: 'Report admin notes.',
+            playerNotes: 'Report player notes.',
+            resolvedAt: null,
+            updatedAt: '2026-04-30T00:17:00.000Z',
+          },
+        ]
+      : [],
+    sanctions: withLinkedData
+      ? [
+          {
+            id: 'sanction-1',
+            caseId,
+            sanctionTypeKey: 'character_point_fine',
+            status: 'pending',
+            statusReason: 'Sanction status reason.',
+            reason: 'Sanction reason.',
+            operatorNotes: 'Sanction operator notes.',
+            targetHeroId: 'hero-1',
+            targetUserId: 'user-1',
+            sourceHeroId: null,
+            destinationHeroId: null,
+            amountCharacterPoints: 25,
+            durationDays: null,
+            startsAt: null,
+            endsAt: null,
+            appliedAt: null,
+            completedAt: null,
+            cancelledAt: null,
+            forgivenAt: null,
+            failedAt: null,
+            imposedByUserId: 'staff-1',
+            updatedAt: '2026-04-30T00:18:00.000Z',
+          },
+        ]
+      : [],
+    characterPointPenalties: withLinkedData
+      ? [
+          {
+            id: 'penalty-1',
+            sanctionId: 'sanction-1',
+            caseId,
+            serverId,
+            heroId: 'hero-1',
+            userId: 'user-1',
+            status: 'pending',
+            statusReason: 'Penalty status reason.',
+            reason: 'Penalty reason.',
+            operatorNotes: 'Penalty operator notes.',
+            totalAmount: 25,
+            remainingAmount: 20,
+            paidAmount: 5,
+            appliedAt: null,
+            completedAt: null,
+            cancelledAt: null,
+            forgivenAt: null,
+            failedAt: null,
+            updatedAt: '2026-04-30T00:19:00.000Z',
+          },
+        ]
+      : [],
+    sanctionItems: withLinkedData
+      ? [
+          {
+            id: 'sanction-item-1',
+            sanctionId: 'sanction-1',
+            itemId: 'item-1',
+            sourceHeroId: 'hero-1',
+            destinationHeroId: null,
+            reason: 'Item reason.',
+            operatorNotes: 'Item operator notes.',
+            createdByUserId: 'staff-1',
+            createdAt: '2026-04-30T00:20:00.000Z',
+          },
+        ]
+      : [],
   };
 }

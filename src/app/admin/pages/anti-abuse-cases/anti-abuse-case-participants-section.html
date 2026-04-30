@@ -1,0 +1,25 @@
+<section class="mg-card p-lg w-100">
+  <h3 class="mg-section__title mg-section__title--xs mb-lg">Participants</h3>
+  <div class="flex-col gap-md">
+    @for (participant of participants(); track participant.id) {
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <div class="flex-row-between-center flex-col-sm gap-sm">
+          <strong class="heading-color">{{ participant.roleKey }}</strong>
+          <span class="mg-tag">{{ participant.createdAt }}</span>
+        </div>
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md">
+          <span class="text-break">Hero: {{ value(participant.heroId) }}</span>
+          <span class="text-break">User: {{ value(participant.userId) }}</span>
+          <span class="text-break">Created by: {{ value(participant.createdByUserId) }}</span>
+        </div>
+        @if (participant.reason || participant.description) {
+          <p class="heading-color mb-0 text-break">
+            {{ value(participant.reason) }} {{ value(participant.description) }}
+          </p>
+        }
+      </article>
+    } @empty {
+      <p class="muted-text mb-0">No participants linked to this case.</p>
+    }
+  </div>
+</section>

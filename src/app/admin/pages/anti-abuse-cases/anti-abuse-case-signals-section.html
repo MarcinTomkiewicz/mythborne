@@ -1,0 +1,47 @@
+<section class="mg-card p-lg w-100">
+  <h3 class="mg-section__title mg-section__title--xs mb-lg">Signals</h3>
+  <div class="flex-col gap-md">
+    @for (signal of signals(); track signal.id) {
+      @let type = signalType(signal);
+      <article class="mg-surface-card p-md flex-col gap-md">
+        <div class="flex-row-between-center flex-col-sm gap-sm">
+          <div class="flex-col gap-xs min-w-0">
+            <p class="card-legend mb-0">{{ signal.createdAt }}</p>
+            <strong class="heading-color text-break">{{ type?.label ?? signal.title }}</strong>
+            <span class="heading-color text-break">{{ signal.description }}</span>
+            @if (type?.adminDescription) {
+              <span class="muted-text text-break">{{ type?.adminDescription }}</span>
+            }
+          </div>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            <span class="mg-tag">{{ signal.severity }}</span>
+            <span class="mg-tag">score: {{ signal.score }}</span>
+            <span class="mg-tag">confidence: {{ signal.confidence }}</span>
+            @if (signal.isDismissed) {
+              <span class="mg-tag">dismissed</span>
+            }
+          </div>
+        </div>
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md">
+          <span class="text-break">Actor: {{ value(signal.actorHeroId ?? signal.actorUserId) }}</span>
+          <span class="text-break">Target: {{ value(signal.targetHeroId ?? signal.targetUserId) }}</span>
+          <span class="text-break">Entity: {{ value(signal.entityTypeKey) }} {{ value(signal.entityId) }}</span>
+          <span class="text-break">Type key: {{ signal.signalTypeKey }}</span>
+          <span class="text-break">Grouping: {{ value(signal.groupingKey) }}</span>
+          <span class="text-break">Audit log: {{ value(signal.auditLogId) }}</span>
+        </div>
+        @if (signal.reason || signal.dismissedReason) {
+          <p class="heading-color mb-0 text-break">
+            {{ value(signal.reason) }} {{ value(signal.dismissedReason) }}
+          </p>
+        }
+        <app-collapsed-json-preview
+          label="Signal metadata"
+          [value]="signal.metadataJson"
+        />
+      </article>
+    } @empty {
+      <p class="muted-text mb-0">No signals linked to this case.</p>
+    }
+  </div>
+</section>
