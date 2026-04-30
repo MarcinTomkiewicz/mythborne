@@ -447,6 +447,9 @@ Still pending at the gameplay level even if partially supported in schema:
 - H6 accepted on 2026-04-30: player relationship declaration form models are generated from DB-backed `PlayerRelationshipDeclarationTypeEntry` flags, with title, description and participants always required and amount, expiration, item and trade fields enabled only when the declaration type requires them.
 - H6 keeps the player-facing form model free of staff-only `adminDescription` / `admin_description` copy, normalizes participant min/max rules into stable helper text, and intentionally does not include submit/RPC behavior; H7 remains the declaration submission slice.
 - H6 is a model-only slice with no meaningful UI smoke path. It was verified technically with `npx tsc --noEmit`, targeted player relationship declaration form specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- H7 accepted on 2026-04-30: player relationship declaration submission now uses the canonical `create_player_relationship_declaration(...)` RPC through a focused service and payload mapper.
+- H7 sends top-level generated RPC args as `p_*` fields, while nested participants/items/trades JSON uses the camelCase keys expected by the DB workflow. Empty optional linked rows are filtered out, item/trade role keys default to `related`, and negative `amountCharacterPoints` is rejected before RPC.
+- H7 does not direct-read or direct-write `player_relationship_declarations` or child declaration tables from the frontend. It is a service-only slice with no meaningful UI smoke path; technical verification covered mapper payloads, service RPC-only submission, `npx tsc --noEmit`, targeted specs and `npm run build`.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

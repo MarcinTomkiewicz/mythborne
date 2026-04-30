@@ -19,6 +19,7 @@ export const RPC = {
   set_anti_abuse_case_decision: 'set_anti_abuse_case_decision',
   set_player_relationship_declaration_decision:
     'set_player_relationship_declaration_decision',
+  create_player_relationship_declaration: 'create_player_relationship_declaration',
   set_player_abuse_report_decision: 'set_player_abuse_report_decision',
   create_anti_abuse_sanction: 'create_anti_abuse_sanction',
   set_anti_abuse_sanction_status: 'set_anti_abuse_sanction_status',

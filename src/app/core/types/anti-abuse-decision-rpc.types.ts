@@ -6,6 +6,10 @@ export type SetAntiAbuseCaseDecisionRpcArgs =
   Database['public']['Functions']['set_anti_abuse_case_decision']['Args'];
 export type SetPlayerRelationshipDeclarationDecisionRpcArgs =
   Database['public']['Functions']['set_player_relationship_declaration_decision']['Args'];
+export type CreatePlayerRelationshipDeclarationRpcArgs =
+  Database['public']['Functions']['create_player_relationship_declaration']['Args'];
+export type CreatePlayerRelationshipDeclarationRpcRow =
+  Database['public']['Functions']['create_player_relationship_declaration']['Returns'][number];
 export type SetPlayerAbuseReportDecisionRpcArgs =
   Database['public']['Functions']['set_player_abuse_report_decision']['Args'];
 export type CreateAntiAbuseSanctionRpcArgs =

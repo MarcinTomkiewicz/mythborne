@@ -754,8 +754,6 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task G6 — Audit gameplay persistent changes
 
-**Status:** Done / confirmed 2026-04-29 for the stat allocation RPC slice.
-
 **Goal:** Add audit to selected important gameplay state changes.
 
 **Scope:**
@@ -929,8 +927,6 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task U0-I7 — Moderator scope assignment UI
 
-**Status:** Done / confirmed 2026-04-29.
-
 **Goal:** Implement the moderator scope UI designed in U0-C4.
 
 **Scope:**
@@ -950,8 +946,6 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 ---
 
 ## Task U0-I8 — Moderation actions UI foundation
-
-**Status:** Done / confirmed 2026-04-29.
 
 **Goal:** Build the first usable UI for U0 moderation actions.
 
@@ -973,8 +967,6 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task U0-I9 — Moderation history and disqualification panels
 
-**Status:** Done / confirmed 2026-04-29.
-
 **Goal:** Surface prior moderation history where staff decisions require it.
 
 **Scope:**
@@ -995,8 +987,6 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H1 — Anti-abuse dictionary models
 
-**Status:** Done / confirmed 2026-04-29 through UX-I8.
-
 **Goal:** Add typed models for anti-abuse dictionaries.
 
 **Scope:**
@@ -1012,8 +1002,6 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H2 — Anti-abuse dictionary loaders
 
-**Status:** Done / confirmed 2026-04-29.
-
 **Goal:** Load active dictionary rows.
 
 **Scope:**
@@ -1027,8 +1015,6 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 ---
 
 ## Task H3 — Anti-abuse case read models
-
-**Status:** Done / confirmed 2026-04-30.
 
 **Goal:** Model cases and linked context.
 
@@ -1047,8 +1033,6 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H4 — Server-scoped case list service
 
-**Status:** Done / confirmed 2026-04-30.
-
 **Goal:** Load cases for selected server.
 
 **Scope:**
@@ -1065,8 +1049,6 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 ---
 
 ## Task H5 — Case detail aggregation service
-
-**Status:** Done / confirmed 2026-04-30.
 
 **Goal:** Load all linked case data.
 
@@ -1087,8 +1069,6 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H6 — Player relationship declaration form model
 
-**Status:** Done / confirmed 2026-04-30.
-
 **Goal:** Dynamic form from declaration type flags.
 
 **Scope:**
@@ -1107,6 +1087,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 ---
 
 ## Task H7 — Player relationship declaration submission
+
+**Status:** Done / confirmed 2026-04-30.
 
 **Goal:** Player can submit declaration.
 
@@ -1420,85 +1402,173 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 # Epic J — Items, economy and player trade
 
-## Task J1 — Inspect current item/trade implementation
+Epic J must follow the current database/RPC reality, not the older placeholder market-listing concept.
 
-**Goal:** Understand what exists before adding trade/anti-abuse logic.
+Current source of truth:
+- Direct player-to-player trade already has a DB/RPC foundation.
+- One-item auctions already have a DB/RPC foundation.
+- Trade/auction use Character Points, not drachmas.
+- Drachmas are vendor/system/building currency.
+- Vendor scrap/sell is not player trade.
+- Do not design or implement a new `market_listings` table unless a new explicit product/database decision replaces the current direct-trade/auction model.
+- Do not write directly to trade, auction, lock, transaction, item ownership, or item lifecycle tables from Angular.
+- Use existing public RPCs from `database-current.md` and generated `database.types.ts`.
+- Internal helper RPCs/functions are not frontend contracts.
+
+Known current DB/RPC concepts for this epic:
+- direct trade: `player_trade_offers`, `player_trade_offer_items`, `player_trade_transactions`, `player_trade_transaction_items`, `character_point_locks`;
+- auction: `player_auction_listings`, `player_auction_bids`, `character_point_locks`, `player_trade_transactions(transaction_type = auction_sale)`, `player_trade_transaction_items`;
+- item locks: `items.status = locked_trade | locked_auction`;
+- player-facing trade/auction mutations should use public RPCs such as `create_player_direct_trade_offer`, `respond_player_direct_trade_offer`, `confirm_player_direct_trade_offer`, `cancel_player_direct_trade_offer`, `reject_player_direct_trade_offer`, `create_player_auction_listing`, `place_player_auction_bid`, `buy_now_player_auction`, `cancel_player_auction_listing`, and `close_player_auction_listing` where present in current generated types.
+
+## Task J1 — Align trade/auction frontend plan with existing DB/RPC contract
+
+**Goal:** Replace the older market/listing assumptions with the current direct-trade and one-item auction model.
 
 **Scope:**
-- Inspect item tables/models.
-- Inspect any market/trade/listing code.
-- Report gaps.
+- Inspect current frontend item/trade/auction code and current generated DB types.
+- Read `database-current.md` sections for direct trade, auctions, Character Points, item lifecycle, and anti-abuse trade signals.
+- Confirm which public RPCs are available in current generated types.
+- Identify any frontend paths that still assume a generic `market_listings` model.
+- Report blockers instead of designing new schema.
 
 **Acceptance criteria:**
-- Clear list of existing vs missing trade runtime pieces.
+- Report lists available trade/auction RPCs and tables used by existing DB contract.
+- Report identifies any outdated market/listing assumptions in app code or prompts.
+- No new schema is proposed for player market listings.
+- No code changes unless explicitly requested.
 
 ---
 
-## Task J2 — Design player-to-player trade model
+## Task J2 — Direct trade read models and services
 
-**Goal:** Prepare trade schema/flow if missing.
+**Goal:** Add typed frontend read/domain layer for existing direct trade offers and transactions.
 
 **Scope:**
-- Trade uses Character Points.
-- Drachma/vendor value is not player market value.
-- Account for:
-  - item sale,
-  - substitute payments,
-  - loans,
-  - group purchase,
-  - shared item pool,
-  - item lending.
+- Model direct trade offers, offer items, transaction rows, transaction items, CP amounts, status, timestamps and participant hero labels.
+- Load active/relevant direct trade offers for the active hero and selected server.
+- Load historical direct trade transactions where needed for UI/history.
+- Use active server and active hero context.
+- Keep read models separate from mutation payloads.
 
 **Acceptance criteria:**
-- Proposed schema/flow is reviewable before implementation.
+- Direct trade lists/details can be displayed using current DB data.
+- Queries are server/hero scoped.
+- No direct write paths are added.
+- No broad unrelated item/user fetches are added.
+- Build and focused mapper/service tests pass.
 
 ---
 
-## Task J3 — Implement minimal market listing read/write
+## Task J3 — Direct trade mutation UI through existing RPCs
 
-**Goal:** Enable basic player-to-player listing if approved.
+**Goal:** Let players create, respond to, confirm, cancel and reject direct trade offers through existing DB/RPC workflows.
 
 **Scope:**
-- Create/list market listings.
-- Price in Character Points.
-- Server-scoped.
-- Active hero context.
+- Create offer from active hero to target hero using current RPC contract.
+- Allow target response with CP and item selection where supported.
+- Allow creator confirmation where required.
+- Allow cancellation/rejection through current RPCs.
+- Display CP locks and item lock state clearly.
+- Use DB-backed human-readable target/item pickers where needed.
 
 **Acceptance criteria:**
-- Player can create/list basic item listings.
+- Mutations use public trade RPCs only.
+- No direct writes to `player_trade_offers`, `player_trade_offer_items`, `character_point_locks`, `items.status`, `player_trade_transactions`, or `player_trade_transaction_items`.
+- CP-only-for-CP-only trade remains blocked by DB workflow.
+- Trade offer expiry/cancel/reject cleanup is handled by DB/RPC, not Angular table writes.
+- RPC errors are surfaced as user-readable messages/toasts.
+- Build and targeted tests pass.
+
+**Blocker rule:**
+If the needed public RPC is missing from generated types or has a different signature than expected, stop and report DB/types blocker. Do not invent a frontend fallback.
 
 ---
 
-## Task J4 — Implement trade completion with audit hooks
+## Task J4 — Auction gameplay UI through existing RPCs
 
-**Goal:** Complete trade transaction safely.
+**Goal:** Build player-facing one-item auction surfaces using the existing auction DB/RPC foundation.
 
 **Scope:**
-- Validate seller/buyer/server/item/status.
-- Transfer item/CP.
-- Write audit.
-- Emit anti-abuse signal candidate if suspicious detection exists.
+- List active server-scoped auction listings.
+- Create one-item auction listing from active hero inventory.
+- Support auction modes currently available in DB: bidding, buy now, bidding with buy now.
+- Place bid through RPC.
+- Buy now through RPC.
+- Close ended auction through RPC where appropriate.
+- Cancel auction where allowed through RPC.
+- Display active item/CP lock state and auction status.
 
 **Acceptance criteria:**
-- Trade completion is transactional.
+- Auction creation/bidding/buy-now/cancel/close use public auction RPCs only.
+- No direct writes to `player_auction_listings`, `player_auction_bids`, `character_point_locks`, `items.status`, `player_trade_transactions`, or `player_trade_transaction_items`.
+- Seller cannot bid/buy own auction.
+- Auction duration and minimum bid increment come from server config/RPC behavior, not hardcoded Angular constants.
+- Expired/no-bid and completed auction states are displayed correctly.
+- Build and targeted tests pass.
+
+**Blocker rule:**
+If a required auction RPC/read model is missing or not present in generated types, stop and report DB/types blocker. Do not create a parallel market/listing flow.
 
 ---
 
-## Task J5 — Add trade snapshot features for anti-abuse
+## Task J5 — Trade/auction transaction item snapshot features
 
-**Goal:** Store lightweight indexed trade/item similarity features.
+**Goal:** Support anti-abuse similarity checks with stable item snapshots captured at transaction time.
 
-**Scope:**
-- Snapshot features:
-  - quality,
-  - base item class/type,
-  - prefix/suffix presence/id,
-  - approximate power/value bucket,
-  - item identity if applicable.
-- Avoid heavy runtime joins for detection.
+**Current blocker:** DB migration is required before frontend/domain code can rely on this fully.
+
+**Needed DB direction:**
+`player_trade_transaction_items` should store lightweight item snapshot features such as quality key, base/base-type, prefix/suffix ids or presence, item value bucket, value snapshot and display/name snapshot at transaction time. These snapshots are for anti-abuse and report/debug evidence. They should not be reconstructed from current live item state.
+
+**Scope after DB migration exists:**
+- Update generated types.
+- Extend transaction item domain models/mappers with snapshot fields.
+- Use snapshot fields in anti-abuse/trade history views where relevant.
+- Avoid live item joins for historical similarity when snapshot fields are available.
 
 **Acceptance criteria:**
-- Anti-abuse trade detection can compare similar trades cheaply.
+- If snapshot columns are absent, Codex reports DB blocker and does not implement a fake client-side substitute.
+- If snapshot columns exist, transaction item mappers include them.
+- Similarity/history UI reads snapshot fields instead of recalculating from current item state.
+- Build and mapper tests pass.
+
+---
+
+## Task J6 — Trade and auction audit follow-up
+
+**Goal:** Add audit evidence for significant trade/auction state changes once frontend flows exist and DB audit keys/RPC support are confirmed.
+
+**Scope:**
+- Audit-worthy events may include offer created, offer responded, offer confirmed/completed, offer cancelled/rejected/expired, auction listed, bid placed, buy-now completed, auction closed, auction cancelled/expired.
+- Prefer DB-side audit inside existing trade/auction RPCs.
+- Do not add separate frontend `AuditWriter` calls if the RPC owns the mutation.
+- Seed/check `audit_action_types` and `audit_entity_types` before using new audit keys.
+
+**Acceptance criteria:**
+- Significant trade/auction operations leave audit evidence where agreed.
+- Audit metadata remains lightweight and does not replace report/snapshot data.
+- UI-only clicks are not audited.
+- If DB/RPC audit support is missing, report DB blocker instead of writing parallel frontend audit.
+
+---
+
+## Task J7 — Vendor scrap/sell for drachmas
+
+**Goal:** Implement the vendor/system economy path for converting items into drachmas, separate from player trade.
+
+**Scope:**
+- Treat vendor scrap/sell as a system/vendor operation, not player-to-player trade.
+- Use drachmas/resources, not Character Points.
+- Decide and implement the canonical DB/RPC path before frontend mutation work.
+- Integrate with current item lifecycle rules without bypassing safe scrap/recovery semantics.
+- Preserve audit/reason where the operation is significant.
+
+**Acceptance criteria:**
+- Vendor scrap/sell does not use trade/auction tables or Character Points.
+- Drachma/resource payout is handled by DB/RPC workflow, not direct Angular table updates.
+- Item cleanup follows current lifecycle rules.
+- If no DB/RPC workflow exists, Codex reports blocker instead of implementing direct writes.
 
 ---
 
@@ -2020,8 +2090,6 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ## Task UX-I1 — Shared metadata display helpers
 
-**Status:** Done / confirmed 2026-04-29.
-
 **Goal:** Add reusable UI/helpers for showing human-readable label, description/helper text, and technical key as secondary metadata.
 
 **Scope:**
@@ -2039,8 +2107,6 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 ---
 
 ## Task UX-I2 — Config governance explainability implementation
-
-**Status:** Done / confirmed 2026-04-29.
 
 **Goal:** Make config governance screens understandable to operators before they create/apply changes.
 
@@ -2063,8 +2129,6 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ## Task UX-I3 — Audit log readability pass
 
-**Status:** Done / confirmed 2026-04-29.
-
 **Goal:** Replace raw audit keys as primary text in audit views with dictionary labels and helpful metadata.
 
 **Scope:**
@@ -2080,8 +2144,6 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 ---
 
 ## Task UX-I4 — Formula impact preview calculators
-
-**Status:** Done / confirmed 2026-04-29.
 
 **Goal:** Add practical formula calculators for admin formula/balance work.
 
@@ -2100,8 +2162,6 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ## Task UX-I5 — Item generation quality impact preview
 
-**Status:** Done / confirmed 2026-04-29.
-
 **Goal:** Show how item quality affects generated item values and bonuses.
 
 **Scope:**
@@ -2117,8 +2177,6 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 ---
 
 ## Task UX-I6 — Building impact calculator
-
-**Status:** Done / confirmed 2026-04-29.
 
 **Goal:** Show predicted building cost/time/bonus output across levels and selected district context.
 
@@ -2136,56 +2194,21 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 ## Task UX-I7 — Bonus and requirement impact preview
 
-**Status:** Done / confirmed 2026-04-29.
-
 **Goal:** Explain resolved bonus/requirement effects in human-readable terms.
 
 **Scope:**
 - Use `get_bonus_impact_preview(...)` to show resolved effect of bonus templates, entity bonuses, quality scaling, per-level intervals and source-stat scaling.
-- Show local live form-row explainability for editable building requirement rows. The saved canonical requirement impact section is intentionally not shown in Buildings admin until canonical requirement editing is available.
+- Use `get_requirement_impact_preview(...)` to show requirement labels/descriptions from central requirements.
 - Keep technical keys secondary.
-- `Open bonus templates` is generic navigation to `/admin/balance`; it is not a selected-template deep link.
 
 **Acceptance criteria:**
 - Admin can understand what a bonus/requirement does without reading raw JSON.
-- Bonus saved impact uses canonical dictionaries and entity bonuses.
-- Requirement rows explain the current form state without presenting partial canonical saved state.
+- Preview uses canonical dictionaries and entity bonuses.
 - Build passes.
 
 ---
 
-## Task UX-I7b - DB-driven central requirement editor
-
-**Status:** Done / confirmed 2026-04-29.
-
-**Goal:** Replace the Buildings admin legacy requirement editor with a canonical `entity_requirements` editor backed by DB requirement definitions and RPC workflows.
-
-**Scope:**
-- Load active `requirement_definitions` as requirement type options.
-- Create, update, deactivate and reactivate building requirements through canonical RPCs.
-- Use `get_requirement_impact_preview(...)` for saved canonical impact and inactive-row visibility.
-- Render value fields based on `requirement_definitions.value_type`.
-- Keep resource options in central domain config for this slice; they are not DB-driven yet.
-
-**Acceptance criteria:**
-- Buildings admin edit path no longer uses legacy `building_requirements`, `buildings.requirements` or `rank_required`.
-- Frontend does not directly read or write `entity_requirements`.
-- Create/update payloads are `value_type` aware and do not send unrelated technical preview defaults.
-- Deactivate removes rows from the active editor and active saved impact.
-- Inactive rows are visually separate and can be reactivated when returned by the DB read model.
-- Build and targeted tests pass.
-
-**Verification notes:**
-- Manual smoke confirmed create/update/deactivate/reactivate.
-- `get_requirement_impact_preview(...)` returns inactive rows required by the reactivate flow.
-- The previous `Unknown or inactive audit action type: config.entity_requirement.created/updated` failure was a seed/database issue, not a frontend issue.
-- Required audit action types: `config.entity_requirement.created`, `config.entity_requirement.updated`, `config.entity_requirement.deactivated`, `config.entity_requirement.reordered`.
-
----
-
 ## Task UX-I8 — Anti-abuse decision explainability pass
-
-**Status:** Accepted 2026-04-29.
 
 **Goal:** Make future anti-abuse case/sanction/declaration/report UI understandable for staff and players.
 
@@ -2199,13 +2222,6 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 - Anti-abuse UI uses labels/helper text from DB dictionaries.
 - Player-facing status views do not leak staff-only metadata.
 - Staff decision UI always requires reason.
-
-**Accepted implementation notes:**
-- Added DB-backed dictionary loaders/mappers for anti-abuse sanction types, signal types, player abuse report types and relationship declaration types.
-- Added future-facing display/projection helpers that keep staff-only notes and staff-only status reasons out of player-facing projections.
-- Status labels are explicit fallback enum labels only; DB-backed type explainability remains dictionary-driven.
-- Sanction item links are explained as evidence/context links, not item confiscation or mutation.
-- Anti-abuse decision RPC payload helpers now require reason/status reason before calling audited workflows.
 
 ---
 
@@ -2335,9 +2351,9 @@ Use this order after the current audit/spec cleanup instead of starting more aud
 4. U0-I4 — completed / confirmed: admin dashboard/cards/tag-link filtering.
 5. U0-I5 — completed / confirmed: staff management read models and services.
 6. U0-I6 — completed / confirmed: staff management UI foundation.
-7. U0-I7 — completed / confirmed: moderator scope assignment UI.
-8. U0-I8 — completed / confirmed: moderation actions UI foundation.
-9. U0-I9 - completed / confirmed: moderation history target picker and full-history modes.
+7. U0-I7 — current next task: moderator scope assignment UI.
+8. U0-I8 — moderation actions UI foundation.
+9. U0-I9 — moderation history and disqualification panels.
 10. UX-I1/UX-I2 quick wins may be interleaved when touching the same admin screens.
 
 Operational rule:
@@ -2754,4 +2770,3 @@ Place U1-U4 after config definitions/value read models and before deeper buildin
 - Armory can show overloaded state such as `251/100`.
 - Newer/lower-priority items are hidden first when capacity is exceeded.
 - Visibility/access is not confused with ownership.
-
