@@ -33,6 +33,8 @@ Global Codex rules:
 
 ## Task A1 — Regenerate Supabase database types
 
+**Status:** Done / confirmed.
+
 **Goal:** Synchronize frontend generated types with current schema.
 
 **Scope:**
@@ -783,6 +785,8 @@ Epic F retires legacy bonus usage from application code. Legacy bonus join table
 
 ## Task G6 — Audit gameplay persistent changes
 
+**Status:** Done / confirmed on 2026-04-29 for the stat allocation slice.
+
 **Goal:** Add audit to selected important gameplay state changes.
 
 **Scope:**
@@ -795,12 +799,15 @@ Start with:
 **Acceptance criteria:**
 - Significant persistent gameplay changes are auditable.
 - UI-only plus/minus clicks are not logged.
+- Implementation note: stat allocation now uses canonical `save_stat_allocation(...)`; DB workflow owns Character Point spend validation, CP ledger writes and audit. UI draft plus/minus clicks remain local and unaudited. Remaining gameplay audit slices are major item operations, trade operations once frontend flows exist, and estate/building irreversible changes.
 
 ---
 
 # Epic H — Anti-abuse foundation integration
 
 ## Task H1 — Anti-abuse dictionary models
+
+Status: completed and accepted on 2026-04-29 through UX-I8.
 
 **Goal:** Add typed models for anti-abuse dictionaries.
 
@@ -812,10 +819,13 @@ Start with:
 
 **Acceptance criteria:**
 - Models include descriptions/helper/admin text and required-field flags.
+- Implementation note: typed anti-abuse dictionary models and mappers cover sanction types, signal types, player abuse report types and player relationship declaration types.
 
 ---
 
 ## Task H2 — Anti-abuse dictionary loaders
+
+Status: completed and accepted on 2026-04-29.
 
 **Goal:** Load active dictionary rows.
 
@@ -826,10 +836,13 @@ Start with:
 
 **Acceptance criteria:**
 - No hardcoded anti-abuse type lists in UI.
+- Implementation note: `AntiAbuseDictionaries` loads active DB-backed dictionary rows for all four anti-abuse dictionary collections, sorted by `sort_order` then `key`.
 
 ---
 
 ## Task H3 — Anti-abuse case read models
+
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Model cases and linked context.
 
@@ -843,10 +856,13 @@ Start with:
 
 **Acceptance criteria:**
 - Case detail aggregation is possible.
+- Implementation note: model-only slice; case, signal, participant, audit-link and declaration-link read models are available for H5 aggregation.
 
 ---
 
 ## Task H4 — Server-scoped case list service
+
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Load cases for selected server.
 
@@ -860,10 +876,13 @@ Start with:
 
 **Acceptance criteria:**
 - Staff does not see unrelated server cases by default.
+- Implementation note: `AntiAbuseCases` requires `serverId`, supports status/verdict/source/date filters, and does not fall back to a global case list.
 
 ---
 
 ## Task H5 — Case detail aggregation service
+
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Load all linked case data.
 
@@ -879,10 +898,13 @@ Start with:
 
 **Acceptance criteria:**
 - One service/domain method gives case detail view model.
+- Implementation note: `AntiAbuseCaseDetails` loads the selected-server case detail aggregate only after confirming the base case by `serverId + caseId`; missing selected-server cases do not trigger linked reads.
 
 ---
 
 ## Task H6 — Player relationship declaration form model
+
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Dynamic form from declaration type flags.
 
@@ -898,12 +920,13 @@ Start with:
 
 **Acceptance criteria:**
 - Form adapts to DB type flags.
+- Implementation note: player relationship declaration form models are generated from DB-backed type flags. Title, description and participants are always required; amount, expiration, item and trade fields are enabled only when required by the declaration type. Staff-only admin description is not exposed.
 
 ---
 
 ## Task H7 — Player relationship declaration submission
 
-**Status:** Done / confirmed 2026-04-30.
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Player can submit declaration.
 
@@ -914,12 +937,13 @@ Start with:
 
 **Acceptance criteria:**
 - Declaration can be submitted and later listed.
+- Implementation note: submission uses canonical `create_player_relationship_declaration(...)` through a focused service and payload mapper. Top-level RPC args are generated `p_*` fields, while nested participants/items/trades JSON is explicitly mapped to the DB workflow contract.
 
 ---
 
 ## Task H8 — Player declaration list/status view
 
-**Status:** Done / confirmed 2026-04-30 as service/read-model slice. Player-facing UI remains a later integration step.
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Player can see declarations and reasons.
 
@@ -928,14 +952,14 @@ Start with:
 - Show status, reason, participants, items/trades, timestamps.
 
 **Acceptance criteria:**
-- Read model/service lists relevant declarations for a server/user/hero context without staff-only field leaks.
-- Player UI still needs to consume this read model before the full user-facing screen is complete.
+- Player understands accepted/rejected/revoked/pending state.
+- Implementation note: service/read-model slice requires `serverId`, `heroId` and `userId`, combines own declarations, hero participant declarations and user-only participant declarations, finalizes server scope through `serverId + id IN (...)`, loads inactive/deprecated type labels by key, and omits staff-only/global account fields from the player-facing model.
 
 ---
 
 ## Task H9 — Staff declaration review
 
-**Status:** Done / confirmed 2026-04-30 as service/read-model slice. Staff-facing UI remains a later integration step.
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Staff can accept/reject/revoke declarations.
 
@@ -946,13 +970,13 @@ Start with:
 
 **Acceptance criteria:**
 - Staff decision and reason are stored and visible.
-- Service confirms the declaration belongs to the selected server before loading linked rows or sending a decision workflow request.
+- Implementation note: staff review uses a server-scoped detail loader and canonical `AntiAbuseDecisions.setRelationshipDeclarationDecision(...)`; no direct write, frontend audit write or direct `.rpc()` call is done in the review service.
 
 ---
 
 ## Task H10 — Player abuse report form model
 
-**Status:** Done / confirmed 2026-04-30.
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Dynamic form from report type flags.
 
@@ -966,13 +990,13 @@ Start with:
 
 **Acceptance criteria:**
 - Form adapts to DB report type flags.
-- `title` and `description` remain base required fields while the submission RPC requires them.
+- Implementation note: player abuse report form models are generated from DB-backed report type flags. `title` and `description` are always visible and required because current `create_player_abuse_report(...)` requires `p_title` and `p_description`; optional accused hero/item/trade fields remain flag-driven.
 
 ---
 
 ## Task H11 — Player abuse report submission
 
-**Status:** Done / confirmed 2026-04-30.
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Player can submit abuse report.
 
@@ -984,12 +1008,13 @@ Start with:
 **Acceptance criteria:**
 - Player can submit report.
 - Linked case exists when RPC path is used.
+- Implementation note: submission uses canonical `create_player_abuse_report(...)`, sends only generated RPC args supported by the DB contract, does not require/send fake `reportingUserId`, requires returned `report_id` and `case_id`, and performs no direct report table writes or frontend audit writes.
 
 ---
 
 ## Task H12 — Player abuse report list/status view
 
-**Status:** Done / confirmed 2026-04-30 as service/read-model slice. Player-facing UI integration remains a later slice.
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Player can see report status.
 
@@ -999,6 +1024,7 @@ Start with:
 
 **Acceptance criteria:**
 - Player understands submitted/linked/dismissed/resolved state.
+- Implementation note: service/read-model slice requires `serverId`, `heroId` and `userId`, combines hero-owned reports and user-only reports, defensively filters final rows by `server_id`, loads inactive/deprecated report type labels and linked case status, and omits staff-only/global account fields.
 
 ---
 
@@ -1122,9 +1148,10 @@ Status: completed and accepted on 2026-04-30.
 - Implementation note: base required fields are `reason`, `targetHeroId` and `targetUserId`; dynamic fields are driven by sanction type flags. Future H19 UI must use server-scoped hero/account target search to populate target ids, not UUID-only inputs.
 
 ---
+
 ## Task H19 — Sanction creation operation
 
-**Status:** Done / confirmed 2026-04-30.
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Staff can create sanctions.
 
@@ -1137,13 +1164,13 @@ Status: completed and accepted on 2026-04-30.
 **Acceptance criteria:**
 - Staff can create at least warning, suspension, CP fine.
 - Case detail shows sanctions.
-- Implementation note: sanction creation is wired into selected-server case detail through canonical anti-abuse decision workflows. Target hero/account, source hero and item selection use server-scoped search/picker flows instead of UUID-only staff inputs. CP fines create linked Character Point penalties, item sanctions link selected item evidence/context, partial linked-record failures are surfaced and the detail aggregate refreshes after base sanction creation. Full manual smoke is deferred until representative gameplay case/item data exists.
+- Implementation note: sanction creation is wired into selected-server case detail through canonical `AntiAbuseDecisions.createSanction(...)`. Target hero/account, source hero and item selection use server-scoped search/picker flows instead of UUID-only staff inputs. CP fines create linked Character Point penalties, item sanctions link selected item evidence/context, partial linked-record failures are surfaced, and the detail aggregate refreshes after base sanction creation. Full manual smoke is deferred until representative gameplay case/item data exists.
 
 ---
 
 ## Task H20 — Sanction status update operation
 
-**Status:** Done / confirmed 2026-04-30.
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Staff can progress/cancel/forgive/fail sanctions.
 
@@ -1158,13 +1185,13 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - Status updates persist with timestamps/reasons.
-- Implementation note: sanction status updates are wired into selected-server case detail through canonical `AntiAbuseDecisions.setSanctionStatus(...)`. The UI requires status reason, uses central sanction status options, labels sanction choices with type/status/target/reason preview, refreshes detail after success, and guards stale success/error responses against case/server changes and selected-sanction changes. Full manual smoke is deferred until representative gameplay sanctions/cases exist.
+- Implementation note: selected-server case detail can update sanction status through canonical `AntiAbuseDecisions.setSanctionStatus(...)`. The action requires sanction, status and status reason, uses central status options, refreshes detail after success, labels sanction options with type/status/target/reason context, and guards stale success/error responses against case/server and selected-sanction changes.
 
 ---
 
 ## Task H21 — CP penalty view/management
 
-**Status:** Done / confirmed 2026-04-30.
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Staff can inspect CP fine debt.
 
@@ -1175,11 +1202,13 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - CP penalty is visible in case/hero history.
-- Implementation note: selected-server case detail shows CP penalty debt and supports manual CP penalty status updates through canonical `AntiAbuseDecisions.setCharacterPointPenaltyStatus(...)`. The UI requires status reason, uses central sanction status options, labels penalty choices with hero/status/debt/reason context, refreshes detail after success, and guards stale success/error responses against case/server changes and selected-penalty changes. Automatic siphoning is not implemented. Broader hero/account repeat-offender history remains H22. Full manual smoke is deferred until representative gameplay CP penalty data exists.
+- Implementation note: selected-server case detail shows CP penalty debt and supports manual CP penalty status updates through canonical `AntiAbuseDecisions.setCharacterPointPenaltyStatus(...)`. The UI requires status reason, uses central sanction status options, labels penalty choices with hero/status/debt/reason context, refreshes detail after success, and guards stale success/error responses against case/server changes and selected-penalty changes. Automatic siphoning is not implemented. Full manual smoke is deferred until representative gameplay CP penalty data exists.
 
 ---
 
 ## Task H22 — Repeat offender/history view
+
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** Staff can review prior cases/sanctions for hero/account.
 
@@ -1193,7 +1222,6 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - Staff can evaluate repeat offender patterns.
-- Status: Done / confirmed on 2026-04-30.
 - Implementation note: selected-server case detail now includes repeat-offender history for a selected hero/account. The read service is server-scoped, excludes the current case, resolves final cases through `serverId + id IN (...)`, reads anti-abuse cases/participants/sanctions/Character Point penalties directly, and does not use the legacy moderation history RPC. Prior sanction/warning labels use referenced sanction type dictionaries loaded through `AntiAbuseReferencedDictionaries`, with raw type keys shown only as secondary metadata. Empty participant targets are ignored and UI requests guard stale target/case/server responses. Full manual smoke is deferred until representative anti-abuse history data exists.
 
 ---
@@ -1201,6 +1229,8 @@ Status: completed and accepted on 2026-04-30.
 # Epic I — Item lifecycle
 
 ## Task I1 — Add lifecycle fields to item domain models
+
+Status: completed and accepted on 2026-04-30.
 
 **Goal:** App understands active/scrapped items.
 
@@ -1213,6 +1243,7 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - Item domain model includes lifecycle state.
+- Implementation note: added `ItemReadModel` and `mapItemReadModel(...)` for runtime `items` rows, including `status`, `scrappedAt`, `recoverableUntil` and `updatedAt`. Equipped-item row typing/select now carries lifecycle fields for follow-up filtering. I1 is model/mapper-only; UI/manual smoke is not applicable.
 
 ---
 
@@ -1259,67 +1290,113 @@ Status: completed and accepted on 2026-04-30.
 
 # Epic J — Items, economy and player trade
 
-## Task J1 — Inspect current item/trade implementation
+Epic J must follow the current database/RPC reality, not the older placeholder market-listing concept.
 
-**Goal:** Understand what exists before adding trade/anti-abuse logic.
+Current source of truth:
+- Direct player-to-player trade already has a DB/RPC foundation.
+- One-item auctions already have a DB/RPC foundation.
+- Trade/auction use Character Points, not drachmas.
+- Drachmas are vendor/system/building currency.
+- Vendor scrap/sell is not player trade.
+- Do not design or implement a new `market_listings` table unless a new explicit product/database decision replaces the current direct-trade/auction model.
+- Do not write directly to trade, auction, lock, transaction, item ownership, or item lifecycle tables from Angular.
+- Use existing public RPCs from `database-current.md` and generated `database.types.ts`.
+- Internal helper RPCs/functions are not frontend contracts.
+
+Known current DB/RPC concepts for this epic:
+- direct trade: `player_trade_offers`, `player_trade_offer_items`, `player_trade_transactions`, `player_trade_transaction_items`, `character_point_locks`;
+- auction: `player_auction_listings`, `player_auction_bids`, `character_point_locks`, `player_trade_transactions(transaction_type = auction_sale)`, `player_trade_transaction_items`;
+- item locks: `items.status = locked_trade | locked_auction`;
+- player-facing trade/auction mutations should use public RPCs such as `create_player_direct_trade_offer`, `respond_player_direct_trade_offer`, `confirm_player_direct_trade_offer`, `cancel_player_direct_trade_offer`, `reject_player_direct_trade_offer`, `create_player_auction_listing`, `place_player_auction_bid`, `buy_now_player_auction`, `cancel_player_auction_listing`, and `close_player_auction_listing` where present in current generated types.
+
+## Task J1 — Align trade/auction frontend plan with existing DB/RPC contract
+
+**Goal:** Replace the older market/listing assumptions with the current direct-trade and one-item auction model.
 
 **Scope:**
-- Inspect item tables/models.
-- Inspect any market/trade/listing code.
-- Report gaps.
+- Inspect current frontend item/trade/auction code and current generated DB types.
+- Read `database-current.md` sections for direct trade, auctions, Character Points, item lifecycle, and anti-abuse trade signals.
+- Confirm which public RPCs are available in current generated types.
+- Identify any frontend paths that still assume a generic `market_listings` model.
+- Report blockers instead of designing new schema.
 
 **Acceptance criteria:**
-- Clear list of existing vs missing trade runtime pieces.
+- Report lists available trade/auction RPCs and tables used by existing DB contract.
+- Report identifies any outdated market/listing assumptions in app code or prompts.
+- No new schema is proposed for player market listings.
+- No code changes unless explicitly requested.
 
 ---
 
-## Task J2 — Design player-to-player trade model
+## Task J2 — Direct trade read models and services
 
-**Goal:** Prepare trade schema/flow if missing.
+**Goal:** Add typed frontend read/domain layer for existing direct trade offers and transactions.
 
 **Scope:**
-- Trade uses Character Points.
-- Drachma/vendor value is not player market value.
-- Account for:
-  - item sale,
-  - substitute payments,
-  - loans,
-  - group purchase,
-  - shared item pool,
-  - item lending.
+- Model direct trade offers, offer items, transaction rows, transaction items, CP amounts, status, timestamps and participant hero labels.
+- Load active/relevant direct trade offers for the active hero and selected server.
+- Load historical direct trade transactions where needed for UI/history.
+- Use active server and active hero context.
+- Keep read models separate from mutation payloads.
 
 **Acceptance criteria:**
-- Proposed schema/flow is reviewable before implementation.
+- Direct trade lists/details can be displayed using current DB data.
+- Queries are server/hero scoped.
+- No direct write paths are added.
+- No broad unrelated item/user fetches are added.
+- Build and focused mapper/service tests pass.
 
 ---
 
-## Task J3 — Implement minimal market listing read/write
+## Task J3 — Direct trade mutation UI through existing RPCs
 
-**Goal:** Enable basic player-to-player listing if approved.
+**Goal:** Let players create, respond to, confirm, cancel and reject direct trade offers through existing DB/RPC workflows.
 
 **Scope:**
-- Create/list market listings.
-- Price in Character Points.
-- Server-scoped.
-- Active hero context.
+- Create offer from active hero to target hero using current RPC contract.
+- Allow target response with CP and item selection where supported.
+- Allow creator confirmation where required.
+- Allow cancellation/rejection through current RPCs.
+- Display CP locks and item lock state clearly.
+- Use DB-backed human-readable target/item pickers where needed.
 
 **Acceptance criteria:**
-- Player can create/list basic item listings.
+- Mutations use public trade RPCs only.
+- No direct writes to `player_trade_offers`, `player_trade_offer_items`, `character_point_locks`, `items.status`, `player_trade_transactions`, or `player_trade_transaction_items`.
+- CP-only-for-CP-only trade remains blocked by DB workflow.
+- Trade offer expiry/cancel/reject cleanup is handled by DB/RPC, not Angular table writes.
+- RPC errors are surfaced as user-readable messages/toasts.
+- Build and targeted tests pass.
+
+**Blocker rule:**
+If the needed public RPC is missing from generated types or has a different signature than expected, stop and report DB/types blocker. Do not invent a frontend fallback.
 
 ---
 
-## Task J4 — Implement trade completion with audit hooks
+## Task J4 — Auction gameplay UI through existing RPCs
 
-**Goal:** Complete trade transaction safely.
+**Goal:** Build player-facing one-item auction surfaces using the existing auction DB/RPC foundation.
 
 **Scope:**
-- Validate seller/buyer/server/item/status.
-- Transfer item/CP.
-- Write audit.
-- Emit anti-abuse signal candidate if suspicious detection exists.
+- List active server-scoped auction listings.
+- Create one-item auction listing from active hero inventory.
+- Support auction modes currently available in DB: bidding, buy now, bidding with buy now.
+- Place bid through RPC.
+- Buy now through RPC.
+- Close ended auction through RPC where appropriate.
+- Cancel auction where allowed through RPC.
+- Display active item/CP lock state and auction status.
 
 **Acceptance criteria:**
-- Trade completion is transactional.
+- Auction creation/bidding/buy-now/cancel/close use public auction RPCs only.
+- No direct writes to `player_auction_listings`, `player_auction_bids`, `character_point_locks`, `items.status`, `player_trade_transactions`, or `player_trade_transaction_items`.
+- Seller cannot bid/buy own auction.
+- Auction duration and minimum bid increment come from server config/RPC behavior, not hardcoded Angular constants.
+- Expired/no-bid and completed auction states are displayed correctly.
+- Build and targeted tests pass.
+
+**Blocker rule:**
+If a required auction RPC/read model is missing or not present in generated types, stop and report DB/types blocker. Do not create a parallel market/listing flow.
 
 ---
 
@@ -1344,6 +1421,7 @@ Status: completed and accepted on 2026-04-30.
 - Build and mapper tests pass.
 
 ---
+
 ## Task J6 — Trade and auction audit follow-up
 
 **Goal:** Add audit evidence for significant trade/auction state changes once frontend flows exist and DB audit keys/RPC support are confirmed.
@@ -1520,94 +1598,306 @@ Known current DB/RPC concepts for this epic include:
 
 ---
 
-# Epic L — PvE exploration/trials
+# Epic L — PvE exploration/trials frontend integration
 
-## Task L1 — Inspect current PvE/exploration implementation
+Epic L is now an implementation epic over the existing PvE DB/RPC foundation, not a fresh design/audit epic.
 
-**Goal:** Know current state before building loop.
+**Current DB foundation expected before Codex starts L tasks:**
+- L-DB1 dictionaries/formula targets/reward foundation are applied.
+- L-DB2 exploration runtime tables are applied.
+- L-DB3a bootstrap/state/start-step RPCs are applied.
+- L-DB3b step resolve/outcome RPCs are applied.
+- L-DB3c reward/challenge completion RPCs are applied.
+- L-DB4a sandbox/admin helper RPCs are applied.
+- L-DB4b forced outcome/challenge testing RPCs are applied.
+- L-DB4c preview/simulation RPCs are applied in the current dump:
+  - `preview_trial_opportunity_curve(...)`,
+  - `preview_trial_manifestation_chance(...)`,
+  - `preview_challenge_auto_resolve_success_chance(...)`,
+  - `preview_reward_generated_item(...)`,
+  - `preview_reward_profile(...)`,
+  - `simulate_trial_opportunity_runs(...)`.
+- Runtime reward item generation has a known fix applied so `generate_reward_item_for_hero(...)` stores the picked quality key once and avoids duplicated `of of` suffix display.
+
+**Epic rules:**
+- Do not redesign PvE from scratch.
+- Use canonical terms: Exploration, Trial opportunity/appearance, Trial manifestation, Trial completion, Encounter, Health.
+- Do not call the implementation loop “monster hunt” except when referencing old legacy docs.
+- Use selected server + active hero; never assume `hero.id === auth.uid()`.
+- Use generated database types after the user regenerates them; do not invent schema or RPC signatures.
+- Player-facing persistent mutations must go through DB/RPC workflows, not direct writes to exploration/challenge/reward tables.
+- Admin/sandbox actions must use the dedicated test/helper RPCs and should surface permission/RPC denials clearly.
+- Use DB dictionaries/read models for difficulty tiers, trials, encounters, rewards and preview labels; avoid hardcoded gameplay lists where DB data exists.
+- Treat preview/simulation RPCs as read-only lab/admin/player explanation tools; do not use them to mutate runtime state.
+- Preserve human-readable explainability in UI: labels, descriptions, helper text, explanatory copy for chances, caps, rewards and debug tools.
+- If generated types do not include the expected PvE tables/RPCs, stop and report a DB types/schema alignment blocker.
+
+## Task L1 — DB/types alignment after PvE migrations
+
+**Goal:** Confirm the frontend type layer can safely consume the PvE DB/RPC foundation after the user regenerates Supabase types.
 
 **Scope:**
-- Find exploration, trial, encounter code.
-- Report what exists vs docs.
+- Run `git status --short` first.
+- Inspect generated database types after user-side regeneration.
+- Confirm generated types expose the expected PvE tables:
+  - `exploration_difficulty_tiers`,
+  - `exploration_minigame_definitions`,
+  - `trial_definitions`,
+  - `encounter_definitions`,
+  - `exploration_location_descriptions`,
+  - `trial_manifestation_cap_profiles`,
+  - `reward_profiles`,
+  - `reward_profile_entries`,
+  - `reward_profile_assignments`,
+  - `reward_grants`,
+  - `reward_grant_entries`,
+  - `hero_daily_action_counters`,
+  - `hero_explorations`,
+  - `hero_exploration_nodes`,
+  - `hero_exploration_edges`,
+  - `hero_exploration_steps`,
+  - `hero_exploration_effects`,
+  - `hero_exploration_challenge_attempts`,
+  - `hero_exploration_test_overrides`.
+- Confirm generated types expose the expected PvE RPCs:
+  - `start_or_get_hero_exploration(...)`,
+  - `get_hero_exploration_state(...)`,
+  - `start_hero_exploration_step(...)`,
+  - `resolve_hero_exploration_step(...)`,
+  - `complete_hero_exploration_challenge_attempt(...)`,
+  - `auto_resolve_hero_exploration_challenge_attempt(...)`,
+  - `get_hero_exploration_debug_state(...)`,
+  - `add_hero_remaining_actions(...)`,
+  - `reset_hero_exploration(...)`,
+  - `skip_hero_exploration_step_timer(...)`,
+  - `test_grant_reward_profile_to_hero(...)`,
+  - `set_next_hero_exploration_outcome_override(...)`,
+  - `force_complete_hero_exploration_challenge_attempt(...)`,
+  - `preview_trial_opportunity_curve(...)`,
+  - `preview_trial_manifestation_chance(...)`,
+  - `preview_challenge_auto_resolve_success_chance(...)`,
+  - `preview_reward_generated_item(...)`,
+  - `preview_reward_profile(...)`,
+  - `simulate_trial_opportunity_runs(...)`.
+- Do not regenerate types unless the user explicitly asks Codex to do so.
+- Do not mark any L task complete in docs during this alignment task.
 
 **Acceptance criteria:**
-- Clear implementation gap report.
+- Expected PvE tables and RPCs are visible in generated types.
+- App compiles after type inspection or any minimal type-reference fixes.
+- If any expected table/RPC/type is missing, Codex reports a precise blocker instead of starting L2.
+- No raw generated rows replace domain models.
 
 ---
 
-## Task L2 — Exploration step model
+## Task L2 — Exploration domain models and mappers
 
-**Goal:** Implement or plan movement step state.
+**Goal:** Add typed frontend domain/read models for the DB-backed exploration/trial foundation.
 
 **Scope:**
-- Direction choice.
-- Every step costs time.
-- First step also costs time.
-- Discovered branches/nodes remembered.
-- Backtracking possible and costs time.
+- Add models/mappers for:
+  - exploration difficulty tier,
+  - minigame definition,
+  - trial definition,
+  - encounter definition,
+  - location description,
+  - manifestation cap profile,
+  - reward profile and reward profile entry,
+  - reward grant and reward grant entry,
+  - hero daily action counter,
+  - exploration state,
+  - exploration node,
+  - exploration edge,
+  - exploration step,
+  - exploration effect,
+  - challenge attempt,
+  - exploration debug state,
+  - L-DB4c preview/simulation output models.
+- Place shared models/mappers under `core/domain` / `core/interfaces` / `core/services` according to project structure.
+- Keep route components thin; do not put reusable types/interfaces in components.
+- Preserve DB labels/descriptions/helper text in mapped models.
+- Represent statuses and outcome kinds as typed string unions/enums derived from generated types where practical.
 
 **Acceptance criteria:**
-- Movement model follows current decisions.
+- Exploration/trial/reward read models do not expose raw DB rows directly to pages.
+- Mappers handle nullable fields and metadata JSON safely.
+- Build passes.
+- No gameplay mutation UI is implemented in this task.
 
 ---
 
-## Task L3 — Trial/encounter roll order
+## Task L3 — Player exploration start/status screen
 
-**Goal:** Enforce PvE roll order and progressive trial chance semantics.
+**Goal:** Create the player-facing entry/status surface for the current hero’s daily exploration.
 
 **Scope:**
-1. roll trial opportunity;
-2. if no trial opportunity, roll encounter/empty.
-- Trial and encounter do not occur simultaneously.
-- Encounter does not reset progressive trial chance.
-- Dry-step/trial chance progression resets after any trial opportunity attempt, even if manifestation fails.
+- Add or update a route/page under the gameplay area for Exploration.
+- Load selected server and active hero before any hero-owned PvE calls.
+- Use `start_or_get_hero_exploration(...)` and/or `get_hero_exploration_state(...)` through a typed service.
+- Display current exploration status, difficulty, remaining trials, active/pending step or challenge status, and clear empty/no-exploration state.
+- Show active difficulty tiers from DB, not hardcoded cards.
+- Surface human-readable descriptions, timing expectations and chance explanations where available.
+- Use L-DB4c preview data where useful for difficulty graphs/curve explanation, without treating preview as runtime truth.
 
 **Acceptance criteria:**
-- Runtime matches documented roll order.
-- Trial chance reset is tied to trial opportunity attempt, not only completed/manifested trial.
+- A player can reach a clear Exploration status page for the active hero/server.
+- Page does not assume `hero.id === auth.uid()`.
+- Remaining trial count is shown in gameplay terms.
+- Difficulty cards/options come from DB read models.
+- No direct writes to exploration tables.
 
 ---
 
-## Task L4 — Daily trial limit
+## Task L4 — Graph state read and direction UI
 
-**Goal:** Implement daily trial gating.
+**Goal:** Show the current exploration graph/path state and allow valid direction choices.
 
 **Scope:**
-- Daily limit applies to trials, not steps.
-- After trials exhausted, exploration ends for the day.
-- Premium can increase opportunities but not quality/luck outcomes.
+- Read graph/path state from `get_hero_exploration_state(...)`.
+- Display current node, discovered branches and available directions.
+- Preserve discovered state: previously discovered nodes/edges are displayed as remembered, not rerolled in the frontend.
+- Support backtracking if DB state exposes a valid edge/path for it.
+- Disable direction choices while a step is already active, awaiting resolution, or while a challenge attempt blocks movement.
+- Explain that every movement step costs time, including the first step.
 
 **Acceptance criteria:**
-- Daily trial count controls exploration end.
+- Player can see where they are and which directions are available.
+- Known paths/backtracking do not trigger frontend-side rerolls.
+- Invalid movement states are disabled/explained.
+- Direction actions call DB/RPC workflow only.
 
 ---
 
-## Task L5 — Trial stages
+## Task L5 — Start step timer and progress UI
 
-**Goal:** Model trial appearance/manifestation/completion.
+**Goal:** Let players start exploration movement and understand the timer before resolving the step.
 
 **Scope:**
-- Trial appearance.
-- Manifestation check.
-- Completion challenge/combat placeholder.
+- Start movement through `start_hero_exploration_step(...)`.
+- Show timer/progress using DB `resolves_at`/step status, not arbitrary client-only state.
+- Handle active step refresh/reload safely.
+- Show `Check result` / resolve affordance only when the DB step is ready.
+- For sandbox/admin/testing contexts, surface `skip_hero_exploration_step_timer(...)` only where permitted.
+- Do not allow normal players to bypass timers.
 
 **Acceptance criteria:**
-- Trial flow has explicit stages.
+- Starting a step creates/uses DB state.
+- Reloading the page preserves timer state.
+- Step cannot be resolved before DB-ready time unless sandbox/admin helper is used.
+- Sandbox skip requires reason where RPC requires it.
 
 ---
 
-## Task L6 — Encounter types
+## Task L6 — Resolve step result UI
 
-**Goal:** Implement current encounter categories.
+**Goal:** Display resolved step outcomes clearly without duplicating DB roll logic in Angular.
 
 **Scope:**
-- Combat encounter.
-- Resource encounter.
-- Buff/debuff encounter.
-- Only one buff/debuff active at a time.
+- Resolve ready step through `resolve_hero_exploration_step(...)`.
+- Display outcome kinds: known-path/backtracking movement, nothing/empty flavor, encounter, trial opportunity with manifestation success, trial opportunity with manifestation fail.
+- For nothing/empty results, show location/flavor text when available instead of a blank “nothing happened”.
+- For manifestation fail, show that the daily trial opportunity was consumed and no reward is granted.
+- For manifested trial or combat encounter, route/transition into challenge attempt UI.
+- Do not reroll on refresh.
 
 **Acceptance criteria:**
-- Encounter rules follow project context.
+- Result page is driven by DB step/challenge state.
+- Trial opportunity consumption and manifestation failure are understandable.
+- Encounter/trial/nothing are mutually exclusive in the UI.
+- No reward is generated by frontend code.
+
+---
+
+## Task L7 — Challenge attempt UI: manual, auto and debug paths
+
+**Goal:** Provide the first UI for manifested trial/combat encounter challenge attempts.
+
+**Scope:**
+- Load active challenge attempt from exploration state.
+- Show trial/encounter label, tested stat/minigame info and manual resolution deadline where available.
+- Support manual completion through `complete_hero_exploration_challenge_attempt(...)` where current prototype allows.
+- Support auto-resolve through `auto_resolve_hero_exploration_challenge_attempt(...)`.
+- Surface chance/explanation data from DB where available; use L-DB4c preview for explanation only, not runtime truth.
+- For admin/sandbox, support forced completion through `force_complete_hero_exploration_challenge_attempt(...)` only in allowed debug UI.
+
+**Acceptance criteria:**
+- Challenge attempt blocks further movement until completed/auto-resolved/admin-forced.
+- Completion uses DB/RPC, not table updates.
+- Success/failure state is visible and refresh-safe.
+- Auto-resolve is clearly presented as fallback/worse-than-manual where applicable.
+
+---
+
+## Task L8 — Reward display and item persistence confirmation
+
+**Goal:** Show exploration challenge rewards from persisted DB state.
+
+**Scope:**
+- Read reward grant and reward grant entries from DB-backed read models.
+- Display EXP, Character Points / Hero Points according to current UI naming, resources, generated items, and skipped/unsupported reward entries where runtime records them.
+- Generated reward items are real `items` rows; display item id/name/value/quality/base/affixes through existing item read models where possible.
+- Handle the case where item generation reward count is zero.
+- Ensure reward display survives refresh and does not re-trigger reward generation.
+- Do not implement vendor scrap/sell here; that belongs to the separate vendor economy workflow.
+
+**Acceptance criteria:**
+- Completed successful challenge shows reward results from DB state.
+- Generated item rewards link into existing inventory/armory visibility where possible.
+- Failed/no-reward attempts show a clear no-reward state.
+- Reward display does not create duplicate rewards.
+- No direct writes to reward/item tables from Angular.
+
+---
+
+## Task L9 — Admin exploration debug page
+
+**Goal:** Add a server-scoped sandbox/admin page for inspecting and controlling exploration test state.
+
+**Scope:**
+- Add admin/debug surface for selected server and selected/test hero.
+- Use DB-owned helper RPCs: `get_hero_exploration_debug_state(...)`, `add_hero_remaining_actions(...)`, `reset_hero_exploration(...)`, `skip_hero_exploration_step_timer(...)`, `test_grant_reward_profile_to_hero(...)`, `set_next_hero_exploration_outcome_override(...)`, `force_complete_hero_exploration_challenge_attempt(...)`.
+- Require/show reason fields where RPCs require reasons.
+- Display selected server/hero clearly to avoid operating on the wrong target.
+- Explain each debug tool in human terms, not only technical function names.
+- Do not expose debug/test tools to normal players.
+
+**Acceptance criteria:**
+- Admin/tester can inspect exploration runtime/debug state for an allowed server/hero.
+- Debug actions use RPCs and show success/error states clearly.
+- Forced next outcome and forced challenge completion are visible as testing tools.
+- The page is permission-aware and does not rely on frontend-only security.
+- Smoke report includes both UI path and gameplay/admin meaning.
+
+---
+
+## Task L10 — Exploration lab / preview / simulation UI
+
+**Goal:** Expose the L-DB4c preview/simulation RPCs as a non-mutating balancing and explainability lab.
+
+**Scope:**
+- Add an admin/lab UI that calls: `preview_trial_opportunity_curve(...)`, `preview_trial_manifestation_chance(...)`, `preview_challenge_auto_resolve_success_chance(...)`, `preview_reward_generated_item(...)`, `preview_reward_profile(...)`, `simulate_trial_opportunity_runs(...)`.
+- Present outputs as readable tables/charts where practical: trial opportunity dry-step curve, manifestation chance by difficulty/stat inputs, auto-resolve chance, generated item preview, reward profile preview, and simulation distribution for trial opportunity runs.
+- Make clear that preview/simulation RPCs do not mutate runtime state and may still use fallback formulas until final formula evaluator/luck-aware integration is wired.
+- Provide input controls for difficulty, district, stat values, Luck, Spirituality, preview count/run count and max steps where supported.
+- Avoid hardcoding active trial/difficulty/reward labels when DB can provide them.
+
+**Acceptance criteria:**
+- Admin/lab user can run all six preview/simulation tools.
+- UI clearly distinguishes preview/simulation from real gameplay resolution.
+- Outputs have human-readable labels and explanations.
+- Preview errors/RPC denials are shown without crashing.
+- Build passes and smoke report explains what each lab action means.
+
+---
+
+## Epic L known follow-ups / caveats
+
+- Current DB runtime still uses fallback calculations for several formulas. Formula targets exist, but a full DB-side formula evaluator integration is not fully wired into exploration runtime helpers.
+- `get_hero_exploration_luck_value(...)` may still return fallback 0 until canonical DB-side derived Luck resolver exists.
+- Item generation persistence works through fallback picker/budget helpers, not final Luck-aware item-generation runtime.
+- Report snapshots are not implemented yet; exploration graph/step/challenge rows are runtime/debug state, not public report snapshots.
+- L-DB4c preview/simulation RPCs are preview tools only. They must not be used as authoritative gameplay resolution.
+- Frontend implementation must wait for regenerated `database.types.ts` after the latest PvE schema/RPC changes.
 
 ---
 
@@ -1705,23 +1995,21 @@ Known current DB/RPC concepts for this epic include:
 
 ---
 
-## Task N2 — Wire stat allocation UI to `save_stat_allocation(...)`
+## Task N2 — Stat allocation save via domain/RPC operation
 
-**Goal:** Use the canonical transactional stat allocation RPC instead of separate frontend writes.
+**Goal:** Make stat allocation save auditable and transactional.
 
 **Scope:**
-- Use generated RPC type for `save_stat_allocation(...)`.
-- Do not direct-write `hero_stats`.
-- Do not direct-update `hero.character_points`.
-- Do not write separate frontend audit for this flow.
-- Map RPC result into stat/hero state refresh.
-- Pass reason and `request_id` where available.
+- Validate available Character Points.
+- Validate caps.
+- Save stat changes.
+- Update resources.
+- Write audit.
+- Return typed result.
 
 **Acceptance criteria:**
 - UI plus/minus clicks are not audited.
-- Final confirm/save goes through `save_stat_allocation(...)`.
-- Character Points and stats refresh from RPC result or post-RPC read model.
-- If a formula-backed cost resolver is later needed, it is added only after a DB contract exists.
+- Final confirm/save is audited.
 
 ---
 
@@ -1948,170 +2236,6 @@ Known current DB/RPC concepts for this epic include:
 
 ---
 
-# Special Epic UX — Explainability and impact previews
-
-UX tasks in this epic should produce visible UI improvements or shared implementation helpers. Do not run another audit-only UX task unless a concrete implementation is blocked by unknown screens or missing DB metadata.
-
-Current DB-backed contracts for this epic:
-- `get_ui_metadata_entries(...)` for labels/descriptions/helper text of technical keys and enum-like values.
-- `get_config_definition_ui_metadata(...)` for per-config-definition helper/impact/warning/preview metadata.
-- `get_config_definition_explainability(...)` for config governance explainability screens.
-- `get_admin_preview_contracts()` for canonical preview kind to RPC routing.
-- `get_item_quality_impact_preview(...)`, `get_building_progression_preview(...)`, `get_bonus_impact_preview(...)`, `get_requirement_impact_preview(...)` for preview input data.
-
-Codex must use these DB contracts where relevant instead of creating permanent Angular-side dictionaries for configurable gameplay/config metadata.
-
-## Task UX-I1 — Shared metadata display helpers
-
-**Goal:** Add reusable UI/helpers for showing human-readable label, description/helper text, and technical key as secondary metadata.
-
-**Scope:**
-- Create shared display helper/component pattern usable in admin/config/audit/bonus/formula screens.
-- Label is primary.
-- Description/helper text is visible where available.
-- Technical key is secondary/collapsible/metadata.
-- Raw JSON remains in technical detail blocks.
-
-**Acceptance criteria:**
-- At least one existing admin screen uses the helper.
-- No raw technical key is the only visible primary label where DB metadata exists.
-- Build passes.
-
----
-
-## Task UX-I2 — Config governance explainability implementation
-
-**Goal:** Make config governance screens understandable to operators before they create/apply changes.
-
-**Scope:**
-- On config definitions/change-entry forms, show what scope means: product global, global balance, server launch, live server, test override.
-- Show whether a value change will be global or selected-server scoped.
-- Show active server context for server-scoped entries.
-- Replace stale success/error text with toast/message behavior where still missing.
-- Use `ui-ux-notes.md` config governance notes as source.
-- Use `get_config_definition_explainability(...)` as the canonical DB read model for scope/value/applicability explanations.
-
-**Acceptance criteria:**
-- User can tell where a config change will apply before submitting.
-- Server-scoped entries show selected server.
-- Global/server target is readonly/explained, not a fake choice.
-- No raw governance scope key as the only explanation.
-- Config scope/value/applicability text comes from DB metadata/read models where available.
-
----
-
-## Task UX-I3 — Audit log readability pass
-
-**Goal:** Replace raw audit keys as primary text in audit views with dictionary labels and helpful metadata.
-
-**Scope:**
-- Use joined `audit_action_types` and `audit_entity_types` labels/descriptions where available.
-- Keep keys visible as secondary technical metadata.
-- Make old/new/metadata JSON easier to scan with collapsible or constrained blocks.
-
-**Acceptance criteria:**
-- Audit log cards primarily show labels, not only keys.
-- Missing dictionary joins fall back gracefully to stable keys.
-- Large JSON does not dominate the page by default.
-
----
-
-## Task UX-I4 — Formula impact preview calculators
-
-**Goal:** Add practical formula calculators for admin formula/balance work.
-
-**Scope:**
-- Let admin enter example inputs for selected formula targets.
-- Show output and errors clearly.
-- Prioritize building upgrade cost/time/bonus and hero stat cost/cap formulas.
-- Reuse existing formula runtime where possible.
-
-**Acceptance criteria:**
-- Admin can test formula output without editing DB values.
-- Invalid formula/input errors are readable.
-- Build passes.
-
----
-
-## Task UX-I5 — Item generation quality impact preview
-
-**Goal:** Show how item quality affects generated item values and bonuses.
-
-**Scope:**
-- For selected base/affix/template, show Normal/Quality/Outstanding or current DB-defined quality rows.
-- Use `get_item_quality_impact_preview(...)` / `item_generation_qualities`, not hardcoded exactly three qualities.
-- Show raw value and quality-scaled value where `quality_scales_value` applies.
-
-**Acceptance criteria:**
-- Admin can see quality impact before saving item-generation changes.
-- Quality never scales level interval.
-- UI uses active quality dictionary rows.
-
----
-
-## Task UX-I6 — Building impact calculator
-
-**Goal:** Show predicted building cost/time/bonus output across levels and selected district context.
-
-**Scope:**
-- Add level range preview for cost/time/bonus formulas.
-- Use `get_building_progression_preview(...)` for district cap / unlimited behavior.
-- Keep existing single-level preview but make multi-level impact easier to understand.
-
-**Acceptance criteria:**
-- Admin can inspect level N -> N+1 and nearby progression values.
-- `0 = unlimited` is clearly explained where relevant.
-- Formula errors are visible.
-
----
-
-## Task UX-I7 — Bonus and requirement impact preview
-
-**Goal:** Explain resolved bonus/requirement effects in human-readable terms.
-
-**Scope:**
-- Use `get_bonus_impact_preview(...)` to show resolved effect of bonus templates, entity bonuses, quality scaling, per-level intervals and source-stat scaling.
-- Use `get_requirement_impact_preview(...)` to show requirement labels/descriptions from central requirements.
-- Keep technical keys secondary.
-
-**Acceptance criteria:**
-- Admin can understand what a bonus/requirement does without reading raw JSON.
-- Preview uses canonical dictionaries and entity bonuses.
-- Build passes.
-
----
-
-## Task UX-I8 — Anti-abuse decision explainability pass
-
-**Goal:** Make future anti-abuse case/sanction/declaration/report UI understandable for staff and players.
-
-**Scope:**
-- Use dictionary labels/descriptions for report/declaration/sanction/action types.
-- Explain sanction item links as evidence/context, not item confiscation.
-- Show reason/status reason prominently.
-- Do not expose staff-only technical history to scoped moderators or players.
-
-**Acceptance criteria:**
-- Anti-abuse UI uses labels/helper text from DB dictionaries.
-- Player-facing status views do not leak staff-only metadata.
-- Staff decision UI always requires reason.
-
----
-
-## Task UX-I9 — Smoke test UX notes integration
-
-**Goal:** Make Codex verification reports include business meaning, not only click paths.
-
-**Scope:**
-- Update workflow docs/templates so smoke tests say what the action means in gameplay/admin terms.
-- Add non-blocking findings to `docs/ui-ux-notes.md`.
-
-**Acceptance criteria:**
-- Future Codex reports include UI path and domain meaning.
-- UX notes are grouped as quick win / DB metadata needed / redesign-needed.
-
----
-
 # Epic S — Responsibility and Angular 21 cleanup
 
 ## Task S1 — Responsibility audit
@@ -2192,8 +2316,6 @@ Codex must use these DB contracts where relevant instead of creating permanent A
 
 # Recommended near-term execution order
 
-Historical retained list. For the actual current task position, prefer `current-todo.md` and user-confirmed Codex status files.
-
 1. A1 — Regenerate DB types
 2. B1 — Audit identity assumptions
 3. B2 — Active server resolver
@@ -2217,34 +2339,13 @@ Historical retained list. For the actual current task position, prefer `current-
 
 ---
 
-## Current execution order update — U0 and UX implementation
-
-This section is historical if it conflicts with `current-todo.md`. Preserve only as context.
-
-1. U0-I1 — completed / confirmed: central staff access policy model.
-2. U0-I2 — completed / confirmed: staff gameplay boundary implementation.
-3. U0-I3 — completed / confirmed: admin route guard and sidebar boundary.
-4. U0-I4 — completed / confirmed: admin dashboard/cards/tag-link filtering.
-5. U0-I5 — completed / confirmed: staff management read models and services.
-6. U0-I6 — completed / confirmed: staff management UI foundation.
-7. U0-I7 — moderator scope assignment UI.
-8. U0-I8 — moderation actions UI foundation.
-9. U0-I9 — moderation history and disqualification panels.
-10. UX-I1/UX-I2 quick wins may be interleaved when touching the same admin screens.
-
-Operational rule:
-- Do not run U0-C5 or additional UX audits before at least U0-I1 through U0-I4 are implemented unless the user explicitly asks.
-- When a screen is already being changed, include the relevant UX implementation improvement instead of creating a separate audit task.
-
----
-
 # 2026-04-26 Priority Update — DB foundation after trade/auction/anti-abuse stages
 
-This historical priority update is retained for context. Current execution position should come from `current-todo.md` and user-confirmed implementation state.
+The database now contains new runtime foundations that Codex must treat as current schema after regenerating Supabase types.
 
 ## Immediate execution order update
 
-Run these before broader gameplay work when still applicable:
+Run these before broader gameplay work:
 
 1. Regenerate Supabase `database.types.ts` and fix compile errors.
 2. Replace legacy `hero_derived.hp` / Hero Points / old HP-as-points usage.
@@ -2256,6 +2357,170 @@ Run these before broader gameplay work when still applicable:
 8. Connect Trade Routes/building bonus runtime to active trade slot limit; remove reliance on fallback config in normal gameplay.
 9. Build staff/admin anti-abuse signal/case read views from existing tables.
 10. Only after user confirms these work, update state docs as completed.
+
+## High priority task — Character Points / legacy HP cleanup
+
+Current database state:
+
+- `hero.character_points` is current spendable Character Points balance.
+- `hero.total_character_points_earned` tracks lifetime generated Character Points baseline.
+- `character_point_ledger` stores append-only CP balance changes.
+- `hero_derived.hp` no longer exists.
+- `hero_derived.health` is combat health / hit points.
+- `hero_resources` remains for resources like drachmas, materials and workforce.
+
+Required work:
+
+- regenerate database types;
+- find all references to `hero_derived.hp`, `hp` as points, `hero points`, `Hero Points`, old PR/points wording;
+- replace Character Point reads with `hero.character_points`;
+- replace combat HP reads with `hero_derived.health` or runtime health resolver;
+- update stat allocation/progression save flow to spend `hero.character_points` and write ledger through backend/RPC/domain logic;
+- do not store Character Points in `hero_resources`;
+- do not write CP ledger rows directly from UI click handlers.
+
+Acceptance criteria:
+
+- app compiles with regenerated DB types;
+- no reference to removed `hero_derived.hp` remains;
+- stat allocation uses Character Points correctly;
+- Character Points and Health are not confused in domain models/UI.
+
+## High priority task — Derived stats cleanup
+
+Decision:
+
+- `hero_derived` is transitional/legacy;
+- derived stats are not authoritative persisted state for new systems;
+- frontend may calculate previews;
+- backend/RPC/domain actions calculate authoritative values from base stats, equipment, bonuses, formulas and context;
+- reports/combat/trials store event snapshots of values used at the time.
+
+Required work:
+
+- audit all reads/writes of `hero_derived`;
+- identify which screens/services rely on persisted derived stats;
+- avoid adding new writes to `hero_derived` on equipment/stat changes;
+- introduce or reuse runtime derived-stat resolver/calculator;
+- do not remove remaining `hero_derived` columns until current usages are audited and replaced.
+
+Acceptance criteria:
+
+- clear report of existing usage;
+- new trade/economy work does not depend on `hero_derived`;
+- combat/progression screens still work after cleanup.
+
+## High priority task — Direct trade frontend/runtime integration
+
+Database/RPCs already exist:
+
+- `create_player_direct_trade_offer(...)`
+- `respond_player_direct_trade_offer(...)`
+- `cancel_player_direct_trade_offer(...)`
+- `reject_player_direct_trade_offer(...)`
+- `confirm_player_direct_trade_offer(...)`
+
+Frontend/domain requirements:
+
+- direct trade is private between two heroes;
+- both sides must be on same server and able to use trade;
+- each side only selects own items;
+- no access to another hero's private inventory;
+- each side must offer item(s) and/or Character Points;
+- CP-only for CP-only exchange should be blocked;
+- show available CP as current CP minus active locks;
+- show clear reason/status text for cancel/reject/expire/fail;
+- after completing/cancelling/rejecting, refresh inventory, CP balance and active offers.
+
+Acceptance criteria:
+
+- player can create, respond to, cancel/reject and complete direct trade using RPCs;
+- locked items are not usable/equippable;
+- CP locks affect available CP display;
+- completed trade creates transaction/ledger and can create anti-abuse signal/case when rules trigger.
+
+## High priority task — Auction frontend/runtime integration
+
+Database/RPCs already exist:
+
+- `create_player_auction_listing(...)`
+- `place_player_auction_bid(...)`
+- `buy_now_player_auction(...)`
+- `cancel_player_auction_listing(...)`
+- `close_player_auction_listing(...)`
+
+Frontend/domain requirements:
+
+- one auction lists exactly one item;
+- supported modes are bidding, buy now, bidding with buy now;
+- duration is server-configured;
+- seller can cancel only before bids;
+- expired auction without bids returns item to `active`;
+- buy now completes immediately;
+- bids lock CP and outbid releases prior lock;
+- show item/CP status clearly.
+
+Acceptance criteria:
+
+- player can list, bid, buy now, cancel eligible auction and close expired/ended auction through RPCs;
+- item and CP locks display correctly;
+- completed auction writes transaction/ledger and can create anti-abuse signal/case.
+
+## High priority task — Anti-abuse signal/case UI integration
+
+Database foundation exists:
+
+- `anti_abuse_signals`
+- `anti_abuse_cases`
+- `anti_abuse_case_signals`
+- `anti_abuse_case_participants`
+
+Implemented signal types:
+
+- `trade.high_cp_direct_trade`
+- `auction.high_cp_sale`
+- `trade.repeated_pair_transfers`
+
+Requirements:
+
+- staff/admin views must be server-scoped;
+- list cases by server/status/grouping key;
+- case detail should show linked signals, participants, related transaction/entity ids, metadata, reasons/descriptions;
+- signals/cases are review aids, not automatic punishment;
+- resolved/cancelled cases are historical and not reopened automatically.
+
+Acceptance criteria:
+
+- staff can view signal-generated cases;
+- case list groups repeated signals correctly;
+- linked transaction/entity ids are visible enough for review/debugging.
+
+## High priority task — Trade Routes and active offer limit
+
+Current database runtime uses `trade_active_offer_limit_fallback`.
+
+Required work:
+
+- connect active trade/auction offer limit to Trade Routes/building bonus runtime;
+- both sides of direct trade must be able to use player trade;
+- auction seller/buyer/bidder must be able to use player trade;
+- direct trade and active auctions share the active-offer slot pool unless later config deliberately changes it.
+
+Acceptance criteria:
+
+- fallback is not the normal gameplay source once building runtime exists;
+- active offer limit changes with Trade Routes/building level/config;
+- frontend explains why trade/auction is unavailable.
+
+## Update old backlog items
+
+Older tasks mentioning generic public fixed-price listings should be interpreted as superseded.
+
+Current direction:
+
+- direct private trade is implemented first;
+- auctions are implemented as the public market path;
+- there is no separate public fixed-price listing mode outside auction buy-now.
 
 ---
 
@@ -2483,3 +2748,216 @@ Place U1-U4 after config definitions/value read models and before deeper buildin
 - Armory can show overloaded state such as `251/100`.
 - Newer/lower-priority items are hidden first when capacity is exceeded.
 - Visibility/access is not confused with ownership.
+
+---
+
+# Special Epic U0 — Roles, permissions and scoped moderation
+
+These tasks should be inserted after the current G-series work and before deeper H/admin/staff UI work, unless the user explicitly chooses another order. They depend on the U0-N4 DB foundation and regenerated Supabase types.
+
+## Task U0-C1 — Frontend role usage audit
+
+**Status:** Done / confirmed on 2026-04-28.
+
+**Goal:** Audit current frontend role/staff assumptions.
+
+**Scope:**
+- Search for role assumptions such as `isAdmin`, `isOperator`, `isModerator`, `isServerStaff`, `globalRoleKey`, `serverStaffRole`, `canManageSelectedServer`.
+- Classify whether each usage matches the U0 role model.
+- Do not refactor broadly.
+
+**Acceptance criteria:**
+- Report lists exact files/components/services.
+- Report identifies mismatches between global role and server staff assignment.
+- No schema or behavior changes.
+- Implementation note: audit identified `/admin` route guards, logged-in menu visibility, static admin navigation, and broad `ActiveServer.canManageSelectedServer` semantics as primary frontend role-boundary risks.
+
+## Task U0-C2 — Staff gameplay access audit
+
+**Status:** Done / confirmed on 2026-04-28.
+
+**Goal:** Verify whether staff can enter normal gameplay on servers where they are assigned staff.
+
+**Scope:**
+- Active server/hero loading.
+- Route guards.
+- Gameplay entry points.
+- Sandbox/test exceptions.
+
+**Acceptance criteria:**
+- Report explains where staff gameplay should be blocked or allowed.
+- Sandbox exception is preserved.
+- No broad implementation yet unless user requests it.
+- Implementation note: audit confirmed `/hero/*` and `/game/*` lacked standard-server assigned-staff gameplay blocking; later U0 implementation added the central policy and gameplay boundary.
+
+## Task U0-C3 — User/staff management UI audit
+
+**Status:** Done / confirmed on 2026-04-28.
+
+**Goal:** Identify existing or missing UI for global role assignment, server staff assignment and moderator scope assignment.
+
+**Scope:**
+- User search/selection.
+- Assign global role flow.
+- Assign server staff flow.
+- Assign moderator scopes flow.
+- Candidate disqualification display.
+
+**Acceptance criteria:**
+- Report identifies missing screens/services/components.
+- No direct table writes proposed; future UI must use U0 RPC.
+- Implementation note: audit confirmed no frontend staff management screen existed yet and future implementation must use staff RPC workflows/dictionaries instead of direct staff table writes.
+
+## Task U0-C4 — Moderator scope UI spec
+
+**Status:** Done / confirmed on 2026-04-28.
+
+**Goal:** Design UI flow for assigning moderator scopes.
+
+**Scope:**
+- Admin/operator selects user and server.
+- UI excludes/disables users with heroes on standard target server.
+- UI shows staff-disqualifying history warnings.
+- UI allows choosing moderator scopes.
+
+**Acceptance criteria:**
+- Spec uses DB dictionaries from `staff_permission_scopes`.
+- No hardcoded scope list except transitional display fallback.
+- No implementation unless user requests it.
+- Implementation note: spec defined safe server/user selection, eligibility checks, moderator role assignment, DB-driven scope selection, required reason/notes and RPC-only submit.
+
+## Task U0-C5 — Role-aware technical metadata visibility audit
+
+**Goal:** Audit where technical keys/raw JSON are shown and whether visibility should depend on role/context.
+
+**Acceptance criteria:**
+- Player-facing technical key leaks are identified.
+- Moderator-only views are checked against scope/context.
+- Admin/operator metadata remains available as secondary information.
+
+## Task U0-C6 — Staff/moderation navigation boundaries audit
+
+**Status:** Done / confirmed on 2026-04-28.
+
+**Goal:** Ensure navigation separates admin global tools, operator server tools, moderator scoped tools and player gameplay.
+
+**Acceptance criteria:**
+- Report identifies routes/menu items requiring role/scope guards.
+- Moderator does not receive operator/admin tooling unless explicitly allowed.
+- Implementation note: audit confirmed admin shell, sidebar, dashboard cards and admin tag-links needed one central route/navigation access policy rather than static prototype visibility.
+
+## Task U0-C7 — Moderation actions UI foundation
+
+**Status:** Done / confirmed on 2026-04-29 through U0-I8 and U0-I9.
+
+**Goal:** Build frontend read/write surfaces for U0 moderation actions after types regeneration.
+
+**Scope:**
+- Create local warning/account warning/restriction/suspension/ban through `create_moderation_action`.
+- Show required reason.
+- Allow source entity id/type where relevant.
+- Show moderation history through RPC.
+
+**Acceptance criteria:**
+- No direct writes to `moderation_actions`.
+- UI uses `moderation_action_types` and `staff_permission_scopes` dictionaries.
+- Moderator only sees actions allowed by scope.
+- Operator/admin see history.
+- Implementation note: `/admin/moderation-actions` uses DB dictionaries, creates actions only through `create_moderation_action`, reads visible/full history through moderation history RPCs, and uses server-scoped user/account and hero target search autocompletes.
+
+## Confirmed U0 implementation follow-ups
+
+These implementation slices were executed after the U0 audit/spec tasks and are recorded here to preserve the completed task history.
+
+- **U0-I1 — Central staff access policy model:** Done / confirmed on 2026-04-28. Added `resolveStaffAccessPolicy(...)` and exported policy types to separate global roles, selected-server staff assignment, management authority, moderation authority, testing access, player gameplay access and assigned-staff gameplay blocking.
+- **U0-I2 — Staff gameplay boundary implementation:** Done / confirmed on 2026-04-28. `/hero/*` and `/game/*` now respect staff gameplay blocking on standard servers while preserving sandbox/testing exceptions and membership punishment handling.
+- **U0-I3 — Admin route guard and sidebar boundary:** Done / confirmed on 2026-04-28. `/admin/*` is guarded by central staff access policy and normal players no longer see the admin shell entry.
+- **U0-I4 — Admin dashboard cards and tag-link filtering:** Done / confirmed on 2026-04-28. Admin dashboard cards and reusable admin tag links now filter through central admin navigation access metadata.
+- **U0-I5 — Staff management read models and services:** Done / confirmed on 2026-04-28. Staff management has typed domain/read services, server-scoped staff candidate search, RPC-only staff mutations and DB-backed roles/scopes.
+- **U0-I6 — Staff management UI foundation:** Done / confirmed on 2026-04-28. `/admin/staff-management` provides selected-server staff assignment management through server-scoped candidate search and RPC-backed assignment/revoke flows.
+- **U0-I7 — Moderator scope assignment UI:** Done / confirmed on 2026-04-29. Staff management supports moderator permission scope assignment using `staff_permission_scopes` labels and `set_server_staff_permission_scopes`.
+- **U0-I8 — Moderation actions UI foundation:** Done / confirmed on 2026-04-29. `/admin/moderation-actions` supports server-scoped moderation actions through canonical moderation action RPCs.
+- **U0-I9 — Moderation history target picker and full-history modes:** Done / confirmed on 2026-04-29. Moderation action create/history target fields use server-scoped user/account and hero autocompletes and support visible plus full target history modes.
+
+# Special Epic UX — Explainability and impact previews
+
+## Task UX-C1 — Audit raw-key and unexplained UI exposure
+
+**Goal:** Find places where UI exposes raw keys, enum values, JSON blobs, config names or audit/action/entity keys without human-readable label/description/helper text.
+
+**Scope:** config governance, formula governance, audit logs, bonus admin, anti-abuse, building admin, item generation admin.
+
+**Acceptance criteria:** report exact screens/components, classify missing DB metadata vs missing display use, and do not refactor broadly.
+
+## Task UX-C2 — Audit missing gameplay impact previews
+
+**Goal:** Find places where admin can change data but cannot see predicted gameplay effect.
+
+**Examples:** item Normal/Quality/Outstanding preview, formula calculators, building level calculators, bonus/requirement previews.
+
+**Acceptance criteria:** actionable report only; no broad refactor.
+
+## Task UX-C3 — Add human-readable metadata display helpers
+
+**Status:** Done / confirmed on 2026-04-29 through UX-I1.
+
+**Goal:** Add shared helper/component pattern to render label, description/helper, and technical key as secondary metadata.
+
+**Acceptance criteria:** label is primary; key is secondary; raw JSON is in technical details; no hardcoded gameplay dictionary explosion.
+- Implementation note: shared `MetadataDisplay` was added and used in Moderation actions action-type details plus Staff management moderator scope options.
+
+## Task UX-C4 — Add dictionary value display helper
+
+**Goal:** Support human-readable labels/descriptions for enum/status/scope/type keys using DB metadata once available.
+
+**Acceptance criteria:** raw enum keys are not primary UI text when dictionary metadata exists.
+
+## Task UX-C5 — Config governance explainability pass
+
+**Status:** Done / confirmed on 2026-04-29 through UX-I2.
+
+**Goal:** Make config governance screens understandable: what the value changes, where it applies, and what risk/scope it has.
+- Implementation note: config governance screens consume `get_config_definition_explainability(...)` for DB-backed scope/value/applicability explanations and keep technical JSON/schema as secondary legacy admin previews.
+
+## Task UX-C6 — Formula impact preview calculators
+
+**Status:** Done / confirmed on 2026-04-29 through UX-I4.
+
+**Goal:** Add calculators showing formula output for supplied example inputs, e.g. building level 11 -> level 12 cost.
+- Implementation note: `/admin/formulas` includes a formula impact calculator for enabled global/default target assignments, using existing formula runtime and expression preview.
+
+## Task UX-C7 — Item generation quality impact preview
+
+**Status:** Done / confirmed on 2026-04-29 through UX-I5.
+
+**Goal:** Show Normal/Quality/Outstanding outcomes for item generation definitions, bonuses, requirements and drachma value.
+- Implementation note: Balance quality tiers include DB-backed item quality impact preview through `get_item_quality_impact_preview(...)` and no hardcoded quality-tier list.
+
+## Task UX-C8 — Building formula impact calculators
+
+**Status:** Done / confirmed on 2026-04-29 through UX-I6.
+
+**Goal:** Show predicted building cost/effect/production by selected level and formula assignment.
+- Implementation note: Building admin includes a separate preview section combining local formula output with DB-backed district/cap progression context from `get_building_progression_preview(...)`.
+
+## Task UX-C9 — Bonus and requirement impact preview
+
+**Status:** Done / confirmed on 2026-04-29 through UX-I7 and UX-I7b.
+
+**Goal:** Show resolved effect of bonus templates, entity bonuses, quality scaling, per-level intervals and requirements in human-readable terms.
+- Implementation note: Building admin bonus rows show live local explainability and saved canonical bonus impact; building requirements now use a DB-driven central requirement editor backed by `requirement_definitions`, canonical entity requirement RPCs and `get_requirement_impact_preview(...)`.
+
+## Task UX-C10 — Audit and anti-abuse explainability pass
+
+**Status:** Done / confirmed on 2026-04-29 through UX-I3 and UX-I8.
+
+**Goal:** Replace raw audit action/case/sanction keys as primary UI text with labels and explanations.
+- Implementation note: Audit logs now show joined audit action/entity labels and collapsed technical JSON; anti-abuse decision explainability has DB-backed dictionary loading and display/projection helpers for sanction, report, declaration and signal types.
+
+## Task UX-C11 — Smoke test UX notes integration
+
+**Goal:** Ensure Codex smoke tests describe both click path and business/gameplay meaning of what is tested.
+
+## Task UX-C12 — ux-ui-notes cleanup and prioritization pass
+
+**Goal:** Periodically group and prioritize UX/UI notes by severity, quick wins, DB metadata needed, and redesign-needed items.

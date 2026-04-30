@@ -8,5 +8,9 @@ export type EquippedItemRow = Row<'hero_equipment'> & {
     | 'generation_quality_key'
     | 'prefix_affix_id'
     | 'suffix_affix_id'
+    | 'status'
+    | 'scrapped_at'
+    | 'recoverable_until'
+    | 'updated_at'
   > | null;
 };

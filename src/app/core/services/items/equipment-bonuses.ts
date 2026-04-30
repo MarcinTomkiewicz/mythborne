@@ -37,7 +37,7 @@ export class EquipmentBonusesService {
     return this.backend.getAll<EquippedItemRow>({
       table: TABLES.hero_equipment,
       select:
-        '*, items (id, generation_base_id, generation_quality_key, prefix_affix_id, suffix_affix_id)',
+        '*, items (id, generation_base_id, generation_quality_key, prefix_affix_id, suffix_affix_id, status, scrapped_at, recoverable_until, updated_at)',
       filters: { heroId: { operator: FilterOperator.EQ, value: heroId } },
       orderBy: { column: 'slot_key' },
       camelCase: false,
