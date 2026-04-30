@@ -69,4 +69,8 @@ export const TABLES = {
   player_relationship_declaration_trades: 'player_relationship_declaration_trades',
   player_relationship_declarations: 'player_relationship_declarations',
   player_relationship_declaration_types: 'player_relationship_declaration_types',
+  player_trade_offer_items: 'player_trade_offer_items',
+  player_trade_offers: 'player_trade_offers',
+  player_trade_transaction_items: 'player_trade_transaction_items',
+  player_trade_transactions: 'player_trade_transactions',
 } as const;

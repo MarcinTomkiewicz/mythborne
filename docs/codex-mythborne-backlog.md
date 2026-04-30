@@ -1342,6 +1342,8 @@ Status: completed and accepted on 2026-04-30.
 
 ## Task J2 — Direct trade read models and services
 
+Status: completed and accepted on 2026-04-30.
+
 **Goal:** Add typed frontend read/domain layer for existing direct trade offers and transactions.
 
 **Scope:**
@@ -1357,6 +1359,7 @@ Status: completed and accepted on 2026-04-30.
 - No direct write paths are added.
 - No broad unrelated item/user fetches are added.
 - Build and focused mapper/service tests pass.
+- Implementation note: added `DirectTrades`, direct trade domain read models and row mappers for active direct trade offers plus direct-trade transaction history. Reads are selected-server and active-hero scoped, transaction loading excludes `auction_sale`, linked hero/item labels are fetched only by concrete IDs, and the service stays read-only through `Backend.getAll`. Player-facing models intentionally do not expose raw `status_reason`/`reason` fields as primary UI data; future UI should add explicit player-safe messaging only if backed by a safe contract.
 
 ---
 

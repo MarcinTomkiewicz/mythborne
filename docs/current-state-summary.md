@@ -535,6 +535,10 @@ Still pending at the gameplay level even if partially supported in schema:
 - J1 accepted on 2026-04-30 as an inspect/preflight slice for trade and auction frontend planning.
 - J1 confirmed that J2 can proceed on the current direct-trade and one-item auction DB/RPC contract without a new DB foundation and without reviving `market_listings`. Generated types include the expected public direct trade and auction RPCs; helper RPCs such as unlock/release/finalize are internal and should not be treated as player-facing frontend contracts.
 - J1 found no active `market_listings` frontend path in `src`. Future J2/J3/J4 work should add typed domain/read/mutation services over the current tables and public workflow RPCs instead of designing a new player market schema.
+- J2 accepted on 2026-04-30: direct trade now has a read-only frontend domain/service layer for active offers and direct-trade transaction history.
+- J2 adds `DirectTrades`, direct trade read models and mappers. Reads are selected-server and active-hero scoped, active offers load where the hero is creator or target, transaction history excludes `auction_sale`, and linked hero/current-item labels are fetched only by concrete IDs.
+- J2 does not add mutation paths, direct writes or RPC writes. Player-facing read models intentionally do not expose raw `status_reason` or transaction `reason` fields; future UI should introduce explicit player-safe status messaging only if supported by a safe contract.
+- J2 was verified with `npx tsc --noEmit`, targeted direct trade specs (`direct-trade-mappers.spec.ts`, `direct-trades.spec.ts`, 7 SUCCESS) and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure. Manual UI smoke is not applicable because J2 is service/model/mapper-only.
 - Status/verdict/sanction/CP penalty action sections now repeat the same audited action shell. Before adding another similar status-action section, check whether a shared wrapper/state/helper is warranted for error/success/loading, submit layout and stale-guard behavior.
 - `core` should continue to hold non-component logic:
   - domain models
