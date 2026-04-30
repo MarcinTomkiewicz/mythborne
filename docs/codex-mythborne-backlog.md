@@ -1137,6 +1137,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H10 — Player abuse report form model
 
+**Status:** Done / confirmed 2026-04-30.
+
 **Goal:** Dynamic form from report type flags.
 
 **Scope:**
@@ -1149,6 +1151,7 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 **Acceptance criteria:**
 - Form adapts to DB report type flags.
+- `title` and `description` remain base required fields while the submission RPC requires them.
 
 ---
 

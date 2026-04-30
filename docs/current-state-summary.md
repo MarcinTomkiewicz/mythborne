@@ -457,6 +457,9 @@ Still pending at the gameplay level even if partially supported in schema:
 - H9 staff-facing detail intentionally exposes review fields such as `statusReason`, `adminNotes`, `playerStatusMessage`, `reviewedByUserId`, `createdByUserId` and participant `userId`, and loads inactive/deprecated declaration type labels plus `adminDescription` from DB by key.
 - H9 staff decisions use `AntiAbuseDecisions.setRelationshipDeclarationDecision(...)`, backed by the canonical `set_player_relationship_declaration_decision` workflow. The review service does not direct-write declaration tables, call `write_audit_log`, or call `.rpc()` directly.
 - H9 has no meaningful UI smoke path yet. Technical verification covered server scope, not-found behavior without linked reads, inactive type labels, staff-visible fields, decision workflow, ID validation, `npx tsc --noEmit`, targeted specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- H10 accepted on 2026-04-30: player abuse report form models are generated from DB-backed `PlayerAbuseReportTypeEntry` flags. `title` and `description` are always visible and required because the current `create_player_abuse_report(...)` RPC requires both `p_title` and `p_description`.
+- H10 uses DB flags only for optional report-specific fields: `requiresAccusedHero` controls accused hero selection, `requiresItemSelection` controls related item selection, and `requiresTradeSelection` controls related trade selection. The player-facing form model does not expose staff-only `adminDescription`.
+- H10 is a model-only slice with no meaningful UI smoke path. It was verified technically with `npx tsc --noEmit`, targeted player abuse report form/dictionary specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

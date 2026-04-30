@@ -1883,19 +1883,18 @@ This is now an active implementation rule. Do not rely on backlog presence alone
 
 ### G6 stat allocation save
 
-Stat allocation save is a critical gameplay mutation and should be one database-owned workflow.
+Stat allocation save is a critical gameplay mutation and is now a database-owned workflow.
 
-Current repository dump status:
+Current DB/RPC contract:
 
-- the currently available `mythborne_schema.sql` does not contain `save_stat_allocation(...)`;
-- the currently available dump does not contain `gameplay.stat_allocation.saved`;
-- generated types/schema, not this decision log, decide whether Codex may call a given RPC.
+- `save_stat_allocation(p_hero_id uuid, p_stat_values_json jsonb, p_character_points_spent integer, p_reason text, p_request_id text)` exists in current schema/dump.
+- It updates `hero_stats`, spends Character Points through `apply_character_points_delta(...)` / `character_point_ledger`, and writes `gameplay.stat_allocation.saved` audit atomically.
 
 Decision:
 
-- frontend must not treat separate `hero_stats` update + Character Points update + audit write as the final architecture;
-- expected target is a transactional RPC such as `save_stat_allocation(...)`, but it is a DB blocker until present in schema/types;
-- if the live DB has already received this migration, refresh the repository dump and generated types before Codex relies on it.
+- frontend must use `save_stat_allocation(...)` for stat allocation save;
+- frontend must not do separate `hero_stats` update + Character Points update + frontend audit write in this flow;
+- `audit_action_types.key = gameplay.stat_allocation.saved` and `audit_entity_types.key = hero` must remain active.
 
 Future possible improvement:
 
@@ -1903,46 +1902,92 @@ Future possible improvement:
 
 ### Requirement editor DB path
 
-Central requirements are not only a preview/read system. The target architecture needs a canonical mutation path for `entity_requirements`.
+Central requirements are not only a preview/read system. They now have a canonical mutation path for `entity_requirements`.
 
-Current repository dump status:
+Current DB/RPC contract:
 
-- central tables and preview exist: `requirement_definitions`, `entity_requirements`, `get_requirement_impact_preview(...)`;
-- planned mutation RPCs such as `create_entity_requirement(...)`, `update_entity_requirement(...)`, `deactivate_entity_requirement(...)`, and `reorder_entity_requirements(...)` are not present in the currently available `mythborne_schema.sql`.
+- `create_entity_requirement(...)`;
+- `update_entity_requirement(...)`;
+- `deactivate_entity_requirement(...)`;
+- `reorder_entity_requirements(...)`;
+- `validate_entity_requirement_payload(...)` helper;
+- `assert_can_manage_entity_requirements(...)` helper.
 
 Decision:
 
 - requirement editor must use DB-backed `requirement_definitions` as the requirement type dictionary;
+- requirement editor must use the canonical RPCs above for create/update/deactivate/reorder;
 - requirement editor must not use legacy `building_requirements`, `buildings.requirements`, or `buildings.rank_required`;
-- if mutation RPCs are not present in schema/types, Codex must report a DB blocker instead of direct-writing `entity_requirements`.
+- requirement mutations are audited through `config.entity_requirement.*` audit actions.
 
 ### Relationship declaration DB path
 
-Player relationship declarations provide anti-abuse context and should be created through a canonical DB workflow.
+Player relationship declarations provide anti-abuse context and are created through a canonical DB workflow.
 
-Current repository dump status:
+Current DB/RPC contract:
 
-- decision/status RPC exists: `set_player_relationship_declaration_decision(...)`;
-- the currently available `mythborne_schema.sql` does not contain `create_player_relationship_declaration(...)`.
+- `create_player_relationship_declaration(...)`;
+- `set_player_relationship_declaration_decision(...)`.
 
 Decision:
 
-- frontend must not treat direct inserts into declaration/participant/item/trade reference tables as the target architecture;
-- declaration creation remains DB-blocked until the create RPC is present in schema/types;
-- if the live DB already has this RPC, refresh the repository dump and generated types before documenting it as current.
+- frontend must use `create_player_relationship_declaration(...)` instead of direct inserts into declaration/participant/item/trade reference tables;
+- declaration creation is audited as `anti_abuse.declaration.created`;
+- decision/status changes are audited as `anti_abuse.declaration.decision_updated`.
 
 ### H preflight status
 
-Current H-family DB preflight is partially green for read/dictionary/decision scope, with creation/mutation caveats below:
+H-family DB preflight is green for the currently known read/dictionary/create/decision/sanction scope.
+
+Current coverage:
 
 - dictionary rows exist for anti-abuse signal types, sanction types, player report types, and relationship declaration types;
 - report creation/decision flows exist;
-- relationship declaration decision flow exists; creation flow is blocked unless `create_player_relationship_declaration(...)` is present in current schema/types;
+- relationship declaration creation/decision flows exist;
 - case/sanction target search and paginated browser RPCs exist;
 - moderation visible/full history read RPCs exist;
 - known audit dictionary rows exist for currently identified H workflows.
 
 If a future H task adds a new mutating workflow or a new aggregate read model, it still needs its own focused preflight.
+
+### Epic I item lifecycle DB path
+
+Epic I item lifecycle now has DB-owned mutation and recovery workflows.
+
+Current DB/RPC contract:
+
+- `scrap_hero_item(...)`;
+- `recover_scrapped_item(...)`;
+- `search_recoverable_scrapped_items_page(...)`.
+
+Decision:
+
+- frontend must use `scrap_hero_item(...)` instead of direct `items` update/delete;
+- no-affix active items with no historical references may be hard-deleted by DB workflow;
+- affix-bearing or historically referenced items become `scrapped`/recoverable;
+- recovery is staff/admin-only through `recover_scrapped_item(...)`;
+- lifecycle scrap/recovery is not vendor sell/scrap payout in drachmas; vendor economy remains a separate slice.
+
+### Epic J trade/auction DB path
+
+Epic J must follow the current direct trade / one-item auction model instead of the older generic market-listing concept.
+
+Current DB/RPC contract:
+
+- direct trade and auction runtime already exist;
+- `player_trade_transaction_items` now stores lightweight item snapshots for completed direct trade / auction sale transaction lines;
+- `trade_item_value_bucket(...)` exists for approximate anti-abuse value bucketing;
+- `fill_player_trade_transaction_item_snapshot()` and `trg_fill_player_trade_transaction_item_snapshot` fill snapshots for new transaction item rows;
+- `audit_player_trade_transaction_completed()` and `trg_audit_player_trade_transaction_completed` write completion audit for completed direct trade / auction sale transactions;
+- audit actions `trade.direct_trade.completed` and `trade.auction_sale.completed` are active.
+
+Decision:
+
+- do not introduce a new `market_listings` table unless a later explicit design decision changes the model;
+- Codex must use existing direct trade and auction RPCs, not direct table writes;
+- transaction item snapshots are historical/evidence data for anti-abuse similarity, reporting and debug;
+- snapshots should remain lightweight and must not become a full item copy;
+- monitor growth of `player_trade_transaction_items` because legal repeated lending/shared gear transfers may produce many snapshot rows; consider retention/archiving/partitioning/lighter snapshots later if needed.
 
 ### PvE exploration/trials decisions so far
 
@@ -1989,4 +2034,6 @@ The admin section currently described as “Saved canonical bonus impact” is v
 - Bonus/admin UX note: saved DB-backed bonus impact preview is useful, but should be renamed in human language and likely collapsed/lightened so it does not look like a technical debug panel.
 - Every new audit-writing workflow must preflight `audit_action_types` and `audit_entity_types`.
 - Future stat allocation work may need DB-side `calculate_stat_allocation_cost(...)` or a formula-backed cost resolver.
-
+- Epic V preflight: before equipment implementation, design canonical equip/unequip/bulk equip/saved loadout RPCs, with requirement check at equip time, hand-pair logic, and audit.
+- Monitor growth of `player_trade_transaction_items` after adding transaction item snapshots; consider retention, archiving, partitioning or lighter snapshots if legal lending/shared gear flows create too much data.
+- Vendor scrap/sell for drachmas is a separate economy workflow and must not be conflated with current lifecycle `scrap_hero_item(...)`.

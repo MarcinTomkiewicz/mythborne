@@ -464,6 +464,45 @@ Rules:
 
 ---
 
+# Item lifecycle and recovery
+
+`items.status` is the canonical lifecycle field for player-owned items. Current status values:
+
+- `active`;
+- `scrapped`;
+- `locked_trade`;
+- `locked_auction`.
+
+Important lifecycle columns:
+
+- `items.status`;
+- `items.scrapped_at`;
+- `items.recoverable_until`.
+
+Canonical RPCs:
+
+- `scrap_hero_item(p_item_id uuid, p_actor_hero_id uuid, p_reason text, p_recoverable_until timestamptz, p_request_id text)` → `TABLE(item_id uuid, status item_status, scrapped_at timestamptz, recoverable_until timestamptz, audit_log_id uuid)`;
+- `recover_scrapped_item(p_item_id uuid, p_target_hero_id uuid, p_reason text, p_request_id text)` → `TABLE(item_id uuid, status item_status, scrapped_at timestamptz, recoverable_until timestamptz, audit_log_id uuid)`;
+- `search_recoverable_scrapped_items_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)` → paginated staff/admin browser for recoverable scrapped items.
+
+Rules:
+
+- frontend must use `scrap_hero_item(...)` instead of direct `items` update/delete;
+- active item without prefix/suffix and without historical references may be hard-deleted by `scrap_hero_item(...)`;
+- affix-bearing items, or no-affix items with trade/auction/report/declaration/sanction/history references, become `scrapped`/recoverable instead of being deleted;
+- recovery is a staff/admin operation through `recover_scrapped_item(...)`;
+- recovery requires anti-abuse sanction-management authority and a reason;
+- `search_recoverable_scrapped_items_page(...)` should be used for staff recovery UI instead of broad item fetches;
+- item lifecycle scrap/recovery is not the same as vendor sale/scrap payout in drachmas. Vendor sale/scrap remains a separate economy workflow.
+
+Relevant audit rows:
+
+- `audit_entity_types.key = item`;
+- `audit_action_types.key = item.lifecycle.scrapped`;
+- `audit_action_types.key = item.lifecycle.recovered`.
+
+---
+
 # Character Points, trade and auctions
 
 Character Points are stored on:
@@ -480,11 +519,67 @@ DB/RPC foundation exists for:
 - CP locks;
 - item locks;
 - transactions;
-- trade/auction anti-abuse signals/case grouping.
+- trade/auction anti-abuse signals/case grouping;
+- trade/auction transaction item snapshots;
+- completed direct-trade / auction-sale audit hooks.
 
 Trade between players uses Character Points. Drachmas are vendor/system/building currency. Vendor scrap is not trade.
 
 Frontend gameplay surfaces are still pending for full trade/auction UI.
+
+## Direct trade and auction transaction item snapshots
+
+`player_trade_transaction_items` stores item-line history for completed direct trade and auction sale transactions. It now also stores lightweight item snapshot features captured at transaction time.
+
+Important snapshot columns include:
+
+- `server_id`;
+- `item_name_snapshot`;
+- `item_drachma_value_snapshot`;
+- `value_bucket_snapshot`;
+- `generation_quality_key_snapshot`;
+- `generation_quality_label_snapshot`;
+- `generation_base_id_snapshot`;
+- `generation_base_key_snapshot`;
+- `generation_base_name_snapshot`;
+- `generation_base_type_key_snapshot`;
+- `prefix_affix_id_snapshot`;
+- `prefix_affix_key_snapshot`;
+- `prefix_affix_name_snapshot`;
+- `suffix_affix_id_snapshot`;
+- `suffix_affix_key_snapshot`;
+- `suffix_affix_name_snapshot`;
+- `has_prefix_snapshot`;
+- `has_suffix_snapshot`;
+- `item_snapshot_json`.
+
+Supporting DB pieces:
+
+- `trade_item_value_bucket(p_drachma_value integer)` returns an approximate value bucket for anti-abuse similarity;
+- `fill_player_trade_transaction_item_snapshot()` is a trigger helper;
+- `trg_fill_player_trade_transaction_item_snapshot` fills snapshots before insert/update of `transaction_id` / `item_id` on `player_trade_transaction_items`;
+- indexes exist for server/date browsing and similarity by base type, value bucket, quality and affix ids.
+
+Rules:
+
+- transaction item snapshots are historical/evidence data; they must not be reconstructed from current live item state;
+- snapshots are intentionally lightweight and must not become a full copy of the item runtime object;
+- `item_id` remains useful when the live item exists, but snapshot fields preserve evidence if the item is later moved, renamed, scrapped, deleted, or if dictionaries change;
+- monitor growth of `player_trade_transaction_items`, because legal repeated lending/shared gear transfers can produce many snapshot rows; consider retention, archiving, partitioning or lighter snapshots later if performance/storage becomes a problem.
+
+## Trade/auction completion audit
+
+Completed direct trade and auction sale transactions are audited DB-side.
+
+Supporting DB pieces:
+
+- `audit_player_trade_transaction_completed()` trigger helper;
+- `trg_audit_player_trade_transaction_completed` on `player_trade_transactions`;
+- `audit_entity_types.key = player_trade_transaction`;
+- `audit_action_types.key = trade.direct_trade.completed`;
+- `audit_action_types.key = trade.auction_sale.completed`.
+
+The completion audit is intentionally minimal. Full lifecycle audit for every offer/bid/listing state transition remains a separate J/G6 follow-up if needed.
 
 ---
 
@@ -615,12 +710,16 @@ Critical rule:
 
 Current recently added/confirmed rows include:
 
-- `gameplay.stat_allocation.saved`
-- `config.entity_requirement.created`
-- `config.entity_requirement.updated`
-- `config.entity_requirement.deactivated`
-- `config.entity_requirement.reordered`
-- `anti_abuse.declaration.created`
+- `gameplay.stat_allocation.saved`;
+- `config.entity_requirement.created`;
+- `config.entity_requirement.updated`;
+- `config.entity_requirement.deactivated`;
+- `config.entity_requirement.reordered`;
+- `anti_abuse.declaration.created`;
+- `item.lifecycle.scrapped`;
+- `item.lifecycle.recovered`;
+- `trade.direct_trade.completed`;
+- `trade.auction_sale.completed`.
 
 ---
 

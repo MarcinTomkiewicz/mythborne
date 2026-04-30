@@ -1929,22 +1929,45 @@ Check:
 
 If any of those are missing, Codex must report a DB blocker instead of inventing a frontend workaround.
 
-### Current mutation-path preflight caveat
+### Current mutation-path status
 
 Do not rely on this document alone to call newly discussed RPCs. Codex must verify the current repository `mythborne_schema.sql` and generated `database.types.ts` first.
 
-Current repository dump caveats:
+Confirmed current mutation paths in the latest dump/source set:
 
-- `save_stat_allocation(...)` is the intended G6 transactional stat allocation workflow, but it is not present in the currently available dump; G6 remains DB-blocked unless schema/types contain it.
-- `create_entity_requirement(...)`, `update_entity_requirement(...)`, `deactivate_entity_requirement(...)`, and `reorder_entity_requirements(...)` are the intended central requirement editor mutation path, but they are not present in the currently available dump; requirement mutation remains DB-blocked unless schema/types contain them.
-- `create_player_relationship_declaration(...)` is the intended declaration creation workflow, but it is not present in the currently available dump; relationship declaration creation remains DB-blocked unless schema/types contain it.
+- `save_stat_allocation(...)` is the canonical G6 stat allocation workflow;
+- `create_entity_requirement(...)`, `update_entity_requirement(...)`, `deactivate_entity_requirement(...)`, and `reorder_entity_requirements(...)` are the canonical central requirement editor mutation path;
+- `create_player_relationship_declaration(...)` is the canonical relationship declaration creation workflow;
+- `scrap_hero_item(...)`, `recover_scrapped_item(...)`, and `search_recoverable_scrapped_items_page(...)` are the current item lifecycle/recovery contracts;
+- direct trade / auction completion has transaction item snapshots and completion audit hooks.
 
-Confirmed current approach:
+Implementation implications:
 
+- use `save_stat_allocation(...)` for stat allocation save;
 - use `get_requirement_impact_preview(...)` for requirement preview/explainability;
-- use `set_player_relationship_declaration_decision(...)` for declaration decision/status handling where present;
+- use entity requirement RPCs for requirement create/update/deactivate/reorder;
+- use `create_player_relationship_declaration(...)` and `set_player_relationship_declaration_decision(...)` for declaration creation/review;
 - use existing anti-abuse/report/sanction RPCs that are present in schema/types;
-- if a needed mutation RPC is missing, report a DB blocker instead of implementing direct frontend writes.
+- use item lifecycle RPCs for scrap/recovery;
+- use direct trade / auction RPCs and do not design a new `market_listings` model;
+- if a needed mutation RPC is missing in current schema/types, report a DB blocker instead of implementing direct frontend writes.
+
+### Epic I/J operational notes
+
+Epic I item lifecycle is DB-ready for current scope:
+
+- active no-affix items without historical references may be hard-deleted by `scrap_hero_item(...)`;
+- affix-bearing or historically referenced items become `scrapped`/recoverable;
+- staff recovery uses `recover_scrapped_item(...)`;
+- vendor sale/scrap for drachmas is a separate future economy slice.
+
+Epic J is DB-ready for current direct trade / one-item auction scope:
+
+- no new `market_listings` table is planned;
+- player trade uses Character Points, while drachmas remain vendor/system/building currency;
+- `player_trade_transaction_items` now contains lightweight item snapshots for anti-abuse/report/debug evidence;
+- completed direct trade and auction sale transactions are audited;
+- monitor `player_trade_transaction_items` growth over time because legal lending/shared gear flows may create many transaction item snapshot rows.
 
 ### Human-readable reference selection
 
@@ -1985,4 +2008,6 @@ Descriptions, helper text, encounter/trial lore variants and other database-back
 - Bonus/admin UX note: saved DB-backed bonus impact preview is useful, but should be renamed in human language and likely collapsed/lightened so it does not look like a technical debug panel.
 - Every new audit-writing workflow must preflight `audit_action_types` and `audit_entity_types`.
 - Future stat allocation work may need DB-side `calculate_stat_allocation_cost(...)` or a formula-backed cost resolver.
-
+- Epic V preflight: before equipment implementation, design canonical equip/unequip/bulk equip/saved loadout RPCs, with requirement check at equip time, hand-pair logic, and audit.
+- Monitor growth of `player_trade_transaction_items` after adding transaction item snapshots; consider retention, archiving, partitioning or lighter snapshots if legal lending/shared gear flows create too much data.
+- Vendor scrap/sell for drachmas is a separate economy workflow and must not be conflated with current lifecycle `scrap_hero_item(...)`.
