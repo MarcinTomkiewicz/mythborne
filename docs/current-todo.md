@@ -73,6 +73,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: H21 - CP penalty view/management.
 - Completed and confirmed: H22 - repeat offender/history view.
 - Completed and confirmed: I1 - add lifecycle fields to item domain models.
+- Completed and confirmed: I2 - filter scrapped items from normal inventory.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
@@ -96,7 +97,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I7 - building bonus and requirement explainability.
 - Completed and confirmed: UX-I7b - DB-driven central requirement editor for Buildings admin.
 - Completed and confirmed: UX-I8 - anti-abuse decision explainability pass.
-- Current backlog task: wait for user commit, then continue with I2 - filter scrapped items from normal inventory.
+- Current backlog task: wait for user commit, then continue with I3 - implement safe scrap behavior skeleton.
 - H17+ planning note: status/verdict/sanction/CP penalty action sections now share a similar workflow-action shell; before adding the next similar audited status-action section, check whether to extract a light shared wrapper/state/helper for error/success/loading/submit card layout and stale-guard handling.
 - Reporting rule: future task reports must include a short Shared/reuse check covering reused shared/admin components, checked-but-not-reused options, and any new component justification.
 - G6 follow-up planning note: remaining gameplay audit slices are major item operations, trade operations once frontend flows exist, and estate/building irreversible changes.

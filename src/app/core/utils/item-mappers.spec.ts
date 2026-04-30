@@ -1,4 +1,5 @@
 import { Row } from '../types/supabase.types';
+import { isPlayerUsableItemStatus } from '../domain/item/item.model';
 import { mapItemReadModel } from './item-mappers';
 
 describe('item mappers', () => {
@@ -17,6 +18,13 @@ describe('item mappers', () => {
     expect(item.armoryShelfPosition).toBe(12);
     expect(item.drachmaValue).toBe(240);
     expect(item.metadataJson as unknown).toBe(row.metadata_json as unknown);
+  });
+
+  it('treats only active item status as player usable', () => {
+    expect(isPlayerUsableItemStatus('active')).toBeTrue();
+    expect(isPlayerUsableItemStatus('scrapped')).toBeFalse();
+    expect(isPlayerUsableItemStatus('locked_trade')).toBeFalse();
+    expect(isPlayerUsableItemStatus('locked_auction')).toBeFalse();
   });
 });
 

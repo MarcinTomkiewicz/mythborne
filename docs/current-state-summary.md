@@ -520,6 +520,10 @@ Still pending at the gameplay level even if partially supported in schema:
 - I1 adds `ItemReadModel` and `mapItemReadModel(...)` with `status`, `scrappedAt`, `recoverableUntil` and `updatedAt`, plus the existing runtime item identity, generation, shelf, value and metadata fields. This prepares I2 to filter scrapped items from normal player inventory/armory paths without reworking the base item row contract.
 - I1 also expands the equipped-item join type/select to include lifecycle columns, but intentionally does not filter scrapped items yet because that is I2 scope.
 - I1 was verified with `npx tsc --noEmit`, targeted `item-mappers.spec.ts` (`1 SUCCESS`) and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure. UI/manual smoke is not applicable because I1 is a model/mapper-only slice.
+- I2 accepted on 2026-04-30: normal player-facing equipment bonus resolution now treats only `items.status = active` as usable.
+- I2 adds `isPlayerUsableItemStatus(...)` to the runtime item domain model and uses it in `EquipmentBonusesService` so `scrapped`, `locked_trade` and `locked_auction` equipped items do not contribute combat/equipment bonuses.
+- I2 preserves the existing integrity guard for missing joined item rows: `row.items === null` still raises `Equipped item "... could not be loaded."` rather than being silently treated as inactive.
+- I2 was verified with `npx tsc --noEmit`, targeted item/equipment specs (`item-mappers.spec.ts`, `equipment-bonuses.spec.ts`, 4 SUCCESS) and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure. UI/manual smoke is not meaningful yet because the current armory route does not expose a runtime inventory list.
 - Status/verdict/sanction/CP penalty action sections now repeat the same audited action shell. Before adding another similar status-action section, check whether a shared wrapper/state/helper is warranted for error/success/loading, submit layout and stale-guard behavior.
 - `core` should continue to hold non-component logic:
   - domain models

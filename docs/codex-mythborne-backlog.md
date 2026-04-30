@@ -1249,6 +1249,8 @@ Status: completed and accepted on 2026-04-30.
 
 ## Task I2 — Filter scrapped items from normal inventory
 
+Status: completed and accepted on 2026-04-30.
+
 **Goal:** Prevent scrapped items from appearing usable.
 
 **Scope:**
@@ -1257,6 +1259,7 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - Player cannot use scrapped items.
+- Implementation note: current player-facing item usage path is equipment bonus resolution for combat. `EquipmentBonusesService` now applies bonuses only for joined `items.status = active`; `scrapped`, `locked_trade` and `locked_auction` items produce no bonuses. Missing joined item rows still throw an integrity error instead of being silently ignored. UI/manual smoke is deferred because runtime inventory/armory list UI does not exist yet.
 
 ---
 

@@ -7,6 +7,7 @@ import {
   ItemGenerationCatalog,
   ItemQualityDefinition,
 } from '../../domain/item/item-generation.model';
+import { isPlayerUsableItemStatus } from '../../domain/item/item.model';
 import { FilterOperator } from '../../enums/filter-operators';
 import { Bonus } from '../../types/bonus.types';
 import { EquippedItemRow } from '../../types/equipment-row.types';
@@ -59,6 +60,10 @@ export class EquipmentBonusesService {
 
     if (!item) {
       throw new Error(`Equipped item "${row.item_id}" could not be loaded.`);
+    }
+
+    if (!isPlayerUsableItemStatus(item.status)) {
+      return [];
     }
 
     const base = this.requiredBase(item.generation_base_id, item.id, catalog);
