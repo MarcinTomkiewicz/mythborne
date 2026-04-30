@@ -1,0 +1,195 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="flex-col gap-xs min-w-0">
+      <p class="card-legend mb-0">Sanctions</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Create sanction</h3>
+      <p class="muted-text mb-0">
+        Create a DB-audited sanction for the selected-server anti-abuse case.
+      </p>
+    </div>
+  </div>
+
+  @if (state.error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  @if (state.successMessage(); as message) {
+    <p-message severity="success">{{ message }}</p-message>
+  }
+
+  <form
+    [formGroup]="state.form"
+    class="mg-surface-card p-md flex-col gap-md"
+    (ngSubmit)="state.submit()"
+  >
+    <label class="flex-col gap-sm">
+      <span class="muted-text">Sanction type</span>
+      <p-select
+        class="w-100"
+        formControlName="sanctionTypeKey"
+        [options]="sanctionTypes()"
+        optionLabel="label"
+        optionValue="key"
+        (onChange)="onSanctionTypeChange()"
+      />
+    </label>
+
+    @if (state.formModel(); as model) {
+      <app-metadata-display
+        [label]="model.label"
+        [description]="model.description"
+        [helperText]="model.helperText"
+        [technicalKey]="model.sanctionTypeKey"
+      />
+      @if (model.adminDescription) {
+        <p class="mb-0">{{ model.adminDescription }}</p>
+      }
+    }
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+      <label class="flex-col gap-sm min-w-0">
+        <span class="muted-text">Target hero/account</span>
+        <p-autocomplete
+          styleClass="w-100"
+          [fluid]="true"
+          [formControl]="state.targetSearch.heroTargetControl"
+          [suggestions]="state.targetSearch.heroTargetSuggestions()"
+          optionLabel="label"
+          [forceSelection]="true"
+          [showClear]="true"
+          [minLength]="state.targetSearch.minQueryLength"
+          [delay]="250"
+          placeholder="Search hero, account or technical id"
+          (completeMethod)="searchTargetHeroes($event)"
+          (onSelect)="selectTargetHero($event.value)"
+          (onClear)="state.clearTargetHero()"
+        />
+        @if (state.targetSearch.heroTargetControl.value; as target) {
+          <span class="muted-text">{{ target.description }}</span>
+        }
+        @if (
+          (state.form.controls.targetHeroId.touched &&
+            state.form.controls.targetHeroId.invalid) ||
+          (state.form.controls.targetUserId.touched &&
+            state.form.controls.targetUserId.invalid)
+        ) {
+          <span class="form-error">A full hero/account target is required.</span>
+        }
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Reason</span>
+        <textarea
+          pInputText
+          rows="3"
+          class="w-100"
+          formControlName="reason"
+          placeholder="Required staff reason"
+        ></textarea>
+      </label>
+    </div>
+
+    <label class="flex-col gap-sm">
+      <span class="muted-text">Operator notes</span>
+      <textarea pInputText rows="2" class="w-100" formControlName="operatorNotes"></textarea>
+    </label>
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+      @if (state.visibleFieldKeys().includes('durationDays')) {
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Duration days</span>
+          <input pInputText class="w-100" type="number" formControlName="durationDays" />
+        </label>
+      }
+
+      @if (state.visibleFieldKeys().includes('amountCharacterPoints')) {
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Character Points amount</span>
+          <input
+            pInputText
+            class="w-100"
+            type="number"
+            formControlName="amountCharacterPoints"
+          />
+        </label>
+      }
+
+      @if (state.visibleFieldKeys().includes('sourceHeroId')) {
+        <label class="flex-col gap-sm min-w-0">
+          <span class="muted-text">Source hero</span>
+          <p-autocomplete
+            styleClass="w-100"
+            [fluid]="true"
+            [formControl]="state.sourceSearch.heroTargetControl"
+            [suggestions]="state.sourceSearch.heroTargetSuggestions()"
+            optionLabel="label"
+            [forceSelection]="true"
+            [showClear]="true"
+            [minLength]="state.sourceSearch.minQueryLength"
+            [delay]="250"
+            placeholder="Search source hero, account or technical id"
+            (completeMethod)="searchSourceHeroes($event)"
+            (onSelect)="selectSourceHero($event.value)"
+            (onClear)="state.clearSourceHero()"
+          />
+          @if (state.sourceSearch.heroTargetControl.value; as target) {
+            <span class="muted-text">{{ target.description }}</span>
+          }
+        </label>
+      }
+
+      @if (state.visibleFieldKeys().includes('itemIds')) {
+        <label class="flex-col gap-sm min-w-0">
+          <span class="muted-text">Items</span>
+          <p-autocomplete
+            styleClass="w-100"
+            [fluid]="true"
+            [formControl]="state.itemSearch.itemTargetControl"
+            [suggestions]="state.itemSearch.itemTargetSuggestions()"
+            optionLabel="label"
+            [forceSelection]="true"
+            [showClear]="true"
+            [minLength]="state.itemSearch.minQueryLength"
+            [delay]="250"
+            placeholder="Search item, owner or technical id"
+            (completeMethod)="searchItems($event)"
+            (onSelect)="selectItem($event.value)"
+          />
+          @if (state.itemSearch.selectedItemTargets().length) {
+            <div class="flex-row-start-center flex-wrap gap-xs">
+              @for (item of state.itemSearch.selectedItemTargets(); track item.itemId) {
+                <button
+                  type="button"
+                  class="mg-tag"
+                  (click)="state.removeItem(item.itemId)"
+                  [title]="item.description"
+                >
+                  {{ item.label }} x
+                </button>
+              }
+            </div>
+          }
+        </label>
+      }
+    </div>
+
+    @if (state.targetSearch.message(); as message) {
+      <span class="muted-text">{{ message }}</span>
+    }
+    @if (state.sourceSearch.message(); as message) {
+      <span class="muted-text">{{ message }}</span>
+    }
+    @if (state.itemSearch.message(); as message) {
+      <span class="muted-text">{{ message }}</span>
+    }
+
+    <div class="flex-row-end-center">
+      <p-button
+        type="submit"
+        label="Create sanction"
+        [loading]="state.isSaving()"
+        [disabled]="state.isSaving()"
+      />
+    </div>
+  </form>
+</section>

@@ -109,6 +109,23 @@ export interface ModerationHeroTarget {
   description: string;
 }
 
+export interface ModerationItemTarget {
+  itemId: string;
+  itemDisplayName: string;
+  itemStatus: string;
+  itemValue: number;
+  ownerHeroId: string;
+  ownerHeroName: string;
+  ownerUserId: string;
+  ownerDisplayName: string;
+  relatedAuctionListingId: string | null;
+  relatedTradeOfferId: string | null;
+  matchKind: string;
+  technicalLabel: string;
+  label: string;
+  description: string;
+}
+
 export interface ModerationTargetSearchInput {
   serverId: string;
   query: string;

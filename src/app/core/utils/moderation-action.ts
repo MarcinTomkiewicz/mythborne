@@ -5,6 +5,7 @@ import {
   ModerationAction,
   ModerationActionHistoryFilter,
   ModerationHeroTarget,
+  ModerationItemTarget,
   ModerationTargetSearchInput,
   ModerationActionType,
   ModerationUserTarget,
@@ -20,6 +21,8 @@ import {
   GetVisibleModerationActionsRpcArgs,
   SearchModerationHeroTargetRpcRow,
   SearchModerationHeroTargetsRpcArgs,
+  SearchModerationItemTargetRpcRow,
+  SearchModerationItemTargetsRpcArgs,
   SearchModerationUserTargetRpcRow,
   SearchModerationUserTargetsRpcArgs,
 } from '../types/moderation-action-rpc.types';
@@ -125,6 +128,39 @@ export function mapModerationHeroTarget(
   };
 }
 
+export function mapModerationItemTarget(
+  row: SearchModerationItemTargetRpcRow,
+): ModerationItemTarget {
+  const relatedAuctionListingId = normalizeNullableText(row.related_auction_listing_id);
+  const relatedTradeOfferId = normalizeNullableText(row.related_trade_offer_id);
+
+  return {
+    itemId: row.item_id,
+    itemDisplayName: row.item_display_name,
+    itemStatus: row.item_status,
+    itemValue: row.item_value,
+    ownerHeroId: row.owner_hero_id,
+    ownerHeroName: row.owner_hero_name,
+    ownerUserId: row.owner_user_id,
+    ownerDisplayName: row.owner_display_name,
+    relatedAuctionListingId,
+    relatedTradeOfferId,
+    matchKind: row.match_kind,
+    technicalLabel: row.technical_label,
+    label: row.item_display_name,
+    description: [
+      `Owner: ${row.owner_hero_name}`,
+      row.owner_display_name,
+      `Value: ${row.item_value}`,
+      relatedTradeOfferId ? `Trade: ${relatedTradeOfferId}` : null,
+      relatedAuctionListingId ? `Auction: ${relatedAuctionListingId}` : null,
+      row.technical_label,
+    ]
+      .filter(Boolean)
+      .join(' | '),
+  };
+}
+
 export function toCreateModerationActionRpcArgs(
   input: CreateModerationActionInput,
 ): CreateModerationActionRpcArgs {
@@ -221,6 +257,16 @@ export function toSearchModerationUserTargetsRpcArgs(
 export function toSearchModerationHeroTargetsRpcArgs(
   input: ModerationTargetSearchInput,
 ): SearchModerationHeroTargetsRpcArgs {
+  return {
+    p_server_id: requiredText(input.serverId, 'serverId'),
+    p_query: requiredText(input.query, 'query'),
+    p_limit: normalizePositiveLimit(input.limit),
+  };
+}
+
+export function toSearchModerationItemTargetsRpcArgs(
+  input: ModerationTargetSearchInput,
+): SearchModerationItemTargetsRpcArgs {
   return {
     p_server_id: requiredText(input.serverId, 'serverId'),
     p_query: requiredText(input.query, 'query'),

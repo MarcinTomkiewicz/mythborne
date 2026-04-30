@@ -9,6 +9,7 @@ import {
   ModerationAction,
   ModerationActionHistoryFilter,
   ModerationHeroTarget,
+  ModerationItemTarget,
   ModerationTargetSearchInput,
   ModerationActionType,
   ModerationUserTarget,
@@ -20,12 +21,14 @@ import {
   FullUserModerationHistoryRpcRow,
   ModerationActionRpcRow,
   SearchModerationHeroTargetRpcRow,
+  SearchModerationItemTargetRpcRow,
   SearchModerationUserTargetRpcRow,
 } from '../../types/moderation-action-rpc.types';
 import { Row } from '../../types/supabase.types';
 import {
   mapModerationAction,
   mapModerationHeroTarget,
+  mapModerationItemTarget,
   mapModerationActionType,
   mapModerationUserTarget,
   toCanApplyLocalModerationActionRpcArgs,
@@ -36,6 +39,7 @@ import {
   toGetFullUserModerationHistoryRpcArgs,
   toGetVisibleModerationActionsRpcArgs,
   toSearchModerationHeroTargetsRpcArgs,
+  toSearchModerationItemTargetsRpcArgs,
   toSearchModerationUserTargetsRpcArgs,
 } from '../../utils/moderation-action';
 import { Backend } from '../backend/backend';
@@ -136,5 +140,16 @@ export class ModerationActions {
         toSearchModerationHeroTargetsRpcArgs(input),
       )
       .pipe(map((rows) => rows.map(mapModerationHeroTarget)));
+  }
+
+  searchItemTargets(
+    input: ModerationTargetSearchInput,
+  ): Observable<ModerationItemTarget[]> {
+    return this.backend
+      .rpc<SearchModerationItemTargetRpcRow[]>(
+        RPC.search_moderation_item_targets,
+        toSearchModerationItemTargetsRpcArgs(input),
+      )
+      .pipe(map((rows) => rows.map(mapModerationItemTarget)));
   }
 }

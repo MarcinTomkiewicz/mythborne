@@ -69,6 +69,13 @@
         (decisionSaved)="applyCaseDecision($event)"
       />
 
+      <app-anti-abuse-case-sanction-create-section
+        [caseItem]="detailModel.case"
+        [sanctionTypes]="detailModel.dictionaries.sanctionTypes"
+        [canTriageAntiAbuse]="canTriageAntiAbuse()"
+        (sanctionCreated)="refresh()"
+      />
+
       <app-anti-abuse-case-detail-sections [detail]="detailModel" />
     }
   }

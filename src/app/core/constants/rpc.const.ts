@@ -36,6 +36,7 @@ export const RPC = {
   get_full_user_moderation_history: 'get_full_user_moderation_history',
   get_visible_moderation_actions: 'get_visible_moderation_actions',
   search_moderation_hero_targets: 'search_moderation_hero_targets',
+  search_moderation_item_targets: 'search_moderation_item_targets',
   search_moderation_user_targets: 'search_moderation_user_targets',
   create_entity_requirement: 'create_entity_requirement',
   deactivate_entity_requirement: 'deactivate_entity_requirement',

@@ -14,6 +14,7 @@ import { ANTI_ABUSE_CASES_PAGE_LINKS } from '../../admin-navigation.config';
 import { AdminServerSwitcher } from '../../components/admin-server-switcher/admin-server-switcher';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
 import { AntiAbuseCaseDetailSections } from './anti-abuse-case-detail-sections';
+import { AntiAbuseCaseSanctionCreateSection } from './anti-abuse-case-sanction-create-section';
 import { AntiAbuseCaseStatusTransitionSection } from './anti-abuse-case-status-transition-section';
 import { AntiAbuseCaseVerdictSection } from './anti-abuse-case-verdict-section';
 
@@ -28,6 +29,7 @@ import { AntiAbuseCaseVerdictSection } from './anti-abuse-case-verdict-section';
     AdminServerSwitcher,
     AdminTagLinks,
     AntiAbuseCaseDetailSections,
+    AntiAbuseCaseSanctionCreateSection,
     AntiAbuseCaseStatusTransitionSection,
     AntiAbuseCaseVerdictSection,
   ],

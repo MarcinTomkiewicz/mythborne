@@ -18,6 +18,8 @@ export type SearchModerationUserTargetsRpcArgs =
   Database['public']['Functions']['search_moderation_user_targets']['Args'];
 export type SearchModerationHeroTargetsRpcArgs =
   Database['public']['Functions']['search_moderation_hero_targets']['Args'];
+export type SearchModerationItemTargetsRpcArgs =
+  Database['public']['Functions']['search_moderation_item_targets']['Args'];
 
 export type ModerationActionRpcRow =
   Database['public']['Functions']['get_visible_moderation_actions']['Returns'][number];
@@ -31,6 +33,8 @@ export type SearchModerationUserTargetRpcRow =
   Database['public']['Functions']['search_moderation_user_targets']['Returns'][number];
 export type SearchModerationHeroTargetRpcRow =
   Database['public']['Functions']['search_moderation_hero_targets']['Returns'][number];
+export type SearchModerationItemTargetRpcRow =
+  Database['public']['Functions']['search_moderation_item_targets']['Returns'][number];
 
 export type AnyModerationActionRpcRow =
   | ModerationActionRpcRow

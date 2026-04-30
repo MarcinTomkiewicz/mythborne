@@ -15,6 +15,7 @@ import {
 import { AntiAbuseCaseDetails } from '../../../core/services/anti-abuse/anti-abuse-case-details';
 import { AntiAbuseDecisions } from '../../../core/services/anti-abuse/anti-abuse-decisions';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
+import { ModerationActions } from '../../../core/services/moderation/moderation-actions';
 import { ActiveServer } from '../../../core/services/server/active-server';
 import { ActiveServerFormFactory } from '../../../core/factories/forms/active-server-form.factory';
 import { AntiAbuseCaseDetailPage } from './anti-abuse-case-detail-page';
@@ -28,6 +29,7 @@ describe('AntiAbuseCaseDetailPage', () => {
   let fixture: ComponentFixture<AntiAbuseCaseDetailPage>;
   let caseDetails: jasmine.SpyObj<AntiAbuseCaseDetails>;
   let decisions: jasmine.SpyObj<AntiAbuseDecisions>;
+  let moderationActions: jasmine.SpyObj<ModerationActions>;
   let selectedServer: WritableSignal<SelectedGameServer | null>;
   let paramMap: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let firstRequest: Subject<AntiAbuseCaseDetailReadModel>;
@@ -58,8 +60,21 @@ describe('AntiAbuseCaseDetailPage', () => {
     });
     decisions = jasmine.createSpyObj<AntiAbuseDecisions>('AntiAbuseDecisions', [
       'setCaseDecision',
+      'createSanction',
+      'createCharacterPointPenalty',
+      'addSanctionItem',
     ]);
     decisions.setCaseDecision.and.returnValue(statusRequest);
+    moderationActions = jasmine.createSpyObj<ModerationActions>('ModerationActions', [
+      'canSearchTargets',
+      'searchHeroTargets',
+      'searchItemTargets',
+      'searchUserTargets',
+    ]);
+    moderationActions.canSearchTargets.and.returnValue(of(true));
+    moderationActions.searchHeroTargets.and.returnValue(of([]));
+    moderationActions.searchItemTargets.and.returnValue(of([]));
+    moderationActions.searchUserTargets.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [AntiAbuseCaseDetailPage],
@@ -67,6 +82,7 @@ describe('AntiAbuseCaseDetailPage', () => {
         provideRouter([]),
         { provide: AntiAbuseCaseDetails, useValue: caseDetails },
         { provide: AntiAbuseDecisions, useValue: decisions },
+        { provide: ModerationActions, useValue: moderationActions },
         { provide: ActiveServer, useValue: createActiveServer(selectedServer) },
         { provide: ActiveHero, useValue: { loadActiveHero: () => of(null) } },
         {
