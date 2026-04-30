@@ -1,11 +1,13 @@
 import {
   AntiAbuseCaseDecision,
-  AntiAbuseSanctionDecision,
-  AntiAbuseSanctionItemDecision,
-  CharacterPointPenaltyDecision,
   PlayerAbuseReportDecision,
   PlayerRelationshipDeclarationDecision,
 } from '../domain/anti-abuse/anti-abuse-decision.model';
+import {
+  AntiAbuseSanctionDecision,
+  AntiAbuseSanctionItemDecision,
+  CharacterPointPenaltyDecision,
+} from '../domain/anti-abuse/anti-abuse-sanction.model';
 import { Row } from '../types/supabase.types';
 
 export function mapAntiAbuseCaseDecision(
@@ -91,6 +93,7 @@ export function mapAntiAbuseSanctionDecision(
     forgivenAt: row.forgiven_at,
     failedAt: row.failed_at,
     imposedByUserId: row.imposed_by_user_id,
+    createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
@@ -117,6 +120,8 @@ export function mapCharacterPointPenaltyDecision(
     cancelledAt: row.cancelled_at,
     forgivenAt: row.forgiven_at,
     failedAt: row.failed_at,
+    createdByUserId: row.created_by_user_id,
+    createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }

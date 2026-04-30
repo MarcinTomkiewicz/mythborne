@@ -2,14 +2,16 @@ import { Database, Json } from '../../types/database.types';
 import { AuditLogEntry } from '../audit/audit-log.model';
 import { AntiAbuseDictionaryData } from './anti-abuse-dictionary.model';
 import {
-  AntiAbuseSanctionDecision,
-  AntiAbuseSanctionItemDecision,
-  CharacterPointPenaltyDecision,
   AntiAbuseCaseStatus,
   AntiAbuseCaseVerdict,
   PlayerAbuseReportDecision,
   PlayerRelationshipDeclarationDecision,
 } from './anti-abuse-decision.model';
+import {
+  AntiAbuseSanctionDecision,
+  AntiAbuseSanctionItemDecision,
+  CharacterPointPenaltyDecision,
+} from './anti-abuse-sanction.model';
 
 export type AntiAbuseCaseSource =
   Database['public']['Enums']['anti_abuse_case_source'];

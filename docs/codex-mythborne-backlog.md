@@ -1273,6 +1273,8 @@ Status: completed and accepted on 2026-04-30.
 
 ## Task H17 — Sanction domain models
 
+Status: completed and accepted on 2026-04-30.
+
 **Goal:** Model sanctions and CP penalties.
 
 **Scope:**
@@ -1282,6 +1284,7 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - Explicit fields are modeled; no core data hidden in metadata JSON.
+- Implementation note: sanction models live in `anti-abuse-sanction.model.ts`, with compatibility re-exports from `anti-abuse-decision.model.ts`. Explicit `createdAt` and `createdByUserId` fields are mapped from table columns where available. H17 is model/service-only; technical verification passed and full UI smoke is not applicable.
 
 ---
 

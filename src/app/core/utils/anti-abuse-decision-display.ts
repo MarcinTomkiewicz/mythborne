@@ -17,14 +17,16 @@ import {
   AntiAbuseCaseDecision,
   AntiAbuseCaseStatus,
   AntiAbuseCaseVerdict,
-  AntiAbuseSanctionDecision,
-  AntiAbuseSanctionItemDecision,
   AntiAbuseSanctionStatus,
   PlayerAbuseReportDecision,
   PlayerAbuseReportStatus,
   PlayerRelationshipDeclarationDecision,
   PlayerRelationshipDeclarationStatus,
 } from '../domain/anti-abuse/anti-abuse-decision.model';
+import {
+  AntiAbuseSanctionDecision,
+  AntiAbuseSanctionItemDecision,
+} from '../domain/anti-abuse/anti-abuse-sanction.model';
 import {
   AntiAbuseDisplayMetadata,
   AntiAbuseSanctionItemLinkDisplay,

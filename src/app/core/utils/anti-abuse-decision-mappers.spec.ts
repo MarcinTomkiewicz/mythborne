@@ -22,6 +22,52 @@ describe('anti-abuse decision domain mappers', () => {
     expect(mapAntiAbuseSanctionItemDecision(createSanctionItemRow()).itemId)
       .toBe('item-1');
   });
+
+  it('maps sanction, sanction item and Character Point penalty rows with explicit fields', () => {
+    expect(mapAntiAbuseSanctionDecision(createSanctionRow())).toEqual(
+      jasmine.objectContaining({
+        id: 'sanction-1',
+        caseId: 'case-1',
+        sanctionTypeKey: 'character_point_fine',
+        targetHeroId: 'hero-1',
+        targetUserId: 'user-1',
+        amountCharacterPoints: 100,
+        durationDays: null,
+        imposedByUserId: 'operator-1',
+        createdAt: '2026-04-28T00:00:00.000Z',
+        updatedAt: '2026-04-28T00:00:00.000Z',
+      }),
+    );
+
+    expect(mapCharacterPointPenaltyDecision(createPenaltyRow())).toEqual(
+      jasmine.objectContaining({
+        id: 'penalty-1',
+        sanctionId: 'sanction-1',
+        caseId: 'case-1',
+        serverId: 'server-1',
+        heroId: 'hero-1',
+        userId: 'user-1',
+        totalAmount: 100,
+        remainingAmount: 100,
+        paidAmount: 0,
+        createdByUserId: 'operator-1',
+        createdAt: '2026-04-28T00:00:00.000Z',
+        updatedAt: '2026-04-28T00:00:00.000Z',
+      }),
+    );
+
+    expect(mapAntiAbuseSanctionItemDecision(createSanctionItemRow())).toEqual(
+      jasmine.objectContaining({
+        id: 'sanction-item-1',
+        sanctionId: 'sanction-1',
+        itemId: 'item-1',
+        sourceHeroId: 'hero-1',
+        destinationHeroId: null,
+        createdByUserId: 'operator-1',
+        createdAt: '2026-04-28T00:00:00.000Z',
+      }),
+    );
+  });
 });
 
 function createCaseRow(): Row<'anti_abuse_cases'> {

@@ -3,10 +3,12 @@ import {
   AntiAbuseSanctionTypeEntry,
 } from '../../../core/domain/anti-abuse/anti-abuse-dictionary.model';
 import {
-  AntiAbuseSanctionDecision,
   AntiAbuseSanctionStatus,
-  CharacterPointPenaltyDecision,
 } from '../../../core/domain/anti-abuse/anti-abuse-decision.model';
+import {
+  AntiAbuseSanctionDecision,
+  CharacterPointPenaltyDecision,
+} from '../../../core/domain/anti-abuse/anti-abuse-sanction.model';
 import { antiAbuseSanctionStatusLabel } from '../../../core/utils/anti-abuse-decision-display';
 import { displayValue } from '../../../core/utils/display-value';
 

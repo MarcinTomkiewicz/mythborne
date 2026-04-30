@@ -735,6 +735,7 @@ function createDetail(
             forgivenAt: null,
             failedAt: null,
             imposedByUserId: 'staff-1',
+            createdAt: '2026-04-30T00:18:00.000Z',
             updatedAt: '2026-04-30T00:18:00.000Z',
           },
         ]
@@ -760,6 +761,8 @@ function createDetail(
             cancelledAt: null,
             forgivenAt: null,
             failedAt: null,
+            createdByUserId: 'staff-1',
+            createdAt: '2026-04-30T00:19:00.000Z',
             updatedAt: '2026-04-30T00:19:00.000Z',
           },
         ]

@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { AntiAbuseSanctionItemDecision } from '../../../core/domain/anti-abuse/anti-abuse-decision.model';
+import { AntiAbuseSanctionItemDecision } from '../../../core/domain/anti-abuse/anti-abuse-sanction.model';
 import { sanctionItemLinkDisplay } from '../../../core/utils/anti-abuse-decision-display';
 import { displayValue } from '../../../core/utils/display-value';
 

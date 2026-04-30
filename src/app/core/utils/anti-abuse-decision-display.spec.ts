@@ -1,10 +1,10 @@
 import { AntiAbuseDictionaryData } from '../domain/anti-abuse/anti-abuse-dictionary.model';
 import {
   AntiAbuseCaseDecision,
-  AntiAbuseSanctionDecision,
   PlayerAbuseReportDecision,
   PlayerRelationshipDeclarationDecision,
 } from '../domain/anti-abuse/anti-abuse-decision.model';
+import { AntiAbuseSanctionDecision } from '../domain/anti-abuse/anti-abuse-sanction.model';
 import {
   playerDeclarationDecisionDisplay,
   playerReportDecisionDisplay,
@@ -199,6 +199,7 @@ function createSanction(): AntiAbuseSanctionDecision {
     forgivenAt: null,
     failedAt: null,
     imposedByUserId: 'operator-1',
+    createdAt: '2026-04-29T00:00:00.000Z',
     updatedAt: '2026-04-29T00:00:00.000Z',
   };
 }

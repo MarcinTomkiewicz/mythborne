@@ -1,13 +1,15 @@
 import {
-  AddAntiAbuseSanctionItemInput,
   AntiAbuseCaseDecisionInput,
+  PlayerAbuseReportDecisionInput,
+  PlayerRelationshipDeclarationDecisionInput,
+} from '../domain/anti-abuse/anti-abuse-decision.model';
+import {
+  AddAntiAbuseSanctionItemInput,
   AntiAbuseSanctionStatusInput,
   CharacterPointPenaltyStatusInput,
   CreateAntiAbuseSanctionInput,
   CreateCharacterPointPenaltyInput,
-  PlayerAbuseReportDecisionInput,
-  PlayerRelationshipDeclarationDecisionInput,
-} from '../domain/anti-abuse/anti-abuse-decision.model';
+} from '../domain/anti-abuse/anti-abuse-sanction.model';
 import {
   AddAntiAbuseSanctionItemRpcArgs,
   CanManageAntiAbuseRpcArgs,
