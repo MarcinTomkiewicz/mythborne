@@ -1193,6 +1193,8 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - Staff can evaluate repeat offender patterns.
+- Status: Done / confirmed on 2026-04-30.
+- Implementation note: selected-server case detail now includes repeat-offender history for a selected hero/account. The read service is server-scoped, excludes the current case, resolves final cases through `serverId + id IN (...)`, reads anti-abuse cases/participants/sanctions/Character Point penalties directly, and does not use the legacy moderation history RPC. Prior sanction/warning labels use referenced sanction type dictionaries loaded through `AntiAbuseReferencedDictionaries`, with raw type keys shown only as secondary metadata. Empty participant targets are ignored and UI requests guard stale target/case/server responses. Full manual smoke is deferred until representative anti-abuse history data exists.
 
 ---
 

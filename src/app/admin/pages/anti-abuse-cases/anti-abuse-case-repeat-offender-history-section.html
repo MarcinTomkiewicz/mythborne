@@ -1,0 +1,122 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="flex-col gap-xs min-w-0">
+      <p class="card-legend mb-0">Repeat offender</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Anti-abuse history</h3>
+      <p class="muted-text mb-0">
+        Server-scoped prior cases, sanctions, warnings and Character Point penalties for a selected case participant.
+      </p>
+    </div>
+  </div>
+
+  @if (error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  @if (targetOptions().length) {
+    <div class="mg-surface-card p-md flex-col gap-md">
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Target</span>
+          <p-select
+            class="w-100"
+            [formControl]="targetControl"
+            [options]="targetOptions()"
+            optionLabel="label"
+            (onChange)="onTargetChange()"
+          />
+        </label>
+
+        <div class="flex-row-end-center align-self-end">
+          <p-button
+            type="button"
+            label="Load history"
+            [loading]="isLoading()"
+            [disabled]="isLoading()"
+            (onClick)="loadHistory()"
+          />
+        </div>
+      </div>
+
+      @if (history(); as model) {
+        <div class="mg-grid grid-cols-5 grid-cols-2-md grid-cols-1-sm gap-sm w-100">
+          <div class="mg-surface-card p-sm flex-col gap-xs">
+            <span class="muted-text">Cases</span>
+            <strong class="heading-color">{{ model.totals.cases }}</strong>
+          </div>
+          <div class="mg-surface-card p-sm flex-col gap-xs">
+            <span class="muted-text">Sanctions</span>
+            <strong class="heading-color">{{ model.totals.sanctions }}</strong>
+          </div>
+          <div class="mg-surface-card p-sm flex-col gap-xs">
+            <span class="muted-text">Warnings</span>
+            <strong class="heading-color">{{ model.totals.warnings }}</strong>
+          </div>
+          <div class="mg-surface-card p-sm flex-col gap-xs">
+            <span class="muted-text">CP penalties</span>
+            <strong class="heading-color">{{ model.totals.characterPointPenalties }}</strong>
+          </div>
+          <div class="mg-surface-card p-sm flex-col gap-xs">
+            <span class="muted-text">Remaining CP</span>
+            <strong class="heading-color">{{ model.totals.remainingCharacterPoints }}</strong>
+          </div>
+        </div>
+
+        <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+          <div class="flex-col gap-sm">
+            <h4 class="mg-section__title mg-section__title--xs mb-0">Prior cases</h4>
+            @for (caseItem of model.cases; track caseItem.id) {
+              <article class="mg-surface-card p-sm flex-col gap-xs">
+                <div class="flex-row-between-center flex-col-sm gap-xs">
+                  <strong class="heading-color text-break">{{ caseItem.title }}</strong>
+                  <span class="mg-tag">{{ caseStatus(caseItem.status) }}</span>
+                </div>
+                <span class="muted-text text-break">{{ caseItem.createdAt }}</span>
+                <span class="text-break">Signals: {{ caseItem.signalCount }}</span>
+              </article>
+            } @empty {
+              <p class="muted-text mb-0">No prior anti-abuse cases for this target.</p>
+            }
+          </div>
+
+          <div class="flex-col gap-sm">
+            <h4 class="mg-section__title mg-section__title--xs mb-0">Sanctions and warnings</h4>
+            @for (sanction of model.sanctions; track sanction.id) {
+              <article class="mg-surface-card p-sm flex-col gap-xs">
+                <div class="flex-row-between-center flex-col-sm gap-xs">
+                  <strong class="heading-color text-break">{{ sanctionTypeLabel(sanction) }}</strong>
+                  <span class="mg-tag">{{ sanctionStatus(sanction.status) }}</span>
+                </div>
+                <span class="muted-text text-break">Type key: {{ sanction.sanctionTypeKey }}</span>
+                <span class="heading-color text-break">Reason: {{ sanction.reason }}</span>
+                <span class="text-break">CP / duration: {{ value(sanction.amountCharacterPoints) }} / {{ value(sanction.durationDays) }}</span>
+              </article>
+            } @empty {
+              <p class="muted-text mb-0">No prior sanctions for this target.</p>
+            }
+          </div>
+
+          <div class="flex-col gap-sm">
+            <h4 class="mg-section__title mg-section__title--xs mb-0">CP penalties</h4>
+            @for (penalty of model.characterPointPenalties; track penalty.id) {
+              <article class="mg-surface-card p-sm flex-col gap-xs">
+                <div class="flex-row-between-center flex-col-sm gap-xs">
+                  <strong class="heading-color text-break">{{ penalty.heroId }}</strong>
+                  <span class="mg-tag">{{ sanctionStatus(penalty.status) }}</span>
+                </div>
+                <span class="text-break">Total / paid / remaining: {{ penalty.totalAmount }} / {{ penalty.paidAmount }} / {{ penalty.remainingAmount }}</span>
+                <span class="heading-color text-break">Reason: {{ penalty.reason }}</span>
+              </article>
+            } @empty {
+              <p class="muted-text mb-0">No prior CP penalties for this target.</p>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <p-message severity="info">
+      Add a case participant or target before loading repeat-offender history.
+    </p-message>
+  }
+</section>
