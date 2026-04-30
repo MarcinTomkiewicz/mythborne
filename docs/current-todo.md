@@ -67,6 +67,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: H15 - case status transition action.
 - Completed and confirmed: H16 - case verdict action.
 - Completed and confirmed: H17 - sanction domain models.
+- Completed and confirmed: H18 - sanction type-driven form model.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
@@ -90,7 +91,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I7 - building bonus and requirement explainability.
 - Completed and confirmed: UX-I7b - DB-driven central requirement editor for Buildings admin.
 - Completed and confirmed: UX-I8 - anti-abuse decision explainability pass.
-- Current backlog task: wait for user commit, then continue with H18 - sanction type-driven form model.
+- Current backlog task: wait for user commit, then continue with H19 - sanction creation operation.
 - H17+ planning note: status/verdict action sections now share a similar workflow-action shell; if more case action cards are added, consider a light shared wrapper/helper for error/success/loading/submit card layout instead of copying the pattern further.
 - Reporting rule: future task reports must include a short Shared/reuse check covering reused shared/admin components, checked-but-not-reused options, and any new component justification.
 - G6 follow-up planning note: remaining gameplay audit slices are major item operations, trade operations once frontend flows exist, and estate/building irreversible changes.

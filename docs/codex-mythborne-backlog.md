@@ -1290,6 +1290,8 @@ Status: completed and accepted on 2026-04-30.
 
 ## Task H18 — Sanction type-driven form model
 
+Status: completed and accepted on 2026-04-30.
+
 **Goal:** Dynamic sanction form from sanction type flags.
 
 **Scope:**
@@ -1302,6 +1304,7 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - Warning/suspension/fine/item forms show the correct fields.
+- Implementation note: base required fields are `reason`, `targetHeroId` and `targetUserId`; dynamic fields are driven by sanction type flags. Future H19 UI must use server-scoped hero/account target search to populate target ids, not UUID-only inputs.
 
 ---
 
