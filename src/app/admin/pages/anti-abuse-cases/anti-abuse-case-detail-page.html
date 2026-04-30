@@ -82,6 +82,12 @@
         (sanctionStatusSaved)="refresh()"
       />
 
+      <app-anti-abuse-case-penalty-status-section
+        [caseItem]="detailModel.case"
+        [penalties]="detailModel.characterPointPenalties"
+        (penaltyStatusSaved)="refresh()"
+      />
+
       <app-anti-abuse-case-detail-sections [detail]="detailModel" />
     }
   }

@@ -8,7 +8,10 @@ import {
   AntiAbuseCaseDetailReadModel,
 } from '../../../core/domain/anti-abuse/anti-abuse-case.model';
 import { AntiAbuseCaseDecision } from '../../../core/domain/anti-abuse/anti-abuse-decision.model';
-import { AntiAbuseSanctionDecision } from '../../../core/domain/anti-abuse/anti-abuse-sanction.model';
+import {
+  AntiAbuseSanctionDecision,
+  CharacterPointPenaltyDecision,
+} from '../../../core/domain/anti-abuse/anti-abuse-sanction.model';
 import {
   SelectedGameServer,
   ServerAccessState,
@@ -25,6 +28,7 @@ import {
   ANTI_ABUSE_VERDICT_STATUS_REASON_FALLBACK,
   AntiAbuseCaseVerdictSection,
 } from './anti-abuse-case-verdict-section';
+import { AntiAbuseCasePenaltyStatusSection } from './anti-abuse-case-penalty-status-section';
 
 describe('AntiAbuseCaseDetailPage', () => {
   let fixture: ComponentFixture<AntiAbuseCaseDetailPage>;
@@ -37,6 +41,7 @@ describe('AntiAbuseCaseDetailPage', () => {
   let secondRequest: Subject<AntiAbuseCaseDetailReadModel>;
   let statusRequest: Subject<AntiAbuseCaseDecision>;
   let sanctionStatusRequest: Subject<AntiAbuseSanctionDecision>;
+  let penaltyStatusRequest: Subject<CharacterPointPenaltyDecision>;
 
   beforeEach(async () => {
     selectedServer = signal(createServer('server-1'));
@@ -45,6 +50,7 @@ describe('AntiAbuseCaseDetailPage', () => {
     secondRequest = new Subject<AntiAbuseCaseDetailReadModel>();
     statusRequest = new Subject<AntiAbuseCaseDecision>();
     sanctionStatusRequest = new Subject<AntiAbuseSanctionDecision>();
+    penaltyStatusRequest = new Subject<CharacterPointPenaltyDecision>();
     caseDetails = jasmine.createSpyObj<AntiAbuseCaseDetails>('AntiAbuseCaseDetails', [
       'getCaseDetail',
     ]);
@@ -64,12 +70,14 @@ describe('AntiAbuseCaseDetailPage', () => {
     decisions = jasmine.createSpyObj<AntiAbuseDecisions>('AntiAbuseDecisions', [
       'setCaseDecision',
       'setSanctionStatus',
+      'setCharacterPointPenaltyStatus',
       'createSanction',
       'createCharacterPointPenalty',
       'addSanctionItem',
     ]);
     decisions.setCaseDecision.and.returnValue(statusRequest);
     decisions.setSanctionStatus.and.returnValue(sanctionStatusRequest);
+    decisions.setCharacterPointPenaltyStatus.and.returnValue(penaltyStatusRequest);
     moderationActions = jasmine.createSpyObj<ModerationActions>('ModerationActions', [
       'canSearchTargets',
       'searchHeroTargets',
@@ -405,6 +413,40 @@ describe('AntiAbuseCaseDetailPage', () => {
 
     expect(fixture.componentInstance.detail()).toBeNull();
   });
+
+  it('submits Character Point penalty status through the canonical decision workflow', () => {
+    firstRequest.next(createDetail('server-1', 'case-1', true));
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    const section = penaltySection(fixture);
+    section.form.controls.penaltyId.setValue('penalty-1');
+    section.form.controls.status.setValue('completed');
+    section.form.controls.statusReason.setValue(' Paid off. ');
+    section.submit();
+
+    penaltyStatusRequest.next(
+      createPenaltyDecision('case-1', 'server-1', {
+        status: 'completed',
+        statusReason: 'Paid off.',
+        remainingAmount: 0,
+        paidAmount: 25,
+      }),
+    );
+    penaltyStatusRequest.complete();
+    fixture.detectChanges();
+
+    expect(decisions.setCharacterPointPenaltyStatus).toHaveBeenCalledOnceWith({
+      penaltyId: 'penalty-1',
+      status: 'completed',
+      statusReason: 'Paid off.',
+    });
+    expect(caseDetails.getCaseDetail).toHaveBeenCalledTimes(2);
+    expect(caseDetails.getCaseDetail.calls.mostRecent().args[0]).toEqual({
+      serverId: 'server-1',
+      caseId: 'case-1',
+    });
+  });
 });
 
 function statusSection(
@@ -419,6 +461,13 @@ function verdictSection(
 ): AntiAbuseCaseVerdictSection {
   return fixture.debugElement.query(By.directive(AntiAbuseCaseVerdictSection))
     .componentInstance as AntiAbuseCaseVerdictSection;
+}
+
+function penaltySection(
+  fixture: ComponentFixture<AntiAbuseCaseDetailPage>,
+): AntiAbuseCasePenaltyStatusSection {
+  return fixture.debugElement.query(By.directive(AntiAbuseCasePenaltyStatusSection))
+    .componentInstance as AntiAbuseCasePenaltyStatusSection;
 }
 
 function createActiveServer(
@@ -826,6 +875,37 @@ function createDecision(
     resolvedAt: null,
     resolvedByUserId: null,
     cancelledAt: null,
+    updatedAt: '2026-04-30T01:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function createPenaltyDecision(
+  caseId: string,
+  serverId = 'server-1',
+  overrides: Partial<CharacterPointPenaltyDecision> = {},
+): CharacterPointPenaltyDecision {
+  return {
+    id: 'penalty-1',
+    sanctionId: 'sanction-1',
+    caseId,
+    serverId,
+    heroId: 'hero-1',
+    userId: 'user-1',
+    status: 'pending',
+    statusReason: null,
+    reason: 'Penalty reason.',
+    operatorNotes: 'Penalty operator notes.',
+    totalAmount: 25,
+    remainingAmount: 20,
+    paidAmount: 5,
+    appliedAt: null,
+    completedAt: null,
+    cancelledAt: null,
+    forgivenAt: null,
+    failedAt: null,
+    createdByUserId: 'staff-1',
+    createdAt: '2026-04-30T00:19:00.000Z',
     updatedAt: '2026-04-30T01:00:00.000Z',
     ...overrides,
   };

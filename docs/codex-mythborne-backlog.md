@@ -1164,6 +1164,8 @@ Status: completed and accepted on 2026-04-30.
 
 ## Task H21 — CP penalty view/management
 
+**Status:** Done / confirmed 2026-04-30.
+
 **Goal:** Staff can inspect CP fine debt.
 
 **Scope:**
@@ -1173,6 +1175,7 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - CP penalty is visible in case/hero history.
+- Implementation note: selected-server case detail shows CP penalty debt and supports manual CP penalty status updates through canonical `AntiAbuseDecisions.setCharacterPointPenaltyStatus(...)`. The UI requires status reason, uses central sanction status options, labels penalty choices with hero/status/debt/reason context, refreshes detail after success, and guards stale success/error responses against case/server changes and selected-penalty changes. Automatic siphoning is not implemented. Broader hero/account repeat-offender history remains H22. Full manual smoke is deferred until representative gameplay CP penalty data exists.
 
 ---
 
