@@ -1028,6 +1028,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H3 — Anti-abuse case read models
 
+**Status:** Done / confirmed 2026-04-30.
+
 **Goal:** Model cases and linked context.
 
 **Scope:**

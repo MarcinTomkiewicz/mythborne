@@ -52,6 +52,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: G6 - audit gameplay persistent changes, stat allocation RPC slice.
 - Completed and confirmed: H1 - anti-abuse dictionary models, satisfied by UX-I8.
 - Completed and confirmed: H2 - anti-abuse dictionary loaders.
+- Completed and confirmed: H3 - anti-abuse case read models.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
@@ -75,7 +76,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I7 - building bonus and requirement explainability.
 - Completed and confirmed: UX-I7b - DB-driven central requirement editor for Buildings admin.
 - Completed and confirmed: UX-I8 - anti-abuse decision explainability pass.
-- Current backlog task: wait for user commit, then continue with H3 - anti-abuse case read models.
+- Current backlog task: wait for user commit, then continue with H4 - server-scoped case list service.
 - G6 follow-up planning note: remaining gameplay audit slices are major item operations, trade operations once frontend flows exist, and estate/building irreversible changes.
 - Epic F direction: legacy bonus model retirement; new app paths should use dictionaries, semantic bonus_templates, and entity_bonuses.
 

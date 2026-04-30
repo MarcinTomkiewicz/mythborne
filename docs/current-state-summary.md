@@ -437,6 +437,8 @@ Still pending at the gameplay level even if partially supported in schema:
 - H1 is confirmed complete through UX-I8: typed anti-abuse dictionary domain models and mappers cover sanction types, signal types, player abuse report types and player relationship declaration types, including descriptions/helper/admin text and required-field flags.
 - H2 accepted on 2026-04-29: `AntiAbuseDictionaries` loads active DB-backed rows for all four anti-abuse dictionary collections, sorts each query by `sort_order` then `key`, and exposes the loaded data for future player/staff forms without UI hardcoded type lists.
 - H2 was verified with `npx tsc --noEmit`, targeted anti-abuse dictionary service/mapper specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- H3 accepted on 2026-04-30: anti-abuse case read models now cover cases, signals, case-signal links, participants, case-audit links and case-declaration links so H5 can build a case detail aggregation model.
+- H3 is a model-only foundation slice with no meaningful UI smoke path. It was verified technically with `npx tsc --noEmit`, targeted anti-abuse case mapper specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services
