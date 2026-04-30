@@ -1265,6 +1265,8 @@ Status: completed and accepted on 2026-04-30.
 
 ## Task I3 — Implement safe scrap behavior skeleton
 
+Status: completed and accepted on 2026-04-30.
+
 **Goal:** Align scrap flow with item lifecycle.
 
 **Scope:**
@@ -1274,6 +1276,7 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - Affix-bearing items are not accidentally permanently deleted.
+- Implementation note: added a core item lifecycle skeleton around the canonical `scrap_hero_item` RPC. `ItemLifecycleService` never direct-deletes or direct-writes `items`; frontend code always asks the DB workflow to decide whether a no-affix item is permanently removed or an affix-bearing/unknown item remains scrapped and recoverable. `permanent_delete_candidate` is only a classification hint, not a frontend delete path. Future UI should refresh inventory/equipment after success and base messaging on the RPC result, especially `recoverableUntil`, without assuming the item row still exists.
 
 ---
 

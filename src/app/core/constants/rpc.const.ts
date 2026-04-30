@@ -44,6 +44,9 @@ export const RPC = {
   get_building_progression_preview: 'get_building_progression_preview',
   get_requirement_impact_preview: 'get_requirement_impact_preview',
   reorder_entity_requirements: 'reorder_entity_requirements',
+  recover_scrapped_item: 'recover_scrapped_item',
+  scrap_hero_item: 'scrap_hero_item',
+  search_recoverable_scrapped_items_page: 'search_recoverable_scrapped_items_page',
   save_stat_allocation: 'save_stat_allocation',
   update_entity_requirement: 'update_entity_requirement',
 } as const;
