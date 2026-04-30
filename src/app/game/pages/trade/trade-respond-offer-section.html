@@ -1,0 +1,67 @@
+<section class="mg-card p-lg w-100">
+  <form [formGroup]="state.form" (ngSubmit)="state.submit()" class="flex-col gap-md">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Respond</h3>
+        <p class="muted-text mb-0">
+          Respond to incoming offers. The database workflow validates locks and trade rules.
+        </p>
+      </div>
+      <div class="flex-row-start-center gap-sm">
+        <button
+          pButton
+          type="button"
+          label="Reject"
+          severity="secondary"
+          [disabled]="state.isSaving() || !state.form.controls.offerId.value"
+          (click)="state.rejectSelectedOffer()"
+        ></button>
+        <button
+          pButton
+          type="submit"
+          label="Respond"
+          [loading]="state.isSaving()"
+          [disabled]="state.isSaving() || !state.form.controls.offerId.value"
+        ></button>
+      </div>
+    </div>
+
+    <div class="grid-2 gap-md">
+      <label class="flex-col gap-xs">
+        <span class="form-label">Incoming offer</span>
+        <p-select
+          formControlName="offerId"
+          [options]="state.incomingOfferOptions()"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </label>
+
+      <label class="flex-col gap-xs">
+        <span class="form-label">Character Points</span>
+        <p-inputnumber
+          formControlName="characterPoints"
+          [min]="0"
+          [showButtons]="true"
+        />
+      </label>
+    </div>
+
+    <label class="flex-col gap-xs">
+      <span class="form-label">Items</span>
+      <p-autocomplete
+        formControlName="items"
+        [suggestions]="state.itemSuggestions()"
+        optionLabel="label"
+        [multiple]="true"
+        [forceSelection]="true"
+        (completeMethod)="state.searchItemTargets($event)"
+      />
+    </label>
+
+    <label class="flex-col gap-xs">
+      <span class="form-label">Description</span>
+      <input pInputText formControlName="description" type="text" />
+    </label>
+  </form>
+</section>

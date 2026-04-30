@@ -47,6 +47,11 @@ export const RPC = {
   recover_scrapped_item: 'recover_scrapped_item',
   scrap_hero_item: 'scrap_hero_item',
   search_recoverable_scrapped_items_page: 'search_recoverable_scrapped_items_page',
+  create_player_direct_trade_offer: 'create_player_direct_trade_offer',
+  respond_player_direct_trade_offer: 'respond_player_direct_trade_offer',
+  confirm_player_direct_trade_offer: 'confirm_player_direct_trade_offer',
+  cancel_player_direct_trade_offer: 'cancel_player_direct_trade_offer',
+  reject_player_direct_trade_offer: 'reject_player_direct_trade_offer',
   save_stat_allocation: 'save_stat_allocation',
   update_entity_requirement: 'update_entity_requirement',
 } as const;

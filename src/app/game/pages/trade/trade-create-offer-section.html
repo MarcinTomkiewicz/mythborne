@@ -1,0 +1,58 @@
+<section class="mg-card p-lg w-100">
+  <form [formGroup]="state.form" (ngSubmit)="state.submit()" class="flex-col gap-md">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Create offer</h3>
+        <p class="muted-text mb-0">
+          Choose a hero target and add Character Points or active items.
+        </p>
+      </div>
+      <button
+        pButton
+        type="submit"
+        label="Create"
+        [loading]="state.isSaving()"
+        [disabled]="state.isSaving()"
+      ></button>
+    </div>
+
+    <div class="grid-2 gap-md">
+      <label class="flex-col gap-xs">
+        <span class="form-label">Target hero</span>
+        <p-autocomplete
+          formControlName="target"
+          [suggestions]="state.targetSuggestions()"
+          optionLabel="label"
+          [forceSelection]="true"
+          (completeMethod)="state.searchHeroTargets($event)"
+        />
+      </label>
+
+      <label class="flex-col gap-xs">
+        <span class="form-label">Character Points</span>
+        <p-inputnumber
+          formControlName="characterPoints"
+          [min]="0"
+          [showButtons]="true"
+        />
+      </label>
+    </div>
+
+    <label class="flex-col gap-xs">
+      <span class="form-label">Items</span>
+      <p-autocomplete
+        formControlName="items"
+        [suggestions]="state.itemSuggestions()"
+        optionLabel="label"
+        [multiple]="true"
+        [forceSelection]="true"
+        (completeMethod)="state.searchItemTargets($event)"
+      />
+    </label>
+
+    <label class="flex-col gap-xs">
+      <span class="form-label">Description</span>
+      <input pInputText formControlName="description" type="text" />
+    </label>
+  </form>
+</section>

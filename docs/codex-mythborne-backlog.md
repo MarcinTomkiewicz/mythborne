@@ -1386,6 +1386,13 @@ Status: completed and accepted on 2026-04-30.
 **Blocker rule:**
 If the needed public RPC is missing from generated types or has a different signature than expected, stop and report DB/types blocker. Do not invent a frontend fallback.
 
+**Status:** Accepted 2026-04-30.
+
+- Implementation note: added `/game/trade` as a player-facing direct trade surface for create, respond, confirm, cancel and reject flows. Mutations go through public direct-trade RPCs via `DirectTradeActions`; the UI does not write directly to trade, lock, item status or transaction tables.
+- Architecture note: `TradePage` is a thin route shell. Workflow responsibilities are split into `TradeOverviewState`, `TradeCreateOfferState`, `TradeRespondOfferState`, `TradeOfferActionsState`, `TradeFeedbackState`, `TradeRequestToken` and pure validation/label helpers. `TradePage.providers` supplies the local state graph, and template option getters are kept free of form mutation side effects.
+- Verification: `npx tsc --noEmit` passed; targeted specs passed (`direct-trade-mappers.spec.ts`, `direct-trade-rpc.spec.ts`, `direct-trades.spec.ts`, `direct-trade-actions.spec.ts`, `trade-page.state.spec.ts`, 19 SUCCESS); `npm run build` passed with existing bundle budget/CommonJS warnings; route smoke `/game/trade -> 200`.
+- Manual smoke: create/respond/confirm/cancel/reject remains pending until sandbox data includes two heroes, active items, a valid session and a real trade flow.
+
 ---
 
 ## Task J4 — Auction gameplay UI through existing RPCs
@@ -1918,79 +1925,297 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 # Epic M — Combat
 
-## Task M1 — Inspect current combat implementation
+Epic M builds the reusable combat core. Combat is one generic module: a caller provides two combatants and receives a result. Exploration encounters, trials, PvP, sandbox and future systems use the same combat rules and only interpret the result differently.
 
-**Goal:** Compare current code with documented combat model.
+**DB foundation status:** applied in schema before frontend work. Current DB foundation includes:
+- combat formula targets: `combat_initiative_score`, `combat_opponent_scaled_stat`;
+- random formula block seeds: `random()`, `random(min, max)`;
+- global `combat_turn_limit` config + `get_combat_turn_limit()` helper;
+- opponent families/definitions/stat values/natural attack sources;
+- opponent equipment blueprint entries using `equipment_slot_definitions`;
+- encounter/trial combat candidate tables;
+- relational combat result snapshot tables.
 
-**Scope:**
-- Timing minigame.
-- Evasion.
-- Crit.
-- Damage.
-- Turn limit/draw.
-- Formula runtime usage.
-
-**Acceptance criteria:**
-- Gap report before changes.
-
----
-
-## Task M2 — Turn limit and draw behavior
-
-**Goal:** Ensure draw logic is correct.
-
-**Scope:**
-- Combat ends after turn limit if both alive.
-- Draw gives no reward.
-
-**Acceptance criteria:**
-- Draw outcome is represented and rewardless.
+**Core rules:**
+- Combat is turn-limited. A turn is a full round of eligible attack slots from both sides, unless one side is defeated earlier.
+- Default global combat turn limit is 10, read from DB config/helper, not duplicated in combat result rows.
+- If no side is defeated by the limit, outcome is draw.
+- Player attack resolution remains timing hit → evasion → crit → damage.
+- Opponent attacks resolve automatically.
+- Attack slots are ordered by `combat_initiative_score`, not by a fixed all-A-then-all-B order.
+- Tie in initiative is won by the initiating side.
+- Equipment is private. Combat reports show the attack source label and optional item-like component refs for tooltip/display, not the full equipment loadout.
+- Public/private report rendering is a later epic, but CombatResult must preserve enough relational snapshot data to reproduce the combat UI later.
+- Do not use `hero_derived`.
 
 ---
 
-## Task M3 — Walking Dead timing integration
+## Task M0 — Align generated DB types after Epic M schema foundation
 
-**Goal:** Align hit timing rules.
+**Goal:** Make the frontend aware of the new combat DB foundation.
 
 **Scope:**
-- Green-zone width based on Dexterity vs Agility plus modifiers.
-- Successful hits narrow/speed.
-- Miss resets.
-- Evaded hit counts toward streak.
+- Confirm regenerated `database.types.ts` includes new enums, tables, config helper and formula seeds.
+- Inspect generated enum/table names for:
+  - `combat_side`, `combat_outcome`, `combat_source_type`, `combat_participant_kind`, `combat_attack_source_kind`, `combat_opponent_equipment_mode`, `combat_candidate_kind`;
+  - `equipment_slot_definitions`;
+  - `combat_opponent_*` tables;
+  - `encounter_combat_candidates`, `trial_combat_candidates`;
+  - `combat_results`, `combat_result_participants`, `combat_result_participant_stats`, `combat_result_attacks`;
+  - `get_combat_turn_limit()`.
 
 **Acceptance criteria:**
-- Timing behavior follows current decisions.
+- Generated types match current schema.
+- No frontend model uses raw DB rows directly as final domain models.
+- No file/status docs are updated before user confirmation.
 
 ---
 
-## Task M4 — Evasion/crit/damage sequence
+## Task M1 — Formula random runtime/editor support
 
-**Goal:** Enforce resolution order.
+**Goal:** Make seeded random formula blocks executable and explainable.
 
 **Scope:**
-1. successful timing hit,
-2. evasion check,
-3. crit check,
-4. damage roll/reduction,
-5. minimum 1 final non-evaded damage.
+- Add runtime support for:
+  - `random()` → decimal 0..1;
+  - `random(min, max)` → decimal between min and max.
+- Do not add separate `randomInt`; integer-like results should use `floor`, `ceil` or `round`.
+- Admin formula preview/editor must mark formulas containing random as non-deterministic.
+- Add reroll/refresh behavior in preview where applicable.
+- Avoid pretending random formulas have stable chart values.
 
 **Acceptance criteria:**
-- Combat resolver follows documented sequence.
+- `FormulaRuntimeService` can evaluate both random forms.
+- Existing deterministic formulas remain stable.
+- Admin preview clearly indicates randomized output and allows reroll.
+- `balance_formula_blocks` remains DB-backed; do not hardcode block library as the source of truth.
 
 ---
 
-## Task M5 — Formula-backed combat values
+## Task M2 — Combat domain contracts
 
-**Goal:** Use formula governance for combat formulas.
+**Goal:** Define reusable combat domain models independent from `/game/combat` sandbox UI.
 
 **Scope:**
-- combat_hit_green_zone,
-- combat_evasion_chance,
-- combat_critical_chance,
-- combat_final_damage.
+- Add domain/types for:
+  - combatant input/snapshot;
+  - combat result;
+  - combat participant side: initiator/defender;
+  - combat attack source kind;
+  - attack plan;
+  - attack slot;
+  - attack result/event row model.
+- Model result from caller perspective without embedding reward/trial/PvP logic.
+- Ensure result can later be mapped to `combat_results` and related tables.
 
 **Acceptance criteria:**
-- Combat formula runtime uses DB formula assignments.
+- Combat core types are not declared inside components/facades.
+- Combat result can represent initiator victory, defender victory and draw.
+- Result contains enough data to persist relational snapshot rows.
+- Reports are not implemented in this task.
+
+---
+
+## Task M3 — Hero combatant resolver and critical damage debt
+
+**Goal:** Build a reusable resolver for hero combat values from current hero stats, equipment and bonuses.
+
+**Scope:**
+- Reuse existing F11 equipment/bonus pipeline where possible.
+- Resolve final combat values on the fly, without `hero_derived`:
+  - Health;
+  - defense;
+  - min/max damage;
+  - luck;
+  - critical chance;
+  - critical damage;
+  - evasion chance;
+  - attack-relevant item/native values.
+- Replace hardcoded crit multiplier `2` with:
+  - base critical damage = 50%;
+  - plus active `critical_damage` bonuses;
+  - multiplier = `1 + criticalDamagePercent / 100`.
+- Keep equipment private; only attack source data is carried into combat result/report snapshot.
+
+**Acceptance criteria:**
+- No `hero_derived` use.
+- Hardcoded crit multiplier is removed from final resolver path.
+- `critical_damage` bonus target is consumed.
+- Existing F11 helpers/services are reused or explicitly rejected with reason.
+
+---
+
+## Task M4 — Opponent definitions read layer
+
+**Goal:** Add frontend/domain read models for admin-defined combat opponents.
+
+**Scope:**
+- Read/map:
+  - `combat_opponent_families`;
+  - `combat_opponent_definitions`;
+  - `combat_opponent_stat_values`;
+  - `combat_opponent_attack_sources`;
+  - `combat_opponent_equipment_entries`;
+  - `equipment_slot_definitions`.
+- Preserve labels/descriptions/helper/admin descriptions from DB.
+- Family is a simple category: one opponent belongs to one family.
+
+**Acceptance criteria:**
+- Admin/balance UI can display opponents with family, equipment mode, stat baselines and natural attacks.
+- No hardcoded family list.
+- No hardcoded slot list if `equipment_slot_definitions` can be read.
+
+---
+
+## Task M5 — Opponent combatant/loadout resolver
+
+**Goal:** Resolve an admin-defined opponent into a combatant input.
+
+**Scope:**
+- Scale opponent stat baselines using:
+  - candidate scaling formula override if present;
+  - otherwise opponent default scaling formula;
+  - otherwise global/default `combat_opponent_scaled_stat` assignment.
+- Support `difficultyMultiplier` from encounter/trial candidate.
+- Support equipment modes:
+  - `none`;
+  - `manual` item-like blueprint;
+  - `generated` item-like loadout materialized for the fight only.
+- Generated NPC equipment must not create rows in `items`.
+- Natural attack sources such as Bite, Scratch, Iron Wings or Fist must be supported.
+
+**Acceptance criteria:**
+- Same opponent can be used by encounter and trial candidates with different scaling formula/multiplier.
+- Generated equipment is materialized once for combat input/snapshot, not rerolled during render/attack.
+- No player-owned item is created for NPC equipment.
+
+---
+
+## Task M6 — Attack plan builder
+
+**Goal:** Build concrete attack slots from hero/opponent combatants.
+
+**Scope:**
+- Apply weapon/attack plan rules:
+  - no weapon = one unarmed attack;
+  - one one-handed weapon + empty off-hand = weapon attack + unarmed attack;
+  - one-handed weapon + shield = one weapon attack;
+  - dual wield = one attack from each weapon;
+  - two-handed = one attack unless item-native data says otherwise;
+  - ranged = two-handed, attack count from item-native `attack_count`;
+  - natural attack sources contribute configured attack slots.
+- Carry attack source labels and optional item-like components into attack slots.
+- Do not expose full equipment in report-oriented output.
+
+**Acceptance criteria:**
+- Attack plan is reusable for hero, opponent and future PvP.
+- Shields do not create attacks.
+- Natural sources and item-like sources are distinguishable.
+
+---
+
+## Task M7 — Initiative and turn order
+
+**Goal:** Order attack slots using the DB formula target `combat_initiative_score`.
+
+**Scope:**
+- Evaluate initiative per attack slot using:
+  - `combatantIntelligence`;
+  - `combatantAgility`;
+  - `attackIndex`;
+  - `attackCount`.
+- Sort slots descending by initiative score.
+- Initiator wins tie.
+- One combat turn consists of all eligible slots from both sides, unless someone dies earlier.
+
+**Acceptance criteria:**
+- Multiattack participants can have interleaved attack order.
+- Formula assignment is read from DB; no hardcoded initiative expression as source of truth.
+- Random initiative formulas work once M1 random runtime support exists.
+
+---
+
+## Task M8 — Core combat resolver with slot execution
+
+**Goal:** Replace sandbox-only alternating flow with reusable turn-limited slot execution.
+
+**Scope:**
+- Keep Walking Dead timing helpers for player-controlled attack timing.
+- Resolve each attack in sequence:
+  1. timing hit when applicable;
+  2. evasion;
+  3. crit;
+  4. damage roll/final damage;
+  5. health update.
+- Opponent/automatic attacks do not require real-time UI interaction.
+- End combat on initiator victory, defender victory or draw.
+- Use `get_combat_turn_limit()` or equivalent DB-backed config path for limit.
+
+**Acceptance criteria:**
+- Resolver is reusable outside `/game/combat` page.
+- Draw happens only after the global turn limit.
+- Minimum successful non-evaded final damage remains enforced.
+- Critical damage percent is used instead of hardcoded x2.
+
+---
+
+## Task M9 — Persist combat result snapshot
+
+**Goal:** Map completed combat results into the relational DB snapshot foundation.
+
+**Scope:**
+- Insert into:
+  - `combat_results`;
+  - `combat_result_participants`;
+  - `combat_result_participant_stats`;
+  - `combat_result_attacks`.
+- Store attack source label and source kind.
+- Store optional component refs for item-like sources:
+  - quality;
+  - base;
+  - prefix;
+  - suffix;
+  - historical player item id without FK expectation.
+- Do not store full equipment loadout.
+
+**Acceptance criteria:**
+- Combat result can be rendered later without recomputing live hero/opponent state.
+- Combat reports can show attack order, source label, hit/evasion/crit/damage and health changes.
+- Full equipment remains private.
+- Future public report system can build from these rows.
+
+---
+
+## Task M10 — Thin sandbox combat caller
+
+**Goal:** Keep `/game/combat` as a sandbox/test caller using the reusable combat core.
+
+**Scope:**
+- Remove page-facade ownership of core combat rules where possible.
+- Sandbox may still create demo/admin-test inputs, but should call the same resolver path.
+- Keep current Walking Dead UI behavior where it remains useful.
+
+**Acceptance criteria:**
+- `/game/combat` remains usable as a test surface.
+- Core rules are no longer trapped in page-specific state.
+- No exploration/trial/PvP integration is required in this task.
+
+---
+
+## Task M11 — Combat admin/balance tooling foundation
+
+**Goal:** Add admin/balance UI surfaces needed to test combat foundation.
+
+**Scope:**
+- Opponent family/definition/stat/natural attack read views.
+- Candidate read views for encounter/trial combat candidates.
+- Initiative preview: user enters stats and attack counts for two sides and sees a sample attack order.
+- If formula uses random, preview supports reroll/refresh.
+
+**Acceptance criteria:**
+- Admin can inspect opponent/candidate setup without raw-key-only UI.
+- Initiative preview explains the sample order in gameplay terms.
+- This task does not implement full report sharing.
 
 ---
 

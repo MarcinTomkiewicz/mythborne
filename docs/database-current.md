@@ -1,6 +1,6 @@
 # Mythborne — Database Current Notes
 
-Updated: 2026-04-28
+Updated: 2026-04-30
 
 This file is the curated semantic index of the current database state.
 
@@ -11,6 +11,153 @@ If this file conflicts with the actual database or generated `database.types.ts`
 ---
 
 # Current DB/RPC contract updates — 2026-04-28
+
+## Update 2026-04-30 — Epic M combat DB foundation
+
+Epic M now has database foundation for reusable combat core, admin-defined opponents, combat candidates and relational combat result snapshots. This is schema/config foundation only; frontend/domain implementation still must be done by Codex after type regeneration.
+
+### Combat formula/config additions
+
+New formula targets:
+
+- `combat_initiative_score`
+  - `scope_key = combat_balance`
+  - allowed variables: `combatantIntelligence`, `combatantAgility`, `attackIndex`, `attackCount`
+  - default formula: `combatantIntelligence * 1.0 + combatantAgility * 0.25 - (attackIndex - 1) * 5`
+  - higher score acts earlier; ties are handled by combat ordering logic and won by the initiating side.
+- `combat_opponent_scaled_stat`
+  - `scope_key = combat_balance`
+  - allowed variables: `baseValue`, `heroLevel`, `difficultyMultiplier`
+  - default formula: `round(baseValue + (heroLevel - 1) * difficultyMultiplier)`
+
+Random formula library seeds now exist in `balance_formula_blocks` for each current formula scope:
+
+- `random()` — random decimal 0..1.
+- `random(min, max)` — random decimal between min and max.
+
+These are DB/admin library seeds only. Runtime support still requires Codex to implement evaluator/editor/preview handling, including nondeterministic preview and reroll/refresh behavior.
+
+Global combat turn limit:
+
+- `config_definitions.key = combat_turn_limit`
+- `governance_scope = product_global`
+- `managed_entity_type = scalar_config`
+- `managed_entity_key = combat`
+- `value_type = integer`
+- default value `10`
+- helper `get_combat_turn_limit()` returns the effective value clamped to at least 1.
+
+Do not store `turn_limit` per combat result. Combat results store `turns_completed`; the limit is the global product rule.
+
+### Combat enums
+
+New combat-related enums:
+
+- `combat_side`: `initiator`, `defender`.
+- `combat_participant_kind`: `hero`, `opponent`.
+- `combat_outcome`: `initiator_victory`, `defender_victory`, `draw`.
+- `combat_source_type`: `encounter`, `trial`, `pvp`, `sandbox`, `admin_test`.
+- `combat_opponent_equipment_mode`: `none`, `manual`, `generated`.
+- `combat_candidate_kind`: `opponent`, `family`.
+- `combat_attack_source_kind`: `natural`, `unarmed`, `player_item`, `opponent_manual`, `opponent_generated`.
+
+### Equipment slot dictionary
+
+`equipment_slot_definitions` is the canonical DB dictionary for equipment slots used by both hero equipment and opponent equipment blueprints.
+
+Current active keys:
+
+- `main_hand`
+- `off_hand`
+- `helmet`
+- `armor`
+- `pants`
+- `boots`
+- `amulet`
+- `ring_1`
+- `ring_2`
+
+`hero_equipment.slot_key` and `combat_opponent_equipment_entries.slot_key` both reference `equipment_slot_definitions(key)`. Do not duplicate permanent slot lists in frontend code.
+
+### Opponent definitions
+
+Opponent/NPC content is admin/balancer-defined. Combat rules remain generic; opponents are combatants provided by encounter/trial/sandbox/PvP callers.
+
+Tables:
+
+- `combat_opponent_equipment_mode_definitions`
+  - human-readable dictionary for `combat_opponent_equipment_mode`.
+- `combat_opponent_families`
+  - admin-defined family/category, e.g. beast, human, undead, mythic; names are data, not hardcoded gameplay logic.
+- `combat_opponent_definitions`
+  - reusable opponent definition.
+  - one opponent belongs to one `family_key`.
+  - has `equipment_mode` and optional `default_scaling_formula_id`.
+- `combat_opponent_stat_values`
+  - baseline canonical stat values per opponent and `stats.key`.
+  - runtime scales these values using candidate/opponent/default formula flow.
+- `combat_opponent_attack_sources`
+  - natural/non-equipment attack sources such as Bite, Scratch, Iron Wings, Fist.
+  - used for opponents that attack without player-owned items.
+- `combat_opponent_equipment_entries`
+  - optional item-like equipment blueprint per opponent and slot.
+  - `entry_mode = manual` uses quality/base/prefix/suffix component references.
+  - `entry_mode = generated` stores generation bucket/max quality instructions.
+  - generated opponent equipment must not create rows in `items`; it is materialized only for the fight snapshot.
+
+Opponent equipment is private. Combat reports show attack source labels and optional item-like source component refs; they do not reveal full equipment loadouts by default.
+
+### Encounter/trial combat candidates
+
+Combat candidates replace the earlier idea of separate pools in v1. A candidate may point to one concrete opponent or to one family. Multiple rows can mix families and specific opponents.
+
+Tables:
+
+- `encounter_combat_candidates`
+  - FK to `encounter_definitions`.
+  - `candidate_kind = opponent | family`.
+  - exactly one of `opponent_definition_id` or `family_key` is required according to kind.
+  - optional `scaling_formula_id`, `difficulty_multiplier`, `weight`, `min_hero_level`, `max_hero_level`.
+- `trial_combat_candidates`
+  - same model for `trial_definitions`.
+
+The same opponent can be used in encounter and trial candidates with different formula/multiplier. Trial combat uses the same combat module, not a separate combat type.
+
+### Combat result snapshot foundation
+
+Relational combat result tables exist for completed combat history and future private/public report rendering:
+
+- `combat_results`
+  - header for one completed fight.
+  - stores `server_id`, source type/entity, optional initiator/defender hero ids, outcome, winner/loser side, `turns_completed`, timestamps.
+  - no `turn_limit`; use `get_combat_turn_limit()` for the global limit.
+- `combat_result_participants`
+  - one row per side.
+  - stores participant kind, hero/opponent reference, display name, level and resolved combat values at fight time.
+  - includes final `critical_damage` percent.
+- `combat_result_participant_stats`
+  - relational base/canonical stat snapshot per participant.
+  - avoids reading `hero_derived` or live state for historical reports.
+- `combat_result_attacks`
+  - one row per resolved attack.
+  - stores turn/order, actor/target side, source kind, source label, optional source component refs, hit/evasion/crit/damage/health-after fields and display text.
+  - `source_item_id` is intentionally not a FK to `items`; item lifecycle must not break historical combat reports.
+
+Full equipment is not public report data. Report UI may show an attack source such as `Outstanding Golden Sword of Despair`, `Bite`, `Iron Wings`, or `Fist` and may use quality/base/prefix/suffix refs for a tooltip when safe.
+
+### Frontend/Codex implications
+
+After schema changes, regenerate `database.types.ts` before implementing Epic M frontend/domain tasks.
+
+Codex tasks must:
+
+- implement random support in formula runtime/editor/preview;
+- remove hardcoded crit multiplier x2 and consume `critical_damage` as base 50% + bonuses;
+- build reusable combat domain models and resolver outside the sandbox page;
+- build attack plans and initiative slot ordering;
+- resolve opponents from definitions/candidates/stat scaling/equipment/natural sources;
+- persist completed combat results into the relational snapshot tables when gameplay caller requires history;
+- avoid `hero_derived`.
 
 This section is a normal part of `database-current.md`. It is not a handoff override and it must not silently supersede the rest of the file. If an older section below conflicts with this section, update the older section instead of adding another override block.
 

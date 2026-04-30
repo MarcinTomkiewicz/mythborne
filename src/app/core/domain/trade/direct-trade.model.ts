@@ -88,3 +88,58 @@ export interface DirectTradeOverviewReadModel {
   offers: DirectTradeOfferReadModel[];
   transactions: DirectTradeTransactionReadModel[];
 }
+
+export interface DirectTradeMutationResult {
+  offerId: string;
+}
+
+export interface CreateDirectTradeOfferInput {
+  creatorHeroId: string;
+  targetHeroId: string;
+  creatorCharacterPoints?: number | null;
+  creatorItemIds?: readonly string[] | null;
+  description?: string | null;
+}
+
+export interface RespondDirectTradeOfferInput {
+  offerId: string;
+  targetCharacterPoints?: number | null;
+  targetItemIds?: readonly string[] | null;
+  description?: string | null;
+}
+
+export interface DirectTradeOfferActionInput {
+  offerId: string;
+  description?: string | null;
+  statusReason?: string | null;
+}
+
+export interface DirectTradeHeroTargetSearchInput {
+  serverId: string;
+  activeHeroId: string;
+  query: string;
+  limit?: number | null;
+}
+
+export interface DirectTradeItemTargetSearchInput {
+  serverId: string;
+  heroId: string;
+  query: string;
+  limit?: number | null;
+}
+
+export interface DirectTradeHeroTarget {
+  heroId: string;
+  heroName: string;
+  label: string;
+  description: string | null;
+}
+
+export interface DirectTradeItemTarget {
+  itemId: string;
+  itemName: string;
+  itemStatus: Row<'items'>['status'];
+  drachmaValue: number | null;
+  label: string;
+  description: string | null;
+}

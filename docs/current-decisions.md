@@ -13,6 +13,146 @@ If something conflicts, prefer:
 
 ## Confirmed / Active
 
+---
+
+## Combat / Epic M Decisions — 2026-04-30
+
+### Combat module scope
+
+Combat is one reusable module, not multiple combat types. Exploration encounter combat, trial combat, PvP, sandbox and future systems provide combatants and interpret the result, but the core combat rules stay the same.
+
+Reports/public share links are a separate future epic. Epic M must still produce a rich enough combat result snapshot so later private/public reports can visually reproduce the combat UI from historical data.
+
+### Turn model
+
+A combat turn is a full round of eligible attack slots from both sides, unless one side is defeated earlier.
+
+The product default turn limit is 10 full turns. This is stored as product-level config `combat_turn_limit` and exposed by `get_combat_turn_limit()`. Do not duplicate `turn_limit` into each combat result row.
+
+If neither side is defeated by the turn limit, combat outcome is draw.
+
+### Sides and outcomes
+
+Combat uses side names:
+
+- `initiator`
+- `defender`
+
+This supports PvE and future PvP without assuming `hero` vs `opponent` in the core result.
+
+Outcomes:
+
+- `initiator_victory`
+- `defender_victory`
+- `draw`
+
+Draw has no winner/loser side.
+
+### Initiative and attack slots
+
+Attack slots are ordered by formula target `combat_initiative_score`.
+
+Allowed variables:
+
+- `combatantIntelligence`
+- `combatantAgility`
+- `attackIndex`
+- `attackCount`
+
+Default seed formula:
+
+`combatantIntelligence * 1.0 + combatantAgility * 0.25 - (attackIndex - 1) * 5`
+
+Higher score acts earlier. The initiating side wins exact ties. Randomness is allowed only through the formula system, not hidden inside combat ordering logic.
+
+### Weapon / attack plan rules
+
+Attack plans are built from current combatant state.
+
+Rules:
+
+- no weapon = one unarmed attack;
+- unarmed base damage range is `strength..strength`, plus applicable bonuses;
+- one one-handed weapon with empty off-hand = one weapon attack plus one unarmed attack;
+- one-handed weapon plus shield = one weapon attack; shield does not attack;
+- dual wield = one attack from each weapon;
+- two-handed = one attack unless item-native data says otherwise;
+- ranged is two-handed and uses item-native `attack_count`.
+
+Natural opponent attack sources such as Bite, Scratch, Iron Wings or Fist are configured in `combat_opponent_attack_sources` and can produce attack slots without equipment.
+
+### Critical damage
+
+Hardcoded crit multiplier x2 is technical debt and must be removed from the final combat resolver.
+
+Critical damage is a combat/derived value:
+
+- base critical damage percent = 50;
+- plus applicable `critical_damage` bonuses from equipment/affixes/etc.;
+- `critMultiplier = 1 + finalCriticalDamagePercent / 100`.
+
+`critical_damage` is displayed/stored as a percent. It is not a standalone formula target.
+
+### Random formulas
+
+Formula tooling must support:
+
+- `random()` — random decimal 0..1;
+- `random(min, max)` — random decimal in range.
+
+No separate `randomInt` is needed; integer-like values can use `floor`, `ceil` or `round` around random output.
+
+Admin formula preview must show that formulas containing random are nondeterministic and allow reroll/refresh.
+
+### Opponent definitions
+
+Opponents are admin/balancer-defined content. Combat rules do not know why an opponent was selected.
+
+One opponent belongs to one opponent family. Families are admin-defined categories, not hardcoded gameplay lists. Encounter/trial candidates can select:
+
+- one concrete opponent;
+- or one family, which expands to active opponents in that family.
+
+Multiple candidates can mix families and specific opponents.
+
+Opponent definitions contain baseline stat values. Runtime scales those baseline values using:
+
+1. candidate scaling formula override, if provided;
+2. opponent default scaling formula, if provided;
+3. default `combat_opponent_scaled_stat` formula assignment.
+
+`difficulty_multiplier` on candidates is passed into the scaling formula.
+
+### Opponent equipment
+
+Opponent equipment mode:
+
+- `none`
+- `manual`
+- `generated`
+
+Manual equipment uses item-generation component references but does not create player-owned items.
+
+Generated equipment is materialized once at combat start for the fight snapshot/input and must not create rows in `items`. It exists only for that fight/result snapshot.
+
+Equipment is private. Future reports should show attack source labels and safe item-like source details/tooltips, not reveal full equipment loadouts by default.
+
+### Combat result snapshots
+
+Combat result persistence is relational:
+
+- `combat_results`
+- `combat_result_participants`
+- `combat_result_participant_stats`
+- `combat_result_attacks`
+
+A combat report should be able to display attack order, source labels, hit/evasion/crit/damage and Health changes without recomputing live hero/opponent state.
+
+`combat_result_attacks.source_item_id` is intentionally not a FK to `items`; item lifecycle must not break historical combat reports. Optional quality/base/prefix/suffix refs can support item-like tooltip/display reconstruction.
+
+Full equipment stays private unless a future explicit UI decision exposes it.
+
+
 ### Project name
 
 Current project/game name: **Mythborne**.

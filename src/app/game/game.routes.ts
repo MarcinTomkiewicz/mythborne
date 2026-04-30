@@ -33,10 +33,6 @@ export const gameRoutes: Routes = [
   {
     path: 'trade',
     loadComponent: () =>
-      import('./pages/section-placeholder/section-placeholder').then((m) => m.GameSectionPlaceholderPage),
-    data: {
-      sectionTitle: 'Trade',
-      sectionDescription: 'Tutaj trafia handel, gospodarka, drachmy i wymiana miedzy graczami.',
-    },
+      import('./pages/trade/trade-page').then((m) => m.TradePage),
   },
 ];

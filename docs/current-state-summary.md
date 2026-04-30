@@ -27,7 +27,7 @@ This is an operational estimate, not a formal audit.
 | Exploration / trials / encounters | 5% | Documented conceptually, not implemented as a real loop yet. |
 | Prestige / reputation | 0% | Not implemented yet. |
 | Guilds / politics / sieges | 0% | Not implemented yet. |
-| Trade / economy gameplay loop | 35% | Database/RPC foundation for Character Points, direct trade, auctions, item locks, and anti-abuse signals exists. Frontend gameplay surfaces and Trade Routes/building integration are still pending. |
+| Trade / economy gameplay loop | 45% | Database/RPC foundation for Character Points, direct trade, auctions, item locks, and anti-abuse signals exists. Direct trade has an initial player-facing RPC-backed UI; auctions and Trade Routes/building integration are still pending. |
 | Generated database types | 100% | Task A1 confirmed. `src/app/core/types/database.types.ts` has been regenerated against the current schema and includes the latest trade, auction, anti-abuse, item lifecycle, server/config/formula/audit, and hero tables/functions/enums. |
 
 ## What Is Implemented
@@ -179,7 +179,8 @@ This is an operational estimate, not a formal audit.
 - Direct trade backend/RPC runtime exists for private same-server hero trades with Character Point locks and item locks.
 - Auction backend/RPC runtime exists for one-item server-scoped auctions with bidding, buy now, and bid escrow through Character Point locks.
 - Completed trade/auction transactions can generate anti-abuse signals and grouped review cases.
-- Frontend trade/auction gameplay surfaces are still pending.
+- Direct trade has an initial player-facing `/game/trade` surface for create, respond, confirm, cancel and reject flows through public RPCs.
+- Auction gameplay surfaces are still pending.
 
 ### Combat
 - `/game/combat` is no longer a placeholder.
@@ -539,6 +540,9 @@ Still pending at the gameplay level even if partially supported in schema:
 - J2 adds `DirectTrades`, direct trade read models and mappers. Reads are selected-server and active-hero scoped, active offers load where the hero is creator or target, transaction history excludes `auction_sale`, and linked hero/current-item labels are fetched only by concrete IDs.
 - J2 does not add mutation paths, direct writes or RPC writes. Player-facing read models intentionally do not expose raw `status_reason` or transaction `reason` fields; future UI should introduce explicit player-safe status messaging only if supported by a safe contract.
 - J2 was verified with `npx tsc --noEmit`, targeted direct trade specs (`direct-trade-mappers.spec.ts`, `direct-trades.spec.ts`, 7 SUCCESS) and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure. Manual UI smoke is not applicable because J2 is service/model/mapper-only.
+- J3 accepted on 2026-04-30: `/game/trade` now exposes direct trade create, respond, confirm, cancel and reject flows through public direct-trade RPCs.
+- J3 keeps the route component thin and splits the workflow into `TradeOverviewState`, `TradeCreateOfferState`, `TradeRespondOfferState`, `TradeOfferActionsState`, `TradeFeedbackState`, `TradeRequestToken` and pure validation/label helpers. `TradePage.providers` supplies the local state graph, stale guards are covered for overview/search/action responses, and direct trade mutations do not write directly to trade, lock, item or transaction tables.
+- J3 was verified with `npx tsc --noEmit`, targeted direct trade/trade page specs (`direct-trade-mappers.spec.ts`, `direct-trade-rpc.spec.ts`, `direct-trades.spec.ts`, `direct-trade-actions.spec.ts`, `trade-page.state.spec.ts`, 19 SUCCESS), `npm run build`, and route smoke `/game/trade -> 200`; build still has the known bundle budget/CommonJS warnings but no hard failure. Manual create/respond/confirm/cancel/reject smoke is pending until sandbox data has two heroes, active items, a session and a real trade flow.
 - Status/verdict/sanction/CP penalty action sections now repeat the same audited action shell. Before adding another similar status-action section, check whether a shared wrapper/state/helper is warranted for error/success/loading, submit layout and stale-guard behavior.
 - `core` should continue to hold non-component logic:
   - domain models

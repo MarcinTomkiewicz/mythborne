@@ -52,6 +52,53 @@ The game should support serious long-term progression, politics, PvP tension and
 
 ---
 
+## Combat Current Direction
+
+Combat is a reusable gameplay module. The same core combat rules should support exploration encounters, trials, future PvP, sandbox/admin tests and later systems.
+
+Combat receives combatants and produces a combat result. It does not decide rewards, trial completion, PvP consequences, cooldowns or public report publishing. The caller interprets the result.
+
+Core combat expectations:
+
+- combat is limited by a global product rule `combat_turn_limit`, currently defaulting to 10 full turns;
+- one turn is a full round of eligible attack slots from both sides unless someone is defeated earlier;
+- draw occurs if no side is defeated before the turn limit;
+- player-controlled attacks use the Walking Dead timing minigame;
+- resolution order is timing hit, evasion, crit, damage;
+- opponents/automatic sides resolve attacks automatically;
+- attack slots are ordered by `combat_initiative_score`;
+- initiative ties are won by the initiating side;
+- critical damage is base 50% plus active `critical_damage` bonuses, not a hardcoded x2 multiplier.
+
+Attack plans:
+
+- unarmed attack damage starts at `strength..strength` plus applicable bonuses;
+- one one-handed weapon with empty off-hand means weapon attack plus unarmed attack;
+- one-handed weapon plus shield means one weapon attack; shield does not attack;
+- dual wield means one attack from each weapon;
+- two-handed means one attack unless item-native values say otherwise;
+- ranged is two-handed and can have item-native attack count greater than 1;
+- opponents may also use natural attack sources such as Bite, Scratch, Iron Wings or Fist.
+
+Opponents are admin/balancer-defined content:
+
+- one opponent belongs to one admin-defined family;
+- encounter/trial combat candidates may point to a concrete opponent or to a family;
+- candidate scaling formula and `difficulty_multiplier` let the same opponent/family scale differently in encounter and trial contexts;
+- opponent equipment can be none, manual item-like blueprint, or generated item-like loadout materialized only for one fight;
+- generated opponent equipment must not create normal player-owned `items` rows.
+
+Combat result persistence should be relational and report-ready:
+
+- result header;
+- participant snapshots;
+- participant stat snapshots;
+- one row per resolved attack.
+
+Future public/private report rendering is a separate epic, but combat snapshots must preserve enough attack/result data to reproduce the combat UI later. Full equipment remains private; reports show attack source labels and safe item-like source details rather than full equipment loadouts.
+
+---
+
 ## Canonical Terminology
 
 ### Character / Power
