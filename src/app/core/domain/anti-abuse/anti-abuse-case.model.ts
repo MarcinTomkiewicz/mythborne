@@ -1,7 +1,13 @@
 import { Database, Json } from '../../types/database.types';
+import { AuditLogEntry } from '../audit/audit-log.model';
 import {
+  AntiAbuseSanctionDecision,
+  AntiAbuseSanctionItemDecision,
+  CharacterPointPenaltyDecision,
   AntiAbuseCaseStatus,
   AntiAbuseCaseVerdict,
+  PlayerAbuseReportDecision,
+  PlayerRelationshipDeclarationDecision,
 } from './anti-abuse-decision.model';
 
 export type AntiAbuseCaseSource =
@@ -104,5 +110,11 @@ export interface AntiAbuseCaseDetailReadModel {
   caseSignals: AntiAbuseCaseSignalLink[];
   participants: AntiAbuseCaseParticipant[];
   auditLinks: AntiAbuseCaseAuditLink[];
+  auditLogs: AuditLogEntry[];
   declarationLinks: AntiAbuseCaseDeclarationLink[];
+  declarations: PlayerRelationshipDeclarationDecision[];
+  reports: PlayerAbuseReportDecision[];
+  sanctions: AntiAbuseSanctionDecision[];
+  characterPointPenalties: CharacterPointPenaltyDecision[];
+  sanctionItems: AntiAbuseSanctionItemDecision[];
 }

@@ -1913,101 +1913,76 @@ Admin panels should show predicted gameplay impact, not only editable fields. Ex
 
 ---
 
-# Update 2026-04-29 — DB-backed admin explainability and preview contracts
+## Update 2026-04-30 — operational implementation rules
 
-Admin/config/staff UI should be explainable from the database rather than from ad hoc frontend dictionaries.
+### Focused DB preflight before implementation
 
-Raw technical keys and JSON may remain visible to admins/operators as secondary technical metadata, but they must not be the only explanation when DB metadata exists.
+Before implementing a backlog task that mutates state, writes audit, or needs a new target picker/read model, Codex should verify the DB contract first.
 
-## UI metadata registry
+Check:
 
-`ui_metadata_entries` is the shared DB-backed metadata registry for technical enum/key/reason/preview values.
+- canonical RPC/domain operation exists and is present in generated `database.types.ts`;
+- required dictionary rows are seeded and active;
+- required `audit_action_types` and `audit_entity_types` rows are seeded and active;
+- human-facing selection uses DB-backed search/browser RPCs, not raw UUID fields or broad frontend fetches;
+- critical gameplay/economy/admin changes are not implemented as direct frontend table writes.
 
-It stores:
+If any of those are missing, Codex must report a DB blocker instead of inventing a frontend workaround.
 
-- human-readable label,
-- description,
-- helper text,
-- impact summary,
-- warning text,
-- grouping metadata,
-- lightweight structured metadata.
+### Current mutation-path preflight caveat
 
-Frontend should read it through `get_ui_metadata_entries(...)` rather than hardcoding labels for configurable keys, config scopes, gameplay block reasons, staff candidate eligibility reasons or preview kinds.
+Do not rely on this document alone to call newly discussed RPCs. Codex must verify the current repository `mythborne_schema.sql` and generated `database.types.ts` first.
 
-## Config explainability
+Current repository dump caveats:
 
-`config_definition_ui_metadata` stores per-config-definition admin explanation metadata:
+- `save_stat_allocation(...)` is the intended G6 transactional stat allocation workflow, but it is not present in the currently available dump; G6 remains DB-blocked unless schema/types contain it.
+- `create_entity_requirement(...)`, `update_entity_requirement(...)`, `deactivate_entity_requirement(...)`, and `reorder_entity_requirements(...)` are the intended central requirement editor mutation path, but they are not present in the currently available dump; requirement mutation remains DB-blocked unless schema/types contain them.
+- `create_player_relationship_declaration(...)` is the intended declaration creation workflow, but it is not present in the currently available dump; relationship declaration creation remains DB-blocked unless schema/types contain it.
 
-- helper text,
-- gameplay impact summary,
-- warning text,
-- preview kind,
-- UI grouping.
+Confirmed current approach:
 
-`get_config_definition_explainability(...)` is the canonical read model for config governance explainability. It combines config definition data, governance scope explanation, value type explanation, applies-to meaning, effective scalar/json value where applicable and preview kind.
+- use `get_requirement_impact_preview(...)` for requirement preview/explainability;
+- use `set_player_relationship_declaration_decision(...)` for declaration decision/status handling where present;
+- use existing anti-abuse/report/sanction RPCs that are present in schema/types;
+- if a needed mutation RPC is missing, report a DB blocker instead of implementing direct frontend writes.
 
-Important config UI rules:
+### Human-readable reference selection
 
-- target/scope must be explained and readonly when derived from `config_definitions.governance_scope`;
-- server-scoped entries must show selected server context;
-- `server_required` means selected server context is needed before showing effective value;
-- `not_value_config` means the definition governs a relational system and needs a dedicated read/preview model rather than scalar/json editing.
+Admin/staff/player operational UI should not ask humans to type raw UUIDs as primary workflow where a name/label/search can exist.
 
-## Preview contracts
+Use DB-backed autocomplete/search/browser RPCs. Use `_page` variants for lazy list / virtual scroll / target browser UI. Raw IDs may appear only as technical metadata.
 
-Canonical preview contract registry:
+### PvE planning status
 
-- `get_admin_preview_contracts()`.
+The exploration/trials database runtime is not yet implemented. Current design planning is active and should not be treated as schema until a PVE-DB migration is explicitly created.
 
-Canonical preview input RPCs:
+Confirmed planning direction:
 
-- `get_item_quality_impact_preview(...)` — item quality rows and sample quality scaling;
-- `get_building_progression_preview(...)` — building levels, district availability, district caps and `0 = unlimited` semantics;
-- `get_bonus_impact_preview(...)` — semantic bonus/entity bonus preview with quality scaling rules;
-- `get_requirement_impact_preview(...)` — central requirement preview from `requirement_definitions` and `entity_requirements`.
+- exploration and trials are the main PvE loop;
+- daily cap is on trials, not raw movement steps;
+- trial opportunity is checked before encounter/nothing;
+- trial opportunity, manifestation and completion are separate stages;
+- all active trial definitions have equal selection chance;
+- encounters are combat/resource/buff/debuff, while nothing is a step outcome;
+- difficulty tiers are easy/medium/hard;
+- Luck remains the main quality-opportunity stat, not a guarantee;
+- reward quality remains Luck-driven within allowed profiles; district/difficulty can affect reward ranges/counts/profiles;
+- future implementation should preserve concise domain naming and avoid pseudo-React terms like `context` when `scope` or a domain-specific word is intended.
 
-Frontend should route preview kinds to these contracts instead of hardcoding data sources.
+### Content/editability note
 
-## Localization direction
-
-Current Polish seed text is acceptable as a working prototype layer. Proper localization remains a later system.
-
-Remembered direction: language should eventually be supported at two levels:
-
-- server default language,
-- private account/user language preference.
-
-Fallback should eventually be designed explicitly, for example user preference → server default → product default.
+Descriptions, helper text, encounter/trial lore variants and other database-backed content should eventually be editable and localizable. Migrations can seed initial content, but the long-term direction is content management/review, not permanent hardcoded text.
 
 ---
 
-# Update 2026-04-29 — human-readable reference selectors and backend pagination
+## Future notes / memory notes
 
-Human-facing operational UI should use DB-backed reference selectors instead of raw UUID entry.
+- Language should be supported at two levels later: a default language for a server/world and a private language preference for each account/user.
+- Daily trial count is a critical product-level balance decision. It should require broad acceptance and must not be casually changed by live-server operators.
+- Database-backed text/content such as descriptions, helper text, encounter/trial lore variants, and system messages should eventually be editable, localizable, and reviewable. Migrations may seed initial content, but permanent hardcoded content is not the long-term direction.
+- Admin/test override should eventually cover daily attempt pools in a reusable way: daily trials first, later daily PvP attacks.
+- The intermediate item quality display name is still open. Current `Quality` is not good enough as a final user-facing label; regular/normal may remain hidden as a displayed quality, and `Outstanding` remains the highest tier.
+- Bonus/admin UX note: saved DB-backed bonus impact preview is useful, but should be renamed in human language and likely collapsed/lightened so it does not look like a technical debug panel.
+- Every new audit-writing workflow must preflight `audit_action_types` and `audit_entity_types`.
+- Future stat allocation work may need DB-side `calculate_stat_allocation_cost(...)` or a formula-backed cost resolver.
 
-This affects admin, staff, moderation, anti-abuse, trade/auction investigation and config/balance tooling. If a human is expected to choose a user, hero, item, case, sanction, auction, trade offer, transaction, config definition, formula, building, bonus template, requirement or item-generation entity, the UI should show a human-readable label/title/name as the primary display value.
-
-## Selector rules
-
-- UUIDs may appear as secondary technical metadata, not the primary workflow.
-- Use existing `search_*_targets(...)` / `search_*_targets_page(...)` RPCs instead of broad frontend reads.
-- Use `_page` RPCs for virtual scroll, lazy lists, target browsers, or browse mode.
-- `_page` RPCs provide backend pagination with `p_limit`, `p_offset` and `total_count`.
-- Empty query in a target browser is allowed only through backend-paginated RPCs, never by fetching all rows into Angular.
-- Frontend must not read `auth.users` for these selectors.
-- Email is not guaranteed; UI must treat email as optional and show it only when the RPC returns it.
-- Server-scoped selectors must keep selected server context explicit.
-
-## Current selector families
-
-The database now provides DB-backed reference search/browser contracts for:
-
-- staff candidate search;
-- moderation user/hero target search;
-- moderation/anti-abuse item search;
-- anti-abuse case and sanction search;
-- trade offer, trade/auction transaction and auction listing search;
-- config definition, formula, formula target, building, bonus template, requirement definition and item-generation entity search.
-
-Codex should treat missing reference selectors as a DB/read-model blocker instead of implementing broad client-side fetches or requiring raw UUID entry.

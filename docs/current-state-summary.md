@@ -441,6 +441,9 @@ Still pending at the gameplay level even if partially supported in schema:
 - H3 is a model-only foundation slice with no meaningful UI smoke path. It was verified technically with `npx tsc --noEmit`, targeted anti-abuse case mapper specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - H4 accepted on 2026-04-30: `AntiAbuseCases` loads anti-abuse case lists scoped by required `serverId`, with optional status, verdict, source and created date range filters. There is no global fallback, so staff case lists do not show unrelated server cases by default.
 - H4 is a service-only slice with no meaningful UI smoke path. It was verified technically with `npx tsc --noEmit`, targeted anti-abuse case service/mapper specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- H5 accepted on 2026-04-30: `AntiAbuseCaseDetails` loads a server-scoped case detail aggregate from the base case, participants, signals, reports, declarations, audit logs, sanctions, Character Point penalties and sanction items.
+- H5 validates both `serverId` and `caseId`, loads the base case by both fields before any linked reads, and fails with a stable selected-server not-found error without querying linked rows when the case is not available for that server.
+- H5 is a service-only slice with no meaningful UI smoke path. It was verified technically with `npx tsc --noEmit`, targeted anti-abuse case detail/list/mapper specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

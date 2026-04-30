@@ -1,6 +1,6 @@
 # Mythborne — Database Current Notes
 
-Updated: 2026-04-29
+Updated: 2026-04-30
 
 This file is the curated semantic index of the current database state.
 
@@ -10,496 +10,17 @@ If this file conflicts with the actual database or generated `database.types.ts`
 
 ---
 
-# Current DB/RPC contract updates — 2026-04-28
-
-This section is a normal part of `database-current.md`. It is not a handoff override and it must not silently supersede the rest of the file. If an older section below conflicts with this section, update the older section instead of adding another override block.
-
-## Update 2026-04-28 — G4b config governance create RPCs
-
-Config governance draft creation and draft value-entry creation are now DB/RPC workflows, not direct frontend table writes. This aligns creation with the existing ready/apply/cancel RPC workflow and keeps config audit on the database side.
-
-Frontend/domain RPC contracts:
-
-- `create_config_change_set_draft(text, text, config_change_visibility, text, text)` → returns `config_change_sets`; creates a draft change set, sets `requested_by = auth.uid()`, validates through table constraints, checks `can_manage_config_governance(null)`, and writes best-effort audit through `try_write_config_change_set_audit(...)`.
-- `create_config_value_change_entry(uuid, config_change_kind, uuid, jsonb, uuid, jsonb)` → returns `config_change_entries`; creates a `global_value_change` or `server_value_change` entry only while the change set is `draft`, computes old effective config value DB-side, sets `field_path = value_json`, stores lightweight metadata, and writes best-effort audit through `try_write_config_change_set_audit(...)`.
-- `mark_config_change_set_ready(uuid)` → returns `config_change_sets`; marks a draft change set as ready after DB-side validation.
-- `apply_config_change_set(uuid)` → returns `config_change_sets`; atomically applies a ready change set. Current scope supports scalar/json `global_value_change` and `server_value_change` entries.
-- `cancel_config_change_set(uuid, text)` → returns `config_change_sets`; cancels a draft/ready change set and requires explicit cancellation reason.
-
-Rules:
-
-- Frontend must call these RPCs instead of direct inserts into `config_change_sets` and `config_change_entries` or direct status updates.
-- Frontend must not call `try_write_config_change_set_audit(...)`; it remains an internal helper.
-- `create_config_value_change_entry(...)` supports only the scalar/json value-entry flow: `scalar_config` / `json_config` definitions and value types `integer`, `decimal`, `boolean`, `string`, `json`.
-- Relational `entity_field_change` creation/application remains a future dedicated workflow.
-- After applying schema/RPC migrations, regenerate `database.types.ts` so the typed frontend services see the current RPCs.
-
-## Update 2026-04-29 — G6 stat allocation workflow
-
-Stat allocation save is now a DB/RPC workflow.
-
-Frontend/domain RPC contract:
-
-- `save_stat_allocation(uuid, jsonb, integer, text, text)` → returns `audit_log_id`, `character_points_after`, `hero_id`, `server_id`, and `stats_json`.
-
-Rules:
-
-- Frontend must call `save_stat_allocation(...)` for attribute allocation saves.
-- Frontend must not directly upsert `hero_stats` for this flow.
-- Frontend must not directly update `hero.character_points` for this flow.
-- Frontend must not call `write_audit_log(...)` / `AuditWriter.write()` separately for this flow.
-- `p_character_points_spent` is a declared request input from the current form state; the DB workflow remains the authority for cost/spend validation, Character Point ledger writes, stat persistence, and audit.
-- UI-only plus/minus draft changes are not audited.
-
-## Config governance status
-
-Confirmed frontend/admin work currently includes D1–D6 and G1–G6 stat allocation RPC slice.
-
-D4/D5 scalar/json config governance rules remain:
-
-- create draft change set with mandatory title/reason;
-- trim-required validation for title/reason;
-- public changelog requires title/body after trim;
-- add value change entries without applying config values;
-- scalar editor supports only `integer`, `decimal`, `boolean`, `string`, `json`;
-- `entity_ref`, `formula_ref`, `enum_ref` are unsupported/hidden in this simple editor;
-- `global_value_change` / `server_value_change` must not send `entityType/entityId`;
-- value changes must not set `oldScope/newScope`;
-- selected server changes must refresh effective values;
-- metadata includes `oldSource` / `oldSourceLabel` where available.
-
-## Critical DB/application state
-
-- Frontend has been cleaned of runtime references to `hero_derived`; only generated `database.types.ts` may mention it while the physical table exists.
-- Do **not** add new dependencies on `hero_derived`.
-- Runtime derived/special stats are resolved from active hero context, `hero_stats`, `derived_stat_definitions`, `bonus_types`, `bonus_scopes`, `bonus_targets`, `bonus_templates`, `entity_bonuses`, and formula assignments only where genuinely needed.
-- The physical `hero_derived` table may still exist unless explicitly confirmed dropped. Treat it as deprecated DB legacy.
-- If/when `hero_derived` is dropped, regenerate `database.types.ts`.
-
-## Bonus system current truth
-
-Current canonical bonus naming is **scope**, not context.
-
-Use `bonus_scopes`, `scope_key`, `scope_key_override`, and `BonusScope` in frontend/domain code. Do not introduce new `BonusContext` terminology except as temporary legacy alias.
-
-Central bonus foundation:
-
-- `bonus_types`
-- `bonus_scopes`
-- `bonus_target_categories`
-- `bonus_targets`
-- extended `bonus_templates`
-- `entity_bonuses`
-
-Legacy/transitional bonus tables:
-
-- `origin_bonuses`
-- `building_bonuses`
-- `item_bonuses`
-- `item_generation_base_bonuses`
-- `item_generation_affix_bonuses`
-
-New code should use `entity_bonuses` as the central relation. Legacy tables may remain only for compatibility/migration.
-
-Quality scaling:
-
-- `entity_bonuses.quality_scales_value = true` means item quality multiplier scales `value`.
-- `quality_scales_level_interval` must remain false.
-- Quality never scales `level_interval`.
-- No database-level rounding is applied.
-- UI/admin preview should read active rows from `item_generation_qualities`; do not hardcode exactly three qualities.
-
-## Derived stat definitions
-
-`derived_stat_definitions` is the DB-backed semantic dictionary for runtime derived/special stats.
-
-Seeded definitions:
-
-- `health`
-- `defense`
-- `min_damage`
-- `max_damage`
-- `luck`
-- `critical_chance`
-- `evasion_chance`
-
-Resolver semantics:
-
-- `defense = endurance + active defense bonuses`.
-- `luck = active luck bonuses`, base 0 unless explicitly changed later.
-- `min_damage = strength + weapon/base min_damage + active min_damage bonuses + active damage bonuses`.
-- `max_damage = strength + weapon/base max_damage + active max_damage bonuses + active damage bonuses`.
-- `damage` target applies to both `min_damage` and `max_damage`.
-- Resolver must ensure `max_damage >= min_damage`.
-- `health` may use a base health formula/fallback, then active health bonuses.
-- `critical_chance` and `evasion_chance` are additive bonus inputs for combat formulas, not necessarily whole final chances.
-
-## Config change entries
-
-For `global_value_change` / `server_value_change` use `config_definition_id`, `server_id` only for server changes, `field_path = value_json`, old/new value JSON, and lightweight metadata. Do **not** misuse `entity_id`.
-
-For relational entity edits later, use `entity_field_change`, with `entity_type`, UUID `entity_id`, and `field_path`.
-
-## Access helpers
-
-Use canonical helpers when writing SQL/RPC:
-
-- `has_global_role(text[])`
-- `has_server_staff_role(uuid, server_staff_role[])`
-
-Do not duplicate role logic by joining `roles` unless the helper layer is missing. If `is_admin()` exists or is needed, prefer it as a wrapper around `has_global_role(array['admin'])`.
-
-`can_manage` is not the same as `can_use_as_sandbox`. Tester visibility is not management permission.
-
-## Character Points
-
-Character Points are stored on `hero.character_points` and `hero.total_character_points_earned`. Use `character_point_ledger` for persistent balance history. Do not put Character Points in `hero_resources` or `hero_derived`.
-
-## Trade and auctions
-
-DB/RPC foundation exists for direct trade, one-item auctions, CP locks, item locks, transactions, and anti-abuse signals/case grouping. Frontend gameplay surfaces are still pending.
-
-Trade between players uses Character Points. Drachmas are vendor/system/building currency. Vendor scrap is not trade.
-
-## Requirements/building caps
-
-Central requirement foundation: `requirement_definitions`, `entity_requirements`.
-
-Building availability: `buildings.district_code` is minimum district; available in that district and higher districts. `buildings.max_level = 0` means unlimited. `building_district_level_caps` stores overrides only; missing override falls back to `buildings.max_level`.
-
-## Update 2026-04-28 — U0 sanction/access, staff gameplay and moderation read contracts
-
-This is the current semantic DB/RPC contract for U0 role/staff/moderation and sanction/access work. It is a curated contract registry for Codex, not a full table dump.
-
-The live dump reflects the DB1–DB6 sequence completed for this area. Treat this U0 database layer as contract-complete for Codex-facing frontend work. Behavioral rollback tests were intentionally not completed here; future behavioral tests should use a proper sandbox/harness and are not a missing DB contract.
-
-### Role/staff foundations
-
-Existing foundations include:
-
-- `roles` with stable global role `key` values;
-- `server_staff_assignments` with `server_staff_role` values `owner`, `operator`, `moderator`, `tester`;
-- `server_staff_assignment_scopes` linking moderator scopes to staff assignments;
-- `staff_permission_scopes` as the DB dictionary for moderator/staff responsibility scopes;
-- `server_memberships` with `server_membership_status` values `active`, `suspended`, `banned`;
-- access helpers such as `has_global_role(...)`, `user_has_global_role(...)`, `has_server_staff_role(...)`, `can_manage_server_staff(...)`.
-
-Global role is account-level capability. Server authority is server-scoped and should flow through `server_staff_assignments` and helper RPCs, not through assumptions that a global operator/moderator has authority everywhere.
-
-### Staff scope dictionary
-
-`staff_permission_scopes` defines configurable staff/moderator responsibility scopes. Initial active scope keys:
-
-- `chat`
-- `dm`
-- `trade`
-- `auction`
-- `reports`
-- `anti_abuse_triage`
-
-`server_staff_assignment_scopes` assigns scope keys to a specific `server_staff_assignments` row. Current intended use is moderator scopes. Operator/admin authority comes from role/helper authority, not from assigned moderator scopes.
-
-Codex must read labels/descriptions/helper text from DB dictionaries instead of hardcoding scope lists for UI.
-
-### Staff assignment eligibility
-
-Server staff assignment is guarded by DB/RPC logic:
-
-- `assign_server_staff(...)` is the canonical audited mutation path.
-- Frontend must not insert/update `server_staff_assignments` directly.
-- User cannot be assigned staff on a standard server if the user has any hero on that server.
-- Sandbox/testing contexts are exceptions for staff/test gameplay.
-- User with staff-disqualifying history cannot be assigned server staff.
-- Server ban anywhere is staff-disqualifying.
-- Suspensions longer than `moderation_staff_disqualifying_suspension_days` are staff-disqualifying.
-
-Canonical staff/user management RPC:
-
-- `assign_global_role(p_user_id uuid, p_role_key text, p_reason text)`
-- `assign_server_staff(p_server_id uuid, p_user_id uuid, p_role server_staff_role, p_reason text, p_notes text)`
-- `revoke_server_staff(p_staff_assignment_id uuid, p_reason text)`
-- `set_server_staff_permission_scopes(p_staff_assignment_id uuid, p_scope_keys text[], p_reason text)`
-
-Rules:
-
-- reason is mandatory for staff/global role mutations;
-- global role assignment is admin-only;
-- server operators may only assign moderator staff where allowed;
-- direct writes to `user_data.role_id` and `server_staff_assignments` are not valid frontend paths.
-
-### Staff gameplay block / normal gameplay access
-
-Normal staff should not play normal gameplay on production-like standard servers where they are assigned staff. Sandbox/test servers are exceptions.
-
-Canonical helper contracts:
-
-- `hero_is_staff_gameplay_blocked(...)`
-- `hero_can_use_normal_gameplay(...)`
-- `get_hero_normal_gameplay_block_reason(...)`
-- `assert_hero_can_use_normal_gameplay(...)`
-
-Future persistent gameplay RPCs should call `assert_hero_can_use_normal_gameplay(...)` before mutating normal gameplay state.
-
-Safe exits and cleanup paths such as cancellation, rejection, expiry and unlock/refund cleanup must not be blocked solely because a user is restricted.
-
-### Sanctions and runtime access
-
-Moderation actions are server-scoped historical/decision records. Runtime access is enforced through helper functions, triggers, and `server_memberships.status`.
-
-- `trade_restriction` blocks player direct-trade participation.
-- `auction_restriction` blocks auction participation.
-- `server_suspension` and `server_ban` synchronize into `server_memberships.status` for fast runtime access checks.
-- `server_memberships.moderation_block_*` columns preserve the moderation action link, reason, expiry and sync timestamp.
-- Future market mutations should use `assert_hero_can_use_player_trade_runtime(...)` / `assert_hero_can_use_player_auction_runtime(...)`.
-
-### Moderation action model
-
-The database has a contract-complete foundation for server-scoped moderation actions:
-
-- local warnings;
-- account warnings within a server;
-- trade/auction restrictions;
-- server suspensions;
-- server bans;
-- scoped moderation action visibility;
-- full-history admin/operator moderation action visibility.
-
-Moderators may apply light/local actions in assigned scopes. Operators/admins handle heavy sanctions, appeals, CP penalties and severe punishments.
-
-Canonical read contracts:
-
-- moderator/scoped UI: `get_visible_moderation_actions(...)`;
-- admin/operator full action history: `get_full_user_moderation_history(...)`, `get_full_hero_moderation_history(...)`;
-- moderation target autocomplete/search: `search_moderation_user_targets(...)`, `search_moderation_hero_targets(...)`.
-
-Moderation target picker/search contracts:
-
-- `can_search_moderation_targets(p_server_id uuid)` -> boolean. Checks whether the authenticated user may use server-scoped moderation target search. Admin/operator/full server staff can search; scoped moderators with at least one active scope can search without receiving full-history authority.
-- `search_moderation_user_targets(p_server_id uuid, p_query text, p_limit integer)` -> account/user target autocomplete. Returns `user_id`, human display name, email only where policy allows, primary hero id/name, visible-history flag, match kind, and technical label.
-- `search_moderation_hero_targets(p_server_id uuid, p_query text, p_limit integer)` -> hero target autocomplete. Returns `hero_id`, hero name, owning user id/display name, email only where policy allows, visible-history flag, match kind, and technical label.
-
-Rules for moderation target search:
-
-- these RPCs are the canonical read models for moderation action/history target pickers;
-- they are server-scoped and require `can_search_moderation_targets(p_server_id)`;
-- they do not read `auth.users`;
-- they reject/return no broad results for empty or too-short queries;
-- minimum query length is 2 characters unless query is UUID-like;
-- email search and email return are limited to full-history authority via `can_read_full_moderation_history(p_server_id)`;
-- scoped moderators can search by account display name and hero name, but should not receive email;
-- `has_visible_moderation_history` means the current actor can see at least one matching moderation action through `can_read_moderation_action(...)`; it must not be treated as proof of all hidden/full history;
-- `search_server_staff_candidates(...)` must not be reused for moderation target search because it has staff-management semantics and permissions.
-
-Legacy combined moderation-history RPCs were removed:
-
-- `get_user_moderation_history(...)` removed;
-- `get_hero_moderation_history(...)` removed.
-
-Codex must not reintroduce those names or create frontend fallbacks to them.
-
-### Explicit anti-abuse permission model
-
-Future G5/H UI should prefer explicit helpers:
-
-- `can_triage_anti_abuse(...)` / `assert_can_triage_anti_abuse(...)`;
-- `can_decide_anti_abuse(...)` / `assert_can_decide_anti_abuse(...)`;
-- `can_manage_anti_abuse_sanctions(...)` / `assert_can_manage_anti_abuse_sanctions(...)`.
-
-Broad compatibility helper `can_manage_anti_abuse(...)` may still exist, but new UI/domain code should use explicit helpers where relevant.
-
-### RLS/read-model direction
-
-`moderation_actions` RLS is enabled.
-
-Current policy direction:
-
-- global admin can manage;
-- admin/operator can select full history;
-- scoped moderator selection is constrained by `scope_key` and moderator scope helper logic;
-- targets can read their own targeted actions where policy allows.
-
-UI should prefer RPC/read contracts above instead of direct table reads for staff/moderation surfaces.
-
-### Grant expectations
-
-Functions/RPCs in this U0 surface should not expose `PUBLIC`/`anon` execute. Current expected grants are `authenticated`, `postgres`, and `service_role` only unless a future migration intentionally says otherwise.
-
-### Codex implications
-
-Before implementing U0/H frontend tasks, Codex must:
-
-- regenerate and use current `database.types.ts` after schema/RPC changes;
-- use DB dictionaries (`staff_permission_scopes`, `moderation_action_types`, etc.) for labels/options;
-- use explicit G5 permission helpers for future anti-abuse UI;
-- use `get_visible_moderation_actions(...)` for moderator-facing moderation UI;
-- use `get_full_user_moderation_history(...)` / `get_full_hero_moderation_history(...)` for admin/operator full moderation action history;
-- use `search_moderation_user_targets(...)` and `search_moderation_hero_targets(...)` for moderation target picker/autocomplete;
-- do not use `search_server_staff_candidates(...)` for moderation target search;
-- use dedicated G5 RPC/services for anti-abuse cases, sanctions and CP penalties;
-- use `hero_can_use_normal_gameplay(...)` / `get_hero_normal_gameplay_block_reason(...)` / `assert_hero_can_use_normal_gameplay(...)` for normal gameplay access;
-- use `assert_hero_can_use_player_trade_runtime(...)` and `assert_hero_can_use_player_auction_runtime(...)` for future market mutations;
-- never reintroduce `get_user_moderation_history(...)` or `get_hero_moderation_history(...)`.
-
-### Remaining work outside DB contract
-
-The DB contract for the U0 sanction/access layer is complete for Codex-facing frontend work.
-
-Remaining work is frontend/application integration, not missing DB contract:
-
-- route/sidebar/admin shell guards;
-- staff gameplay blocked notice and player-route guard wiring;
-- user/staff management UI;
-- moderator scope assignment UI;
-- moderation action/history UI;
-- G5 UI migration from broad `can_manage_anti_abuse(...)` toward explicit permission helpers where relevant.
-
-## Verified live DB function/RPC inventory — 2026-04-28
-
-This section is based on live database inventory/dump verification against schema `public`.
-
-Operational rule:
-- Codex must not invent new RPC names, migrations, or database workflow functions when a needed DB contract is missing.
-- If a needed function/RPC is not listed here and is not present in generated database types, the implementation task is blocked by missing database contract.
-- New database RPCs are designed in the conceptual/database track first, then implemented through an approved migration, then documented here and regenerated into `database.types.ts`.
-
-### Config governance functions currently present
-
-Current config helper functions:
-- `get_server_config_integer(uuid, text, integer)` → reads a server config value by config key with integer fallback.
-- `get_server_config_boolean(uuid, text, boolean)` → reads a server config value by config key with boolean fallback.
-
-Current D5 config change-set workflow RPCs:
-- `mark_config_change_set_ready(uuid)` → returns `config_change_sets`; marks a draft change set as ready after DB-side validation.
-- `apply_config_change_set(uuid)` → returns `config_change_sets`; atomically applies a ready change set. D5 supports scalar/json `global_value_change` and `server_value_change` entries only.
-- `cancel_config_change_set(uuid, text)` → returns `config_change_sets`; cancels a draft/ready change set and requires an explicit cancellation reason.
-
-Current internal config workflow helpers:
-- `validate_config_change_set_entries_for_d5(uuid)` → validates D5-supported entries before mutation.
-- `apply_global_config_value_change_entry(config_change_entries, uuid)` → internal helper for one `global_value_change` entry.
-- `apply_server_config_value_change_entry(config_change_entries, uuid)` → internal helper for one `server_value_change` entry.
-
-D5 operational rules:
-- Frontend must use the RPCs above as a thin client; it must not directly mutate `global_config_values` or `server_config_values`.
-- Codex must not invent new config governance RPC names or migrations. If a needed DB workflow is not listed here, the task is DB-blocked until the conceptual/database track designs and applies it.
-- D5 currently supports only scalar/json value changes. Relational/entity changes remain blocked until a dedicated `entity_field_change` workflow exists.
-- `cancel_config_change_set` requires `p_cancelled_reason`; the original change-set `reason` explains why a change was proposed, while `cancelled_reason` explains why it was abandoned.
-
-### Access / identity helpers
-
-- `has_global_role(text[])` → checks current authenticated user's global role keys.
-- `user_has_global_role(uuid, text[])` → checks a specific user's global role keys.
-- `has_server_staff_role(uuid, server_staff_role[])` → checks current authenticated user's staff role on a server.
-- `can_read_hero(uuid)` → hero read helper.
-- `can_manage_hero(uuid)` → hero management helper.
-- `estate_matches_hero_server(uuid, uuid)` → validates estate/hero server relationship.
-- `is_admin()` → legacy/compatibility helper using older role naming; prefer `has_global_role(array['admin'])` in new SQL/RPC.
-
-### Character Points helpers / operations
-
-- `get_hero_active_character_point_locks(uuid)` → active CP lock sum for hero.
-- `get_hero_available_character_points(uuid)` → spendable CP after active locks.
-- `apply_character_points_delta(uuid, integer, character_point_ledger_reason, text, uuid, text, uuid)` → applies CP delta and writes `character_point_ledger`.
-- `create_character_point_lock_for_trade(uuid, uuid, integer, uuid, text)` → creates CP lock for direct trade.
-- `create_character_point_lock_for_auction_bid(uuid, uuid, integer, uuid, uuid, text)` → creates CP lock for auction bid.
-- `create_character_point_lock_for_auction_buy_now(uuid, uuid, integer, uuid, text)` → creates CP lock for auction buy-now.
-
-### Player direct trade RPC / operations
-
-- `create_player_direct_trade_offer(uuid, uuid, integer, uuid[], text)` → creates direct trade offer and locks creator-side CP/items.
-- `respond_player_direct_trade_offer(uuid, integer, uuid[], text)` → target response to direct trade offer.
-- `confirm_player_direct_trade_offer(uuid, text)` → creator confirmation and transactional completion.
-- `cancel_player_direct_trade_offer(uuid, text)` → cancels pending direct trade offer.
-- `reject_player_direct_trade_offer(uuid, text)` → rejects pending direct trade offer.
-- `release_trade_offer_character_point_locks(uuid, text)` → releases active CP locks for trade offer.
-- `unlock_trade_offer_items(uuid)` → unlocks trade-locked items for offer.
-
-### Player auction RPC / operations
-
-- `create_player_auction_listing(uuid, uuid, player_auction_mode, integer, integer, text)` → creates one-item auction listing and locks item.
-- `place_player_auction_bid(uuid, uuid, integer)` → places auction bid and locks bidder CP.
-- `buy_now_player_auction(uuid, uuid, text)` → completes buy-now purchase.
-- `close_player_auction_listing(uuid, text)` → closes ended auction, expires if no bids or completes sale.
-- `cancel_player_auction_listing(uuid, text)` → cancels active auction where allowed.
-- `finalize_player_auction_sale(uuid, uuid, integer, text, text, uuid)` → final auction transfer operation.
-- `release_auction_character_point_locks(uuid, text)` → releases active auction CP locks.
-- `unlock_auction_item(uuid)` → unlocks auction-locked item.
-
-### Trade slot / availability helpers
-
-- `get_hero_active_trade_slot_count(uuid)` → active direct-trade + auction slot count.
-- `get_hero_trade_slot_limit(uuid)` → current trade slot limit; transitional fallback uses server config `trade_active_offer_limit_fallback`.
-- `hero_has_free_trade_slot(uuid)` → checks if hero has a free active trade slot.
-- `hero_can_use_player_trade(uuid)` → checks whether hero can use player trade/auctions; transitional fallback uses trade slot config.
-
-### Anti-abuse RPC / operations
-
-- `create_player_abuse_report(uuid, text, text, text, uuid, uuid, uuid, uuid, text)` → creates player abuse report and linked case.
-- `create_or_link_anti_abuse_case_for_signal(uuid)` → creates or links case for signal grouping key.
-- `add_anti_abuse_case_participant_if_missing(uuid, uuid, uuid, text, text, text, uuid)` → idempotent case participant insert.
-- `refresh_anti_abuse_case_signal_stats(uuid)` → refreshes case signal count and last signal timestamp.
-- `generate_trade_transaction_anti_abuse_signals(uuid)` → generates trade/auction-related anti-abuse signals from completed transaction.
-- `insert_trade_transaction_anti_abuse_signal(uuid, text, text, text, text, uuid, uuid, text, integer, numeric, jsonb)` → inserts anti-abuse signal for trade transaction.
-- `build_anti_abuse_hero_pair_grouping_key(uuid, uuid, uuid)` → deterministic same-pair grouping key.
-
-### Audit RPC / operations
-
-- `write_audit_log(text, text, uuid, uuid, uuid, uuid, uuid, audit_severity, text, jsonb, jsonb, jsonb, text)` → writes audit log after validating dictionary keys and actor constraints.
-
-Audit note:
-- Existing audit foundation is present.
-- Config governance create/add/ready/apply/cancel workflow RPCs own their DB-side audit writes where available.
-- Frontend code must not call low-level audit helpers directly after governed config mutations.
-
-### Building / district helpers
-
-- `is_building_available_in_district(uuid, text)` → checks district availability by comparing district ranks.
-- `get_building_max_level_for_district(uuid, text)` → resolves district-specific cap override with fallback to `buildings.max_level`.
-
-### Trigger / validation functions
-
-These are not frontend RPC contracts. They are database trigger helpers and validation functions:
-
-- `rls_auto_enable()`
-- `audit_dictionary_change()`
-- `audit_set_updated_at()`
-- `prevent_audit_dictionary_key_update()`
-- `prevent_dictionary_key_update()`
-- `set_anti_abuse_dictionary_updated_at()`
-- `set_anti_abuse_sanction_updated_at()`
-- `set_anti_abuse_updated_at()`
-- `set_items_updated_at()`
-- `set_player_relationship_updated_at()`
-- `anti_abuse_case_signal_stats_trigger()`
-- `trigger_create_or_link_anti_abuse_case_for_signal()`
-- `trigger_generate_trade_transaction_anti_abuse_signals()`
-- `enforce_hero_server_policy()`
-- `enforce_item_server_matches_hero()`
-- `enforce_character_point_ledger_server()`
-- `enforce_character_point_lock_server()`
-- `enforce_building_district_cap_is_available()`
-- `enforce_player_trade_offer_server()`
-- `enforce_player_trade_offer_item_valid()`
-- `enforce_player_auction_listing_valid()`
-- `enforce_player_auction_bid_valid()`
-- `validate_anti_abuse_sanction()`
-- `validate_anti_abuse_sanction_item()`
-- `validate_character_point_penalty()`
-
-Documentation debt:
-- Most live DB functions currently have no `COMMENT ON FUNCTION` descriptions.
-- Add comments for critical RPCs in future migrations so function inventory can become self-documenting.
-
-## Source-of-truth order
+# Source-of-truth order
 
 For schema-sensitive implementation, use this order:
 
-1. current live database / generated `database.types.ts`
-2. current migrations / SQL that have been applied
-3. this file as the semantic index
-4. `current-decisions.md`
-5. `project-context.md`
-6. `codex-mythborne-backlog.md`
-7. `current-state-summary.md` and `current-todo.md` only as Codex progress/status files
+1. current live database / generated `database.types.ts`;
+2. current migrations / SQL that have been applied;
+3. this file as the semantic index;
+4. `current-decisions.md`;
+5. `project-context.md`;
+6. `codex-mythborne-backlog.md`;
+7. `current-state-summary.md` and `current-todo.md` only as Codex progress/status files.
 
 Important: `current-state-summary.md`, `current-todo.md`, and task statuses in the backlog are owned by Codex/user-confirmed implementation progress. Do not use them as the main schema source.
 
@@ -511,14 +32,15 @@ Important: `current-state-summary.md`, `current-todo.md`, and task statuses in t
 - Prefer relational modeling over hidden JSON blobs.
 - Prefer explicit constraints, dictionary tables, helper text, descriptions, and status reasons.
 - Do not duplicate role/access logic if canonical helper functions exist.
-- Critical gameplay/economy mutations should go through RPC/domain operations, not direct frontend table writes.
+- Critical gameplay/economy/admin mutations should go through RPC/domain operations, not direct frontend table writes.
 - Preserve `reason`, `description`, `status_reason`, `helper_text`, and `admin_description` wherever applicable.
 - Metadata JSON should be lightweight and contextual, not a place to hide core fields.
 - Legacy/transitional tables and fields may remain for compatibility, but new systems should use the current central models.
+- Any workflow that writes audit must have active `audit_action_types` and `audit_entity_types` rows before Codex can consider it unblocked.
 
 ---
 
-# Canonical stats
+# Canonical stats and stat allocation
 
 Base stats come from the `stats` table and should be treated as canonical.
 
@@ -540,13 +62,46 @@ Do not hardcode old stat lists from outdated concept docs.
 
 Purpose:
 
-- stores base stat values for a hero.
-
-Important semantics:
-
+- stores base stat values for a hero;
 - keyed by hero and stat key;
-- should align with the canonical `stats` table;
-- stat allocation should spend Character Points through proper domain/RPC flow, not direct UI balance mutation.
+- should align with the canonical `stats` table.
+
+## G6 stat allocation RPC
+
+`save_stat_allocation(p_hero_id uuid, p_stat_values_json jsonb, p_character_points_spent integer, p_reason text, p_request_id text)` is the canonical transactional gameplay RPC for stat allocation saves.
+
+Return model:
+
+- `hero_id uuid`
+- `server_id uuid`
+- `character_points_after integer`
+- `stats_json jsonb`
+- `audit_log_id uuid`
+
+Purpose:
+
+- update `hero_stats`;
+- spend Character Points through `apply_character_points_delta(...)` / `character_point_ledger`;
+- write `gameplay.stat_allocation.saved` audit;
+- perform the above atomically in one DB-owned workflow.
+
+Frontend rules:
+
+- use `save_stat_allocation(...)` for stat allocation save;
+- do not update `hero_stats` directly in this flow;
+- do not update `hero.character_points` directly in this flow;
+- do not call frontend `AuditWriter` separately for this flow;
+- normalize UI payloads before calling where useful, but DB also validates/nonnegative-normalizes the persisted values;
+- pass a `request_id` when available for idempotency/audit correlation.
+
+Required audit dictionary rows:
+
+- `audit_action_types.key = gameplay.stat_allocation.saved`, category `gameplay`, severity `notice`, active;
+- `audit_entity_types.key = hero`, category `hero`, active.
+
+Future optional DB work:
+
+- `calculate_stat_allocation_cost(...)` or formula-backed cost resolver, if/when stat allocation cost should be calculated fully DB-side instead of passed as `p_character_points_spent`.
 
 ---
 
@@ -556,10 +111,10 @@ Important semantics:
 
 Current hero identity model:
 
-- `hero.id` is the character id.
-- `hero.user_id` is the owning account id.
-- `hero.server_id` is the server/world id.
-- Do not assume `hero.id = auth.uid()`.
+- `hero.id` is the character id;
+- `hero.user_id` is the owning account id;
+- `hero.server_id` is the server/world id;
+- do not assume `hero.id = auth.uid()`.
 
 Current important columns include:
 
@@ -579,8 +134,8 @@ Current important columns include:
 
 Important constraints:
 
-- `character_points >= 0`
-- `total_character_points_earned >= 0`
+- `character_points >= 0`;
+- `total_character_points_earned >= 0`;
 - hero names are server-scoped.
 
 ## Hero loading rule
@@ -608,356 +163,433 @@ Before fully relying on multiple heroes per account or sandbox multi-hero flows,
 
 # Server/world access and staff access
 
-## Core tables
-
 Important server/access tables include:
 
 - `game_servers`
 - `server_memberships`
 - `server_staff_assignments`
-
-Known conceptual columns:
-
-`game_servers`:
-
-- `id`
-- `key`
-- `name`
-- `kind`
-- `status`
-- `description`
-- `launched_at`
-- `archived_at`
+- `server_staff_assignment_scopes`
+- `staff_permission_scopes`
 
 Enums include:
 
-- `game_server_kind`
-- `game_server_status`
-- `server_membership_status`
-- `server_staff_role`
+- `game_server_kind`: `sandbox`, `standard`;
+- `game_server_status`: `draft`, `testing`, `scheduled`, `live`, `archived`;
+- `server_membership_status`: `active`, `suspended`, `banned`;
+- `server_staff_role`: `owner`, `operator`, `moderator`, `tester`.
 
-## Canonical access helpers
+Use canonical helpers when writing SQL/RPC:
 
-Current DB/RLS logic uses helper functions for role/staff checks. New SQL/RPC should use these instead of duplicating role joins.
+- `has_global_role(text[])`
+- `has_server_staff_role(uuid, server_staff_role[])`
+- `can_manage_server_staff(uuid)`
+- `can_have_moderator_scope(uuid, text)`
 
-Known helper/RPC functions:
+Do not duplicate role logic by joining `roles` unless the helper layer is missing.
 
-- `get_server_config_integer(server_id, config_key, fallback)`
-- `get_server_config_boolean(server_id, config_key, fallback)`
-- `mark_config_change_set_ready(p_change_set_id uuid)`
-- `apply_config_change_set(p_change_set_id uuid)`
-- `cancel_config_change_set(p_change_set_id uuid, p_cancelled_reason text)`
+Global role is account-level capability. Server authority is server-scoped and should flow through `server_staff_assignments` and helper RPCs, not through assumptions that a global operator/moderator has authority everywhere.
 
-Config values should not be hardcoded where server/product balance says they are governed.
+`can_manage` is not the same as `can_use_as_sandbox`. Tester visibility is not management permission.
 
-Config change sets preserve:
+## Staff assignment and scope mutations
 
-- title;
-- reason;
-- status;
-- changelog visibility;
-- requested/applied/cancelled user;
-- `ready_by` / `ready_at`;
-- `cancelled_reason`;
-- timestamps.
+Canonical mutation paths:
 
-D5 apply/cancel rules:
+- `assign_global_role(p_user_id uuid, p_role_key text, p_reason text)`;
+- `assign_server_staff(p_server_id uuid, p_user_id uuid, p_role server_staff_role, p_reason text, p_notes text)`;
+- `revoke_server_staff(...)` if present in generated types;
+- `set_server_staff_permission_scopes(...)` if present in generated types.
 
-- apply/cancel/ready are database-owned workflow operations, not frontend write sequences;
-- `apply_config_change_set` is atomic and supports only `global_value_change` and `server_value_change` for scalar/json definitions;
-- `server_config_values.locked_at` must be respected;
-- server value source is derived from `config_definitions.governance_scope`;
-- unsupported change kinds such as `entity_field_change` remain blocked until a dedicated workflow is designed.
+Frontend must not direct-write `user_data.role_id`, `server_staff_assignments`, or `server_staff_assignment_scopes`.
 
-## Config-managed entities added by recent foundations
-
-Known managed entity types/definitions include:
-
-Requirements/building caps:
-
-- `requirement_definition`
-- `entity_requirement`
-- `building_district_level_cap`
-
-Bonus system:
-
-- bonus dictionaries and `entity_bonuses` should be registered/managed through config governance in the next bonus stage.
-
-Anti-abuse configs exist for trade/abuse thresholds and should be server-specific where defined.
+Staff assignment eligibility is DB-owned and should use DB helper/read RPCs such as `search_server_staff_candidates(...)` and `search_server_staff_candidates_page(...)`.
 
 ---
 
-# Direct trade
+# Configuration governance
 
-## Core tables
+Config governance is database-backed and reasoned.
 
-Direct trade foundation uses:
+Important rule: configurable does not mean freely changeable at any time.
 
-- `player_trade_offers`
-- `player_trade_offer_items`
-- `player_trade_transactions`
-- `player_trade_transaction_items`
-- `character_point_locks`
+## Config governance scopes
 
-## Direct trade rules
+`config_governance_scope` values:
 
-- private between two heroes;
-- server-scoped;
-- both heroes must be on same server;
-- both sides must be able to use player trade;
-- each side only selects their own items;
-- no access to another hero’s private inventory;
-- each side must offer item(s) and/or Character Points;
-- CP-only-for-CP-only exchange is blocked at finalization;
-- offered CP is locked with `character_point_locks`;
-- offered items are locked as `locked_trade`;
-- cancel/reject/expiry releases CP locks and returns items to `active`;
-- finalization is transactional.
+- `product_global`
+- `global_balance`
+- `server_launch`
+- `live_server`
+- `test_override`
 
-## Direct trade RPC/functions
+`product_global` examples:
 
-Known important functions:
+- daily trial count;
+- daily attack count;
+- base exploration step timing model;
+- manual siege action timer;
+- base PvP travel-time minimum/model.
 
-- `create_player_direct_trade_offer(...)`
-- `respond_player_direct_trade_offer(...)`
-- `cancel_player_direct_trade_offer(...)`
-- `reject_player_direct_trade_offer(...)`
-- `confirm_player_direct_trade_offer(...)`
+These are highly controlled product-level rules, not casual live-server settings.
 
-Trade-slot helper functions include:
+## Config change-set RPCs
 
-- `hero_can_use_player_trade(hero_id)`
-- `hero_has_free_trade_slot(hero_id)`
-- `get_hero_trade_slot_limit(hero_id)`
-- `get_hero_active_trade_slot_count(hero_id)`
+Config governance workflow is DB/RPC-owned:
 
-`trade_active_offer_limit_fallback` is temporary until Trade Routes/building bonus runtime is connected.
+- `create_config_change_set_draft(text, text, config_change_visibility, text, text)`;
+- `create_config_value_change_entry(uuid, config_change_kind, uuid, jsonb, uuid, jsonb)`;
+- `mark_config_change_set_ready(uuid)`;
+- `apply_config_change_set(uuid)`;
+- `cancel_config_change_set(uuid, text)`.
+
+Rules:
+
+- frontend must call these RPCs instead of direct inserts/updates into `config_change_sets` and `config_change_entries`;
+- frontend must not call `try_write_config_change_set_audit(...)` directly;
+- `create_config_value_change_entry(...)` supports scalar/json value changes only;
+- relational `entity_field_change` needs a dedicated workflow before use;
+- `apply_config_change_set(...)` currently supports scalar/json `global_value_change` and `server_value_change` entries.
 
 ---
 
-# Auctions
+# Formulas, bonuses, derived stats
 
-## Core tables
+## Formula system
 
-Auction foundation uses:
+Use the relational formula system:
 
-- `player_auction_listings`
-- `player_auction_bids`
-- `character_point_locks`
-- `player_trade_transactions` with `transaction_type = auction_sale`
-- `player_trade_transaction_items`
+- `balance_formula_targets`
+- `balance_formulas`
+- `balance_formula_assignments`
+- `balance_formula_blocks`
+- `entity_formula_assignments`
 
-## Auction rules
+Do not replace this with generic JSON configs.
 
-- public server-scoped listing;
-- exactly one item per auction;
-- no bundle/set auction support for now;
-- allowed modes:
-  - bidding,
-  - buy now,
-  - bidding with buy now;
-- auction duration is server-configured, not player-selected;
-- listed item is locked as `locked_auction`;
-- bids lock Character Points;
-- outbid bids release prior CP lock;
-- buy now completes immediately;
-- seller can cancel only before any bid exists;
-- auction without bids after `ends_at` becomes `expired` and item returns to `active`;
-- auction with winning bid completes into a trade transaction and CP ledger rows.
+## Bonus system current truth
 
-## Auction RPC/functions
+Current canonical bonus naming is **scope**, not context.
 
-Known important functions:
+Use:
 
-- `create_player_auction_listing(...)`
-- `place_player_auction_bid(...)`
-- `buy_now_player_auction(...)`
-- `cancel_player_auction_listing(...)`
-- `close_player_auction_listing(...)`
+- `bonus_types`
+- `bonus_scopes`
+- `bonus_target_categories`
+- `bonus_targets`
+- semantic `bonus_templates`
+- `entity_bonuses`
 
-Internal/helper functions created for auction runtime include:
+Legacy/transitional bonus tables:
 
-- `create_character_point_lock_for_auction_bid(...)`
-- `create_character_point_lock_for_auction_buy_now(...)`
-- `release_auction_character_point_locks(...)`
-- `unlock_auction_item(...)`
-- `finalize_player_auction_sale(...)`
+- `origin_bonuses`
+- `building_bonuses`
+- `item_bonuses`
+- `item_generation_base_bonuses`
+- `item_generation_affix_bonuses`
 
-Frontend should use public RPCs, not internal helpers.
+New code should use `entity_bonuses` as the central relation. Legacy tables may remain only for compatibility/migration.
+
+Quality scaling:
+
+- `entity_bonuses.quality_scales_value = true` means item quality multiplier scales `value`;
+- `quality_scales_level_interval` must remain false;
+- quality never scales `level_interval`;
+- no database-level rounding is applied;
+- UI/admin preview should read active rows from `item_generation_qualities`; do not hardcode exactly three qualities.
+
+## Derived stat definitions
+
+`derived_stat_definitions` is the DB-backed semantic dictionary for runtime derived/special stats.
+
+Seeded definitions:
+
+- `health`
+- `defense`
+- `min_damage`
+- `max_damage`
+- `luck`
+- `critical_chance`
+- `evasion_chance`
+
+Resolver semantics:
+
+- `defense = endurance + active defense bonuses`;
+- `luck = active luck bonuses`, base 0 unless explicitly changed later;
+- `min_damage = strength + weapon/base min_damage + active min_damage bonuses + active damage bonuses`;
+- `max_damage = strength + weapon/base max_damage + active max_damage bonuses + active damage bonuses`;
+- `damage` target applies to both `min_damage` and `max_damage`;
+- resolver must ensure `max_damage >= min_damage`;
+- `health` may use a base health formula/fallback, then active health bonuses;
+- `critical_chance` and `evasion_chance` are additive bonus inputs for combat formulas, not necessarily whole final chances.
+
+`hero_derived` is deprecated/transitional. Do not add new dependencies on it.
 
 ---
 
-# Trade / auction configs
+# Requirements and building caps
 
-Server config keys added for trade/auction runtime:
+Central requirement foundation:
 
-- `trade_direct_offer_expiration_hours`
-- `trade_max_items_per_direct_offer`
-- `auction_duration_hours`
-- `auction_min_bid_increment_character_points`
-- `trade_active_offer_limit_fallback`
+- `requirement_definitions`
+- `entity_requirements`
 
-`trade_active_offer_limit_fallback` is temporary.
+Legacy/transitional requirement tables/fields:
 
-Final active trade/auction slot limit should come from Trade Routes/building bonus runtime.
+- `building_requirements`
+- `buildings.requirements`
+- `buildings.rank_required`
 
-Direct trade offers and active auctions currently share the active-offer slot pool unless a later explicit config changes that.
+Use central `entity_requirements`.
+
+## Requirement mutation RPCs
+
+Central entity requirement mutations are now DB/RPC-owned.
+
+Canonical RPCs:
+
+- `create_entity_requirement(p_entity_type requirement_entity_type, p_entity_id uuid, p_requirement_definition_key text, p_required_value_integer integer, p_required_value_decimal numeric, p_required_value_boolean boolean, p_required_value_text text, p_required_stat_key text, p_required_building_key text, p_required_resource_type text, p_required_district_code text, p_requirement_scope_key text, p_applies_from_level integer, p_description text, p_sort_order integer, p_reason text)`;
+- `update_entity_requirement(p_requirement_id uuid, p_requirement_definition_key text, p_required_value_integer integer, p_required_value_decimal numeric, p_required_value_boolean boolean, p_required_value_text text, p_required_stat_key text, p_required_building_key text, p_required_resource_type text, p_required_district_code text, p_requirement_scope_key text, p_applies_from_level integer, p_is_active boolean, p_description text, p_sort_order integer, p_reason text)`;
+- `deactivate_entity_requirement(p_requirement_id uuid, p_reason text)`;
+- `reorder_entity_requirements(p_entity_type requirement_entity_type, p_entity_id uuid, p_requirement_ids uuid[], p_reason text)`;
+- `validate_entity_requirement_payload(...)` is an internal/helper validation function;
+- `assert_can_manage_entity_requirements(...)` is an access/target assertion helper.
+
+Rules:
+
+- frontend must use these RPCs instead of direct writes to `entity_requirements`;
+- frontend must not use legacy `building_requirements`, `buildings.requirements`, or `buildings.rank_required` for new editor workflows;
+- requirement editor should load active `requirement_definitions` from DB;
+- UI should render fields by `requirement_definitions.value_type`;
+- preview/explainability should use `get_requirement_impact_preview(...)`.
+
+Required audit rows:
+
+- `audit_entity_types.key = entity_requirement`;
+- `config.entity_requirement.created`;
+- `config.entity_requirement.updated`;
+- `config.entity_requirement.deactivated`;
+- `config.entity_requirement.reordered`.
+
+## Building caps
+
+Building availability:
+
+- `buildings.district_code` is minimum district;
+- building is available in that district and higher districts;
+- `buildings.max_level = 0` means unlimited;
+- `building_district_level_caps` stores overrides only;
+- missing override falls back to `buildings.max_level`.
+
+Helpers:
+
+- `is_building_available_in_district(uuid, text)`;
+- `get_building_max_level_for_district(uuid, text)`.
 
 ---
 
-# Anti-abuse foundation
+# Human-readable reference search and paginated target browsers
 
-## Core tables
+Human-facing admin/staff UI must not require raw UUID entry as primary UX.
 
-Important anti-abuse tables include:
+Rules:
+
+- use DB-backed autocomplete/search/browser RPCs;
+- use `_page` variants for virtual scroll, target browsers, or empty-query lazy lists;
+- do not broad-fetch `user_data`, `hero`, `items`, case/sanction/trade/auction/admin balance tables and filter in Angular;
+- raw UUIDs/keys may be shown only as secondary technical metadata;
+- `_page` variants accept `p_limit`, `p_offset`, and return `total_count`.
+
+Known search/browser RPC families:
+
+- `search_server_staff_candidates(...)`
+- `search_server_staff_candidates_page(...)`
+- `search_moderation_user_targets(...)`
+- `search_moderation_user_targets_page(...)`
+- `search_moderation_hero_targets(...)`
+- `search_moderation_hero_targets_page(...)`
+- `search_anti_abuse_case_targets(...)`
+- `search_anti_abuse_case_targets_page(...)`
+- `search_anti_abuse_sanction_targets(...)`
+- `search_anti_abuse_sanction_targets_page(...)`
+- `search_moderation_item_targets(...)`
+- `search_moderation_item_targets_page(...)`
+- `search_trade_offer_targets(...)`
+- `search_trade_offer_targets_page(...)`
+- `search_trade_transaction_targets(...)`
+- `search_trade_transaction_targets_page(...)`
+- `search_auction_listing_targets(...)`
+- `search_auction_listing_targets_page(...)`
+- `search_config_definition_targets(...)`
+- `search_config_definition_targets_page(...)`
+- `search_balance_formula_targets(...)`
+- `search_balance_formula_targets_page(...)`
+- `search_balance_formula_target_targets(...)`
+- `search_balance_formula_target_targets_page(...)`
+- `search_building_targets(...)`
+- `search_building_targets_page(...)`
+- `search_bonus_template_targets(...)`
+- `search_bonus_template_targets_page(...)`
+- `search_requirement_definition_targets(...)`
+- `search_requirement_definition_targets_page(...)`
+- `search_item_generation_entity_targets(...)`
+- `search_item_generation_entity_targets_page(...)`
+
+---
+
+# Item generation and equipment
+
+Item generation is layered:
+
+- quality;
+- prefix;
+- base item;
+- suffix.
+
+Luck affects value buckets, prefix/suffix odds, quality odds, and limited trial-related randomness. Luck improves opportunity quality, not certainty of perfect outcomes.
+
+Important item-generation tables include:
+
+- `item_generation_qualities`
+- `item_generation_bases`
+- `item_generation_affixes`
+- `item_generation_bucket_profiles`
+- `entity_bonuses`
+
+Rules:
+
+- high economic value does not automatically mean high utility;
+- expensive “bait”/scrap-oriented affixes are allowed;
+- +Luck itemization should remain rare/elite by itemization design;
+- item quality roll is Luck-driven within the allowed max quality/reward profile; district and difficulty affect reward ranges/profiles, not direct guaranteed quality.
+
+---
+
+# Character Points, trade and auctions
+
+Character Points are stored on:
+
+- `hero.character_points`
+- `hero.total_character_points_earned`
+
+Use `character_point_ledger` for persistent balance history. Do not put Character Points in `hero_resources` or `hero_derived`.
+
+DB/RPC foundation exists for:
+
+- direct trade;
+- one-item auctions;
+- CP locks;
+- item locks;
+- transactions;
+- trade/auction anti-abuse signals/case grouping.
+
+Trade between players uses Character Points. Drachmas are vendor/system/building currency. Vendor scrap is not trade.
+
+Frontend gameplay surfaces are still pending for full trade/auction UI.
+
+---
+
+# Moderation, anti-abuse, reports and declarations
+
+## Dictionaries
+
+Active dictionary tables include:
 
 - `anti_abuse_signal_types`
-- `anti_abuse_signals`
-- `anti_abuse_cases`
-- `anti_abuse_case_signals`
-- `anti_abuse_case_participants`
-- `anti_abuse_case_declarations`
-- `anti_abuse_case_audit_logs`
 - `anti_abuse_sanction_types`
-- `anti_abuse_sanctions`
-- `anti_abuse_sanction_items`
-- `character_point_penalties`
-- `player_relationship_declaration_types`
-- `player_relationship_declarations`
-- `player_relationship_declaration_participants`
-- `player_relationship_declaration_items`
-- `player_relationship_declaration_trades`
 - `player_abuse_report_types`
-- `player_abuse_reports`
+- `player_relationship_declaration_types`
 
-## Signal types currently implemented
+Codex should load labels/descriptions/helper/admin text from DB where present and should not hardcode dictionary option lists.
 
-- `trade.high_cp_direct_trade`
-- `auction.high_cp_sale`
-- `trade.repeated_pair_transfers`
+## Anti-abuse cases and signals
 
-## Anti-abuse rules
+Anti-abuse creates signals/cases for review. It must not auto-punish.
 
-- anti-abuse signals/cases are review aids, not automatic guilt;
-- sanctions are not automatically applied by detection;
-- signals use lightweight `metadata_json`;
-- signals use `grouping_key` for case grouping;
-- automatic case creation is controlled by `anti_abuse_auto_case_creation_enabled`;
-- active cases are grouped by `server_id + grouping_key`;
-- active statuses for grouping:
-  - `open`
-  - `in_review`
-  - `waiting_for_player`
-- `resolved` and `cancelled` cases are historical and are not reopened automatically;
-- a new signal after resolved/cancelled creates a new case if auto-case is enabled;
-- signal actor/target are added as participants.
+Important DB/RPC pieces include:
 
-## Case enums
+- `anti_abuse_cases`
+- `anti_abuse_signals`
+- `anti_abuse_case_participants`
+- `anti_abuse_case_signals`
+- `create_or_link_anti_abuse_case_for_signal(...)`
+- `generate_trade_transaction_anti_abuse_signals(...)`
+- `insert_trade_transaction_anti_abuse_signal(...)`
+- `refresh_anti_abuse_case_signal_stats(...)`
+- `search_anti_abuse_case_targets(...)`
+- `search_anti_abuse_case_targets_page(...)`
 
-Known case statuses:
+## Moderation history and actions
 
-- `open`
-- `in_review`
-- `waiting_for_player`
-- `resolved`
-- `cancelled`
+Canonical read RPCs:
 
-Known verdicts:
+- `get_visible_moderation_actions(p_server_id uuid, p_target_user_id uuid, p_target_hero_id uuid)`;
+- `get_full_user_moderation_history(p_server_id uuid, p_user_id uuid)`;
+- `get_full_hero_moderation_history(p_server_id uuid, p_hero_id uuid)`;
+- `can_read_moderation_action(moderation_actions)`;
+- `can_read_full_moderation_history(p_server_id uuid)`;
+- `assert_can_read_full_moderation_history(p_server_id uuid, p_operation text)`.
 
-- `no_abuse`
-- `insufficient_evidence`
-- `abuse_confirmed`
-- `resolved_by_voluntary_return`
+Scoped moderators should use scoped visible history/search RPCs. Full history is admin/operator authority.
 
-Known sources:
+## Player abuse reports
 
-- `system_signal`
-- `player_report`
-- `manual`
+Canonical creation/decision RPCs:
 
-## Anti-abuse functions
+- `create_player_abuse_report(...)`;
+- `set_player_abuse_report_decision(...)`.
 
-Known signal/case helper functions include:
+Relevant audit actions include:
 
-- `build_anti_abuse_hero_pair_grouping_key(server_id, hero_a, hero_b)`
-- `generate_trade_transaction_anti_abuse_signals(transaction_id)`
-- `insert_trade_transaction_anti_abuse_signal(...)` internal/helper
-- `trigger_generate_trade_transaction_anti_abuse_signals()` trigger function
-- `create_or_link_anti_abuse_case_for_signal(signal_id)`
-- `trigger_create_or_link_anti_abuse_case_for_signal()` trigger function
-- `refresh_anti_abuse_case_signal_stats(case_id)` internal/helper
-- `add_anti_abuse_case_participant_if_missing(...)` internal/helper
+- `player_report.created`
+- `player_report.linked_to_case`
+- `player_report.status_changed`
+- `anti_abuse.report.decision_updated`
 
-Player report/declaration functions created earlier include:
+## Player relationship declarations
 
-- `create_player_abuse_report(...)` if present in generated types/schema;
-- declaration/report creation should prefer RPC where available.
+Relationship declarations provide anti-abuse context. They do not disable anti-abuse.
 
-Codex must inspect current generated DB types for exact signatures before calling.
+Canonical RPCs:
+
+- `create_player_relationship_declaration(p_server_id uuid, p_declaration_type_key text, p_title text, p_description text, p_created_by_hero_id uuid, p_amount_character_points integer, p_starts_at timestamptz, p_expires_at timestamptz, p_participants_json jsonb, p_items_json jsonb, p_trades_json jsonb, p_request_id text)` → `TABLE(declaration_id uuid)`;
+- `set_player_relationship_declaration_decision(p_declaration_id uuid, p_status player_relationship_declaration_status, p_status_reason text, p_admin_notes text, p_player_notes text)`.
+
+Rules:
+
+- frontend must use `create_player_relationship_declaration(...)` instead of direct inserts into declaration/participant/item/trade tables;
+- creation is audited as `anti_abuse.declaration.created`;
+- decision/update is audited as `anti_abuse.declaration.decision_updated`.
+
+Relevant audit rows:
+
+- `audit_entity_types.key = player_relationship_declaration`;
+- `audit_action_types.key = anti_abuse.declaration.created`;
+- `audit_action_types.key = anti_abuse.declaration.decision_updated`.
 
 ## Sanctions and CP penalties
 
-Sanctions are separate records linked to cases.
+Sanctions are explicit records linked to cases. A case can have multiple sanctions.
 
-A case can have multiple sanctions.
+Canonical RPCs include:
 
-Sanction status should track lifecycle such as:
+- `create_anti_abuse_sanction(...)`;
+- `set_anti_abuse_sanction_status(...)`;
+- `add_anti_abuse_sanction_item(...)`;
+- `create_character_point_penalty_for_sanction(...)` if present in current generated types/schema;
+- `set_character_point_penalty_status(...)` if present in current generated types/schema.
 
-- pending;
-- applied;
-- completed;
-- cancelled;
-- forgiven;
-- failed.
+Search/browser:
 
-CP fines should use `character_point_penalties`.
+- `search_anti_abuse_sanction_targets(...)`;
+- `search_anti_abuse_sanction_targets_page(...)`.
 
-Do not hide core sanction data in metadata JSON.
-
----
-
-# Player relationship declarations and abuse reports
-
-## Relationship declarations
-
-Used to provide context for anti-abuse review.
-
-Examples:
-
-- shared IP;
-- loan;
-- group purchase;
-- shared item pool;
-- item lending;
-- group settlement.
-
-Declaration types are dictionary/config-driven, not hardcoded.
-
-Declaration does not disable anti-abuse. It provides context for case review.
-
-## Abuse reports
-
-Player abuse reports create or link cases.
-
-Report types are dictionary/config-driven.
-
-Examples:
-
-- scam;
-- stolen item;
-- unreturned loan;
-- suspicious trade;
-- multi-accounting;
-- harassment;
-- other.
-
-Report status/reason should be visible to relevant players where allowed.
+Sanction item linking is evidence/context linking, not necessarily a true item confiscation/return workflow. True confiscation/return item movement remains a separate future domain workflow unless explicitly implemented.
 
 ---
 
 # Audit foundation
 
-Important tables include:
+Important tables:
 
 - `audit_action_types`
 - `audit_entity_types`
@@ -977,6 +609,50 @@ Good audit targets:
 
 Audit metadata should be lightweight and should not replace event/report snapshots.
 
+Critical rule:
+
+- Any new audited mutation must seed/verify `audit_action_types` and `audit_entity_types` before Codex treats it as unblocked.
+
+Current recently added/confirmed rows include:
+
+- `gameplay.stat_allocation.saved`
+- `config.entity_requirement.created`
+- `config.entity_requirement.updated`
+- `config.entity_requirement.deactivated`
+- `config.entity_requirement.reordered`
+- `anti_abuse.declaration.created`
+
+---
+
+# PvE exploration / trials / encounters — design state, not DB foundation yet
+
+The PvE exploration/trials runtime is **not yet implemented in database**. The following is current design direction for upcoming PVE-DB work and must not be treated as existing schema.
+
+Current design decisions:
+
+- PvE is exploration plus trials, not classic monster hunt wording.
+- Exploration is per hero/server and should produce a daily map/graph for the hero.
+- Daily limit applies to trials, not raw movement steps.
+- Premium increases number of attempts, not quality of outcomes.
+- Step flow: trial opportunity check first; if no trial opportunity, then encounter or nothing.
+- Encounter and trial cannot happen on the same step.
+- Trial flow: opportunity → equal random active trial selection → manifestation → minigame completion.
+- Dry step count affects only trial opportunity and resets after any trial opportunity attempt, even if manifestation fails.
+- All active trial definitions are equal in selection; no trial weights.
+- Each base stat should eventually have its own trial definition/archetype.
+- Trial definition points to a `minigame_key`; minigame interprets difficulty.
+- Difficulty tiers are `easy`, `medium`, `hard` and are one source of truth for global difficulty semantics.
+- Encounter types are `combat`, `resource`, `buff`, `debuff`; `nothing` is a step outcome, not an encounter definition.
+- Encounter definitions are configurable and may have multiple description variants.
+- Encounter selection is equal among active/qualified definitions; no weights at the current design stage.
+- Buff/debuff: only one active exploration effect at a time; buff/debuff encounters are excluded if an active effect exists; active effect expires on trial or combat encounter, not on resource/nothing.
+- Manifestation caps are flat profile values by `difficulty × district`, not complex formulas.
+- Trial reward item count ranges are intended to be profile values by `difficulty × district`.
+- Item quality remains Luck-driven within allowed caps/profiles; district/difficulty influence ranges/profiles and reward count, not guaranteed item quality.
+- Exploration graph/current-state model is still under discussion. Current direction: minimal `hero_explorations` record, nodes, edges, steps, counters/effects, avoiding duplicated state.
+
+Future PVE DB work should follow the ongoing A–I plan in `current-decisions.md` before writing migrations.
+
 ---
 
 # Reports and snapshots
@@ -990,7 +666,7 @@ Future report/snapshot system should support:
 - PvP combat reports;
 - siege reports.
 
-Rule:
+Rules:
 
 - public report reproduces the event view using historical snapshot data;
 - it must not recalculate from current live state;
@@ -1071,7 +747,7 @@ Legacy/transitional:
 - `buildings.requirements`
 - `buildings.rank_required`
 
-Use central `entity_requirements`.
+Use central `entity_requirements` and mutation RPCs.
 
 ## Trade active slot fallback
 
@@ -1089,333 +765,25 @@ Vendor scrap gives drachmas and does not use Character Points.
 
 # Current completed database/runtime foundations
 
-The following foundations were designed and rollback-tested in SQL editor:
+The following foundations have current DB/RPC coverage or accepted DB direction:
 
+- server/world/account/hero identity model;
+- staff access and server-scoped staff assignments;
+- config governance scalar/json change set workflow;
+- formula governance foundation;
 - item ownership / lifecycle foundation;
 - Character Points balance and ledger foundation;
+- stat allocation transactional save RPC;
 - direct trade schema and RPC runtime;
 - auction schema and RPC runtime;
 - trade/auction anti-abuse signal generation;
 - automatic anti-abuse case grouping;
-- requirements foundation and building district cap overrides;
-- bonus dictionary/entity bonus foundation and legacy bonus backfill.
+- moderation read/scope contracts;
+- player abuse report create/decision flows;
+- player relationship declaration create/decision flows;
+- sanctions, sanction item linking, CP penalties foundation;
+- requirements foundation, requirement mutation RPCs and building district cap overrides;
+- bonus dictionary/entity bonus foundation and legacy bonus backfill;
+- human-readable reference search and paginated target browser RPCs.
 
 Codex must regenerate database types after schema changes before implementing affected frontend/domain code.
-
----
-
-## Update 2026-04-29 — U0 staff candidate search and UX explainability DB contracts
-
-This section documents the DB/RPC contracts added after the U0 sanction/access work, so Codex can build staff-management and admin explainability UI without client-side broad reads or hardcoded labels.
-
-### Staff candidate search RPC
-
-`search_server_staff_candidates(p_server_id uuid, p_query text, p_limit integer)` is the canonical DB-side read model for user/staff candidate search in staff management UI.
-
-Purpose:
-
-- replace frontend fetching broad `user_data` pools and filtering client-side;
-- avoid Angular reads from `auth.users`;
-- keep candidate search server-scoped;
-- expose only limited fields needed for staff assignment UI;
-- return DB-computed eligibility flags using the same DB-side rules as staff assignment.
-
-Return model includes:
-
-- `user_id`
-- `display_name`
-- `email`
-- `global_role_key`
-- `existing_staff_assignment_id`
-- `existing_staff_role`
-- `has_hero_on_server`
-- `has_staff_disqualifying_history`
-- `is_existing_staff_on_server`
-- `is_eligible_for_server_staff`
-- `eligibility_reason`
-
-Rules:
-
-- requires `can_manage_server_staff(p_server_id)`;
-- does not read `auth.users`;
-- does not return broad unfiltered results;
-- short/empty search queries should not become a broad user list;
-- frontend should map `eligibility_reason` through DB metadata / human-readable UI, not display raw keys as primary text.
-
-
-### Moderation target search RPCs
-
-U0-I9 moderation history/action UI must not require humans to type raw UUIDs for account/user or hero targets. The database now provides canonical server-scoped target-search RPCs for autocomplete/lazy target pickers.
-
-Contracts:
-
-- `can_search_moderation_targets(p_server_id uuid)` -> boolean. Returns whether the current authenticated user may use moderation target search for the server.
-- `search_moderation_user_targets(p_server_id uuid, p_query text, p_limit integer)` -> table with:
-  - `user_id`
-  - `display_name`
-  - `email`
-  - `primary_hero_id`
-  - `primary_hero_name`
-  - `has_visible_moderation_history`
-  - `match_kind`
-  - `technical_label`
-- `search_moderation_hero_targets(p_server_id uuid, p_query text, p_limit integer)` -> table with:
-  - `hero_id`
-  - `hero_name`
-  - `user_id`
-  - `user_display_name`
-  - `email`
-  - `has_visible_moderation_history`
-  - `match_kind`
-  - `technical_label`
-
-Rules:
-
-- these RPCs are for moderation action/history target pickers, not staff assignment;
-- `search_server_staff_candidates(...)` remains staff-management-only and must not be reused for moderation target search;
-- no frontend read from `auth.users`;
-- no broad client-side fetch from `user_data` or `hero`;
-- queries are server-scoped;
-- empty or too-short queries return no broad result set;
-- minimum query length is 2 characters unless query is UUID-like;
-- primary UI labels should use `display_name`, `primary_hero_name`, `hero_name`, and `user_display_name`;
-- UUIDs belong in secondary technical metadata only;
-- `email` may be null for scoped moderators because email search/return requires full-history authority;
-- `has_visible_moderation_history` is actor-visible history only, not a full hidden-history indicator.
-
-Known eligibility reason keys:
-
-- `already_staff_on_server`
-- `staff_disqualifying_history`
-- `has_hero_on_standard_server`
-
-### UI metadata registry
-
-`ui_metadata_entries` is the canonical DB-backed metadata registry for enum-like keys, reason keys, config scope names, preview kinds and other technical values that may appear in admin/staff/config UI.
-
-Core columns:
-
-- `namespace`
-- `key`
-- `label`
-- `description`
-- `helper_text`
-- `impact_summary`
-- `warning_text`
-- `ui_group_key`
-- `ui_group_label`
-- `sort_order`
-- `is_active`
-- `metadata_json`
-
-Canonical read RPC:
-
-- `get_ui_metadata_entries(p_namespace text, p_keys text[], p_include_inactive boolean)` → returns `ui_metadata_entries`.
-
-Current seeded namespaces include:
-
-- `config_governance_scope`
-- `config_change_kind`
-- `config_change_status`
-- `config_change_visibility`
-- `config_value_type`
-- `server_config_value_source`
-- `gameplay_block_reason`
-- `staff_candidate_eligibility_reason`
-- `ui_preview_kind`
-- `config_managed_entity_type`
-- `config_applies_to_kind`
-- `config_effective_value_source`
-
-Rules:
-
-- frontend should use this registry instead of hardcoding configurable enum/key labels;
-- raw technical keys may be visible as secondary metadata, but must not be the only explanation when metadata exists;
-- `metadata_json` must remain lightweight and must not replace relational domain systems;
-- labels/descriptions seeded during this work may be Polish-first until a proper localization layer exists.
-
-### Config definition UI metadata
-
-`config_definition_ui_metadata` stores per-config-definition admin explainability metadata.
-
-Purpose:
-
-- avoid hardcoding config helper text and impact descriptions in Angular;
-- describe the admin/operator meaning of a concrete `config_definitions` row;
-- tell UI which preview family to use;
-- group config definitions for readable admin panels.
-
-Core columns:
-
-- `config_definition_id`
-- `admin_label_override`
-- `admin_description_override`
-- `helper_text`
-- `gameplay_impact_summary`
-- `change_warning`
-- `preview_kind`
-- `ui_group_key`
-- `ui_group_label`
-- `sort_order`
-- `metadata_json`
-
-Canonical read RPC:
-
-- `get_config_definition_ui_metadata(p_config_definition_id uuid, p_managed_entity_key text, p_include_inactive boolean)`.
-
-Current preview kind keys include:
-
-- `none`
-- `scalar`
-- `json`
-- `formula`
-- `item_quality`
-- `building_progression`
-- `bonus`
-- `requirement`
-- `anti_abuse_threshold`
-
-### Canonical config explainability read model
-
-`get_config_definition_explainability(p_server_id uuid, p_managed_entity_key text, p_include_inactive boolean)` is the canonical DB-backed read model for config governance explainability UI.
-
-It combines:
-
-- `config_definitions`;
-- `config_definition_ui_metadata`;
-- UI metadata for managed entity type, governance scope, value type, preview kind, applies-to kind, effective value source and expected change kind;
-- effective scalar/json value where applicable;
-- source explanation for server/global/default/missing values;
-- expected change kind for UI/workflow guidance.
-
-Frontend should use this read model for config definitions/change-entry explainability instead of reconstructing scope semantics through Angular switch statements.
-
-Important semantics:
-
-- `server_required` means selected server context is required before showing an effective server-scoped value;
-- `not_value_config` means the definition governs a relational system and should use a dedicated read model/preview instead of pretending to be a scalar/json value;
-- `selected_server_id` is populated only for server-scoped applies-to kinds when a server id was supplied.
-
-### Admin preview input contracts
-
-`get_admin_preview_contracts()` lists canonical preview contract names for UI routing.
-
-Current preview contract RPCs:
-
-- `get_item_quality_impact_preview(p_base_value numeric, p_bonus_value numeric)`
-- `get_building_progression_preview(p_building_id uuid, p_district_code text, p_from_level integer, p_to_level integer)`
-- `get_bonus_impact_preview(p_entity_type text, p_entity_id uuid, p_quality_key text)`
-- `get_requirement_impact_preview(p_entity_type requirement_entity_type, p_entity_id uuid)`
-
-Rules:
-
-- item quality preview reads active `item_generation_qualities`; UI must not hardcode quality rows;
-- bonus preview joins semantic `bonus_templates`, bonus dictionaries and `entity_bonuses`;
-- bonus quality scaling applies only to value when `quality_scales_value = true`;
-- quality never scales `level_interval`;
-- building preview shows district availability, effective cap, cap source and `0 = unlimited` semantics;
-- requirement preview uses central `requirement_definitions` and `entity_requirements`, not legacy `building_requirements` or `buildings.requirements` JSON.
-
-### Codex implications
-
-For UX/admin/config explainability work, Codex must:
-
-- use `get_ui_metadata_entries(...)` for key/enum/reason labels when available;
-- use `get_config_definition_explainability(...)` for config governance screens;
-- use `get_config_definition_ui_metadata(...)` when only per-definition metadata is needed;
-- use `get_admin_preview_contracts()` and the preview RPCs above for preview input data;
-- not hardcode gameplay/config dictionaries in Angular when DB metadata exists;
-- keep raw keys as secondary technical metadata only;
-- keep JSON collapsed/constrained and never as the only explanation;
-- regenerate `database.types.ts` after these schema/RPC changes before implementing affected frontend work.
-
----
-
-## Update 2026-04-29 — human-readable reference search and paginated target browser contracts
-
-Human-facing admin/staff/moderation/config UI must not require users to type raw UUIDs as the primary workflow for selecting accounts, heroes, items, cases, sanctions, trade offers, auctions, formulas, buildings, config definitions, bonus templates or requirements.
-
-Raw UUIDs may remain visible as secondary technical metadata, but primary UI should show names, titles, labels, statuses and contextual descriptions from DB-backed read models.
-
-### General search contract rule
-
-For human-readable reference selection, the database now provides two related RPC families:
-
-- lightweight autocomplete/search RPCs named `search_*_targets(...)`;
-- paginated target-browser/virtual-scroll RPCs named `search_*_targets_page(...)`.
-
-New UI should prefer `_page` variants whenever it needs lazy lists, target browsers, virtual scroll, or an initial browse view. Autocomplete-only UI may use either the lightweight variant or the `_page` variant with `p_offset = 0`.
-
-Page variant standard:
-
-- `p_query text` may be null/empty for browse mode;
-- `p_limit integer` is capped DB-side, currently max 50;
-- `p_offset integer` enables backend pagination;
-- every `_page` result includes `total_count bigint`;
-- empty query must never cause a broad frontend fetch; it is a backend-paginated browse.
-
-All these RPCs avoid frontend reads from `auth.users`. They expose only fields needed for the specific admin/staff workflow, using `user_data`, `hero`, domain tables and DB permission helpers.
-
-### Current reference-search families
-
-Staff candidate search:
-
-- `search_server_staff_candidates(p_server_id uuid, p_query text, p_limit integer)`;
-- `search_server_staff_candidates_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`.
-
-Moderation user/hero target search:
-
-- `can_search_moderation_targets(p_server_id uuid)`;
-- `search_moderation_user_targets(p_server_id uuid, p_query text, p_limit integer)`;
-- `search_moderation_hero_targets(p_server_id uuid, p_query text, p_limit integer)`;
-- `search_moderation_user_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`;
-- `search_moderation_hero_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`.
-
-Anti-abuse/moderation reference search:
-
-- `search_anti_abuse_case_targets(p_server_id uuid, p_query text, p_limit integer)`;
-- `search_anti_abuse_sanction_targets(p_server_id uuid, p_query text, p_limit integer)`;
-- `search_moderation_item_targets(p_server_id uuid, p_query text, p_limit integer)`;
-- `search_anti_abuse_case_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`;
-- `search_anti_abuse_sanction_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`;
-- `search_moderation_item_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`.
-
-Trade / auction / economy reference search:
-
-- `search_trade_offer_targets(p_server_id uuid, p_query text, p_limit integer)`;
-- `search_trade_transaction_targets(p_server_id uuid, p_query text, p_limit integer)`;
-- `search_auction_listing_targets(p_server_id uuid, p_query text, p_limit integer)`;
-- `search_trade_offer_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`;
-- `search_trade_transaction_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`;
-- `search_auction_listing_targets_page(p_server_id uuid, p_query text, p_limit integer, p_offset integer)`.
-
-Admin/config/balance reference search:
-
-- `can_search_admin_balance_references()`;
-- `search_config_definition_targets(p_query text, p_limit integer)`;
-- `search_balance_formula_targets(p_query text, p_limit integer)`;
-- `search_balance_formula_target_targets(p_query text, p_limit integer)`;
-- `search_building_targets(p_query text, p_limit integer)`;
-- `search_bonus_template_targets(p_query text, p_limit integer)`;
-- `search_requirement_definition_targets(p_query text, p_limit integer)`;
-- `search_item_generation_entity_targets(p_entity_type config_managed_entity_type, p_query text, p_limit integer)`;
-- `search_config_definition_targets_page(p_query text, p_limit integer, p_offset integer)`;
-- `search_balance_formula_targets_page(p_query text, p_limit integer, p_offset integer)`;
-- `search_balance_formula_target_targets_page(p_query text, p_limit integer, p_offset integer)`;
-- `search_building_targets_page(p_query text, p_limit integer, p_offset integer)`;
-- `search_bonus_template_targets_page(p_query text, p_limit integer, p_offset integer)`;
-- `search_requirement_definition_targets_page(p_query text, p_limit integer, p_offset integer)`;
-- `search_item_generation_entity_targets_page(p_entity_type config_managed_entity_type, p_query text, p_limit integer, p_offset integer)`.
-
-### Rules and Codex implications
-
-- `search_server_staff_candidates(...)` is staff-management-only and must not be reused for moderation target search.
-- Moderation target search is server-scoped and requires `can_search_moderation_targets(p_server_id)`.
-- Email fields are optional; email search/return is limited to full-history authority where the RPC enforces it.
-- Admin/config/balance search is for admin tooling, not player UI, and requires `can_search_admin_balance_references()`.
-- Use names/titles/labels as primary UI labels and UUIDs only as optional technical metadata.
-- Use `_page` variants for virtual scroll, lazy loading, target browsers, or empty-query browse mode.
-- Treat `total_count` as the backend count of matches for the current query and permissions.
-- Do not implement broad client-side reads from `user_data`, `hero`, `items`, case/sanction/trade/auction tables or admin balance dictionaries for human-facing selectors.
-- After these schema/RPC changes, regenerate `database.types.ts` before implementing affected frontend work.
-

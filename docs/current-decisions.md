@@ -1867,122 +1867,126 @@ Before implementing U0/H frontend tasks, Codex must:
 
 ---
 
-## Anti-abuse decision explainability
+## Update 2026-04-30 — DB/RPC preflight, G6, H coverage and PvE planning
 
-Future anti-abuse case, sanction, declaration and report UI should separate staff-facing decision context from player-facing status views.
+### DB/RPC preflight discipline
 
-Rules:
+Before Codex starts a task that mutates persistent state or writes audit, perform a focused DB preflight for that task:
 
-- sanction/report/declaration/signal type labels, descriptions, helper text and admin descriptions come from DB dictionary tables where available;
-- anti-abuse enum status labels in Angular are fallback labels only, not DB-backed explainability;
-- technical keys may remain visible as secondary metadata, not primary explanation;
-- player-facing projections must not expose staff-only `operatorNotes`, `adminNotes`, `adminDescription` or staff-only `statusReason`;
-- player-facing copy should prefer explicitly player-visible notes/text, or show no reason when the stored reason is not known to be player-safe;
-- staff-facing decision views should show reason/status reason prominently and require reason/status reason before calling audited workflow RPCs;
-- sanction item links are evidence/context links and do not confiscate, transfer or mutate the item by themselves.
+- required RPC/domain operation exists in live DB and generated `database.types.ts`;
+- frontend is not expected to direct-write critical tables;
+- required dictionary rows exist and are active;
+- required `audit_action_types` and `audit_entity_types` rows exist and are active;
+- search/list UI has a DB-backed read model and does not require broad frontend fetches.
 
----
+This is now an active implementation rule. Do not rely on backlog presence alone as proof that the database contract is complete.
 
-## DB-backed UI explainability metadata
+### G6 stat allocation save
 
-Admin/staff/config UI must not rely on raw keys or JSON as the only visible explanation when DB metadata exists.
+Stat allocation save is a critical gameplay mutation and should be one database-owned workflow.
 
-Current decision:
+Current repository dump status:
 
-- technical keys remain stable and may be shown as secondary metadata;
-- primary labels, descriptions, helper text, impact summaries and warnings should come from DB-backed metadata where available;
-- Angular should not create permanent hardcoded dictionaries for configurable gameplay/config values when the database exposes a dictionary/read model;
-- `metadata_json` remains lightweight and must not replace relational domain systems.
-
-Canonical metadata contracts:
-
-- `ui_metadata_entries`
-- `get_ui_metadata_entries(...)`
-
-Seeded metadata namespaces include config governance scopes, config change kinds/statuses/visibility, value types, server config sources, gameplay block reasons, staff candidate eligibility reasons, preview kinds, config managed entity types, applies-to kinds and effective value sources.
-
-## Config definition explainability
-
-`config_definition_ui_metadata` is the per-config-definition UI metadata layer.
-
-It stores admin-facing helper text, gameplay impact summary, change warning, preview kind and grouping.
-
-Canonical read contracts:
-
-- `get_config_definition_ui_metadata(...)`
-- `get_config_definition_explainability(...)`
-
-Rules:
-
-- config governance screens should use `get_config_definition_explainability(...)` instead of reconstructing governance semantics in frontend switch statements;
-- `server_required` means a selected server is needed before showing the effective server-scoped value;
-- `not_value_config` means the definition governs a relational system and should use a dedicated read/preview model instead of scalar/json config editing;
-- target/scope in config change entry UI should be derived from DB definition metadata and explained, not presented as a fake editable choice.
-
-## Admin preview contracts
-
-Canonical preview registry:
-
-- `get_admin_preview_contracts()`.
-
-Canonical preview RPCs:
-
-- `get_item_quality_impact_preview(...)`
-- `get_building_progression_preview(...)`
-- `get_bonus_impact_preview(...)`
-- `get_requirement_impact_preview(...)`
-
-Rules:
-
-- item quality preview reads `item_generation_qualities`; do not hardcode exactly three quality rows;
-- building preview explains district availability, effective caps and `0 = unlimited`;
-- bonus preview uses semantic bonus dictionaries and `entity_bonuses`;
-- quality may scale bonus value only when `quality_scales_value = true`;
-- quality never scales `level_interval`;
-- requirement preview uses `requirement_definitions` and `entity_requirements`, not legacy requirements JSON.
-- Buildings admin central requirement editing uses canonical RPCs only: `create_entity_requirement(...)`, `update_entity_requirement(...)`, `deactivate_entity_requirement(...)`, `reorder_entity_requirements(...)` and `get_requirement_impact_preview(...)`.
-- Requirement create/update payloads must be `value_type` aware. Frontend must send only fields relevant to the selected `requirement_definitions.value_type` and must not pass through unrelated technical defaults from preview rows.
-- Reactivating a requirement is allowed through `update_entity_requirement(..., p_is_active = true, ...)` when `get_requirement_impact_preview(...)` returns inactive rows. Do not add direct reads from `entity_requirements` to recover inactive rows.
-- Required audit action type keys for central requirement editing are `config.entity_requirement.created`, `config.entity_requirement.updated`, `config.entity_requirement.deactivated` and `config.entity_requirement.reordered`.
-
-## Staff candidate search read model
-
-`search_server_staff_candidates(...)` is the canonical server-scoped staff candidate search RPC.
-
-Rules:
-
-- frontend must not fetch broad `user_data` pools and filter up to large limits client-side for staff candidate search;
-- frontend must not read `auth.users` directly;
-- staff candidate eligibility flags should come from DB-side read model/helper logic;
-- eligibility reasons should be displayed through human-readable DB metadata, not raw keys as primary text.
-
-## Localization note for future design
-
-Language should eventually be supported at two levels:
-
-- server default language;
-- private account/user language preference.
-
-This is a remembered future-design note, not a requirement to implement localization in the current DB explainability slice.
-
----
-
-## Human-readable reference selection and paginated target browsers
-
-Human-facing admin/staff/moderation/config workflows should not require raw UUID entry as the primary UX for selecting domain objects.
-
-This applies to accounts/users, heroes, items, anti-abuse cases, sanctions, trade offers, trade/auction transactions, auction listings, config definitions, formulas, formula targets, buildings, bonus templates, requirement definitions and item-generation entities.
+- the currently available `mythborne_schema.sql` does not contain `save_stat_allocation(...)`;
+- the currently available dump does not contain `gameplay.stat_allocation.saved`;
+- generated types/schema, not this decision log, decide whether Codex may call a given RPC.
 
 Decision:
 
-- raw UUID may remain visible as secondary technical metadata;
-- primary UI should use human-readable names, labels, titles, statuses and contextual descriptions;
-- frontend must use DB-backed search/browser RPCs where available instead of broad client-side fetches;
-- target browsers and virtual-scroll lists must use backend pagination, not local filtering over a broad dataset;
-- `_page` search RPC variants are canonical for lazy lists, target browsers and virtual-scroll UI because they include `p_offset` and `total_count`;
-- non-page `search_*_targets(...)` RPCs may remain useful for autocomplete-only flows, but new work should prefer `_page` variants when a browser/list is possible;
-- frontend must not read `auth.users` for these selectors;
-- server-scoped selectors must keep server context explicit;
-- permission helpers and RPC-specific authority rules remain the backend source of truth.
+- frontend must not treat separate `hero_stats` update + Character Points update + audit write as the final architecture;
+- expected target is a transactional RPC such as `save_stat_allocation(...)`, but it is a DB blocker until present in schema/types;
+- if the live DB has already received this migration, refresh the repository dump and generated types before Codex relies on it.
 
-This is an active implementation rule, not a post-MVP cleanup item. It should be applied whenever a UI asks a human to choose an object that has a human-readable label/name/title.
+Future possible improvement:
+
+- DB-side `calculate_stat_allocation_cost(...)` / formula-backed stat allocation cost resolver.
+
+### Requirement editor DB path
+
+Central requirements are not only a preview/read system. The target architecture needs a canonical mutation path for `entity_requirements`.
+
+Current repository dump status:
+
+- central tables and preview exist: `requirement_definitions`, `entity_requirements`, `get_requirement_impact_preview(...)`;
+- planned mutation RPCs such as `create_entity_requirement(...)`, `update_entity_requirement(...)`, `deactivate_entity_requirement(...)`, and `reorder_entity_requirements(...)` are not present in the currently available `mythborne_schema.sql`.
+
+Decision:
+
+- requirement editor must use DB-backed `requirement_definitions` as the requirement type dictionary;
+- requirement editor must not use legacy `building_requirements`, `buildings.requirements`, or `buildings.rank_required`;
+- if mutation RPCs are not present in schema/types, Codex must report a DB blocker instead of direct-writing `entity_requirements`.
+
+### Relationship declaration DB path
+
+Player relationship declarations provide anti-abuse context and should be created through a canonical DB workflow.
+
+Current repository dump status:
+
+- decision/status RPC exists: `set_player_relationship_declaration_decision(...)`;
+- the currently available `mythborne_schema.sql` does not contain `create_player_relationship_declaration(...)`.
+
+Decision:
+
+- frontend must not treat direct inserts into declaration/participant/item/trade reference tables as the target architecture;
+- declaration creation remains DB-blocked until the create RPC is present in schema/types;
+- if the live DB already has this RPC, refresh the repository dump and generated types before documenting it as current.
+
+### H preflight status
+
+Current H-family DB preflight is partially green for read/dictionary/decision scope, with creation/mutation caveats below:
+
+- dictionary rows exist for anti-abuse signal types, sanction types, player report types, and relationship declaration types;
+- report creation/decision flows exist;
+- relationship declaration decision flow exists; creation flow is blocked unless `create_player_relationship_declaration(...)` is present in current schema/types;
+- case/sanction target search and paginated browser RPCs exist;
+- moderation visible/full history read RPCs exist;
+- known audit dictionary rows exist for currently identified H workflows.
+
+If a future H task adds a new mutating workflow or a new aggregate read model, it still needs its own focused preflight.
+
+### PvE exploration/trials decisions so far
+
+The PvE foundation is being planned before migration. Current decisions:
+
+- PvE is exploration plus trials, not classic “monster hunt” terminology.
+- Daily limit applies to trials, not raw movement steps.
+- Premium increases number of attempts, not quality of trial or drop outcome.
+- Step flow: trial opportunity check first; if no trial opportunity, encounter-or-nothing is checked.
+- Encounter and trial never happen at the same step.
+- Trial flow: opportunity → equal random active trial selection → manifestation → minigame completion.
+- All active trial definitions are selected equally; no trial weights.
+- Dry step count affects trial opportunity only and resets after any trial opportunity attempt, even if manifestation fails.
+- Each base stat should have its own trial definition/archetype.
+- Trial definition points to `minigame_key`; minigame interprets difficulty.
+- Difficulty tiers are `easy`, `medium`, `hard` and are one source of truth for difficulty semantics.
+- Encounter types are `combat`, `resource`, `buff`, `debuff`; `nothing` is a step outcome, not an encounter definition.
+- Encounter definitions are configurable and can have multiple lore/description variants.
+- Encounter selection has no weights at current design stage; selection is equal among active qualified definitions.
+- Buff/debuff does not stack. If an active exploration effect exists, buff/debuff encounters are not eligible. Active effect expires on trial or combat encounter, not resource/nothing.
+- Trial manifestation caps are flat values by `difficulty × district`, not complex formulas.
+- Trial reward item counts are planned as ranges by `difficulty × district`.
+- Item quality remains Luck-driven within allowed caps/profiles. District/difficulty affect reward ranges/profiles/counts, not guaranteed quality.
+- Daily trial count is a critical product-level balance decision and should not be casually changed by live server operators.
+- Exploration graph/current-state model is still being refined; current direction is minimal `hero_explorations` plus nodes/edges/steps/counters/effects, avoiding duplicated state.
+
+### Future content/localization decision
+
+Database-seeded text/content such as descriptions, helper text, encounter/trial lore variants and system messages should eventually be editable, localizable, and reviewable. Do not assume all user-facing content can live permanently only in migrations.
+
+### UX note carried forward
+
+The admin section currently described as “Saved canonical bonus impact” is valid as a DB-backed saved-state preview, but the UI should eventually use human-readable language and likely be collapsed/lightened so it does not look like a technical debug panel.
+
+---
+
+## Future notes / memory notes
+
+- Language should be supported at two levels later: a default language for a server/world and a private language preference for each account/user.
+- Daily trial count is a critical product-level balance decision. It should require broad acceptance and must not be casually changed by live-server operators.
+- Database-backed text/content such as descriptions, helper text, encounter/trial lore variants, and system messages should eventually be editable, localizable, and reviewable. Migrations may seed initial content, but permanent hardcoded content is not the long-term direction.
+- Admin/test override should eventually cover daily attempt pools in a reusable way: daily trials first, later daily PvP attacks.
+- The intermediate item quality display name is still open. Current `Quality` is not good enough as a final user-facing label; regular/normal may remain hidden as a displayed quality, and `Outstanding` remains the highest tier.
+- Bonus/admin UX note: saved DB-backed bonus impact preview is useful, but should be renamed in human language and likely collapsed/lightened so it does not look like a technical debug panel.
+- Every new audit-writing workflow must preflight `audit_action_types` and `audit_entity_types`.
+- Future stat allocation work may need DB-side `calculate_stat_allocation_cost(...)` or a formula-backed cost resolver.
+

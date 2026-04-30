@@ -1066,6 +1066,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H5 — Case detail aggregation service
 
+**Status:** Done / confirmed 2026-04-30.
+
 **Goal:** Load all linked case data.
 
 **Scope:**
