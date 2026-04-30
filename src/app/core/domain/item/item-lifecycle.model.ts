@@ -34,8 +34,8 @@ export interface SearchRecoverableScrappedItemsInput {
 export interface ItemLifecycleOperationResult {
   itemId: string;
   status: ItemStatus;
-  scrappedAt: string;
-  recoverableUntil: string;
+  scrappedAt: string | null;
+  recoverableUntil: string | null;
   auditLogId: string;
 }
 

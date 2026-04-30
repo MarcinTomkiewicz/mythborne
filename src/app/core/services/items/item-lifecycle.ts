@@ -9,9 +9,8 @@ import {
   ScrapHeroItemInput,
 } from '../../domain/item/item-lifecycle.model';
 import {
-  RecoverScrappedItemRpcRow,
+  ItemLifecycleOperationRpcRow,
   SearchRecoverableScrappedItemsPageRpcRow,
-  ScrapHeroItemRpcRow,
 } from '../../types/item-lifecycle-rpc.types';
 import {
   mapItemLifecycleOperationResult,
@@ -28,7 +27,7 @@ export class ItemLifecycleService {
 
   scrapHeroItem(input: ScrapHeroItemInput): Observable<ItemLifecycleOperationResult> {
     return this.backend
-      .rpc<ScrapHeroItemRpcRow[]>(
+      .rpc<ItemLifecycleOperationRpcRow[]>(
         RPC.scrap_hero_item,
         toScrapHeroItemRpcArgs(input),
       )
@@ -50,7 +49,7 @@ export class ItemLifecycleService {
     input: RecoverScrappedItemInput,
   ): Observable<ItemLifecycleOperationResult> {
     return this.backend
-      .rpc<RecoverScrappedItemRpcRow[]>(
+      .rpc<ItemLifecycleOperationRpcRow[]>(
         RPC.recover_scrapped_item,
         toRecoverScrappedItemRpcArgs(input),
       )

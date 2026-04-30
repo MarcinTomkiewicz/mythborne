@@ -1282,6 +1282,8 @@ Status: completed and accepted on 2026-04-30.
 
 ## Task I4 — Staff item recovery operation
 
+Status: completed and accepted on 2026-04-30.
+
 **Goal:** Allow recovery for anti-abuse cases later.
 
 **Scope:**
@@ -1291,6 +1293,7 @@ Status: completed and accepted on 2026-04-30.
 
 **Acceptance criteria:**
 - Staff can recover relevant scrapped item when linked to case/sanction.
+- Implementation note: added core item lifecycle recovery/search support around canonical `recover_scrapped_item` and `search_recoverable_scrapped_items_page` RPCs. `ItemLifecycleService` does not direct-write or direct-delete `items`; recovery results allow `status = active` with `scrappedAt` and `recoverableUntil` cleared to `null`, matching DB workflow semantics. I4 is service/model/mapper-only, so manual UI smoke is not applicable; full staff recovery UI smoke is deferred to a later UI task with real staff data.
 
 ---
 

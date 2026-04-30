@@ -76,7 +76,7 @@ describe('ItemLifecycleService', () => {
   });
 
   it('recovers scrapped items through the canonical lifecycle RPC', async () => {
-    backend.rpc.and.returnValue(of([resultRow('item-1')]));
+    backend.rpc.and.returnValue(of([recoveryResultRow('item-1')]));
 
     const result = await firstValueFrom(
       service.recoverScrappedItem({
@@ -93,6 +93,9 @@ describe('ItemLifecycleService', () => {
     });
     expect(backend.delete).not.toHaveBeenCalled();
     expect(result.itemId).toBe('item-1');
+    expect(result.status).toBe('active');
+    expect(result.scrappedAt).toBeNull();
+    expect(result.recoverableUntil).toBeNull();
   });
 });
 
@@ -103,6 +106,16 @@ function resultRow(itemId: string) {
     scrapped_at: '2026-04-30T10:00:00.000Z',
     recoverable_until: '2026-05-07T10:00:00.000Z',
     audit_log_id: 'audit-1',
+  };
+}
+
+function recoveryResultRow(itemId: string) {
+  return {
+    item_id: itemId,
+    status: 'active' as const,
+    scrapped_at: null,
+    recoverable_until: null,
+    audit_log_id: 'audit-2',
   };
 }
 

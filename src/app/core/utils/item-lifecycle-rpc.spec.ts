@@ -42,6 +42,24 @@ describe('item lifecycle rpc mappers', () => {
     });
   });
 
+  it('maps recovery result rows with cleared lifecycle timestamps', () => {
+    expect(
+      mapItemLifecycleOperationResult({
+        item_id: 'item-1',
+        status: 'active',
+        scrapped_at: null,
+        recoverable_until: null,
+        audit_log_id: 'audit-2',
+      }),
+    ).toEqual({
+      itemId: 'item-1',
+      status: 'active',
+      scrappedAt: null,
+      recoverableUntil: null,
+      auditLogId: 'audit-2',
+    });
+  });
+
   it('maps recovery workflow args', () => {
     expect(
       toRecoverScrappedItemRpcArgs({
