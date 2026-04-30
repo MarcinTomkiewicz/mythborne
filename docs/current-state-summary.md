@@ -450,6 +450,9 @@ Still pending at the gameplay level even if partially supported in schema:
 - H7 accepted on 2026-04-30: player relationship declaration submission now uses the canonical `create_player_relationship_declaration(...)` RPC through a focused service and payload mapper.
 - H7 sends top-level generated RPC args as `p_*` fields, while nested participants/items/trades JSON uses the camelCase keys expected by the DB workflow. Empty optional linked rows are filtered out, item/trade role keys default to `related`, and negative `amountCharacterPoints` is rejected before RPC.
 - H7 does not direct-read or direct-write `player_relationship_declarations` or child declaration tables from the frontend. It is a service-only slice with no meaningful UI smoke path; technical verification covered mapper payloads, service RPC-only submission, `npx tsc --noEmit`, targeted specs and `npm run build`.
+- H8 accepted on 2026-04-30 as a service/read-model slice: player relationship declaration list loading now requires `serverId`, `heroId` and `userId`, and combines own declarations, hero participant declarations and user-only participant declarations.
+- H8 keeps the final declaration list server-scoped by reloading participant-linked declarations with `serverId + id IN (...)`, loads referenced inactive/deprecated declaration type labels from DB, and exposes a player-facing model without `userId`, `adminNotes`, `adminDescription` or staff-only `statusReason`.
+- H8 is not a UI slice yet, so there is no meaningful manual UI smoke path. Technical verification covered service and mapper specs for user-only participants, cross-server leakage prevention, inactive type labels, staff-only field privacy, `npx tsc --noEmit` and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

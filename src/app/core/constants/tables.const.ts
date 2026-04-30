@@ -63,6 +63,10 @@ export const TABLES = {
   character_point_penalties: 'character_point_penalties',
   player_abuse_reports: 'player_abuse_reports',
   player_abuse_report_types: 'player_abuse_report_types',
+  player_relationship_declaration_items: 'player_relationship_declaration_items',
+  player_relationship_declaration_participants:
+    'player_relationship_declaration_participants',
+  player_relationship_declaration_trades: 'player_relationship_declaration_trades',
   player_relationship_declarations: 'player_relationship_declarations',
   player_relationship_declaration_types: 'player_relationship_declaration_types',
 } as const;

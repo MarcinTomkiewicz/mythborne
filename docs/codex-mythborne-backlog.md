@@ -1104,6 +1104,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H8 — Player declaration list/status view
 
+**Status:** Done / confirmed 2026-04-30 as service/read-model slice. Player-facing UI remains a later integration step.
+
 **Goal:** Player can see declarations and reasons.
 
 **Scope:**
@@ -1111,7 +1113,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 - Show status, reason, participants, items/trades, timestamps.
 
 **Acceptance criteria:**
-- Player understands accepted/rejected/revoked/pending state.
+- Read model/service lists relevant declarations for a server/user/hero context without staff-only field leaks.
+- Player UI still needs to consume this read model before the full user-facing screen is complete.
 
 ---
 
