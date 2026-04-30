@@ -1047,6 +1047,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H4 — Server-scoped case list service
 
+**Status:** Done / confirmed 2026-04-30.
+
 **Goal:** Load cases for selected server.
 
 **Scope:**

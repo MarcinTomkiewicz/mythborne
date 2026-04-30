@@ -439,6 +439,8 @@ Still pending at the gameplay level even if partially supported in schema:
 - H2 was verified with `npx tsc --noEmit`, targeted anti-abuse dictionary service/mapper specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - H3 accepted on 2026-04-30: anti-abuse case read models now cover cases, signals, case-signal links, participants, case-audit links and case-declaration links so H5 can build a case detail aggregation model.
 - H3 is a model-only foundation slice with no meaningful UI smoke path. It was verified technically with `npx tsc --noEmit`, targeted anti-abuse case mapper specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- H4 accepted on 2026-04-30: `AntiAbuseCases` loads anti-abuse case lists scoped by required `serverId`, with optional status, verdict, source and created date range filters. There is no global fallback, so staff case lists do not show unrelated server cases by default.
+- H4 is a service-only slice with no meaningful UI smoke path. It was verified technically with `npx tsc --noEmit`, targeted anti-abuse case service/mapper specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services
