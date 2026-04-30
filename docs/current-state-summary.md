@@ -444,6 +444,9 @@ Still pending at the gameplay level even if partially supported in schema:
 - H5 accepted on 2026-04-30: `AntiAbuseCaseDetails` loads a server-scoped case detail aggregate from the base case, participants, signals, reports, declarations, audit logs, sanctions, Character Point penalties and sanction items.
 - H5 validates both `serverId` and `caseId`, loads the base case by both fields before any linked reads, and fails with a stable selected-server not-found error without querying linked rows when the case is not available for that server.
 - H5 is a service-only slice with no meaningful UI smoke path. It was verified technically with `npx tsc --noEmit`, targeted anti-abuse case detail/list/mapper specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- H6 accepted on 2026-04-30: player relationship declaration form models are generated from DB-backed `PlayerRelationshipDeclarationTypeEntry` flags, with title, description and participants always required and amount, expiration, item and trade fields enabled only when the declaration type requires them.
+- H6 keeps the player-facing form model free of staff-only `adminDescription` / `admin_description` copy, normalizes participant min/max rules into stable helper text, and intentionally does not include submit/RPC behavior; H7 remains the declaration submission slice.
+- H6 is a model-only slice with no meaningful UI smoke path. It was verified technically with `npx tsc --noEmit`, targeted player relationship declaration form specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services

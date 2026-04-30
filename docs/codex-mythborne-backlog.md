@@ -1087,6 +1087,8 @@ These tasks are now implementation-oriented. Audit/spec tasks already completed 
 
 ## Task H6 — Player relationship declaration form model
 
+**Status:** Done / confirmed 2026-04-30.
+
 **Goal:** Dynamic form from declaration type flags.
 
 **Scope:**
