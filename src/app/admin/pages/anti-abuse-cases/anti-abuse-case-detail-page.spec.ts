@@ -19,6 +19,10 @@ import { ActiveServer } from '../../../core/services/server/active-server';
 import { ActiveServerFormFactory } from '../../../core/factories/forms/active-server-form.factory';
 import { AntiAbuseCaseDetailPage } from './anti-abuse-case-detail-page';
 import { AntiAbuseCaseStatusTransitionSection } from './anti-abuse-case-status-transition-section';
+import {
+  ANTI_ABUSE_VERDICT_STATUS_REASON_FALLBACK,
+  AntiAbuseCaseVerdictSection,
+} from './anti-abuse-case-verdict-section';
 
 describe('AntiAbuseCaseDetailPage', () => {
   let fixture: ComponentFixture<AntiAbuseCaseDetailPage>;
@@ -274,6 +278,112 @@ describe('AntiAbuseCaseDetailPage', () => {
     expect(section.successMessage()).toBe('Case status updated.');
     expect(fixture.nativeElement.textContent).toContain('Case status updated.');
   });
+
+  it('submits case verdict through the canonical decision workflow', () => {
+    firstRequest.next(createDetail('server-1', 'case-1', true));
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    const section = verdictSection(fixture);
+    section.form.controls.verdict.setValue('no_abuse');
+    section.form.controls.verdictReason.setValue(' Evidence does not confirm abuse. ');
+    section.form.controls.sanctionRequired.setValue(false);
+    section.form.controls.noSanctionReason.setValue('No sanction needed.');
+    section.submit();
+
+    statusRequest.next(
+      createDecision('case-1', 'server-1', {
+        verdict: 'no_abuse',
+        verdictReason: 'Evidence does not confirm abuse.',
+        sanctionRequired: false,
+        noSanctionReason: 'No sanction needed.',
+      }),
+    );
+    statusRequest.complete();
+    fixture.detectChanges();
+
+    expect(decisions.setCaseDecision).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        caseId: 'case-1',
+        status: 'open',
+        statusReason: 'Status reason text.',
+        verdict: 'no_abuse',
+        verdictReason: 'Evidence does not confirm abuse.',
+        sanctionRequired: false,
+        noSanctionReason: 'No sanction needed.',
+      }),
+    );
+    const payload = decisions.setCaseDecision.calls.mostRecent().args[0];
+    expect(payload.operatorNotes).toBeUndefined();
+    expect(fixture.componentInstance.detail()?.case.verdict).toBe('no_abuse');
+    expect(fixture.componentInstance.detail()?.case.sanctionRequired).toBeFalse();
+  });
+
+  it('uses stable verdict status reason fallback and clears no-sanction reason when sanction is required', () => {
+    firstRequest.next(createDetail('server-1', 'case-1', false));
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    const section = verdictSection(fixture);
+    section.form.controls.verdict.setValue('abuse_confirmed');
+    section.form.controls.verdictReason.setValue('Confirmed funneling.');
+    section.form.controls.sanctionRequired.setValue(true);
+    section.form.controls.noSanctionReason.setValue('Should not be sent.');
+    section.submit();
+
+    expect(decisions.setCaseDecision).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        caseId: 'case-1',
+        status: 'open',
+        statusReason: ANTI_ABUSE_VERDICT_STATUS_REASON_FALLBACK,
+        verdict: 'abuse_confirmed',
+        verdictReason: 'Confirmed funneling.',
+        sanctionRequired: true,
+        noSanctionReason: null,
+      }),
+    );
+    const payload = decisions.setCaseDecision.calls.mostRecent().args[0];
+    expect(payload.operatorNotes).toBeUndefined();
+  });
+
+  it('blocks resolved sanction-required verdicts when no sanctions exist', () => {
+    const detail = createDetail('server-1', 'case-1', false);
+    detail.case.status = 'resolved';
+    detail.case.statusReason = 'Case resolved.';
+    firstRequest.next(detail);
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    const section = verdictSection(fixture);
+    section.form.controls.verdict.setValue('abuse_confirmed');
+    section.form.controls.verdictReason.setValue('Confirmed abuse.');
+    section.form.controls.sanctionRequired.setValue(true);
+    section.submit();
+
+    expect(decisions.setCaseDecision).not.toHaveBeenCalled();
+    expect(section.error()).toContain('sanction required');
+  });
+
+  it('ignores stale verdict response after selected server changes', () => {
+    firstRequest.next(createDetail('server-1', 'case-1', true));
+    firstRequest.complete();
+    fixture.detectChanges();
+
+    const section = verdictSection(fixture);
+    section.form.controls.verdict.setValue('no_abuse');
+    section.form.controls.verdictReason.setValue('Evidence does not confirm abuse.');
+    section.form.controls.sanctionRequired.setValue(false);
+    section.submit();
+
+    selectedServer.set(createServer('server-2'));
+    fixture.detectChanges();
+
+    statusRequest.next(createDecision('case-1', 'server-1', { verdict: 'no_abuse' }));
+    statusRequest.complete();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.detail()).toBeNull();
+  });
 });
 
 function statusSection(
@@ -281,6 +391,13 @@ function statusSection(
 ): AntiAbuseCaseStatusTransitionSection {
   return fixture.debugElement.query(By.directive(AntiAbuseCaseStatusTransitionSection))
     .componentInstance as AntiAbuseCaseStatusTransitionSection;
+}
+
+function verdictSection(
+  fixture: ComponentFixture<AntiAbuseCaseDetailPage>,
+): AntiAbuseCaseVerdictSection {
+  return fixture.debugElement.query(By.directive(AntiAbuseCaseVerdictSection))
+    .componentInstance as AntiAbuseCaseVerdictSection;
 }
 
 function createActiveServer(
@@ -665,7 +782,11 @@ function createDetail(
   };
 }
 
-function createDecision(caseId: string, serverId = 'server-1') {
+function createDecision(
+  caseId: string,
+  serverId = 'server-1',
+  overrides: Partial<AntiAbuseCaseDecision> = {},
+): AntiAbuseCaseDecision {
   return {
     id: caseId,
     serverId,
@@ -682,5 +803,6 @@ function createDecision(caseId: string, serverId = 'server-1') {
     resolvedByUserId: null,
     cancelledAt: null,
     updatedAt: '2026-04-30T01:00:00.000Z',
-  } as const;
+    ...overrides,
+  };
 }

@@ -15,6 +15,7 @@ import { AdminServerSwitcher } from '../../components/admin-server-switcher/admi
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
 import { AntiAbuseCaseDetailSections } from './anti-abuse-case-detail-sections';
 import { AntiAbuseCaseStatusTransitionSection } from './anti-abuse-case-status-transition-section';
+import { AntiAbuseCaseVerdictSection } from './anti-abuse-case-verdict-section';
 
 @Component({
   selector: 'app-anti-abuse-case-detail-page',
@@ -28,6 +29,7 @@ import { AntiAbuseCaseStatusTransitionSection } from './anti-abuse-case-status-t
     AdminTagLinks,
     AntiAbuseCaseDetailSections,
     AntiAbuseCaseStatusTransitionSection,
+    AntiAbuseCaseVerdictSection,
   ],
   templateUrl: './anti-abuse-case-detail-page.html',
 })

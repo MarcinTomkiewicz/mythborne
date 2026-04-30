@@ -1249,6 +1249,8 @@ Status: completed and accepted on 2026-04-30.
 
 ## Task H16 — Case verdict action
 
+Status: completed and accepted on 2026-04-30.
+
 **Goal:** Staff can set verdict and sanction_required.
 
 **Scope:**
@@ -1264,6 +1266,8 @@ Status: completed and accepted on 2026-04-30.
 **Acceptance criteria:**
 - Verdict is stored with reason.
 - Sanction requirement is visible/enforced.
+- Implementation note: verdict updates go through `AntiAbuseDecisions.setCaseDecision(...)`, omit `operatorNotes`, preserve existing `statusReason` or use the stable fallback `Verdict updated.`, and clear `noSanctionReason` to `null` when a sanction is required. Technical verification and route smoke passed; full manual smoke on real case/staff data is deferred until representative gameplay cases exist.
+- Planning note: if more case action sections are added, consider a light shared workflow-action wrapper/helper for the repeated error/success/loading/submit shell.
 
 ---
 

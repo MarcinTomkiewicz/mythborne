@@ -1,0 +1,78 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="flex-col gap-xs min-w-0">
+      <p class="card-legend mb-0">Decision</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Case verdict</h3>
+      <p class="muted-text mb-0">
+        Set the staff verdict and whether a sanction is required for this case.
+      </p>
+    </div>
+  </div>
+
+  @if (error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  @if (successMessage(); as message) {
+    <p-message severity="success">{{ message }}</p-message>
+  }
+
+  @if (form.controls.sanctionRequired.value === true && sanctionCount() === 0) {
+    <p-message severity="warn">
+      This case is marked as sanction required, but no sanctions are linked yet.
+    </p-message>
+  }
+
+  <form [formGroup]="form" class="mg-surface-card p-md flex-col gap-md" (ngSubmit)="submit()">
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Verdict</span>
+        <p-select
+          class="w-100"
+          formControlName="verdict"
+          [options]="verdictOptions"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Verdict reason</span>
+        <textarea
+          pInputText
+          rows="3"
+          class="w-100"
+          formControlName="verdictReason"
+          placeholder="Required staff reason for this verdict"
+        ></textarea>
+      </label>
+    </div>
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+      <label class="flex-row-start-center gap-sm">
+        <p-checkbox formControlName="sanctionRequired" [binary]="true" />
+        <span>Sanction required</span>
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">No-sanction reason</span>
+        <textarea
+          pInputText
+          rows="3"
+          class="w-100"
+          formControlName="noSanctionReason"
+          placeholder="Optional reason when no sanction is required"
+        ></textarea>
+      </label>
+    </div>
+
+    <div class="flex-row-end-center">
+      <p-button
+        type="submit"
+        label="Update verdict"
+        [loading]="isSaving()"
+        [disabled]="isSaving()"
+      />
+    </div>
+  </form>
+</section>

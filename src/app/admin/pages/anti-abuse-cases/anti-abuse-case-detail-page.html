@@ -63,6 +63,12 @@
         (decisionSaved)="applyCaseDecision($event)"
       />
 
+      <app-anti-abuse-case-verdict-section
+        [caseItem]="detailModel.case"
+        [sanctionCount]="detailModel.sanctions.length"
+        (decisionSaved)="applyCaseDecision($event)"
+      />
+
       <app-anti-abuse-case-detail-sections [detail]="detailModel" />
     }
   }
