@@ -460,6 +460,10 @@ Still pending at the gameplay level even if partially supported in schema:
 - H10 accepted on 2026-04-30: player abuse report form models are generated from DB-backed `PlayerAbuseReportTypeEntry` flags. `title` and `description` are always visible and required because the current `create_player_abuse_report(...)` RPC requires both `p_title` and `p_description`.
 - H10 uses DB flags only for optional report-specific fields: `requiresAccusedHero` controls accused hero selection, `requiresItemSelection` controls related item selection, and `requiresTradeSelection` controls related trade selection. The player-facing form model does not expose staff-only `adminDescription`.
 - H10 is a model-only slice with no meaningful UI smoke path. It was verified technically with `npx tsc --noEmit`, targeted player abuse report form/dictionary specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- H11 accepted on 2026-04-30: player abuse report submission now uses the canonical `create_player_abuse_report(...)` RPC through a focused service and payload mapper.
+- H11 sends only generated RPC args supported by the current DB contract. The frontend validates `serverId`, `reportTypeKey`, `title`, `description` and `reportingHeroId`; it does not require or send a fake `reportingUserId` because the DB workflow resolves the authenticated user.
+- H11 maps optional accused hero, related item, related trade id and trade reference only when present, requires both returned `report_id` and `case_id`, and does not direct-read/write `player_abuse_reports` or call separate audit helpers.
+- H11 is a service-only slice with no meaningful UI smoke path. Technical verification covered RPC payloads, unsupported user id args, required fields, empty RPC responses, `npx tsc --noEmit`, targeted specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
 - `core` should continue to hold non-component logic:
   - domain models
   - domain-specific services
