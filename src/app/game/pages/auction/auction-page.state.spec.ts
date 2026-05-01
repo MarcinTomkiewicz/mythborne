@@ -121,7 +121,10 @@ describe('AuctionPage states', () => {
     const first = new Subject<{ bidId: string }>();
     const second = new Subject<{ bidId: string }>();
     auctionActions.placeBid.and.returnValues(first.asObservable(), second.asObservable());
-    overview.overview.set({ listings: [auctionListing({ sellerHeroId: 'hero-2' })] });
+    overview.overview.set({
+      listings: [auctionListing({ sellerHeroId: 'hero-2' })],
+      transactions: [],
+    });
     const listing = overview.overview().listings[0];
 
     actions.bidForm(listing).controls.bidAmountCharacterPoints.setValue(10);
@@ -140,7 +143,7 @@ describe('AuctionPage states', () => {
 
   it('accepts bid, buy-now and close success results that are not listing ids', () => {
     const listing = auctionListing({ sellerHeroId: 'hero-2' });
-    overview.overview.set({ listings: [listing] });
+    overview.overview.set({ listings: [listing], transactions: [] });
     spyOn(overview, 'refreshCurrent');
     auctionActions.placeBid.and.returnValue(of({ bidId: 'bid-1' }));
     auctionActions.buyNow.and.returnValue(of({ transactionId: 'transaction-1' }));
@@ -166,7 +169,7 @@ describe('AuctionPage states', () => {
 });
 
 function emptyOverview(): PlayerAuctionOverviewReadModel {
-  return { listings: [] };
+  return { listings: [], transactions: [] };
 }
 
 function auctionListing(input: {

@@ -16,11 +16,11 @@
           <div class="flex-col gap-xs">
             <strong>{{ overview.listingLabel(listing) }}</strong>
             <span class="muted-text">
-              Seller: {{ sellerLabel(listing) }} · Current bid:
+              Seller: {{ sellerLabel(listing) }} - Current bid:
               {{ listing.currentBidCharacterPoints ?? listing.startingBidCharacterPoints ?? 0 }} CP
             </span>
             <span class="muted-text">
-              Buy now: {{ listing.buyNowCharacterPoints ?? 'N/D' }} · Ends:
+              Buy now: {{ listing.buyNowCharacterPoints ?? 'N/D' }} - Ends:
               {{ listing.endsAt ?? 'N/D' }}
             </span>
           </div>
@@ -95,6 +95,45 @@
       </article>
     } @empty {
       <p class="muted-text mb-0">No auction listings.</p>
+    }
+  </div>
+
+  <div class="flex-col gap-sm mt-lg">
+    <div class="flex-col gap-xs">
+      <h4 class="mg-section__title mg-section__title--xs mb-0">Auction history</h4>
+      <p class="muted-text mb-0">Completed auction sale snapshots.</p>
+    </div>
+
+    @for (transaction of overview.overview().transactions; track transaction.id) {
+      <article class="mg-card p-md">
+        <div class="flex-row-between-start flex-col-sm gap-md">
+          <div class="flex-col gap-xs">
+            <strong>{{ transactionLabel(transaction) }}</strong>
+            <span class="muted-text">
+              CP: {{ transaction.buyerCharacterPoints }} - Status:
+              {{ transaction.status }} - Completed:
+              {{ transaction.completedAt ?? 'N/D' }}
+            </span>
+          </div>
+          <span class="tag-badge tag-badge--muted">auction_sale</span>
+        </div>
+
+        @if (transaction.items.length) {
+          <div class="flex-row-start-center flex-wrap gap-xs mt-sm">
+            @for (item of transaction.items; track item.id) {
+              <span class="tag-badge tag-badge--muted">
+                {{ item.generationQualityLabel ?? item.generationQualityKey ?? 'Item' }}
+                {{ item.generationBaseName ?? item.generationBaseKey ?? item.itemName ?? item.itemId }}
+                @if (item.valueBucket !== null) {
+                  - bucket {{ item.valueBucket }}
+                }
+              </span>
+            }
+          </div>
+        }
+      </article>
+    } @empty {
+      <p class="muted-text mb-0">No completed auction sales.</p>
     }
   </div>
 </section>

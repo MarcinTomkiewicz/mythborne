@@ -1,5 +1,9 @@
 import { Row } from '../../types/supabase.types';
-import { DirectTradeItemTarget } from './direct-trade.model';
+import {
+  DirectTradeItemTarget,
+  DirectTradeTransactionItemReadModel,
+  DirectTradeTransactionStatus,
+} from './direct-trade.model';
 
 export type PlayerAuctionMode = Row<'player_auction_listings'>['auction_mode'];
 export type PlayerAuctionStatus = Row<'player_auction_listings'>['status'];
@@ -57,8 +61,26 @@ export interface PlayerAuctionListingReadModel {
   bids: PlayerAuctionBidReadModel[];
 }
 
+export interface PlayerAuctionTransactionReadModel {
+  id: string;
+  serverId: string;
+  auctionListingId: string | null;
+  status: DirectTradeTransactionStatus;
+  description: string | null;
+  seller: PlayerAuctionParticipantLabel;
+  buyer: PlayerAuctionParticipantLabel;
+  sellerCharacterPoints: number;
+  buyerCharacterPoints: number;
+  completedAt: string | null;
+  reversedAt: string | null;
+  failedAt: string | null;
+  createdAt: string;
+  items: DirectTradeTransactionItemReadModel[];
+}
+
 export interface PlayerAuctionOverviewReadModel {
   listings: PlayerAuctionListingReadModel[];
+  transactions: PlayerAuctionTransactionReadModel[];
 }
 
 export interface PlayerAuctionCreateListingResult {

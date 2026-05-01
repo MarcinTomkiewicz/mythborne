@@ -58,10 +58,22 @@ export interface DirectTradeTransactionItemReadModel {
   itemDrachmaValue: number | null;
   fromHeroId: string | null;
   toHeroId: string | null;
+  generationBaseId: string | null;
+  generationBaseKey: string | null;
   generationBaseName: string | null;
+  generationBaseTypeKey: string | null;
+  generationQualityKey: string | null;
   generationQualityLabel: string | null;
+  hasPrefix: boolean | null;
+  hasSuffix: boolean | null;
+  itemSnapshotJson: Row<'player_trade_transaction_items'>['item_snapshot_json'];
+  prefixAffixId: string | null;
+  prefixAffixKey: string | null;
   prefixAffixName: string | null;
+  suffixAffixId: string | null;
+  suffixAffixKey: string | null;
   suffixAffixName: string | null;
+  valueBucket: number | null;
   createdAt: string;
 }
 

@@ -80,6 +80,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: J2 - direct trade read models and services.
 - Completed and confirmed: J3 - direct trade mutation UI through existing RPCs.
 - Completed and confirmed: J4 - auction gameplay UI through existing RPCs.
+- Completed and confirmed: J5 - trade/auction transaction item snapshot feature integration.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.

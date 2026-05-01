@@ -3,7 +3,9 @@ import {
   PlayerAuctionItemLabel,
   PlayerAuctionListingReadModel,
   PlayerAuctionParticipantLabel,
+  PlayerAuctionTransactionReadModel,
 } from '../domain/trade/player-auction.model';
+import { DirectTradeTransactionItemReadModel } from '../domain/trade/direct-trade.model';
 import { Row } from '../types/supabase.types';
 
 export function mapPlayerAuctionListing(
@@ -60,6 +62,31 @@ export function mapPlayerAuctionBid(
     refundedAt: row.refunded_at,
     failedAt: row.failed_at,
     createdAt: row.created_at,
+  };
+}
+
+export function mapPlayerAuctionTransaction(
+  row: Row<'player_trade_transactions'>,
+  context: {
+    items: readonly DirectTradeTransactionItemReadModel[];
+    participantLabels: ReadonlyMap<string, PlayerAuctionParticipantLabel>;
+  },
+): PlayerAuctionTransactionReadModel {
+  return {
+    id: row.id,
+    serverId: row.server_id,
+    auctionListingId: row.auction_listing_id,
+    status: row.status,
+    description: row.description,
+    seller: participantLabel(row.creator_hero_id, context.participantLabels),
+    buyer: participantLabel(row.target_hero_id, context.participantLabels),
+    sellerCharacterPoints: row.creator_character_points,
+    buyerCharacterPoints: row.target_character_points,
+    completedAt: row.completed_at,
+    reversedAt: row.reversed_at,
+    failedAt: row.failed_at,
+    createdAt: row.created_at,
+    items: context.items.filter((item) => item.transactionId === row.id),
   };
 }
 

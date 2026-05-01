@@ -22,7 +22,10 @@ export class AuctionOverviewState {
   private activeServerId: string | null = null;
   private activeHeroId: string | null = null;
 
-  readonly overview = signal<PlayerAuctionOverviewReadModel>({ listings: [] });
+  readonly overview = signal<PlayerAuctionOverviewReadModel>({
+    listings: [],
+    transactions: [],
+  });
   readonly isLoading = signal(false);
 
   loadData(): void {
