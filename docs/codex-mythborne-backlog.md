@@ -1687,6 +1687,8 @@ Current source of truth:
 
 ## Task K3 — Trade/auction signal review integration
 
+**Status:** Done / confirmed 2026-05-01. Manual smoke pending real DB-generated trade/auction signal case data.
+
 **Goal:** Let staff review DB-generated trade/auction anti-abuse signals without recreating detection logic in Angular.
 
 **Scope:**

@@ -30,6 +30,23 @@
           <span class="text-break">Grouping: {{ value(signal.groupingKey) }}</span>
           <span class="text-break">Audit log: {{ value(signal.auditLogId) }}</span>
         </div>
+        @if (isTradeOrAuctionSignal(signal)) {
+          @let relatedContext = relatedTradeContext(signal);
+          <div class="flex-col gap-xs">
+            <span class="mg-tag">DB-generated trade/auction review signal</span>
+            @if (relatedContext.length) {
+              <div class="mg-grid grid-cols-3 grid-cols-1-md gap-sm">
+                @for (entry of relatedContext; track entry.label + ':' + value(entry.value)) {
+                  <span class="text-break">{{ entry.label }}: {{ value(entry.value) }}</span>
+                }
+              </div>
+            } @else {
+              <span class="muted-text text-break">
+                Related trade or auction entity is not available on this signal.
+              </span>
+            }
+          </div>
+        }
         @if (signal.reason || signal.dismissedReason) {
           <p class="heading-color mb-0 text-break">
             {{ value(signal.reason) }} {{ value(signal.dismissedReason) }}
