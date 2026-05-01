@@ -25,6 +25,8 @@ describe('HeroExplorations', () => {
           return of(playerStateJson());
         case RPC.start_or_get_hero_exploration:
           return of([startRow()]);
+        case RPC.start_hero_exploration_step:
+          return of([startStepRow()]);
         case RPC.preview_trial_opportunity_curve:
           return of([trialOpportunityPreviewRow()]);
         default:
@@ -91,6 +93,29 @@ describe('HeroExplorations', () => {
     expect(backend.delete).not.toHaveBeenCalled();
   });
 
+  it('starts movement steps through RPC before refreshing the canonical state', async () => {
+    await firstValueFrom(
+      service.startHeroExplorationStep({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        explorationId: 'exploration-1',
+        edgeId: 'edge-1',
+      }),
+    );
+
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.start_hero_exploration_step, {
+      p_exploration_id: 'exploration-1',
+      p_edge_id: 'edge-1',
+    });
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.get_hero_exploration_state, {
+      p_hero_id: 'hero-1',
+      p_difficulty_key: 'easy',
+    });
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+  });
+
   it('loads trial opportunity curve as read-only preview data', async () => {
     const result = await firstValueFrom(
       service.previewTrialOpportunityCurve({
@@ -147,6 +172,22 @@ function startRow() {
     current_node_id: 'node-1',
     trial_dry_step_count: 0,
     remaining_trials: 2,
+  };
+}
+
+function startStepRow() {
+  return {
+    step_id: 'step-1',
+    exploration_id: 'exploration-1',
+    edge_id: 'edge-1',
+    from_node_id: 'node-1',
+    to_node_id: 'node-2',
+    direction_key: 'north',
+    step_kind: 'movement',
+    status: 'pending',
+    outcome_kind: 'none',
+    started_at: '2026-05-01T10:00:00.000Z',
+    resolves_at: '2026-05-01T10:05:00.000Z',
   };
 }
 

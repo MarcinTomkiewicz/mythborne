@@ -1,6 +1,8 @@
 import {
   GetHeroExplorationStateRpcArgs,
   PreviewTrialOpportunityCurveRpcArgs,
+  StartHeroExplorationStepRpcArgs,
+  StartHeroExplorationStepRpcRow,
   StartOrGetHeroExplorationRpcArgs,
   StartOrGetHeroExplorationRpcRow,
 } from '../types/exploration-runtime-rpc.types';
@@ -24,6 +26,24 @@ export function toStartOrGetHeroExplorationRpcArgs(input: {
     p_hero_id: requiredText(input.heroId, 'heroId'),
     p_difficulty_key: requiredText(input.difficultyKey, 'difficultyKey'),
   };
+}
+
+export function toStartHeroExplorationStepRpcArgs(input: {
+  explorationId: string | null | undefined;
+  edgeId: string | null | undefined;
+  stepKind?: string | null;
+}): StartHeroExplorationStepRpcArgs {
+  const args: StartHeroExplorationStepRpcArgs = {
+    p_exploration_id: requiredText(input.explorationId, 'explorationId'),
+    p_edge_id: requiredText(input.edgeId, 'edgeId'),
+  };
+  const stepKind = trimText(input.stepKind);
+
+  if (stepKind) {
+    args.p_step_kind = stepKind;
+  }
+
+  return args;
 }
 
 export function toPreviewTrialOpportunityCurveRpcArgs(input: {
@@ -55,6 +75,18 @@ export function firstStartOrGetHeroExplorationRow(
 
   if (!row) {
     throw new Error('start_or_get_hero_exploration returned no exploration row.');
+  }
+
+  return row;
+}
+
+export function firstStartHeroExplorationStepRow(
+  rows: readonly StartHeroExplorationStepRpcRow[],
+): StartHeroExplorationStepRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error('start_hero_exploration_step returned no step row.');
   }
 
   return row;

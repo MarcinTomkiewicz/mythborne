@@ -124,6 +124,54 @@
               <p class="muted-text mb-0">{{ page.activeEffectLabel() }}</p>
             </article>
           </div>
+
+          <div class="flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <h4 class="mg-section__title mg-section__title--xs mb-0">Directions</h4>
+                <p class="muted-text mb-0">
+                  Every movement step costs time, including the first step.
+                </p>
+              </div>
+              @if (page.movementBlockReason(); as reason) {
+                <span class="tag-badge tag-badge--muted">{{ reason }}</span>
+              }
+            </div>
+
+            <div class="mg-grid-auto-fit gap-sm">
+              @for (edge of page.edges(); track edge.id) {
+                <article class="mg-card p-md">
+                  <div class="flex-col gap-sm">
+                    <div class="flex-row-between-start gap-sm">
+                      <div class="flex-col gap-xs">
+                        <strong>{{ page.directionLabel(edge) }}</strong>
+                        <span class="muted-text">
+                          {{ edge.directionKey }} - {{ page.edgeStatusLabel(edge) }}
+                        </span>
+                      </div>
+                      <span class="tag-badge tag-badge--muted">Order {{ edge.sortOrder }}</span>
+                    </div>
+
+                    @if (edge.toNodeId) {
+                      <span class="muted-text">Known node: {{ edge.toNodeId }}</span>
+                    } @else {
+                      <span class="muted-text">Destination is undiscovered.</span>
+                    }
+
+                    <button
+                      pButton
+                      type="button"
+                      label="Go"
+                      [disabled]="!page.canChooseDirection(edge)"
+                      (click)="page.chooseDirection(edge)"
+                    ></button>
+                  </div>
+                </article>
+              } @empty {
+                <p class="muted-text mb-0">No directions are available from this node.</p>
+              }
+            </div>
+          </div>
         } @else {
           <div class="flex-col gap-sm">
             <p class="muted-text mb-0">

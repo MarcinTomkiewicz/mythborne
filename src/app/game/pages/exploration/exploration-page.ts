@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
+import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
@@ -15,6 +16,7 @@ import { ExplorationStartState } from './exploration-start.state';
     ExplorationFeedbackState,
     ExplorationPreviewState,
     ExplorationOverviewState,
+    ExplorationMovementState,
     ExplorationStartState,
     ExplorationPageState,
   ],

@@ -1803,6 +1803,8 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ## Task L4 — Graph state read and direction UI
 
+**Status:** Done / confirmed on 2026-05-01.
+
 **Goal:** Show the current exploration graph/path state and allow valid direction choices.
 
 **Scope:**

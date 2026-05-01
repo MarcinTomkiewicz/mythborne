@@ -10,15 +10,18 @@ import { Row } from '../../types/supabase.types';
 import {
   GetHeroExplorationStateRpcResult,
   PreviewTrialOpportunityCurveRpcRow,
+  StartHeroExplorationStepRpcRow,
   StartOrGetHeroExplorationRpcRow,
 } from '../../types/exploration-runtime-rpc.types';
 import { mapExplorationDifficultyTier } from '../../utils/exploration-definition-mappers';
 import { mapTrialOpportunityCurvePreview } from '../../utils/exploration-preview-mappers';
 import { mapHeroExplorationStateJson } from '../../utils/exploration-runtime-json-mappers';
 import {
+  firstStartHeroExplorationStepRow,
   firstStartOrGetHeroExplorationRow,
   toGetHeroExplorationStateRpcArgs,
   toPreviewTrialOpportunityCurveRpcArgs,
+  toStartHeroExplorationStepRpcArgs,
   toStartOrGetHeroExplorationRpcArgs,
 } from '../../utils/exploration-runtime-rpc';
 import { Backend } from '../backend/backend';
@@ -70,6 +73,29 @@ export class HeroExplorations {
           this.getHeroExplorationState({
             heroId: row.hero_id,
             difficultyKey: row.difficulty_key,
+          }),
+        ),
+      );
+  }
+
+  startHeroExplorationStep(input: {
+    heroId: string;
+    difficultyKey: string;
+    explorationId: string;
+    edgeId: string;
+    stepKind?: string | null;
+  }): Observable<HeroExplorationStateReadModel> {
+    return this.backend
+      .rpc<StartHeroExplorationStepRpcRow[]>(
+        RPC.start_hero_exploration_step,
+        toStartHeroExplorationStepRpcArgs(input),
+      )
+      .pipe(
+        map(firstStartHeroExplorationStepRow),
+        switchMap(() =>
+          this.getHeroExplorationState({
+            heroId: input.heroId,
+            difficultyKey: input.difficultyKey,
           }),
         ),
       );

@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
+import { HeroExplorationEdgeReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { TrialOpportunityCurvePreview } from '../../../core/domain/exploration/exploration-preview.model';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
+import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
 import { ExplorationStartState } from './exploration-start.state';
@@ -9,6 +11,7 @@ import { ExplorationStartState } from './exploration-start.state';
 export class ExplorationPageState {
   readonly feedback = inject(ExplorationFeedbackState);
   readonly overview = inject(ExplorationOverviewState);
+  readonly movement = inject(ExplorationMovementState);
   readonly preview = inject(ExplorationPreviewState);
   readonly start = inject(ExplorationStartState);
 
@@ -17,7 +20,10 @@ export class ExplorationPageState {
   readonly selectedDifficultyKey = this.overview.selectedDifficultyKey;
   readonly selectedDifficulty = this.overview.selectedDifficulty;
   readonly isLoading = this.overview.isLoading;
+  readonly isMoving = this.movement.isMoving;
   readonly isStarting = this.start.isStarting;
+  readonly edges = this.movement.edges;
+  readonly movementBlockReason = this.movement.movementBlockReason;
   readonly remainingTrialsLabel = this.overview.remainingTrialsLabel;
   readonly currentNodeLabel = this.overview.currentNodeLabel;
   readonly activeStepLabel = this.overview.activeStepLabel;
@@ -34,6 +40,22 @@ export class ExplorationPageState {
 
   startSelectedDifficulty(): void {
     this.start.startSelectedDifficulty();
+  }
+
+  chooseDirection(edge: HeroExplorationEdgeReadModel): void {
+    this.movement.chooseDirection(edge);
+  }
+
+  canChooseDirection(edge: HeroExplorationEdgeReadModel): boolean {
+    return this.movement.canChooseDirection(edge);
+  }
+
+  directionLabel(edge: HeroExplorationEdgeReadModel): string {
+    return this.movement.directionLabel(edge);
+  }
+
+  edgeStatusLabel(edge: HeroExplorationEdgeReadModel): string {
+    return this.movement.edgeStatusLabel(edge);
   }
 
   previewRows(difficultyKey: string): TrialOpportunityCurvePreview[] {

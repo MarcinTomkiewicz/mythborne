@@ -7,6 +7,7 @@ import { RequiredActiveHeroState } from '../../../core/interfaces/hero/active-he
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
+import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
@@ -23,6 +24,7 @@ describe('ExplorationPageState', () => {
     explorations = jasmine.createSpyObj<HeroExplorations>('HeroExplorations', [
       'getActiveDifficultyTiers',
       'getHeroExplorationState',
+      'startHeroExplorationStep',
       'startOrGetHeroExploration',
       'previewTrialOpportunityCurve',
     ]);
@@ -30,6 +32,9 @@ describe('ExplorationPageState', () => {
     activeHero.requireActiveHero.and.returnValue(of(activeHeroContext()));
     explorations.getActiveDifficultyTiers.and.returnValue(of([difficulty('easy')]));
     explorations.getHeroExplorationState.and.returnValue(of(noExplorationState('easy')));
+    explorations.startHeroExplorationStep.and.returnValue(
+      of(activeExplorationState('easy', true)),
+    );
     explorations.startOrGetHeroExploration.and.returnValue(of(activeExplorationState('easy')));
     explorations.previewTrialOpportunityCurve.and.returnValue(of([previewRow('easy')]));
 
@@ -38,6 +43,7 @@ describe('ExplorationPageState', () => {
         ExplorationFeedbackState,
         ExplorationPreviewState,
         ExplorationOverviewState,
+        ExplorationMovementState,
         ExplorationStartState,
         ExplorationPageState,
         { provide: ActiveHero, useValue: activeHero },
@@ -74,6 +80,37 @@ describe('ExplorationPageState', () => {
     });
     expect(page.state()?.hasExploration).toBeTrue();
     expect(feedback.successMessage()).toBe('Exploration is ready.');
+  });
+
+  it('starts movement through RPC for the selected DB edge', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    const edge = page.edges()[0];
+
+    page.chooseDirection(edge);
+
+    expect(explorations.startHeroExplorationStep).toHaveBeenCalledOnceWith({
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+      explorationId: 'exploration-1',
+      edgeId: 'edge-1',
+    });
+    expect(feedback.successMessage()).toBe('Movement step started.');
+    expect(page.activeStepLabel()).toContain('movement - pending');
+  });
+
+  it('disables movement while a step or challenge blocks direction choice', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', true));
+
+    expect(page.movementBlockReason()).toBe('Wait for the active movement step to resolve.');
+    expect(page.canChooseDirection(page.edges()[0])).toBeFalse();
+
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', false, true));
+
+    expect(page.movementBlockReason()).toBe('Resolve the active challenge before moving.');
+    expect(page.canChooseDirection(page.edges()[0])).toBeFalse();
   });
 
   it('ignores stale state responses after difficulty changes', () => {
@@ -164,7 +201,11 @@ function noExplorationState(difficultyKey: string): HeroExplorationStateReadMode
   };
 }
 
-function activeExplorationState(difficultyKey: string): HeroExplorationStateReadModel {
+function activeExplorationState(
+  difficultyKey: string,
+  withActiveStep = false,
+  withActiveChallenge = false,
+): HeroExplorationStateReadModel {
   return {
     ...noExplorationState(difficultyKey),
     hasExploration: true,
@@ -184,5 +225,49 @@ function activeExplorationState(difficultyKey: string): HeroExplorationStateRead
       createdAt: '2026-05-01T10:00:00.000Z',
       updatedAt: '2026-05-01T10:00:00.000Z',
     },
+    currentNode: {
+      id: 'node-1',
+      serverId: 'server-1',
+      explorationId: 'exploration-1',
+      parentNodeId: null,
+      descriptionId: null,
+      label: 'Crossroads',
+      createdSequence: 1,
+      distanceFromRoot: 0,
+      metadataJson: {},
+      createdAt: '2026-05-01T10:00:00.000Z',
+      updatedAt: '2026-05-01T10:00:00.000Z',
+    },
+    edges: [
+      {
+        id: 'edge-1',
+        serverId: 'server-1',
+        explorationId: 'exploration-1',
+        fromNodeId: 'node-1',
+        toNodeId: 'node-2',
+        directionKey: 'north',
+        label: 'North road',
+        sortOrder: 10,
+        isAvailable: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
+    activeStep: withActiveStep
+      ? {
+          id: 'step-1',
+          stepKind: 'movement',
+          status: 'pending',
+          resolvesAt: '2026-05-01T10:05:00.000Z',
+        } as HeroExplorationStateReadModel['activeStep']
+      : null,
+    activeChallenge: withActiveChallenge
+      ? {
+          id: 'challenge-1',
+          challengeKind: 'trial',
+          status: 'active',
+        } as HeroExplorationStateReadModel['activeChallenge']
+      : null,
   };
 }
