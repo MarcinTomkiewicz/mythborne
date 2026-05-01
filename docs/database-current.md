@@ -10,86 +10,90 @@ If this file conflicts with the actual database or generated `database.types.ts`
 
 ---
 
-# Current DB/RPC contract updates — 2026-04-28
+# Current DB/RPC contract updates
 
-## Update 2026-05-01 — Trade/auction DB-owned audit foundation
+## Update 2026-05-01 — J6 trade/auction DB-owned audit foundation
 
-J6 trade/auction audit blocker was resolved at DB foundation level. Trade/auction lifecycle audit must be owned by canonical DB/RPC workflows and triggers, not by frontend `AuditWriter` calls.
+Trade and auction lifecycle audit is DB-owned. Frontend must keep using canonical public trade/auction RPCs and must not add Angular-side `AuditWriter` calls for these workflows.
 
-### Existing completed transaction audit
+Confirmed audit dictionaries:
 
-`player_trade_transactions` already had DB-side audit for completed transactions:
-
-- trigger: `trg_audit_player_trade_transaction_completed`
-- trigger function: `audit_player_trade_transaction_completed()`
-- action keys:
+- action types for direct trade lifecycle:
+  - `trade.direct_trade.created`
+  - `trade.direct_trade.responded`
+  - `trade.direct_trade.cancelled`
+  - `trade.direct_trade.rejected`
+  - `trade.direct_trade.expired`
+  - `trade.direct_trade.failed`
   - `trade.direct_trade.completed`
+- action types for auction lifecycle:
+  - `trade.auction.listed`
+  - `trade.auction.bid_placed`
+  - `trade.auction.buy_now`
+  - `trade.auction.cancelled`
+  - `trade.auction.expired`
+  - `trade.auction.closed`
+  - `trade.auction.failed`
   - `trade.auction_sale.completed`
-- entity type: `player_trade_transaction`
+- entity types:
+  - `player_trade_offer`
+  - `player_trade_transaction`
+  - `player_auction_listing`
+  - `player_auction_bid`
 
-This remains the canonical audit for final completed direct trade and auction sale transaction rows.
+Confirmed DB trigger-owned audit functions/triggers:
 
-### Trade/auction audit dictionaries
+- `audit_player_trade_offer_lifecycle()` via `trg_audit_player_trade_offer_lifecycle` on `player_trade_offers`.
+- `audit_player_auction_listing_lifecycle()` via `trg_audit_player_auction_listing_lifecycle` on `player_auction_listings`.
+- `audit_player_auction_bid_lifecycle()` via `trg_audit_player_auction_bid_lifecycle` on `player_auction_bids`.
+- `audit_player_trade_transaction_auction_reason()` via `trg_audit_player_trade_transaction_auction_reason` on `player_trade_transactions`.
+- Existing `audit_player_trade_transaction_completed()` via `trg_audit_player_trade_transaction_completed` remains the canonical completed transaction audit.
 
-Active audit entity types confirmed/required for trade and auction lifecycle:
+Audit logs complement transaction rows, Character Point ledgers, transaction item snapshots and anti-abuse signals. Audit logs are not public reports and must not replace relational transaction history.
 
-- `player_trade_offer`
-- `player_trade_transaction`
-- `player_auction_listing`
-- `player_auction_bid`
+## Update 2026-05-01 — J7 vendor scrap/sell DB/RPC workflow
 
-Active trade/auction audit action types now include:
+Vendor/system item scrap/sell now has a canonical public DB/RPC workflow. Frontend must use this workflow instead of composing `scrap_hero_item(...)` and resource updates in Angular.
 
-Direct trade:
+New config:
 
-- `trade.direct_trade.created`
-- `trade.direct_trade.responded`
-- `trade.direct_trade.cancelled`
-- `trade.direct_trade.rejected`
-- `trade.direct_trade.expired`
-- `trade.direct_trade.failed`
-- `trade.direct_trade.completed`
+- `config_definitions.key = vendor_scrap_drachma_payout_percent`
+- `governance_scope = product_global`
+- `managed_entity_type = scalar_config`
+- `managed_entity_key = economy`
+- `value_type = integer`
+- default value `50`
 
-Auction:
+Helper:
 
-- `trade.auction.listed`
-- `trade.auction.bid_placed`
-- `trade.auction.buy_now`
-- `trade.auction.cancelled`
-- `trade.auction.expired`
-- `trade.auction.closed`
-- `trade.auction.failed`
-- `trade.auction_sale.completed`
+- `get_vendor_scrap_drachma_payout_percent()` returns the effective vendor payout percent clamped to `0..100`.
 
-### New lifecycle audit triggers
+New public RPC:
 
-Trade/auction lifecycle rows now have trigger-owned audit writes:
+- `vendor_scrap_hero_item(p_item_id uuid, p_actor_hero_id uuid, p_reason text default 'Item sold to vendor.', p_request_id text default null)`
 
-- `trg_audit_player_trade_offer_lifecycle`
-  - table: `player_trade_offers`
-  - function: `audit_player_trade_offer_lifecycle()`
-  - audits create/respond/cancel/reject/expire/fail lifecycle transitions.
-- `trg_audit_player_auction_listing_lifecycle`
-  - table: `player_auction_listings`
-  - function: `audit_player_auction_listing_lifecycle()`
-  - audits listed/cancelled/expired/failed listing lifecycle transitions and preserves seller, item, auction mode, starting bid, buy-now price and current bid context.
-- `trg_audit_player_auction_bid_lifecycle`
-  - table: `player_auction_bids`
-  - function: `audit_player_auction_bid_lifecycle()`
-  - audits bid placement and preserves bid amount, listing, seller and bidder context.
-- `trg_audit_player_trade_transaction_auction_reason`
-  - table: `player_trade_transactions`
-  - function: `audit_player_trade_transaction_auction_reason()`
-  - supplemental audit distinguishing auction buy-now completion from normal auction close completion.
+RPC semantics:
 
-### Frontend/Codex implications
+1. Requires authenticated user and verifies `p_actor_hero_id` belongs to `auth.uid()`.
+2. Requires normal gameplay access through `assert_hero_can_use_normal_gameplay(...)`.
+3. Locks and validates the item belongs to the actor hero, is on the same server and has `status = active`.
+4. Computes drachma payout from `items.drachma_value * vendor_scrap_drachma_payout_percent / 100`, rounded down and clamped at minimum 0.
+5. Calls `scrap_hero_item(...)` for canonical safe item lifecycle cleanup.
+6. Applies the `drachma` resource delta through the existing DB-owned resource helper.
+7. Writes audit action `item.vendor_scrap.sold`.
+8. Returns item cleanup result, resource type, drachma amount, resulting balance and audit ids.
 
-- Frontend must continue using canonical trade/auction RPCs.
-- Frontend must not add `AuditWriter` calls for trade/auction lifecycle.
-- Frontend must not direct-write trade/auction tables for workflow mutations.
-- Audit is DB-owned and trigger/RPC-owned.
-- Ledger rows, transaction rows, item snapshots and anti-abuse signals remain complementary evidence/history. Audit does not replace them.
-- Audit must preserve enough lifecycle context to support later review, reversal requests and anti-abuse investigation: starting bid, buy-now price, final transaction value, bid amount, participant hero ids, item/listing/bid/transaction ids, status reasons and failure/expiry/cancellation context.
+Audit action:
+
+- `item.vendor_scrap.sold`
+
+Important rules:
+
+- Vendor scrap/sell is not player trade.
+- Vendor scrap/sell uses drachmas/resources, not Character Points.
+- Frontend must not direct-write `items`, `hero_resources`, audit logs or compose multiple low-level workflows for vendor sell.
+- `scrap_hero_item(...)` remains the canonical item lifecycle helper, but vendor payout belongs to `vendor_scrap_hero_item(...)`.
+
 
 ## Update 2026-04-30 — Epic M combat DB foundation
 

@@ -27,7 +27,7 @@ This is an operational estimate, not a formal audit.
 | Exploration / trials / encounters | 5% | Documented conceptually, not implemented as a real loop yet. |
 | Prestige / reputation | 0% | Not implemented yet. |
 | Guilds / politics / sieges | 0% | Not implemented yet. |
-| Trade / economy gameplay loop | 55% | Database/RPC foundation for Character Points, direct trade, auctions, item locks, and anti-abuse signals exists. Direct trade and one-item auctions have initial player-facing RPC-backed UIs; Trade Routes/building integration and real sandbox smoke coverage are still pending. |
+| Trade / economy gameplay loop | 58% | Database/RPC foundation for Character Points, direct trade, auctions, item locks, vendor scrap and anti-abuse signals exists. Direct trade and one-item auctions have initial player-facing RPC-backed UIs; vendor sell has a core service contract, while Trade Routes/building integration and real sandbox smoke coverage are still pending. |
 | Generated database types | 100% | Task A1 confirmed. `src/app/core/types/database.types.ts` has been regenerated against the current schema and includes the latest trade, auction, anti-abuse, item lifecycle, server/config/formula/audit, and hero tables/functions/enums. |
 
 ## What Is Implemented
@@ -183,6 +183,7 @@ This is an operational estimate, not a formal audit.
 - Auction has an initial player-facing `/game/auction` surface for listing, bidding, buy now, close and cancel flows through public RPCs.
 - Auction sale history reads `player_trade_transactions(transaction_type = auction_sale)` and linked `player_trade_transaction_items` transaction-time snapshots instead of reconstructing historical item state from current `items`.
 - Trade and auction lifecycle audit is DB-owned by canonical RPCs/triggers. Frontend trade/auction action services do not inject or call Angular `AuditWriter` and do not direct-write trade, auction, item lock or transaction tables.
+- Vendor scrap/sell is a separate system/vendor economy workflow. Frontend core service support calls `vendor_scrap_hero_item(...)` and does not compose item lifecycle cleanup with resource updates client-side.
 
 ### Combat
 - `/game/combat` is no longer a placeholder.
@@ -556,6 +557,9 @@ Still pending at the gameplay level even if partially supported in schema:
 - J6 accepted on 2026-05-01: trade and auction frontend mutation services are aligned with the DB-owned lifecycle audit foundation.
 - J6 keeps direct trade and auction lifecycle audit in canonical DB RPCs/triggers. `DirectTradeActions` and `PlayerAuctionActions` continue to use public RPCs and do not use Angular `AuditWriter`; focused specs assert `AuditWriter.write(...)` is not called and direct `create/update/delete` writes are not used.
 - J6 was verified with `npx tsc --noEmit`, targeted trade/auction action specs (`direct-trade-actions.spec.ts`, `player-auction-actions.spec.ts`, 5 SUCCESS) and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure. Manual smoke is not applicable because J6 is service/test alignment only.
+- J7 accepted on 2026-05-01: vendor scrap/sell for drachmas now has core frontend service/model/mapper support over the canonical `vendor_scrap_hero_item(...)` DB workflow.
+- J7 adds `vendorScrapHeroItem(...)` and `getVendorScrapDrachmaPayoutPercent()` to `ItemLifecycleService`, plus typed RPC args/result mapping for lifecycle outcome and payout fields. The frontend does not call `apply_reward_resource_delta(...)` directly and does not direct-write `items`, `hero_resources`, audit logs or resource balances.
+- J7 was verified with `npx tsc --noEmit`, targeted lifecycle specs (`item-lifecycle-rpc.spec.ts`, `item-lifecycle.spec.ts`, 17 SUCCESS) and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure. Manual smoke is not applicable until a future player-facing inventory/armory vendor sell action exists with real active item data.
 - Status/verdict/sanction/CP penalty action sections now repeat the same audited action shell. Before adding another similar status-action section, check whether a shared wrapper/state/helper is warranted for error/success/loading, submit layout and stale-guard behavior.
 - `core` should continue to hold non-component logic:
   - domain models

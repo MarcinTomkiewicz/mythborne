@@ -2,9 +2,11 @@ import { resolveSafeItemScrapBehavior } from '../domain/item/item-lifecycle.mode
 import {
   mapItemLifecycleOperationResult,
   mapRecoverableScrappedItemSearchResult,
+  mapVendorScrapHeroItemResult,
   toRecoverScrappedItemRpcArgs,
   toSearchRecoverableScrappedItemsPageRpcArgs,
   toScrapHeroItemRpcArgs,
+  toVendorScrapHeroItemRpcArgs,
 } from './item-lifecycle-rpc';
 
 describe('item lifecycle rpc mappers', () => {
@@ -24,6 +26,22 @@ describe('item lifecycle rpc mappers', () => {
     });
   });
 
+  it('maps vendor scrap workflow args without low-level resource composition', () => {
+    expect(
+      toVendorScrapHeroItemRpcArgs({
+        actorHeroId: ' hero-1 ',
+        itemId: ' item-1 ',
+        reason: ' sold to vendor ',
+        requestId: ' request-1 ',
+      }),
+    ).toEqual({
+      p_actor_hero_id: 'hero-1',
+      p_item_id: 'item-1',
+      p_reason: 'sold to vendor',
+      p_request_id: 'request-1',
+    });
+  });
+
   it('maps lifecycle workflow result rows', () => {
     expect(
       mapItemLifecycleOperationResult({
@@ -39,6 +57,32 @@ describe('item lifecycle rpc mappers', () => {
       scrappedAt: '2026-04-30T10:00:00.000Z',
       recoverableUntil: '2026-05-07T10:00:00.000Z',
       auditLogId: 'audit-1',
+    });
+  });
+
+  it('maps vendor scrap results with drachma payout and lifecycle outcome', () => {
+    expect(
+      mapVendorScrapHeroItemResult({
+        item_id: 'item-1',
+        item_status: 'scrapped',
+        scrapped_at: '2026-05-01T10:00:00.000Z',
+        recoverable_until: null,
+        resource_type: 'drachma',
+        drachma_amount: 60,
+        balance_after: 160,
+        item_audit_log_id: 'audit-item-1',
+        vendor_audit_log_id: 'audit-vendor-1',
+      }),
+    ).toEqual({
+      itemId: 'item-1',
+      itemStatus: 'scrapped',
+      scrappedAt: '2026-05-01T10:00:00.000Z',
+      recoverableUntil: null,
+      resourceType: 'drachma',
+      drachmaAmount: 60,
+      balanceAfter: 160,
+      itemAuditLogId: 'audit-item-1',
+      vendorAuditLogId: 'audit-vendor-1',
     });
   });
 
@@ -163,6 +207,9 @@ describe('item lifecycle rpc mappers', () => {
     expect(() =>
       toScrapHeroItemRpcArgs({ actorHeroId: ' ', itemId: 'item-1' }),
     ).toThrowError('actorHeroId is required for item lifecycle workflow.');
+    expect(() =>
+      toVendorScrapHeroItemRpcArgs({ actorHeroId: 'hero-1', itemId: ' ' }),
+    ).toThrowError('itemId is required for item lifecycle workflow.');
     expect(() =>
       toRecoverScrappedItemRpcArgs({
         itemId: 'item-1',

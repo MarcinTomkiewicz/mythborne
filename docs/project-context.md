@@ -99,31 +99,28 @@ Future public/private report rendering is a separate epic, but combat snapshots 
 
 ---
 
-## Trade / Auction Audit Current Direction
+## Trade / Auction / Vendor Current Direction
 
-Trade and auction gameplay mutations are canonical DB/RPC workflows. Frontend code must call the existing public trade/auction RPCs and must not write audit logs directly for those workflows.
+Trade and auction mutations are DB/RPC-owned workflows. Frontend services should call the canonical public RPCs and should not direct-write workflow tables or audit logs.
 
-Trade/auction audit is DB-owned:
+Trade and auction audit is DB-owned:
 
-- final completed direct trade and auction sale transactions are audited from `player_trade_transactions`;
-- direct trade offer lifecycle is audited from `player_trade_offers`;
-- auction listing lifecycle is audited from `player_auction_listings`;
-- auction bid placement is audited from `player_auction_bids`;
-- auction buy-now vs normal auction-close completion is distinguished by supplemental transaction audit.
+- direct trade offer lifecycle is audited by DB triggers;
+- auction listing lifecycle is audited by DB triggers;
+- auction bid placement is audited by DB triggers;
+- completed direct trade and auction sale transactions are audited by DB triggers;
+- buy-now / auction-close path reason is also audited DB-side.
 
-Audit should preserve review-relevant lifecycle facts such as:
+Do not add Angular-side `AuditWriter` calls for trade/auction lifecycle. Audit logs are operational evidence and complement transaction rows, Character Point ledgers, item snapshots and anti-abuse signals.
 
-- starting bid;
-- buy-now price;
-- final transaction value;
-- bid amount;
-- participant hero ids;
-- item/listing/bid/transaction ids;
-- status reason, cancellation, expiry and failure context.
+Vendor scrap/sell is separate from player trade:
 
-Audit is not a replacement for ledger rows, transaction rows, item snapshots or anti-abuse signals. Those remain complementary evidence/history used for review, reversal requests and anti-abuse investigation.
+- it uses drachmas/resources, not Character Points;
+- it is not direct trade and not auction;
+- frontend must call `vendor_scrap_hero_item(...)`;
+- frontend must not compose item lifecycle cleanup and resource payout client-side.
 
-Codex rule: do not add Angular `AuditWriter` calls for trade/auction lifecycle. If a trade/auction lifecycle audit is missing, fix the DB/RPC/trigger foundation instead of adding frontend-side audit writes.
+The current vendor payout config is `vendor_scrap_drachma_payout_percent`, default 50% of `items.drachma_value`. The RPC internally applies safe item lifecycle cleanup and drachma payout atomically.
 
 ---
 

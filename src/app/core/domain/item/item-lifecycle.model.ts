@@ -17,6 +17,13 @@ export interface ScrapHeroItemInput {
   requestId?: string | null;
 }
 
+export interface VendorScrapHeroItemInput {
+  actorHeroId: string;
+  itemId: string;
+  reason?: string | null;
+  requestId?: string | null;
+}
+
 export interface RecoverScrappedItemInput {
   itemId: string;
   targetHeroId: string;
@@ -37,6 +44,18 @@ export interface ItemLifecycleOperationResult {
   scrappedAt: string | null;
   recoverableUntil: string | null;
   auditLogId: string;
+}
+
+export interface VendorScrapHeroItemResult {
+  itemId: string;
+  itemStatus: ItemStatus;
+  scrappedAt: string | null;
+  recoverableUntil: string | null;
+  resourceType: string;
+  drachmaAmount: number;
+  balanceAfter: number;
+  itemAuditLogId: string;
+  vendorAuditLogId: string;
 }
 
 export interface RecoverableScrappedItem {

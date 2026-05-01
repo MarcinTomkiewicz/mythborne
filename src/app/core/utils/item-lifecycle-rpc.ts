@@ -5,6 +5,8 @@ import {
   RecoverScrappedItemInput,
   SearchRecoverableScrappedItemsInput,
   ScrapHeroItemInput,
+  VendorScrapHeroItemInput,
+  VendorScrapHeroItemResult,
 } from '../domain/item/item-lifecycle.model';
 import {
   ItemLifecycleRpcRow,
@@ -12,6 +14,8 @@ import {
   SearchRecoverableScrappedItemsPageRpcArgs,
   SearchRecoverableScrappedItemsPageRpcRow,
   ScrapHeroItemRpcArgs,
+  VendorScrapHeroItemRpcArgs,
+  VendorScrapHeroItemRpcRow,
 } from '../types/item-lifecycle-rpc.types';
 import { trimText, trimToNull } from './normalize-text';
 
@@ -19,6 +23,20 @@ export function toScrapHeroItemRpcArgs(
   input: ScrapHeroItemInput,
 ): ScrapHeroItemRpcArgs {
   const args: ScrapHeroItemRpcArgs = {
+    p_actor_hero_id: requiredText(input.actorHeroId, 'actorHeroId'),
+    p_item_id: requiredText(input.itemId, 'itemId'),
+  };
+
+  addOptionalText(args, 'p_reason', input.reason);
+  addOptionalText(args, 'p_request_id', input.requestId);
+
+  return args;
+}
+
+export function toVendorScrapHeroItemRpcArgs(
+  input: VendorScrapHeroItemInput,
+): VendorScrapHeroItemRpcArgs {
+  const args: VendorScrapHeroItemRpcArgs = {
     p_actor_hero_id: requiredText(input.actorHeroId, 'actorHeroId'),
     p_item_id: requiredText(input.itemId, 'itemId'),
   };
@@ -78,6 +96,22 @@ export function mapItemLifecycleOperationResult(
     scrappedAt: row.scrapped_at,
     recoverableUntil: row.recoverable_until,
     auditLogId: row.audit_log_id,
+  };
+}
+
+export function mapVendorScrapHeroItemResult(
+  row: VendorScrapHeroItemRpcRow,
+): VendorScrapHeroItemResult {
+  return {
+    itemId: row.item_id,
+    itemStatus: row.item_status,
+    scrappedAt: row.scrapped_at,
+    recoverableUntil: row.recoverable_until,
+    resourceType: row.resource_type,
+    drachmaAmount: row.drachma_amount,
+    balanceAfter: row.balance_after,
+    itemAuditLogId: row.item_audit_log_id,
+    vendorAuditLogId: row.vendor_audit_log_id,
   };
 }
 

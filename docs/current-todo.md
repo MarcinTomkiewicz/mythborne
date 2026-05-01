@@ -82,6 +82,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: J4 - auction gameplay UI through existing RPCs.
 - Completed and confirmed: J5 - trade/auction transaction item snapshot feature integration.
 - Completed and confirmed: J6 - trade and auction audit frontend alignment.
+- Completed and confirmed: J7 - vendor scrap/sell for drachmas core service alignment.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
@@ -105,7 +106,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I7 - building bonus and requirement explainability.
 - Completed and confirmed: UX-I7b - DB-driven central requirement editor for Buildings admin.
 - Completed and confirmed: UX-I8 - anti-abuse decision explainability pass.
-- Current backlog task: wait for user commit, then continue with J7 - vendor scrap/sell for drachmas.
+- Current backlog task: wait for user commit, then continue with the next backlog task.
 - H17+ planning note: status/verdict/sanction/CP penalty action sections now share a similar workflow-action shell; before adding the next similar audited status-action section, check whether to extract a light shared wrapper/state/helper for error/success/loading/submit card layout and stale-guard handling.
 - Reporting rule: future task reports must include a short Shared/reuse check covering reused shared/admin components, checked-but-not-reused options, and any new component justification.
 - G6 follow-up planning note: remaining gameplay audit slices are major item operations, trade operations once frontend flows exist, and estate/building irreversible changes.
@@ -236,7 +237,7 @@ Order reflects implementation priority, not final business priority.
 - Connect Character Point earning to experience gain paths where appropriate.
 - Use `character_point_ledger` for all persistent Character Point balance changes.
 - Replace the current attribute-allocation direct balance update with the proper Character Point ledger/RPC flow.
-- Keep vendor scrap outside player trade and Character Points.
+- Keep vendor scrap outside player trade and Character Points; frontend core service uses `vendor_scrap_hero_item(...)`, while full player-facing vendor sell smoke waits for inventory/armory UI.
 
 ## Formula / Admin TODO
 

@@ -9,7 +9,12 @@ describe('ItemLifecycleService', () => {
   let service: ItemLifecycleService;
 
   beforeEach(() => {
-    backend = jasmine.createSpyObj<Backend>('Backend', ['rpc', 'delete']);
+    backend = jasmine.createSpyObj<Backend>('Backend', [
+      'rpc',
+      'create',
+      'update',
+      'delete',
+    ]);
 
     TestBed.configureTestingModule({
       providers: [ItemLifecycleService, { provide: Backend, useValue: backend }],
@@ -37,6 +42,48 @@ describe('ItemLifecycleService', () => {
     expect(backend.delete).not.toHaveBeenCalled();
     expect(result.itemId).toBe('item-1');
     expect(result.status).toBe('scrapped');
+  });
+
+  it('loads vendor scrap payout percent through the canonical helper RPC', async () => {
+    backend.rpc.and.returnValue(of(50));
+
+    const result = await firstValueFrom(service.getVendorScrapDrachmaPayoutPercent());
+
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_vendor_scrap_drachma_payout_percent,
+    );
+    expect(result).toBe(50);
+  });
+
+  it('vendor scraps hero items through the canonical vendor RPC', async () => {
+    backend.rpc.and.returnValue(of([vendorScrapResultRow('item-1')]));
+
+    const result = await firstValueFrom(
+      service.vendorScrapHeroItem({
+        actorHeroId: 'hero-1',
+        itemId: 'item-1',
+        reason: 'Sold to vendor',
+      }),
+    );
+
+    expect(backend.rpc.calls.allArgs()).toEqual([
+      [
+        RPC.vendor_scrap_hero_item,
+        {
+          p_actor_hero_id: 'hero-1',
+          p_item_id: 'item-1',
+          p_reason: 'Sold to vendor',
+        },
+      ],
+    ]);
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+    expect(result.itemId).toBe('item-1');
+    expect(result.itemStatus).toBe('scrapped');
+    expect(result.resourceType).toBe('drachma');
+    expect(result.drachmaAmount).toBe(60);
+    expect(result.balanceAfter).toBe(160);
   });
 
   it('fails when the lifecycle RPC returns no row', async () => {
@@ -106,6 +153,20 @@ function resultRow(itemId: string) {
     scrapped_at: '2026-04-30T10:00:00.000Z',
     recoverable_until: '2026-05-07T10:00:00.000Z',
     audit_log_id: 'audit-1',
+  };
+}
+
+function vendorScrapResultRow(itemId: string) {
+  return {
+    item_id: itemId,
+    item_status: 'scrapped' as const,
+    scrapped_at: '2026-05-01T10:00:00.000Z',
+    recoverable_until: null,
+    resource_type: 'drachma',
+    drachma_amount: 60,
+    balance_after: 160,
+    item_audit_log_id: 'audit-item-1',
+    vendor_audit_log_id: 'audit-vendor-1',
   };
 }
 

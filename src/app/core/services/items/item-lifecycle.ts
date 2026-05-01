@@ -7,17 +7,22 @@ import {
   RecoverScrappedItemInput,
   SearchRecoverableScrappedItemsInput,
   ScrapHeroItemInput,
+  VendorScrapHeroItemInput,
+  VendorScrapHeroItemResult,
 } from '../../domain/item/item-lifecycle.model';
 import {
   ItemLifecycleOperationRpcRow,
   SearchRecoverableScrappedItemsPageRpcRow,
+  VendorScrapHeroItemRpcRow,
 } from '../../types/item-lifecycle-rpc.types';
 import {
   mapItemLifecycleOperationResult,
   mapRecoverableScrappedItemSearchResult,
+  mapVendorScrapHeroItemResult,
   toRecoverScrappedItemRpcArgs,
   toSearchRecoverableScrappedItemsPageRpcArgs,
   toScrapHeroItemRpcArgs,
+  toVendorScrapHeroItemRpcArgs,
 } from '../../utils/item-lifecycle-rpc';
 import { Backend } from '../backend/backend';
 
@@ -32,6 +37,21 @@ export class ItemLifecycleService {
         toScrapHeroItemRpcArgs(input),
       )
       .pipe(map((rows) => mapItemLifecycleOperationResult(firstRow(rows))));
+  }
+
+  getVendorScrapDrachmaPayoutPercent(): Observable<number> {
+    return this.backend.rpc<number>(RPC.get_vendor_scrap_drachma_payout_percent);
+  }
+
+  vendorScrapHeroItem(
+    input: VendorScrapHeroItemInput,
+  ): Observable<VendorScrapHeroItemResult> {
+    return this.backend
+      .rpc<VendorScrapHeroItemRpcRow[]>(
+        RPC.vendor_scrap_hero_item,
+        toVendorScrapHeroItemRpcArgs(input),
+      )
+      .pipe(map((rows) => mapVendorScrapHeroItemResult(firstRow(rows))));
   }
 
   searchRecoverableScrappedItems(

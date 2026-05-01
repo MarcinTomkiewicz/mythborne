@@ -15,61 +15,6 @@ If something conflicts, prefer:
 
 ---
 
-## Trade / Auction Audit Decisions — 2026-05-01
-
-### Ownership
-
-Trade and auction lifecycle audit is DB-owned.
-
-Frontend must use canonical trade/auction RPCs and must not add Angular `AuditWriter` calls for trade/auction lifecycle events.
-
-If a lifecycle audit is missing, fix the DB/RPC/trigger foundation. Do not create a parallel frontend audit path.
-
-### Audit coverage
-
-Trade/auction audit must cover review-relevant and reversal-relevant lifecycle facts, including:
-
-- direct trade offer creation, response, cancellation, rejection, expiry, failure and completed transaction;
-- auction listing creation, bid placement, buy-now, cancellation, expiry, normal close, failure and completed sale transaction;
-- starting bid;
-- buy-now price;
-- final transaction value;
-- bid amount;
-- participant hero ids;
-- item/listing/bid/transaction ids;
-- status reasons and cancellation/expiry/failure context.
-
-### Current DB foundation
-
-DB audit foundation includes active audit action types for the trade/auction lifecycle and active audit entity types for:
-
-- `player_trade_offer`
-- `player_trade_transaction`
-- `player_auction_listing`
-- `player_auction_bid`
-
-DB-side trigger audit exists for:
-
-- `player_trade_offers` through `trg_audit_player_trade_offer_lifecycle`;
-- `player_auction_listings` through `trg_audit_player_auction_listing_lifecycle`;
-- `player_auction_bids` through `trg_audit_player_auction_bid_lifecycle`;
-- `player_trade_transactions` through `trg_audit_player_trade_transaction_completed` and `trg_audit_player_trade_transaction_auction_reason`.
-
-The completed transaction audit remains canonical. The auction-reason transaction audit is supplemental and distinguishes buy-now from normal close path.
-
-### Relationship to other history systems
-
-Audit does not replace:
-
-- Character Point ledger rows;
-- player trade transaction rows;
-- item transaction snapshots;
-- anti-abuse signals/cases.
-
-Those systems remain complementary evidence and history used for moderation, anti-abuse review, and possible reversal/recovery workflows.
-
----
-
 ## Combat / Epic M Decisions — 2026-04-30
 
 ### Combat module scope
@@ -207,6 +152,55 @@ A combat report should be able to display attack order, source labels, hit/evasi
 
 Full equipment stays private unless a future explicit UI decision exposes it.
 
+
+## Trade / Auction / Vendor Audit Decisions — 2026-05-01
+
+### Trade and auction audit ownership
+
+Trade and auction lifecycle audit is DB-owned.
+
+Frontend must:
+
+- keep using canonical public trade/auction RPCs;
+- not add Angular-side `AuditWriter` calls for trade/auction lifecycle;
+- not write audit logs directly for offer/listing/bid/transaction mutations.
+
+DB triggers write lifecycle audit for:
+
+- direct trade offer create/respond/cancel/reject/expire/fail;
+- auction listing list/cancel/expire/fail;
+- auction bid placement;
+- auction buy-now / auction close path reason;
+- completed direct trade / auction sale transactions.
+
+Audit evidence complements transaction rows, Character Point ledgers, transaction item snapshots and anti-abuse signals. It is not a public report/snapshot system.
+
+### Vendor scrap/sell
+
+Vendor scrap/sell is a system/vendor economy workflow, not player-to-player trade.
+
+Rules:
+
+- uses drachmas/resources, not Character Points;
+- must go through `vendor_scrap_hero_item(...)`;
+- frontend must not compose `scrap_hero_item(...)` plus resource updates;
+- frontend must not direct-update `items` or `hero_resources`;
+- item cleanup must still use canonical safe item lifecycle semantics through `scrap_hero_item(...)` internally.
+
+Current payout config:
+
+- `vendor_scrap_drachma_payout_percent`, product-global, default 50.
+
+Current helper/RPC:
+
+- `get_vendor_scrap_drachma_payout_percent()`;
+- `vendor_scrap_hero_item(...)`.
+
+### Resource ledger note
+
+There is currently no general `hero_resource_ledger`. `apply_reward_resource_delta(...)` remains a DB-owned resource helper, but it is not a full resource ledger. Do not invent frontend-side resource history. If a full resource ledger becomes necessary, it should be added as a separate DB/domain decision.
+
+---
 
 ### Project name
 

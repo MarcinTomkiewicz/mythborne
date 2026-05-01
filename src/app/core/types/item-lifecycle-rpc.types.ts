@@ -5,6 +5,21 @@ export type ScrapHeroItemRpcArgs =
 export type ScrapHeroItemRpcRow =
   Database['public']['Functions']['scrap_hero_item']['Returns'][number];
 
+export type VendorScrapHeroItemRpcArgs =
+  Database['public']['Functions']['vendor_scrap_hero_item']['Args'];
+
+export type VendorScrapHeroItemRpcRow = {
+  balance_after: number;
+  drachma_amount: number;
+  item_audit_log_id: string;
+  item_id: string;
+  item_status: Database['public']['Enums']['item_status'];
+  recoverable_until: string | null;
+  resource_type: string;
+  scrapped_at: string | null;
+  vendor_audit_log_id: string;
+};
+
 export type RecoverScrappedItemRpcArgs =
   Database['public']['Functions']['recover_scrapped_item']['Args'];
 export type RecoverScrappedItemRpcRow =

@@ -44,9 +44,12 @@ export const RPC = {
   get_building_progression_preview: 'get_building_progression_preview',
   get_requirement_impact_preview: 'get_requirement_impact_preview',
   reorder_entity_requirements: 'reorder_entity_requirements',
+  get_vendor_scrap_drachma_payout_percent:
+    'get_vendor_scrap_drachma_payout_percent',
   recover_scrapped_item: 'recover_scrapped_item',
   scrap_hero_item: 'scrap_hero_item',
   search_recoverable_scrapped_items_page: 'search_recoverable_scrapped_items_page',
+  vendor_scrap_hero_item: 'vendor_scrap_hero_item',
   create_player_direct_trade_offer: 'create_player_direct_trade_offer',
   respond_player_direct_trade_offer: 'respond_player_direct_trade_offer',
   confirm_player_direct_trade_offer: 'confirm_player_direct_trade_offer',
