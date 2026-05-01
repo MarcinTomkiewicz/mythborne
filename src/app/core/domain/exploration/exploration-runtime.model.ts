@@ -201,6 +201,23 @@ export interface HeroExplorationStepResolutionWorkflowResult {
   state: HeroExplorationStateReadModel;
 }
 
+export interface HeroExplorationChallengeCompletionReadModel {
+  challengeAttemptId: string;
+  status: string;
+  success: boolean;
+  completionMode: string;
+  rewardGrantId: string | null;
+  remainingTrials: number | null;
+  explorationStatus: string | null;
+  autoResolveChance: number | null;
+  autoResolveRoll: number | null;
+}
+
+export interface HeroExplorationChallengeCompletionWorkflowResult {
+  result: HeroExplorationChallengeCompletionReadModel;
+  state: HeroExplorationStateReadModel;
+}
+
 export interface HeroExplorationDebugEntryReadModel {
   exploration: HeroExplorationReadModel;
   remainingTrials: number | null;

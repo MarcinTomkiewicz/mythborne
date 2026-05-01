@@ -31,6 +31,38 @@ If a new authoritative workflow needs formula evaluation and the current helper 
 
 ---
 
+## Game Reports / Epic P Decisions — 2026-05-01
+
+Game reports are player-facing gameplay reports, not audit logs and not player abuse reports.
+
+A report should reproduce the same core event view the player saw in-game. The private Reports UI renders it inside the normal application shell; the public link renders the same report content without the app shell.
+
+Public report route is conceptually `/report/:publicToken`. Use `game_reports.public_token` instead of exposing internal report ids.
+
+Game reports are shared per event. Multiple heroes can have private access to the same report through `game_report_hero_access` with roles `owner`, `participant`, or `viewer`.
+
+Removing a report from a hero's Reports list removes that hero access row. If it was the final access row, the report row is deleted and the public token stops resolving. This is gameplay/report cleanup, not audit deletion; audit logs and other durable system records remain separate.
+
+Current report type dictionary values include:
+
+- `combat`
+- `trial`
+- `encounter`
+- `pvp_combat`
+- `siege`
+
+Combat report production is the first concrete producer and wraps `combat_results`. Combat reports must not duplicate combat attack rows; renderers should read the durable combat result snapshot tables.
+
+Trial and encounter reports should later wrap challenge/encounter outcomes, reward grant data and optional combat sections. PvP and siege report producers belong to future PvP/siege epics, but the report model is ready for those types.
+
+Reward/drop item references are public showcase item references. If the dropped item still exists, renderers should prefer the live `items` row and current balanced item card. If the item row is gone, renderers fall back to saved quality/base/prefix/suffix component refs and fallback display name.
+
+Reward/drop report references intentionally do not snapshot final item stats forever. Reports show the living item when it still exists, not a frozen pre-rebalance stat card.
+
+Combat attack source labels can be public, but full private player equipment/loadouts must not be exposed by default. Drop rewards are showcase items; used weapons/equipment are not automatically full public item cards.
+
+---
+
 ## Estates / Buildings Runtime Decisions — 2026-05-01
 
 Empty estate addresses are not rows.
@@ -82,7 +114,6 @@ Progression formulas are configurable and must not be hardcoded in Angular: `her
 `critical_damage` is a runtime combat/derived stat. Current semantic base is 50%, plus active `critical_damage` bonuses. Final crit multiplier is derived from final critical damage percent, not hardcoded x2.
 
 ---
-
 
 ## Combat / Epic M Decisions — 2026-04-30
 
@@ -1377,31 +1408,7 @@ Only highest prestige tier should be eligible to contend for highest seat/E1 equ
 
 ## Report Snapshots
 
-Shareable reports are needed relatively early.
-
-A report is a historical snapshot of an in-game event.
-
-Externally, the report should reproduce the in-game view of that event as faithfully as possible.
-
-Report uses snapshot data, not current live game data.
-
-Important report types:
-
-- `trial`
-- `encounter`
-- `pvp_combat`
-- `siege`
-
-Rules:
-
-- Trial reports should reflect in-game trial view and result/reward.
-- Encounter reports should reflect in-game encounter view.
-- PvP reports should reflect in-game PvP combat view.
-- Tooltip-capable entities in reports should use snapshot data.
-- Player names may link to public in-game character profiles.
-- Public reports should not expose private account data.
-
----
+Current report decisions are covered by **Game Reports / Epic P Decisions — 2026-05-01** above.
 
 ## PvP attack travel time
 

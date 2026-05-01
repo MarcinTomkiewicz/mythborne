@@ -1869,6 +1869,8 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ## Task L7 — Challenge attempt UI: manual, auto and debug paths
 
+**Status:** Done / confirmed on 2026-05-01.
+
 **Goal:** Provide the first UI for manifested trial/combat encounter challenge attempts.
 
 **Scope:**

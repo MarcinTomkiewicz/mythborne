@@ -4,6 +4,7 @@ import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import { ExplorationDifficultyTierReadModel } from '../../domain/exploration/exploration-definition.model';
 import {
+  HeroExplorationChallengeCompletionWorkflowResult,
   HeroExplorationStateReadModel,
   HeroExplorationStepResolutionWorkflowResult,
 } from '../../domain/exploration/exploration-runtime.model';
@@ -11,6 +12,8 @@ import { TrialOpportunityCurvePreview } from '../../domain/exploration/explorati
 import { FilterOperator } from '../../enums/filter-operators';
 import { Row } from '../../types/supabase.types';
 import {
+  AutoResolveHeroExplorationChallengeAttemptRpcRow,
+  CompleteHeroExplorationChallengeAttemptRpcRow,
   GetHeroExplorationStateRpcResult,
   PreviewTrialOpportunityCurveRpcRow,
   ResolveHeroExplorationStepRpcRow,
@@ -21,11 +24,18 @@ import { mapExplorationDifficultyTier } from '../../utils/exploration-definition
 import { mapTrialOpportunityCurvePreview } from '../../utils/exploration-preview-mappers';
 import { mapHeroExplorationStateJson } from '../../utils/exploration-runtime-json-mappers';
 import {
+  explorationChallengeCompletionWorkflowResult,
   firstResolveHeroExplorationStepRow,
+  firstAutoResolveHeroExplorationChallengeAttemptRow,
+  firstCompleteHeroExplorationChallengeAttemptRow,
   firstStartHeroExplorationStepRow,
   firstStartOrGetHeroExplorationRow,
   explorationStepResolutionWorkflowResult,
+  mapAutoResolveHeroExplorationChallengeResult,
+  mapCompleteHeroExplorationChallengeResult,
   mapResolveHeroExplorationStepResult,
+  toAutoResolveHeroExplorationChallengeAttemptRpcArgs,
+  toCompleteHeroExplorationChallengeAttemptRpcArgs,
   toGetHeroExplorationStateRpcArgs,
   toPreviewTrialOpportunityCurveRpcArgs,
   toResolveHeroExplorationStepRpcArgs,
@@ -129,6 +139,68 @@ export class HeroExplorations {
             map((state) =>
               explorationStepResolutionWorkflowResult(
                 mapResolveHeroExplorationStepResult(row),
+                state,
+              ),
+            ),
+          ),
+        ),
+      );
+  }
+
+  completeHeroExplorationChallengeAttempt(input: {
+    heroId: string;
+    difficultyKey: string;
+    challengeAttemptId: string;
+    success: boolean;
+    completionMode?: string | null;
+    score?: number | null;
+    performanceRating?: string | null;
+    requestId?: string | null;
+  }): Observable<HeroExplorationChallengeCompletionWorkflowResult> {
+    return this.backend
+      .rpc<CompleteHeroExplorationChallengeAttemptRpcRow[]>(
+        RPC.complete_hero_exploration_challenge_attempt,
+        toCompleteHeroExplorationChallengeAttemptRpcArgs(input),
+      )
+      .pipe(
+        map(firstCompleteHeroExplorationChallengeAttemptRow),
+        switchMap((row) =>
+          this.getHeroExplorationState({
+            heroId: input.heroId,
+            difficultyKey: input.difficultyKey,
+          }).pipe(
+            map((state) =>
+              explorationChallengeCompletionWorkflowResult(
+                mapCompleteHeroExplorationChallengeResult(row),
+                state,
+              ),
+            ),
+          ),
+        ),
+      );
+  }
+
+  autoResolveHeroExplorationChallengeAttempt(input: {
+    heroId: string;
+    difficultyKey: string;
+    challengeAttemptId: string;
+    requestId?: string | null;
+  }): Observable<HeroExplorationChallengeCompletionWorkflowResult> {
+    return this.backend
+      .rpc<AutoResolveHeroExplorationChallengeAttemptRpcRow[]>(
+        RPC.auto_resolve_hero_exploration_challenge_attempt,
+        toAutoResolveHeroExplorationChallengeAttemptRpcArgs(input),
+      )
+      .pipe(
+        map(firstAutoResolveHeroExplorationChallengeAttemptRow),
+        switchMap((row) =>
+          this.getHeroExplorationState({
+            heroId: input.heroId,
+            difficultyKey: input.difficultyKey,
+          }).pipe(
+            map((state) =>
+              explorationChallengeCompletionWorkflowResult(
+                mapAutoResolveHeroExplorationChallengeResult(row),
                 state,
               ),
             ),

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HeroExplorationEdgeReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { TrialOpportunityCurvePreview } from '../../../core/domain/exploration/exploration-preview.model';
+import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -15,6 +16,7 @@ export class ExplorationPageState {
   readonly movement = inject(ExplorationMovementState);
   readonly preview = inject(ExplorationPreviewState);
   readonly step = inject(ExplorationStepState);
+  readonly challenge = inject(ExplorationChallengeState);
   readonly start = inject(ExplorationStartState);
 
   readonly difficulties = this.overview.difficulties;
@@ -24,9 +26,11 @@ export class ExplorationPageState {
   readonly isLoading = this.overview.isLoading;
   readonly isMoving = this.movement.isMoving;
   readonly isResolvingStep = this.step.isResolving;
+  readonly isCompletingChallenge = this.challenge.isCompleting;
   readonly isStarting = this.start.isStarting;
   readonly edges = this.movement.edges;
   readonly activeStep = this.step.activeStep;
+  readonly activeChallenge = this.challenge.activeChallenge;
   readonly activeStepProgressPercent = this.step.activeStepProgressPercent;
   readonly activeStepRemainingLabel = this.step.activeStepRemainingLabel;
   readonly activeStepStatusLabel = this.step.activeStepStatusLabel;
@@ -35,6 +39,13 @@ export class ExplorationPageState {
   readonly stepResultDescription = this.step.stepResultDescription;
   readonly stepResultFlavor = this.step.stepResultFlavor;
   readonly stepResultTitle = this.step.stepResultTitle;
+  readonly canCompleteChallenge = this.challenge.canCompleteChallenge;
+  readonly challengeFacts = this.challenge.challengeFacts;
+  readonly challengeResultDescription = this.challenge.challengeResultDescription;
+  readonly challengeResultTitle = this.challenge.challengeResultTitle;
+  readonly challengeTitle = this.challenge.challengeTitle;
+  readonly currentChallengeResult = this.challenge.currentChallengeResult;
+  readonly autoResolveExplanation = this.challenge.autoResolveExplanation;
   readonly movementBlockReason = this.movement.movementBlockReason;
   readonly remainingTrialsLabel = this.overview.remainingTrialsLabel;
   readonly currentNodeLabel = this.overview.currentNodeLabel;
@@ -56,6 +67,14 @@ export class ExplorationPageState {
 
   checkStepResult(): void {
     this.step.checkResult();
+  }
+
+  completeChallenge(success: boolean): void {
+    this.challenge.completeManually(success);
+  }
+
+  autoResolveChallenge(): void {
+    this.challenge.autoResolve();
   }
 
   chooseDirection(edge: HeroExplorationEdgeReadModel): void {

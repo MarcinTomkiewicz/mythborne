@@ -50,8 +50,6 @@ High value does not always mean high usefulness.
 
 The game should support serious long-term progression, politics, PvP tension and economic variance, while still allowing lighter flavor elements such as strange encounters, unlucky drops and shareable “look what happened” reports.
 
----
-
 ## Authoritative Formula Runtime Current Direction
 
 Balance formulas are source of truth for configurable gameplay math.
@@ -105,6 +103,28 @@ Vendor/system item scrap/sell uses drachmas and is not player trade.
 Frontend must call `vendor_scrap_hero_item(...)` for vendor sell/scrap. It must not compose item lifecycle and resource updates in Angular.
 
 Resources such as `drachma`, `materials`, and `workforce` have current balances in `hero_resources`. A minimal relational `hero_resource_ledger` records balance changes from DB/RPC workflows such as building upgrades. The ledger is for history/debug/admin investigation; it is not an undo/refund feature.
+
+---
+
+## Game Reports Current Direction
+
+Game reports are player-facing gameplay reports and are separate from audit logs, player abuse reports, and runtime/debug state.
+
+A report should reproduce the same core event view the player saw in-game. The private Reports UI renders it inside the normal application shell; the public link renders the same report content without the app shell.
+
+Public report route is conceptually `/report/:publicToken` and uses `game_reports.public_token`, not the internal report id.
+
+Multiple heroes can have private access to the same report through `game_report_hero_access`, which supports future PvP and siege reports. Removing a report from one hero's list removes that hero's access; if no hero access remains, the report is deleted and the public token stops resolving.
+
+Current report type dictionary values include `combat`, `trial`, `encounter`, `pvp_combat`, and `siege`.
+
+Combat report production is the first concrete producer and wraps `combat_results`. Trial and encounter producers should later wrap challenge/encounter outcomes, reward grant data and optional combat sections. PvP and siege report producers belong to future PvP/siege epics.
+
+Reward/drop item references are public showcase item references. If the dropped item still exists, renderers should prefer the live `items` row and current balanced item card. If the item row is gone, renderers fall back to saved quality/base/prefix/suffix component refs and fallback display name. Reward/drop report references intentionally do not snapshot final item stats forever.
+
+Combat attack source labels can be public, but full private player equipment/loadouts must not be exposed by default. Drop rewards are showcase items; used weapons/equipment are not automatically full public item cards.
+
+---
 
 ---
 
@@ -1415,39 +1435,16 @@ Only the highest prestige tier should be eligible to contend for the highest sea
 
 ## Report Snapshots / Sharing
 
-The system must support public/shareable report snapshots.
+The current report direction is described above in **Game Reports Current Direction**.
 
-Core rule:
+Important summary:
 
-- a shareable report is a historical snapshot of an in-game event,
-- externally it should render as a faithful reproduction of the in-game view of that event,
-- but using historical snapshot data, not current live game data.
-
-Important rules:
-
-- reports should have their own public identifiers / URLs,
-- report URLs should be shareable,
-- reports may be visible even to non-logged-in users,
-- important reports must be stored separately from temporary exploration path/session data,
-- tooltips in reports must use snapshot data of the referenced entities, not current live values,
-- player names in reports may link to a public in-game profile if applicable,
-- public reports should not expose private account data.
-
-Current important report types:
-
-- `trial`
-- `encounter`
-- `pvp_combat`
-- `siege`
-
-Notes:
-
-- trial reports should reflect the full trial result as shown in-game,
-- if a trial in-game view includes drop/reward, the report should show it too,
-- encounter reports should mirror the in-game encounter view,
-- PvP reports should mirror the in-game PvP combat view.
-
----
+- reports are shareable gameplay event views, not audit logs;
+- `/report/:publicToken` renders the same core report content without the app shell;
+- combat reports wrap `combat_results` first;
+- trial/encounter/PvP/siege producers are future integrations;
+- reward/drop item references prefer the live item when it exists and use saved component fallback when it does not;
+- public reports must not expose private account data or full private equipment loadouts.
 
 ## PvP Travel Timer
 

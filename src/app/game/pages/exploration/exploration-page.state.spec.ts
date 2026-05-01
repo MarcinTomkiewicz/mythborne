@@ -3,12 +3,14 @@ import { of, Subject } from 'rxjs';
 import { ExplorationDifficultyTierReadModel } from '../../../core/domain/exploration/exploration-definition.model';
 import { TrialOpportunityCurvePreview } from '../../../core/domain/exploration/exploration-preview.model';
 import {
+  HeroExplorationChallengeCompletionWorkflowResult,
   HeroExplorationStateReadModel,
   HeroExplorationStepResolutionWorkflowResult,
 } from '../../../core/domain/exploration/exploration-runtime.model';
 import { RequiredActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
+import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -32,6 +34,8 @@ describe('ExplorationPageState', () => {
       'startOrGetHeroExploration',
       'previewTrialOpportunityCurve',
       'resolveHeroExplorationStep',
+      'completeHeroExplorationChallengeAttempt',
+      'autoResolveHeroExplorationChallengeAttempt',
     ]);
 
     activeHero.requireActiveHero.and.returnValue(of(activeHeroContext()));
@@ -45,6 +49,12 @@ describe('ExplorationPageState', () => {
     explorations.resolveHeroExplorationStep.and.returnValue(
       of(stepResolutionWorkflow('easy')),
     );
+    explorations.completeHeroExplorationChallengeAttempt.and.returnValue(
+      of(challengeCompletionWorkflow('easy')),
+    );
+    explorations.autoResolveHeroExplorationChallengeAttempt.and.returnValue(
+      of(challengeCompletionWorkflow('easy', { completionMode: 'auto' })),
+    );
 
     TestBed.configureTestingModule({
       providers: [
@@ -53,6 +63,7 @@ describe('ExplorationPageState', () => {
         ExplorationOverviewState,
         ExplorationMovementState,
         ExplorationStepState,
+        ExplorationChallengeState,
         ExplorationStartState,
         ExplorationPageState,
         { provide: ActiveHero, useValue: activeHero },
@@ -187,6 +198,57 @@ describe('ExplorationPageState', () => {
     expect(feedback.error()).toBe('Movement step is not ready yet.');
   });
 
+  it('completes active challenges through the manual completion RPC', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', false, true));
+
+    page.completeChallenge(true);
+
+    expect(explorations.completeHeroExplorationChallengeAttempt).toHaveBeenCalledOnceWith({
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+      challengeAttemptId: 'challenge-1',
+      completionMode: 'manual',
+      success: true,
+    });
+    expect(page.challengeResultTitle()).toBe('Challenge completed');
+    expect(page.challengeResultDescription()).toContain('Manual completion succeeded');
+    expect(feedback.successMessage()).toBe('Challenge completed.');
+  });
+
+  it('auto-resolves active challenges as a database fallback', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', false, true));
+
+    expect(page.autoResolveExplanation()).toContain('database fallback');
+    expect(page.autoResolveExplanation()).toContain('worse than manual');
+
+    page.autoResolveChallenge();
+
+    expect(explorations.autoResolveHeroExplorationChallengeAttempt).toHaveBeenCalledOnceWith({
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+      challengeAttemptId: 'challenge-1',
+    });
+    expect(page.currentChallengeResult()?.completionMode).toBe('auto');
+    expect(feedback.successMessage()).toBe('Challenge auto-resolved.');
+  });
+
+  it('hides stale challenge completion results after exploration context changes', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', false, true));
+    page.completeChallenge(true);
+
+    expect(page.currentChallengeResult()).not.toBeNull();
+
+    page.overview.setStateFromWorkflow(activeExplorationState('hard', false, false, pastStepTiming(), 'exploration-2'));
+
+    expect(page.currentChallengeResult()).toBeNull();
+  });
+
   it('ignores stale state responses after difficulty changes', () => {
     const firstState = new Subject<HeroExplorationStateReadModel>();
     const secondState = new Subject<HeroExplorationStateReadModel>();
@@ -294,8 +356,29 @@ function activeExplorationState(
     activeChallenge: withActiveChallenge
       ? {
           id: 'challenge-1',
+          explorationId,
+          stepId: 'step-1',
           challengeKind: 'trial',
           status: 'active',
+          difficultyKey,
+          districtCode: 'district-a',
+          trialDefinitionId: 'trial-1',
+          encounterDefinitionId: null,
+          minigameKey: 'timing',
+          testedStatKey: 'dexterity',
+          manifestationStatus: 'manifested',
+          manifestationChance: 40,
+          manifestationRoll: 12,
+          manualDeadlineAt: '2026-05-01T10:10:00.000Z',
+          completionMode: null,
+          performanceRating: null,
+          score: null,
+          success: null,
+          rewardGrantId: null,
+          autoResolveChance: 35,
+          autoResolveRoll: null,
+          startedAt: '2026-05-01T10:05:00.000Z',
+          completedAt: null,
         } as HeroExplorationStateReadModel['activeChallenge']
       : null,
   };
@@ -322,6 +405,27 @@ function stepResolutionWorkflow(
       trialDryStepCount: 1,
       metadataJson: { flavorText: 'The passage is quiet.' },
       ...resultPatch,
+    },
+    state: activeExplorationState(difficultyKey),
+  };
+}
+
+function challengeCompletionWorkflow(
+  difficultyKey: string,
+  patch: Partial<HeroExplorationChallengeCompletionWorkflowResult['result']> = {},
+): HeroExplorationChallengeCompletionWorkflowResult {
+  return {
+    result: {
+      challengeAttemptId: 'challenge-1',
+      status: 'completed',
+      success: true,
+      completionMode: 'manual',
+      rewardGrantId: 'reward-1',
+      remainingTrials: 1,
+      explorationStatus: 'active',
+      autoResolveChance: null,
+      autoResolveRoll: null,
+      ...patch,
     },
     state: activeExplorationState(difficultyKey),
   };

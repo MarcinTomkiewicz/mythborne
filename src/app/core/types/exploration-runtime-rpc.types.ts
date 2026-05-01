@@ -23,6 +23,16 @@ export type ResolveHeroExplorationStepRpcArgs =
 export type ResolveHeroExplorationStepRpcRow =
   Rpc<'resolve_hero_exploration_step'>['Returns'][number];
 
+export type CompleteHeroExplorationChallengeAttemptRpcArgs =
+  Rpc<'complete_hero_exploration_challenge_attempt'>['Args'];
+export type CompleteHeroExplorationChallengeAttemptRpcRow =
+  Rpc<'complete_hero_exploration_challenge_attempt'>['Returns'][number];
+
+export type AutoResolveHeroExplorationChallengeAttemptRpcArgs =
+  Rpc<'auto_resolve_hero_exploration_challenge_attempt'>['Args'];
+export type AutoResolveHeroExplorationChallengeAttemptRpcRow =
+  Rpc<'auto_resolve_hero_exploration_challenge_attempt'>['Returns'][number];
+
 export type PreviewTrialOpportunityCurveRpcArgs =
   Rpc<'preview_trial_opportunity_curve'>['Args'];
 export type PreviewTrialOpportunityCurveRpcRow =

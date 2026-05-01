@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -20,6 +21,7 @@ import { ExplorationStartState } from './exploration-start.state';
     ExplorationOverviewState,
     ExplorationMovementState,
     ExplorationStepState,
+    ExplorationChallengeState,
     ExplorationStartState,
     ExplorationPageState,
   ],

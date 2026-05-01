@@ -29,6 +29,10 @@ describe('HeroExplorations', () => {
           return of([startStepRow()]);
         case RPC.resolve_hero_exploration_step:
           return of([resolveStepRow()]);
+        case RPC.complete_hero_exploration_challenge_attempt:
+          return of([completeChallengeRow()]);
+        case RPC.auto_resolve_hero_exploration_challenge_attempt:
+          return of([autoResolveChallengeRow()]);
         case RPC.preview_trial_opportunity_curve:
           return of([trialOpportunityPreviewRow()]);
         default:
@@ -146,6 +150,73 @@ describe('HeroExplorations', () => {
     expect(backend.delete).not.toHaveBeenCalled();
   });
 
+  it('completes challenge attempts through RPC before refreshing the canonical state', async () => {
+    const workflow = await firstValueFrom(
+      service.completeHeroExplorationChallengeAttempt({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        challengeAttemptId: 'challenge-1',
+        completionMode: 'manual',
+        success: true,
+      }),
+    );
+
+    expect(workflow.result).toEqual(
+      jasmine.objectContaining({
+        challengeAttemptId: 'challenge-1',
+        completionMode: 'manual',
+        success: true,
+      }),
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.complete_hero_exploration_challenge_attempt,
+      {
+        p_challenge_attempt_id: 'challenge-1',
+        p_completion_mode: 'manual',
+        p_success: true,
+      },
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.get_hero_exploration_state, {
+      p_hero_id: 'hero-1',
+      p_difficulty_key: 'easy',
+    });
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+  });
+
+  it('auto-resolves challenge attempts through RPC before refreshing the canonical state', async () => {
+    const workflow = await firstValueFrom(
+      service.autoResolveHeroExplorationChallengeAttempt({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        challengeAttemptId: 'challenge-1',
+      }),
+    );
+
+    expect(workflow.result).toEqual(
+      jasmine.objectContaining({
+        challengeAttemptId: 'challenge-1',
+        completionMode: 'auto',
+        autoResolveChance: 45,
+        autoResolveRoll: 32,
+      }),
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.auto_resolve_hero_exploration_challenge_attempt,
+      {
+        p_challenge_attempt_id: 'challenge-1',
+      },
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.get_hero_exploration_state, {
+      p_hero_id: 'hero-1',
+      p_difficulty_key: 'easy',
+    });
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+  });
+
   it('loads trial opportunity curve as read-only preview data', async () => {
     const result = await firstValueFrom(
       service.previewTrialOpportunityCurve({
@@ -235,6 +306,30 @@ function resolveStepRow() {
     remaining_trials: 1,
     trial_dry_step_count: 1,
     metadata_json: {},
+  };
+}
+
+function completeChallengeRow() {
+  return {
+    challenge_attempt_id: 'challenge-1',
+    completion_mode: 'manual',
+    exploration_status: 'active',
+    remaining_trials: 1,
+    reward_grant_id: 'reward-1',
+    status: 'completed',
+    success: true,
+  };
+}
+
+function autoResolveChallengeRow() {
+  return {
+    auto_resolve_chance: 45,
+    auto_resolve_roll: 32,
+    challenge_attempt_id: 'challenge-1',
+    completion_mode: 'auto',
+    reward_grant_id: 'reward-1',
+    status: 'completed',
+    success: true,
   };
 }
 

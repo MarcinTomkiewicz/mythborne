@@ -1,8 +1,14 @@
 import {
+  HeroExplorationChallengeCompletionReadModel,
+  HeroExplorationChallengeCompletionWorkflowResult,
   HeroExplorationStepResolutionReadModel,
   HeroExplorationStepResolutionWorkflowResult,
 } from '../domain/exploration/exploration-runtime.model';
 import {
+  AutoResolveHeroExplorationChallengeAttemptRpcArgs,
+  AutoResolveHeroExplorationChallengeAttemptRpcRow,
+  CompleteHeroExplorationChallengeAttemptRpcArgs,
+  CompleteHeroExplorationChallengeAttemptRpcRow,
   GetHeroExplorationStateRpcArgs,
   PreviewTrialOpportunityCurveRpcArgs,
   ResolveHeroExplorationStepRpcArgs,
@@ -13,7 +19,7 @@ import {
   StartOrGetHeroExplorationRpcRow,
 } from '../types/exploration-runtime-rpc.types';
 import { Json } from '../types/database.types';
-import { trimText } from './normalize-text';
+import { trimText, trimToNull } from './normalize-text';
 
 export function toGetHeroExplorationStateRpcArgs(input: {
   heroId: string | null | undefined;
@@ -59,6 +65,65 @@ export function toResolveHeroExplorationStepRpcArgs(input: {
   return {
     p_step_id: requiredText(input.stepId, 'stepId'),
   };
+}
+
+export function toCompleteHeroExplorationChallengeAttemptRpcArgs(input: {
+  challengeAttemptId: string | null | undefined;
+  success: boolean;
+  completionMode?: string | null;
+  score?: number | null;
+  performanceRating?: string | null;
+  detailsJson?: Json;
+  requestId?: string | null;
+}): CompleteHeroExplorationChallengeAttemptRpcArgs {
+  const args: CompleteHeroExplorationChallengeAttemptRpcArgs = {
+    p_challenge_attempt_id: requiredText(
+      input.challengeAttemptId,
+      'challengeAttemptId',
+    ),
+    p_completion_mode: trimText(input.completionMode) || 'manual',
+    p_success: input.success,
+  };
+  const score = optionalFiniteNumber(input.score);
+  const performanceRating = trimToNull(input.performanceRating);
+  const requestId = trimToNull(input.requestId);
+
+  if (score !== null) {
+    args.p_score = score;
+  }
+
+  if (performanceRating) {
+    args.p_performance_rating = performanceRating;
+  }
+
+  if (input.detailsJson !== undefined) {
+    args.p_details_json = input.detailsJson;
+  }
+
+  if (requestId) {
+    args.p_request_id = requestId;
+  }
+
+  return args;
+}
+
+export function toAutoResolveHeroExplorationChallengeAttemptRpcArgs(input: {
+  challengeAttemptId: string | null | undefined;
+  requestId?: string | null;
+}): AutoResolveHeroExplorationChallengeAttemptRpcArgs {
+  const args: AutoResolveHeroExplorationChallengeAttemptRpcArgs = {
+    p_challenge_attempt_id: requiredText(
+      input.challengeAttemptId,
+      'challengeAttemptId',
+    ),
+  };
+  const requestId = trimToNull(input.requestId);
+
+  if (requestId) {
+    args.p_request_id = requestId;
+  }
+
+  return args;
 }
 
 export function toPreviewTrialOpportunityCurveRpcArgs(input: {
@@ -119,6 +184,34 @@ export function firstResolveHeroExplorationStepRow(
   return row;
 }
 
+export function firstCompleteHeroExplorationChallengeAttemptRow(
+  rows: readonly CompleteHeroExplorationChallengeAttemptRpcRow[],
+): CompleteHeroExplorationChallengeAttemptRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error(
+      'complete_hero_exploration_challenge_attempt returned no result row.',
+    );
+  }
+
+  return row;
+}
+
+export function firstAutoResolveHeroExplorationChallengeAttemptRow(
+  rows: readonly AutoResolveHeroExplorationChallengeAttemptRpcRow[],
+): AutoResolveHeroExplorationChallengeAttemptRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error(
+      'auto_resolve_hero_exploration_challenge_attempt returned no result row.',
+    );
+  }
+
+  return row;
+}
+
 export function mapResolveHeroExplorationStepResult(
   row: ResolveHeroExplorationStepRpcRow,
 ): HeroExplorationStepResolutionReadModel {
@@ -138,10 +231,49 @@ export function mapResolveHeroExplorationStepResult(
   };
 }
 
+export function mapCompleteHeroExplorationChallengeResult(
+  row: CompleteHeroExplorationChallengeAttemptRpcRow,
+): HeroExplorationChallengeCompletionReadModel {
+  return {
+    challengeAttemptId: row.challenge_attempt_id,
+    status: row.status,
+    success: row.success,
+    completionMode: row.completion_mode,
+    rewardGrantId: row.reward_grant_id,
+    remainingTrials: row.remaining_trials,
+    explorationStatus: row.exploration_status,
+    autoResolveChance: null,
+    autoResolveRoll: null,
+  };
+}
+
+export function mapAutoResolveHeroExplorationChallengeResult(
+  row: AutoResolveHeroExplorationChallengeAttemptRpcRow,
+): HeroExplorationChallengeCompletionReadModel {
+  return {
+    challengeAttemptId: row.challenge_attempt_id,
+    status: row.status,
+    success: row.success,
+    completionMode: row.completion_mode,
+    rewardGrantId: row.reward_grant_id,
+    remainingTrials: null,
+    explorationStatus: null,
+    autoResolveChance: row.auto_resolve_chance,
+    autoResolveRoll: row.auto_resolve_roll,
+  };
+}
+
 export function explorationStepResolutionWorkflowResult(
   result: HeroExplorationStepResolutionReadModel,
   state: HeroExplorationStepResolutionWorkflowResult['state'],
 ): HeroExplorationStepResolutionWorkflowResult {
+  return { result, state };
+}
+
+export function explorationChallengeCompletionWorkflowResult(
+  result: HeroExplorationChallengeCompletionReadModel,
+  state: HeroExplorationChallengeCompletionWorkflowResult['state'],
+): HeroExplorationChallengeCompletionWorkflowResult {
   return { result, state };
 }
 
@@ -173,4 +305,14 @@ function optionalPositiveInteger(value: number | null | undefined): number | nul
   const normalized = Math.floor(Number(value));
 
   return Number.isFinite(normalized) && normalized > 0 ? normalized : null;
+}
+
+function optionalFiniteNumber(value: number | null | undefined): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const normalized = Number(value);
+
+  return Number.isFinite(normalized) ? normalized : null;
 }

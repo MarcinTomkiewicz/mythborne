@@ -12,6 +12,60 @@ If this file conflicts with the actual database or generated `database.types.ts`
 
 # Current DB/RPC contract updates
 
+## Update 2026-05-01 — Epic P game reports DB foundation
+
+Game reports are player-facing gameplay reports and are separate from `player_abuse_reports` and audit logs.
+
+Current DB foundation:
+
+- enum `game_report_access_role`: `owner`, `participant`, `viewer`.
+- enum `game_report_item_source_kind`: `reward_drop`.
+- enum `game_report_source_entity_type`: `combat_result`, `trial_result`, `encounter_result`, `pvp_result`, `siege_result`.
+- table `game_report_types` for DB-backed report type labels/descriptions.
+- table `game_reports` as the shareable report wrapper.
+- table `game_report_hero_access` for private per-hero report inbox/access rows.
+- table `game_report_participants` for participant snapshots shown inside report content.
+- table `game_report_item_references` for public/showcase report item references, especially reward drops.
+
+Current seeded report types:
+
+- `combat`
+- `trial`
+- `encounter`
+- `pvp_combat`
+- `siege`
+
+Public report routing should use `game_reports.public_token`, conceptually `/report/:publicToken`, not the internal report UUID.
+
+`game_reports` wraps durable gameplay source snapshots by `source_entity_type + source_entity_id`. The current first producer is combat:
+
+- `create_game_report_from_combat_result(p_combat_result_id, p_owner_hero_id, p_reason, p_request_id)`
+
+This RPC creates an idempotent report wrapper for an existing `combat_result`, adds private report access rows for hero participants, creates report participant snapshots, and does not duplicate `combat_result_attacks`. Renderers should use `combat_results` and related combat result tables as the durable combat snapshot source.
+
+Report removal is DB-owned:
+
+- `delete_game_report_for_hero(p_report_id, p_hero_id, p_reason, p_request_id)`
+
+This removes only the selected hero's private access row. If it was the final access row, the `game_reports` row is deleted and dependent report rows are removed by cascade, so the public token stops resolving. Frontend must not direct-delete report tables.
+
+Reward/drop item attachment is DB-owned:
+
+- `attach_reward_drop_item_to_game_report(p_report_id, p_item_id, p_sort_order, p_reason, p_request_id)`
+- helper `build_report_item_display_name(p_quality_key, p_base_id, p_prefix_affix_id, p_suffix_affix_id, p_source_item_id)`
+
+`game_report_item_references` prefers `source_item_id` when the real item still exists, so report item cards can show the current live/balanced item. If the item row is gone, rendering falls back to saved quality/base/prefix/suffix component refs plus `display_name_fallback`. This intentionally does not snapshot final item stats for reward drops.
+
+A unique partial index protects reward-drop idempotency for `(report_id, source_kind, source_item_id)` where `source_item_id is not null`.
+
+Frontend/Codex implications:
+
+- Regenerate database types before implementing Epic P frontend/domain work.
+- Use `game_report_types` labels/descriptions rather than hardcoding report type labels.
+- Use the report RPCs/helpers rather than direct table writes/deletes.
+- Combat reports should render combat snapshots from `combat_results`; trial/encounter/PvP/siege producers are future integrations.
+- Public reports must not expose account/user ids or private equipment loadouts. Attack sources may be shown through safe labels/component refs; reward drops may be public showcase item cards.
+
 ## Update 2026-05-01 — Authoritative DB formula runtime and Epic O estate/building runtime foundation
 
 The database now has an authoritative, DB-side numeric formula evaluator for assigned `balance_formulas`. This is a platform rule, not only an Epic O detail.
@@ -143,7 +197,6 @@ Progression formula/runtime foundation includes existing `save_stat_allocation(.
 `critical_damage` is a runtime combat/derived stat. Current semantic rule: base critical damage percent is 50, then active `critical_damage` bonuses are added. The final critical hit multiplier should be derived from final critical damage percent, not hardcoded as x2.
 
 `hero_experience_to_next_level` is a configurable formula target. Frontend/Codex must not hardcode XP-to-next-level progression.
-
 
 ## Update 2026-04-30 — Epic M combat DB foundation
 
@@ -1658,7 +1711,7 @@ Edge Function:
 
 # Epic L PvE exploration / trials / rewards DB foundation
 
-Epic L DB foundation is implemented through applied migrations **L-DB1..L-DB4c**. Preview/simulation RPCs are present in live schema/generated types and should be treated as applied.
+Epic L DB foundation is partially implemented through applied migrations **L-DB1..L-DB4b**. Preview/simulation RPCs remain pending as **L-DB4c**.
 
 ## L-DB1 — dictionaries, formulas, rewards
 
@@ -1808,22 +1861,17 @@ Rules:
 - overrides expire and are consumed by step resolution;
 - challenge force-complete uses normal completion path, so success still grants rewards.
 
-## L-DB4c — preview/simulation RPCs
+## Pending L-DB4c — preview/simulation RPCs
 
-L-DB4c is applied in the database. These RPCs are read-only preview/simulation tools and must not mutate runtime exploration, challenge, reward, or item state.
+Not yet applied in the database.
 
-Current preview/simulation functions:
+Next migration should be split into small safe chunks and add preview/simulation RPCs for:
 
-- `preview_trial_opportunity_curve(...)` — shows trial opportunity chance by dry-step progression / difficulty.
-- `preview_trial_manifestation_chance(...)` — shows trial manifestation chance for trial/stat/difficulty/district inputs.
-- `preview_challenge_auto_resolve_success_chance(...)` — shows fallback auto-resolve chance; auto-resolve should remain worse than manual play.
-- `preview_reward_generated_item(...)` — simulates generated item output without inserting into `items`.
-- `preview_reward_profile(...)` — previews reward profile entries, chance rolls, amounts and generated item previews without granting rewards.
-- `simulate_trial_opportunity_runs(...)` — simulates trial opportunity runs and returns roll history/distribution-oriented rows.
+- trial opportunity curve preview;
+- trial manifestation preview;
+- auto-resolve preview;
+- reward profile preview;
+- generated item preview without inserting into `items`;
+- multi-run trial opportunity/manifestation simulation.
 
-Rules:
-
-- preview/simulation RPCs are explanation/admin/lab tools, not gameplay mutation paths;
-- frontend must not use preview output as authoritative runtime result;
-- generated item preview must not insert rows into `items`;
-- runtime reward item generation uses the fixed `generate_reward_item_for_hero(...)` path that stores the picked quality key once and normalizes suffix display.
+Codex/frontend must not assume these functions exist until present in live schema/generated types.
