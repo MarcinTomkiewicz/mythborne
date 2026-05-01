@@ -12,87 +12,137 @@ If this file conflicts with the actual database or generated `database.types.ts`
 
 # Current DB/RPC contract updates
 
-## Update 2026-05-01 — J6 trade/auction DB-owned audit foundation
+## Update 2026-05-01 — Authoritative DB formula runtime and Epic O estate/building runtime foundation
 
-Trade and auction lifecycle audit is DB-owned. Frontend must keep using canonical public trade/auction RPCs and must not add Angular-side `AuditWriter` calls for these workflows.
+The database now has an authoritative, DB-side numeric formula evaluator for assigned `balance_formulas`. This is a platform rule, not only an Epic O detail.
 
-Confirmed audit dictionaries:
+New formula runtime helpers:
 
-- action types for direct trade lifecycle:
-  - `trade.direct_trade.created`
-  - `trade.direct_trade.responded`
-  - `trade.direct_trade.cancelled`
-  - `trade.direct_trade.rejected`
-  - `trade.direct_trade.expired`
-  - `trade.direct_trade.failed`
-  - `trade.direct_trade.completed`
-- action types for auction lifecycle:
-  - `trade.auction.listed`
-  - `trade.auction.bid_placed`
-  - `trade.auction.buy_now`
-  - `trade.auction.cancelled`
-  - `trade.auction.expired`
-  - `trade.auction.closed`
-  - `trade.auction.failed`
-  - `trade.auction_sale.completed`
-- entity types:
-  - `player_trade_offer`
-  - `player_trade_transaction`
-  - `player_auction_listing`
-  - `player_auction_bid`
+- `formula_round_up(p_value numeric, p_step numeric default 1)` for `roundUp(value, step)`.
+- `formula_round_down(p_value numeric, p_step numeric default 1)` for `roundDown(value, step)`.
+- `formula_clamp(p_value numeric, p_min numeric, p_max numeric)` for `clamp(value, min, max)`.
+- `formula_random()` for `random()`.
+- `formula_random(p_min numeric, p_max numeric)` for `random(min, max)`.
+- `evaluate_balance_formula_expression(p_expression text, p_allowed_variables text[], p_variables_json jsonb)` for restricted numeric expression evaluation.
+- `evaluate_balance_formula_target(p_target_key text, p_variables_json jsonb)` for evaluating the currently assigned enabled formula for a formula target.
 
-Confirmed DB trigger-owned audit functions/triggers:
+Authoritative DB/RPC workflows must not rely on frontend-computed formula outputs as source of truth. Frontend formula runtime remains appropriate for previews, charts and admin explainability. Persistent gameplay mutations must evaluate assigned formulas in DB/RPC/backend workflow.
 
-- `audit_player_trade_offer_lifecycle()` via `trg_audit_player_trade_offer_lifecycle` on `player_trade_offers`.
-- `audit_player_auction_listing_lifecycle()` via `trg_audit_player_auction_listing_lifecycle` on `player_auction_listings`.
-- `audit_player_auction_bid_lifecycle()` via `trg_audit_player_auction_bid_lifecycle` on `player_auction_bids`.
-- `audit_player_trade_transaction_auction_reason()` via `trg_audit_player_trade_transaction_auction_reason` on `player_trade_transactions`.
-- Existing `audit_player_trade_transaction_completed()` via `trg_audit_player_trade_transaction_completed` remains the canonical completed transaction audit.
+Known implications:
 
-Audit logs complement transaction rows, Character Point ledgers, transaction item snapshots and anti-abuse signals. Audit logs are not public reports and must not replace relational transaction history.
+- Building start now evaluates `building_upgrade_cost` and `building_upgrade_time` server-side.
+- Future formula-backed gameplay RPCs should use `evaluate_balance_formula_target(...)` or a domain RPC/helper wrapping it.
+- Existing fallback-based PvE or progression helpers should be audited and migrated gradually when their runtime paths become authoritative formula consumers.
 
-## Update 2026-05-01 — J7 vendor scrap/sell DB/RPC workflow
+### Epic O resource ledger
 
-Vendor/system item scrap/sell now has a canonical public DB/RPC workflow. Frontend must use this workflow instead of composing `scrap_hero_item(...)` and resource updates in Angular.
+Minimal resource ledger foundation exists:
 
-New config:
+- table: `hero_resource_ledger`
+- helper: `apply_hero_resource_delta_with_ledger(p_hero_id, p_resource_type, p_amount_delta, p_reason, p_related_entity_type, p_related_entity_id)`
 
-- `config_definitions.key = vendor_scrap_drachma_payout_percent`
-- `governance_scope = product_global`
-- `managed_entity_type = scalar_config`
-- `managed_entity_key = economy`
-- `value_type = integer`
-- default value `50`
+The ledger records minimal resource balance changes for resources such as `drachma`, `materials`, and `workforce`. It is not an undo/refund feature. It is intended for DB/RPC workflows such as building upgrades, future rewards, admin adjustments and system corrections.
 
-Helper:
+### Estate address foundation
 
-- `get_vendor_scrap_drachma_payout_percent()` returns the effective vendor payout percent clamped to `0..100`.
+Estate address source of truth is now `district_code + address_number`.
 
-New public RPC:
+`estates.address` remains as legacy/display compatibility only. It is normalized from `district_code + address_number` and should not be treated as the long-term source of truth by new frontend/domain code.
 
-- `vendor_scrap_hero_item(p_item_id uuid, p_actor_hero_id uuid, p_reason text default 'Item sold to vendor.', p_request_id text default null)`
+New address/capacity objects:
 
-RPC semantics:
+- `estate_district_address_capacities`
+- `format_estate_address(p_district_code, p_address_number)`
+- `parse_estate_address_number(p_address, p_district_code)`
+- `normalize_estate_address_fields()` trigger function
+- trigger: `trg_normalize_estate_address_fields` on `estates`
 
-1. Requires authenticated user and verifies `p_actor_hero_id` belongs to `auth.uid()`.
-2. Requires normal gameplay access through `assert_hero_can_use_normal_gameplay(...)`.
-3. Locks and validates the item belongs to the actor hero, is on the same server and has `status = active`.
-4. Computes drachma payout from `items.drachma_value * vendor_scrap_drachma_payout_percent / 100`, rounded down and clamped at minimum 0.
-5. Calls `scrap_hero_item(...)` for canonical safe item lifecycle cleanup.
-6. Applies the `drachma` resource delta through the existing DB-owned resource helper.
-7. Writes audit action `item.vendor_scrap.sold`.
-8. Returns item cleanup result, resource type, drachma amount, resulting balance and audit ids.
+Current active district capacities:
 
-Audit action:
+- A = 5000
+- B = 3000
+- C = 500
+- D = 50
+- E = 1
 
-- `item.vendor_scrap.sold`
+Empty estate addresses are not stored as database rows. Frontend may generate possible address ranges from capacity and overlay occupied `estates` rows.
 
-Important rules:
+If Codex removes the final code dependency on `estates.address`, it must report `DB cleanup candidate: estates.address` instead of silently leaving the legacy column behind.
 
-- Vendor scrap/sell is not player trade.
-- Vendor scrap/sell uses drachmas/resources, not Character Points.
-- Frontend must not direct-write `items`, `hero_resources`, audit logs or compose multiple low-level workflows for vendor sell.
-- `scrap_hero_item(...)` remains the canonical item lifecycle helper, but vendor payout belongs to `vendor_scrap_hero_item(...)`.
+### Empty-address relocation RPC
+
+Player relocation to an empty address is DB-owned:
+
+- `relocate_hero_estate_to_empty_address(p_hero_id, p_district_code, p_address_number, p_confirm_destroy_existing_estate, p_reason, p_request_id)`
+
+This RPC validates hero ownership, normal gameplay eligibility, district capacity and target occupancy; requires explicit destructive confirmation; deletes the current estate row; relies on cascade to delete current `estate_buildings` and `estate_building_jobs`; creates the new estate; and writes audit action `estate.relocated_empty_address` for entity type `estate`.
+
+This is not siege. Siege/takeover of an occupied estate is a separate future workflow and must not use this destructive empty-address relocation RPC.
+
+### Building jobs and finalization
+
+Active building jobs are stored in `estate_building_jobs`.
+
+Status enum:
+
+- `active`
+- `completed`
+- `cancelled`
+- `failed`
+
+MVP rule: one active job per estate. Player-facing cancel is not implemented; `cancelled` and `failed` are reserved for admin/system correction paths.
+
+Job stores estate, building, target level, status, `started_at` and `completes_at`. Costs are not stored in the job; costs are handled by the start-building RPC and resource ledger.
+
+Lazy finalization helper:
+
+- `finalize_completed_estate_building_jobs(p_estate_id)`
+
+Gameplay/read RPCs that rely on current building state should call the helper before reading completed building levels or building-derived bonuses.
+
+### Building upgrade start RPC
+
+Building construction/upgrade start is DB-owned:
+
+- `start_estate_building_upgrade(p_hero_id, p_building_id, p_reason, p_request_id)`
+
+This RPC finalizes completed jobs, validates ownership/district/max level/one-active-job rule, evaluates assigned `building_upgrade_cost` and `building_upgrade_time` formulas in DB, spends `drachma/materials/workforce` through `apply_hero_resource_delta_with_ledger(...)`, creates an active `estate_building_job`, and writes audit action `estate.building_upgrade.started` for entity type `estate_building_job`.
+
+Frontend must call this RPC. Frontend must not compute authoritative cost/time, directly mutate `hero_resources`, or insert building jobs.
+
+Runtime smoke verified that a real hero/estate/building can start an upgrade in a rollback transaction and that DB-side formula evaluation returns formula-backed cost/time and ledger rows.
+
+## Update 2026-05-01 — Vendor scrap/sell DB/RPC foundation
+
+Vendor scrap/sell is DB/RPC-owned and is not player trade.
+
+Current contracts:
+
+- config: `vendor_scrap_drachma_payout_percent`, default 50;
+- helper: `get_vendor_scrap_drachma_payout_percent()`;
+- RPC: `vendor_scrap_hero_item(p_item_id, p_actor_hero_id, p_reason, p_request_id)`.
+
+`vendor_scrap_hero_item(...)` computes drachma payout from `items.drachma_value`, calls `scrap_hero_item(...)`, applies drachma resource delta, writes vendor audit action `item.vendor_scrap.sold`, and returns item lifecycle result, payout amount and resulting balance.
+
+Frontend must use this RPC for vendor/system item sell/scrap. It must not compose `scrap_hero_item(...)` and resource updates in Angular and must not direct-write `items`, `hero_resources`, audit logs or resource balances.
+
+## Update 2026-05-01 — Trade/auction DB-owned audit foundation
+
+Trade/auction lifecycle audit is DB-owned. Frontend must not add Angular `AuditWriter` calls for trade/auction lifecycle.
+
+Lifecycle audit foundation includes completed transaction audit plus triggers/functions for direct trade offer lifecycle, auction listing lifecycle, auction bid placement and auction buy-now/close path distinction.
+
+Active audit action types cover direct trade create/respond/cancel/reject/expire/fail/completed and auction list/bid/buy-now/cancel/expire/close/fail/completed sale.
+
+Audit preserves review/reversal-relevant lifecycle facts such as starting bid, buy-now price, final transaction value, bid amount, participant hero ids, item/listing/bid/transaction ids, and status reason/failure/expiry context. Audit is complementary to ledgers, transaction rows, item snapshots and anti-abuse signals.
+
+## Update 2026-05-01 — Epic N progression DB foundation
+
+Progression formula/runtime foundation includes existing `save_stat_allocation(...)`, formula targets `hero_stat_upgrade_cost`, `hero_stat_level_cap`, `hero_experience_to_next_level`, and derived stat definition `critical_damage`.
+
+`critical_damage` is a runtime combat/derived stat. Current semantic rule: base critical damage percent is 50, then active `critical_damage` bonuses are added. The final critical hit multiplier should be derived from final critical damage percent, not hardcoded as x2.
+
+`hero_experience_to_next_level` is a configurable formula target. Frontend/Codex must not hardcode XP-to-next-level progression.
 
 
 ## Update 2026-04-30 — Epic M combat DB foundation
@@ -1608,7 +1658,7 @@ Edge Function:
 
 # Epic L PvE exploration / trials / rewards DB foundation
 
-Epic L DB foundation is partially implemented through applied migrations **L-DB1..L-DB4b**. Preview/simulation RPCs remain pending as **L-DB4c**.
+Epic L DB foundation is implemented through applied migrations **L-DB1..L-DB4c**. Preview/simulation RPCs are present in live schema/generated types and should be treated as applied.
 
 ## L-DB1 — dictionaries, formulas, rewards
 
@@ -1758,17 +1808,22 @@ Rules:
 - overrides expire and are consumed by step resolution;
 - challenge force-complete uses normal completion path, so success still grants rewards.
 
-## Pending L-DB4c — preview/simulation RPCs
+## L-DB4c — preview/simulation RPCs
 
-Not yet applied in the database.
+L-DB4c is applied in the database. These RPCs are read-only preview/simulation tools and must not mutate runtime exploration, challenge, reward, or item state.
 
-Next migration should be split into small safe chunks and add preview/simulation RPCs for:
+Current preview/simulation functions:
 
-- trial opportunity curve preview;
-- trial manifestation preview;
-- auto-resolve preview;
-- reward profile preview;
-- generated item preview without inserting into `items`;
-- multi-run trial opportunity/manifestation simulation.
+- `preview_trial_opportunity_curve(...)` — shows trial opportunity chance by dry-step progression / difficulty.
+- `preview_trial_manifestation_chance(...)` — shows trial manifestation chance for trial/stat/difficulty/district inputs.
+- `preview_challenge_auto_resolve_success_chance(...)` — shows fallback auto-resolve chance; auto-resolve should remain worse than manual play.
+- `preview_reward_generated_item(...)` — simulates generated item output without inserting into `items`.
+- `preview_reward_profile(...)` — previews reward profile entries, chance rolls, amounts and generated item previews without granting rewards.
+- `simulate_trial_opportunity_runs(...)` — simulates trial opportunity runs and returns roll history/distribution-oriented rows.
 
-Codex/frontend must not assume these functions exist until present in live schema/generated types.
+Rules:
+
+- preview/simulation RPCs are explanation/admin/lab tools, not gameplay mutation paths;
+- frontend must not use preview output as authoritative runtime result;
+- generated item preview must not insert rows into `items`;
+- runtime reward item generation uses the fixed `generate_reward_item_for_hero(...)` path that stores the picked quality key once and normalizes suffix display.

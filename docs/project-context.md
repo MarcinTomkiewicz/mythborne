@@ -52,6 +52,62 @@ The game should support serious long-term progression, politics, PvP tension and
 
 ---
 
+## Authoritative Formula Runtime Current Direction
+
+Balance formulas are source of truth for configurable gameplay math.
+
+Frontend formula runtime may be used for preview, charts, calculators and admin explainability. It must not be treated as authoritative for persistent gameplay mutations.
+
+DB/RPC/backend workflows that spend resources, start timers, grant rewards, resolve challenges, persist combat results, validate stat costs/caps or otherwise change durable state must evaluate assigned formulas server-side.
+
+Current DB-side formula runtime foundation includes:
+
+- `evaluate_balance_formula_expression(...)`
+- `evaluate_balance_formula_target(...)`
+- formula helpers for `roundUp`, `roundDown`, `clamp`, and random functions.
+
+Codex rule: if an authoritative workflow needs a formula result and no DB/RPC path evaluates it server-side, report a DB/RPC blocker instead of computing the value in Angular and sending it as truth.
+
+---
+
+## Estate / Buildings Current Direction
+
+Empty estate addresses are not database rows. The database stores occupied estates only.
+
+Estate address source of truth is `district_code + address_number`.
+
+`estates.address` remains legacy/display compatibility. New code should format addresses from `district_code + address_number`. When the final code dependency on `estates.address` is removed, Codex must report it as a `DB cleanup candidate`.
+
+Current district capacity values: A=5000, B=3000, C=500, D=50, E=1.
+
+Frontend may generate possible address ranges from `estate_district_address_capacities` and overlay occupied estate rows.
+
+Moving to an empty address is destructive and DB-owned through `relocate_hero_estate_to_empty_address(...)`. It deletes the current estate row and its buildings/jobs via cascade, then creates the new estate at the selected empty address. It is not the same as siege/takeover.
+
+Siege/takeover of an occupied estate is a future guild/PvP workflow. It should swap/transfer estate ownership or hero assignment without deleting estate/building state.
+
+Building construction/upgrades are DB-owned:
+
+- one active `estate_building_jobs` row per estate;
+- job stores target level and timing only;
+- player-facing cancel is not part of MVP;
+- `finalize_completed_estate_building_jobs(...)` lazy-finalizes completed jobs;
+- `start_estate_building_upgrade(...)` starts construction/upgrade, evaluates assigned building formulas server-side, spends `drachma/materials/workforce` through `hero_resource_ledger`, creates a job and writes audit.
+
+Building UI may preview formulas, but authoritative cost/time is calculated in the RPC.
+
+---
+
+## Vendor Scrap / Resource Economy Current Direction
+
+Vendor/system item scrap/sell uses drachmas and is not player trade.
+
+Frontend must call `vendor_scrap_hero_item(...)` for vendor sell/scrap. It must not compose item lifecycle and resource updates in Angular.
+
+Resources such as `drachma`, `materials`, and `workforce` have current balances in `hero_resources`. A minimal relational `hero_resource_ledger` records balance changes from DB/RPC workflows such as building upgrades. The ledger is for history/debug/admin investigation; it is not an undo/refund feature.
+
+---
+
 ## Combat Current Direction
 
 Combat is a reusable gameplay module. The same core combat rules should support exploration encounters, trials, future PvP, sandbox/admin tests and later systems.
@@ -96,31 +152,6 @@ Combat result persistence should be relational and report-ready:
 - one row per resolved attack.
 
 Future public/private report rendering is a separate epic, but combat snapshots must preserve enough attack/result data to reproduce the combat UI later. Full equipment remains private; reports show attack source labels and safe item-like source details rather than full equipment loadouts.
-
----
-
-## Trade / Auction / Vendor Current Direction
-
-Trade and auction mutations are DB/RPC-owned workflows. Frontend services should call the canonical public RPCs and should not direct-write workflow tables or audit logs.
-
-Trade and auction audit is DB-owned:
-
-- direct trade offer lifecycle is audited by DB triggers;
-- auction listing lifecycle is audited by DB triggers;
-- auction bid placement is audited by DB triggers;
-- completed direct trade and auction sale transactions are audited by DB triggers;
-- buy-now / auction-close path reason is also audited DB-side.
-
-Do not add Angular-side `AuditWriter` calls for trade/auction lifecycle. Audit logs are operational evidence and complement transaction rows, Character Point ledgers, item snapshots and anti-abuse signals.
-
-Vendor scrap/sell is separate from player trade:
-
-- it uses drachmas/resources, not Character Points;
-- it is not direct trade and not auction;
-- frontend must call `vendor_scrap_hero_item(...)`;
-- frontend must not compose item lifecycle cleanup and resource payout client-side.
-
-The current vendor payout config is `vendor_scrap_drachma_payout_percent`, default 50% of `items.drachma_value`. The RPC internally applies safe item lifecycle cleanup and drachma payout atomically.
 
 ---
 

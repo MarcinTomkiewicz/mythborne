@@ -1779,6 +1779,8 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ## Task L1 — DB/types alignment after PvE migrations
 
+**Status:** Done / confirmed 2026-05-01 as inspect/types-alignment slice. No code changes were made.
+
 **Goal:** Confirm the frontend type layer can safely consume the PvE DB/RPC foundation after the user regenerates Supabase types.
 
 **Scope:**

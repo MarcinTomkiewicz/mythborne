@@ -15,6 +15,75 @@ If something conflicts, prefer:
 
 ---
 
+## Formula Runtime Decisions — 2026-05-01
+
+`balance_formulas` and their assignments are the source of truth for configurable gameplay formulas.
+
+Frontend formula runtime is preview/explainability tooling. It is not authoritative for durable gameplay mutations.
+
+Any DB/RPC/backend workflow that persists gameplay state must evaluate assigned formulas server-side when the result affects durable state.
+
+Examples: building upgrade cost/time, stat upgrade cost/cap validation, XP-to-next-level validation, combat/opponent scaling where persisted, reward/challenge resolution where formula-backed, and future PvP/siege/resource calculations.
+
+The database now has restricted numeric evaluation helpers: `evaluate_balance_formula_expression(...)`, `evaluate_balance_formula_target(...)`, `formula_round_up(...)`, `formula_round_down(...)`, `formula_clamp(...)`, `formula_random()`, and `formula_random(min, max)`.
+
+If a new authoritative workflow needs formula evaluation and the current helper subset is insufficient, extend the approved DB/backend formula runtime instead of duplicating formula expressions in ad hoc RPC helpers.
+
+---
+
+## Estates / Buildings Runtime Decisions — 2026-05-01
+
+Empty estate addresses are not rows.
+
+`district_code + address_number` is the source of truth for estate address identity.
+
+`estates.address` remains legacy/display compatibility. It is not the long-term source of truth. Codex must report a `DB cleanup candidate` when frontend/backend no longer depends on it.
+
+Current address capacities: A=5000, B=3000, C=500, D=50, E=1.
+
+Moving to an empty address is destructive and irreversible for the current estate state. The canonical RPC is `relocate_hero_estate_to_empty_address(...)`. This is not siege/takeover.
+
+Building construction/upgrades use one active job per estate. Player-facing cancel is not part of MVP; `cancelled` and `failed` are reserved for admin/system correction paths.
+
+`finalize_completed_estate_building_jobs(p_estate_id)` must be called by read/gameplay workflows before relying on current building state.
+
+The canonical building start RPC is `start_estate_building_upgrade(...)`. It must evaluate assigned `building_upgrade_cost` and `building_upgrade_time` formulas in DB, spend `drachma/materials/workforce` through resource ledger helper, create the job and write audit. Angular must not compute authoritative cost/time or directly mutate resources/jobs.
+
+`hero_resource_ledger` is a minimal resource movement ledger. It is not a player undo/refund feature.
+
+---
+
+## Vendor Scrap / Sell Decisions — 2026-05-01
+
+Vendor/system scrap is not player trade. It uses drachmas, not Character Points.
+
+The canonical RPC is `vendor_scrap_hero_item(...)`. Frontend must not compose `scrap_hero_item(...)` and resource changes manually.
+
+---
+
+## Trade / Auction Audit Decisions — 2026-05-01
+
+Trade and auction lifecycle audit is DB-owned.
+
+Frontend must use canonical trade/auction RPCs and must not add Angular `AuditWriter` calls for trade/auction lifecycle events.
+
+DB-owned audit covers direct trade lifecycle, auction listing lifecycle, auction bid placement, completed trade/auction sale transactions, and the distinction between buy-now and normal auction close completion.
+
+Audit is complementary to ledgers, transaction rows, item snapshots and anti-abuse signals. It does not replace them.
+
+---
+
+## Progression / Epic N Decisions — 2026-05-01
+
+Stat allocation uses the existing DB/RPC workflow `save_stat_allocation(...)`.
+
+Progression formulas are configurable and must not be hardcoded in Angular: `hero_stat_upgrade_cost`, `hero_stat_level_cap`, and `hero_experience_to_next_level`.
+
+`critical_damage` is a runtime combat/derived stat. Current semantic base is 50%, plus active `critical_damage` bonuses. Final crit multiplier is derived from final critical damage percent, not hardcoded x2.
+
+---
+
+
 ## Combat / Epic M Decisions — 2026-04-30
 
 ### Combat module scope
@@ -152,55 +221,6 @@ A combat report should be able to display attack order, source labels, hit/evasi
 
 Full equipment stays private unless a future explicit UI decision exposes it.
 
-
-## Trade / Auction / Vendor Audit Decisions — 2026-05-01
-
-### Trade and auction audit ownership
-
-Trade and auction lifecycle audit is DB-owned.
-
-Frontend must:
-
-- keep using canonical public trade/auction RPCs;
-- not add Angular-side `AuditWriter` calls for trade/auction lifecycle;
-- not write audit logs directly for offer/listing/bid/transaction mutations.
-
-DB triggers write lifecycle audit for:
-
-- direct trade offer create/respond/cancel/reject/expire/fail;
-- auction listing list/cancel/expire/fail;
-- auction bid placement;
-- auction buy-now / auction close path reason;
-- completed direct trade / auction sale transactions.
-
-Audit evidence complements transaction rows, Character Point ledgers, transaction item snapshots and anti-abuse signals. It is not a public report/snapshot system.
-
-### Vendor scrap/sell
-
-Vendor scrap/sell is a system/vendor economy workflow, not player-to-player trade.
-
-Rules:
-
-- uses drachmas/resources, not Character Points;
-- must go through `vendor_scrap_hero_item(...)`;
-- frontend must not compose `scrap_hero_item(...)` plus resource updates;
-- frontend must not direct-update `items` or `hero_resources`;
-- item cleanup must still use canonical safe item lifecycle semantics through `scrap_hero_item(...)` internally.
-
-Current payout config:
-
-- `vendor_scrap_drachma_payout_percent`, product-global, default 50.
-
-Current helper/RPC:
-
-- `get_vendor_scrap_drachma_payout_percent()`;
-- `vendor_scrap_hero_item(...)`.
-
-### Resource ledger note
-
-There is currently no general `hero_resource_ledger`. `apply_reward_resource_delta(...)` remains a DB-owned resource helper, but it is not a full resource ledger. Do not invent frontend-side resource history. If a full resource ledger becomes necessary, it should be added as a separate DB/domain decision.
-
----
 
 ### Project name
 
