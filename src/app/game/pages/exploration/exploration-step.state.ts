@@ -1,8 +1,12 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
-import { HeroExplorationStepReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
+import {
+  HeroExplorationStepReadModel,
+  HeroExplorationStepResolutionReadModel,
+} from '../../../core/domain/exploration/exploration-runtime.model';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
+import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -19,7 +23,18 @@ export class ExplorationStepState {
 
   readonly now = signal(Date.now());
   readonly isResolving = signal(false);
+  readonly lastResolvedStep = signal<HeroExplorationStepResolutionReadModel | null>(null);
   readonly activeStep = computed(() => this.overview.state()?.activeStep ?? null);
+  readonly currentStepResult = computed(() => {
+    const state = this.overview.state();
+    const result = this.lastResolvedStep();
+
+    return result &&
+      state?.exploration?.id === result.explorationId &&
+      !state.activeStep
+      ? result
+      : null;
+  });
   readonly activeStepProgressPercent = computed(() =>
     this.progressPercent(this.activeStep()),
   );
@@ -40,6 +55,11 @@ export class ExplorationStepState {
       ? 'Ready to check result.'
       : `Resolving at ${step.resolvesAt}.`;
   });
+  readonly stepResultTitle = computed(() => this.resultTitle(this.currentStepResult()));
+  readonly stepResultDescription = computed(() =>
+    this.resultDescription(this.currentStepResult()),
+  );
+  readonly stepResultFlavor = computed(() => this.resultFlavor(this.currentStepResult()));
 
   constructor() {
     effect(() => {
@@ -86,12 +106,13 @@ export class ExplorationStepState {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (state) => {
+        next: (workflow) => {
           if (!this.isCurrentResolve(token, context.heroId, context.difficultyKey, step.id)) {
             return;
           }
 
-          this.overview.setStateFromWorkflow(state);
+          this.lastResolvedStep.set(workflow.result);
+          this.overview.setStateFromWorkflow(workflow.state);
           this.feedback.setSuccess('Movement result checked.');
         },
         error: (error: unknown) => {
@@ -108,6 +129,95 @@ export class ExplorationStepState {
     const resolvesAt = this.resolvesAtMs(this.activeStep());
 
     return resolvesAt !== null && this.now() >= resolvesAt;
+  }
+
+  private resultTitle(result: HeroExplorationStepResolutionReadModel | null): string {
+    if (!result) {
+      return '';
+    }
+
+    if (result.challengeAttemptId && result.trialDefinitionId) {
+      return 'Trial manifested';
+    }
+
+    if (result.challengeAttemptId && result.encounterDefinitionId) {
+      return 'Encounter started';
+    }
+
+    if (result.trialDefinitionId) {
+      return 'Trial did not manifest';
+    }
+
+    if (this.isMovementOutcome(result.outcomeKind)) {
+      return 'Path resolved';
+    }
+
+    if (this.isEmptyOutcome(result.outcomeKind)) {
+      return 'Nothing found';
+    }
+
+    return this.humanizeKey(result.outcomeKind);
+  }
+
+  private resultDescription(result: HeroExplorationStepResolutionReadModel | null): string {
+    if (!result) {
+      return '';
+    }
+
+    if (result.challengeAttemptId && result.trialDefinitionId) {
+      return 'A trial challenge is ready. Resolve the challenge flow to continue.';
+    }
+
+    if (result.challengeAttemptId && result.encounterDefinitionId) {
+      return 'An encounter challenge is ready. Resolve the encounter flow to continue.';
+    }
+
+    if (result.trialDefinitionId) {
+      return 'The daily trial opportunity was consumed, but no trial manifested and no reward is granted.';
+    }
+
+    if (result.toNodeId || result.currentNodeId) {
+      return `Current node: ${result.currentNodeId ?? result.toNodeId}.`;
+    }
+
+    return 'The step was resolved by the database runtime.';
+  }
+
+  private resultFlavor(result: HeroExplorationStepResolutionReadModel | null): string | null {
+    const metadata = jsonRecord(result?.metadataJson);
+
+    return optionalText(
+      read(
+        metadata,
+        'flavorText',
+        'flavor_text',
+        'description',
+        'descriptionText',
+        'description_text',
+      ),
+    );
+  }
+
+  private isMovementOutcome(value: string): boolean {
+    return [
+      'known_path',
+      'known_path_movement',
+      'backtracking',
+      'movement',
+      'moved',
+    ].includes(value);
+  }
+
+  private isEmptyOutcome(value: string): boolean {
+    return ['nothing', 'empty', 'none'].includes(value);
+  }
+
+  private humanizeKey(value: string): string {
+    return value
+      .split(/[_\s-]+/)
+      .filter(Boolean)
+      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+      .join(' ') || 'Step resolved';
   }
 
   private progressPercent(step: HeroExplorationStepReadModel | null): number {

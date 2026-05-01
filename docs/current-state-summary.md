@@ -24,7 +24,7 @@ This is an operational estimate, not a formal audit.
 | Hero progression formulas | 70% | Stat cost and cap formulas are live, including support for `statLevel`. |
 | Armory / item visibility layer | 50% | Core item catalog and armory surface exist, but broader gameplay loops are still incomplete. |
 | Combat | 35% | `/game/combat` now has a 10-turn Walking Dead duel with formula-driven hit/evasion/crit/damage, but it is still sandbox-only and not tied to rewards or exploration. |
-| Exploration / trials / encounters | 25% | DB/RPC foundation and guarded frontend models/mappers exist. `/game/exploration` now has player-facing status/start, DB-backed graph/direction display, movement start and DB-time-gated step resolve affordance, but resolved outcome presentation, challenges and rewards are still pending. |
+| Exploration / trials / encounters | 30% | DB/RPC foundation and guarded frontend models/mappers exist. `/game/exploration` now has player-facing status/start, DB-backed graph/direction display, movement start, DB-time-gated step resolve and resolved outcome presentation, but challenge completion and rewards are still pending. |
 | Prestige / reputation | 0% | Not implemented yet. |
 | Guilds / politics / sieges | 0% | Not implemented yet. |
 | Trade / economy gameplay loop | 58% | Database/RPC foundation for Character Points, direct trade, auctions, item locks, vendor scrap and anti-abuse signals exists. Direct trade and one-item auctions have initial player-facing RPC-backed UIs; vendor sell has a core service contract, while Trade Routes/building integration and real sandbox smoke coverage are still pending. |
@@ -590,6 +590,9 @@ Still pending at the gameplay level even if partially supported in schema:
 - L5 accepted on 2026-05-01: `/game/exploration` now shows active movement step timer/progress from DB `startedAt`, `resolvesAt` and `status`, and exposes `Check result` only when the DB-ready time has passed.
 - L5 adds `ExplorationStepState` and `HeroExplorations.resolveHeroExplorationStep(...)` over canonical `resolve_hero_exploration_step(...)`; after resolve, canonical state is refreshed through `get_hero_exploration_state(...)`. Normal player UI does not expose `skip_hero_exploration_step_timer(...)`, which remains a sandbox/admin helper.
 - L5 was verified with `npx tsc --noEmit`, focused exploration service/page specs and `npm run build`; build retained the known bundle budget/CommonJS warnings. Full timer/resolve manual smoke remains pending real active exploration step data.
+- L6 accepted on 2026-05-01: resolved exploration step outcomes are now shown from DB `resolve_hero_exploration_step(...)` snapshots, paired with refreshed canonical exploration state.
+- L6 adds `HeroExplorationStepResolutionReadModel`, keeps the last resolved step result scoped to the current exploration, and presents known-path/movement, empty/nothing flavor, encounter started, trial manifested and trial manifestation-fail outcomes without frontend reroll or reward generation.
+- L6 split the growing `/game/exploration` template into `ExplorationStatusSection`. Verification: changed-file list matched the expected 11 files, `npx tsc --noEmit` passed, focused exploration service/page specs passed with 14 SUCCESS, and `npm run build` passed with the known bundle budget/CommonJS warnings. Manual outcome smoke remains pending real resolved step/challenge data.
 - Status/verdict/sanction/CP penalty action sections now repeat the same audited action shell. Before adding another similar status-action section, check whether a shared wrapper/state/helper is warranted for error/success/loading, submit layout and stale-guard behavior.
 - `core` should continue to hold non-component logic:
   - domain models

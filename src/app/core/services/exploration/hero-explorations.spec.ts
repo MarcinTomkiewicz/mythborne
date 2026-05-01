@@ -119,7 +119,7 @@ describe('HeroExplorations', () => {
   });
 
   it('resolves ready movement steps through RPC before refreshing the canonical state', async () => {
-    await firstValueFrom(
+    const workflow = await firstValueFrom(
       service.resolveHeroExplorationStep({
         heroId: 'hero-1',
         difficultyKey: 'easy',
@@ -127,6 +127,13 @@ describe('HeroExplorations', () => {
       }),
     );
 
+    expect(workflow.result).toEqual(
+      jasmine.objectContaining({
+        stepId: 'step-1',
+        outcomeKind: 'nothing',
+        remainingTrials: 1,
+      }),
+    );
     expect(backend.rpc).toHaveBeenCalledWith(RPC.resolve_hero_exploration_step, {
       p_step_id: 'step-1',
     });

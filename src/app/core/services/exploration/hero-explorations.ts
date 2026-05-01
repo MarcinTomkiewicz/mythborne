@@ -3,7 +3,10 @@ import { map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import { ExplorationDifficultyTierReadModel } from '../../domain/exploration/exploration-definition.model';
-import { HeroExplorationStateReadModel } from '../../domain/exploration/exploration-runtime.model';
+import {
+  HeroExplorationStateReadModel,
+  HeroExplorationStepResolutionWorkflowResult,
+} from '../../domain/exploration/exploration-runtime.model';
 import { TrialOpportunityCurvePreview } from '../../domain/exploration/exploration-preview.model';
 import { FilterOperator } from '../../enums/filter-operators';
 import { Row } from '../../types/supabase.types';
@@ -21,6 +24,8 @@ import {
   firstResolveHeroExplorationStepRow,
   firstStartHeroExplorationStepRow,
   firstStartOrGetHeroExplorationRow,
+  explorationStepResolutionWorkflowResult,
+  mapResolveHeroExplorationStepResult,
   toGetHeroExplorationStateRpcArgs,
   toPreviewTrialOpportunityCurveRpcArgs,
   toResolveHeroExplorationStepRpcArgs,
@@ -108,7 +113,7 @@ export class HeroExplorations {
     heroId: string;
     difficultyKey: string;
     stepId: string;
-  }): Observable<HeroExplorationStateReadModel> {
+  }): Observable<HeroExplorationStepResolutionWorkflowResult> {
     return this.backend
       .rpc<ResolveHeroExplorationStepRpcRow[]>(
         RPC.resolve_hero_exploration_step,
@@ -116,11 +121,18 @@ export class HeroExplorations {
       )
       .pipe(
         map(firstResolveHeroExplorationStepRow),
-        switchMap(() =>
+        switchMap((row) =>
           this.getHeroExplorationState({
             heroId: input.heroId,
             difficultyKey: input.difficultyKey,
-          }),
+          }).pipe(
+            map((state) =>
+              explorationStepResolutionWorkflowResult(
+                mapResolveHeroExplorationStepResult(row),
+                state,
+              ),
+            ),
+          ),
         ),
       );
   }

@@ -2,7 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
 import { ExplorationDifficultyTierReadModel } from '../../../core/domain/exploration/exploration-definition.model';
 import { TrialOpportunityCurvePreview } from '../../../core/domain/exploration/exploration-preview.model';
-import { HeroExplorationStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
+import {
+  HeroExplorationStateReadModel,
+  HeroExplorationStepResolutionWorkflowResult,
+} from '../../../core/domain/exploration/exploration-runtime.model';
 import { RequiredActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
@@ -39,7 +42,9 @@ describe('ExplorationPageState', () => {
     );
     explorations.startOrGetHeroExploration.and.returnValue(of(activeExplorationState('easy')));
     explorations.previewTrialOpportunityCurve.and.returnValue(of([previewRow('easy')]));
-    explorations.resolveHeroExplorationStep.and.returnValue(of(activeExplorationState('easy')));
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy')),
+    );
 
     TestBed.configureTestingModule({
       providers: [
@@ -117,26 +122,51 @@ describe('ExplorationPageState', () => {
     expect(page.canChooseDirection(page.edges()[0])).toBeFalse();
   });
 
-  it('checks ready movement step results through RPC', () => {
+  it('describes resolved step outcomes from RPC snapshots', () => {
+    const cases: Array<[
+      Partial<HeroExplorationStepResolutionWorkflowResult['result']>,
+      string,
+      string,
+    ]> = [
+      [{ outcomeKind: 'known_path' }, 'Path resolved', 'Current node: node-2.'],
+      [{ outcomeKind: 'empty', currentNodeId: null, toNodeId: null }, 'Nothing found', 'database runtime'],
+      [{ outcomeKind: 'encounter', encounterDefinitionId: 'encounter-1', challengeAttemptId: 'challenge-1' }, 'Encounter started', 'An encounter challenge is ready.'],
+      [{ outcomeKind: 'trial', trialDefinitionId: 'trial-1', challengeAttemptId: 'challenge-1' }, 'Trial manifested', 'A trial challenge is ready.'],
+      [{ outcomeKind: 'trial', trialDefinitionId: 'trial-1' }, 'Trial did not manifest', 'daily trial opportunity was consumed'],
+    ];
+
     page.loadData();
     page.startSelectedDifficulty();
-    page.overview.setStateFromWorkflow(
-      activeExplorationState('easy', true, false, {
-        startedAt: new Date(Date.now() - 60_000).toISOString(),
-        resolvesAt: new Date(Date.now() - 1_000).toISOString(),
-      }),
-    );
 
-    expect(page.canCheckResult()).toBeTrue();
+    for (const [patch, title, description] of cases) {
+      page.overview.setStateFromWorkflow(activeExplorationState('easy', true, false, pastStepTiming()));
+      explorations.resolveHeroExplorationStep.and.returnValue(
+        of(stepResolutionWorkflow('easy', patch)),
+      );
 
+      page.checkStepResult();
+
+      expect(explorations.resolveHeroExplorationStep).toHaveBeenCalledWith({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        stepId: 'step-1',
+      });
+      expect(page.stepResultTitle()).toBe(title);
+      expect(page.stepResultDescription()).toContain(description);
+    }
+  });
+
+  it('hides stale resolved step results after exploration context changes', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', true, false, pastStepTiming()));
     page.checkStepResult();
 
-    expect(explorations.resolveHeroExplorationStep).toHaveBeenCalledOnceWith({
-      heroId: 'hero-1',
-      difficultyKey: 'easy',
-      stepId: 'step-1',
-    });
-    expect(feedback.successMessage()).toBe('Movement result checked.');
+    expect(page.currentStepResult()).not.toBeNull();
+
+    page.overview.setStateFromWorkflow(activeExplorationState('hard', false, false, pastStepTiming(), 'exploration-2'));
+
+    expect(page.currentStepResult()).toBeNull();
   });
 
   it('does not resolve movement steps before the DB ready time', () => {
@@ -187,13 +217,8 @@ describe('ExplorationPageState', () => {
 
 function activeHeroContext(): RequiredActiveHeroState {
   return {
-    userId: 'user-1',
-    serverId: 'server-1',
     heroId: 'hero-1',
-    server: { id: 'server-1', name: 'Server' } as RequiredActiveHeroState['server'],
-    hero: {} as never,
-    heroRow: {} as never,
-  };
+  } as RequiredActiveHeroState;
 }
 
 function difficulty(key: string): ExplorationDifficultyTierReadModel {
@@ -208,14 +233,7 @@ function difficulty(key: string): ExplorationDifficultyTierReadModel {
 function previewRow(difficultyKey: string): TrialOpportunityCurvePreview {
   return {
     difficultyKey,
-    difficultyLabel: difficultyKey.toUpperCase(),
-    projectedStepNumber: 1,
-    dryStepCount: 0,
-    trialOpportunityChance: 25,
-    trialOpportunityStepCap: 3,
-    isGuaranteedByStepCap: false,
-    explanation: 'Preview only.',
-  };
+  } as TrialOpportunityCurvePreview;
 }
 
 function noExplorationState(difficultyKey: string): HeroExplorationStateReadModel {
@@ -223,32 +241,25 @@ function noExplorationState(difficultyKey: string): HeroExplorationStateReadMode
     hasExploration: false,
     heroId: 'hero-1',
     difficultyKey,
-    explorationDate: '2026-05-01',
     remainingTrials: 2,
     exploration: null,
-    currentNode: null,
     edges: [],
     activeStep: null,
-    activeChallenge: null,
-    activeEffect: null,
-    rawJson: {},
-  };
+  } as unknown as HeroExplorationStateReadModel;
 }
 
 function activeExplorationState(
   difficultyKey: string,
   withActiveStep = false,
   withActiveChallenge = false,
-  activeStepTiming: { startedAt: string; resolvesAt: string } = {
-    startedAt: '2026-05-01T10:00:00.000Z',
-    resolvesAt: '2026-05-01T10:05:00.000Z',
-  },
+  activeStepTiming = { startedAt: '2026-05-01T10:00:00.000Z', resolvesAt: '2026-05-01T10:05:00.000Z' },
+  explorationId = 'exploration-1',
 ): HeroExplorationStateReadModel {
   return {
     ...noExplorationState(difficultyKey),
     hasExploration: true,
     exploration: {
-      id: 'exploration-1',
+      id: explorationId,
       difficultyKey,
       districtCode: 'district-a',
       status: 'active',
@@ -262,7 +273,7 @@ function activeExplorationState(
     edges: [
       {
         id: 'edge-1',
-        explorationId: 'exploration-1',
+        explorationId,
         fromNodeId: 'node-1',
         toNodeId: 'node-2',
         directionKey: 'north',
@@ -287,5 +298,38 @@ function activeExplorationState(
           status: 'active',
         } as HeroExplorationStateReadModel['activeChallenge']
       : null,
+  };
+}
+
+function stepResolutionWorkflow(
+  difficultyKey: string,
+  patch: Partial<HeroExplorationStepResolutionWorkflowResult['result']> | string = 'nothing',
+): HeroExplorationStepResolutionWorkflowResult {
+  const resultPatch = typeof patch === 'string' ? { outcomeKind: patch } : patch;
+
+  return {
+    result: {
+      stepId: 'step-1',
+      explorationId: 'exploration-1',
+      status: 'resolved',
+      outcomeKind: 'nothing',
+      currentNodeId: 'node-2',
+      toNodeId: 'node-2',
+      trialDefinitionId: null,
+      encounterDefinitionId: null,
+      challengeAttemptId: null,
+      remainingTrials: 1,
+      trialDryStepCount: 1,
+      metadataJson: { flavorText: 'The passage is quiet.' },
+      ...resultPatch,
+    },
+    state: activeExplorationState(difficultyKey),
+  };
+}
+
+function pastStepTiming(): { startedAt: string; resolvesAt: string } {
+  return {
+    startedAt: new Date(Date.now() - 60_000).toISOString(),
+    resolvesAt: new Date(Date.now() - 1_000).toISOString(),
   };
 }

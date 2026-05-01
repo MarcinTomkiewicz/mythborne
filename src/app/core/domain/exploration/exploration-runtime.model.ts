@@ -181,6 +181,26 @@ export interface HeroExplorationStateReadModel {
   rawJson: Json;
 }
 
+export interface HeroExplorationStepResolutionReadModel {
+  stepId: string;
+  explorationId: string;
+  status: string;
+  outcomeKind: string;
+  currentNodeId: string | null;
+  toNodeId: string | null;
+  trialDefinitionId: string | null;
+  encounterDefinitionId: string | null;
+  challengeAttemptId: string | null;
+  remainingTrials: number;
+  trialDryStepCount: number;
+  metadataJson: Json;
+}
+
+export interface HeroExplorationStepResolutionWorkflowResult {
+  result: HeroExplorationStepResolutionReadModel;
+  state: HeroExplorationStateReadModel;
+}
+
 export interface HeroExplorationDebugEntryReadModel {
   exploration: HeroExplorationReadModel;
   remainingTrials: number | null;

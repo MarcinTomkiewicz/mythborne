@@ -93,6 +93,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: L3 - player exploration start/status screen.
 - Completed and confirmed: L4 - graph state read and direction UI.
 - Completed and confirmed: L5 - start step timer and progress UI.
+- Completed and confirmed: L6 - resolve step result UI.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
@@ -116,7 +117,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I7 - building bonus and requirement explainability.
 - Completed and confirmed: UX-I7b - DB-driven central requirement editor for Buildings admin.
 - Completed and confirmed: UX-I8 - anti-abuse decision explainability pass.
-- Current backlog task: L6 - resolve step result UI.
+- Current backlog task: L7 - challenge attempt UI: manual, auto and debug paths.
 - H17+ planning note: status/verdict/sanction/CP penalty action sections now share a similar workflow-action shell; before adding the next similar audited status-action section, check whether to extract a light shared wrapper/state/helper for error/success/loading/submit card layout and stale-guard handling.
 - Reporting rule: future task reports must include a short Shared/reuse check covering reused shared/admin components, checked-but-not-reused options, and any new component justification.
 - G6 follow-up planning note: remaining gameplay audit slices are major item operations, trade operations once frontend flows exist, and estate/building irreversible changes.
@@ -137,7 +138,8 @@ Order reflects implementation priority, not final business priority.
 ## Highest Priority Gameplay TODO
 
 ### Exploration + trials loop
-- Next: L6 should display resolved step outcomes without duplicating DB roll logic in Angular.
+- Next: L7 should add challenge attempt UI for manual, auto and debug paths.
+- L6 has added resolved step outcome display driven by DB `resolve_hero_exploration_step(...)` snapshots without frontend reroll or reward generation.
 - L5 has added step timer/progress display from DB `resolves_at`/step status plus ready-only `Check result` handling through `resolve_hero_exploration_step(...)`.
 - L4 has added graph/path display and valid direction choices from `get_hero_exploration_state(...)`, with movement started through `start_hero_exploration_step(...)`.
 - L3 has added `/game/exploration`, DB-backed difficulty tiers, selected-difficulty state loading, and `start_or_get_hero_exploration(...)` start/status flow.

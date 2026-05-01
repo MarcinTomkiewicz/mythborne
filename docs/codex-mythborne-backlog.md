@@ -1847,6 +1847,8 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ## Task L6 — Resolve step result UI
 
+**Status:** Done / confirmed on 2026-05-01.
+
 **Goal:** Display resolved step outcomes clearly without duplicating DB roll logic in Angular.
 
 **Scope:**

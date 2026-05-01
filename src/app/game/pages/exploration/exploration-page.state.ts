@@ -31,6 +31,10 @@ export class ExplorationPageState {
   readonly activeStepRemainingLabel = this.step.activeStepRemainingLabel;
   readonly activeStepStatusLabel = this.step.activeStepStatusLabel;
   readonly canCheckResult = this.step.canCheckResult;
+  readonly currentStepResult = this.step.currentStepResult;
+  readonly stepResultDescription = this.step.stepResultDescription;
+  readonly stepResultFlavor = this.step.stepResultFlavor;
+  readonly stepResultTitle = this.step.stepResultTitle;
   readonly movementBlockReason = this.movement.movementBlockReason;
   readonly remainingTrialsLabel = this.overview.remainingTrialsLabel;
   readonly currentNodeLabel = this.overview.currentNodeLabel;

@@ -1,4 +1,8 @@
 import {
+  HeroExplorationStepResolutionReadModel,
+  HeroExplorationStepResolutionWorkflowResult,
+} from '../domain/exploration/exploration-runtime.model';
+import {
   GetHeroExplorationStateRpcArgs,
   PreviewTrialOpportunityCurveRpcArgs,
   ResolveHeroExplorationStepRpcArgs,
@@ -8,6 +12,7 @@ import {
   StartOrGetHeroExplorationRpcArgs,
   StartOrGetHeroExplorationRpcRow,
 } from '../types/exploration-runtime-rpc.types';
+import { Json } from '../types/database.types';
 import { trimText } from './normalize-text';
 
 export function toGetHeroExplorationStateRpcArgs(input: {
@@ -112,6 +117,32 @@ export function firstResolveHeroExplorationStepRow(
   }
 
   return row;
+}
+
+export function mapResolveHeroExplorationStepResult(
+  row: ResolveHeroExplorationStepRpcRow,
+): HeroExplorationStepResolutionReadModel {
+  return {
+    stepId: row.step_id,
+    explorationId: row.exploration_id,
+    status: row.status,
+    outcomeKind: row.outcome_kind,
+    currentNodeId: row.current_node_id,
+    toNodeId: row.to_node_id,
+    trialDefinitionId: row.trial_definition_id,
+    encounterDefinitionId: row.encounter_definition_id,
+    challengeAttemptId: row.challenge_attempt_id,
+    remainingTrials: row.remaining_trials,
+    trialDryStepCount: row.trial_dry_step_count,
+    metadataJson: row.metadata_json as Json,
+  };
+}
+
+export function explorationStepResolutionWorkflowResult(
+  result: HeroExplorationStepResolutionReadModel,
+  state: HeroExplorationStepResolutionWorkflowResult['state'],
+): HeroExplorationStepResolutionWorkflowResult {
+  return { result, state };
 }
 
 function requiredText(value: string | null | undefined, field: string): string {
