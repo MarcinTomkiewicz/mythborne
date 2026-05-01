@@ -4,13 +4,13 @@ import { of, Subject } from 'rxjs';
 import { HeroExplorationDebugStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { ModerationHeroTarget } from '../../../core/domain/moderation/moderation-action.model';
 import { SelectedGameServer, ServerAccessState } from '../../../core/interfaces/server/active-server.interface';
-import { ExplorationDebugDefinitions } from '../../../core/services/exploration/exploration-debug-definitions';
+import { ExplorationDefinitions } from '../../../core/services/exploration/exploration-definitions';
 import { HeroExplorationDebug } from '../../../core/services/exploration/hero-exploration-debug';
 import { ModerationActions } from '../../../core/services/moderation/moderation-actions';
 import { ActiveServer } from '../../../core/services/server/active-server';
 import { ToastService } from '../../../core/services/ui/toast';
 import { ExplorationDebugActionsState } from './exploration-debug-actions.state';
-import { ExplorationDebugDefinitionsState } from './exploration-debug-definitions.state';
+import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
 import { ExplorationDebugScopeState } from './exploration-debug-scope.state';
 import { ExplorationDebugFeedbackState } from './exploration-debug-feedback.state';
 import { ExplorationDebugPageState } from './exploration-debug-page.state';
@@ -21,7 +21,7 @@ describe('ExplorationDebugPageState', () => {
   let selectedServerSignal: ReturnType<typeof signal<SelectedGameServer | null>>;
   let accessSignal: ReturnType<typeof signal<ServerAccessState>>;
   let debug: jasmine.SpyObj<HeroExplorationDebug>;
-  let definitions: jasmine.SpyObj<ExplorationDebugDefinitions>;
+  let definitions: jasmine.SpyObj<ExplorationDefinitions>;
   let moderationActions: jasmine.SpyObj<ModerationActions>;
   let toast: jasmine.SpyObj<ToastService>;
   let state: ExplorationDebugPageState;
@@ -57,19 +57,27 @@ describe('ExplorationDebugPageState', () => {
         counterId: 'counter-1',
       }),
     );
-    definitions = jasmine.createSpyObj<ExplorationDebugDefinitions>(
-      'ExplorationDebugDefinitions',
+    definitions = jasmine.createSpyObj<ExplorationDefinitions>(
+      'ExplorationDefinitions',
       [
         'getActiveDifficultyTiers',
         'getActiveRewardProfiles',
         'getActiveTrialDefinitions',
         'getActiveEncounterDefinitions',
+        'getActiveItemBucketProfiles',
+        'getEnabledItemQualities',
+        'getDistrictOptions',
+        'getStatOptions',
       ],
     );
     definitions.getActiveDifficultyTiers.and.returnValue(of([difficulty()]));
     definitions.getActiveRewardProfiles.and.returnValue(of([rewardProfile()]));
     definitions.getActiveTrialDefinitions.and.returnValue(of([trialDefinition()]));
     definitions.getActiveEncounterDefinitions.and.returnValue(of([encounterDefinition()]));
+    definitions.getActiveItemBucketProfiles.and.returnValue(of([]));
+    definitions.getEnabledItemQualities.and.returnValue(of([]));
+    definitions.getDistrictOptions.and.returnValue(of([]));
+    definitions.getStatOptions.and.returnValue(of([]));
     moderationActions = jasmine.createSpyObj<ModerationActions>('ModerationActions', [
       'searchHeroTargets',
     ]);
@@ -80,13 +88,13 @@ describe('ExplorationDebugPageState', () => {
       providers: [
         ExplorationDebugFeedbackState,
         ExplorationDebugScopeState,
-        ExplorationDebugDefinitionsState,
+        ExplorationDefinitionsState,
         ExplorationDebugRuntimeState,
         ExplorationDebugActionsState,
         ExplorationDebugPageState,
         { provide: ActiveServer, useValue: activeServer },
         { provide: HeroExplorationDebug, useValue: debug },
-        { provide: ExplorationDebugDefinitions, useValue: definitions },
+        { provide: ExplorationDefinitions, useValue: definitions },
         { provide: ModerationActions, useValue: moderationActions },
         { provide: ToastService, useValue: toast },
       ],

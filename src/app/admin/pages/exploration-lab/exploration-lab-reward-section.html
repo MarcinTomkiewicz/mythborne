@@ -1,0 +1,90 @@
+<section class="grid-2 gap-lg">
+  <article class="mg-card p-lg flex-col gap-md">
+    <div class="flex-col gap-xs">
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Generated item preview</h3>
+      <p class="muted-text mb-0">
+        Simulates item generation for a DB bucket profile and optional maximum quality. This does
+        not create item rows.
+      </p>
+    </div>
+    <form class="grid-form" [formGroup]="page.generatedItemForm">
+      <label class="form-field">
+        <span>Bucket profile</span>
+        <p-select formControlName="bucketProfileId" [options]="page.itemBucketOptions()" optionLabel="label" optionValue="value" />
+        <small class="muted-text">Active item generation bucket profile from the database.</small>
+      </label>
+      <label class="form-field">
+        <span>Maximum quality</span>
+        <p-select formControlName="maxQualityKey" [options]="page.itemQualityOptions()" optionLabel="label" optionValue="value" />
+        <small class="muted-text">Optional cap. Database default leaves quality uncapped.</small>
+      </label>
+      <label class="form-field">
+        <span>Preview count</span>
+        <p-inputnumber formControlName="previewCount" [min]="1" />
+      </label>
+      <button pButton type="button" label="Preview items" (click)="page.runGeneratedItemPreview()"></button>
+    </form>
+    <p-table [value]="page.generatedItemRows()" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>#</th><th>Name</th><th>Bucket</th><th>Quality</th><th>Value</th><th>Explanation</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>{{ row.previewIndex }}</td>
+          <td>{{ row.generatedName }}</td>
+          <td>{{ row.bucketProfileName }} / {{ row.rolledBudget }}</td>
+          <td>{{ row.qualityLabel }} <span class="muted-text">x{{ row.qualityMultiplier }}</span></td>
+          <td>{{ row.drachmaValue }}</td>
+          <td>{{ row.explanation }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </article>
+
+  <article class="mg-card p-lg flex-col gap-md">
+    <div class="flex-col gap-xs">
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Reward profile preview</h3>
+      <p class="muted-text mb-0">
+        Explains which reward profile entries would be included across sample runs. It previews
+        persisted profile rules without granting a reward.
+      </p>
+    </div>
+    <form class="grid-form" [formGroup]="page.rewardProfileForm">
+      <label class="form-field">
+        <span>Reward profile</span>
+        <p-autocomplete
+          formControlName="rewardProfile"
+          [suggestions]="page.rewardProfileSuggestions()"
+          optionLabel="label"
+          [dropdown]="true"
+          [forceSelection]="true"
+          [showClear]="true"
+          placeholder="Search reward profile by label or key"
+          (completeMethod)="page.searchRewardProfiles($event.query)"
+          (onSelect)="page.selectRewardProfile($event.value)"
+          (onClear)="page.clearRewardProfile()"
+        />
+      </label>
+      <label class="form-field">
+        <span>Preview count</span>
+        <p-inputnumber formControlName="previewCount" [min]="1" />
+      </label>
+      <button pButton type="button" label="Preview profile" (click)="page.runRewardProfilePreview()"></button>
+    </form>
+    <p-table [value]="page.rewardProfileRows()" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Run</th><th>Entry</th><th>Included</th><th>Amount</th><th>Items</th><th>Explanation</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>{{ row.previewRunIndex }}</td>
+          <td>{{ row.entryLabel }} <span class="muted-text">({{ row.entryKind }})</span></td>
+          <td>{{ row.isIncluded ? 'Yes' : 'No' }}</td>
+          <td>{{ row.previewAmount ?? '-' }}</td>
+          <td>{{ row.previewItemCount ?? '-' }}</td>
+          <td>{{ row.explanation }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </article>
+</section>

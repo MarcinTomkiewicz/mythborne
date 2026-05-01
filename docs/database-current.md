@@ -12,6 +12,50 @@ If this file conflicts with the actual database or generated `database.types.ts`
 
 # Current DB/RPC contract updates
 
+## Update 2026-05-01 — Epic Q notifications DB foundation
+
+Notifications are persistent inbox/bell entries. They are separate from game reports, audit logs, player abuse reports and local UI-only toasts.
+
+Toast behavior is presentation-only: frontend may show a fresh notification row as a toast when the recipient is online and the notification type allows it. The persistent `notifications` row is the source of truth.
+
+Current DB foundation:
+
+- enum `notification_recipient_kind`: `user`, `hero`, `staff`.
+- enum `notification_severity`: `info`, `notice`, `warning`, `critical`.
+- table `notification_types` for DB-backed labels/descriptions/categories/default severity/default toast behavior.
+- table `notifications` for persistent notification rows.
+- internal helper `create_notification(...)` for DB/RPC workflows.
+- RPC `mark_notification_read(p_notification_id)`.
+- RPC `dismiss_notification(p_notification_id)`.
+
+Current seeded notification types include:
+
+- direct trade: `trade.offer_received`, `trade.offer_completed`, `trade.offer_rejected`;
+- auction: `auction.outbid`, `auction.sold`, `auction.won`;
+- declarations: `declaration.approved`, `declaration.rejected`;
+- reports/moderation: `abuse_report.resolved`, `anti_abuse.case_waiting_for_player`, `anti_abuse.case_waiting_for_staff`;
+- sanctions: `sanction.created`, `cp_penalty.created`;
+- estate/buildings: `building.completed`.
+
+Current DB-owned notification hooks:
+
+- `notify_player_trade_offer_lifecycle()` via `trg_notify_player_trade_offer_lifecycle` on `player_trade_offers`;
+- `notify_player_trade_transaction_completed()` via `trg_notify_player_trade_transaction_completed` on `player_trade_transactions`;
+- `notify_player_auction_bid_outbid()` via `trg_notify_player_auction_bid_outbid` on `player_auction_bids`;
+- `notify_player_relationship_declaration_decision()` via `trg_notify_player_relationship_declaration_decision` on `player_relationship_declarations`;
+- `notify_player_abuse_report_decision()` via `trg_notify_player_abuse_report_decision` on `player_abuse_reports`;
+- `notify_anti_abuse_case_attention()` via `trg_notify_anti_abuse_case_attention` on `anti_abuse_cases`;
+- `notify_anti_abuse_sanction_created()` via `trg_notify_anti_abuse_sanction_created` on `anti_abuse_sanctions`;
+- `notify_character_point_penalty_created()` via `trg_notify_character_point_penalty_created` on `character_point_penalties`.
+
+Frontend/Codex implications:
+
+- Frontend must not insert rows into `notifications` directly.
+- Frontend should read current-user notifications, unread counts, and dismissed state from `notifications` joined with `notification_types`.
+- Frontend may display fresh eligible notification rows as toasts, but toast state is not a separate DB domain.
+- Game reports use the Reports inbox/badge and must not create `game_report.created` notifications by default.
+- Notification item names such as an auction item name are short current-context labels, not historical item snapshots.
+
 ## Update 2026-05-01 — Epic P game reports DB foundation
 
 Game reports are player-facing gameplay reports and are separate from `player_abuse_reports` and audit logs.
@@ -1711,7 +1755,7 @@ Edge Function:
 
 # Epic L PvE exploration / trials / rewards DB foundation
 
-Epic L DB foundation is partially implemented through applied migrations **L-DB1..L-DB4b**. Preview/simulation RPCs remain pending as **L-DB4c**.
+Epic L DB foundation is implemented through applied migrations **L-DB1..L-DB4c**. Preview/simulation RPCs are present in the database and should be treated as available after generated types are refreshed.
 
 ## L-DB1 — dictionaries, formulas, rewards
 
@@ -1861,17 +1905,16 @@ Rules:
 - overrides expire and are consumed by step resolution;
 - challenge force-complete uses normal completion path, so success still grants rewards.
 
-## Pending L-DB4c — preview/simulation RPCs
+## L-DB4c — preview/simulation RPCs
 
-Not yet applied in the database.
+Applied preview/simulation RPCs:
 
-Next migration should be split into small safe chunks and add preview/simulation RPCs for:
+- `preview_trial_opportunity_curve(...)`;
+- `preview_trial_manifestation_chance(...)`;
+- `preview_challenge_auto_resolve_success_chance(...)`;
+- `preview_reward_generated_item(...)`;
+- `preview_reward_profile(...)`;
+- `simulate_trial_opportunity_runs(...)`.
 
-- trial opportunity curve preview;
-- trial manifestation preview;
-- auto-resolve preview;
-- reward profile preview;
-- generated item preview without inserting into `items`;
-- multi-run trial opportunity/manifestation simulation.
+These RPCs are read-only lab/explainability tools. They do not mutate runtime exploration state and should not be used as the authoritative runtime resolution path.
 
-Codex/frontend must not assume these functions exist until present in live schema/generated types.

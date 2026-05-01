@@ -11,7 +11,7 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
 import { CollapsedJsonPreview } from '../../../shared/json-preview/collapsed-json-preview';
 import { ExplorationDebugActionsSection } from './exploration-debug-actions-section';
 import { ExplorationDebugActionsState } from './exploration-debug-actions.state';
-import { ExplorationDebugDefinitionsState } from './exploration-debug-definitions.state';
+import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
 import { ExplorationDebugScopeState } from './exploration-debug-scope.state';
 import { ExplorationDebugFeedbackState } from './exploration-debug-feedback.state';
 import { ExplorationDebugPageState } from './exploration-debug-page.state';
@@ -35,7 +35,7 @@ import { ExplorationDebugRuntimeState } from './exploration-debug-runtime.state'
   providers: [
     ExplorationDebugFeedbackState,
     ExplorationDebugScopeState,
-    ExplorationDebugDefinitionsState,
+    ExplorationDefinitionsState,
     ExplorationDebugRuntimeState,
     ExplorationDebugActionsState,
     ExplorationDebugPageState,

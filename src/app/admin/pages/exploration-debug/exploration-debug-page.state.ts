@@ -2,7 +2,7 @@ import { Injectable, computed, inject } from '@angular/core';
 import { AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { ModerationHeroTarget } from '../../../core/domain/moderation/moderation-action.model';
 import { ExplorationDebugActionsState } from './exploration-debug-actions.state';
-import { ExplorationDebugDefinitionsState } from './exploration-debug-definitions.state';
+import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
 import { ExplorationDebugScopeState } from './exploration-debug-scope.state';
 import { ExplorationDebugFeedbackState } from './exploration-debug-feedback.state';
 import { ExplorationDebugRuntimeState } from './exploration-debug-runtime.state';
@@ -10,7 +10,7 @@ import { ExplorationDebugRuntimeState } from './exploration-debug-runtime.state'
 @Injectable()
 export class ExplorationDebugPageState {
   readonly scope = inject(ExplorationDebugScopeState);
-  readonly definitions = inject(ExplorationDebugDefinitionsState);
+  readonly definitions = inject(ExplorationDefinitionsState);
   readonly runtime = inject(ExplorationDebugRuntimeState);
   readonly actions = inject(ExplorationDebugActionsState);
   readonly feedback = inject(ExplorationDebugFeedbackState);
@@ -22,7 +22,7 @@ export class ExplorationDebugPageState {
   readonly minHeroQueryLength = this.scope.minHeroQueryLength;
   readonly hasActiveDifficulties = this.definitions.hasActiveDifficulties;
   readonly debugState = this.runtime.debugState;
-  readonly error = this.feedback.error;
+  readonly error = computed(() => this.feedback.error() ?? this.definitions.error());
   readonly isLoading = computed(
     () =>
       this.scope.isServerLoading() ||

@@ -96,6 +96,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: L6 - resolve step result UI.
 - Completed and confirmed: L7 - challenge attempt UI: manual, auto and debug paths.
 - Completed and confirmed: L8 - reward display and item persistence confirmation.
+- Completed and confirmed: L9 - admin exploration debug page.
+- Completed and confirmed: L10 - exploration lab / preview / simulation UI.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
@@ -119,7 +121,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I7 - building bonus and requirement explainability.
 - Completed and confirmed: UX-I7b - DB-driven central requirement editor for Buildings admin.
 - Completed and confirmed: UX-I8 - anti-abuse decision explainability pass.
-- Current backlog task: L9 - admin exploration debug page.
+- Current backlog task: L11 - trial definitions admin configurator.
 - H17+ planning note: status/verdict/sanction/CP penalty action sections now share a similar workflow-action shell; before adding the next similar audited status-action section, check whether to extract a light shared wrapper/state/helper for error/success/loading/submit card layout and stale-guard handling.
 - Reporting rule: future task reports must include a short Shared/reuse check covering reused shared/admin components, checked-but-not-reused options, and any new component justification.
 - G6 follow-up planning note: remaining gameplay audit slices are major item operations, trade operations once frontend flows exist, and estate/building irreversible changes.
@@ -143,6 +145,7 @@ Order reflects implementation priority, not final business priority.
 - Next: fix the backend/RLS blocker for player exploration challenge/reward reads: `/game/exploration` currently hits `permission denied for table hero_exploration_challenge_attempts`. Resolve with player-safe SELECT/RLS or a safe RPC/read model; do not bypass this in Angular with direct writes or service-role access.
 - After the backend/RLS fix, repeat gameplay smoke: active difficulty tiers visible, debug `add_hero_remaining_actions` increases remaining trials for the selected hero/date, start exploration works, and challenge/reward read path does not throw permission denied.
 - L9 has added the server-scoped admin exploration debug page with hero search, DB-backed selectors/pickers and sandbox helper RPC actions. Frontend/admin-debug smoke is accepted; full gameplay smoke is blocked by the backend/RLS issue above.
+- L10 has added `/admin/exploration-lab` as a non-mutating balancing and explainability lab for exploration preview/simulation RPCs, with DB-backed selectors, labelled inputs, RPC explanations and simulation summary/distribution.
 - L8 has added read-only persisted reward display for completed challenge attempts: challenge attempts -> reward grants -> reward grant entries -> items.
 - L7 has added active challenge attempt UI with prototype manual completion and auto-resolve through canonical challenge RPCs. Full challenge/minigame smoke remains pending real trial/challenge data.
 - L6 has added resolved step outcome display driven by DB `resolve_hero_exploration_step(...)` snapshots without frontend reroll or reward generation.

@@ -6,7 +6,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { ExplorationDebugActionsState } from './exploration-debug-actions.state';
-import { ExplorationDebugDefinitionsState } from './exploration-debug-definitions.state';
+import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
 
 @Component({
   selector: 'app-exploration-debug-actions-section',
@@ -23,5 +23,5 @@ import { ExplorationDebugDefinitionsState } from './exploration-debug-definition
 })
 export class ExplorationDebugActionsSection {
   readonly actions = inject(ExplorationDebugActionsState);
-  readonly definitions = inject(ExplorationDebugDefinitionsState);
+  readonly definitions = inject(ExplorationDefinitionsState);
 }

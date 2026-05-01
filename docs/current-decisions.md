@@ -1,5 +1,3 @@
-
-
 # Mythborne — Current Decisions Log
 
 Use this file for recent design and implementation decisions that should override older assumptions.
@@ -12,6 +10,45 @@ If something conflicts, prefer:
 4. broader concept documents.
 
 ## Confirmed / Active
+
+---
+
+## Notifications / Epic Q Decisions — 2026-05-01
+
+Notifications are persistent inbox/bell entries for short attention or status events.
+
+Notifications are not game reports, audit logs, player abuse reports, or local UI-only toasts/messages.
+
+The DB notification row is the durable source. A toast is only a frontend presentation of a fresh notification row when the recipient is online and the notification type has `default_toast_enabled = true`.
+
+Reports have their own Reports inbox and unread badge. Do not create default `game_report.created` notifications for ordinary report creation.
+
+Current recipient kinds:
+
+- `user` — account/global notification;
+- `hero` — gameplay/server/hero notification;
+- `staff` — staff/server-work notification.
+
+Current notification severity values:
+
+- `info`
+- `notice`
+- `warning`
+- `critical`
+
+Frontend must not insert notification rows directly. DB/RPC workflows create notifications through `create_notification(...)`. Frontend may call `mark_notification_read(...)` and `dismiss_notification(...)` for current-user notifications.
+
+DB-owned hooks currently cover:
+
+- direct trade offer received/rejected/completed;
+- auction outbid/sold/won;
+- declaration approved/rejected;
+- abuse report resolved/dismissed;
+- anti-abuse case waiting for player/staff;
+- sanction created;
+- Character Points penalty created.
+
+Notification body/title/action URLs are concise attention messages. They are not historical item/report snapshots. For example, auction item names may be composed from the current listing/item at notification creation time.
 
 ---
 
@@ -1408,7 +1445,31 @@ Only highest prestige tier should be eligible to contend for highest seat/E1 equ
 
 ## Report Snapshots
 
-Current report decisions are covered by **Game Reports / Epic P Decisions — 2026-05-01** above.
+Shareable reports are needed relatively early.
+
+A report is a historical snapshot of an in-game event.
+
+Externally, the report should reproduce the in-game view of that event as faithfully as possible.
+
+Report uses snapshot data, not current live game data.
+
+Important report types:
+
+- `trial`
+- `encounter`
+- `pvp_combat`
+- `siege`
+
+Rules:
+
+- Trial reports should reflect in-game trial view and result/reward.
+- Encounter reports should reflect in-game encounter view.
+- PvP reports should reflect in-game PvP combat view.
+- Tooltip-capable entities in reports should use snapshot data.
+- Player names may link to public in-game character profiles.
+- Public reports should not expose private account data.
+
+---
 
 ## PvP attack travel time
 
@@ -2197,7 +2258,7 @@ Codex implications:
 
 ## Epic L PvE exploration/trials foundation
 
-Epic L has moved from planning into applied DB foundation up to **L-DB4b**.
+Epic L has moved from planning into applied DB foundation through **L-DB4c**.
 
 Applied and verified in conversation:
 
@@ -2208,10 +2269,7 @@ Applied and verified in conversation:
 - **L-DB3c** — reward grants, real item persistence, challenge completion and auto-resolve helpers.
 - **L-DB4a** — sandbox/admin debug state, add remaining actions, reset exploration, skip timer, test grant reward profile.
 - **L-DB4b** — force next outcome overrides, force challenge result, `items.metadata_json`, and override-aware step resolution.
-
-Not yet applied:
-
-- **L-DB4c** — preview/simulation RPCs. This must be the first DB continuation item in a new conversation, split into small SQL chunks.
+- **L-DB4c** — preview/simulation RPCs for trial opportunity curve, trial manifestation chance, auto-resolve chance, generated item preview, reward profile preview and multi-run trial opportunity simulations.
 
 Current gameplay decisions now represented by DB foundation:
 
@@ -2240,7 +2298,7 @@ Future direction:
 - XP required for next level should be formula-driven;
 - level-up may grant rewards, including stat bonuses on selected levels or every N levels;
 - `level_up` should be able to use the generic reward profile system later;
-- this is not implemented in L-DB1..L-DB4b and should be treated as future work.
+- this is not implemented in L-DB1..L-DB4c and should be treated as future work.
 
 ## Working-standard clarification
 

@@ -75,7 +75,13 @@ export const RPC = {
   close_player_auction_listing: 'close_player_auction_listing',
   cancel_player_auction_listing: 'cancel_player_auction_listing',
   get_hero_exploration_state: 'get_hero_exploration_state',
+  preview_challenge_auto_resolve_success_chance:
+    'preview_challenge_auto_resolve_success_chance',
+  preview_reward_generated_item: 'preview_reward_generated_item',
+  preview_reward_profile: 'preview_reward_profile',
+  preview_trial_manifestation_chance: 'preview_trial_manifestation_chance',
   preview_trial_opportunity_curve: 'preview_trial_opportunity_curve',
+  simulate_trial_opportunity_runs: 'simulate_trial_opportunity_runs',
   start_hero_exploration_step: 'start_hero_exploration_step',
   start_or_get_hero_exploration: 'start_or_get_hero_exploration',
   save_stat_allocation: 'save_stat_allocation',

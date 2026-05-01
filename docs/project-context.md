@@ -1,5 +1,3 @@
-
-
 # Mythborne — Project Context for Codex
 
 ## Purpose
@@ -125,6 +123,31 @@ Reward/drop item references are public showcase item references. If the dropped 
 Combat attack source labels can be public, but full private player equipment/loadouts must not be exposed by default. Drop rewards are showcase items; used weapons/equipment are not automatically full public item cards.
 
 ---
+
+## Notifications Current Direction
+
+Notifications are persistent inbox/bell entries for short attention or status events.
+
+Notifications are separate from:
+
+- game reports, which have their own Reports inbox and unread badge;
+- audit logs, which are operational/system evidence;
+- player abuse reports, which are moderation/source records;
+- local UI toasts/messages after a user action.
+
+The database always creates a persistent `notifications` row for notification-worthy events. If the recipient is online, frontend may present a fresh notification row as a toast when the notification type allows it. Toasts are presentation only, not a separate domain.
+
+Recipient kinds:
+
+- `user` — account/global notification;
+- `hero` — gameplay/server/hero notification;
+- `staff` — staff/server-work notification for an account in a server context.
+
+Current DB foundation includes `notification_types`, `notifications`, `create_notification(...)`, `mark_notification_read(...)`, and `dismiss_notification(...)`.
+
+Trade, auction, declaration, abuse report, anti-abuse case, sanction and Character Points penalty hooks are DB-owned. Frontend must read notifications and mutate read/dismiss state through RPCs; it must not insert notification rows directly.
+
+Reports do not create notifications by default. A new report appears in the Reports area and contributes to the Reports unread badge, not the Notifications bell.
 
 ---
 
@@ -1435,16 +1458,39 @@ Only the highest prestige tier should be eligible to contend for the highest sea
 
 ## Report Snapshots / Sharing
 
-The current report direction is described above in **Game Reports Current Direction**.
+The system must support public/shareable report snapshots.
 
-Important summary:
+Core rule:
 
-- reports are shareable gameplay event views, not audit logs;
-- `/report/:publicToken` renders the same core report content without the app shell;
-- combat reports wrap `combat_results` first;
-- trial/encounter/PvP/siege producers are future integrations;
-- reward/drop item references prefer the live item when it exists and use saved component fallback when it does not;
-- public reports must not expose private account data or full private equipment loadouts.
+- a shareable report is a historical snapshot of an in-game event,
+- externally it should render as a faithful reproduction of the in-game view of that event,
+- but using historical snapshot data, not current live game data.
+
+Important rules:
+
+- reports should have their own public identifiers / URLs,
+- report URLs should be shareable,
+- reports may be visible even to non-logged-in users,
+- important reports must be stored separately from temporary exploration path/session data,
+- tooltips in reports must use snapshot data of the referenced entities, not current live values,
+- player names in reports may link to a public in-game profile if applicable,
+- public reports should not expose private account data.
+
+Current important report types:
+
+- `trial`
+- `encounter`
+- `pvp_combat`
+- `siege`
+
+Notes:
+
+- trial reports should reflect the full trial result as shown in-game,
+- if a trial in-game view includes drop/reward, the report should show it too,
+- encounter reports should mirror the in-game encounter view,
+- PvP reports should mirror the in-game PvP combat view.
+
+---
 
 ## PvP Travel Timer
 
@@ -2130,12 +2176,10 @@ Current player-flow contract:
 
 Still pending before frontend implementation is comfortable:
 
-- L-DB4c preview/simulation RPCs;
-- regeneration of `database.types.ts` after L migrations;
-- backlog Epic L rewrite into implementation tasks;
-- frontend services/pages/components for exploration player UI and admin exploration lab;
-- formula-backed runtime replacement for fallback chance/duration calculations;
-- report snapshots for trial/encounter/combat events.
+- regeneration of `database.types.ts` after L/Q/latest DB migrations;
+- admin configurators for trial/encounter definitions and remaining PvE balancing data;
+- formula-backed runtime replacement for fallback chance/duration calculations where authoritative runtime still uses fallbacks;
+- report producer integration for trial/encounter events on top of the game reports foundation.
 
 ## Standards carried forward from this conversation
 

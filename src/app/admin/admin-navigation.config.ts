@@ -90,6 +90,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerTesting',
   },
   {
+    legend: 'Exploration',
+    title: 'Exploration lab',
+    description:
+      'Non-mutating previews and simulations for trial chances, auto-resolve and rewards.',
+    routerLink: '/admin/exploration-lab',
+    accessPolicy: 'selectedServerTesting',
+  },
+  {
     legend: 'Audit',
     title: 'Audit dictionaries',
     description:
@@ -294,6 +302,25 @@ export const EXPLORATION_DEBUG_PAGE_LINKS: readonly AdminTagLink[] = [
     label: 'Audit logs',
     routerLink: '/admin/audit-logs',
     accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Config definitions',
+    routerLink: '/admin/config-definitions',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const EXPLORATION_LAB_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Exploration debug',
+    routerLink: '/admin/exploration-debug',
+    accessPolicy: 'selectedServerTesting',
+  },
+  {
+    label: 'Exploration',
+    routerLink: '/game/exploration',
+    accessPolicy: 'playerGameplay',
   },
   {
     label: 'Config definitions',

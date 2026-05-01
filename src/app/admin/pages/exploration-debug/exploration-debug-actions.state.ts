@@ -19,14 +19,14 @@ import {
 } from './exploration-debug-action-options';
 import { ExplorationDebugFeedbackState } from './exploration-debug-feedback.state';
 import { createExplorationDebugActionForms } from './exploration-debug-forms';
-import { ExplorationDebugDefinitionsState } from './exploration-debug-definitions.state';
+import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
 import { ExplorationDebugRuntimeState } from './exploration-debug-runtime.state';
 
 @Injectable()
 export class ExplorationDebugActionsState {
   private readonly debug = inject(HeroExplorationDebug);
   private readonly scope = inject(ExplorationDebugScopeState);
-  private readonly definitions = inject(ExplorationDebugDefinitionsState);
+  private readonly definitions = inject(ExplorationDefinitionsState);
   private readonly runtime = inject(ExplorationDebugRuntimeState);
   private readonly feedback = inject(ExplorationDebugFeedbackState);
   private readonly toast = inject(ToastService);

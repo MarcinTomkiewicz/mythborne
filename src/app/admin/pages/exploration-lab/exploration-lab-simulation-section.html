@@ -1,0 +1,81 @@
+<section class="mg-card p-lg flex-col gap-md w-100">
+  <div class="flex-col gap-xs">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Trial opportunity simulation</h3>
+    <p class="muted-text mb-0">
+      Runs repeated read-only simulations of the trial opportunity roll. Summary and distribution
+      show how often trials appear and after how many movement steps.
+    </p>
+  </div>
+  <form class="grid-form" [formGroup]="page.simulationForm">
+    <label class="form-field">
+      <span>Difficulty tier</span>
+      <p-select formControlName="difficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
+    </label>
+    <label class="form-field">
+      <span>Starting dry step count</span>
+      <p-inputnumber formControlName="startingDryStepCount" [min]="0" />
+    </label>
+    <label class="form-field">
+      <span>Max steps per run</span>
+      <p-inputnumber formControlName="maxStepsPerRun" [min]="1" />
+      <small class="muted-text">Simulation stops here if no trial is found.</small>
+    </label>
+    <label class="form-field">
+      <span>Run count</span>
+      <p-inputnumber formControlName="runCount" [min]="1" />
+    </label>
+    <label class="form-field">
+      <span>Roll history</span>
+      <span class="flex-row-start-center gap-sm">
+        <p-checkbox inputId="includeRollHistory" formControlName="includeRollHistory" [binary]="true" />
+        <span>Include roll history in RPC output</span>
+      </span>
+      <small class="muted-text">Useful for inspecting individual rolls; keep off for compact output.</small>
+    </label>
+    <button pButton type="button" label="Run simulation" (click)="page.runTrialOpportunitySimulation()"></button>
+  </form>
+
+  @if (page.simulationRows().length) {
+    <div class="grid-2 gap-md">
+      <div class="mg-card p-md">
+        <strong>Simulation summary</strong>
+        <div class="grid-2 gap-sm mt-sm">
+          <span>Total runs: {{ page.simulationSummary().totalRuns }}</span>
+          <span>Found: {{ page.simulationSummary().foundCount }}</span>
+          <span>Not found: {{ page.simulationSummary().notFoundCount }}</span>
+          <span>Found rate: {{ page.simulationSummary().foundRate | percent:'1.0-1' }}</span>
+          <span>Average steps: {{ page.simulationSummary().averageSteps | number:'1.1-2' }}</span>
+        </div>
+      </div>
+      <p-table [value]="page.simulationStepDistribution()" styleClass="p-datatable-sm">
+        <ng-template pTemplate="header">
+          <tr><th>Steps taken</th><th>Runs</th><th>Found</th><th>Found rate</th></tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+          <tr>
+            <td>{{ row.stepsTaken }}</td>
+            <td>{{ row.runCount }}</td>
+            <td>{{ row.foundCount }}</td>
+            <td>{{ row.foundRate | percent:'1.0-1' }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  }
+
+  <p-table [value]="page.simulationRows()" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr><th>Run</th><th>Found</th><th>Steps</th><th>Final chance</th><th>Roll</th><th>Explanation</th></tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td>{{ row.runIndex }}</td>
+        <td>{{ row.trialFound ? 'Yes' : 'No' }}</td>
+        <td>{{ row.stepsTaken }}</td>
+        <td>{{ row.finalTrialOpportunityChance }}</td>
+        <td>{{ row.finalTrialOpportunityRoll }}</td>
+        <td>{{ row.explanation }}</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</section>

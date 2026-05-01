@@ -1,0 +1,40 @@
+<div class="flex-col gap-xl">
+  <app-loading-overlay
+    [visible]="page.isLoading()"
+    title="Running exploration lab"
+    message="Preview and simulation RPCs do not mutate gameplay state."
+  />
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Exploration lab</p>
+      <h2 class="mg-section__title mg-section__title--sm mb-0">Balancing and explainability</h2>
+      <p class="muted-text mb-0">
+        Read-only preview and simulation RPCs for exploration chances and rewards. They do not
+        create runtime rows, challenge attempts, reward grants or items.
+      </p>
+      <p class="muted-text mb-0">
+        Inputs use database-backed dictionaries where available. Technical keys remain visible in
+        output metadata so balance decisions can be traced to stored rows.
+      </p>
+    </div>
+  </section>
+
+  @if (page.error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+  @if (!page.hasActiveDifficulties()) {
+    <p-message severity="warn">
+      No active exploration difficulty tiers are configured. Difficulty-based previews need at
+      least one active database tier.
+    </p-message>
+  }
+
+  <app-exploration-lab-chance-section />
+  <app-exploration-lab-reward-section />
+  <app-exploration-lab-simulation-section />
+
+  <section class="mg-card p-lg w-100">
+    <app-admin-tag-links [links]="links" />
+  </section>
+</div>

@@ -6,19 +6,29 @@ import {
   ExplorationDifficultyTierReadModel,
   TrialDefinitionReadModel,
 } from '../../domain/exploration/exploration-definition.model';
+import {
+  EditableItemGenerationBucketProfile,
+  EditableItemGenerationQuality,
+} from '../../domain/item/item-generation-admin.model';
 import { RewardProfileReadModel } from '../../domain/exploration/exploration-reward.model';
 import { FilterOperator } from '../../enums/filter-operators';
+import { BuildingDistrictOption, BuildingStatOption } from '../../types/building.types';
 import { Row } from '../../types/supabase.types';
+import { mapBuildingDistricts, mapBuildingStats } from '../../utils/building-admin-mappers';
 import {
   mapEncounterDefinition,
   mapExplorationDifficultyTier,
   mapTrialDefinition,
 } from '../../utils/exploration-definition-mappers';
 import { mapRewardProfile } from '../../utils/exploration-reward-mappers';
+import {
+  mapEditableBucketProfile,
+  mapEditableQuality,
+} from '../../utils/item-generation-admin-mappers';
 import { Backend } from '../backend/backend';
 
 @Injectable({ providedIn: 'root' })
-export class ExplorationDebugDefinitions {
+export class ExplorationDefinitions {
   private readonly backend = inject(Backend);
 
   getActiveDifficultyTiers(): Observable<ExplorationDifficultyTierReadModel[]> {
@@ -83,5 +93,62 @@ export class ExplorationDebugDefinitions {
         camelCase: false,
       })
       .pipe(map((rows) => rows.map(mapEncounterDefinition)));
+  }
+
+  getActiveItemBucketProfiles(): Observable<EditableItemGenerationBucketProfile[]> {
+    return this.backend
+      .getAll<Row<'item_generation_bucket_profiles'>>({
+        table: TABLES.item_generation_bucket_profiles,
+        filters: {
+          isActive: { operator: FilterOperator.EQ, value: true },
+        },
+        orderBy: [
+          { column: 'key', ascending: true },
+        ],
+        camelCase: false,
+      })
+      .pipe(map((rows) => rows.map(mapEditableBucketProfile)));
+  }
+
+  getEnabledItemQualities(): Observable<EditableItemGenerationQuality[]> {
+    return this.backend
+      .getAll<Row<'item_generation_qualities'>>({
+        table: TABLES.item_generation_qualities,
+        filters: {
+          isEnabled: { operator: FilterOperator.EQ, value: true },
+        },
+        orderBy: [
+          { column: 'sort_order', ascending: true },
+          { column: 'key', ascending: true },
+        ],
+        camelCase: false,
+      })
+      .pipe(map((rows) => rows.map(mapEditableQuality)));
+  }
+
+  getDistrictOptions(): Observable<BuildingDistrictOption[]> {
+    return this.backend
+      .getAll<Row<'estate_districts'>>({
+        table: TABLES.estate_districts,
+        orderBy: [
+          { column: 'rank', ascending: true },
+          { column: 'code', ascending: true },
+        ],
+        camelCase: false,
+      })
+      .pipe(map(mapBuildingDistricts));
+  }
+
+  getStatOptions(): Observable<BuildingStatOption[]> {
+    return this.backend
+      .getAll<Pick<Row<'stats'>, 'key' | 'label'>>({
+        table: TABLES.stats,
+        orderBy: [
+          { column: 'order', ascending: true },
+          { column: 'key', ascending: true },
+        ],
+        camelCase: false,
+      })
+      .pipe(map(mapBuildingStats));
   }
 }
