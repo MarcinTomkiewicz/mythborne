@@ -2,12 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
 import { ExplorationDifficultyTierReadModel } from '../../../core/domain/exploration/exploration-definition.model';
 import { TrialOpportunityCurvePreview } from '../../../core/domain/exploration/exploration-preview.model';
+import { ExplorationChallengeRewardReadModel } from '../../../core/domain/exploration/exploration-reward.model';
 import {
   HeroExplorationChallengeCompletionWorkflowResult,
   HeroExplorationStateReadModel,
   HeroExplorationStepResolutionWorkflowResult,
 } from '../../../core/domain/exploration/exploration-runtime.model';
 import { RequiredActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
+import { HeroExplorationRewards } from '../../../core/services/exploration/hero-exploration-rewards';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ExplorationChallengeState } from './exploration-challenge.state';
@@ -16,17 +18,22 @@ import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
+import { ExplorationRewardState } from './exploration-reward.state';
 import { ExplorationStepState } from './exploration-step.state';
 import { ExplorationStartState } from './exploration-start.state';
 
 describe('ExplorationPageState', () => {
   let activeHero: jasmine.SpyObj<ActiveHero>;
   let explorations: jasmine.SpyObj<HeroExplorations>;
+  let rewards: jasmine.SpyObj<HeroExplorationRewards>;
   let page: ExplorationPageState;
   let feedback: ExplorationFeedbackState;
 
   beforeEach(() => {
     activeHero = jasmine.createSpyObj<ActiveHero>('ActiveHero', ['requireActiveHero']);
+    rewards = jasmine.createSpyObj<HeroExplorationRewards>('HeroExplorationRewards', [
+      'getLatestChallengeReward',
+    ]);
     explorations = jasmine.createSpyObj<HeroExplorations>('HeroExplorations', [
       'getActiveDifficultyTiers',
       'getHeroExplorationState',
@@ -55,6 +62,7 @@ describe('ExplorationPageState', () => {
     explorations.autoResolveHeroExplorationChallengeAttempt.and.returnValue(
       of(challengeCompletionWorkflow('easy', { completionMode: 'auto' })),
     );
+    rewards.getLatestChallengeReward.and.returnValue(of(null));
 
     TestBed.configureTestingModule({
       providers: [
@@ -64,10 +72,12 @@ describe('ExplorationPageState', () => {
         ExplorationMovementState,
         ExplorationStepState,
         ExplorationChallengeState,
+        ExplorationRewardState,
         ExplorationStartState,
         ExplorationPageState,
         { provide: ActiveHero, useValue: activeHero },
         { provide: HeroExplorations, useValue: explorations },
+        { provide: HeroExplorationRewards, useValue: rewards },
       ],
     });
     page = TestBed.inject(ExplorationPageState);
@@ -234,6 +244,76 @@ describe('ExplorationPageState', () => {
     });
     expect(page.currentChallengeResult()?.completionMode).toBe('auto');
     expect(feedback.successMessage()).toBe('Challenge auto-resolved.');
+  });
+
+  it('loads persisted challenge rewards for the current exploration', async () => {
+    rewards.getLatestChallengeReward.and.returnValue(of(challengeReward()));
+
+    page.loadData();
+    page.startSelectedDifficulty();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(rewards.getLatestChallengeReward).toHaveBeenCalledWith({
+      heroId: 'hero-1',
+      explorationId: 'exploration-1',
+    });
+    expect(page.rewardSummary()).toContain('2 reward entries');
+    expect(page.rewardEntryLabel(page.reward()!.entries[0])).toBe('20 EXP');
+    expect(page.rewardItemLabel('item-1')).toBe('Reward blade');
+    expect(page.rewardItemDetails('item-1')).toContain('Quality fine');
+  });
+
+  it('shows clear no-reward state for failed persisted challenges', async () => {
+    rewards.getLatestChallengeReward.and.returnValue(
+      of(challengeReward({
+        success: false,
+        rewardGrantId: null,
+        rewardGrant: null,
+        entries: [],
+        items: [],
+      })),
+    );
+
+    page.loadData();
+    page.startSelectedDifficulty();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(page.rewardSummary()).toBe('The latest completed challenge did not grant a reward.');
+  });
+
+  it('clears stale reward while loading a new exploration and ignores stale responses', async () => {
+    const firstReward = new Subject<ExplorationChallengeRewardReadModel | null>();
+    const secondReward = new Subject<ExplorationChallengeRewardReadModel | null>();
+    rewards.getLatestChallengeReward.and.returnValues(
+      of(challengeReward()),
+      firstReward.asObservable(),
+      secondReward.asObservable(),
+    );
+
+    page.loadData();
+    page.startSelectedDifficulty();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(page.reward()?.rewardGrantId).toBe('reward-1');
+
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', false, false, pastStepTiming(), 'exploration-2'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(page.reward()).toBeNull();
+    expect(page.isLoadingReward()).toBeTrue();
+
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', false, false, pastStepTiming(), 'exploration-3'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(page.reward()).toBeNull();
+    expect(page.isLoadingReward()).toBeTrue();
+
+    firstReward.next(challengeReward({ rewardGrantId: 'stale-reward' }));
+    firstReward.complete();
+    expect(page.reward()).toBeNull();
+    expect(page.isLoadingReward()).toBeTrue();
+
+    secondReward.next(challengeReward({ rewardGrantId: 'reward-2' }));
+    secondReward.complete();
+    expect(page.reward()?.rewardGrantId).toBe('reward-2');
+    expect(page.isLoadingReward()).toBeFalse();
   });
 
   it('hides stale challenge completion results after exploration context changes', () => {
@@ -428,6 +508,91 @@ function challengeCompletionWorkflow(
       ...patch,
     },
     state: activeExplorationState(difficultyKey),
+  };
+}
+
+function challengeReward(
+  patch: Partial<ExplorationChallengeRewardReadModel> = {},
+): ExplorationChallengeRewardReadModel {
+  return {
+    challengeAttemptId: 'challenge-1',
+    challengeKind: 'trial',
+    status: 'completed',
+    success: true,
+    completionMode: 'manual',
+    completedAt: '2026-05-01T10:20:00.000Z',
+    rewardGrantId: 'reward-1',
+    rewardGrant: {
+      id: 'reward-1',
+      serverId: 'server-1',
+      recipientHeroId: 'hero-1',
+      rewardProfileId: 'profile-1',
+      sourceKind: 'challenge_attempt',
+      sourceId: 'challenge-1',
+      status: 'granted',
+      reason: null,
+      requestId: null,
+      metadataJson: {},
+      grantedAt: '2026-05-01T10:20:00.000Z',
+      createdAt: '2026-05-01T10:20:00.000Z',
+    },
+    entries: [
+      {
+        id: 'entry-1',
+        rewardGrantId: 'reward-1',
+        rewardProfileEntryId: 'profile-entry-1',
+        entryKind: 'experience',
+        amount: 20,
+        resourceType: null,
+        itemId: null,
+        effectDefinitionId: null,
+        sourceHeroId: null,
+        targetHeroId: 'hero-1',
+        oldValueJson: null,
+        newValueJson: null,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:20:00.000Z',
+      },
+      {
+        id: 'entry-2',
+        rewardGrantId: 'reward-1',
+        rewardProfileEntryId: 'profile-entry-2',
+        entryKind: 'generated_item',
+        amount: 1,
+        resourceType: null,
+        itemId: 'item-1',
+        effectDefinitionId: null,
+        sourceHeroId: null,
+        targetHeroId: 'hero-1',
+        oldValueJson: null,
+        newValueJson: null,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:20:00.000Z',
+      },
+    ],
+    items: [
+      {
+        id: 'item-1',
+        serverId: 'server-1',
+        heroId: 'hero-1',
+        name: 'Reward blade',
+        description: null,
+        status: 'active',
+        generationBaseId: 'base-1',
+        generationQualityKey: 'fine',
+        prefixAffixId: 'prefix-1',
+        suffixAffixId: null,
+        armoryShelfPosition: 0,
+        drachmaValue: 120,
+        metadataJson: {},
+        generatedAt: '2026-05-01T10:20:00.000Z',
+        scrappedAt: null,
+        recoverableUntil: null,
+        createdAt: '2026-05-01T10:20:00.000Z',
+        updatedAt: '2026-05-01T10:20:00.000Z',
+      },
+    ],
+    ...patch,
   };
 }
 

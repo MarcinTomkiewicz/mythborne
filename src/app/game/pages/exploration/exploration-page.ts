@@ -7,6 +7,7 @@ import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
+import { ExplorationRewardState } from './exploration-reward.state';
 import { ExplorationStatusSection } from './exploration-status-section';
 import { ExplorationStepState } from './exploration-step.state';
 import { ExplorationStartState } from './exploration-start.state';
@@ -22,6 +23,7 @@ import { ExplorationStartState } from './exploration-start.state';
     ExplorationMovementState,
     ExplorationStepState,
     ExplorationChallengeState,
+    ExplorationRewardState,
     ExplorationStartState,
     ExplorationPageState,
   ],

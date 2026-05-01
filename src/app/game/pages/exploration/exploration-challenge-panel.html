@@ -1,0 +1,52 @@
+@if (page.activeChallenge(); as challenge) {
+  <div class="mg-card p-md">
+    <div class="flex-col gap-sm">
+      <div class="flex-row-between-center flex-col-sm gap-sm">
+        <div class="flex-col gap-xs">
+          <strong>{{ page.challengeTitle() }}</strong>
+          <span class="muted-text">
+            Prototype manual completion records a sandbox outcome through the
+            database RPC until a minigame submits the real result.
+          </span>
+        </div>
+        <span class="tag-badge tag-badge--info">{{ challenge.status }}</span>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-xs">
+        @for (fact of page.challengeFacts(); track fact.label) {
+          <span class="tag-badge tag-badge--muted">
+            {{ fact.label }}: {{ fact.value }}
+          </span>
+        }
+      </div>
+
+      <p class="muted-text mb-0">{{ page.autoResolveExplanation() }}</p>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <button
+          pButton
+          type="button"
+          label="Record prototype success"
+          [disabled]="!page.canCompleteChallenge()"
+          (click)="page.completeChallenge(true)"
+        ></button>
+        <button
+          pButton
+          type="button"
+          label="Record prototype fail"
+          severity="secondary"
+          [disabled]="!page.canCompleteChallenge()"
+          (click)="page.completeChallenge(false)"
+        ></button>
+        <button
+          pButton
+          type="button"
+          label="Auto-resolve"
+          severity="warn"
+          [disabled]="!page.canCompleteChallenge()"
+          (click)="page.autoResolveChallenge()"
+        ></button>
+      </div>
+    </div>
+  </div>
+}

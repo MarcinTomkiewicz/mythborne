@@ -1,0 +1,51 @@
+@if (page.reward(); as reward) {
+  <div class="mg-card p-md">
+    <div class="flex-col gap-sm">
+      <div class="flex-row-between-center flex-col-sm gap-sm">
+        <div class="flex-col gap-xs">
+          <strong>Challenge reward</strong>
+          <span class="muted-text">{{ page.rewardSummary() }}</span>
+        </div>
+        <span class="tag-badge tag-badge--info">{{ reward.status }}</span>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-xs">
+        <span class="tag-badge tag-badge--muted">
+          Success: {{ reward.success === null ? 'N/D' : reward.success ? 'Yes' : 'No' }}
+        </span>
+        <span class="tag-badge tag-badge--muted">
+          Mode: {{ reward.completionMode ?? 'N/D' }}
+        </span>
+        <span class="tag-badge tag-badge--muted">
+          Grant: {{ reward.rewardGrantId ?? 'N/D' }}
+        </span>
+        <span class="tag-badge tag-badge--muted">
+          Completed: {{ reward.completedAt ?? 'N/D' }}
+        </span>
+      </div>
+
+      @if (reward.entries.length) {
+        <div class="flex-col gap-xs">
+          @for (entry of reward.entries; track entry.id) {
+            <div class="flex-row-between-start flex-col-sm gap-sm">
+              <span>{{ page.rewardEntryLabel(entry) }}</span>
+              <span class="muted-text">
+                @if (entry.itemId) {
+                  {{ page.rewardItemLabel(entry.itemId) }} - {{ page.rewardItemDetails(entry.itemId) }}
+                } @else {
+                  {{ entry.entryKind }}
+                }
+              </span>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="muted-text mb-0">No reward entries were recorded.</p>
+      }
+    </div>
+  </div>
+} @else if (page.isLoadingReward()) {
+  <div class="mg-card p-md">
+    <span class="tag-badge tag-badge--muted">Loading reward</span>
+  </div>
+}

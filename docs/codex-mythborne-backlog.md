@@ -30,6 +30,32 @@ Global Codex rules:
 
 ---
 
+## DB cleanup candidate rule
+
+If a task removes the final frontend/backend dependency on a legacy DB object, Codex must report it as a cleanup candidate instead of silently leaving schema debt.
+
+The report must include:
+
+- object name, e.g. table/column/function/view;
+- where it was previously used;
+- what replaced it;
+- whether a later DB cleanup/drop migration appears safe;
+- any remaining known references in docs, generated types, tests, migrations or legacy adapters.
+
+Codex must not create cleanup/drop migrations unless the user explicitly asks for database cleanup work.
+
+---
+
+## Implementation backlog discipline
+
+- Prefer implementation tasks over repeated audits once schema/contracts are known.
+- Audit/spec tasks should normally be followed by concrete implementation tasks in the same epic.
+- Do not create long audit-only sequences unless user explicitly asks or implementation is blocked.
+- If an audit finds clear work, add/update implementation tasks with acceptance criteria before continuing.
+- UX tasks should produce visible UI/helpers unless explicitly marked as audit/spec.
+
+---
+
 # Epic A — Documentation, state and generated DB types
 
 ## Task A1 — Regenerate Supabase database types
@@ -1491,20 +1517,33 @@ If a required auction RPC/read model is missing or not present in generated type
 
 ## Task J7 — Vendor scrap/sell for drachmas
 
-**Goal:** Implement the vendor/system economy path for converting items into drachmas, separate from player trade.
+**Status:** Done / confirmed 2026-05-01.
+
+**Goal:** Implement the vendor/system economy path for converting items into drachmas through the canonical DB/RPC workflow.
+
+**Current DB status:** DB/RPC foundation exists. Use `vendor_scrap_hero_item(...)`.
+
+Current DB contracts:
+- `vendor_scrap_drachma_payout_percent` config, default 50;
+- `get_vendor_scrap_drachma_payout_percent()` helper;
+- `vendor_scrap_hero_item(p_item_id, p_actor_hero_id, p_reason, p_request_id)` public RPC;
+- `scrap_hero_item(...)` remains the canonical item lifecycle cleanup path used by vendor workflow.
 
 **Scope:**
 - Treat vendor scrap/sell as a system/vendor operation, not player-to-player trade.
 - Use drachmas/resources, not Character Points.
-- Decide and implement the canonical DB/RPC path before frontend mutation work.
-- Integrate with current item lifecycle rules without bypassing safe scrap/recovery semantics.
-- Preserve audit/reason where the operation is significant.
+- Call `vendor_scrap_hero_item(...)` from frontend/domain services.
+- Do not compose `scrap_hero_item(...)` and resource changes in Angular.
+- Show payout amount/result from RPC response.
+- Preserve clear UX language: vendor sell/scrap is irreversible according to item lifecycle outcome and is not trade.
 
 **Acceptance criteria:**
 - Vendor scrap/sell does not use trade/auction tables or Character Points.
-- Drachma/resource payout is handled by DB/RPC workflow, not direct Angular table updates.
-- Item cleanup follows current lifecycle rules.
-- If no DB/RPC workflow exists, Codex reports blocker instead of implementing direct writes.
+- Drachma payout is handled by `vendor_scrap_hero_item(...)`, not direct Angular table updates.
+- Item cleanup follows current lifecycle rules through DB/RPC.
+- Frontend does not call `apply_reward_resource_delta(...)` directly for vendor sell.
+- Frontend does not direct-write `items`, `hero_resources`, audit logs or resource balances.
+- Build and focused armory/item service tests pass.
 
 ---
 
@@ -1890,6 +1929,8 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 ---
 
 ## Task L8 — Reward display and item persistence confirmation
+
+**Status:** Done / confirmed on 2026-05-01.
 
 **Goal:** Show exploration challenge rewards from persisted DB state.
 
@@ -2661,48 +2702,219 @@ Epic O is now an implementation epic over the current DB/RPC estate/building run
 
 # Epic P — Reports and snapshots
 
-## Task P1 — Report/snapshot schema inspection
+Epic P is an implementation epic over the DB-backed game report foundation. It must not be treated as a generic report placeholder or as an audit/player-abuse feature.
 
-**Goal:** Determine current report support.
+Game reports are player-facing gameplay reports. They are separate from:
+- `player_abuse_reports`;
+- audit logs;
+- temporary runtime/debug state.
 
-**Scope:**
-- Inspect report tables/code if present.
-- Compare with desired:
-  - trial,
-  - encounter,
-  - pvp_combat,
-  - siege.
-- Report gaps.
+Current DB/RPC foundation:
+- `game_report_types`;
+- `game_reports`;
+- `game_report_hero_access`;
+- `game_report_participants`;
+- `game_report_item_references`;
+- enum `game_report_access_role = owner | participant | viewer`;
+- enum `game_report_item_source_kind = reward_drop`;
+- enum `game_report_source_entity_type = combat_result | trial_result | encounter_result | pvp_result | siege_result`;
+- `generate_game_report_public_token()`;
+- `delete_game_report_for_hero(...)`;
+- `create_game_report_from_combat_result(...)`;
+- `attach_reward_drop_item_to_game_report(...)`;
+- `build_report_item_display_name(...)`.
 
-**Acceptance criteria:**
-- Clear plan for reports/snapshots.
+**Epic rules:**
+- Use the report DB/RPC foundation.
+- Do not make public gameplay reports from `player_abuse_reports`, audit logs or raw exploration runtime/debug rows.
+- Public report route is `/report/:publicToken` and uses `game_reports.public_token`, not internal report ids.
+- Private Reports UI uses `game_report_hero_access`; multiple heroes may have access to the same report.
+- Removing a report for one hero uses `delete_game_report_for_hero(...)`; it removes that hero access row and deletes the report only when no access rows remain.
+- Combat reports wrap `combat_results`; do not duplicate `combat_result_attacks` into report tables.
+- Reward/drop item references are public showcase references. Prefer live `source_item_id` when the item still exists; fall back to quality/base/prefix/suffix/display name when it does not.
+- Reward/drop references do not snapshot final item stats forever.
+- Combat attack source labels can be public, but full private player equipment/loadouts must not be exposed by default.
+- If Codex removes the final code dependency on a legacy report/display field, report it as a `DB cleanup candidate`; do not silently leave obsolete DB debt.
 
 ---
 
-## Task P2 — Public report route skeleton
+## Task P0 — Align generated DB types after game reports foundation
 
-**Goal:** Prepare shareable report viewing.
+**Goal:** Confirm frontend type layer exposes current game report DB/RPC contracts.
 
 **Scope:**
-- Public route by identifier.
-- Load snapshot data.
-- Do not expose private account data.
+- Confirm generated types include report enums/tables/functions listed in the P foundation.
+- Confirm generated types include combat result tables used by report rendering.
+- Do not edit generated types manually.
 
 **Acceptance criteria:**
-- Skeleton route/view exists or plan is ready.
+- Generated types match current schema.
+- Missing report types/functions are reported before UI implementation.
+- No raw generated rows replace report domain models.
 
 ---
 
-## Task P3 — Trial/combat report snapshot model
+## Task P1 — Game report domain models and mappers
 
-**Goal:** Store historical event snapshot, not live recalculation.
+**Goal:** Add typed domain/read models for game reports.
 
 **Scope:**
-- Snapshot includes historical tooltips/values needed to reproduce view.
-- Player names may link to public profiles.
+- Report type dictionary.
+- Report header.
+- Hero access rows.
+- Participants.
+- Item references.
+- Combat source linkage.
+- Public token route payload/read model.
 
 **Acceptance criteria:**
-- Reports are distinct from audit logs.
+- Models separate private access from report participants.
+- Raw DB rows are mapped to domain/UI models.
+- Report type labels/descriptions come from DB.
+- Public-facing models do not expose account/user ids.
+
+---
+
+## Task P2 — Private Reports list/inbox
+
+**Goal:** Show reports available to the active hero.
+
+**Scope:**
+- Load reports through `game_report_hero_access` for active hero/server.
+- Show type, title, summary, created time and public link.
+- Support removing a report from this hero's list through `delete_game_report_for_hero(...)`.
+- Surface RPC errors as user-readable messages/toasts.
+
+**Acceptance criteria:**
+- Hero sees only reports they have access to.
+- Removing a report uses RPC, not direct delete.
+- If other heroes still have access, report remains for them.
+- Public link stops resolving only when the underlying report row is deleted after final access removal.
+
+---
+
+## Task P3 — Public report route
+
+**Goal:** Add public route `/report/:publicToken` for shareable reports.
+
+**Scope:**
+- Load report by `public_token`.
+- Render report content without normal app shell/sidebar/topbar.
+- Do not expose account/user ids, staff-only data, audit logs or anti-abuse metadata.
+- Show safe not-found state when token no longer resolves.
+
+**Acceptance criteria:**
+- Anonymous/public viewer can open a valid report token.
+- Deleted/no-access reports show a safe not-found page.
+- Public route does not leak private account data.
+- Public and private report content use the same core report renderer where practical.
+
+---
+
+## Task P4 — Combat report renderer
+
+**Goal:** Render reports sourced from `combat_results`.
+
+**Scope:**
+- Use `combat_results`, `combat_result_participants`, participant stats and attacks.
+- Show attack order, source labels, timing/evasion/crit/damage and Health changes.
+- Do not duplicate or recompute combat result state.
+- Do not expose full private equipment/loadouts by default.
+- Support both private app-shell rendering and public bare-shell rendering.
+
+**Acceptance criteria:**
+- Combat report reproduces the core combat result view.
+- Attack source labels are visible.
+- Combat result attack rows are rendered in historical order.
+- Private equipment stays private unless a future explicit feature changes that.
+
+---
+
+## Task P5 — Combat report creation integration
+
+**Goal:** Use current DB producer to create/get reports for combat results.
+
+**Scope:**
+- Call `create_game_report_from_combat_result(...)` where a combat result should become a report.
+- Treat the RPC as idempotent.
+- Do not create report rows directly in Angular.
+- Do not duplicate `combat_result_attacks` into report tables.
+
+**Acceptance criteria:**
+- Combat result can produce a report wrapper.
+- Hero participants receive private report access.
+- Report uses existing combat result snapshot tables.
+- Repeated creation attempts return/reuse the existing report rather than creating duplicates.
+
+---
+
+## Task P6 — Reward/drop item reference display
+
+**Goal:** Render public showcase drop item references in reports.
+
+**Scope:**
+- Read `game_report_item_references`.
+- Prefer live `source_item_id` when the item exists.
+- Fall back to quality/base/prefix/suffix/display name.
+- Do not snapshot final item stats forever.
+- Show full item card/tooltip for reward drops.
+- Do not use this as a way to expose equipment used in combat.
+
+**Acceptance criteria:**
+- Drop reward item can be shared publicly.
+- Rebalanced live item stats are reflected when item exists.
+- Missing item row falls back gracefully.
+- Used weapons/equipment are not automatically rendered as public item cards.
+
+---
+
+## Task P7 — Attach reward drops to reports
+
+**Goal:** Use DB helper to attach dropped/generated reward items to reports.
+
+**Scope:**
+- Call `attach_reward_drop_item_to_game_report(...)` from approved producer/workflow where reward drop report should include item.
+- Keep it idempotent.
+- Do not insert `game_report_item_references` directly from Angular.
+- Use generated item/item read models for display after DB attachment.
+
+**Acceptance criteria:**
+- Reward drops can appear in report item references.
+- Duplicate report/item references are prevented by DB unique index.
+- No direct report item reference writes from Angular.
+
+---
+
+## Task P8 — Trial/encounter report producer preflight
+
+**Goal:** Prepare producers for trial and encounter reports after L/M integration.
+
+**Scope:**
+- Decide where completed trial/encounter workflows should call report creation.
+- Wrap challenge outcome, reward grant and optional combat result.
+- Attach reward/drop items through `attach_reward_drop_item_to_game_report(...)` where appropriate.
+- Do not expose raw exploration graph/step/challenge runtime rows directly as public report snapshots.
+
+**Acceptance criteria:**
+- Producer plan exists before coding trial/encounter report creation.
+- Combat section is reused when a trial/encounter includes combat.
+- Reward grants are represented without re-triggering reward generation.
+
+---
+
+## Task P9 — Future PvP/siege report placeholders
+
+**Goal:** Keep report model ready for PvP and siege without implementing those workflows early.
+
+**Scope:**
+- Keep report type support for `pvp_combat` and `siege`.
+- Do not fake PvP/siege producers before those epics exist.
+- Later PvP reports should show resource changes and prestige indication without exposing hidden prestige values.
+- Later siege reports should support many hero access rows for all eligible participants.
+
+**Acceptance criteria:**
+- P does not block future PvP/siege reports.
+- No fake PvP/siege workflow is built inside P.
 
 ---
 

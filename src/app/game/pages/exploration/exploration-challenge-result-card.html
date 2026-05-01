@@ -1,0 +1,28 @@
+@if (page.currentChallengeResult(); as result) {
+  <div class="mg-card p-md">
+    <div class="flex-col gap-sm">
+      <div class="flex-row-between-center flex-col-sm gap-sm">
+        <div class="flex-col gap-xs">
+          <strong>{{ page.challengeResultTitle() }}</strong>
+          <span class="muted-text">{{ page.challengeResultDescription() }}</span>
+        </div>
+        <span class="tag-badge tag-badge--info">{{ result.completionMode }}</span>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-xs">
+        <span class="tag-badge tag-badge--muted">Status: {{ result.status }}</span>
+        <span class="tag-badge tag-badge--muted">
+          Success: {{ result.success ? 'Yes' : 'No' }}
+        </span>
+        <span class="tag-badge tag-badge--muted">
+          Reward: {{ result.rewardGrantId ?? 'N/D' }}
+        </span>
+        @if (result.autoResolveChance !== null) {
+          <span class="tag-badge tag-badge--muted">
+            Auto chance: {{ result.autoResolveChance }}%
+          </span>
+        }
+      </div>
+    </div>
+  </div>
+}

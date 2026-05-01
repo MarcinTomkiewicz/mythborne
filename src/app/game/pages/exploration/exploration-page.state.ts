@@ -6,6 +6,7 @@ import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
+import { ExplorationRewardState } from './exploration-reward.state';
 import { ExplorationStepState } from './exploration-step.state';
 import { ExplorationStartState } from './exploration-start.state';
 
@@ -17,6 +18,7 @@ export class ExplorationPageState {
   readonly preview = inject(ExplorationPreviewState);
   readonly step = inject(ExplorationStepState);
   readonly challenge = inject(ExplorationChallengeState);
+  readonly rewardState = inject(ExplorationRewardState);
   readonly start = inject(ExplorationStartState);
 
   readonly difficulties = this.overview.difficulties;
@@ -46,6 +48,9 @@ export class ExplorationPageState {
   readonly challengeTitle = this.challenge.challengeTitle;
   readonly currentChallengeResult = this.challenge.currentChallengeResult;
   readonly autoResolveExplanation = this.challenge.autoResolveExplanation;
+  readonly isLoadingReward = this.rewardState.isLoadingReward;
+  readonly reward = this.rewardState.reward;
+  readonly rewardSummary = this.rewardState.rewardSummary;
   readonly movementBlockReason = this.movement.movementBlockReason;
   readonly remainingTrialsLabel = this.overview.remainingTrialsLabel;
   readonly currentNodeLabel = this.overview.currentNodeLabel;
@@ -96,4 +101,8 @@ export class ExplorationPageState {
   previewRows(difficultyKey: string): TrialOpportunityCurvePreview[] {
     return this.preview.previewRows(difficultyKey);
   }
+
+  rewardEntryLabel = this.rewardState.entryLabel.bind(this.rewardState);
+  rewardItemLabel = this.rewardState.itemLabel.bind(this.rewardState);
+  rewardItemDetails = this.rewardState.itemDetails.bind(this.rewardState);
 }

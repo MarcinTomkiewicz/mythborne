@@ -1,4 +1,5 @@
 import { Json } from '../../types/database.types';
+import { ItemReadModel } from '../item/item.model';
 import { Row } from '../../types/supabase.types';
 
 export type RewardProfileCategory = Row<'reward_profiles'>['category'];
@@ -96,4 +97,17 @@ export interface RewardGrantEntryReadModel {
   newValueJson: Json | null;
   metadataJson: Json;
   createdAt: string;
+}
+
+export interface ExplorationChallengeRewardReadModel {
+  challengeAttemptId: string;
+  challengeKind: string;
+  status: string;
+  success: boolean | null;
+  completionMode: string | null;
+  completedAt: string | null;
+  rewardGrantId: string | null;
+  rewardGrant: RewardGrantReadModel | null;
+  entries: RewardGrantEntryReadModel[];
+  items: ItemReadModel[];
 }
