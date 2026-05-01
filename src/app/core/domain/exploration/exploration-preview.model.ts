@@ -1,0 +1,131 @@
+import { Json, Database } from '../../types/database.types';
+
+type RpcRow<T extends keyof Database['public']['Functions']> =
+  Database['public']['Functions'][T]['Returns'] extends readonly (infer Row)[] ? Row : never;
+
+export type TrialOpportunityCurvePreviewRow =
+  RpcRow<'preview_trial_opportunity_curve'>;
+export type TrialManifestationChancePreviewRow =
+  RpcRow<'preview_trial_manifestation_chance'>;
+export type ChallengeAutoResolveSuccessChancePreviewRow =
+  RpcRow<'preview_challenge_auto_resolve_success_chance'>;
+export type RewardGeneratedItemPreviewRow = RpcRow<'preview_reward_generated_item'>;
+export type RewardProfilePreviewRow = RpcRow<'preview_reward_profile'>;
+export type TrialOpportunitySimulationRow = RpcRow<'simulate_trial_opportunity_runs'>;
+
+export interface TrialOpportunityCurvePreview {
+  difficultyKey: string;
+  difficultyLabel: string;
+  projectedStepNumber: number;
+  dryStepCount: number;
+  trialOpportunityChance: number;
+  trialOpportunityStepCap: number;
+  isGuaranteedByStepCap: boolean;
+  explanation: string;
+}
+
+export interface TrialManifestationChancePreview {
+  trialDefinitionId: string;
+  trialKey: string;
+  trialLabel: string;
+  testedStatKey: string;
+  testedStatValue: number;
+  difficultyKey: string;
+  districtCode: string;
+  spiritualityValue: number;
+  luckValue: number;
+  rawManifestationChance: number;
+  maxManifestationChancePercent: number;
+  finalManifestationChance: number;
+  explanation: string;
+}
+
+export interface ChallengeAutoResolveSuccessChancePreview {
+  testedStatKey: string;
+  testedStatValue: number;
+  difficultyKey: string;
+  difficultyLabel: string;
+  difficultyMultiplier: number;
+  spiritualityValue: number;
+  luckValue: number;
+  rawAutoResolveSuccessChance: number;
+  capPercent: number;
+  finalAutoResolveSuccessChance: number;
+  explanation: string;
+}
+
+export interface RewardGeneratedItemPreview {
+  previewIndex: number;
+  bucketProfileId: string;
+  bucketProfileKey: string;
+  bucketProfileName: string;
+  bucketIndex: number;
+  rolledBudget: number;
+  baseId: string;
+  baseKey: string;
+  baseName: string;
+  baseTypeKey: string;
+  baseValue: number;
+  qualityKey: string;
+  qualityLabel: string;
+  qualityMultiplier: number;
+  prefixAffixId: string;
+  prefixKey: string;
+  prefixName: string;
+  prefixGoldValue: number;
+  suffixAffixId: string;
+  suffixKey: string;
+  suffixName: string;
+  suffixGoldValue: number;
+  generatedName: string;
+  drachmaValue: number;
+  budgetBeforeQualityMultiplier: number;
+  remainingBudgetAfterBase: number;
+  remainingBudgetAfterPrefix: number;
+  remainingBudgetAfterSuffix: number;
+  explanation: string;
+}
+
+export interface RewardProfilePreview {
+  previewRunIndex: number;
+  rewardProfileId: string;
+  rewardProfileKey: string;
+  rewardProfileLabel: string;
+  rewardProfileDescription: string;
+  entryId: string;
+  entryKind: string;
+  entryLabel: string;
+  entryDescription: string;
+  effectDefinitionId: string;
+  amountMode: string;
+  resourceType: string;
+  chancePercent: number;
+  chanceRoll: number;
+  isIncluded: boolean;
+  previewAmount: number;
+  minItemCount: number;
+  maxItemCount: number;
+  previewItemCount: number;
+  maxQualityKey: string;
+  bucketProfileId: string;
+  generatedItemsPreviewJson: Json;
+  explanation: string;
+}
+
+export interface TrialOpportunitySimulation {
+  runIndex: number;
+  difficultyKey: string;
+  difficultyLabel: string;
+  startingDryStepCount: number;
+  maxStepsPerRun: number;
+  stepsTaken: number;
+  trialFound: boolean;
+  trialStepNumber: number;
+  dryStepCountBeforeFinalRoll: number;
+  finalDryStepCount: number;
+  finalTrialOpportunityChance: number;
+  finalTrialOpportunityRoll: number;
+  trialOpportunityStepCap: number;
+  rollHistoryJson: Json;
+  explanation: string;
+}
