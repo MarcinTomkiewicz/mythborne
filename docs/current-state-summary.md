@@ -24,7 +24,7 @@ This is an operational estimate, not a formal audit.
 | Hero progression formulas | 70% | Stat cost and cap formulas are live, including support for `statLevel`. |
 | Armory / item visibility layer | 50% | Core item catalog and armory surface exist, but broader gameplay loops are still incomplete. |
 | Combat | 35% | `/game/combat` now has a 10-turn Walking Dead duel with formula-driven hit/evasion/crit/damage, but it is still sandbox-only and not tied to rewards or exploration. |
-| Exploration / trials / encounters | 5% | Documented conceptually, not implemented as a real loop yet. |
+| Exploration / trials / encounters | 15% | DB/RPC foundation and guarded frontend models/mappers exist. `/game/exploration` now has an initial player-facing status/start screen over DB-backed difficulty tiers and exploration state, but movement, step resolution, challenges and rewards are still pending. |
 | Prestige / reputation | 0% | Not implemented yet. |
 | Guilds / politics / sieges | 0% | Not implemented yet. |
 | Trade / economy gameplay loop | 58% | Database/RPC foundation for Character Points, direct trade, auctions, item locks, vendor scrap and anti-abuse signals exists. Direct trade and one-item auctions have initial player-facing RPC-backed UIs; vendor sell has a core service contract, while Trade Routes/building integration and real sandbox smoke coverage are still pending. |
@@ -578,6 +578,12 @@ Still pending at the gameplay level even if partially supported in schema:
 - L1 accepted on 2026-05-01 as an inspect/types-alignment slice for the Epic L PvE exploration/trials foundation.
 - L1 confirmed that generated `database.types.ts` exposes the expected exploration/PvE tables, including difficulty tiers, minigames, trial/encounter definitions, reward profiles/grants, daily action counters, hero explorations, nodes, edges, steps, effects, challenge attempts and test overrides.
 - L1 confirmed that generated types expose runtime RPCs, challenge completion/auto-resolve/force-complete RPCs, sandbox/admin helper RPCs and all L-DB4c preview/simulation RPCs. `get_hero_exploration_state(...)` and `get_hero_exploration_debug_state(...)` return `Json`, so L2 should add guarded core/domain mappers instead of assuming raw JSON shape in components. Verification: `npx tsc --noEmit` and `npm run build` passed; build retained the known bundle budget/CommonJS warnings.
+- L2 accepted on 2026-05-01: exploration/trial/reward/preview frontend domain models and mappers now cover the DB-backed PvE foundation without exposing raw generated rows or raw RPC JSON to future components.
+- L2 adds guarded JSON mapping for the real `get_hero_exploration_state(...)` player shape and a separate debug aggregate for `get_hero_exploration_debug_state(...)`. Generic JSON guard/read primitives live in shared `core/utils/json-read.ts`, while exploration-specific RPC mapping remains in `exploration-runtime-json-mappers.ts`.
+- L2 was verified with `npx tsc --noEmit`, focused shared JSON/exploration mapper specs and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure.
+- L3 accepted on 2026-05-01: `/game/exploration` now has a player-facing start/status page for the active hero/server.
+- L3 adds the `HeroExplorations` core service over DB-backed active difficulty tiers, `get_hero_exploration_state(...)`, `start_or_get_hero_exploration(...)` and read-only `preview_trial_opportunity_curve(...)`. Mutating runtime start uses the public RPC only; no direct writes to exploration, reward or item tables were added.
+- L3 keeps page state split into `ExplorationOverviewState`, `ExplorationPreviewState`, `ExplorationStartState`, `ExplorationFeedbackState` and a small `ExplorationPageState` facade. Shared stale request handling now uses neutral `core/utils/request-token.ts`, reused by trade, auction and exploration. Manual runtime smoke is pending logged-in hero/server data and a real exploration RPC flow.
 - Status/verdict/sanction/CP penalty action sections now repeat the same audited action shell. Before adding another similar status-action section, check whether a shared wrapper/state/helper is warranted for error/success/loading, submit layout and stale-guard behavior.
 - `core` should continue to hold non-component logic:
   - domain models

@@ -16,6 +16,11 @@ export const gameRoutes: Routes = [
     },
   },
   {
+    path: 'exploration',
+    loadComponent: () =>
+      import('./pages/exploration/exploration-page').then((m) => m.ExplorationPage),
+  },
+  {
     path: 'combat',
     loadComponent: () =>
       import('./pages/combat/combat-page').then((m) => m.CombatPage),

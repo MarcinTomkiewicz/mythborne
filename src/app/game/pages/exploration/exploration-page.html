@@ -1,0 +1,146 @@
+<div class="flex-col gap-xl min-w-0">
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Game</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">Exploration</h2>
+        <p class="muted-text mb-0">Daily exploration status for the active hero.</p>
+      </div>
+      <span class="tag-badge tag-badge--info">{{ page.remainingTrialsLabel() }}</span>
+    </div>
+  </section>
+
+  @if (feedback.error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+  @if (feedback.successMessage(); as message) {
+    <p-message severity="success">{{ message }}</p-message>
+  }
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+      <div class="flex-col gap-xs">
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Difficulty</h3>
+        <p class="muted-text mb-0">Active tiers come from the database configuration.</p>
+      </div>
+      @if (page.isLoading()) {
+        <span class="tag-badge tag-badge--muted">Loading</span>
+      }
+    </div>
+
+    <div class="mg-grid-auto-fit gap-md">
+      @for (difficulty of page.difficulties(); track difficulty.key) {
+        <article class="mg-card p-md">
+          <div class="flex-col gap-sm">
+            <div class="flex-row-between-start gap-sm">
+              <div class="flex-col gap-xs">
+                <strong>{{ difficulty.label }}</strong>
+                <span class="muted-text">{{ difficulty.description }}</span>
+              </div>
+              @if (page.selectedDifficultyKey() === difficulty.key) {
+                <span class="tag-badge tag-badge--info">Selected</span>
+              }
+            </div>
+
+            @if (difficulty.helperText) {
+              <p class="muted-text mb-0">{{ difficulty.helperText }}</p>
+            }
+
+            <div class="flex-row-start-center flex-wrap gap-xs">
+              <span class="tag-badge tag-badge--muted">
+                Step x{{ difficulty.stepDurationMultiplier }}
+              </span>
+              <span class="tag-badge tag-badge--muted">
+                Trial reward x{{ difficulty.trialRewardMultiplier }}
+              </span>
+              <span class="tag-badge tag-badge--muted">
+                Encounter reward x{{ difficulty.encounterRewardMultiplier }}
+              </span>
+            </div>
+
+            @if (page.previewRows(difficulty.key).length) {
+              <div class="flex-col gap-xs">
+                @for (preview of page.previewRows(difficulty.key); track preview.projectedStepNumber) {
+                  <span class="muted-text">
+                    Step {{ preview.projectedStepNumber }}:
+                    {{ preview.trialOpportunityChance }}% trial chance
+                  </span>
+                }
+              </div>
+            }
+
+            <button
+              pButton
+              type="button"
+              label="Select"
+              severity="secondary"
+              [disabled]="page.isLoading() || page.isStarting()"
+              (click)="page.selectDifficulty(difficulty.key)"
+            ></button>
+          </div>
+        </article>
+      } @empty {
+        <p class="muted-text mb-0">No active exploration difficulties.</p>
+      }
+    </div>
+  </section>
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+      <div class="flex-col gap-xs">
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Current status</h3>
+        <p class="muted-text mb-0">Runtime state is loaded from the exploration RPC.</p>
+      </div>
+      @if (page.state(); as state) {
+        <span class="tag-badge tag-badge--info">{{ state.difficultyKey }}</span>
+      }
+    </div>
+
+    @if (page.state(); as state) {
+      <div class="flex-col gap-md">
+        @if (state.hasExploration && state.exploration) {
+          <div class="mg-grid-auto-fit gap-sm">
+            <span class="tag-badge tag-badge--muted">Status: {{ state.exploration.status }}</span>
+            <span class="tag-badge tag-badge--muted">District: {{ state.exploration.districtCode }}</span>
+            <span class="tag-badge tag-badge--muted">Dry steps: {{ state.exploration.trialDryStepCount }}</span>
+            <span class="tag-badge tag-badge--muted">Date: {{ state.explorationDate }}</span>
+          </div>
+
+          <div class="mg-grid-auto-fit gap-sm">
+            <article class="mg-card p-md">
+              <strong>Current node</strong>
+              <p class="muted-text mb-0">{{ page.currentNodeLabel() }}</p>
+            </article>
+            <article class="mg-card p-md">
+              <strong>Movement step</strong>
+              <p class="muted-text mb-0">{{ page.activeStepLabel() }}</p>
+            </article>
+            <article class="mg-card p-md">
+              <strong>Challenge</strong>
+              <p class="muted-text mb-0">{{ page.activeChallengeLabel() }}</p>
+            </article>
+            <article class="mg-card p-md">
+              <strong>Effect</strong>
+              <p class="muted-text mb-0">{{ page.activeEffectLabel() }}</p>
+            </article>
+          </div>
+        } @else {
+          <div class="flex-col gap-sm">
+            <p class="muted-text mb-0">
+              No exploration has been started for this hero, date and difficulty.
+            </p>
+            <button
+              pButton
+              type="button"
+              label="Start exploration"
+              [disabled]="page.isLoading() || page.isStarting() || !page.selectedDifficultyKey()"
+              (click)="page.startSelectedDifficulty()"
+            ></button>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="muted-text mb-0">Select an active difficulty to load exploration status.</p>
+    }
+  </section>
+</div>

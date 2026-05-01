@@ -8,9 +8,9 @@ import {
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { DirectTrades } from '../../../core/services/trade/direct-trades';
 import { SelectOption } from '../../../core/types/select-option.types';
+import { RequestToken } from '../../../core/utils/request-token';
 import { TradeFeedbackState } from './trade-feedback.state';
 import { directTradeOfferLabel } from './trade-labels';
-import { TradeRequestToken } from './trade-request-token';
 
 @Injectable()
 export class TradeOverviewState {
@@ -18,7 +18,7 @@ export class TradeOverviewState {
   private readonly directTrades = inject(DirectTrades);
   private readonly destroyRef = inject(DestroyRef);
   private readonly feedback = inject(TradeFeedbackState);
-  private readonly requestToken = new TradeRequestToken();
+  private readonly requestToken = new RequestToken();
 
   private activeServerId: string | null = null;
   private activeHeroId: string | null = null;

@@ -9,9 +9,9 @@ import { DirectTradeActions } from '../../../core/services/trade/direct-trade-ac
 import { PlayerAuctionActions } from '../../../core/services/trade/player-auction-actions';
 import { PlayerAuctionCreateForm } from '../../../core/types/forms/player-auction-form.types';
 import { trimText } from '../../../core/utils/normalize-text';
+import { RequestToken } from '../../../core/utils/request-token';
 import { AuctionFeedbackState } from './auction-feedback.state';
 import { AuctionOverviewState } from './auction-overview.state';
-import { TradeRequestToken } from '../trade/trade-request-token';
 import { normalizeCharacterPoints, validateCreateAuctionValues } from './auction-validation';
 
 @Injectable()
@@ -21,8 +21,8 @@ export class AuctionCreateListingState {
   private readonly overview = inject(AuctionOverviewState);
   private readonly feedback = inject(AuctionFeedbackState);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly itemSearchToken = new TradeRequestToken();
-  private readonly submitToken = new TradeRequestToken();
+  private readonly itemSearchToken = new RequestToken();
+  private readonly submitToken = new RequestToken();
 
   readonly itemSuggestions = signal<DirectTradeItemTarget[]>([]);
   readonly isSaving = signal(false);

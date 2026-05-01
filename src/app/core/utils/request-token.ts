@@ -1,4 +1,4 @@
-export class TradeRequestToken {
+export class RequestToken {
   private current = 0;
 
   next(): number {

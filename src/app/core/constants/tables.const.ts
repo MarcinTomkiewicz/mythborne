@@ -75,4 +75,5 @@ export const TABLES = {
   player_trade_offers: 'player_trade_offers',
   player_trade_transaction_items: 'player_trade_transaction_items',
   player_trade_transactions: 'player_trade_transactions',
+  exploration_difficulty_tiers: 'exploration_difficulty_tiers',
 } as const;

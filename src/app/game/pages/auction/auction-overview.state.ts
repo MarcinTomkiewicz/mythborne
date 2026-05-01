@@ -7,9 +7,9 @@ import {
 } from '../../../core/domain/trade/player-auction.model';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerAuctions } from '../../../core/services/trade/player-auctions';
+import { RequestToken } from '../../../core/utils/request-token';
 import { auctionListingLabel } from './auction-labels';
 import { AuctionFeedbackState } from './auction-feedback.state';
-import { TradeRequestToken } from '../trade/trade-request-token';
 
 @Injectable()
 export class AuctionOverviewState {
@@ -17,7 +17,7 @@ export class AuctionOverviewState {
   private readonly auctions = inject(PlayerAuctions);
   private readonly destroyRef = inject(DestroyRef);
   private readonly feedback = inject(AuctionFeedbackState);
-  private readonly requestToken = new TradeRequestToken();
+  private readonly requestToken = new RequestToken();
 
   private activeServerId: string | null = null;
   private activeHeroId: string | null = null;

@@ -8,9 +8,9 @@ import { DirectTradeActions } from '../../../core/services/trade/direct-trade-ac
 import { DirectTradeRespondForm } from '../../../core/types/forms/direct-trade-form.types';
 import { SelectOption } from '../../../core/types/select-option.types';
 import { trimText } from '../../../core/utils/normalize-text';
+import { RequestToken } from '../../../core/utils/request-token';
 import { TradeFeedbackState } from './trade-feedback.state';
 import { TradeOverviewState } from './trade-overview.state';
-import { TradeRequestToken } from './trade-request-token';
 import { normalizeCharacterPoints, validateTradeValue } from './trade-validation';
 
 @Injectable()
@@ -19,8 +19,8 @@ export class TradeRespondOfferState {
   private readonly overview = inject(TradeOverviewState);
   private readonly feedback = inject(TradeFeedbackState);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly itemSearchToken = new TradeRequestToken();
-  private readonly submitToken = new TradeRequestToken();
+  private readonly itemSearchToken = new RequestToken();
+  private readonly submitToken = new RequestToken();
 
   readonly itemSuggestions = signal<DirectTradeItemTarget[]>([]);
   readonly isSaving = signal(false);

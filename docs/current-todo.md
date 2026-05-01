@@ -89,6 +89,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: K4 - identity observation / same-IP-device integration boundary.
 - Completed and confirmed: K5 - signal grouping and case explainability UI.
 - Completed and confirmed: L1 - DB/types alignment after PvE migrations.
+- Completed and confirmed: L2 - exploration domain models and mappers.
+- Completed and confirmed: L3 - player exploration start/status screen.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
@@ -112,7 +114,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I7 - building bonus and requirement explainability.
 - Completed and confirmed: UX-I7b - DB-driven central requirement editor for Buildings admin.
 - Completed and confirmed: UX-I8 - anti-abuse decision explainability pass.
-- Current backlog task: wait for user commit, then continue with the next backlog task.
+- Current backlog task: L4 - graph state read and direction UI.
 - H17+ planning note: status/verdict/sanction/CP penalty action sections now share a similar workflow-action shell; before adding the next similar audited status-action section, check whether to extract a light shared wrapper/state/helper for error/success/loading/submit card layout and stale-guard handling.
 - Reporting rule: future task reports must include a short Shared/reuse check covering reused shared/admin components, checked-but-not-reused options, and any new component justification.
 - G6 follow-up planning note: remaining gameplay audit slices are major item operations, trade operations once frontend flows exist, and estate/building irreversible changes.
@@ -133,7 +135,9 @@ Order reflects implementation priority, not final business priority.
 ## Highest Priority Gameplay TODO
 
 ### Exploration + trials loop
-- Create a real exploration step loop instead of placeholders.
+- Next: L4 should add graph/path display and valid direction choices from `get_hero_exploration_state(...)`.
+- L3 has added `/game/exploration`, DB-backed difficulty tiers, selected-difficulty state loading, and `start_or_get_hero_exploration(...)` start/status flow.
+- Continue building the real exploration step loop instead of placeholders.
 - Implement step outcomes:
   - nothing
   - light combat encounter

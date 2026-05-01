@@ -10,9 +10,9 @@ import {
 import { DirectTradeActions } from '../../../core/services/trade/direct-trade-actions';
 import { DirectTradeCreateForm } from '../../../core/types/forms/direct-trade-form.types';
 import { trimText } from '../../../core/utils/normalize-text';
+import { RequestToken } from '../../../core/utils/request-token';
 import { TradeFeedbackState } from './trade-feedback.state';
 import { TradeOverviewState } from './trade-overview.state';
-import { TradeRequestToken } from './trade-request-token';
 import { normalizeCharacterPoints, validateTradeValue } from './trade-validation';
 
 @Injectable()
@@ -21,9 +21,9 @@ export class TradeCreateOfferState {
   private readonly overview = inject(TradeOverviewState);
   private readonly feedback = inject(TradeFeedbackState);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly heroSearchToken = new TradeRequestToken();
-  private readonly itemSearchToken = new TradeRequestToken();
-  private readonly submitToken = new TradeRequestToken();
+  private readonly heroSearchToken = new RequestToken();
+  private readonly itemSearchToken = new RequestToken();
+  private readonly submitToken = new RequestToken();
 
   readonly targetSuggestions = signal<DirectTradeHeroTarget[]>([]);
   readonly itemSuggestions = signal<DirectTradeItemTarget[]>([]);

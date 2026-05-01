@@ -5,9 +5,9 @@ import { Observable, finalize } from 'rxjs';
 import { PlayerAuctionListingReadModel } from '../../../core/domain/trade/player-auction.model';
 import { PlayerAuctionActions } from '../../../core/services/trade/player-auction-actions';
 import { PlayerAuctionBidForm } from '../../../core/types/forms/player-auction-form.types';
+import { RequestToken } from '../../../core/utils/request-token';
 import { AuctionFeedbackState } from './auction-feedback.state';
 import { AuctionOverviewState } from './auction-overview.state';
-import { TradeRequestToken } from '../trade/trade-request-token';
 import { normalizeCharacterPoints, validateBidAmount } from './auction-validation';
 
 @Injectable()
@@ -16,7 +16,7 @@ export class AuctionListingActionsState {
   private readonly overview = inject(AuctionOverviewState);
   private readonly feedback = inject(AuctionFeedbackState);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly actionToken = new TradeRequestToken();
+  private readonly actionToken = new RequestToken();
 
   readonly isSaving = signal(false);
   readonly bidForms = new Map<string, PlayerAuctionBidForm>();

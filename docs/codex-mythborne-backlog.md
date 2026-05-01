@@ -1779,6 +1779,8 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ## Task L3 — Player exploration start/status screen
 
+**Status:** Done / confirmed on 2026-05-01.
+
 **Goal:** Create the player-facing entry/status surface for the current hero’s daily exploration.
 
 **Scope:**

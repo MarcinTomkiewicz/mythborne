@@ -60,6 +60,9 @@ export const RPC = {
   buy_now_player_auction: 'buy_now_player_auction',
   close_player_auction_listing: 'close_player_auction_listing',
   cancel_player_auction_listing: 'cancel_player_auction_listing',
+  get_hero_exploration_state: 'get_hero_exploration_state',
+  preview_trial_opportunity_curve: 'preview_trial_opportunity_curve',
+  start_or_get_hero_exploration: 'start_or_get_hero_exploration',
   save_stat_allocation: 'save_stat_allocation',
   update_entity_requirement: 'update_entity_requirement',
 } as const;

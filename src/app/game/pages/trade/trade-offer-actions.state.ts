@@ -3,9 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { DirectTradeOfferReadModel } from '../../../core/domain/trade/direct-trade.model';
 import { DirectTradeActions } from '../../../core/services/trade/direct-trade-actions';
+import { RequestToken } from '../../../core/utils/request-token';
 import { TradeFeedbackState } from './trade-feedback.state';
 import { TradeOverviewState } from './trade-overview.state';
-import { TradeRequestToken } from './trade-request-token';
 
 @Injectable()
 export class TradeOfferActionsState {
@@ -13,7 +13,7 @@ export class TradeOfferActionsState {
   private readonly overview = inject(TradeOverviewState);
   private readonly feedback = inject(TradeFeedbackState);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly requestToken = new TradeRequestToken();
+  private readonly requestToken = new RequestToken();
 
   readonly isSaving = signal(false);
 
