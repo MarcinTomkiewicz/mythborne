@@ -1707,6 +1707,8 @@ Current source of truth:
 
 ## Task K4 — Identity observation / same-IP-device integration boundary
 
+**Status:** Done / confirmed 2026-05-01. Manual smoke pending deployed Edge Function config/secrets and authenticated runtime invocation.
+
 **Goal:** Integrate the approved identity-observation path without unsafe IP handling in Angular.
 
 **Scope:**

@@ -86,6 +86,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: K1 - anti-abuse signal generation contract alignment.
 - Completed and confirmed: K2 - anti-abuse signal and case read models.
 - Completed and confirmed: K3 - trade/auction signal review integration.
+- Completed and confirmed: K4 - identity observation / same-IP-device integration boundary.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
