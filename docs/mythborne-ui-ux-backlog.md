@@ -1134,6 +1134,939 @@ Ten ekran nie ma być drugim dashboardem. Dashboard pokazuje ogólny stan postac
 
   ---
 
+## Task UI-18 — Armory screen: equipment layout and inventory shell
+
+**Goal:**  
+Zbudować player-facing ekran `Armory`, który łączy:
+- widok założonego ekwipunku w układzie sylwetki / equipment layout,
+- listę posiadanych przedmiotów ograniczoną przez aktualną widoczność zbrojowni,
+- mechanikę Display Stands jako priorytet widoczności itemów.
+
+Ten ekran nie ma być dashboardem ani admin item catalogiem. Ma być głównym ekranem gracza do zarządzania ekwipunkiem i widocznymi itemami.
+
+**Scope:**
+- Route/page dla `Armory`, docelowo np. `src/app/game/pages/armory`.
+- Użyć istniejącego shellu/topbara/sidebaru.
+- Zachować kierunek wizualny:
+  - modern premium browser RPG,
+  - dark navy / gold / bronze,
+  - lekki ancient-Greek flavor,
+  - zgodność z dashboard/statistics/exploration prototypami.
+- Lewa część:
+  - `Equipped items`,
+  - equipment layout z sylwetką i slotami.
+- Prawa część:
+  - `Inventory`,
+  - widoczność ograniczona przez Armory capacity,
+  - podział itemów na sekcje Display Stands od Stand 10 do Stand 1.
+
+**Equipment layout:**
+- Player-facing label: `Equipped items` albo `Equipment`.
+- Nie pokazywać player-facing słowa `Paperdoll`.
+- Technicznie komponent może się nazywać `EquipmentPaperdollComponent`.
+- Sloty:
+  - `main_hand`,
+  - `off_hand`,
+  - `helmet`,
+  - `armor`,
+  - `pants`,
+  - `boots`,
+  - `amulet`,
+  - `ring_1`,
+  - `ring_2`.
+- `Main hand` i `Off hand` mają być po właściwych stronach zgodnie z aktualnym prototypem Armory V2.
+- Empty slots muszą być widoczne jako empty/drop target.
+- Każdy equipped item powinien otwierać ten sam item popover/detail pattern co item card.
+
+**Inventory summary:**
+- Pokazać wyraźnie:
+  - total owned items,
+  - visible item capacity,
+  - np. `270 owned / 30 visible`.
+- Capacity nie oznacza ownership limit.
+- Jeśli gracz ma 270 itemów i capacity 30, nadal posiada 270 itemów, ale widzi 30 wg stand priority.
+- Hidden items nie są usuwane ani tracone.
+
+**Out of scope:**
+- Nie robić admin item catalogu.
+- Nie robić crafting.
+- Nie robić pełnego trade/auction workflow.
+- Nie implementować DB schema dla standów, jeśli jej jeszcze nie ma.
+- Nie tworzyć nowego item generation systemu.
+- Nie robić pełnego porównywarki itemów, jeśli nie ma read modelu.
+- Nie dublować dashboardu.
+
+**Data/source rules:**
+- Użyć istniejących item read models/services, jeśli są dostępne.
+- Użyć item lifecycle/status:
+  - active,
+  - equipped/current equipment state,
+  - locked_trade,
+  - locked_auction,
+  - scrapped ma nie pojawiać się w normalnym inventory.
+- Sloty powinny pochodzić z equipment slot dictionary/read modelu, jeśli istnieje.
+- Wartość itemu w drachmach ma pochodzić z item read modelu.
+- Item actions muszą używać canonical RPC/domain operations, nie direct writes.
+
+**PrimeNG/vendor rules:**
+- Sprawdzić istniejące shared/vendor components dla cards, badges, popover/tooltip, buttons, filters.
+- Preferować istniejące PrimeNG/vendor wrappers.
+- Nie robić ad hoc `div soup`.
+- Nie dodawać nowego globalnego card frameworka bez potrzeby.
+
+**Acceptance criteria:**
+- Armory screen pokazuje equipped items i inventory.
+- Equipped items używają equipment layoutu z widocznymi slotami.
+- `Paperdoll` nie jest player-facing labelem.
+- Inventory summary pokazuje `owned / visible`.
+- Hidden items są opisane jako owned but not visible.
+- Item actions respektują status locks.
+- Build/tsc przechodzi.
+- Codex raportuje:
+  - `reused:`
+  - `checked but not reused:`
+  - `new component/state/helper added:`
+  - `scope kept minimal:`
+  - `not added intentionally:`
+
+  ---
+
+  ## Task UI-19 — Armory Display Stands visibility model
+
+**Goal:**  
+Dodać UI/UX model **Display Stands** jako mechanikę organizacji i priorytetu widoczności itemów w Armory.
+
+**Concept:**
+- Gracz ma zawsze 10 Display Stands.
+- `Stand 1` jest domyślny i ma najniższy priorytet.
+- `Stand 10` ma najwyższy priorytet widoczności.
+- Inventory renderuje sekcje w kolejności:
+  - Stand 10,
+  - Stand 9,
+  - Stand 8,
+  - ...
+  - Stand 1.
+- Armory capacity określa, ile itemów jest widocznych.
+- Itemy ze standów o wyższym priorytecie wypełniają widoczną pojemność jako pierwsze.
+- Standy puste muszą być nadal widoczne.
+
+**Scope:**
+- W Armory inventory pokazać wszystkie 10 standów jako sekcje.
+- Każda sekcja pokazuje:
+  - numer standu,
+  - nazwę standu,
+  - liczbę itemów,
+  - status widoczności:
+    - shown first,
+    - visible,
+    - partially visible,
+    - hidden by capacity,
+    - empty,
+    - default.
+- Sekcje mają być rozwijane albo widoczne zgodnie z prototypem; na start mogą być widoczne.
+- Itemy mają być wyświetlane wewnątrz sekcji standu.
+- Puste standy mają pokazywać dropzone/empty state.
+- Stand 1 ma oznaczenie `default` / `new items`.
+
+**Renameable stand labels:**
+- UI powinien zakładać, że stand może mieć player-defined label w przyszłości.
+- Jeżeli backend/DB jeszcze tego nie ma, nie implementować trwałego rename.
+- Można pokazać placeholder/hint:
+  - `Custom name later`,
+  - `Rename stand` disabled,
+  - albo nie pokazywać akcji rename w pierwszym slice.
+- Jeśli Codex widzi istniejącą DB strukturę na nazwy standów, może jej użyć, ale nie ma wymyślać schematu bez potwierdzenia.
+
+**Visibility algorithm for UI:**
+- Input:
+  - all active owned items,
+  - each item’s assigned stand number,
+  - visible capacity.
+- Sort:
+  - by stand descending: 10 → 1,
+  - within stand by selected sort order, e.g. value/name/updated date, depending on available data.
+- Visible list:
+  - take first `capacity` items after stand-priority ordering.
+- Section states:
+  - jeśli wszystkie itemy w sekcji mieszczą się w capacity: visible,
+  - jeśli tylko część itemów z sekcji mieści się w capacity: partially visible,
+  - jeśli żaden item z sekcji się nie mieści: hidden by capacity,
+  - jeśli sekcja nie ma itemów: empty.
+
+**Out of scope:**
+- Nie tworzyć DB migration dla standów bez osobnego taska/akceptacji.
+- Nie robić skomplikowanego tree/folder inventory.
+- Nie robić standów jako zwykłych filter tabs.
+- Nie ukrywać pustych standów.
+- Nie robić `Stand 1` jako highest priority.
+- Nie usuwać itemów ukrytych przez capacity.
+
+**Acceptance criteria:**
+- UI pokazuje dokładnie 10 standów.
+- Kolejność renderowania to Stand 10 → Stand 1.
+- Stand 1 jest oznaczony jako default/lowest priority.
+- Puste standy są widoczne.
+- Inventory itemy są pogrupowane w sekcje standów.
+- Capacity wpływa na widoczność, nie na ownership.
+- UI jasno komunikuje `owned / visible`.
+- Build/tsc przechodzi.
+- Codex raportuje:
+  - `reused:`
+  - `checked but not reused:`
+  - `new component/state/helper added:`
+  - `scope kept minimal:`
+  - `not added intentionally:`
+
+  ---
+
+## Task UI-20 — Armory item card and item popover pattern
+
+**Goal:**  
+Dodać kompaktowy item card dla Armory oraz wspólny item popover/detail pattern dla hover/click, pokazujący pełne informacje o przedmiocie.
+
+**Scope:**
+- Item card w inventory i equipped layout.
+- Na kafelku itemu pokazać:
+  - nazwę itemu,
+  - slot / category,
+  - stand number,
+  - status badge,
+  - wartość w drachmach w osobnej linii.
+- Wartość w drachmach nie ma być sklejana w jednej linii z typem itemu.
+- Na hover/click itemu pokazać popover/detail:
+  - pełna nazwa itemu,
+  - quality,
+  - prefix,
+  - base item,
+  - suffix,
+  - slot,
+  - stand,
+  - status,
+  - damage range, jeśli dotyczy,
+  - suma bonusów,
+  - requirements,
+  - wartość w drachmach,
+  - akcje kontekstowe, jeśli są dopuszczalne.
+
+**Important item semantics:**
+- Wysoka wartość w drachmach nie oznacza automatycznie wysokiej użyteczności.
+- UI ma pokazywać wartość i bonusy, ale nie może sugerować, że droższy item zawsze jest lepszy.
+- Requirements są kluczowe: gracz może mieć item, którego jeszcze nie może założyć.
+- Locked itemy nie powinny pokazywać akcji, które są zablokowane przez status.
+
+**Status handling:**
+- `active` — normal item.
+- `equipped` — item założony; jeśli status/read model reprezentuje to osobno, użyć właściwego źródła.
+- `locked_trade` — zablokowany w direct trade.
+- `locked_auction` — zablokowany w auction.
+- `scrapped` — nie pokazuje się w normalnym inventory.
+
+**Actions:**
+- `Equip selected` — tylko jeśli item jest equippable i nie jest locked.
+- `Sell to vendor` — przez canonical vendor scrap/sell workflow.
+- `Create trade offer` — przez canonical direct trade flow.
+- `List auction` — przez canonical auction flow.
+- Akcje mogą być disabled z tooltipem/reason.
+
+**Out of scope:**
+- Nie robić pełnego trade/auction flow.
+- Nie robić pełnego vendor sell confirmation modal, jeśli to osobny task.
+- Nie robić permanentnego item comparison engine.
+- Nie hardcodować bonusów jako prawdy, jeśli read model istnieje.
+- Nie pokazywać staff-only/admin-only pól.
+
+**Data/source rules:**
+- Item display name powinien korzystać z istniejącego item display mapper/helper, jeśli jest dostępny.
+- Bonusy i requirements mają pochodzić z item read modelu / domain mapperów.
+- Value in drachmas z item row/read modelu.
+- Actions muszą respektować item lifecycle/status.
+- Nie robić direct table writes.
+
+**Acceptance criteria:**
+- Item card jest kompaktowy i czytelny.
+- Drachma value jest w osobnej linii na kafelku.
+- Hover/click pokazuje pełniejszy popover z bonusami, requirements i value.
+- Popover pattern jest reuseable dla Armory, Dashboard equipment preview, Trade/Auction i Reports.
+- Locked itemy mają właściwe disabled states / badges.
+- Build/tsc przechodzi.
+- Codex raportuje:
+  - `reused:`
+  - `checked but not reused:`
+  - `new component/state/helper added:`
+  - `scope kept minimal:`
+  - `not added intentionally:`
+
+  ---
+
+## Task UI-21 — Armory drag and drop / move-to-stand UX slice
+
+**Goal:**  
+Dodać UX do przenoszenia itemów między Display Stands, najlepiej przez drag & drop, z fallbackiem na prostą akcję `Move to stand`.
+
+**Scope:**
+- UI-only albo read/write slice zależnie od tego, czy istnieje backend support dla item stand assignment.
+- Stand sections mają działać jako drop targets.
+- Item cards powinny być draggable, jeśli użycie drag/drop jest bezpieczne i zgodne z obecnymi vendorami.
+- Puste standy też muszą być drop targets.
+- Alternatywnie lub dodatkowo item popover może mieć akcję:
+  - `Move to Stand 10`,
+  - `Move to Stand 9`,
+  - ...
+  - `Move to Stand 1`.
+
+**Fallback if no DB/backend support exists:**
+- Nie implementować trwałego zapisu stand assignment.
+- Pokazać mock/local UX tylko w prototypie albo zgłosić dependency:
+  - `DB/read-write support for item display stand assignment needed`.
+- Nie zapisywać standu w przypadkowym metadata JSON bez decyzji projektowej.
+- Nie dodawać nowej tabeli/migracji bez osobnego taska.
+
+**Expected backend/domain concept, if/when implemented:**
+- Każdy item ma przypisany stand number 1–10.
+- Nowe itemy defaultowo trafiają na Stand 1.
+- Stand assignment wpływa na ordering/visibility, nie na item ownership.
+- Stand label/name może być player-defined later.
+- Zmiana standu powinna być hero-owned operation, nie admin config.
+
+**UX rules:**
+- Po przeciągnięciu itemu na stand:
+  - pokazać optimistic local move tylko jeśli można bezpiecznie cofnąć po błędzie,
+  - albo wykonać zapis i potem odświeżyć read model.
+- Locked itemy mogą być przenoszone między standami tylko jeśli domena to dopuszcza; jeśli nie wiadomo, disabled + reason.
+- Przenoszenie itemu nie może zmienić jego statusu trade/auction/equipped.
+- DnD ma być dodatkiem UX, nie jedynym sposobem obsługi. Fallback action jest wskazany.
+
+**Out of scope:**
+- Nie robić kompletnego inventory folder system.
+- Nie robić multi-select bulk move, chyba że istnieje już pattern i zakres pozostaje mały.
+- Nie dodawać complex animations.
+- Nie robić drag/drop bez accessibility/fallback.
+- Nie zmieniać item ownership.
+- Nie przenosić hidden itemów do visible capacity inaczej niż przez stand priority.
+
+**Acceptance criteria:**
+- Stand sections są czytelnymi drop targets.
+- Empty stands są drop targets.
+- Item może zostać przeniesiony do innego standu albo UI zgłasza brak backend dependency.
+- Stand priority przelicza visible/hidden state po zmianie.
+- Fallback bez drag/drop jest dostępny lub zaplanowany.
+- Build/tsc przechodzi.
+- Codex raportuje:
+  - `reused:`
+  - `checked but not reused:`
+  - `new component/state/helper added:`
+  - `scope kept minimal:`
+  - `not added intentionally:`
+
+  ---
+
+## Task UI-22 — Armory implementation pass and anti-overengineering check
+
+**Goal:**
+Po wdrożeniu pierwszych slice’ów Armory wykonać pass ograniczający overengineering i upewnić się, że ekran pozostaje prosty, cienki, zgodny z projektem oraz faktycznie realizuje zaakceptowany model UI:
+
+* Equipped items / equipment layout po lewej.
+* Inventory po prawej.
+* Display Stands jako sekcje od Stand 10 do Stand 1.
+* Armory capacity jako limit widoczności, nie limit ownership.
+* Item cards plus reusable item popover.
+* Hidden-by-capacity itemy nadal pozostają owned.
+
+**Scope:**
+
+* Przejrzeć:
+
+  * Armory page,
+  * equipment layout component,
+  * item card component,
+  * item popover/detail component,
+  * Display Stand section component,
+  * capacity/visibility helper,
+  * item actions,
+  * SCSS/classes,
+  * read-model/service usage.
+* Upewnić się, że ekran nie stał się:
+
+  * dashboardem,
+  * admin item catalogiem,
+  * crafting screenem,
+  * trade/auction screenem,
+  * formula/debug screenem,
+  * jednym ogromnym komponentem,
+  * zbiorem ad hoc wrapperów i klas.
+
+**Required model checks:**
+
+* Display Stands są renderowane jako sekcje, nie jako zwykłe filter tabs.
+* Sekcje są w kolejności Stand 10 → Stand 1.
+* Stand 10 ma najwyższy priorytet widoczności.
+* Stand 1 jest defaultowym standem dla nowych itemów i ma najniższy priorytet.
+* Puste standy są widoczne.
+* Stand labels/names mogą być player-editable później, ale jeśli nie ma DB/backend supportu, Codex nie wymyśla trwałego zapisu.
+* Hidden-by-capacity itemy nadal są owned.
+* Capacity decyduje, ile itemów jest widocznych.
+* Stand priority decyduje, które itemy wchodzą do widocznej puli jako pierwsze.
+* Player-facing UI nie używa słowa Paperdoll; techniczny komponent może nazywać się EquipmentPaperdollComponent.
+
+**Required architecture checks:**
+
+* Nie ma direct writes do item tables.
+* Item actions idą przez istniejące canonical RPC/domain paths:
+
+  * equip/unequip, jeśli istnieje,
+  * vendor sell/scrap,
+  * direct trade,
+  * auction listing.
+* Locked itemy respektują status:
+
+  * locked_trade,
+  * locked_auction.
+* Scrapped itemy nie pojawiają się w normalnym inventory.
+* Item display name, drachma value, requirements i bonuses pochodzą z read modelu/domain mapperów, nie z hardcoded template logic.
+* Jeśli stand assignment nie ma jeszcze backend/DB supportu, Codex ma zgłosić dependency zamiast wymyślać trwały zapis w losowym metadata JSON.
+
+**Required reuse checks:**
+
+* Sprawdzić istniejące shared/vendor/PrimeNG patterns dla:
+
+  * card,
+  * badge/tag,
+  * tooltip/popover,
+  * item display,
+  * metadata display,
+  * buttons/actions,
+  * filters/search,
+  * drag/drop, jeśli jest wdrażany.
+* Item popover powinien być reusable dla:
+
+  * Armory,
+  * Dashboard equipment preview,
+  * Trade/Auction,
+  * Reports.
+* Capacity/stand visibility calculation powinno być czystym helperem/testowalne, jeśli implementowane frontendowo.
+* Typy/interfejsy nie mogą lądować w komponencie.
+
+**What Codex must not add:**
+
+* No crafting.
+* No full trade flow.
+* No full auction flow.
+* No admin item catalog.
+* No permanent DB schema invented for stands.
+* No item comparison engine.
+* No Angular-only item bonus resolver.
+* No direct item table writes.
+* No player-facing Paperdoll label.
+* No hidden item deletion.
+* No new icon framework.
+* No massive generic inventory framework.
+* No 200k props for future use.
+
+**Required report section:**
+Codex po tasku musi jawnie dopisać:
+
+scope kept minimal:
+
+* ...
+
+not added intentionally:
+
+* ...
+
+**Acceptance criteria:**
+
+* Armory screen pozostaje prostym ekranem zarządzania ekwipunkiem i widocznością itemów.
+* Display Stands są sekcjami Stand 10 → Stand 1.
+* Puste standy są widoczne.
+* Item cards i item popover są reusable albo uzasadniono, dlaczego jeszcze nie są.
+* Equipment layout nie pokazuje player-facing labela Paperdoll.
+* Stand/capacity logic nie udaje, że hidden itemy są usunięte.
+* Reuse check jest wiarygodny.
+* Nie ma zbędnych properties/states/helpers.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
+## Task UI-23 — Estate screen: player-facing estate overview
+
+**Goal:**
+Zbudować player-facing ekran Estate dla zarządzania posiadłością bohatera.
+
+Ekran ma być głównym miejscem do:
+
+* obejrzenia aktualnej posiadłości,
+* sprawdzenia dostępnych budynków,
+* sprawdzenia bonusów budynków,
+* rozpoczęcia budowy lub upgrade’u,
+* sprawdzenia aktywnego building joba,
+* przejścia do listy okolicznych posiadłości.
+
+To nie ma być admin building catalog ani city-builder. To ma być czytelny ekran gracza.
+
+**Scope:**
+
+* Route/page dla Estate, docelowo w obszarze game, zgodnie z project structure.
+* Użyć istniejącego shellu, topbara i sidebaru.
+* Zachować kierunek wizualny z aktualnego Estate V3 preview:
+
+  * modern premium browser RPG,
+  * dark navy / gold / bronze,
+  * lekki ancient-Greek flavor,
+  * desktop-first.
+* Header ekranu:
+
+  * label Estate,
+  * adres estate, np. B-0421,
+  * krótki opis,
+  * badge District B,
+  * badge Estate B-0421.
+* Nie pokazywać technicznych/project-only badge:
+
+  * one estate per hero,
+  * A+B buildings available,
+  * cancel not available.
+* Prawy summary card:
+
+  * District,
+  * Available buildings,
+  * Active job,
+  * Vicinity / Open estate list.
+* Vicinity / Open estate list ma prowadzić do przyszłego widoku listy okolicznych posiadłości.
+
+**Estate address rules:**
+
+* Estate address source of truth to district_code + address_number.
+* Nie traktować estates.address jako długoterminowego źródła prawdy.
+* Jeśli istnieje helper formatujący adres, użyć helpera.
+* Jeśli usunięta zostanie ostatnia zależność od estates.address, Codex ma zgłosić DB cleanup candidate: estates.address.
+
+**Out of scope:**
+
+* Nie implementować listy posiadłości w tym tasku.
+* Nie implementować relocation.
+* Nie implementować siege/takeover.
+* Nie robić admin edycji budynków.
+* Nie robić building balance editor.
+* Nie robić cancel building job.
+* Nie robić collect/claim completed building job.
+
+**Data/source rules:**
+
+* Ładować estate przez active hero i selected server.
+* Hero-owned reads nie mogą używać auth uid jako hero id.
+* Budynki i building jobs muszą być server/hero/estate scoped.
+* Dane definicyjne budynków powinny pochodzić z DB/read modelu, nie z hardcoded list w komponencie.
+* UI może previewować koszt/czas, ale authoritative build start musi iść przez DB/RPC.
+
+**Acceptance criteria:**
+
+* Estate screen pokazuje aktualny estate address jako district + number.
+* Header nie pokazuje technicznych/project-only informacji.
+* Summary ma District, Available buildings, Active job i Vicinity link.
+* UI jest desktop-first i spójny z dashboard/statistics/armory style.
+* Nie ma player-facing cancel action.
+* Nie ma collect/claim completed building job.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
+## Task UI-24 — Estate building grid grouped by district
+
+**Goal:**
+Dodać do Estate widok budynków pogrupowanych według dystryktu, zgodnie z aktualnym modelem UI z Estate V3 preview.
+
+Dla estate w District B widoczne są sekcje:
+
+* District A buildings,
+* District B buildings.
+
+Budynki z wyższych dystryktów nie są pokazywane jako locked. Pojawią się dopiero wtedy, gdy estate osiągnie odpowiedni district.
+
+**Scope:**
+
+* Renderować budynki jako sekcje per district.
+* Sekcje mają być w kolejności od najniższego dostępnego dystryktu do aktualnego:
+
+  * District A,
+  * District B,
+  * District C,
+  * District D,
+  * District E.
+* Dla aktualnego mocka/implementacji District B:
+
+  * pokazać District A buildings,
+  * pokazać District B buildings,
+  * nie pokazywać District C/D/E.
+* Każda sekcja pokazuje:
+
+  * nazwę dystryktu,
+  * krótki opis,
+  * licznik dostępnych budynków w tej sekcji.
+* Budynki spoza dostępnego zakresu dystryktu nie mają być renderowane jako disabled/locked cards.
+
+**Building card content:**
+Każdy building card pokazuje:
+
+* obrazek/ilustrację budynku,
+* nazwę budynku,
+* aktualny poziom,
+* opis,
+* current bonus,
+* next level bonus,
+* build time następnego poziomu,
+* koszt następnego poziomu:
+
+  * drachmas,
+  * materials,
+  * workforce,
+* akcję Build albo Upgrade.
+
+**Visual direction:**
+
+* 3 kolumny na desktopie są akceptowalne na start.
+* Mobile/responsive dopracować później, ale nie łamać podstawowego responsive layoutu.
+* Cards mają być spójne z Estate V3:
+
+  * obrazek na górze,
+  * info rows w środku,
+  * CTA/status na dole.
+* Budynki aktualnie budowane powinny być wizualnie wyróżnione.
+
+**Out of scope:**
+
+* Nie robić widoku budynków spoza aktualnego dystryktu.
+* Nie robić admin preview.
+* Nie robić pełnego building dictionary editor.
+* Nie robić drag/drop/reorder budynków.
+* Nie tworzyć hardcoded final listy budynków w komponencie, jeśli DB/read model istnieje.
+
+**Data/source rules:**
+
+* Budynek ma minimal district, np. district_code.
+* Budynek jest dostępny w swoim district i wyższych districtach.
+* Missing/higher district buildings nie są widoczne.
+* Max level i district caps muszą pochodzić z DB/read modelu lub istniejącego helpera.
+* Requirements/caps są DB-backed i nie powinny być hardcodowane w Angularze.
+
+**Acceptance criteria:**
+
+* Budynki są pogrupowane po district sections.
+* District B pokazuje tylko District A i District B buildings.
+* District C/D/E buildings nie są pokazane jako locked.
+* Każdy building card pokazuje current bonus, next bonus, cost, time i action.
+* Układ desktopowy jest czytelny i spójny z aktualnym stylem.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
+## Task UI-25 — Estate active building job panel
+
+**Goal:**
+Dodać czytelny player-facing panel aktywnej budowy na ekranie Estate.
+
+Panel ma jasno pokazywać, że aktualnie trwa building job, ale nie ma sugerować cancel/claim/collect flow.
+
+**Scope:**
+
+* Panel nad listą budynków:
+
+  * status Building in progress,
+  * nazwa budynku,
+  * target level,
+  * czas pozostały,
+  * progress bar,
+  * krótki opis skutku aktywnego joba.
+* Building card aktualnie budowanego budynku też pokazuje:
+
+  * Level X → Y,
+  * Building in progress,
+  * progress bar,
+  * remaining time albo percent,
+  * disabled action.
+
+**Rules:**
+
+* Jeden aktywny job per estate.
+* Jeśli active job istnieje, inne Build/Upgrade buttons są disabled.
+* Disabled reason:
+
+  * Blocked by active building job
+  * albo krótszy wariant spójny z UI.
+* Nie pokazywać cancel action.
+* Nie pokazywać collect/claim completed action.
+* Nie pokazywać “ready to collect”.
+* Jeśli job jest completed, read/gameplay workflow powinien go finalizować przed prezentacją stanu.
+
+**Out of scope:**
+
+* Brak cancel.
+* Brak admin/system failed/cancelled correction UI.
+* Brak queue management.
+* Brak wielu równoległych jobów.
+* Brak claim completed.
+
+**Data/source rules:**
+
+* Active job pochodzi z estate_building_jobs.
+* Przed odczytem aktualnych poziomów budynków workflow/read path powinien respektować finalize_completed_estate_building_jobs.
+* Player-facing UI nie musi pokazywać statusów cancelled/failed.
+* Jeśli backend zwraca cancelled/failed, pokazać bezpieczny fallback/error state zamiast budować player action.
+
+**Acceptance criteria:**
+
+* Active job panel jest widoczny, gdy trwa budowa.
+* Aktualnie budowany building card jest wyróżniony.
+* Inne building actions są disabled.
+* Nie ma cancel action.
+* Nie ma collect/claim action.
+* Completed jobs nie są player-facing “ready to collect”.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
+## Task UI-26 — Estate building action through canonical RPC
+
+**Goal:**
+Podłączyć Build/Upgrade action na ekranie Estate do canonical DB/RPC workflow dla rozpoczęcia budowy lub upgrade’u.
+
+**Canonical operation:**
+
+* start_estate_building_upgrade
+
+**Scope:**
+
+* Kliknięcie Build/Upgrade wywołuje domain/service operation.
+* Payload musi zawierać tylko dane wymagane przez RPC:
+
+  * hero id,
+  * building id,
+  * reason,
+  * request id, jeśli obecny pattern go wymaga.
+* Po sukcesie:
+
+  * odświeżyć estate,
+  * odświeżyć buildings,
+  * odświeżyć active job,
+  * odświeżyć hero resources.
+* Po błędzie:
+
+  * pokazać czytelny feedback,
+  * nie robić optimistic trwałej zmiany, jeśli nie ma bezpiecznego rollbacku.
+* Loading state per clicked building albo global action state dla estate.
+
+**Critical DB/RPC rules:**
+
+* Frontend nie liczy authoritative cost/time.
+* Frontend nie odejmuje resources.
+* Frontend nie insertuje estate_building_jobs.
+* Frontend nie update’uje estate_buildings bezpośrednio.
+* RPC ocenia building_upgrade_cost i building_upgrade_time po stronie DB.
+* RPC wydaje drachmas/materials/workforce przez hero_resource_ledger.
+* RPC tworzy job i zapisuje audit.
+
+**Preview vs authoritative:**
+
+* UI może pokazać preview kosztu i czasu.
+* Preview nie jest źródłem prawdy.
+* Jeśli preview różni się od RPC, po sukcesie odświeżony read model wygrywa.
+* Jeśli brakuje preview path, można pokazać cost/time z read modelu albo placeholder dependency, ale nie wymyślać formuł w komponencie.
+
+**Stale guards:**
+
+* Jeśli active hero/server/estate zmieni się podczas requestu, response ma zostać zignorowany.
+* Stary error/success nie może nadpisać aktualnego widoku.
+* Loading kończy się tylko dla aktualnego requestu.
+
+**Out of scope:**
+
+* Brak cancel.
+* Brak queue.
+* Brak admin override.
+* Brak relocation.
+* Brak completed job claim.
+* Brak direct resource mutation.
+
+**Acceptance criteria:**
+
+* Build/Upgrade używa canonical RPC/domain operation.
+* Brak direct writes do resources/jobs/building tables.
+* Po sukcesie dane są odświeżone.
+* Po błędzie UI pokazuje sensowną informację.
+* Stale guards są zaimplementowane.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
+## Task UI-27 — Estate vicinity entry point and future estate list boundary
+
+**Goal:**
+Dodać na ekranie Estate player-facing entry point do przyszłej listy okolicznych posiadłości, bez implementowania pełnego widoku listy w tym tasku.
+
+**Scope:**
+
+* W summary card Estate dodać:
+
+  * Vicinity,
+  * Open estate list.
+* Link/akcja prowadzi do planowanej route, np. Estate Vicinity / Nearby Estates.
+* Jeśli route jeszcze nie istnieje:
+
+  * przycisk może być disabled z krótkim hintem,
+  * albo może prowadzić do placeholder page, jeśli to jest w zakresie taska.
+* Nie pokazywać tego jako technical estate registry.
+* Player-facing nazwa powinna być bliższa:
+
+  * Vicinity,
+  * Nearby estates,
+  * Estate vicinity.
+* Nie używać nazwy Owned estates, bo hero ma własny estate, a lista ma dotyczyć okolicy / sąsiednich adresów.
+
+**Future behavior to keep in mind:**
+
+* Lista okolicy powinna pokazywać estate addresses wokół aktualnego address_number, np. kilka/kilkanaście niżej i wyżej.
+* Empty addresses nie są DB rows.
+* Frontend może generować address range z estate_district_address_capacities i overlayować occupied estates.
+* Relocation do empty address jest destructive i DB-owned through relocate_hero_estate_to_empty_address.
+* Siege/takeover occupied estate to future PvP/guild workflow i nie może używać destructive empty-address relocation.
+
+**Out of scope:**
+
+* Nie implementować pełnej listy okolicznych posiadłości w tym tasku.
+* Nie implementować relocation.
+* Nie implementować siege/takeover.
+* Nie pokazywać empty address move confirmation.
+* Nie dodawać mapy/district browsera.
+* Nie tworzyć DB schema.
+
+**Acceptance criteria:**
+
+* Estate screen ma czytelny player-facing entry point do Vicinity/Nearby estates.
+* Nie ma technical labeli typu one estate per hero.
+* Nie ma Owned estates.
+* Jeśli route nie istnieje, zachowanie linku/placeholdera jest jasno opisane.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
+## Task UI-28 — Mythborne UI style contract extraction
+
+**Goal:**
+Wyciągnąć z aktualnych HTML previewów i UI/UX backlogu spójny, praktyczny “UI style contract” dla Codexa, żeby kolejne ekrany wyglądały tak samo bez kopiowania całych mocków HTML.
+
+Ten task nie ma tworzyć finalnego design systemu. Ma zebrać konkretne tokeny, klasy, zachowania i wzorce wizualne, które już zaakceptowaliśmy w dashboard/statistics/armory/estate preview.
+
+**Scope:**
+
+* Dodać albo rozszerzyć sekcję w mythborne-ui-ux-backlog.md.
+* Opisać podstawowe tokeny:
+
+  * background,
+  * navy,
+  * gold/bronze,
+  * text colors,
+  * border/line colors,
+  * shadows,
+  * radiuses,
+  * layout widths.
+* Opisać wzorce:
+
+  * app shell,
+  * topbar,
+  * sidebar,
+  * active nav link,
+  * nav icon,
+  * page header,
+  * summary card,
+  * card,
+  * badge,
+  * chip/resource chip,
+  * progress bar,
+  * section header,
+  * item/building card,
+  * hover/focus states.
+* Szczególnie opisać active sidebar link:
+
+  * gold/blue subtle gradient,
+  * left inset gold accent,
+  * soft border,
+  * text color shift,
+  * no heavy blocky selected state.
+* Opisać zasady stylistyczne:
+
+  * modern-first,
+  * premium dark RPG,
+  * ancient Greek flavor przez kolor/materiał/detal, nie przez ciężką dekorację,
+  * desktop-first,
+  * no div soup,
+  * no random ad hoc classes,
+  * prefer shared/vendor/PrimeNG wrappers.
+
+**Do not:**
+
+* Nie przepisywać całych HTML mocków do backlogu.
+* Nie tworzyć osobnego pełnego design systemu bez potrzeby.
+* Nie narzucać wszystkich tokenów jako immutable, jeśli repo ma już lepsze vendor tokens.
+* Nie dodawać nowych ikon ani icon frameworka.
+* Nie mieszać statusów tasków Codexa.
+
+**Acceptance criteria:**
+
+* Codex ma jasne wskazówki, jak odtworzyć aktywny sidebar link, topbar, cards, badges i page headers.
+* Sekcja wskazuje, że preview HTML jest referencją, ale implementacja ma używać shared/vendor/PrimeNG i istniejących tokenów.
+* Style contract nie zastępuje current-decisions ani database-current.
+* Nie aktualizuje statusów klasycznego backlogu.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
 ## 21. Otwarte kwestie UI do dalszego dopracowania
 
 Ten plik jest na razie mocno dashboard/shell oriented. To jest celowe, bo najpierw stabilizujemy główny język UI. Z czasem UI/UX backlog powinien dostać osobne sekcje dla pełnych ekranów:

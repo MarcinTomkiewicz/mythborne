@@ -1,0 +1,93 @@
+<section class="mg-card p-lg flex-col gap-md">
+  <div class="flex-col gap-xs">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Combat candidates</h3>
+    <p class="muted-text mb-0">
+      Combat candidates define which concrete opponent or opponent family can be used when a
+      combat trial manifests. Non-combat trials do not use this list.
+    </p>
+  </div>
+  @if (page.selectedTrial(); as view) {
+    @if (!view.isCombatTrial) {
+      <p-message severity="info">
+        This trial uses {{ view.trial.minigameKey }} and is not configured as a combat trial.
+      </p-message>
+    } @else {
+      <form class="grid-form" [formGroup]="actions.candidateForm">
+        <label class="form-field">
+          <span>Candidate kind</span>
+          <p-select formControlName="candidateKind" [options]="page.candidateKindOptions" optionLabel="label" optionValue="value" />
+        </label>
+        @if (actions.candidateForm.controls.candidateKind.value === 'opponent') {
+          <label class="form-field">
+            <span>Opponent</span>
+            <p-select formControlName="opponentDefinitionId" [options]="page.opponentOptions()" optionLabel="label" optionValue="value" />
+          </label>
+        } @else {
+          <label class="form-field">
+            <span>Opponent family</span>
+            <p-select formControlName="familyKey" [options]="page.familyOptions()" optionLabel="label" optionValue="value" />
+          </label>
+        }
+        <label class="form-field">
+          <span>Scaling formula</span>
+          <p-select formControlName="scalingFormulaId" [options]="page.formulaOptions()" optionLabel="label" optionValue="value" />
+        </label>
+        <label class="form-field"><span>Difficulty multiplier</span><p-inputnumber formControlName="difficultyMultiplier" [min]="0.01" /></label>
+        <label class="form-field"><span>Weight</span><p-inputnumber formControlName="weight" [min]="0.01" /></label>
+        <label class="form-field"><span>Min hero level</span><p-inputnumber formControlName="minHeroLevel" [min]="1" /></label>
+        <label class="form-field"><span>Max hero level</span><p-inputnumber formControlName="maxHeroLevel" [min]="1" /></label>
+        <label class="form-field"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
+        <label class="form-field">
+          <span>Active</span>
+          <p-checkbox formControlName="isActive" [binary]="true" />
+        </label>
+        <label class="form-field form-field--wide">
+          <span>Reason</span>
+          <input pInputText formControlName="reason" />
+        </label>
+        <div class="flex-row gap-sm">
+          <button pButton type="button" label="Save candidate" [disabled]="actions.isSaving()" (click)="actions.saveCandidate()"></button>
+          <button pButton type="button" label="New candidate" severity="secondary" (click)="actions.startNewCandidate()"></button>
+          <button pButton type="button" label="Deactivate candidate" severity="danger" [disabled]="!actions.selectedCandidate()" (click)="actions.deactivateCandidate()"></button>
+        </div>
+      </form>
+      <p-table [value]="page.combatCandidates()" styleClass="p-datatable-sm">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Candidate</th>
+            <th>Kind</th>
+            <th>Scaling formula</th>
+            <th>Multiplier</th>
+            <th>Weight</th>
+            <th>Hero level</th>
+            <th>Status</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+          <tr (click)="actions.selectCandidate(row.candidate.id)">
+            <td>
+              {{ row.targetLabel }}
+              @if (row.targetDescription) {
+                <br />
+                <span class="muted-text">{{ row.targetDescription }}</span>
+              }
+            </td>
+            <td>{{ row.candidate.candidateKind }}</td>
+            <td>{{ row.formulaLabel }}</td>
+            <td>{{ row.candidate.difficultyMultiplier }}</td>
+            <td>{{ row.candidate.weight }}</td>
+            <td>{{ row.levelRangeLabel }}</td>
+            <td>
+              <p-tag [severity]="row.candidate.isActive ? 'success' : 'secondary'" [value]="row.candidate.isActive ? 'Active' : 'Inactive'" />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="7">No combat candidates are configured for this combat trial.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  }
+</section>

@@ -1,0 +1,37 @@
+<div class="flex-col gap-xl">
+  <app-loading-overlay
+    [visible]="page.isLoading()"
+    title="Loading trial definitions"
+    message="Reading exploration dictionaries and combat candidate configuration."
+  />
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Exploration trials</p>
+      <h2 class="mg-section__title mg-section__title--sm mb-0">Trial definitions configurator</h2>
+      <p class="muted-text mb-0">
+        Configure exploration trial definitions through approved admin RPCs. Combat candidates are
+        editable only when the selected trial uses the combat minigame.
+      </p>
+    </div>
+  </section>
+
+  @if (page.error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+  @if (!page.isLoading() && !page.hasTrials()) {
+    <p-message severity="warn">No trial definitions are configured in the database.</p-message>
+  }
+
+  <section class="grid-2 gap-lg">
+    <app-exploration-trials-list-section />
+    <app-exploration-trial-meaning-section />
+  </section>
+
+  <app-exploration-trial-edit-section />
+  <app-exploration-combat-candidates-section />
+
+  <section class="mg-card p-lg w-100">
+    <app-admin-tag-links [links]="links" />
+  </section>
+</div>

@@ -2188,6 +2188,8 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ## Task L11 — Trial definitions admin configurator
 
+**Status:** Done / confirmed on 2026-05-01.
+
 **Goal:** Add an admin/balancer UI for configuring trial definitions used by Exploration.
 
 **Scope:**
@@ -3556,49 +3558,251 @@ Epic rules:
 
 ---
 
-# Epic R — Admin/navigation UX
+# Epic R — Admin information architecture and layout hygiene
 
-## Task R1 — Admin panel structure review
+Epic R is a lightweight admin IA/layout hygiene epic, not a final UI redesign.
 
-**Goal:** Organize admin tools by global vs server-specific.
+The goal is to stop admin tooling from growing randomly and to give new admin/balancer modules predictable places in the admin shell. Final visual style, spacing, iconography, and full design-system decisions remain in the UI/UX backlog.
+
+Admin UI should be organized by **work intent**, not by raw table names.
+
+Preferred admin groups:
+
+- **Overview**
+- **Global Governance**
+- **Game Balance**
+- **Server Operations**
+- **Moderation & Anti-abuse**
+- **Gameplay Tools / Sandbox**
+
+General Epic R rules:
+- Do not rename gameplay concepts casually.
+- Do not move player-facing routes into admin.
+- Keep selected server context visible for server-scoped admin pages.
+- Use DB dictionaries and labels instead of hardcoded permanent lists.
+- Raw technical keys/UUIDs may appear as secondary metadata, not as primary UX.
+- Prefer PrimeNG Tabs / tabbed sections for complex admin pages instead of one long vertical form.
+- R is not a final visual redesign. Keep changes structural, navigational, and reusable.
+- If a route/page already exists, preserve functionality while moving or grouping navigation.
+- If a target route does not exist yet, add a clear placeholder/navigation slot only when useful; do not fake implemented functionality.
+
+---
+
+## Task R1 — Admin navigation taxonomy and route inventory
+
+**Goal:** Audit current admin routes and assign them to a stable admin navigation taxonomy.
 
 **Scope:**
-
-- Global admin:
-  - config definitions,
-  - global roles,
-  - global dictionaries,
-  - product/global balance.
-- Server admin:
-  - selected server,
-  - anti-abuse cases,
-  - declarations/reports,
-  - server configs,
-  - memberships/staff.
+- Inspect current admin routes, sidebar entries, dashboard links, and admin page entry points.
+- Classify each current admin route under one of:
+  - Overview;
+  - Global Governance;
+  - Game Balance;
+  - Server Operations;
+  - Moderation & Anti-abuse;
+  - Gameplay Tools / Sandbox.
+- Identify routes currently placed randomly or under misleading labels.
+- Identify missing route slots needed by upcoming/current admin modules:
+  - Trial definitions admin configurator;
+  - Encounter definitions admin configurator;
+  - Combat opponent definitions admin configurator;
+  - Notification inbox/type admin/readability;
+  - Game report admin/debug/readability;
+  - Exploration lab/debug tools;
+  - Combat sandbox/admin test tools.
+- Keep a distinction between:
+  - global/product admin pages;
+  - selected-server admin pages;
+  - staff/moderation pages;
+  - sandbox/test tools.
+- Do not change behavior yet unless it is a trivial label/grouping fix.
 
 **Acceptance criteria:**
-
-- Navigation plan avoids mixing global and server-specific screens.
+- Report lists current admin routes and their proposed group.
+- Report identifies misplaced or ambiguous routes.
+- Report lists missing navigation slots for M12/L11/L12/P/Q-related admin pages.
+- No large UI rewrite is done in this audit task.
+- No route is removed.
+- Build is not required unless code changes are made.
 
 ---
 
-## Task R2 — Staff landing/dashboard
+## Task R2 — Admin sidebar grouping implementation
 
-**Goal:** Give staff useful starting point.
+**Goal:** Reorganize admin navigation into stable, readable groups.
 
 **Scope:**
-
-- Selected server summary.
-- Open anti-abuse cases.
-- Waiting-for-player cases.
-- Pending declarations/reports.
-- Pending sanctions.
+- Update admin/sidebar navigation to use the agreed groups:
+  - Overview;
+  - Global Governance;
+  - Game Balance;
+  - Server Operations;
+  - Moderation & Anti-abuse;
+  - Gameplay Tools / Sandbox.
+- Move existing entries into the correct groups based on R1.
+- Keep global/product tools separate from selected-server tools.
+- Keep moderation and anti-abuse tools grouped together.
+- Create clear navigation slots for upcoming admin modules where appropriate:
+  - Game Balance → Trials;
+  - Game Balance → Encounters;
+  - Game Balance → Combat Opponents;
+  - Game Balance → Reward Profiles if/when route exists;
+  - Gameplay Tools / Sandbox → Exploration Lab;
+  - Gameplay Tools / Sandbox → Combat Sandbox/Admin Test;
+  - Overview or Operations → Notifications;
+  - Gameplay Tools or Reports area → Game Reports, if route exists.
+- Do not create fake working pages. If a route is missing, either omit it or mark it as pending only if the project already uses pending/disabled navigation conventions.
+- Preserve existing route guards and staff/admin access boundaries.
+- Preserve selected-server switcher behavior.
 
 **Acceptance criteria:**
-
-- Staff can quickly find work.
+- Admin sidebar is grouped by work intent, not raw table/entity names.
+- Existing admin routes remain reachable.
+- No player-facing route is accidentally moved into admin.
+- Server-scoped pages still make selected server context clear.
+- Hidden/disabled/pending links do not imply implemented functionality.
+- Build passes.
 
 ---
+
+## Task R3 — Admin page layout pattern: header, context, and sections
+
+**Goal:** Establish a reusable admin page layout pattern for current and future admin tools.
+
+**Scope:**
+- Identify or create a lightweight reusable/admin-local layout pattern for admin pages:
+  - page title;
+  - short explanation/helper text;
+  - optional technical key/source metadata;
+  - global vs selected-server context indicator;
+  - action area;
+  - content sections.
+- Prefer reuse of existing shared/page layout components if they already exist.
+- For complex admin pages, prefer PrimeNG Tabs / tabbed grouping or clearly separated sections instead of long vertical forms.
+- Do not perform full visual redesign.
+- Do not introduce a heavy design system replacement.
+- Apply the pattern to one or two representative admin pages only, unless the change is trivial and safe.
+- Document the pattern in comments or local helper naming so future admin configurators can reuse it.
+
+**Recommended tab patterns for future configurators:**
+- Combat Opponents:
+  - Overview;
+  - Stats;
+  - Natural attacks;
+  - Equipment;
+  - Scaling;
+  - Usage / candidates.
+- Trials:
+  - Overview;
+  - Minigame;
+  - Combat candidates;
+  - Requirements / availability;
+  - Preview.
+- Encounters:
+  - Overview;
+  - Kind / minigame;
+  - Reward profile;
+  - Combat candidates;
+  - Difficulty / districts;
+  - Preview.
+- Notifications:
+  - Types;
+  - Inbox/read model;
+  - Hook diagnostics.
+- Reports:
+  - Types;
+  - Combat reports;
+  - Public link preview;
+  - Item references.
+
+**Acceptance criteria:**
+- At least one admin page demonstrates the reusable header/context/section pattern.
+- Selected-server pages visibly show selected server context.
+- Global pages do not pretend to be server-scoped.
+- Complex content is organized into tabs or logical sections where appropriate.
+- Existing form behavior is not broken.
+- Build passes.
+
+---
+
+## Task R4 — Staff/Admin dashboard attention cards
+
+**Goal:** Make the admin/staff landing page useful by surfacing work that needs attention.
+
+**Scope:**
+- Add or improve staff/admin landing dashboard cards using existing read models where available.
+- Candidate cards:
+  - selected server summary;
+  - open anti-abuse cases;
+  - cases waiting for player;
+  - cases waiting for staff;
+  - pending player abuse reports;
+  - pending relationship declarations;
+  - pending sanctions / Character Points penalties;
+  - unread staff notifications.
+- Use DB/RPC/read models that already exist.
+- Do not invent new backend aggregation tables.
+- If a needed aggregate/read path is missing, show a minimal safe fallback or report DB/RPC blocker.
+- Cards should link to the relevant admin/staff section.
+- Avoid raw UUID-only display.
+- Do not expose staff-only data to non-staff users.
+
+**Acceptance criteria:**
+- Staff/admin landing page shows at least several meaningful attention cards from existing systems.
+- Staff notifications from the Q foundation can be surfaced if current read path permits.
+- Cards link to relevant admin pages where routes exist.
+- Missing route/read path is documented clearly instead of faked.
+- Normal players cannot access staff dashboard data.
+- Build passes.
+
+---
+
+## Task R5 — Admin source-link and cross-navigation hygiene
+
+**Goal:** Improve navigation between related admin/domain entities without forcing admins to manually copy UUIDs.
+
+**Scope:**
+- Add or standardize source links where existing data has source entity references:
+  - notifications → source entity;
+  - audit logs → entity/source where route exists;
+  - anti-abuse case → related report/trade/auction/hero;
+  - player abuse report → related case/trade/item;
+  - game report → source combat result/report detail where route exists;
+  - exploration lab/debug → related trial/encounter definitions where route exists.
+- If a route exists, render a usable link.
+- If a route does not exist, show readable metadata and mark the link as unavailable/pending.
+- Keep raw UUIDs secondary and copyable where useful.
+- Do not create fake routes or broken links.
+- Respect player/staff privacy boundaries.
+
+**Acceptance criteria:**
+- Admins can navigate from at least one notification/source-driven area to its source entity where route exists.
+- Missing source routes are represented as disabled/pending with metadata, not broken links.
+- UUIDs are not the main UX label.
+- Cross-links do not expose player-private or staff-only fields to the wrong audience.
+- Build passes.
+
+---
+
+## Task R6 — Admin configurator placement check for M12/L11/L12
+
+**Goal:** Ensure new admin configurators for combat opponents, trials, and encounters have correct navigation and layout placement.
+
+**Scope:**
+- Confirm where these upcoming/added admin tools should appear:
+  - `M12 — Combat opponent definitions admin configurator` → Game Balance / Combat Opponents.
+  - `L11 — Trial definitions admin configurator` → Game Balance / Trials.
+  - `L12 — Encounter definitions admin configurator` → Game Balance / Encounters.
+- Ensure route labels are human-readable and not raw table names.
+- Ensure these pages use the R3 layout pattern where implemented.
+- If routes are not implemented yet, document the intended placement and keep sidebar placeholders disabled or omitted according to existing navigation convention.
+- Do not implement M12/L11/L12 inside R unless explicitly instructed.
+
+**Acceptance criteria:**
+- Placement decision for M12/L11/L12 is documented in code comments, route metadata, or admin navigation config.
+- No configurator is hidden under unrelated moderation/server/config sections.
+- Future Codex tasks can add those pages without inventing a new navigation structure.
+- Build passes if code changes are made.
 
 # Epic S — Responsibility and Angular 21 cleanup
 

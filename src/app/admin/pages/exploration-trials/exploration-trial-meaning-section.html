@@ -1,0 +1,42 @@
+<article class="mg-card p-lg flex-col gap-md">
+  <div class="flex-col gap-xs">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Trial meaning</h3>
+    <p class="muted-text mb-0">
+      Labels come from canonical database dictionaries: stats and exploration minigames.
+    </p>
+  </div>
+  @if (page.selectedTrial(); as view) {
+    <div class="grid-form">
+      <div class="form-field">
+        <span>Label</span>
+        <strong>{{ view.trial.label }}</strong>
+        <small class="muted-text">{{ view.trial.key }}</small>
+      </div>
+      <div class="form-field">
+        <span>Tested stat</span>
+        <strong>{{ view.testedStatLabel }}</strong>
+      </div>
+      <div class="form-field">
+        <span>Minigame</span>
+        <strong>{{ view.minigameLabel }}</strong>
+        <small class="muted-text">{{ view.minigameDescription ?? '-' }}</small>
+      </div>
+      <div class="form-field">
+        <span>Sort order</span>
+        <strong>{{ view.trial.sortOrder }}</strong>
+      </div>
+    </div>
+    <div class="flex-col gap-sm">
+      <strong>Description</strong>
+      <p class="mb-0">{{ view.trial.description }}</p>
+      @if (view.trial.helperText) {
+        <p class="muted-text mb-0">{{ view.trial.helperText }}</p>
+      }
+      @if (view.trial.adminDescription) {
+        <p class="muted-text mb-0">{{ view.trial.adminDescription }}</p>
+      }
+    </div>
+  } @else {
+    <p class="muted-text mb-0">Select a trial definition to inspect details.</p>
+  }
+</article>

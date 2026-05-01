@@ -1,0 +1,58 @@
+<section class="mg-card p-lg flex-col gap-md">
+  <div class="flex-col gap-xs">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Edit trial definition</h3>
+    <p class="muted-text mb-0">
+      Saves through <code>upsert_trial_definition</code>. The reason is required for audit and
+      governance traceability.
+    </p>
+  </div>
+  <form class="grid-form" [formGroup]="actions.trialForm">
+    <label class="form-field"><span>Label</span><input pInputText formControlName="label" /></label>
+    <label class="form-field">
+      <span>Generated key</span>
+      <input pInputText formControlName="key" [readonly]="!actions.trialForm.controls.allowKeyOverride.value" />
+      <small class="muted-text">New trial keys are generated from the label. Existing keys stay stable.</small>
+    </label>
+    <label class="form-field">
+      <span>Advanced key override</span>
+      <p-checkbox formControlName="allowKeyOverride" [binary]="true" />
+    </label>
+    <label class="form-field">
+      <span>Tested stat</span>
+      <p-select formControlName="testedStatKey" [options]="page.statOptions()" optionLabel="label" optionValue="value" />
+    </label>
+    <label class="form-field">
+      <span>Minigame</span>
+      <p-select formControlName="minigameKey" [options]="page.minigameOptions()" optionLabel="label" optionValue="value" />
+    </label>
+    <label class="form-field"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
+    <label class="form-field">
+      <span>Active</span>
+      <p-checkbox formControlName="isActive" [binary]="true" />
+    </label>
+    <label class="form-field form-field--wide">
+      <span>Description</span>
+      <textarea pInputText rows="3" formControlName="description"></textarea>
+    </label>
+    <label class="form-field form-field--wide">
+      <span>Helper text</span>
+      <textarea pInputText rows="2" formControlName="helperText"></textarea>
+    </label>
+    <label class="form-field form-field--wide">
+      <span>Admin description</span>
+      <textarea pInputText rows="2" formControlName="adminDescription"></textarea>
+    </label>
+    <label class="form-field form-field--wide">
+      <span>Metadata JSON</span>
+      <textarea pInputText rows="4" formControlName="metadataJsonText"></textarea>
+    </label>
+    <label class="form-field form-field--wide">
+      <span>Reason</span>
+      <input pInputText formControlName="reason" />
+    </label>
+    <div class="flex-row gap-sm">
+      <button pButton type="button" label="Save trial" [disabled]="actions.isSaving()" (click)="actions.saveTrial()"></button>
+      <button pButton type="button" label="New trial" severity="secondary" (click)="actions.startNewTrial()"></button>
+    </div>
+  </form>
+</section>

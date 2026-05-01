@@ -96,6 +96,13 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'exploration-trials',
+    loadComponent: () =>
+      import('./pages/exploration-trials/exploration-trials-page').then(
+        (m) => m.ExplorationTrialsPage,
+      ),
+  },
+  {
     path: 'formulas',
     loadComponent: () =>
       import('./pages/formulas/formulas-page').then((m) => m.FormulasPage),

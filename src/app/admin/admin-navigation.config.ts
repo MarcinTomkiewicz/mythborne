@@ -98,6 +98,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerTesting',
   },
   {
+    legend: 'Exploration',
+    title: 'Trial definitions',
+    description:
+      'Read-only inspector for exploration trial definitions, minigames and combat candidates.',
+    routerLink: '/admin/exploration-trials',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Audit',
     title: 'Audit dictionaries',
     description:
@@ -310,8 +318,32 @@ export const EXPLORATION_DEBUG_PAGE_LINKS: readonly AdminTagLink[] = [
   },
 ];
 
+export const EXPLORATION_TRIALS_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Exploration lab',
+    routerLink: '/admin/exploration-lab',
+    accessPolicy: 'selectedServerTesting',
+  },
+  {
+    label: 'Formula read model',
+    routerLink: '/admin/formulas',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Config definitions',
+    routerLink: '/admin/config-definitions',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
 export const EXPLORATION_LAB_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Trial definitions',
+    routerLink: '/admin/exploration-trials',
+    accessPolicy: 'selectedServerManagement',
+  },
   {
     label: 'Exploration debug',
     routerLink: '/admin/exploration-debug',

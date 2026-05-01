@@ -84,6 +84,9 @@ export const RPC = {
   simulate_trial_opportunity_runs: 'simulate_trial_opportunity_runs',
   start_hero_exploration_step: 'start_hero_exploration_step',
   start_or_get_hero_exploration: 'start_or_get_hero_exploration',
+  upsert_trial_definition: 'upsert_trial_definition',
+  upsert_trial_combat_candidate: 'upsert_trial_combat_candidate',
+  deactivate_trial_combat_candidate: 'deactivate_trial_combat_candidate',
   save_stat_allocation: 'save_stat_allocation',
   update_entity_requirement: 'update_entity_requirement',
 } as const;
