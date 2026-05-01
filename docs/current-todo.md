@@ -83,6 +83,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: J5 - trade/auction transaction item snapshot feature integration.
 - Completed and confirmed: J6 - trade and auction audit frontend alignment.
 - Completed and confirmed: J7 - vendor scrap/sell for drachmas core service alignment.
+- Completed and confirmed: K1 - anti-abuse signal generation contract alignment.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
