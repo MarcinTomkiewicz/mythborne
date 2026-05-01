@@ -1,0 +1,209 @@
+<article class="mg-card p-lg">
+  <h3 class="mg-section__title mg-section__title--xs">Testing helpers</h3>
+  <div class="flex-col gap-md">
+    <form class="grid-form" [formGroup]="actions.remainingActionsForm">
+      <p class="muted-text mb-0">
+        Adds remaining daily trial attempts for this hero on the selected date.
+      </p>
+      <label class="form-field">
+        <span>Daily action type</span>
+        <p-select
+          formControlName="actionKind"
+          [options]="actions.dailyActionTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </label>
+      <p-inputnumber formControlName="amount" [min]="1" />
+      <input pInputText type="date" formControlName="actionDate" />
+      <input pInputText type="text" formControlName="reason" placeholder="reason" />
+      <button
+        pButton
+        type="button"
+        label="Add actions"
+        (click)="actions.addRemainingActions()"
+      ></button>
+    </form>
+
+    <form class="grid-form" [formGroup]="actions.resetForm">
+      <p class="muted-text mb-0">
+        Clears today's exploration runtime for this hero/difficulty so you can start again.
+      </p>
+      <label class="form-field">
+        <span>Difficulty</span>
+        <p-select
+          formControlName="difficultyKey"
+          [options]="definitions.difficultyOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select difficulty"
+        />
+      </label>
+      <input pInputText type="date" formControlName="explorationDate" />
+      <input pInputText type="text" formControlName="reason" placeholder="reason" />
+      <button
+        pButton
+        type="button"
+        label="Reset exploration"
+        (click)="actions.resetExploration()"
+      ></button>
+    </form>
+
+    <form class="grid-form" [formGroup]="actions.skipTimerForm">
+      <p class="muted-text mb-0">Makes selected pending movement step ready to resolve.</p>
+      <label class="form-field">
+        <span>Step</span>
+        <p-select
+          formControlName="stepId"
+          [options]="actions.stepOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select active or recent step"
+        />
+      </label>
+      <input pInputText type="text" formControlName="reason" placeholder="reason" />
+      <button
+        pButton
+        type="button"
+        label="Skip step timer"
+        (click)="actions.skipStepTimer()"
+      ></button>
+    </form>
+
+    <form class="grid-form" [formGroup]="actions.rewardForm">
+      <p class="muted-text mb-0">
+        Grants selected reward profile to the selected hero for reward UI/debug verification.
+      </p>
+      <label class="form-field">
+        <span>Reward profile</span>
+        <p-autocomplete
+          styleClass="w-100"
+          [fluid]="true"
+          formControlName="rewardProfile"
+          [suggestions]="actions.rewardProfileSuggestions()"
+          optionLabel="label"
+          [forceSelection]="true"
+          [showClear]="true"
+          placeholder="Search reward profile key or label"
+          (completeMethod)="actions.searchRewardProfiles($event.query)"
+          (onSelect)="actions.selectRewardProfile()"
+          (onClear)="actions.clearRewardProfile()"
+        />
+        @if (actions.rewardForm.controls.rewardProfile.value; as profile) {
+          <span class="muted-text">{{ profile.key }} / {{ profile.id }}</span>
+        }
+      </label>
+      <input pInputText type="text" formControlName="reason" placeholder="reason" />
+      <button
+        pButton
+        type="button"
+        label="Grant reward profile"
+        (click)="actions.grantRewardProfile()"
+      ></button>
+    </form>
+
+    <form class="grid-form" [formGroup]="actions.overrideForm">
+      <p class="muted-text mb-0">
+        Forces the next movement resolution outcome once, then expires/consumes it.
+      </p>
+      <label class="form-field">
+        <span>Difficulty</span>
+        <p-select
+          formControlName="difficultyKey"
+          [options]="definitions.difficultyOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select difficulty"
+        />
+      </label>
+      <label class="form-field">
+        <span>Forced outcome</span>
+        <p-select
+          formControlName="forcedOutcomeKind"
+          [options]="actions.forcedOutcomeOptions"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </label>
+      <label class="form-field">
+        <span>Trial definition</span>
+        <p-autocomplete
+          styleClass="w-100"
+          [fluid]="true"
+          formControlName="trialDefinition"
+          [suggestions]="actions.trialDefinitionSuggestions()"
+          optionLabel="label"
+          [forceSelection]="true"
+          [showClear]="true"
+          placeholder="Search trial key or label"
+          (completeMethod)="actions.searchTrialDefinitions($event.query)"
+          (onSelect)="actions.selectTrialDefinition()"
+          (onClear)="actions.clearTrialDefinition()"
+        />
+      </label>
+      <label class="form-field">
+        <span>Encounter definition</span>
+        <p-autocomplete
+          styleClass="w-100"
+          [fluid]="true"
+          formControlName="encounterDefinition"
+          [suggestions]="actions.encounterDefinitionSuggestions()"
+          optionLabel="label"
+          [forceSelection]="true"
+          [showClear]="true"
+          placeholder="Search encounter key or label"
+          (completeMethod)="actions.searchEncounterDefinitions($event.query)"
+          (onSelect)="actions.selectEncounterDefinition()"
+          (onClear)="actions.clearEncounterDefinition()"
+        />
+      </label>
+      <label class="form-field">
+        <span>Manifestation status</span>
+        <p-select
+          formControlName="forceManifestationStatus"
+          [options]="actions.manifestationStatusOptions"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </label>
+      <p-inputnumber formControlName="expiresInMinutes" [min]="1" />
+      <input pInputText type="text" formControlName="reason" placeholder="reason" />
+      <button
+        pButton
+        type="button"
+        label="Set next outcome"
+        (click)="actions.setNextOutcomeOverride()"
+      ></button>
+    </form>
+
+    <form class="grid-form" [formGroup]="actions.forceChallengeForm">
+      <p class="muted-text mb-0">Completes selected challenge attempt with a sandbox result.</p>
+      <label class="form-field">
+        <span>Challenge attempt</span>
+        <p-select
+          formControlName="challengeAttemptId"
+          [options]="actions.challengeOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select active or recent challenge"
+        />
+      </label>
+      <label class="form-field">
+        <span>Sandbox result</span>
+        <p-select
+          formControlName="success"
+          [options]="actions.challengeSuccessOptions"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </label>
+      <input pInputText type="text" formControlName="reason" placeholder="reason" />
+      <button
+        pButton
+        type="button"
+        label="Force complete challenge"
+        (click)="actions.forceCompleteChallenge()"
+      ></button>
+    </form>
+  </div>
+</article>

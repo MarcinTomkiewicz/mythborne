@@ -75,8 +75,11 @@ export const TABLES = {
   player_trade_offers: 'player_trade_offers',
   player_trade_transaction_items: 'player_trade_transaction_items',
   player_trade_transactions: 'player_trade_transactions',
+  encounter_definitions: 'encounter_definitions',
   exploration_difficulty_tiers: 'exploration_difficulty_tiers',
   hero_exploration_challenge_attempts: 'hero_exploration_challenge_attempts',
+  reward_profiles: 'reward_profiles',
   reward_grant_entries: 'reward_grant_entries',
   reward_grants: 'reward_grants',
+  trial_definitions: 'trial_definitions',
 } as const;

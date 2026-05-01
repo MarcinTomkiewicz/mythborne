@@ -1,4 +1,13 @@
 import { Routes } from '@angular/router';
+import { ExplorationChallengeState } from './pages/exploration/exploration-challenge.state';
+import { ExplorationFeedbackState } from './pages/exploration/exploration-feedback.state';
+import { ExplorationMovementState } from './pages/exploration/exploration-movement.state';
+import { ExplorationOverviewState } from './pages/exploration/exploration-overview.state';
+import { ExplorationPageState } from './pages/exploration/exploration-page.state';
+import { ExplorationPreviewState } from './pages/exploration/exploration-preview.state';
+import { ExplorationRewardState } from './pages/exploration/exploration-reward.state';
+import { ExplorationStepState } from './pages/exploration/exploration-step.state';
+import { ExplorationStartState } from './pages/exploration/exploration-start.state';
 
 export const gameRoutes: Routes = [
   {
@@ -17,6 +26,17 @@ export const gameRoutes: Routes = [
   },
   {
     path: 'exploration',
+    providers: [
+      ExplorationFeedbackState,
+      ExplorationPreviewState,
+      ExplorationOverviewState,
+      ExplorationMovementState,
+      ExplorationStepState,
+      ExplorationChallengeState,
+      ExplorationRewardState,
+      ExplorationStartState,
+      ExplorationPageState,
+    ],
     loadComponent: () =>
       import('./pages/exploration/exploration-page').then((m) => m.ExplorationPage),
   },

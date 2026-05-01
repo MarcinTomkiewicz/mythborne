@@ -140,8 +140,10 @@ Order reflects implementation priority, not final business priority.
 ## Highest Priority Gameplay TODO
 
 ### Exploration + trials loop
-- Next: L9 should add the admin exploration debug page so sandbox data can be created and inspected for deeper smoke tests.
-- L8 has added read-only persisted reward display for completed challenge attempts: challenge attempts -> reward grants -> reward grant entries -> items. Full reward smoke is deferred until admin/debug tooling can create real trial/challenge/reward data.
+- Next: fix the backend/RLS blocker for player exploration challenge/reward reads: `/game/exploration` currently hits `permission denied for table hero_exploration_challenge_attempts`. Resolve with player-safe SELECT/RLS or a safe RPC/read model; do not bypass this in Angular with direct writes or service-role access.
+- After the backend/RLS fix, repeat gameplay smoke: active difficulty tiers visible, debug `add_hero_remaining_actions` increases remaining trials for the selected hero/date, start exploration works, and challenge/reward read path does not throw permission denied.
+- L9 has added the server-scoped admin exploration debug page with hero search, DB-backed selectors/pickers and sandbox helper RPC actions. Frontend/admin-debug smoke is accepted; full gameplay smoke is blocked by the backend/RLS issue above.
+- L8 has added read-only persisted reward display for completed challenge attempts: challenge attempts -> reward grants -> reward grant entries -> items.
 - L7 has added active challenge attempt UI with prototype manual completion and auto-resolve through canonical challenge RPCs. Full challenge/minigame smoke remains pending real trial/challenge data.
 - L6 has added resolved step outcome display driven by DB `resolve_hero_exploration_step(...)` snapshots without frontend reroll or reward generation.
 - L5 has added step timer/progress display from DB `resolves_at`/step status plus ready-only `Check result` handling through `resolve_hero_exploration_step(...)`.

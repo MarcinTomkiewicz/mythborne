@@ -1,0 +1,163 @@
+<div class="flex-col gap-xl">
+  <app-loading-overlay
+    [visible]="page.isLoading()"
+    title="Loading exploration debug"
+    message="Running server-scoped exploration helper."
+  />
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-col gap-sm">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Exploration sandbox</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">Exploration debug</h2>
+        <p class="muted-text mb-0">
+          Inspect and prepare exploration test state for one selected server and hero.
+        </p>
+      </div>
+
+      <app-admin-server-switcher />
+    </div>
+  </section>
+
+  @if (!page.selectedServer()) {
+    <p-message severity="warn">Select a server before using exploration debug tools.</p-message>
+  } @else if (!page.canUseDebugTools()) {
+    <p-message severity="warn">
+      This account can open the admin shell, but cannot use sandbox testing tools for the selected
+      server.
+    </p-message>
+  } @else {
+    @if (page.error(); as message) {
+      <p-message severity="error">{{ message }}</p-message>
+    }
+    @if (!page.hasActiveDifficulties()) {
+      <p-message severity="warn">
+        No active exploration difficulties are configured. Add or activate difficulty tiers before
+        testing player exploration; trial counters alone are not enough to start the flow.
+      </p-message>
+    }
+
+    <section class="mg-card p-lg w-100">
+      <div class="grid-form" [formGroup]="page.scopeForm">
+        <label class="form-field">
+          <span>Selected server</span>
+          <input pInputText type="text" [value]="page.serverLabel()" disabled />
+        </label>
+        <label class="form-field">
+          <span>Hero</span>
+          <p-autocomplete
+            styleClass="w-100"
+            [fluid]="true"
+            formControlName="heroTarget"
+            [suggestions]="page.heroTargetSuggestions()"
+            optionLabel="label"
+            [forceSelection]="true"
+            [showClear]="true"
+            [minLength]="page.minHeroQueryLength"
+            [delay]="250"
+            placeholder="Search hero, account, email or technical id"
+            (completeMethod)="page.searchHeroTargets($event)"
+            (onSelect)="page.selectHeroTarget($event.value)"
+            (onClear)="page.clearHeroTarget()"
+          />
+          @if (page.scopeForm.controls.heroTarget.value; as target) {
+            <span class="muted-text">{{ target.description }}</span>
+          }
+        </label>
+        <label class="form-field">
+          <span>Advanced hero id fallback</span>
+          <input pInputText type="text" formControlName="heroId" />
+        </label>
+        <label class="form-field">
+          <span>Exploration date</span>
+          <input pInputText type="date" formControlName="explorationDate" />
+        </label>
+        <button
+          pButton
+          type="button"
+          label="Load debug state"
+          [disabled]="page.isLoading()"
+          (click)="page.loadDebugState()"
+        ></button>
+      </div>
+    </section>
+
+    <section class="grid-2 gap-lg">
+      <article class="mg-card p-lg">
+        <h3 class="mg-section__title mg-section__title--xs">Runtime state</h3>
+        @if (page.debugState(); as state) {
+          <div class="flex-col gap-sm">
+            <div class="flex-row-start-center flex-wrap gap-sm">
+              <span class="tag-badge tag-badge--muted">server {{ state.serverId }}</span>
+              <span class="tag-badge tag-badge--muted">hero {{ state.heroId }}</span>
+              <span class="tag-badge tag-badge--info">{{ state.explorationDate }}</span>
+            </div>
+
+            <div class="grid-2 gap-sm">
+              <div class="flex-col gap-xs">
+                <strong>Counters</strong>
+                @for (counter of state.counters; track counter.id) {
+                  <span class="muted-text">
+                    {{ counter.actionKind }}: {{ counter.remainingCount }} on
+                    {{ counter.actionDate }}
+                  </span>
+                } @empty {
+                  <span class="muted-text">No daily counters.</span>
+                }
+              </div>
+
+              <div class="flex-col gap-xs">
+                <strong>Explorations</strong>
+                @for (entry of state.explorations; track entry.exploration.id) {
+                  <span class="muted-text">
+                    {{ entry.exploration.difficultyKey }} -
+                    {{ entry.exploration.status }} -
+                    {{ entry.exploration.id }}
+                  </span>
+                } @empty {
+                  <span class="muted-text">No exploration rows.</span>
+                }
+              </div>
+            </div>
+
+            @for (entry of state.explorations; track entry.exploration.id) {
+              <div class="mg-card p-md">
+                <div class="flex-row-between-start flex-col-sm gap-sm">
+                  <strong>{{ entry.exploration.difficultyKey }}</strong>
+                  <span class="tag-badge tag-badge--muted">
+                    remaining trials {{ entry.remainingTrials ?? '-' }}
+                  </span>
+                </div>
+                <div class="flex-row-start-center flex-wrap gap-xs mt-sm">
+                  <span class="tag-badge tag-badge--muted">
+                    node {{ entry.currentNode?.id ?? '-' }}
+                  </span>
+                  <span class="tag-badge tag-badge--muted">
+                    step {{ entry.activeStep?.id ?? '-' }}
+                  </span>
+                  <span class="tag-badge tag-badge--muted">
+                    challenge {{ entry.activeChallenge?.id ?? '-' }}
+                  </span>
+                  <span class="tag-badge tag-badge--muted">
+                    overrides {{ entry.testOverrides.length }}
+                  </span>
+                </div>
+              </div>
+            }
+
+            <app-collapsed-json-preview label="Raw debug JSON" [value]="state.rawJson" />
+          </div>
+        } @else {
+          <p class="muted-text mb-0">Load a hero debug state to inspect runtime rows.</p>
+        }
+      </article>
+
+      <app-exploration-debug-actions-section />
+    </section>
+  }
+
+  <section class="mg-card p-lg w-100">
+    <app-admin-tag-links [links]="links" />
+  </section>
+</div>
+

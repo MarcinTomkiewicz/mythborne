@@ -15,6 +15,7 @@ import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationMovementState } from './exploration-movement.state';
+import { ExplorationPage } from './exploration-page';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
@@ -65,6 +66,7 @@ describe('ExplorationPageState', () => {
     rewards.getLatestChallengeReward.and.returnValue(of(null));
 
     TestBed.configureTestingModule({
+      imports: [ExplorationPage],
       providers: [
         ExplorationFeedbackState,
         ExplorationPreviewState,
@@ -98,6 +100,15 @@ describe('ExplorationPageState', () => {
       difficultyKey: 'easy',
       stepsToPreview: 3,
     });
+  });
+
+  it('creates the exploration route component with local page state providers', () => {
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.page).toBeTruthy();
+    expect(activeHero.requireActiveHero).toHaveBeenCalled();
   });
 
   it('does not assume hero id matches auth user id when starting exploration', () => {

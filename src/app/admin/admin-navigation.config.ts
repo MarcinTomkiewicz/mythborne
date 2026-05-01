@@ -82,6 +82,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerModeration',
   },
   {
+    legend: 'Exploration',
+    title: 'Exploration debug',
+    description:
+      'Server-scoped sandbox tools for inspecting exploration runtime state and test helper RPCs.',
+    routerLink: '/admin/exploration-debug',
+    accessPolicy: 'selectedServerTesting',
+  },
+  {
     legend: 'Audit',
     title: 'Audit dictionaries',
     description:
@@ -271,6 +279,25 @@ export const MODERATION_ACTIONS_PAGE_LINKS: readonly AdminTagLink[] = [
   {
     label: 'Anti-abuse config',
     routerLink: '/admin/anti-abuse-config',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const EXPLORATION_DEBUG_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Exploration',
+    routerLink: '/game/exploration',
+    accessPolicy: 'playerGameplay',
+  },
+  {
+    label: 'Audit logs',
+    routerLink: '/admin/audit-logs',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Config definitions',
+    routerLink: '/admin/config-definitions',
     accessPolicy: 'selectedServerManagement',
   },
 ];

@@ -47,13 +47,22 @@ export const RPC = {
   get_vendor_scrap_drachma_payout_percent:
     'get_vendor_scrap_drachma_payout_percent',
   recover_scrapped_item: 'recover_scrapped_item',
+  add_hero_remaining_actions: 'add_hero_remaining_actions',
   auto_resolve_hero_exploration_challenge_attempt:
     'auto_resolve_hero_exploration_challenge_attempt',
   complete_hero_exploration_challenge_attempt:
     'complete_hero_exploration_challenge_attempt',
+  force_complete_hero_exploration_challenge_attempt:
+    'force_complete_hero_exploration_challenge_attempt',
+  get_hero_exploration_debug_state: 'get_hero_exploration_debug_state',
+  reset_hero_exploration: 'reset_hero_exploration',
   resolve_hero_exploration_step: 'resolve_hero_exploration_step',
+  set_next_hero_exploration_outcome_override:
+    'set_next_hero_exploration_outcome_override',
+  skip_hero_exploration_step_timer: 'skip_hero_exploration_step_timer',
   scrap_hero_item: 'scrap_hero_item',
   search_recoverable_scrapped_items_page: 'search_recoverable_scrapped_items_page',
+  test_grant_reward_profile_to_hero: 'test_grant_reward_profile_to_hero',
   vendor_scrap_hero_item: 'vendor_scrap_hero_item',
   create_player_direct_trade_offer: 'create_player_direct_trade_offer',
   respond_player_direct_trade_offer: 'respond_player_direct_trade_offer',

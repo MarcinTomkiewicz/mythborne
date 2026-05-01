@@ -1953,6 +1953,8 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ## Task L9 — Admin exploration debug page
 
+**Status:** Done / confirmed on 2026-05-01 for frontend/admin-debug. Full gameplay smoke is pending backend/RLS fix for `hero_exploration_challenge_attempts` read access.
+
 **Goal:** Add a server-scoped sandbox/admin page for inspecting and controlling exploration test state.
 
 **Scope:**
