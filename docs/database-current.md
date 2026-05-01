@@ -1,6 +1,6 @@
 # Mythborne — Database Current Notes
 
-Updated: 2026-04-30
+Updated: 2026-05-01
 
 This file is the curated semantic index of the current database state.
 
@@ -11,6 +11,85 @@ If this file conflicts with the actual database or generated `database.types.ts`
 ---
 
 # Current DB/RPC contract updates — 2026-04-28
+
+## Update 2026-05-01 — Trade/auction DB-owned audit foundation
+
+J6 trade/auction audit blocker was resolved at DB foundation level. Trade/auction lifecycle audit must be owned by canonical DB/RPC workflows and triggers, not by frontend `AuditWriter` calls.
+
+### Existing completed transaction audit
+
+`player_trade_transactions` already had DB-side audit for completed transactions:
+
+- trigger: `trg_audit_player_trade_transaction_completed`
+- trigger function: `audit_player_trade_transaction_completed()`
+- action keys:
+  - `trade.direct_trade.completed`
+  - `trade.auction_sale.completed`
+- entity type: `player_trade_transaction`
+
+This remains the canonical audit for final completed direct trade and auction sale transaction rows.
+
+### Trade/auction audit dictionaries
+
+Active audit entity types confirmed/required for trade and auction lifecycle:
+
+- `player_trade_offer`
+- `player_trade_transaction`
+- `player_auction_listing`
+- `player_auction_bid`
+
+Active trade/auction audit action types now include:
+
+Direct trade:
+
+- `trade.direct_trade.created`
+- `trade.direct_trade.responded`
+- `trade.direct_trade.cancelled`
+- `trade.direct_trade.rejected`
+- `trade.direct_trade.expired`
+- `trade.direct_trade.failed`
+- `trade.direct_trade.completed`
+
+Auction:
+
+- `trade.auction.listed`
+- `trade.auction.bid_placed`
+- `trade.auction.buy_now`
+- `trade.auction.cancelled`
+- `trade.auction.expired`
+- `trade.auction.closed`
+- `trade.auction.failed`
+- `trade.auction_sale.completed`
+
+### New lifecycle audit triggers
+
+Trade/auction lifecycle rows now have trigger-owned audit writes:
+
+- `trg_audit_player_trade_offer_lifecycle`
+  - table: `player_trade_offers`
+  - function: `audit_player_trade_offer_lifecycle()`
+  - audits create/respond/cancel/reject/expire/fail lifecycle transitions.
+- `trg_audit_player_auction_listing_lifecycle`
+  - table: `player_auction_listings`
+  - function: `audit_player_auction_listing_lifecycle()`
+  - audits listed/cancelled/expired/failed listing lifecycle transitions and preserves seller, item, auction mode, starting bid, buy-now price and current bid context.
+- `trg_audit_player_auction_bid_lifecycle`
+  - table: `player_auction_bids`
+  - function: `audit_player_auction_bid_lifecycle()`
+  - audits bid placement and preserves bid amount, listing, seller and bidder context.
+- `trg_audit_player_trade_transaction_auction_reason`
+  - table: `player_trade_transactions`
+  - function: `audit_player_trade_transaction_auction_reason()`
+  - supplemental audit distinguishing auction buy-now completion from normal auction close completion.
+
+### Frontend/Codex implications
+
+- Frontend must continue using canonical trade/auction RPCs.
+- Frontend must not add `AuditWriter` calls for trade/auction lifecycle.
+- Frontend must not direct-write trade/auction tables for workflow mutations.
+- Audit is DB-owned and trigger/RPC-owned.
+- Ledger rows, transaction rows, item snapshots and anti-abuse signals remain complementary evidence/history. Audit does not replace them.
+- Audit must preserve enough lifecycle context to support later review, reversal requests and anti-abuse investigation: starting bid, buy-now price, final transaction value, bid amount, participant hero ids, item/listing/bid/transaction ids, status reasons and failure/expiry/cancellation context.
 
 ## Update 2026-04-30 — Epic M combat DB foundation
 
@@ -180,66 +259,6 @@ Rules:
 - `create_config_value_change_entry(...)` supports only the scalar/json value-entry flow: `scalar_config` / `json_config` definitions and value types `integer`, `decimal`, `boolean`, `string`, `json`.
 - Relational `entity_field_change` creation/application remains a future dedicated workflow.
 - After applying schema/RPC migrations, regenerate `database.types.ts` so the typed frontend services see the current RPCs.
-
-## Update 2026-04-30 — Epic N progression DB foundation
-
-Epic N now has current DB/balance foundation for stat progression, XP-to-next-level and critical damage semantics. This is schema/config foundation only; frontend/domain implementation still must be done by Codex after type regeneration.
-
-### Existing stat allocation workflow
-
-Stat allocation is not a new Epic N DB task. The canonical workflow already exists from the gameplay audit/stat allocation slice:
-
-- `save_stat_allocation(...)` is the frontend-facing DB/RPC workflow for final stat allocation save.
-- UI plus/minus changes should remain local drafts and unaudited.
-- Final save must go through the RPC/domain workflow.
-- Frontend must not direct-write `hero_stats`, `hero.character_points`, `character_point_ledger`, or audit tables.
-
-### Progression formula targets
-
-Current active progression formula targets:
-
-- `hero_stat_level_cap`
-  - `scope_key = hero_progression`
-  - allowed variables: `heroLevel`
-  - current default formula: `heroLevel + 4`
-- `hero_stat_upgrade_cost`
-  - `scope_key = hero_progression`
-  - allowed variables: `heroLevel`, `level`, `statLevel`
-  - current default formula: `roundUp(4 + level * 2 + pow(level, 1.45), 5)`
-- `hero_experience_to_next_level`
-  - `scope_key = hero_progression`
-  - allowed variables: `heroLevel`
-  - current default formula: `roundUp(100 + heroLevel * 50 + pow(heroLevel, 2.1) * 25, 10)`
-
-`hero_experience_to_next_level` is a configurable formula seed, not a hardcoded frontend threshold table. Admin/balancer may rebalance it through the formula system.
-
-### Critical damage derived stat
-
-`critical_damage` is now present in `derived_stat_definitions` as a runtime combat stat:
-
-- `key = critical_damage`
-- `value_kind = decimal`
-- `calculation_kind = additive`
-- `base_source = zero`
-- `bonus_target_key = critical_damage`
-- `is_combat_stat = true`
-
-Runtime semantic decision:
-
-- base critical damage percent is 50;
-- active `critical_damage` bonuses are added on top;
-- final crit multiplier should be computed by combat runtime as `1 + finalCriticalDamagePercent / 100`.
-
-This replaces the old sandbox hardcoded crit multiplier x2. Do not treat `critical_damage` as a standalone formula target.
-
-### Codex implications for Epic N
-
-- Regenerate `database.types.ts` before implementing N frontend/domain tasks.
-- Do not recreate stat allocation RPC/workflow.
-- Do not hardcode stat cost, cap or XP thresholds in Angular.
-- Use formula assignment resolver for progression formulas.
-- Use `derived_stat_definitions` and active bonuses for runtime derived/combat stats.
-- Do not reintroduce `hero_derived` dependencies.
 
 ## Config governance status
 

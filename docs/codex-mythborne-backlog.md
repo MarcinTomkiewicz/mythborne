@@ -1453,21 +1453,46 @@ If a required auction RPC/read model is missing or not present in generated type
 
 ---
 
-## Task J6 — Trade and auction audit follow-up
+## Task J6 — Trade and auction audit frontend alignment
 
-**Goal:** Add audit evidence for significant trade/auction state changes once frontend flows exist and DB audit keys/RPC support are confirmed.
+**Goal:** Align frontend trade/auction flows with the now DB-owned audit foundation, without adding Angular-side audit writers.
+
+**Current DB foundation:**
+- Trade/auction audit action dictionaries are seeded for direct trade and auction lifecycle.
+- Audit entity dictionaries exist for:
+  - `player_trade_offer`,
+  - `player_trade_transaction`,
+  - `player_auction_listing`,
+  - `player_auction_bid`.
+- DB triggers write lifecycle audit for:
+  - direct trade offer create/respond/cancel/reject/expire/fail,
+  - auction listing list/cancel/expire/fail,
+  - auction bid placement,
+  - auction buy-now / auction close path reason,
+  - completed direct trade / auction sale transactions.
+- Existing transaction rows, ledgers, transaction item snapshots and anti-abuse signals remain complementary evidence; audit does not replace them.
 
 **Scope:**
-- Audit-worthy events may include offer created, offer responded, offer confirmed/completed, offer cancelled/rejected/expired, auction listed, bid placed, buy-now completed, auction closed, auction cancelled/expired.
-- Prefer DB-side audit inside existing trade/auction RPCs.
-- Do not add separate frontend `AuditWriter` calls if the RPC owns the mutation.
-- Seed/check `audit_action_types` and `audit_entity_types` before using new audit keys.
+- Confirm frontend trade/auction mutations still go only through canonical public RPCs.
+- Do not add `AuditWriter` calls in Angular for trade/auction lifecycle.
+- Update any review notes, services or comments that still claim trade/auction audit is missing as a DB blocker.
+- If UI exposes audit/history later, read from audit logs and domain history; do not recreate audit evidence client-side.
+- Keep audit metadata lightweight and do not treat audit logs as public reports or item/combat snapshots.
 
 **Acceptance criteria:**
-- Significant trade/auction operations leave audit evidence where agreed.
-- Audit metadata remains lightweight and does not replace report/snapshot data.
-- UI-only clicks are not audited.
-- If DB/RPC audit support is missing, report DB blocker instead of writing parallel frontend audit.
+- Trade/auction UI has no direct calls to low-level audit helpers.
+- All trade/auction mutations continue to use public RPC/domain operations.
+- Any stale blocker/comment saying lifecycle audit is missing is removed or updated to the DB-owned trigger model.
+- Frontend does not duplicate DB-owned lifecycle audit.
+- Build and focused trade/auction tests pass.
+
+**Status:** Accepted 2026-05-01.
+
+- Implementation note: `DirectTradeActions` and `PlayerAuctionActions` remain aligned to the DB-owned audit model. They continue to call only canonical public trade/auction RPCs for lifecycle mutations and do not inject or call Angular `AuditWriter`.
+- Guardrail note: focused service specs now provide an `AuditWriter` spy and assert that `AuditWriter.write(...)` is not called for direct trade or auction mutations, while still asserting no direct table `create/update/delete` calls are made.
+- Reuse note: existing `DirectTradeActions`, `PlayerAuctionActions`, `Backend.rpc(...)` and RPC arg/result mappers were reused. `AuditWriter` was checked and intentionally not reused because trade/auction lifecycle audit is owned by DB triggers/RPC workflows.
+- Manual smoke: N/D for this service/test alignment slice.
+- Verification: `npx tsc --noEmit` passed; focused specs passed (`direct-trade-actions.spec.ts`, `player-auction-actions.spec.ts`, 5 SUCCESS); `npm run build` passed with existing bundle budget/CommonJS warnings.
 
 ---
 

@@ -32,6 +32,8 @@ import { Backend } from '../backend/backend';
 export class PlayerAuctionActions {
   private readonly backend = inject(Backend);
 
+  // Auction lifecycle audit is DB-owned by the canonical RPCs/triggers.
+  // Do not add frontend AuditWriter calls in this mutation boundary.
   createListing(
     input: CreatePlayerAuctionListingInput,
   ): Observable<PlayerAuctionCreateListingResult> {

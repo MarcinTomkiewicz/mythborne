@@ -33,6 +33,8 @@ const DEFAULT_SEARCH_LIMIT = 20;
 export class DirectTradeActions {
   private readonly backend = inject(Backend);
 
+  // Direct trade lifecycle audit is DB-owned by the canonical RPCs/triggers.
+  // Do not add frontend AuditWriter calls in this mutation boundary.
   createOffer(input: CreateDirectTradeOfferInput): Observable<DirectTradeMutationResult> {
     return this.backend
       .rpc<DirectTradeOfferIdRpcResult>(

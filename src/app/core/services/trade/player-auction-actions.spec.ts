@@ -1,14 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
+import { AuditWriter } from '../audit/audit-writer';
 import { Backend } from '../backend/backend';
 import { PlayerAuctionActions } from './player-auction-actions';
 
 describe('PlayerAuctionActions', () => {
+  let auditWriter: jasmine.SpyObj<AuditWriter>;
   let backend: jasmine.SpyObj<Backend>;
   let service: PlayerAuctionActions;
 
   beforeEach(() => {
+    auditWriter = jasmine.createSpyObj<AuditWriter>('AuditWriter', ['write']);
     backend = jasmine.createSpyObj<Backend>('Backend', [
       'getAll',
       'create',
@@ -17,7 +20,11 @@ describe('PlayerAuctionActions', () => {
       'rpc',
     ]);
     TestBed.configureTestingModule({
-      providers: [PlayerAuctionActions, { provide: Backend, useValue: backend }],
+      providers: [
+        PlayerAuctionActions,
+        { provide: AuditWriter, useValue: auditWriter },
+        { provide: Backend, useValue: backend },
+      ],
     });
     service = TestBed.inject(PlayerAuctionActions);
   });
@@ -83,6 +90,7 @@ describe('PlayerAuctionActions', () => {
     expect(backend.create).not.toHaveBeenCalled();
     expect(backend.update).not.toHaveBeenCalled();
     expect(backend.delete).not.toHaveBeenCalled();
+    expect(auditWriter.write).not.toHaveBeenCalled();
   });
 
   it('maps auction RPC result ids by action semantics', async () => {

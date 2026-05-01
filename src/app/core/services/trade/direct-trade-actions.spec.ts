@@ -4,14 +4,17 @@ import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import { FilterOperator } from '../../enums/filter-operators';
 import { Row } from '../../types/supabase.types';
+import { AuditWriter } from '../audit/audit-writer';
 import { Backend } from '../backend/backend';
 import { DirectTradeActions } from './direct-trade-actions';
 
 describe('DirectTradeActions', () => {
+  let auditWriter: jasmine.SpyObj<AuditWriter>;
   let backend: jasmine.SpyObj<Backend>;
   let service: DirectTradeActions;
 
   beforeEach(() => {
+    auditWriter = jasmine.createSpyObj<AuditWriter>('AuditWriter', ['write']);
     backend = jasmine.createSpyObj<Backend>('Backend', [
       'getAll',
       'create',
@@ -32,7 +35,11 @@ describe('DirectTradeActions', () => {
     }) as Backend['getAll']);
 
     TestBed.configureTestingModule({
-      providers: [DirectTradeActions, { provide: Backend, useValue: backend }],
+      providers: [
+        DirectTradeActions,
+        { provide: AuditWriter, useValue: auditWriter },
+        { provide: Backend, useValue: backend },
+      ],
     });
     service = TestBed.inject(DirectTradeActions);
   });
@@ -82,6 +89,7 @@ describe('DirectTradeActions', () => {
     expect(backend.create).not.toHaveBeenCalled();
     expect(backend.update).not.toHaveBeenCalled();
     expect(backend.delete).not.toHaveBeenCalled();
+    expect(auditWriter.write).not.toHaveBeenCalled();
   });
 
   it('searches trade hero targets by server scope and excludes active hero', async () => {

@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-04-30
+Updated: 2026-05-01
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -81,6 +81,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: J3 - direct trade mutation UI through existing RPCs.
 - Completed and confirmed: J4 - auction gameplay UI through existing RPCs.
 - Completed and confirmed: J5 - trade/auction transaction item snapshot feature integration.
+- Completed and confirmed: J6 - trade and auction audit frontend alignment.
 - Completed and confirmed: U0-C1 - frontend role usage audit.
 - Completed and confirmed: U0-C2 - staff gameplay access audit.
 - Completed and confirmed: U0-C6 - staff/moderation navigation boundaries audit.
@@ -104,7 +105,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I7 - building bonus and requirement explainability.
 - Completed and confirmed: UX-I7b - DB-driven central requirement editor for Buildings admin.
 - Completed and confirmed: UX-I8 - anti-abuse decision explainability pass.
-- Current backlog task: wait for user commit, then continue with the next backlog task.
+- Current backlog task: wait for user commit, then continue with J7 - vendor scrap/sell for drachmas.
 - H17+ planning note: status/verdict/sanction/CP penalty action sections now share a similar workflow-action shell; before adding the next similar audited status-action section, check whether to extract a light shared wrapper/state/helper for error/success/loading/submit card layout and stale-guard handling.
 - Reporting rule: future task reports must include a short Shared/reuse check covering reused shared/admin components, checked-but-not-reused options, and any new component justification.
 - G6 follow-up planning note: remaining gameplay audit slices are major item operations, trade operations once frontend flows exist, and estate/building irreversible changes.
@@ -217,9 +218,11 @@ Order reflects implementation priority, not final business priority.
 ## Economy TODO
 
 ### Trade / auctions frontend
-- Build frontend gameplay/admin surfaces for direct trade offers.
+- Direct trade and one-item auction player-facing surfaces exist; continue with smoke/data hardening when sandbox data is ready.
+- Manual smoke direct trade create/respond/confirm/cancel/reject once sandbox data includes two heroes, active items, a session and a real trade flow.
 - Manual smoke gameplay auction listings, bids, buy now, cancellation, and closing once sandbox data includes active items, at least two heroes/users, Character Points and a real auction flow.
 - Use existing RPC/domain operations for trade and auction mutations instead of direct table writes.
+- Keep trade/auction lifecycle audit DB-owned through canonical RPCs/triggers; do not add Angular `AuditWriter` calls for these flows.
 - Keep player-to-player trade based on Character Points.
 - Keep drachmas as system/vendor currency/resource unless a later decision changes that.
 - Hide or block trade/auction locked items from usable/equippable armory views.

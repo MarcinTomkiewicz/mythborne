@@ -1,6 +1,6 @@
 # Monster Hunt - Current State Summary
 
-Updated: 2026-04-30
+Updated: 2026-05-01
 
 This file summarizes the current implementation state against:
 - `docs/project-context.md`
@@ -27,7 +27,7 @@ This is an operational estimate, not a formal audit.
 | Exploration / trials / encounters | 5% | Documented conceptually, not implemented as a real loop yet. |
 | Prestige / reputation | 0% | Not implemented yet. |
 | Guilds / politics / sieges | 0% | Not implemented yet. |
-| Trade / economy gameplay loop | 45% | Database/RPC foundation for Character Points, direct trade, auctions, item locks, and anti-abuse signals exists. Direct trade has an initial player-facing RPC-backed UI; auctions and Trade Routes/building integration are still pending. |
+| Trade / economy gameplay loop | 55% | Database/RPC foundation for Character Points, direct trade, auctions, item locks, and anti-abuse signals exists. Direct trade and one-item auctions have initial player-facing RPC-backed UIs; Trade Routes/building integration and real sandbox smoke coverage are still pending. |
 | Generated database types | 100% | Task A1 confirmed. `src/app/core/types/database.types.ts` has been regenerated against the current schema and includes the latest trade, auction, anti-abuse, item lifecycle, server/config/formula/audit, and hero tables/functions/enums. |
 
 ## What Is Implemented
@@ -180,7 +180,9 @@ This is an operational estimate, not a formal audit.
 - Auction backend/RPC runtime exists for one-item server-scoped auctions with bidding, buy now, and bid escrow through Character Point locks.
 - Completed trade/auction transactions can generate anti-abuse signals and grouped review cases.
 - Direct trade has an initial player-facing `/game/trade` surface for create, respond, confirm, cancel and reject flows through public RPCs.
-- Auction gameplay surfaces are still pending.
+- Auction has an initial player-facing `/game/auction` surface for listing, bidding, buy now, close and cancel flows through public RPCs.
+- Auction sale history reads `player_trade_transactions(transaction_type = auction_sale)` and linked `player_trade_transaction_items` transaction-time snapshots instead of reconstructing historical item state from current `items`.
+- Trade and auction lifecycle audit is DB-owned by canonical RPCs/triggers. Frontend trade/auction action services do not inject or call Angular `AuditWriter` and do not direct-write trade, auction, item lock or transaction tables.
 
 ### Combat
 - `/game/combat` is no longer a placeholder.
@@ -551,6 +553,9 @@ Still pending at the gameplay level even if partially supported in schema:
 - J5 extends `DirectTradeTransactionItemReadModel` and `mapDirectTradeTransactionItem(...)` with transaction-time snapshot fields for base, quality, affixes, prefix/suffix flags, value bucket and snapshot JSON. Auction history reuses that mapper for `auction_sale` transaction items.
 - J5 adds auction sale history to `/game/auction` through `PlayerAuctions`, reading active-hero `player_trade_transactions(transaction_type = auction_sale)` and linked historical transaction item snapshots. No write path or client-side fake snapshot substitute was added.
 - J5 was verified with `npx tsc --noEmit`, targeted snapshot/auction specs (`direct-trade-mappers.spec.ts`, `player-auctions.spec.ts`, `auction-page.state.spec.ts`, 9 SUCCESS) and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure. Manual auction-history smoke is pending until sandbox data has completed auction sales.
+- J6 accepted on 2026-05-01: trade and auction frontend mutation services are aligned with the DB-owned lifecycle audit foundation.
+- J6 keeps direct trade and auction lifecycle audit in canonical DB RPCs/triggers. `DirectTradeActions` and `PlayerAuctionActions` continue to use public RPCs and do not use Angular `AuditWriter`; focused specs assert `AuditWriter.write(...)` is not called and direct `create/update/delete` writes are not used.
+- J6 was verified with `npx tsc --noEmit`, targeted trade/auction action specs (`direct-trade-actions.spec.ts`, `player-auction-actions.spec.ts`, 5 SUCCESS) and `npm run build`; build still has the known bundle budget/CommonJS warnings but no hard failure. Manual smoke is not applicable because J6 is service/test alignment only.
 - Status/verdict/sanction/CP penalty action sections now repeat the same audited action shell. Before adding another similar status-action section, check whether a shared wrapper/state/helper is warranted for error/success/loading, submit layout and stale-guard behavior.
 - `core` should continue to hold non-component logic:
   - domain models
