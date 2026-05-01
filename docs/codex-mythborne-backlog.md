@@ -1825,6 +1825,8 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ## Task L5 — Start step timer and progress UI
 
+**Status:** Done / confirmed on 2026-05-01.
+
 **Goal:** Let players start exploration movement and understand the timer before resolving the step.
 
 **Scope:**

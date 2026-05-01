@@ -27,6 +27,8 @@ describe('HeroExplorations', () => {
           return of([startRow()]);
         case RPC.start_hero_exploration_step:
           return of([startStepRow()]);
+        case RPC.resolve_hero_exploration_step:
+          return of([resolveStepRow()]);
         case RPC.preview_trial_opportunity_curve:
           return of([trialOpportunityPreviewRow()]);
         default:
@@ -116,6 +118,27 @@ describe('HeroExplorations', () => {
     expect(backend.delete).not.toHaveBeenCalled();
   });
 
+  it('resolves ready movement steps through RPC before refreshing the canonical state', async () => {
+    await firstValueFrom(
+      service.resolveHeroExplorationStep({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        stepId: 'step-1',
+      }),
+    );
+
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.resolve_hero_exploration_step, {
+      p_step_id: 'step-1',
+    });
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.get_hero_exploration_state, {
+      p_hero_id: 'hero-1',
+      p_difficulty_key: 'easy',
+    });
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+  });
+
   it('loads trial opportunity curve as read-only preview data', async () => {
     const result = await firstValueFrom(
       service.previewTrialOpportunityCurve({
@@ -188,6 +211,23 @@ function startStepRow() {
     outcome_kind: 'none',
     started_at: '2026-05-01T10:00:00.000Z',
     resolves_at: '2026-05-01T10:05:00.000Z',
+  };
+}
+
+function resolveStepRow() {
+  return {
+    step_id: 'step-1',
+    exploration_id: 'exploration-1',
+    current_node_id: 'node-2',
+    to_node_id: 'node-2',
+    status: 'resolved',
+    outcome_kind: 'nothing',
+    trial_definition_id: null,
+    encounter_definition_id: null,
+    challenge_attempt_id: null,
+    remaining_trials: 1,
+    trial_dry_step_count: 1,
+    metadata_json: {},
   };
 }
 

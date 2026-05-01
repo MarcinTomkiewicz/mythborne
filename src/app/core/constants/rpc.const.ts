@@ -47,6 +47,7 @@ export const RPC = {
   get_vendor_scrap_drachma_payout_percent:
     'get_vendor_scrap_drachma_payout_percent',
   recover_scrapped_item: 'recover_scrapped_item',
+  resolve_hero_exploration_step: 'resolve_hero_exploration_step',
   scrap_hero_item: 'scrap_hero_item',
   search_recoverable_scrapped_items_page: 'search_recoverable_scrapped_items_page',
   vendor_scrap_hero_item: 'vendor_scrap_hero_item',

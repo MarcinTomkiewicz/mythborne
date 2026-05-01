@@ -1,6 +1,8 @@
 import {
   GetHeroExplorationStateRpcArgs,
   PreviewTrialOpportunityCurveRpcArgs,
+  ResolveHeroExplorationStepRpcArgs,
+  ResolveHeroExplorationStepRpcRow,
   StartHeroExplorationStepRpcArgs,
   StartHeroExplorationStepRpcRow,
   StartOrGetHeroExplorationRpcArgs,
@@ -46,6 +48,14 @@ export function toStartHeroExplorationStepRpcArgs(input: {
   return args;
 }
 
+export function toResolveHeroExplorationStepRpcArgs(input: {
+  stepId: string | null | undefined;
+}): ResolveHeroExplorationStepRpcArgs {
+  return {
+    p_step_id: requiredText(input.stepId, 'stepId'),
+  };
+}
+
 export function toPreviewTrialOpportunityCurveRpcArgs(input: {
   difficultyKey: string | null | undefined;
   startingDryStepCount?: number | null;
@@ -87,6 +97,18 @@ export function firstStartHeroExplorationStepRow(
 
   if (!row) {
     throw new Error('start_hero_exploration_step returned no step row.');
+  }
+
+  return row;
+}
+
+export function firstResolveHeroExplorationStepRow(
+  rows: readonly ResolveHeroExplorationStepRpcRow[],
+): ResolveHeroExplorationStepRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error('resolve_hero_exploration_step returned no result row.');
   }
 
   return row;

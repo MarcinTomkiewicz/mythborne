@@ -11,6 +11,7 @@ import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
+import { ExplorationStepState } from './exploration-step.state';
 import { ExplorationStartState } from './exploration-start.state';
 
 describe('ExplorationPageState', () => {
@@ -27,6 +28,7 @@ describe('ExplorationPageState', () => {
       'startHeroExplorationStep',
       'startOrGetHeroExploration',
       'previewTrialOpportunityCurve',
+      'resolveHeroExplorationStep',
     ]);
 
     activeHero.requireActiveHero.and.returnValue(of(activeHeroContext()));
@@ -37,6 +39,7 @@ describe('ExplorationPageState', () => {
     );
     explorations.startOrGetHeroExploration.and.returnValue(of(activeExplorationState('easy')));
     explorations.previewTrialOpportunityCurve.and.returnValue(of([previewRow('easy')]));
+    explorations.resolveHeroExplorationStep.and.returnValue(of(activeExplorationState('easy')));
 
     TestBed.configureTestingModule({
       providers: [
@@ -44,6 +47,7 @@ describe('ExplorationPageState', () => {
         ExplorationPreviewState,
         ExplorationOverviewState,
         ExplorationMovementState,
+        ExplorationStepState,
         ExplorationStartState,
         ExplorationPageState,
         { provide: ActiveHero, useValue: activeHero },
@@ -113,6 +117,46 @@ describe('ExplorationPageState', () => {
     expect(page.canChooseDirection(page.edges()[0])).toBeFalse();
   });
 
+  it('checks ready movement step results through RPC', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', true, false, {
+        startedAt: new Date(Date.now() - 60_000).toISOString(),
+        resolvesAt: new Date(Date.now() - 1_000).toISOString(),
+      }),
+    );
+
+    expect(page.canCheckResult()).toBeTrue();
+
+    page.checkStepResult();
+
+    expect(explorations.resolveHeroExplorationStep).toHaveBeenCalledOnceWith({
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+      stepId: 'step-1',
+    });
+    expect(feedback.successMessage()).toBe('Movement result checked.');
+  });
+
+  it('does not resolve movement steps before the DB ready time', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', true, false, {
+        startedAt: new Date(Date.now()).toISOString(),
+        resolvesAt: new Date(Date.now() + 60_000).toISOString(),
+      }),
+    );
+
+    expect(page.canCheckResult()).toBeFalse();
+
+    page.checkStepResult();
+
+    expect(explorations.resolveHeroExplorationStep).not.toHaveBeenCalled();
+    expect(feedback.error()).toBe('Movement step is not ready yet.');
+  });
+
   it('ignores stale state responses after difficulty changes', () => {
     const firstState = new Subject<HeroExplorationStateReadModel>();
     const secondState = new Subject<HeroExplorationStateReadModel>();
@@ -157,18 +201,8 @@ function difficulty(key: string): ExplorationDifficultyTierReadModel {
     key,
     label: key.toUpperCase(),
     description: `${key} difficulty.`,
-    helperText: null,
-    adminDescription: null,
-    sortOrder: key === 'easy' ? 10 : 20,
-    isActive: true,
-    stepDurationMultiplier: 1,
-    trialRewardMultiplier: 1,
-    encounterRewardMultiplier: 1,
     trialOpportunityStepCap: 3,
-    metadataJson: {},
-    createdAt: '2026-05-01T10:00:00.000Z',
-    updatedAt: '2026-05-01T10:00:00.000Z',
-  };
+  } as ExplorationDifficultyTierReadModel;
 }
 
 function previewRow(difficultyKey: string): TrialOpportunityCurvePreview {
@@ -205,43 +239,29 @@ function activeExplorationState(
   difficultyKey: string,
   withActiveStep = false,
   withActiveChallenge = false,
+  activeStepTiming: { startedAt: string; resolvesAt: string } = {
+    startedAt: '2026-05-01T10:00:00.000Z',
+    resolvesAt: '2026-05-01T10:05:00.000Z',
+  },
 ): HeroExplorationStateReadModel {
   return {
     ...noExplorationState(difficultyKey),
     hasExploration: true,
     exploration: {
       id: 'exploration-1',
-      serverId: 'server-1',
-      heroId: 'hero-1',
       difficultyKey,
       districtCode: 'district-a',
-      explorationDate: '2026-05-01',
       status: 'active',
       currentNodeId: 'node-1',
       trialDryStepCount: 0,
-      metadataJson: {},
-      startedAt: '2026-05-01T10:00:00.000Z',
-      completedAt: null,
-      createdAt: '2026-05-01T10:00:00.000Z',
-      updatedAt: '2026-05-01T10:00:00.000Z',
-    },
+    } as HeroExplorationStateReadModel['exploration'],
     currentNode: {
       id: 'node-1',
-      serverId: 'server-1',
-      explorationId: 'exploration-1',
-      parentNodeId: null,
-      descriptionId: null,
       label: 'Crossroads',
-      createdSequence: 1,
-      distanceFromRoot: 0,
-      metadataJson: {},
-      createdAt: '2026-05-01T10:00:00.000Z',
-      updatedAt: '2026-05-01T10:00:00.000Z',
-    },
+    } as HeroExplorationStateReadModel['currentNode'],
     edges: [
       {
         id: 'edge-1',
-        serverId: 'server-1',
         explorationId: 'exploration-1',
         fromNodeId: 'node-1',
         toNodeId: 'node-2',
@@ -249,17 +269,15 @@ function activeExplorationState(
         label: 'North road',
         sortOrder: 10,
         isAvailable: true,
-        metadataJson: {},
-        createdAt: '2026-05-01T10:00:00.000Z',
-        updatedAt: '2026-05-01T10:00:00.000Z',
-      },
+      } as HeroExplorationStateReadModel['edges'][number],
     ],
     activeStep: withActiveStep
       ? {
           id: 'step-1',
           stepKind: 'movement',
           status: 'pending',
-          resolvesAt: '2026-05-01T10:05:00.000Z',
+          startedAt: activeStepTiming.startedAt,
+          resolvesAt: activeStepTiming.resolvesAt,
         } as HeroExplorationStateReadModel['activeStep']
       : null,
     activeChallenge: withActiveChallenge

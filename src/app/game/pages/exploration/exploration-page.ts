@@ -6,6 +6,7 @@ import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
+import { ExplorationStepState } from './exploration-step.state';
 import { ExplorationStartState } from './exploration-start.state';
 
 @Component({
@@ -17,6 +18,7 @@ import { ExplorationStartState } from './exploration-start.state';
     ExplorationPreviewState,
     ExplorationOverviewState,
     ExplorationMovementState,
+    ExplorationStepState,
     ExplorationStartState,
     ExplorationPageState,
   ],

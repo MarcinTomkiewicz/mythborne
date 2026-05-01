@@ -125,6 +125,39 @@
             </article>
           </div>
 
+          @if (page.activeStep(); as step) {
+            <div class="mg-card p-md">
+              <div class="flex-col gap-sm">
+                <div class="flex-row-between-center flex-col-sm gap-sm">
+                  <div class="flex-col gap-xs">
+                    <strong>Step timer</strong>
+                    <span class="muted-text">{{ page.activeStepStatusLabel() }}</span>
+                  </div>
+                  <span class="tag-badge tag-badge--info">
+                    {{ page.activeStepRemainingLabel() }}
+                  </span>
+                </div>
+
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  <span class="tag-badge tag-badge--muted">Status: {{ step.status }}</span>
+                  <span class="tag-badge tag-badge--muted">Started: {{ step.startedAt }}</span>
+                  <span class="tag-badge tag-badge--muted">Ready: {{ step.resolvesAt }}</span>
+                  <span class="tag-badge tag-badge--muted">
+                    Progress: {{ page.activeStepProgressPercent() }}%
+                  </span>
+                </div>
+
+                <button
+                  pButton
+                  type="button"
+                  label="Check result"
+                  [disabled]="!page.canCheckResult()"
+                  (click)="page.checkStepResult()"
+                ></button>
+              </div>
+            </div>
+          }
+
           <div class="flex-col gap-sm">
             <div class="flex-row-between-center flex-col-sm gap-sm">
               <div class="flex-col gap-xs">

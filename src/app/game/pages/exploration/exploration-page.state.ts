@@ -5,6 +5,7 @@ import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
+import { ExplorationStepState } from './exploration-step.state';
 import { ExplorationStartState } from './exploration-start.state';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class ExplorationPageState {
   readonly overview = inject(ExplorationOverviewState);
   readonly movement = inject(ExplorationMovementState);
   readonly preview = inject(ExplorationPreviewState);
+  readonly step = inject(ExplorationStepState);
   readonly start = inject(ExplorationStartState);
 
   readonly difficulties = this.overview.difficulties;
@@ -21,8 +23,14 @@ export class ExplorationPageState {
   readonly selectedDifficulty = this.overview.selectedDifficulty;
   readonly isLoading = this.overview.isLoading;
   readonly isMoving = this.movement.isMoving;
+  readonly isResolvingStep = this.step.isResolving;
   readonly isStarting = this.start.isStarting;
   readonly edges = this.movement.edges;
+  readonly activeStep = this.step.activeStep;
+  readonly activeStepProgressPercent = this.step.activeStepProgressPercent;
+  readonly activeStepRemainingLabel = this.step.activeStepRemainingLabel;
+  readonly activeStepStatusLabel = this.step.activeStepStatusLabel;
+  readonly canCheckResult = this.step.canCheckResult;
   readonly movementBlockReason = this.movement.movementBlockReason;
   readonly remainingTrialsLabel = this.overview.remainingTrialsLabel;
   readonly currentNodeLabel = this.overview.currentNodeLabel;
@@ -40,6 +48,10 @@ export class ExplorationPageState {
 
   startSelectedDifficulty(): void {
     this.start.startSelectedDifficulty();
+  }
+
+  checkStepResult(): void {
+    this.step.checkResult();
   }
 
   chooseDirection(edge: HeroExplorationEdgeReadModel): void {

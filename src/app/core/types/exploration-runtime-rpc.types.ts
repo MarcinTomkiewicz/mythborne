@@ -18,6 +18,11 @@ export type StartHeroExplorationStepRpcArgs =
 export type StartHeroExplorationStepRpcRow =
   Rpc<'start_hero_exploration_step'>['Returns'][number];
 
+export type ResolveHeroExplorationStepRpcArgs =
+  Rpc<'resolve_hero_exploration_step'>['Args'];
+export type ResolveHeroExplorationStepRpcRow =
+  Rpc<'resolve_hero_exploration_step'>['Returns'][number];
+
 export type PreviewTrialOpportunityCurveRpcArgs =
   Rpc<'preview_trial_opportunity_curve'>['Args'];
 export type PreviewTrialOpportunityCurveRpcRow =
