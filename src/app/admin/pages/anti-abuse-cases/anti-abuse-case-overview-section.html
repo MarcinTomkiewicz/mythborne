@@ -59,4 +59,41 @@
       <strong class="heading-color text-break">{{ caseItem.operatorNotes }}</strong>
     </div>
   }
+
+  <div class="mg-surface-card p-md flex-col gap-md mt-md">
+    <div class="flex-col gap-xs">
+      <span class="muted-text">Signal grouping and review context</span>
+      <strong class="heading-color text-break">{{ sourceExplanation() }}</strong>
+      <span class="muted-text text-break">
+        Anti-abuse signals are review aids. They do not automatically punish players or apply sanctions.
+      </span>
+    </div>
+
+    <div class="mg-grid grid-cols-4 grid-cols-1-md gap-sm">
+      @for (fact of groupingFacts(); track fact.label) {
+        <div class="flex-col gap-xs min-w-0">
+          <span class="muted-text">{{ fact.label }}</span>
+          <strong class="heading-color text-break">{{ fact.value }}</strong>
+        </div>
+      }
+    </div>
+
+    @if (linkedSignalFacts().length) {
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Linked signal context</span>
+        @for (fact of linkedSignalFacts(); track fact.label + ':' + fact.value) {
+          <span class="text-break">{{ fact.label }} - {{ fact.value }}</span>
+        }
+      </div>
+    }
+
+    @if (participantFacts().length) {
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Participant context</span>
+        @for (fact of participantFacts(); track fact.label + ':' + fact.value) {
+          <span class="text-break">{{ fact.label }} - {{ fact.value }}</span>
+        }
+      </div>
+    }
+  </div>
 </section>

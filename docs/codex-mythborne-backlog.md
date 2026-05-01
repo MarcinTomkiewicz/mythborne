@@ -1728,6 +1728,8 @@ Current source of truth:
 
 ## Task K5 — Signal grouping and case explainability UI
 
+**Status:** Done / confirmed 2026-05-01. Manual smoke pending real DB-generated grouped signal/case data.
+
 **Goal:** Make DB-owned signal grouping/cases explainable for staff.
 
 **Scope:**
