@@ -1,0 +1,50 @@
+<div class="flex-col gap-xl">
+  <app-loading-overlay
+    [visible]="page.isLoading()"
+    title="Loading encounter definitions"
+    message="Reading encounter dictionaries, reward assignments and combat candidate configuration."
+  />
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Exploration encounters</p>
+      <h2 class="mg-section__title mg-section__title--sm mb-0">Encounter definitions configurator</h2>
+      <p class="mb-0">
+        Configure exploration encounter definitions through approved admin RPCs. Combat candidates
+        are editable only for combat encounters; reward assignment rows configure outcome-specific
+        reward behavior.
+      </p>
+    </div>
+  </section>
+
+  @if (page.error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+  @if (!page.isLoading() && !page.hasEncounters()) {
+    <p-message severity="warn">No encounter definitions are configured in the database.</p-message>
+  }
+
+  <section class="grid-2 gap-lg">
+    <app-exploration-encounters-list-section />
+    <app-exploration-encounter-meaning-section />
+  </section>
+
+  <app-exploration-encounter-edit-section />
+  <app-exploration-encounter-reward-section />
+  <app-exploration-encounter-combat-section />
+
+  <section class="mg-card p-lg flex-col gap-md">
+    <div class="flex-col gap-xs">
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Resource and effect encounter payloads</h3>
+      <p class="mb-0">
+        Resource, buff and debuff encounters can be named and scoped here, but their dedicated
+        payload editors are pending DB shape and RPC contracts. This page does not fake those
+        payloads through metadata-only forms.
+      </p>
+    </div>
+  </section>
+
+  <section class="mg-card p-lg w-100">
+    <app-admin-tag-links [links]="links" />
+  </section>
+</div>

@@ -1,0 +1,61 @@
+<section class="mg-card p-lg flex-col gap-md">
+  <div class="flex-col gap-xs">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Edit encounter definition</h3>
+    <p class="mb-0">
+      Saves through <code>upsert_encounter_definition</code>. Reward profile here is the legacy
+      direct assignment; detailed balancing should use the reward assignment panel below.
+    </p>
+  </div>
+  <form class="grid-form gap-lg" [formGroup]="definitionActions.encounterForm">
+    <label class="form-field"><span>Label</span><input pInputText formControlName="label" /></label>
+    <label class="form-field">
+      <span>Generated key</span>
+      <input pInputText formControlName="key" [readonly]="!definitionActions.encounterForm.controls.allowKeyOverride.value" />
+      <small class="muted-text">Generated for new encounters. Existing keys stay stable unless advanced override is enabled.</small>
+    </label>
+    <label class="form-field">
+      <span>Advanced key override</span>
+      <p-checkbox formControlName="allowKeyOverride" [binary]="true" />
+    </label>
+    <label class="form-field">
+      <span>Encounter kind</span>
+      <p-select formControlName="encounterKind" [options]="page.encounterKindOptions()" optionLabel="label" optionValue="value" />
+    </label>
+    <label class="form-field">
+      <span>Minigame</span>
+      <p-select formControlName="minigameKey" [options]="page.minigameOptions()" optionLabel="label" optionValue="value" />
+    </label>
+    <label class="form-field">
+      <span>Direct reward profile</span>
+      <p-select formControlName="rewardProfileId" [options]="page.rewardProfileOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">Prefer reward assignments for outcome/difficulty/district-specific rewards.</small>
+    </label>
+    <label class="form-field">
+      <span>Minimum difficulty</span>
+      <p-select formControlName="minDifficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
+    </label>
+    <label class="form-field">
+      <span>Maximum difficulty</span>
+      <p-select formControlName="maxDifficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
+    </label>
+    <label class="form-field">
+      <span>Minimum district</span>
+      <p-select formControlName="minDistrictCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
+    </label>
+    <label class="form-field">
+      <span>Maximum district</span>
+      <p-select formControlName="maxDistrictCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
+    </label>
+    <label class="form-field"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
+    <label class="form-field"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
+    <label class="form-field form-field--wide"><span>Description</span><textarea pInputText rows="3" formControlName="description"></textarea></label>
+    <label class="form-field form-field--wide"><span>Helper text</span><textarea pInputText rows="2" formControlName="helperText"></textarea></label>
+    <label class="form-field form-field--wide"><span>Admin description</span><textarea pInputText rows="2" formControlName="adminDescription"></textarea></label>
+    <label class="form-field form-field--wide"><span>Metadata JSON</span><textarea pInputText rows="4" formControlName="metadataJsonText"></textarea></label>
+    <label class="form-field form-field--wide"><span>Reason</span><input pInputText formControlName="reason" /></label>
+    <div class="flex-row gap-sm">
+      <button pButton type="button" label="Save encounter" [disabled]="definitionActions.isSaving()" (click)="definitionActions.saveEncounter()"></button>
+      <button pButton type="button" label="Deactivate encounter" severity="danger" [disabled]="!page.selectedEncounter()" (click)="definitionActions.deactivateEncounter()"></button>
+    </div>
+  </form>
+</section>

@@ -1,0 +1,21 @@
+<section class="mg-card p-lg flex-col gap-md">
+  <div class="flex-col gap-xs">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Encounter selector</h3>
+    <p class="mb-0">
+      Choose an existing encounter definition or start a new one. The key is generated from the
+      label for new encounters and remains stable for existing definitions.
+    </p>
+  </div>
+  <label class="form-field">
+    <span>Encounter definition</span>
+    <p-select
+      [formControl]="page.encounterSelector"
+      [options]="page.encounterOptions()"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Select encounter"
+      [showClear]="true"
+    />
+  </label>
+  <button pButton type="button" label="New encounter" severity="secondary" (click)="definitionActions.startNewEncounter()"></button>
+</section>

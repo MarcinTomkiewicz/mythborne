@@ -1,0 +1,60 @@
+<section class="mg-card p-lg flex-col gap-md">
+  <div class="flex-col gap-xs">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Reward assignments</h3>
+    <p class="mb-0">
+      Reward assignments connect this encounter to reward profiles by outcome, difficulty and
+      district. Saves use <code>upsert_reward_profile_assignment</code> with source kind
+      <code>encounter</code>.
+    </p>
+  </div>
+  @if (page.selectedEncounter()) {
+    <form class="grid-form gap-lg" [formGroup]="rewardActions.assignmentForm">
+      <label class="form-field">
+        <span>Reward profile</span>
+        <p-select formControlName="rewardProfileId" [options]="page.requiredRewardProfileOptions()" optionLabel="label" optionValue="value" />
+      </label>
+      <label class="form-field">
+        <span>Outcome kind</span>
+        <input pInputText formControlName="outcomeKind" />
+        <small class="muted-text">Examples: success, failure, encounter_completed. Keep aligned with DB runtime outcomes.</small>
+      </label>
+      <label class="form-field">
+        <span>Difficulty</span>
+        <p-select formControlName="difficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
+      </label>
+      <label class="form-field">
+        <span>District</span>
+        <p-select formControlName="districtCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
+      </label>
+      <label class="form-field"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
+      <label class="form-field"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
+      <label class="form-field form-field--wide"><span>Description</span><textarea pInputText rows="2" formControlName="description"></textarea></label>
+      <label class="form-field form-field--wide"><span>Helper text</span><textarea pInputText rows="2" formControlName="helperText"></textarea></label>
+      <label class="form-field form-field--wide"><span>Metadata JSON</span><textarea pInputText rows="3" formControlName="metadataJsonText"></textarea></label>
+      <label class="form-field form-field--wide"><span>Reason</span><input pInputText formControlName="reason" /></label>
+      <div class="flex-row gap-sm">
+        <button pButton type="button" label="Save assignment" [disabled]="rewardActions.isSaving()" (click)="rewardActions.saveAssignment()"></button>
+        <button pButton type="button" label="New assignment" severity="secondary" (click)="rewardActions.startNewAssignment()"></button>
+        <button pButton type="button" label="Deactivate assignment" severity="danger" [disabled]="!rewardActions.selectedAssignment()" (click)="rewardActions.deactivateAssignment()"></button>
+      </div>
+    </form>
+    <p-table [value]="page.rewardAssignments()" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Reward</th><th>Scope</th><th>Description</th><th>Status</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr (click)="rewardActions.selectAssignment(row.assignment.id)">
+          <td>{{ row.rewardProfileLabel }}</td>
+          <td>{{ row.scopeLabel }}</td>
+          <td>{{ row.assignment.description ?? '-' }}</td>
+          <td><p-tag [severity]="row.assignment.isActive ? 'success' : 'secondary'" [value]="row.assignment.isActive ? 'Active' : 'Inactive'" /></td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="4">No encounter reward assignments are configured.</td></tr>
+      </ng-template>
+    </p-table>
+  } @else {
+    <p class="mb-0">Select or save an encounter before adding reward assignments.</p>
+  }
+</section>

@@ -1,0 +1,30 @@
+<section class="mg-card p-lg flex-col gap-md">
+  <div class="flex-col gap-xs">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Encounter meaning</h3>
+    <p class="mb-0">
+      Encounter definitions describe optional exploration challenges. Combat encounters can use
+      combat candidates; resource and effect-style encounter details remain pending until their DB
+      payloads exist.
+    </p>
+  </div>
+  @if (page.selectedEncounter(); as view) {
+    <div class="grid-form">
+      <div><strong>{{ view.encounter.label }}</strong><br /><span class="muted-text">{{ view.encounter.key }}</span></div>
+      <div><strong>Kind</strong><br />{{ view.kindLabel }}</div>
+      <div><strong>Minigame</strong><br />{{ view.minigameLabel }}</div>
+      <div><strong>Direct reward</strong><br />{{ view.rewardProfileLabel }}</div>
+      <div><strong>Difficulty range</strong><br />{{ view.difficultyRangeLabel }}</div>
+      <div><strong>District range</strong><br />{{ view.districtRangeLabel }}</div>
+      <div>
+        <strong>Status</strong><br />
+        <p-tag [severity]="view.encounter.isActive ? 'success' : 'secondary'" [value]="view.encounter.isActive ? 'Active' : 'Inactive'" />
+      </div>
+    </div>
+    <p class="mb-0">{{ view.encounter.description }}</p>
+    @if (view.encounter.helperText) {
+      <p class="muted-text mb-0">{{ view.encounter.helperText }}</p>
+    }
+  } @else {
+    <p class="mb-0">No encounter is selected.</p>
+  }
+</section>

@@ -101,8 +101,16 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     legend: 'Exploration',
     title: 'Trial definitions',
     description:
-      'Read-only inspector for exploration trial definitions, minigames and combat candidates.',
+      'Admin configurator for exploration trial definitions, minigames and combat candidates.',
     routerLink: '/admin/exploration-trials',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    legend: 'Exploration',
+    title: 'Encounter definitions',
+    description:
+      'Admin configurator for exploration encounter definitions, reward assignments and combat candidates.',
+    routerLink: '/admin/exploration-encounters',
     accessPolicy: 'selectedServerManagement',
   },
   {
@@ -321,6 +329,35 @@ export const EXPLORATION_DEBUG_PAGE_LINKS: readonly AdminTagLink[] = [
 export const EXPLORATION_TRIALS_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
   {
+    label: 'Encounter definitions',
+    routerLink: '/admin/exploration-encounters',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Exploration lab',
+    routerLink: '/admin/exploration-lab',
+    accessPolicy: 'selectedServerTesting',
+  },
+  {
+    label: 'Formula read model',
+    routerLink: '/admin/formulas',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Config definitions',
+    routerLink: '/admin/config-definitions',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const EXPLORATION_ENCOUNTERS_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Trial definitions',
+    routerLink: '/admin/exploration-trials',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     label: 'Exploration lab',
     routerLink: '/admin/exploration-lab',
     accessPolicy: 'selectedServerTesting',
@@ -339,6 +376,11 @@ export const EXPLORATION_TRIALS_PAGE_LINKS: readonly AdminTagLink[] = [
 
 export const EXPLORATION_LAB_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Encounter definitions',
+    routerLink: '/admin/exploration-encounters',
+    accessPolicy: 'selectedServerManagement',
+  },
   {
     label: 'Trial definitions',
     routerLink: '/admin/exploration-trials',

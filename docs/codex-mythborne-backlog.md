@@ -2228,6 +2228,8 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ## Task L12 — Encounter definitions admin configurator
 
+**Status:** Done / frontend-confirmed on 2026-05-01. Full admin smoke remains conditional on backend/RLS grants for the required read tables.
+
 **Goal:** Add an admin/balancer UI for configuring encounter definitions used by Exploration.
 
 **Scope:**
@@ -2265,6 +2267,32 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 - UI clearly distinguishes implemented combat candidate config from future resource/effect-specific config.
 - Mutations use approved RPC/governance path or are reported as DB/RPC blocker.
 - Build passes and smoke report explains what encounter configuration affects in Exploration.
+
+---
+
+## Task L12b — Resource and effect encounter payload configurators
+
+**Goal:** Add explicit DB-backed configuration for non-combat encounter payloads instead of hiding them in generic metadata.
+
+**Scope:**
+
+- Define/read the DB shape for resource encounter payloads.
+- Define/read the DB shape for buff/debuff exploration effect payloads.
+- Add approved write RPC/governance paths for the new payload tables or report a DB/RPC blocker.
+- Extend `/admin/exploration-encounters` with dedicated sections for:
+  - resource encounter payloads,
+  - buff encounter payloads,
+  - debuff encounter payloads.
+- Keep the current combat candidate editor limited to combat encounters.
+- Do not encode authoritative resource/effect behavior as arbitrary JSON-only Angular forms.
+
+**Acceptance criteria:**
+
+- Resource encounters have a readable, typed payload editor.
+- Buff/debuff encounters have readable, typed payload editors.
+- UI explains how the payload affects exploration runtime.
+- Mutations use approved RPC/governance path.
+- Build passes and smoke report distinguishes combat, resource and effect encounter config.
 
 ---
 

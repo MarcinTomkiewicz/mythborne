@@ -87,6 +87,12 @@ export const RPC = {
   upsert_trial_definition: 'upsert_trial_definition',
   upsert_trial_combat_candidate: 'upsert_trial_combat_candidate',
   deactivate_trial_combat_candidate: 'deactivate_trial_combat_candidate',
+  upsert_encounter_definition: 'upsert_encounter_definition',
+  deactivate_encounter_definition: 'deactivate_encounter_definition',
+  upsert_encounter_combat_candidate: 'upsert_encounter_combat_candidate',
+  deactivate_encounter_combat_candidate: 'deactivate_encounter_combat_candidate',
+  upsert_reward_profile_assignment: 'upsert_reward_profile_assignment',
+  deactivate_reward_profile_assignment: 'deactivate_reward_profile_assignment',
   save_stat_allocation: 'save_stat_allocation',
   update_entity_requirement: 'update_entity_requirement',
 } as const;

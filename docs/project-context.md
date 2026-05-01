@@ -13,15 +13,32 @@ If something here conflicts with a newer migration, seed, generated type, or exp
 1. explicit user instruction,
 2. current database schema / migrations / dump,
 3. `current-decisions.md`,
-4. this document.
+4. `database-current.md`,
+5. this document.
+
+This document is intentionally compact. For exact DB/RPC/helper inventory, consult `database-current.md` and the current dump. For decision rationale and warnings, consult `current-decisions.md`.
+
+---
 
 ## Project Name
 
-The current canonical project/game name is **Mythborne**.
+The canonical project/game name is **Mythborne**.
 
 Older names such as Monster Hunt, MythHunter, MythBurn, Mythos Hunter, etc. may still appear in legacy filenames or older discussion. They should not be treated as current canonical naming.
 
 Use **Mythborne** for new conceptual, UI-facing and documentation work unless explicitly instructed otherwise.
+
+---
+
+## Working / Review Discipline Current Direction
+
+The user often dictates project notes. Obvious transcription noise should not be treated as a design change. Examples such as `UX/UI` vs `UI/UX`, malformed words or reordered phrases should be interpreted conservatively against the current dump and project files.
+
+Do not say that a whole epic is ready merely because a table, seed or runtime helper exists. For admin configurators, check the full path: table/read policy, canonical RPC/write path, governance permission, audit/reason handling, generated types and frontend route scope.
+
+When the user asks for database or RPC work, provide SQL in-chat in future turns, plus verification SQL and rollback smoke tests when feasible. If smoke cannot be done without a real authenticated admin session, state that plainly.
+
+Memory/side notes are not the place for active task details. Keep current task decisions in the relevant working response, migration, handoff or one of the three canonical project files.
 
 ---
 
@@ -34,6 +51,7 @@ The game combines:
 - character progression;
 - item generation and loot variance;
 - exploration plus trials;
+- encounters;
 - estate and district progression;
 - PvP conflict;
 - guild-supported sieges;
@@ -46,6 +64,44 @@ The game combines:
 Failure is allowed. RNG is allowed. High value does not always mean high usefulness.
 
 The game should support serious long-term progression, politics, PvP tension and economic variance, while still allowing lighter flavor elements such as strange encounters, unlucky drops and shareable “look what happened” reports.
+
+---
+
+## Canonical Terms
+
+Use these terms consistently:
+
+- Exploration;
+- Trial opportunity / Trial appearance;
+- Trial manifestation;
+- Trial completion;
+- Encounter;
+- Prestige;
+- Health;
+- Character Points.
+
+Do not rename the PvE implementation loop back to “monster hunt” except when referencing old legacy documents.
+
+Core in-world names should remain Greek across language versions. Localize descriptions and explanatory text, not proper names.
+
+---
+
+## Source and Implementation Rules
+
+Codex must:
+
+- work from the current repository state;
+- run `git status --short` before starting a new backlog task and stop if the tree is dirty;
+- read relevant docs before coding;
+- not invent schema that is not in current DB/migrations;
+- regenerate/update database types when schema changes require it;
+- not assume `hero.id === auth.uid()`;
+- load selected/current server and active hero before hero-owned queries;
+- use DB dictionaries/configs instead of hardcoded gameplay/config lists;
+- keep metadata JSON lightweight;
+- prefer backend/RPC/domain operations for critical persistent changes;
+- preserve `reason`, `description`, `status_reason`, helper/admin text wherever applicable;
+- not mark tasks completed in state docs before user confirms they work.
 
 ---
 
@@ -67,24 +123,32 @@ Codex rule: if an authoritative workflow needs a formula result and no DB/RPC pa
 
 ---
 
+## Server / Account / Hero Current Direction
+
+`hero.id != auth.uid()`.
+
+User account is global. Hero is server-specific.
+
+Correct loading path:
+
+1. authenticated user;
+2. selected/current server;
+3. active hero on selected server;
+4. hero-owned data.
+
+Sandbox/testing may allow privileged multi-hero tooling. Standard gameplay must not assume one global hero.
+
+Server staff permissions are server-scoped.
+
+---
+
 ## Exploration / Trials Current Direction
-
-Use canonical terms:
-
-- Exploration;
-- Trial opportunity / Trial appearance;
-- Trial manifestation;
-- Trial completion;
-- Encounter;
-- Health.
-
-Do not rename the PvE implementation loop back to “monster hunt” except when referencing old legacy documents.
 
 Exploration runtime tables are RLS-protected and readable by the owning hero/user through SELECT policies. Frontend read models may read owner-visible exploration state, but persistent mutations must go through PvE RPCs.
 
 Difficulty tiers are DB-backed. Current active tiers are `easy`, `medium`, and `hard`; UI must not show hardcoded permanent cards when DB tiers are available.
 
-Trial definitions and trial combat candidates now have canonical admin write RPCs:
+Trial definitions and trial combat candidates have canonical admin write RPCs:
 
 - `upsert_trial_definition(...)`;
 - `upsert_trial_combat_candidate(...)`;
@@ -98,13 +162,52 @@ Frontend must not direct-write `trial_definitions` or `trial_combat_candidates`.
 
 ---
 
+## Encounters / L12 Current Direction
+
+Encounter definitions are now DB/RPC-backed admin/balancer configuration, not frontend-only content. `/admin/exploration-encounters` is the current admin/balancer UI for encounter definition, reward assignment and combat candidate configuration.
+
+Current encounter kinds are:
+
+- `combat`;
+- `resource`;
+- `buff`;
+- `debuff`.
+
+`nothing` remains an exploration step outcome and must not be modeled as an encounter definition.
+
+Canonical L12 admin write RPCs:
+
+- `upsert_encounter_definition(...)`;
+- `deactivate_encounter_definition(...)`;
+- `upsert_encounter_combat_candidate(...)`;
+- `deactivate_encounter_combat_candidate(...)`;
+- `upsert_encounter_description_variant(...)`;
+- `deactivate_encounter_description_variant(...)`;
+- `upsert_reward_profile_assignment(...)`;
+- `deactivate_reward_profile_assignment(...)`.
+
+Frontend must not direct-write `encounter_definitions`, `encounter_combat_candidates`, `encounter_description_variants` or `reward_profile_assignments`.
+
+L12 UI must be encounter-kind aware:
+
+- combat encounters may configure opponent/family candidates and scaling;
+- resource/buff/debuff encounters should not expose combat-candidate editors;
+- buff/debuff presentation must remember that only one exploration effect may be active at a time;
+- reward balancing must use `reward_profile_assignments`, especially `source_kind = encounter`, rather than treating `encounter_definitions.reward_profile_id` as the complete reward system.
+
+Resource/buff/debuff encounter payload editors are a separate L12b scope. Their DB shape and approved write RPC/governance path require explicit project decision before frontend implementation. They must not be modeled as arbitrary metadata JSON forms.
+
+Codex rule: after schema changes in this area, generated Supabase types must be refreshed before frontend implementation.
+
+---
+
 ## Estate / Buildings Current Direction
 
 Empty estate addresses are not database rows. The database stores occupied estates only.
 
 Estate address source of truth is `district_code + address_number`.
 
-`estates.address` remains legacy/display compatibility. New code should format addresses from `district_code + address_number`. When the final code dependency on `estates.address` is removed, Codex must report it as a `DB cleanup candidate`.
+`estates.address` remains legacy/display compatibility. New code should format addresses from `district_code + address_number`. When the final code dependency on `estates.address` is removed, Codex must report it as a DB cleanup candidate.
 
 Current district capacity values: A=5000, B=3000, C=500, D=50, E=1.
 
@@ -138,7 +241,7 @@ Resources such as `drachma`, `materials`, and `workforce` have current balances 
 
 ## Game Reports Current Direction
 
-Game reports are player-facing gameplay reports and are separate from audit logs, player abuse reports, notifications, and temporary runtime/debug state.
+Game reports are player-facing gameplay reports and are separate from audit logs, player abuse reports, notifications and temporary runtime/debug state.
 
 A report should reproduce the same core event view the player saw in-game. The private Reports UI renders it inside the normal application shell; the public link renders the same report content without the app shell.
 
@@ -150,91 +253,82 @@ Current report type dictionary values include `combat`, `trial`, `encounter`, `p
 
 Combat report production is the first concrete producer and wraps `combat_results`. Trial and encounter producers should later wrap challenge/encounter outcomes, reward grant data and optional combat sections. PvP and siege report producers belong to future PvP/siege epics.
 
-Reward/drop item references are public showcase item references. If the dropped item still exists, renderers should prefer the live `items` row and current balanced item card. If the item row is gone, renderers fall back to saved quality/base/prefix/suffix component refs and fallback display name. Reward/drop report references intentionally do not snapshot final item stats forever.
+Reward/drop item references are public showcase item references. If the dropped item still exists, renderers should prefer the live `items` row and current balanced item card. If the item row is gone, renderers fall back to saved quality/base/prefix/suffix component refs and fallback display name.
 
-Combat attack source labels can be public, but full private player equipment/loadouts must not be exposed by default. Drop rewards are showcase items; used weapons/equipment are not automatically full public item cards.
+Combat attack source labels can be public, but full private player equipment/loadouts must not be exposed by default.
 
 ---
 
 ## Notifications Current Direction
 
-Notifications are persistent inbox/bell entries for short attention or status events.
+Notifications are persistent inbox/bell entries. They are separate from game reports, audit logs, player abuse reports and UI-only toasts/messages.
 
-Notifications are separate from:
+The durable DB row is the source. Toasts are only presentation of fresh eligible notification rows.
 
-- game reports, which have their own Reports inbox and unread badge;
-- audit logs, which are operational/system evidence;
-- player abuse reports, which are moderation/source records;
-- local UI toasts/messages after a user action.
+Reports have their own Reports inbox and unread badge. Do not create default `game_report.created` notifications for ordinary report creation.
 
-The database always creates a persistent `notifications` row for notification-worthy events. If the recipient is online, frontend may present a fresh notification row as a toast when the notification type allows it. Toasts are presentation only, not a separate domain.
-
-Recipient kinds:
-
-- `user` — account/global notification;
-- `hero` — gameplay/server/hero notification;
-- `staff` — staff/server-work notification for an account in a server context.
-
-Current DB foundation includes `notification_types`, `notifications`, `create_notification(...)`, `mark_notification_read(...)`, and `dismiss_notification(...)`.
-
-Trade, auction, declaration, abuse report, anti-abuse case, sanction and Character Points penalty hooks are DB-owned. Frontend must read notifications and mutate read/dismiss state through RPCs; it must not insert notification rows directly.
-
-Reports do not create notifications by default. A new report appears in the Reports area and contributes to the Reports unread badge, not the Notifications bell.
+Frontend must not insert notifications directly. DB/RPC workflows create them through `create_notification(...)`; frontend may mark/dismiss current-user notifications through the approved RPCs.
 
 ---
 
 ## Combat Current Direction
 
-Combat is a reusable gameplay module. The same core combat rules should support exploration encounters, trials, future PvP, sandbox/admin tests and later systems.
+Combat is one reusable module, not multiple combat types.
 
-Combat receives combatants and produces a combat result. It does not decide rewards, trial completion, PvP consequences, cooldowns or public report publishing. The caller interprets the result.
+Exploration encounter combat, trial combat, PvP, sandbox and future systems provide combatants and interpret the result, but core combat rules stay the same.
 
-Core combat expectations:
+Combat receives combatants and produces a combat result. It does not decide rewards, trial completion, PvP consequences, cooldowns or public report publishing.
 
-- combat is limited by global product rule `combat_turn_limit`, currently defaulting to 10 full turns;
-- one turn is a full round of eligible attack slots from both sides unless someone is defeated earlier;
-- draw occurs if no side is defeated before the turn limit;
-- player-controlled attacks use the Walking Dead timing minigame;
-- resolution order is timing hit, evasion, crit, damage;
-- opponents/automatic sides resolve attacks automatically;
-- attack slots are ordered by `combat_initiative_score`;
-- initiative ties are won by the initiating side;
-- critical damage is base 50% plus active `critical_damage` bonuses, not a hardcoded x2 multiplier.
+Combat is turn-limited. Current global product rule `combat_turn_limit` defaults to 10 full turns.
 
-Attack plans:
+Combat uses side names `initiator` and `defender`. Outcomes are `initiator_victory`, `defender_victory`, and `draw`.
 
-- unarmed attack damage starts at `strength..strength` plus applicable bonuses;
-- one one-handed weapon with empty off-hand means weapon attack plus unarmed attack;
-- one-handed weapon plus shield means one weapon attack; shield does not attack;
-- dual wield means one attack from each weapon;
-- two-handed means one attack unless item-native data says otherwise;
-- ranged is two-handed and can have item-native attack count greater than 1;
-- opponents may also use natural attack sources such as Bite, Scratch, Iron Wings or Fist.
+Admin-defined opponents belong to one family. Encounter/trial combat candidates may point to a concrete opponent or a family. Opponent equipment can be none, manual blueprint, or generated item-like loadout materialized only for one fight.
 
-Opponents are admin/balancer-defined content:
+Generated opponent equipment must not create normal player-owned `items` rows.
 
-- one opponent belongs to one admin-defined family;
-- encounter/trial combat candidates may point to a concrete opponent or to a family;
-- candidate scaling formula and `difficulty_multiplier` let the same opponent/family scale differently in encounter and trial contexts;
-- opponent equipment can be none, manual item-like blueprint, or generated item-like loadout materialized only for one fight;
-- generated opponent equipment must not create normal player-owned `items` rows.
+---
 
-Combat result persistence should be relational and report-ready:
+## Trade / Auction Current Direction
 
-- result header;
-- participant snapshots;
-- participant stat snapshots;
-- one row per resolved attack.
+Player-to-player trade uses Character Points. Drachmas are vendor/system/building currency.
 
-Future public/private report rendering is a separate epic, but combat snapshots must preserve enough attack/result data to reproduce the combat UI later. Full equipment remains private; reports show attack source labels and safe item-like source details rather than full equipment loadouts.
+Items are not copied on transfer; ownership changes through `items.hero_id` through DB/RPC workflows.
+
+Direct trade and one-item auction workflows are DB/RPC-owned. Angular must not direct-write critical trade/auction tables.
+
+Trade/auction audit and anti-abuse signal generation are DB-owned.
+
+---
+
+## Bonus / Derived Stats Current Direction
+
+Use `scope`, not `context`, for bonus semantics.
+
+Central bonus foundation uses DB dictionaries and semantic bonus templates:
+
+- `bonus_types`;
+- `bonus_scopes`;
+- `bonus_target_categories`;
+- `bonus_targets`;
+- `bonus_templates`;
+- `entity_bonuses`.
+
+Legacy bonus join tables are transitional.
+
+`hero_derived` is no longer frontend/runtime source of truth. Do not introduce new dependencies on it.
 
 ---
 
 ## Admin / Content Tooling Current Direction
 
-Admin tooling should be organized by work intent, not raw table names.
+Admin/balancer/content tooling must use DB-backed dictionaries and canonical RPC/governance contracts.
 
-Recommended top-level admin IA groups:
+Critical mutations must not be direct writes from Angular.
+
+Admin UI should be organized by work intent rather than raw table names.
+
+Current admin IA groups:
 
 - Overview;
 - Global Governance;
@@ -243,30 +337,28 @@ Recommended top-level admin IA groups:
 - Moderation & Anti-abuse;
 - Gameplay Tools / Sandbox.
 
-Complex admin pages should prefer PrimeNG tabs or clearly separated sections over long vertical forms. This is structural/layout hygiene, not a final visual redesign.
+Epic R is lightweight admin information architecture/layout hygiene, not final visual redesign. Final visual direction belongs to `mythborne-ui-ux-backlog.md` and UI/UX work.
 
-Known configurators that need predictable placement:
-
-- Combat Opponents → Game Balance / Combat Opponents;
-- Trial Definitions → Game Balance / Trials;
-- Encounter Definitions → Game Balance / Encounters;
-- Notifications → Overview/Operations and Global Governance for type dictionaries;
-- Reports → Gameplay Tools/Reports area.
+For complex admin pages, prefer PrimeNG tabs/tabbed sections or clear sections instead of one long vertical form.
 
 ---
 
-## Canonical Terminology
+## UI/UX Current Direction
 
-Use canonical implementation terms:
+Roboczo zaakceptowany kierunek UI: modern premium browser RPG UI stylizowany na antyczną Grecję.
 
-- Exploration;
-- Trials;
-- Encounter;
-- Trial appearance/opportunity;
-- Trial manifestation;
-- Trial completion;
-- Prestige;
-- Health;
-- Character Points for the current UI-facing progression/trade currency label where new UI labels are needed.
+Avoid generic SaaS admin feel, heavy decorative stone panels everywhere, raw UUID-only pickers and hardcoded gameplay lists when DB dictionaries/read models exist.
 
-Core in-world Greek names remain Greek across language versions. Localize explanations and UI descriptions, not the proper names themselves.
+Use existing/shared/vendor components before adding new ones. Future Codex reports for larger UI/workflow tasks must include `reused`, `checked but not reused`, and `new component/state/helper added`.
+
+---
+
+## Current High-Priority Implementation Implications
+
+- Regenerate/update generated Supabase types after the new L11/L12/P/Q/O schema additions before Codex consumes them.
+- L11 can be converted from read-only inspector into RPC-backed editor using trial RPCs.
+- L12 can be implemented as write-capable encounter configurator using encounter/reward assignment RPCs.
+- M12 combat opponent configurator remains future work; check exact dump/generated types before assuming its write path.
+- Reports, Notifications, Audit Logs and Player Abuse Reports are separate domains.
+- Frontend formula runtime is preview/explainability only; durable mutation workflows must calculate server-side.
+- Do not update Codex status files without explicit user acceptance/confirmation.

@@ -103,6 +103,13 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'exploration-encounters',
+    loadComponent: () =>
+      import('./pages/exploration-encounters/exploration-encounters-page').then(
+        (m) => m.ExplorationEncountersPage,
+      ),
+  },
+  {
     path: 'formulas',
     loadComponent: () =>
       import('./pages/formulas/formulas-page').then((m) => m.FormulasPage),
