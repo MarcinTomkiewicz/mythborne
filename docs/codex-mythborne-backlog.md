@@ -1661,6 +1661,8 @@ Current source of truth:
 
 ## Task K2 — Anti-abuse signal and case read models
 
+**Status:** Done / confirmed 2026-05-01 as core read-service/model slice. Manual smoke not applicable.
+
 **Goal:** Add/align typed read/domain models for the existing DB-backed signal/case system.
 
 **Scope:**
@@ -2065,9 +2067,38 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ---
 
+## Task L11 — Trial definitions admin configurator
+
+**Goal:** Let admin/balancer configure trial definitions and their minigame-specific ingredients instead of hardcoding all trials as combat.
+
+**Scope:**
+- Add an admin/balance UI for reading and editing `trial_definitions` through the approved DB/domain path available in current schema/RPCs. If write RPCs are missing, stop and report a DB/RPC blocker instead of direct table writes.
+- Display and edit human-readable trial fields where supported: key, label, description/helper/admin text, active/sort state, tested stat and minigame.
+- Load stat choices from canonical `stats`, not a hardcoded list.
+- Load minigame choices from `exploration_minigame_definitions`, not a hardcoded list.
+- Treat `trial_definitions.minigame_key` as the source of truth for what a trial uses.
+- For `minigame_key = combat`, show/manage the related `trial_combat_candidates` section:
+  - candidate kind: concrete opponent or family,
+  - opponent/family picker,
+  - weight, level range, scaling formula and difficulty multiplier,
+  - labels/helper text from DB dictionaries where available.
+- Do not hardcode a temporary rule that every trial is combat. During early implementation, admin may manually configure existing trials to use `combat` until other minigames exist.
+- Keep non-combat/minigame-specific sections extensible and clearly marked as not implemented if the relevant DB foundation does not exist yet.
+- Do not resolve or complete trials here; this is configuration/admin tooling, not runtime gameplay.
+
+**Acceptance criteria:**
+- Admin can inspect trial definitions with tested stat and minigame displayed from DB-backed sources.
+- Admin can configure a trial to use `combat` by setting/reading `minigame_key = combat` through the approved path.
+- For combat trials, admin can inspect and, where approved write paths exist, manage `trial_combat_candidates`.
+- UI does not imply that all trials are intrinsically combat.
+- Missing write RPCs are reported as precise DB/RPC blockers; Codex does not direct-write config tables from Angular.
+- Build passes and smoke report explains how this configurator lets current trials temporarily use combat while preserving future non-combat trial types.
+
+---
+
 ## Epic L known follow-ups / caveats
 
-These are not blockers for L1-L10 unless the user promotes them into acceptance criteria:
+These are not blockers for L1-L11 unless the user promotes them into acceptance criteria:
 
 - Several PvE runtime helpers still use fallback calculations; formula targets exist, but DB-side formula evaluator integration is not fully wired into all runtime helpers.
 - `get_hero_exploration_luck_value(...)` currently has fallback behavior until canonical DB-side derived Luck resolution is fully available.
