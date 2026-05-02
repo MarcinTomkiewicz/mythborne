@@ -1,7 +1,6 @@
 import {
   COMBAT_ATTACK_SOURCE_KIND,
   CombatAttackPlan,
-  CombatAttackSlot,
 } from '../domain/combat/combat.model';
 import {
   CombatOpponentAdminData,
@@ -10,6 +9,8 @@ import {
   ResolveCombatOpponentInput,
   ResolvedCombatOpponentEquipment,
 } from '../domain/combat/combat-opponent.model';
+import { CombatAttackSourcePlanInput } from '../domain/combat/combat-attack-plan.model';
+import { buildCombatAttackPlan } from './combat-attack-plan';
 import { isLevelInRange } from './combat-opponent-range';
 
 export function naturalAttacksFor(
@@ -31,7 +32,7 @@ export function attackPlanFor(
   naturalAttacks: CombatOpponentAttackSourceReadModel[],
   equipment: ResolvedCombatOpponentEquipment[],
 ): CombatAttackPlan {
-  const slots: CombatAttackSlot[] = [
+  const sources: CombatAttackSourcePlanInput[] = [
     ...naturalAttacks.map((attack) => ({
       source: {
         kind: COMBAT_ATTACK_SOURCE_KIND.natural,
@@ -49,29 +50,11 @@ export function attackPlanFor(
       source: entry.source,
       repeat: 1,
     })),
-  ].flatMap(({ source, repeat }) =>
-    Array.from({ length: Math.max(1, repeat) }, (_, index) => ({
-      side,
-      slotIndex: 0,
-      initiativeScore: 0,
-      source: {
-        ...source,
-        label: repeat > 1 ? `${source.label} #${index + 1}` : source.label,
-      },
-    })),
-  );
+  ];
 
-  if (slots.length === 0) {
-    throw new Error(
-      `Combat opponent "${opponentKey}" has no active natural attacks or materialized equipment attack sources.`,
-    );
-  }
-
-  return {
+  return buildCombatAttackPlan(
     side,
-    slots: slots.map((slot, index) => ({
-      ...slot,
-      slotIndex: index,
-    })),
-  };
+    sources,
+    `Combat opponent "${opponentKey}" has no active natural attacks or materialized equipment attack sources.`,
+  );
 }

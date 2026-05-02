@@ -3330,6 +3330,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 - Natural sources and item-like sources are distinguishable.
 - Attack source kind display uses DB-backed dictionary text where visible.
 
+**Implementation note:** M6 accepted on 2026-05-02. Core combat now has a reusable canonical attack plan builder, domain input contracts for attack-source planning, a hero/equipped-item attack-source adapter, and opponent attack-plan construction using the same shared builder. The hero adapter implements unarmed, one-handed, shield, dual-wield, two-handed/ranged and item-native `attack_count` behavior without touching the prototype `/game/combat` flow. Shared item catalog lookup helpers are used by both equipment bonus resolution and attack-source materialization to avoid private-helper duplication. M6 added no UI, no sandbox/prototype behavior changes, no write/RPC paths, no manual smoke and no route smoke.
+
 ---
 
 ## Task M7 — Initiative and turn order

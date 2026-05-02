@@ -1,17 +1,17 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable, of, switchMap } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
-import {
-  ItemAffixDefinition,
-  ItemBaseDefinition,
-  ItemGenerationCatalog,
-  ItemQualityDefinition,
-} from '../../domain/item/item-generation.model';
+import { ItemGenerationCatalog } from '../../domain/item/item-generation.model';
 import { isPlayerUsableItemStatus } from '../../domain/item/item.model';
 import { FilterOperator } from '../../enums/filter-operators';
 import { Bonus } from '../../types/bonus.types';
 import { EquippedItemRow } from '../../types/equipment-row.types';
 import { applyQualityScaledBonuses } from '../../utils/item-generation-catalog-mappers';
+import {
+  requiredItemGenerationAffix,
+  requiredItemGenerationBase,
+  requiredItemGenerationQuality,
+} from '../../utils/item-catalog-lookup';
 import { Backend } from '../backend/backend';
 import { ItemCatalogService } from './item-catalog';
 
@@ -66,13 +66,13 @@ export class EquipmentBonusesService {
       return [];
     }
 
-    const base = this.requiredBase(item.generation_base_id, item.id, catalog);
-    const quality = this.requiredQuality(item.generation_quality_key, item.id, catalog);
+    const base = requiredItemGenerationBase(item.generation_base_id, item.id, catalog);
+    const quality = requiredItemGenerationQuality(item.generation_quality_key, item.id, catalog);
     const prefix = item.prefix_affix_id
-      ? this.requiredAffix(item.prefix_affix_id, item.id, catalog.prefixes)
+      ? requiredItemGenerationAffix(item.prefix_affix_id, item.id, catalog.prefixes)
       : null;
     const suffix = item.suffix_affix_id
-      ? this.requiredAffix(item.suffix_affix_id, item.id, catalog.suffixes)
+      ? requiredItemGenerationAffix(item.suffix_affix_id, item.id, catalog.suffixes)
       : null;
 
     return applyQualityScaledBonuses(
@@ -83,47 +83,5 @@ export class EquipmentBonusesService {
       ],
       quality.multiplier,
     );
-  }
-
-  private requiredBase(
-    baseId: string | null,
-    itemId: string,
-    catalog: ItemGenerationCatalog
-  ): ItemBaseDefinition {
-    const base = catalog.bases.find((entry) => entry.id === baseId);
-
-    if (!base) {
-      throw new Error(`Equipped item "${itemId}" references missing generation base.`);
-    }
-
-    return base;
-  }
-
-  private requiredQuality(
-    qualityKey: string | null,
-    itemId: string,
-    catalog: ItemGenerationCatalog
-  ): ItemQualityDefinition {
-    const quality = catalog.qualities.find((entry) => entry.key === qualityKey);
-
-    if (!quality) {
-      throw new Error(`Equipped item "${itemId}" references missing generation quality.`);
-    }
-
-    return quality;
-  }
-
-  private requiredAffix(
-    affixId: string,
-    itemId: string,
-    affixes: readonly ItemAffixDefinition[]
-  ): ItemAffixDefinition {
-    const affix = affixes.find((entry) => entry.id === affixId);
-
-    if (!affix) {
-      throw new Error(`Equipped item "${itemId}" references missing affix "${affixId}".`);
-    }
-
-    return affix;
   }
 }

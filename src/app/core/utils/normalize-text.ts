@@ -14,3 +14,7 @@ export function trimToLower(value: unknown): string {
 export function trimToUpper(value: unknown): string {
   return trimText(value).toUpperCase();
 }
+
+export function normalizeKeyText(value: unknown): string {
+  return trimToLower(value).replace(/[\s-]+/g, '_');
+}
