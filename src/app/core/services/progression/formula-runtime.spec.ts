@@ -24,4 +24,34 @@ describe('FormulaRuntimeService', () => {
     expect(result.value).toBeNull();
     expect(result.error).toContain('Unknown token');
   });
+
+  it('evaluates random helpers and marks formulas as non-deterministic', () => {
+    spyOn(Math, 'random').and.returnValue(0.25);
+
+    const unit = service.evaluate('random()', {});
+    const ranged = service.evaluate('random(10, 20)', {});
+
+    expect(unit.error).toBeNull();
+    expect(unit.value).toBe(0.25);
+    expect(ranged.error).toBeNull();
+    expect(ranged.value).toBe(12.5);
+    expect(service.isNonDeterministic('round(random(1, 6))')).toBeTrue();
+    expect(service.isNonDeterministic('round(level * 1.2)')).toBeFalse();
+  });
+
+  it('rejects unsupported random arity with a specific validation error', () => {
+    const result = service.evaluate('random(10)', {});
+
+    expect(result.value).toBeNull();
+    expect(result.error).toBe(
+      'random accepts either no arguments or exactly two arguments: random() or random(min, max).',
+    );
+  });
+
+  it('humanizes random helper expressions', () => {
+    expect(service.humanizeExpression('random()')).toBe('random decimal between 0 and 1');
+    expect(service.humanizeExpression('round(random(10, 20))')).toBe(
+      'round (random decimal between 10 and 20)',
+    );
+  });
 });

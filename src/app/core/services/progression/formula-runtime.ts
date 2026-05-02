@@ -13,6 +13,17 @@ export class FormulaRuntimeService {
     max: Math.max,
     min: Math.min,
     pow: Math.pow,
+    random: (min?: number, max?: number) => {
+      if (min === undefined && max === undefined) {
+        return Math.random();
+      }
+
+      if (!Number.isFinite(min) || !Number.isFinite(max)) {
+        return Number.NaN;
+      }
+
+      return Math.random() * (Number(max) - Number(min)) + Number(min);
+    },
     round: Math.round,
     roundDown: (value, step = 1) => {
       const normalizedStep = step <= 0 ? 1 : step;
@@ -134,6 +145,17 @@ export class FormulaRuntimeService {
       exampleHuman: 'distance between level and rank',
       insertTemplate: 'abs(level - rank)',
     },
+    {
+      key: 'random',
+      label: 'random()',
+      syntax: 'random() or random(min, max)',
+      friendlySyntax: 'random() / random(min, max)',
+      humanSyntax: 'random decimal value',
+      description: 'Returns a random decimal. Use floor, ceil or round when a whole number is needed.',
+      example: 'round(random(1, 6))',
+      exampleHuman: 'roll a decimal from 1 to 6, then round it',
+      insertTemplate: 'random(0, 1)',
+    },
   ];
   private readonly templateGuides: readonly FormulaTemplateGuide[] = [
     {
@@ -224,6 +246,15 @@ export class FormulaRuntimeService {
       };
     }
 
+    const functionCallError = this.validateFunctionCalls(normalizedExpression);
+
+    if (functionCallError) {
+      return {
+        value: null,
+        error: functionCallError,
+      };
+    }
+
     try {
       const scope = {
         ...this.allowedFunctions,
@@ -285,6 +316,10 @@ export class FormulaRuntimeService {
     return identifiers.filter((identifier) => !allowed.has(identifier));
   }
 
+  isNonDeterministic(expression: string): boolean {
+    return this.extractIdentifiers(expression.trim()).includes('random');
+  }
+
   humanizeExpression(expression: string): string {
     const normalizedExpression = expression.trim();
 
@@ -299,6 +334,57 @@ export class FormulaRuntimeService {
 
   private extractIdentifiers(expression: string): string[] {
     return expression.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? [];
+  }
+
+  private validateFunctionCalls(expression: string): string | null {
+    let index = 0;
+
+    while (index < expression.length) {
+      const current = expression[index];
+
+      if (!/[A-Za-z_]/.test(current)) {
+        index += 1;
+        continue;
+      }
+
+      let end = index + 1;
+      while (end < expression.length && /[A-Za-z0-9_]/.test(expression[end])) {
+        end += 1;
+      }
+
+      const identifier = expression.slice(index, end);
+      let nextIndex = end;
+
+      while (nextIndex < expression.length && /\s/.test(expression[nextIndex])) {
+        nextIndex += 1;
+      }
+
+      if (identifier !== 'random') {
+        index = end;
+        continue;
+      }
+
+      if (expression[nextIndex] !== '(') {
+        return 'random must be called as random() or random(min, max).';
+      }
+
+      const closingIndex = this.findClosingParenthesis(expression, nextIndex);
+
+      if (closingIndex <= nextIndex) {
+        return 'random must be called as random() or random(min, max).';
+      }
+
+      const inner = expression.slice(nextIndex + 1, closingIndex);
+      const argCount = inner.trim() ? this.splitTopLevelArgs(inner).length : 0;
+
+      if (argCount !== 0 && argCount !== 2) {
+        return 'random accepts either no arguments or exactly two arguments: random() or random(min, max).';
+      }
+
+      index = closingIndex + 1;
+    }
+
+    return null;
   }
 
   private humanizeSegment(expression: string): string {
@@ -373,6 +459,8 @@ export class FormulaRuntimeService {
         return `keep ${third} between ${first} and ${second}`;
       case 'abs':
         return `absolute value of ${first}`;
+      case 'random':
+        return second ? `random decimal between ${first} and ${second}` : 'random decimal between 0 and 1';
       default:
         return `${identifier}(${args.join(', ')})`;
     }

@@ -53,6 +53,7 @@ export class ItemGenerationFormulaBalanceFacade {
   readonly testerContext = signal<Record<string, number>>({});
   readonly testerTargetId = signal('');
   readonly selectedTargetVariablesDraft = signal<FormulaVariableDefinition[]>([]);
+  private readonly previewRerollTick = signal(0);
   readonly selectorForm = this.formFactory.createFormulaSelectorForm();
   readonly editorForm = this.formFactory.createFormulaEditorForm();
   readonly assignmentForm = this.formFactory.createFormulaAssignmentForm();
@@ -171,6 +172,7 @@ export class ItemGenerationFormulaBalanceFacade {
     return Array.from(items.values()).sort((left, right) => left.label.localeCompare(right.label));
   });
   readonly preview = computed(() => {
+    this.previewRerollTick();
     const validationError = this.formulaValidationError();
 
     if (validationError) {
@@ -188,6 +190,9 @@ export class ItemGenerationFormulaBalanceFacade {
   });
   readonly humanExpression = computed(() =>
     this.formulaRuntime.humanizeExpression(this.editorValue().expression ?? '')
+  );
+  readonly isFormulaNonDeterministic = computed(() =>
+    this.formulaRuntime.isNonDeterministic(this.editorValue().expression ?? '')
   );
   readonly functionGuides = computed(() => this.formulaRuntime.getFunctionGuides());
   readonly formulaTemplates = computed(() => this.formulaRuntime.getTemplateGuides());
@@ -208,7 +213,12 @@ export class ItemGenerationFormulaBalanceFacade {
     const variable = this.chartVariable();
     const expression = this.editorValue().expression ?? '';
 
-    if (!variable || !expression.trim() || this.formulaValidationError()) {
+    if (
+      !variable ||
+      !expression.trim() ||
+      this.formulaValidationError() ||
+      this.isFormulaNonDeterministic()
+    ) {
       return [];
     }
 
@@ -391,6 +401,10 @@ export class ItemGenerationFormulaBalanceFacade {
       ...current,
       [variable]: Number.isFinite(numericValue) ? numericValue : 0,
     }));
+  }
+
+  rerollPreview() {
+    this.previewRerollTick.update((current) => current + 1);
   }
 
   getTesterValue(variable: string): number {

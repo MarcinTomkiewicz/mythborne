@@ -127,7 +127,9 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: L12c - encounter configurator explainability and layout pass.
 - Completed and confirmed: L13 - reward profile configurator.
 - Completed and confirmed: L11c - trial configurator explainability and layout pass.
-- Next backlog task: pending user instruction.
+- Completed and confirmed: M0 - align generated DB types after Epic M schema foundation.
+- Completed and confirmed: M1 - formula random runtime/editor support.
+- Next backlog task: M2 - combat domain contracts, after the user commit and explicit start instruction.
 - L12c refactor debt: exploration encounter forms/templates remain fairly manual; future refactor work should revisit FormFieldConfig/shared renderer/form factory direction with a strong reuse check before new helpers/configs.
 - L11c refactor debt: trial and encounter configurators now share similar metadata facade, form rules and workflow patterns; do not refactor retrospectively in this task, but future work should check existing feature/core patterns before adding helpers.
 - H17+ planning note: status/verdict/sanction/CP penalty action sections now share a similar workflow-action shell; before adding the next similar audited status-action section, check whether to extract a light shared wrapper/state/helper for error/success/loading/submit card layout and stale-guard handling.

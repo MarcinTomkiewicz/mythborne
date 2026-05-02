@@ -14,7 +14,9 @@
   <div class="mg-surface-card flex-col gap-sm p-md">
     <p class="card-legend mb-0">Curve</p>
     <span class="muted-text">
-      @if (chartVariable()) {
+      @if (isNonDeterministic()) {
+        This expression uses random(), so the editor does not draw a stable curve. Use the preview result reroll instead.
+      } @else if (chartVariable()) {
         Plot for <strong>{{ chartVariable() }}</strong>
         from {{ chartState().firstX }} to {{ chartState().lastX }}.
       } @else {
@@ -44,7 +46,11 @@
       </div>
     } @else {
       <p class="mb-0 muted-text">
-        The current expression cannot be plotted yet. Add at least one numeric variable and a valid formula.
+        @if (isNonDeterministic()) {
+          Randomized formulas intentionally skip curve plotting because each sample can differ.
+        } @else {
+          The current expression cannot be plotted yet. Add at least one numeric variable and a valid formula.
+        }
       </p>
     }
   </div>

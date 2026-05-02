@@ -10,4 +10,5 @@ export class FormulaExpressionPreview {
   readonly humanExpression = input('');
   readonly chartVariable = input<string | null>(null);
   readonly chartState = input.required<FormulaChartState>();
+  readonly isNonDeterministic = input(false);
 }

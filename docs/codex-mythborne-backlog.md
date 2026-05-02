@@ -3082,6 +3082,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 
 ## Task M0 — Align generated DB types after Epic M schema foundation
 
+**Status:** Done / accepted on 2026-05-02.
+
 **Goal:** Make the frontend aware of the current combat DB foundation.
 
 **Scope:**
@@ -3133,6 +3135,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 ---
 
 ## Task M1 — Formula random runtime/editor support
+
+**Status:** Done / accepted on 2026-05-02.
 
 **Goal:** Make seeded random formula blocks executable and explainable.
 

@@ -1,8 +1,9 @@
-import { Component, computed, effect, inject, input } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { startWith } from 'rxjs';
 import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { FormulaTargetAssignmentRow } from '../../../core/types/formula-admin-view.types';
 import { toFormulaChartState } from '../../../core/utils/formula-chart';
@@ -20,6 +21,7 @@ interface ImpactPreviewRow {
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    ButtonModule,
     InputTextModule,
     SelectModule,
     FormulaExpressionPreview,
@@ -29,6 +31,7 @@ interface ImpactPreviewRow {
 export class FormulaImpactCalculator {
   private readonly formBuilder = inject(FormBuilder);
   private readonly formulaRuntime = inject(FormulaRuntimeService);
+  private readonly previewRerollTick = signal(0);
 
   readonly rows = input<readonly FormulaTargetAssignmentRow[]>([]);
   readonly form = this.formBuilder.nonNullable.group({
@@ -87,7 +90,11 @@ export class FormulaImpactCalculator {
   readonly humanExpression = computed(() =>
     this.formulaRuntime.humanizeExpression(this.selectedRow()?.formula?.expression ?? ''),
   );
+  readonly isSelectedFormulaNonDeterministic = computed(() =>
+    this.formulaRuntime.isNonDeterministic(this.selectedRow()?.formula?.expression ?? ''),
+  );
   readonly previewRows = computed<ImpactPreviewRow[]>(() => {
+    this.previewRerollTick();
     const row = this.selectedRow();
     const formula = row?.formula ?? null;
     const sweepVariable = this.sweepVariable();
@@ -132,11 +139,13 @@ export class FormulaImpactCalculator {
     return this.rangeError() ?? this.previewRows().find((row) => row.error)?.error ?? null;
   });
   readonly chartState = computed(() =>
-    toFormulaChartState(
-      this.previewRows()
-        .filter((row): row is ImpactPreviewRow & { value: number } => row.value !== null && row.error === null)
-        .map((row) => ({ x: row.input, y: row.value })),
-    ),
+    this.isSelectedFormulaNonDeterministic()
+      ? toFormulaChartState([])
+      : toFormulaChartState(
+          this.previewRows()
+            .filter((row): row is ImpactPreviewRow & { value: number } => row.value !== null && row.error === null)
+            .map((row) => ({ x: row.input, y: row.value })),
+        ),
   );
 
   constructor() {
@@ -177,6 +186,10 @@ export class FormulaImpactCalculator {
     }
 
     return control;
+  }
+
+  rerollPreview(): void {
+    this.previewRerollTick.update((current) => current + 1);
   }
 
   private preferredTargetId(): string | null {

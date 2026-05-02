@@ -41,6 +41,7 @@
         [humanExpression]="page.formulas.humanExpression()"
         [chartVariable]="page.formulas.chartVariable()"
         [chartState]="page.formulas.chartState()"
+        [isNonDeterministic]="page.formulas.isFormulaNonDeterministic()"
       />
     </div>
 
@@ -115,7 +116,12 @@
     </div>
 
     <div class="mg-surface-card flex-col gap-xs p-md">
-      <span class="muted-text">Preview result</span>
+      <div class="flex-row-between-center flex-col-sm gap-sm">
+        <span class="muted-text">Preview result</span>
+        @if (page.formulas.isFormulaNonDeterministic()) {
+          <p-button label="Reroll preview" [text]="true" (onClick)="page.formulas.rerollPreview()" />
+        }
+      </div>
       @if (page.formulas.preview().error) {
         <strong class="heading-color">Formula error</strong>
         <span class="muted-text">{{ page.formulas.preview().error }}</span>
@@ -124,7 +130,11 @@
           {{ page.formulas.preview().value }}
         </strong>
         <span class="muted-text">
-          Result of the current formula for the chosen target context.
+          @if (page.formulas.isFormulaNonDeterministic()) {
+            Non-deterministic admin preview for the chosen target context. Use reroll to sample again; this does not guarantee durable gameplay support unless the server-side formula evaluator supports the same random semantics for that workflow.
+          } @else {
+            Result of the current formula for the chosen target context.
+          }
         </span>
       }
     </div>
