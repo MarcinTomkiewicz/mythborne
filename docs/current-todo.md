@@ -138,7 +138,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: M8 - core combat resolver with slot execution.
 - Completed and confirmed: M9 - persist combat result snapshot through canonical RPC.
 - Completed and confirmed: M10 - thin sandbox combat caller.
-- Next backlog task: M11 - combat admin/balance tooling foundation, after the user commit and explicit start instruction.
+- Completed and confirmed: M11 - combat admin/balance tooling foundation.
+- Next backlog task: M12 - combat opponent definitions admin configurator, after the user commit and explicit start instruction.
 - Epic O follow-up: fully integrate central `entity_requirements` / `requirement_definitions` into the building UI/read model. The M9-adjacent compile-only hotfix removed active legacy `building_requirements` reads and leaves building runtime requirements as an empty placeholder until the proper O slice.
 - M2 follow-up debt: after the canonical combat runtime is implemented and integrated, retire the temporary `/game/combat` sandbox/prototype flow and remove `combat-sandbox.model.ts` instead of developing it as the target system.
 - M4 follow-up debt: first opponent catalog UI should add readable labels for manual item-generation references and generated bucket references, and should distinguish "families exist but no opponent definitions" from a fully empty opponent catalog.

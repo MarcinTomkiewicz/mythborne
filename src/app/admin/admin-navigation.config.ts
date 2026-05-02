@@ -50,6 +50,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'Combat',
+    title: 'Combat balance',
+    description:
+      'Read-only opponent, candidate and initiative preview tooling for the canonical combat foundation.',
+    routerLink: '/admin/combat-balance',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Anti-abuse',
     title: 'Anti-abuse config',
     description:
@@ -434,6 +442,30 @@ export const FORMULAS_PAGE_LINKS: readonly AdminTagLink[] = [
     label: 'Config changes',
     routerLink: '/admin/config-change-sets',
     accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const COMBAT_BALANCE_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Formula read model',
+    routerLink: '/admin/formulas',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Encounter definitions',
+    routerLink: '/admin/exploration-encounters',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Trial definitions',
+    routerLink: '/admin/exploration-trials',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Combat test surface',
+    routerLink: '/game/combat',
+    accessPolicy: 'playerGameplay',
   },
 ];
 

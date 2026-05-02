@@ -33,6 +33,13 @@ export const adminRoutes: Routes = [
       import('./pages/buildings/buildings-page').then((m) => m.BuildingsPage),
   },
   {
+    path: 'combat-balance',
+    loadComponent: () =>
+      import('./pages/combat-balance/combat-balance-page').then(
+        (m) => m.CombatBalancePage,
+      ),
+  },
+  {
     path: 'config-definitions',
     loadComponent: () =>
       import('./pages/config-definitions/config-definitions-page').then(

@@ -1,0 +1,259 @@
+<app-loading-overlay
+  [visible]="page.isLoading() && page.error() === null"
+  label="Loading combat balance..."
+  description="Loading opponents, candidates, dictionaries and initiative formula data."
+/>
+
+@if (page.error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ page.error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Combat Balance</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">Combat Foundation Inspection</h2>
+          <p class="muted-text mb-0">
+            Read-only opponent, candidate and initiative tooling for checking the canonical combat foundation.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-5 grid-cols-1-md gap-md w-100">
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Families</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.data().opponents.families.length }}</strong>
+        </div>
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Opponents</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.data().opponents.opponents.length }}</strong>
+        </div>
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Natural attacks</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.data().opponents.attackSources.length }}</strong>
+        </div>
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Encounter candidates</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.data().encounterCandidates.length }}</strong>
+        </div>
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Trial candidates</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.data().trialCandidates.length }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-xs mb-lg">
+        <p class="card-legend mb-0">Initiative preview</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Sample attack order</h3>
+        <p class="muted-text mb-0">
+          Sample order for one initiative evaluation. If the formula uses random(), click Preview order again to reroll.
+          Actual combat currently evaluates initiative before the turn loop; per-turn recomputation is a follow-up if design expects initiative to vary each round.
+        </p>
+      </div>
+
+      <form [formGroup]="page.form" class="flex-col gap-md">
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-lg w-100">
+          <div class="mg-surface-card p-md flex-col gap-md">
+            <h4 class="mg-section__title mg-section__title--xs mb-0">Initiator</h4>
+            <label class="flex-col gap-xs">
+              <span class="muted-text">Intelligence</span>
+              <input pInputText class="w-100" type="number" formControlName="initiatorIntelligence" />
+            </label>
+            <label class="flex-col gap-xs">
+              <span class="muted-text">Agility</span>
+              <input pInputText class="w-100" type="number" formControlName="initiatorAgility" />
+            </label>
+            <label class="flex-col gap-xs">
+              <span class="muted-text">Attack count</span>
+              <input pInputText class="w-100" type="number" formControlName="initiatorAttackCount" />
+            </label>
+          </div>
+
+          <div class="mg-surface-card p-md flex-col gap-md">
+            <h4 class="mg-section__title mg-section__title--xs mb-0">Defender</h4>
+            <label class="flex-col gap-xs">
+              <span class="muted-text">Intelligence</span>
+              <input pInputText class="w-100" type="number" formControlName="defenderIntelligence" />
+            </label>
+            <label class="flex-col gap-xs">
+              <span class="muted-text">Agility</span>
+              <input pInputText class="w-100" type="number" formControlName="defenderAgility" />
+            </label>
+            <label class="flex-col gap-xs">
+              <span class="muted-text">Attack count</span>
+              <input pInputText class="w-100" type="number" formControlName="defenderAttackCount" />
+            </label>
+          </div>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <p-button
+            label="Preview order"
+            [disabled]="page.isPreviewLoading()"
+            (onClick)="page.previewInitiative()"
+          />
+          @if (page.initiativePreview()?.usesRandomFormula) {
+            <span class="tag-badge tag-badge--warn">Formula uses random; preview can be rerolled.</span>
+          }
+          @if (page.previewError()) {
+            <span class="tag-badge tag-badge--warn">{{ page.previewError() }}</span>
+          }
+        </div>
+      </form>
+
+      @if (page.initiativePreview(); as preview) {
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100 mt-lg">
+          <div class="mg-surface-card p-md flex-col gap-xs">
+            <span class="muted-text">Formula</span>
+            <strong class="heading-color">{{ preview.plan.formula.formulaLabel }}</strong>
+            <span class="muted-text">{{ preview.plan.formula.formulaExpression }}</span>
+          </div>
+          <div class="mg-surface-card p-md flex-col gap-xs">
+            <span class="muted-text">Ordering rule</span>
+            <strong class="heading-color">Sample order for one evaluation</strong>
+            <span class="muted-text">{{ preview.plan.explanation.tieBreaker }}</span>
+          </div>
+        </div>
+
+        <div class="flex-col gap-sm mt-lg">
+          @for (slot of page.initiativeRows(); track slot.side + ':' + slot.slotIndex) {
+            <article class="mg-surface-card p-md flex-row-between-center flex-col-sm gap-md">
+              <div class="flex-col gap-xs">
+                <strong class="heading-color">#{{ $index + 1 }} {{ slot.sideLabel }}</strong>
+                <span class="muted-text">{{ slot.sourceKindLabel }} - {{ slot.source.label }}</span>
+              </div>
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="mg-tag">score {{ slot.initiativeScore }}</span>
+                <span class="mg-tag">attack {{ slot.attackIndex }} / {{ slot.attackCount }}</span>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-xs mb-lg">
+        <p class="card-legend mb-0">Opponent catalog</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Definitions and natural attacks</h3>
+      </div>
+
+      <div class="flex-col gap-md">
+        @for (view of page.data().opponents.opponentViews; track view.opponent.id) {
+          <article class="mg-surface-card p-md flex-col gap-md">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <strong class="heading-color">{{ view.opponent.label }}</strong>
+                <span class="muted-text">{{ view.opponent.key }}</span>
+                @if (view.opponent.description) {
+                  <span class="muted-text">{{ view.opponent.description }}</span>
+                }
+              </div>
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="mg-tag">{{ view.familyLabel }}</span>
+                <span class="mg-tag">{{ view.equipmentModeLabel }}</span>
+                <span class="mg-tag">{{ view.opponent.isActive ? 'active' : 'inactive' }}</span>
+              </div>
+            </div>
+
+            <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Stat baselines</span>
+                @for (stat of view.statBaselines; track stat.stat.id) {
+                  <strong class="heading-color">{{ stat.statLabel }}: {{ stat.stat.baseValue }}</strong>
+                } @empty {
+                  <span class="muted-text">No stat baselines configured.</span>
+                }
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Natural attacks</span>
+                @for (attack of view.naturalAttacks; track attack.attack.id) {
+                  <strong class="heading-color">{{ attack.attack.label }} x{{ attack.attack.attackCount }}</strong>
+                  <span class="muted-text">
+                    {{ page.dictionaryLabel('attackSourceKinds', 'natural') }}; damage {{ attack.damageLabel }}; levels {{ attack.levelRangeLabel }}
+                  </span>
+                } @empty {
+                  <span class="muted-text">No natural attacks configured.</span>
+                }
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Equipment entries</span>
+                @for (entry of view.equipmentEntries; track entry.entry.id) {
+                  <strong class="heading-color">{{ entry.slotLabel }}</strong>
+                  <span class="muted-text">{{ entry.entryModeLabel }}; levels {{ entry.levelRangeLabel }}</span>
+                } @empty {
+                  <span class="muted-text">No equipment entries configured.</span>
+                }
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">
+            {{ page.data().opponents.emptyState?.message ?? 'No combat opponent definitions configured.' }}
+          </p>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-xs mb-lg">
+        <p class="card-legend mb-0">Combat candidates</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Encounter and trial candidate routing</h3>
+        <p class="muted-text mb-0">
+          Candidate kind labels come from combat_candidate_kind_definitions. Candidate scaling formulas are shown as runtime selection hints only.
+        </p>
+      </div>
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-lg w-100">
+        <div class="flex-col gap-md">
+          <h4 class="mg-section__title mg-section__title--xs mb-0">Encounter candidates</h4>
+          @for (candidate of page.data().encounterCandidates; track candidate.id) {
+            <article class="mg-surface-card p-md flex-col gap-xs">
+              <div class="flex-row-between-center flex-col-sm gap-sm">
+                <strong class="heading-color">{{ candidate.sourceLabel }}</strong>
+                <span class="mg-tag">{{ candidate.isActive ? 'active' : 'inactive' }}</span>
+              </div>
+              <span class="muted-text">{{ candidate.candidateKindLabel }} - {{ candidate.targetLabel }}</span>
+              @if (candidate.candidateKindDescription) {
+                <span class="muted-text">{{ candidate.candidateKindDescription }}</span>
+              }
+              <span class="muted-text">{{ candidate.formulaLabel }}; levels {{ candidate.levelRangeLabel }}; weight {{ candidate.weight }}; difficulty x{{ candidate.difficultyMultiplier }}</span>
+            </article>
+          } @empty {
+            <p class="muted-text mb-0">No encounter combat candidates configured.</p>
+          }
+        </div>
+
+        <div class="flex-col gap-md">
+          <h4 class="mg-section__title mg-section__title--xs mb-0">Trial candidates</h4>
+          @for (candidate of page.data().trialCandidates; track candidate.id) {
+            <article class="mg-surface-card p-md flex-col gap-xs">
+              <div class="flex-row-between-center flex-col-sm gap-sm">
+                <strong class="heading-color">{{ candidate.sourceLabel }}</strong>
+                <span class="mg-tag">{{ candidate.isActive ? 'active' : 'inactive' }}</span>
+              </div>
+              <span class="muted-text">{{ candidate.candidateKindLabel }} - {{ candidate.targetLabel }}</span>
+              @if (candidate.candidateKindDescription) {
+                <span class="muted-text">{{ candidate.candidateKindDescription }}</span>
+              }
+              <span class="muted-text">{{ candidate.formulaLabel }}; levels {{ candidate.levelRangeLabel }}; weight {{ candidate.weight }}; difficulty x{{ candidate.difficultyMultiplier }}</span>
+            </article>
+          } @empty {
+            <p class="muted-text mb-0">No trial combat candidates configured.</p>
+          }
+        </div>
+      </div>
+    </section>
+  </div>
+}
