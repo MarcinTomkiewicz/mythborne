@@ -1,6 +1,6 @@
 import { BONUS_SCOPES } from '../constants/bonus-scopes.const';
 import { COMBAT_ITEM_BONUS_TARGETS } from '../constants/bonus-targets.const';
-import { CombatBonusSnapshot } from '../domain/combat/combat.model';
+import { CombatBonusSnapshot } from '../domain/combat/combat-sandbox.model';
 import { IHeroStats } from '../interfaces/hero/i-hero-stats';
 import { Bonus } from '../types/bonus.types';
 import { normalizeBonusTarget, resolveBonusValue } from './bonus';

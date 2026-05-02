@@ -4,7 +4,7 @@ import {
   CombatantSnapshot,
   CombatEntryResult,
   CombatRoundEntry,
-} from '../../domain/combat/combat.model';
+} from '../../domain/combat/combat-sandbox.model';
 import { CombatBalanceService } from './combat-balance';
 import { isInsideWalkingDeadZone, toWalkingDeadZone } from '../../utils/combat-walking-dead';
 

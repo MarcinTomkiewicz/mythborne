@@ -20,9 +20,9 @@ This document is intentionally compact. For exact DB/RPC/helper inventory, consu
 
 ---
 
-## Current High-Priority Implementation Context — 2026-05-02
+## Current High-Priority Implementation Context — 2026-05-02 late
 
-Current implementation focus is **Epic M / Combat**, while Codex may separately continue L12c/L13 frontend work.
+Recent **Combat / Reward / Encounter** foundations remain current and must not be treated as cancelled or obsolete, but the live planning focus has moved toward **Epic N DB/RPC progression planning**.
 
 Recently resolved DB/RPC and explainability foundations:
 
@@ -33,24 +33,53 @@ Recently resolved DB/RPC and explainability foundations:
 - **L-Reward-DB1:** reward outcome/profile/entry admin foundation and governed reward profile write path.
 - **L-Reward-DB2:** `resource_types` dictionary and resource FK alignment.
 - **L-Reward-DB3:** reward assignment match semantics (`any`, `exact`, `minimum`, `range`), formula reward amounts for XP/CP/resources, and failure reward assignment path.
+- **L11c/L12c metadata follow-up:** missing `ui_metadata_entries` aliases/content rows were seeded for trial and encounter configurators.
+- **M12 metadata follow-up:** combat opponent configurator has section-level metadata under `combat_opponent_configurator_section`.
 
-Generated Supabase types must be regenerated after these schema/RPC/dictionary changes before Codex uses them in Angular.
+Generated Supabase types must be regenerated after schema/RPC/dictionary changes before Codex consumes those changes in Angular. Pure content-row seeds in existing `ui_metadata_entries` do not by themselves require type regeneration if the table/RPC are already present in generated types.
 
-Current live thread:
+Current feature state:
 
 - Epic M has been rewritten to include DB/RPC contracts and explainability requirements.
-- M12 opponent configurator is no longer blocked by missing DB write RPCs.
+- M12 opponent configurator is no longer blocked by missing DB write RPCs or missing section metadata.
 - M9 combat result persistence is no longer blocked by missing DB write RPC.
-- Combat opponent seed rows may be empty; M12 must support empty state and create first rows through RPC.
-- L12c and L13 are frontend tasks over the newly expanded reward/encounter DB surface; they must use DB-backed dictionary text rather than permanent hardcoded Angular explanations.
+- Combat opponent seed rows may be empty; M12 must support empty state and create first rows through canonical RPCs.
+- L12c/L13 and L11c frontend work may continue over the expanded reward/trial/encounter DB surface; they must use DB-backed dictionary/metadata text where available, but final i18n/label polish belongs in the appropriate UI/refactor backlog.
+- Main backlog and refactor backlog have been split. Refactor backlog uses `Epic Ref A/B/C...` IDs and includes former R/S/U0/UX/UX-CFG material.
 
-Do not mark Codex tasks complete in status documents unless the user explicitly confirms the task outcome.
+Current Epic N decision state:
+
+- Epic N concerns **Stats and Progression**.
+- Stats = spending Character Points on stat allocation through `save_stat_allocation(...)`.
+- Progression = XP, level, XP-to-next-level formula, level-up, Character Points gain, penalty sink, level-up rewards and level-up stat bonuses.
+- N preflight showed that stat allocation foundation exists, but canonical XP/level-up DB/RPC workflow does not yet exist.
+
+Critical next DB track:
+
+1. **N-DB0 — CP helper boundary and penalty sink.** Secure low-level CP helpers while preserving DB-owned workflows; XP must always grant equal gross Character Points, and active CP penalties/sanctions should consume future CP gains as a ledgered sink/payment.
+2. **N-DB1 — canonical XP and level-up workflow.** Add lifetime XP, XP ledger and `grant_hero_experience(...)`; `hero.experience` is current progress toward next level, and XP threshold is evaluated server-side through `hero_experience_to_next_level`.
+3. **N-DB2 — level-up reward routing and level matching.** Add level matching for level-up rewards (`any`, `exact`, `minimum`, `range`, `interval`) and prevent level-up reward profiles from containing active XP entries that could recurse.
+4. **N-DB3 — level-up base stat bonus rules/grants.** Add configurable fixed/random stat bonus rules for level-up that directly update `hero_stats` and intentionally affect future CP stat allocation cost.
+5. **N-DB4 — progression admin/configurator section metadata.** Add section-level DB-backed explainability for XP, CP, level-up rewards, level matching, stat bonus rules, penalty sink and ledger/admin diagnostics.
+
+Important user intent for N:
+
+- XP always grants equal gross Character Points. This is a core game rule, not a configurable option.
+- CP penalties/sanctions may immediately consume newly earned CP, but this is a sink/payment, not an exception to XP → CP.
+- `hero.experience` should represent progress toward the next level; `hero.total_experience_earned` should represent lifetime XP.
+- Level-up workflow must safely handle multiple levels gained in one call, even if this is expected to be rare.
+- Level-up rewards need level matching, including interval rules such as every 4 levels.
+- Level-up stat bonuses must update base `hero_stats`, intentionally increasing future CP costs for manual stat allocation.
+- Multiple stat bonus rules may fire on the same level. Example: level 20 should trigger both an interval-4 Strength rule and an interval-5 Agility rule.
+- Random level-up stat bonuses are allowed and must be configurable/reportable, not hidden in `metadata_json`.
+
+A new conversation should not start N-DB SQL until it has read the handoff and current docs. Do not mark Codex tasks complete in status documents unless the user explicitly confirms the task outcome.
 
 ---
 
 ## Current Known Gaps / Future Work Notes
 
-These are known planning gaps and memory notes. They are not current Epic M work unless the user explicitly promotes them.
+These are known planning gaps and memory notes. They are not current active N-DB work unless the user explicitly promotes them.
 
 - **Trial editor explainability:** after Epic M, return to `/admin/exploration-trials` for an explainability/layout pass analogous to L12c.
 - **Admin configurator sweep:** later create/run a dedicated `UX-CFG` epic for systematic review of all admin/configurator UI explanations, DB-backed dictionary text and runtime meaning.

@@ -3162,6 +3162,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 
 ## Task M2 — Combat domain contracts
 
+**Status:** Done / confirmed 2026-05-02.
+
 **Goal:** Define reusable combat domain models independent from `/game/combat` sandbox UI.
 
 **Scope:**

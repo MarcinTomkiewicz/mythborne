@@ -4,7 +4,7 @@ import {
   CombatAssignedFormula,
   CombatBalanceRules,
   CombatantSnapshot,
-} from '../../domain/combat/combat.model';
+} from '../../domain/combat/combat-sandbox.model';
 import { FormulaService } from '../formula/formula';
 import { FormulaRuntimeService } from '../progression/formula-runtime';
 

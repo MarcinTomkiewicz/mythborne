@@ -4,11 +4,11 @@ import { Observable, finalize, forkJoin, map, of, switchMap } from 'rxjs';
 import { BonusSource } from '../../domain/bonus/bonus.model';
 import {
   CombatBalanceRules,
-  CombatOutcome,
   CombatRoundEntry,
   CombatantSnapshot,
-  CombatResult,
-} from '../../domain/combat/combat.model';
+  SandboxCombatOutcome,
+  SandboxCombatResult,
+} from '../../domain/combat/combat-sandbox.model';
 import { OriginBonus, Origin } from '../../domain/origin/origin.model';
 import { IHeroDerived } from '../../types/hero.types';
 import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
@@ -49,7 +49,7 @@ export class CombatPageFacade {
   readonly battleError = signal<string | null>(null);
   readonly hero = signal<CombatantSnapshot | null>(null);
   readonly enemy = signal<CombatantSnapshot | null>(null);
-  readonly result = signal<CombatResult | null>(null);
+  readonly result = signal<SandboxCombatResult | null>(null);
   readonly origin = signal<Origin | null>(null);
   readonly originBonuses = signal<OriginBonus[]>([]);
   readonly statsDefinitions = signal<IStat[]>([]);
@@ -291,7 +291,7 @@ export class CombatPageFacade {
     return `${index}:${entry.turn}:${entry.attackerKey}:${entry.defenderKey}:${entry.result}`;
   }
 
-  private finishFight(outcome: CombatOutcome) {
+  private finishFight(outcome: SandboxCombatOutcome) {
     this.stopWalkingDead();
     this.phase.set('finished');
 

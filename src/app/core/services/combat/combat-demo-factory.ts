@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CombatantSnapshot } from '../../domain/combat/combat.model';
+import { CombatantSnapshot } from '../../domain/combat/combat-sandbox.model';
 import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
 import { emptyCombatBonusSnapshot } from '../../utils/combat-equipment-bonuses';
 

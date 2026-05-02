@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { CombatantSnapshot } from '../../../core/domain/combat/combat.model';
+import { CombatantSnapshot } from '../../../core/domain/combat/combat-sandbox.model';
 
 @Component({
   selector: 'app-combatant-card',

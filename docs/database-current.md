@@ -14,6 +14,72 @@ If this file conflicts with the actual database, generated Supabase types, or a 
 
 After every schema/RPC migration that Codex will consume, regenerate/update generated Supabase types before frontend work.
 
+## Update 2026-05-02 late — L11/L12/M12 UI metadata and Epic N progression preflight
+
+### UI metadata content seeds
+
+The DB now has/should be treated as having DB-backed admin configurator section metadata for recently touched configurators:
+
+- `encounter_configurator_section` / `encounter_configurator_field` for `/admin/exploration-encounters`;
+- L12c alias rows for frontend-requested keys such as `page_header`, `kind_specific_payloads`, `encounter_key`, `minigame`, `min_difficulty`, `max_difficulty`, `min_district`, `max_district`, reward assignment reason/helper keys, combat candidate reason/weight keys, resource payload keys and effect payload keys;
+- `trial_configurator_section` / `trial_configurator_field` for `/admin/exploration-trials`;
+- L11c alias rows for frontend-requested keys such as `page_header`, `trial_meaning`, `trial_key`, `tested_stat`, `minigame`, `definition_reason`, reward assignment keys and combat candidate reason/weight keys;
+- `combat_opponent_configurator_section` for M12 combat opponent admin/balancer UI.
+
+These are content rows in `ui_metadata_entries`; they do not require type regeneration if the table and `get_ui_metadata_entries(...)` are already present in generated types.
+
+Rule: section-level runtime meaning and impact should come from DB metadata where available. Basic field labels and validation copy may later be handled by i18n/refactor.
+
+### Epic N progression preflight result
+
+Preflight confirmed:
+
+- `hero` has `level`, `experience`, `character_points`, and `total_character_points_earned`.
+- `save_stat_allocation(...)` exists for stat allocation.
+- `evaluate_balance_formula_target(...)`, `grant_reward_profile_to_hero(...)`, `apply_reward_character_points_delta(...)`, and `apply_character_points_delta(...)` exist.
+- Reward source `level_up` exists as a dictionary placeholder/future source.
+- No canonical XP/level-up RPC was found.
+- No XP/progression ledger or level-up event table was found.
+- No level-up reward matching/rules table was found.
+
+`apply_character_points_delta(...)` is a low-level helper that updates `hero.character_points` and writes `character_point_ledger`. Its body does not itself validate hero ownership/admin permission. It should be treated as an internal DB helper, not an arbitrary frontend mutation path.
+
+Existing CP penalty foundation:
+
+- `character_point_penalties` models total/paid/remaining penalty amounts;
+- anti-abuse/sanction workflows can create/manage CP penalties;
+- the missing progression integration is automatic CP penalty/debt sink for future CP gains from XP.
+
+### Planned N-DB sequence
+
+N-DB work is required before full frontend Epic N progression work:
+
+1. **N-DB0 — CP helper boundary and penalty sink**
+   - secure low-level CP helper exposure;
+   - preserve existing workflow callers;
+   - add/verify automatic CP penalty sink for future CP gains.
+2. **N-DB1 — Canonical hero experience and level-up workflow**
+   - add `hero.total_experience_earned`;
+   - add a single XP/progression ledger;
+   - add `grant_hero_experience(...)` returning typed table result;
+   - XP always grants equal gross CP;
+   - level thresholds are evaluated server-side with `hero_experience_to_next_level`.
+3. **N-DB2 — Level-up reward routing and level matching**
+   - add level match semantics for `reward_profile_assignments`;
+   - make `level_up/completed` a real reward routing source/outcome;
+   - one reached level selects one best reward profile;
+   - level-up reward profiles may not include active `experience` entries.
+4. **N-DB3 — Level-up base stat bonus rules and grants**
+   - add fixed and random stat bonus rules for level-up;
+   - support exact/minimum/range/interval matching;
+   - apply grants directly to `hero_stats` so future stat allocation costs increase;
+   - write append-only stat bonus grant history.
+5. **N-DB4 — Progression admin/configurator metadata**
+   - add section-level `ui_metadata_entries` for progression admin/config UI.
+
+Do not implement these as one giant migration. Use one migration with verification/rollback smoke per step unless user explicitly asks otherwise.
+
+
 ---
 
 # Current DB/RPC contract updates

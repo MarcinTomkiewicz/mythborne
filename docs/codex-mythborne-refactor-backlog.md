@@ -688,6 +688,30 @@ Do not update `current-todo.md` unless explicitly requested.
 
 - Backlog no longer contains stale duplicate instructions that conflict with current epics.
 - Pending work has current owners.
+
+---
+
+## Task Ref B12 — Retire prototype combat sandbox after canonical runtime integration
+
+**Goal:** Remove the temporary `/game/combat` sandbox/prototype flow once the proper Epic M combat runtime is implemented and integrated.
+
+**Scope:**
+
+- After canonical combat runtime, resolver, attack-plan execution and caller integration are in place, delete the prototype-only sandbox model and demo flow instead of extending it as target architecture.
+- Remove or replace:
+  - `src/app/core/domain/combat/combat-sandbox.model.ts`;
+  - demo/prototype combat services that depend on sandbox snapshots;
+  - `/game/combat` prototype UI paths that do not use the canonical runtime contract.
+- Keep `src/app/core/domain/combat/combat.model.ts` as the canonical DB-backed combat contract boundary.
+- Preserve or rebuild any useful admin/test surface only if it calls the canonical combat runtime and clearly labels sandbox/admin-test authority.
+- Do not remove the sandbox before canonical runtime integration gives an equivalent test/admin path.
+
+**Acceptance criteria:**
+
+- No active app path depends on `combat-sandbox.model.ts`.
+- Prototype sandbox result types are gone or replaced by canonical combat runtime/result types.
+- `/game/combat` no longer implies the prototype resolver is the production combat system.
+- Canonical combat result snapshots remain DB-backed and caller consequences remain outside combat core.
 - No confirmed work is marked complete before user confirmation.
 
 ---
