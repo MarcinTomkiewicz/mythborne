@@ -169,7 +169,7 @@ describe('BuildingProgressionService', () => {
     };
 
     expect(service.getUpgradeCost(3, 100, 1, rules)).toBe(103);
-    expect(service.getUpgradeTimeMinutes(3, 20, 1, rules)).toBe(23);
+    expect(service.getUpgradeTimeSeconds(3, 20, 1, rules)).toBe(23);
     expect(service.getBonusValue(3, 7, rules)).toBe(10);
   });
 

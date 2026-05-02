@@ -4,7 +4,6 @@ import { BONUS_ENTITY_TYPES } from '../../constants/bonus-entity-types.const';
 import { TABLES } from '../../constants/tables.const';
 import {
   BuildingBonusPreview,
-  BuildingRequirementType,
   BuildingRequirementPreview,
   BuildingResourceCostPreview,
   BuildingResourceCostTotal,
@@ -29,10 +28,8 @@ import {
   DistrictRow,
   EstateBuildingRow,
   EstateRow,
-  MansionBuildingRequirementRow,
   MansionBuildingResourceCostRow,
   MansionBuildingRow,
-  StatLabelRow,
 } from '../../types/building-service.types';
 
 @Injectable({ providedIn: 'root' })
@@ -49,12 +46,11 @@ export class BuildingsService {
           formulaData: this.formulaService.getAdminData(),
           buildings: this.backend.getAll<
             MansionBuildingRow & {
-              building_requirements: MansionBuildingRequirementRow[];
               building_resource_costs: MansionBuildingResourceCostRow[];
             }
           >({
             table: TABLES.buildings,
-            select: '*, building_requirements(*), building_resource_costs(*)',
+            select: '*, building_resource_costs(*)',
             orderBy: [
               { column: 'district_code' },
               { column: 'sort_order' },
@@ -104,14 +100,8 @@ export class BuildingsService {
             orderBy: { column: 'rank' },
             camelCase: false,
           }),
-          stats: this.backend.getAll<StatLabelRow>({
-            table: TABLES.stats,
-            select: 'key, label',
-            orderBy: { column: 'order' },
-            camelCase: false,
-          }),
         }).pipe(
-          map(({ formulaData, buildings, entityBonuses, estate, estateBuildings, districts, stats }) => {
+          map(({ formulaData, buildings, entityBonuses, estate, estateBuildings, districts }) => {
             const currentDistrictCode = estate?.district_code ?? 'A';
             const currentDistrict = districts.find(
               (district) => district.code === currentDistrictCode
@@ -119,9 +109,6 @@ export class BuildingsService {
             const currentDistrictRank = currentDistrict?.rank ?? 1;
             const ownedMap = new Map(
               estateBuildings.map((entry) => [entry.building_id, entry.level])
-            );
-            const statLabelMap = new Map(
-              stats.map((stat) => [stat.key, stat.label])
             );
             const bonusesByBuildingId = this.groupBonusesByEntityId(entityBonuses);
 
@@ -131,7 +118,6 @@ export class BuildingsService {
                   row,
                   bonusesByBuildingId.get(row.id) ?? [],
                   ownedMap,
-                  statLabelMap,
                   currentDistrictRank,
                   formulaData
                 )
@@ -152,12 +138,10 @@ export class BuildingsService {
 
   private mapMansionBuilding(
     building: MansionBuildingRow & {
-      building_requirements: MansionBuildingRequirementRow[];
       building_resource_costs: MansionBuildingResourceCostRow[];
     },
     bonuses: CanonicalEntityBonusWithTemplateRow[],
     ownedMap: Map<string, number>,
-    statLabelMap: Map<string, string>,
     currentDistrictRank: number,
     formulaData: FormulaAdminData
   ): MansionBuilding {
@@ -190,25 +174,21 @@ export class BuildingsService {
       maxLevel: building.max_level ?? 0,
       currentLevel,
       nextLevel,
-      baseBuildTimeMinutes: building.base_build_time_minutes ?? 0,
+      baseBuildTimeSeconds: building.base_build_time_seconds ?? 0,
       isOwned: currentLevel > 0,
       isUnlocked: currentDistrictRank >= building.rank_required,
       canUpgrade,
-      nextUpgradeTimeMinutes: canUpgrade
-        ? this.progression.getUpgradeTimeMinutes(
+      nextUpgradeTimeSeconds: canUpgrade
+        ? this.progression.getUpgradeTimeSeconds(
             currentLevel,
-            building.base_build_time_minutes ?? 0,
+            building.base_build_time_seconds ?? 0,
             building.rank_required,
             rules
           )
         : null,
       nextUpgradeCosts: this.aggregateCostTotals(activeCostRules),
       activeCostRules,
-      activeRequirements: this.mapActiveRequirements(
-        building.building_requirements ?? [],
-        statLabelMap,
-        nextLevel
-      ),
+      activeRequirements: this.mapActiveRequirements(nextLevel),
       bonuses: this.mapBonuses(bonuses, currentLevel, rules),
     };
   }
@@ -285,26 +265,9 @@ export class BuildingsService {
   }
 
   private mapActiveRequirements(
-    rows: MansionBuildingRequirementRow[],
-    statLabelMap: Map<string, string>,
-    nextLevel: number
+    _nextLevel: number
   ): BuildingRequirementPreview[] {
-    return rows
-      .filter((row) => row.applies_from_level <= nextLevel)
-      .sort((left, right) => {
-        if (left.sort_order !== right.sort_order) {
-          return left.sort_order - right.sort_order;
-        }
-
-        return left.applies_from_level - right.applies_from_level;
-      })
-      .map((row) => ({
-        type: normalizeRuntimeBuildingRequirementType(row.requirement_type),
-        statKey: row.stat_key,
-        statLabel: row.stat_key ? statLabelMap.get(row.stat_key) ?? row.stat_key : null,
-        minValue: row.min_value,
-        appliesFromLevel: row.applies_from_level,
-      }));
+    return [];
   }
 
   private groupBonusesByEntityId(
@@ -320,8 +283,4 @@ export class BuildingsService {
 
     return mapById;
   }
-}
-
-function normalizeRuntimeBuildingRequirementType(value: string): BuildingRequirementType {
-  return value === 'hero_rank' || value === 'hero_stat' ? value : 'hero_level';
 }

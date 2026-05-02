@@ -51,11 +51,11 @@ export interface MansionBuilding {
   maxLevel: number;
   currentLevel: number;
   nextLevel: number;
-  baseBuildTimeMinutes: number;
+  baseBuildTimeSeconds: number;
   isOwned: boolean;
   isUnlocked: boolean;
   canUpgrade: boolean;
-  nextUpgradeTimeMinutes: number | null;
+  nextUpgradeTimeSeconds: number | null;
   nextUpgradeCosts: BuildingResourceCostTotal[];
   activeCostRules: BuildingResourceCostPreview[];
   activeRequirements: BuildingRequirementPreview[];
@@ -85,7 +85,7 @@ export interface EditableBuilding {
   imagePath: string;
   districtCode: string;
   sortOrder: number;
-  baseBuildTimeMinutes: number;
+  baseBuildTimeSeconds: number;
   maxLevel: number;
   formulaOverrides: BuildingFormulaOverrides;
   bonuses: EditableBuildingBonus[];
@@ -222,7 +222,7 @@ export interface BuildingProgressionPreview {
   previewLevel: number;
   nextLevel: number;
   baseCost: number;
-  baseBuildTimeMinutes: number;
+  baseBuildTimeSeconds: number;
   defaultMaxLevel: number;
   effectiveMaxLevel: number;
   isUnlimited: boolean;

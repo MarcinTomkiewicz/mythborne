@@ -55,16 +55,16 @@ export class BuildingProgressionService {
     );
   }
 
-  getUpgradeTimeMinutes(
+  getUpgradeTimeSeconds(
     level: number,
     baseTime: number,
     rank: number,
     rules: BuildingProgressionRules
   ): number | null {
-    return this.getUpgradeTimeMinutesResult(level, baseTime, rank, rules).value;
+    return this.getUpgradeTimeSecondsResult(level, baseTime, rank, rules).value;
   }
 
-  getUpgradeTimeMinutesResult(
+  getUpgradeTimeSecondsResult(
     level: number,
     baseTime: number,
     rank: number,

@@ -76,8 +76,8 @@ export class MansionPageFacade {
     return `${requirement.minValue} from level ${requirement.appliesFromLevel}`;
   }
 
-  toDurationLabel(minutes: number | null): string {
-    return toBuildingDurationLabel(minutes);
+  toDurationLabel(seconds: number | null): string {
+    return toBuildingDurationLabel(seconds);
   }
 
   resourceLabel(type: BuildingResourceType): string {

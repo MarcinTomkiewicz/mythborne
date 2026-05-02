@@ -67,7 +67,7 @@ function createBuilding() {
     imagePath: '',
     districtCode: 'A',
     sortOrder: 1,
-    baseBuildTimeMinutes: 10,
+    baseBuildTimeSeconds: 10,
     maxLevel: 15,
     formulaOverrides: {
       upgradeCostFormulaId: null,

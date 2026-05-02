@@ -208,9 +208,9 @@ export class BuildingFormulaPreviewCalculator {
       };
     }
 
-    const result = this.buildingProgression.getUpgradeTimeMinutesResult(
+    const result = this.buildingProgression.getUpgradeTimeSecondsResult(
       level,
-      Number(input.building.baseBuildTimeMinutes ?? 0),
+      Number(input.building.baseBuildTimeSeconds ?? 0),
       rank,
       input.rules,
     );

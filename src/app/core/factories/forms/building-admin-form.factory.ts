@@ -48,7 +48,7 @@ export class BuildingAdminFormFactory {
       imagePath: this.fb.control(''),
       districtCode: this.fb.control('A'),
       sortOrder: this.fb.control(0),
-      baseBuildTimeMinutes: this.fb.control(60),
+      baseBuildTimeSeconds: this.fb.control(60),
       maxLevel: this.fb.control(0),
       formulaOverrides: this.fb.group({
         upgradeCostFormulaId: this.fb.control<string | null>(null),
@@ -69,7 +69,7 @@ export class BuildingAdminFormFactory {
       imagePath: '',
       districtCode: data.districts[0]?.code ?? 'A',
       sortOrder: 0,
-      baseBuildTimeMinutes: 60,
+      baseBuildTimeSeconds: 60,
       maxLevel: 0,
       formulaOverrides: {
         upgradeCostFormulaId: null,
@@ -116,7 +116,7 @@ export class BuildingAdminFormFactory {
       imagePath: draft.imagePath,
       districtCode: draft.districtCode,
       sortOrder: draft.sortOrder,
-      baseBuildTimeMinutes: draft.baseBuildTimeMinutes,
+      baseBuildTimeSeconds: draft.baseBuildTimeSeconds,
       maxLevel: draft.maxLevel,
       formulaOverrides: draft.formulaOverrides,
     });
@@ -142,7 +142,7 @@ export class BuildingAdminFormFactory {
       imagePath: trimText(value.imagePath),
       districtCode: value.districtCode,
       sortOrder: roundedNumber(value.sortOrder),
-      baseBuildTimeMinutes: roundedNumber(value.baseBuildTimeMinutes),
+      baseBuildTimeSeconds: roundedNumber(value.baseBuildTimeSeconds),
       maxLevel: roundedNumber(value.maxLevel),
       formulaOverrides: {
         upgradeCostFormulaId: value.formulaOverrides.upgradeCostFormulaId,

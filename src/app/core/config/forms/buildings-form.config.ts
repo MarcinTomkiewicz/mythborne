@@ -67,6 +67,6 @@ export function createBuildingPrimaryEditorFields(
 
 export const BUILDING_PROGRESSION_FIELDS: readonly FormFieldConfig[] = [
   { type: FormFieldType.Number, controlName: 'sortOrder', label: 'Sort order' },
-  { type: FormFieldType.Number, controlName: 'baseBuildTimeMinutes', label: 'Base build time (min)' },
+  { type: FormFieldType.Number, controlName: 'baseBuildTimeSeconds', label: 'Base build time (sec)' },
   { type: FormFieldType.Number, controlName: 'maxLevel', label: 'Max level' },
 ];

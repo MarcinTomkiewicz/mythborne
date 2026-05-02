@@ -123,7 +123,7 @@ export class BuildingAdminService {
         null,
       districtCode: draft.districtCode,
       sortOrder: nonNegativeInteger(draft.sortOrder),
-      baseBuildTimeMinutes: nonNegativeInteger(draft.baseBuildTimeMinutes),
+      baseBuildTimeSeconds: nonNegativeInteger(draft.baseBuildTimeSeconds),
       maxLevel: nonNegativeInteger(draft.maxLevel),
     };
 

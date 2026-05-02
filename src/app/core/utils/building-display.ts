@@ -14,23 +14,26 @@ export function toBuildingBonusValue(value: number, type: BonusType): string {
   return formatBonusValue(value, type, { includePlus: false });
 }
 
-export function toBuildingDurationLabel(minutes: number | null): string {
-  if (minutes === null) {
+export function toBuildingDurationLabel(seconds: number | null): string {
+  if (seconds === null) {
     return 'Unavailable';
   }
 
+  if (seconds < 60) {
+    return `${seconds} sec`;
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
   if (minutes < 60) {
-    return `${minutes} min`;
+    return remainingSeconds === 0 ? `${minutes} min` : `${minutes} min ${remainingSeconds} sec`;
   }
 
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
 
-  if (remainingMinutes === 0) {
-    return `${hours} h`;
-  }
-
-  return `${hours} h ${remainingMinutes} min`;
+  return remainingMinutes === 0 ? `${hours} h` : `${hours} h ${remainingMinutes} min`;
 }
 
 export function toResourceLabel(type: BuildingResourceType): string {

@@ -2234,6 +2234,7 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 **Goal:** Rebuild `/admin/exploration-trials` into a usable admin/balancer configurator, not a raw table editor.
 
 The admin must understand:
+
 - what the selected trial represents;
 - which stat it tests;
 - which minigame executes it;
@@ -2654,6 +2655,7 @@ Every durable mutation must require and send reason where the RPC requires it.
 **Goal:** Make `/admin/exploration-encounters` usable as an admin/balancer tool, not just a raw table editor.
 
 The admin must understand:
+
 - what the selected encounter does;
 - which configuration applies only to the selected encounter;
 - which configuration is global/fallback;
@@ -3503,6 +3505,12 @@ Current snapshot tables:
 
 ---
 
+**Implementation note:** M9 accepted on 2026-05-02. Combat result persistence now goes through `CombatResultSnapshotsService` and `RPC.persist_combat_result_snapshot` only. The mapper converts completed canonical combat results to participant/stat/attack JSON payloads, normalizes empty returned `source_entity_id` to `null`, keeps full equipment private, and does not add rewards, trial completion, PvP consequences, notifications or reports. Production gameplay source types require an explicit backend validation/finalization authority boundary before snapshot persistence. Verification passed: `npx tsc --noEmit`, focused M9 specs with 6 SUCCESS, static grep checks for no direct writes/consequence paths, and `npm run build` with known budget/CommonJS warnings. Manual smoke and route smoke were not run by Codex.
+
+**Related compile-only note:** The M9 acceptance window also included a minimal Epic O type-drift hotfix after DB type regeneration. Active building frontend code now uses the seconds-based build-time contract (`base_build_time_seconds`, `baseBuildTimeSeconds`, `nextUpgradeTimeSeconds`, `getUpgradeTimeSeconds(...)`) and no longer uses active legacy `base_build_time_minutes` / `baseBuildTimeMinutes` or `building_requirements` / `buildings.requirements` references outside generated types. This is not full Epic O UI/read-layer alignment; pending O follow-up is central `entity_requirements` / `requirement_definitions` integration for building requirements.
+
+---
+
 ## Task M10 — Thin sandbox combat caller
 
 **Goal:** Keep `/game/combat` as a sandbox/test caller using the reusable combat core.
@@ -3999,7 +4007,7 @@ Current source of truth:
 
 # Epic O — Estates, districts and buildings
 
-Epic O implements player-facing estate/building runtime and admin/balancer building configuration over the current DB/RPC estate foundation.
+Epic O implements player-facing estate/building runtime, estate address browsing/relocation UI, and admin/balancer building configuration over the current DB/RPC estate foundation.
 
 This is not a fresh placeholder design. The DB foundation exists and must be treated as the source of truth for frontend and admin work.
 
@@ -4434,53 +4442,21 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 
 ---
 
-## Task O9 — Estate/building integration smoke and blocker report
+## Task O9 — Estate vicinity/address browser and relocation picker UI
 
-**Goal:** Verify the player-facing and admin-facing Epic O integration after O1–O8 changes.
-
-**Scope:**
-
-- Run technical checks appropriate for the changed slice.
-- Smoke player flow where possible:
-  - load current estate;
-  - show address/district;
-  - show available building list;
-  - hide higher-district buildings;
-  - show level 0 buildings as unbuilt where configured;
-  - show active/no-active job state;
-  - finalize completed jobs through `finalize_hero_estate_building_jobs(...)`;
-  - start a build/upgrade through `start_estate_building_upgrade(...)` when data/resources allow.
-- Smoke admin/configurator flow where possible:
-  - metadata sections render;
-  - starting level is visible;
-  - seconds-based time is visible;
-  - central requirements are visible;
-  - resource costs are visible;
-  - caps are visible;
-  - raw keys are secondary metadata only.
-- Do not claim full manual gameplay smoke if there is no authenticated session or insufficient test data.
-- If a smoke step cannot be executed, report the exact missing data/session/permission.
-- If a DB/RPC/configurator write blocker remains, report it explicitly and do not mark the epic complete.
-
-**Acceptance criteria:**
-
-- Report states which O flows were technically verified.
-- Report lists pending manual smoke separately from blockers.
-- Route smoke alone is not treated as full smoke.
-- No direct writes were introduced for player runtime.
-- No legacy building requirements/time fields are used.
-- Remaining blockers, if any, are concrete and actionable.
-
----
-
-## Task O10 — Estate district/address browser and relocation picker UI
-
-**Goal:** Build the player-facing UI for browsing estate addresses by district, seeing occupied/empty addresses and choosing an empty address for relocation.
+**Goal:** Build the player-facing UI for browsing estate addresses by district/vicinity, seeing occupied/empty addresses and choosing an empty address for relocation. The visual direction should be compatible with the future PvP “Nearby estates” targeting screen, but this task must not implement real PvP attack/spy/siege actions.
 
 **Scope:**
 
-- Add a player-facing estate address browser/picker UI.
+- Add a player-facing estate vicinity/address browser UI.
 - Use the read layer from O2.
+- Use the provided “Nearby estates / vicinity” mockup as visual direction:
+  - main content list/table of nearby or generated estate addresses;
+  - current estate highlighted;
+  - occupied estate rows;
+  - empty plot rows;
+  - selected address/target side panel where useful;
+  - compact context cards for current estate/district/address.
 - Show districts A–E with configured capacities:
   - A = 5000;
   - B = 3000;
@@ -4498,6 +4474,7 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - Occupied address rows/cards should show safe public occupant/estate information only:
   - hero/display name where allowed;
   - district/address;
+  - visible public summary only;
   - no account id;
   - no private staff/user metadata.
 - Support filters/search where useful:
@@ -4507,23 +4484,31 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
   - occupied only;
   - hero/name if safely available.
 - The relocation action must route into O3 confirmation flow.
+- Future PvP concepts such as attack, spy, siege, protection, daily attacks, travel time and target eligibility may be represented only as disabled/placeholder visual slots if needed for layout compatibility.
+- Do not implement real attack/spy/siege actions in Epic O.
+- Do not implement PvP eligibility logic in Epic O.
 - Do not implement siege/takeover actions here.
 - Do not create empty estate rows.
 - Do not direct-write `estates`.
+- Reuse existing game shell/card/table/button patterns where available.
+- Include shared/reuse report in Codex summary.
 
 **Acceptance criteria:**
 
-- Player can browse addresses by district.
+- Player can browse estate addresses by district/vicinity.
+- Current estate is visually identifiable.
 - Empty addresses are visibly distinct from occupied addresses.
 - Empty address action starts the relocation confirmation flow.
 - Occupied addresses do not expose private account/user data.
 - Large districts do not render as one massive DOM list.
+- UI structure can later be extended by a PvP targeting epic without rewriting the address browser foundation.
+- No real PvP attack/spy/siege action is implemented in this task.
 - No empty address rows are persisted.
 - Build passes.
 
 ---
 
-## Task O11 — Player estate overview and building dashboard UI
+## Task O10 — Player estate overview and building dashboard UI
 
 **Goal:** Build the main player-facing estate screen that shows the current estate, available buildings, levels, jobs, resources and build/upgrade actions.
 
@@ -4578,7 +4563,7 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 
 ---
 
-## Task O12 — Estate/building feedback and notification integration
+## Task O11 — Estate/building feedback and notification integration
 
 **Goal:** Ensure estate/building actions provide correct immediate feedback and produce persistent notifications only where appropriate.
 
@@ -4617,6 +4602,53 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - Build passes.
 
 ---
+
+## Task O12 — Estate/building integration smoke and blocker report
+
+**Goal:** Verify the player-facing and admin-facing Epic O integration after O1–O11 changes.
+
+**Scope:**
+
+- Run technical checks appropriate for the changed slice.
+- Smoke player flow where possible:
+  - load current estate;
+  - show address/district;
+  - browse estate addresses by district;
+  - show occupied and empty addresses;
+  - trigger relocation confirmation from an empty address;
+  - show available building list;
+  - hide higher-district buildings;
+  - show level 0 buildings as unbuilt where configured;
+  - show active/no-active job state;
+  - finalize completed jobs through `finalize_hero_estate_building_jobs(...)`;
+  - start a build/upgrade through `start_estate_building_upgrade(...)` when data/resources allow;
+  - show immediate feedback for relocation/build actions.
+- Smoke notification integration where possible:
+  - confirm frontend does not insert notification rows;
+  - confirm building completion notification hook exists or blocker is reported;
+  - confirm notification action URL points to the estate/building page where available.
+- Smoke admin/configurator flow where possible:
+  - metadata sections render;
+  - starting level is visible;
+  - seconds-based time is visible;
+  - central requirements are visible;
+  - resource costs are visible;
+  - caps are visible;
+  - raw keys are secondary metadata only.
+- Do not claim full manual gameplay smoke if there is no authenticated session or insufficient test data.
+- If a smoke step cannot be executed, report the exact missing data/session/permission.
+- If a DB/RPC/configurator write blocker remains, report it explicitly and do not mark the epic complete.
+
+**Acceptance criteria:**
+
+- Report states which O flows were technically verified.
+- Report lists pending manual smoke separately from blockers.
+- Route smoke alone is not treated as full smoke.
+- Address browser, estate overview, building dashboard and admin configurator are covered by the smoke report.
+- No direct writes were introduced for player runtime.
+- No frontend notification inserts were introduced.
+- No legacy building requirements/time fields are used.
+- Remaining blockers, if any, are concrete and actionable.
 
 # Epic P — Reports and snapshots
 
@@ -4866,6 +4898,7 @@ Epic Q implements persistent notification inbox/bell UI over the current DB-owne
 Notifications are short attention/status events. They are not game reports, audit logs, player abuse reports, or local UI-only toasts.
 
 Current DB foundation:
+
 - enum `notification_recipient_kind`: `user`, `hero`, `staff`;
 - enum `notification_severity`: `info`, `notice`, `warning`, `critical`;
 - table `notification_types`;
@@ -4875,6 +4908,7 @@ Current DB foundation:
 - RPC `dismiss_notification(p_notification_id)`.
 
 Current DB-owned notification hooks:
+
 - direct trade offer received/rejected/completed;
 - auction outbid/sold/won;
 - declaration approved/rejected;
@@ -4884,6 +4918,7 @@ Current DB-owned notification hooks:
 - Character Points penalty created.
 
 Epic rules:
+
 - Frontend must not insert notification rows directly.
 - Frontend may show fresh notification rows as toasts when `notification_types.default_toast_enabled = true`.
 - Toast is presentation only; persistent `notifications` row is the source.
@@ -4897,6 +4932,7 @@ Epic rules:
 **Goal:** Add typed frontend domain models for DB-backed notification inbox/bell data.
 
 **Scope:**
+
 - Add models/mappers for:
   - `notification_types`,
   - `notifications`,
@@ -4911,6 +4947,7 @@ Epic rules:
 - Join or load `notification_types` so UI can show labels/descriptions/category/default toast behavior.
 
 **Acceptance criteria:**
+
 - Notification models expose readable type label/category/severity.
 - Mapper handles nullable source/action/body fields safely.
 - Player-facing model does not expose unrelated staff-only data.
@@ -4923,6 +4960,7 @@ Epic rules:
 **Goal:** Load current user's notification inbox and unread counts.
 
 **Scope:**
+
 - Add a service/domain read layer for notifications belonging to `auth.uid()`.
 - Query `notifications.recipient_user_id = current user`.
 - Exclude dismissed rows from normal inbox view.
@@ -4933,6 +4971,7 @@ Epic rules:
 - Do not mix game reports unread count into notifications.
 
 **Acceptance criteria:**
+
 - Current user can see their notification inbox.
 - Bell badge shows unread notification count only.
 - Dismissed notifications are hidden from normal inbox view.
@@ -4946,6 +4985,7 @@ Epic rules:
 **Goal:** Add a player/staff-visible notification bell with unread count and short notification list.
 
 **Scope:**
+
 - Add notification bell entry in the app shell/topbar.
 - Show unread count badge.
 - Dropdown/list shows newest notifications with:
@@ -4960,6 +5000,7 @@ Epic rules:
 - Do not include Reports items in the notification bell.
 
 **Acceptance criteria:**
+
 - User can open a concise notification dropdown/list.
 - Unread notifications are visually distinguishable.
 - Action link navigates to the relevant route when present.
@@ -4973,6 +5014,7 @@ Epic rules:
 **Goal:** Allow users to manage notification read/dismiss state through canonical RPCs.
 
 **Scope:**
+
 - Call `mark_notification_read(...)` for marking a notification read.
 - Call `dismiss_notification(...)` for hiding/dismissing a notification.
 - Do not direct-update `notifications.read_at` or `notifications.dismissed_at`.
@@ -4982,6 +5024,7 @@ Epic rules:
 - Show RPC errors via toast/message.
 
 **Acceptance criteria:**
+
 - Read/dismiss mutations use RPC only.
 - Notification ownership/access denial is surfaced clearly.
 - Unread badge updates after read/dismiss.
@@ -4995,6 +5038,7 @@ Epic rules:
 **Goal:** Show fresh DB-created notifications as transient toasts when the user is online.
 
 **Scope:**
+
 - Detect newly loaded or realtime-received notification rows for current user.
 - Show toast only when `notification_types.default_toast_enabled = true`.
 - Avoid duplicate toasts for the same notification in one session.
@@ -5003,6 +5047,7 @@ Epic rules:
 - If realtime subscription is not available/reliable yet, implement a safe polling/refresh-based fallback or report the limitation.
 
 **Acceptance criteria:**
+
 - Fresh eligible notifications can appear as toasts.
 - No duplicate toast spam for the same row in one session.
 - Toasts are presentation-only; persistent DB notification remains source of truth.
@@ -5016,6 +5061,7 @@ Epic rules:
 **Goal:** Make staff/server-work notifications visible in the same notification system while respecting selected-server access.
 
 **Scope:**
+
 - Show staff notifications where `recipient_kind = staff`.
 - Keep recipient check by authenticated user.
 - Server-scoped staff notifications should display selected server context.
@@ -5024,6 +5070,7 @@ Epic rules:
 - Keep player and staff notifications in the same inbox unless UX later splits them.
 
 **Acceptance criteria:**
+
 - Staff user can see server-scoped staff notifications addressed to them.
 - Normal player does not see staff notifications.
 - Notification body does not leak staff-only case details beyond what the notification row already stores.
@@ -5036,6 +5083,7 @@ Epic rules:
 **Goal:** Make notification type labels/descriptions readable in admin/debug contexts.
 
 **Scope:**
+
 - Add a simple admin/read-only view or section for `notification_types`, or integrate into existing dictionary/admin metadata tooling.
 - Display:
   - key,
@@ -5050,6 +5098,7 @@ Epic rules:
 - Keep technical key secondary to label/description.
 
 **Acceptance criteria:**
+
 - Admin/operator can inspect notification types and understand which events may toast.
 - No hardcoded notification type list in admin UI.
 - Build passes.
@@ -5061,6 +5110,7 @@ Epic rules:
 **Goal:** Verify that DB-owned notification hooks are visible to users through the frontend.
 
 **Scope:**
+
 - Use existing DB/RPC workflows where possible to trigger:
   - trade offer received,
   - auction outbid or sold/won,
@@ -5073,6 +5123,7 @@ Epic rules:
 - Verify report creation does not create a notification.
 
 **Acceptance criteria:**
+
 - At least one trade/auction notification is smoke-tested end-to-end where data exists.
 - At least one moderation/declaration notification is smoke-tested where data exists.
 - Pending smoke cases are explicitly listed with required data.

@@ -41,6 +41,7 @@ export const RPC = {
   create_entity_requirement: 'create_entity_requirement',
   get_ui_metadata_entries: 'get_ui_metadata_entries',
   get_combat_turn_limit: 'get_combat_turn_limit',
+  persist_combat_result_snapshot: 'persist_combat_result_snapshot',
   deactivate_entity_requirement: 'deactivate_entity_requirement',
   get_bonus_impact_preview: 'get_bonus_impact_preview',
   get_building_progression_preview: 'get_building_progression_preview',
