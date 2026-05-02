@@ -3530,6 +3530,8 @@ Current snapshot tables:
 - No exploration/trial/PvP integration is required in this task.
 - Sandbox result display does not rely on raw combat enum keys as primary UX.
 
+**Implementation note:** M10 accepted on 2026-05-02. `/game/combat` remains a temporary Walking Dead timing test surface for the canonical combat core, not the target production combat UI. One strike resolves only the current player timing action plus the enemy response through the canonical step path; if the fight has not naturally ended, the meter returns for the next player action. The slice keeps persistence, rewards, trial/exploration/PvP consequences, reports and production combat UI scope out of M10. User manual smoke passed; Codex did not run manual smoke or route smoke. Technical verification passed with `npx tsc --noEmit`, focused combat page/caller/step/core specs and `npm run build` with known budget/CommonJS warnings.
+
 ---
 
 ## Task M11 — Combat admin/balance tooling foundation

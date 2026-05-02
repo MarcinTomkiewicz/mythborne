@@ -37,6 +37,9 @@ export interface CombatRoundEntry {
   attackerName: string;
   defenderKey: string;
   defenderName: string;
+  displayText?: string;
+  attackSourceLabel?: string;
+  attackSourceKindLabel?: string;
   indicatorPosition: number | null;
   hitWindowStart: number;
   hitWindowEnd: number;

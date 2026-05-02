@@ -1,53 +1,50 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, finalize, forkJoin, map, of, switchMap } from 'rxjs';
+import { finalize } from 'rxjs';
+import { CombatDisplayDictionaries } from '../../domain/combat/combat-dictionary.model';
+import { CombatAttackEvent } from '../../domain/combat/combat.model';
 import {
   CombatBalanceRules,
   CombatRoundEntry,
   CombatantSnapshot,
-  SandboxCombatOutcome,
   SandboxCombatResult,
 } from '../../domain/combat/combat-sandbox.model';
 import { OriginBonus, Origin } from '../../domain/origin/origin.model';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import {
-  COMBAT_TURN_LIMIT,
   toWalkingDeadSpeed,
   toWalkingDeadZone,
 } from '../../utils/combat-walking-dead';
+import {
+  combatSandboxOutcomeLabel,
+  combatSandboxSourceTypeLabel,
+  combatSandboxWinnerSideLabel,
+  withCombatSandboxAttackSourceKindLabels,
+} from '../../utils/combat-sandbox-display';
 import { getErrorMessage } from '../../utils/error-message';
-import { Hero } from '../hero/hero';
-import { HeroDerivedStats } from '../hero/hero-derived-stats';
-import { EquipmentBonusesService } from '../items/equipment-bonuses';
-import { Origins } from '../origins/origins';
-import { StatsService } from '../stats/stats';
 import { CombatBalanceService } from './combat-balance';
-import { CombatDemoFactoryService } from './combat-demo-factory';
-import { HeroCombatantResolver } from './hero-combatant-resolver';
-import { CombatResolverService } from './combat-resolver';
+import { CombatPageLoaderService } from './combat-page-loader';
+import { CombatSandboxCallerService } from './combat-sandbox-caller';
 
 type CombatPhase = 'idle' | 'player_turn' | 'finished';
 
 @Injectable()
 export class CombatPageFacade {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly heroService = inject(Hero);
-  private readonly heroDerivedStats = inject(HeroDerivedStats);
-  private readonly equipmentBonuses = inject(EquipmentBonusesService);
-  private readonly originsService = inject(Origins);
-  private readonly statsService = inject(StatsService);
   private readonly balance = inject(CombatBalanceService);
-  private readonly demoFactory = inject(CombatDemoFactoryService);
-  private readonly heroCombatantResolver = inject(HeroCombatantResolver);
-  private readonly resolver = inject(CombatResolverService);
+  private readonly loader = inject(CombatPageLoaderService);
+  private readonly sandboxCaller = inject(CombatSandboxCallerService);
   private walkingTimer: number | null = null;
 
   readonly isLoading = signal(false);
+  readonly isResolving = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly battleError = signal<string | null>(null);
+  readonly heroId = signal<string | null>(null);
   readonly hero = signal<CombatantSnapshot | null>(null);
   readonly enemy = signal<CombatantSnapshot | null>(null);
   readonly result = signal<SandboxCombatResult | null>(null);
+  readonly combatDictionaries = signal<CombatDisplayDictionaries | null>(null);
   readonly origin = signal<Origin | null>(null);
   readonly originBonuses = signal<OriginBonus[]>([]);
   readonly statsDefinitions = signal<IStat[]>([]);
@@ -58,8 +55,10 @@ export class CombatPageFacade {
   readonly heroCurrentHealth = signal(0);
   readonly enemyCurrentHealth = signal(0);
   readonly logEntries = signal<CombatRoundEntry[]>([]);
+  readonly attacks = signal<readonly CombatAttackEvent[]>([]);
   readonly walkingPosition = signal(0);
   readonly walkingDirection = signal<1 | -1>(1);
+  readonly turnLimit = signal<number | null>(null);
 
   readonly winnerLabel = computed(() => {
     const result = this.result();
@@ -71,9 +70,17 @@ export class CombatPageFacade {
     return result.winnerKey === this.hero()?.key ? this.hero()?.name : this.enemy()?.name;
   });
   readonly canStartFight = computed(
-    () => !!this.hero() && !!this.enemy() && !!this.rules() && !this.isLoading()
+    () =>
+      !!this.hero() &&
+      !!this.enemy() &&
+      !!this.rules() &&
+      !!this.heroId() &&
+      !this.isLoading() &&
+      !this.isResolving()
   );
-  readonly canStrike = computed(() => this.phase() === 'player_turn' && !this.result());
+  readonly canStrike = computed(
+    () => this.phase() === 'player_turn' && !this.result() && !this.isResolving()
+  );
   readonly playerHitWindow = computed(() => {
     const hero = this.hero();
     const enemy = this.enemy();
@@ -93,21 +100,18 @@ export class CombatPageFacade {
     }
   });
   readonly walkingSpeed = computed(() => toWalkingDeadSpeed(this.streak()));
-  readonly turnLabel = computed(() => `${this.turn()} / ${COMBAT_TURN_LIMIT}`);
-  readonly outcomeLabel = computed(() => {
-    const outcome = this.result()?.outcome;
-
-    switch (outcome) {
-      case 'victory':
-        return 'Victory';
-      case 'defeat':
-        return 'Defeat';
-      case 'draw':
-        return 'Draw';
-      default:
-        return null;
-    }
-  });
+  readonly turnLabel = computed(() =>
+    this.turnLimit() ? `${this.turn()} / ${this.turnLimit()}` : `${this.turn()}`
+  );
+  readonly outcomeLabel = computed(() =>
+    combatSandboxOutcomeLabel(this.result(), this.combatDictionaries())
+  );
+  readonly sourceTypeLabel = computed(() =>
+    combatSandboxSourceTypeLabel(this.combatDictionaries())
+  );
+  readonly winnerSideLabel = computed(() =>
+    combatSandboxWinnerSideLabel(this.result(), this.combatDictionaries())
+  );
 
   constructor() {
     this.destroyRef.onDestroy(() => this.stopWalkingDead());
@@ -117,71 +121,21 @@ export class CombatPageFacade {
     this.isLoading.set(true);
     this.loadError.set(null);
 
-    forkJoin({
-      hero: this.heroService.getHeroData(),
-      baseStats: this.heroService.getHeroStats(),
-      statsDefinitions: this.statsService.getStats(),
-      rules: this.balance.getRules(),
-    })
+    this.loader.load()
       .pipe(
-        switchMap(({ hero, baseStats, statsDefinitions, rules }) => {
-          const originRequest$: Observable<{
-            origin: Origin | null;
-            bonuses: OriginBonus[];
-          }> = hero.origin_id
-            ? this.originsService.getOriginWithBonuses(hero.origin_id)
-            : of({ origin: null, bonuses: [] });
-
-          return originRequest$.pipe(
-            switchMap(({ origin, bonuses }) =>
-              forkJoin({
-                derivedStats: this.heroDerivedStats.resolveActiveHeroDerivedStats('combat'),
-                equipmentBonuses: this.equipmentBonuses.getEquipmentBonusesForHero(hero.id),
-              }).pipe(
-                map(({ derivedStats, equipmentBonuses }) => ({
-                  hero,
-                  baseStats,
-                  derivedStats,
-                  equipmentBonuses,
-                  statsDefinitions,
-                  rules,
-                  origin,
-                  bonuses,
-                })),
-              ),
-            ),
-          );
-        }),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoading.set(false))
       )
       .subscribe({
-        next: ({
-          hero,
-          baseStats,
-          derivedStats,
-          equipmentBonuses,
-          statsDefinitions,
-          rules,
-          origin,
-          bonuses,
-        }) => {
-          this.origin.set(origin);
-          this.originBonuses.set(bonuses);
-          this.statsDefinitions.set(statsDefinitions);
-          this.rules.set(rules);
-
-          const heroSnapshot = this.heroCombatantResolver.resolveHeroCombatant({
-            name: hero.name,
-            level: hero.level ?? 1,
-            baseStats,
-            derivedStats,
-            equipmentBonuses,
-            originBonuses: bonuses,
-          });
-
-          this.hero.set(heroSnapshot);
-          this.enemy.set(this.demoFactory.createOpponent(heroSnapshot.level));
+        next: (data) => {
+          this.heroId.set(data.heroId);
+          this.origin.set(data.origin);
+          this.originBonuses.set(data.originBonuses);
+          this.statsDefinitions.set(data.statsDefinitions);
+          this.rules.set(data.rules);
+          this.combatDictionaries.set(data.dictionaries);
+          this.hero.set(data.hero);
+          this.enemy.set(data.enemy);
           this.resetCombatState();
         },
         error: (error: unknown) => {
@@ -203,63 +157,63 @@ export class CombatPageFacade {
   strike() {
     const hero = this.hero();
     const enemy = this.enemy();
-    const rules = this.rules();
+    const heroId = this.heroId();
 
-    if (!hero || !enemy || !rules || !this.canStrike()) {
+    if (!hero || !enemy || !heroId || !this.canStrike()) {
       return;
     }
 
     this.battleError.set(null);
     this.stopWalkingDead();
+    this.isResolving.set(true);
 
-    try {
-      const playerEntry = this.resolver.resolvePlayerAttack(
-        this.turn(),
-        hero,
-        enemy,
-        this.enemyCurrentHealth(),
-        rules,
-        this.walkingPosition(),
-        this.streak()
-      );
+    this.sandboxCaller.resolvePlayerStep({
+      heroId,
+      hero,
+      enemy,
+      heroHealth: this.heroCurrentHealth(),
+      enemyHealth: this.enemyCurrentHealth(),
+      turnNumber: this.turn(),
+      attackOrderStart: this.logEntries().length + 1,
+      indicatorPosition: this.walkingPosition(),
+      streak: this.streak(),
+    })
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isResolving.set(false)),
+      )
+      .subscribe({
+        next: ({ result, logEntries, attacks, heroHealth, enemyHealth, turnsPlayed, turnLimit }) => {
+          this.turnLimit.set(turnLimit);
+          this.attacks.update((entries) => [...entries, ...attacks]);
+          this.logEntries.update((entries) => [
+            ...entries,
+            ...withCombatSandboxAttackSourceKindLabels(
+              logEntries,
+              attacks,
+              this.combatDictionaries(),
+            ),
+          ]);
+          this.heroCurrentHealth.set(heroHealth);
+          this.enemyCurrentHealth.set(enemyHealth);
+          this.streak.set(logEntries[0]?.result === 'miss' ? 0 : this.streak() + 1);
+          this.turn.set(turnsPlayed);
 
-      this.logEntries.update((entries) => [...entries, playerEntry.entry]);
-      this.enemyCurrentHealth.set(playerEntry.defenderHealthAfter);
-      this.streak.set(playerEntry.entry.result === 'miss' ? 0 : this.streak() + 1);
+          if (result) {
+            this.result.set(result);
+            this.phase.set('finished');
+            return;
+          }
 
-      if (playerEntry.defenderHealthAfter <= 0) {
-        this.finishFight('victory');
-        return;
-      }
-
-      const enemyEntry = this.resolver.resolveAutoAttack(
-        this.turn(),
-        enemy,
-        hero,
-        this.heroCurrentHealth(),
-        rules
-      );
-
-      this.logEntries.update((entries) => [...entries, enemyEntry.entry]);
-      this.heroCurrentHealth.set(enemyEntry.defenderHealthAfter);
-
-      if (enemyEntry.defenderHealthAfter <= 0) {
-        this.finishFight('defeat');
-        return;
-      }
-
-      if (this.turn() >= COMBAT_TURN_LIMIT) {
-        this.finishFight('draw');
-        return;
-      }
-
-      this.turn.update((turn) => turn + 1);
-      this.phase.set('player_turn');
-      this.startWalkingDead();
-    } catch (error: unknown) {
-      this.battleError.set(getErrorMessage(error, 'Failed to resolve combat turn.'));
-      this.phase.set('idle');
-    }
+          this.turn.update((turn) => turn + 1);
+          this.phase.set('player_turn');
+          this.startWalkingDead();
+        },
+        error: (error: unknown) => {
+          this.battleError.set(getErrorMessage(error, 'Failed to resolve combat.'));
+          this.phase.set('idle');
+        },
+      });
   }
 
   baseStatEntries(combatant: CombatantSnapshot): Array<{ key: string; label: string; value: number }> {
@@ -290,34 +244,6 @@ export class CombatPageFacade {
     return `${index}:${entry.turn}:${entry.attackerKey}:${entry.defenderKey}:${entry.result}`;
   }
 
-  private finishFight(outcome: SandboxCombatOutcome) {
-    this.stopWalkingDead();
-    this.phase.set('finished');
-
-    const hero = this.hero();
-    const enemy = this.enemy();
-
-    this.result.set({
-      outcome,
-      winnerKey:
-        outcome === 'draw'
-          ? null
-          : outcome === 'victory'
-            ? hero?.key ?? null
-            : enemy?.key ?? null,
-      loserKey:
-        outcome === 'draw'
-          ? null
-          : outcome === 'victory'
-            ? enemy?.key ?? null
-            : hero?.key ?? null,
-      rounds: this.logEntries(),
-      heroRemainingHealth: this.heroCurrentHealth(),
-      enemyRemainingHealth: this.enemyCurrentHealth(),
-      turnsPlayed: this.turn(),
-    });
-  }
-
   private resetCombatState() {
     this.stopWalkingDead();
     this.result.set(null);
@@ -326,6 +252,7 @@ export class CombatPageFacade {
     this.turn.set(1);
     this.streak.set(0);
     this.logEntries.set([]);
+    this.attacks.set([]);
     this.walkingPosition.set(0);
     this.walkingDirection.set(1);
     this.heroCurrentHealth.set(this.hero()?.derived.health ?? 0);
