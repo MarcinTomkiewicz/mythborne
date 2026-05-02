@@ -1,4 +1,8 @@
 import { Json } from '../../types/database.types';
+import {
+  CombatAttackSourceSnapshot,
+  CombatParticipantInput,
+} from './combat.model';
 
 export interface CombatDictionaryReadModel {
   key: string;
@@ -181,4 +185,57 @@ export interface CombatOpponentAdminData {
   };
   opponentViews: CombatOpponentAdminView[];
   emptyState: CombatOpponentEmptyState | null;
+}
+
+export interface ResolveCombatOpponentInput {
+  opponentDefinitionId: string;
+  side: CombatParticipantInput['side'];
+  heroLevel: number;
+  opponentLevel?: number;
+  difficultyMultiplier: number;
+  scalingFormulaId?: string | null;
+}
+
+export interface ResolvedCombatOpponentStat {
+  statKey: string;
+  baseValue: number;
+  scaledValue: number;
+}
+
+export type ResolvedCombatOpponentEquipmentKind = 'manual' | 'generated';
+
+export interface ResolvedCombatOpponentEquipment {
+  kind: ResolvedCombatOpponentEquipmentKind;
+  equipmentEntryId: string;
+  slotKey: string;
+  levelRange: {
+    min: number | null;
+    max: number | null;
+  };
+  source: CombatAttackSourceSnapshot;
+  generatedItem: ResolvedCombatOpponentGeneratedItem | null;
+}
+
+export interface ResolvedCombatOpponentGeneratedItem {
+  displayName: string;
+  baseId: string;
+  qualityKey: string;
+  prefixAffixId: string | null;
+  suffixAffixId: string | null;
+  bucketProfileId: string | null;
+  maxQualityKey: string | null;
+}
+
+export interface ResolvedCombatOpponent {
+  participant: CombatParticipantInput;
+  opponent: CombatOpponentDefinitionReadModel;
+  scalingFormula: {
+    targetKey: string;
+    formulaId: string;
+    label: string;
+    expression: string;
+  };
+  scaledStats: ResolvedCombatOpponentStat[];
+  naturalAttackSources: CombatOpponentAttackSourceReadModel[];
+  equipment: ResolvedCombatOpponentEquipment[];
 }

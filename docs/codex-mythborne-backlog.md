@@ -3301,6 +3301,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 - No player-owned item is created for NPC equipment.
 - Missing combat opponent content is reported as content/configuration gap, not as missing DB/RPC contract.
 
+**Implementation note:** M5 accepted on 2026-05-02 as a read/resolution layer. Core combat now has `CombatOpponentResolver`, typed resolved opponent models, opponent stat scaling through formula assignments/overrides, fight-local generated equipment materialization, manual equipment source snapshots, natural attack source attack-plan slots, and explicit configuration-gap errors for unsupported generated bucket profile integration and opponents with no active attack sources. The resolver stays orchestration-focused; stat resolution, range/level helpers, equipment resolution and attack-plan construction are split into focused helpers. No UI, sandbox/prototype flow changes, player-owned item creation, write/RPC mutation path, manual smoke or route smoke were added in M5.
+
 ---
 
 ## Task M6 — Attack plan builder

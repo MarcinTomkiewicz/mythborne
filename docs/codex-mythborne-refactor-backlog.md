@@ -734,6 +734,7 @@ Do not update `current-todo.md` unless explicitly requested.
   - add readable labels for manual item-generation references: base, quality, prefix affix and suffix affix;
   - add readable labels for generated equipment bucket profile and max quality references;
   - distinguish a fully empty opponent catalog from "families exist, but no opponent definitions are configured".
+- M5 note: resolver support currently treats `generatedBucketProfileId` as an explicit unsupported integration gap because the current item generation catalog loader does not provide opponent-specific bucket profile selection. Revisit this when the first opponent catalog/admin UI exposes generated equipment references.
 - timing: handle with the first opponent catalog/admin UI task or a focused read-model polish task; do not retrofit during unrelated combat runtime work.
 
 ---

@@ -132,9 +132,11 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: M2 - combat domain contracts.
 - Completed and confirmed: M3 - hero combatant resolver and critical damage debt.
 - Completed and confirmed: M4 - opponent definitions and combat dictionaries read layer.
-- Next backlog task: M5 - opponent combatant/loadout resolver, after the user commit and explicit start instruction.
+- Completed and confirmed: M5 - opponent combatant/loadout resolver.
+- Next backlog task: M6 - attack plan builder, after the user commit and explicit start instruction.
 - M2 follow-up debt: after the canonical combat runtime is implemented and integrated, retire the temporary `/game/combat` sandbox/prototype flow and remove `combat-sandbox.model.ts` instead of developing it as the target system.
 - M4 follow-up debt: first opponent catalog UI should add readable labels for manual item-generation references and generated bucket references, and should distinguish "families exist but no opponent definitions" from a fully empty opponent catalog.
+- M5 follow-up debt: generated opponent equipment with `generatedBucketProfileId` is currently reported as an unsupported integration gap because the current item generation catalog loader does not support opponent-specific bucket profile selection; revisit with the first opponent catalog/admin UI or item generation catalog integration pass.
 - DB cleanup candidate: `hero_derived` is no longer the frontend/runtime source for derived stats; replacement path is runtime derived stats from base stats, equipment, bonus templates/entity bonuses, derived stat definitions and formula assignments. Removal safety remains unknown until a dedicated SQL/reference audit and type regeneration.
 - L12c refactor debt: exploration encounter forms/templates remain fairly manual; future refactor work should revisit FormFieldConfig/shared renderer/form factory direction with a strong reuse check before new helpers/configs.
 - L11c refactor debt: trial and encounter configurators now share similar metadata facade, form rules and workflow patterns; do not refactor retrospectively in this task, but future work should check existing feature/core patterns before adding helpers.
