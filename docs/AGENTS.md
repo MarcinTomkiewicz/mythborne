@@ -126,7 +126,17 @@ Do not add a new domain-specific utility, mapper, factory, validator, or helper 
 
 ### Required implementation report
 
-Every implementation summary must include:
+Every implementation summary must start with:
+
+1. task scope / what the task covered;
+2. non-goals / what the task intentionally did not cover;
+3. acceptance mapping;
+4. verification;
+5. clean-code check covering DRY, KISS, separation of concerns and reuse of existing helpers/services/constants/factories;
+6. explicit statement that manual smoke and route smoke were not run by Codex, unless the user explicitly asked Codex to run them;
+7. a user-only manual smoke checklist when the task has a meaningful manual flow.
+
+Every implementation summary must also include:
 
 | Category | Required content |
 |---|---|

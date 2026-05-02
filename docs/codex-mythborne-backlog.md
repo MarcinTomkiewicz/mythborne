@@ -3336,6 +3336,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 
 ## Task M7 — Initiative and turn order
 
+**Status:** Done / accepted on 2026-05-02.
+
 **Goal:** Order attack slots using the DB formula target `combat_initiative_score`.
 
 **Scope:**
@@ -3360,6 +3362,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 - Formula assignment is read from DB; no hardcoded initiative expression as source of truth.
 - Random initiative formulas work once M1 random runtime support exists.
 - Admin can understand why the sample order is produced.
+
+**Implementation note:** M7 accepted on 2026-05-02. Core combat now has `CombatInitiativeOrderService`, which reads the assigned `combat_initiative_score` formula through `FormulaService`, evaluates each attack slot with `combatantIntelligence`, `combatantAgility`, `attackIndex` and `attackCount`, orders slots by descending score, and applies the initiator tie-breaker outside the formula. The result includes formula metadata and explanation text so admin/preview tooling can show why a sample order was produced. M7 added no UI, no sandbox/prototype flow changes, no write/RPC mutation path, no manual smoke and no route smoke.
 
 ---
 
