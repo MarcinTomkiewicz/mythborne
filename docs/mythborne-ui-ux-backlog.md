@@ -3790,6 +3790,632 @@ Podstawowa zasada: jeśli gracz jest online i dzieje się coś wymagające notyf
 
 ---
 
+## Task UI-51 — Admin Overview shell and global admin variant
+
+**Goal:**
+Zbudować Admin Overview jako czysty orientation hub dla global admina, zgodny z zaakceptowanym preview Admin Overview V7.
+
+Admin Overview nie ma udawać live dashboardu ani activity feedu. Ma pokazywać kontekst, zakres uprawnień, najważniejsze obszary administracji i mapę pokrycia lewego menu.
+
+**Scope:**
+
+* Route/page dla Admin Overview w `src/app/admin`.
+* Użyć istniejącego admin shellu, layout patterns i PrimeNG/vendor wrappers, jeśli istnieją.
+* Zachować visual direction:
+
+  * dark navy / gold / bronze,
+  * modern premium browser RPG,
+  * administracyjny, ale nadal Mythborne,
+  * logo/brand z literą `M` jako stały element shellu.
+* Wariant w tym tasku: **Global Admin overview**.
+* Sidebar:
+
+  * Mythborne brand z literą `M`,
+  * Admin context,
+  * Server focus,
+  * Current role,
+  * grupy menu:
+
+    * Overview,
+    * Priority Operations,
+    * Content & Balance,
+    * World & Economy,
+    * Gameplay Tools / Sandbox.
+* Topbar:
+
+  * Admin Overview,
+  * Edit level selector,
+  * Server focus selector,
+  * role/scope chips,
+  * search,
+  * View audit action.
+* Header:
+
+  * Staff Console,
+  * Admin Overview,
+  * krótki opis,
+  * chips:
+
+    * DB-backed dictionaries first,
+    * Reasoned mutations through RPC,
+    * Technical keys as secondary metadata.
+* Summary card:
+
+  * Server focus,
+  * Live servers,
+  * Current role,
+  * Edit level,
+  * Staff managed,
+  * Last governance action.
+
+**Global admin vs operator distinction:**
+
+* Global admin sees scope strip.
+* Operator does not see global scope strip.
+* Global admin can use server focus as a filter/context selector.
+* Operator uses selected-server variant only.
+* Do not label global admin as Operator.
+* Do not show selected-server-only labels when in global admin overview.
+
+**Out of scope:**
+
+* Nie implementować konkretnych modułów admina.
+* Nie robić full audit view.
+* Nie robić live activity feed.
+* Nie robić fake dashboard metrics.
+* Nie projektować DB tabeli admin navigation registry w tym tasku.
+* Nie zmieniać statusów backlogu/status docs.
+
+**Data/source rules:**
+
+* Staff/admin access comes from current role/access model.
+* Global vs server-scoped access must not be guessed in component-local code.
+* Server focus list should reuse existing active server/admin server switcher/service where available.
+* Role/scope labels should use existing access/read model or DB-backed labels where available.
+* Persistent/admin mutations must not be introduced in this task.
+* If a needed read/access model is missing, Codex must report dependency.
+
+**Acceptance criteria:**
+
+* Admin Overview renders as global admin variant.
+* Branding with the Mythborne `M` is preserved.
+* Sidebar groups match accepted preview direction.
+* Topbar clearly shows Global Admin edit level and Server focus.
+* Summary card does not confuse operator with admin.
+* Scope strip is visible in global admin variant.
+* No fake Recent Staff Activity.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-52 — Admin scope strip and operator/server-scoped variant boundary
+
+**Goal:**
+Dodać jasną zasadę UI/UX i implementacyjną dla scope stripu oraz wariantu operatora.
+
+Scope strip jest elementem global admin UI. Operatorzy server-scoped nie powinni widzieć przełącznika global/server/launch/sandbox jako równorzędnych poziomów edycji, ponieważ działają w przypisanym kontekście serwera.
+
+**Scope:**
+
+* Scope strip dla global admina:
+
+  * Global Admin,
+  * Selected Server,
+  * Launch New Server,
+  * Sandbox / Test.
+* Scope strip opisuje tryb pracy, nie jest zwykłą dekoracją.
+* Dla operatora:
+
+  * ukryć scope strip,
+  * pokazać selected server context,
+  * role: Operator,
+  * edit level: Selected server,
+  * scope: przypisany serwer i dozwolone obszary.
+* Dla global admina:
+
+  * role: Admin,
+  * edit level: Global admin,
+  * server focus może być All servers albo konkretny serwer.
+* Scope strip nie powinien pojawiać się player-facing ani w normalnym game shellu.
+
+**Out of scope:**
+
+* Nie implementować pełnego operator dashboardu, jeśli task jest tylko boundary/pattern.
+* Nie projektować DB permission modelu.
+* Nie zmieniać RLS/RPC.
+* Nie tworzyć nowych global roles.
+* Nie robić staff assignment workflow.
+
+**Data/source rules:**
+
+* Use existing access model / ActiveServer access / staff access policy where available.
+* Do not infer global admin from selected server role.
+* Global role and server staff role remain separate.
+* If current access model cannot distinguish required states, report dependency.
+
+**Acceptance criteria:**
+
+* Scope strip visible only for global admin.
+* Operator/server-scoped variant does not show scope strip.
+* Global admin can focus all servers or one server.
+* Operator cannot switch to global or launch mode.
+* UI labels do not confuse role with server focus.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-53 — Admin sidebar information architecture
+
+**Goal:**
+Ułożyć admin sidebar według zaakceptowanej intencji pracy, bez dublowania raw table names i bez mieszania globalnych, serwerowych oraz sandboxowych narzędzi.
+
+**Accepted sidebar groups:**
+
+* Overview
+* Priority Operations
+* Content & Balance
+* World & Economy
+* Gameplay Tools / Sandbox
+
+**Accepted entries:**
+
+* Overview:
+
+  * Overview
+* Priority Operations:
+
+  * Config Governance
+  * Anti-abuse
+* Content & Balance:
+
+  * Exploration
+  * Rewards & Loot
+  * Combat Foundation
+  * Formulas
+* World & Economy:
+
+  * Estate & Buildings
+  * Economy & Trade
+  * Server Management
+  * Launch New Server
+* Gameplay Tools / Sandbox:
+
+  * Sandbox Helpers
+
+**Entry intent:**
+
+* Config Governance:
+
+  * global config,
+  * server config,
+  * launch config,
+  * change sets.
+* Anti-abuse:
+
+  * cases,
+  * sanctions,
+  * signals.
+* Exploration:
+
+  * trials,
+  * encounters,
+  * resource/effect payloads,
+  * combat candidates.
+* Rewards & Loot:
+
+  * reward profiles,
+  * drop references,
+  * item generation,
+  * quality,
+  * affixes.
+* Combat Foundation:
+
+  * combat opponents,
+  * combat rules,
+  * snapshots,
+  * later combat admin/sandbox integration.
+* Formulas:
+
+  * formula targets,
+  * formula definitions,
+  * assignments,
+  * local overrides.
+* Estate & Buildings:
+
+  * buildings,
+  * costs,
+  * requirements,
+  * district caps.
+* Economy & Trade:
+
+  * auctions,
+  * direct trade,
+  * vendor/scrap,
+  * market restrictions.
+* Server Management:
+
+  * server list,
+  * server settings,
+  * operator assignment,
+  * moderator assignment,
+  * staff scopes.
+* Launch New Server:
+
+  * launch template,
+  * server snapshot,
+  * pre-live checks.
+* Sandbox Helpers:
+
+  * test tools,
+  * debug helpers,
+  * sandbox-only actions.
+
+**Out of scope:**
+
+* Nie tworzyć fake working pages.
+* Nie zmieniać route guards bez potrzeby.
+* Nie usuwać istniejących routes.
+* Nie przenosić player-facing pages do admina.
+* Nie projektować DB admin nav registry w tym tasku.
+
+**Data/source rules:**
+
+* Existing routes remain reachable.
+* If a route does not exist, entry may be hidden, disabled, or omitted according to existing project pattern.
+* Do not imply implemented functionality through enabled links.
+* Labels/descriptions should be DB/registry-backed later where available, but this UI task may use a local registry if needed.
+* Raw keys are secondary metadata only.
+
+**Acceptance criteria:**
+
+* Sidebar matches accepted grouping.
+* Config Governance and Anti-abuse are visibly prioritized.
+* Exploration groups trials/encounters/payloads together.
+* Rewards & Loot groups reward profiles and item generation together.
+* Combat Opponents are not a random top-level island; they belong under Combat Foundation.
+* Server Management and Launch New Server are separate.
+* Existing admin routes remain reachable.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-54 — Admin Area Map and Coverage Checklist
+
+**Goal:**
+Zastąpić pseudo-dashboard/Workspaces/Recent Staff Activity uczciwym orientation blockiem: Admin Area Map + Coverage Checklist.
+
+Admin Area Map nie jest drugą nawigacją. To mapa orientacyjna pokazująca, co obejmuje lewy sidebar i czy najważniejsze obszary administracji są uwzględnione.
+
+**Scope:**
+
+* W centralnej części Admin Overview dodać:
+
+  * Admin Area Map,
+  * Coverage Checklist.
+* Usunąć lub nie implementować:
+
+  * fake Command Board,
+  * Recent Staff Activity,
+  * live dashboard metrics wymyślone bez realnego read modelu.
+* Admin Area Map pokazuje obszary:
+
+  * Config Governance,
+  * Anti-abuse,
+  * Exploration,
+  * Rewards & Loot,
+  * Server Management.
+* Każdy obszar pokazuje chips/subareas, np.:
+
+  * Config Governance: global config, server config, launch config, change sets, changelog.
+  * Anti-abuse: cases, signals, reports, sanctions, CP penalties.
+  * Exploration: trials, encounters, resource payloads, effects, combat candidates.
+  * Rewards & Loot: reward profiles, drop refs, item generation, quality, affixes.
+  * Server Management: server list, server settings, operator, moderators, staff scopes.
+* Coverage Checklist pokazuje sanity check:
+
+  * Global config — covered,
+  * Server config — covered,
+  * Launch new server — slot,
+  * Staff assignment — covered,
+  * Sandbox tools — separate.
+* Dodać krótki note:
+
+  * overview is intentionally light,
+  * real work happens inside concrete modules.
+
+**Out of scope:**
+
+* Nie implementować live queue.
+* Nie implementować recent activity feed.
+* Nie implementować coverage matrix z repo/routes w tym tasku.
+* Nie projektować DB-backed admin nav registry.
+* Nie robić staff audit view.
+
+**Data/source rules:**
+
+* Admin Area Map may initially be static/local registry, but should be easy to replace with DB/registry-backed metadata later.
+* Do not fetch unrelated live data just to fill overview.
+* If implementing with a registry, keep it typed and reusable.
+* Area descriptions should support label/description/helper/admin-description fields later.
+
+**Acceptance criteria:**
+
+* Workspaces are replaced by Admin Area Map.
+* No fake activity feed appears on overview.
+* Admin Overview explains admin IA without duplicating sidebar as cards.
+* Coverage Checklist exists and is visually secondary.
+* The overview feels useful as orientation, not forced dashboard content.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-55 — Admin Context / Explainability panel
+
+**Goal:**
+Dodać lub ujednolicić prawy panel Context / Explainability dla Admin Overview i przyszłych admin modułów.
+
+Panel ma pokazywać wyjaśnienie zaznaczonego obszaru lub konfiguracji, używając label/description/helper/admin-description, jeśli są dostępne.
+
+**Scope:**
+
+* Prawy panel `Context / Explainability`.
+* Dla selected area, np. Config Governance, pokazuje:
+
+  * Label,
+  * Description,
+  * Helper text,
+  * Admin description,
+  * Technical key,
+  * Why this matters.
+* Technical key jest secondary metadata.
+* Panel powinien być podłączalny do:
+
+  * Admin Area Map selected area,
+  * konkretnych config definitions,
+  * dictionary entries,
+  * future admin modules.
+* Visual direction zgodny z Admin Overview V7.
+
+**Out of scope:**
+
+* Nie projektować DB tabeli metadata.
+* Nie implementować pełnego config definition editor.
+* Nie pokazywać raw JSON jako głównego contentu.
+* Nie tworzyć osobnego docs viewer.
+* Nie robić panelu staff-only leakującego player-private data.
+
+**Data/source rules:**
+
+* Prefer DB/read model metadata where available:
+
+  * label,
+  * description,
+  * helper_text,
+  * admin_description,
+  * gameplay impact/warning where applicable.
+* If metadata is missing, fallback may come from typed local registry.
+* Raw key appears only after human-readable labels.
+* The panel should not invent gameplay meaning not backed by config/dictionary/docs.
+* Missing metadata should be visible as content debt, not silently hidden if important.
+
+**Acceptance criteria:**
+
+* Context panel renders selected area metadata.
+* Technical key is secondary.
+* Labels/descriptions are human-readable first.
+* Panel can be reused conceptually by concrete admin pages.
+* No staff/player privacy leak.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-56 — Server Management admin entry and staff assignment boundary
+
+**Goal:**
+Ująć Server Management jako pełnoprawny admin area, widoczny w Admin Overview i sidebarze, z jasną granicą między global adminem i scoped operatorem.
+
+**Scope:**
+
+* Sidebar entry: Server Management.
+* Admin Area Map coverage:
+
+  * server list,
+  * server settings,
+  * operator,
+  * moderators,
+  * staff scopes.
+* Global admin can:
+
+  * see server list,
+  * manage any server,
+  * assign operator,
+  * assign multiple moderators,
+  * manage staff scopes subject to backend rules.
+* Scoped operator can:
+
+  * manage assigned server context,
+  * manage moderators within allowed backend rules,
+  * not assign global admin role,
+  * not access other servers.
+* UI labels must clearly distinguish:
+
+  * global admin,
+  * selected server operator,
+  * moderator,
+  * tester/sandbox roles where applicable.
+
+**Out of scope:**
+
+* Nie implementować full staff assignment form in this task.
+* Nie implementować server launch flow here.
+* Nie editować DB role modelu.
+* Nie obchodzić backend/RPC permission checks.
+* Nie direct-write staff assignment tables.
+
+**Data/source rules:**
+
+* Staff assignment must use canonical audited RPC/service where available.
+* UI must preserve reason requirement for staff assignment changes.
+* Server staff assignment must respect staff-disqualifying history warnings.
+* Operators may only manage within their own server scope and backend-enforced limits.
+* Sandbox/test server exceptions must remain explicit.
+
+**Acceptance criteria:**
+
+* Server Management appears in sidebar and Admin Area Map.
+* Global admin vs operator capabilities are not visually conflated.
+* Operator assignment and multiple moderator assignment are represented as future/covered subareas.
+* No fake staff mutation is implemented.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-57 — Launch New Server admin entry
+
+**Goal:**
+Dodać Launch New Server jako osobny admin area od live Server Management.
+
+Launch New Server dotyczy konfiguracji nowego serwera przed startem. Nie powinien mieszać się z bieżącymi live overrides wybranego serwera.
+
+**Scope:**
+
+* Sidebar entry: Launch New Server.
+* Scope strip includes Launch New Server for global admin.
+* Admin Area Map/Coverage Checklist includes:
+
+  * launch new server,
+  * launch templates,
+  * launch snapshots,
+  * pre-live checks.
+* Topbar/global admin edit level can switch to Launch New Server mode.
+* Labeling makes clear this is pre-live setup, not selected live server operation.
+
+**Out of scope:**
+
+* Nie implementować launch flow forms.
+* Nie tworzyć server records.
+* Nie projektować DB schema for launch templates.
+* Nie implementować config snapshot application.
+* Nie direct-write server/config tables.
+
+**Data/source rules:**
+
+* If launch-related read models/RPCs do not exist, UI should route to placeholder/dependency or hide disabled according to project pattern.
+* Launch config should eventually use config governance/server_launch scope, not ad hoc config JSON.
+* Pre-live checks should be backend/read-model driven when implemented.
+
+**Acceptance criteria:**
+
+* Launch New Server appears as separate entry from Server Management.
+* Scope strip includes launch mode for global admin only.
+* Admin overview does not imply launch flow is already implemented if missing.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-58 — Admin Overview status cards
+
+**Goal:**
+Dodać ostrożne, niewymyślone status cards do Admin Overview.
+
+Status cards mogą być informacyjne, ale nie powinny udawać balance AI, staff activity feedu ani live dashboardu bez read modelu.
+
+**Accepted cards for global admin variant:**
+
+* Pending Global Changes
+* Server Staff Gaps
+* Open Anti-abuse Cases
+* Sandbox Tools Ready
+
+**Rules:**
+
+* Pending Global Changes:
+
+  * visible for global admin,
+  * source: global/launch-level change sets.
+* Server Staff Gaps:
+
+  * global admin card,
+  * source should later come from server/staff coverage read model.
+* Open Anti-abuse Cases:
+
+  * server-specific data aggregated for global admin,
+  * filterable by server focus,
+  * visible to scoped operator only for their selected server.
+* Sandbox Tools Ready:
+
+  * visible where user has sandbox/test permissions.
+* Avoid `Balance Warnings` until there is a real balance warning/read model.
+
+**Out of scope:**
+
+* Nie budować balance warning engine.
+* Nie fake’ować staff gaps if no source exists in implementation.
+* Nie budować recent staff activity.
+* Nie budować command queue unless real read model exists.
+* Nie robić audit list in overview.
+
+**Data/source rules:**
+
+* Each card must either connect to real read model/service or be explicitly placeholder/pending in implementation.
+* No hardcoded production counts.
+* Global admin cards may aggregate across server focus.
+* Operator cards must be server-scoped.
+* If source read model is missing, Codex must report dependency or hide/placeholder according to project pattern.
+
+**Acceptance criteria:**
+
+* Four accepted cards appear.
+* Balance Warnings are not used without real source.
+* Counts are not hardcoded in production.
+* Operator and admin visibility differs correctly.
+* No Recent Staff Activity appears.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
 ## 21. Otwarte kwestie UI do dalszego dopracowania
 
 Ten plik jest na razie mocno dashboard/shell oriented. To jest celowe, bo najpierw stabilizujemy główny język UI. Z czasem UI/UX backlog powinien dostać osobne sekcje dla pełnych ekranów:

@@ -1,12 +1,16 @@
 import { Json } from '../types/database.types';
+import { REWARD_SOURCE_KIND } from '../constants/reward-runtime-keys.const';
 import {
+  DeactivateRewardProfileAssignmentRpcArgs,
   DeactivateTrialCombatCandidateRpcArgs,
+  UpsertRewardProfileAssignmentRpcArgs,
   UpsertTrialCombatCandidateRpcArgs,
   UpsertTrialDefinitionRpcArgs,
 } from '../types/exploration-trial-admin-rpc.types';
 import {
   UpsertTrialCombatCandidateInput,
   UpsertTrialDefinitionInput,
+  UpsertTrialRewardAssignmentInput,
 } from '../domain/exploration/exploration-trial-admin.model';
 import { trimText, trimToNull } from './normalize-text';
 
@@ -61,6 +65,43 @@ export function toDeactivateTrialCombatCandidateRpcArgs(
 ): DeactivateTrialCombatCandidateRpcArgs {
   return {
     p_candidate_id: requiredText(candidateId, 'candidateId'),
+    p_reason: requiredText(reason, 'reason'),
+  };
+}
+
+export function toUpsertRewardProfileAssignmentRpcArgs(
+  input: UpsertTrialRewardAssignmentInput,
+): UpsertRewardProfileAssignmentRpcArgs {
+  const args: UpsertRewardProfileAssignmentRpcArgs = {
+    p_assignment_id: trimToNull(input.assignmentId) ?? undefined,
+    p_source_kind: REWARD_SOURCE_KIND.trial,
+    p_trial_definition_id: requiredText(input.trialDefinitionId, 'trialDefinitionId'),
+    p_reward_profile_id: requiredText(input.rewardProfileId, 'rewardProfileId'),
+    p_outcome_kind: requiredText(input.outcomeKind, 'outcomeKind'),
+    p_sort_order: integer(input.sortOrder, 'sortOrder'),
+    p_is_active: input.isActive,
+    p_metadata_json: input.metadataJson as Json,
+    p_reason: requiredText(input.reason, 'reason'),
+  };
+
+  addOptionalText(args, 'p_difficulty_key', input.difficultyKey);
+  addOptionalText(args, 'p_difficulty_match_kind', input.difficultyMatchKind);
+  addOptionalText(args, 'p_max_difficulty_key', input.maxDifficultyKey);
+  addOptionalText(args, 'p_district_code', input.districtCode);
+  addOptionalText(args, 'p_district_match_kind', input.districtMatchKind);
+  addOptionalText(args, 'p_max_district_code', input.maxDistrictCode);
+  addOptionalText(args, 'p_description', input.description);
+  addOptionalText(args, 'p_helper_text', input.helperText);
+
+  return args;
+}
+
+export function toDeactivateRewardProfileAssignmentRpcArgs(
+  assignmentId: string,
+  reason: string,
+): DeactivateRewardProfileAssignmentRpcArgs {
+  return {
+    p_assignment_id: requiredText(assignmentId, 'assignmentId'),
     p_reason: requiredText(reason, 'reason'),
   };
 }

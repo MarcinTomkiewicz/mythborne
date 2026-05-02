@@ -5,8 +5,15 @@ import {
   TrialCombatCandidateAdminView,
   TrialCombatCandidateReadModel,
   TrialDefinitionAdminView,
+  TrialRewardAssignmentAdminView,
 } from '../domain/exploration/exploration-trial-admin.model';
+import {
+  REWARD_ASSIGNMENT_MATCH_KIND,
+  REWARD_SOURCE_KIND,
+} from '../constants/reward-runtime-keys.const';
 import { Row } from '../types/supabase.types';
+import { labelFromKey } from './dictionary-options';
+import { toRewardProfileEntrySummary } from './reward-profile-entry-summary';
 
 export function mapTrialCombatCandidate(
   row: Row<'trial_combat_candidates'>,
@@ -81,11 +88,110 @@ export function toTrialDefinitionAdminView(
   return {
     trial,
     testedStatLabel: stat ? `${stat.label} (${stat.key})` : trial.testedStatKey,
+    testedStatDescription:
+      stat?.description ?? stat?.helperText ?? stat?.adminDescription ?? null,
     minigameLabel: minigame ? `${minigame.label} (${minigame.key})` : trial.minigameKey,
     minigameDescription: minigame?.description ?? null,
     isCombatTrial: trial.minigameKey === 'combat',
     metadataJson: trial.metadataJson,
   };
+}
+
+export function toTrialRewardAssignmentAdminViews(
+  data: ExplorationTrialAdminData,
+  trialId: string,
+): TrialRewardAssignmentAdminView[] {
+  return data.rewardAssignments
+    .filter(
+      (entry) =>
+        entry.sourceKind === REWARD_SOURCE_KIND.trial &&
+        entry.trialDefinitionId === trialId,
+    )
+    .map((assignment) => toTrialRewardAssignmentAdminView(data, assignment));
+}
+
+export function toGlobalTrialRewardAssignmentAdminViews(
+  data: ExplorationTrialAdminData,
+): TrialRewardAssignmentAdminView[] {
+  return data.rewardAssignments
+    .filter(
+      (entry) =>
+        entry.sourceKind === REWARD_SOURCE_KIND.trial &&
+        entry.trialDefinitionId === null,
+    )
+    .map((assignment) => toTrialRewardAssignmentAdminView(data, assignment));
+}
+
+function toTrialRewardAssignmentAdminView(
+  data: ExplorationTrialAdminData,
+  assignment: ExplorationTrialAdminData['rewardAssignments'][number],
+): TrialRewardAssignmentAdminView {
+  const rewardProfile = data.rewardProfiles.find(
+    (entry) => entry.id === assignment.rewardProfileId,
+  );
+  const outcome = data.rewardOutcomeKinds.find(
+    (entry) =>
+      entry.sourceKind === REWARD_SOURCE_KIND.trial && entry.key === assignment.outcomeKind,
+  );
+  const difficultyMatchLabel = matchScopeLabel(
+    data,
+    assignment.difficultyMatchKind,
+    assignment.difficultyKey,
+    assignment.maxDifficultyKey,
+    'difficulty',
+  );
+  const districtMatchLabel = matchScopeLabel(
+    data,
+    assignment.districtMatchKind,
+    assignment.districtCode,
+    assignment.maxDistrictCode,
+    'district',
+  );
+  const rewardProfileLabel = rewardProfile
+    ? `${rewardProfile.label} (${rewardProfile.key})`
+    : assignment.rewardProfileId;
+
+  return {
+    assignment,
+    rewardProfileLabel,
+    rewardProfileDescription:
+      rewardProfile?.description ?? rewardProfile?.helperText ?? rewardProfile?.adminDescription ?? null,
+    outcomeLabel: outcome ? `${outcome.label} (${outcome.key})` : assignment.outcomeKind,
+    difficultyMatchLabel,
+    districtMatchLabel,
+    scopeLabel: assignment.trialDefinitionId === null
+      ? 'Global trial assignment'
+      : 'Selected trial assignment',
+    summaryLabel: `When trial runtime emits ${outcome?.label ?? assignment.outcomeKind}, and ${difficultyMatchLabel}, and ${districtMatchLabel}, use ${rewardProfileLabel}.`,
+    rewardProfileEntrySummaries: data.rewardProfileEntries
+      .filter((entry) => entry.rewardProfileId === assignment.rewardProfileId && entry.isActive)
+      .map((entry) =>
+        toRewardProfileEntrySummary({
+          entryKinds: data.rewardEntryKinds,
+          amountModes: data.rewardEntryAmountModes,
+          resourceTypes: data.resourceTypes,
+          formulas: data.formulas,
+          effectDefinitions: [],
+        }, entry),
+      ),
+  };
+}
+
+function matchScopeLabel(
+  data: ExplorationTrialAdminData,
+  matchKind: string,
+  key: string | null,
+  maxKey: string | null,
+  noun: string,
+): string {
+  const match = data.rewardAssignmentMatchKinds.find((entry) => entry.key === matchKind);
+  const matchLabel = match?.label ?? labelFromKey(matchKind);
+
+  if (!key && !maxKey) {
+    return `${noun} ${matchLabel.toLowerCase()}: any`;
+  }
+
+  return `${noun} ${matchLabel.toLowerCase()}: ${key ?? REWARD_ASSIGNMENT_MATCH_KIND.any}${maxKey ? `..${maxKey}` : ''}`;
 }
 
 export function toTrialCombatCandidateAdminViews(

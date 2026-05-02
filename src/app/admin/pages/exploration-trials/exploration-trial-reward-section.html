@@ -1,0 +1,146 @@
+<section class="mg-card p-lg flex-col gap-md">
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.rewardAssignments)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.rewardAssignments, true)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.rewardAssignments)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.rewardAssignments)"
+  />
+
+  @if (!page.hasRewardProfiles()) {
+    <p-message severity="warn">
+      No active reward profiles are available. Reward assignment save is blocked until reward profile configuration exists.
+    </p-message>
+  }
+
+  @if (page.globalRewardAssignments().length > 0) {
+    <div class="flex-col gap-xs">
+      <strong>Global trial reward assignments</strong>
+      @for (row of page.globalRewardAssignments(); track row.assignment.id) {
+        <small class="muted-text">{{ row.summaryLabel }}</small>
+      }
+    </div>
+  }
+
+  <form class="mg-grid gap-md" [formGroup]="actions.form">
+    <div class="flex-col gap-xs">
+      <span>Reward profile</span>
+      <p-select formControlName="rewardProfileId" [options]="page.rewardProfileOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.rewardProfile) }}</small>
+      @if (actions.form.controls.rewardProfileId.touched && actions.form.controls.rewardProfileId.invalid) {
+        <small class="error-text">Reward profile is required.</small>
+      }
+    </div>
+    <div class="flex-col gap-xs">
+      <span>Outcome kind</span>
+      <p-select formControlName="outcomeKind" [options]="page.outcomeKindOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.outcomeKind) }}</small>
+    </div>
+    <div class="flex-col gap-xs">
+      <span>Difficulty match mode</span>
+      <p-select formControlName="difficultyMatchKind" [options]="page.rewardMatchKindOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.difficultyMatchKind) }}</small>
+    </div>
+    @if (actions.showDifficultyValue()) {
+      <div class="flex-col gap-xs">
+        <span>Difficulty value</span>
+        <p-select formControlName="difficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
+      </div>
+    }
+    @if (actions.showDifficultyMaximum()) {
+      <div class="flex-col gap-xs">
+        <span>Maximum difficulty</span>
+        <p-select formControlName="maxDifficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
+        @if (actions.difficultyRangeError()) {
+          <small class="error-text">{{ actions.difficultyRangeError() }}</small>
+        }
+      </div>
+    }
+    <div class="flex-col gap-xs">
+      <span>District match mode</span>
+      <p-select formControlName="districtMatchKind" [options]="page.rewardMatchKindOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.districtMatchKind) }}</small>
+    </div>
+    @if (actions.showDistrictValue()) {
+      <div class="flex-col gap-xs">
+        <span>District value</span>
+        <p-select formControlName="districtCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
+      </div>
+    }
+    @if (actions.showDistrictMaximum()) {
+      <div class="flex-col gap-xs">
+        <span>Maximum district</span>
+        <p-select formControlName="maxDistrictCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
+        @if (actions.districtRangeError()) {
+          <small class="error-text">{{ actions.districtRangeError() }}</small>
+        }
+      </div>
+    }
+    <div class="flex-col gap-xs">
+      <span>Active</span>
+      <p-checkbox formControlName="isActive" [binary]="true" />
+    </div>
+    <div class="flex-col gap-xs w-100">
+      <span>Helper text</span>
+      <textarea pInputText rows="2" formControlName="helperText"></textarea>
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.assignmentHelperText) }}</small>
+    </div>
+    <details class="w-100">
+      <summary>Advanced / Technical</summary>
+      <div class="flex-col gap-xs mt-sm">
+        <span>Metadata JSON</span>
+        <textarea pInputText rows="4" formControlName="metadataJsonText"></textarea>
+      </div>
+    </details>
+    <div class="flex-col gap-xs w-100">
+      <span>Reason</span>
+      <input pInputText formControlName="reason" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.assignmentReason) }}</small>
+      @if (actions.reasonError()) {
+        <small class="error-text">{{ actions.reasonError() }}</small>
+      }
+    </div>
+    <div class="flex-row gap-sm">
+      <button pButton type="button" label="Save assignment" [disabled]="actions.isSaving()" (click)="actions.saveAssignment()"></button>
+      <button pButton type="button" label="New assignment" severity="secondary" (click)="actions.startNewAssignment()"></button>
+      <button pButton type="button" label="Deactivate assignment" severity="danger" [disabled]="!actions.selectedAssignment()" (click)="actions.deactivateAssignment()"></button>
+    </div>
+  </form>
+
+  <p-table [value]="page.rewardAssignments()" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Reward profile</th>
+        <th>Outcome</th>
+        <th>Match</th>
+        <th>Scope</th>
+        <th>Status</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-row>
+      <tr (click)="actions.selectAssignment(row.assignment.id)">
+        <td>
+          {{ row.rewardProfileLabel }}
+          @if (row.rewardProfileDescription) {
+            <br />
+            <span class="muted-text">{{ row.rewardProfileDescription }}</span>
+          }
+          @for (entry of row.rewardProfileEntrySummaries; track entry.entryId) {
+            <br />
+            <small class="muted-text">{{ entry.label }}: {{ entry.detail }}</small>
+          }
+        </td>
+        <td>{{ row.outcomeLabel }}</td>
+        <td>{{ row.difficultyMatchLabel }}<br />{{ row.districtMatchLabel }}</td>
+        <td>{{ row.scopeLabel }}</td>
+        <td>
+          <p-tag [severity]="row.assignment.isActive ? 'success' : 'secondary'" [value]="row.assignment.isActive ? 'Active' : 'Inactive'" />
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="5">No reward assignments are configured for this selected trial.</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</section>

@@ -7,9 +7,17 @@ import { ExplorationTrialAdmin } from '../../../core/services/exploration/explor
 import {
   toTrialCombatCandidateAdminViews,
   toTrialDefinitionAdminView,
+  toGlobalTrialRewardAssignmentAdminViews,
+  toTrialRewardAssignmentAdminViews,
 } from '../../../core/utils/exploration-trial-admin-mappers';
+import { dictionaryOptions } from '../../../core/utils/dictionary-options';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { RequestToken } from '../../../core/utils/request-token';
+import {
+  REWARD_ASSIGNMENT_MATCH_KIND_FALLBACKS,
+  REWARD_SOURCE_KIND,
+} from '../../../core/constants/reward-runtime-keys.const';
+import { ExplorationTrialUiMetadata } from './exploration-trial-ui-metadata';
 
 @Injectable()
 export class ExplorationTrialsPageState {
@@ -22,6 +30,10 @@ export class ExplorationTrialsPageState {
   readonly trialSelector = new FormControl<string | null>(null);
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly uiMetadata = new ExplorationTrialUiMetadata(
+    () => this.data()?.uiMetadataEntries ?? [],
+    () => this.selectedTrial()?.trial.label ?? null,
+  );
 
   readonly trialOptions = computed(() =>
     (this.data()?.trials ?? []).map((trial) => ({
@@ -40,6 +52,17 @@ export class ExplorationTrialsPageState {
     const trialId = this.selectedTrialId();
 
     return data && trialId ? toTrialCombatCandidateAdminViews(data, trialId) : [];
+  });
+  readonly rewardAssignments = computed(() => {
+    const data = this.data();
+    const trialId = this.selectedTrialId();
+
+    return data && trialId ? toTrialRewardAssignmentAdminViews(data, trialId) : [];
+  });
+  readonly globalRewardAssignments = computed(() => {
+    const data = this.data();
+
+    return data ? toGlobalTrialRewardAssignmentAdminViews(data) : [];
   });
   readonly statOptions = computed(() =>
     (this.data()?.stats ?? []).map((entry) => ({
@@ -76,8 +99,46 @@ export class ExplorationTrialsPageState {
       value: entry.id,
     })),
   ]);
+  readonly rewardProfileOptions = computed(() =>
+    (this.data()?.rewardProfiles ?? [])
+      .filter((entry) => entry.isActive)
+      .map((entry) => ({
+        label: `${entry.label} (${entry.key})`,
+        value: entry.id,
+      })),
+  );
+  readonly outcomeKindOptions = computed(() => {
+    const options = (this.data()?.rewardOutcomeKinds ?? [])
+      .filter((entry) => entry.isActive && entry.sourceKind === REWARD_SOURCE_KIND.trial)
+      .map((entry) => ({
+        label: `${entry.label} (${entry.key})`,
+        value: entry.key,
+      }));
+
+    return options.length > 0 ? options : [{ label: 'Success (success)', value: 'success' }];
+  });
+  readonly rewardMatchKindOptions = computed(() =>
+    dictionaryOptions(
+      this.data()?.rewardAssignmentMatchKinds ?? [],
+      REWARD_ASSIGNMENT_MATCH_KIND_FALLBACKS,
+    ),
+  );
+  readonly difficultyOptions = computed(() =>
+    (this.data()?.difficulties ?? []).map((entry) => ({
+      label: `${entry.label} (${entry.key})`,
+      value: entry.key,
+    })),
+  );
+  readonly districtOptions = computed(() =>
+    (this.data()?.districts ?? []).map((entry) => ({
+      label: `${entry.name} (${entry.code})`,
+      value: entry.code,
+    })),
+  );
   readonly hasTrials = computed(() => (this.data()?.trials.length ?? 0) > 0);
+  readonly hasRewardProfiles = computed(() => (this.data()?.rewardProfiles.length ?? 0) > 0);
   readonly canEditCombatCandidates = computed(() => this.selectedTrial()?.isCombatTrial ?? false);
+  readonly missingUiMetadataGaps = computed(() => this.uiMetadata.missingGaps());
 
   constructor() {
     this.trialSelector.valueChanges

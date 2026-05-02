@@ -1,29 +1,33 @@
 <article class="mg-card p-lg flex-col gap-md">
-  <div class="flex-col gap-xs">
-    <h3 class="mg-section__title mg-section__title--xs mb-0">Trial meaning</h3>
-    <p class="muted-text mb-0">
-      Labels come from canonical database dictionaries: stats and exploration minigames.
-    </p>
-  </div>
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.trialMeaning)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.trialMeaning, true)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.trialMeaning)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.trialMeaning)"
+  />
+
   @if (page.selectedTrial(); as view) {
-    <div class="grid-form">
-      <div class="form-field">
+    <div class="mg-grid gap-md">
+      <div class="flex-col gap-xs">
         <span>Label</span>
         <strong>{{ view.trial.label }}</strong>
         <small class="muted-text">{{ view.trial.key }}</small>
       </div>
-      <div class="form-field">
+      <div class="flex-col gap-xs">
         <span>Tested stat</span>
         <strong>{{ view.testedStatLabel }}</strong>
+        @if (view.testedStatDescription) {
+          <small class="muted-text">{{ view.testedStatDescription }}</small>
+        }
       </div>
-      <div class="form-field">
+      <div class="flex-col gap-xs">
         <span>Minigame</span>
         <strong>{{ view.minigameLabel }}</strong>
         <small class="muted-text">{{ view.minigameDescription ?? '-' }}</small>
       </div>
-      <div class="form-field">
-        <span>Sort order</span>
-        <strong>{{ view.trial.sortOrder }}</strong>
+      <div class="flex-col gap-xs">
+        <span>Status</span>
+        <strong>{{ view.trial.isActive ? 'Active' : 'Inactive' }}</strong>
       </div>
     </div>
     <div class="flex-col gap-sm">

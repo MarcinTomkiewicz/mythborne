@@ -19,6 +19,13 @@ describe('ExplorationTrialAdmin', () => {
       'rpc',
     ]);
     backend.getAll.and.callFake((opts: { table: string }) => of(rowsFor(opts.table)));
+    backend.rpc.and.callFake(<T>(name: string, args?: Record<string, unknown>) => {
+      if (name === RPC.get_ui_metadata_entries) {
+        return of(uiMetadataRows(String(args?.['p_namespace'] ?? '')) as T);
+      }
+
+      return of(null as T);
+    });
 
     TestBed.configureTestingModule({
       providers: [
@@ -37,6 +44,9 @@ describe('ExplorationTrialAdmin', () => {
       expect(data.opponents[0].label).toBe('Bandit');
       expect(data.families[0].label).toBe('Bandits');
       expect(data.formulas[0].label).toBe('Enemy scaling');
+      expect(data.rewardProfiles[0].label).toBe('Trial reward');
+      expect(data.rewardAssignments[0].sourceKind).toBe('trial');
+      expect(data.uiMetadataEntries[0].namespace).toBe('trial_configurator_section');
       expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
         table: TABLES.trial_definitions,
       }));
@@ -47,7 +57,10 @@ describe('ExplorationTrialAdmin', () => {
       expect(backend.update).not.toHaveBeenCalled();
       expect(backend.upsert).not.toHaveBeenCalled();
       expect(backend.delete).not.toHaveBeenCalled();
-      expect(backend.rpc).not.toHaveBeenCalled();
+      expect(backend.rpc).toHaveBeenCalledWith(
+        RPC.get_ui_metadata_entries,
+        jasmine.objectContaining({ p_namespace: 'trial_configurator_section' }),
+      );
       done();
     });
   });
@@ -173,7 +186,145 @@ function rowsFor(table: string): any[] {
         updated_at: '2026-05-01T10:00:00.000Z',
       }];
     case TABLES.stats:
-      return [{ key: 'spirituality', label: 'Spirituality' }];
+      return [{
+        id: 'stat-1',
+        key: 'spirituality',
+        label: 'Spirituality',
+        description: 'Spiritual stat.',
+        helper_text: null,
+        admin_description: null,
+        order: 10,
+      }];
+    case TABLES.exploration_difficulty_tiers:
+      return [{
+        key: 'easy',
+        label: 'Easy',
+        description: 'Easy.',
+        helper_text: null,
+        admin_description: null,
+        sort_order: 10,
+        is_active: true,
+        step_duration_multiplier: 1,
+        trial_reward_multiplier: 1,
+        encounter_reward_multiplier: 1,
+        trial_opportunity_step_cap: 3,
+        metadata_json: {},
+        created_at: '2026-05-01T10:00:00.000Z',
+        updated_at: '2026-05-01T10:00:00.000Z',
+      }];
+    case TABLES.estate_districts:
+      return [{ code: 'old-town', name: 'Old Town', description: 'Old district.', rank: 1 }];
+    case TABLES.reward_profiles:
+      return [{
+        id: 'reward-1',
+        key: 'trial-reward',
+        label: 'Trial reward',
+        category: 'trial',
+        description: 'Reward.',
+        helper_text: null,
+        admin_description: null,
+        sort_order: 10,
+        is_active: true,
+        metadata_json: {},
+        created_at: '2026-05-01T10:00:00.000Z',
+        updated_at: '2026-05-01T10:00:00.000Z',
+      }];
+    case TABLES.reward_profile_entries:
+      return [{
+        id: 'entry-1',
+        reward_profile_id: 'reward-1',
+        entry_kind: 'experience',
+        label: 'Experience reward',
+        description: 'XP.',
+        helper_text: null,
+        admin_description: null,
+        amount_mode: 'fixed',
+        min_amount: 10,
+        max_amount: 10,
+        resource_type: null,
+        formula_id: null,
+        chance_percent: 100,
+        min_item_count: null,
+        max_item_count: null,
+        max_quality_key: null,
+        bucket_profile_id: null,
+        effect_definition_id: null,
+        transfer_source_role: null,
+        transfer_recipient_role: null,
+        sort_order: 10,
+        is_active: true,
+        metadata_json: {},
+        created_at: '2026-05-01T10:00:00.000Z',
+        updated_at: '2026-05-01T10:00:00.000Z',
+      }];
+    case TABLES.reward_outcome_kinds:
+      return [{
+        source_kind: 'trial',
+        key: 'success',
+        label: 'Success',
+        description: 'Trial success.',
+        helper_text: null,
+        admin_description: null,
+        sort_order: 10,
+        is_active: true,
+        metadata_json: {},
+        created_at: '2026-05-01T10:00:00.000Z',
+        updated_at: '2026-05-01T10:00:00.000Z',
+      }];
+    case TABLES.resource_types:
+      return [];
+    case TABLES.reward_assignment_match_kinds:
+      return [{
+        key: 'any',
+        label: 'Any',
+        description: 'Wildcard.',
+        helper_text: null,
+        admin_description: null,
+        sort_order: 10,
+        is_active: true,
+        metadata_json: {},
+        created_at: '2026-05-01T10:00:00.000Z',
+        updated_at: '2026-05-01T10:00:00.000Z',
+      }];
+    case TABLES.reward_source_kinds:
+      return [{
+        key: 'trial',
+        label: 'Trial',
+        description: 'Trial routing.',
+        helper_text: null,
+        admin_description: null,
+        sort_order: 10,
+        is_active: true,
+        metadata_json: {},
+        created_at: '2026-05-01T10:00:00.000Z',
+        updated_at: '2026-05-01T10:00:00.000Z',
+      }];
+    case TABLES.reward_entry_kinds:
+      return [];
+    case TABLES.reward_entry_amount_modes:
+      return [];
+    case TABLES.reward_profile_assignments:
+      return [{
+        id: 'assignment-1',
+        reward_profile_id: 'reward-1',
+        source_kind: 'trial',
+        outcome_kind: 'success',
+        trial_definition_id: 'trial-1',
+        encounter_definition_id: null,
+        difficulty_key: null,
+        difficulty_match_kind: 'any',
+        max_difficulty_key: null,
+        district_code: null,
+        district_match_kind: 'any',
+        max_district_code: null,
+        description: null,
+        helper_text: null,
+        sort_order: 10,
+        is_active: true,
+        metadata_json: {},
+        created_at: '2026-05-01T10:00:00.000Z',
+        updated_at: '2026-05-01T10:00:00.000Z',
+      }];
     case TABLES.trial_combat_candidates:
       return [{
         id: 'candidate-1',
@@ -234,4 +385,24 @@ function rowsFor(table: string): any[] {
     default:
       return [];
   }
+}
+
+function uiMetadataRows(namespace: string): any[] {
+  return [{
+    id: `${namespace}-page-header`,
+    namespace,
+    key: 'page_header',
+    label: 'Trial configurator',
+    description: 'Trial configurator metadata.',
+    helper_text: null,
+    impact_summary: null,
+    warning_text: null,
+    ui_group_key: 'trial-configurator',
+    ui_group_label: 'Exploration trials',
+    sort_order: 10,
+    is_active: true,
+    metadata_json: {},
+    created_at: '2026-05-01T10:00:00.000Z',
+    updated_at: '2026-05-01T10:00:00.000Z',
+  }];
 }

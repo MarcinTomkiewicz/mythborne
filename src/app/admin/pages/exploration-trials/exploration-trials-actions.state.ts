@@ -1,21 +1,19 @@
-import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize, Observable } from 'rxjs';
-import { Json } from '../../../core/types/database.types';
 import { TrialCombatCandidateAdminView } from '../../../core/domain/exploration/exploration-trial-admin.model';
 import { ExplorationTrialAdmin } from '../../../core/services/exploration/exploration-trial-admin';
 import { ToastService } from '../../../core/services/ui/toast';
+import { parseMetadataJson } from '../../../core/utils/admin-form-helpers';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { trimText, trimToNull } from '../../../core/utils/normalize-text';
 import { RequestToken } from '../../../core/utils/request-token';
 import { toSlug } from '../../../core/utils/slug';
-import {
-  candidateFormValue,
-  createTrialCombatCandidateForm,
-  createTrialDefinitionForm,
-  trialFormValue,
-} from './exploration-trials-forms';
+import { ExplorationTrialFormFactory } from './exploration-trial-form.factory';
 import { ExplorationTrialsPageState } from './exploration-trials-page.state';
+import {
+  markReasonInvalid,
+  runTrialWorkflowAction,
+} from './exploration-trial-workflow-actions';
 
 @Injectable()
 export class ExplorationTrialsActionsState {
@@ -23,29 +21,47 @@ export class ExplorationTrialsActionsState {
   private readonly page = inject(ExplorationTrialsPageState);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly formFactory = inject(ExplorationTrialFormFactory);
   private readonly saveToken = new RequestToken();
   private isSyncingForm = false;
 
   readonly selectedCandidateId = signal<string | null>(null);
   readonly isSaving = signal(false);
+  readonly trialReasonError = signal<string | null>(null);
+  readonly candidateReasonError = signal<string | null>(null);
+  readonly draftMinigameKey = signal<string | null>(null);
   readonly selectedCandidate = computed(() => {
     const candidateId = this.selectedCandidateId();
 
     return this.page.combatCandidates().find((row) => row.candidate.id === candidateId) ?? null;
   });
+  readonly draftIsCombatTrial = computed(() => this.draftMinigameKey() === 'combat');
+  readonly hasUnsavedMinigameChange = computed(() => {
+    if (this.trialForm.controls.trialDefinitionId.value !== this.page.selectedTrialId()) {
+      return false;
+    }
 
-  readonly trialForm = createTrialDefinitionForm();
-  readonly candidateForm = createTrialCombatCandidateForm();
+    const saved = this.page.selectedTrial()?.trial.minigameKey ?? null;
+    const draft = this.draftMinigameKey();
+
+    return !!this.page.selectedTrialId() && saved !== draft;
+  });
+
+  readonly trialForm = this.formFactory.createTrialDefinitionForm();
+  readonly candidateForm = this.formFactory.createTrialCombatCandidateForm();
 
   constructor() {
     effect(() => {
       this.page.selectedTrialId();
-      this.syncFormsFromSelection();
+      untracked(() => this.syncFormsFromSelection());
     });
 
     this.trialForm.controls.label.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((label) => this.syncGeneratedKey(label));
+    this.trialForm.controls.minigameKey.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((minigameKey) => this.draftMinigameKey.set(minigameKey));
   }
 
   selectCandidate(candidateId: string | null): void {
@@ -56,7 +72,8 @@ export class ExplorationTrialsActionsState {
   startNewTrial(): void {
     this.page.selectTrial(null);
     this.selectedCandidateId.set(null);
-    this.trialForm.reset(trialFormValue(this.page.data(), null));
+    this.trialForm.reset(this.formFactory.trialValue(this.page.data(), null));
+    this.draftMinigameKey.set(this.trialForm.controls.minigameKey.value);
     this.resetCandidateForm();
   }
 
@@ -66,9 +83,18 @@ export class ExplorationTrialsActionsState {
   }
 
   saveTrial(): void {
-    const metadataJson = this.parseMetadata();
+    this.page.error.set(null);
+    const metadataJson = parseMetadataJson(
+      this.trialForm.controls.metadataJsonText.value,
+      (message) => this.page.error.set(message),
+    );
 
     if (metadataJson === null) {
+      return;
+    }
+
+    this.trialForm.markAllAsTouched();
+    if (markReasonInvalid(this.trialReasonError, this.trialForm.controls.reason) || this.trialForm.invalid) {
       return;
     }
 
@@ -76,8 +102,14 @@ export class ExplorationTrialsActionsState {
       const guard = this.currentTrialGuard();
       const reason = requiredFormValue(this.trialForm.controls.reason.value, 'Reason');
 
-      this.runSave(
-        this.admin.upsertTrialDefinition({
+      runTrialWorkflowAction({
+        token: this.saveToken,
+        destroyRef: this.destroyRef,
+        page: this.page,
+        toast: this.toast,
+        isSaving: this.isSaving,
+        guard,
+        call: () => this.admin.upsertTrialDefinition({
           trialDefinitionId: this.trialForm.controls.trialDefinitionId.value,
           key: this.trialForm.controls.key.value,
           label: this.trialForm.controls.label.value,
@@ -91,13 +123,13 @@ export class ExplorationTrialsActionsState {
           metadataJson,
           reason,
         }),
-        'Trial definition saved.',
-        (trial) => {
+        successMessage: 'Trial definition saved.',
+        failureMessage: 'Trial configuration action failed.',
+        onSuccess: (trial) => {
           this.page.selectTrial(trial.id);
           this.page.loadInitialData();
         },
-        guard,
-      );
+      });
     } catch (error: unknown) {
       this.page.error.set(getErrorMessage(error, 'Trial definition validation failed.'));
     }
@@ -106,18 +138,35 @@ export class ExplorationTrialsActionsState {
   saveCandidate(): void {
     const trial = this.page.selectedTrial();
 
+    if (this.hasUnsavedMinigameChange()) {
+      this.page.error.set('Save the trial definition before editing combat candidates for the changed minigame.');
+      return;
+    }
+
     if (!trial?.isCombatTrial) {
       this.page.error.set('Combat candidates can be edited only for combat trials.');
       return;
     }
 
     const candidateKind = this.candidateForm.controls.candidateKind.value;
-    const guard = this.currentCandidateGuard();
-    const reason = requiredFormValue(this.candidateForm.controls.reason.value, 'Reason');
+    this.page.error.set(null);
+    this.candidateForm.markAllAsTouched();
+    if (markReasonInvalid(this.candidateReasonError, this.candidateForm.controls.reason)) {
+      return;
+    }
 
     try {
-      this.runSave(
-        this.admin.upsertTrialCombatCandidate({
+      const guard = this.currentCandidateGuard();
+      const reason = requiredFormValue(this.candidateForm.controls.reason.value, 'Reason');
+
+      runTrialWorkflowAction({
+        token: this.saveToken,
+        destroyRef: this.destroyRef,
+        page: this.page,
+        toast: this.toast,
+        isSaving: this.isSaving,
+        guard,
+        call: () => this.admin.upsertTrialCombatCandidate({
           candidateId: this.candidateForm.controls.candidateId.value,
           trialDefinitionId: trial.trial.id,
           candidateKind,
@@ -135,13 +184,13 @@ export class ExplorationTrialsActionsState {
           isActive: this.candidateForm.controls.isActive.value,
           reason,
         }),
-        'Combat candidate saved.',
-        (candidate) => {
+        successMessage: 'Combat candidate saved.',
+        failureMessage: 'Trial configuration action failed.',
+        onSuccess: (candidate) => {
           this.selectedCandidateId.set(candidate.id);
           this.page.loadInitialData();
         },
-        guard,
-      );
+      });
     } catch (error: unknown) {
       this.page.error.set(getErrorMessage(error, 'Combat candidate validation failed.'));
     }
@@ -159,15 +208,18 @@ export class ExplorationTrialsActionsState {
       const guard = this.currentCandidateGuard();
       const reason = requiredFormValue(this.candidateForm.controls.reason.value, 'Reason');
 
-      this.runSave(
-        this.admin.deactivateTrialCombatCandidate(
-          candidate.candidate.id,
-          reason,
-        ),
-        'Combat candidate deactivated.',
-        () => this.page.loadInitialData(),
+      runTrialWorkflowAction({
+        token: this.saveToken,
+        destroyRef: this.destroyRef,
+        page: this.page,
+        toast: this.toast,
+        isSaving: this.isSaving,
         guard,
-      );
+        call: () => this.admin.deactivateTrialCombatCandidate(candidate.candidate.id, reason),
+        successMessage: 'Combat candidate deactivated.',
+        failureMessage: 'Trial configuration action failed.',
+        onSuccess: () => this.page.loadInitialData(),
+      });
     } catch (error: unknown) {
       this.page.error.set(getErrorMessage(error, 'Combat candidate validation failed.'));
     }
@@ -175,71 +227,20 @@ export class ExplorationTrialsActionsState {
 
   private syncFormsFromSelection(): void {
     this.isSyncingForm = true;
-    this.trialForm.reset(trialFormValue(this.page.data(), this.page.selectedTrialId()));
+    this.trialForm.reset(this.formFactory.trialValue(this.page.data(), this.page.selectedTrialId()));
+    this.draftMinigameKey.set(this.trialForm.controls.minigameKey.value);
     this.isSyncingForm = false;
     this.selectedCandidateId.set(null);
     this.resetCandidateForm();
   }
 
   private syncCandidateForm(row: TrialCombatCandidateAdminView | null): void {
-    this.candidateForm.reset(candidateFormValue(row));
+    this.candidateReasonError.set(null);
+    this.candidateForm.reset(this.formFactory.candidateValue(row));
   }
 
   private resetCandidateForm(): void {
     this.syncCandidateForm(null);
-  }
-
-  private parseMetadata(): Json | null {
-    try {
-      const parsed = JSON.parse(this.trialForm.controls.metadataJsonText.value || '{}');
-
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        throw new Error('Metadata must be a JSON object.');
-      }
-
-      return parsed as Json;
-    } catch (error: unknown) {
-      this.page.error.set('Metadata must be a valid JSON object.');
-      return null;
-    }
-  }
-
-  private runSave<T>(
-    request$: Observable<T>,
-    message: string,
-    onSuccess: (value: T) => void,
-    isCurrent: () => boolean,
-  ): void {
-    const token = this.saveToken.next();
-
-    this.isSaving.set(true);
-    this.page.error.set(null);
-    request$
-      .pipe(
-        finalize(() => {
-          if (this.saveToken.isCurrent(token)) {
-            this.isSaving.set(false);
-          }
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: (value) => {
-          if (!this.saveToken.isCurrent(token) || !isCurrent()) {
-            return;
-          }
-
-          this.toast.show('success', 'Exploration trials', message);
-          onSuccess(value);
-        },
-        error: (error: unknown) => {
-          if (!this.saveToken.isCurrent(token) || !isCurrent()) {
-            return;
-          }
-
-          this.page.error.set(getErrorMessage(error, 'Trial configuration action failed.'));
-        },
-      });
   }
 
   private syncGeneratedKey(label: string): void {
@@ -281,6 +282,7 @@ export class ExplorationTrialsActionsState {
       this.selectedCandidateId() === selectedCandidateId &&
       this.candidateForm.controls.candidateId.value === formCandidateId;
   }
+
 }
 
 function requiredFormValue(value: string | null, label: string): string {

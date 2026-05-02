@@ -1,5 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { forkJoin, map, Observable } from 'rxjs';
+import {
+  TRIAL_CONFIGURATOR_FIELD_METADATA_KEYS,
+  TRIAL_CONFIGURATOR_FIELD_METADATA_NAMESPACE,
+  TRIAL_CONFIGURATOR_SECTION_METADATA_KEYS,
+  TRIAL_CONFIGURATOR_SECTION_METADATA_NAMESPACE,
+} from '../../constants/exploration-trial-ui-metadata.const';
 import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import {
@@ -7,10 +13,14 @@ import {
   TrialCombatCandidateReadModel,
   UpsertTrialCombatCandidateInput,
   UpsertTrialDefinitionInput,
+  UpsertTrialRewardAssignmentInput,
 } from '../../domain/exploration/exploration-trial-admin.model';
 import { TrialDefinitionReadModel } from '../../domain/exploration/exploration-definition.model';
-import { mapBuildingStats } from '../../utils/building-admin-mappers';
+import { RewardProfileAssignmentReadModel } from '../../domain/exploration/exploration-reward.model';
+import { mapBuildingDistricts } from '../../utils/building-admin-mappers';
+import { mapUiMetadataEntry } from '../../utils/admin-ui-metadata';
 import {
+  mapExplorationDifficultyTier,
   mapExplorationMinigameDefinition,
   mapTrialDefinition,
 } from '../../utils/exploration-definition-mappers';
@@ -20,7 +30,17 @@ import {
   mapTrialCombatCandidate,
 } from '../../utils/exploration-trial-admin-mappers';
 import {
+  mapResourceType,
+  mapRewardDictionary,
+  mapRewardOutcomeKind,
+  mapRewardProfile,
+  mapRewardProfileAssignment,
+  mapRewardProfileEntry,
+} from '../../utils/exploration-reward-mappers';
+import {
+  toDeactivateRewardProfileAssignmentRpcArgs,
   toDeactivateTrialCombatCandidateRpcArgs,
+  toUpsertRewardProfileAssignmentRpcArgs,
   toUpsertTrialCombatCandidateRpcArgs,
   toUpsertTrialDefinitionRpcArgs,
 } from '../../utils/exploration-trial-admin-rpc';
@@ -51,7 +71,7 @@ export class ExplorationTrialAdmin {
         ],
         camelCase: false,
       }),
-      stats: this.backend.getAll<Pick<Row<'stats'>, 'key' | 'label'>>({
+      stats: this.backend.getAll<Row<'stats'>>({
         table: TABLES.stats,
         orderBy: [
           { column: 'order', ascending: true },
@@ -59,6 +79,52 @@ export class ExplorationTrialAdmin {
         ],
         camelCase: false,
       }),
+      difficulties: getRows<Row<'exploration_difficulty_tiers'>>(this.backend, TABLES.exploration_difficulty_tiers, [
+        { column: 'sort_order', ascending: true },
+        { column: 'key', ascending: true },
+      ]),
+      districts: getRows<Row<'estate_districts'>>(this.backend, TABLES.estate_districts, [
+        { column: 'rank', ascending: true },
+        { column: 'code', ascending: true },
+      ]),
+      rewardProfiles: getRows<Row<'reward_profiles'>>(this.backend, TABLES.reward_profiles, [
+        { column: 'sort_order', ascending: true },
+        { column: 'key', ascending: true },
+      ]),
+      rewardProfileEntries: getRows<Row<'reward_profile_entries'>>(this.backend, TABLES.reward_profile_entries, [
+        { column: 'reward_profile_id', ascending: true },
+        { column: 'sort_order', ascending: true },
+        { column: 'label', ascending: true },
+      ]),
+      rewardOutcomeKinds: getRows<Row<'reward_outcome_kinds'>>(this.backend, TABLES.reward_outcome_kinds, [
+        { column: 'source_kind', ascending: true },
+        { column: 'sort_order', ascending: true },
+        { column: 'key', ascending: true },
+      ]),
+      resourceTypes: getRows<Row<'resource_types'>>(this.backend, TABLES.resource_types, [
+        { column: 'sort_order', ascending: true },
+        { column: 'key', ascending: true },
+      ]),
+      rewardAssignmentMatchKinds: getRows<Row<'reward_assignment_match_kinds'>>(this.backend, TABLES.reward_assignment_match_kinds, [
+        { column: 'sort_order', ascending: true },
+        { column: 'key', ascending: true },
+      ]),
+      rewardSourceKinds: getRows<Row<'reward_source_kinds'>>(this.backend, TABLES.reward_source_kinds, [
+        { column: 'sort_order', ascending: true },
+        { column: 'key', ascending: true },
+      ]),
+      rewardEntryKinds: getRows<Row<'reward_entry_kinds'>>(this.backend, TABLES.reward_entry_kinds, [
+        { column: 'sort_order', ascending: true },
+        { column: 'key', ascending: true },
+      ]),
+      rewardEntryAmountModes: getRows<Row<'reward_entry_amount_modes'>>(this.backend, TABLES.reward_entry_amount_modes, [
+        { column: 'sort_order', ascending: true },
+        { column: 'key', ascending: true },
+      ]),
+      rewardAssignments: getRows<Row<'reward_profile_assignments'>>(this.backend, TABLES.reward_profile_assignments, [
+        { column: 'sort_order', ascending: true },
+        { column: 'id', ascending: true },
+      ]),
       combatCandidates: this.backend.getAll<Row<'trial_combat_candidates'>>({
         table: TABLES.trial_combat_candidates,
         orderBy: [
@@ -91,15 +157,34 @@ export class ExplorationTrialAdmin {
         ],
         camelCase: false,
       }),
+      uiMetadataEntries: getTrialConfiguratorUiMetadata(this.backend),
     }).pipe(
       map((data) => ({
         trials: data.trials.map(mapTrialDefinition),
         minigames: data.minigames.map(mapExplorationMinigameDefinition),
-        stats: mapBuildingStats(data.stats),
+        stats: data.stats.map((row) => ({
+          key: row.key,
+          label: row.label,
+          description: row.description,
+          helperText: row.helper_text,
+          adminDescription: row.admin_description,
+        })),
+        difficulties: data.difficulties.map(mapExplorationDifficultyTier),
+        districts: mapBuildingDistricts(data.districts),
+        rewardProfiles: data.rewardProfiles.map(mapRewardProfile),
+        rewardProfileEntries: data.rewardProfileEntries.map(mapRewardProfileEntry),
+        rewardOutcomeKinds: data.rewardOutcomeKinds.map(mapRewardOutcomeKind),
+        resourceTypes: data.resourceTypes.map(mapResourceType),
+        rewardAssignmentMatchKinds: data.rewardAssignmentMatchKinds.map(mapRewardDictionary),
+        rewardSourceKinds: data.rewardSourceKinds.map(mapRewardDictionary),
+        rewardEntryKinds: data.rewardEntryKinds.map(mapRewardDictionary),
+        rewardEntryAmountModes: data.rewardEntryAmountModes.map(mapRewardDictionary),
+        rewardAssignments: data.rewardAssignments.map(mapRewardProfileAssignment),
         combatCandidates: data.combatCandidates.map(mapTrialCombatCandidate),
         opponents: data.opponents.map(mapCombatOpponentDefinition),
         families: data.families.map(mapCombatOpponentFamily),
         formulas: data.formulas.map(mapBalanceFormula),
+        uiMetadataEntries: data.uiMetadataEntries,
       })),
     );
   }
@@ -137,4 +222,66 @@ export class ExplorationTrialAdmin {
       )
       .pipe(map(mapTrialCombatCandidate));
   }
+
+  upsertRewardProfileAssignment(
+    input: UpsertTrialRewardAssignmentInput,
+  ): Observable<RewardProfileAssignmentReadModel> {
+    return this.backend
+      .rpc<Database['public']['Functions']['upsert_reward_profile_assignment']['Returns']>(
+        RPC.upsert_reward_profile_assignment,
+        toUpsertRewardProfileAssignmentRpcArgs(input),
+      )
+      .pipe(map(mapRewardProfileAssignment));
+  }
+
+  deactivateRewardProfileAssignment(
+    assignmentId: string,
+    reason: string,
+  ): Observable<RewardProfileAssignmentReadModel> {
+    return this.backend
+      .rpc<Database['public']['Functions']['deactivate_reward_profile_assignment']['Returns']>(
+        RPC.deactivate_reward_profile_assignment,
+        toDeactivateRewardProfileAssignmentRpcArgs(assignmentId, reason),
+      )
+      .pipe(map(mapRewardProfileAssignment));
+  }
+}
+
+function getRows<T extends object>(
+  backend: Backend,
+  table: string,
+  orderBy: Array<{ column: string; ascending: boolean }>,
+) {
+  return backend.getAll<T>({
+    table,
+    orderBy,
+    camelCase: false,
+  });
+}
+
+function getTrialConfiguratorUiMetadata(backend: Backend) {
+  return forkJoin([
+    getUiMetadataEntries(
+      backend,
+      TRIAL_CONFIGURATOR_SECTION_METADATA_NAMESPACE,
+      TRIAL_CONFIGURATOR_SECTION_METADATA_KEYS,
+    ),
+    getUiMetadataEntries(
+      backend,
+      TRIAL_CONFIGURATOR_FIELD_METADATA_NAMESPACE,
+      TRIAL_CONFIGURATOR_FIELD_METADATA_KEYS,
+    ),
+  ]).pipe(map(([sections, fields]) => [...sections, ...fields].map(mapUiMetadataEntry)));
+}
+
+function getUiMetadataEntries(
+  backend: Backend,
+  namespace: string,
+  keys: readonly string[],
+) {
+  return backend.rpc<Row<'ui_metadata_entries'>[]>(RPC.get_ui_metadata_entries, {
+    p_namespace: namespace,
+    p_keys: [...keys],
+    p_include_inactive: false,
+  });
 }

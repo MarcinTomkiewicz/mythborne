@@ -5,7 +5,7 @@
       Select a trial to inspect its gameplay meaning and any combat opponent candidates.
     </p>
   </div>
-  <label class="form-field">
+  <div class="flex-col gap-xs">
     <span>Trial definition</span>
     <p-select
       [formControl]="page.trialSelector"
@@ -13,7 +13,7 @@
       optionLabel="label"
       optionValue="value"
     />
-  </label>
+  </div>
   <p-table [value]="page.data()?.trials ?? []" styleClass="p-datatable-sm">
     <ng-template pTemplate="header">
       <tr>

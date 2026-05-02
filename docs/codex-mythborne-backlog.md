@@ -2229,6 +2229,8 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ## Task L11c — Trial configurator explainability and layout pass
 
+**Status:** Done / accepted on 2026-05-02 after manual smoke.
+
 **Goal:** Rebuild `/admin/exploration-trials` into a usable admin/balancer configurator, not a raw table editor.
 
 The admin must understand:
@@ -3675,6 +3677,7 @@ Frontend must use these RPCs. Do not direct-write combat opponent tables from An
 - If generated `database.types.ts` does not include M-DB1/M-Dict-DB1 functions/tables, stop and report that DB types must be regenerated.
 - Do not invent large permanent Angular explanations for combat dictionaries if DB dictionary text is missing or weak.
 - If a required DB-backed description is missing after accepted seed cleanup, report the exact table/key/field gap.
+- M12 must load `ui_metadata_entries` with namespace `combat_opponent_configurator_section` and use those rows for section/page intros. Field labels may remain local/i18n for now, but domain dictionary rows and section metadata must explain runtime meaning and impact.
 
 **Acceptance criteria:**
 

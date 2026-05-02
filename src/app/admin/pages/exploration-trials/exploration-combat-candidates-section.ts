@@ -8,6 +8,7 @@ import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { AdminSectionIntro } from '../../components/admin-section-intro/admin-section-intro';
 import { ExplorationTrialsActionsState } from './exploration-trials-actions.state';
 import { ExplorationTrialsPageState } from './exploration-trials-page.state';
 
@@ -16,6 +17,7 @@ import { ExplorationTrialsPageState } from './exploration-trials-page.state';
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    AdminSectionIntro,
     ButtonModule,
     CheckboxModule,
     InputNumberModule,

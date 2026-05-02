@@ -59,7 +59,24 @@ function adminData(): ExplorationTrialAdminData {
         updatedAt: '2026-05-01T10:00:00.000Z',
       },
     ],
-    stats: [{ key: 'spirituality', label: 'Spirituality' }],
+    stats: [{
+      key: 'spirituality',
+      label: 'Spirituality',
+      description: 'Spiritual stat.',
+      helperText: null,
+      adminDescription: null,
+    }],
+    difficulties: [],
+    districts: [],
+    rewardProfiles: [],
+    rewardProfileEntries: [],
+    rewardOutcomeKinds: [],
+    resourceTypes: [],
+    rewardAssignmentMatchKinds: [],
+    rewardSourceKinds: [],
+    rewardEntryKinds: [],
+    rewardEntryAmountModes: [],
+    rewardAssignments: [],
     combatCandidates: [
       {
         id: 'candidate-1',
@@ -137,5 +154,6 @@ function adminData(): ExplorationTrialAdminData {
         updatedAt: '2026-05-01T10:00:00.000Z',
       },
     ],
+    uiMetadataEntries: [],
   };
 }
