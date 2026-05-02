@@ -1,8 +1,10 @@
 <div class="flex-col gap-md">
-  <div class="flex-col gap-xs">
-    <h4 class="mg-section__title mg-section__title--xs mb-0">Effect library</h4>
-    <p class="mb-0">Reusable buff/debuff definitions: bonus template, default value and fallback behavior.</p>
-  </div>
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.effectLibrary)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.effectLibrary)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.effectLibrary)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.effectLibrary)"
+  />
   <form class="flex-col gap-md w-100" [formGroup]="actions.form">
     <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
     <label class="flex-col gap-sm w-100">
@@ -15,7 +17,7 @@
     <label class="flex-col gap-sm w-100">
       <span>Generated key</span>
       <input pInputText formControlName="key" [readonly]="!actions.form.controls.allowKeyOverride.value" />
-      <small class="muted-text">Generated from label for new effects. Enable advanced override only for deliberate key changes.</small>
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.effectKey) }}</small>
       @if (actions.form.controls.key.touched && actions.form.controls.key.invalid) {
         <small class="error-text">Key is required.</small>
       }
@@ -27,16 +29,18 @@
     <div class="flex-col gap-sm w-100">
       <span>Effect kind</span>
       <p-select formControlName="effectKind" [options]="page.effectKindOptions" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.effectKind) }}</small>
     </div>
     <div class="flex-col gap-sm w-100">
       <span>Bonus template</span>
       <p-select formControlName="bonusTemplateId" [options]="page.bonusTemplateOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.bonusTemplate) }}</small>
     </div>
     <label class="flex-col gap-sm w-100"><span>Default value</span><p-inputnumber formControlName="defaultValue" /></label>
     <label class="flex-col gap-sm w-100">
       <span>Fallback duration steps (advanced)</span>
       <p-inputnumber formControlName="defaultDurationSteps" [min]="1" />
-      <small class="muted-text">Normal exploration effects expire at the next combat encounter or trial.</small>
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.effectDuration) }}</small>
     </label>
     <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
     </div>
@@ -59,12 +63,13 @@
     <label class="flex-col gap-sm w-100">
       <span>Reason</span>
       <input pInputText formControlName="reason" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.effectDefinitionReason) }}</small>
       @if (actions.reasonError() || (actions.form.controls.reason.touched && actions.form.controls.reason.invalid)) {
         <small class="error-text">{{ actions.reasonError() ?? 'Reason is required.' }}</small>
       }
     </label>
     <div class="flex-row flex-wrap gap-sm">
-      <button pButton type="button" label="Save effect" [disabled]="actions.isSaving()" (click)="saveEffectDefinition()"></button>
+      <button pButton type="button" label="Save effect" [disabled]="actions.isSaving() || definitionActions.hasUnsavedEncounterKindChange()" (click)="saveEffectDefinition()"></button>
       <button pButton type="button" label="New effect" severity="secondary" (click)="actions.startNewEffectDefinition()"></button>
       <button pButton type="button" label="Deactivate effect" severity="danger" [disabled]="!actions.selectedEffectDefinition()" (click)="actions.deactivateEffectDefinition()"></button>
     </div>
@@ -87,3 +92,5 @@
     </ng-template>
   </p-table>
 </div>
+
+

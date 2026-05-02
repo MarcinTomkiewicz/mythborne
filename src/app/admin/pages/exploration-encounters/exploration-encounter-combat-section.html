@@ -1,15 +1,20 @@
 <section class="mg-card p-lg flex-col gap-md">
-  <div class="flex-col gap-xs">
-    <h3 class="mg-section__title mg-section__title--xs mb-0">Combat candidates</h3>
-    <p class="mb-0">
-      Combat candidates define which opponent or opponent family can be selected for combat
-      encounters. Resource and buff/debuff payloads are configured in the payload panel.
-    </p>
-  </div>
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.combatCandidates)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.combatCandidates, true)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.combatCandidates)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.combatCandidates)"
+  />
   @if (page.selectedEncounter(); as view) {
-    @if (!view.isCombatEncounter) {
+    @if (definitionActions.hasUnsavedEncounterKindChange()) {
       <p-message severity="info">
-        This encounter is {{ view.encounter.encounterKind }} / {{ view.encounter.minigameKey ?? 'no minigame' }} and does not use combat candidates.
+        Save the encounter definition before editing kind-specific configuration. Draft kind is
+        {{ definitionActions.draftEncounterKind() }}, saved kind is {{ view.encounter.encounterKind }}.
+      </p-message>
+    }
+    @if (definitionActions.draftEncounterKind() !== page.encounterKind.combat) {
+      <p-message severity="info">
+        Draft encounter kind is {{ definitionActions.draftEncounterKind() }} and does not use combat candidates.
       </p-message>
     } @else {
       <form class="flex-col gap-md w-100" [formGroup]="candidateActions.candidateForm">
@@ -17,6 +22,7 @@
         <div class="flex-col gap-sm w-100">
           <span>Candidate kind</span>
           <p-select formControlName="candidateKind" [options]="page.candidateKindOptions" optionLabel="label" optionValue="value" />
+          <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.candidateKind) }}</small>
         </div>
         @if (candidateActions.candidateForm.controls.candidateKind.value === 'opponent') {
           <div class="flex-col gap-sm w-100">
@@ -32,9 +38,18 @@
         <div class="flex-col gap-sm w-100">
           <span>Scaling formula</span>
           <p-select formControlName="scalingFormulaId" [options]="page.formulaOptions()" optionLabel="label" optionValue="value" />
+          <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.scalingFormula) }}</small>
         </div>
-        <label class="flex-col gap-sm w-100"><span>Difficulty multiplier</span><p-inputnumber formControlName="difficultyMultiplier" [min]="0.01" /></label>
-        <label class="flex-col gap-sm w-100"><span>Weight</span><p-inputnumber formControlName="weight" [min]="0.01" /></label>
+        <label class="flex-col gap-sm w-100">
+          <span>Difficulty multiplier</span>
+          <p-inputnumber formControlName="difficultyMultiplier" [min]="0.01" />
+          <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.difficultyMultiplier) }}</small>
+        </label>
+        <label class="flex-col gap-sm w-100">
+          <span>Weight</span>
+          <p-inputnumber formControlName="weight" [min]="0.01" />
+          <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.weight) }}</small>
+        </label>
         <label class="flex-col gap-sm w-100"><span>Min hero level</span><p-inputnumber formControlName="minHeroLevel" [min]="1" /></label>
         <label class="flex-col gap-sm w-100"><span>Max hero level</span><p-inputnumber formControlName="maxHeroLevel" [min]="1" /></label>
         <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
@@ -42,12 +57,13 @@
         <label class="flex-col gap-sm w-100">
           <span>Reason</span>
           <input pInputText formControlName="reason" />
+          <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.candidateReason) }}</small>
           @if (candidateActions.reasonError() || (candidateActions.candidateForm.controls.reason.touched && candidateActions.candidateForm.controls.reason.invalid)) {
             <small class="error-text">{{ candidateActions.reasonError() ?? 'Reason is required.' }}</small>
           }
         </label>
         <div class="flex-row flex-wrap gap-sm">
-          <button pButton type="button" label="Save candidate" [disabled]="candidateActions.isSaving()" (click)="candidateActions.saveCandidate()"></button>
+          <button pButton type="button" label="Save candidate" [disabled]="candidateActions.isSaving() || definitionActions.hasUnsavedEncounterKindChange()" (click)="candidateActions.saveCandidate()"></button>
           <button pButton type="button" label="New candidate" severity="secondary" (click)="candidateActions.startNewCandidate()"></button>
           <button pButton type="button" label="Deactivate candidate" severity="danger" [disabled]="!candidateActions.selectedCandidate()" (click)="candidateActions.deactivateCandidate()"></button>
         </div>
@@ -79,3 +95,5 @@
     <p class="mb-0">Select or save a combat encounter before adding candidates.</p>
   }
 </section>
+
+

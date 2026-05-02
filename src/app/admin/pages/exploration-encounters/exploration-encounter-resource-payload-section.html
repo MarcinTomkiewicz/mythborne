@@ -1,4 +1,10 @@
 <div class="flex-col gap-md">
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.resourcePayloads)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.resourcePayloads)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.resourcePayloads)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.resourcePayloads)"
+  />
   @if (!page.hasResourceTypeDictionary()) {
     <p-message severity="warn">
       No resource_types dictionary rows are loaded. Resource payloads are using degraded fallback
@@ -13,6 +19,8 @@
       <p-select formControlName="resourceType" [options]="page.resourceTypeOptions()" optionLabel="label" optionValue="value" />
       @if (page.resourceTypeHelp(actions.form.controls.resourceType.value); as help) {
         <small class="muted-text">{{ help }}</small>
+      } @else {
+        <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.resourceType) }}</small>
       }
       @if (actions.form.controls.resourceType.touched && actions.form.controls.resourceType.invalid) {
         <small class="error-text">Resource type is required.</small>
@@ -20,14 +28,18 @@
     </div>
     <div class="flex-col gap-sm w-100">
       <span>Amount mode</span>
-      <p-select formControlName="amountMode" [options]="page.amountModeOptions" optionLabel="label" optionValue="value" />
+      <p-select formControlName="amountMode" [options]="page.amountModeOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.resourceAmountMode) }}</small>
+      @if (page.amountModeHelp(actions.form.controls.amountMode.value); as help) {
+        <small class="muted-text">{{ help }}</small>
+      }
     </div>
     <label class="flex-col gap-sm w-100"><span>Min amount</span><p-inputnumber formControlName="minAmount" /></label>
     <label class="flex-col gap-sm w-100"><span>Max amount</span><p-inputnumber formControlName="maxAmount" /></label>
     <div class="flex-col gap-sm w-100">
       <span>Formula</span>
       <p-select formControlName="formulaId" [options]="page.payloadFormulaOptions()" optionLabel="label" optionValue="value" />
-      <small class="muted-text">Advanced. Filtered to exploration/resource/reward-like formula scopes when available.</small>
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.resourceFormula) }}</small>
     </div>
     <label class="flex-col gap-sm w-100"><span>Chance percent</span><p-inputnumber formControlName="chancePercent" [min]="0" [max]="100" /></label>
     <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
@@ -45,12 +57,13 @@
     <label class="flex-col gap-sm w-100">
       <span>Reason</span>
       <input pInputText formControlName="reason" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.resourceReason) }}</small>
       @if (actions.reasonError() || (actions.form.controls.reason.touched && actions.form.controls.reason.invalid)) {
         <small class="error-text">{{ actions.reasonError() ?? 'Reason is required.' }}</small>
       }
     </label>
     <div class="flex-row flex-wrap gap-sm">
-      <button pButton type="button" label="Save resource payload" [disabled]="actions.isSaving()" (click)="actions.savePayload()"></button>
+      <button pButton type="button" label="Save resource payload" [disabled]="actions.isSaving() || definitionActions.hasUnsavedEncounterKindChange()" (click)="actions.savePayload()"></button>
       <button pButton type="button" label="New payload" severity="secondary" (click)="actions.startNewPayload()"></button>
       <button pButton type="button" label="Deactivate payload" severity="danger" [disabled]="!actions.selectedPayload()" (click)="actions.deactivatePayload()"></button>
     </div>
@@ -77,3 +90,5 @@
     </ng-template>
   </p-table>
 </div>
+
+

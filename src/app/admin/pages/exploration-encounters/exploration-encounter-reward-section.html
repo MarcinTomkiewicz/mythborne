@@ -1,12 +1,13 @@
 <section class="mg-card p-lg flex-col gap-md">
-  <div class="flex-col gap-xs">
-    <h3 class="mg-section__title mg-section__title--xs mb-0">Reward assignments</h3>
-    <p class="mb-0">
-      One assignment selects one reward profile for this encounter source. Runtime reward lookup
-      chooses the best matching assignment; it does not grant every matching assignment.
-      Multiple rewards for one event belong as entries inside the selected reward profile.
-    </p>
-  </div>
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.rewardAssignments)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.rewardAssignments, true)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.rewardAssignments)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.rewardAssignments)"
+  />
+  @if (page.encounterRewardSourceHelp(); as help) {
+    <p class="muted-text mb-0">{{ help }}</p>
+  }
   @if (page.selectedEncounter()) {
     @if (!page.hasRewardProfiles()) {
       <p-message severity="warn">
@@ -27,11 +28,18 @@
         using degraded fallback keys until reward_assignment_match_kinds is seeded.
       </p-message>
     }
+    @if (!page.hasRewardEntryDictionaries()) {
+      <p-message severity="warn">
+        Reward entry kind or amount mode dictionaries are not fully loaded. Reward profile entry
+        summaries may fall back to technical keys.
+      </p-message>
+    }
     <form class="flex-col gap-md w-100" [formGroup]="rewardActions.assignmentForm">
       <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
       <div class="flex-col gap-sm w-100">
         <span>Reward profile</span>
         <p-select formControlName="rewardProfileId" [options]="page.requiredRewardProfileOptions()" optionLabel="label" optionValue="value" />
+        <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.rewardProfile) }}</small>
         @if (rewardActions.assignmentForm.controls.rewardProfileId.touched && rewardActions.assignmentForm.controls.rewardProfileId.invalid) {
           <small class="error-text">Reward profile is required.</small>
         }
@@ -43,48 +51,65 @@
         } @else {
           <input pInputText formControlName="outcomeKind" />
         }
-        <small class="muted-text">Use an encounter outcome emitted by runtime. Advanced override is only for schema-approved runtime values.</small>
+        <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.outcomeKind) }}</small>
+        @if (page.outcomeKindHelp(rewardActions.assignmentForm.controls.outcomeKind.value); as help) {
+          <small class="muted-text">{{ help }}</small>
+        }
       </div>
       <label class="flex-col gap-sm w-100"><span>Advanced outcome override</span><p-checkbox formControlName="allowOutcomeOverride" [binary]="true" /></label>
       <div class="flex-col gap-sm w-100">
         <span>Difficulty match mode</span>
         <p-select formControlName="difficultyMatchKind" [options]="page.rewardMatchKindOptions()" optionLabel="label" optionValue="value" />
-        <small class="muted-text">DB-defined mode controls whether the difficulty fields are ignored, exact-matched or interpreted as a supported range.</small>
+        <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.difficultyMatchKind) }}</small>
         @if (page.rewardMatchKindHelp(rewardActions.assignmentForm.controls.difficultyMatchKind.value); as help) {
           <small class="muted-text">{{ help }}</small>
         }
       </div>
-      <div class="flex-col gap-sm w-100">
-        <span>Difficulty value</span>
-        <p-select formControlName="difficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
-      </div>
-      <div class="flex-col gap-sm w-100">
-        <span>Maximum difficulty</span>
-        <p-select formControlName="maxDifficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
-      </div>
+      @if (rewardActions.showDifficultyValue()) {
+        <div class="flex-col gap-sm w-100">
+          <span>Difficulty value</span>
+          <p-select formControlName="difficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
+        </div>
+      }
+      @if (rewardActions.showDifficultyMaximum()) {
+        <div class="flex-col gap-sm w-100">
+          <span>Maximum difficulty</span>
+          <p-select formControlName="maxDifficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
+          @if (rewardActions.difficultyRangeError()) {
+            <small class="error-text">{{ rewardActions.difficultyRangeError() }}</small>
+          }
+        </div>
+      }
       <div class="flex-col gap-sm w-100">
         <span>District match mode</span>
         <p-select formControlName="districtMatchKind" [options]="page.rewardMatchKindOptions()" optionLabel="label" optionValue="value" />
-        <small class="muted-text">DB-defined mode controls whether the district fields are ignored, exact-matched or interpreted as a supported range.</small>
+        <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.districtMatchKind) }}</small>
         @if (page.rewardMatchKindHelp(rewardActions.assignmentForm.controls.districtMatchKind.value); as help) {
           <small class="muted-text">{{ help }}</small>
         }
       </div>
-      <div class="flex-col gap-sm w-100">
-        <span>District value</span>
-        <p-select formControlName="districtCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
-      </div>
-      <div class="flex-col gap-sm w-100">
-        <span>Maximum district</span>
-        <p-select formControlName="maxDistrictCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
-      </div>
+      @if (rewardActions.showDistrictValue()) {
+        <div class="flex-col gap-sm w-100">
+          <span>District value</span>
+          <p-select formControlName="districtCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
+        </div>
+      }
+      @if (rewardActions.showDistrictMaximum()) {
+        <div class="flex-col gap-sm w-100">
+          <span>Maximum district</span>
+          <p-select formControlName="maxDistrictCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
+          @if (rewardActions.districtRangeError()) {
+            <small class="error-text">{{ rewardActions.districtRangeError() }}</small>
+          }
+        </div>
+      }
       <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
       </div>
       <label class="flex-col gap-sm w-100"><span>Description</span><textarea pInputText rows="2" formControlName="description"></textarea></label>
       <label class="flex-col gap-sm w-100">
         <span>Helper text</span>
         <textarea pInputText rows="2" formControlName="helperText"></textarea>
-        <small class="muted-text">When encounter scope is empty in the DB, the assignment is global for encounter source rather than limited to the selected encounter.</small>
+        <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.assignmentHelperText) }}</small>
       </label>
       <details class="mg-card p-md w-100">
         <summary class="muted-text">Advanced technical metadata</summary>
@@ -96,6 +121,7 @@
       <label class="flex-col gap-sm w-100">
         <span>Reason</span>
         <input pInputText formControlName="reason" />
+        <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.assignmentReason) }}</small>
         @if (rewardActions.reasonError() || (rewardActions.assignmentForm.controls.reason.touched && rewardActions.assignmentForm.controls.reason.invalid)) {
           <small class="error-text">{{ rewardActions.reasonError() ?? 'Reason is required.' }}</small>
         }
@@ -108,12 +134,26 @@
     </form>
     <p-table [value]="page.rewardAssignments()" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
-        <tr><th>Reward</th><th>Scope</th><th>Description</th><th>Status</th></tr>
+        <tr><th>Reward routing</th><th>Profile entries</th><th>Description</th><th>Status</th></tr>
       </ng-template>
       <ng-template pTemplate="body" let-row>
         <tr (click)="rewardActions.selectAssignment(row.assignment.id)">
-          <td>{{ row.rewardProfileLabel }}</td>
-          <td>{{ row.scopeLabel }}</td>
+          <td>
+            <strong>{{ row.rewardProfileLabel }}</strong>
+            <br /><span class="muted-text">{{ row.scopeLabel }}</span>
+            <br /><span class="muted-text">{{ row.summaryLabel }}</span>
+          </td>
+          <td>
+            @if (row.rewardProfileEntrySummaries.length > 0) {
+              <ul class="mb-0">
+                @for (entry of row.rewardProfileEntrySummaries; track entry.entryId) {
+                  <li>{{ entry.label }} - {{ entry.detail }}</li>
+                }
+              </ul>
+            } @else {
+              <span class="muted-text">Selected reward profile has no active entries.</span>
+            }
+          </td>
           <td>{{ row.assignment.description ?? '-' }}</td>
           <td><p-tag [severity]="row.assignment.isActive ? 'success' : 'secondary'" [value]="row.assignment.isActive ? 'Active' : 'Inactive'" /></td>
         </tr>
@@ -122,7 +162,30 @@
         <tr><td colspan="4">No encounter reward assignments are configured.</td></tr>
       </ng-template>
     </p-table>
+    @if (page.globalRewardAssignments().length > 0) {
+      <div class="flex-col gap-sm w-100">
+        <h4 class="mg-section__title mg-section__title--xs mb-0">Global encounter assignment scope</h4>
+        <p class="muted-text mb-0">
+          These assignments have no encounter id and may match any encounter source. They are shown
+          here for routing scope explainability; this selected-encounter form does not create global rows.
+        </p>
+        <p-table [value]="page.globalRewardAssignments()" styleClass="p-datatable-sm">
+          <ng-template pTemplate="header">
+            <tr><th>Routing summary</th><th>Reward profile</th><th>Status</th></tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td>{{ row.summaryLabel }}</td>
+              <td>{{ row.rewardProfileLabel }}</td>
+              <td><p-tag [severity]="row.assignment.isActive ? 'success' : 'secondary'" [value]="row.assignment.isActive ? 'Active' : 'Inactive'" /></td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    }
   } @else {
     <p class="mb-0">Select or save an encounter before adding reward assignments.</p>
   }
 </section>
+
+

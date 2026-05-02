@@ -5,6 +5,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { AdminSectionIntro } from '../../components/admin-section-intro/admin-section-intro';
 import { ExplorationEncounterDefinitionActionsState } from './exploration-encounter-definition-actions.state';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 
@@ -18,6 +19,7 @@ import { ExplorationEncountersPageState } from './exploration-encounters-page.st
     InputNumberModule,
     InputTextModule,
     SelectModule,
+    AdminSectionIntro,
   ],
   templateUrl: './exploration-encounter-edit-section.html',
 })

@@ -7,6 +7,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { AdminSectionIntro } from '../../components/admin-section-intro/admin-section-intro';
+import { ExplorationEncounterDefinitionActionsState } from './exploration-encounter-definition-actions.state';
 import { ExplorationEncounterEffectDefinitionActionsState } from './exploration-encounter-effect-definition-actions.state';
 import { ExplorationEncounterEffectPayloadActionsState } from './exploration-encounter-effect-payload-actions.state';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
@@ -23,11 +25,13 @@ import { ExplorationEncountersPageState } from './exploration-encounters-page.st
     SelectModule,
     TableModule,
     TagModule,
+    AdminSectionIntro,
   ],
   templateUrl: './exploration-encounter-effect-definition-section.html',
 })
 export class ExplorationEncounterEffectDefinitionSection {
   readonly page = inject(ExplorationEncountersPageState);
+  readonly definitionActions = inject(ExplorationEncounterDefinitionActionsState);
   readonly actions = inject(ExplorationEncounterEffectDefinitionActionsState);
   private readonly payloadActions = inject(ExplorationEncounterEffectPayloadActionsState);
 

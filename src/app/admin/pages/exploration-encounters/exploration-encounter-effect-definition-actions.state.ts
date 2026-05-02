@@ -9,10 +9,8 @@ import { trimToNull } from '../../../core/utils/normalize-text';
 import { RequestToken } from '../../../core/utils/request-token';
 import { toSlug } from '../../../core/utils/slug';
 import { parseMetadataJson, requiredFormValue } from './exploration-encounter-action-utils';
-import {
-  createExplorationEffectDefinitionForm,
-  effectDefinitionFormValue,
-} from './exploration-encounters-forms';
+import { ExplorationEncounterFormFactory } from './exploration-encounter-form.factory';
+import { ExplorationEncounterDefinitionActionsState } from './exploration-encounter-definition-actions.state';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 import {
   markReasonInvalid,
@@ -24,15 +22,17 @@ import {
 export class ExplorationEncounterEffectDefinitionActionsState {
   private readonly admin = inject(ExplorationEncounterAdmin);
   private readonly page = inject(ExplorationEncountersPageState);
+  private readonly definitionActions = inject(ExplorationEncounterDefinitionActionsState);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly formFactory = inject(ExplorationEncounterFormFactory);
   private readonly saveToken = new RequestToken();
   private isSyncingForm = false;
 
   readonly selectedEffectDefinitionId = signal<string | null>(null);
   readonly isSaving = signal(false);
   readonly reasonError = signal<string | null>(null);
-  readonly form = createExplorationEffectDefinitionForm();
+  readonly form = this.formFactory.createExplorationEffectDefinitionForm();
   readonly selectedEffectDefinition = computed(() => {
     const effectId = this.selectedEffectDefinitionId();
 
@@ -71,6 +71,11 @@ export class ExplorationEncounterEffectDefinitionActionsState {
     const hasInvalidReason = markReasonInvalid(this.reasonError, this.form.controls.reason);
 
     if (this.form.invalid || hasInvalidReason || metadataJson === null) {
+      return;
+    }
+
+    if (this.definitionActions.hasUnsavedEncounterKindChange()) {
+      this.page.error.set('Save the encounter definition kind before editing kind-specific configuration.');
       return;
     }
 
@@ -151,7 +156,7 @@ export class ExplorationEncounterEffectDefinitionActionsState {
   private syncForm(row: ExplorationEffectDefinitionAdminView | null): void {
     this.reasonError.set(null);
     this.isSyncingForm = true;
-    this.form.reset(effectDefinitionFormValue(row));
+    this.form.reset(this.formFactory.effectDefinitionValue(row));
     this.isSyncingForm = false;
 
     if (!row) {

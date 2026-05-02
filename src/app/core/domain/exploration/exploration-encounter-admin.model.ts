@@ -1,4 +1,5 @@
 import { Json } from '../../types/database.types';
+import { UiMetadataEntryReadModel } from '../admin-ui-metadata.model';
 import { BuildingDistrictOption } from '../../types/building.types';
 import { CanonicalBonusTemplate } from '../../types/bonus-governance.types';
 import { BalanceFormula } from '../formula/formula.model';
@@ -11,7 +12,9 @@ import {
   RewardDictionaryReadModel,
   ResourceTypeReadModel,
   RewardOutcomeKindReadModel,
+  RewardProfileEntryReadModel,
   RewardProfileReadModel,
+  RewardProfileEntrySummaryView,
 } from './exploration-reward.model';
 import {
   CombatOpponentDefinitionReadModel,
@@ -115,9 +118,13 @@ export interface ExplorationEncounterAdminData {
   difficulties: ExplorationDifficultyTierReadModel[];
   districts: BuildingDistrictOption[];
   rewardProfiles: RewardProfileReadModel[];
+  rewardProfileEntries: RewardProfileEntryReadModel[];
   rewardOutcomeKinds: RewardOutcomeKindReadModel[];
   resourceTypes: ResourceTypeReadModel[];
   rewardAssignmentMatchKinds: RewardDictionaryReadModel[];
+  rewardSourceKinds: RewardDictionaryReadModel[];
+  rewardEntryKinds: RewardDictionaryReadModel[];
+  rewardEntryAmountModes: RewardDictionaryReadModel[];
   rewardAssignments: RewardProfileAssignmentReadModel[];
   combatCandidates: EncounterCombatCandidateReadModel[];
   resourcePayloads: EncounterResourcePayloadReadModel[];
@@ -127,6 +134,7 @@ export interface ExplorationEncounterAdminData {
   opponents: CombatOpponentDefinitionReadModel[];
   families: CombatOpponentFamilyReadModel[];
   formulas: BalanceFormula[];
+  uiMetadataEntries: UiMetadataEntryReadModel[];
 }
 
 export interface UpsertEncounterDefinitionInput {
@@ -275,5 +283,11 @@ export interface EncounterEffectPayloadAdminView {
 export interface EncounterRewardAssignmentAdminView {
   assignment: RewardProfileAssignmentReadModel;
   rewardProfileLabel: string;
+  rewardProfileDescription: string | null;
+  outcomeLabel: string;
+  difficultyMatchLabel: string;
+  districtMatchLabel: string;
   scopeLabel: string;
+  summaryLabel: string;
+  rewardProfileEntrySummaries: RewardProfileEntrySummaryView[];
 }

@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, effect, inject, signal, untracked } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
 import { ToastService } from '../../../core/services/ui/toast';
@@ -6,10 +6,11 @@ import { getErrorMessage } from '../../../core/utils/error-message';
 import { trimToNull } from '../../../core/utils/normalize-text';
 import { RequestToken } from '../../../core/utils/request-token';
 import { toSlug } from '../../../core/utils/slug';
+import { ExplorationEncounterFormFactory } from './exploration-encounter-form.factory';
 import {
-  createEncounterDefinitionForm,
-  encounterFormValue,
-} from './exploration-encounters-forms';
+  validateDifficultyRange,
+  validateDistrictRange,
+} from './exploration-encounter-form-rules';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 import { parseMetadataJson, requiredFormValue } from './exploration-encounter-action-utils';
 import {
@@ -23,13 +24,27 @@ export class ExplorationEncounterDefinitionActionsState {
   private readonly page = inject(ExplorationEncountersPageState);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly formFactory = inject(ExplorationEncounterFormFactory);
   private readonly saveToken = new RequestToken();
   private isSyncingForm = false;
   private skipNextNewEncounterSync = false;
 
-  readonly encounterForm = createEncounterDefinitionForm();
+  readonly encounterForm = this.formFactory.createEncounterDefinitionForm();
   readonly isSaving = signal(false);
   readonly reasonError = signal<string | null>(null);
+  readonly draftEncounterKind = signal(this.encounterForm.controls.encounterKind.value);
+  readonly difficultyRangeError = signal<string | null>(null);
+  readonly districtRangeError = signal<string | null>(null);
+  readonly hasUnsavedEncounterKindChange = computed(() => {
+    const selected = this.page.selectedEncounter()?.encounter.encounterKind ?? null;
+    const selectedId = this.page.selectedEncounterId();
+
+    if (this.encounterForm.controls.encounterDefinitionId.value !== selectedId) {
+      return false;
+    }
+
+    return !!selected && selected !== this.draftEncounterKind();
+  });
 
   constructor() {
     effect(() => {
@@ -40,12 +55,16 @@ export class ExplorationEncounterDefinitionActionsState {
     this.encounterForm.controls.label.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((label) => this.syncGeneratedKey(label));
+
+    this.encounterForm.controls.encounterKind.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((kind) => this.draftEncounterKind.set(kind));
   }
 
   startNewEncounter(): void {
     this.skipNextNewEncounterSync = true;
     this.page.selectEncounter(null);
-    this.encounterForm.reset(encounterFormValue(this.page.data(), null));
+    this.encounterForm.reset(this.formFactory.encounterValue(this.page.data(), null));
   }
 
   saveEncounter(): void {
@@ -61,8 +80,9 @@ export class ExplorationEncounterDefinitionActionsState {
 
     this.encounterForm.markAllAsTouched();
     const hasInvalidReason = markReasonInvalid(this.reasonError, this.encounterForm.controls.reason);
+    const hasInvalidRanges = this.markInvalidRanges();
 
-    if (this.encounterForm.invalid || hasInvalidReason) {
+    if (this.encounterForm.invalid || hasInvalidReason || hasInvalidRanges) {
       return;
     }
 
@@ -154,7 +174,12 @@ export class ExplorationEncounterDefinitionActionsState {
 
     this.reasonError.set(null);
     this.isSyncingForm = true;
-    this.encounterForm.reset(encounterFormValue(this.page.data(), this.page.selectedEncounterId()));
+    this.encounterForm.reset(
+      this.formFactory.encounterValue(this.page.data(), this.page.selectedEncounterId()),
+    );
+    this.draftEncounterKind.set(this.encounterForm.controls.encounterKind.value);
+    this.difficultyRangeError.set(null);
+    this.districtRangeError.set(null);
     this.isSyncingForm = false;
   }
 
@@ -182,5 +207,31 @@ export class ExplorationEncounterDefinitionActionsState {
     return () =>
       this.page.selectedEncounterId() === selectedEncounterId &&
       this.encounterForm.controls.encounterDefinitionId.value === formEncounterId;
+  }
+
+  private markInvalidRanges(): boolean {
+    const difficulty = validateDifficultyRange(
+      this.page.data(),
+      this.encounterForm.controls.minDifficultyKey.value,
+      this.encounterForm.controls.maxDifficultyKey.value,
+    );
+    const district = validateDistrictRange(
+      this.page.data(),
+      this.encounterForm.controls.minDistrictCode.value,
+      this.encounterForm.controls.maxDistrictCode.value,
+    );
+
+    this.difficultyRangeError.set(difficulty.message);
+    this.districtRangeError.set(district.message);
+
+    if (!difficulty.valid) {
+      this.encounterForm.controls.maxDifficultyKey.markAsTouched();
+    }
+
+    if (!district.valid) {
+      this.encounterForm.controls.maxDistrictCode.markAsTouched();
+    }
+
+    return !difficulty.valid || !district.valid;
   }
 }

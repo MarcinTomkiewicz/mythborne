@@ -4,12 +4,10 @@ import { ExplorationEncounterAdmin } from '../../../core/services/exploration/ex
 import { ToastService } from '../../../core/services/ui/toast';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { RequestToken } from '../../../core/utils/request-token';
-import {
-  candidateFormValue,
-  createEncounterCombatCandidateForm,
-} from './exploration-encounters-forms';
+import { ExplorationEncounterFormFactory } from './exploration-encounter-form.factory';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 import { requiredFormValue } from './exploration-encounter-action-utils';
+import { ExplorationEncounterDefinitionActionsState } from './exploration-encounter-definition-actions.state';
 import {
   markReasonInvalid,
   runEncounterWorkflowAction,
@@ -19,8 +17,10 @@ import {
 export class ExplorationEncounterCandidateActionsState {
   private readonly admin = inject(ExplorationEncounterAdmin);
   private readonly page = inject(ExplorationEncountersPageState);
+  private readonly definitionActions = inject(ExplorationEncounterDefinitionActionsState);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly formFactory = inject(ExplorationEncounterFormFactory);
   private readonly saveToken = new RequestToken();
 
   readonly selectedCandidateId = signal<string | null>(null);
@@ -31,7 +31,7 @@ export class ExplorationEncounterCandidateActionsState {
 
     return this.page.combatCandidates().find((row) => row.candidate.id === candidateId) ?? null;
   });
-  readonly candidateForm = createEncounterCombatCandidateForm();
+  readonly candidateForm = this.formFactory.createEncounterCombatCandidateForm();
 
   constructor() {
     effect(() => {
@@ -56,6 +56,11 @@ export class ExplorationEncounterCandidateActionsState {
 
     if (!encounter?.isCombatEncounter) {
       this.page.error.set('Combat candidates can be edited only for combat encounters.');
+      return;
+    }
+
+    if (this.definitionActions.hasUnsavedEncounterKindChange()) {
+      this.page.error.set('Save the encounter definition kind before editing kind-specific configuration.');
       return;
     }
 
@@ -144,7 +149,7 @@ export class ExplorationEncounterCandidateActionsState {
 
   private syncCandidateForm(row: EncounterCombatCandidateAdminView | null): void {
     this.reasonError.set(null);
-    this.candidateForm.reset(candidateFormValue(row));
+    this.candidateForm.reset(this.formFactory.candidateValue(row));
   }
 
   private resetCandidateForm(): void {

@@ -1,13 +1,16 @@
 <div class="flex-col gap-md">
-  <div class="flex-col gap-xs">
-    <h4 class="mg-section__title mg-section__title--xs mb-0">Payloads for selected encounter</h4>
-    <p class="mb-0">Attach one effect from the library to this encounter and tune chance/copy for this encounter only.</p>
-  </div>
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.effectPayloads)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.effectPayloads)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.effectPayloads)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.effectPayloads)"
+  />
   <form class="flex-col gap-md w-100" [formGroup]="actions.form">
     <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
     <div class="flex-col gap-sm w-100">
       <span>Effect definition</span>
       <p-select formControlName="effectDefinitionId" [options]="page.effectDefinitionOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.effectPayloadDefinition) }}</small>
       @if (actions.form.controls.effectDefinitionId.touched && actions.form.controls.effectDefinitionId.invalid) {
         <small class="error-text">Effect definition is required.</small>
       }
@@ -26,14 +29,15 @@
       </label>
     </details>
     <label class="flex-col gap-sm w-100">
-      <span>Reason</span>
-      <input pInputText formControlName="reason" />
+        <span>Reason</span>
+        <input pInputText formControlName="reason" />
+        <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.effectPayloadReason) }}</small>
       @if (actions.reasonError() || (actions.form.controls.reason.touched && actions.form.controls.reason.invalid)) {
         <small class="error-text">{{ actions.reasonError() ?? 'Reason is required.' }}</small>
       }
     </label>
     <div class="flex-row flex-wrap gap-sm">
-      <button pButton type="button" label="Save effect payload" [disabled]="actions.isSaving()" (click)="actions.savePayload()"></button>
+      <button pButton type="button" label="Save effect payload" [disabled]="actions.isSaving() || definitionActions.hasUnsavedEncounterKindChange()" (click)="actions.savePayload()"></button>
       <button pButton type="button" label="New payload" severity="secondary" (click)="actions.startNewPayload()"></button>
       <button pButton type="button" label="Deactivate payload" severity="danger" [disabled]="!actions.selectedPayload()" (click)="actions.deactivatePayload()"></button>
     </div>
@@ -59,3 +63,5 @@
     </ng-template>
   </p-table>
 </div>
+
+

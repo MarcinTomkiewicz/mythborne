@@ -1,11 +1,10 @@
 <section class="mg-card p-lg flex-col gap-md">
-  <div class="flex-col gap-xs">
-    <h3 class="mg-section__title mg-section__title--xs mb-0">Edit encounter definition</h3>
-    <p class="mb-0">
-      Saves through <code>upsert_encounter_definition</code>. Reward profile here is the legacy
-      direct assignment; detailed balancing should use the reward assignment panel below.
-    </p>
-  </div>
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.encounterDefinition)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.encounterDefinition, true)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.encounterDefinition)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.encounterDefinition)"
+  />
   <form class="flex-col gap-md w-100" [formGroup]="definitionActions.encounterForm">
     <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
     <label class="flex-col gap-sm w-100">
@@ -18,7 +17,7 @@
     <label class="flex-col gap-sm w-100">
       <span>Generated key</span>
       <input pInputText formControlName="key" [readonly]="!definitionActions.encounterForm.controls.allowKeyOverride.value" />
-      <small class="muted-text">Generated for new encounters. Existing keys stay stable unless advanced override is enabled.</small>
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.encounterKey) }}</small>
       @if (definitionActions.encounterForm.controls.key.touched && definitionActions.encounterForm.controls.key.invalid) {
         <small class="error-text">Key is required.</small>
       }
@@ -30,31 +29,43 @@
     <div class="flex-col gap-sm w-100">
       <span>Encounter kind</span>
       <p-select formControlName="encounterKind" [options]="page.encounterKindOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.encounterKind) }}</small>
     </div>
     <div class="flex-col gap-sm w-100">
       <span>Minigame</span>
       <p-select formControlName="minigameKey" [options]="page.minigameOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.minigame) }}</small>
     </div>
     <div class="flex-col gap-sm w-100">
-      <span>Direct reward profile</span>
+      <span>Direct reward profile (legacy/simple fallback)</span>
       <p-select formControlName="rewardProfileId" [options]="page.rewardProfileOptions()" optionLabel="label" optionValue="value" />
-      <small class="muted-text">Prefer reward assignments for outcome/difficulty/district-specific rewards.</small>
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.directRewardProfile) }}</small>
     </div>
     <div class="flex-col gap-sm w-100">
       <span>Minimum difficulty</span>
       <p-select formControlName="minDifficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.minDifficulty) }}</small>
     </div>
     <div class="flex-col gap-sm w-100">
       <span>Maximum difficulty</span>
       <p-select formControlName="maxDifficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.maxDifficulty) }}</small>
+      @if (definitionActions.difficultyRangeError()) {
+        <small class="error-text">{{ definitionActions.difficultyRangeError() }}</small>
+      }
     </div>
     <div class="flex-col gap-sm w-100">
       <span>Minimum district</span>
       <p-select formControlName="minDistrictCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.minDistrict) }}</small>
     </div>
     <div class="flex-col gap-sm w-100">
       <span>Maximum district</span>
       <p-select formControlName="maxDistrictCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.maxDistrict) }}</small>
+      @if (definitionActions.districtRangeError()) {
+        <small class="error-text">{{ definitionActions.districtRangeError() }}</small>
+      }
     </div>
     <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
     </div>
@@ -77,6 +88,7 @@
     <label class="flex-col gap-sm w-100">
       <span>Reason</span>
       <input pInputText formControlName="reason" />
+      <small class="muted-text">{{ page.uiMetadata.fieldHelp(page.uiMetadata.field.definitionReason) }}</small>
       @if (definitionActions.reasonError() || (definitionActions.encounterForm.controls.reason.touched && definitionActions.encounterForm.controls.reason.invalid)) {
         <small class="error-text">{{ definitionActions.reasonError() ?? 'Reason is required.' }}</small>
       }
@@ -87,3 +99,5 @@
     </div>
   </form>
 </section>
+
+

@@ -2,10 +2,12 @@ import { Component, DestroyRef, OnInit, effect, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
+import { MessageModule } from 'primeng/message';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { ToastService } from '../../../core/services/ui/toast';
 import { EXPLORATION_ENCOUNTERS_PAGE_LINKS } from '../../admin-navigation.config';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
+import { AdminSectionIntro } from '../../components/admin-section-intro/admin-section-intro';
 import { ExplorationEncounterCandidateActionsState } from './exploration-encounter-candidate-actions.state';
 import { ExplorationEncounterCombatSection } from './exploration-encounter-combat-section';
 import { ExplorationEncounterDefinitionActionsState } from './exploration-encounter-definition-actions.state';
@@ -25,7 +27,9 @@ import { ExplorationEncountersPageState } from './exploration-encounters-page.st
   standalone: true,
   imports: [
     LoadingOverlay,
+    MessageModule,
     AdminTagLinks,
+    AdminSectionIntro,
     ExplorationEncountersListSection,
     ExplorationEncounterMeaningSection,
     ExplorationEncounterEditSection,

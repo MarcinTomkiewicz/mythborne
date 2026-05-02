@@ -1,27 +1,33 @@
 <section class="mg-card p-lg flex-col gap-md">
-  <div class="flex-col gap-xs">
-    <h3 class="mg-section__title mg-section__title--xs mb-0">Resource and effect payloads</h3>
-    <p class="mb-0">
-      Non-combat encounter payloads are configured through typed DB rows. Resource encounters grant
-      a configured resource opportunity; buff and debuff encounters link to reusable exploration
-      effects, which normally expire at the next combat encounter or trial.
-    </p>
-  </div>
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.kindSpecificPayloads)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.kindSpecificPayloads, true)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.kindSpecificPayloads)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.kindSpecificPayloads)"
+  />
 
   @if (page.selectedEncounter(); as view) {
-    @if (view.encounter.encounterKind === page.encounterKind.resource) {
+    @if (definitionActions.hasUnsavedEncounterKindChange()) {
+      <p-message severity="info">
+        Save the encounter definition before editing kind-specific configuration. Draft kind is
+        {{ definitionActions.draftEncounterKind() }}, saved kind is {{ view.encounter.encounterKind }}.
+      </p-message>
+    }
+    @if (definitionActions.draftEncounterKind() === page.encounterKind.resource) {
       <app-exploration-encounter-resource-payload-section />
-    } @else if (view.encounter.encounterKind === page.encounterKind.buff || view.encounter.encounterKind === page.encounterKind.debuff) {
+    } @else if (definitionActions.draftEncounterKind() === page.encounterKind.buff || definitionActions.draftEncounterKind() === page.encounterKind.debuff) {
       <div class="grid-2 gap-lg">
         <app-exploration-encounter-effect-definition-section />
         <app-exploration-encounter-effect-payload-section />
       </div>
     } @else {
       <p-message severity="info">
-        This encounter is {{ view.encounter.encounterKind }} and does not use resource/effect payloads.
+        Draft encounter kind is {{ definitionActions.draftEncounterKind() }} and does not use resource/effect payloads.
       </p-message>
     }
   } @else {
     <p class="mb-0">Select or save an encounter before configuring non-combat payloads.</p>
   }
 </section>
+
+

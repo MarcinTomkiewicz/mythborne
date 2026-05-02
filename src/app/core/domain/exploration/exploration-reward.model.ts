@@ -64,6 +64,13 @@ export interface RewardProfileEntryReadModel {
   updatedAt: string;
 }
 
+export interface RewardProfileEntrySummaryView {
+  entryId: string;
+  label: string;
+  detail: string;
+  dictionaryHelp: string | null;
+}
+
 export interface ResourceTypeReadModel {
   key: string;
   label: string;

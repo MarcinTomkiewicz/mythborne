@@ -29,6 +29,7 @@ Global Codex rules:
 - Preserve `reason`, `description`, `status_reason`, helper/admin text wherever applicable.
 - After each task, summarize exact changes and wait for user confirmation.
 - Do not mark tasks as completed in state docs before user confirms they work.
+- Before adding new utility/config/factory files, check existing `core/utils`, `core/factories`, form config files and shared form patterns. If you add a new helper anyway, include a `reused / checked but not reused / new` table in the report.
 
 ---
 
@@ -2569,7 +2570,7 @@ Every durable mutation must require and send reason where the RPC requires it.
   - amount mode filtering verified;
   - combat candidate empty state or create/deactivate verified;
   - preview section explanation verified.
-  
+
 ---
 
 ## Task L12 — Encounter definitions admin configurator
@@ -2646,6 +2647,8 @@ Every durable mutation must require and send reason where the RPC requires it.
 
 ## Task L12c — Encounter configurator explainability and layout pass
 
+**Status:** Done / accepted on 2026-05-02 after manual smoke.
+
 **Goal:** Make `/admin/exploration-encounters` usable as an admin/balancer tool, not just a raw table editor.
 
 The admin must understand:
@@ -2692,7 +2695,7 @@ Do not hardcode permanent gameplay/config explanations in Angular when DB-backed
   - reusable library content,
   - or technical/advanced metadata.
 
-- Add selected-context labels, for example:
+- Add selected-scope labels, for example:
   - `Reward assignments for selected encounter: Light combat`
   - `Combat candidates for selected encounter: Light combat`
   - `Resource payloads for selected encounter: Resource find`
@@ -4651,311 +4654,9 @@ Epic rules:
 
 ---
 
-# Epic R — Admin information architecture and layout hygiene
+# Epic R — Appeals and future moderation extensions
 
-Epic R is a lightweight admin IA/layout hygiene epic, not a final UI redesign.
-
-The goal is to stop admin tooling from growing randomly and to give new admin/balancer modules predictable places in the admin shell. Final visual style, spacing, iconography, and full design-system decisions remain in the UI/UX backlog.
-
-Admin UI should be organized by **work intent**, not by raw table names.
-
-Preferred admin groups:
-
-- **Overview**
-- **Global Governance**
-- **Game Balance**
-- **Server Operations**
-- **Moderation & Anti-abuse**
-- **Gameplay Tools / Sandbox**
-
-General Epic R rules:
-- Do not rename gameplay concepts casually.
-- Do not move player-facing routes into admin.
-- Keep selected server context visible for server-scoped admin pages.
-- Use DB dictionaries and labels instead of hardcoded permanent lists.
-- Raw technical keys/UUIDs may appear as secondary metadata, not as primary UX.
-- Prefer PrimeNG Tabs / tabbed sections for complex admin pages instead of one long vertical form.
-- R is not a final visual redesign. Keep changes structural, navigational, and reusable.
-- If a route/page already exists, preserve functionality while moving or grouping navigation.
-- If a target route does not exist yet, add a clear placeholder/navigation slot only when useful; do not fake implemented functionality.
-
----
-
-## Task R1 — Admin navigation taxonomy and route inventory
-
-**Goal:** Audit current admin routes and assign them to a stable admin navigation taxonomy.
-
-**Scope:**
-- Inspect current admin routes, sidebar entries, dashboard links, and admin page entry points.
-- Classify each current admin route under one of:
-  - Overview;
-  - Global Governance;
-  - Game Balance;
-  - Server Operations;
-  - Moderation & Anti-abuse;
-  - Gameplay Tools / Sandbox.
-- Identify routes currently placed randomly or under misleading labels.
-- Identify missing route slots needed by upcoming/current admin modules:
-  - Trial definitions admin configurator;
-  - Encounter definitions admin configurator;
-  - Combat opponent definitions admin configurator;
-  - Notification inbox/type admin/readability;
-  - Game report admin/debug/readability;
-  - Exploration lab/debug tools;
-  - Combat sandbox/admin test tools.
-- Keep a distinction between:
-  - global/product admin pages;
-  - selected-server admin pages;
-  - staff/moderation pages;
-  - sandbox/test tools.
-- Do not change behavior yet unless it is a trivial label/grouping fix.
-
-**Acceptance criteria:**
-- Report lists current admin routes and their proposed group.
-- Report identifies misplaced or ambiguous routes.
-- Report lists missing navigation slots for M12/L11/L12/P/Q-related admin pages.
-- No large UI rewrite is done in this audit task.
-- No route is removed.
-- Build is not required unless code changes are made.
-
----
-
-## Task R2 — Admin sidebar grouping implementation
-
-**Goal:** Reorganize admin navigation into stable, readable groups.
-
-**Scope:**
-- Update admin/sidebar navigation to use the agreed groups:
-  - Overview;
-  - Global Governance;
-  - Game Balance;
-  - Server Operations;
-  - Moderation & Anti-abuse;
-  - Gameplay Tools / Sandbox.
-- Move existing entries into the correct groups based on R1.
-- Keep global/product tools separate from selected-server tools.
-- Keep moderation and anti-abuse tools grouped together.
-- Create clear navigation slots for upcoming admin modules where appropriate:
-  - Game Balance → Trials;
-  - Game Balance → Encounters;
-  - Game Balance → Combat Opponents;
-  - Game Balance → Reward Profiles if/when route exists;
-  - Gameplay Tools / Sandbox → Exploration Lab;
-  - Gameplay Tools / Sandbox → Combat Sandbox/Admin Test;
-  - Overview or Operations → Notifications;
-  - Gameplay Tools or Reports area → Game Reports, if route exists.
-- Do not create fake working pages. If a route is missing, either omit it or mark it as pending only if the project already uses pending/disabled navigation conventions.
-- Preserve existing route guards and staff/admin access boundaries.
-- Preserve selected-server switcher behavior.
-
-**Acceptance criteria:**
-- Admin sidebar is grouped by work intent, not raw table/entity names.
-- Existing admin routes remain reachable.
-- No player-facing route is accidentally moved into admin.
-- Server-scoped pages still make selected server context clear.
-- Hidden/disabled/pending links do not imply implemented functionality.
-- Build passes.
-
----
-
-## Task R3 — Admin page layout pattern: header, context, and sections
-
-**Goal:** Establish a reusable admin page layout pattern for current and future admin tools.
-
-**Scope:**
-- Identify or create a lightweight reusable/admin-local layout pattern for admin pages:
-  - page title;
-  - short explanation/helper text;
-  - optional technical key/source metadata;
-  - global vs selected-server context indicator;
-  - action area;
-  - content sections.
-- Prefer reuse of existing shared/page layout components if they already exist.
-- For complex admin pages, prefer PrimeNG Tabs / tabbed grouping or clearly separated sections instead of long vertical forms.
-- Do not perform full visual redesign.
-- Do not introduce a heavy design system replacement.
-- Apply the pattern to one or two representative admin pages only, unless the change is trivial and safe.
-- Document the pattern in comments or local helper naming so future admin configurators can reuse it.
-
-**Recommended tab patterns for future configurators:**
-- Combat Opponents:
-  - Overview;
-  - Stats;
-  - Natural attacks;
-  - Equipment;
-  - Scaling;
-  - Usage / candidates.
-- Trials:
-  - Overview;
-  - Minigame;
-  - Combat candidates;
-  - Requirements / availability;
-  - Preview.
-- Encounters:
-  - Overview;
-  - Kind / minigame;
-  - Reward profile;
-  - Combat candidates;
-  - Difficulty / districts;
-  - Preview.
-- Notifications:
-  - Types;
-  - Inbox/read model;
-  - Hook diagnostics.
-- Reports:
-  - Types;
-  - Combat reports;
-  - Public link preview;
-  - Item references.
-
-**Acceptance criteria:**
-- At least one admin page demonstrates the reusable header/context/section pattern.
-- Selected-server pages visibly show selected server context.
-- Global pages do not pretend to be server-scoped.
-- Complex content is organized into tabs or logical sections where appropriate.
-- Existing form behavior is not broken.
-- Build passes.
-
----
-
-## Task R4 — Staff/Admin dashboard attention cards
-
-**Goal:** Make the admin/staff landing page useful by surfacing work that needs attention.
-
-**Scope:**
-- Add or improve staff/admin landing dashboard cards using existing read models where available.
-- Candidate cards:
-  - selected server summary;
-  - open anti-abuse cases;
-  - cases waiting for player;
-  - cases waiting for staff;
-  - pending player abuse reports;
-  - pending relationship declarations;
-  - pending sanctions / Character Points penalties;
-  - unread staff notifications.
-- Use DB/RPC/read models that already exist.
-- Do not invent new backend aggregation tables.
-- If a needed aggregate/read path is missing, show a minimal safe fallback or report DB/RPC blocker.
-- Cards should link to the relevant admin/staff section.
-- Avoid raw UUID-only display.
-- Do not expose staff-only data to non-staff users.
-
-**Acceptance criteria:**
-- Staff/admin landing page shows at least several meaningful attention cards from existing systems.
-- Staff notifications from the Q foundation can be surfaced if current read path permits.
-- Cards link to relevant admin pages where routes exist.
-- Missing route/read path is documented clearly instead of faked.
-- Normal players cannot access staff dashboard data.
-- Build passes.
-
----
-
-## Task R5 — Admin source-link and cross-navigation hygiene
-
-**Goal:** Improve navigation between related admin/domain entities without forcing admins to manually copy UUIDs.
-
-**Scope:**
-- Add or standardize source links where existing data has source entity references:
-  - notifications → source entity;
-  - audit logs → entity/source where route exists;
-  - anti-abuse case → related report/trade/auction/hero;
-  - player abuse report → related case/trade/item;
-  - game report → source combat result/report detail where route exists;
-  - exploration lab/debug → related trial/encounter definitions where route exists.
-- If a route exists, render a usable link.
-- If a route does not exist, show readable metadata and mark the link as unavailable/pending.
-- Keep raw UUIDs secondary and copyable where useful.
-- Do not create fake routes or broken links.
-- Respect player/staff privacy boundaries.
-
-**Acceptance criteria:**
-- Admins can navigate from at least one notification/source-driven area to its source entity where route exists.
-- Missing source routes are represented as disabled/pending with metadata, not broken links.
-- UUIDs are not the main UX label.
-- Cross-links do not expose player-private or staff-only fields to the wrong audience.
-- Build passes.
-
----
-
-## Task R6 — Admin configurator placement check for M12/L11/L12
-
-**Goal:** Ensure new admin configurators for combat opponents, trials, and encounters have correct navigation and layout placement.
-
-**Scope:**
-- Confirm where these upcoming/added admin tools should appear:
-  - `M12 — Combat opponent definitions admin configurator` → Game Balance / Combat Opponents.
-  - `L11 — Trial definitions admin configurator` → Game Balance / Trials.
-  - `L12 — Encounter definitions admin configurator` → Game Balance / Encounters.
-- Ensure route labels are human-readable and not raw table names.
-- Ensure these pages use the R3 layout pattern where implemented.
-- If routes are not implemented yet, document the intended placement and keep sidebar placeholders disabled or omitted according to existing navigation convention.
-- Do not implement M12/L11/L12 inside R unless explicitly instructed.
-
-**Acceptance criteria:**
-- Placement decision for M12/L11/L12 is documented in code comments, route metadata, or admin navigation config.
-- No configurator is hidden under unrelated moderation/server/config sections.
-- Future Codex tasks can add those pages without inventing a new navigation structure.
-- Build passes if code changes are made.
-
-# Epic S — Responsibility and Angular 21 cleanup
-
-## Task S1 — Responsibility audit
-
-**Goal:** Find scattered domain responsibilities.
-
-**Scope:**
-
-- hero,
-- progression/stat allocation,
-- resources,
-- estate/buildings,
-- combat,
-- admin/config,
-- anti-abuse.
-
-**Acceptance criteria:**
-
-- Report lists misplaced responsibilities.
-
----
-
-## Task S2 — Hero/progression/stat cleanup
-
-**Goal:** Fix the known scattered area first.
-
-**Scope:**
-
-- Hero domain handles hero identity/bootstrap.
-- Progression/stat domain handles stat allocation/progression.
-- Resource domain handles resources.
-- Preserve behavior.
-
-**Acceptance criteria:**
-
-- Existing stat allocation still works.
-- Responsibilities are clearer.
-
----
-
-## Task S3 — Angular 21 naming cleanup when touched
-
-**Goal:** Avoid outdated naming noise.
-
-**Scope:**
-
-- Do not add unnecessary `XxxService` suffix if project style avoids it.
-- Avoid redundant facade naming.
-- Do not mass rename unrelated files.
-
-**Acceptance criteria:**
-
-- Touched code follows current project style.
-
----
-
-# Epic T — Appeals and future moderation extensions
-
-## Task T1 — Appeals parked design note
+## Task R1 — Appeals parked design note
 
 **Goal:** Keep appeal concept available without implementing yet.
 
@@ -4970,7 +4671,7 @@ General Epic R rules:
 
 ---
 
-## Task T2 — Future relationship/report types as configurable dictionaries
+## Task R2 — Future relationship/report types as configurable dictionaries
 
 **Goal:** Ensure future types like mercenary/equipment rental remain configurable.
 
@@ -4985,219 +4686,9 @@ General Epic R rules:
 
 ---
 
-# Recommended near-term execution order
+# Epic S — Requirements and building district caps
 
-1. A1 — Regenerate DB types
-2. B1 — Audit identity assumptions
-3. B2 — Active server resolver
-4. B3 — Active hero resolver and critical progression/stat/resource cleanup
-5. C1/C2 — role/membership/staff access read layer and server switcher
-6. D1/D2 — config definitions/values read model
-7. G1/G2/G3 — audit dictionaries/log read/write helper
-8. H1/H2/H3/H4/H5 — anti-abuse read models and server-scoped case read
-9. H6-H12 — player declarations/reports
-10. H13-H21 — staff case/sanction UI
-11. D6/H config admin — anti-abuse config UI
-12. I1-I3 — item lifecycle
-13. F1-F12 — bonus model legacy retirement
-14. L/M/N/O/P workstreams as separate feature milestones
-
-# Notes
-
-- Do not attempt this entire backlog in one Codex run.
-- Use one task or a small tightly related group per prompt.
-- After each completed task, wait for user test/confirmation before updating completed-state docs.
-
----
-
-# 2026-04-26 Priority Update — DB foundation after trade/auction/anti-abuse stages
-
-The database now contains new runtime foundations that Codex must treat as current schema after regenerating Supabase types.
-
-## Immediate execution order update
-
-Run these before broader gameplay work:
-
-1. Regenerate Supabase `database.types.ts` and fix compile errors.
-2. Replace legacy `hero_derived.hp` / Hero Points / old HP-as-points usage.
-3. Ensure Character Points reads use `hero.character_points`.
-4. Ensure Character Points changes go through backend/RPC/domain operations and write `character_point_ledger` where appropriate.
-5. Treat `hero_derived` as transitional/legacy; do not add new dependencies to it.
-6. Wire direct trade and auction frontend to existing RPCs.
-7. Ensure inventory/armory hides or disables `locked_trade` and `locked_auction` items.
-8. Connect Trade Routes/building bonus runtime to active trade slot limit; remove reliance on fallback config in normal gameplay.
-9. Build staff/admin anti-abuse signal/case read views from existing tables.
-10. Only after user confirms these work, update state docs as completed.
-
-## High priority task — Character Points / legacy HP cleanup
-
-Current database state:
-
-- `hero.character_points` is current spendable Character Points balance.
-- `hero.total_character_points_earned` tracks lifetime generated Character Points baseline.
-- `character_point_ledger` stores append-only CP balance changes.
-- `hero_derived.hp` no longer exists.
-- `hero_derived.health` is combat health / hit points.
-- `hero_resources` remains for resources like drachmas, materials and workforce.
-
-Required work:
-
-- regenerate database types;
-- find all references to `hero_derived.hp`, `hp` as points, `hero points`, `Hero Points`, old PR/points wording;
-- replace Character Point reads with `hero.character_points`;
-- replace combat HP reads with `hero_derived.health` or runtime health resolver;
-- update stat allocation/progression save flow to spend `hero.character_points` and write ledger through backend/RPC/domain logic;
-- do not store Character Points in `hero_resources`;
-- do not write CP ledger rows directly from UI click handlers.
-
-Acceptance criteria:
-
-- app compiles with regenerated DB types;
-- no reference to removed `hero_derived.hp` remains;
-- stat allocation uses Character Points correctly;
-- Character Points and Health are not confused in domain models/UI.
-
-## High priority task — Derived stats cleanup
-
-Decision:
-
-- `hero_derived` is transitional/legacy;
-- derived stats are not authoritative persisted state for new systems;
-- frontend may calculate previews;
-- backend/RPC/domain actions calculate authoritative values from base stats, equipment, bonuses, formulas and context;
-- reports/combat/trials store event snapshots of values used at the time.
-
-Required work:
-
-- audit all reads/writes of `hero_derived`;
-- identify which screens/services rely on persisted derived stats;
-- avoid adding new writes to `hero_derived` on equipment/stat changes;
-- introduce or reuse runtime derived-stat resolver/calculator;
-- do not remove remaining `hero_derived` columns until current usages are audited and replaced.
-
-Acceptance criteria:
-
-- clear report of existing usage;
-- new trade/economy work does not depend on `hero_derived`;
-- combat/progression screens still work after cleanup.
-
-## High priority task — Direct trade frontend/runtime integration
-
-Database/RPCs already exist:
-
-- `create_player_direct_trade_offer(...)`
-- `respond_player_direct_trade_offer(...)`
-- `cancel_player_direct_trade_offer(...)`
-- `reject_player_direct_trade_offer(...)`
-- `confirm_player_direct_trade_offer(...)`
-
-Frontend/domain requirements:
-
-- direct trade is private between two heroes;
-- both sides must be on same server and able to use trade;
-- each side only selects own items;
-- no access to another hero's private inventory;
-- each side must offer item(s) and/or Character Points;
-- CP-only for CP-only exchange should be blocked;
-- show available CP as current CP minus active locks;
-- show clear reason/status text for cancel/reject/expire/fail;
-- after completing/cancelling/rejecting, refresh inventory, CP balance and active offers.
-
-Acceptance criteria:
-
-- player can create, respond to, cancel/reject and complete direct trade using RPCs;
-- locked items are not usable/equippable;
-- CP locks affect available CP display;
-- completed trade creates transaction/ledger and can create anti-abuse signal/case when rules trigger.
-
-## High priority task — Auction frontend/runtime integration
-
-Database/RPCs already exist:
-
-- `create_player_auction_listing(...)`
-- `place_player_auction_bid(...)`
-- `buy_now_player_auction(...)`
-- `cancel_player_auction_listing(...)`
-- `close_player_auction_listing(...)`
-
-Frontend/domain requirements:
-
-- one auction lists exactly one item;
-- supported modes are bidding, buy now, bidding with buy now;
-- duration is server-configured;
-- seller can cancel only before bids;
-- expired auction without bids returns item to `active`;
-- buy now completes immediately;
-- bids lock CP and outbid releases prior lock;
-- show item/CP status clearly.
-
-Acceptance criteria:
-
-- player can list, bid, buy now, cancel eligible auction and close expired/ended auction through RPCs;
-- item and CP locks display correctly;
-- completed auction writes transaction/ledger and can create anti-abuse signal/case.
-
-## High priority task — Anti-abuse signal/case UI integration
-
-Database foundation exists:
-
-- `anti_abuse_signals`
-- `anti_abuse_cases`
-- `anti_abuse_case_signals`
-- `anti_abuse_case_participants`
-
-Implemented signal types:
-
-- `trade.high_cp_direct_trade`
-- `auction.high_cp_sale`
-- `trade.repeated_pair_transfers`
-
-Requirements:
-
-- staff/admin views must be server-scoped;
-- list cases by server/status/grouping key;
-- case detail should show linked signals, participants, related transaction/entity ids, metadata, reasons/descriptions;
-- signals/cases are review aids, not automatic punishment;
-- resolved/cancelled cases are historical and not reopened automatically.
-
-Acceptance criteria:
-
-- staff can view signal-generated cases;
-- case list groups repeated signals correctly;
-- linked transaction/entity ids are visible enough for review/debugging.
-
-## High priority task — Trade Routes and active offer limit
-
-Current database runtime uses `trade_active_offer_limit_fallback`.
-
-Required work:
-
-- connect active trade/auction offer limit to Trade Routes/building bonus runtime;
-- both sides of direct trade must be able to use player trade;
-- auction seller/buyer/bidder must be able to use player trade;
-- direct trade and active auctions share the active-offer slot pool unless later config deliberately changes it.
-
-Acceptance criteria:
-
-- fallback is not the normal gameplay source once building runtime exists;
-- active offer limit changes with Trade Routes/building level/config;
-- frontend explains why trade/auction is unavailable.
-
-## Update old backlog items
-
-Older tasks mentioning generic public fixed-price listings should be interpreted as superseded.
-
-Current direction:
-
-- direct private trade is implemented first;
-- auctions are implemented as the public market path;
-- there is no separate public fixed-price listing mode outside auction buy-now.
-
----
-
-# Epic U — Requirements and building district caps
-
-## Task U1 — Requirements read models
+## Task S1 — Requirements read models
 
 **Goal:** Add typed frontend/domain models for the central requirements foundation.
 
@@ -5216,7 +4707,7 @@ Current direction:
 
 ---
 
-## Task U2 — Building district cap read model
+## Task S2 — Building district cap read model
 
 **Goal:** Make building district max-level overrides available to admin/building logic.
 
@@ -5236,7 +4727,7 @@ Current direction:
 
 ---
 
-## Task U3 — Building availability and requirement migration cleanup
+## Task S3 — Building availability and requirement migration cleanup
 
 **Goal:** Align building UI/runtime with the new requirements and district rules.
 
@@ -5256,7 +4747,7 @@ Current direction:
 
 ---
 
-## Task U4 — Building admin UI for requirements and caps
+## Task S4 — Building admin UI for requirements and caps
 
 **Goal:** Expose requirements and district caps as building balance configuration.
 
@@ -5278,13 +4769,13 @@ Current direction:
 
 ## Recommended order update
 
-Place U1-U4 after config definitions/value read models and before deeper building execution, because building runtime/admin logic now depends on central requirements and district cap semantics.
+Place S1-S4 after config definitions/value read models and before deeper building execution, because building runtime/admin logic now depends on central requirements and district cap semantics.
 
 ---
 
-# Epic V — Item generation and equipment foundation integration
+# Epic T — Item generation and equipment foundation integration
 
-## Task V1 — Regenerate database types after item generation/equipment migration
+## Task T1 — Regenerate database types after item generation/equipment migration
 
 **Goal:** Synchronize frontend generated Supabase types with the newly migrated item generation and equipment schema.
 
@@ -5308,7 +4799,7 @@ Place U1-U4 after config definitions/value read models and before deeper buildin
 
 ---
 
-## Task V2 — Update item generation domain models and mappers
+## Task T2 — Update item generation domain models and mappers
 
 **Goal:** Teach frontend item-generation code the new base type model.
 
@@ -5327,7 +4818,7 @@ Place U1-U4 after config definitions/value read models and before deeper buildin
 
 ---
 
-## Task V3 — Update base item admin form to use DB-defined native targets
+## Task T3 — Update base item admin form to use DB-defined native targets
 
 **Goal:** Base item creation/editing should be driven by `item_generation_base_type_targets`.
 
@@ -5348,7 +4839,7 @@ Place U1-U4 after config definitions/value read models and before deeper buildin
 
 ---
 
-## Task V4 — Update item generation preview to use new native bonus model
+## Task T4 — Update item generation preview to use new native bonus model
 
 **Goal:** Generated item preview should read base item native values from `entity_bonuses` and base type metadata.
 
@@ -5367,7 +4858,7 @@ Place U1-U4 after config definitions/value read models and before deeper buildin
 
 ---
 
-## Task V5 — Add Armory shelf read/edit UI foundation
+## Task T5 — Add Armory shelf read/edit UI foundation
 
 **Goal:** Allow player/admin-facing code to display and edit hero-local Armory shelf names.
 
@@ -5386,7 +4877,7 @@ Place U1-U4 after config definitions/value read models and before deeper buildin
 
 ---
 
-## Task V6 — Add hero equipment read model
+## Task T6 — Add hero equipment read model
 
 **Goal:** Frontend can read current equipment from `hero_equipment`.
 
@@ -5406,7 +4897,7 @@ Place U1-U4 after config definitions/value read models and before deeper buildin
 
 ---
 
-## Task V7 — Prepare equip/unequip DB workflow design, do not implement ad hoc
+## Task T7 — Prepare equip/unequip DB workflow design, do not implement ad hoc
 
 **Goal:** Before coding equip/unequip gameplay, identify required RPC/domain operations and ask for DB contract if missing.
 
@@ -5424,7 +4915,7 @@ Place U1-U4 after config definitions/value read models and before deeper buildin
 
 ---
 
-## Task V8 — Update Armory visible filtering to use capacity, shelf position and generation time
+## Task T8 — Update Armory visible filtering to use capacity, shelf position and generation time
 
 **Goal:** Align Armory item visibility with the new DB-backed visibility model.
 
@@ -5445,233 +4936,3 @@ Place U1-U4 after config definitions/value read models and before deeper buildin
 - Visibility/access is not confused with ownership.
 
 ---
-
-# Special Epic U0 — Roles, permissions and scoped moderation
-
-These tasks should be inserted after the current G-series work and before deeper H/admin/staff UI work, unless the user explicitly chooses another order. They depend on the U0-N4 DB foundation and regenerated Supabase types.
-
-## Task U0-C1 — Frontend role usage audit
-
-**Status:** Done / confirmed on 2026-04-28.
-
-**Goal:** Audit current frontend role/staff assumptions.
-
-**Scope:**
-
-- Search for role assumptions such as `isAdmin`, `isOperator`, `isModerator`, `isServerStaff`, `globalRoleKey`, `serverStaffRole`, `canManageSelectedServer`.
-- Classify whether each usage matches the U0 role model.
-- Do not refactor broadly.
-
-**Acceptance criteria:**
-
-- Report lists exact files/components/services.
-- Report identifies mismatches between global role and server staff assignment.
-- No schema or behavior changes.
-- Implementation note: audit identified `/admin` route guards, logged-in menu visibility, static admin navigation, and broad `ActiveServer.canManageSelectedServer` semantics as primary frontend role-boundary risks.
-
-## Task U0-C2 — Staff gameplay access audit
-
-**Status:** Done / confirmed on 2026-04-28.
-
-**Goal:** Verify whether staff can enter normal gameplay on servers where they are assigned staff.
-
-**Scope:**
-
-- Active server/hero loading.
-- Route guards.
-- Gameplay entry points.
-- Sandbox/test exceptions.
-
-**Acceptance criteria:**
-
-- Report explains where staff gameplay should be blocked or allowed.
-- Sandbox exception is preserved.
-- No broad implementation yet unless user requests it.
-- Implementation note: audit confirmed `/hero/*` and `/game/*` lacked standard-server assigned-staff gameplay blocking; later U0 implementation added the central policy and gameplay boundary.
-
-## Task U0-C3 — User/staff management UI audit
-
-**Status:** Done / confirmed on 2026-04-28.
-
-**Goal:** Identify existing or missing UI for global role assignment, server staff assignment and moderator scope assignment.
-
-**Scope:**
-
-- User search/selection.
-- Assign global role flow.
-- Assign server staff flow.
-- Assign moderator scopes flow.
-- Candidate disqualification display.
-
-**Acceptance criteria:**
-
-- Report identifies missing screens/services/components.
-- No direct table writes proposed; future UI must use U0 RPC.
-- Implementation note: audit confirmed no frontend staff management screen existed yet and future implementation must use staff RPC workflows/dictionaries instead of direct staff table writes.
-
-## Task U0-C4 — Moderator scope UI spec
-
-**Status:** Done / confirmed on 2026-04-28.
-
-**Goal:** Design UI flow for assigning moderator scopes.
-
-**Scope:**
-
-- Admin/operator selects user and server.
-- UI excludes/disables users with heroes on standard target server.
-- UI shows staff-disqualifying history warnings.
-- UI allows choosing moderator scopes.
-
-**Acceptance criteria:**
-
-- Spec uses DB dictionaries from `staff_permission_scopes`.
-- No hardcoded scope list except transitional display fallback.
-- No implementation unless user requests it.
-- Implementation note: spec defined safe server/user selection, eligibility checks, moderator role assignment, DB-driven scope selection, required reason/notes and RPC-only submit.
-
-## Task U0-C5 — Role-aware technical metadata visibility audit
-
-**Goal:** Audit where technical keys/raw JSON are shown and whether visibility should depend on role/context.
-
-**Acceptance criteria:**
-
-- Player-facing technical key leaks are identified.
-- Moderator-only views are checked against scope/context.
-- Admin/operator metadata remains available as secondary information.
-
-## Task U0-C6 — Staff/moderation navigation boundaries audit
-
-**Status:** Done / confirmed on 2026-04-28.
-
-**Goal:** Ensure navigation separates admin global tools, operator server tools, moderator scoped tools and player gameplay.
-
-**Acceptance criteria:**
-
-- Report identifies routes/menu items requiring role/scope guards.
-- Moderator does not receive operator/admin tooling unless explicitly allowed.
-- Implementation note: audit confirmed admin shell, sidebar, dashboard cards and admin tag-links needed one central route/navigation access policy rather than static prototype visibility.
-
-## Task U0-C7 — Moderation actions UI foundation
-
-**Status:** Done / confirmed on 2026-04-29 through U0-I8 and U0-I9.
-
-**Goal:** Build frontend read/write surfaces for U0 moderation actions after types regeneration.
-
-**Scope:**
-
-- Create local warning/account warning/restriction/suspension/ban through `create_moderation_action`.
-- Show required reason.
-- Allow source entity id/type where relevant.
-- Show moderation history through RPC.
-
-**Acceptance criteria:**
-
-- No direct writes to `moderation_actions`.
-- UI uses `moderation_action_types` and `staff_permission_scopes` dictionaries.
-- Moderator only sees actions allowed by scope.
-- Operator/admin see history.
-- Implementation note: `/admin/moderation-actions` uses DB dictionaries, creates actions only through `create_moderation_action`, reads visible/full history through moderation history RPCs, and uses server-scoped user/account and hero target search autocompletes.
-
-## Confirmed U0 implementation follow-ups
-
-These implementation slices were executed after the U0 audit/spec tasks and are recorded here to preserve the completed task history.
-
-- **U0-I1 — Central staff access policy model:** Done / confirmed on 2026-04-28. Added `resolveStaffAccessPolicy(...)` and exported policy types to separate global roles, selected-server staff assignment, management authority, moderation authority, testing access, player gameplay access and assigned-staff gameplay blocking.
-- **U0-I2 — Staff gameplay boundary implementation:** Done / confirmed on 2026-04-28. `/hero/*` and `/game/*` now respect staff gameplay blocking on standard servers while preserving sandbox/testing exceptions and membership punishment handling.
-- **U0-I3 — Admin route guard and sidebar boundary:** Done / confirmed on 2026-04-28. `/admin/*` is guarded by central staff access policy and normal players no longer see the admin shell entry.
-- **U0-I4 — Admin dashboard cards and tag-link filtering:** Done / confirmed on 2026-04-28. Admin dashboard cards and reusable admin tag links now filter through central admin navigation access metadata.
-- **U0-I5 — Staff management read models and services:** Done / confirmed on 2026-04-28. Staff management has typed domain/read services, server-scoped staff candidate search, RPC-only staff mutations and DB-backed roles/scopes.
-- **U0-I6 — Staff management UI foundation:** Done / confirmed on 2026-04-28. `/admin/staff-management` provides selected-server staff assignment management through server-scoped candidate search and RPC-backed assignment/revoke flows.
-- **U0-I7 — Moderator scope assignment UI:** Done / confirmed on 2026-04-29. Staff management supports moderator permission scope assignment using `staff_permission_scopes` labels and `set_server_staff_permission_scopes`.
-- **U0-I8 — Moderation actions UI foundation:** Done / confirmed on 2026-04-29. `/admin/moderation-actions` supports server-scoped moderation actions through canonical moderation action RPCs.
-- **U0-I9 — Moderation history target picker and full-history modes:** Done / confirmed on 2026-04-29. Moderation action create/history target fields use server-scoped user/account and hero autocompletes and support visible plus full target history modes.
-
-# Special Epic UX — Explainability and impact previews
-
-## Task UX-C1 — Audit raw-key and unexplained UI exposure
-
-**Goal:** Find places where UI exposes raw keys, enum values, JSON blobs, config names or audit/action/entity keys without human-readable label/description/helper text.
-
-**Scope:** config governance, formula governance, audit logs, bonus admin, anti-abuse, building admin, item generation admin.
-
-**Acceptance criteria:** report exact screens/components, classify missing DB metadata vs missing display use, and do not refactor broadly.
-
-## Task UX-C2 — Audit missing gameplay impact previews
-
-**Goal:** Find places where admin can change data but cannot see predicted gameplay effect.
-
-**Examples:** item Normal/Quality/Outstanding preview, formula calculators, building level calculators, bonus/requirement previews.
-
-**Acceptance criteria:** actionable report only; no broad refactor.
-
-## Task UX-C3 — Add human-readable metadata display helpers
-
-**Status:** Done / confirmed on 2026-04-29 through UX-I1.
-
-**Goal:** Add shared helper/component pattern to render label, description/helper, and technical key as secondary metadata.
-
-**Acceptance criteria:** label is primary; key is secondary; raw JSON is in technical details; no hardcoded gameplay dictionary explosion.
-
-- Implementation note: shared `MetadataDisplay` was added and used in Moderation actions action-type details plus Staff management moderator scope options.
-
-## Task UX-C4 — Add dictionary value display helper
-
-**Goal:** Support human-readable labels/descriptions for enum/status/scope/type keys using DB metadata once available.
-
-**Acceptance criteria:** raw enum keys are not primary UI text when dictionary metadata exists.
-
-## Task UX-C5 — Config governance explainability pass
-
-**Status:** Done / confirmed on 2026-04-29 through UX-I2.
-
-**Goal:** Make config governance screens understandable: what the value changes, where it applies, and what risk/scope it has.
-
-- Implementation note: config governance screens consume `get_config_definition_explainability(...)` for DB-backed scope/value/applicability explanations and keep technical JSON/schema as secondary legacy admin previews.
-
-## Task UX-C6 — Formula impact preview calculators
-
-**Status:** Done / confirmed on 2026-04-29 through UX-I4.
-
-**Goal:** Add calculators showing formula output for supplied example inputs, e.g. building level 11 -> level 12 cost.
-
-- Implementation note: `/admin/formulas` includes a formula impact calculator for enabled global/default target assignments, using existing formula runtime and expression preview.
-
-## Task UX-C7 — Item generation quality impact preview
-
-**Status:** Done / confirmed on 2026-04-29 through UX-I5.
-
-**Goal:** Show Normal/Quality/Outstanding outcomes for item generation definitions, bonuses, requirements and drachma value.
-
-- Implementation note: Balance quality tiers include DB-backed item quality impact preview through `get_item_quality_impact_preview(...)` and no hardcoded quality-tier list.
-
-## Task UX-C8 — Building formula impact calculators
-
-**Status:** Done / confirmed on 2026-04-29 through UX-I6.
-
-**Goal:** Show predicted building cost/effect/production by selected level and formula assignment.
-
-- Implementation note: Building admin includes a separate preview section combining local formula output with DB-backed district/cap progression context from `get_building_progression_preview(...)`.
-
-## Task UX-C9 — Bonus and requirement impact preview
-
-**Status:** Done / confirmed on 2026-04-29 through UX-I7 and UX-I7b.
-
-**Goal:** Show resolved effect of bonus templates, entity bonuses, quality scaling, per-level intervals and requirements in human-readable terms.
-
-- Implementation note: Building admin bonus rows show live local explainability and saved canonical bonus impact; building requirements now use a DB-driven central requirement editor backed by `requirement_definitions`, canonical entity requirement RPCs and `get_requirement_impact_preview(...)`.
-
-## Task UX-C10 — Audit and anti-abuse explainability pass
-
-**Status:** Done / confirmed on 2026-04-29 through UX-I3 and UX-I8.
-
-**Goal:** Replace raw audit action/case/sanction keys as primary UI text with labels and explanations.
-
-- Implementation note: Audit logs now show joined audit action/entity labels and collapsed technical JSON; anti-abuse decision explainability has DB-backed dictionary loading and display/projection helpers for sanction, report, declaration and signal types.
-
-## Task UX-C11 — Smoke test UX notes integration
-
-**Goal:** Ensure Codex smoke tests describe both click path and business/gameplay meaning of what is tested.
-
-## Task UX-C12 — ux-ui-notes cleanup and prioritization pass
-
-**Goal:** Periodically group and prioritize UX/UI notes by severity, quick wins, DB metadata needed, and redesign-needed items.

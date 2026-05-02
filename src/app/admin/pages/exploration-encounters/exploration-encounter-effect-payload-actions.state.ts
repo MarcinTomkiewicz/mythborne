@@ -7,10 +7,8 @@ import { getErrorMessage } from '../../../core/utils/error-message';
 import { trimToNull } from '../../../core/utils/normalize-text';
 import { RequestToken } from '../../../core/utils/request-token';
 import { parseMetadataJson, requiredFormValue } from './exploration-encounter-action-utils';
-import {
-  createEncounterEffectPayloadForm,
-  effectPayloadFormValue,
-} from './exploration-encounters-forms';
+import { ExplorationEncounterFormFactory } from './exploration-encounter-form.factory';
+import { ExplorationEncounterDefinitionActionsState } from './exploration-encounter-definition-actions.state';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 import {
   markReasonInvalid,
@@ -22,14 +20,16 @@ import {
 export class ExplorationEncounterEffectPayloadActionsState {
   private readonly admin = inject(ExplorationEncounterAdmin);
   private readonly page = inject(ExplorationEncountersPageState);
+  private readonly definitionActions = inject(ExplorationEncounterDefinitionActionsState);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly formFactory = inject(ExplorationEncounterFormFactory);
   private readonly saveToken = new RequestToken();
 
   readonly selectedPayloadId = signal<string | null>(null);
   readonly isSaving = signal(false);
   readonly reasonError = signal<string | null>(null);
-  readonly form = createEncounterEffectPayloadForm();
+  readonly form = this.formFactory.createEncounterEffectPayloadForm();
   readonly selectedPayload = computed(() => {
     const payloadId = this.selectedPayloadId();
 
@@ -82,6 +82,11 @@ export class ExplorationEncounterEffectPayloadActionsState {
       encounter.encounter.encounterKind !== ENCOUNTER_KIND.debuff
     ) {
       this.page.error.set('Effect payloads can be edited only for buff or debuff encounters.');
+      return;
+    }
+
+    if (this.definitionActions.hasUnsavedEncounterKindChange()) {
+      this.page.error.set('Save the encounter definition kind before editing kind-specific configuration.');
       return;
     }
 
@@ -166,7 +171,7 @@ export class ExplorationEncounterEffectPayloadActionsState {
 
   private syncForm(row: EncounterEffectPayloadAdminView | null): void {
     this.reasonError.set(null);
-    this.form.reset(effectPayloadFormValue(row));
+    this.form.reset(this.formFactory.effectPayloadValue(row));
 
     if (!row) {
       this.form.controls.sortOrder.setValue(

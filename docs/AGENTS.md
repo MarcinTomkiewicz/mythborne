@@ -84,6 +84,66 @@ When a current file and a legacy concept file disagree, prefer the current schem
 
 ---
 
+## Shared code reuse and extension policy
+
+Before adding new code, Codex must first check existing shared/project patterns.
+
+### Required lookup order
+
+When implementing forms, validators, mappers, options, metadata helpers, RPC helpers, or domain utilities, first check and prefer:
+
+1. `core/factories`
+2. `core/validators`
+3. `core/utils`
+4. existing form config files using `FormFieldConfig`
+5. existing domain models and mappers
+6. existing constants in `core/constants`
+7. existing services/RPC helpers
+
+Do not add a new domain-specific utility, mapper, factory, validator, or helper until existing shared options have been checked.
+
+### Forms
+
+- Form construction should use an existing factory pattern where available.
+- New form creation logic should normally live in a factory, not grow large page/action files.
+- Validators must reuse `core/validators` wherever possible.
+- If a new validator is needed, prefer adding a generic validator to `core/validators` when it can apply across domains.
+- Feature-local validators/helpers are acceptable only when genuinely domain-specific.
+
+### Form configs and renderers
+
+- Prefer existing `FormFieldConfig` patterns for repeated form field definitions.
+- If an existing generic renderer cannot be used safely, explain why.
+- In particular, do not use a renderer that wraps PrimeNG `p-select` inside a native `<label>`, because that has caused selection bugs.
+- When a generic renderer is unsafe, use a feature-local config/helper only as a constrained workaround and document the reason.
+
+### Utilities and mappers
+
+- Do not create new `core/utils/*` files for feature-specific behavior.
+- Feature-specific helpers should stay near the feature unless they are genuinely reusable across multiple domains.
+- Domain mappers should not duplicate generic mapper/helpers already available in `core/utils`.
+- Constants should go in `core/constants` only when they represent a shared runtime/DB contract. Feature-only constants should remain feature-local.
+
+### Required implementation report
+
+Every implementation summary must include:
+
+| Category | Required content |
+|---|---|
+| reused | Existing utilities/factories/configs/validators/services reused |
+| checked but not reused | Existing shared code checked and why it was not appropriate |
+| new | New helpers/factories/utils/configs/constants added and why they are feature-local or core |
+
+### No retrospective refactor by default
+
+Do not refactor unrelated legacy code merely to satisfy these rules unless the task explicitly asks for cleanup. Apply these rules to new or touched code. Larger cleanup belongs in a separate refactor task/backlog item.
+
+### Shared code registry
+
+When adding a new shared generic helper, factory, validator, renderer, or config pattern, update the shared-code registry document if one exists. The registry should help future work discover reusable project primitives without scanning the entire repository.
+
+---
+
 ## Legacy DB cleanup candidates
 
 When a task removes the last known code usage of a legacy table, column, RPC, helper or model, Codex must report it explicitly instead of silently leaving database debt behind.

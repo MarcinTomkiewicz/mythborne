@@ -1,0 +1,12 @@
+<div class="flex-col gap-xs">
+  @if (legend()) {
+    <p class="card-legend mb-0">{{ legend() }}</p>
+  }
+  <h3 class="mg-section__title mg-section__title--xs mb-0">{{ title() }}</h3>
+  @if (text()) {
+    <p class="mb-0">{{ text() }}</p>
+  }
+  @if (secondaryText()) {
+    <p class="muted-text mb-0">{{ secondaryText() }}</p>
+  }
+</div>

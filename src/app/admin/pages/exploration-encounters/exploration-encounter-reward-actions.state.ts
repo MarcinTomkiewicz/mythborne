@@ -1,16 +1,21 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EncounterRewardAssignmentAdminView } from '../../../core/domain/exploration/exploration-encounter-admin.model';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
 import { ToastService } from '../../../core/services/ui/toast';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { trimToNull } from '../../../core/utils/normalize-text';
 import { RequestToken } from '../../../core/utils/request-token';
-import {
-  assignmentFormValue,
-  createEncounterRewardAssignmentForm,
-} from './exploration-encounters-forms';
+import { ExplorationEncounterFormFactory } from './exploration-encounter-form.factory';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 import { parseMetadataJson, requiredFormValue } from './exploration-encounter-action-utils';
+import {
+  clearHiddenMatchControls,
+  shouldShowMatchMaximum,
+  shouldShowMatchValue,
+  validateDifficultyRange,
+  validateDistrictRange,
+} from './exploration-encounter-form-rules';
 import {
   markReasonInvalid,
   nextSortOrder,
@@ -23,17 +28,20 @@ export class ExplorationEncounterRewardActionsState {
   private readonly page = inject(ExplorationEncountersPageState);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly formFactory = inject(ExplorationEncounterFormFactory);
   private readonly saveToken = new RequestToken();
 
   readonly selectedAssignmentId = signal<string | null>(null);
   readonly isSaving = signal(false);
   readonly reasonError = signal<string | null>(null);
+  readonly difficultyRangeError = signal<string | null>(null);
+  readonly districtRangeError = signal<string | null>(null);
   readonly selectedAssignment = computed(() => {
     const assignmentId = this.selectedAssignmentId();
 
     return this.page.rewardAssignments().find((row) => row.assignment.id === assignmentId) ?? null;
   });
-  readonly assignmentForm = createEncounterRewardAssignmentForm();
+  readonly assignmentForm = this.formFactory.createEncounterRewardAssignmentForm();
 
   constructor() {
     effect(() => {
@@ -43,6 +51,13 @@ export class ExplorationEncounterRewardActionsState {
         this.resetAssignmentForm();
       });
     });
+
+    this.assignmentForm.controls.difficultyMatchKind.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((matchKind) => this.reconcileDifficultyControls(matchKind));
+    this.assignmentForm.controls.districtMatchKind.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((matchKind) => this.reconcileDistrictControls(matchKind));
   }
 
   selectAssignment(assignmentId: string | null): void {
@@ -74,8 +89,10 @@ export class ExplorationEncounterRewardActionsState {
 
     this.assignmentForm.markAllAsTouched();
     const hasInvalidReason = markReasonInvalid(this.reasonError, this.assignmentForm.controls.reason);
+    this.reconcileHiddenMatchControls();
+    const hasInvalidRanges = this.markInvalidRanges();
 
-    if (this.assignmentForm.invalid || hasInvalidReason) {
+    if (this.assignmentForm.invalid || hasInvalidReason || hasInvalidRanges) {
       return;
     }
 
@@ -171,7 +188,10 @@ export class ExplorationEncounterRewardActionsState {
 
   private syncAssignmentForm(row: EncounterRewardAssignmentAdminView | null): void {
     this.reasonError.set(null);
-    this.assignmentForm.reset(assignmentFormValue(row));
+    this.difficultyRangeError.set(null);
+    this.districtRangeError.set(null);
+    this.assignmentForm.reset(this.formFactory.assignmentValue(row));
+    this.reconcileHiddenMatchControls();
 
     if (!row) {
       this.assignmentForm.controls.sortOrder.setValue(
@@ -184,6 +204,22 @@ export class ExplorationEncounterRewardActionsState {
     this.syncAssignmentForm(null);
   }
 
+  showDifficultyValue(): boolean {
+    return shouldShowMatchValue(this.assignmentForm.controls.difficultyMatchKind.value);
+  }
+
+  showDifficultyMaximum(): boolean {
+    return shouldShowMatchMaximum(this.assignmentForm.controls.difficultyMatchKind.value);
+  }
+
+  showDistrictValue(): boolean {
+    return shouldShowMatchValue(this.assignmentForm.controls.districtMatchKind.value);
+  }
+
+  showDistrictMaximum(): boolean {
+    return shouldShowMatchMaximum(this.assignmentForm.controls.districtMatchKind.value);
+  }
+
   private currentAssignmentGuard(): () => boolean {
     const selectedEncounterId = this.page.selectedEncounterId();
     const selectedAssignmentId = this.selectedAssignmentId();
@@ -193,5 +229,58 @@ export class ExplorationEncounterRewardActionsState {
       this.page.selectedEncounterId() === selectedEncounterId &&
       this.selectedAssignmentId() === selectedAssignmentId &&
       this.assignmentForm.controls.assignmentId.value === formAssignmentId;
+  }
+
+  private reconcileHiddenMatchControls(): void {
+    this.reconcileDifficultyControls(this.assignmentForm.controls.difficultyMatchKind.value);
+    this.reconcileDistrictControls(this.assignmentForm.controls.districtMatchKind.value);
+  }
+
+  private reconcileDifficultyControls(matchKind: string | null): void {
+    clearHiddenMatchControls(
+      matchKind,
+      this.assignmentForm.controls.difficultyKey,
+      this.assignmentForm.controls.maxDifficultyKey,
+    );
+    this.difficultyRangeError.set(null);
+  }
+
+  private reconcileDistrictControls(matchKind: string | null): void {
+    clearHiddenMatchControls(
+      matchKind,
+      this.assignmentForm.controls.districtCode,
+      this.assignmentForm.controls.maxDistrictCode,
+    );
+    this.districtRangeError.set(null);
+  }
+
+  private markInvalidRanges(): boolean {
+    const difficulty = this.showDifficultyMaximum()
+      ? validateDifficultyRange(
+        this.page.data(),
+        this.assignmentForm.controls.difficultyKey.value,
+        this.assignmentForm.controls.maxDifficultyKey.value,
+      )
+      : { valid: true, message: null };
+    const district = this.showDistrictMaximum()
+      ? validateDistrictRange(
+        this.page.data(),
+        this.assignmentForm.controls.districtCode.value,
+        this.assignmentForm.controls.maxDistrictCode.value,
+      )
+      : { valid: true, message: null };
+
+    this.difficultyRangeError.set(difficulty.message);
+    this.districtRangeError.set(district.message);
+
+    if (!difficulty.valid) {
+      this.assignmentForm.controls.maxDifficultyKey.markAsTouched();
+    }
+
+    if (!district.valid) {
+      this.assignmentForm.controls.maxDistrictCode.markAsTouched();
+    }
+
+    return !difficulty.valid || !district.valid;
   }
 }

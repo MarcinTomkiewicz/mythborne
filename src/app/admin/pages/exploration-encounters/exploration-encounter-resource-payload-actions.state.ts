@@ -7,10 +7,8 @@ import { getErrorMessage } from '../../../core/utils/error-message';
 import { trimToNull } from '../../../core/utils/normalize-text';
 import { RequestToken } from '../../../core/utils/request-token';
 import { parseMetadataJson, requiredFormValue } from './exploration-encounter-action-utils';
-import {
-  createEncounterResourcePayloadForm,
-  resourcePayloadFormValue,
-} from './exploration-encounters-forms';
+import { ExplorationEncounterFormFactory } from './exploration-encounter-form.factory';
+import { ExplorationEncounterDefinitionActionsState } from './exploration-encounter-definition-actions.state';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 import {
   markReasonInvalid,
@@ -22,14 +20,16 @@ import {
 export class ExplorationEncounterResourcePayloadActionsState {
   private readonly admin = inject(ExplorationEncounterAdmin);
   private readonly page = inject(ExplorationEncountersPageState);
+  private readonly definitionActions = inject(ExplorationEncounterDefinitionActionsState);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly formFactory = inject(ExplorationEncounterFormFactory);
   private readonly saveToken = new RequestToken();
 
   readonly selectedPayloadId = signal<string | null>(null);
   readonly isSaving = signal(false);
   readonly reasonError = signal<string | null>(null);
-  readonly form = createEncounterResourcePayloadForm();
+  readonly form = this.formFactory.createEncounterResourcePayloadForm();
   readonly selectedPayload = computed(() => {
     const payloadId = this.selectedPayloadId();
 
@@ -75,6 +75,11 @@ export class ExplorationEncounterResourcePayloadActionsState {
 
     if (encounter.encounter.encounterKind !== ENCOUNTER_KIND.resource) {
       this.page.error.set('Resource payloads can be edited only for resource encounters.');
+      return;
+    }
+
+    if (this.definitionActions.hasUnsavedEncounterKindChange()) {
+      this.page.error.set('Save the encounter definition kind before editing kind-specific configuration.');
       return;
     }
 
@@ -152,7 +157,7 @@ export class ExplorationEncounterResourcePayloadActionsState {
 
   private syncForm(row: EncounterResourcePayloadAdminView | null): void {
     this.reasonError.set(null);
-    this.form.reset(resourcePayloadFormValue(row));
+    this.form.reset(this.formFactory.resourcePayloadValue(row));
 
     if (!row) {
       this.form.controls.sortOrder.setValue(

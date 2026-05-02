@@ -1,6 +1,14 @@
 import { forkJoin, map, Observable } from 'rxjs';
+import {
+  ENCOUNTER_CONFIGURATOR_FIELD_METADATA_KEYS,
+  ENCOUNTER_CONFIGURATOR_FIELD_METADATA_NAMESPACE,
+  ENCOUNTER_CONFIGURATOR_SECTION_METADATA_KEYS,
+  ENCOUNTER_CONFIGURATOR_SECTION_METADATA_NAMESPACE,
+} from '../../constants/exploration-encounter-ui-metadata.const';
+import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import { ExplorationEncounterAdminData } from '../../domain/exploration/exploration-encounter-admin.model';
+import { mapUiMetadataEntry } from '../../utils/admin-ui-metadata';
 import { Row } from '../../types/supabase.types';
 import { mapBuildingDistricts } from '../../utils/building-admin-mappers';
 import { mapCanonicalBonusTemplate } from '../../utils/bonus-governance';
@@ -21,6 +29,7 @@ import {
 } from '../../utils/exploration-trial-admin-mappers';
 import {
   mapRewardProfile,
+  mapRewardProfileEntry,
   mapRewardOutcomeKind,
   mapRewardProfileAssignment,
   mapRewardDictionary,
@@ -53,6 +62,11 @@ export function getExplorationEncounterAdminData(
       { column: 'sort_order', ascending: true },
       { column: 'key', ascending: true },
     ]),
+    rewardProfileEntries: getRows<Row<'reward_profile_entries'>>(backend, TABLES.reward_profile_entries, [
+      { column: 'reward_profile_id', ascending: true },
+      { column: 'sort_order', ascending: true },
+      { column: 'label', ascending: true },
+    ]),
     rewardOutcomeKinds: getRows<Row<'reward_outcome_kinds'>>(backend, TABLES.reward_outcome_kinds, [
       { column: 'source_kind', ascending: true },
       { column: 'sort_order', ascending: true },
@@ -63,6 +77,18 @@ export function getExplorationEncounterAdminData(
       { column: 'key', ascending: true },
     ]),
     rewardAssignmentMatchKinds: getRows<Row<'reward_assignment_match_kinds'>>(backend, TABLES.reward_assignment_match_kinds, [
+      { column: 'sort_order', ascending: true },
+      { column: 'key', ascending: true },
+    ]),
+    rewardSourceKinds: getRows<Row<'reward_source_kinds'>>(backend, TABLES.reward_source_kinds, [
+      { column: 'sort_order', ascending: true },
+      { column: 'key', ascending: true },
+    ]),
+    rewardEntryKinds: getRows<Row<'reward_entry_kinds'>>(backend, TABLES.reward_entry_kinds, [
+      { column: 'sort_order', ascending: true },
+      { column: 'key', ascending: true },
+    ]),
+    rewardEntryAmountModes: getRows<Row<'reward_entry_amount_modes'>>(backend, TABLES.reward_entry_amount_modes, [
       { column: 'sort_order', ascending: true },
       { column: 'key', ascending: true },
     ]),
@@ -103,6 +129,7 @@ export function getExplorationEncounterAdminData(
       { column: 'scope_key', ascending: true },
       { column: 'key', ascending: true },
     ]),
+    uiMetadataEntries: getEncounterConfiguratorUiMetadata(backend),
   }).pipe(
     map((data) => ({
       encounters: data.encounters.map(mapEncounterDefinition),
@@ -110,9 +137,13 @@ export function getExplorationEncounterAdminData(
       difficulties: data.difficulties.map(mapExplorationDifficultyTier),
       districts: mapBuildingDistricts(data.districts),
       rewardProfiles: data.rewardProfiles.map(mapRewardProfile),
+      rewardProfileEntries: data.rewardProfileEntries.map(mapRewardProfileEntry),
       rewardOutcomeKinds: data.rewardOutcomeKinds.map(mapRewardOutcomeKind),
       resourceTypes: data.resourceTypes.map(mapResourceType),
       rewardAssignmentMatchKinds: data.rewardAssignmentMatchKinds.map(mapRewardDictionary),
+      rewardSourceKinds: data.rewardSourceKinds.map(mapRewardDictionary),
+      rewardEntryKinds: data.rewardEntryKinds.map(mapRewardDictionary),
+      rewardEntryAmountModes: data.rewardEntryAmountModes.map(mapRewardDictionary),
       rewardAssignments: data.rewardAssignments.map(mapRewardProfileAssignment),
       combatCandidates: data.combatCandidates.map(mapEncounterCombatCandidate),
       resourcePayloads: data.resourcePayloads.map(mapEncounterResourcePayload),
@@ -122,6 +153,7 @@ export function getExplorationEncounterAdminData(
       opponents: data.opponents.map(mapCombatOpponentDefinition),
       families: data.families.map(mapCombatOpponentFamily),
       formulas: data.formulas.map(mapBalanceFormula),
+      uiMetadataEntries: data.uiMetadataEntries,
     })),
   );
 }
@@ -135,5 +167,32 @@ function getRows<T extends object>(
     table,
     orderBy,
     camelCase: false,
+  });
+}
+
+function getEncounterConfiguratorUiMetadata(backend: Backend) {
+  return forkJoin([
+    getUiMetadataEntries(
+      backend,
+      ENCOUNTER_CONFIGURATOR_SECTION_METADATA_NAMESPACE,
+      ENCOUNTER_CONFIGURATOR_SECTION_METADATA_KEYS,
+    ),
+    getUiMetadataEntries(
+      backend,
+      ENCOUNTER_CONFIGURATOR_FIELD_METADATA_NAMESPACE,
+      ENCOUNTER_CONFIGURATOR_FIELD_METADATA_KEYS,
+    ),
+  ]).pipe(map(([sections, fields]) => [...sections, ...fields].map(mapUiMetadataEntry)));
+}
+
+function getUiMetadataEntries(
+  backend: Backend,
+  namespace: string,
+  keys: readonly string[],
+) {
+  return backend.rpc<Row<'ui_metadata_entries'>[]>(RPC.get_ui_metadata_entries, {
+    p_namespace: namespace,
+    p_keys: [...keys],
+    p_include_inactive: false,
   });
 }

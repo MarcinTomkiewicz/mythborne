@@ -30,10 +30,22 @@ describe('ExplorationEncounterAdmin', () => {
   });
 
   it('loads encounter admin dictionaries through read-only table queries', (done) => {
+    backend.rpc.and.callFake(<T>(name: string, args?: Record<string, unknown>) => {
+      if (name === RPC.get_ui_metadata_entries) {
+        return of(uiMetadataRows(String(args?.['p_namespace'] ?? '')) as T);
+      }
+
+      return of(null as T);
+    });
+
     service.getAdminData().subscribe((data) => {
       expect(data.encounters[0].label).toBe('Bandit ambush');
       expect(data.rewardAssignments[0].outcomeKind).toBe('success');
       expect(data.rewardOutcomeKinds[0].label).toBe('Success');
+      expect(data.rewardProfileEntries[0].entryKind).toBe('experience');
+      expect(data.rewardEntryKinds[0].label).toBe('Experience');
+      expect(data.rewardEntryAmountModes[0].label).toBe('Fixed');
+      expect(data.rewardSourceKinds[0].key).toBe('encounter');
       expect(data.resourceTypes[0].label).toBe('Drachma');
       expect(data.rewardAssignmentMatchKinds[0].key).toBe('exact');
       expect(data.combatCandidates[0].candidateKind).toBe('opponent');
@@ -41,6 +53,7 @@ describe('ExplorationEncounterAdmin', () => {
       expect(data.effectDefinitions[0].effectKind).toBe('buff');
       expect(data.effectPayloads[0].effectDefinitionId).toBe('effect-1');
       expect(data.rewardProfiles[0].label).toBe('Encounter reward');
+      expect(data.uiMetadataEntries[0].namespace).toBe('encounter_configurator_section');
       expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
         table: TABLES.encounter_definitions,
       }));
@@ -52,6 +65,18 @@ describe('ExplorationEncounterAdmin', () => {
       }));
       expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
         table: TABLES.reward_profile_assignments,
+      }));
+      expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
+        table: TABLES.reward_profile_entries,
+      }));
+      expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
+        table: TABLES.reward_entry_kinds,
+      }));
+      expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
+        table: TABLES.reward_entry_amount_modes,
+      }));
+      expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
+        table: TABLES.reward_source_kinds,
       }));
       expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
         table: TABLES.resource_types,
@@ -69,7 +94,18 @@ describe('ExplorationEncounterAdmin', () => {
       expect(backend.update).not.toHaveBeenCalled();
       expect(backend.upsert).not.toHaveBeenCalled();
       expect(backend.delete).not.toHaveBeenCalled();
-      expect(backend.rpc).not.toHaveBeenCalled();
+      expect(backend.rpc).toHaveBeenCalledWith(
+        RPC.get_ui_metadata_entries,
+        jasmine.objectContaining({
+          p_namespace: 'encounter_configurator_section',
+        }),
+      );
+      expect(backend.rpc).toHaveBeenCalledWith(
+        RPC.get_ui_metadata_entries,
+        jasmine.objectContaining({
+          p_namespace: 'encounter_configurator_field',
+        }),
+      );
       done();
     });
   });
@@ -355,10 +391,55 @@ function rowsFor(table: string): any[] {
         created_at: '2026-05-01T10:00:00.000Z',
         updated_at: '2026-05-01T10:00:00.000Z',
       }];
+    case TABLES.reward_profile_entries:
+      return [{
+        id: 'entry-1',
+        reward_profile_id: 'reward-1',
+        entry_kind: 'experience',
+        label: 'Experience reward',
+        description: 'XP.',
+        helper_text: null,
+        admin_description: null,
+        amount_mode: 'fixed',
+        min_amount: 10,
+        max_amount: 10,
+        resource_type: null,
+        formula_id: null,
+        chance_percent: 100,
+        min_item_count: null,
+        max_item_count: null,
+        max_quality_key: null,
+        bucket_profile_id: null,
+        effect_definition_id: null,
+        transfer_source_role: null,
+        transfer_recipient_role: null,
+        sort_order: 10,
+        is_active: true,
+        metadata_json: {},
+        created_at: '2026-05-01T10:00:00.000Z',
+        updated_at: '2026-05-01T10:00:00.000Z',
+      }];
     case TABLES.reward_assignment_match_kinds:
       return [
         rewardDictionaryRow('exact', 'Exact'),
         rewardDictionaryRow('any', 'Any'),
+      ];
+    case TABLES.reward_entry_kinds:
+      return [
+        rewardDictionaryRow('experience', 'Experience'),
+        rewardDictionaryRow('resource', 'Resource'),
+      ];
+    case TABLES.reward_entry_amount_modes:
+      return [
+        rewardDictionaryRow('fixed', 'Fixed'),
+        rewardDictionaryRow('range', 'Range'),
+        rewardDictionaryRow('formula', 'Formula'),
+        rewardDictionaryRow('none', 'None'),
+      ];
+    case TABLES.reward_source_kinds:
+      return [
+        rewardDictionaryRow('encounter', 'Encounter'),
+        rewardDictionaryRow('trial', 'Trial'),
       ];
     case TABLES.resource_types:
       return [{
@@ -495,6 +576,32 @@ function rewardDictionaryRow(key: string, label: string): any {
     created_at: '2026-05-01T10:00:00.000Z',
     updated_at: '2026-05-01T10:00:00.000Z',
   };
+}
+
+function uiMetadataRows(namespace: string): any[] {
+  return [
+    {
+      id: `${namespace}-page-header`,
+      namespace,
+      key: namespace === 'encounter_configurator_section'
+        ? 'page_header'
+        : 'encounter_key',
+      label: namespace === 'encounter_configurator_section'
+        ? 'Encounter definitions configurator'
+        : 'Generated key',
+      description: 'DB-backed UI metadata.',
+      helper_text: null,
+      impact_summary: null,
+      warning_text: null,
+      ui_group_key: 'encounter-configurator',
+      ui_group_label: 'Exploration encounters',
+      sort_order: 10,
+      is_active: true,
+      metadata_json: {},
+      created_at: '2026-05-01T10:00:00.000Z',
+      updated_at: '2026-05-01T10:00:00.000Z',
+    },
+  ];
 }
 
 function baseEncounter(): any {

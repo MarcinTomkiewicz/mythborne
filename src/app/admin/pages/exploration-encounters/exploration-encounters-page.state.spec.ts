@@ -12,6 +12,7 @@ import { ExplorationEncounterEffectPayloadSection } from './exploration-encounte
 import { ExplorationEncounterResourcePayloadActionsState } from './exploration-encounter-resource-payload-actions.state';
 import { ExplorationEncounterRewardActionsState } from './exploration-encounter-reward-actions.state';
 import { ExplorationEncounterEditSection } from './exploration-encounter-edit-section';
+import { ExplorationEncounterPayloadSection } from './exploration-encounter-payload-section';
 import { ExplorationEncounterRewardSection } from './exploration-encounter-reward-section';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 
@@ -112,6 +113,24 @@ describe('ExplorationEncountersPageState', () => {
       'Olive blessing template (olive-blessing-template)',
     );
     expect(state.effectPayloads()[0].effectLabel).toBe('Olive blessing (olive-blessing)');
+    expect(state.rewardAssignments()[0].summaryLabel).toContain('use Encounter reward');
+    expect(state.rewardAssignments()[0].rewardProfileEntrySummaries[0].detail).toBe('Fixed: 10.');
+  });
+
+  it('reports missing UI metadata as exact namespace/key gaps', () => {
+    const data = adminData();
+    admin.getAdminData.and.returnValue(of({
+      ...data,
+      uiMetadataEntries: data.uiMetadataEntries.filter(
+        (entry) => !(entry.namespace === 'encounter_configurator_field' && entry.key === 'reward_profile'),
+      ),
+    }));
+
+    state.loadInitialData();
+
+    expect(state.missingUiMetadataGaps()).toContain(
+      'encounter_configurator_field/reward_profile',
+    );
   });
 
   it('generates keys from labels for new encounters and keeps existing keys stable', () => {
@@ -320,6 +339,29 @@ describe('ExplorationEncountersPageState', () => {
     );
   });
 
+  it('blocks encounter definition save when max difficulty or district is below minimum', () => {
+    state.loadInitialData();
+    definitionActions.encounterForm.patchValue({
+      minDifficultyKey: 'hard',
+      maxDifficultyKey: 'easy',
+      minDistrictCode: 'market',
+      maxDistrictCode: 'old-town',
+      reason: 'Invalid range.',
+    });
+
+    definitionActions.saveEncounter();
+
+    expect(admin.upsertEncounterDefinition).not.toHaveBeenCalled();
+    expect(definitionActions.difficultyRangeError()).toBe(
+      'Maximum difficulty cannot be lower than minimum difficulty.',
+    );
+    expect(definitionActions.districtRangeError()).toBe(
+      'Maximum district cannot be lower than minimum district.',
+    );
+    expect(definitionActions.encounterForm.controls.maxDifficultyKey.touched).toBeTrue();
+    expect(definitionActions.encounterForm.controls.maxDistrictCode.touched).toBeTrue();
+  });
+
   it('updates encounter reward assignment control when selecting through rendered p-select', async () => {
     state.loadInitialData();
     rewardActions.startNewAssignment();
@@ -359,6 +401,61 @@ describe('ExplorationEncountersPageState', () => {
     );
   });
 
+  it('cleans hidden reward assignment match values before saving', () => {
+    state.loadInitialData();
+    rewardActions.startNewAssignment();
+    rewardActions.assignmentForm.patchValue({
+      rewardProfileId: 'reward-1',
+      outcomeKind: 'success',
+      difficultyMatchKind: 'any',
+      difficultyKey: 'hard',
+      maxDifficultyKey: 'medium',
+      districtMatchKind: 'exact',
+      districtCode: 'harbor',
+      maxDistrictCode: 'market',
+      reason: 'Tune match cleanup.',
+    });
+
+    rewardActions.saveAssignment();
+
+    expect(admin.upsertRewardProfileAssignment).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        difficultyMatchKind: 'any',
+        difficultyKey: null,
+        maxDifficultyKey: null,
+        districtMatchKind: 'exact',
+        districtCode: 'harbor',
+        maxDistrictCode: null,
+      }),
+    );
+  });
+
+  it('blocks reward assignment range save when maximum match value is below value', () => {
+    state.loadInitialData();
+    rewardActions.startNewAssignment();
+    rewardActions.assignmentForm.patchValue({
+      rewardProfileId: 'reward-1',
+      outcomeKind: 'success',
+      difficultyMatchKind: 'range',
+      difficultyKey: 'hard',
+      maxDifficultyKey: 'easy',
+      districtMatchKind: 'range',
+      districtCode: 'market',
+      maxDistrictCode: 'old-town',
+      reason: 'Invalid range.',
+    });
+
+    rewardActions.saveAssignment();
+
+    expect(admin.upsertRewardProfileAssignment).not.toHaveBeenCalled();
+    expect(rewardActions.difficultyRangeError()).toBe(
+      'Maximum difficulty cannot be lower than minimum difficulty.',
+    );
+    expect(rewardActions.districtRangeError()).toBe(
+      'Maximum district cannot be lower than minimum district.',
+    );
+  });
+
   it('updates and saves effect payload definition selected through rendered p-select', () => {
     admin.getAdminData.and.returnValue(of(adminData('encounter-1', 'buff', null)));
     state.loadInitialData();
@@ -383,6 +480,26 @@ describe('ExplorationEncountersPageState', () => {
         reason: 'Tune effect payload.',
       }),
     );
+  });
+
+  it('uses draft encounter kind for kind-specific section visibility until definition is saved', () => {
+    admin.getAdminData.and.returnValue(of(adminData('encounter-1', 'buff', null)));
+    state.loadInitialData();
+    const fixture = TestBed.createComponent(ExplorationEncounterPayloadSection);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('effect payloads');
+    expect(fixture.nativeElement.textContent).toContain('Effect definition');
+
+    definitionActions.encounterForm.controls.encounterKind.setValue('combat');
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(definitionActions.hasUnsavedEncounterKindChange()).toBeTrue();
+    expect(fixture.nativeElement.textContent).toContain('Save the encounter definition');
+    expect(fixture.nativeElement.textContent).toContain('does not use resource/effect payloads');
+    expect(fixture.nativeElement.textContent).not.toContain('Effect definition');
   });
 
   it('blocks reward assignment save when no reward profiles exist', () => {
@@ -835,6 +952,35 @@ function adminData(
         updatedAt: '2026-05-01T10:00:00.000Z',
       },
     ],
+    rewardProfileEntries: [
+      {
+        id: 'entry-1',
+        rewardProfileId: 'reward-1',
+        entryKind: 'experience',
+        label: 'Experience reward',
+        description: 'XP.',
+        helperText: null,
+        adminDescription: null,
+        amountMode: 'fixed',
+        minAmount: 10,
+        maxAmount: 10,
+        resourceType: null,
+        formulaId: null,
+        chancePercent: 100,
+        minItemCount: null,
+        maxItemCount: null,
+        maxQualityKey: null,
+        bucketProfileId: null,
+        effectDefinitionId: null,
+        transferSourceRole: null,
+        transferRecipientRole: null,
+        sortOrder: 10,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
     rewardOutcomeKinds: [
       {
         sourceKind: 'encounter',
@@ -907,6 +1053,48 @@ function adminData(
         helperText: null,
         adminDescription: null,
         sortOrder: 20,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
+    rewardSourceKinds: [
+      {
+        key: 'encounter',
+        label: 'Encounter',
+        description: 'Encounter reward routing source.',
+        helperText: null,
+        adminDescription: null,
+        sortOrder: 10,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
+    rewardEntryKinds: [
+      {
+        key: 'experience',
+        label: 'Experience',
+        description: 'Numeric experience reward.',
+        helperText: null,
+        adminDescription: null,
+        sortOrder: 10,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
+    rewardEntryAmountModes: [
+      {
+        key: 'fixed',
+        label: 'Fixed',
+        description: 'Fixed numeric amount.',
+        helperText: null,
+        adminDescription: null,
+        sortOrder: 10,
         isActive: true,
         metadataJson: {},
         createdAt: '2026-05-01T10:00:00.000Z',
@@ -1023,6 +1211,76 @@ function adminData(
         isActive: true,
       },
     ],
+    uiMetadataEntries: uiMetadataEntries(),
+  };
+}
+
+function uiMetadataEntries() {
+  return [
+    ...[
+      'page_header',
+      'encounter_meaning',
+      'encounter_definition',
+      'reward_assignments',
+      'combat_candidates',
+      'kind_specific_payloads',
+      'resource_payloads',
+      'effect_library',
+      'effect_payloads',
+    ].map((key, index) => uiMetadataEntry('encounter_configurator_section', key, index)),
+    ...[
+      'encounter_key',
+      'encounter_kind',
+      'minigame',
+      'direct_reward_profile',
+      'min_difficulty',
+      'max_difficulty',
+      'min_district',
+      'max_district',
+      'definition_reason',
+      'reward_profile',
+      'outcome_kind',
+      'difficulty_match_kind',
+      'district_match_kind',
+      'assignment_helper_text',
+      'assignment_reason',
+      'candidate_kind',
+      'scaling_formula',
+      'difficulty_multiplier',
+      'weight',
+      'candidate_reason',
+      'resource_type',
+      'resource_amount_mode',
+      'resource_formula',
+      'resource_reason',
+      'effect_key',
+      'effect_kind',
+      'bonus_template',
+      'effect_duration',
+      'effect_definition_reason',
+      'effect_payload_definition',
+      'effect_payload_reason',
+    ].map((key, index) => uiMetadataEntry('encounter_configurator_field', key, index)),
+  ];
+}
+
+function uiMetadataEntry(namespace: string, key: string, index: number) {
+  return {
+    id: `${namespace}-${key}`,
+    namespace,
+    key,
+    label: key.replace(/_/g, ' '),
+    description: `${namespace}/${key} description.`,
+    helperText: null,
+    impactSummary: null,
+    warningText: null,
+    uiGroupKey: 'encounter-configurator',
+    uiGroupLabel: 'Exploration encounters',
+    sortOrder: index + 1,
+    isActive: true,
+    metadataJson: {},
+    createdAt: '2026-05-01T10:00:00.000Z',
+    updatedAt: '2026-05-01T10:00:00.000Z',
   };
 }
 
