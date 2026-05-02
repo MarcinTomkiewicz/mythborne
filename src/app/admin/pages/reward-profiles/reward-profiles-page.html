@@ -1,0 +1,28 @@
+<div class="flex-col gap-xl">
+  <app-loading-overlay
+    [visible]="page.isLoading()"
+    title="Loading reward profiles"
+    message="Reading reward profiles, entries, outcome kinds and DB-backed reward dictionaries."
+  />
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Exploration rewards</p>
+      <h2 class="mg-section__title mg-section__title--sm mb-0">Reward profile configurator</h2>
+      <p class="mb-0">
+        Configure reusable reward profiles through approved reward RPCs. Assignments in encounters
+        and trials point at these profiles; this page owns the profile contents and outcome-kind
+        dictionary.
+      </p>
+    </div>
+  </section>
+
+  <app-reward-profile-editor-section />
+  <app-reward-profile-entries-section />
+  <app-reward-profile-outcomes-section />
+  <app-reward-profile-preview-section />
+
+  <section class="mg-card p-lg w-100">
+    <app-admin-tag-links [links]="links" />
+  </section>
+</div>

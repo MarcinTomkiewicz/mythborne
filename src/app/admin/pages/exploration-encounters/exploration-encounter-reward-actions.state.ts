@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { EncounterRewardAssignmentAdminView } from '../../../core/domain/exploration/exploration-encounter-admin.model';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
 import { ToastService } from '../../../core/services/ui/toast';
@@ -38,8 +38,10 @@ export class ExplorationEncounterRewardActionsState {
   constructor() {
     effect(() => {
       this.page.selectedEncounterId();
-      this.selectedAssignmentId.set(null);
-      this.resetAssignmentForm();
+      untracked(() => {
+        this.selectedAssignmentId.set(null);
+        this.resetAssignmentForm();
+      });
     });
   }
 
@@ -106,7 +108,17 @@ export class ExplorationEncounterRewardActionsState {
               'Outcome kind',
             ),
             difficultyKey: this.assignmentForm.controls.difficultyKey.value,
+            difficultyMatchKind: requiredFormValue(
+              this.assignmentForm.controls.difficultyMatchKind.value,
+              'Difficulty match mode',
+            ),
+            maxDifficultyKey: this.assignmentForm.controls.maxDifficultyKey.value,
             districtCode: this.assignmentForm.controls.districtCode.value,
+            districtMatchKind: requiredFormValue(
+              this.assignmentForm.controls.districtMatchKind.value,
+              'District match mode',
+            ),
+            maxDistrictCode: this.assignmentForm.controls.maxDistrictCode.value,
             description: trimToNull(this.assignmentForm.controls.description.value),
             helperText: trimToNull(this.assignmentForm.controls.helperText.value),
             sortOrder: this.assignmentForm.controls.sortOrder.value,

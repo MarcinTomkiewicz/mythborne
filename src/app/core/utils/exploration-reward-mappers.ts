@@ -1,11 +1,66 @@
 import {
   RewardGrantEntryReadModel,
   RewardGrantReadModel,
+  RewardDictionaryReadModel,
+  ResourceTypeReadModel,
+  RewardOutcomeKindReadModel,
   RewardProfileAssignmentReadModel,
   RewardProfileEntryReadModel,
   RewardProfileReadModel,
 } from '../domain/exploration/exploration-reward.model';
 import { Row } from '../types/supabase.types';
+
+export function mapRewardOutcomeKind(row: Row<'reward_outcome_kinds'>): RewardOutcomeKindReadModel {
+  return {
+    sourceKind: row.source_kind,
+    key: row.key,
+    label: row.label,
+    description: row.description,
+    helperText: row.helper_text,
+    adminDescription: row.admin_description,
+    sortOrder: row.sort_order,
+    isActive: row.is_active,
+    metadataJson: row.metadata_json,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapResourceType(row: Row<'resource_types'>): ResourceTypeReadModel {
+  return {
+    key: row.key,
+    label: row.label,
+    description: row.description,
+    helperText: row.helper_text,
+    adminDescription: row.admin_description,
+    sortOrder: row.sort_order,
+    isActive: row.is_active,
+    metadataJson: row.metadata_json,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapRewardDictionary(
+  row:
+    | Row<'reward_assignment_match_kinds'>
+    | Row<'reward_entry_amount_modes'>
+    | Row<'reward_entry_kinds'>
+    | Row<'reward_source_kinds'>,
+): RewardDictionaryReadModel {
+  return {
+    key: row.key,
+    label: row.label,
+    description: row.description,
+    helperText: row.helper_text,
+    adminDescription: row.admin_description,
+    sortOrder: row.sort_order,
+    isActive: row.is_active,
+    metadataJson: row.metadata_json,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 export function mapRewardProfile(row: Row<'reward_profiles'>): RewardProfileReadModel {
   return {
@@ -67,7 +122,11 @@ export function mapRewardProfileAssignment(
     trialDefinitionId: row.trial_definition_id,
     encounterDefinitionId: row.encounter_definition_id,
     difficultyKey: row.difficulty_key,
+    difficultyMatchKind: row.difficulty_match_kind,
+    maxDifficultyKey: row.max_difficulty_key,
     districtCode: row.district_code,
+    districtMatchKind: row.district_match_kind,
+    maxDistrictCode: row.max_district_code,
     description: row.description,
     helperText: row.helper_text,
     sortOrder: row.sort_order,

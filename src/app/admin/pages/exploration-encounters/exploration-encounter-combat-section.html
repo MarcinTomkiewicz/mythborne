@@ -14,30 +14,29 @@
     } @else {
       <form class="flex-col gap-md w-100" [formGroup]="candidateActions.candidateForm">
         <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
-        <label class="flex-col gap-sm w-100">
+        <div class="flex-col gap-sm w-100">
           <span>Candidate kind</span>
           <p-select formControlName="candidateKind" [options]="page.candidateKindOptions" optionLabel="label" optionValue="value" />
-        </label>
+        </div>
         @if (candidateActions.candidateForm.controls.candidateKind.value === 'opponent') {
-          <label class="flex-col gap-sm w-100">
+          <div class="flex-col gap-sm w-100">
             <span>Opponent</span>
             <p-select formControlName="opponentDefinitionId" [options]="page.opponentOptions()" optionLabel="label" optionValue="value" />
-          </label>
+          </div>
         } @else {
-          <label class="flex-col gap-sm w-100">
+          <div class="flex-col gap-sm w-100">
             <span>Opponent family</span>
             <p-select formControlName="familyKey" [options]="page.familyOptions()" optionLabel="label" optionValue="value" />
-          </label>
+          </div>
         }
-        <label class="flex-col gap-sm w-100">
+        <div class="flex-col gap-sm w-100">
           <span>Scaling formula</span>
           <p-select formControlName="scalingFormulaId" [options]="page.formulaOptions()" optionLabel="label" optionValue="value" />
-        </label>
+        </div>
         <label class="flex-col gap-sm w-100"><span>Difficulty multiplier</span><p-inputnumber formControlName="difficultyMultiplier" [min]="0.01" /></label>
         <label class="flex-col gap-sm w-100"><span>Weight</span><p-inputnumber formControlName="weight" [min]="0.01" /></label>
         <label class="flex-col gap-sm w-100"><span>Min hero level</span><p-inputnumber formControlName="minHeroLevel" [min]="1" /></label>
         <label class="flex-col gap-sm w-100"><span>Max hero level</span><p-inputnumber formControlName="maxHeroLevel" [min]="1" /></label>
-        <label class="flex-col gap-sm w-100"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
         <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
         </div>
         <label class="flex-col gap-sm w-100">

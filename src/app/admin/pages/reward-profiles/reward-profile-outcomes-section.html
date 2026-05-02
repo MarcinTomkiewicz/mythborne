@@ -1,0 +1,84 @@
+<section class="mg-card p-lg flex-col gap-md">
+  <div class="flex-col gap-xs">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Reward outcome kinds</h3>
+    <p class="mb-0">
+      Outcome kinds are DB-backed runtime values scoped by <code>(source_kind, key)</code>.
+      The same key, such as <code>success</code>, can be valid for trial, encounter, quest or event
+      when those runtimes emit it.
+    </p>
+    @if (!page.hasSourceKindDictionary()) {
+      <p-message severity="warn">
+        reward_source_kinds dictionary is not loaded. Source kind options are degraded fallback
+        values plus existing outcome rows.
+      </p-message>
+    }
+  </div>
+  <form class="flex-col gap-md w-100" [formGroup]="page.outcomeForm">
+    <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+      <div class="flex-col gap-sm w-100">
+        <span>Source kind</span>
+        <p-select formControlName="sourceKind" [options]="page.sourceKindOptions()" optionLabel="label" optionValue="value" />
+        @if (page.sourceKindHelp(page.outcomeForm.controls.sourceKind.value); as help) {
+          <small class="muted-text">{{ help }}</small>
+        }
+      </div>
+      <label class="flex-col gap-sm w-100">
+        <span>Label</span>
+        <input pInputText formControlName="label" />
+        @if (page.outcomeForm.controls.label.touched && page.outcomeForm.controls.label.invalid) {
+          <small class="error-text">Label is required.</small>
+        }
+      </label>
+      <label class="flex-col gap-sm w-100">
+        <span>Runtime outcome key</span>
+        <input pInputText formControlName="key" [readonly]="!page.outcomeForm.controls.allowKeyOverride.value" />
+        <small class="muted-text">This value must match an outcome emitted by the selected source runtime. Adding a new outcome kind does not make runtime emit it.</small>
+        @if (page.outcomeForm.controls.key.touched && page.outcomeForm.controls.key.invalid) {
+          <small class="error-text">Runtime outcome key is required.</small>
+        }
+      </label>
+      <label class="flex-col gap-sm w-100"><span>Advanced key override</span><p-checkbox formControlName="allowKeyOverride" [binary]="true" /></label>
+      <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
+    </div>
+    <label class="flex-col gap-sm w-100">
+      <span>Description</span>
+      <textarea pInputText rows="2" formControlName="description"></textarea>
+      @if (page.outcomeForm.controls.description.touched && page.outcomeForm.controls.description.invalid) {
+        <small class="error-text">Description is required.</small>
+      }
+    </label>
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+      <label class="flex-col gap-sm w-100"><span>Helper text</span><textarea pInputText rows="2" formControlName="helperText"></textarea></label>
+      <label class="flex-col gap-sm w-100"><span>Admin description</span><textarea pInputText rows="2" formControlName="adminDescription"></textarea></label>
+    </div>
+    <details class="mg-card p-md w-100">
+      <summary class="muted-text">Advanced technical metadata</summary>
+      <label class="flex-col gap-sm mt-md"><span>Metadata JSON</span><textarea pInputText rows="3" formControlName="metadataJsonText"></textarea></label>
+    </details>
+    <label class="flex-col gap-sm w-100">
+      <span>Reason</span>
+      <input pInputText formControlName="reason" />
+      @if (outcomeActions.reasonError() || (page.outcomeForm.controls.reason.touched && page.outcomeForm.controls.reason.invalid)) {
+        <small class="error-text">{{ outcomeActions.reasonError() ?? 'Reason is required.' }}</small>
+      }
+    </label>
+    <div class="flex-row flex-wrap gap-sm">
+      <button pButton type="button" label="Save outcome kind" [disabled]="outcomeActions.isSaving()" (click)="outcomeActions.saveOutcome()"></button>
+      <button pButton type="button" label="New outcome kind" severity="secondary" (click)="outcomeActions.startNewOutcome()"></button>
+      <button pButton type="button" label="Deactivate outcome kind" severity="danger" [disabled]="!page.selectedOutcome() || outcomeActions.isSaving()" (click)="outcomeActions.deactivateOutcome()"></button>
+    </div>
+  </form>
+  <p-table [value]="page.data()?.outcomeKinds ?? []" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr><th>Source</th><th>Outcome</th><th>Description</th><th>Status</th></tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-row>
+      <tr (click)="page.selectOutcome(row)">
+        <td>{{ row.sourceKind }}</td>
+        <td>{{ row.label }} <span class="muted-text">({{ row.key }})</span></td>
+        <td>{{ row.description }}</td>
+        <td><p-tag [severity]="row.isActive ? 'success' : 'secondary'" [value]="row.isActive ? 'Active' : 'Inactive'" /></td>
+      </tr>
+    </ng-template>
+  </p-table>
+</section>

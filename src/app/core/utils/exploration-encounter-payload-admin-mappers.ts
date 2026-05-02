@@ -7,7 +7,12 @@ import {
   ExplorationEffectDefinitionAdminView,
   ExplorationEffectDefinitionReadModel,
 } from '../domain/exploration/exploration-encounter-admin.model';
+import { REWARD_AMOUNT_MODE } from '../constants/reward-runtime-keys.const';
 import { Row } from '../types/supabase.types';
+import {
+  resourceTypeDescription,
+  resourceTypeDisplayLabel,
+} from './resource-type-options';
 
 export function mapEncounterResourcePayload(
   row: Row<'encounter_resource_payloads'>,
@@ -86,6 +91,8 @@ export function toEncounterResourcePayloadAdminViews(
 
       return {
         payload,
+        resourceTypeLabel: resourceTypeDisplayLabel(data.resourceTypes, payload.resourceType),
+        resourceTypeDescription: resourceTypeDescription(data.resourceTypes, payload.resourceType),
         formulaLabel: formula ? `${formula.label} (${formula.key})` : 'No formula',
         amountLabel: resourceAmountLabel(payload),
       };
@@ -134,7 +141,7 @@ export function toEncounterEffectPayloadAdminViews(
 }
 
 function resourceAmountLabel(payload: EncounterResourcePayloadReadModel): string {
-  if (payload.amountMode === 'formula') {
+  if (payload.amountMode === REWARD_AMOUNT_MODE.formula) {
     return 'Formula-backed amount';
   }
 

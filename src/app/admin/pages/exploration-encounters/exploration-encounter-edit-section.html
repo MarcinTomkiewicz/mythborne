@@ -27,36 +27,35 @@
       <span>Advanced key override</span>
       <p-checkbox formControlName="allowKeyOverride" [binary]="true" />
     </label>
-    <label class="flex-col gap-sm w-100">
+    <div class="flex-col gap-sm w-100">
       <span>Encounter kind</span>
       <p-select formControlName="encounterKind" [options]="page.encounterKindOptions()" optionLabel="label" optionValue="value" />
-    </label>
-    <label class="flex-col gap-sm w-100">
+    </div>
+    <div class="flex-col gap-sm w-100">
       <span>Minigame</span>
       <p-select formControlName="minigameKey" [options]="page.minigameOptions()" optionLabel="label" optionValue="value" />
-    </label>
-    <label class="flex-col gap-sm w-100">
+    </div>
+    <div class="flex-col gap-sm w-100">
       <span>Direct reward profile</span>
       <p-select formControlName="rewardProfileId" [options]="page.rewardProfileOptions()" optionLabel="label" optionValue="value" />
       <small class="muted-text">Prefer reward assignments for outcome/difficulty/district-specific rewards.</small>
-    </label>
-    <label class="flex-col gap-sm w-100">
+    </div>
+    <div class="flex-col gap-sm w-100">
       <span>Minimum difficulty</span>
       <p-select formControlName="minDifficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
-    </label>
-    <label class="flex-col gap-sm w-100">
+    </div>
+    <div class="flex-col gap-sm w-100">
       <span>Maximum difficulty</span>
       <p-select formControlName="maxDifficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
-    </label>
-    <label class="flex-col gap-sm w-100">
+    </div>
+    <div class="flex-col gap-sm w-100">
       <span>Minimum district</span>
       <p-select formControlName="minDistrictCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
-    </label>
-    <label class="flex-col gap-sm w-100">
+    </div>
+    <div class="flex-col gap-sm w-100">
       <span>Maximum district</span>
       <p-select formControlName="maxDistrictCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
-    </label>
-    <label class="flex-col gap-sm w-100"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
+    </div>
     <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
     </div>
     <label class="flex-col gap-sm w-100">

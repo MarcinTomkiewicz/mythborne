@@ -9,9 +9,9 @@
   </div>
 
   @if (page.selectedEncounter(); as view) {
-    @if (view.encounter.encounterKind === 'resource') {
+    @if (view.encounter.encounterKind === page.encounterKind.resource) {
       <app-exploration-encounter-resource-payload-section />
-    } @else if (view.encounter.encounterKind === 'buff' || view.encounter.encounterKind === 'debuff') {
+    } @else if (view.encounter.encounterKind === page.encounterKind.buff || view.encounter.encounterKind === page.encounterKind.debuff) {
       <div class="grid-2 gap-lg">
         <app-exploration-encounter-effect-definition-section />
         <app-exploration-encounter-effect-payload-section />

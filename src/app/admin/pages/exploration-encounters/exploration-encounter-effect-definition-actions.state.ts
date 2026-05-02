@@ -1,5 +1,6 @@
-import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import { ExplorationEffectDefinitionAdminView } from '../../../core/domain/exploration/exploration-encounter-admin.model';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
 import { ToastService } from '../../../core/services/ui/toast';
@@ -41,7 +42,7 @@ export class ExplorationEncounterEffectDefinitionActionsState {
   constructor() {
     effect(() => {
       this.page.selectedEncounterId();
-      this.startNewEffectDefinition();
+      untracked(() => this.startNewEffectDefinition());
     });
 
     this.form.controls.label.valueChanges
@@ -156,7 +157,7 @@ export class ExplorationEncounterEffectDefinitionActionsState {
     if (!row) {
       const encounterKind = this.page.selectedEncounter()?.encounter.encounterKind;
 
-      if (encounterKind === 'buff' || encounterKind === 'debuff') {
+      if (encounterKind === ENCOUNTER_KIND.buff || encounterKind === ENCOUNTER_KIND.debuff) {
         this.form.controls.effectKind.setValue(encounterKind, { emitEvent: false });
       }
 

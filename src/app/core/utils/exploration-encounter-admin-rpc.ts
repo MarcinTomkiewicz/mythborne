@@ -12,13 +12,14 @@ import {
   UpsertEncounterDefinitionInput,
   UpsertEncounterRewardAssignmentInput,
 } from '../domain/exploration/exploration-encounter-admin.model';
+import { REWARD_SOURCE_KIND } from '../constants/reward-runtime-keys.const';
 import {
   addOptionalInteger,
   addOptionalText,
   integer,
   positiveNumber,
   requiredText,
-} from './exploration-encounter-rpc-helpers';
+} from './admin-rpc-helpers';
 import { trimToNull } from './normalize-text';
 
 export function toUpsertEncounterDefinitionRpcArgs(
@@ -96,7 +97,7 @@ export function toUpsertRewardProfileAssignmentRpcArgs(
 ): UpsertRewardProfileAssignmentRpcArgs {
   const args: UpsertRewardProfileAssignmentRpcArgs = {
     p_assignment_id: trimToNull(input.assignmentId) ?? undefined,
-    p_source_kind: 'encounter',
+    p_source_kind: REWARD_SOURCE_KIND.encounter,
     p_encounter_definition_id: requiredText(input.encounterDefinitionId, 'encounterDefinitionId'),
     p_reward_profile_id: requiredText(input.rewardProfileId, 'rewardProfileId'),
     p_outcome_kind: requiredText(input.outcomeKind, 'outcomeKind'),
@@ -107,7 +108,11 @@ export function toUpsertRewardProfileAssignmentRpcArgs(
   };
 
   addOptionalText(args, 'p_difficulty_key', input.difficultyKey);
+  addOptionalText(args, 'p_difficulty_match_kind', input.difficultyMatchKind);
+  addOptionalText(args, 'p_max_difficulty_key', input.maxDifficultyKey);
   addOptionalText(args, 'p_district_code', input.districtCode);
+  addOptionalText(args, 'p_district_match_kind', input.districtMatchKind);
+  addOptionalText(args, 'p_max_district_code', input.maxDistrictCode);
   addOptionalText(args, 'p_description', input.description);
   addOptionalText(args, 'p_helper_text', input.helperText);
 

@@ -5,6 +5,11 @@ import {
   EncounterRewardAssignmentAdminView,
   ExplorationEncounterAdminData,
 } from '../domain/exploration/exploration-encounter-admin.model';
+import { ENCOUNTER_KIND } from '../constants/encounter-runtime-keys.const';
+import {
+  REWARD_ASSIGNMENT_MATCH_KIND,
+  REWARD_SOURCE_KIND,
+} from '../constants/reward-runtime-keys.const';
 import { Row } from '../types/supabase.types';
 
 export function mapEncounterCombatCandidate(
@@ -66,7 +71,9 @@ export function toEncounterDefinitionAdminView(
       encounter.maxDistrictCode,
       'Any district',
     ),
-    isCombatEncounter: encounter.encounterKind === 'combat' || encounter.minigameKey === 'combat',
+    isCombatEncounter:
+      encounter.encounterKind === ENCOUNTER_KIND.combat ||
+      encounter.minigameKey === ENCOUNTER_KIND.combat,
   };
 }
 
@@ -86,7 +93,8 @@ export function toEncounterRewardAssignmentAdminViews(
   return data.rewardAssignments
     .filter(
       (entry) =>
-        entry.sourceKind === 'encounter' && entry.encounterDefinitionId === encounterId,
+        entry.sourceKind === REWARD_SOURCE_KIND.encounter &&
+        entry.encounterDefinitionId === encounterId,
     )
     .map((assignment) => {
       const rewardProfile = data.rewardProfiles.find(
@@ -100,11 +108,34 @@ export function toEncounterRewardAssignmentAdminViews(
           : assignment.rewardProfileId,
         scopeLabel: [
           assignment.outcomeKind,
-          assignment.difficultyKey ?? 'any difficulty',
-          assignment.districtCode ?? 'any district',
+          matchScopeLabel(
+            assignment.difficultyMatchKind,
+            assignment.difficultyKey,
+            assignment.maxDifficultyKey,
+            'difficulty',
+          ),
+          matchScopeLabel(
+            assignment.districtMatchKind,
+            assignment.districtCode,
+            assignment.maxDistrictCode,
+            'district',
+          ),
         ].join(' / '),
       };
     });
+}
+
+function matchScopeLabel(
+  matchKind: string,
+  key: string | null,
+  maxKey: string | null,
+  noun: string,
+): string {
+  if (!key && !maxKey) {
+    return `${matchKind}: any ${noun}`;
+  }
+
+  return `${matchKind}: ${key ?? REWARD_ASSIGNMENT_MATCH_KIND.any}${maxKey ? `..${maxKey}` : ''}`;
 }
 
 function toEncounterCombatCandidateAdminView(

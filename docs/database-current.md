@@ -18,6 +18,165 @@ After every schema/RPC migration that Codex will consume, regenerate/update gene
 
 # Current DB/RPC contract updates
 
+## Update 2026-05-02 — L-Reward-DB1/DB2/DB3 reward configuration foundation
+
+The DB now has a governed, explainable reward configuration foundation for L12/L13.
+
+### L-Reward-DB1 — reward profiles, entries and outcome kinds
+
+Tables/read surfaces:
+
+- `reward_outcome_kinds` — DB-backed runtime outcome vocabulary per `source_kind`;
+- `reward_profiles` — reusable reward bundles;
+- `reward_profile_entries` — individual grants inside a reward profile;
+- `reward_profile_assignments` — routing from source/outcome/scope to one reward profile.
+
+Admin/balancer RPCs:
+
+- `upsert_reward_outcome_kind(...)`;
+- `deactivate_reward_outcome_kind(...)`;
+- `upsert_reward_profile(...)`;
+- `deactivate_reward_profile(...)`;
+- `upsert_reward_profile_entry(...)`;
+- `deactivate_reward_profile_entry(...)`;
+- `upsert_reward_profile_assignment(...)`.
+
+Rules:
+
+- RPCs require authenticated user context, config-governance permission and a non-blank reason.
+- Angular must not direct-write reward configuration tables.
+- `reward_outcome_kinds` is keyed by `(source_kind, key)`.
+- Outcome key is a runtime-facing value, not a label slug. Adding an outcome kind does not make runtime emit it.
+- `source_kind = test` is technical/admin/sandbox only, not player gameplay.
+
+### L-Reward-DB2 — resource type dictionary
+
+Tables/read surfaces:
+
+- `resource_types` — DB-backed resource dictionary for `drachma`, `materials`, `workforce` and future resources.
+
+RPCs:
+
+- `upsert_resource_type(...)`;
+- `deactivate_resource_type(...)`.
+
+Foreign-key alignment now keeps these resource references dictionary-backed:
+
+- `hero_resources.resource_type`;
+- `hero_resource_ledger.resource_type`;
+- `reward_profile_entries.resource_type`;
+- `reward_grant_entries.resource_type`;
+- `encounter_resource_payloads.resource_type`.
+
+Frontend must use `resource_types` instead of fallback hardcoded resource lists.
+
+### L-Reward-DB3 — assignment match semantics and formula reward amounts
+
+Tables/read surfaces:
+
+- `reward_assignment_match_kinds` — `any`, `exact`, `minimum`, `range`;
+- `reward_entry_kinds` — `experience`, `character_points`, `resource`, `item_generation`, `exploration_effect`;
+- `reward_entry_amount_modes` — `fixed`, `range`, `formula`, `transfer_formula`, `none`;
+- `reward_source_kinds` — `trial`, `encounter`, `pvp`, `quest`, `event`, `level_up`, `test`.
+
+`reward_profile_assignments` now includes:
+
+- `difficulty_match_kind`;
+- `difficulty_key`;
+- `max_difficulty_key`;
+- `district_match_kind`;
+- `district_code`;
+- `max_district_code`.
+
+Rules:
+
+- `any` means wildcard.
+- `exact` means only the selected value.
+- `minimum` means selected value and higher.
+- `range` means from selected value to max selected value, inclusive.
+- Active duplicate assignment scopes are blocked by a DB uniqueness guard.
+- Reward lookup selects one best matching reward profile; it does not fire all matching assignments.
+- Multiple rewards for one event belong as multiple `reward_profile_entries` inside one reward profile.
+- `amount_mode = formula` is supported for numeric `experience`, `character_points`, and `resource` entries.
+- Formula reward amounts are evaluated server-side through `evaluate_reward_profile_entry_amount(...)` and `grant_reward_profile_to_hero(...)`.
+- `transfer_formula` is reserved for future PvP transfer workflows and is not a normal PvE reward amount mode.
+- `complete_hero_exploration_challenge_attempt(...)` can grant a configured failure reward when a matching failure assignment exists. Missing failure assignment means no failure reward.
+
+Formula target added/used:
+
+- `reward_entry_amount` — DB-side formula target for numeric reward entry amount.
+
+Default formula:
+
+- `reward_entry_amount_scaled_by_difficulty` — `round(minAmount * difficultyRewardMultiplier)`.
+
+Frontend/Codex implications:
+
+- Regenerate generated Supabase types before L12c/L13 work that consumes these additions.
+- L12c must explain reward assignment matching and one-profile selection in the encounter configurator.
+- L13 must use the DB-backed dictionaries for source kind, outcome kind, entry kind, amount mode, match kind and resource type.
+- Do not present `transfer_formula` as a normal PvE option.
+
+---
+
+## Update 2026-05-02 — M-Dict-DB1 combat explainability dictionaries
+
+The DB now has DB-backed, Polish explainability dictionaries for combat enum-like concepts used by Epic M admin/sandbox/report-adjacent UI.
+
+Tables/read surfaces:
+
+- `combat_source_type_definitions` — labels/descriptions for `encounter`, `trial`, `pvp`, `sandbox`, `admin_test`;
+- `combat_side_definitions` — labels/descriptions for `initiator`, `defender`;
+- `combat_outcome_definitions` — labels/descriptions for `initiator_victory`, `defender_victory`, `draw`;
+- `combat_participant_kind_definitions` — labels/descriptions for `hero`, `opponent`;
+- `combat_attack_source_kind_definitions` — labels/descriptions for `natural`, `unarmed`, `player_item`, `opponent_manual`, `opponent_generated`;
+- `combat_candidate_kind_definitions` — labels/descriptions for `opponent`, `family`;
+- enriched `combat_opponent_equipment_mode_definitions`;
+- enriched `equipment_slot_definitions`.
+
+Rules:
+
+- These dictionaries describe fixed runtime enum/contract values. Adding new runtime enum values still requires DB/runtime migration.
+- UI must show dictionary `label`, `description`, `helper_text`, and `admin_description` where relevant.
+- Raw enum keys may be shown as secondary metadata only.
+- Missing or weak dictionary text should be reported as DB/content seed gap, not hidden with permanent hardcoded Angular copy.
+
+Combat formula labels/descriptions are now Polish for admin explainability:
+
+- `combat-initiative-score-default` / `Domyślna inicjatywa ataku`;
+- `combat-opponent-scaled-stat-default` / `Domyślne skalowanie statystyki przeciwnika`.
+
+Frontend/Codex implications:
+
+- Regenerate generated Supabase types before Epic M frontend work.
+- M0 must confirm these dictionary tables are visible.
+- M4/M9/M10/M11/M12 should consume these dictionaries instead of raw enum labels.
+
+---
+
+## Update 2026-05-02 — Epic M readiness after DB/explainability preflight
+
+Epic M has the required DB/RPC foundations for the currently planned frontend tasks:
+
+- combat opponent admin write path exists;
+- combat result snapshot persistence exists;
+- combat explainability dictionaries exist;
+- combat formula targets and default formulas exist;
+- combat turn limit helper exists.
+
+Known non-blocking content state:
+
+- The database may contain zero `combat_opponent_families`, `combat_opponent_definitions`, `combat_opponent_stat_values`, `combat_opponent_attack_sources`, and `combat_opponent_equipment_entries`.
+- This is not a schema/RPC blocker. M12 must support empty state and allow creating the first family/opponent/stat/attack/equipment rows through canonical RPCs.
+
+Important runtime boundary:
+
+- `persist_combat_result_snapshot(...)` persists a completed snapshot. It does not prove the combat was production-authoritative.
+- Sandbox/admin-test combat may persist Angular-resolved results for tooling.
+- Production callers (`encounter`, `trial`, `pvp`) must keep a clear backend/RPC validation/finalization boundary before treating an Angular-computed result as authoritative gameplay truth.
+
+---
+
 ## Update 2026-05-02 — M-DB1 combat opponent admin RPC/governance path
 
 The DB now has a canonical admin/balancer read/write path for combat opponent configuration used by Epic M and M12.

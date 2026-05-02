@@ -7,7 +7,12 @@ import {
   ExplorationDifficultyTierReadModel,
   ExplorationMinigameDefinitionReadModel,
 } from './exploration-definition.model';
-import { RewardProfileReadModel } from './exploration-reward.model';
+import {
+  RewardDictionaryReadModel,
+  ResourceTypeReadModel,
+  RewardOutcomeKindReadModel,
+  RewardProfileReadModel,
+} from './exploration-reward.model';
 import {
   CombatOpponentDefinitionReadModel,
   CombatOpponentFamilyReadModel,
@@ -90,7 +95,11 @@ export interface RewardProfileAssignmentReadModel {
   rewardProfileId: string;
   outcomeKind: string;
   difficultyKey: string | null;
+  difficultyMatchKind: string;
+  maxDifficultyKey: string | null;
   districtCode: string | null;
+  districtMatchKind: string;
+  maxDistrictCode: string | null;
   description: string | null;
   helperText: string | null;
   sortOrder: number;
@@ -106,6 +115,9 @@ export interface ExplorationEncounterAdminData {
   difficulties: ExplorationDifficultyTierReadModel[];
   districts: BuildingDistrictOption[];
   rewardProfiles: RewardProfileReadModel[];
+  rewardOutcomeKinds: RewardOutcomeKindReadModel[];
+  resourceTypes: ResourceTypeReadModel[];
+  rewardAssignmentMatchKinds: RewardDictionaryReadModel[];
   rewardAssignments: RewardProfileAssignmentReadModel[];
   combatCandidates: EncounterCombatCandidateReadModel[];
   resourcePayloads: EncounterResourcePayloadReadModel[];
@@ -208,7 +220,11 @@ export interface UpsertEncounterRewardAssignmentInput {
   rewardProfileId: string;
   outcomeKind: string;
   difficultyKey: string | null;
+  difficultyMatchKind: string;
+  maxDifficultyKey: string | null;
   districtCode: string | null;
+  districtMatchKind: string;
+  maxDistrictCode: string | null;
   description: string | null;
   helperText: string | null;
   sortOrder: number;
@@ -237,6 +253,8 @@ export interface EncounterCombatCandidateAdminView {
 
 export interface EncounterResourcePayloadAdminView {
   payload: EncounterResourcePayloadReadModel;
+  resourceTypeLabel: string;
+  resourceTypeDescription: string | null;
   formulaLabel: string;
   amountLabel: string;
 }

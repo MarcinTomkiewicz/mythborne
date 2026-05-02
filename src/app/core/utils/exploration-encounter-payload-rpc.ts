@@ -19,7 +19,7 @@ import {
   integer,
   percent,
   requiredText,
-} from './exploration-encounter-rpc-helpers';
+} from './admin-rpc-helpers';
 import { trimToNull } from './normalize-text';
 
 export function toUpsertEncounterResourcePayloadRpcArgs(

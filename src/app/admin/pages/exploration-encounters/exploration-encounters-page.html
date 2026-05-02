@@ -17,13 +17,6 @@
     </div>
   </section>
 
-  @if (page.error(); as message) {
-    <p-message severity="error">{{ message }}</p-message>
-  }
-  @if (!page.isLoading() && !page.hasEncounters()) {
-    <p-message severity="warn">No encounter definitions are configured in the database.</p-message>
-  }
-
   <section class="grid-2 gap-lg">
     <app-exploration-encounters-list-section />
     <app-exploration-encounter-meaning-section />

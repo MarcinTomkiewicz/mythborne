@@ -1,10 +1,25 @@
 import { Json } from '../../types/database.types';
 import { ItemReadModel } from '../item/item.model';
 import { Row } from '../../types/supabase.types';
+import { BalanceFormula } from '../formula/formula.model';
 
 export type RewardProfileCategory = Row<'reward_profiles'>['category'];
 export type RewardProfileEntryKind = Row<'reward_profile_entries'>['entry_kind'];
 export type RewardGrantStatus = Row<'reward_grants'>['status'];
+
+export interface RewardOutcomeKindReadModel {
+  sourceKind: string;
+  key: string;
+  label: string;
+  description: string;
+  helperText: string | null;
+  adminDescription: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  metadataJson: Json;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface RewardProfileReadModel {
   id: string;
@@ -49,6 +64,32 @@ export interface RewardProfileEntryReadModel {
   updatedAt: string;
 }
 
+export interface ResourceTypeReadModel {
+  key: string;
+  label: string;
+  description: string;
+  helperText: string | null;
+  adminDescription: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  metadataJson: Json;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RewardDictionaryReadModel {
+  key: string;
+  label: string;
+  description: string;
+  helperText: string | null;
+  adminDescription: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  metadataJson: Json;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface RewardProfileAssignmentReadModel {
   id: string;
   rewardProfileId: string;
@@ -57,7 +98,11 @@ export interface RewardProfileAssignmentReadModel {
   trialDefinitionId: string | null;
   encounterDefinitionId: string | null;
   difficultyKey: string | null;
+  difficultyMatchKind: string;
+  maxDifficultyKey: string | null;
   districtCode: string | null;
+  districtMatchKind: string;
+  maxDistrictCode: string | null;
   description: string | null;
   helperText: string | null;
   sortOrder: number;
@@ -110,4 +155,86 @@ export interface ExplorationChallengeRewardReadModel {
   rewardGrant: RewardGrantReadModel | null;
   entries: RewardGrantEntryReadModel[];
   items: ItemReadModel[];
+}
+
+export interface RewardProfileAdminData {
+  outcomeKinds: RewardOutcomeKindReadModel[];
+  profiles: RewardProfileReadModel[];
+  entries: RewardProfileEntryReadModel[];
+  entryKinds: RewardDictionaryReadModel[];
+  amountModes: RewardDictionaryReadModel[];
+  sourceKinds: RewardDictionaryReadModel[];
+  resourceTypes: ResourceTypeReadModel[];
+  formulas: BalanceFormula[];
+  qualities: Array<{
+    key: string;
+    label: string;
+    sortOrder: number;
+    isEnabled: boolean;
+  }>;
+  bucketProfiles: Array<{
+    id: string | null;
+    key: string;
+    name: string;
+    isActive: boolean;
+  }>;
+  effectDefinitions: Array<{
+    id: string;
+    key: string;
+    label: string;
+    effectKind: string;
+    isActive: boolean;
+  }>;
+}
+
+export interface UpsertRewardOutcomeKindInput {
+  sourceKind: string;
+  key: string;
+  label: string;
+  description: string;
+  helperText: string | null;
+  adminDescription: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  metadataJson: Json;
+  reason: string;
+}
+
+export interface UpsertRewardProfileInput {
+  rewardProfileId: string | null;
+  key: string;
+  label: string;
+  category: string;
+  description: string;
+  helperText: string | null;
+  adminDescription: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  metadataJson: Json;
+  reason: string;
+}
+
+export interface UpsertRewardProfileEntryInput {
+  entryId: string | null;
+  rewardProfileId: string;
+  entryKind: string;
+  label: string;
+  description: string;
+  helperText: string | null;
+  adminDescription: string | null;
+  amountMode: string;
+  minAmount: number | null;
+  maxAmount: number | null;
+  resourceType: string | null;
+  formulaId: string | null;
+  chancePercent: number;
+  minItemCount: number | null;
+  maxItemCount: number | null;
+  maxQualityKey: string | null;
+  bucketProfileId: string | null;
+  effectDefinitionId: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  metadataJson: Json;
+  reason: string;
 }

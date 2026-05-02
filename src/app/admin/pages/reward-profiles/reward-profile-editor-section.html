@@ -1,0 +1,58 @@
+<section class="mg-card p-lg flex-col gap-md">
+  <div class="flex-row-start-end flex-wrap gap-md">
+    <div class="flex-col gap-sm">
+      <span>Selected reward profile</span>
+      <p-select [formControl]="page.profileSelector" [options]="page.profileOptions()" optionLabel="label" optionValue="value" />
+    </div>
+    <button pButton type="button" label="New profile" severity="secondary" (click)="profileActions.startNewProfile()"></button>
+    <button pButton type="button" label="Preview profile" [disabled]="!page.selectedProfileId() || preview.isLoading()" (click)="preview.loadPreview()"></button>
+  </div>
+
+  <form class="flex-col gap-md w-100" [formGroup]="page.profileForm">
+    <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+      <label class="flex-col gap-sm w-100">
+        <span>Label</span>
+        <input pInputText formControlName="label" />
+        @if (page.profileForm.controls.label.touched && page.profileForm.controls.label.invalid) {
+          <small class="error-text">Label is required.</small>
+        }
+      </label>
+      <label class="flex-col gap-sm w-100">
+        <span>Key</span>
+        <input pInputText formControlName="key" [readonly]="!page.profileForm.controls.allowKeyOverride.value" />
+        @if (page.profileForm.controls.key.touched && page.profileForm.controls.key.invalid) {
+          <small class="error-text">Key is required.</small>
+        }
+      </label>
+      <label class="flex-col gap-sm w-100"><span>Advanced key override</span><p-checkbox formControlName="allowKeyOverride" [binary]="true" /></label>
+      <div class="flex-col gap-sm w-100"><span>Category</span><p-select formControlName="category" [options]="page.categoryOptions()" optionLabel="label" optionValue="value" /></div>
+      <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
+    </div>
+    <label class="flex-col gap-sm w-100">
+      <span>Description</span>
+      <textarea pInputText rows="2" formControlName="description"></textarea>
+      @if (page.profileForm.controls.description.touched && page.profileForm.controls.description.invalid) {
+        <small class="error-text">Description is required.</small>
+      }
+    </label>
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+      <label class="flex-col gap-sm w-100"><span>Helper text</span><textarea pInputText rows="2" formControlName="helperText"></textarea></label>
+      <label class="flex-col gap-sm w-100"><span>Admin description</span><textarea pInputText rows="2" formControlName="adminDescription"></textarea></label>
+    </div>
+    <details class="mg-card p-md w-100">
+      <summary class="muted-text">Advanced technical metadata</summary>
+      <label class="flex-col gap-sm mt-md"><span>Metadata JSON</span><textarea pInputText rows="3" formControlName="metadataJsonText"></textarea></label>
+    </details>
+    <label class="flex-col gap-sm w-100">
+      <span>Reason</span>
+      <input pInputText formControlName="reason" />
+      @if (profileActions.reasonError() || (page.profileForm.controls.reason.touched && page.profileForm.controls.reason.invalid)) {
+        <small class="error-text">{{ profileActions.reasonError() ?? 'Reason is required.' }}</small>
+      }
+    </label>
+    <div class="flex-row flex-wrap gap-sm">
+      <button pButton type="button" label="Save profile" [disabled]="profileActions.isSaving()" (click)="profileActions.saveProfile()"></button>
+      <button pButton type="button" label="Deactivate profile" severity="danger" [disabled]="!page.selectedProfileId() || profileActions.isSaving()" (click)="profileActions.deactivateProfile()"></button>
+    </div>
+  </form>
+</section>

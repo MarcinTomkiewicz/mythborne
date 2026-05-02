@@ -2863,7 +2863,932 @@ Zastosować globalny item hover popover pattern w Direct Trade, zgodnie z zaakce
 
 ---
 
+## Task UI-39 — PvP Vicinity target selection screen
 
+**Goal:**
+Zbudować osobny ekran wyboru celu PvP oparty o listę pobliskich posiadłości.
+
+Ten ekran nie jest ekranem walki. Nie pokazuje Walking Dead, combat logu, result preview ani snapshot data. Służy wyłącznie do znalezienia celu i rozpoczęcia jednej z akcji: spy, attack albo siege.
+
+**Scope:**
+
+* Route/page dla PvP target selection, docelowo w `src/app/game`, zgodnie z podziałem feature areas.
+* Użyć istniejącego shellu, topbara i sidebaru.
+* Zachować styl z zaakceptowanego preview PvP Targeting V4:
+
+  * modern premium browser RPG,
+  * dark navy / gold / bronze,
+  * desktop-first,
+  * spójność z Estate, Armory, Auction House i Direct Trade.
+* Header:
+
+  * `PvP`,
+  * `Nearby estates`,
+  * opis, że cel wybiera się z okolicy estate,
+  * badge: `Your estate: B-0421`,
+  * badge: `Vicinity`,
+  * badge: `Combat opens after attack`.
+* Summary:
+
+  * Daily attacks,
+  * Your address,
+  * Attack range,
+  * Protection.
+* Główna karta:
+
+  * tytuł `Vicinity`,
+  * tabs/entry points:
+
+    * `Vicinity`,
+    * `Ranking`.
+* `Vicinity` i `Ranking` muszą mieścić się w jednej linii i być dopchane do prawej strony nagłówka karty.
+* `Reports` nie jest tabem na tym ekranie.
+
+**Table columns:**
+
+* Address,
+* Hero,
+* Level,
+* Attack,
+* Spy,
+* Actions.
+
+Nie pokazywać osobnej kolumny District, bo district wynika z adresu.
+Nie pokazywać osobnej kolumny Distance, jeśli travel time jest wystarczającą informacją dla gracza.
+
+**Rows/states:**
+
+* Self row:
+
+  * address,
+  * hero name,
+  * `Your estate`,
+  * badge `You`.
+* Occupied attackable estate:
+
+  * address,
+  * hero,
+  * level,
+  * attack travel time,
+  * spy travel time,
+  * compact action icons.
+* Empty plot:
+
+  * badge/status `Empty`,
+  * brak akcji.
+* Protected target:
+
+  * spy available,
+  * siege available if allowed by rules,
+  * no attack action,
+  * compact status `Protected`, not a large button.
+* Guild member:
+
+  * spy available,
+  * no attack,
+  * no siege,
+  * compact status `Guild`.
+
+**Action visibility rules:**
+
+* Spy:
+
+  * available for every occupied estate,
+  * including guild members.
+* Attack:
+
+  * available only when target is attack-eligible,
+  * target is in backend-defined attack range,
+  * target is not protected,
+  * target is not a guild member.
+* Siege:
+
+  * available for non-guild estates,
+  * exact siege availability can be backend/read-model driven.
+* If action is not available:
+
+  * hide it or show a compact disabled state with tooltip,
+  * do not show a large `Unavailable` button.
+
+**Visual rules:**
+
+* Row actions are compact icon buttons, not large buttons.
+* Protected/Empty/Guild are compact status pills.
+* Actions column must not overflow.
+* Buttons should remain slightly smaller than earlier large pill buttons if needed.
+* Emoji may be used in the prototype only; production should use the project’s icon system / Game Icons direction.
+
+**Out of scope:**
+
+* No Walking Dead.
+* No combat preview.
+* No combat log.
+* No result preview.
+* No report detail.
+* No ranking implementation in this task beyond the tab/entry point.
+* No siege setup screen.
+* No spy result screen.
+* No backend distance formula implementation unless already provided by read model.
+
+**Data/source rules:**
+
+* Active hero and selected server must be loaded before hero-owned reads.
+* Vicinity rows should come from estate/vicinity/PvP eligibility read model when available.
+* Attack availability, protection, travel times and siege availability are backend/read-model outputs.
+* Do not compute authoritative PvP eligibility purely in Angular.
+* Do not hardcode permanent attack range rules in UI.
+* Empty plots may be generated from address range + occupied-estate overlay if that is the accepted estate-vicinity model.
+* Do not expose defender private equipment.
+
+**Acceptance criteria:**
+
+* PvP target selection screen does one thing: target/action selection.
+* `Vicinity` and `Ranking` are the only tabs in this card.
+* `Vicinity` and `Ranking` stay on one line.
+* Table does not include District or Distance columns.
+* Table includes Attack and Spy travel time columns.
+* Actions are compact icon buttons.
+* Protected/Guild/Empty do not break table layout.
+* Guild member row shows Spy + Guild only.
+* Protected row does not show Attack.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-40 — PvP Selected Target side panel
+
+**Goal:**
+Dodać prawy panel Selected Target dla ekranu PvP Vicinity, pokazujący dostępne akcje dla aktualnie wybranego celu.
+
+Panel ma być krótki, czytelny i player-facing. Nie ma być debug panelem ani combat preview.
+
+**Scope:**
+
+* Prawy panel `Selected target`.
+* Panel pokazuje:
+
+  * Target,
+  * Address,
+  * Attack travel time,
+  * Spy travel time,
+  * Siege available.
+* Pod spodem compact action buttons/icons:
+
+  * Start attack,
+  * Spy,
+  * Lay siege.
+* Przyciski powinny być kompaktowe i nie rozpychać panelu.
+* Brak `Clear` button.
+* Jeśli cel jest protected:
+
+  * Start attack ukryty albo disabled z tooltipem,
+  * Spy zostaje,
+  * Siege zależnie od backend rule.
+* Jeśli cel jest guild member:
+
+  * Spy zostaje,
+  * Start attack hidden/disabled,
+  * Lay siege hidden/disabled,
+  * panel pokazuje `Siege available: No`.
+
+**Out of scope:**
+
+* No combat screen.
+* No combat result.
+* No report snapshot.
+* No spy result detail.
+* No siege setup flow.
+* No resource-steal calculation preview.
+* No defender equipment display.
+
+**Data/source rules:**
+
+* Panel korzysta z selected row/read modelu.
+* Travel times i availability pochodzą z backend/read modelu.
+* UI może pokazać mock values w prototypie, ale implementacja nie może hardcodować finalnych reguł.
+* If selected target changes during async action, stale response must be ignored.
+
+**Acceptance criteria:**
+
+* Selected target panel nie overflowuje.
+* Panel pokazuje target/address/action travel times.
+* Panel pokazuje action buttons compactly.
+* Start attack dostępny tylko dla attack-eligible target.
+* Spy dostępny dla occupied estate.
+* Siege dostępne tylko jeśli target is non-guild and siege eligible.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-41 — PvP Vicinity pagination and search
+
+**Goal:**
+Dodać paginację i lekkie wyszukiwanie do listy Vicinity.
+
+Lista okolicy może mieć więcej wpisów niż aktualnie widoczne rows, więc ekran musi obsługiwać paginację w stylu zaakceptowanym dla Auction House i Direct Trade.
+
+**Scope:**
+
+* Search:
+
+  * hero name,
+  * address.
+* Optional filter:
+
+  * Show only attackable.
+* Pagination:
+
+  * current page,
+  * total pages,
+  * visible range, np. Showing 1–20 around B-0421,
+  * Prev / Next,
+  * page numbers.
+* Page size może być stałe w pierwszym slice, np. 20, jeśli backend/read model nie wspiera configurable page size.
+* Paginacja powinna być pod tabelą.
+* Search/filter changes reset page to 1.
+
+**Out of scope:**
+
+* No advanced sort like `best opportunity`, `highest resources`, `least protected`.
+* No player-resource-based targeting sort.
+* No infinite scroll.
+* No map view.
+* No ranking implementation.
+
+**Data/source rules:**
+
+* Prefer service-backed/server-side pagination if the vicinity list can be large.
+* Empty plots can be included if current estate vicinity model supports generated address ranges.
+* Search/filter state should not assume UUID-only lookup.
+* Stale response guard required for search/filter/page changes.
+
+**Acceptance criteria:**
+
+* Vicinity list has visible pagination.
+* Search by hero/address works or is wired to current read-model capability.
+* Show only attackable does not invent attack logic in Angular.
+* Pagination display matches real result count/range.
+* Search/filter resets page to 1.
+* Stale async responses do not overwrite current state.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-42 — PvP action start boundaries
+
+**Goal:**
+Podłączyć player-facing PvP target actions do właściwych workflow boundaries bez implementowania pełnej walki, szpiegowania ani oblężenia w tym samym ekranie.
+
+**Scope:**
+
+* Actions from Vicinity row and Selected Target panel:
+
+  * Start attack,
+  * Spy,
+  * Lay siege.
+* Start attack:
+
+  * validates selected target,
+  * uses canonical backend/RPC/domain operation when available,
+  * starts travel timer or opens pending action state,
+  * combat screen opens only after attack is ready.
+* Spy:
+
+  * starts spy action/travel timer if backend/domain path exists,
+  * otherwise show dependency/placeholder, not fake result.
+* Lay siege:
+
+  * routes to future siege setup if available,
+  * otherwise show dependency/placeholder.
+* Action feedback:
+
+  * loading state,
+  * toast/message on success/error,
+  * disabled/hidden actions when not allowed.
+
+**Out of scope:**
+
+* No Walking Dead.
+* No combat implementation.
+* No spy result implementation.
+* No siege setup implementation unless already exists.
+* No resource reward/loot calculation.
+* No report generation in this task.
+* No direct writes to hero/resources/pvp/combat tables.
+
+**Data/source rules:**
+
+* Persistent action start must go through backend/RPC/domain service.
+* Frontend must not directly mutate:
+
+  * daily attack counters,
+  * resources,
+  * protection windows,
+  * combat results,
+  * reports.
+* Backend/read model decides:
+
+  * attack eligibility,
+  * protection,
+  * guild restrictions,
+  * travel times,
+  * action availability.
+* Stale guards required for selected target, active hero, selected server and current request.
+
+**Acceptance criteria:**
+
+* Actions are wired to canonical service boundaries or explicitly marked as dependency.
+* UI does not fake completed combat/spy/siege.
+* Start attack does not show Walking Dead on this screen.
+* Action availability follows read model.
+* Errors are player-readable.
+* No direct writes to durable gameplay tables.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-43 — PvP Ranking entry point
+
+**Goal:**
+Przygotować entry point dla PvP Ranking bez mieszania rankingu z Vicinity.
+
+Ranking jest drugim sposobem wyboru celu PvP obok Vicinity, ale nie musi być zaimplementowany w pełni w tym samym slice.
+
+**Scope:**
+
+* Tab/entry point `Ranking` obok `Vicinity`.
+* `Vicinity` i `Ranking` muszą być w jednej linii.
+* Ranking tab może:
+
+  * prowadzić do osobnej route,
+  * przełączać widok w ramach PvP page,
+  * albo być placeholderem/dependency, jeśli ranking read model jeszcze nie istnieje.
+* Nie pokazywać `Reports` w tym tab barze.
+* Ranking powinien później wspierać wybór celu, ale jego sort/range rules mają pochodzić z backend/read modelu.
+
+**Out of scope:**
+
+* No full ranking implementation if backend/read model is missing.
+* No fake ranking based on hardcoded levels.
+* No fake match range calculations in Angular.
+* No combat preview.
+
+**Data/source rules:**
+
+* Ranking source should come from PvP/ranking read model when available.
+* Attack availability still comes from PvP eligibility read model.
+* Ranking display must not leak private defender equipment.
+* If ranking read model does not exist, Codex reports dependency instead of inventing schema.
+
+**Acceptance criteria:**
+
+* Ranking exists as clear UI entry point.
+* Vicinity/Ranking tab row is stable and does not wrap on desktop.
+* Reports are not included in this tab row.
+* No fake ranking logic is added.
+* Build/tsc passes.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-44 — PvP combat screen boundary note
+
+**Goal:**
+Zabezpieczyć zakres prac: PvP target selection nie może zamienić się w ekran walki.
+
+To jest task/spec boundary dla przyszłego osobnego ekranu walki PvP.
+
+**Scope:**
+
+* W UI/UX backlogu albo w task notes dopisać jasną granicę:
+
+  * PvP Vicinity/Ranking = wybór celu i start akcji,
+  * PvP Combat = osobny ekran walki,
+  * Reports = osobny widok wyników/snapshotów.
+* PvP Combat screen later may include:
+
+  * Walking Dead,
+  * combat log,
+  * health bars,
+  * turn limit,
+  * attack source labels,
+  * result display.
+* PvP target selection must not include:
+
+  * Walking Dead,
+  * combat preview,
+  * combat log,
+  * result preview,
+  * resource reward/loss calculation preview.
+
+**Data/source rules:**
+
+* Core combat remains reusable and caller-agnostic.
+* PvP caller interprets result after combat.
+* Reports should use durable snapshots, not recompute from live state.
+* Full defender equipment remains private; later combat/report UI can show resolved stats and attack source labels where allowed.
+
+**Acceptance criteria:**
+
+* UI backlog/task notes clearly separate target selection from combat screen.
+* Future Codex prompts cannot reasonably merge these screens by accident.
+* No status docs are updated unless user confirms.
+* Codex reports:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
+## Task UI-45 — Reports Center shell with Reports and Notifications tabs
+
+**Goal:**
+Zbudować wspólny Reports Center jako player-facing archive hub dla dwóch różnych typów wpisów:
+
+* Reports — pełne raporty gameplayowe.
+* Notifications — krótkie komunikaty systemowe/gameplayowe.
+
+To nie ma być audit log, admin log ani action queue.
+
+**Scope:**
+
+* Route/page dla Reports Center.
+* Użyć istniejącego shellu/topbara/sidebaru.
+* Zachować kierunek wizualny z aktualnych preview:
+
+  * modern premium browser RPG,
+  * dark navy / gold / bronze,
+  * desktop-first,
+  * spójność z Dashboard, Estate, Auction House, Direct Trade i PvP.
+* Dodać dwa główne taby:
+
+  * Reports,
+  * Notifications.
+* Reports i Notifications mogą współdzielić:
+
+  * page header,
+  * filters shell,
+  * list layout,
+  * detail side panel,
+  * pagination,
+  * unread/read styling,
+  * icon placeholder pattern.
+* Taby mają przełączać między osobnymi archiwami, nie mieszać typów wpisów w jednej liście.
+* Sidebar entry może pozostać jako Reports, jeśli Reports Center jest głównym archiwum.
+
+**Important IA rules:**
+
+* Reports = pełne gameplay records.
+* Notifications = krótkie attention/status messages.
+* Notifications mogą linkować do Reports, ale nie zastępują report detail.
+* Topbar bell/dropdown to quick access do najnowszych notifications, nie pełne archiwum.
+* Pełne archiwum notifications jest w Reports Center → Notifications.
+
+**Out of scope:**
+
+* Nie implementować full report detail w tym tasku.
+* Nie implementować public share route w tym tasku.
+* Nie implementować notification settings w pełni.
+* Nie robić action queue/timer dashboard.
+* Nie mieszać audit logs z gameplay reports.
+* Nie pokazywać staff-only/private metadata.
+
+**Data/source rules:**
+
+* Reports i Notifications powinny mieć osobne read modele/services, jeśli DB/read model je rozróżnia.
+* Typy/statusy/severity powinny pochodzić z DB dictionaries/read modelu, jeśli istnieją.
+* Jeśli DB foundation dla notifications jest niepełny, Codex ma zgłosić dependency zamiast wymyślać trwały model w Angularze.
+* Read/unread powinno być hero/user scoped.
+* Nie zakładać hero.id === auth.uid().
+
+**Acceptance criteria:**
+
+* Reports Center ma dwa taby: Reports i Notifications.
+* Reports tab pokazuje pełne raporty.
+* Notifications tab pokazuje krótkie komunikaty.
+* Taby nie mieszają entries.
+* Topbar bell nie zastępuje Notifications archive.
+* UI nie wygląda jak admin/audit log.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-46 — Reports list/archive screen
+
+**Goal:**
+Zbudować Reports tab jako archiwum pełnych raportów gameplayowych.
+
+Reports są pełnymi zapisami wydarzeń, które można otworzyć w detail view albo później w full report route.
+
+**Scope:**
+
+* Reports tab w Reports Center.
+* Lista raportów z filtrami i paginacją.
+* Report row pokazuje:
+
+  * icon placeholder, np. PV/TL/EX/TR/SP,
+  * tytuł,
+  * krótki summary,
+  * typ raportu,
+  * wynik/status,
+  * read/unread,
+  * czas utworzenia.
+* Kategorie raportów:
+
+  * Combat,
+  * Trial,
+  * Encounter,
+  * PvP,
+  * Spy/Siege,
+  * Trade/Auction.
+* Detail side panel pokazuje summary wybranego raportu:
+
+  * title,
+  * type,
+  * outcome,
+  * participants/source,
+  * key rewards/changes,
+  * created at,
+  * privacy/share status.
+* Actions:
+
+  * Open full report,
+  * Share.
+* Nie ma przycisku Mark read. Otwarcie raportu oznacza go jako przeczytany automatycznie.
+
+**Report content examples:**
+
+* PvP victory/defeat/draw.
+* Trial success/failure.
+* Encounter result.
+* Spy report.
+* Siege report later.
+* Auction sale completed.
+* Direct trade completed.
+* Exploration result.
+
+**Out of scope:**
+
+* Nie budować pełnego report detail route w tym tasku.
+* Nie budować public /report/:publicToken w tym tasku.
+* Nie przeliczać raportów z live state.
+* Nie robić audit logs.
+* Nie dodawać staff moderation reports.
+* Nie robić share modal, jeśli share link workflow nie istnieje.
+
+**Data/source rules:**
+
+* Reports muszą renderować ze snapshotów/durable report data, nie z live state.
+* Tooltipy w reportach powinny używać snapshot data.
+* Public share link ma używać public token, nie internal id, jeśli/when implemented.
+* Player names mogą linkować do public in-game profiles where applicable.
+* Reports nie mogą expose private account data.
+* Jeśli report producer/read model jeszcze nie istnieje dla danego type, pokazać dependency, nie fake durable data.
+
+**Acceptance criteria:**
+
+* Reports tab ma listę raportów i detail summary.
+* Report read state jest widoczne.
+* Kliknięcie/open traktuje raport jako read.
+* Detail actions to Open full report i Share.
+* Nie ma Mark read button.
+* Nie ma Share later label.
+* List ma filters i pagination.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-47 — Full report detail route
+
+**Goal:**
+Przygotować osobny full report detail screen dla pełnego raportu gameplayowego.
+
+Reports Center pokazuje listę i summary, ale pełna rozpiska raportu powinna otwierać się osobno.
+
+**Scope:**
+
+* Route/page dla full report detail, np. game/reports/:reportId albo projektowy odpowiednik.
+* Private in-app report view w normalnym app shellu.
+* Full report powinien renderować ten sam core content, który później może być pokazany publicznie bez app shellu.
+* Report detail powinien wspierać różne typy:
+
+  * combat,
+  * trial,
+  * encounter,
+  * pvp_combat,
+  * siege later,
+  * spy later,
+  * trade/auction summary.
+* Report detail layout:
+
+  * header z typem, wynikiem i datą,
+  * participants/source,
+  * main result,
+  * timeline/log/turns, jeśli raport combatowy,
+  * rewards/loot/resource changes,
+  * linked items with snapshot-based item popovers,
+  * share action.
+* Share action:
+
+  * label: Share,
+  * nie Share later.
+* Read state:
+
+  * otwarcie raportu oznacza report jako read automatycznie.
+
+**Out of scope:**
+
+* Nie implementować public report route w tym tasku, jeśli scope tego nie obejmuje.
+* Nie implementować report producers.
+* Nie przeliczać combat/trial/reward z live state.
+* Nie expose private defender equipment beyond allowed snapshot/source labels.
+* Nie dodawać admin/debug JSON payload jako player-facing UI.
+
+**Data/source rules:**
+
+* Full report reads durable snapshot/report data.
+* Combat reports wrap combat result snapshots and attack rows where available.
+* Trial/encounter reports wrap outcome/reward snapshots.
+* Trade reports show exact buyer/seller/item/Character Points summary from transaction-time snapshots.
+* Public token generation/access is separate but should be compatible with this detail content.
+* If report snapshot data is missing, show safe fallback/dependency rather than recompute live state.
+
+**Acceptance criteria:**
+
+* Open full report from Reports Center navigates to detail.
+* Detail route is readable and player-facing.
+* Report renders from snapshot/read model.
+* Share action is present where allowed.
+* Opening detail marks report as read.
+* No live recomputation for historical values.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-48 — Notifications archive tab
+
+**Goal:**
+Zbudować Notifications tab jako pełne archiwum krótkich komunikatów systemowych i gameplayowych.
+
+Notifications są krótkimi attention/status messages. Nie są pełnymi raportami, ale mogą linkować do reportów albo ekranów źródłowych.
+
+**Scope:**
+
+* Notifications tab w Reports Center.
+* Zachować cztery summary fields/kafle:
+
+  * Unread,
+  * Needs attention,
+  * Last 24h,
+  * Muted categories.
+* Lista notyfikacji z filtrami i paginacją.
+* Row notyfikacji pokazuje:
+
+  * icon placeholder, np. AU/PV/ES/TR/EX/SY,
+  * title,
+  * krótki text,
+  * category,
+  * severity,
+  * read/unread,
+  * created time,
+  * linked source/report indicators if available.
+* Filters:
+
+  * category,
+  * status,
+  * severity,
+  * search.
+* Detail side panel pokazuje:
+
+  * title,
+  * category,
+  * severity,
+  * source,
+  * effect,
+  * created time,
+  * state,
+  * linked report/source,
+  * primary action, np. Open auction / Open report / Open estate / Open trade offer.
+* Opening a notification marks it as read automatically.
+* Nie ma Mark read button jako głównej akcji.
+
+**Notification examples:**
+
+* You were outbid.
+* PvP report ready.
+* Exploration step ready.
+* Building completed.
+* Direct offer received.
+* Server maintenance scheduled.
+* Spy result ready.
+* Auction sold.
+* Protection expired.
+
+**Out of scope:**
+
+* Nie implementować full notification settings w tym tasku.
+* Nie implementować server maintenance admin flow.
+* Nie robić pełnego action queue/timer dashboard.
+* Nie budować report detail inside notification detail.
+* Nie robić audit logs.
+* Nie pokazywać raw technical payloads.
+
+**Data/source rules:**
+
+* Notifications powinny być persisted, jeśli gracz nie widział toasta albo event ma pozostać w historii.
+* Online event should show toast first and may also persist depending on notification type.
+* Category/severity/status labels powinny pochodzić z DB/read modelu, jeśli istnieje.
+* Read/unread is user/hero scoped.
+* Linked report/source should use stable ids/tokens from backend/read model.
+* If backend notification archive does not exist yet, Codex must report dependency instead of inventing permanent local storage.
+
+**Acceptance criteria:**
+
+* Notifications tab has four summary cards.
+* Notifications list is short-form and scannable.
+* Detail panel does not become full report detail.
+* Opening notification marks read automatically.
+* Notifications can link to source/report when available.
+* Filters and pagination exist.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-49 — Topbar notification bell and recent notifications dropdown
+
+**Goal:**
+Dodać do topbara szybki dostęp do najnowszych notifications przez bell/dropdown.
+
+Dropdown jest quick access. Pełne archiwum pozostaje w Reports Center → Notifications.
+
+**Scope:**
+
+* Topbar bell with unread count.
+* On click, dropdown shows latest 5–10 notifications.
+* Dropdown entry shows:
+
+  * icon placeholder,
+  * title,
+  * short subtitle,
+  * time,
+  * unread indicator where applicable.
+* Dropdown footer:
+
+  * View all, linking to Reports Center → Notifications.
+* Bell count shows unread notifications count.
+* If count is zero, show subtle inactive/empty state.
+* Dropdown should not break topbar layout.
+* Current preview had structural issues after dropdown removal; implementation must keep topbar markup clean:
+
+  * bell/notification anchor,
+  * Drachmas,
+  * Materials,
+  * Workforce,
+  * no orphan dropdown nodes.
+
+**Out of scope:**
+
+* Nie implementować full notification archive here.
+* Nie implementować notification settings here.
+* Nie pokazywać reports list in dropdown.
+* Nie robić dropdown jako osobnej strony.
+* Nie mieszać toast systemu z dropdown rendererem.
+
+**Data/source rules:**
+
+* Dropdown uses same notification read model as Notifications archive, but limited to latest entries.
+* Read/unread count comes from backend/read model.
+* Clicking View all routes to Notifications archive.
+* Clicking a dropdown item may open source/report/notification detail depending on route support.
+* Stale guards if dropdown loads asynchronously.
+
+**Acceptance criteria:**
+
+* Topbar bell shows unread count.
+* Dropdown shows recent notifications.
+* View all opens Notifications tab/archive.
+* Dropdown is not the full archive.
+* Topbar markup is valid and does not leave orphan dropdown elements.
+* Bell coexists with resource chips without layout breakage.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-50 — Toast-to-notification behavior contract
+
+**Goal:**
+Opisać i wdrożyć UI contract dla relacji toastów i notification archive.
+
+Podstawowa zasada: jeśli gracz jest online i dzieje się coś wymagające notyfikacji, widzi toast. Jeśli gracz nie jest online, nie widzi toasta albo event powinien pozostać w historii, notification trafia do archive.
+
+**Scope:**
+
+* Dodać frontend contract/helper/service boundary:
+
+  * toast display for online active session events,
+  * persisted notification archive read model for historical items.
+* Toasty są krótkie:
+
+  * title,
+  * summary,
+  * severity,
+  * optional action/link.
+* Persistent notification archive przechowuje:
+
+  * category,
+  * severity,
+  * title,
+  * message,
+  * created time,
+  * read state,
+  * optional linked report/source.
+* Toast click can route to source screen or notification/report detail.
+* If the notification is opened from toast, read state should be updated where appropriate.
+
+**Out of scope:**
+
+* Nie budować całego backendu notifications, jeśli nie istnieje.
+* Nie zapisywać notifications w localStorage jako trwały model gry.
+* Nie tworzyć audit/event log substitute.
+* Nie wysyłać staff/private payloads to player notifications.
+
+**Data/source rules:**
+
+* Backend decides which events persist as notifications.
+* Frontend displays toast for received live events.
+* Backend/read model owns archive and read/unread state.
+* If no backend live-event channel exists, Codex should document dependency and wire only available read/archive surfaces.
+* Do not infer notification persistence solely from toast state.
+
+**Acceptance criteria:**
+
+* Toast behavior is documented in code/task notes.
+* Online events can show toast where event delivery exists.
+* Notification archive remains source of persisted messages.
+* Toast click can navigate to source/detail where supported.
+* No local-only permanent notification store is created.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
 
 ## 21. Otwarte kwestie UI do dalszego dopracowania
 

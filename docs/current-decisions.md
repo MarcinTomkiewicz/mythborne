@@ -16,6 +16,121 @@ This file is not a Codex status tracker. Do not mark Codex tasks as completed he
 
 ---
 
+## Rewards / L12-L13 Reward Configuration Decisions — 2026-05-02
+
+The L12/L13 reward smoke showed that a technically writable admin UI is not enough if the admin cannot understand what is being configured. Reward configuration must therefore be treated as a DB-backed, explainable configuration surface, not as raw table editing.
+
+Current reward foundations now include:
+
+1. **L-Reward-DB1 — reward profile/outcome admin foundation**
+   - `reward_outcome_kinds` is the DB-backed dictionary for runtime-facing reward outcomes.
+   - `reward_profiles` and `reward_profile_entries` have governed admin/balancer RPCs:
+     - `upsert_reward_profile(...)`;
+     - `deactivate_reward_profile(...)`;
+     - `upsert_reward_profile_entry(...)`;
+     - `deactivate_reward_profile_entry(...)`.
+   - `reward_profile_assignments` validates `source_kind + outcome_kind` against `reward_outcome_kinds`.
+   - `source_kind = test` is technical/admin/sandbox only, not normal player gameplay.
+
+2. **L-Reward-DB2 — resource type dictionary**
+   - `resource_types` is now the DB-backed source of truth for resource keys such as `drachma`, `materials`, and `workforce`.
+   - Resource reward entries, resource payloads, hero resources, ledgers and reward grant entries reference `resource_types`.
+   - Angular must not use fallback hardcoded resource lists as the normal source.
+
+3. **L-Reward-DB3 — reward assignment match semantics and formula amounts**
+   - `reward_assignment_match_kinds` defines matching modes: `any`, `exact`, `minimum`, `range`.
+   - `reward_profile_assignments` now has explicit match semantics for difficulty and district:
+     - `difficulty_match_kind`, `difficulty_key`, `max_difficulty_key`;
+     - `district_match_kind`, `district_code`, `max_district_code`.
+   - Active duplicate assignment scopes are blocked by DB uniqueness. There may be several assignments for the same source/outcome if their scopes differ, but not two active assignments for the exact same source/outcome/target/difficulty/district scope.
+   - Reward lookup selects **one best matching reward profile**, not all matching profiles.
+   - If one event should grant several things, model that as multiple `reward_profile_entries` inside the selected reward profile.
+   - `amount_mode = formula` is now supported for numeric `experience`, `character_points`, and `resource` reward entries and is evaluated server-side.
+   - `transfer_formula` remains reserved for future PvP transfer workflows and must not be presented as a normal PvE reward mode.
+   - Failure reward assignments are no longer merely decorative: challenge completion may grant a configured failure reward if a matching failure assignment exists. Missing failure assignment means no failure reward.
+
+Reward outcome keys are runtime-facing values scoped by source kind, not normal slugs generated from labels. Adding a new reward outcome kind does not make runtime emit it. The corresponding runtime workflow must explicitly emit that outcome key.
+
+L12c must explain reward assignments in the encounter configurator. L13 must configure reward profiles/entries/outcomes. Both UIs must consume DB-backed `label`, `description`, `helper_text`, and `admin_description` instead of inventing permanent Angular-only copy.
+
+---
+
+## Combat / Epic M Explainability and Readiness Decisions — 2026-05-02
+
+Epic M must be treated as a reusable combat foundation, not just a sandbox screen.
+
+Current combat foundations include:
+
+- **M-DB1:** governed combat opponent admin/balancer write path for opponent families, definitions, stat values, natural attack sources, and equipment blueprint entries.
+- **M-DB2:** `persist_combat_result_snapshot(...)` for relational combat result snapshots.
+- **M-Dict-DB1:** DB-backed combat explainability dictionaries:
+  - `combat_source_type_definitions`;
+  - `combat_side_definitions`;
+  - `combat_outcome_definitions`;
+  - `combat_participant_kind_definitions`;
+  - `combat_attack_source_kind_definitions`;
+  - `combat_candidate_kind_definitions`;
+  - existing/enriched `combat_opponent_equipment_mode_definitions`;
+  - enriched `equipment_slot_definitions`.
+
+Combat formulas are explainable and DB-backed:
+
+- `combat_initiative_score` / `combat-initiative-score-default` describes attack-slot ordering. Intelligence is the main tempo stat, Agility contributes lightly, and later attacks are slowed by `attackIndex`.
+- `combat_opponent_scaled_stat` / `combat-opponent-scaled-stat-default` scales a single opponent baseline stat by hero level and candidate `difficultyMultiplier`.
+
+Epic M rules:
+
+- Combat core produces a combat result. Source-specific callers interpret consequences.
+- Combat does not grant rewards, complete trials, apply PvP consequences, publish reports, or create notifications.
+- `persist_combat_result_snapshot(...)` persists the snapshot only. It is not anti-cheat validation and does not prove the result was production-authoritative.
+- Sandbox/admin-test combat may use the Angular combat resolver as a test surface.
+- Production gameplay callers (`encounter`, `trial`, `pvp`) must not silently persist arbitrary Angular-computed combat results as final authoritative truth unless a backend/RPC validation/finalization boundary explicitly approves that path.
+- No `hero_derived` dependency is allowed.
+- Opponent equipment entries are fight-local item-like blueprints/loadouts and must not create player-owned `items`.
+- Current DB may contain zero opponent families/definitions/stat values/attack sources/equipment entries. This is not a DB blocker: M12 must support empty state and create the first rows through canonical RPCs.
+
+Epic M frontend work may begin after generated Supabase types are regenerated and M0 confirms the new M-DB1/M-DB2/M-Dict-DB1 tables/RPCs are visible.
+
+---
+
+## Admin Configurator Explainability Standard — 2026-05-02
+
+Every epic that introduces or consumes admin-configurable gameplay objects must include the admin/operator/balancer explanation surface for those objects.
+
+Admin UI must explain:
+
+- what the object configures;
+- where it is used;
+- whether it is global, server-scoped, selected-entity-scoped, reusable library content, or technical metadata;
+- what runtime/gameplay effect the configuration has;
+- which DB dictionary/helper/admin text is displayed;
+- which mutation path/RPC owns durable changes.
+
+Raw keys/UUIDs are secondary metadata only. Missing or weak DB dictionary text must be reported as a DB/content seed gap, not hidden by permanent hardcoded Angular copy.
+
+After Epic M, return to `/admin/exploration-trials` for a trial-editor explainability/layout pass analogous to L12c. Later, create/run a dedicated `UX-CFG` epic for a systematic explainability sweep of all admin/configurator screens.
+
+---
+
+## Future Memory Notes — 2026-05-02
+
+These are side notes, not current Epic M/L work unless explicitly promoted:
+
+- After Epic M, revisit `/admin/exploration-trials` for explainability/layout cleanup.
+- Create a later `UX-CFG` epic for a systematic review of all admin/configurator UI explanations.
+- PvP attack target range must be level-limited; very low/high level targets should be blocked outside the allowed range.
+- PvP attacks cannot target members of the attacker’s own guild.
+- PvP attack travel time depends on estate/address distance.
+- PvP spying should be shorter than attack travel time.
+- PvP spying can target anyone, including own guild members, without level limits, but still uses distance-based time.
+- PvP sieges can ignore level limits but cannot target own guild members.
+- Auction watchers should later support notifications for watched-auction price/outbid/end-soon events.
+- Auction rules still need a design/config home: minimum increment, custom bid amount, auction timing, and anti-snipe/end-extension behavior.
+- Trade Routes/building integration should later define the combined active offer-slot limit across auctions and direct trade.
+- Direct trade offers received from another player should not consume the receiver’s Trade Routes/offer slot unless the receiver makes a counteroffer or otherwise creates their own commitment.
+
+---
+
 ## Combat / Epic M DB-RPC Completion Decisions — 2026-05-02
 
 Epic M must be treated as a reusable combat foundation, not merely a sandbox screen. Two missing DB/RPC contracts were added after pre-flight:

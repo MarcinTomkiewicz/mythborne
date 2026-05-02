@@ -1,0 +1,19 @@
+@if (preview.rows().length > 0) {
+  <section class="mg-card p-lg flex-col gap-md">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Reward profile preview</h3>
+    <p-table [value]="preview.rows()" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Run</th><th>Entry</th><th>Included</th><th>Amount</th><th>Explanation</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>{{ row.previewRunIndex }}</td>
+          <td>{{ row.entryLabel }}</td>
+          <td>{{ row.isIncluded ? 'Yes' : 'No' }}</td>
+          <td>{{ row.previewAmount || row.previewItemCount || '-' }}</td>
+          <td>{{ row.explanation }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </section>
+}

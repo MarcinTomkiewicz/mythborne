@@ -2,47 +2,90 @@
   <div class="flex-col gap-xs">
     <h3 class="mg-section__title mg-section__title--xs mb-0">Reward assignments</h3>
     <p class="mb-0">
-      Reward assignments connect this encounter to reward profiles by outcome, difficulty and
-      district. Saves use <code>upsert_reward_profile_assignment</code> with source kind
-      <code>encounter</code>.
+      One assignment selects one reward profile for this encounter source. Runtime reward lookup
+      chooses the best matching assignment; it does not grant every matching assignment.
+      Multiple rewards for one event belong as entries inside the selected reward profile.
     </p>
   </div>
   @if (page.selectedEncounter()) {
     @if (!page.hasRewardProfiles()) {
-      <p-message severity="warn">No reward profiles configured; create/activate reward profile first.</p-message>
+      <p-message severity="warn">
+        No reward profiles configured; create/activate reward profile first in
+        <a routerLink="/admin/reward-profiles">Reward profiles</a>.
+      </p-message>
+    }
+    @if (!page.hasDbEncounterOutcomeKinds()) {
+      <p-message severity="warn">
+        No active encounter outcome kinds are configured in DB. The outcome selector is using
+        temporary fallback values; configure reward outcome kinds in
+        <a routerLink="/admin/reward-profiles">Reward profiles</a>.
+      </p-message>
+    }
+    @if (!page.hasRewardMatchKindDictionary()) {
+      <p-message severity="warn">
+        Reward assignment match mode dictionary is not loaded. Difficulty and district matching are
+        using degraded fallback keys until reward_assignment_match_kinds is seeded.
+      </p-message>
     }
     <form class="flex-col gap-md w-100" [formGroup]="rewardActions.assignmentForm">
       <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
-      <label class="flex-col gap-sm w-100">
+      <div class="flex-col gap-sm w-100">
         <span>Reward profile</span>
         <p-select formControlName="rewardProfileId" [options]="page.requiredRewardProfileOptions()" optionLabel="label" optionValue="value" />
         @if (rewardActions.assignmentForm.controls.rewardProfileId.touched && rewardActions.assignmentForm.controls.rewardProfileId.invalid) {
           <small class="error-text">Reward profile is required.</small>
         }
-      </label>
-      <label class="flex-col gap-sm w-100">
+      </div>
+      <div class="flex-col gap-sm w-100">
         <span>Outcome kind</span>
         @if (!rewardActions.assignmentForm.controls.allowOutcomeOverride.value) {
           <p-select formControlName="outcomeKind" [options]="page.outcomeKindOptions()" optionLabel="label" optionValue="value" />
         } @else {
           <input pInputText formControlName="outcomeKind" />
         }
-        <small class="muted-text">Use known encounter outcome keys. Advanced override is for schema-approved runtime values.</small>
-      </label>
+        <small class="muted-text">Use an encounter outcome emitted by runtime. Advanced override is only for schema-approved runtime values.</small>
+      </div>
       <label class="flex-col gap-sm w-100"><span>Advanced outcome override</span><p-checkbox formControlName="allowOutcomeOverride" [binary]="true" /></label>
-      <label class="flex-col gap-sm w-100">
-        <span>Difficulty</span>
+      <div class="flex-col gap-sm w-100">
+        <span>Difficulty match mode</span>
+        <p-select formControlName="difficultyMatchKind" [options]="page.rewardMatchKindOptions()" optionLabel="label" optionValue="value" />
+        <small class="muted-text">DB-defined mode controls whether the difficulty fields are ignored, exact-matched or interpreted as a supported range.</small>
+        @if (page.rewardMatchKindHelp(rewardActions.assignmentForm.controls.difficultyMatchKind.value); as help) {
+          <small class="muted-text">{{ help }}</small>
+        }
+      </div>
+      <div class="flex-col gap-sm w-100">
+        <span>Difficulty value</span>
         <p-select formControlName="difficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
-      </label>
-      <label class="flex-col gap-sm w-100">
-        <span>District</span>
+      </div>
+      <div class="flex-col gap-sm w-100">
+        <span>Maximum difficulty</span>
+        <p-select formControlName="maxDifficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
+      </div>
+      <div class="flex-col gap-sm w-100">
+        <span>District match mode</span>
+        <p-select formControlName="districtMatchKind" [options]="page.rewardMatchKindOptions()" optionLabel="label" optionValue="value" />
+        <small class="muted-text">DB-defined mode controls whether the district fields are ignored, exact-matched or interpreted as a supported range.</small>
+        @if (page.rewardMatchKindHelp(rewardActions.assignmentForm.controls.districtMatchKind.value); as help) {
+          <small class="muted-text">{{ help }}</small>
+        }
+      </div>
+      <div class="flex-col gap-sm w-100">
+        <span>District value</span>
         <p-select formControlName="districtCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
-      </label>
-      <label class="flex-col gap-sm w-100"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
+      </div>
+      <div class="flex-col gap-sm w-100">
+        <span>Maximum district</span>
+        <p-select formControlName="maxDistrictCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
+      </div>
       <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
       </div>
       <label class="flex-col gap-sm w-100"><span>Description</span><textarea pInputText rows="2" formControlName="description"></textarea></label>
-      <label class="flex-col gap-sm w-100"><span>Helper text</span><textarea pInputText rows="2" formControlName="helperText"></textarea></label>
+      <label class="flex-col gap-sm w-100">
+        <span>Helper text</span>
+        <textarea pInputText rows="2" formControlName="helperText"></textarea>
+        <small class="muted-text">When encounter scope is empty in the DB, the assignment is global for encounter source rather than limited to the selected encounter.</small>
+      </label>
       <details class="mg-card p-md w-100">
         <summary class="muted-text">Advanced technical metadata</summary>
         <label class="flex-col gap-sm mt-md">

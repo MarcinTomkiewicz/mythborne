@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ToastService } from '../../../core/services/ui/toast';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { RequestToken } from '../../../core/utils/request-token';
+import { markReasonInvalid, nextSortOrder } from '../../../core/utils/admin-form-helpers';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 
 export interface EncounterWorkflowAction<T> {
@@ -54,21 +55,4 @@ export function runEncounterWorkflowAction<T>(action: EncounterWorkflowAction<T>
     });
 }
 
-export function markReasonInvalid(
-  reasonError: WritableSignal<string | null>,
-  reason: { markAsTouched: () => void; value: string | null },
-): boolean {
-  reason.markAsTouched();
-
-  if (typeof reason.value === 'string' && reason.value.trim().length > 0) {
-    reasonError.set(null);
-    return false;
-  }
-
-  reasonError.set('Reason is required for this admin mutation.');
-  return true;
-}
-
-export function nextSortOrder<T>(rows: T[], read: (row: T) => number): number {
-  return rows.reduce((max, row) => Math.max(max, read(row)), 0) + 10;
-}
+export { markReasonInvalid, nextSortOrder };

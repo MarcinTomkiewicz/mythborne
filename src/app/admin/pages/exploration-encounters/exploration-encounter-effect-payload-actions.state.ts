@@ -1,4 +1,5 @@
-import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import { EncounterEffectPayloadAdminView } from '../../../core/domain/exploration/exploration-encounter-admin.model';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
 import { ToastService } from '../../../core/services/ui/toast';
@@ -38,7 +39,7 @@ export class ExplorationEncounterEffectPayloadActionsState {
   constructor() {
     effect(() => {
       this.page.selectedEncounterId();
-      this.startNewPayload();
+      untracked(() => this.startNewPayload());
     });
   }
 
@@ -76,7 +77,10 @@ export class ExplorationEncounterEffectPayloadActionsState {
       return;
     }
 
-    if (encounter.encounter.encounterKind !== 'buff' && encounter.encounter.encounterKind !== 'debuff') {
+    if (
+      encounter.encounter.encounterKind !== ENCOUNTER_KIND.buff &&
+      encounter.encounter.encounterKind !== ENCOUNTER_KIND.debuff
+    ) {
       this.page.error.set('Effect payloads can be edited only for buff or debuff encounters.');
       return;
     }

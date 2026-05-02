@@ -1,4 +1,5 @@
-import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import { EncounterResourcePayloadAdminView } from '../../../core/domain/exploration/exploration-encounter-admin.model';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
 import { ToastService } from '../../../core/services/ui/toast';
@@ -38,7 +39,7 @@ export class ExplorationEncounterResourcePayloadActionsState {
   constructor() {
     effect(() => {
       this.page.selectedEncounterId();
-      this.startNewPayload();
+      untracked(() => this.startNewPayload());
     });
   }
 
@@ -72,7 +73,7 @@ export class ExplorationEncounterResourcePayloadActionsState {
       return;
     }
 
-    if (encounter.encounter.encounterKind !== 'resource') {
+    if (encounter.encounter.encounterKind !== ENCOUNTER_KIND.resource) {
       this.page.error.set('Resource payloads can be edited only for resource encounters.');
       return;
     }

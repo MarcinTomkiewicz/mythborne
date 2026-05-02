@@ -114,6 +114,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'Exploration',
+    title: 'Reward profiles',
+    description:
+      'Admin configurator for reusable reward profiles, profile entries and reward outcome kinds.',
+    routerLink: '/admin/reward-profiles',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Audit',
     title: 'Audit dictionaries',
     description:
@@ -161,6 +169,13 @@ export const BALANCE_PAGE_LINKS: readonly AdminTagLink[] = [
     accessPolicy: 'selectedServerManagement',
   },
   { label: 'Go to armory', routerLink: '/game/armory', accessPolicy: 'playerGameplay' },
+];
+
+export const REWARD_PROFILES_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Encounter definitions', routerLink: '/admin/exploration-encounters', accessPolicy: 'selectedServerManagement' },
+  { label: 'Trial definitions', routerLink: '/admin/exploration-trials', accessPolicy: 'selectedServerManagement' },
+  { label: 'Exploration lab', routerLink: '/admin/exploration-lab', accessPolicy: 'selectedServerTesting' },
+  { label: 'Formula read model', routerLink: '/admin/formulas', accessPolicy: 'selectedServerManagement' },
 ];
 
 export const ITEM_CATALOG_PAGE_LINKS: readonly AdminTagLink[] = [

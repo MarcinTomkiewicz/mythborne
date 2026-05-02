@@ -1,13 +1,8 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { trimRequiredValidator } from '../../../core/validators/form.validators';
-import {
-  EncounterCombatCandidateAdminView,
-  EncounterEffectPayloadAdminView,
-  EncounterResourcePayloadAdminView,
-  EncounterRewardAssignmentAdminView,
-  ExplorationEncounterAdminData,
-  ExplorationEffectDefinitionAdminView,
-} from '../../../core/domain/exploration/exploration-encounter-admin.model';
+import { EncounterCombatCandidateAdminView, EncounterEffectPayloadAdminView, EncounterResourcePayloadAdminView, EncounterRewardAssignmentAdminView, ExplorationEncounterAdminData, ExplorationEffectDefinitionAdminView } from '../../../core/domain/exploration/exploration-encounter-admin.model';
+import { COMBAT_CANDIDATE_KIND, ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
+import { ENCOUNTER_REWARD_OUTCOME_KIND_FALLBACKS, REWARD_AMOUNT_MODE, REWARD_ASSIGNMENT_MATCH_KIND } from '../../../core/constants/reward-runtime-keys.const';
 
 export function createEncounterDefinitionForm() {
   return new FormGroup({
@@ -27,7 +22,7 @@ export function createEncounterDefinitionForm() {
     }),
     helperText: new FormControl<string | null>(null),
     adminDescription: new FormControl<string | null>(null),
-    encounterKind: new FormControl<string>('combat', {
+    encounterKind: new FormControl<string>(ENCOUNTER_KIND.combat, {
       nonNullable: true,
       validators: [trimRequiredValidator()],
     }),
@@ -50,7 +45,7 @@ export function createEncounterDefinitionForm() {
 export function createEncounterCombatCandidateForm() {
   return new FormGroup({
     candidateId: new FormControl<string | null>(null),
-    candidateKind: new FormControl<string>('opponent', {
+    candidateKind: new FormControl<string>(COMBAT_CANDIDATE_KIND.opponent, {
       nonNullable: true, validators: [trimRequiredValidator()],
     }),
     opponentDefinitionId: new FormControl<string | null>(null),
@@ -73,13 +68,23 @@ export function createEncounterRewardAssignmentForm() {
   return new FormGroup({
     assignmentId: new FormControl<string | null>(null),
     rewardProfileId: new FormControl<string | null>(null, { validators: [Validators.required] }),
-    outcomeKind: new FormControl<string>('success', {
+    outcomeKind: new FormControl<string>(ENCOUNTER_REWARD_OUTCOME_KIND_FALLBACKS[0], {
       nonNullable: true,
       validators: [trimRequiredValidator()],
     }),
     allowOutcomeOverride: new FormControl<boolean>(false, { nonNullable: true }),
     difficultyKey: new FormControl<string | null>(null),
+    difficultyMatchKind: new FormControl<string>(REWARD_ASSIGNMENT_MATCH_KIND.any, {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
+    maxDifficultyKey: new FormControl<string | null>(null),
     districtCode: new FormControl<string | null>(null),
+    districtMatchKind: new FormControl<string>(REWARD_ASSIGNMENT_MATCH_KIND.any, {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
+    maxDistrictCode: new FormControl<string | null>(null),
     description: new FormControl<string | null>(null),
     helperText: new FormControl<string | null>(null),
     sortOrder: new FormControl<number>(0, { nonNullable: true }),
@@ -99,7 +104,7 @@ export function createEncounterResourcePayloadForm() {
       nonNullable: true,
       validators: [trimRequiredValidator()],
     }),
-    amountMode: new FormControl<string>('fixed', {
+    amountMode: new FormControl<string>(REWARD_AMOUNT_MODE.fixed, {
       nonNullable: true, validators: [trimRequiredValidator()],
     }),
     minAmount: new FormControl<number | null>(1),
@@ -137,7 +142,7 @@ export function createExplorationEffectDefinitionForm() {
     }),
     helperText: new FormControl<string | null>(null),
     adminDescription: new FormControl<string | null>(null),
-    effectKind: new FormControl<string>('buff', {
+    effectKind: new FormControl<string>(ENCOUNTER_KIND.buff, {
       nonNullable: true,
       validators: [trimRequiredValidator()],
     }),
@@ -186,7 +191,7 @@ export function encounterFormValue(
     description: encounter?.description ?? '',
     helperText: encounter?.helperText ?? null,
     adminDescription: encounter?.adminDescription ?? null,
-    encounterKind: encounter?.encounterKind ?? 'combat',
+    encounterKind: encounter?.encounterKind ?? ENCOUNTER_KIND.combat,
     minigameKey: encounter?.minigameKey ?? data?.minigames[0]?.key ?? null,
     rewardProfileId: encounter?.rewardProfileId ?? null,
     minDifficultyKey: encounter?.minDifficultyKey ?? null,
@@ -205,7 +210,7 @@ export function candidateFormValue(row: EncounterCombatCandidateAdminView | null
 
   return {
     candidateId: candidate?.id ?? null,
-    candidateKind: candidate?.candidateKind ?? 'opponent',
+    candidateKind: candidate?.candidateKind ?? COMBAT_CANDIDATE_KIND.opponent,
     opponentDefinitionId: candidate?.opponentDefinitionId ?? null,
     familyKey: candidate?.familyKey ?? null,
     scalingFormulaId: candidate?.scalingFormulaId ?? null,
@@ -225,10 +230,14 @@ export function assignmentFormValue(row: EncounterRewardAssignmentAdminView | nu
   return {
     assignmentId: assignment?.id ?? null,
     rewardProfileId: assignment?.rewardProfileId ?? null,
-    outcomeKind: assignment?.outcomeKind ?? 'success',
+    outcomeKind: assignment?.outcomeKind ?? ENCOUNTER_REWARD_OUTCOME_KIND_FALLBACKS[0],
     allowOutcomeOverride: false,
     difficultyKey: assignment?.difficultyKey ?? null,
+    difficultyMatchKind: assignment?.difficultyMatchKind ?? REWARD_ASSIGNMENT_MATCH_KIND.any,
+    maxDifficultyKey: assignment?.maxDifficultyKey ?? null,
     districtCode: assignment?.districtCode ?? null,
+    districtMatchKind: assignment?.districtMatchKind ?? REWARD_ASSIGNMENT_MATCH_KIND.any,
+    maxDistrictCode: assignment?.maxDistrictCode ?? null,
     description: assignment?.description ?? null,
     helperText: assignment?.helperText ?? null,
     sortOrder: assignment?.sortOrder ?? 0,
@@ -244,7 +253,7 @@ export function resourcePayloadFormValue(row: EncounterResourcePayloadAdminView 
   return {
     payloadId: payload?.id ?? null,
     resourceType: payload?.resourceType ?? '',
-    amountMode: payload?.amountMode ?? 'fixed',
+    amountMode: payload?.amountMode ?? REWARD_AMOUNT_MODE.fixed,
     minAmount: payload?.minAmount ?? 1,
     maxAmount: payload?.maxAmount ?? payload?.minAmount ?? 1,
     formulaId: payload?.formulaId ?? null,
@@ -270,7 +279,7 @@ export function effectDefinitionFormValue(row: ExplorationEffectDefinitionAdminV
     description: effect?.description ?? '',
     helperText: effect?.helperText ?? null,
     adminDescription: effect?.adminDescription ?? null,
-    effectKind: effect?.effectKind ?? 'buff',
+    effectKind: effect?.effectKind ?? ENCOUNTER_KIND.buff,
     bonusTemplateId: effect?.bonusTemplateId ?? null,
     defaultValue: effect?.defaultValue ?? null,
     defaultDurationSteps: effect?.defaultDurationSteps ?? null,

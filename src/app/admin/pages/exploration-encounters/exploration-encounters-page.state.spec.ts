@@ -1,4 +1,5 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { of, Subject } from 'rxjs';
 import { ExplorationEncounterAdminData } from '../../../core/domain/exploration/exploration-encounter-admin.model';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
@@ -7,8 +8,11 @@ import { ExplorationEncounterCandidateActionsState } from './exploration-encount
 import { ExplorationEncounterDefinitionActionsState } from './exploration-encounter-definition-actions.state';
 import { ExplorationEncounterEffectDefinitionActionsState } from './exploration-encounter-effect-definition-actions.state';
 import { ExplorationEncounterEffectPayloadActionsState } from './exploration-encounter-effect-payload-actions.state';
+import { ExplorationEncounterEffectPayloadSection } from './exploration-encounter-effect-payload-section';
 import { ExplorationEncounterResourcePayloadActionsState } from './exploration-encounter-resource-payload-actions.state';
 import { ExplorationEncounterRewardActionsState } from './exploration-encounter-reward-actions.state';
+import { ExplorationEncounterEditSection } from './exploration-encounter-edit-section';
+import { ExplorationEncounterRewardSection } from './exploration-encounter-reward-section';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 
 describe('ExplorationEncountersPageState', () => {
@@ -72,6 +76,7 @@ describe('ExplorationEncountersPageState', () => {
     toast = jasmine.createSpyObj<ToastService>('ToastService', ['show', 'clear']);
 
     TestBed.configureTestingModule({
+      imports: [ExplorationEncounterEditSection, ExplorationEncounterRewardSection],
       providers: [
         ExplorationEncountersPageState,
         ExplorationEncounterDefinitionActionsState,
@@ -102,6 +107,7 @@ describe('ExplorationEncountersPageState', () => {
     expect(state.combatCandidates()[0].targetLabel).toBe('Bandit (bandit)');
     expect(state.rewardAssignments()[0].rewardProfileLabel).toBe('Encounter reward (encounter-reward)');
     expect(state.resourcePayloads()[0].amountLabel).toBe('5');
+    expect(state.resourcePayloads()[0].resourceTypeLabel).toBe('Drachma (drachma)');
     expect(state.effectDefinitions()[0].bonusTemplateLabel).toBe(
       'Olive blessing template (olive-blessing-template)',
     );
@@ -199,11 +205,13 @@ describe('ExplorationEncountersPageState', () => {
   it('saves reward assignments through source_kind encounter', () => {
     state.loadInitialData();
     rewardActions.assignmentForm.patchValue({
-      rewardProfileId: 'reward-1',
-      outcomeKind: 'success',
-      difficultyKey: 'easy',
-      reason: 'Tune reward.',
-    });
+        rewardProfileId: 'reward-1',
+        outcomeKind: 'success',
+        difficultyMatchKind: 'exact',
+        difficultyKey: 'easy',
+        districtMatchKind: 'any',
+        reason: 'Tune reward.',
+      });
 
     rewardActions.saveAssignment();
 
@@ -212,8 +220,167 @@ describe('ExplorationEncountersPageState', () => {
         encounterDefinitionId: 'encounter-1',
         rewardProfileId: 'reward-1',
         outcomeKind: 'success',
+        difficultyMatchKind: 'exact',
         difficultyKey: 'easy',
+        districtMatchKind: 'any',
         reason: 'Tune reward.',
+      }),
+    );
+  });
+
+  it('does not wrap p-select controls in native labels in encounter form templates', () => {
+    state.loadInitialData();
+
+    const editFixture = TestBed.createComponent(ExplorationEncounterEditSection);
+    editFixture.detectChanges();
+    const rewardFixture = TestBed.createComponent(ExplorationEncounterRewardSection);
+    rewardFixture.detectChanges();
+
+    expect(editFixture.nativeElement.querySelectorAll('label p-select').length).toBe(0);
+    expect(rewardFixture.nativeElement.querySelectorAll('label p-select').length).toBe(0);
+  });
+
+  it('updates edit encounter definition controls through rendered p-selects for existing and new encounters', () => {
+    state.loadInitialData();
+    const fixture = TestBed.createComponent(ExplorationEncounterEditSection);
+    fixture.detectChanges();
+
+    selectPrimeOption(fixture, 'p-select[formcontrolname="encounterKind"]', 'resource');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="minigameKey"]', 'puzzle');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="rewardProfileId"]', 'reward-2');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="minDifficultyKey"]', 'medium');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="maxDifficultyKey"]', 'hard');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="minDistrictCode"]', 'harbor');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="maxDistrictCode"]', 'market');
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(definitionActions.encounterForm.controls.encounterKind.value).toBe('resource');
+    expect(definitionActions.encounterForm.controls.minigameKey.value).toBe('puzzle');
+    expect(definitionActions.encounterForm.controls.rewardProfileId.value).toBe('reward-2');
+    expect(definitionActions.encounterForm.controls.minDifficultyKey.value).toBe('medium');
+    expect(definitionActions.encounterForm.controls.maxDifficultyKey.value).toBe('hard');
+    expect(definitionActions.encounterForm.controls.minDistrictCode.value).toBe('harbor');
+    expect(definitionActions.encounterForm.controls.maxDistrictCode.value).toBe('market');
+
+    definitionActions.startNewEncounter();
+    fixture.detectChanges();
+
+    selectPrimeOption(fixture, 'p-select[formcontrolname="encounterKind"]', 'buff');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="minigameKey"]', 'puzzle');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="rewardProfileId"]', 'reward-2');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="minDifficultyKey"]', 'medium');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="maxDifficultyKey"]', 'hard');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="minDistrictCode"]', 'harbor');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="maxDistrictCode"]', 'market');
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(definitionActions.encounterForm.controls.encounterKind.value).toBe('buff');
+    expect(definitionActions.encounterForm.controls.minigameKey.value).toBe('puzzle');
+    expect(definitionActions.encounterForm.controls.rewardProfileId.value).toBe('reward-2');
+    expect(definitionActions.encounterForm.controls.minDifficultyKey.value).toBe('medium');
+    expect(definitionActions.encounterForm.controls.maxDifficultyKey.value).toBe('hard');
+    expect(definitionActions.encounterForm.controls.minDistrictCode.value).toBe('harbor');
+    expect(definitionActions.encounterForm.controls.maxDistrictCode.value).toBe('market');
+  });
+
+  it('saves encounter definition values selected through rendered p-selects', () => {
+    state.loadInitialData();
+    const fixture = TestBed.createComponent(ExplorationEncounterEditSection);
+    fixture.detectChanges();
+
+    selectPrimeOption(fixture, 'p-select[formcontrolname="encounterKind"]', 'resource');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="minigameKey"]', 'puzzle');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="rewardProfileId"]', 'reward-2');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="minDifficultyKey"]', 'medium');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="maxDifficultyKey"]', 'hard');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="minDistrictCode"]', 'harbor');
+    selectPrimeOption(fixture, 'p-select[formcontrolname="maxDistrictCode"]', 'market');
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    definitionActions.encounterForm.controls.reason.setValue('Tune encounter selects.');
+
+    definitionActions.saveEncounter();
+
+    expect(admin.upsertEncounterDefinition).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        encounterKind: 'resource',
+        minigameKey: 'puzzle',
+        rewardProfileId: 'reward-2',
+        minDifficultyKey: 'medium',
+        maxDifficultyKey: 'hard',
+        minDistrictCode: 'harbor',
+        maxDistrictCode: 'market',
+        reason: 'Tune encounter selects.',
+      }),
+    );
+  });
+
+  it('updates encounter reward assignment control when selecting through rendered p-select', async () => {
+    state.loadInitialData();
+    rewardActions.startNewAssignment();
+    const fixture = TestBed.createComponent(ExplorationEncounterRewardSection);
+    fixture.detectChanges();
+
+    selectPrimeOption(fixture, 'p-select[formcontrolname="rewardProfileId"]', 'reward-1');
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(rewardActions.assignmentForm.controls.rewardProfileId.value).toBe('reward-1');
+  });
+
+  it('saves encounter reward assignment value selected through rendered p-select', () => {
+    state.loadInitialData();
+    rewardActions.startNewAssignment();
+    const fixture = TestBed.createComponent(ExplorationEncounterRewardSection);
+    fixture.detectChanges();
+
+    selectPrimeOption(fixture, 'p-select[formcontrolname="rewardProfileId"]', 'reward-2');
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    rewardActions.assignmentForm.patchValue({
+      outcomeKind: 'success',
+      reason: 'Tune reward assignment.',
+    });
+
+    rewardActions.saveAssignment();
+
+    expect(admin.upsertRewardProfileAssignment).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        rewardProfileId: 'reward-2',
+        reason: 'Tune reward assignment.',
+      }),
+    );
+  });
+
+  it('updates and saves effect payload definition selected through rendered p-select', () => {
+    admin.getAdminData.and.returnValue(of(adminData('encounter-1', 'buff', null)));
+    state.loadInitialData();
+    const fixture = TestBed.createComponent(ExplorationEncounterEffectPayloadSection);
+    fixture.detectChanges();
+
+    expect(state.effectDefinitionOptions().some((option) => option.value === 'effect-1')).toBeTrue();
+
+    selectPrimeOption(fixture, 'p-select[formcontrolname="effectDefinitionId"]', 'effect-1');
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(effectPayloadActions.form.controls.effectDefinitionId.value).toBe('effect-1');
+
+    effectPayloadActions.form.controls.reason.setValue('Tune effect payload.');
+    effectPayloadActions.savePayload();
+
+    expect(admin.upsertEncounterEffectPayload).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        effectDefinitionId: 'effect-1',
+        reason: 'Tune effect payload.',
       }),
     );
   });
@@ -256,6 +423,68 @@ describe('ExplorationEncountersPageState', () => {
         reason: 'Tune resource.',
       }),
     );
+  });
+
+  it('builds encounter resource payload options from resource_types', () => {
+    const data = adminData('encounter-1', 'resource', null);
+    admin.getAdminData.and.returnValue(of({
+      ...data,
+      resourcePayloads: [{ ...data.resourcePayloads[0], resourceType: 'legacy_resource' }],
+      resourceTypes: [
+        data.resourceTypes[0],
+        {
+          key: 'legacy_resource',
+          label: 'Legacy resource',
+          description: 'Legacy resource.',
+          helperText: null,
+          adminDescription: null,
+          sortOrder: 20,
+          isActive: false,
+          metadataJson: {},
+          createdAt: '2026-05-01T10:00:00.000Z',
+          updatedAt: '2026-05-01T10:00:00.000Z',
+        },
+      ],
+    }));
+
+    state.loadInitialData();
+
+    expect(state.hasResourceTypeDictionary()).toBeTrue();
+    expect(state.resourceTypeOptions()).toEqual([
+      { label: 'Drachma (drachma)', value: 'drachma' },
+      { label: 'Legacy resource (legacy_resource) - inactive referenced', value: 'legacy_resource' },
+    ]);
+    expect(state.resourcePayloads()[0].resourceTypeLabel).toBe(
+      'Legacy resource (legacy_resource) - inactive',
+    );
+  });
+
+  it('refreshes reward profile options when encounter admin data is loaded again', () => {
+    const initial = adminData();
+    admin.getAdminData.and.returnValues(
+      of({ ...initial, rewardProfiles: [] }),
+      of(initial),
+    );
+
+    state.loadInitialData();
+    expect(state.requiredRewardProfileOptions()).toEqual([]);
+
+    state.loadInitialData();
+
+    expect(state.requiredRewardProfileOptions()).toEqual([
+      { label: 'Encounter reward (encounter-reward)', value: 'reward-1' },
+      { label: 'Alternate reward (alternate-reward)', value: 'reward-2' },
+    ]);
+  });
+
+  it('builds reward assignment match mode options from DB dictionary', () => {
+    state.loadInitialData();
+
+    expect(state.rewardMatchKindOptions()).toEqual([
+      { label: 'Any (any)', value: 'any' },
+      { label: 'Exact (exact)', value: 'exact' },
+    ]);
+    expect(state.hasRewardMatchKindDictionary()).toBeTrue();
   });
 
   it('saves effect definitions and payloads for buff encounters', () => {
@@ -507,6 +736,19 @@ function adminData(
         createdAt: '2026-05-01T10:00:00.000Z',
         updatedAt: '2026-05-01T10:00:00.000Z',
       },
+      {
+        key: 'puzzle',
+        label: 'Puzzle',
+        description: 'Puzzle minigame.',
+        helperText: null,
+        adminDescription: null,
+        implementationKey: 'puzzle',
+        sortOrder: 20,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
     ],
     difficulties: [
       {
@@ -525,8 +767,44 @@ function adminData(
         createdAt: '2026-05-01T10:00:00.000Z',
         updatedAt: '2026-05-01T10:00:00.000Z',
       },
+      {
+        key: 'medium',
+        label: 'Medium',
+        description: 'Medium.',
+        helperText: null,
+        adminDescription: null,
+        sortOrder: 20,
+        isActive: true,
+        stepDurationMultiplier: 1,
+        trialRewardMultiplier: 1,
+        encounterRewardMultiplier: 1,
+        trialOpportunityStepCap: 3,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+      {
+        key: 'hard',
+        label: 'Hard',
+        description: 'Hard.',
+        helperText: null,
+        adminDescription: null,
+        sortOrder: 30,
+        isActive: true,
+        stepDurationMultiplier: 1,
+        trialRewardMultiplier: 1,
+        encounterRewardMultiplier: 1,
+        trialOpportunityStepCap: 3,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
     ],
-    districts: [{ code: 'old-town', name: 'Old Town', description: 'Old district.', rank: 1 }],
+    districts: [
+      { code: 'old-town', name: 'Old Town', description: 'Old district.', rank: 1 },
+      { code: 'harbor', name: 'Harbor', description: 'Harbor district.', rank: 2 },
+      { code: 'market', name: 'Market', description: 'Market district.', rank: 3 },
+    ],
     rewardProfiles: [
       {
         id: 'reward-1',
@@ -535,6 +813,49 @@ function adminData(
         category: 'encounter',
         description: 'Reward.',
         helperText: null,
+        adminDescription: null,
+        sortOrder: 10,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+      {
+        id: 'reward-2',
+        key: 'alternate-reward',
+        label: 'Alternate reward',
+        category: 'encounter',
+        description: 'Reward.',
+        helperText: null,
+        adminDescription: null,
+        sortOrder: 20,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
+    rewardOutcomeKinds: [
+      {
+        sourceKind: 'encounter',
+        key: 'success',
+        label: 'Success',
+        description: 'Encounter success.',
+        helperText: null,
+        adminDescription: null,
+        sortOrder: 10,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
+    resourceTypes: [
+      {
+        key: 'drachma',
+        label: 'Drachma',
+        description: 'Core currency.',
+        helperText: 'Used for most rewards.',
         adminDescription: null,
         sortOrder: 10,
         isActive: true,
@@ -552,10 +873,40 @@ function adminData(
         rewardProfileId: 'reward-1',
         outcomeKind: 'success',
         difficultyKey: 'easy',
+        difficultyMatchKind: 'exact',
+        maxDifficultyKey: null,
         districtCode: null,
+        districtMatchKind: 'any',
+        maxDistrictCode: null,
         description: null,
         helperText: null,
         sortOrder: 10,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
+    rewardAssignmentMatchKinds: [
+      {
+        key: 'any',
+        label: 'Any',
+        description: 'Wildcard match.',
+        helperText: null,
+        adminDescription: null,
+        sortOrder: 10,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+      {
+        key: 'exact',
+        label: 'Exact',
+        description: 'Exact match.',
+        helperText: null,
+        adminDescription: null,
+        sortOrder: 20,
         isActive: true,
         metadataJson: {},
         createdAt: '2026-05-01T10:00:00.000Z',
@@ -673,4 +1024,15 @@ function adminData(
       },
     ],
   };
+}
+
+function selectPrimeOption(
+  fixture: ComponentFixture<unknown>,
+  selector: string,
+  optionValue: string,
+): void {
+  const select = fixture.debugElement.query(By.css(selector)).componentInstance;
+  const option = select.options.find((entry: { value: string }) => entry.value === optionValue);
+
+  select.onOptionSelect(new Event('click'), option);
 }

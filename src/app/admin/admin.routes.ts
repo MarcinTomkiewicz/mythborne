@@ -110,6 +110,13 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'reward-profiles',
+    loadComponent: () =>
+      import('./pages/reward-profiles/reward-profiles-page').then(
+        (m) => m.RewardProfilesPage,
+      ),
+  },
+  {
     path: 'formulas',
     loadComponent: () =>
       import('./pages/formulas/formulas-page').then((m) => m.FormulasPage),

@@ -22,24 +22,29 @@ This document is intentionally compact. For exact DB/RPC/helper inventory, consu
 
 ## Current High-Priority Implementation Context — 2026-05-02
 
-The project has moved past the first large DB/config foundation pass. The current implementation track is around Epic M / Combat, after resolving missing DB/RPC contracts for M and L12b.
+Current implementation focus is **Epic M / Combat**, while Codex may separately continue L12c/L13 frontend work.
 
-Fresh DB/RPC foundations now available:
+Recently resolved DB/RPC and explainability foundations:
 
 - **M-DB1:** combat opponent admin/balancer write path for families, definitions, stat values, natural attack sources and equipment blueprint entries.
 - **M-DB2:** `persist_combat_result_snapshot(...)` for relational, report-ready combat result snapshots.
+- **M-Dict-DB1:** combat explainability dictionaries for source type, side, outcome, participant kind, attack source kind, candidate kind, opponent equipment mode and equipment slots.
 - **L12b:** typed resource/effect encounter payload tables and RPCs for resource, buff and debuff encounter configuration.
+- **L-Reward-DB1:** reward outcome/profile/entry admin foundation and governed reward profile write path.
+- **L-Reward-DB2:** `resource_types` dictionary and resource FK alignment.
+- **L-Reward-DB3:** reward assignment match semantics (`any`, `exact`, `minimum`, `range`), formula reward amounts for XP/CP/resources, and failure reward assignment path.
 
-Generated Supabase types must be regenerated after these schema/RPC changes before Codex uses them in Angular.
-
-Do not mark Codex tasks complete in status documents unless the user explicitly confirms the task outcome.
+Generated Supabase types must be regenerated after these schema/RPC/dictionary changes before Codex uses them in Angular.
 
 Current live thread:
 
-- Work focus: Epic M / Combat implementation readiness.
-- L12/L12b DB blockers are resolved at DB/RPC level, but frontend still needs generated types and implementation.
+- Epic M has been rewritten to include DB/RPC contracts and explainability requirements.
 - M12 opponent configurator is no longer blocked by missing DB write RPCs.
-- M9-style combat result persistence is no longer blocked by missing DB write RPC.
+- M9 combat result persistence is no longer blocked by missing DB write RPC.
+- Combat opponent seed rows may be empty; M12 must support empty state and create first rows through RPC.
+- L12c and L13 are frontend tasks over the newly expanded reward/encounter DB surface; they must use DB-backed dictionary text rather than permanent hardcoded Angular explanations.
+
+Do not mark Codex tasks complete in status documents unless the user explicitly confirms the task outcome.
 
 ---
 
@@ -47,11 +52,14 @@ Current live thread:
 
 These are known planning gaps and memory notes. They are not current Epic M work unless the user explicitly promotes them.
 
+- **Trial editor explainability:** after Epic M, return to `/admin/exploration-trials` for an explainability/layout pass analogous to L12c.
+- **Admin configurator sweep:** later create/run a dedicated `UX-CFG` epic for systematic review of all admin/configurator UI explanations, DB-backed dictionary text and runtime meaning.
 - **Equipment equip/unequip:** `hero_equipment` exists, but there is no approved player-facing equip/unequip DB/RPC workflow yet. Angular must not invent direct writes for this.
-- **PvP MVP:** combat source type and report foundations can support PvP, but target selection, attack range, attack limits, protection/cooldowns, resource stealing/loss, PvP consequences and PvP report producer still need a dedicated epic/workflow.
+- **PvP MVP:** combat/report foundations can support PvP sources, but target selection, level range, guild restrictions, attack travel time, spying, siege rules, protection/cooldowns, resource stealing/loss, PvP consequences and PvP report production still need a dedicated epic/workflow.
+- **PvP memory notes:** attacks should be level-range limited and cannot target own guild; attack travel time depends on estate/address distance; spying is shorter, has no level limit and can target own guild; sieges ignore level limits but cannot target own guild.
 - **Auction watchers:** later design/implement watched auctions and notifications for watched auction changes.
 - **Auction rules:** later design where auction rules live and how minimum bid increment, custom bid amount, timing and anti-snipe/end-extension behavior are configured.
-- **Trade Routes / building-economy integration:** still future work; not a blocker for Epic M.
+- **Trade Routes / building-economy integration:** future work; Trade Routes should affect the combined active offer-slot limit across auctions/direct trade. Received direct-trade offers should not consume the receiver’s slot unless the receiver creates a counteroffer/commitment.
 
 Memory notes are intentionally short. Do not expand them into design work unless the user asks to work on that topic.
 

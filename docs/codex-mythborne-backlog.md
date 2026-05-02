@@ -2226,6 +2226,352 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ---
 
+## Task L11c — Trial configurator explainability and layout pass
+
+**Goal:** Rebuild `/admin/exploration-trials` into a usable admin/balancer configurator, not a raw table editor.
+
+The admin must understand:
+- what the selected trial represents;
+- which stat it tests;
+- which minigame executes it;
+- where combat candidates apply;
+- when rewards are routed;
+- what reward profile will be selected;
+- what candidate/scaling settings do at runtime.
+
+**DB/RPC foundation status:** Available after L11 write path, L-Reward-DB1/2/3/4, M-Dict-DB1 and L11-DB2.
+
+Relevant DB-backed surfaces include:
+
+- `trial_definitions`;
+- `trial_combat_candidates`;
+- `stats`;
+- `exploration_minigame_definitions`;
+- `reward_source_kinds`;
+- `reward_outcome_kinds`;
+- `reward_assignment_match_kinds`;
+- `reward_profiles`;
+- `reward_profile_entries`;
+- `reward_entry_kinds`;
+- `reward_entry_amount_modes`;
+- `reward_entry_kind_amount_modes`;
+- `resource_types`;
+- `combat_candidate_kind_definitions`;
+- `combat_opponent_families`;
+- `combat_opponent_definitions`;
+- `combat_opponent_stat_values`;
+- `combat_opponent_attack_sources`;
+- `combat_opponent_equipment_mode_definitions`;
+- `combat_source_type_definitions`;
+- `combat_outcome_definitions`;
+- `combat_attack_source_kind_definitions`;
+- `ui_metadata_entries` via `get_ui_metadata_entries(...)`.
+
+Canonical mutation RPCs:
+
+- `upsert_trial_definition(...)`;
+- `deactivate_trial_definition(...)`;
+- `upsert_trial_combat_candidate(...)`;
+- `deactivate_trial_combat_candidate(...)`;
+- `upsert_reward_profile_assignment(...)`;
+- `deactivate_reward_profile_assignment(...)`.
+
+Frontend must not direct-write `trial_definitions`, `trial_combat_candidates` or `reward_profile_assignments`.
+
+**Scope:**
+
+- Reorganize `/admin/exploration-trials` into clear sections/tabs:
+  - Overview / meaning;
+  - Trial definition;
+  - Reward assignments;
+  - Combat candidates;
+  - Previews / simulation;
+  - Advanced / technical.
+- Load trial configurator section/field help from `ui_metadata_entries` through `get_ui_metadata_entries(...)`.
+- Preserve and display DB-backed:
+  - label;
+  - description;
+  - helper text;
+  - admin description;
+  - impact summary / warning text where available.
+- Raw keys/UUIDs may appear only as secondary metadata.
+- Metadata JSON must be collapsed under Advanced / Technical.
+
+### Overview / meaning
+
+- Show selected trial label and description.
+- Explain:
+  - trial definition = reusable exploration trial;
+  - tested stat = gameplay meaning of the trial;
+  - minigame = current execution mechanic;
+  - current combat minigame may be prototype execution for multiple stat trials.
+- Use `stats.description/helper_text/admin_description` for tested stat explanation.
+- Use `exploration_minigame_definitions` for minigame explanation.
+
+### Trial definition section
+
+- Allow create/update through `upsert_trial_definition(...)`.
+- Allow deactivate through `deactivate_trial_definition(...)`.
+- Reason is mandatory.
+- Explain fields:
+  - key = stable technical/runtime key;
+  - label = admin/player-facing label;
+  - description/helper/admin description = UI/explainability copy;
+  - tested stat = stat archetype tested by trial;
+  - minigame = current execution mechanic;
+  - active flag = whether runtime may use this trial;
+  - sort order = admin display/order, not probability unless DB/runtime explicitly says so.
+- Do not rely on local hardcoded stat descriptions.
+
+### Reward assignments section
+
+- Show `source_kind = trial` as the normal source kind for this page.
+- Use `reward_source_kinds` and `reward_outcome_kinds`.
+- Explain:
+  - outcome kind is a runtime-emitted signal;
+  - trial runtime currently emits success/failure for completion reward routing;
+  - reward assignment chooses one best matching reward profile;
+  - multiple rewards for one event belong as entries inside one reward profile.
+- Use L-Reward-DB3 match modes:
+  - any;
+  - exact;
+  - minimum;
+  - range.
+- Show whether assignment is:
+  - scoped to selected trial via `trial_definition_id`;
+  - or global for matching trials.
+- Show human-readable summary, e.g.:
+  - “Dla triala X, gdy runtime wyemituje Y, a trudność/dystrykt pasują do zakresu, użyj profilu Z.”
+- Show selected reward profile summary:
+  - profile label/description/helper/admin text;
+  - active entries;
+  - entry kind labels from `reward_entry_kinds`;
+  - amount mode labels from `reward_entry_amount_modes`;
+  - allowed mode filtering from `reward_entry_kind_amount_modes`.
+- Do not expose `formula` for `item_generation` or `exploration_effect`.
+- `transfer_formula` remains reserved for future PvP transfer runtime.
+
+### Combat candidates section
+
+- Show this section as active only when `trial_definitions.minigame_key = combat`.
+- If selected trial is not combat, explain why combat candidates are not applicable.
+- Use `combat_candidate_kind_definitions`.
+- Explain:
+  - opponent candidate = concrete opponent definition;
+  - family candidate = runtime can select from a family/pool;
+  - weight = selection weight, not stat multiplier;
+  - difficulty multiplier = scaling multiplier for this trial/candidate;
+  - scaling formula = override of opponent stat scaling;
+  - min/max hero level = candidate availability bounds.
+- Use DB-backed labels/descriptions for:
+  - opponent definitions;
+  - opponent families;
+  - formulas;
+  - candidate kind.
+- Empty state:
+  - if there are no trial combat candidates, say none are configured;
+  - if there are no combat opponents/families yet, link/point to M12 opponent configurator or explain that opponents must be created first.
+- Mutations use:
+  - `upsert_trial_combat_candidate(...)`;
+  - `deactivate_trial_combat_candidate(...)`.
+
+### Previews / simulation section
+
+- Use preview RPCs where available:
+  - `preview_trial_manifestation_chance(...)`;
+  - `preview_challenge_auto_resolve_success_chance(...)`;
+  - relevant reward profile preview if selected.
+- Explain that previews are read-only tools and do not mutate runtime state.
+- Preview UI must clearly state inputs:
+  - difficulty;
+  - district;
+  - stat value;
+  - hero level;
+  - relevant formula/default context.
+
+### Advanced / technical section
+
+- Collapse metadata JSON.
+- Show raw keys/UUIDs as secondary metadata.
+- Show generated/runtime key warnings only here or as subdued technical metadata.
+- Do not make metadata JSON the primary gameplay configuration surface.
+
+### General architecture rules
+
+- Use Reactive Forms.
+- Use existing shared/admin helpers where possible:
+  - metadata JSON display;
+  - dictionary option mappers;
+  - reason form patterns;
+  - RPC error display;
+  - stale request guards.
+- Do not add new DB schema in this task.
+- If generated `database.types.ts` does not include L11-DB2 / reward amount mode matrix / M-Dict-DB1 additions, stop and request type regeneration.
+- Do not hardcode permanent explanations when DB text exists.
+
+### Non-negotiable completeness requirements
+
+This task must implement the trial editor as a complete functional admin/balancer configurator, not a styling-only pass.
+
+Codex must verify that generated `database.types.ts` includes after L11-DB2:
+
+- `stats.description`;
+- `stats.helper_text`;
+- `stats.admin_description`;
+- `deactivate_trial_definition(...)`;
+- `reward_entry_kind_amount_modes`;
+- `ui_metadata_entries`;
+- `get_ui_metadata_entries(...)`;
+- latest reward dictionaries from L-Reward-DB3/DB4;
+- latest combat dictionaries from M-Dict-DB1.
+
+If any of these are missing, stop and report that generated DB types must be regenerated.
+
+The page must load and use, at minimum:
+
+- trial definitions;
+- trial combat candidates;
+- stats with description/helper/admin text;
+- exploration minigame definitions;
+- trial configurator UI metadata from `ui_metadata_entries`;
+- reward source kinds;
+- reward outcome kinds;
+- reward assignment match kinds;
+- reward profiles;
+- reward profile entries;
+- reward entry kinds;
+- reward entry amount modes;
+- reward entry kind amount mode matrix;
+- resource types;
+- combat candidate kind definitions;
+- combat opponent families and definitions;
+- formula targets/formulas relevant to trial combat candidate scaling and preview.
+
+The UI must not expose all amount modes for all reward entry kinds. It must use `reward_entry_kind_amount_modes`:
+
+- `experience`: fixed/range/formula;
+- `character_points`: fixed/range/formula;
+- `resource`: fixed/range/formula;
+- `item_generation`: none only;
+- `exploration_effect`: none only.
+
+`transfer_formula` must not be shown as a normal PvE reward mode.
+
+The trial editor must include clear empty states for:
+
+- no reward assignments for selected trial;
+- no reward profiles available;
+- no combat candidates for selected trial;
+- no combat opponents/families available yet;
+- selected trial is not combat, so combat candidates are not applicable.
+
+The page must provide human-readable summaries, not just forms:
+
+- selected trial summary;
+- tested stat meaning;
+- minigame meaning;
+- reward assignment summary;
+- selected reward profile summary;
+- reward entries summary;
+- combat candidate summary;
+- scaling/difficulty multiplier explanation;
+- preview input/result explanation.
+
+The reward assignment summary must state clearly:
+
+- source kind is `trial`;
+- outcome is a runtime-emitted signal such as success/failure;
+- assignment chooses one best matching reward profile;
+- multiple rewards belong as entries inside that one reward profile;
+- difficulty/district matching uses any/exact/minimum/range;
+- assignment may be selected-trial scoped or global for matching trials.
+
+The combat candidate section must state clearly:
+
+- candidate kind `opponent` means one concrete opponent;
+- candidate kind `family` means runtime can select from a family/pool;
+- weight affects selection frequency, not stat scaling;
+- difficulty multiplier affects opponent scaling in this trial context;
+- scaling formula overrides or falls back to combat opponent/default scaling;
+- natural attack/equipment details come from opponent configuration, not from this trial row.
+
+The trial definition section must state clearly:
+
+- tested stat is the gameplay archetype of the trial;
+- minigame is the execution mechanic;
+- combat may currently be a prototype minigame for multiple stat trials;
+- changing tested stat/minigame may change balancing and runtime meaning;
+- sort order is display/admin order unless runtime explicitly uses it.
+
+Metadata JSON must remain collapsed under Advanced / Technical and must not be presented as the primary gameplay configuration surface.
+
+All durable mutations must use canonical RPCs only:
+
+- `upsert_trial_definition(...)`;
+- `deactivate_trial_definition(...)`;
+- `upsert_trial_combat_candidate(...)`;
+- `deactivate_trial_combat_candidate(...)`;
+- `upsert_reward_profile_assignment(...)`;
+- `deactivate_reward_profile_assignment(...)`.
+
+No direct Angular writes to:
+
+- `trial_definitions`;
+- `trial_combat_candidates`;
+- `reward_profile_assignments`;
+- `reward_profile_entries`;
+- `reward_profiles`.
+
+Every durable mutation must require and send reason where the RPC requires it.
+
+**Acceptance criteria:**
+
+- Admin can understand what each section changes without knowing table names.
+- Admin can distinguish:
+  - trial definition;
+  - tested stat;
+  - minigame;
+  - reward assignment;
+  - reward profile;
+  - reward profile entry;
+  - combat candidate;
+  - opponent/family target.
+- Admin can tell whether reward assignment is scoped to selected trial or global.
+- Admin can tell exactly when reward assignment will match.
+- Admin can tell that only one reward profile is selected.
+- Admin can tell that several rewards require several entries inside the selected reward profile.
+- Admin can see that `formula` amount mode is only for experience/character_points/resource.
+- Admin cannot select formula for item_generation or exploration_effect.
+- Combat candidates are not shown as normal editable content for non-combat minigames.
+- Empty states for no reward assignments/no combat candidates/no opponents are clear.
+- Mutations use canonical RPCs only.
+- Build passes.
+- Smoke report explains:
+  - trial definition create/update/deactivate;
+  - reward assignment create/deactivate for trial success/failure;
+  - combat candidate create/deactivate when combat minigame is selected;
+  - what each tested configuration would affect in runtime.
+- Generated DB types include L11-DB2 additions before implementation starts.
+- Trial editor loads DB-backed UI metadata for sections/fields instead of relying only on hardcoded section copy.
+- Tested stat descriptions come from `stats`, not local Angular copy.
+- Reward amount modes are filtered through `reward_entry_kind_amount_modes`.
+- `formula` is not available for `item_generation` or `exploration_effect`.
+- `item_generation` explains min/max item count, max quality and bucket profile as item generation configuration.
+- `exploration_effect` explains effect definition selection as effect application, not numeric amount.
+- Trial reward assignments clearly explain one selected profile, not stacked matching assignments.
+- Combat candidate section is disabled/explained for non-combat minigames.
+- Empty states are useful and tell admin what must be configured next.
+- Smoke report includes domain meaning, not only click path:
+  - trial definition create/update/deactivate;
+  - tested stat/minigame explanation visible;
+  - reward assignment create/deactivate for trial success/failure;
+  - reward profile entries summary visible;
+  - amount mode filtering verified;
+  - combat candidate empty state or create/deactivate verified;
+  - preview section explanation verified.
+  
+---
+
 ## Task L12 — Encounter definitions admin configurator
 
 **Status:** Done / frontend-confirmed on 2026-05-01. Full admin smoke remains conditional on backend/RLS grants for the required read tables.
@@ -2302,6 +2648,32 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 **Goal:** Make `/admin/exploration-encounters` usable as an admin/balancer tool, not just a raw table editor.
 
+The admin must understand:
+- what the selected encounter does;
+- which configuration applies only to the selected encounter;
+- which configuration is global/fallback;
+- when a reward assignment will match;
+- which one reward profile will be selected;
+- what that reward profile actually grants.
+
+**DB/RPC foundation status:** Available after L12, L12b, L-Reward-DB1, L-Reward-DB2 and L-Reward-DB3.
+
+Relevant DB-backed dictionaries/read surfaces include:
+
+- `reward_source_kinds`
+- `reward_outcome_kinds`
+- `reward_assignment_match_kinds`
+- `reward_entry_kinds`
+- `reward_entry_amount_modes`
+- `resource_types`
+- `reward_profiles`
+- `reward_profile_entries`
+- `encounter_resource_payloads`
+- `encounter_effect_payloads`
+- `exploration_effect_definitions`
+
+Do not hardcode permanent gameplay/config explanations in Angular when DB-backed labels/descriptions/helper/admin text exist.
+
 **Scope:**
 
 - Reorganize the page into clear sections/tabs:
@@ -2313,45 +2685,192 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
   - Effect definitions,
   - Effect payloads,
   - Advanced / technical.
-- Update stale copy that says resource/effect payloads are pending.
-- Add concise help text explaining what each section changes in Exploration runtime.
-- For resource payloads, explain:
-  - resource type,
-  - fixed/range/formula amount mode,
-  - min/max amount,
-  - chance percent,
-  - formula usage.
-- For effect definitions, explain:
-  - buff/debuff kind,
-  - bonus template,
-  - default value,
-  - default duration,
-  - runtime rule: only one active exploration effect at a time.
-- For effect payloads, explain that payload links selected encounter to reusable effect definition.
-- For reward assignments, explain:
-  - source kind = encounter,
-  - outcome kind,
-  - difficulty/district matching,
-  - why this is preferred over legacy direct reward profile field.
+
+- Every section must clearly say whether it affects:
+  - the selected encounter only,
+  - all encounters through a global assignment,
+  - reusable library content,
+  - or technical/advanced metadata.
+
+- Add selected-context labels, for example:
+  - `Reward assignments for selected encounter: Light combat`
+  - `Combat candidates for selected encounter: Light combat`
+  - `Resource payloads for selected encounter: Resource find`
+
+- Update stale copy that says resource/effect payloads are pending. After L12b they are DB-backed.
+
+### Encounter definition section
+
+- Explain `encounter_kind` in gameplay terms:
+  - combat = encounter resolves through combat candidate/opponent flow;
+  - resource = encounter gives configured resource payloads / reward routing;
+  - buff/debuff = encounter links to temporary exploration effects.
+- Explain that `nothing` is not an encounter definition.
+- Explain that min/max difficulty and min/max district on the encounter definition control where the encounter may appear, not reward amount and not reward assignment matching.
+- Keep generated/raw key secondary.
 - Keep metadata JSON collapsed under Advanced / Technical.
-- Keep raw UUIDs/technical keys secondary.
+
+### Reward assignments section
+
+Reward assignment UI must explain the full reward routing model:
+
+- A reward assignment chooses **one best matching reward profile**.
+- If one event should grant several things, e.g. XP + item + drachma, those must be modeled as several `reward_profile_entries` inside one selected reward profile.
+- Do not imply that multiple matching assignments all fire.
+- The selected reward profile is the bundle of grants; the assignment only decides when that bundle is used.
+- `source_kind = encounter` should be shown as the normal source kind for this page.
+- `outcome_kind` is a runtime-emitted outcome signal, not a label slug.
+- Adding an outcome kind does not make runtime emit it.
+- Show whether the assignment is scoped to the selected encounter:
+  - if `encounter_definition_id` is set, say it applies to the selected encounter;
+  - if `encounter_definition_id` is null, say it is global for matching encounters.
+
+Use DB-backed dictionaries:
+
+- `reward_source_kinds` for source kind label/help;
+- `reward_outcome_kinds` for outcome label/help/admin description;
+- `reward_assignment_match_kinds` for difficulty/district match modes.
+
+Difficulty and district matching must use L-Reward-DB3 semantics:
+
+- `any` / `Dowolne` = any value;
+- `exact` / `Dokładnie` = only selected value;
+- `minimum` / `Od wartości wzwyż` = selected value and higher;
+- `range` / `Zakres` = from selected value to max selected value.
+
+UI must not describe difficulty/district as exact-only after L-Reward-DB3.
+
+For every reward assignment, show a human-readable summary, for example:
+
+> For selected encounter `Light combat`, when outcome `Encounter failure` is emitted and difficulty matches `Od wartości wzwyż: Medium`, district matches `Dowolne`, use reward profile `Test profile`.
+
+Or in Polish if the surrounding admin UI is Polish:
+
+> Dla encountera `Light combat`, gdy runtime wyemituje `Encounter failure`, a trudność pasuje jako `Od wartości wzwyż: Medium` i dystrykt jako `Dowolne`, użyj profilu nagrody `Test profile`.
+
+Show a short reward profile summary inline:
+
+- profile label;
+- profile description/helper/admin text if available;
+- list of active entries:
+  - entry kind label,
+  - amount mode label,
+  - amount/formula/resource/item/effect summary.
+
+If no reward profile is selectable:
+
+- explain that reward profiles are created in the reward profile configurator;
+- do not imply direct creation is available in this page unless it actually is;
+- do not direct-write reward tables from this page.
+
+`Direct reward profile` on `encounter_definitions.reward_profile_id` must be labelled as legacy/simple fallback, not the main balancing path. Main reward balancing is through `reward_profile_assignments`.
+
+### Reward entry / amount mode explainability when shown from assignment preview
+
+If reward profile entries are summarized in this page, use DB-backed labels from:
+
+- `reward_entry_kinds`,
+- `reward_entry_amount_modes`,
+- `resource_types`.
+
+Explain:
+
+- `fixed` = fixed numeric amount;
+- `range` = DB/runtime rolls within range;
+- `formula` = numeric reward amount calculated DB-side for XP/CP/resource;
+- `transfer_formula` = reserved for future PvP transfer runtime, not normal PvE reward mode;
+- `none` = no numeric amount, used for item generation or exploration effect.
+
+Formula amount mode must be described as numeric reward amount only. It must not imply arbitrary durable gameplay effects such as siege relocation or other special workflow outcomes.
+
+### Combat candidates section
+
+- Explain that combat candidates apply only to combat encounters.
+- Explain candidate kind:
+  - concrete opponent = this specific opponent definition;
+  - opponent family = runtime can choose from a family/pool.
+- Explain:
+  - weight affects candidate selection probability/priority;
+  - difficulty multiplier affects opponent scaling for this encounter;
+  - scaling formula override changes how opponent stats scale for this candidate.
+- Use DB-backed labels/descriptions for opponents, families and formulas where available.
+- Do not show raw UUIDs as primary labels.
+
+### Resource payloads section
+
+- Explain resource payloads as typed payloads for resource encounters.
+- Use `resource_types` as the source of truth for resource options.
+- Do not use fallback resource type lists as the normal source after L-Reward-DB2.
+- Explain:
+  - resource type;
+  - fixed/range/formula amount mode;
+  - min/max amount;
+  - chance percent;
+  - formula usage as DB-side numeric reward/payload amount.
+- Raw resource key may be secondary metadata only.
+
+### Effect definitions section
+
+- Explain that effect definitions are reusable buff/debuff library entries.
+- Explain:
+  - buff/debuff kind;
+  - bonus template;
+  - default value;
+  - default duration;
+  - runtime rule: only one active exploration effect at a time.
+- Make clear that editing effect definitions may affect every encounter/payload that reuses the same effect.
+
+### Effect payloads section
+
+- Explain that effect payload links the selected encounter to a reusable effect definition.
+- Explain that payload controls whether this selected encounter may apply the effect.
+- Use DB-backed effect labels/descriptions/helper/admin text.
+- Make clear whether the selected payload is active and what chance percent means.
+
+### Advanced / technical section
+
+- Keep metadata JSON collapsed.
+- Keep raw keys/UUIDs secondary.
+- Metadata JSON must not be presented as the primary gameplay configuration surface.
+- Reason field must explain that it is required for audit/governance.
+
+### General UI and architecture rules
+
 - Prefer DB-backed labels/descriptions/helper/admin text over hardcoded explanations.
+- Raw keys/UUIDs may appear as secondary metadata only.
 - Formula pickers must be filtered, grouped, or clearly labelled so unrelated formula targets are not presented as equally valid without explanation.
 - Preserve all existing RPC/governance mutation paths.
 - Do not add new DB schema in this task.
+- If generated `database.types.ts` does not include L-Reward-DB3 dictionaries/fields, stop and request database type regeneration.
 
 **Acceptance criteria:**
 
 - Admin can tell what each section changes in gameplay without knowing table names.
-- Admin can distinguish encounter definition, reward assignment, resource payload, effect definition and effect payload.
+- Admin can distinguish:
+  - encounter definition,
+  - reward assignment,
+  - reward profile,
+  - reward profile entry,
+  - resource payload,
+  - effect definition,
+  - effect payload.
+- Admin can tell whether a reward assignment is scoped to the selected encounter or global.
+- Admin can tell exactly when a reward assignment will match.
+- Admin can tell that reward assignment chooses one best matching reward profile.
+- Admin can tell that several rewards for one event must be entries inside the selected reward profile.
+- Admin can see what the selected reward profile contains.
+- Difficulty/district matching uses and explains any/exact/minimum/range from `reward_assignment_match_kinds`.
 - Resource/effect payload sections no longer say their DB payloads are pending.
+- Resource type options come from `resource_types`.
 - Metadata JSON is not presented as the primary gameplay configuration surface.
 - Build passes.
-- Smoke report explains what a combat/resource/buff/debuff encounter configuration affects.
+- Smoke report explains what a combat/resource/buff/debuff encounter configuration affects and what tested reward assignments would do at runtime.
 
 ---
 
 ## Task L13 — Reward profile configurator
+
+**Status:** Implemented / accepted on 2026-05-02.
 
 **Goal:** Add a write-capable admin/balancer UI for creating and editing reusable reward profiles, reward profile entries, and DB-backed reward outcome kinds used by trials, encounters and future reward sources.
 
@@ -2485,53 +3004,126 @@ Frontend must use these RPCs. Do not direct-write reward tables from Angular.
 
 # Epic M — Combat
 
-Epic M builds the reusable combat core. Combat is one generic module: a caller provides two combatants and receives a result. Exploration encounters, trials, PvP, sandbox and future systems use the same combat rules and only interpret the result differently.
+Epic M builds the reusable combat core. Combat is one generic module: a caller provides two combatants and receives a result. Exploration encounters, trials, PvP, sandbox and future systems use the same combat rules and interpret the result differently.
+
+Epic M must not implement rewards, trial completion, PvP consequences, prestige changes, reports publishing, siege effects or special durable workflow effects. Combat produces a result/snapshot; the caller owns consequences.
 
 **DB foundation status:** applied in schema before frontend work. Current DB foundation includes:
 
-- combat formula targets: `combat_initiative_score`, `combat_opponent_scaled_stat`;
-- random formula block seeds: `random()`, `random(min, max)`;
+- combat formula targets:
+  - `combat_initiative_score`,
+  - `combat_opponent_scaled_stat`;
+- random formula block seeds:
+  - `random()`,
+  - `random(min, max)`;
 - global `combat_turn_limit` config + `get_combat_turn_limit()` helper;
 - opponent families/definitions/stat values/natural attack sources;
 - opponent equipment blueprint entries using `equipment_slot_definitions`;
 - encounter/trial combat candidate tables;
-- relational combat result snapshot tables.
+- relational combat result snapshot tables;
+- snapshot persistence RPC:
+  - `persist_combat_result_snapshot(...)`;
+- snapshot read helper:
+  - `can_read_combat_result(...)`;
+- opponent admin/balancer RPCs:
+  - `upsert_combat_opponent_family(...)`,
+  - `deactivate_combat_opponent_family(...)`,
+  - `upsert_combat_opponent_definition(...)`,
+  - `deactivate_combat_opponent_definition(...)`,
+  - `upsert_combat_opponent_stat_value(...)`,
+  - `delete_combat_opponent_stat_value(...)`,
+  - `upsert_combat_opponent_attack_source(...)`,
+  - `deactivate_combat_opponent_attack_source(...)`,
+  - `upsert_combat_opponent_equipment_entry(...)`,
+  - `deactivate_combat_opponent_equipment_entry(...)`;
+- combat explainability dictionaries:
+  - `combat_source_type_definitions`,
+  - `combat_side_definitions`,
+  - `combat_outcome_definitions`,
+  - `combat_participant_kind_definitions`,
+  - `combat_attack_source_kind_definitions`,
+  - `combat_candidate_kind_definitions`,
+  - `combat_opponent_equipment_mode_definitions`,
+  - enriched `equipment_slot_definitions`.
 
-**Core rules:**
+**Important DB/content note:** starter opponent rows are not required before Epic M frontend work. Current DB may contain zero opponent families/definitions/stat values/attack sources/equipment entries. M12 must support this empty state and let admins create the first family/opponent through canonical RPCs.
 
-- Combat is turn-limited. A turn is a full round of eligible attack slots from both sides, unless one side is defeated earlier.
-- Default global combat turn limit is 10, read from DB config/helper, not duplicated in combat result rows.
+**Core combat rules:**
+
+- Combat is turn-limited.
+- A turn is a full round of eligible attack slots from both sides, unless one side is defeated earlier.
+- Default global combat turn limit is 10 and must be read from DB config/helper, not duplicated in combat result rows.
 - If no side is defeated by the limit, outcome is draw.
-- Player attack resolution remains timing hit → evasion → crit → damage.
+- Player attack resolution remains:
+  1. timing hit,
+  2. evasion,
+  3. crit,
+  4. damage.
 - Opponent attacks resolve automatically.
-- Attack slots are ordered by `combat_initiative_score`, not by a fixed all-A-then-all-B order.
+- Attack slots are ordered by `combat_initiative_score`, not by fixed all-A-then-all-B order.
 - Tie in initiative is won by the initiating side.
-- Equipment is private. Combat reports show the attack source label and optional item-like component refs for tooltip/display, not the full equipment loadout.
-- Public/private report rendering is a later epic, but CombatResult must preserve enough relational snapshot data to reproduce the combat UI later.
+- Equipment is private. Combat reports show attack source label and optional item-like component refs for tooltip/display, not the full equipment loadout.
+- Public/private report rendering is a later epic, but `CombatResult` must preserve enough relational snapshot data to reproduce the combat UI later.
 - Do not use `hero_derived`.
+- Sandbox/admin-test combat may use the Angular combat resolver as a test surface.
+- Production gameplay callers (`encounter`, `trial`, `pvp`) must not treat a fully Angular-computed combat result as final authoritative truth unless a caller-specific backend/RPC validation/finalization path explicitly approves that boundary.
+- `persist_combat_result_snapshot(...)` is the canonical snapshot persistence contract. It stores a completed result; it does not by itself prove that the result was authoritatively resolved.
+- Epic M may build the reusable combat core and sandbox caller first. Real encounter/trial/PvP integration must keep the authority boundary explicit.
+- Combat UI/admin tooling must use DB-backed dictionary descriptions for source type, side, outcome, participant kind, attack source kind, candidate kind, opponent equipment mode and equipment slots.
+- Raw enum keys/UUIDs may appear only as secondary technical metadata.
+- If DB dictionary label/description/helper/admin text is missing or too weak, report the exact table/key/field gap instead of creating permanent hardcoded Angular explanations.
 
 ---
 
 ## Task M0 — Align generated DB types after Epic M schema foundation
 
-**Goal:** Make the frontend aware of the new combat DB foundation.
+**Goal:** Make the frontend aware of the current combat DB foundation.
 
 **Scope:**
 
-- Confirm regenerated `database.types.ts` includes new enums, tables, config helper and formula seeds.
-- Inspect generated enum/table names for:
-  - `combat_side`, `combat_outcome`, `combat_source_type`, `combat_participant_kind`, `combat_attack_source_kind`, `combat_opponent_equipment_mode`, `combat_candidate_kind`;
-  - `equipment_slot_definitions`;
-  - `combat_opponent_*` tables;
-  - `encounter_combat_candidates`, `trial_combat_candidates`;
-  - `combat_results`, `combat_result_participants`, `combat_result_participant_stats`, `combat_result_attacks`;
-  - `get_combat_turn_limit()`.
+- Confirm regenerated `database.types.ts` includes combat enums:
+  - `combat_side`,
+  - `combat_outcome`,
+  - `combat_source_type`,
+  - `combat_participant_kind`,
+  - `combat_attack_source_kind`,
+  - `combat_opponent_equipment_mode`,
+  - `combat_candidate_kind`.
+- Confirm generated types include combat tables:
+  - `combat_opponent_families`,
+  - `combat_opponent_definitions`,
+  - `combat_opponent_stat_values`,
+  - `combat_opponent_attack_sources`,
+  - `combat_opponent_equipment_entries`,
+  - `combat_opponent_equipment_mode_definitions`,
+  - `equipment_slot_definitions`,
+  - `encounter_combat_candidates`,
+  - `trial_combat_candidates`,
+  - `combat_results`,
+  - `combat_result_participants`,
+  - `combat_result_participant_stats`,
+  - `combat_result_attacks`.
+- Confirm generated types include combat explainability dictionaries:
+  - `combat_source_type_definitions`,
+  - `combat_side_definitions`,
+  - `combat_outcome_definitions`,
+  - `combat_participant_kind_definitions`,
+  - `combat_attack_source_kind_definitions`,
+  - `combat_candidate_kind_definitions`.
+- Confirm generated types include helpers/RPCs:
+  - `get_combat_turn_limit()`,
+  - `persist_combat_result_snapshot(...)`,
+  - `can_read_combat_result(...)`,
+  - all M-DB1 combat opponent admin RPCs.
+- Do not edit generated DB types manually.
+- Do not update status docs before user confirmation.
 
 **Acceptance criteria:**
 
 - Generated types match current schema.
+- Generated types include M-DB1, M-DB2 and M-Dict-DB1 additions.
 - No frontend model uses raw DB rows directly as final domain models.
-- No file/status docs are updated before user confirmation.
+- If combat dictionaries/RPCs are missing from generated types, stop and report that database types must be regenerated.
 
 ---
 
@@ -2542,19 +3134,20 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 **Scope:**
 
 - Add runtime support for:
-  - `random()` → decimal 0..1;
+  - `random()` → decimal 0..1,
   - `random(min, max)` → decimal between min and max.
 - Do not add separate `randomInt`; integer-like results should use `floor`, `ceil` or `round`.
 - Admin formula preview/editor must mark formulas containing random as non-deterministic.
 - Add reroll/refresh behavior in preview where applicable.
 - Avoid pretending random formulas have stable chart values.
+- Keep `balance_formula_blocks` DB-backed; do not hardcode block library as the source of truth.
 
 **Acceptance criteria:**
 
 - `FormulaRuntimeService` can evaluate both random forms.
 - Existing deterministic formulas remain stable.
 - Admin preview clearly indicates randomized output and allows reroll.
-- `balance_formula_blocks` remains DB-backed; do not hardcode block library as the source of truth.
+- Formula block library remains DB-backed.
 
 ---
 
@@ -2565,15 +3158,23 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 **Scope:**
 
 - Add domain/types for:
-  - combatant input/snapshot;
-  - combat result;
-  - combat participant side: initiator/defender;
-  - combat attack source kind;
-  - attack plan;
-  - attack slot;
+  - combatant input/snapshot,
+  - combat result,
+  - combat participant side,
+  - combat participant kind,
+  - combat outcome,
+  - combat source type,
+  - combat attack source kind,
+  - attack plan,
+  - attack slot,
   - attack result/event row model.
 - Model result from caller perspective without embedding reward/trial/PvP logic.
-- Ensure result can later be mapped to `combat_results` and related tables.
+- Ensure result can later be mapped to:
+  - `combat_results`,
+  - `combat_result_participants`,
+  - `combat_result_participant_stats`,
+  - `combat_result_attacks`.
+- Domain models should not expose raw generated DB rows as final UI/domain types.
 
 **Acceptance criteria:**
 
@@ -2581,6 +3182,7 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 - Combat result can represent initiator victory, defender victory and draw.
 - Result contains enough data to persist relational snapshot rows.
 - Reports are not implemented in this task.
+- Caller-owned consequences are not embedded in combat core.
 
 ---
 
@@ -2592,19 +3194,20 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 
 - Reuse existing F11 equipment/bonus pipeline where possible.
 - Resolve final combat values on the fly, without `hero_derived`:
-  - Health;
-  - defense;
-  - min/max damage;
-  - luck;
-  - critical chance;
-  - critical damage;
-  - evasion chance;
+  - Health,
+  - defense,
+  - min/max damage,
+  - luck,
+  - critical chance,
+  - critical damage,
+  - evasion chance,
   - attack-relevant item/native values.
 - Replace hardcoded crit multiplier `2` with:
-  - base critical damage = 50%;
-  - plus active `critical_damage` bonuses;
+  - base critical damage = 50%,
+  - plus active `critical_damage` bonuses,
   - multiplier = `1 + criticalDamagePercent / 100`.
 - Keep equipment private; only attack source data is carried into combat result/report snapshot.
+- If equip/unequip workflow is missing, do not implement it in M. M may consume current equipped state only.
 
 **Acceptance criteria:**
 
@@ -2612,30 +3215,48 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 - Hardcoded crit multiplier is removed from final resolver path.
 - `critical_damage` bonus target is consumed.
 - Existing F11 helpers/services are reused or explicitly rejected with reason.
+- Missing equip/unequip workflow is not confused with a combat resolver blocker.
 
 ---
 
-## Task M4 — Opponent definitions read layer
+## Task M4 — Opponent definitions and combat dictionaries read layer
 
-**Goal:** Add frontend/domain read models for admin-defined combat opponents.
+**Goal:** Add frontend/domain read models for admin-defined combat opponents and DB-backed combat explainability dictionaries.
 
 **Scope:**
 
 - Read/map:
-  - `combat_opponent_families`;
-  - `combat_opponent_definitions`;
-  - `combat_opponent_stat_values`;
-  - `combat_opponent_attack_sources`;
-  - `combat_opponent_equipment_entries`;
+  - `combat_opponent_families`,
+  - `combat_opponent_definitions`,
+  - `combat_opponent_stat_values`,
+  - `combat_opponent_attack_sources`,
+  - `combat_opponent_equipment_entries`,
+  - `combat_opponent_equipment_mode_definitions`,
   - `equipment_slot_definitions`.
-- Preserve labels/descriptions/helper/admin descriptions from DB.
-- Family is a simple category: one opponent belongs to one family.
+- Read/map combat explainability dictionaries:
+  - `combat_source_type_definitions`,
+  - `combat_side_definitions`,
+  - `combat_outcome_definitions`,
+  - `combat_participant_kind_definitions`,
+  - `combat_attack_source_kind_definitions`,
+  - `combat_candidate_kind_definitions`.
+- Preserve:
+  - label,
+  - description,
+  - helper text,
+  - admin description,
+  - active flag,
+  - sort order.
+- Family is a simple category/pool: one opponent belongs to one family.
+- Handle empty opponent tables as a valid configuration state.
 
 **Acceptance criteria:**
 
 - Admin/balance UI can display opponents with family, equipment mode, stat baselines and natural attacks.
+- Combat enum-like values are displayed through DB dictionary labels/descriptions, not raw enum keys.
 - No hardcoded family list.
-- No hardcoded slot list if `equipment_slot_definitions` can be read.
+- No hardcoded slot list.
+- Empty opponent family/definition lists show useful empty state, not broken admin UI.
 
 ---
 
@@ -2646,22 +3267,24 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 **Scope:**
 
 - Scale opponent stat baselines using:
-  - candidate scaling formula override if present;
-  - otherwise opponent default scaling formula;
+  - candidate scaling formula override if present,
+  - otherwise opponent default scaling formula,
   - otherwise global/default `combat_opponent_scaled_stat` assignment.
 - Support `difficultyMultiplier` from encounter/trial candidate.
 - Support equipment modes:
-  - `none`;
-  - `manual` item-like blueprint;
+  - `none`,
+  - `manual` item-like blueprint,
   - `generated` item-like loadout materialized for the fight only.
 - Generated NPC equipment must not create rows in `items`.
 - Natural attack sources such as Bite, Scratch, Iron Wings or Fist must be supported.
+- If no active opponent definitions exist in DB, resolver implementation may still be developed with typed fixtures/domain models, but live UI/manual smoke must report that real content must be created through M12 before live opponent resolution can be demonstrated.
 
 **Acceptance criteria:**
 
 - Same opponent can be used by encounter and trial candidates with different scaling formula/multiplier.
 - Generated equipment is materialized once for combat input/snapshot, not rerolled during render/attack.
 - No player-owned item is created for NPC equipment.
+- Missing combat opponent content is reported as content/configuration gap, not as missing DB/RPC contract.
 
 ---
 
@@ -2672,21 +3295,23 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 **Scope:**
 
 - Apply weapon/attack plan rules:
-  - no weapon = one unarmed attack;
-  - one one-handed weapon + empty off-hand = weapon attack + unarmed attack;
-  - one-handed weapon + shield = one weapon attack;
-  - dual wield = one attack from each weapon;
-  - two-handed = one attack unless item-native data says otherwise;
-  - ranged = two-handed, attack count from item-native `attack_count`;
+  - no weapon = one unarmed attack,
+  - one one-handed weapon + empty off-hand = weapon attack + unarmed attack,
+  - one-handed weapon + shield = one weapon attack,
+  - dual wield = one attack from each weapon,
+  - two-handed = one attack unless item-native data says otherwise,
+  - ranged = two-handed, attack count from item-native `attack_count`,
   - natural attack sources contribute configured attack slots.
 - Carry attack source labels and optional item-like components into attack slots.
 - Do not expose full equipment in report-oriented output.
+- Use `combat_attack_source_kind_definitions` when displaying attack source kind in admin/sandbox/report-adjacent UI.
 
 **Acceptance criteria:**
 
 - Attack plan is reusable for hero, opponent and future PvP.
 - Shields do not create attacks.
 - Natural sources and item-like sources are distinguishable.
+- Attack source kind display uses DB-backed dictionary text where visible.
 
 ---
 
@@ -2697,19 +3322,25 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 **Scope:**
 
 - Evaluate initiative per attack slot using:
-  - `combatantIntelligence`;
-  - `combatantAgility`;
-  - `attackIndex`;
+  - `combatantIntelligence`,
+  - `combatantAgility`,
+  - `attackIndex`,
   - `attackCount`.
 - Sort slots descending by initiative score.
 - Initiator wins tie.
 - One combat turn consists of all eligible slots from both sides, unless someone dies earlier.
+- Formula target/formula labels and descriptions should be shown in admin preview/tooling where applicable.
+- Preview must explain:
+  - higher score acts earlier,
+  - tie-breaker is outside the formula,
+  - formula assignment is DB-backed.
 
 **Acceptance criteria:**
 
 - Multiattack participants can have interleaved attack order.
 - Formula assignment is read from DB; no hardcoded initiative expression as source of truth.
 - Random initiative formulas work once M1 random runtime support exists.
+- Admin can understand why the sample order is produced.
 
 ---
 
@@ -2721,14 +3352,15 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 
 - Keep Walking Dead timing helpers for player-controlled attack timing.
 - Resolve each attack in sequence:
-  1. timing hit when applicable;
-  2. evasion;
-  3. crit;
-  4. damage roll/final damage;
+  1. timing hit when applicable,
+  2. evasion,
+  3. crit,
+  4. damage roll/final damage,
   5. health update.
 - Opponent/automatic attacks do not require real-time UI interaction.
 - End combat on initiator victory, defender victory or draw.
 - Use `get_combat_turn_limit()` or equivalent DB-backed config path for limit.
+- Use `combat_outcome_definitions` and `combat_side_definitions` for admin/sandbox result display where visible.
 
 **Acceptance criteria:**
 
@@ -2736,6 +3368,8 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 - Draw happens only after the global turn limit.
 - Minimum successful non-evaded final damage remains enforced.
 - Critical damage percent is used instead of hardcoded x2.
+- Resolver is suitable for sandbox/admin-test and for producing deterministic domain result objects.
+- Any future production integration must explicitly state whether the result is backend-authoritative, backend-validated, or sandbox/client-only.
 
 ---
 
@@ -2747,65 +3381,65 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 
 Current canonical RPC/helper surface:
 
-- `persist_combat_result_snapshot(...)`
-- `can_read_combat_result(...)`
-- `get_combat_turn_limit()`
+- `persist_combat_result_snapshot(...)`,
+- `can_read_combat_result(...)`,
+- `get_combat_turn_limit()`.
 
 Current snapshot tables:
 
-- `combat_results`
-- `combat_result_participants`
-- `combat_result_participant_stats`
-- `combat_result_attacks`
+- `combat_results`,
+- `combat_result_participants`,
+- `combat_result_participant_stats`,
+- `combat_result_attacks`.
 
 **Scope:**
 
 - Replace any planned/direct table insert flow for combat result persistence with `persist_combat_result_snapshot(...)`.
 - Map the completed combat core result into the RPC payload:
-  - `server_id`
-  - `source_type`
-  - optional `source_entity_id`
-  - outcome
-  - turns completed
-  - participant snapshots JSON
-  - attack history JSON
-  - started/completed timestamps where available
+  - `server_id`,
+  - `source_type`,
+  - optional `source_entity_id`,
+  - outcome,
+  - turns completed,
+  - participant snapshots JSON,
+  - attack history JSON,
+  - started/completed timestamps where available,
   - reason/request id where available.
 - Preserve the core Epic M rule:
   - Combat produces a result.
   - The caller interprets rewards, trial completion, PvP consequences, cooldowns and report publishing.
   - M9 must not grant rewards, complete trials, apply PvP consequences or create public reports.
 - Participant snapshot mapping must include:
-  - side: `initiator` / `defender`
-  - participant kind: `hero` / `opponent`
-  - hero id or opponent definition id where applicable
-  - display name
-  - level
-  - Health start/end/max
-  - defense
-  - min/max damage
-  - luck
-  - critical chance
-  - critical damage
-  - evasion chance
+  - side,
+  - participant kind,
+  - hero id or opponent definition id where applicable,
+  - display name,
+  - level,
+  - Health start/end/max,
+  - defense,
+  - min/max damage,
+  - luck,
+  - critical chance,
+  - critical damage,
+  - evasion chance,
   - stat snapshots.
 - Attack snapshot mapping must include:
-  - turn number
-  - attack order
-  - actor side
-  - target side
-  - attack slot index
-  - attack source kind
-  - attack source label
-  - optional player item id / quality / base / prefix / suffix component refs
-  - optional opponent attack source id
-  - timing hit
-  - evaded
-  - critical
-  - critical damage
-  - rolled damage
-  - final damage
-  - target Health before/after
+  - turn number,
+  - attack order,
+  - actor side,
+  - target side,
+  - attack slot index,
+  - attack source kind,
+  - attack source label,
+  - optional player item id / quality / base / prefix / suffix component refs,
+  - optional opponent attack source id,
+  - timing hit,
+  - evaded,
+  - critical,
+  - critical damage,
+  - rolled damage,
+  - final damage,
+  - target Health before/after,
   - display text.
 - Do not store or expose the full equipment loadout.
 - Do not recompute persisted results from live hero/opponent state after persistence.
@@ -2813,16 +3447,25 @@ Current snapshot tables:
 - Add domain mappers/helpers for converting combat core result models into the RPC payload.
 - Keep domain models outside components/facades.
 - Use generated Supabase types, but do not expose raw generated DB rows as final domain models.
-- If generated `database.types.ts` does not include M-DB2 functions/tables, stop and report that DB types must be regenerated. Do not invent types manually as the permanent fix.
+- For `sandbox` / `admin_test`, M9 may persist a result produced by the reusable frontend combat core for testing and balancing.
+- For production gameplay source types (`encounter`, `trial`, `pvp`), do not silently persist arbitrary Angular-computed combat results as authoritative gameplay truth. If the current task reaches real gameplay integration and no backend/RPC validation/finalization boundary exists, report this as a production-authority blocker instead of pretending M9 fully solves it.
+- Treat `persist_combat_result_snapshot(...)` as snapshot persistence, not reward/trial/PvP finalization and not anti-cheat validation.
+- When displaying persisted snapshots in admin/sandbox tooling, use:
+  - `combat_source_type_definitions`,
+  - `combat_side_definitions`,
+  - `combat_outcome_definitions`,
+  - `combat_participant_kind_definitions`,
+  - `combat_attack_source_kind_definitions`.
 
 **Acceptance criteria:**
 
 - Completed combat result is persisted by calling `persist_combat_result_snapshot(...)`.
 - No Angular direct insert/update into `combat_results`, `combat_result_participants`, `combat_result_participant_stats` or `combat_result_attacks`.
 - Persisted result can be rendered later without recomputing live hero/opponent state.
-- Combat reports can later use the snapshot rows for attack order, source label, hit/evasion/crit/damage and Health changes.
+- Combat reports can later use snapshot rows for attack order, source label, hit/evasion/crit/damage and Health changes.
 - Full equipment remains private; attack source label/component refs are the only public/report-ready attack-source data carried forward.
 - M9 does not create game reports, grant rewards, complete trials or apply PvP consequences.
+- Snapshot/admin display does not rely on raw combat enum keys as primary labels.
 - Build passes.
 - Smoke report explains:
   - which combat caller was used,
@@ -2842,12 +3485,15 @@ Current snapshot tables:
 - Remove page-facade ownership of core combat rules where possible.
 - Sandbox may still create demo/admin-test inputs, but should call the same resolver path.
 - Keep current Walking Dead UI behavior where it remains useful.
+- Sandbox UI should use combat dictionaries for source/outcome/side/participant/attack-source labels when displaying result summaries.
+- Do not integrate exploration/trial/PvP consequences in this task.
 
 **Acceptance criteria:**
 
 - `/game/combat` remains usable as a test surface.
 - Core rules are no longer trapped in page-specific state.
 - No exploration/trial/PvP integration is required in this task.
+- Sandbox result display does not rely on raw combat enum keys as primary UX.
 
 ---
 
@@ -2859,13 +3505,34 @@ Current snapshot tables:
 
 - Opponent family/definition/stat/natural attack read views.
 - Candidate read views for encounter/trial combat candidates.
-- Initiative preview: user enters stats and attack counts for two sides and sees a sample attack order.
+- Initiative preview:
+  - user enters stats and attack counts for two sides,
+  - sees a sample attack order,
+  - sees formula target/formula explanation.
 - If formula uses random, preview supports reroll/refresh.
+- Use combat explainability dictionaries in all combat admin/balance tooling:
+  - source type,
+  - side,
+  - outcome,
+  - participant kind,
+  - attack source kind,
+  - candidate kind,
+  - opponent equipment mode,
+  - equipment slot.
+- Initiative preview must explain:
+  - what `combat_initiative_score` controls,
+  - which variables are used,
+  - that higher score acts earlier,
+  - that tie-breaker is handled by combat ordering logic, not by the formula itself.
+- Candidate read views must explain candidate kind using `combat_candidate_kind_definitions`.
+- Attack/source previews must explain attack source kind using `combat_attack_source_kind_definitions`.
 
 **Acceptance criteria:**
 
 - Admin can inspect opponent/candidate setup without raw-key-only UI.
 - Initiative preview explains the sample order in gameplay terms.
+- Admin can understand candidate/source labels without knowing raw enum keys.
+- Combat admin tooling uses DB-backed dictionary text for explainability.
 - This task does not implement full report sharing.
 
 ---
@@ -2874,143 +3541,181 @@ Current snapshot tables:
 
 **Goal:** Add a write-capable admin/balancer UI for configuring reusable combat opponent definitions used by encounter and trial combat candidates.
 
-**DB/RPC foundation status:** Available after M-DB1.
+**DB/RPC foundation status:** Available after M-DB1 and M-Dict-DB1.
 
 Current canonical RPC surface:
 
-- `upsert_combat_opponent_family(...)`
-- `deactivate_combat_opponent_family(...)`
-- `upsert_combat_opponent_definition(...)`
-- `deactivate_combat_opponent_definition(...)`
-- `upsert_combat_opponent_stat_value(...)`
-- `delete_combat_opponent_stat_value(...)`
-- `upsert_combat_opponent_attack_source(...)`
-- `deactivate_combat_opponent_attack_source(...)`
-- `upsert_combat_opponent_equipment_entry(...)`
-- `deactivate_combat_opponent_equipment_entry(...)`
+- `upsert_combat_opponent_family(...)`,
+- `deactivate_combat_opponent_family(...)`,
+- `upsert_combat_opponent_definition(...)`,
+- `deactivate_combat_opponent_definition(...)`,
+- `upsert_combat_opponent_stat_value(...)`,
+- `delete_combat_opponent_stat_value(...)`,
+- `upsert_combat_opponent_attack_source(...)`,
+- `deactivate_combat_opponent_attack_source(...)`,
+- `upsert_combat_opponent_equipment_entry(...)`,
+- `deactivate_combat_opponent_equipment_entry(...)`.
 
 Frontend must use these RPCs. Do not direct-write combat opponent tables from Angular.
 
 **Scope:**
 
 - Add or extend an admin/balancer page/section for combat opponents, preferably under the Game Balance admin group.
+- The page must support empty DB state:
+  - if no opponent families/definitions exist, show a clear empty state;
+  - allow creating the first family/opponent through canonical RPCs;
+  - do not treat empty opponent tables as DB blocker.
 - Load and display `combat_opponent_families`:
-  - key
-  - label
-  - description
-  - helper text
-  - admin description
-  - active flag
+  - key,
+  - label,
+  - description,
+  - helper text,
+  - admin description,
+  - active flag,
   - sort order.
-- Allow creating/updating/deactivating opponent families through the canonical family RPCs.
+- Allow creating/updating/deactivating opponent families through canonical family RPCs.
 - Load and display `combat_opponent_definitions`:
-  - opponent key
-  - label/name
-  - description
-  - helper text
-  - admin description
-  - family
-  - equipment mode
-  - default scaling formula
-  - active flag
+  - opponent key,
+  - label/name,
+  - description,
+  - helper text,
+  - admin description,
+  - family,
+  - equipment mode,
+  - default scaling formula,
+  - active flag,
   - sort order.
-- Allow creating/updating/deactivating opponent definitions through the canonical opponent definition RPCs.
+- Allow creating/updating/deactivating opponent definitions through canonical opponent definition RPCs.
 - Show and manage baseline stat values from `combat_opponent_stat_values`:
-  - stat picker from canonical `stats`
-  - readable stat label/description
-  - base value
-  - sort order if used by the current schema/read model.
-- Stat values must use `upsert_combat_opponent_stat_value(...)` and `delete_combat_opponent_stat_value(...)`.
+  - stat picker from canonical `stats`,
+  - readable stat label/description,
+  - base value,
+  - sort order if used by current schema/read model.
+- Stat values must use:
+  - `upsert_combat_opponent_stat_value(...)`,
+  - `delete_combat_opponent_stat_value(...)`.
 - Show and manage natural attack sources from `combat_opponent_attack_sources`.
 - Important corrected rule:
-  - `combat_opponent_attack_sources` does **not** have an attack-source-kind field.
-  - Treat these rows as natural/non-equipment opponent attack sources.
+  - `combat_opponent_attack_sources` does **not** have an attack-source-kind field;
+  - treat these rows as natural/non-equipment opponent attack sources.
 - Natural attack source fields:
-  - key
-  - label
-  - description
-  - helper text
-  - admin description
-  - min/max opponent level
-  - attack count
-  - min/max damage
-  - critical chance
-  - critical damage
-  - active flag
+  - key,
+  - label,
+  - description,
+  - helper text,
+  - admin description,
+  - min/max opponent level,
+  - attack count,
+  - min/max damage,
+  - critical chance,
+  - critical damage,
+  - active flag,
   - sort order.
 - Natural attack source mutations must use:
-  - `upsert_combat_opponent_attack_source(...)`
+  - `upsert_combat_opponent_attack_source(...)`,
   - `deactivate_combat_opponent_attack_source(...)`.
 - Show and manage opponent equipment entries from `combat_opponent_equipment_entries`.
 - Opponent-level `equipment_mode` supports:
-  - `none`
-  - `manual`
+  - `none`,
+  - `manual`,
   - `generated`.
 - Equipment-entry-level `entry_mode` supports:
-  - `manual`
+  - `manual`,
   - `generated`.
 - Equipment entry UI must use DB-backed dictionaries/read models:
-  - slots from `equipment_slot_definitions`
-  - qualities from item generation quality definitions
-  - bases from item generation base definitions
-  - prefix/suffix affixes from item generation affix definitions
-  - generated bucket profiles from item generation bucket profiles
+  - slots from `equipment_slot_definitions`,
+  - qualities from item generation quality definitions,
+  - bases from item generation base definitions,
+  - prefix/suffix affixes from item generation affix definitions,
+  - generated bucket profiles from item generation bucket profiles,
   - formulas from formula read/search helpers where applicable.
 - Manual equipment entry fields:
-  - slot
-  - level range where available
-  - quality
-  - base
-  - optional prefix
+  - slot,
+  - level range where available,
+  - quality,
+  - base,
+  - optional prefix,
   - optional suffix.
 - Generated equipment entry fields:
-  - slot
-  - level range where available
-  - generated bucket profile
+  - slot,
+  - level range where available,
+  - generated bucket profile,
   - generated max quality.
 - Equipment entries must not create player-owned `items`.
 - Generated opponent equipment is fight-local only and must be described that way in the UI.
 - Formula picker must use formula labels/search/read helpers where available, not raw UUID-only entry.
-- Preserve human-readable metadata:
-  - label
-  - description
-  - helper text
-  - admin description.
-- Technical keys/UUIDs may appear as secondary metadata, not primary UX.
+- Load and use combat explainability dictionaries:
+  - `combat_candidate_kind_definitions` for candidate kind labels/help,
+  - `combat_attack_source_kind_definitions` where attack source kinds are displayed,
+  - `combat_opponent_equipment_mode_definitions` for opponent equipment mode,
+  - `equipment_slot_definitions` for equipment slot labels/help,
+  - formula target/formula labels/descriptions for scaling formula selectors.
+- Show DB-backed `description`, `helper_text`, and `admin_description` near relevant form sections.
+- The page must explain:
+  - family = grouping/selection pool;
+  - opponent definition = reusable NPC identity and default scaling/equipment mode;
+  - stat values = baseline values before scaling;
+  - natural attack sources = non-equipment attack slots configured on the opponent;
+  - equipment mode = whether opponent uses no equipment, manual blueprint or generated fight-local loadout;
+  - equipment entries = fight-local item-like blueprint/loadout sources, not player-owned items;
+  - scaling formula = how baseline values change for concrete encounter/trial usage;
+  - difficulty multiplier = candidate-level multiplier applied in that concrete context.
+- Technical keys/UUIDs may appear as secondary metadata only.
 - Reason is mandatory for all durable admin mutations.
 - Use PrimeNG tabs/sections or another existing project pattern so the page does not become one long, hard-to-use form.
 - Reuse existing admin/shared helpers where possible:
-  - metadata/JSON display helpers
-  - dictionary option mappers
-  - reason form patterns
-  - RPC error display patterns
+  - metadata/JSON display helpers,
+  - dictionary option mappers,
+  - reason form patterns,
+  - RPC error display patterns,
   - stale request guards.
-- If generated `database.types.ts` does not include M-DB1 functions/tables, stop and report that DB types must be regenerated. Do not invent types manually as the permanent fix.
+- If generated `database.types.ts` does not include M-DB1/M-Dict-DB1 functions/tables, stop and report that DB types must be regenerated.
+- Do not invent large permanent Angular explanations for combat dictionaries if DB dictionary text is missing or weak.
+- If a required DB-backed description is missing after accepted seed cleanup, report the exact table/key/field gap.
 
 **Acceptance criteria:**
 
+- Admin can create the first combat opponent family/definition from an empty database state.
 - Admin can inspect and configure combat opponent families and opponent definitions.
 - Admin can define baseline stats for opponents.
 - Admin can define natural attack sources for non-equipped or additionally equipped opponents.
 - Admin can configure no/manual/generated equipment modes without creating normal player-owned item rows.
 - Encounter/trial candidate configurators can reuse these opponents/families as selectable content.
-- UI uses DB dictionaries for stats, slots, item-generation components, formulas and bucket profiles.
+- UI uses DB dictionaries for:
+  - combat candidate kind,
+  - attack source kind where displayed,
+  - opponent equipment mode,
+  - stats,
+  - slots,
+  - item-generation components,
+  - formulas,
+  - bucket profiles.
+- Admin can understand runtime meaning of:
+  - family,
+  - opponent definition,
+  - stat baseline,
+  - natural attack source,
+  - equipment mode,
+  - equipment entry,
+  - scaling formula,
+  - difficulty multiplier.
 - Mutations use approved RPC/governance path only.
 - No direct Angular writes to:
-  - `combat_opponent_families`
-  - `combat_opponent_definitions`
-  - `combat_opponent_stat_values`
-  - `combat_opponent_attack_sources`
+  - `combat_opponent_families`,
+  - `combat_opponent_definitions`,
+  - `combat_opponent_stat_values`,
+  - `combat_opponent_attack_sources`,
   - `combat_opponent_equipment_entries`.
 - Build passes.
 - Smoke report distinguishes:
+  - empty state,
   - family creation/update/deactivation,
   - opponent definition creation/update/deactivation,
   - stat value upsert/delete,
   - natural attack source upsert/deactivation,
   - manual equipment entry upsert/deactivation,
   - generated equipment entry upsert/deactivation,
-  - and explains how the configured opponent affects combat encounters/trials.
+  - and explains how configured opponent content affects combat encounters/trials.
 
 ---
 
@@ -3019,6 +3724,7 @@ Frontend must use these RPCs. Do not direct-write combat opponent tables from An
 Epic M must expose the full admin/balancer configuration surface for combat opponents introduced or consumed by this epic.
 
 Admin UI must not be a raw table editor. It must explain how each configured object affects combat runtime:
+
 - opponent family controls grouping/selection pools;
 - opponent definition controls reusable NPC identity and default scaling/equipment mode;
 - stat values define baseline opponent combat stats before scaling;
@@ -3026,7 +3732,22 @@ Admin UI must not be a raw table editor. It must explain how each configured obj
 - equipment entries define fight-local manual/generated item-like attack/defense sources and must not create player-owned items;
 - scaling formulas and difficulty multipliers affect how the same opponent behaves in trial/encounter contexts.
 
-Raw keys/UUIDs may appear as secondary metadata only. Labels, descriptions, helper text and admin descriptions should be shown wherever available.
+This rule is backed by DB dictionaries. M UI should consume, not duplicate, explanatory text from:
+
+- `combat_source_type_definitions`;
+- `combat_side_definitions`;
+- `combat_outcome_definitions`;
+- `combat_participant_kind_definitions`;
+- `combat_attack_source_kind_definitions`;
+- `combat_candidate_kind_definitions`;
+- `combat_opponent_equipment_mode_definitions`;
+- `equipment_slot_definitions`;
+- relevant formula targets/formulas;
+- combat opponent family/definition/attack/equipment rows.
+
+Raw keys/UUIDs may appear as secondary metadata only.
+
+If these dictionaries are missing from generated types, regenerate database types before frontend work. If a dictionary row is missing or weak after accepted DB seed cleanup, report the exact table/key/field gap instead of hiding it with permanent hardcoded Angular copy.
 
 ---
 

@@ -21,7 +21,10 @@ import {
 } from '../../utils/exploration-trial-admin-mappers';
 import {
   mapRewardProfile,
+  mapRewardOutcomeKind,
   mapRewardProfileAssignment,
+  mapRewardDictionary,
+  mapResourceType,
 } from '../../utils/exploration-reward-mappers';
 import { mapBalanceFormula } from '../../utils/formula-admin-mappers';
 import { Backend } from '../backend/backend';
@@ -47,6 +50,19 @@ export function getExplorationEncounterAdminData(
       { column: 'code', ascending: true },
     ]),
     rewardProfiles: getRows<Row<'reward_profiles'>>(backend, TABLES.reward_profiles, [
+      { column: 'sort_order', ascending: true },
+      { column: 'key', ascending: true },
+    ]),
+    rewardOutcomeKinds: getRows<Row<'reward_outcome_kinds'>>(backend, TABLES.reward_outcome_kinds, [
+      { column: 'source_kind', ascending: true },
+      { column: 'sort_order', ascending: true },
+      { column: 'key', ascending: true },
+    ]),
+    resourceTypes: getRows<Row<'resource_types'>>(backend, TABLES.resource_types, [
+      { column: 'sort_order', ascending: true },
+      { column: 'key', ascending: true },
+    ]),
+    rewardAssignmentMatchKinds: getRows<Row<'reward_assignment_match_kinds'>>(backend, TABLES.reward_assignment_match_kinds, [
       { column: 'sort_order', ascending: true },
       { column: 'key', ascending: true },
     ]),
@@ -94,6 +110,9 @@ export function getExplorationEncounterAdminData(
       difficulties: data.difficulties.map(mapExplorationDifficultyTier),
       districts: mapBuildingDistricts(data.districts),
       rewardProfiles: data.rewardProfiles.map(mapRewardProfile),
+      rewardOutcomeKinds: data.rewardOutcomeKinds.map(mapRewardOutcomeKind),
+      resourceTypes: data.resourceTypes.map(mapResourceType),
+      rewardAssignmentMatchKinds: data.rewardAssignmentMatchKinds.map(mapRewardDictionary),
       rewardAssignments: data.rewardAssignments.map(mapRewardProfileAssignment),
       combatCandidates: data.combatCandidates.map(mapEncounterCombatCandidate),
       resourcePayloads: data.resourcePayloads.map(mapEncounterResourcePayload),

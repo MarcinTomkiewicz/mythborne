@@ -4,7 +4,7 @@ export function requiredText(value: string | null | undefined, field: string): s
   const normalized = trimText(value);
 
   if (!normalized) {
-    throw new Error(`${field} is required for encounter configuration workflow.`);
+    throw new Error(`${field} is required for admin configuration workflow.`);
   }
 
   return normalized;
@@ -14,7 +14,7 @@ export function integer(value: number | null | undefined, field: string): number
   const normalized = Math.floor(Number(value));
 
   if (!Number.isFinite(normalized)) {
-    throw new Error(`${field} must be a number for encounter configuration workflow.`);
+    throw new Error(`${field} must be a number for admin configuration workflow.`);
   }
 
   return normalized;
@@ -24,7 +24,7 @@ export function positiveNumber(value: number | null | undefined, field: string):
   const normalized = Number(value);
 
   if (!Number.isFinite(normalized) || normalized <= 0) {
-    throw new Error(`${field} must be positive for encounter configuration workflow.`);
+    throw new Error(`${field} must be positive for admin configuration workflow.`);
   }
 
   return normalized;
@@ -34,7 +34,7 @@ export function percent(value: number | null | undefined, field: string): number
   const normalized = Number(value);
 
   if (!Number.isFinite(normalized) || normalized < 0 || normalized > 100) {
-    throw new Error(`${field} must be between 0 and 100 for encounter configuration workflow.`);
+    throw new Error(`${field} must be between 0 and 100 for admin configuration workflow.`);
   }
 
   return normalized;

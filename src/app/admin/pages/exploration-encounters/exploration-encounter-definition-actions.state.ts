@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
 import { ToastService } from '../../../core/services/ui/toast';
@@ -25,6 +25,7 @@ export class ExplorationEncounterDefinitionActionsState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly saveToken = new RequestToken();
   private isSyncingForm = false;
+  private skipNextNewEncounterSync = false;
 
   readonly encounterForm = createEncounterDefinitionForm();
   readonly isSaving = signal(false);
@@ -33,7 +34,7 @@ export class ExplorationEncounterDefinitionActionsState {
   constructor() {
     effect(() => {
       this.page.selectedEncounterId();
-      this.syncFormFromSelection();
+      untracked(() => this.syncFormFromSelection());
     });
 
     this.encounterForm.controls.label.valueChanges
@@ -42,6 +43,7 @@ export class ExplorationEncounterDefinitionActionsState {
   }
 
   startNewEncounter(): void {
+    this.skipNextNewEncounterSync = true;
     this.page.selectEncounter(null);
     this.encounterForm.reset(encounterFormValue(this.page.data(), null));
   }
@@ -145,6 +147,11 @@ export class ExplorationEncounterDefinitionActionsState {
   }
 
   private syncFormFromSelection(): void {
+    if (this.skipNextNewEncounterSync && this.page.selectedEncounterId() === null) {
+      this.skipNextNewEncounterSync = false;
+      return;
+    }
+
     this.reasonError.set(null);
     this.isSyncingForm = true;
     this.encounterForm.reset(encounterFormValue(this.page.data(), this.page.selectedEncounterId()));

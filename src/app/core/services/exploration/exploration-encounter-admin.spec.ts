@@ -33,6 +33,9 @@ describe('ExplorationEncounterAdmin', () => {
     service.getAdminData().subscribe((data) => {
       expect(data.encounters[0].label).toBe('Bandit ambush');
       expect(data.rewardAssignments[0].outcomeKind).toBe('success');
+      expect(data.rewardOutcomeKinds[0].label).toBe('Success');
+      expect(data.resourceTypes[0].label).toBe('Drachma');
+      expect(data.rewardAssignmentMatchKinds[0].key).toBe('exact');
       expect(data.combatCandidates[0].candidateKind).toBe('opponent');
       expect(data.resourcePayloads[0].resourceType).toBe('drachma');
       expect(data.effectDefinitions[0].effectKind).toBe('buff');
@@ -45,7 +48,13 @@ describe('ExplorationEncounterAdmin', () => {
         table: TABLES.encounter_combat_candidates,
       }));
       expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
+        table: TABLES.reward_outcome_kinds,
+      }));
+      expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
         table: TABLES.reward_profile_assignments,
+      }));
+      expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
+        table: TABLES.resource_types,
       }));
       expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
         table: TABLES.encounter_resource_payloads,
@@ -222,7 +231,11 @@ describe('ExplorationEncounterAdmin', () => {
                 rewardProfileId: 'reward-1',
                 outcomeKind: 'success',
                 difficultyKey: 'easy',
+                difficultyMatchKind: 'exact',
+                maxDifficultyKey: null,
                 districtCode: null,
+                districtMatchKind: 'any',
+                maxDistrictCode: null,
                 description: null,
                 helperText: null,
                 sortOrder: 10,
@@ -237,6 +250,8 @@ describe('ExplorationEncounterAdmin', () => {
                     p_source_kind: 'encounter',
                     p_encounter_definition_id: 'encounter-1',
                     p_reward_profile_id: 'reward-1',
+                    p_difficulty_match_kind: 'exact',
+                    p_district_match_kind: 'any',
                     p_reason: 'Tune reward.',
                   }),
                 );
@@ -304,6 +319,20 @@ function rowsFor(table: string): any[] {
         created_at: '2026-05-01T10:00:00.000Z',
         updated_at: '2026-05-01T10:00:00.000Z',
       }];
+    case TABLES.reward_outcome_kinds:
+      return [{
+        source_kind: 'encounter',
+        key: 'success',
+        label: 'Success',
+        description: 'Encounter success.',
+        helper_text: null,
+        admin_description: null,
+        sort_order: 10,
+        is_active: true,
+        metadata_json: {},
+        created_at: '2026-05-01T10:00:00.000Z',
+        updated_at: '2026-05-01T10:00:00.000Z',
+      }];
     case TABLES.reward_profile_assignments:
       return [{
         id: 'assignment-1',
@@ -313,9 +342,31 @@ function rowsFor(table: string): any[] {
         reward_profile_id: 'reward-1',
         outcome_kind: 'success',
         difficulty_key: 'easy',
+        difficulty_match_kind: 'exact',
+        max_difficulty_key: null,
         district_code: null,
+        district_match_kind: 'any',
+        max_district_code: null,
         description: null,
         helper_text: null,
+        sort_order: 10,
+        is_active: true,
+        metadata_json: {},
+        created_at: '2026-05-01T10:00:00.000Z',
+        updated_at: '2026-05-01T10:00:00.000Z',
+      }];
+    case TABLES.reward_assignment_match_kinds:
+      return [
+        rewardDictionaryRow('exact', 'Exact'),
+        rewardDictionaryRow('any', 'Any'),
+      ];
+    case TABLES.resource_types:
+      return [{
+        key: 'drachma',
+        label: 'Drachma',
+        description: 'Core currency.',
+        helper_text: 'Used for most rewards.',
+        admin_description: null,
         sort_order: 10,
         is_active: true,
         metadata_json: {},
@@ -429,6 +480,21 @@ function rowsFor(table: string): any[] {
     default:
       return [];
   }
+}
+
+function rewardDictionaryRow(key: string, label: string): any {
+  return {
+    key,
+    label,
+    description: `${label}.`,
+    helper_text: null,
+    admin_description: null,
+    sort_order: 10,
+    is_active: true,
+    metadata_json: {},
+    created_at: '2026-05-01T10:00:00.000Z',
+    updated_at: '2026-05-01T10:00:00.000Z',
+  };
 }
 
 function baseEncounter(): any {

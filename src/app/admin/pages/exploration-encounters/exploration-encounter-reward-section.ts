@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -16,6 +17,7 @@ import { ExplorationEncountersPageState } from './exploration-encounters-page.st
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     ButtonModule,
     CheckboxModule,
     InputNumberModule,

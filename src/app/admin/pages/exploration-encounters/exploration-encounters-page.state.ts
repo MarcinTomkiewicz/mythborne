@@ -2,8 +2,26 @@ import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { finalize } from 'rxjs';
+import {
+  COMBAT_CANDIDATE_KIND,
+  ENCOUNTER_KIND,
+  ENCOUNTER_KIND_FALLBACKS,
+  EXPLORATION_EFFECT_KIND_FALLBACKS,
+} from '../../../core/constants/encounter-runtime-keys.const';
+import {
+  ENCOUNTER_REWARD_OUTCOME_KIND_FALLBACKS,
+  REWARD_AMOUNT_MODE_PVE_FALLBACKS,
+  REWARD_ASSIGNMENT_MATCH_KIND_FALLBACKS,
+  REWARD_SOURCE_KIND,
+} from '../../../core/constants/reward-runtime-keys.const';
 import { ExplorationEncounterAdminData } from '../../../core/domain/exploration/exploration-encounter-admin.model';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
+import {
+  dictionaryHelp,
+  dictionaryOptions,
+  labelFromKey,
+  optionsFromValues,
+} from '../../../core/utils/dictionary-options';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import {
   toEncounterCombatCandidateAdminViews,
@@ -16,6 +34,11 @@ import {
   toExplorationEffectDefinitionAdminViews,
 } from '../../../core/utils/exploration-encounter-payload-admin-mappers';
 import { RequestToken } from '../../../core/utils/request-token';
+import {
+  resourceTypeDescription,
+  toResourceTypeOptions,
+} from '../../../core/utils/resource-type-options';
+import { isExplorationPayloadFormulaScope } from '../../../core/utils/reward-formula-options';
 
 @Injectable()
 export class ExplorationEncountersPageState {
@@ -23,6 +46,8 @@ export class ExplorationEncountersPageState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly loadToken = new RequestToken();
 
+  readonly encounterKind = ENCOUNTER_KIND;
+  readonly rewardAmountModeOptions = optionsFromValues(REWARD_AMOUNT_MODE_PVE_FALLBACKS);
   readonly data = signal<ExplorationEncounterAdminData | null>(null);
   readonly selectedEncounterId = signal<string | null>(null);
   readonly encounterSelector = new FormControl<string | null>(null);
@@ -68,7 +93,9 @@ export class ExplorationEncountersPageState {
   readonly effectDefinitions = computed(() => {
     const data = this.data();
     const encounterKind = this.selectedEncounter()?.encounter.encounterKind ?? null;
-    const kind = encounterKind === 'buff' || encounterKind === 'debuff' ? encounterKind : null;
+    const kind = encounterKind === ENCOUNTER_KIND.buff || encounterKind === ENCOUNTER_KIND.debuff
+      ? encounterKind
+      : null;
 
     return data ? toExplorationEffectDefinitionAdminViews(data, kind) : [];
   });
@@ -78,10 +105,10 @@ export class ExplorationEncountersPageState {
   );
   readonly encounterKindOptions = computed(() => {
     const existing = new Set((this.data()?.encounters ?? []).map((entry) => entry.encounterKind));
-    ['combat', 'resource', 'buff', 'debuff'].forEach((kind) => existing.add(kind));
+    ENCOUNTER_KIND_FALLBACKS.forEach((kind) => existing.add(kind));
 
     return Array.from(existing).sort().map((kind) => ({
-      label: kindLabel(kind),
+      label: labelFromKey(kind),
       value: kind,
     }));
   });
@@ -99,6 +126,15 @@ export class ExplorationEncountersPageState {
       value: entry.key,
     })),
   ]);
+  readonly rewardMatchKindOptions = computed(() =>
+    dictionaryOptions(
+      this.data()?.rewardAssignmentMatchKinds ?? [],
+      REWARD_ASSIGNMENT_MATCH_KIND_FALLBACKS,
+    ),
+  );
+  readonly hasRewardMatchKindDictionary = computed(() =>
+    (this.data()?.rewardAssignmentMatchKinds ?? []).some((entry) => entry.isActive),
+  );
   readonly districtOptions = computed(() => [
     { label: 'Any district', value: null },
     ...(this.data()?.districts ?? []).map((entry) => ({
@@ -120,22 +156,29 @@ export class ExplorationEncountersPageState {
     })),
   );
   readonly hasRewardProfiles = computed(() => this.requiredRewardProfileOptions().length > 0);
+  readonly hasDbEncounterOutcomeKinds = computed(() =>
+    (this.data()?.rewardOutcomeKinds ?? []).some(
+      (entry) => entry.sourceKind === REWARD_SOURCE_KIND.encounter && entry.isActive,
+    ),
+  );
   readonly outcomeKindOptions = computed(() => {
-    const existing = new Set(
-      (this.data()?.rewardAssignments ?? [])
-        .filter((entry) => entry.sourceKind === 'encounter')
-        .map((entry) => entry.outcomeKind),
-    );
-    ['success', 'failure', 'encounter_completed'].forEach((kind) => existing.add(kind));
+    const options = (this.data()?.rewardOutcomeKinds ?? [])
+      .filter((entry) => entry.sourceKind === REWARD_SOURCE_KIND.encounter && entry.isActive)
+      .map((entry) => ({
+        label: `${entry.label} (${entry.key})`,
+        value: entry.key,
+      }));
 
-    return Array.from(existing).sort().map((kind) => ({
-      label: kindLabel(kind),
-      value: kind,
-    }));
+    return options.length > 0
+      ? options
+      : ENCOUNTER_REWARD_OUTCOME_KIND_FALLBACKS.map((kind) => ({
+        label: `${labelFromKey(kind)} (${kind})`,
+        value: kind,
+      }));
   });
   readonly candidateKindOptions = [
-    { label: 'Concrete opponent', value: 'opponent' },
-    { label: 'Opponent family', value: 'family' },
+    { label: 'Concrete opponent', value: COMBAT_CANDIDATE_KIND.opponent },
+    { label: 'Opponent family', value: COMBAT_CANDIDATE_KIND.family },
   ];
   readonly opponentOptions = computed(() =>
     (this.data()?.opponents ?? []).map((entry) => ({
@@ -159,7 +202,7 @@ export class ExplorationEncountersPageState {
   readonly payloadFormulaOptions = computed(() => [
     { label: 'No formula', value: null },
     ...(this.data()?.formulas ?? [])
-      .filter((entry) => isPayloadFormulaScope(entry.scopeKey))
+      .filter((entry) => isExplorationPayloadFormulaScope(entry.scopeKey))
       .map((entry) => ({
       label: `${entry.label} (${entry.key})${entry.isEnabled ? '' : ' - disabled'}`,
       value: entry.id,
@@ -183,25 +226,25 @@ export class ExplorationEncountersPageState {
         value: entry.id,
       }));
   });
-  readonly amountModeOptions = [
-    { label: 'Fixed amount', value: 'fixed' },
-    { label: 'Amount range', value: 'range' },
-    { label: 'Formula amount', value: 'formula' },
-  ];
-  readonly effectKindOptions = [
-    { label: 'Buff', value: 'buff' },
-    { label: 'Debuff', value: 'debuff' },
-  ];
-  readonly hasResourceTypeDictionary = computed(() => false);
+  readonly amountModeOptions = this.rewardAmountModeOptions;
+  readonly effectKindOptions = optionsFromValues(EXPLORATION_EFFECT_KIND_FALLBACKS);
+  readonly hasResourceTypeDictionary = computed(() => (this.data()?.resourceTypes.length ?? 0) > 0);
   readonly resourceTypeOptions = computed(() => {
-    const existing = new Set((this.data()?.resourcePayloads ?? []).map((entry) => entry.resourceType));
-    ['drachma', 'materials', 'workforce'].forEach((type) => existing.add(type));
+    const data = this.data();
+    const referenced = (data?.resourcePayloads ?? []).map((entry) => entry.resourceType);
 
-    return Array.from(existing).sort().map((type) => ({
-      label: kindLabel(type),
-      value: type,
-    }));
+    return toResourceTypeOptions(data?.resourceTypes ?? [], referenced);
   });
+
+  rewardMatchKindHelp(matchKind: string | null): string | null {
+    return dictionaryHelp(this.data()?.rewardAssignmentMatchKinds ?? [], matchKind);
+  }
+
+  resourceTypeHelp(resourceType: string | null): string | null {
+    return resourceType
+      ? resourceTypeDescription(this.data()?.resourceTypes ?? [], resourceType)
+      : null;
+  }
 
   constructor() {
     this.encounterSelector.valueChanges
@@ -261,20 +304,4 @@ export class ExplorationEncountersPageState {
 
     this.selectEncounter(data.encounters[0]?.id ?? null);
   }
-}
-
-function kindLabel(kind: string): string {
-  return kind
-    .split(/[_\s-]+/)
-    .filter(Boolean)
-    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-    .join(' ') || kind;
-}
-
-function isPayloadFormulaScope(scopeKey: string): boolean {
-  const normalized = scopeKey.toLowerCase();
-
-  return ['exploration', 'encounter', 'resource', 'reward'].some((part) =>
-    normalized.includes(part),
-  );
 }

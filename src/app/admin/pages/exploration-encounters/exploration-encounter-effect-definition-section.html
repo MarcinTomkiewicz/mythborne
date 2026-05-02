@@ -24,21 +24,20 @@
       <span>Advanced key override</span>
       <p-checkbox formControlName="allowKeyOverride" [binary]="true" />
     </label>
-    <label class="flex-col gap-sm w-100">
+    <div class="flex-col gap-sm w-100">
       <span>Effect kind</span>
       <p-select formControlName="effectKind" [options]="page.effectKindOptions" optionLabel="label" optionValue="value" />
-    </label>
-    <label class="flex-col gap-sm w-100">
+    </div>
+    <div class="flex-col gap-sm w-100">
       <span>Bonus template</span>
       <p-select formControlName="bonusTemplateId" [options]="page.bonusTemplateOptions()" optionLabel="label" optionValue="value" />
-    </label>
+    </div>
     <label class="flex-col gap-sm w-100"><span>Default value</span><p-inputnumber formControlName="defaultValue" /></label>
     <label class="flex-col gap-sm w-100">
       <span>Fallback duration steps (advanced)</span>
       <p-inputnumber formControlName="defaultDurationSteps" [min]="1" />
       <small class="muted-text">Normal exploration effects expire at the next combat encounter or trial.</small>
     </label>
-    <label class="flex-col gap-sm w-100"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
     <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
     </div>
     <label class="flex-col gap-sm w-100">
