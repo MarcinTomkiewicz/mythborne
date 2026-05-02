@@ -1,7 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, finalize, forkJoin, map, of, switchMap } from 'rxjs';
-import { BonusSource } from '../../domain/bonus/bonus.model';
 import {
   CombatBalanceRules,
   CombatRoundEntry,
@@ -10,8 +9,6 @@ import {
   SandboxCombatResult,
 } from '../../domain/combat/combat-sandbox.model';
 import { OriginBonus, Origin } from '../../domain/origin/origin.model';
-import { IHeroDerived } from '../../types/hero.types';
-import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import {
   COMBAT_TURN_LIMIT,
@@ -19,7 +16,6 @@ import {
   toWalkingDeadZone,
 } from '../../utils/combat-walking-dead';
 import { getErrorMessage } from '../../utils/error-message';
-import { toCombatBonusSnapshotFromEquipment } from '../../utils/combat-equipment-bonuses';
 import { Hero } from '../hero/hero';
 import { HeroDerivedStats } from '../hero/hero-derived-stats';
 import { EquipmentBonusesService } from '../items/equipment-bonuses';
@@ -27,6 +23,7 @@ import { Origins } from '../origins/origins';
 import { StatsService } from '../stats/stats';
 import { CombatBalanceService } from './combat-balance';
 import { CombatDemoFactoryService } from './combat-demo-factory';
+import { HeroCombatantResolver } from './hero-combatant-resolver';
 import { CombatResolverService } from './combat-resolver';
 
 type CombatPhase = 'idle' | 'player_turn' | 'finished';
@@ -41,6 +38,7 @@ export class CombatPageFacade {
   private readonly statsService = inject(StatsService);
   private readonly balance = inject(CombatBalanceService);
   private readonly demoFactory = inject(CombatDemoFactoryService);
+  private readonly heroCombatantResolver = inject(HeroCombatantResolver);
   private readonly resolver = inject(CombatResolverService);
   private walkingTimer: number | null = null;
 
@@ -173,13 +171,14 @@ export class CombatPageFacade {
           this.statsDefinitions.set(statsDefinitions);
           this.rules.set(rules);
 
-          const heroSnapshot = this.toHeroCombatant(
-            hero.name,
-            hero.level ?? 1,
+          const heroSnapshot = this.heroCombatantResolver.resolveHeroCombatant({
+            name: hero.name,
+            level: hero.level ?? 1,
             baseStats,
             derivedStats,
-            equipmentBonuses
-          );
+            equipmentBonuses,
+            originBonuses: bonuses,
+          });
 
           this.hero.set(heroSnapshot);
           this.enemy.set(this.demoFactory.createOpponent(heroSnapshot.level));
@@ -365,52 +364,4 @@ export class CombatPageFacade {
     }
   }
 
-  private toHeroCombatant(
-    name: string,
-    level: number,
-    baseStats: IHeroStats,
-    derivedStats: IHeroDerived,
-    equipmentBonuses: BonusSource['bonuses']
-  ): CombatantSnapshot {
-    const source = this.originBonusSource();
-    const effectiveBaseStats = this.statsService.getFinalStats(baseStats, [source], {
-      heroLevel: level,
-    }) as IHeroStats;
-
-    return {
-      key: 'hero',
-      name,
-      level,
-      baseStats: effectiveBaseStats,
-      derived: {
-        health: derivedStats.health,
-        def: derivedStats.def,
-        luck: derivedStats.luck,
-        minDmg: derivedStats.minDmg,
-        maxDmg: derivedStats.maxDmg,
-        critical: derivedStats.critical,
-        evasion: derivedStats.evasion,
-      },
-      bonuses: toCombatBonusSnapshotFromEquipment(
-        equipmentBonuses,
-        level,
-        effectiveBaseStats
-      ),
-    };
-  }
-
-  private originBonusSource(): BonusSource {
-    return {
-      name: 'origin',
-      bonuses: this.originBonuses().map((bonus) => ({
-        target: bonus.target ?? '',
-        value: bonus.baseValue,
-        type: bonus.type,
-        scope: bonus.scope,
-        levelsStep: bonus.levelsStep,
-        sourceStat: bonus.sourceStat,
-        scalingFactor: bonus.scalingFactor,
-      })),
-    };
-  }
 }

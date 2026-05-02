@@ -8,6 +8,7 @@ export type RuntimeDerivedStatKey =
   | DerivedStatKey.MaxDamage
   | DerivedStatKey.Luck
   | DerivedStatKey.CriticalChance
+  | DerivedStatKey.CriticalDamage
   | DerivedStatKey.EvasionChance;
 
 export type RuntimeDerivedStats = Record<RuntimeDerivedStatKey, number>;

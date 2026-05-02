@@ -8,8 +8,6 @@ import {
 import { CombatBalanceService } from './combat-balance';
 import { isInsideWalkingDeadZone, toWalkingDeadZone } from '../../utils/combat-walking-dead';
 
-const CRIT_MULTIPLIER = 2;
-
 @Injectable({ providedIn: 'root' })
 export class CombatResolverService {
   constructor(private readonly balance: CombatBalanceService) {}
@@ -143,7 +141,7 @@ export class CombatResolverService {
       attacker,
       defender,
       rawDamage,
-      wasCritical ? CRIT_MULTIPLIER : 1
+      wasCritical ? this.criticalMultiplier(attacker) : 1
     );
     const defenderHealthAfter = Math.max(0, defenderHealthBefore - damage);
 
@@ -207,5 +205,12 @@ export class CombatResolverService {
     const normalizedMin = Math.min(min, max);
     const normalizedMax = Math.max(min, max);
     return Math.floor(Math.random() * (normalizedMax - normalizedMin + 1)) + normalizedMin;
+  }
+
+  private criticalMultiplier(attacker: CombatantSnapshot): number {
+    const criticalDamagePercent =
+      attacker.derived.criticalDamage + attacker.bonuses.criticalDamageBonusFromItems;
+
+    return 1 + Math.max(0, criticalDamagePercent) / 100;
   }
 }

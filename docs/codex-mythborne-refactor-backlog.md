@@ -716,6 +716,16 @@ Do not update `current-todo.md` unless explicitly requested.
 
 ---
 
+## DB cleanup candidate — `hero_derived`
+
+- legacy object: `hero_derived`
+- previous usage: former frontend/runtime source for derived stats.
+- replacement path: runtime derived stats resolved from base stats, equipment, bonus templates/entity bonuses, `derived_stat_definitions`, and formula assignments.
+- remaining blockers: dedicated SQL/reference audit and regenerated Supabase types after any DB cleanup.
+- safe to remove now: unknown until dedicated SQL/reference audit.
+
+---
+
 # Historical material for Epic Ref B classification
 
 The following historical execution notes and the 2026-04-26 priority update are preserved only for Ref B4/Ref B11 classification.

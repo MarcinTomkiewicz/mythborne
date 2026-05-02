@@ -2,6 +2,7 @@ import {
   DERIVED_STAT_CHANCE_TARGETS,
   DERIVED_STAT_DAMAGE_TARGETS,
   DERIVED_STAT_SCOPE_CHAIN,
+  BASE_CRITICAL_DAMAGE_PERCENT,
   TRANSITIONAL_BASE_WEAPON_DAMAGE,
 } from '../constants/derived-stats.const';
 import { DerivedStatKey, HeroDerivedField } from '../enums/derived-stat.enum';
@@ -92,6 +93,12 @@ export function resolveAdditiveDerivedStats(
       bonuses,
       heroLevel,
     ),
+    [DerivedStatKey.CriticalDamage]: resolveCriticalDamageValue(
+      baseStats,
+      definitions,
+      bonuses,
+      heroLevel,
+    ),
     [DerivedStatKey.EvasionChance]: resolveDefinitionValue(
       DerivedStatKey.EvasionChance,
       baseStats,
@@ -152,6 +159,7 @@ export function toHeroDerived(stats: RuntimeDerivedStats): IHeroDerived {
     [HeroDerivedField.MinDamage]: stats[DerivedStatKey.MinDamage],
     [HeroDerivedField.MaxDamage]: stats[DerivedStatKey.MaxDamage],
     [HeroDerivedField.CriticalChance]: stats[DerivedStatKey.CriticalChance],
+    [HeroDerivedField.CriticalDamage]: stats[DerivedStatKey.CriticalDamage],
     [HeroDerivedField.EvasionChance]: stats[DerivedStatKey.EvasionChance],
   };
 }
@@ -201,6 +209,26 @@ function resolveDamageValue(
   const baseValue = resolveBaseValue(definition, baseStats, key) + fallbackWeaponDamage;
   const bonusValue = sumBonuses(
     derivedBonusTargets(definition, key, DERIVED_STAT_DAMAGE_TARGETS),
+    bonuses,
+    heroLevel,
+    baseStats,
+  );
+
+  return Math.max(definition?.min_value ?? 0, Math.floor(baseValue + bonusValue));
+}
+
+function resolveCriticalDamageValue(
+  baseStats: IHeroStats,
+  definitions: Row<'derived_stat_definitions'>[],
+  bonuses: Bonus[],
+  heroLevel: number,
+): number {
+  const definition = findDerivedDefinition(DerivedStatKey.CriticalDamage, definitions);
+  const baseValue =
+    BASE_CRITICAL_DAMAGE_PERCENT +
+    (definition ? resolveBaseValue(definition, baseStats, DerivedStatKey.CriticalDamage) : 0);
+  const bonusValue = sumBonuses(
+    derivedBonusTargets(definition, DerivedStatKey.CriticalDamage),
     bonuses,
     heroLevel,
     baseStats,

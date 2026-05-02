@@ -106,6 +106,33 @@ describe('hero derived stats bonus mapper', () => {
     expect(effectiveBaseStats.endurance).toBe(15);
     expect(derived[DerivedStatKey.Defense]).toBe(15);
   });
+
+  it('uses base critical damage percent plus active critical damage bonuses', () => {
+    const baseStats = createBaseStats();
+    const bonuses = [
+      {
+        target: DerivedStatKey.CriticalDamage,
+        value: 25,
+        type: 'flat',
+        scope: 'combat',
+        levelsStep: null,
+        sourceStat: null,
+        scalingFactor: null,
+      },
+    ] as const;
+    const derived = resolveAdditiveDerivedStats(
+      baseStats,
+      [createDerivedDefinitionRow({
+        key: DerivedStatKey.CriticalDamage,
+        base_stat_key: null,
+        bonus_target_key: DerivedStatKey.CriticalDamage,
+      })],
+      [...bonuses],
+      1,
+    );
+
+    expect(derived[DerivedStatKey.CriticalDamage]).toBe(75);
+  });
 });
 
 function createEntityBonusRow(

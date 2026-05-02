@@ -11,6 +11,7 @@ describe('combat equipment bonuses', () => {
     expect(emptyCombatBonusSnapshot()).toEqual({
       hitBonusFromItems: 0,
       critBonusFromItems: 0,
+      criticalDamageBonusFromItems: 0,
       evasionBonusFromItems: 0,
       damageBonusFromItems: 0,
     });
@@ -22,6 +23,7 @@ describe('combat equipment bonuses', () => {
         createBonus({ target: BONUS_TARGETS.Damage, value: 4 }),
         createBonus({ target: BONUS_TARGETS.MinDamage, value: 2 }),
         createBonus({ target: BONUS_TARGETS.CriticalChance, value: 7 }),
+        createBonus({ target: BONUS_TARGETS.CriticalDamage, value: 25 }),
         createBonus({ target: BONUS_TARGETS.EvasionChance, value: 3 }),
         createBonus({ target: BONUS_TARGETS.Damage, value: 99, scope: 'trade' }),
       ],
@@ -32,6 +34,7 @@ describe('combat equipment bonuses', () => {
     expect(snapshot).toEqual({
       hitBonusFromItems: 0,
       critBonusFromItems: 7,
+      criticalDamageBonusFromItems: 25,
       evasionBonusFromItems: 3,
       damageBonusFromItems: 6,
     });

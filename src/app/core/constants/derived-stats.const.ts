@@ -22,6 +22,8 @@ export const DERIVED_STAT_CHANCE_TARGETS: readonly DerivedStatKey[] = [
   DerivedStatKey.EvasionChance,
 ] as const;
 
+export const BASE_CRITICAL_DAMAGE_PERCENT = 50;
+
 export const DERIVED_STAT_DAMAGE_TARGETS = [
   DerivedStatKey.Damage,
   DerivedStatKey.MinDamage,

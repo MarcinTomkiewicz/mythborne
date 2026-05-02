@@ -6,6 +6,7 @@ export enum DerivedStatKey {
   Damage = 'damage',
   Luck = 'luck',
   CriticalChance = 'critical_chance',
+  CriticalDamage = 'critical_damage',
   EvasionChance = 'evasion_chance',
 }
 
@@ -15,6 +16,7 @@ export enum HeroDerivedField {
   MaxDamage = 'maxDmg',
   Luck = 'luck',
   CriticalChance = 'critical',
+  CriticalDamage = 'criticalDamage',
   EvasionChance = 'evasion',
   Health = 'health',
 }

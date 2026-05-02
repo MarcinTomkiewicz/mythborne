@@ -20,6 +20,7 @@ export interface IHeroDerived extends Record<string, number> {
   maxDmg: number;
   luck: number;
   critical: number;
+  criticalDamage: number;
   evasion: number;
   health: number;
 }

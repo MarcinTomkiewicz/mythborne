@@ -3199,6 +3199,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 
 ## Task M3 — Hero combatant resolver and critical damage debt
 
+**Status:** Done / confirmed 2026-05-02.
+
 **Goal:** Build a reusable resolver for hero combat values from current hero stats, equipment and bonuses.
 
 **Scope:**

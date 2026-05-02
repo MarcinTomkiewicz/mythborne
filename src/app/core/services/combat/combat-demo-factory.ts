@@ -35,6 +35,7 @@ export class CombatDemoFactoryService {
         minDmg,
         maxDmg,
         critical: Math.min(30, 4 + Math.floor(baseStats.cunning / 2)),
+        criticalDamage: 50,
         evasion: Math.min(30, 3 + Math.floor(baseStats.agility / 2)),
       },
       bonuses: emptyCombatBonusSnapshot(),

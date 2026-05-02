@@ -10,6 +10,7 @@ export function emptyCombatBonusSnapshot(): CombatBonusSnapshot {
   return {
     hitBonusFromItems: 0,
     critBonusFromItems: 0,
+    criticalDamageBonusFromItems: 0,
     evasionBonusFromItems: 0,
     damageBonusFromItems: 0,
   };
@@ -32,6 +33,12 @@ export function toCombatBonusSnapshotFromEquipment(
     critBonusFromItems: sumCombatBonusTargets(
       scopedBonuses,
       COMBAT_ITEM_BONUS_TARGETS.Critical,
+      heroLevel,
+      sourceStats
+    ),
+    criticalDamageBonusFromItems: sumCombatBonusTargets(
+      scopedBonuses,
+      COMBAT_ITEM_BONUS_TARGETS.CriticalDamage,
       heroLevel,
       sourceStats
     ),

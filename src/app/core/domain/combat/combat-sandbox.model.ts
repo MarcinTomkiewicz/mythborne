@@ -7,12 +7,14 @@ export interface CombatDerivedStats {
   minDmg: number;
   maxDmg: number;
   critical: number;
+  criticalDamage: number;
   evasion: number;
 }
 
 export interface CombatBonusSnapshot {
   hitBonusFromItems: number;
   critBonusFromItems: number;
+  criticalDamageBonusFromItems: number;
   evasionBonusFromItems: number;
   damageBonusFromItems: number;
 }
