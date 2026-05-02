@@ -12,7 +12,14 @@ import {
   UpsertEncounterDefinitionInput,
   UpsertEncounterRewardAssignmentInput,
 } from '../domain/exploration/exploration-encounter-admin.model';
-import { trimText, trimToNull } from './normalize-text';
+import {
+  addOptionalInteger,
+  addOptionalText,
+  integer,
+  positiveNumber,
+  requiredText,
+} from './exploration-encounter-rpc-helpers';
+import { trimToNull } from './normalize-text';
 
 export function toUpsertEncounterDefinitionRpcArgs(
   input: UpsertEncounterDefinitionInput,
@@ -115,62 +122,4 @@ export function toDeactivateRewardProfileAssignmentRpcArgs(
     p_assignment_id: requiredText(assignmentId, 'assignmentId'),
     p_reason: requiredText(reason, 'reason'),
   };
-}
-
-function requiredText(value: string | null | undefined, field: string): string {
-  const normalized = trimText(value);
-
-  if (!normalized) {
-    throw new Error(`${field} is required for encounter configuration workflow.`);
-  }
-
-  return normalized;
-}
-
-function integer(value: number | null | undefined, field: string): number {
-  const normalized = Math.floor(Number(value));
-
-  if (!Number.isFinite(normalized)) {
-    throw new Error(`${field} must be a number for encounter configuration workflow.`);
-  }
-
-  return normalized;
-}
-
-function positiveNumber(value: number | null | undefined, field: string): number {
-  const normalized = Number(value);
-
-  if (!Number.isFinite(normalized) || normalized <= 0) {
-    throw new Error(`${field} must be positive for encounter configuration workflow.`);
-  }
-
-  return normalized;
-}
-
-function addOptionalText<T extends Record<string, unknown>, K extends keyof T>(
-  target: T,
-  key: K,
-  value: string | null | undefined,
-): void {
-  const normalized = trimToNull(value);
-
-  if (normalized) {
-    target[key] = normalized as T[K];
-  }
-}
-
-function addOptionalInteger<T extends Record<string, unknown>, K extends keyof T>(
-  target: T,
-  key: K,
-  value: number | null | undefined,
-): void {
-  if (value === null || value === undefined) {
-    return;
-  }
-
-  const normalized = Math.floor(Number(value));
-
-  if (Number.isFinite(normalized)) {
-    target[key] = normalized as T[K];
-  }
 }

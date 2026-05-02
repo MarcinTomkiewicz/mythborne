@@ -8,6 +8,18 @@ export type UpsertEncounterCombatCandidateRpcArgs =
   Database['public']['Functions']['upsert_encounter_combat_candidate']['Args'];
 export type DeactivateEncounterCombatCandidateRpcArgs =
   Database['public']['Functions']['deactivate_encounter_combat_candidate']['Args'];
+export type UpsertEncounterResourcePayloadRpcArgs =
+  Database['public']['Functions']['upsert_encounter_resource_payload']['Args'];
+export type DeactivateEncounterResourcePayloadRpcArgs =
+  Database['public']['Functions']['deactivate_encounter_resource_payload']['Args'];
+export type UpsertEncounterEffectPayloadRpcArgs =
+  Database['public']['Functions']['upsert_encounter_effect_payload']['Args'];
+export type DeactivateEncounterEffectPayloadRpcArgs =
+  Database['public']['Functions']['deactivate_encounter_effect_payload']['Args'];
+export type UpsertExplorationEffectDefinitionRpcArgs =
+  Database['public']['Functions']['upsert_exploration_effect_definition']['Args'];
+export type DeactivateExplorationEffectDefinitionRpcArgs =
+  Database['public']['Functions']['deactivate_exploration_effect_definition']['Args'];
 export type UpsertRewardProfileAssignmentRpcArgs =
   Database['public']['Functions']['upsert_reward_profile_assignment']['Args'];
 export type DeactivateRewardProfileAssignmentRpcArgs =

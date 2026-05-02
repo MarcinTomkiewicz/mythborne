@@ -1,20 +1,36 @@
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { trimRequiredValidator } from '../../../core/validators/form.validators';
 import {
   EncounterCombatCandidateAdminView,
+  EncounterEffectPayloadAdminView,
+  EncounterResourcePayloadAdminView,
   EncounterRewardAssignmentAdminView,
   ExplorationEncounterAdminData,
+  ExplorationEffectDefinitionAdminView,
 } from '../../../core/domain/exploration/exploration-encounter-admin.model';
 
 export function createEncounterDefinitionForm() {
   return new FormGroup({
     encounterDefinitionId: new FormControl<string | null>(null),
-    key: new FormControl<string>('', { nonNullable: true }),
+    key: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
     allowKeyOverride: new FormControl<boolean>(false, { nonNullable: true }),
-    label: new FormControl<string>('', { nonNullable: true }),
-    description: new FormControl<string>('', { nonNullable: true }),
+    label: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
+    description: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
     helperText: new FormControl<string | null>(null),
     adminDescription: new FormControl<string | null>(null),
-    encounterKind: new FormControl<string>('combat', { nonNullable: true }),
+    encounterKind: new FormControl<string>('combat', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
     minigameKey: new FormControl<string | null>(null),
     rewardProfileId: new FormControl<string | null>(null),
     minDifficultyKey: new FormControl<string | null>(null),
@@ -24,14 +40,19 @@ export function createEncounterDefinitionForm() {
     sortOrder: new FormControl<number>(0, { nonNullable: true }),
     isActive: new FormControl<boolean>(true, { nonNullable: true }),
     metadataJsonText: new FormControl<string>('{}', { nonNullable: true }),
-    reason: new FormControl<string>('', { nonNullable: true }),
+    reason: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
   });
 }
 
 export function createEncounterCombatCandidateForm() {
   return new FormGroup({
     candidateId: new FormControl<string | null>(null),
-    candidateKind: new FormControl<string>('opponent', { nonNullable: true }),
+    candidateKind: new FormControl<string>('opponent', {
+      nonNullable: true, validators: [trimRequiredValidator()],
+    }),
     opponentDefinitionId: new FormControl<string | null>(null),
     familyKey: new FormControl<string | null>(null),
     scalingFormulaId: new FormControl<string | null>(null),
@@ -41,15 +62,22 @@ export function createEncounterCombatCandidateForm() {
     maxHeroLevel: new FormControl<number | null>(null),
     sortOrder: new FormControl<number>(0, { nonNullable: true }),
     isActive: new FormControl<boolean>(true, { nonNullable: true }),
-    reason: new FormControl<string>('', { nonNullable: true }),
+    reason: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
   });
 }
 
 export function createEncounterRewardAssignmentForm() {
   return new FormGroup({
     assignmentId: new FormControl<string | null>(null),
-    rewardProfileId: new FormControl<string | null>(null),
-    outcomeKind: new FormControl<string>('success', { nonNullable: true }),
+    rewardProfileId: new FormControl<string | null>(null, { validators: [Validators.required] }),
+    outcomeKind: new FormControl<string>('success', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
+    allowOutcomeOverride: new FormControl<boolean>(false, { nonNullable: true }),
     difficultyKey: new FormControl<string | null>(null),
     districtCode: new FormControl<string | null>(null),
     description: new FormControl<string | null>(null),
@@ -57,7 +85,90 @@ export function createEncounterRewardAssignmentForm() {
     sortOrder: new FormControl<number>(0, { nonNullable: true }),
     isActive: new FormControl<boolean>(true, { nonNullable: true }),
     metadataJsonText: new FormControl<string>('{}', { nonNullable: true }),
-    reason: new FormControl<string>('', { nonNullable: true }),
+    reason: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
+  });
+}
+
+export function createEncounterResourcePayloadForm() {
+  return new FormGroup({
+    payloadId: new FormControl<string | null>(null),
+    resourceType: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
+    amountMode: new FormControl<string>('fixed', {
+      nonNullable: true, validators: [trimRequiredValidator()],
+    }),
+    minAmount: new FormControl<number | null>(1),
+    maxAmount: new FormControl<number | null>(1),
+    formulaId: new FormControl<string | null>(null),
+    chancePercent: new FormControl<number>(100, { nonNullable: true }),
+    description: new FormControl<string | null>(null),
+    helperText: new FormControl<string | null>(null),
+    adminDescription: new FormControl<string | null>(null),
+    sortOrder: new FormControl<number>(0, { nonNullable: true }),
+    isActive: new FormControl<boolean>(true, { nonNullable: true }),
+    metadataJsonText: new FormControl<string>('{}', { nonNullable: true }),
+    reason: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
+  });
+}
+
+export function createExplorationEffectDefinitionForm() {
+  return new FormGroup({
+    effectDefinitionId: new FormControl<string | null>(null),
+    key: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
+    allowKeyOverride: new FormControl<boolean>(false, { nonNullable: true }),
+    label: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
+    description: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
+    helperText: new FormControl<string | null>(null),
+    adminDescription: new FormControl<string | null>(null),
+    effectKind: new FormControl<string>('buff', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
+    bonusTemplateId: new FormControl<string | null>(null),
+    defaultValue: new FormControl<number | null>(null),
+    defaultDurationSteps: new FormControl<number | null>(null),
+    sortOrder: new FormControl<number>(0, { nonNullable: true }),
+    isActive: new FormControl<boolean>(true, { nonNullable: true }),
+    metadataJsonText: new FormControl<string>('{}', { nonNullable: true }),
+    reason: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
+  });
+}
+
+export function createEncounterEffectPayloadForm() {
+  return new FormGroup({
+    payloadId: new FormControl<string | null>(null),
+    effectDefinitionId: new FormControl<string | null>(null, { validators: [Validators.required] }),
+    chancePercent: new FormControl<number>(100, { nonNullable: true }),
+    description: new FormControl<string | null>(null),
+    helperText: new FormControl<string | null>(null),
+    adminDescription: new FormControl<string | null>(null),
+    sortOrder: new FormControl<number>(0, { nonNullable: true }),
+    isActive: new FormControl<boolean>(true, { nonNullable: true }),
+    metadataJsonText: new FormControl<string>('{}', { nonNullable: true }),
+    reason: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [trimRequiredValidator()],
+    }),
   });
 }
 
@@ -115,6 +226,7 @@ export function assignmentFormValue(row: EncounterRewardAssignmentAdminView | nu
     assignmentId: assignment?.id ?? null,
     rewardProfileId: assignment?.rewardProfileId ?? null,
     outcomeKind: assignment?.outcomeKind ?? 'success',
+    allowOutcomeOverride: false,
     difficultyKey: assignment?.difficultyKey ?? null,
     districtCode: assignment?.districtCode ?? null,
     description: assignment?.description ?? null,
@@ -122,6 +234,66 @@ export function assignmentFormValue(row: EncounterRewardAssignmentAdminView | nu
     sortOrder: assignment?.sortOrder ?? 0,
     isActive: assignment?.isActive ?? true,
     metadataJsonText: JSON.stringify(assignment?.metadataJson ?? {}, null, 2),
+    reason: '',
+  };
+}
+
+export function resourcePayloadFormValue(row: EncounterResourcePayloadAdminView | null) {
+  const payload = row?.payload;
+
+  return {
+    payloadId: payload?.id ?? null,
+    resourceType: payload?.resourceType ?? '',
+    amountMode: payload?.amountMode ?? 'fixed',
+    minAmount: payload?.minAmount ?? 1,
+    maxAmount: payload?.maxAmount ?? payload?.minAmount ?? 1,
+    formulaId: payload?.formulaId ?? null,
+    chancePercent: payload?.chancePercent ?? 100,
+    description: payload?.description ?? null,
+    helperText: payload?.helperText ?? null,
+    adminDescription: payload?.adminDescription ?? null,
+    sortOrder: payload?.sortOrder ?? 0,
+    isActive: payload?.isActive ?? true,
+    metadataJsonText: JSON.stringify(payload?.metadataJson ?? {}, null, 2),
+    reason: '',
+  };
+}
+
+export function effectDefinitionFormValue(row: ExplorationEffectDefinitionAdminView | null) {
+  const effect = row?.effect;
+
+  return {
+    effectDefinitionId: effect?.id ?? null,
+    key: effect?.key ?? '',
+    allowKeyOverride: false,
+    label: effect?.label ?? '',
+    description: effect?.description ?? '',
+    helperText: effect?.helperText ?? null,
+    adminDescription: effect?.adminDescription ?? null,
+    effectKind: effect?.effectKind ?? 'buff',
+    bonusTemplateId: effect?.bonusTemplateId ?? null,
+    defaultValue: effect?.defaultValue ?? null,
+    defaultDurationSteps: effect?.defaultDurationSteps ?? null,
+    sortOrder: effect?.sortOrder ?? 0,
+    isActive: effect?.isActive ?? true,
+    metadataJsonText: JSON.stringify(effect?.metadataJson ?? {}, null, 2),
+    reason: '',
+  };
+}
+
+export function effectPayloadFormValue(row: EncounterEffectPayloadAdminView | null) {
+  const payload = row?.payload;
+
+  return {
+    payloadId: payload?.id ?? null,
+    effectDefinitionId: payload?.effectDefinitionId ?? null,
+    chancePercent: payload?.chancePercent ?? 100,
+    description: payload?.description ?? null,
+    helperText: payload?.helperText ?? null,
+    adminDescription: payload?.adminDescription ?? null,
+    sortOrder: payload?.sortOrder ?? 0,
+    isActive: payload?.isActive ?? true,
+    metadataJsonText: JSON.stringify(payload?.metadataJson ?? {}, null, 2),
     reason: '',
   };
 }

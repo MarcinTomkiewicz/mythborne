@@ -7,7 +7,11 @@ import { ExplorationEncounterCandidateActionsState } from './exploration-encount
 import { ExplorationEncounterCombatSection } from './exploration-encounter-combat-section';
 import { ExplorationEncounterDefinitionActionsState } from './exploration-encounter-definition-actions.state';
 import { ExplorationEncounterEditSection } from './exploration-encounter-edit-section';
+import { ExplorationEncounterEffectDefinitionActionsState } from './exploration-encounter-effect-definition-actions.state';
+import { ExplorationEncounterEffectPayloadActionsState } from './exploration-encounter-effect-payload-actions.state';
 import { ExplorationEncounterMeaningSection } from './exploration-encounter-meaning-section';
+import { ExplorationEncounterPayloadSection } from './exploration-encounter-payload-section';
+import { ExplorationEncounterResourcePayloadActionsState } from './exploration-encounter-resource-payload-actions.state';
 import { ExplorationEncounterRewardActionsState } from './exploration-encounter-reward-actions.state';
 import { ExplorationEncounterRewardSection } from './exploration-encounter-reward-section';
 import { ExplorationEncountersListSection } from './exploration-encounters-list-section';
@@ -25,12 +29,16 @@ import { ExplorationEncountersPageState } from './exploration-encounters-page.st
     ExplorationEncounterEditSection,
     ExplorationEncounterRewardSection,
     ExplorationEncounterCombatSection,
+    ExplorationEncounterPayloadSection,
   ],
   providers: [
     ExplorationEncountersPageState,
     ExplorationEncounterDefinitionActionsState,
     ExplorationEncounterRewardActionsState,
     ExplorationEncounterCandidateActionsState,
+    ExplorationEncounterResourcePayloadActionsState,
+    ExplorationEncounterEffectDefinitionActionsState,
+    ExplorationEncounterEffectPayloadActionsState,
   ],
   templateUrl: './exploration-encounters-page.html',
 })

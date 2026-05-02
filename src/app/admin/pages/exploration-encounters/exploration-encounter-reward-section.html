@@ -8,32 +8,57 @@
     </p>
   </div>
   @if (page.selectedEncounter()) {
-    <form class="grid-form gap-lg" [formGroup]="rewardActions.assignmentForm">
-      <label class="form-field">
+    @if (!page.hasRewardProfiles()) {
+      <p-message severity="warn">No reward profiles configured; create/activate reward profile first.</p-message>
+    }
+    <form class="flex-col gap-md w-100" [formGroup]="rewardActions.assignmentForm">
+      <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+      <label class="flex-col gap-sm w-100">
         <span>Reward profile</span>
         <p-select formControlName="rewardProfileId" [options]="page.requiredRewardProfileOptions()" optionLabel="label" optionValue="value" />
+        @if (rewardActions.assignmentForm.controls.rewardProfileId.touched && rewardActions.assignmentForm.controls.rewardProfileId.invalid) {
+          <small class="error-text">Reward profile is required.</small>
+        }
       </label>
-      <label class="form-field">
+      <label class="flex-col gap-sm w-100">
         <span>Outcome kind</span>
-        <input pInputText formControlName="outcomeKind" />
-        <small class="muted-text">Examples: success, failure, encounter_completed. Keep aligned with DB runtime outcomes.</small>
+        @if (!rewardActions.assignmentForm.controls.allowOutcomeOverride.value) {
+          <p-select formControlName="outcomeKind" [options]="page.outcomeKindOptions()" optionLabel="label" optionValue="value" />
+        } @else {
+          <input pInputText formControlName="outcomeKind" />
+        }
+        <small class="muted-text">Use known encounter outcome keys. Advanced override is for schema-approved runtime values.</small>
       </label>
-      <label class="form-field">
+      <label class="flex-col gap-sm w-100"><span>Advanced outcome override</span><p-checkbox formControlName="allowOutcomeOverride" [binary]="true" /></label>
+      <label class="flex-col gap-sm w-100">
         <span>Difficulty</span>
         <p-select formControlName="difficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
       </label>
-      <label class="form-field">
+      <label class="flex-col gap-sm w-100">
         <span>District</span>
         <p-select formControlName="districtCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
       </label>
-      <label class="form-field"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
-      <label class="form-field"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
-      <label class="form-field form-field--wide"><span>Description</span><textarea pInputText rows="2" formControlName="description"></textarea></label>
-      <label class="form-field form-field--wide"><span>Helper text</span><textarea pInputText rows="2" formControlName="helperText"></textarea></label>
-      <label class="form-field form-field--wide"><span>Metadata JSON</span><textarea pInputText rows="3" formControlName="metadataJsonText"></textarea></label>
-      <label class="form-field form-field--wide"><span>Reason</span><input pInputText formControlName="reason" /></label>
-      <div class="flex-row gap-sm">
-        <button pButton type="button" label="Save assignment" [disabled]="rewardActions.isSaving()" (click)="rewardActions.saveAssignment()"></button>
+      <label class="flex-col gap-sm w-100"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
+      <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
+      </div>
+      <label class="flex-col gap-sm w-100"><span>Description</span><textarea pInputText rows="2" formControlName="description"></textarea></label>
+      <label class="flex-col gap-sm w-100"><span>Helper text</span><textarea pInputText rows="2" formControlName="helperText"></textarea></label>
+      <details class="mg-card p-md w-100">
+        <summary class="muted-text">Advanced technical metadata</summary>
+        <label class="flex-col gap-sm mt-md">
+          <span>Metadata JSON</span>
+          <textarea pInputText rows="3" formControlName="metadataJsonText"></textarea>
+        </label>
+      </details>
+      <label class="flex-col gap-sm w-100">
+        <span>Reason</span>
+        <input pInputText formControlName="reason" />
+        @if (rewardActions.reasonError() || (rewardActions.assignmentForm.controls.reason.touched && rewardActions.assignmentForm.controls.reason.invalid)) {
+          <small class="error-text">{{ rewardActions.reasonError() ?? 'Reason is required.' }}</small>
+        }
+      </label>
+      <div class="flex-row flex-wrap gap-sm">
+        <button pButton type="button" label="Save assignment" [disabled]="rewardActions.isSaving() || !page.hasRewardProfiles()" (click)="rewardActions.saveAssignment()"></button>
         <button pButton type="button" label="New assignment" severity="secondary" (click)="rewardActions.startNewAssignment()"></button>
         <button pButton type="button" label="Deactivate assignment" severity="danger" [disabled]="!rewardActions.selectedAssignment()" (click)="rewardActions.deactivateAssignment()"></button>
       </div>

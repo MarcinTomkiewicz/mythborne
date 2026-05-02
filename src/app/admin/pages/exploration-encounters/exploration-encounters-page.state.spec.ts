@@ -5,6 +5,9 @@ import { ExplorationEncounterAdmin } from '../../../core/services/exploration/ex
 import { ToastService } from '../../../core/services/ui/toast';
 import { ExplorationEncounterCandidateActionsState } from './exploration-encounter-candidate-actions.state';
 import { ExplorationEncounterDefinitionActionsState } from './exploration-encounter-definition-actions.state';
+import { ExplorationEncounterEffectDefinitionActionsState } from './exploration-encounter-effect-definition-actions.state';
+import { ExplorationEncounterEffectPayloadActionsState } from './exploration-encounter-effect-payload-actions.state';
+import { ExplorationEncounterResourcePayloadActionsState } from './exploration-encounter-resource-payload-actions.state';
 import { ExplorationEncounterRewardActionsState } from './exploration-encounter-reward-actions.state';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 
@@ -15,6 +18,9 @@ describe('ExplorationEncountersPageState', () => {
   let definitionActions: ExplorationEncounterDefinitionActionsState;
   let candidateActions: ExplorationEncounterCandidateActionsState;
   let rewardActions: ExplorationEncounterRewardActionsState;
+  let resourcePayloadActions: ExplorationEncounterResourcePayloadActionsState;
+  let effectDefinitionActions: ExplorationEncounterEffectDefinitionActionsState;
+  let effectPayloadActions: ExplorationEncounterEffectPayloadActionsState;
 
   beforeEach(() => {
     admin = jasmine.createSpyObj<ExplorationEncounterAdmin>('ExplorationEncounterAdmin', [
@@ -23,6 +29,12 @@ describe('ExplorationEncountersPageState', () => {
       'deactivateEncounterDefinition',
       'upsertEncounterCombatCandidate',
       'deactivateEncounterCombatCandidate',
+      'upsertEncounterResourcePayload',
+      'deactivateEncounterResourcePayload',
+      'upsertExplorationEffectDefinition',
+      'deactivateExplorationEffectDefinition',
+      'upsertEncounterEffectPayload',
+      'deactivateEncounterEffectPayload',
       'upsertRewardProfileAssignment',
       'deactivateRewardProfileAssignment',
     ]);
@@ -38,6 +50,21 @@ describe('ExplorationEncountersPageState', () => {
       isActive: false,
     }));
     admin.upsertRewardProfileAssignment.and.returnValue(of(adminData().rewardAssignments[0]));
+    admin.upsertEncounterResourcePayload.and.returnValue(of(adminData().resourcePayloads[0]));
+    admin.deactivateEncounterResourcePayload.and.returnValue(of({
+      ...adminData().resourcePayloads[0],
+      isActive: false,
+    }));
+    admin.upsertExplorationEffectDefinition.and.returnValue(of(adminData().effectDefinitions[0]));
+    admin.deactivateExplorationEffectDefinition.and.returnValue(of({
+      ...adminData().effectDefinitions[0],
+      isActive: false,
+    }));
+    admin.upsertEncounterEffectPayload.and.returnValue(of(adminData().effectPayloads[0]));
+    admin.deactivateEncounterEffectPayload.and.returnValue(of({
+      ...adminData().effectPayloads[0],
+      isActive: false,
+    }));
     admin.deactivateRewardProfileAssignment.and.returnValue(of({
       ...adminData().rewardAssignments[0],
       isActive: false,
@@ -50,6 +77,9 @@ describe('ExplorationEncountersPageState', () => {
         ExplorationEncounterDefinitionActionsState,
         ExplorationEncounterCandidateActionsState,
         ExplorationEncounterRewardActionsState,
+        ExplorationEncounterResourcePayloadActionsState,
+        ExplorationEncounterEffectDefinitionActionsState,
+        ExplorationEncounterEffectPayloadActionsState,
         { provide: ExplorationEncounterAdmin, useValue: admin },
         { provide: ToastService, useValue: toast },
       ],
@@ -58,6 +88,9 @@ describe('ExplorationEncountersPageState', () => {
     definitionActions = TestBed.inject(ExplorationEncounterDefinitionActionsState);
     candidateActions = TestBed.inject(ExplorationEncounterCandidateActionsState);
     rewardActions = TestBed.inject(ExplorationEncounterRewardActionsState);
+    resourcePayloadActions = TestBed.inject(ExplorationEncounterResourcePayloadActionsState);
+    effectDefinitionActions = TestBed.inject(ExplorationEncounterEffectDefinitionActionsState);
+    effectPayloadActions = TestBed.inject(ExplorationEncounterEffectPayloadActionsState);
   });
 
   it('loads encounter definitions and readable DB-backed labels', () => {
@@ -68,6 +101,11 @@ describe('ExplorationEncountersPageState', () => {
     expect(state.selectedEncounter()?.difficultyRangeLabel).toBe('Easy+');
     expect(state.combatCandidates()[0].targetLabel).toBe('Bandit (bandit)');
     expect(state.rewardAssignments()[0].rewardProfileLabel).toBe('Encounter reward (encounter-reward)');
+    expect(state.resourcePayloads()[0].amountLabel).toBe('5');
+    expect(state.effectDefinitions()[0].bonusTemplateLabel).toBe(
+      'Olive blessing template (olive-blessing-template)',
+    );
+    expect(state.effectPayloads()[0].effectLabel).toBe('Olive blessing (olive-blessing)');
   });
 
   it('generates keys from labels for new encounters and keeps existing keys stable', () => {
@@ -83,6 +121,38 @@ describe('ExplorationEncountersPageState', () => {
     definitionActions.encounterForm.controls.label.setValue('Renamed ambush');
 
     expect(definitionActions.encounterForm.controls.key.value).toBe('bandit-ambush');
+  });
+
+  it('blocks empty encounter and effect keys even when advanced override is enabled', () => {
+    state.loadInitialData();
+    definitionActions.encounterForm.patchValue({
+      allowKeyOverride: true,
+      key: '',
+      label: 'Updated ambush',
+      description: 'Updated.',
+      reason: 'Tune encounter.',
+    });
+
+    definitionActions.saveEncounter();
+
+    expect(admin.upsertEncounterDefinition).not.toHaveBeenCalled();
+    expect(definitionActions.encounterForm.controls.key.touched).toBeTrue();
+    expect(definitionActions.encounterForm.controls.key.invalid).toBeTrue();
+
+    effectDefinitionActions.form.patchValue({
+      allowKeyOverride: true,
+      key: '',
+      label: 'Olive blessing',
+      description: 'A temporary buff.',
+      effectKind: 'buff',
+      reason: 'Tune effect.',
+    });
+
+    effectDefinitionActions.saveEffectDefinition();
+
+    expect(admin.upsertExplorationEffectDefinition).not.toHaveBeenCalled();
+    expect(effectDefinitionActions.form.controls.key.touched).toBeTrue();
+    expect(effectDefinitionActions.form.controls.key.invalid).toBeTrue();
   });
 
   it('saves encounter definitions through the admin RPC service with a reason', () => {
@@ -148,6 +218,142 @@ describe('ExplorationEncountersPageState', () => {
     );
   });
 
+  it('blocks reward assignment save when no reward profiles exist', () => {
+    const data = adminData();
+    admin.getAdminData.and.returnValue(of({ ...data, rewardProfiles: [] }));
+    state.loadInitialData();
+    rewardActions.assignmentForm.patchValue({
+      rewardProfileId: null,
+      outcomeKind: 'success',
+      reason: 'Tune reward.',
+    });
+
+    rewardActions.saveAssignment();
+
+    expect(admin.upsertRewardProfileAssignment).not.toHaveBeenCalled();
+    expect(state.error()).toBeNull();
+  });
+
+  it('saves resource payloads only for resource encounters', () => {
+    admin.getAdminData.and.returnValue(of(adminData('encounter-1', 'resource', null)));
+    state.loadInitialData();
+    resourcePayloadActions.form.patchValue({
+      resourceType: 'drachma',
+      amountMode: 'fixed',
+      minAmount: 5,
+      maxAmount: 5,
+      chancePercent: 100,
+      reason: 'Tune resource.',
+    });
+
+    resourcePayloadActions.savePayload();
+
+    expect(admin.upsertEncounterResourcePayload).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        encounterDefinitionId: 'encounter-1',
+        resourceType: 'drachma',
+        amountMode: 'fixed',
+        reason: 'Tune resource.',
+      }),
+    );
+  });
+
+  it('saves effect definitions and payloads for buff encounters', () => {
+    admin.getAdminData.and.returnValue(of(adminData('encounter-1', 'buff', null)));
+    state.loadInitialData();
+    effectDefinitionActions.form.patchValue({
+      key: 'olive-blessing',
+      label: 'Olive blessing',
+      description: 'A temporary buff.',
+      effectKind: 'buff',
+      bonusTemplateId: 'bonus-1',
+      reason: 'Tune effect.',
+    });
+
+    effectDefinitionActions.saveEffectDefinition((effectId, effectKind) =>
+      effectPayloadActions.prefillEffectDefinition(effectId, effectKind),
+    );
+
+    expect(admin.upsertExplorationEffectDefinition).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        key: 'olive-blessing',
+        effectKind: 'buff',
+        bonusTemplateId: 'bonus-1',
+        reason: 'Tune effect.',
+      }),
+    );
+
+    expect(effectPayloadActions.form.controls.effectDefinitionId.value).toBe('effect-1');
+    expect(state.effectDefinitionOptions().some((option) => option.value === 'effect-1')).toBeTrue();
+
+    effectPayloadActions.form.patchValue({
+      chancePercent: 75,
+      reason: 'Tune payload.',
+    });
+
+    effectPayloadActions.savePayload();
+
+    expect(admin.upsertEncounterEffectPayload).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        encounterDefinitionId: 'encounter-1',
+        effectDefinitionId: 'effect-1',
+        chancePercent: 75,
+        reason: 'Tune payload.',
+      }),
+    );
+  });
+
+  it('blocks resource and effect payloads for incompatible encounter kinds', () => {
+    state.loadInitialData();
+    resourcePayloadActions.form.patchValue({
+      resourceType: 'drachma',
+      reason: 'Wrong kind.',
+    });
+    resourcePayloadActions.savePayload();
+
+    expect(admin.upsertEncounterResourcePayload).not.toHaveBeenCalled();
+    expect(state.error()).toBe('Resource payloads can be edited only for resource encounters.');
+
+    effectPayloadActions.form.patchValue({
+      effectDefinitionId: 'effect-1',
+      reason: 'Wrong kind.',
+    });
+    effectPayloadActions.savePayload();
+
+    expect(admin.upsertEncounterEffectPayload).not.toHaveBeenCalled();
+    expect(state.error()).toBe('Effect payloads can be edited only for buff or debuff encounters.');
+  });
+
+  it('marks reason invalid and does not call payload RPCs without a reason', () => {
+    admin.getAdminData.and.returnValue(of(adminData('encounter-1', 'resource', null)));
+    state.loadInitialData();
+    resourcePayloadActions.form.patchValue({
+      resourceType: 'drachma',
+      amountMode: 'fixed',
+      reason: '',
+    });
+
+    resourcePayloadActions.savePayload();
+
+    expect(admin.upsertEncounterResourcePayload).not.toHaveBeenCalled();
+    expect(resourcePayloadActions.form.controls.reason.touched).toBeTrue();
+    expect(resourcePayloadActions.reasonError()).toBe('Reason is required for this admin mutation.');
+  });
+
+  it('generates next sort order for new assignment and payload forms', () => {
+    state.loadInitialData();
+
+    rewardActions.startNewAssignment();
+    resourcePayloadActions.startNewPayload();
+    effectDefinitionActions.startNewEffectDefinition();
+    effectPayloadActions.startNewPayload();
+
+    expect(rewardActions.assignmentForm.controls.sortOrder.value).toBe(20);
+    expect(resourcePayloadActions.form.controls.sortOrder.value).toBe(20);
+    expect(effectDefinitionActions.form.controls.sortOrder.value).toBe(20);
+    expect(effectPayloadActions.form.controls.sortOrder.value).toBe(20);
+  });
+
   it('ignores stale encounter and candidate save responses after selection changes', () => {
     const encounterSave = new Subject<ExplorationEncounterAdminData['encounters'][number]>();
     const candidateSave = new Subject<ExplorationEncounterAdminData['combatCandidates'][number]>();
@@ -197,7 +403,65 @@ describe('ExplorationEncountersPageState', () => {
     definitionActions.saveEncounter();
 
     expect(admin.upsertEncounterDefinition).not.toHaveBeenCalled();
-    expect(state.error()).toBe('Reason is required.');
+    expect(state.error()).toBeNull();
+    expect(definitionActions.reasonError()).toBe('Reason is required for this admin mutation.');
+  });
+
+  it('keeps invalid metadata errors visible and does not call payload RPCs', () => {
+    admin.getAdminData.and.returnValue(of(adminData('encounter-1', 'resource', null)));
+    state.loadInitialData();
+    resourcePayloadActions.form.patchValue({
+      resourceType: 'drachma',
+      amountMode: 'fixed',
+      metadataJsonText: '[',
+      reason: 'Tune resource.',
+    });
+
+    resourcePayloadActions.savePayload();
+
+    expect(admin.upsertEncounterResourcePayload).not.toHaveBeenCalled();
+    expect(state.error()).toBe('Metadata must be a valid JSON object.');
+
+    admin.getAdminData.and.returnValue(of(adminData()));
+    state.loadInitialData();
+    rewardActions.assignmentForm.patchValue({
+      rewardProfileId: 'reward-1',
+      outcomeKind: 'success',
+      metadataJsonText: '[',
+      reason: 'Tune reward.',
+    });
+
+    rewardActions.saveAssignment();
+
+    expect(admin.upsertRewardProfileAssignment).not.toHaveBeenCalled();
+    expect(state.error()).toBe('Metadata must be a valid JSON object.');
+
+    admin.getAdminData.and.returnValue(of(adminData('encounter-1', 'buff', null)));
+    state.loadInitialData();
+    effectDefinitionActions.form.patchValue({
+      key: 'olive-blessing',
+      label: 'Olive blessing',
+      description: 'A temporary buff.',
+      effectKind: 'buff',
+      metadataJsonText: '[',
+      reason: 'Tune effect.',
+    });
+
+    effectDefinitionActions.saveEffectDefinition();
+
+    expect(admin.upsertExplorationEffectDefinition).not.toHaveBeenCalled();
+    expect(state.error()).toBe('Metadata must be a valid JSON object.');
+
+    effectPayloadActions.form.patchValue({
+      effectDefinitionId: 'effect-1',
+      metadataJsonText: '[',
+      reason: 'Tune payload.',
+    });
+
+    effectPayloadActions.savePayload();
+
+    expect(admin.upsertEncounterEffectPayload).not.toHaveBeenCalled();
+    expect(state.error()).toBe('Metadata must be a valid JSON object.');
   });
 });
 
@@ -335,5 +599,78 @@ function adminData(
     ],
     families: [],
     formulas: [],
+    resourcePayloads: [
+      {
+        id: 'resource-payload-1',
+        encounterDefinitionId: encounterId,
+        resourceType: 'drachma',
+        amountMode: 'fixed',
+        minAmount: 5,
+        maxAmount: 5,
+        formulaId: null,
+        chancePercent: 100,
+        description: null,
+        helperText: null,
+        adminDescription: null,
+        sortOrder: 10,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
+    effectPayloads: [
+      {
+        id: 'effect-payload-1',
+        encounterDefinitionId: encounterId,
+        effectDefinitionId: 'effect-1',
+        chancePercent: 75,
+        description: null,
+        helperText: null,
+        adminDescription: null,
+        sortOrder: 10,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
+    effectDefinitions: [
+      {
+        id: 'effect-1',
+        key: 'olive-blessing',
+        label: 'Olive blessing',
+        description: 'A temporary buff.',
+        helperText: null,
+        adminDescription: null,
+        effectKind: 'buff',
+        bonusTemplateId: 'bonus-1',
+        defaultValue: 2,
+        defaultDurationSteps: 1,
+        sortOrder: 10,
+        isActive: true,
+        metadataJson: {},
+        createdAt: '2026-05-01T10:00:00.000Z',
+        updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
+    bonusTemplates: [
+      {
+        id: 'bonus-1',
+        key: 'olive-blessing-template',
+        label: 'Olive blessing template',
+        description: null,
+        typeKey: 'flat_stat_bonus',
+        targetKey: 'strength',
+        scopeKey: 'exploration',
+        levelInterval: null,
+        formulaId: null,
+        formulaTargetId: null,
+        scalingStatKey: null,
+        paramsJson: {},
+        sortOrder: 10,
+        isActive: true,
+      },
+    ],
   };
 }

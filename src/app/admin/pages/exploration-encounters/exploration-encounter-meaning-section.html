@@ -3,12 +3,11 @@
     <h3 class="mg-section__title mg-section__title--xs mb-0">Encounter meaning</h3>
     <p class="mb-0">
       Encounter definitions describe optional exploration challenges. Combat encounters can use
-      combat candidates; resource and effect-style encounter details remain pending until their DB
-      payloads exist.
+      combat candidates; resource and buff/debuff encounters use typed payload sections below.
     </p>
   </div>
   @if (page.selectedEncounter(); as view) {
-    <div class="grid-form">
+    <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
       <div><strong>{{ view.encounter.label }}</strong><br /><span class="muted-text">{{ view.encounter.key }}</span></div>
       <div><strong>Kind</strong><br />{{ view.kindLabel }}</div>
       <div><strong>Minigame</strong><br />{{ view.minigameLabel }}</div>

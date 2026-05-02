@@ -2272,6 +2272,8 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 
 ## Task L12b — Resource and effect encounter payload configurators
 
+**Status:** Implemented / accepted on 2026-05-02.
+
 **Goal:** Add explicit DB-backed configuration for non-combat encounter payloads instead of hiding them in generic metadata.
 
 **Scope:**
@@ -2293,6 +2295,180 @@ Epic L is now an implementation epic over the existing PvE DB/RPC foundation, no
 - UI explains how the payload affects exploration runtime.
 - Mutations use approved RPC/governance path.
 - Build passes and smoke report distinguishes combat, resource and effect encounter config.
+
+---
+
+## Task L12c — Encounter configurator explainability and layout pass
+
+**Goal:** Make `/admin/exploration-encounters` usable as an admin/balancer tool, not just a raw table editor.
+
+**Scope:**
+
+- Reorganize the page into clear sections/tabs:
+  - Overview / meaning,
+  - Encounter definition,
+  - Reward assignments,
+  - Combat candidates,
+  - Resource payloads,
+  - Effect definitions,
+  - Effect payloads,
+  - Advanced / technical.
+- Update stale copy that says resource/effect payloads are pending.
+- Add concise help text explaining what each section changes in Exploration runtime.
+- For resource payloads, explain:
+  - resource type,
+  - fixed/range/formula amount mode,
+  - min/max amount,
+  - chance percent,
+  - formula usage.
+- For effect definitions, explain:
+  - buff/debuff kind,
+  - bonus template,
+  - default value,
+  - default duration,
+  - runtime rule: only one active exploration effect at a time.
+- For effect payloads, explain that payload links selected encounter to reusable effect definition.
+- For reward assignments, explain:
+  - source kind = encounter,
+  - outcome kind,
+  - difficulty/district matching,
+  - why this is preferred over legacy direct reward profile field.
+- Keep metadata JSON collapsed under Advanced / Technical.
+- Keep raw UUIDs/technical keys secondary.
+- Prefer DB-backed labels/descriptions/helper/admin text over hardcoded explanations.
+- Formula pickers must be filtered, grouped, or clearly labelled so unrelated formula targets are not presented as equally valid without explanation.
+- Preserve all existing RPC/governance mutation paths.
+- Do not add new DB schema in this task.
+
+**Acceptance criteria:**
+
+- Admin can tell what each section changes in gameplay without knowing table names.
+- Admin can distinguish encounter definition, reward assignment, resource payload, effect definition and effect payload.
+- Resource/effect payload sections no longer say their DB payloads are pending.
+- Metadata JSON is not presented as the primary gameplay configuration surface.
+- Build passes.
+- Smoke report explains what a combat/resource/buff/debuff encounter configuration affects.
+
+---
+
+## Task L13 — Reward profile configurator
+
+**Goal:** Add a write-capable admin/balancer UI for creating and editing reusable reward profiles, reward profile entries, and DB-backed reward outcome kinds used by trials, encounters and future reward sources.
+
+**DB/RPC foundation status:** Available after L-Reward-DB1.
+
+Current canonical DB/RPC surface:
+
+- `reward_outcome_kinds`
+- `reward_profiles`
+- `reward_profile_entries`
+- `reward_profile_assignments`
+- `upsert_reward_outcome_kind(...)`
+- `deactivate_reward_outcome_kind(...)`
+- `upsert_reward_profile(...)`
+- `deactivate_reward_profile(...)`
+- `upsert_reward_profile_entry(...)`
+- `deactivate_reward_profile_entry(...)`
+- `upsert_reward_profile_assignment(...)`
+- `preview_reward_profile(...)`
+
+Frontend must use these RPCs. Do not direct-write reward tables from Angular.
+
+**Scope:**
+
+- Add an admin/balancer page or section for reward configuration, preferably under the same Game Balance / Exploration admin area where trials and encounters are configured.
+- Load and display `reward_profiles`:
+  - key,
+  - label,
+  - description,
+  - helper text,
+  - admin description,
+  - category,
+  - active flag,
+  - sort order,
+  - metadata as collapsed Advanced/Technical only.
+- Allow creating/updating reward profiles through `upsert_reward_profile(...)`.
+- Allow deactivating reward profiles through `deactivate_reward_profile(...)`.
+- Reason is mandatory for all durable reward mutations.
+- Load and display `reward_profile_entries` for the selected reward profile.
+- Allow creating/updating reward profile entries through `upsert_reward_profile_entry(...)`.
+- Allow deactivating reward profile entries through `deactivate_reward_profile_entry(...)`.
+- Supported entry kinds:
+  - `experience`,
+  - `character_points`,
+  - `resource`,
+  - `item_generation`,
+  - `exploration_effect`.
+- Entry kind UI must be kind-aware:
+  - `experience`: fixed/range amount; explain that runtime grants matching Character Points according to current reward workflow.
+  - `character_points`: fixed/range Character Points.
+  - `resource`: resource type + fixed/range amount.
+  - `item_generation`: min/max item count, max quality, bucket profile.
+  - `exploration_effect`: effect definition selector.
+- Do not expose unsupported formula reward amount modes as normal editable options unless DB/runtime support exists. If generated types expose formula fields, keep them technical/reserved or report a runtime support gap.
+- Use DB-backed dictionaries/read models where available:
+  - `reward_outcome_kinds`,
+  - item generation qualities,
+  - item generation bucket profiles,
+  - exploration effect definitions,
+  - resource type source if available in current schema/read models.
+- Load and display `reward_outcome_kinds` as a DB-backed dictionary:
+  - source kind,
+  - key,
+  - label,
+  - description,
+  - helper text,
+  - admin description,
+  - active flag,
+  - sort order.
+- Outcome kinds must not be hardcoded in Angular as the source of truth.
+- Normal encounter/trial reward assignment UI should use active outcome kinds filtered by `source_kind`.
+- `source_kind = test` is a technical/admin/sandbox context only. Do not present it as normal player gameplay content.
+- Use `preview_reward_profile(...)` to show what a selected reward profile would grant.
+- Preview must be labelled clearly as preview-only, not a real grant.
+- Add clear explainability:
+  - reward profile = reusable bundle of rewards;
+  - reward profile entry = one grant inside the bundle;
+  - reward profile assignment = where/when that profile is used;
+  - outcome kind = DB-backed meaning for success/failure/completion in a source context.
+- Add navigation/link affordance from `/admin/exploration-encounters` reward assignment empty state:
+  - if no reward profiles exist, tell admin to create/activate one in reward profile configurator;
+  - do not imply direct reward profile creation is available inside L12 unless it actually is.
+- Keep raw keys/UUIDs secondary. Show labels/descriptions/helper/admin text wherever available.
+- Keep metadata JSON collapsed under Advanced/Technical.
+- Reuse existing shared/admin helpers where possible:
+  - metadata JSON display,
+  - reason field pattern,
+  - DB dictionary option mapping,
+  - RPC error display,
+  - stale request guards,
+  - PrimeNG section/tab patterns.
+- If generated `database.types.ts` does not include L-Reward-DB1 tables/functions, stop and report that database types must be regenerated. Do not invent permanent frontend types manually.
+
+**Acceptance criteria:**
+
+- Admin can create/update/deactivate reward profiles.
+- Admin can create/update/deactivate reward profile entries.
+- Admin can inspect DB-backed reward outcome kinds.
+- Admin can preview a reward profile without granting it.
+- Encounter/trial reward assignment UI can select existing reward profiles and DB-backed outcome kinds.
+- Outcome kind options come from `reward_outcome_kinds`, not hardcoded Angular lists.
+- `source_kind = test` is treated as technical/admin/sandbox, not normal gameplay.
+- Mutations use canonical RPC/governance path only.
+- No Angular direct writes to:
+  - `reward_outcome_kinds`,
+  - `reward_profiles`,
+  - `reward_profile_entries`,
+  - `reward_profile_assignments`.
+- UI explains the gameplay/admin meaning of reward profiles, entries, assignments and outcome kinds.
+- Build passes.
+- Smoke report covers:
+  - reward profile create/update/deactivate,
+  - reward profile entry create/update/deactivate for at least `experience` and one non-XP kind if data exists,
+  - reward profile preview,
+  - outcome kind read/display,
+  - L12 empty-state/link behavior when no reward profile is selectable,
+  - and explains what each tested action means in reward routing terms.
 
 ---
 
@@ -2563,32 +2739,97 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 
 ---
 
-## Task M9 — Persist combat result snapshot
+## Task M9 — Persist combat result snapshot through canonical RPC
 
-**Goal:** Map completed combat results into the relational DB snapshot foundation.
+**Goal:** Persist completed reusable combat results through the canonical DB/RPC snapshot contract.
+
+**DB/RPC foundation status:** Available after M-DB2.
+
+Current canonical RPC/helper surface:
+
+- `persist_combat_result_snapshot(...)`
+- `can_read_combat_result(...)`
+- `get_combat_turn_limit()`
+
+Current snapshot tables:
+
+- `combat_results`
+- `combat_result_participants`
+- `combat_result_participant_stats`
+- `combat_result_attacks`
 
 **Scope:**
 
-- Insert into:
-  - `combat_results`;
-  - `combat_result_participants`;
-  - `combat_result_participant_stats`;
-  - `combat_result_attacks`.
-- Store attack source label and source kind.
-- Store optional component refs for item-like sources:
-  - quality;
-  - base;
-  - prefix;
-  - suffix;
-  - historical player item id without FK expectation.
-- Do not store full equipment loadout.
+- Replace any planned/direct table insert flow for combat result persistence with `persist_combat_result_snapshot(...)`.
+- Map the completed combat core result into the RPC payload:
+  - `server_id`
+  - `source_type`
+  - optional `source_entity_id`
+  - outcome
+  - turns completed
+  - participant snapshots JSON
+  - attack history JSON
+  - started/completed timestamps where available
+  - reason/request id where available.
+- Preserve the core Epic M rule:
+  - Combat produces a result.
+  - The caller interprets rewards, trial completion, PvP consequences, cooldowns and report publishing.
+  - M9 must not grant rewards, complete trials, apply PvP consequences or create public reports.
+- Participant snapshot mapping must include:
+  - side: `initiator` / `defender`
+  - participant kind: `hero` / `opponent`
+  - hero id or opponent definition id where applicable
+  - display name
+  - level
+  - Health start/end/max
+  - defense
+  - min/max damage
+  - luck
+  - critical chance
+  - critical damage
+  - evasion chance
+  - stat snapshots.
+- Attack snapshot mapping must include:
+  - turn number
+  - attack order
+  - actor side
+  - target side
+  - attack slot index
+  - attack source kind
+  - attack source label
+  - optional player item id / quality / base / prefix / suffix component refs
+  - optional opponent attack source id
+  - timing hit
+  - evaded
+  - critical
+  - critical damage
+  - rolled damage
+  - final damage
+  - target Health before/after
+  - display text.
+- Do not store or expose the full equipment loadout.
+- Do not recompute persisted results from live hero/opponent state after persistence.
+- Use `get_combat_turn_limit()` for limit alignment where the frontend still needs to display or validate the limit.
+- Add domain mappers/helpers for converting combat core result models into the RPC payload.
+- Keep domain models outside components/facades.
+- Use generated Supabase types, but do not expose raw generated DB rows as final domain models.
+- If generated `database.types.ts` does not include M-DB2 functions/tables, stop and report that DB types must be regenerated. Do not invent types manually as the permanent fix.
 
 **Acceptance criteria:**
 
-- Combat result can be rendered later without recomputing live hero/opponent state.
-- Combat reports can show attack order, source label, hit/evasion/crit/damage and health changes.
-- Full equipment remains private.
-- Future public report system can build from these rows.
+- Completed combat result is persisted by calling `persist_combat_result_snapshot(...)`.
+- No Angular direct insert/update into `combat_results`, `combat_result_participants`, `combat_result_participant_stats` or `combat_result_attacks`.
+- Persisted result can be rendered later without recomputing live hero/opponent state.
+- Combat reports can later use the snapshot rows for attack order, source label, hit/evasion/crit/damage and Health changes.
+- Full equipment remains private; attack source label/component refs are the only public/report-ready attack-source data carried forward.
+- M9 does not create game reports, grant rewards, complete trials or apply PvP consequences.
+- Build passes.
+- Smoke report explains:
+  - which combat caller was used,
+  - which source type was persisted,
+  - whether the RPC returned a combat result id,
+  - whether participant/stat/attack counts match the combat result,
+  - which smoke steps remain pending due to missing real gameplay data.
 
 ---
 
@@ -2631,58 +2872,161 @@ Epic M builds the reusable combat core. Combat is one generic module: a caller p
 
 ## Task M12 — Combat opponent definitions admin configurator
 
-**Goal:** Add an admin/balancer UI for configuring reusable combat opponent definitions used by encounter and trial combat candidates.
+**Goal:** Add a write-capable admin/balancer UI for configuring reusable combat opponent definitions used by encounter and trial combat candidates.
+
+**DB/RPC foundation status:** Available after M-DB1.
+
+Current canonical RPC surface:
+
+- `upsert_combat_opponent_family(...)`
+- `deactivate_combat_opponent_family(...)`
+- `upsert_combat_opponent_definition(...)`
+- `deactivate_combat_opponent_definition(...)`
+- `upsert_combat_opponent_stat_value(...)`
+- `delete_combat_opponent_stat_value(...)`
+- `upsert_combat_opponent_attack_source(...)`
+- `deactivate_combat_opponent_attack_source(...)`
+- `upsert_combat_opponent_equipment_entry(...)`
+- `deactivate_combat_opponent_equipment_entry(...)`
+
+Frontend must use these RPCs. Do not direct-write combat opponent tables from Angular.
 
 **Scope:**
 
-- Add admin page/section for `combat_opponent_definitions`.
-- Load and display:
-  - opponent key,
-  - label/name,
-  - description/helper/admin text where available,
-  - family,
-  - equipment mode,
-  - default scaling formula,
-  - active flag / sort order.
-- Add/administer `combat_opponent_families` as simple categories:
-  - key,
-  - label,
-  - description/helper/admin text,
-  - active flag / sort order.
+- Add or extend an admin/balancer page/section for combat opponents, preferably under the Game Balance admin group.
+- Load and display `combat_opponent_families`:
+  - key
+  - label
+  - description
+  - helper text
+  - admin description
+  - active flag
+  - sort order.
+- Allow creating/updating/deactivating opponent families through the canonical family RPCs.
+- Load and display `combat_opponent_definitions`:
+  - opponent key
+  - label/name
+  - description
+  - helper text
+  - admin description
+  - family
+  - equipment mode
+  - default scaling formula
+  - active flag
+  - sort order.
+- Allow creating/updating/deactivating opponent definitions through the canonical opponent definition RPCs.
 - Show and manage baseline stat values from `combat_opponent_stat_values`:
-  - stat picker from canonical `stats`,
-  - base value,
-  - readable stat label/description.
-- Show and manage natural attack sources from `combat_opponent_attack_sources`:
-  - key and label,
-  - description/helper/admin text,
-  - min/max opponent level,
-  - attack count,
-  - min/max damage,
-  - critical chance and critical damage,
-  - active flag / sort order.
-- Show and manage opponent equipment entries from `combat_opponent_equipment_entries`:
-  - opponent-level `equipment_mode`: none/manual/generated;
-  - entry-level `entry_mode`: manual/generated only;
-  - slot from `equipment_slot_definitions`;
-  - manual quality/base/prefix/suffix component pickers;
-  - generated bucket profile and max quality;
-  - min/max opponent level if available.
+  - stat picker from canonical `stats`
+  - readable stat label/description
+  - base value
+  - sort order if used by the current schema/read model.
+- Stat values must use `upsert_combat_opponent_stat_value(...)` and `delete_combat_opponent_stat_value(...)`.
+- Show and manage natural attack sources from `combat_opponent_attack_sources`.
+- Important corrected rule:
+  - `combat_opponent_attack_sources` does **not** have an attack-source-kind field.
+  - Treat these rows as natural/non-equipment opponent attack sources.
+- Natural attack source fields:
+  - key
+  - label
+  - description
+  - helper text
+  - admin description
+  - min/max opponent level
+  - attack count
+  - min/max damage
+  - critical chance
+  - critical damage
+  - active flag
+  - sort order.
+- Natural attack source mutations must use:
+  - `upsert_combat_opponent_attack_source(...)`
+  - `deactivate_combat_opponent_attack_source(...)`.
+- Show and manage opponent equipment entries from `combat_opponent_equipment_entries`.
+- Opponent-level `equipment_mode` supports:
+  - `none`
+  - `manual`
+  - `generated`.
+- Equipment-entry-level `entry_mode` supports:
+  - `manual`
+  - `generated`.
+- Equipment entry UI must use DB-backed dictionaries/read models:
+  - slots from `equipment_slot_definitions`
+  - qualities from item generation quality definitions
+  - bases from item generation base definitions
+  - prefix/suffix affixes from item generation affix definitions
+  - generated bucket profiles from item generation bucket profiles
+  - formulas from formula read/search helpers where applicable.
+- Manual equipment entry fields:
+  - slot
+  - level range where available
+  - quality
+  - base
+  - optional prefix
+  - optional suffix.
+- Generated equipment entry fields:
+  - slot
+  - level range where available
+  - generated bucket profile
+  - generated max quality.
 - Equipment entries must not create player-owned `items`.
-- Generated opponent equipment is fight-local only and must be described that way in UI.
-- Formula picker must use formula target/search helpers where available, not raw UUID-only entry.
-- Preserve human-readable metadata everywhere possible.
-- If write RPC/governance path for opponent definitions/families/stat values/attack sources/equipment entries is missing, stop and report DB/RPC blocker. Do not implement direct Angular writes as a permanent path.
+- Generated opponent equipment is fight-local only and must be described that way in the UI.
+- Formula picker must use formula labels/search/read helpers where available, not raw UUID-only entry.
+- Preserve human-readable metadata:
+  - label
+  - description
+  - helper text
+  - admin description.
+- Technical keys/UUIDs may appear as secondary metadata, not primary UX.
+- Reason is mandatory for all durable admin mutations.
+- Use PrimeNG tabs/sections or another existing project pattern so the page does not become one long, hard-to-use form.
+- Reuse existing admin/shared helpers where possible:
+  - metadata/JSON display helpers
+  - dictionary option mappers
+  - reason form patterns
+  - RPC error display patterns
+  - stale request guards.
+- If generated `database.types.ts` does not include M-DB1 functions/tables, stop and report that DB types must be regenerated. Do not invent types manually as the permanent fix.
 
 **Acceptance criteria:**
 
 - Admin can inspect and configure combat opponent families and opponent definitions.
-- Admin can define baseline stats and natural attacks for non-equipped opponents.
+- Admin can define baseline stats for opponents.
+- Admin can define natural attack sources for non-equipped or additionally equipped opponents.
 - Admin can configure no/manual/generated equipment modes without creating normal player-owned item rows.
 - Encounter/trial candidate configurators can reuse these opponents/families as selectable content.
 - UI uses DB dictionaries for stats, slots, item-generation components, formulas and bucket profiles.
-- Mutations use approved RPC/governance path or are reported as DB/RPC blocker.
-- Build passes and smoke report explains how opponent configuration affects combat encounters/trials.
+- Mutations use approved RPC/governance path only.
+- No direct Angular writes to:
+  - `combat_opponent_families`
+  - `combat_opponent_definitions`
+  - `combat_opponent_stat_values`
+  - `combat_opponent_attack_sources`
+  - `combat_opponent_equipment_entries`.
+- Build passes.
+- Smoke report distinguishes:
+  - family creation/update/deactivation,
+  - opponent definition creation/update/deactivation,
+  - stat value upsert/delete,
+  - natural attack source upsert/deactivation,
+  - manual equipment entry upsert/deactivation,
+  - generated equipment entry upsert/deactivation,
+  - and explains how the configured opponent affects combat encounters/trials.
+
+---
+
+### Epic M admin configuration completeness / explainability rule
+
+Epic M must expose the full admin/balancer configuration surface for combat opponents introduced or consumed by this epic.
+
+Admin UI must not be a raw table editor. It must explain how each configured object affects combat runtime:
+- opponent family controls grouping/selection pools;
+- opponent definition controls reusable NPC identity and default scaling/equipment mode;
+- stat values define baseline opponent combat stats before scaling;
+- natural attack sources define non-equipment attack slots;
+- equipment entries define fight-local manual/generated item-like attack/defense sources and must not create player-owned items;
+- scaling formulas and difficulty multipliers affect how the same opponent behaves in trial/encounter contexts.
+
+Raw keys/UUIDs may appear as secondary metadata only. Labels, descriptions, helper text and admin descriptions should be shown wherever available.
 
 ---
 

@@ -2067,6 +2067,804 @@ Ten task nie ma tworzyć finalnego design systemu. Ma zebrać konkretne tokeny, 
 
 ---
 
+## Task UI-29 — Auction House screen: one-item listing browser
+
+**Goal:**
+Zbudować osobny ekran Auction House jako list-first browser aukcji.
+
+Auction House nie jest Direct Trade. Direct Trade ma być osobnym ekranem dla prywatnych ofert hero-to-hero. Auction House pokazuje publiczne listingi aukcyjne, gdzie każdy listing zawiera dokładnie jeden item.
+
+**Scope:**
+
+* Route/page dla Auction House, docelowo w obszarze game/trade/economy.
+* Użyć istniejącego shellu/topbara/sidebaru.
+* Zachować aktualny kierunek wizualny:
+
+  * modern premium browser RPG,
+  * dark navy / gold / bronze,
+  * lekki ancient-Greek flavor,
+  * desktop-first.
+* Header ekranu:
+
+  * label Auction House,
+  * tytuł Browse one-item listings,
+  * krótki opis,
+  * summary card z:
+
+    * Available CP,
+    * Locked CP,
+    * Active bids,
+    * Your listings.
+* Listingi mają być prezentowane jako lista, nie jako mały losowy zestaw kafelków.
+* Każdy row/listing pokazuje:
+
+  * ikonę itemu,
+  * nazwę itemu,
+  * slot/category,
+  * seller,
+  * time remaining,
+  * najważniejsze wymaganie, jeśli istnieje,
+  * Cannot equip yet, jeśli gracz nie spełnia wymagań,
+  * aktualną cenę w Character Points,
+  * buy now price, jeśli listing ma buy now,
+  * akcje zależne od auction mode.
+
+**Auction mode actions:**
+
+* Bidding only:
+
+  * Bid,
+  * Watch.
+* Buy now only:
+
+  * Buy now.
+* Bidding with buy now:
+
+  * Bid,
+  * Watch,
+  * Buy now.
+* Own listing:
+
+  * Manage / Open listing tylko dla własnych listingów.
+  * Nie pokazywać Buy now dla własnego listingu jako normalnej akcji kupującego.
+
+**Out of scope:**
+
+* Nie robić Direct Trade buildera na tym ekranie.
+* Nie robić vendor sell/scrap.
+* Nie robić bundle auctions.
+* Nie robić multi-item auction.
+* Nie pokazywać wartości w drachmach na listing rows.
+* Nie robić pełnego item comparison engine.
+* Nie robić admin auction inspector.
+
+**Data/source rules:**
+
+* Auction listing = exactly one item.
+* Payment is Character Points.
+* Drachma value może pojawić się tylko w item popoverze jako informacja o wartości itemu, nie jako cena aukcji.
+* Auction data musi pochodzić z existing auction read models/services/RPC-backed flows.
+* Item display name, requirements and bonus summary muszą pochodzić z item read model/domain mapperów, nie z hardcoded template logic.
+* Persistent actions muszą iść przez existing auction RPC/domain operations, nie direct writes.
+
+**Acceptance criteria:**
+
+* Auction House jest osobnym ekranem od Direct Trade.
+* Lista aukcji pokazuje publiczne one-item listings.
+* Listing row nie pokazuje drachma value.
+* Listing row pokazuje Character Points price.
+* Actions zależą od auction mode.
+* Cannot equip yet jest wyraźnie widoczne, jeśli wymagania nie są spełnione.
+* Własne listingi mają osobne player-facing actions.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
+## Task UI-30 — Auction House filters and pagination
+
+**Goal:**
+Dodać do Auction House czytelne filtrowanie, sortowanie i paginację, żeby gracz mógł przeglądać dużą listę aukcji nawet wtedy, gdy nie wie dokładnie, czego szuka.
+
+**Scope:**
+
+* Panel filtrów po prawej stronie lub w responsywnym miejscu zgodnym z layoutem.
+* Filtry:
+
+  * search: item name, affix, seller, requirement,
+  * slot/category:
+
+    * All,
+    * Weapon,
+    * Head,
+    * Chest,
+    * Boots,
+    * Ring,
+    * Amulet,
+    * inne sloty, jeśli dictionary/read model je zwraca,
+  * CP price range,
+  * usability:
+
+    * All items,
+    * Can equip now,
+    * Cannot equip yet,
+    * Hide my listings,
+  * auction mode/status, jeśli read model to wspiera.
+* Sort:
+
+  * Ending soon,
+  * Lowest current bid,
+  * Buy now first,
+  * Newest listings.
+* Paginacja:
+
+  * current page,
+  * total pages,
+  * visible range, np. Showing 1–12 of 126 active listings,
+  * Prev / Next,
+  * page numbers,
+  * ellipsis dla długich zakresów,
+  * per page selector: 12 / 24 / 48 albo DB/config-backed values, jeśli istnieją.
+
+**Out of scope:**
+
+* Nie robić infinite scroll w pierwszym slice.
+* Nie robić skomplikowanych saved searches.
+* Nie robić advanced query builder.
+* Nie hardcodować slot list, jeśli slot dictionary istnieje.
+* Nie wykonywać filtrowania wyłącznie lokalnie, jeśli dane są paginowane server-side.
+
+**Data/source rules:**
+
+* Paginacja powinna być server-side albo service-backed, jeśli lista może być duża.
+* Query state powinien być możliwie route/query-param friendly, ale nie trzeba robić pełnego deep-linking w pierwszym slice, jeśli to komplikuje zakres.
+* Slot/category labels powinny pochodzić z DB dictionary/read modelu, jeśli istnieje.
+* Search/filter state powinien resetować paginację do strony 1.
+* Stale response guard wymagany przy zmianie filtra/sort/page.
+
+**Acceptance criteria:**
+
+* Auction House ma widoczny panel filtrów.
+* Listing można filtrować po slotach.
+* Listing ma czytelną paginację.
+* Paginacja pokazuje zakres i liczbę wyników.
+* Zmiana filtra resetuje current page.
+* Stare async responses nie nadpisują nowszego filter/page state.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
+## Task UI-31 — Global item hover popover contract
+
+**Goal:**
+Wprowadzić globalną zasadę UI: wszędzie tam, gdzie w aplikacji pojawia się item, hover albo click/focus powinien pokazać reusable item popover z pełnym podsumowaniem przedmiotu.
+
+Dotyczy to m.in.:
+
+* Dashboard equipment preview,
+* Armory,
+* Auction House,
+* Direct Trade,
+* Reports,
+* future reward/result screens.
+
+**Scope:**
+
+* Stworzyć albo wykorzystać istniejący shared item popover component/pattern.
+* Popover powinien pokazywać:
+
+  * pełną nazwę itemu,
+  * quality,
+  * prefix,
+  * base item,
+  * suffix,
+  * slot/category,
+  * status, jeśli istotny,
+  * sumę bonusów,
+  * wymagania po przeliczeniu,
+  * informację czy hero spełnia wymagania,
+  * damage range, jeśli dotyczy,
+  * wartość w drachmach.
+* Popover nie pokazuje wartości w Character Points, bo ta jest rynkowa i zależy od aukcji/oferty.
+* Item rows/listing cards mogą pokazywać tylko najważniejsze skróty, a popover pokazuje pełnię.
+
+**Important display rules:**
+
+* Wartość w drachmach jest informacją o itemie, nie ceną P2P trade/auction.
+* Character Points price pochodzi z auction/direct trade listing/offer, nie z itemu.
+* Nie sugerować, że droższy item w drachmach jest automatycznie lepszy.
+* Cannot equip yet powinno być widoczne przy itemach, których wymagań hero nie spełnia.
+* Popover musi działać też keyboard/focus-friendly, nie tylko mouse hover, jeśli używane w produkcyjnym UI.
+
+**Out of scope:**
+
+* Nie robić item comparison engine.
+* Nie robić permanentnego item valuation in Character Points.
+* Nie robić admin-only debug fields.
+* Nie przepisywać wszystkich ekranów naraz, jeśli komponent można wdrażać etapami.
+
+**Data/source rules:**
+
+* Item display name powinien używać istniejącego item display mapper/helper.
+* Bonus summary powinien pochodzić z item read model/domain mapperów.
+* Requirements powinny pochodzić z entity requirements/read modelu.
+* Drachma value powinno pochodzić z item read modelu.
+* Jeśli read model nie dostarcza pełnego popover summary, Codex ma zgłosić dependency lub dodać mały mapper w core, nie składać logiki w komponencie.
+
+**Acceptance criteria:**
+
+* Istnieje reusable item popover/pattern.
+* Auction House używa item popover na item name/row.
+* Popover pokazuje full item summary.
+* Listing rows nie muszą pokazywać drachma value, ale popover pokazuje drachma value.
+* Cannot equip yet jest widoczne przy niespełnionych requirements.
+* Pattern nadaje się do reuse w Armory i Dashboard.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
+## Task UI-32 — Auction House actions through canonical RPC/domain paths
+
+**Goal:**
+Podłączyć player-facing actions na Auction House do istniejących canonical auction RPC/domain operations, bez direct writes do tabel aukcji, itemów ani Character Points.
+
+**Scope:**
+
+* Actions:
+
+  * Create auction,
+  * Bid,
+  * Watch, jeśli istnieje read/write support albo local-only placeholder,
+  * Buy now,
+  * Manage/Open own listing.
+* Actions muszą respektować auction mode:
+
+  * bidding,
+  * buy_now,
+  * bidding_with_buy_now.
+* Actions muszą respektować item/listing status:
+
+  * active listing,
+  * expired/cancelled/completed listing,
+  * own listing,
+  * locked_auction,
+  * active bid/outbid/winning.
+* CP lock preview i CP availability powinny być czytelne przed akcją.
+* Po sukcesie odświeżyć listing list, summary i CP lock/balance view.
+
+**Out of scope:**
+
+* Nie implementować Direct Trade.
+* Nie robić vendor sell/scrap.
+* Nie robić admin cancellation.
+* Nie robić anti-abuse case UI.
+* Nie robić transaction history detail, chyba że istnieje już route/pattern.
+* Nie robić watchlist backend, jeśli nie ma kontraktu; wtedy Watch może być placeholderem albo dependency.
+
+**Data/source rules:**
+
+* Frontend nie może:
+
+  * insert/update player_auction_listings bez RPC/domain service,
+  * insert/update player_auction_bids bez RPC/domain service,
+  * mutować items.status bez RPC/domain service,
+  * mutować Character Points/locks bez RPC/domain service.
+* Buy now powinien używać canonical buy-now operation.
+* Bid powinien używać canonical bid operation.
+* Create listing powinien używać canonical listing operation.
+* Backend/RPC odpowiada za locks, CP validation, listing status, item status i audit.
+* Stale guards wymagane przy actions zależnych od listing id / selected server / active hero.
+
+**Acceptance criteria:**
+
+* Bid działa tylko dla listingów z bidding.
+* Buy now działa tylko dla listingów z buy_now.
+* Bidding with buy now pokazuje i obsługuje oba typy akcji.
+* Own listing nie pokazuje buyer actions.
+* CP locks/balance odświeżają się po mutacji.
+* Brak direct writes do auction/item/CP tables.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
+## Task UI-33 — Direct Trade screen: offer builder
+
+**Goal:**
+Zbudować osobny ekran Direct Trade jako prywatny offer builder do handlu bezpośredniego między bohaterami.
+
+Direct Trade nie jest Auction House. Auction House jest osobnym ekranem publicznych listingów, gdzie jeden listing zawiera dokładnie jeden item. Direct Trade służy do wysłania oferty do jednego wybranego bohatera.
+
+**Scope:**
+
+* Route/page dla Direct Trade, docelowo w obszarze game/trade/economy.
+* Użyć istniejącego shellu/topbara/sidebaru.
+* Zachować aktualny kierunek wizualny z Direct Trade V2 preview:
+
+  * modern premium browser RPG,
+  * dark navy / gold / bronze,
+  * desktop-first,
+  * spójność z Auction House, Armory i Estate.
+* Header ekranu:
+
+  * Direct Trade,
+  * Offer to selected hero,
+  * krótki opis,
+  * summary card:
+
+    * Available CP,
+    * Locked CP,
+    * Market slots,
+    * Remaining slots.
+* Target hero picker:
+
+  * wyszukiwanie bohatera na aktualnym serwerze,
+  * bez player-facing informacji typu same server,
+  * handel między serwerami nie jest dostępny.
+* Offer builder:
+
+  * lewa strona: Your offer,
+  * prawa strona: Target response,
+  * creator wybiera tylko swoje itemy i swoje Character Points,
+  * creator nie wybiera i nie żąda itemów celu,
+  * creator nie ustawia target Character Points,
+  * target response pozostaje pusty do czasu odpowiedzi celu.
+* Your offer:
+
+  * do 5 item slots w aktualnym mocku,
+  * limit ma być traktowany jako config/design-backed, nie betonowany, jeśli DB/config mówi inaczej,
+  * Character Points input,
+  * podsumowanie items selected i CP to lock.
+* Target response:
+
+  * puste sloty odpowiedzi,
+  * informacja, że odpowiedź pojawi się po reakcji celu,
+  * brak wymagania/requestowania konkretnych itemów lub CP.
+
+**Out of scope:**
+
+* Nie implementować Auction House na tym ekranie.
+* Nie implementować public marketplace.
+* Nie pokazywać inventory celu.
+* Nie pozwalać creatorowi żądać konkretnych itemów celu.
+* Nie pozwalać creatorowi żądać konkretnej liczby CP celu.
+* Nie robić vendor sell/scrap.
+* Nie robić anti-abuse admin/debug UI.
+* Nie robić bundle auction.
+* Nie robić pełnej historii transakcji.
+
+**Data/source rules:**
+
+* Direct trade jest server-scoped.
+* Target hero musi pochodzić z aktualnego serwera.
+* Creator-side itemy pochodzą z inventory active hero.
+* Creator-side itemy muszą być active i owned.
+* Scrapped / locked_trade / locked_auction itemy nie mogą być selectable jako nowe offer items.
+* Target response data pojawia się dopiero po response workflow.
+* Drachma value nie jest trade price i nie pokazuje się jako cena oferty; może pojawić się tylko w item popoverze.
+* Character Points są walutą player-to-player.
+* Persistent mutations muszą iść przez canonical RPC/domain operations, bez direct table writes.
+
+**Acceptance criteria:**
+
+* Direct Trade jest osobnym ekranem od Auction House.
+* Creator wybiera tylko swoje itemy i swoje CP.
+* Target response jest puste do czasu odpowiedzi celu.
+* UI nie pokazuje inventory celu.
+* UI nie pozwala żądać konkretnych itemów lub CP celu przy tworzeniu oferty.
+* Item hover używa reusable item popover pattern.
+* Drachma value jest tylko w item popoverze.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-34 — Direct Trade pending offers panel and pagination
+
+**Goal:**
+Dodać panel Pending offers dla Direct Trade, z paginacją ograniczoną do 5 ofert na stronę.
+
+Panel ma obsługiwać sytuację, w której gracz ma wiele ofert z różnymi użytkownikami albo kilka osobnych ofert z tym samym użytkownikiem.
+
+**Scope:**
+
+* Prawy panel Pending offers.
+* Pokazać total count, np. 17 total.
+* Pokazać maksymalnie 5 pending offers na stronie.
+* Dodać paginację szerokości panelu:
+
+  * zakres, np. 1–5 of 17,
+  * previous/next,
+  * page numbers,
+  * ellipsis dla długich zakresów.
+* Oferty mogą być:
+
+  * incoming,
+  * outgoing,
+  * waiting for target,
+  * waiting for creator,
+  * locked_trade.
+* Oferty do tego samego bohatera mogą występować wielokrotnie jako osobne rekordy/oferty.
+* Incoming empty offer nie zużywa market slotu odbiorcy, dopóki odbiorca nie odpowie itemem albo CP.
+* Pending offers powinny być nad Rules w prawym panelu.
+* Rules i explanation notes są poniżej Pending offers.
+
+**Out of scope:**
+
+* Nie robić pełnego transaction history.
+* Nie robić anti-abuse detail panelu.
+* Nie robić admin/moderator view.
+* Nie robić custom inbox systemu.
+* Nie robić infinite scroll.
+* Nie pokazywać więcej niż 5 ofert naraz w panelu.
+
+**Data/source rules:**
+
+* Pending offers muszą pochodzić z direct trade read modelu.
+* Status labels powinny być mapowane z DB/domain statusów na player-facing copy.
+* Paginacja może być server-side albo service-backed.
+* Zmiana strony nie może mieszać stale responses.
+* Incoming empty offers nie powinny być liczone jako market slot usage odbiorcy, jeśli target nie odpowiedział itemem/CP.
+* Outgoing offers, gdzie creator lockuje itemy/CP, zużywają market slot zgodnie z market slot logic.
+
+**Acceptance criteria:**
+
+* Pending offers panel pokazuje total count.
+* Panel pokazuje maksymalnie 5 ofert.
+* Paginacja jest widoczna i mieści się w panelu.
+* Kilka ofert z tym samym hero jest pokazanych jako osobne oferty.
+* Incoming empty offer ma czytelny status i nie sugeruje zajęcia slotu targeta.
+* Pending offers znajduje się nad Rules.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-35 — Direct Trade market slot summary
+
+**Goal:**
+Dodać czytelne summary market slotów dla Direct Trade, zgodne z aktualnym modelem, w którym limit aktywności rynku wynika z poziomu Trade Routes / market level.
+
+Market slots są współdzielone przez:
+
+* outgoing direct offers,
+* aktywne auction listings,
+* aktywne auction bids.
+
+**Scope:**
+
+* Header summary card Direct Trade:
+
+  * Available CP,
+  * Locked CP,
+  * Market slots, np. 3 / 5 used,
+  * Remaining slots, np. 2.
+* Dodać krótką notkę niżej w prawym panelu:
+
+  * market slots są współdzielone przez outgoing offers, active auction listings i active auction bids,
+  * incoming offers zaczynają używać slotu dopiero, gdy gracz odpowie itemami albo CP.
+* Notka ma być drugorzędna i nie dominować UI.
+* Nie pokazywać technicznego tekstu w głównym headerze, jeśli nie jest potrzebny.
+
+**Out of scope:**
+
+* Nie implementować Trade Routes building integration, jeśli backend/read model jeszcze tego nie dostarcza.
+* Nie robić pełnego market slot debug UI.
+* Nie robić adminowej rozpiski, skąd dokładnie pochodzi limit.
+* Nie robić anti-abuse explanation panelu.
+* Nie hardcodować finalnego limitu 5, jeśli config/read model istnieje.
+
+**Data/source rules:**
+
+* Limit market slots powinien pochodzić z read modelu/config/runtime, jeśli jest dostępny.
+* UI może mockować 3 / 5 used tylko w prototypie.
+* Codex nie może zabetonować 5 jako stałej gameplayowej, jeśli istnieje DB/config/building-backed source.
+* Slot usage powinno rozróżniać:
+
+  * outgoing direct offers,
+  * direct trade responses with locked assets,
+  * active auction listings,
+  * active auction bids,
+  * incoming empty offers that do not consume target slots.
+
+**Acceptance criteria:**
+
+* Header pokazuje market slot usage.
+* Remaining slots są widoczne.
+* UI nie sugeruje, że incoming empty offers blokują target hero.
+* Limit nie jest hardcoded, jeśli jest dostępny DB/config/read model.
+* Wyjaśnienie slotów jest krótkie i umieszczone niżej niż pending offers.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-36 — Direct Trade create offer RPC workflow
+
+**Goal:**
+Podłączyć wysyłanie direct trade offer do canonical RPC/domain operation, bez direct writes do tabel handlu, itemów ani Character Points.
+
+**Scope:**
+
+* Action: Send offer.
+* Payload zawiera tylko creator-side dane:
+
+  * target hero id,
+  * creator item ids,
+  * creator Character Points,
+  * optional description/request id, jeśli istnieje w kontrakcie.
+* Payload nie zawiera:
+
+  * target item ids,
+  * target Character Points,
+  * danych inventory targeta.
+* Po wysłaniu:
+
+  * creator itemy/CP są locked przez backend/RPC,
+  * oferta przechodzi w status waiting for target / pending_target,
+  * odświeżyć pending offers,
+  * odświeżyć CP balance/locks,
+  * odświeżyć item statuses.
+* Po błędzie:
+
+  * pokazać toast/message,
+  * nie zostawiać fałszywego optimistic locka.
+* Stale guards:
+
+  * selected server,
+  * active hero,
+  * target hero,
+  * current draft id/request id.
+
+**Validation rules:**
+
+* Creator może wysłać 0–N itemów zgodnie z config/limit.
+* Creator może wysłać CP.
+* CP-only for CP-only nie musi być stałym widocznym elementem UI; jeśli backend odrzuci niedozwolony wariant, pokazać toast/message.
+* Nie można wybrać itemów:
+
+  * scrapped,
+  * locked_trade,
+  * locked_auction,
+  * nie-owned,
+  * z innego serwera.
+* Nie można wysłać oferty, jeśli market slots limit jest wyczerpany.
+* Nie można wysłać oferty między serwerami.
+
+**Out of scope:**
+
+* Nie implementować target response RPC w tym tasku, chyba że scope explicitly includes it.
+* Nie implementować auction.
+* Nie implementować transaction finalization.
+* Nie implementować anti-abuse UI.
+* Nie robić direct writes do item statusów/CP locks.
+
+**Data/source rules:**
+
+* Używać existing direct trade RPC/domain service.
+* Backend/RPC odpowiada za:
+
+  * locks,
+  * CP validation,
+  * item status validation,
+  * market slot validation,
+  * audit,
+  * anti-abuse signal generation where applicable.
+* Frontend nie modyfikuje item.status ani character_point_locks bezpośrednio.
+
+**Acceptance criteria:**
+
+* Send offer wysyła tylko creator-side itemy/CP.
+* Target-side itemy/CP nie są częścią create offer payloadu.
+* Po sukcesie offer/locks/CP/item statuses się odświeżają.
+* Po błędzie UI pokazuje czytelny feedback.
+* Brak direct writes do trade/item/CP tables.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-37 — Direct Trade target response UI
+
+**Goal:**
+Dodać osobny response flow dla target hero, który otrzymał direct trade offer.
+
+Target może odpowiedzieć własnymi itemami i/lub Character Points. To jest osobny krok od tworzenia oferty przez creatora.
+
+**Scope:**
+
+* Dla incoming offer:
+
+  * panel z tym, co creator oferuje,
+  * target response builder:
+
+    * do N itemów zgodnie z config/limit,
+    * target Character Points,
+  * Review response,
+  * Send response,
+  * Reject.
+* Target response builder używa inventory targeta, czyli active hero gracza odpowiadającego.
+* Incoming empty offer nie zajmuje market slotu targeta, dopóki target nie doda itemów lub CP i nie wyśle odpowiedzi.
+* Jeśli target odpowie itemem/CP:
+
+  * powinien zostać użyty market slot zgodnie z rules/read model.
+* Po response offer przechodzi do statusu waiting for creator / pending_creator.
+* Creator musi potem zobaczyć response i móc zaakceptować albo odrzucić, jeśli taki jest aktualny workflow.
+
+**Out of scope:**
+
+* Nie pokazywać inventory targeta creatorowi.
+* Nie implementować final transaction completion, jeśli jest osobnym RPC/slice.
+* Nie robić anti-abuse review UI.
+* Nie implementować auction.
+* Nie robić CP-only-for-CP-only explanation jako stałego visible panelu; błędy jako toast/message.
+
+**Data/source rules:**
+
+* Response idzie przez canonical direct trade response RPC/domain operation.
+* Frontend nie direct-write:
+
+  * player_trade_offers,
+  * trade offer items,
+  * item statuses,
+  * CP locks.
+* Backend/RPC odpowiada za locks, slot validation, CP validation i audit.
+* Stale guards wymagane dla offer id / active hero / selected server.
+
+**Acceptance criteria:**
+
+* Incoming offer można odrzucić.
+* Incoming offer można uzupełnić target-side itemami/CP i wysłać response.
+* Creator nie widzi inventory targeta.
+* Empty incoming offer nie zużywa target slotu przed response.
+* Po response read model odświeża status i locks.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+## Task UI-38 — Direct Trade item display and popover integration
+
+**Goal:**
+Zastosować globalny item hover popover pattern w Direct Trade, zgodnie z zaakceptowanym kierunkiem tooltipa/popupu itemu.
+
+**Scope:**
+
+* Każdy item w Direct Trade:
+
+  * offer builder,
+  * target response builder,
+  * pending offers,
+  * offer review,
+  * history/details later,
+    powinien używać reusable item popover.
+* Main row itemu pokazuje krótko:
+
+  * nazwę,
+  * typ/slot,
+  * status lock/equip/cannot equip where relevant.
+* Popover pokazuje pełne summary:
+
+  * nazwa,
+  * quality/tier,
+  * prefix/base/suffix naming where available,
+  * item type/subtype,
+  * equip slot or allowed hand slot,
+  * item stats,
+  * bonuses,
+  * requirements,
+  * drachma value,
+  * icon placeholder / future Game Icons asset.
+* Ikonka typu itemu ma być w popoverze, po prawej stronie headera popovera.
+* Drachma value nie jest trade price i pojawia się tylko w popoverze.
+
+**Weapon display rules:**
+
+* Weapon subtype ma być rozróżniany:
+
+  * one-handed weapon,
+  * two-handed weapon,
+  * ranged weapon.
+* Slot/equip wording ma odzwierciedlać equip rules:
+
+  * shield always off hand,
+  * one-handed weapon can be main or off hand,
+  * two-handed and ranged weapon go main hand,
+  * tooltip może pokazywać Hand slot / Main hand / Off hand zależnie od read modelu i kontekstu.
+* Nie upraszczać wszystkiego do generic Weapon, jeśli read model dostarcza subtype.
+
+**Item stats and boosted values:**
+
+* Native item stats, np. Damage 18–31, mają być pokazane jako item stat, nie jako bonus z plusem.
+* Bonusy wpływające na staty mogą być pokazane osobno w Bonuses, np. Damage +16.
+* Jeśli finalna wartość item stat jest podbita przez quality/prefix/suffix/bonus, podbita część albo podbita wartość ma być wyróżniona kolorem gold.
+* Jeśli podbity jest tylko max damage, np. 2–31, tylko wartość 31 powinna być wyróżniona.
+* Jeśli min i max są podbite, obie wartości powinny być wyróżnione.
+* Ten sam wzorzec ma później działać też dla defense na armor/head/boots itd.
+
+**Out of scope:**
+
+* Nie robić pełnego item comparison engine.
+* Nie implementować finalnych Game Icons assetów, jeśli nie są jeszcze wybrane.
+* Nie hardcodować item stat formulas w komponencie.
+* Nie tworzyć osobnego popovera tylko dla Direct Trade, jeśli globalny/shared pattern już istnieje albo jest planowany.
+
+**Data/source rules:**
+
+* Popover używa item read model/domain mapperów.
+* Item display name używa istniejącego display name helpera.
+* Item stats i boosted flags powinny pochodzić z read modelu lub czystego mappera.
+* Jeśli read model nie dostarcza boosted/base split, Codex ma zgłosić dependency zamiast zgadywać w komponencie.
+* Requirements mają być przeliczone względem active hero, jeśli dostępne.
+
+**Acceptance criteria:**
+
+* Direct Trade item rows używają item popover.
+* Popover ma ikonę po prawej w headerze.
+* Popover rozróżnia item stats i bonuses.
+* Damage nie jest pokazany jako Damage +18–31.
+* Wzmocnione wartości są wyróżnione gold.
+* Drachma value jest tylko w popoverze.
+* Weapon subtype/slot wording jest zgodny z equip rules.
+* Build/tsc przechodzi.
+* Codex raportuje:
+
+  * reused:
+  * checked but not reused:
+  * new component/state/helper added:
+  * scope kept minimal:
+  * not added intentionally:
+
+---
+
+
+
 ## 21. Otwarte kwestie UI do dalszego dopracowania
 
 Ten plik jest na razie mocno dashboard/shell oriented. To jest celowe, bo najpierw stabilizujemy główny język UI. Z czasem UI/UX backlog powinien dostać osobne sekcje dla pełnych ekranów:

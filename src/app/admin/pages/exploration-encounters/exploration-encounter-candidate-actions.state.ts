@@ -1,6 +1,4 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
 import { EncounterCombatCandidateAdminView } from '../../../core/domain/exploration/exploration-encounter-admin.model';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
 import { ToastService } from '../../../core/services/ui/toast';
@@ -12,6 +10,10 @@ import {
 } from './exploration-encounters-forms';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 import { requiredFormValue } from './exploration-encounter-action-utils';
+import {
+  markReasonInvalid,
+  runEncounterWorkflowAction,
+} from './exploration-encounter-workflow-actions';
 
 @Injectable()
 export class ExplorationEncounterCandidateActionsState {
@@ -23,6 +25,7 @@ export class ExplorationEncounterCandidateActionsState {
 
   readonly selectedCandidateId = signal<string | null>(null);
   readonly isSaving = signal(false);
+  readonly reasonError = signal<string | null>(null);
   readonly selectedCandidate = computed(() => {
     const candidateId = this.selectedCandidateId();
 
@@ -56,59 +59,50 @@ export class ExplorationEncounterCandidateActionsState {
       return;
     }
 
+    this.page.error.set(null);
+    this.candidateForm.markAllAsTouched();
+    const hasInvalidReason = markReasonInvalid(this.reasonError, this.candidateForm.controls.reason);
+
+    if (this.candidateForm.invalid || hasInvalidReason) {
+      return;
+    }
+
     try {
       const guard = this.currentCandidateGuard();
       const reason = requiredFormValue(this.candidateForm.controls.reason.value, 'Reason');
       const candidateKind = this.candidateForm.controls.candidateKind.value;
-      const token = this.saveToken.next();
 
-      this.isSaving.set(true);
-      this.page.error.set(null);
-      this.admin
-        .upsertEncounterCombatCandidate({
-          candidateId: this.candidateForm.controls.candidateId.value,
-          encounterDefinitionId: encounter.encounter.id,
-          candidateKind,
-          opponentDefinitionId:
-            candidateKind === 'opponent'
-              ? this.candidateForm.controls.opponentDefinitionId.value
-              : null,
-          familyKey: candidateKind === 'family' ? this.candidateForm.controls.familyKey.value : null,
-          scalingFormulaId: this.candidateForm.controls.scalingFormulaId.value,
-          difficultyMultiplier: this.candidateForm.controls.difficultyMultiplier.value,
-          weight: this.candidateForm.controls.weight.value,
-          minHeroLevel: this.candidateForm.controls.minHeroLevel.value,
-          maxHeroLevel: this.candidateForm.controls.maxHeroLevel.value,
-          sortOrder: this.candidateForm.controls.sortOrder.value,
-          isActive: this.candidateForm.controls.isActive.value,
-          reason,
-        })
-        .pipe(
-          finalize(() => {
-            if (this.saveToken.isCurrent(token)) {
-              this.isSaving.set(false);
-            }
+      runEncounterWorkflowAction({
+        token: this.saveToken,
+        destroyRef: this.destroyRef,
+        page: this.page,
+        toast: this.toast,
+        isSaving: this.isSaving,
+        guard,
+        call: () =>
+          this.admin.upsertEncounterCombatCandidate({
+            candidateId: this.candidateForm.controls.candidateId.value,
+            encounterDefinitionId: encounter.encounter.id,
+            candidateKind,
+            opponentDefinitionId:
+              candidateKind === 'opponent'
+                ? this.candidateForm.controls.opponentDefinitionId.value
+                : null,
+            familyKey:
+              candidateKind === 'family' ? this.candidateForm.controls.familyKey.value : null,
+            scalingFormulaId: this.candidateForm.controls.scalingFormulaId.value,
+            difficultyMultiplier: this.candidateForm.controls.difficultyMultiplier.value,
+            weight: this.candidateForm.controls.weight.value,
+            minHeroLevel: this.candidateForm.controls.minHeroLevel.value,
+            maxHeroLevel: this.candidateForm.controls.maxHeroLevel.value,
+            sortOrder: this.candidateForm.controls.sortOrder.value,
+            isActive: this.candidateForm.controls.isActive.value,
+            reason,
           }),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
-          next: (candidate) => {
-            if (!this.saveToken.isCurrent(token) || !guard()) {
-              return;
-            }
-
-            this.toast.show('success', 'Exploration encounters', 'Encounter combat candidate saved.');
-            this.selectedCandidateId.set(candidate.id);
-            this.page.loadInitialData();
-          },
-          error: (error: unknown) => {
-            if (!this.saveToken.isCurrent(token) || !guard()) {
-              return;
-            }
-
-            this.page.error.set(getErrorMessage(error, 'Encounter configuration action failed.'));
-          },
-        });
+        successMessage: 'Encounter combat candidate saved.',
+        failureMessage: 'Encounter configuration action failed.',
+        onSuccess: (candidate) => this.selectedCandidateId.set(candidate.id),
+      });
     } catch (error: unknown) {
       this.page.error.set(getErrorMessage(error, 'Combat candidate validation failed.'));
     }
@@ -122,46 +116,34 @@ export class ExplorationEncounterCandidateActionsState {
       return;
     }
 
+    this.page.error.set(null);
+    this.candidateForm.markAllAsTouched();
+    if (markReasonInvalid(this.reasonError, this.candidateForm.controls.reason)) {
+      return;
+    }
+
     try {
       const guard = this.currentCandidateGuard();
       const reason = requiredFormValue(this.candidateForm.controls.reason.value, 'Reason');
-      const token = this.saveToken.next();
 
-      this.isSaving.set(true);
-      this.page.error.set(null);
-      this.admin
-        .deactivateEncounterCombatCandidate(candidate.candidate.id, reason)
-        .pipe(
-          finalize(() => {
-            if (this.saveToken.isCurrent(token)) {
-              this.isSaving.set(false);
-            }
-          }),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
-          next: () => {
-            if (!this.saveToken.isCurrent(token) || !guard()) {
-              return;
-            }
-
-            this.toast.show('success', 'Exploration encounters', 'Encounter combat candidate deactivated.');
-            this.page.loadInitialData();
-          },
-          error: (error: unknown) => {
-            if (!this.saveToken.isCurrent(token) || !guard()) {
-              return;
-            }
-
-            this.page.error.set(getErrorMessage(error, 'Encounter configuration action failed.'));
-          },
-        });
+      runEncounterWorkflowAction({
+        token: this.saveToken,
+        destroyRef: this.destroyRef,
+        page: this.page,
+        toast: this.toast,
+        isSaving: this.isSaving,
+        guard,
+        call: () => this.admin.deactivateEncounterCombatCandidate(candidate.candidate.id, reason),
+        successMessage: 'Encounter combat candidate deactivated.',
+        failureMessage: 'Encounter configuration action failed.',
+      });
     } catch (error: unknown) {
       this.page.error.set(getErrorMessage(error, 'Combat candidate validation failed.'));
     }
   }
 
   private syncCandidateForm(row: EncounterCombatCandidateAdminView | null): void {
+    this.reasonError.set(null);
     this.candidateForm.reset(candidateFormValue(row));
   }
 

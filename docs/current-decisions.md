@@ -1,6 +1,6 @@
 # Mythborne — Current Decisions Log
 
-Updated: 2026-05-01
+Updated: 2026-05-02
 
 Use this file for recent design, domain, database and implementation decisions that should override older assumptions.
 
@@ -13,6 +13,79 @@ If something conflicts, prefer:
 5. broader concept documents.
 
 This file is not a Codex status tracker. Do not mark Codex tasks as completed here unless the user explicitly asks for documentation/status updates after accepting the work.
+
+---
+
+## Combat / Epic M DB-RPC Completion Decisions — 2026-05-02
+
+Epic M must be treated as a reusable combat foundation, not merely a sandbox screen. Two missing DB/RPC contracts were added after pre-flight:
+
+1. **M-DB1 — combat opponent admin configurator foundation**
+   - Combat opponent families, definitions, stat values, natural attack sources and equipment blueprint entries now have governed admin/balancer RPCs.
+   - Frontend must use these RPCs rather than direct writes to `combat_opponent_*` tables.
+   - RPCs require authenticated user context, config-governance permission and a non-blank reason.
+   - Admin SELECT policies for combat opponent configuration tables are gated through `can_manage_config_governance(null)`.
+   - Opponent equipment is blueprint/fight-local configuration only. It must not create normal player-owned `items` rows.
+
+2. **M-DB2 — combat result snapshot persistence**
+   - Combat result persistence now has canonical RPC `persist_combat_result_snapshot(...)`.
+   - The RPC persists combat result header, participant snapshots, participant stat snapshots and attack rows.
+   - The RPC intentionally does **not** grant rewards, complete trials, apply PvP consequences, publish reports or create notifications. Callers own those workflows.
+   - Combat result read access is controlled through `can_read_combat_result(...)`, allowing config-governance staff and authenticated owners of hero participants.
+
+Combat source types remain generic: `encounter`, `trial`, `pvp`, `sandbox`, `admin_test`. Combat core produces a result; source-specific callers interpret the result.
+
+After these DB/RPC additions, Codex can implement Epic M without hidden DB blockers for M9 result persistence or M12 opponent admin configuration, provided generated Supabase types are regenerated first.
+
+---
+
+## Exploration / L12b Resource and Effect Payload Decisions — 2026-05-02
+
+The L12b blocker was real: encounter definitions supported `resource`, `buff` and `debuff` kinds, but there was no typed DB-backed payload configuration for those non-combat encounter types.
+
+L12b DB foundation now exists:
+
+- `encounter_resource_payloads` — typed resource payload rows for resource encounters;
+- `encounter_effect_payloads` — typed links between buff/debuff encounters and exploration effect definitions;
+- `exploration_effect_definitions` — reusable exploration buff/debuff effect definitions with governed admin write path.
+
+Canonical L12b admin/balancer RPCs:
+
+- `upsert_encounter_resource_payload(...)`;
+- `deactivate_encounter_resource_payload(...)`;
+- `upsert_encounter_effect_payload(...)`;
+- `deactivate_encounter_effect_payload(...)`;
+- `upsert_exploration_effect_definition(...)`;
+- `deactivate_exploration_effect_definition(...)`.
+
+Rules:
+
+- Resource encounter payloads are valid only for `encounter_kind = resource`.
+- Effect encounter payloads are valid only for `encounter_kind = buff` or `encounter_kind = debuff`.
+- Effect payload kind must match the linked `exploration_effect_definitions.effect_kind`.
+- Resource payload amount modes are typed as `fixed`, `range` or `formula`.
+- Formula-backed payloads reference `balance_formulas`; fixed/range payloads require ordered min/max amounts.
+- Chance percent must remain within 0..100.
+- `metadata_json` remains technical extension data and must not become the authoritative gameplay contract for resource/effect behavior.
+- Mutations require authenticated user context, config-governance permission and a non-blank reason.
+
+Smoke verification passed with rollback: a resource encounter accepted one resource payload, and a buff encounter accepted one effect payload. The resulting smoke summary was:
+
+- `smoke_resource_encounter`: `resource_payloads = 1`, `effect_payloads = 0`;
+- `smoke_buff_encounter`: `resource_payloads = 0`, `effect_payloads = 1`.
+
+L12 UI should now expose kind-aware payload sections instead of leaving resource/effect configuration as pending or encoding behavior in arbitrary metadata JSON.
+
+---
+
+## Current Known Foundation Gaps — 2026-05-02
+
+These are not part of Epic M/L12b execution unless explicitly promoted, but they remain important planning gaps:
+
+- Equipment equip/unequip workflow: `hero_equipment` exists, but player-facing equip/unequip needs an approved DB/RPC workflow before Angular mutates equipment state.
+- PvP MVP: combat/report foundations can support PvP sources, but target selection, attack limits, protection, resource stealing/loss, cooldowns and PvP report production still need a dedicated epic/DB workflow.
+- Auction watchers: future side note, not current work.
+- Auction rules/configuration: future side note, not current work.
 
 ---
 

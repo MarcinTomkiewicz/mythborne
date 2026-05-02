@@ -1,6 +1,4 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
 import { EncounterRewardAssignmentAdminView } from '../../../core/domain/exploration/exploration-encounter-admin.model';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
 import { ToastService } from '../../../core/services/ui/toast';
@@ -13,6 +11,11 @@ import {
 } from './exploration-encounters-forms';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 import { parseMetadataJson, requiredFormValue } from './exploration-encounter-action-utils';
+import {
+  markReasonInvalid,
+  nextSortOrder,
+  runEncounterWorkflowAction,
+} from './exploration-encounter-workflow-actions';
 
 @Injectable()
 export class ExplorationEncounterRewardActionsState {
@@ -24,6 +27,7 @@ export class ExplorationEncounterRewardActionsState {
 
   readonly selectedAssignmentId = signal<string | null>(null);
   readonly isSaving = signal(false);
+  readonly reasonError = signal<string | null>(null);
   readonly selectedAssignment = computed(() => {
     const assignmentId = this.selectedAssignmentId();
 
@@ -51,67 +55,69 @@ export class ExplorationEncounterRewardActionsState {
 
   saveAssignment(): void {
     const encounter = this.page.selectedEncounter();
+    this.page.error.set(null);
     const metadataJson = parseMetadataJson(
       this.assignmentForm.controls.metadataJsonText.value,
       (message) => this.page.error.set(message),
     );
 
-    if (!encounter || metadataJson === null) {
-      this.page.error.set(encounter ? this.page.error() : 'Select an encounter definition first.');
+    if (metadataJson === null) {
+      return;
+    }
+
+    if (!encounter) {
+      this.page.error.set('Select an encounter definition first.');
+      return;
+    }
+
+    this.assignmentForm.markAllAsTouched();
+    const hasInvalidReason = markReasonInvalid(this.reasonError, this.assignmentForm.controls.reason);
+
+    if (this.assignmentForm.invalid || hasInvalidReason) {
+      return;
+    }
+
+    if (!this.page.hasRewardProfiles()) {
+      this.page.error.set('No reward profiles configured; create or activate a reward profile first.');
       return;
     }
 
     try {
       const guard = this.currentAssignmentGuard();
       const reason = requiredFormValue(this.assignmentForm.controls.reason.value, 'Reason');
-      const token = this.saveToken.next();
 
-      this.isSaving.set(true);
-      this.page.error.set(null);
-      this.admin
-        .upsertRewardProfileAssignment({
-          assignmentId: this.assignmentForm.controls.assignmentId.value,
-          encounterDefinitionId: encounter.encounter.id,
-          rewardProfileId: requiredFormValue(
-            this.assignmentForm.controls.rewardProfileId.value,
-            'Reward profile',
-          ),
-          outcomeKind: requiredFormValue(this.assignmentForm.controls.outcomeKind.value, 'Outcome kind'),
-          difficultyKey: this.assignmentForm.controls.difficultyKey.value,
-          districtCode: this.assignmentForm.controls.districtCode.value,
-          description: trimToNull(this.assignmentForm.controls.description.value),
-          helperText: trimToNull(this.assignmentForm.controls.helperText.value),
-          sortOrder: this.assignmentForm.controls.sortOrder.value,
-          isActive: this.assignmentForm.controls.isActive.value,
-          metadataJson,
-          reason,
-        })
-        .pipe(
-          finalize(() => {
-            if (this.saveToken.isCurrent(token)) {
-              this.isSaving.set(false);
-            }
+      runEncounterWorkflowAction({
+        token: this.saveToken,
+        destroyRef: this.destroyRef,
+        page: this.page,
+        toast: this.toast,
+        isSaving: this.isSaving,
+        guard,
+        call: () =>
+          this.admin.upsertRewardProfileAssignment({
+            assignmentId: this.assignmentForm.controls.assignmentId.value,
+            encounterDefinitionId: encounter.encounter.id,
+            rewardProfileId: requiredFormValue(
+              this.assignmentForm.controls.rewardProfileId.value,
+              'Reward profile',
+            ),
+            outcomeKind: requiredFormValue(
+              this.assignmentForm.controls.outcomeKind.value,
+              'Outcome kind',
+            ),
+            difficultyKey: this.assignmentForm.controls.difficultyKey.value,
+            districtCode: this.assignmentForm.controls.districtCode.value,
+            description: trimToNull(this.assignmentForm.controls.description.value),
+            helperText: trimToNull(this.assignmentForm.controls.helperText.value),
+            sortOrder: this.assignmentForm.controls.sortOrder.value,
+            isActive: this.assignmentForm.controls.isActive.value,
+            metadataJson,
+            reason,
           }),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
-          next: (assignment) => {
-            if (!this.saveToken.isCurrent(token) || !guard()) {
-              return;
-            }
-
-            this.toast.show('success', 'Exploration encounters', 'Encounter reward assignment saved.');
-            this.selectedAssignmentId.set(assignment.id);
-            this.page.loadInitialData();
-          },
-          error: (error: unknown) => {
-            if (!this.saveToken.isCurrent(token) || !guard()) {
-              return;
-            }
-
-            this.page.error.set(getErrorMessage(error, 'Encounter configuration action failed.'));
-          },
-        });
+        successMessage: 'Encounter reward assignment saved.',
+        failureMessage: 'Encounter configuration action failed.',
+        onSuccess: (assignment) => this.selectedAssignmentId.set(assignment.id),
+      });
     } catch (error: unknown) {
       this.page.error.set(getErrorMessage(error, 'Reward assignment validation failed.'));
     }
@@ -125,47 +131,41 @@ export class ExplorationEncounterRewardActionsState {
       return;
     }
 
+    this.page.error.set(null);
+    this.assignmentForm.markAllAsTouched();
+    if (markReasonInvalid(this.reasonError, this.assignmentForm.controls.reason)) {
+      return;
+    }
+
     try {
       const guard = this.currentAssignmentGuard();
       const reason = requiredFormValue(this.assignmentForm.controls.reason.value, 'Reason');
-      const token = this.saveToken.next();
 
-      this.isSaving.set(true);
-      this.page.error.set(null);
-      this.admin
-        .deactivateRewardProfileAssignment(assignment.assignment.id, reason)
-        .pipe(
-          finalize(() => {
-            if (this.saveToken.isCurrent(token)) {
-              this.isSaving.set(false);
-            }
-          }),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
-          next: () => {
-            if (!this.saveToken.isCurrent(token) || !guard()) {
-              return;
-            }
-
-            this.toast.show('success', 'Exploration encounters', 'Encounter reward assignment deactivated.');
-            this.page.loadInitialData();
-          },
-          error: (error: unknown) => {
-            if (!this.saveToken.isCurrent(token) || !guard()) {
-              return;
-            }
-
-            this.page.error.set(getErrorMessage(error, 'Encounter configuration action failed.'));
-          },
-        });
+      runEncounterWorkflowAction({
+        token: this.saveToken,
+        destroyRef: this.destroyRef,
+        page: this.page,
+        toast: this.toast,
+        isSaving: this.isSaving,
+        guard,
+        call: () => this.admin.deactivateRewardProfileAssignment(assignment.assignment.id, reason),
+        successMessage: 'Encounter reward assignment deactivated.',
+        failureMessage: 'Encounter configuration action failed.',
+      });
     } catch (error: unknown) {
       this.page.error.set(getErrorMessage(error, 'Reward assignment validation failed.'));
     }
   }
 
   private syncAssignmentForm(row: EncounterRewardAssignmentAdminView | null): void {
+    this.reasonError.set(null);
     this.assignmentForm.reset(assignmentFormValue(row));
+
+    if (!row) {
+      this.assignmentForm.controls.sortOrder.setValue(
+        nextSortOrder(this.page.rewardAssignments(), (entry) => entry.assignment.sortOrder),
+      );
+    }
   }
 
   private resetAssignmentForm(): void {

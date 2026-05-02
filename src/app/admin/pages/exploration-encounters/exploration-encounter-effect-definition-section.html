@@ -1,0 +1,90 @@
+<div class="flex-col gap-md">
+  <div class="flex-col gap-xs">
+    <h4 class="mg-section__title mg-section__title--xs mb-0">Effect library</h4>
+    <p class="mb-0">Reusable buff/debuff definitions: bonus template, default value and fallback behavior.</p>
+  </div>
+  <form class="flex-col gap-md w-100" [formGroup]="actions.form">
+    <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+    <label class="flex-col gap-sm w-100">
+      <span>Label</span>
+      <input pInputText formControlName="label" />
+      @if (actions.form.controls.label.touched && actions.form.controls.label.invalid) {
+        <small class="error-text">Label is required.</small>
+      }
+    </label>
+    <label class="flex-col gap-sm w-100">
+      <span>Generated key</span>
+      <input pInputText formControlName="key" [readonly]="!actions.form.controls.allowKeyOverride.value" />
+      <small class="muted-text">Generated from label for new effects. Enable advanced override only for deliberate key changes.</small>
+      @if (actions.form.controls.key.touched && actions.form.controls.key.invalid) {
+        <small class="error-text">Key is required.</small>
+      }
+    </label>
+    <label class="flex-col gap-sm w-100">
+      <span>Advanced key override</span>
+      <p-checkbox formControlName="allowKeyOverride" [binary]="true" />
+    </label>
+    <label class="flex-col gap-sm w-100">
+      <span>Effect kind</span>
+      <p-select formControlName="effectKind" [options]="page.effectKindOptions" optionLabel="label" optionValue="value" />
+    </label>
+    <label class="flex-col gap-sm w-100">
+      <span>Bonus template</span>
+      <p-select formControlName="bonusTemplateId" [options]="page.bonusTemplateOptions()" optionLabel="label" optionValue="value" />
+    </label>
+    <label class="flex-col gap-sm w-100"><span>Default value</span><p-inputnumber formControlName="defaultValue" /></label>
+    <label class="flex-col gap-sm w-100">
+      <span>Fallback duration steps (advanced)</span>
+      <p-inputnumber formControlName="defaultDurationSteps" [min]="1" />
+      <small class="muted-text">Normal exploration effects expire at the next combat encounter or trial.</small>
+    </label>
+    <label class="flex-col gap-sm w-100"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
+    <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
+    </div>
+    <label class="flex-col gap-sm w-100">
+      <span>Description</span>
+      <textarea pInputText rows="2" formControlName="description"></textarea>
+      @if (actions.form.controls.description.touched && actions.form.controls.description.invalid) {
+        <small class="error-text">Description is required.</small>
+      }
+    </label>
+    <label class="flex-col gap-sm w-100"><span>Helper text</span><textarea pInputText rows="2" formControlName="helperText"></textarea></label>
+    <label class="flex-col gap-sm w-100"><span>Admin description</span><textarea pInputText rows="2" formControlName="adminDescription"></textarea></label>
+    <details class="mg-card p-md w-100">
+      <summary class="muted-text">Advanced technical metadata</summary>
+      <label class="flex-col gap-sm mt-md">
+        <span>Metadata JSON</span>
+        <textarea pInputText rows="3" formControlName="metadataJsonText"></textarea>
+      </label>
+    </details>
+    <label class="flex-col gap-sm w-100">
+      <span>Reason</span>
+      <input pInputText formControlName="reason" />
+      @if (actions.reasonError() || (actions.form.controls.reason.touched && actions.form.controls.reason.invalid)) {
+        <small class="error-text">{{ actions.reasonError() ?? 'Reason is required.' }}</small>
+      }
+    </label>
+    <div class="flex-row flex-wrap gap-sm">
+      <button pButton type="button" label="Save effect" [disabled]="actions.isSaving()" (click)="saveEffectDefinition()"></button>
+      <button pButton type="button" label="New effect" severity="secondary" (click)="actions.startNewEffectDefinition()"></button>
+      <button pButton type="button" label="Deactivate effect" severity="danger" [disabled]="!actions.selectedEffectDefinition()" (click)="actions.deactivateEffectDefinition()"></button>
+    </div>
+  </form>
+
+  <p-table [value]="page.effectDefinitions()" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr><th>Effect</th><th>Bonus</th><th>Defaults</th><th>Status</th></tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-row>
+      <tr (click)="actions.selectEffectDefinition(row.effect.id)">
+        <td>{{ row.effect.label }}<br /><span class="muted-text">{{ row.effect.key }}</span></td>
+        <td>{{ row.bonusTemplateLabel }}</td>
+        <td>{{ row.defaultBehaviorLabel }}</td>
+        <td><p-tag [severity]="row.effect.isActive ? 'success' : 'secondary'" [value]="row.effect.isActive ? 'Active' : 'Inactive'" /></td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr><td colspan="4">No {{ page.selectedEncounter()?.encounter?.encounterKind }} effect definitions are configured.</td></tr>
+    </ng-template>
+  </p-table>
+</div>

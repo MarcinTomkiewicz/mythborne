@@ -1,27 +1,31 @@
 import { Injectable, inject } from '@angular/core';
-import { forkJoin, map, Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
-import { TABLES } from '../../constants/tables.const';
 import {
   EncounterCombatCandidateReadModel,
+  EncounterEffectPayloadReadModel,
+  EncounterResourcePayloadReadModel,
   ExplorationEncounterAdminData,
+  ExplorationEffectDefinitionReadModel,
   UpsertEncounterCombatCandidateInput,
   UpsertEncounterDefinitionInput,
+  UpsertEncounterEffectPayloadInput,
+  UpsertEncounterResourcePayloadInput,
   UpsertEncounterRewardAssignmentInput,
+  UpsertExplorationEffectDefinitionInput,
 } from '../../domain/exploration/exploration-encounter-admin.model';
 import { EncounterDefinitionReadModel } from '../../domain/exploration/exploration-definition.model';
 import { RewardProfileAssignmentReadModel } from '../../domain/exploration/exploration-reward.model';
 import { Database } from '../../types/database.types';
-import { Row } from '../../types/supabase.types';
-import { mapBuildingDistricts } from '../../utils/building-admin-mappers';
-import {
-  mapEncounterDefinition,
-  mapExplorationDifficultyTier,
-  mapExplorationMinigameDefinition,
-} from '../../utils/exploration-definition-mappers';
+import { mapEncounterDefinition } from '../../utils/exploration-definition-mappers';
 import {
   mapEncounterCombatCandidate,
 } from '../../utils/exploration-encounter-admin-mappers';
+import {
+  mapEncounterEffectPayload,
+  mapEncounterResourcePayload,
+  mapExplorationEffectDefinition,
+} from '../../utils/exploration-encounter-payload-admin-mappers';
 import {
   toDeactivateEncounterCombatCandidateRpcArgs,
   toDeactivateEncounterDefinitionRpcArgs,
@@ -31,116 +35,23 @@ import {
   toUpsertRewardProfileAssignmentRpcArgs,
 } from '../../utils/exploration-encounter-admin-rpc';
 import {
-  mapCombatOpponentDefinition,
-  mapCombatOpponentFamily,
-} from '../../utils/exploration-trial-admin-mappers';
-import {
-  mapRewardProfile,
-  mapRewardProfileAssignment,
-} from '../../utils/exploration-reward-mappers';
-import { mapBalanceFormula } from '../../utils/formula-admin-mappers';
+  toDeactivateEncounterEffectPayloadRpcArgs,
+  toDeactivateEncounterResourcePayloadRpcArgs,
+  toDeactivateExplorationEffectDefinitionRpcArgs,
+  toUpsertEncounterEffectPayloadRpcArgs,
+  toUpsertEncounterResourcePayloadRpcArgs,
+  toUpsertExplorationEffectDefinitionRpcArgs,
+} from '../../utils/exploration-encounter-payload-rpc';
+import { mapRewardProfileAssignment } from '../../utils/exploration-reward-mappers';
 import { Backend } from '../backend/backend';
+import { getExplorationEncounterAdminData } from './exploration-encounter-admin-data';
 
 @Injectable({ providedIn: 'root' })
 export class ExplorationEncounterAdmin {
   private readonly backend = inject(Backend);
 
   getAdminData(): Observable<ExplorationEncounterAdminData> {
-    return forkJoin({
-      encounters: this.backend.getAll<Row<'encounter_definitions'>>({
-        table: TABLES.encounter_definitions,
-        orderBy: [
-          { column: 'sort_order', ascending: true },
-          { column: 'key', ascending: true },
-        ],
-        camelCase: false,
-      }),
-      minigames: this.backend.getAll<Row<'exploration_minigame_definitions'>>({
-        table: TABLES.exploration_minigame_definitions,
-        orderBy: [
-          { column: 'sort_order', ascending: true },
-          { column: 'key', ascending: true },
-        ],
-        camelCase: false,
-      }),
-      difficulties: this.backend.getAll<Row<'exploration_difficulty_tiers'>>({
-        table: TABLES.exploration_difficulty_tiers,
-        orderBy: [
-          { column: 'sort_order', ascending: true },
-          { column: 'key', ascending: true },
-        ],
-        camelCase: false,
-      }),
-      districts: this.backend.getAll<Row<'estate_districts'>>({
-        table: TABLES.estate_districts,
-        orderBy: [
-          { column: 'rank', ascending: true },
-          { column: 'code', ascending: true },
-        ],
-        camelCase: false,
-      }),
-      rewardProfiles: this.backend.getAll<Row<'reward_profiles'>>({
-        table: TABLES.reward_profiles,
-        orderBy: [
-          { column: 'sort_order', ascending: true },
-          { column: 'key', ascending: true },
-        ],
-        camelCase: false,
-      }),
-      rewardAssignments: this.backend.getAll<Row<'reward_profile_assignments'>>({
-        table: TABLES.reward_profile_assignments,
-        orderBy: [
-          { column: 'sort_order', ascending: true },
-          { column: 'id', ascending: true },
-        ],
-        camelCase: false,
-      }),
-      combatCandidates: this.backend.getAll<Row<'encounter_combat_candidates'>>({
-        table: TABLES.encounter_combat_candidates,
-        orderBy: [
-          { column: 'sort_order', ascending: true },
-          { column: 'id', ascending: true },
-        ],
-        camelCase: false,
-      }),
-      opponents: this.backend.getAll<Row<'combat_opponent_definitions'>>({
-        table: TABLES.combat_opponent_definitions,
-        orderBy: [
-          { column: 'sort_order', ascending: true },
-          { column: 'key', ascending: true },
-        ],
-        camelCase: false,
-      }),
-      families: this.backend.getAll<Row<'combat_opponent_families'>>({
-        table: TABLES.combat_opponent_families,
-        orderBy: [
-          { column: 'sort_order', ascending: true },
-          { column: 'key', ascending: true },
-        ],
-        camelCase: false,
-      }),
-      formulas: this.backend.getAll<Row<'balance_formulas'>>({
-        table: TABLES.balance_formulas,
-        orderBy: [
-          { column: 'scope_key', ascending: true },
-          { column: 'key', ascending: true },
-        ],
-        camelCase: false,
-      }),
-    }).pipe(
-      map((data) => ({
-        encounters: data.encounters.map(mapEncounterDefinition),
-        minigames: data.minigames.map(mapExplorationMinigameDefinition),
-        difficulties: data.difficulties.map(mapExplorationDifficultyTier),
-        districts: mapBuildingDistricts(data.districts),
-        rewardProfiles: data.rewardProfiles.map(mapRewardProfile),
-        rewardAssignments: data.rewardAssignments.map(mapRewardProfileAssignment),
-        combatCandidates: data.combatCandidates.map(mapEncounterCombatCandidate),
-        opponents: data.opponents.map(mapCombatOpponentDefinition),
-        families: data.families.map(mapCombatOpponentFamily),
-        formulas: data.formulas.map(mapBalanceFormula),
-      })),
-    );
+    return getExplorationEncounterAdminData(this.backend);
   }
 
   upsertEncounterDefinition(
@@ -187,6 +98,75 @@ export class ExplorationEncounterAdmin {
         toDeactivateEncounterCombatCandidateRpcArgs(candidateId, reason),
       )
       .pipe(map(mapEncounterCombatCandidate));
+  }
+
+  upsertEncounterResourcePayload(
+    input: UpsertEncounterResourcePayloadInput,
+  ): Observable<EncounterResourcePayloadReadModel> {
+    return this.backend
+      .rpc<Database['public']['Functions']['upsert_encounter_resource_payload']['Returns']>(
+        RPC.upsert_encounter_resource_payload,
+        toUpsertEncounterResourcePayloadRpcArgs(input),
+      )
+      .pipe(map(mapEncounterResourcePayload));
+  }
+
+  deactivateEncounterResourcePayload(
+    payloadId: string,
+    reason: string,
+  ): Observable<EncounterResourcePayloadReadModel> {
+    return this.backend
+      .rpc<Database['public']['Functions']['deactivate_encounter_resource_payload']['Returns']>(
+        RPC.deactivate_encounter_resource_payload,
+        toDeactivateEncounterResourcePayloadRpcArgs(payloadId, reason),
+      )
+      .pipe(map(mapEncounterResourcePayload));
+  }
+
+  upsertExplorationEffectDefinition(
+    input: UpsertExplorationEffectDefinitionInput,
+  ): Observable<ExplorationEffectDefinitionReadModel> {
+    return this.backend
+      .rpc<Database['public']['Functions']['upsert_exploration_effect_definition']['Returns']>(
+        RPC.upsert_exploration_effect_definition,
+        toUpsertExplorationEffectDefinitionRpcArgs(input),
+      )
+      .pipe(map(mapExplorationEffectDefinition));
+  }
+
+  deactivateExplorationEffectDefinition(
+    effectDefinitionId: string,
+    reason: string,
+  ): Observable<ExplorationEffectDefinitionReadModel> {
+    return this.backend
+      .rpc<Database['public']['Functions']['deactivate_exploration_effect_definition']['Returns']>(
+        RPC.deactivate_exploration_effect_definition,
+        toDeactivateExplorationEffectDefinitionRpcArgs(effectDefinitionId, reason),
+      )
+      .pipe(map(mapExplorationEffectDefinition));
+  }
+
+  upsertEncounterEffectPayload(
+    input: UpsertEncounterEffectPayloadInput,
+  ): Observable<EncounterEffectPayloadReadModel> {
+    return this.backend
+      .rpc<Database['public']['Functions']['upsert_encounter_effect_payload']['Returns']>(
+        RPC.upsert_encounter_effect_payload,
+        toUpsertEncounterEffectPayloadRpcArgs(input),
+      )
+      .pipe(map(mapEncounterEffectPayload));
+  }
+
+  deactivateEncounterEffectPayload(
+    payloadId: string,
+    reason: string,
+  ): Observable<EncounterEffectPayloadReadModel> {
+    return this.backend
+      .rpc<Database['public']['Functions']['deactivate_encounter_effect_payload']['Returns']>(
+        RPC.deactivate_encounter_effect_payload,
+        toDeactivateEncounterEffectPayloadRpcArgs(payloadId, reason),
+      )
+      .pipe(map(mapEncounterEffectPayload));
   }
 
   upsertRewardProfileAssignment(

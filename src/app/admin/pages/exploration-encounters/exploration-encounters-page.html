@@ -32,17 +32,7 @@
   <app-exploration-encounter-edit-section />
   <app-exploration-encounter-reward-section />
   <app-exploration-encounter-combat-section />
-
-  <section class="mg-card p-lg flex-col gap-md">
-    <div class="flex-col gap-xs">
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Resource and effect encounter payloads</h3>
-      <p class="mb-0">
-        Resource, buff and debuff encounters can be named and scoped here, but their dedicated
-        payload editors are pending DB shape and RPC contracts. This page does not fake those
-        payloads through metadata-only forms.
-      </p>
-    </div>
-  </section>
+  <app-exploration-encounter-payload-section />
 
   <section class="mg-card p-lg w-100">
     <app-admin-tag-links [links]="links" />

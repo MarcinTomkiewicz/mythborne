@@ -8,11 +8,11 @@ import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-import { ExplorationEncounterRewardActionsState } from './exploration-encounter-reward-actions.state';
+import { ExplorationEncounterResourcePayloadActionsState } from './exploration-encounter-resource-payload-actions.state';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 
 @Component({
-  selector: 'app-exploration-encounter-reward-section',
+  selector: 'app-exploration-encounter-resource-payload-section',
   standalone: true,
   imports: [
     ReactiveFormsModule,
@@ -25,9 +25,9 @@ import { ExplorationEncountersPageState } from './exploration-encounters-page.st
     TableModule,
     TagModule,
   ],
-  templateUrl: './exploration-encounter-reward-section.html',
+  templateUrl: './exploration-encounter-resource-payload-section.html',
 })
-export class ExplorationEncounterRewardSection {
+export class ExplorationEncounterResourcePayloadSection {
   readonly page = inject(ExplorationEncountersPageState);
-  readonly rewardActions = inject(ExplorationEncounterRewardActionsState);
+  readonly actions = inject(ExplorationEncounterResourcePayloadActionsState);
 }

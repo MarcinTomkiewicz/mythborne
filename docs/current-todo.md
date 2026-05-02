@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-05-01
+Updated: 2026-05-02
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -123,7 +123,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UX-I7b - DB-driven central requirement editor for Buildings admin.
 - Completed and confirmed: UX-I8 - anti-abuse decision explainability pass.
 - Completed and frontend-confirmed: L12 - encounter definitions admin configurator.
-- Current backlog task: M12 - combat opponent definitions admin configurator.
+- Completed and confirmed: L12b - resource and effect encounter payload configurators.
+- Current backlog task: waiting for L13 to be added and started by user instruction.
 - H17+ planning note: status/verdict/sanction/CP penalty action sections now share a similar workflow-action shell; before adding the next similar audited status-action section, check whether to extract a light shared wrapper/state/helper for error/success/loading/submit card layout and stale-guard handling.
 - Reporting rule: future task reports must include a short Shared/reuse check covering reused shared/admin components, checked-but-not-reused options, and any new component justification.
 - G6 follow-up planning note: remaining gameplay audit slices are major item operations, trade operations once frontend flows exist, and estate/building irreversible changes.

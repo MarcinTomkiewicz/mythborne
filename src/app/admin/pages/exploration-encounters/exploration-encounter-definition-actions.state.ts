@@ -1,6 +1,5 @@
 import { DestroyRef, Injectable, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
 import { ToastService } from '../../../core/services/ui/toast';
 import { getErrorMessage } from '../../../core/utils/error-message';
@@ -13,6 +12,10 @@ import {
 } from './exploration-encounters-forms';
 import { ExplorationEncountersPageState } from './exploration-encounters-page.state';
 import { parseMetadataJson, requiredFormValue } from './exploration-encounter-action-utils';
+import {
+  markReasonInvalid,
+  runEncounterWorkflowAction,
+} from './exploration-encounter-workflow-actions';
 
 @Injectable()
 export class ExplorationEncounterDefinitionActionsState {
@@ -25,6 +28,7 @@ export class ExplorationEncounterDefinitionActionsState {
 
   readonly encounterForm = createEncounterDefinitionForm();
   readonly isSaving = signal(false);
+  readonly reasonError = signal<string | null>(null);
 
   constructor() {
     effect(() => {
@@ -43,6 +47,7 @@ export class ExplorationEncounterDefinitionActionsState {
   }
 
   saveEncounter(): void {
+    this.page.error.set(null);
     const metadataJson = parseMetadataJson(
       this.encounterForm.controls.metadataJsonText.value,
       (message) => this.page.error.set(message),
@@ -52,62 +57,54 @@ export class ExplorationEncounterDefinitionActionsState {
       return;
     }
 
+    this.encounterForm.markAllAsTouched();
+    const hasInvalidReason = markReasonInvalid(this.reasonError, this.encounterForm.controls.reason);
+
+    if (this.encounterForm.invalid || hasInvalidReason) {
+      return;
+    }
+
     try {
       const guard = this.currentEncounterGuard();
       const reason = requiredFormValue(this.encounterForm.controls.reason.value, 'Reason');
-      const token = this.saveToken.next();
 
-      this.isSaving.set(true);
-      this.page.error.set(null);
-      this.admin
-        .upsertEncounterDefinition({
-          encounterDefinitionId: this.encounterForm.controls.encounterDefinitionId.value,
-          key: this.encounterForm.controls.key.value,
-          label: this.encounterForm.controls.label.value,
-          description: this.encounterForm.controls.description.value,
-          helperText: trimToNull(this.encounterForm.controls.helperText.value),
-          adminDescription: trimToNull(this.encounterForm.controls.adminDescription.value),
-          encounterKind: requiredFormValue(
-            this.encounterForm.controls.encounterKind.value,
-            'Encounter kind',
-          ),
-          minigameKey: this.encounterForm.controls.minigameKey.value,
-          rewardProfileId: this.encounterForm.controls.rewardProfileId.value,
-          minDifficultyKey: this.encounterForm.controls.minDifficultyKey.value,
-          maxDifficultyKey: this.encounterForm.controls.maxDifficultyKey.value,
-          minDistrictCode: this.encounterForm.controls.minDistrictCode.value,
-          maxDistrictCode: this.encounterForm.controls.maxDistrictCode.value,
-          sortOrder: this.encounterForm.controls.sortOrder.value,
-          isActive: this.encounterForm.controls.isActive.value,
-          metadataJson,
-          reason,
-        })
-        .pipe(
-          finalize(() => {
-            if (this.saveToken.isCurrent(token)) {
-              this.isSaving.set(false);
-            }
+      runEncounterWorkflowAction({
+        token: this.saveToken,
+        destroyRef: this.destroyRef,
+        page: this.page,
+        toast: this.toast,
+        isSaving: this.isSaving,
+        guard,
+        call: () =>
+          this.admin.upsertEncounterDefinition({
+            encounterDefinitionId: this.encounterForm.controls.encounterDefinitionId.value,
+            key: requiredFormValue(this.encounterForm.controls.key.value, 'Key'),
+            label: requiredFormValue(this.encounterForm.controls.label.value, 'Label'),
+            description: requiredFormValue(
+              this.encounterForm.controls.description.value,
+              'Description',
+            ),
+            helperText: trimToNull(this.encounterForm.controls.helperText.value),
+            adminDescription: trimToNull(this.encounterForm.controls.adminDescription.value),
+            encounterKind: requiredFormValue(
+              this.encounterForm.controls.encounterKind.value,
+              'Encounter kind',
+            ),
+            minigameKey: this.encounterForm.controls.minigameKey.value,
+            rewardProfileId: this.encounterForm.controls.rewardProfileId.value,
+            minDifficultyKey: this.encounterForm.controls.minDifficultyKey.value,
+            maxDifficultyKey: this.encounterForm.controls.maxDifficultyKey.value,
+            minDistrictCode: this.encounterForm.controls.minDistrictCode.value,
+            maxDistrictCode: this.encounterForm.controls.maxDistrictCode.value,
+            sortOrder: this.encounterForm.controls.sortOrder.value,
+            isActive: this.encounterForm.controls.isActive.value,
+            metadataJson,
+            reason,
           }),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
-          next: (encounter) => {
-            if (!this.saveToken.isCurrent(token) || !guard()) {
-              return;
-            }
-
-            this.toast.show('success', 'Exploration encounters', 'Encounter definition saved.');
-            this.page.selectEncounter(encounter.id);
-            this.page.loadInitialData();
-          },
-          error: (error: unknown) => {
-            if (!this.saveToken.isCurrent(token) || !guard()) {
-              return;
-            }
-
-            this.page.error.set(getErrorMessage(error, 'Encounter configuration action failed.'));
-          },
-        });
+        successMessage: 'Encounter definition saved.',
+        failureMessage: 'Encounter configuration action failed.',
+        onSuccess: (encounter) => this.page.selectEncounter(encounter.id),
+      });
     } catch (error: unknown) {
       this.page.error.set(getErrorMessage(error, 'Encounter definition validation failed.'));
     }
@@ -121,46 +118,34 @@ export class ExplorationEncounterDefinitionActionsState {
       return;
     }
 
+    this.page.error.set(null);
+    this.encounterForm.markAllAsTouched();
+    if (markReasonInvalid(this.reasonError, this.encounterForm.controls.reason)) {
+      return;
+    }
+
     try {
       const guard = this.currentEncounterGuard();
       const reason = requiredFormValue(this.encounterForm.controls.reason.value, 'Reason');
-      const token = this.saveToken.next();
 
-      this.isSaving.set(true);
-      this.page.error.set(null);
-      this.admin
-        .deactivateEncounterDefinition(encounter.encounter.id, reason)
-        .pipe(
-          finalize(() => {
-            if (this.saveToken.isCurrent(token)) {
-              this.isSaving.set(false);
-            }
-          }),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
-          next: () => {
-            if (!this.saveToken.isCurrent(token) || !guard()) {
-              return;
-            }
-
-            this.toast.show('success', 'Exploration encounters', 'Encounter definition deactivated.');
-            this.page.loadInitialData();
-          },
-          error: (error: unknown) => {
-            if (!this.saveToken.isCurrent(token) || !guard()) {
-              return;
-            }
-
-            this.page.error.set(getErrorMessage(error, 'Encounter configuration action failed.'));
-          },
-        });
+      runEncounterWorkflowAction({
+        token: this.saveToken,
+        destroyRef: this.destroyRef,
+        page: this.page,
+        toast: this.toast,
+        isSaving: this.isSaving,
+        guard,
+        call: () => this.admin.deactivateEncounterDefinition(encounter.encounter.id, reason),
+        successMessage: 'Encounter definition deactivated.',
+        failureMessage: 'Encounter configuration action failed.',
+      });
     } catch (error: unknown) {
       this.page.error.set(getErrorMessage(error, 'Encounter deactivation validation failed.'));
     }
   }
 
   private syncFormFromSelection(): void {
+    this.reasonError.set(null);
     this.isSyncingForm = true;
     this.encounterForm.reset(encounterFormValue(this.page.data(), this.page.selectedEncounterId()));
     this.isSyncingForm = false;

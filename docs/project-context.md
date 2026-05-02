@@ -1,6 +1,6 @@
 # Mythborne — Project Context for Codex
 
-Updated: 2026-05-01
+Updated: 2026-05-02
 
 ## Purpose
 
@@ -17,6 +17,43 @@ If something here conflicts with a newer migration, seed, generated type, or exp
 5. this document.
 
 This document is intentionally compact. For exact DB/RPC/helper inventory, consult `database-current.md` and the current dump. For decision rationale and warnings, consult `current-decisions.md`.
+
+---
+
+## Current High-Priority Implementation Context — 2026-05-02
+
+The project has moved past the first large DB/config foundation pass. The current implementation track is around Epic M / Combat, after resolving missing DB/RPC contracts for M and L12b.
+
+Fresh DB/RPC foundations now available:
+
+- **M-DB1:** combat opponent admin/balancer write path for families, definitions, stat values, natural attack sources and equipment blueprint entries.
+- **M-DB2:** `persist_combat_result_snapshot(...)` for relational, report-ready combat result snapshots.
+- **L12b:** typed resource/effect encounter payload tables and RPCs for resource, buff and debuff encounter configuration.
+
+Generated Supabase types must be regenerated after these schema/RPC changes before Codex uses them in Angular.
+
+Do not mark Codex tasks complete in status documents unless the user explicitly confirms the task outcome.
+
+Current live thread:
+
+- Work focus: Epic M / Combat implementation readiness.
+- L12/L12b DB blockers are resolved at DB/RPC level, but frontend still needs generated types and implementation.
+- M12 opponent configurator is no longer blocked by missing DB write RPCs.
+- M9-style combat result persistence is no longer blocked by missing DB write RPC.
+
+---
+
+## Current Known Gaps / Future Work Notes
+
+These are known planning gaps and memory notes. They are not current Epic M work unless the user explicitly promotes them.
+
+- **Equipment equip/unequip:** `hero_equipment` exists, but there is no approved player-facing equip/unequip DB/RPC workflow yet. Angular must not invent direct writes for this.
+- **PvP MVP:** combat source type and report foundations can support PvP, but target selection, attack range, attack limits, protection/cooldowns, resource stealing/loss, PvP consequences and PvP report producer still need a dedicated epic/workflow.
+- **Auction watchers:** later design/implement watched auctions and notifications for watched auction changes.
+- **Auction rules:** later design where auction rules live and how minimum bid increment, custom bid amount, timing and anti-snipe/end-extension behavior are configured.
+- **Trade Routes / building-economy integration:** still future work; not a blocker for Epic M.
+
+Memory notes are intentionally short. Do not expand them into design work unless the user asks to work on that topic.
 
 ---
 
@@ -164,7 +201,7 @@ Frontend must not direct-write `trial_definitions` or `trial_combat_candidates`.
 
 ## Encounters / L12 Current Direction
 
-Encounter definitions are now DB/RPC-backed admin/balancer configuration, not frontend-only content. `/admin/exploration-encounters` is the current admin/balancer UI for encounter definition, reward assignment and combat candidate configuration.
+Encounter definitions are now DB/RPC-backed admin/balancer configuration, not frontend-only content.
 
 Current encounter kinds are:
 
@@ -194,8 +231,6 @@ L12 UI must be encounter-kind aware:
 - resource/buff/debuff encounters should not expose combat-candidate editors;
 - buff/debuff presentation must remember that only one exploration effect may be active at a time;
 - reward balancing must use `reward_profile_assignments`, especially `source_kind = encounter`, rather than treating `encounter_definitions.reward_profile_id` as the complete reward system.
-
-Resource/buff/debuff encounter payload editors are a separate L12b scope. Their DB shape and approved write RPC/governance path require explicit project decision before frontend implementation. They must not be modeled as arbitrary metadata JSON forms.
 
 Codex rule: after schema changes in this area, generated Supabase types must be refreshed before frontend implementation.
 

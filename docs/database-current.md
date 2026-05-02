@@ -1,6 +1,6 @@
 # Mythborne — Database Current Notes
 
-Updated: 2026-05-01
+Updated: 2026-05-02
 
 This file is the curated semantic index of the current database state. It is not a full `pg_dump`.
 
@@ -17,6 +17,141 @@ After every schema/RPC migration that Codex will consume, regenerate/update gene
 ---
 
 # Current DB/RPC contract updates
+
+## Update 2026-05-02 — M-DB1 combat opponent admin RPC/governance path
+
+The DB now has a canonical admin/balancer read/write path for combat opponent configuration used by Epic M and M12.
+
+Tables/read surfaces:
+
+- `combat_opponent_families` — simple family/category dictionary for opponents;
+- `combat_opponent_definitions` — reusable admin-defined combat opponents;
+- `combat_opponent_stat_values` — baseline stat values per opponent;
+- `combat_opponent_attack_sources` — natural/non-equipment attacks;
+- `combat_opponent_equipment_entries` — item-like equipment blueprint entries;
+- `combat_opponent_equipment_mode_definitions` — dictionary/read surface for equipment modes.
+
+Admin/balancer RPCs:
+
+- `upsert_combat_opponent_family(...)`;
+- `deactivate_combat_opponent_family(...)`;
+- `upsert_combat_opponent_definition(...)`;
+- `deactivate_combat_opponent_definition(...)`;
+- `upsert_combat_opponent_stat_value(...)`;
+- `delete_combat_opponent_stat_value(...)`;
+- `upsert_combat_opponent_attack_source(...)`;
+- `deactivate_combat_opponent_attack_source(...)`;
+- `upsert_combat_opponent_equipment_entry(...)`;
+- `deactivate_combat_opponent_equipment_entry(...)`;
+- internal helper `assert_can_manage_combat_opponent_config(...)`.
+
+Rules:
+
+- RPCs require authenticated user context, `can_manage_config_governance(null)` and a non-blank reason.
+- Angular must not direct-write `combat_opponent_*` tables.
+- Opponent `equipment_mode` supports `none`, `manual`, `generated`.
+- Equipment entry `entry_mode` supports `manual` and `generated` only.
+- Opponent equipment entries are item-like blueprints for combat setup, not player-owned `items`.
+- Natural attack sources use key/label/descriptions, min/max opponent level, attack count, min/max damage, critical chance/damage, active flag and sort order. They do not have an “attack source kind” field.
+- Stat values use canonical `stats.key`.
+- Equipment entries should use DB-backed item-generation components and slot dictionaries/read models where available.
+
+RLS/grants:
+
+- Authenticated SELECT is granted for the combat opponent configuration tables above.
+- Admin SELECT policies are gated through `can_manage_config_governance(null)`.
+- No direct INSERT/UPDATE/DELETE policy is intended for Angular.
+
+Audit dictionary entries include combat opponent family, definition, stat value, attack source and equipment entry entity/action types.
+
+---
+
+## Update 2026-05-02 — M-DB2 combat result snapshot persistence RPC
+
+The DB now has a canonical RPC for persisting completed combat result snapshots:
+
+- `persist_combat_result_snapshot(...)`.
+
+Related read helper:
+
+- `can_read_combat_result(...)`.
+
+Related rule helper:
+
+- `get_combat_turn_limit()`.
+
+Persisted tables/read surfaces:
+
+- `combat_results` — combat result header/source/outcome;
+- `combat_result_participants` — participant snapshots;
+- `combat_result_participant_stats` — participant stat snapshots;
+- `combat_result_attacks` — one row per resolved attack.
+
+Rules:
+
+- Frontend/callers must use `persist_combat_result_snapshot(...)` instead of direct inserts into combat result tables.
+- The RPC persists the snapshot only. It does not grant rewards, complete trials, apply PvP consequences, publish reports or create notifications.
+- Caller/source workflows interpret the combat result.
+- Read policies use `can_read_combat_result(...)`, which allows config-governance staff or authenticated owners of hero participants.
+- Combat result audit uses entity type `combat_result` and action `combat.result.persisted`.
+
+This removes the DB blocker for Epic M result persistence / M9-style frontend integration.
+
+---
+
+## Update 2026-05-02 — L12b resource/effect encounter payload foundation
+
+The DB now has typed payload configuration for non-combat encounters.
+
+Tables:
+
+- `encounter_resource_payloads` — typed resource payload rows for `encounter_kind = resource`;
+- `encounter_effect_payloads` — typed buff/debuff payload rows linking encounters to `exploration_effect_definitions`;
+- `exploration_effect_definitions` — reusable exploration effect definitions with governed admin write path.
+
+Admin/balancer RPCs:
+
+- `upsert_encounter_resource_payload(...)`;
+- `deactivate_encounter_resource_payload(...)`;
+- `upsert_encounter_effect_payload(...)`;
+- `deactivate_encounter_effect_payload(...)`;
+- `upsert_exploration_effect_definition(...)`;
+- `deactivate_exploration_effect_definition(...)`;
+- internal helper `assert_can_manage_encounter_payload_config(...)`.
+
+Rules:
+
+- Resource payloads may be attached only to resource encounters.
+- Effect payloads may be attached only to buff/debuff encounters.
+- Linked effect kind must match the encounter kind.
+- Resource payload `amount_mode` supports `fixed`, `range`, `formula`.
+- Formula mode requires `formula_id`; fixed/range modes require ordered min/max amounts.
+- Chance percent must be between 0 and 100.
+- `metadata_json` is a technical extension object, not the main gameplay contract.
+- Mutations require authenticated user context, config-governance permission and reason.
+
+RLS/grants:
+
+- Authenticated SELECT is granted for `encounter_resource_payloads`, `encounter_effect_payloads`, and `exploration_effect_definitions`.
+- Admin SELECT policies are gated through `can_manage_config_governance(null)`.
+- No direct write policy is intended for Angular.
+
+Rollback smoke passed by creating, within a rolled-back transaction, one resource encounter with one resource payload and one buff encounter with one effect payload.
+
+---
+
+## Smoke-test note — authenticated admin context
+
+SQL-editor rollback smoke tests should not assume that an admin/operator row can always be discovered automatically. Prefer one of these patterns:
+
+- explicitly set `request.jwt.claim.sub` to a known admin `user_data.id` / `auth.users.id` for the local database; or
+- query by a known admin email in the local test database; or
+- create a temporary test user/role inside a transaction only when that is safe and isolated.
+
+Do not treat “No admin/operator user found” from a smoke helper as evidence that the migrated RPC/table shape is broken.
+
+---
+
 
 ## Update 2026-05-01 — L12 encounter admin write path and reward assignment foundation
 

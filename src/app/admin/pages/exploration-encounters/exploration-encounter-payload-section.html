@@ -1,0 +1,27 @@
+<section class="mg-card p-lg flex-col gap-md">
+  <div class="flex-col gap-xs">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Resource and effect payloads</h3>
+    <p class="mb-0">
+      Non-combat encounter payloads are configured through typed DB rows. Resource encounters grant
+      a configured resource opportunity; buff and debuff encounters link to reusable exploration
+      effects, which normally expire at the next combat encounter or trial.
+    </p>
+  </div>
+
+  @if (page.selectedEncounter(); as view) {
+    @if (view.encounter.encounterKind === 'resource') {
+      <app-exploration-encounter-resource-payload-section />
+    } @else if (view.encounter.encounterKind === 'buff' || view.encounter.encounterKind === 'debuff') {
+      <div class="grid-2 gap-lg">
+        <app-exploration-encounter-effect-definition-section />
+        <app-exploration-encounter-effect-payload-section />
+      </div>
+    } @else {
+      <p-message severity="info">
+        This encounter is {{ view.encounter.encounterKind }} and does not use resource/effect payloads.
+      </p-message>
+    }
+  } @else {
+    <p class="mb-0">Select or save an encounter before configuring non-combat payloads.</p>
+  }
+</section>

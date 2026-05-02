@@ -1,0 +1,77 @@
+<div class="flex-col gap-md">
+  @if (!page.hasResourceTypeDictionary()) {
+    <p-message severity="warn">
+      Resource type has no dedicated DB dictionary yet. The selector uses existing payload values
+      plus current core resource keys until a resource type dictionary is added.
+    </p-message>
+  }
+
+  <form class="flex-col gap-md w-100" [formGroup]="actions.form">
+    <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+    <label class="flex-col gap-sm w-100">
+      <span>Resource type</span>
+      <p-select formControlName="resourceType" [options]="page.resourceTypeOptions()" optionLabel="label" optionValue="value" />
+      @if (actions.form.controls.resourceType.touched && actions.form.controls.resourceType.invalid) {
+        <small class="error-text">Resource type is required.</small>
+      }
+    </label>
+    <label class="flex-col gap-sm w-100">
+      <span>Amount mode</span>
+      <p-select formControlName="amountMode" [options]="page.amountModeOptions" optionLabel="label" optionValue="value" />
+    </label>
+    <label class="flex-col gap-sm w-100"><span>Min amount</span><p-inputnumber formControlName="minAmount" /></label>
+    <label class="flex-col gap-sm w-100"><span>Max amount</span><p-inputnumber formControlName="maxAmount" /></label>
+    <label class="flex-col gap-sm w-100">
+      <span>Formula</span>
+      <p-select formControlName="formulaId" [options]="page.payloadFormulaOptions()" optionLabel="label" optionValue="value" />
+      <small class="muted-text">Advanced. Filtered to exploration/resource/reward-like formula scopes when available.</small>
+    </label>
+    <label class="flex-col gap-sm w-100"><span>Chance percent</span><p-inputnumber formControlName="chancePercent" [min]="0" [max]="100" /></label>
+    <label class="flex-col gap-sm w-100"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
+    <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
+    </div>
+    <label class="flex-col gap-sm w-100"><span>Description</span><textarea pInputText rows="2" formControlName="description"></textarea></label>
+    <label class="flex-col gap-sm w-100"><span>Helper text</span><textarea pInputText rows="2" formControlName="helperText"></textarea></label>
+    <label class="flex-col gap-sm w-100"><span>Admin description</span><textarea pInputText rows="2" formControlName="adminDescription"></textarea></label>
+    <details class="mg-card p-md w-100">
+      <summary class="muted-text">Advanced technical metadata</summary>
+      <label class="flex-col gap-sm mt-md">
+        <span>Metadata JSON</span>
+        <textarea pInputText rows="3" formControlName="metadataJsonText"></textarea>
+      </label>
+    </details>
+    <label class="flex-col gap-sm w-100">
+      <span>Reason</span>
+      <input pInputText formControlName="reason" />
+      @if (actions.reasonError() || (actions.form.controls.reason.touched && actions.form.controls.reason.invalid)) {
+        <small class="error-text">{{ actions.reasonError() ?? 'Reason is required.' }}</small>
+      }
+    </label>
+    <div class="flex-row flex-wrap gap-sm">
+      <button pButton type="button" label="Save resource payload" [disabled]="actions.isSaving()" (click)="actions.savePayload()"></button>
+      <button pButton type="button" label="New payload" severity="secondary" (click)="actions.startNewPayload()"></button>
+      <button pButton type="button" label="Deactivate payload" severity="danger" [disabled]="!actions.selectedPayload()" (click)="actions.deactivatePayload()"></button>
+    </div>
+  </form>
+
+  <p-table [value]="page.resourcePayloads()" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr><th>Resource</th><th>Amount</th><th>Chance</th><th>Formula</th><th>Status</th></tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-row>
+      <tr (click)="actions.selectPayload(row.payload.id)">
+        <td>
+          {{ row.payload.resourceType }}
+          @if (row.payload.description) { <br /><span class="muted-text">{{ row.payload.description }}</span> }
+        </td>
+        <td>{{ row.amountLabel }}</td>
+        <td>{{ row.payload.chancePercent }}%</td>
+        <td>{{ row.formulaLabel }}</td>
+        <td><p-tag [severity]="row.payload.isActive ? 'success' : 'secondary'" [value]="row.payload.isActive ? 'Active' : 'Inactive'" /></td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr><td colspan="5">No resource payloads are configured for this encounter.</td></tr>
+    </ng-template>
+  </p-table>
+</div>

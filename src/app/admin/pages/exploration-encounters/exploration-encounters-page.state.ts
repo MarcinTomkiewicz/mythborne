@@ -10,6 +10,11 @@ import {
   toEncounterDefinitionAdminView,
   toEncounterRewardAssignmentAdminViews,
 } from '../../../core/utils/exploration-encounter-admin-mappers';
+import {
+  toEncounterEffectPayloadAdminViews,
+  toEncounterResourcePayloadAdminViews,
+  toExplorationEffectDefinitionAdminViews,
+} from '../../../core/utils/exploration-encounter-payload-admin-mappers';
 import { RequestToken } from '../../../core/utils/request-token';
 
 @Injectable()
@@ -47,6 +52,25 @@ export class ExplorationEncountersPageState {
     const encounterId = this.selectedEncounterId();
 
     return data && encounterId ? toEncounterRewardAssignmentAdminViews(data, encounterId) : [];
+  });
+  readonly resourcePayloads = computed(() => {
+    const data = this.data();
+    const encounterId = this.selectedEncounterId();
+
+    return data && encounterId ? toEncounterResourcePayloadAdminViews(data, encounterId) : [];
+  });
+  readonly effectPayloads = computed(() => {
+    const data = this.data();
+    const encounterId = this.selectedEncounterId();
+
+    return data && encounterId ? toEncounterEffectPayloadAdminViews(data, encounterId) : [];
+  });
+  readonly effectDefinitions = computed(() => {
+    const data = this.data();
+    const encounterKind = this.selectedEncounter()?.encounter.encounterKind ?? null;
+    const kind = encounterKind === 'buff' || encounterKind === 'debuff' ? encounterKind : null;
+
+    return data ? toExplorationEffectDefinitionAdminViews(data, kind) : [];
   });
   readonly hasEncounters = computed(() => (this.data()?.encounters.length ?? 0) > 0);
   readonly canEditCombatCandidates = computed(
@@ -95,6 +119,20 @@ export class ExplorationEncountersPageState {
       value: entry.id,
     })),
   );
+  readonly hasRewardProfiles = computed(() => this.requiredRewardProfileOptions().length > 0);
+  readonly outcomeKindOptions = computed(() => {
+    const existing = new Set(
+      (this.data()?.rewardAssignments ?? [])
+        .filter((entry) => entry.sourceKind === 'encounter')
+        .map((entry) => entry.outcomeKind),
+    );
+    ['success', 'failure', 'encounter_completed'].forEach((kind) => existing.add(kind));
+
+    return Array.from(existing).sort().map((kind) => ({
+      label: kindLabel(kind),
+      value: kind,
+    }));
+  });
   readonly candidateKindOptions = [
     { label: 'Concrete opponent', value: 'opponent' },
     { label: 'Opponent family', value: 'family' },
@@ -118,6 +156,52 @@ export class ExplorationEncountersPageState {
       value: entry.id,
     })),
   ]);
+  readonly payloadFormulaOptions = computed(() => [
+    { label: 'No formula', value: null },
+    ...(this.data()?.formulas ?? [])
+      .filter((entry) => isPayloadFormulaScope(entry.scopeKey))
+      .map((entry) => ({
+      label: `${entry.label} (${entry.key})${entry.isEnabled ? '' : ' - disabled'}`,
+      value: entry.id,
+    })),
+  ]);
+  readonly bonusTemplateOptions = computed(() => [
+    { label: 'No bonus template', value: null },
+    ...(this.data()?.bonusTemplates ?? []).map((entry) => ({
+      label: `${entry.label} (${entry.key})${entry.isActive ? '' : ' - inactive'}`,
+      value: entry.id,
+    })),
+  ]);
+  readonly effectDefinitionOptions = computed(() => {
+    const encounterKind = this.selectedEncounter()?.encounter.encounterKind;
+    const effects = this.data()?.effectDefinitions ?? [];
+
+    return effects
+      .filter((entry) => entry.effectKind === encounterKind)
+      .map((entry) => ({
+        label: `${entry.label} (${entry.key})${entry.isActive ? '' : ' - inactive'}`,
+        value: entry.id,
+      }));
+  });
+  readonly amountModeOptions = [
+    { label: 'Fixed amount', value: 'fixed' },
+    { label: 'Amount range', value: 'range' },
+    { label: 'Formula amount', value: 'formula' },
+  ];
+  readonly effectKindOptions = [
+    { label: 'Buff', value: 'buff' },
+    { label: 'Debuff', value: 'debuff' },
+  ];
+  readonly hasResourceTypeDictionary = computed(() => false);
+  readonly resourceTypeOptions = computed(() => {
+    const existing = new Set((this.data()?.resourcePayloads ?? []).map((entry) => entry.resourceType));
+    ['drachma', 'materials', 'workforce'].forEach((type) => existing.add(type));
+
+    return Array.from(existing).sort().map((type) => ({
+      label: kindLabel(type),
+      value: type,
+    }));
+  });
 
   constructor() {
     this.encounterSelector.valueChanges
@@ -185,4 +269,12 @@ function kindLabel(kind: string): string {
     .filter(Boolean)
     .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
     .join(' ') || kind;
+}
+
+function isPayloadFormulaScope(scopeKey: string): boolean {
+  const normalized = scopeKey.toLowerCase();
+
+  return ['exploration', 'encounter', 'resource', 'reward'].some((part) =>
+    normalized.includes(part),
+  );
 }

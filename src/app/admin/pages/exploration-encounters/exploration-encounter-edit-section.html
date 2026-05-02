@@ -6,54 +6,83 @@
       direct assignment; detailed balancing should use the reward assignment panel below.
     </p>
   </div>
-  <form class="grid-form gap-lg" [formGroup]="definitionActions.encounterForm">
-    <label class="form-field"><span>Label</span><input pInputText formControlName="label" /></label>
-    <label class="form-field">
+  <form class="flex-col gap-md w-100" [formGroup]="definitionActions.encounterForm">
+    <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+    <label class="flex-col gap-sm w-100">
+      <span>Label</span>
+      <input pInputText formControlName="label" />
+      @if (definitionActions.encounterForm.controls.label.touched && definitionActions.encounterForm.controls.label.invalid) {
+        <small class="error-text">Label is required.</small>
+      }
+    </label>
+    <label class="flex-col gap-sm w-100">
       <span>Generated key</span>
       <input pInputText formControlName="key" [readonly]="!definitionActions.encounterForm.controls.allowKeyOverride.value" />
       <small class="muted-text">Generated for new encounters. Existing keys stay stable unless advanced override is enabled.</small>
+      @if (definitionActions.encounterForm.controls.key.touched && definitionActions.encounterForm.controls.key.invalid) {
+        <small class="error-text">Key is required.</small>
+      }
     </label>
-    <label class="form-field">
+    <label class="flex-col gap-sm w-100">
       <span>Advanced key override</span>
       <p-checkbox formControlName="allowKeyOverride" [binary]="true" />
     </label>
-    <label class="form-field">
+    <label class="flex-col gap-sm w-100">
       <span>Encounter kind</span>
       <p-select formControlName="encounterKind" [options]="page.encounterKindOptions()" optionLabel="label" optionValue="value" />
     </label>
-    <label class="form-field">
+    <label class="flex-col gap-sm w-100">
       <span>Minigame</span>
       <p-select formControlName="minigameKey" [options]="page.minigameOptions()" optionLabel="label" optionValue="value" />
     </label>
-    <label class="form-field">
+    <label class="flex-col gap-sm w-100">
       <span>Direct reward profile</span>
       <p-select formControlName="rewardProfileId" [options]="page.rewardProfileOptions()" optionLabel="label" optionValue="value" />
       <small class="muted-text">Prefer reward assignments for outcome/difficulty/district-specific rewards.</small>
     </label>
-    <label class="form-field">
+    <label class="flex-col gap-sm w-100">
       <span>Minimum difficulty</span>
       <p-select formControlName="minDifficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
     </label>
-    <label class="form-field">
+    <label class="flex-col gap-sm w-100">
       <span>Maximum difficulty</span>
       <p-select formControlName="maxDifficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
     </label>
-    <label class="form-field">
+    <label class="flex-col gap-sm w-100">
       <span>Minimum district</span>
       <p-select formControlName="minDistrictCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
     </label>
-    <label class="form-field">
+    <label class="flex-col gap-sm w-100">
       <span>Maximum district</span>
       <p-select formControlName="maxDistrictCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
     </label>
-    <label class="form-field"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
-    <label class="form-field"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
-    <label class="form-field form-field--wide"><span>Description</span><textarea pInputText rows="3" formControlName="description"></textarea></label>
-    <label class="form-field form-field--wide"><span>Helper text</span><textarea pInputText rows="2" formControlName="helperText"></textarea></label>
-    <label class="form-field form-field--wide"><span>Admin description</span><textarea pInputText rows="2" formControlName="adminDescription"></textarea></label>
-    <label class="form-field form-field--wide"><span>Metadata JSON</span><textarea pInputText rows="4" formControlName="metadataJsonText"></textarea></label>
-    <label class="form-field form-field--wide"><span>Reason</span><input pInputText formControlName="reason" /></label>
-    <div class="flex-row gap-sm">
+    <label class="flex-col gap-sm w-100"><span>Sort order</span><p-inputnumber formControlName="sortOrder" /></label>
+    <label class="flex-col gap-sm w-100"><span>Active</span><p-checkbox formControlName="isActive" [binary]="true" /></label>
+    </div>
+    <label class="flex-col gap-sm w-100">
+      <span>Description</span>
+      <textarea pInputText rows="3" formControlName="description"></textarea>
+      @if (definitionActions.encounterForm.controls.description.touched && definitionActions.encounterForm.controls.description.invalid) {
+        <small class="error-text">Description is required.</small>
+      }
+    </label>
+    <label class="flex-col gap-sm w-100"><span>Helper text</span><textarea pInputText rows="2" formControlName="helperText"></textarea></label>
+    <label class="flex-col gap-sm w-100"><span>Admin description</span><textarea pInputText rows="2" formControlName="adminDescription"></textarea></label>
+    <details class="mg-card p-md w-100">
+      <summary class="muted-text">Advanced technical metadata</summary>
+      <label class="flex-col gap-sm mt-md">
+        <span>Metadata JSON</span>
+        <textarea pInputText rows="4" formControlName="metadataJsonText"></textarea>
+      </label>
+    </details>
+    <label class="flex-col gap-sm w-100">
+      <span>Reason</span>
+      <input pInputText formControlName="reason" />
+      @if (definitionActions.reasonError() || (definitionActions.encounterForm.controls.reason.touched && definitionActions.encounterForm.controls.reason.invalid)) {
+        <small class="error-text">{{ definitionActions.reasonError() ?? 'Reason is required.' }}</small>
+      }
+    </label>
+    <div class="flex-row flex-wrap gap-sm">
       <button pButton type="button" label="Save encounter" [disabled]="definitionActions.isSaving()" (click)="definitionActions.saveEncounter()"></button>
       <button pButton type="button" label="Deactivate encounter" severity="danger" [disabled]="!page.selectedEncounter()" (click)="definitionActions.deactivateEncounter()"></button>
     </div>
