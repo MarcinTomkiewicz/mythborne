@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { map, Observable } from 'rxjs';
+import { COMBAT_FORMULA_TARGET } from '../../constants/combat-formula-targets.const';
 import { COMBAT_SIDE } from '../../domain/combat/combat.model';
 import {
   CombatInitiativeParticipantInput,
@@ -9,7 +10,7 @@ import {
 import { FormulaService } from '../formula/formula';
 import { FormulaRuntimeService } from '../progression/formula-runtime';
 
-export const COMBAT_INITIATIVE_SCORE_TARGET = 'combat_initiative_score';
+export const COMBAT_INITIATIVE_SCORE_TARGET = COMBAT_FORMULA_TARGET.initiativeScore;
 
 @Injectable({ providedIn: 'root' })
 export class CombatInitiativeOrderService {

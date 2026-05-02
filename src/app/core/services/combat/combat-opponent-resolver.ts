@@ -13,6 +13,7 @@ import {
 import { BalanceFormula, FormulaTarget } from '../../domain/formula/formula.model';
 import { ItemGenerationCatalog } from '../../domain/item/item-generation.model';
 import { ItemGenerationFactory } from '../../factories/item-generation/item-generation.factory';
+import { defaultCombatFormulaBonusesForOpponent } from '../../utils/combat-formula-bonuses';
 import { attackPlanFor, naturalAttacksFor } from '../../utils/combat-opponent-attack-plan';
 import {
   OPPONENT_EQUIPMENT_MODE,
@@ -93,6 +94,7 @@ export class CombatOpponentResolver {
         },
         stats: coreStatsFrom(scaledStats, naturalAttackSources),
         baseStats: participantStats(input.side, scaledStats),
+        formulaBonuses: defaultCombatFormulaBonusesForOpponent(),
         attackPlan,
       },
       opponent,

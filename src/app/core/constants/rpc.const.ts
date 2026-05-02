@@ -40,6 +40,7 @@ export const RPC = {
   search_moderation_user_targets: 'search_moderation_user_targets',
   create_entity_requirement: 'create_entity_requirement',
   get_ui_metadata_entries: 'get_ui_metadata_entries',
+  get_combat_turn_limit: 'get_combat_turn_limit',
   deactivate_entity_requirement: 'deactivate_entity_requirement',
   get_bonus_impact_preview: 'get_bonus_impact_preview',
   get_building_progression_preview: 'get_building_progression_preview',

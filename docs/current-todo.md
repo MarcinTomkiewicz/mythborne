@@ -135,7 +135,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: M5 - opponent combatant/loadout resolver.
 - Completed and confirmed: M6 - attack plan builder.
 - Completed and confirmed: M7 - initiative and turn order.
-- Next backlog task: M8 - core combat resolver with slot execution, after the user commit and explicit start instruction.
+- Completed and confirmed: M8 - core combat resolver with slot execution.
+- Next backlog task: M9 - persist combat result snapshot through canonical RPC, after the user commit and explicit start instruction.
 - M2 follow-up debt: after the canonical combat runtime is implemented and integrated, retire the temporary `/game/combat` sandbox/prototype flow and remove `combat-sandbox.model.ts` instead of developing it as the target system.
 - M4 follow-up debt: first opponent catalog UI should add readable labels for manual item-generation references and generated bucket references, and should distinguish "families exist but no opponent definitions" from a fully empty opponent catalog.
 - M5 follow-up debt: generated opponent equipment with `generatedBucketProfileId` is currently reported as an unsupported integration gap because the current item generation catalog loader does not support opponent-specific bucket profile selection; revisit with the first opponent catalog/admin UI or item generation catalog integration pass.

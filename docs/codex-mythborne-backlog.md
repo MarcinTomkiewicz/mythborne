@@ -3369,6 +3369,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 
 ## Task M8 — Core combat resolver with slot execution
 
+**Status:** Done / accepted on 2026-05-02.
+
 **Goal:** Replace sandbox-only alternating flow with reusable turn-limited slot execution.
 
 **Scope:**
@@ -3393,6 +3395,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 - Critical damage percent is used instead of hardcoded x2.
 - Resolver is suitable for sandbox/admin-test and for producing deterministic domain result objects.
 - Any future production integration must explicitly state whether the result is backend-authoritative, backend-validated, or sandbox/client-only.
+
+**Implementation note:** M8 accepted on 2026-05-02. Core combat now has `CombatCoreResolverService` for reusable slot execution over canonical combat inputs. The service loads `get_combat_turn_limit()` through `RPC.get_combat_turn_limit`, reads DB-backed combat formula assignments, uses M7 initiative order, validates invalid turn-limit configuration, and delegates turn loop, attack resolution, formula context, and result/event snapshot mapping to focused pure helpers. Timing inputs are keyed by turn, final non-evaded damage is clamped to at least 1, critical damage uses percent multiplier semantics, and opponent formula bonuses use a named default helper. M8 added no UI, no sandbox/prototype flow changes, no result persistence, no manual smoke and no route smoke.
 
 ---
 
@@ -3995,220 +3999,621 @@ Current source of truth:
 
 # Epic O — Estates, districts and buildings
 
-Epic O is now an implementation epic over the current DB/RPC estate/building runtime foundation, not a fresh placeholder design.
+Epic O implements player-facing estate/building runtime and admin/balancer building configuration over the current DB/RPC estate foundation.
+
+This is not a fresh placeholder design. The DB foundation exists and must be treated as the source of truth for frontend and admin work.
 
 **Current DB/RPC foundation expected before Codex starts O tasks:**
 
-- `estate_district_address_capacities` with active capacities: A=5000, B=3000, C=500, D=50, E=1.
-- `estates.address_number`.
-- `format_estate_address(...)` and `parse_estate_address_number(...)`.
-- `normalize_estate_address_fields(...)` trigger on `estates`.
+- `estate_district_address_capacities` with active capacities:
+  - A = 5000;
+  - B = 3000;
+  - C = 500;
+  - D = 50;
+  - E = 1.
+- `estates.district_code + estates.address_number` as the estate address source of truth.
+- `estates.address` only as legacy/display compatibility. New code should format addresses from `district_code + address_number`.
+- `trg_normalize_estate_address_fields` / `normalize_estate_address_fields(...)` on `estates`.
+- `buildings.district_code` as **minimum district availability**, not exact district only.
+- `buildings.starting_level`.
+- `buildings.base_build_time_seconds`.
+- No `buildings.requirements` legacy JSON column.
+- No `building_requirements` legacy table.
+- `building_resource_costs`.
+- `building_district_level_caps`.
+- Central requirements through `requirement_definitions` and `entity_requirements`.
 - `hero_resource_ledger`.
-- `apply_hero_resource_delta_with_ledger(...)`.
+- Internal `apply_hero_resource_delta_with_ledger(...)`.
 - `estate_building_jobs`.
-- `estate_building_job_status` enum: `active`, `completed`, `cancelled`, `failed`.
-- `finalize_completed_estate_building_jobs(...)`.
-- `relocate_hero_estate_to_empty_address(...)`.
-- `start_estate_building_upgrade(...)`.
+- `estate_building_job_status`: `active`, `completed`, `cancelled`, `failed`.
+- Internal `finalize_completed_estate_building_jobs(...)`.
+- Internal `ensure_estate_building_baseline(...)`.
+- Internal `assert_hero_meets_building_requirements(...)`.
+- Owner-safe `finalize_hero_estate_building_jobs(...)`.
+- Owner-safe `relocate_hero_estate_to_empty_address(...)`.
+- Owner-safe `start_estate_building_upgrade(...)`, returning `build_time_seconds`.
+- `get_building_progression_preview(...)`.
 - `evaluate_balance_formula_target(...)` and DB-side formula runtime helpers.
+- DB metadata namespaces:
+  - `building_configurator_section`;
+  - `building_configurator_field`;
+  - `estate_runtime_section`;
+  - `estate_building_runtime_section`.
 
 **Epic rules:**
 
 - Empty estate addresses are not database rows.
+- The database stores occupied estates only.
 - `district_code + address_number` is the source of truth for estate identity.
 - `estates.address` is legacy/display compatibility only. Do not treat it as source of truth. If a task removes final code dependency on it, report `DB cleanup candidate: estates.address`.
 - Frontend may generate possible address labels from `estate_district_address_capacities` and overlay occupied `estates` rows.
+- `buildings.district_code` is the minimum estate district where the building becomes available.
+- Higher estate districts include buildings from lower districts:
+  - Estate A sees A buildings;
+  - Estate B sees A+B buildings;
+  - Estate C sees A+B+C buildings;
+  - Estate D sees A+B+C+D buildings;
+  - Estate E sees A+B+C+D+E buildings.
+- Do not render higher-district buildings as locked cards in lower districts. They should not appear in the player estate building list.
+- New estate baseline is DB-owned through `ensure_estate_building_baseline(...)`.
+- New estate baseline creates explicit `estate_buildings` rows for buildings available in the estate district and lower districts.
+- `buildings.starting_level` controls the level inserted into new estate baseline:
+  - `0` means available but unbuilt; first upgrade builds level 1;
+  - `1` is the default;
+  - values above `1` are technically allowed but should be treated as advanced/admin-danger balance configuration.
 - Moving to an empty address is destructive and irreversible for the current estate/building/job state.
 - Empty-address relocation must use `relocate_hero_estate_to_empty_address(...)`; do not direct delete/insert `estates` from Angular.
-- Siege/takeover of occupied estates is a separate future workflow and must not use the destructive empty-address relocation RPC.
+- Empty-address relocation resets building state to the configured baseline for the target district. It does not preserve levels from the old estate.
+- Siege/takeover of occupied estates is a separate future guild/PvP workflow and must not use the destructive empty-address relocation RPC.
 - Building construction/upgrades use one active `estate_building_jobs` row per estate.
 - Player-facing build cancel is not part of MVP. `cancelled` and `failed` are reserved for admin/system correction paths.
-- `finalize_completed_estate_building_jobs(...)` must be called by read/gameplay workflows before relying on current completed building state.
-- Starting a build/upgrade must use `start_estate_building_upgrade(...)`; do not calculate authoritative cost/time in Angular, do not direct-write `hero_resources`, `hero_resource_ledger`, `estate_buildings`, or `estate_building_jobs`.
-- `start_estate_building_upgrade(...)` evaluates assigned `building_upgrade_cost` and `building_upgrade_time` formulas server-side through DB formula runtime.
-- Building UI may show previews, but preview is not source of truth for spending/timers.
-
-## Task O1 — DB/types alignment after estate/building runtime migrations
-
-**Goal:** Confirm frontend generated types expose the current estate/building runtime foundation before implementation work.
-
-**Scope:**
-
-- Run `git status --short` first.
-- Inspect generated database types after user-side regeneration.
-- Confirm generated types expose:
-  - `estate_district_address_capacities`,
-  - `estates.address_number`,
-  - `hero_resource_ledger`,
-  - `estate_building_jobs`,
-  - `estate_building_job_status`,
-  - `relocate_hero_estate_to_empty_address(...)`,
-  - `start_estate_building_upgrade(...)`,
-  - `finalize_completed_estate_building_jobs(...)`,
-  - `evaluate_balance_formula_target(...)`.
-- Do not regenerate types unless the user explicitly asks Codex to do so.
-- Do not mark O tasks complete in state docs during this alignment task.
-
-**Acceptance criteria:**
-
-- Expected tables/enums/RPCs are visible in generated types.
-- App compiles after type inspection or minimal type-reference fixes.
-- If any expected table/RPC/type is missing, Codex reports a precise DB/types blocker instead of starting O2.
-- No raw generated rows replace domain models.
+- Frontend must use `finalize_hero_estate_building_jobs(...)` for owner-safe lazy finalization. It must not call internal `finalize_completed_estate_building_jobs(...)`.
+- `finalize_hero_estate_building_jobs(...)` ensures baseline and lazy-finalizes completed jobs before current building state is trusted.
+- Building construction/upgrade must use `start_estate_building_upgrade(...)`.
+- `start_estate_building_upgrade(...)` is the authoritative workflow for:
+  - owner validation;
+  - gameplay eligibility;
+  - baseline normalization;
+  - completed job finalization;
+  - active job guard;
+  - district availability;
+  - max-level/district cap validation;
+  - central requirement validation;
+  - formula-backed resource costs;
+  - formula-backed build time in seconds;
+  - resource spending through `hero_resource_ledger`;
+  - job creation;
+  - audit.
+- Build time contract is seconds. UI may render seconds as minutes/hours/days, but new code must not assume whole minutes.
+- Formula preview in Angular is explainability only. Authoritative cost/time is calculated by DB/RPC.
+- Requirements are central `entity_requirements`. Requirements are availability gates, not costs.
+- Legacy `building_requirements` and `buildings.requirements` must not be reintroduced.
+- `buildings.max_level = 0` means unlimited.
+- Missing district cap override falls back to `buildings.max_level`.
+- Costs come from `building_resource_costs` and formula evaluation. Costs are spent by RPC and recorded in resource ledger.
+- Player-facing UI must not direct-write:
+  - `estates`;
+  - `estate_buildings`;
+  - `estate_building_jobs`;
+  - `hero_resources`;
+  - `hero_resource_ledger`.
+- Admin/balancer building configurator must explain what each section configures, where runtime uses it, what changes on save and gameplay impact. Use DB-backed metadata namespaces where available.
+- Ordinary form labels may come from frontend i18n, but runtime meaning, impact, safety boundaries and diagnostics must use DB-backed metadata where feasible.
+- If a building/estate admin edit path lacks a canonical DB/RPC/governance write path, stop and report a DB/RPC blocker instead of expanding raw direct table writes.
 
 ---
 
-## Task O2 — Estate/address read layer and availability model
+## Task O1 — DB/types alignment after estate foundation cleanup
 
-**Goal:** Build the frontend read/domain layer for current estate address identity and district capacities.
+**Goal:** Synchronize generated frontend DB types and frontend expectations with the current estate/building DB contract.
 
 **Scope:**
 
-- Add/update domain models/mappers for:
-  - estate district,
-  - district address capacity,
-  - occupied estate row,
-  - generated available/vacant address entry.
-- Treat `district_code + address_number` as source of truth.
-- Format display address from `district_code + address_number`; keep `estates.address` as legacy/display fallback only.
-- Generate possible addresses from `estate_district_address_capacities` and overlay occupied `estates` rows.
-- Support pagination/windowing so frontend does not materialize huge address lists unnecessarily.
-- Show occupied address with safe occupant display data only; do not expose private account data.
+- Regenerate/update generated Supabase database types after the O foundation migrations.
+- Confirm generated types include:
+  - `buildings.starting_level`;
+  - `buildings.base_build_time_seconds`;
+  - no `buildings.base_build_time_minutes`;
+  - no `buildings.requirements`;
+  - no `building_requirements`;
+  - `finalize_hero_estate_building_jobs(...)`;
+  - `relocate_hero_estate_to_empty_address(...)`;
+  - `start_estate_building_upgrade(...)` with `build_time_seconds`;
+  - `get_building_progression_preview(...)`;
+  - `building_configurator_section`;
+  - `building_configurator_field`;
+  - `estate_runtime_section`;
+  - `estate_building_runtime_section`.
+- Confirm generated types do not expose internal helpers as intended frontend contracts:
+  - `finalize_completed_estate_building_jobs(...)`;
+  - `ensure_estate_building_baseline(...)`;
+  - `assert_hero_meets_building_requirements(...)`;
+  - `apply_hero_resource_delta_with_ledger(...)`.
+- If internal helpers still appear in generated function types, do not use them from frontend services.
+- Do not edit generated DB types manually.
+- Do not update status docs before user confirmation.
 
 **Acceptance criteria:**
 
-- Address availability UI/read model can show possible vs occupied addresses without empty DB rows.
-- Address identity uses `district_code + address_number`.
-- `estates.address` is not treated as source of truth.
-- If this task removes final dependency on `estates.address`, report `DB cleanup candidate: estates.address`.
-- Build and mapper/service tests pass.
+- Generated types match the current estate/building schema and RPC signatures.
+- Frontend code does not reference removed legacy fields/tables.
+- Frontend services use `hero.id` as the domain target and do not assume `hero.id === auth.uid()`.
+- Player-facing service contracts use owner-safe RPCs, not internal helpers.
+- Build passes after type regeneration and any required compile fixes.
+
+---
+
+## Task O2 — Estate address and capacity read layer
+
+**Goal:** Provide a typed read layer for estate address identity, district capacity and occupied-address overlays.
+
+**Scope:**
+
+- Add/update domain models and mappers for:
+  - estate district capacity;
+  - occupied estate address;
+  - generated empty address option;
+  - selected/current estate address state.
+- Load capacities from `estate_district_address_capacities`.
+- Generate possible address labels from `district_code + address_number`.
+- Overlay occupied `estates` rows for the selected server.
+- Treat `estates.address` as display compatibility only.
+- Do not create rows for empty addresses.
+- Do not expose global account/user ids in player-facing address views.
+- Preserve server scope. Address occupancy is server-scoped.
+- Support district capacity values:
+  - A = 5000;
+  - B = 3000;
+  - C = 500;
+  - D = 50;
+  - E = 1.
+- Keep address generation efficient. Do not render thousands of DOM rows without paging/filtering/virtualization.
+
+**Acceptance criteria:**
+
+- Player/admin read layer can list occupied addresses and generate empty address options per district.
+- Address display is derived from `district_code + address_number`.
+- Empty addresses are generated client-side/read-model-side and are not persisted.
+- Occupied state is server-scoped.
+- `estates.address` is not used as source of truth.
+- No direct estate mutation is introduced.
 
 ---
 
 ## Task O3 — Empty-address relocation flow
 
-**Goal:** Implement the destructive move-to-empty-address player flow using the canonical RPC.
-
-**Current DB contract:** `relocate_hero_estate_to_empty_address(p_hero_id, p_district_code, p_address_number, p_confirm_destroy_existing_estate, p_reason, p_request_id)`.
+**Goal:** Implement player-facing relocation to an empty estate address through the canonical destructive RPC.
 
 **Scope:**
 
-- Add relocation action only for vacant addresses.
-- Show strong confirmation modal/warning that the current estate/building/job state will be permanently destroyed.
-- Require explicit confirmation before calling RPC.
-- Call `relocate_hero_estate_to_empty_address(...)` through a typed domain service.
-- Refresh active estate/building/address state after success.
-- Surface RPC errors clearly, including occupied address, invalid capacity/range, no estate, or gameplay block.
-- Do not implement siege/takeover here.
+- Use active hero context and pass `hero.id` to `relocate_hero_estate_to_empty_address(...)`.
+- Do not pass `auth.uid()` as hero id.
+- Require explicit destructive confirmation in UI.
+- Show warning that relocation:
+  - destroys current estate/building/job state;
+  - creates a new estate at the chosen empty address;
+  - resets buildings to configured baseline from `buildings.starting_level`;
+  - does not preserve old building levels.
+- Explain district building inheritance:
+  - moving to C creates baseline rows for A+B+C buildings;
+  - moving to C does not create D/E building rows.
+- Refresh estate address, building state, active job state and resources after successful RPC.
+- Do not direct delete/insert `estates`.
+- Do not use this workflow for occupied-estate siege/takeover.
 
 **Acceptance criteria:**
 
-- Relocation uses the RPC only.
-- No direct Angular delete/insert/update of `estates`, `estate_buildings`, or `estate_building_jobs`.
-- User cannot relocate without explicit destructive confirmation.
-- UI clearly distinguishes empty-address relocation from future siege/takeover.
-- Build and focused flow tests pass.
+- Player can choose a valid empty address and relocate through RPC.
+- UI clearly communicates destructive reset and baseline semantics before submit.
+- New estate state is reloaded after success.
+- Building list after relocation reflects target district baseline.
+- Occupied address relocation is blocked by RPC and surfaced clearly.
+- No direct table writes are used.
 
 ---
 
-## Task O4 — Building definitions/read layer alignment
+## Task O4 — Building catalog and estate building read layer
 
-**Goal:** Align building read models with current building definitions, requirements, caps, formulas, and district availability.
+**Goal:** Provide typed building read models for player estate screens and admin previews using the current DB contract.
 
 **Scope:**
 
-- Read building definitions and current estate building levels.
-- Use `get_building_progression_preview(...)` for admin/preview input data where appropriate.
-- Use `building_district_level_caps` / existing helpers for effective max level semantics.
-- Respect `0 = unlimited` max-level behavior.
-- Use central `entity_requirements`; do not add new dependencies on legacy `building_requirements` / `buildings.requirements` JSON.
-- Display formula assignments and local overrides as read/preview metadata where useful, but do not use Angular-computed formula output as authoritative mutation input.
+- Read `buildings` with:
+  - key;
+  - name;
+  - description;
+  - image/path where available;
+  - minimum `district_code`;
+  - `starting_level`;
+  - `base_cost`;
+  - `base_build_time_seconds`;
+  - `max_level`;
+  - rank/sort fields where present.
+- Read current estate building levels from `estate_buildings`.
+- Treat `estate_buildings.level = 0` as available but unbuilt.
+- Do not infer level from missing rows. Baseline should ensure explicit rows for available buildings.
+- Filter player estate building list by district inheritance:
+  - show building if `building.district_code` rank is less than or equal to estate district rank;
+  - hide higher-district buildings.
+- Load district caps from `building_district_level_caps`.
+- Interpret `max_level = 0` and effective cap `0` as unlimited.
+- Load central requirements from `entity_requirements`.
+- Do not read `building_requirements`.
+- Do not read `buildings.requirements`.
+- Load resource cost rows from `building_resource_costs`.
+- Load formula target metadata for `building_upgrade_cost` and `building_upgrade_time` where preview is needed.
+- Formula preview is explainability only; do not treat client preview as authoritative mutation input.
+- Preserve building bonuses through the canonical `entity_bonuses(entity_type = building)` path if bonuses are displayed.
+- Do not add `buildings.is_active`; current decision is that building definitions exist as the active building pool.
 
 **Acceptance criteria:**
 
-- Building UI/read model uses DB definitions and current district/cap semantics.
-- `0 = unlimited` is explained where visible.
-- Requirements come from central requirements model where present.
-- No new direct dependency on legacy requirement JSON.
-- Build and mapper/service tests pass.
+- Player estate building screen can display available buildings for the current estate district.
+- Estate C shows A+B+C buildings and hides D/E buildings.
+- Level 0 buildings are shown as available/unbuilt, not as missing data.
+- Starting level is visible in admin/diagnostic contexts.
+- Time values use seconds, not minutes.
+- Requirements come only from central requirements.
+- Legacy building requirements are not referenced.
+- No direct mutation is added.
 
 ---
 
-## Task O5 — Building jobs and lazy finalization read integration
+## Task O5 — Building job read layer and lazy finalization
 
-**Goal:** Make active building jobs visible and ensure completed jobs are finalized before current building state is used.
+**Goal:** Make building job state readable and keep current building levels fresh through the owner-safe finalization wrapper.
 
 **Scope:**
 
-- Add typed read/domain models for `estate_building_jobs`.
-- Show active job state in estate/building UI:
-  - building label,
-  - target level,
-  - status,
-  - started_at,
-  - completes_at,
-  - remaining/progress display.
-- Integrate read flows so DB-side `finalize_completed_estate_building_jobs(...)` is called through approved RPC/read workflow before relying on current building levels, where available.
-- If no public read/finalization wrapper exists for a needed UI path, report DB/RPC blocker instead of direct-updating job state.
-- Do not expose player-facing cancel.
+- Add/update typed models/mappers for `estate_building_jobs`.
+- Load active and recent job state for the current hero estate.
+- Before trusting current building levels in player runtime, call `finalize_hero_estate_building_jobs(p_hero_id)` where appropriate.
+- Do not call internal `finalize_completed_estate_building_jobs(...)` from frontend.
+- Treat `completed_count = 0` as normal.
+- Use `started_at` and `completes_at` as authoritative timer anchors.
+- Use seconds-based duration formatting in UI.
+- Do not assume whole-minute timers.
+- Do not implement player-facing cancel/claim flow in this task.
+- Preserve `cancelled` and `failed` as admin/system correction statuses only.
+- Guard async responses by selected hero/server context.
 
 **Acceptance criteria:**
 
-- Active building job is visible to the player.
-- Completed jobs do not leave stale building state in normal read/gameplay flows.
-- UI does not direct-update `estate_building_jobs.status` or `estate_buildings.level`.
-- Player-facing cancel is not implemented.
-- Build and focused tests pass.
+- Completed active jobs can be finalized through owner-safe RPC before building state is displayed.
+- Active job progress can be displayed from timestamps.
+- UI handles no active job, active job and just-finalized job states.
+- No direct writes to `estate_building_jobs` or `estate_buildings`.
+- No internal helper RPC is used from frontend services.
+- Stale responses do not update the wrong selected hero/server state.
 
 ---
 
 ## Task O6 — Start building construction/upgrade flow
 
-**Goal:** Let players start a building construction/upgrade through the canonical DB/RPC workflow.
-
-**Current DB contract:** `start_estate_building_upgrade(p_hero_id, p_building_id, p_reason, p_request_id)`.
+**Goal:** Implement the player action to start a building construction/upgrade through the authoritative RPC.
 
 **Scope:**
 
-- Add start/upgrade action for eligible building definitions.
-- Call `start_estate_building_upgrade(...)` through a typed domain service.
-- Display returned:
-  - job id,
-  - target level,
-  - started/completes timestamps,
-  - drachma/materials/workforce costs,
-  - resulting balances.
-- Use returned RPC values as source of truth for spending/timing.
-- Refresh resources, active job and building state after success.
-- Surface errors clearly: insufficient resources, active job exists, district/cap unavailable, gameplay block, missing estate.
+- Use active hero context and pass `hero.id` to `start_estate_building_upgrade(...)`.
+- Do not pass `auth.uid()` as hero id.
+- Use RPC return values as source of truth:
+  - job id;
+  - estate id;
+  - building id;
+  - target level;
+  - status;
+  - started_at;
+  - completes_at;
+  - build_time_seconds;
+  - drachma/materials/workforce costs;
+  - resource balances after spending;
+  - audit log id where returned.
+- Show requirements/cap/resource/time preview before submit, but treat it as advisory.
+- Surface RPC errors for:
+  - unmet central requirements;
+  - unavailable district;
+  - max-level/cap reached;
+  - active job already exists;
+  - insufficient resources;
+  - gameplay blocked by membership/moderation state.
+- Support `estate_buildings.level = 0` → target level 1 construction.
+- Disable or explain unavailable action when another active job exists.
+- Refresh resources, building levels and active job state after success.
+- Do not calculate authoritative cost/time in Angular.
+- Do not write resources or jobs directly.
 
 **Acceptance criteria:**
 
-- Start/upgrade uses `start_estate_building_upgrade(...)` only.
-- Angular does not calculate authoritative cost/time.
-- Angular does not direct-write `hero_resources`, `hero_resource_ledger`, `estate_buildings`, or `estate_building_jobs`.
-- Returned costs/timers are displayed or used for refresh feedback.
-- Build and focused service/UI tests pass.
+- Player can start a valid build/upgrade through RPC.
+- RPC-calculated costs, duration and balances are shown after success.
+- Level 0 building can start target level 1 construction.
+- Active job blocks additional construction.
+- Requirements/cap/resource errors are clear.
+- No direct table writes are introduced.
+- Build passes.
 
 ---
 
-## Task O7 — Estate/building admin and diagnostics alignment
+## Task O7 — Building and estate configurator explainability
 
-**Goal:** Align admin/building diagnostics with the current runtime foundation and formula source-of-truth rules.
+**Goal:** Align building/estate admin and runtime screens with DB-backed explanation metadata so the admin understands what each section configures and what the gameplay impact is.
 
 **Scope:**
 
-- In admin/building screens, expose district capacity, address-number model, current active jobs and formula-backed start behavior where relevant.
-- Make it clear that formula preview is not the authoritative mutation path.
-- Use DB labels/descriptions/helper/admin text for district capacity and building definitions.
-- Add diagnostics for active jobs and completed-but-not-finalized jobs if useful.
-- Do not add admin-only direct mutations unless backed by approved RPC/governance workflow.
+- Load and use DB metadata from:
+  - `building_configurator_section`;
+  - `building_configurator_field`;
+  - `estate_runtime_section`;
+  - `estate_building_runtime_section`.
+- Do not hardcode permanent section explanations when DB metadata exists.
+- Field labels and short form validation copy may remain local/i18n, but runtime meaning, impact, safety and diagnostics must use DB-backed metadata where available.
+- Building configurator/admin surfaces must explain:
+  - building identity;
+  - minimum district availability;
+  - district inheritance;
+  - starting level;
+  - level 0 semantics;
+  - base build time in seconds;
+  - resource costs;
+  - formula preview vs authoritative RPC;
+  - max level and district caps;
+  - central requirements;
+  - building bonuses;
+  - runtime boundary;
+  - diagnostics.
+- Estate runtime/player/admin surfaces must explain:
+  - empty addresses are not rows;
+  - `district_code + address_number` source of truth;
+  - relocation reset;
+  - baseline initialization;
+  - district building inheritance;
+  - active job model;
+  - lazy finalization;
+  - resource ledger;
+  - seconds-based timers.
+- Missing metadata must be reported with exact `namespace/key`, not silently replaced by permanent local copy.
+- Raw keys/UUIDs may appear only as secondary metadata.
+- Use existing shared metadata display helpers/components where available.
+- Include shared/reuse report in Codex summary.
 
 **Acceptance criteria:**
 
-- Admin can understand address capacity and building runtime state without raw SQL.
-- Formula preview and authoritative DB/RPC mutation are clearly distinguished.
-- No new direct DB workflow writes are added from Angular.
+- Admin can understand what each building/estate section configures without reading SQL or source code.
+- UI explains where runtime uses each configuration and what changes on save.
+- `building_configurator_section` and `building_configurator_field` are used for admin configurator explanations.
+- `estate_runtime_section` and `estate_building_runtime_section` are used for runtime/diagnostic explanations.
+- Missing metadata gaps are reported precisely.
+- No raw table-editor style screen is introduced as the final UX.
+- Build passes.
+
+---
+
+## Task O8 — Building configurator edit alignment
+
+**Goal:** Align the existing building admin/editor surface with the current building DB model and safety rules.
+
+**Scope:**
+
+- Inspect the existing building admin/editor route/components/services before changing them.
+- Reuse existing admin layout, metadata display and form patterns where possible.
+- Ensure the editor can display and, where an approved write path exists, edit:
+  - building identity fields;
+  - minimum district;
+  - `starting_level`;
+  - `base_build_time_seconds`;
+  - resource base costs from `building_resource_costs`;
+  - max level and district caps;
+  - central requirements from `entity_requirements`;
+  - building bonuses through `entity_bonuses(entity_type = building)`;
+  - formula assignments/preview where existing formula tooling supports it.
+- If the current editor has no canonical DB/RPC/governance write path for a mutation, stop and report a DB/RPC blocker for that write slice.
+- Do not expand raw direct table writes for critical balance configuration.
+- Do not reintroduce legacy fields/tables:
+  - `building_requirements`;
+  - `buildings.requirements`;
+  - `base_build_time_minutes`;
+  - `buildings.is_active`.
+- Explain advanced/admin-danger values:
+  - `starting_level > 1`;
+  - unlimited max level (`0`);
+  - very long or very short build times;
+  - high resource costs;
+  - district cap overrides.
+- Preserve selected server/global context distinctions where relevant.
+- Include stale guards for selected server/route/entity changes during async saves.
+- Include shared/reuse report in Codex summary.
+
+**Acceptance criteria:**
+
+- Existing building editor reflects the current DB model.
+- Admin can see and understand `starting_level`, seconds-based build time, costs, caps, requirements and bonuses.
+- Editor does not show removed legacy fields.
+- Editor does not assume `buildings.is_active`.
+- Save paths use approved DB/RPC/governance operations or are explicitly reported as blockers.
+- Build passes.
+
+---
+
+## Task O9 — Estate/building integration smoke and blocker report
+
+**Goal:** Verify the player-facing and admin-facing Epic O integration after O1–O8 changes.
+
+**Scope:**
+
+- Run technical checks appropriate for the changed slice.
+- Smoke player flow where possible:
+  - load current estate;
+  - show address/district;
+  - show available building list;
+  - hide higher-district buildings;
+  - show level 0 buildings as unbuilt where configured;
+  - show active/no-active job state;
+  - finalize completed jobs through `finalize_hero_estate_building_jobs(...)`;
+  - start a build/upgrade through `start_estate_building_upgrade(...)` when data/resources allow.
+- Smoke admin/configurator flow where possible:
+  - metadata sections render;
+  - starting level is visible;
+  - seconds-based time is visible;
+  - central requirements are visible;
+  - resource costs are visible;
+  - caps are visible;
+  - raw keys are secondary metadata only.
+- Do not claim full manual gameplay smoke if there is no authenticated session or insufficient test data.
+- If a smoke step cannot be executed, report the exact missing data/session/permission.
+- If a DB/RPC/configurator write blocker remains, report it explicitly and do not mark the epic complete.
+
+**Acceptance criteria:**
+
+- Report states which O flows were technically verified.
+- Report lists pending manual smoke separately from blockers.
+- Route smoke alone is not treated as full smoke.
+- No direct writes were introduced for player runtime.
+- No legacy building requirements/time fields are used.
+- Remaining blockers, if any, are concrete and actionable.
+
+---
+
+## Task O10 — Estate district/address browser and relocation picker UI
+
+**Goal:** Build the player-facing UI for browsing estate addresses by district, seeing occupied/empty addresses and choosing an empty address for relocation.
+
+**Scope:**
+
+- Add a player-facing estate address browser/picker UI.
+- Use the read layer from O2.
+- Show districts A–E with configured capacities:
+  - A = 5000;
+  - B = 3000;
+  - C = 500;
+  - D = 50;
+  - E = 1.
+- Do not render thousands of address rows at once. Use paging, filtering, virtualization or a compact generated list pattern.
+- Show address identity from `district_code + address_number`.
+- Overlay occupied estate rows onto generated address options.
+- Empty address rows/cards should clearly show:
+  - address label;
+  - district;
+  - empty/available state;
+  - relocation action if eligible.
+- Occupied address rows/cards should show safe public occupant/estate information only:
+  - hero/display name where allowed;
+  - district/address;
+  - no account id;
+  - no private staff/user metadata.
+- Support filters/search where useful:
+  - district;
+  - address number;
+  - empty only;
+  - occupied only;
+  - hero/name if safely available.
+- The relocation action must route into O3 confirmation flow.
+- Do not implement siege/takeover actions here.
+- Do not create empty estate rows.
+- Do not direct-write `estates`.
+
+**Acceptance criteria:**
+
+- Player can browse addresses by district.
+- Empty addresses are visibly distinct from occupied addresses.
+- Empty address action starts the relocation confirmation flow.
+- Occupied addresses do not expose private account/user data.
+- Large districts do not render as one massive DOM list.
+- No empty address rows are persisted.
+- Build passes.
+
+---
+
+## Task O11 — Player estate overview and building dashboard UI
+
+**Goal:** Build the main player-facing estate screen that shows the current estate, available buildings, levels, jobs, resources and build/upgrade actions.
+
+**Scope:**
+
+- Add/update player-facing estate overview page under the game/estate area.
+- Show current estate identity:
+  - district;
+  - address number;
+  - formatted address;
+  - rank if relevant.
+- Show available buildings for the current estate district using district inheritance:
+  - Estate A shows A buildings;
+  - Estate B shows A+B buildings;
+  - Estate C shows A+B+C buildings;
+  - Estate D shows A+B+C+D buildings;
+  - Estate E shows A+B+C+D+E buildings.
+- Do not show higher-district buildings as locked cards in lower districts.
+- Show each available building with:
+  - name;
+  - description;
+  - current level;
+  - `level 0` as available but unbuilt;
+  - next target level where applicable;
+  - effective max level / unlimited state;
+  - requirement state;
+  - resource cost preview;
+  - build time preview in seconds rendered as human duration;
+  - active job state where relevant.
+- Use `finalize_hero_estate_building_jobs(...)` before trusting completed job state, as defined by O5.
+- Use `start_estate_building_upgrade(...)` for build/upgrade action, as defined by O6.
+- Show resource balances relevant to building:
+  - drachma;
+  - materials;
+  - workforce.
+- Show one-active-job limitation clearly.
+- Show no cancel/claim action in MVP.
+- Use existing shell/card/button/progress/timer components where available.
+- Include shared/reuse report in Codex summary.
+
+**Acceptance criteria:**
+
+- Player can see current estate and available buildings.
+- Available building list respects district inheritance.
+- Level 0 buildings are shown as unbuilt but available.
+- Active job progress is visible.
+- Build/upgrade action is available only through RPC.
+- Costs/time shown before action are clearly preview/advisory.
+- RPC result updates job/resources/building state.
+- No direct estate/building/resource writes are introduced.
+- Build passes.
+
+---
+
+## Task O12 — Estate/building feedback and notification integration
+
+**Goal:** Ensure estate/building actions provide correct immediate feedback and produce persistent notifications only where appropriate.
+
+**Scope:**
+
+- Use local toast/inline feedback for immediate player actions:
+  - successful relocation;
+  - failed relocation;
+  - successful build/upgrade start;
+  - failed build/upgrade start.
+- Relocation success feedback should explain:
+  - new address;
+  - destructive reset completed;
+  - new baseline initialized.
+- Do not create frontend-inserted notification rows.
+- Building completion is an asynchronous/time-based event and should be represented by persistent notification when DB workflow finalizes a completed job.
+- Check whether a DB-owned building completion notification hook already exists.
+- If no hook exists, report DB/RPC blocker or add the approved DB-owned hook in the assigned DB slice:
+  - notification type for building completion;
+  - call `create_notification(...)` from finalization workflow;
+  - recipient kind `hero`;
+  - source entity type `estate_building_job`;
+  - source entity id = job id;
+  - action URL to the estate/building page.
+- Notification bell/inbox rendering belongs to Epic Q, but O must ensure estate/building workflows produce the correct events.
+- Do not create ordinary game reports for estate/building actions.
+- Do not duplicate audit logs as player notifications.
+
+**Acceptance criteria:**
+
+- Immediate estate/building actions show clear UI feedback.
+- Frontend does not insert notification rows.
+- Building completion notification production is either implemented DB-side or reported as an explicit DB/RPC blocker.
+- Relocation does not create persistent notifications unless a separate design decision explicitly requires it.
+- Notification action links route to the estate/building UI.
 - Build passes.
 
 ---

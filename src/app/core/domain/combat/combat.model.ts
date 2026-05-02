@@ -1,4 +1,5 @@
 import type { Database } from '../../types/database.types';
+import type { FormulaAssignmentResolution } from '../formula/formula.model';
 
 type CombatEnums = Database['public']['Enums'];
 
@@ -65,6 +66,13 @@ export interface CombatCoreStatsSnapshot {
   evasionChance: number;
 }
 
+export interface CombatFormulaBonusSnapshot {
+  hitBonusFromItems: number;
+  critBonusFromItems: number;
+  evasionBonusFromItems: number;
+  damageBonusFromItems: number;
+}
+
 export interface CombatParticipantInput {
   side: CombatSide;
   displayName: string;
@@ -72,7 +80,32 @@ export interface CombatParticipantInput {
   reference: CombatantReference;
   stats: CombatCoreStatsSnapshot;
   baseStats: readonly CombatParticipantStatSnapshot[];
+  formulaBonuses: CombatFormulaBonusSnapshot;
   attackPlan: CombatAttackPlan;
+}
+
+export interface CombatAttackTimingInput {
+  turnNumber: number;
+  side: CombatSide;
+  slotIndex: number;
+  indicatorPosition: number;
+  streak?: number;
+}
+
+export interface CombatResolutionInput {
+  source: Omit<CombatSourceRef, 'completedAt'> & {
+    completedAt?: string;
+  };
+  initiator: CombatParticipantInput;
+  defender: CombatParticipantInput;
+  timingInputs?: readonly CombatAttackTimingInput[];
+}
+
+export interface CombatFormulaRules {
+  hitGreenZone: FormulaAssignmentResolution;
+  evasionChance: FormulaAssignmentResolution;
+  criticalChance: FormulaAssignmentResolution;
+  finalDamage: FormulaAssignmentResolution;
 }
 
 export interface CombatParticipantSnapshot {
