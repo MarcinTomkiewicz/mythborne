@@ -4,6 +4,10 @@ import { BuildingDistrictOption } from '../../types/building.types';
 import { CanonicalBonusTemplate } from '../../types/bonus-governance.types';
 import { BalanceFormula } from '../formula/formula.model';
 import {
+  CombatOpponentDefinitionReadModel,
+  CombatOpponentFamilyReadModel,
+} from '../combat/combat-opponent.model';
+import {
   EncounterDefinitionReadModel,
   ExplorationDifficultyTierReadModel,
   ExplorationMinigameDefinitionReadModel,
@@ -16,11 +20,6 @@ import {
   RewardProfileReadModel,
   RewardProfileEntrySummaryView,
 } from './exploration-reward.model';
-import {
-  CombatOpponentDefinitionReadModel,
-  CombatOpponentFamilyReadModel,
-} from './exploration-trial-admin.model';
-
 export interface EncounterCombatCandidateReadModel {
   id: string;
   encounterDefinitionId: string;

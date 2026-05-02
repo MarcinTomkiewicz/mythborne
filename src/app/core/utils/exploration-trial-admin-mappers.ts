@@ -1,6 +1,4 @@
 import {
-  CombatOpponentDefinitionReadModel,
-  CombatOpponentFamilyReadModel,
   ExplorationTrialAdminData,
   TrialCombatCandidateAdminView,
   TrialCombatCandidateReadModel,
@@ -29,42 +27,6 @@ export function mapTrialCombatCandidate(
     weight: row.weight,
     minHeroLevel: row.min_hero_level,
     maxHeroLevel: row.max_hero_level,
-    sortOrder: row.sort_order,
-    isActive: row.is_active,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-export function mapCombatOpponentDefinition(
-  row: Row<'combat_opponent_definitions'>,
-): CombatOpponentDefinitionReadModel {
-  return {
-    id: row.id,
-    key: row.key,
-    label: row.label,
-    description: row.description,
-    helperText: row.helper_text,
-    adminDescription: row.admin_description,
-    familyKey: row.family_key,
-    equipmentMode: row.equipment_mode,
-    defaultScalingFormulaId: row.default_scaling_formula_id,
-    sortOrder: row.sort_order,
-    isActive: row.is_active,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-export function mapCombatOpponentFamily(
-  row: Row<'combat_opponent_families'>,
-): CombatOpponentFamilyReadModel {
-  return {
-    key: row.key,
-    label: row.label,
-    description: row.description,
-    helperText: row.helper_text,
-    adminDescription: row.admin_description,
     sortOrder: row.sort_order,
     isActive: row.is_active,
     createdAt: row.created_at,

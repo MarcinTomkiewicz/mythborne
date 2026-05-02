@@ -1,4 +1,8 @@
 import { Json } from '../../types/database.types';
+import {
+  CombatOpponentDefinitionReadModel,
+  CombatOpponentFamilyReadModel,
+} from '../combat/combat-opponent.model';
 import { UiMetadataEntryReadModel } from '../admin-ui-metadata.model';
 import { BuildingDistrictOption } from '../../types/building.types';
 import { BalanceFormula } from '../formula/formula.model';
@@ -28,34 +32,6 @@ export interface TrialCombatCandidateReadModel {
   weight: number;
   minHeroLevel: number | null;
   maxHeroLevel: number | null;
-  sortOrder: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CombatOpponentDefinitionReadModel {
-  id: string;
-  key: string;
-  label: string;
-  description: string | null;
-  helperText: string | null;
-  adminDescription: string | null;
-  familyKey: string;
-  equipmentMode: string;
-  defaultScalingFormulaId: string | null;
-  sortOrder: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CombatOpponentFamilyReadModel {
-  key: string;
-  label: string;
-  description: string | null;
-  helperText: string | null;
-  adminDescription: string | null;
   sortOrder: number;
   isActive: boolean;
   createdAt: string;

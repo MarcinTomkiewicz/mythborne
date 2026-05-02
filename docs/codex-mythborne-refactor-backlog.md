@@ -726,6 +726,18 @@ Do not update `current-todo.md` unless explicitly requested.
 
 ---
 
+## Epic M follow-up candidate - opponent catalog UI read-model polish
+
+- origin: M4 accepted read-layer follow-up.
+- current state: M4 exposes opponent equipment entry shape, DB-backed slot labels, equipment mode labels and level ranges.
+- remaining polish:
+  - add readable labels for manual item-generation references: base, quality, prefix affix and suffix affix;
+  - add readable labels for generated equipment bucket profile and max quality references;
+  - distinguish a fully empty opponent catalog from "families exist, but no opponent definitions are configured".
+- timing: handle with the first opponent catalog/admin UI task or a focused read-model polish task; do not retrofit during unrelated combat runtime work.
+
+---
+
 # Historical material for Epic Ref B classification
 
 The following historical execution notes and the 2026-04-26 priority update are preserved only for Ref B4/Ref B11 classification.

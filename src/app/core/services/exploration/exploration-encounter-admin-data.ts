@@ -26,7 +26,7 @@ import {
 import {
   mapCombatOpponentDefinition,
   mapCombatOpponentFamily,
-} from '../../utils/exploration-trial-admin-mappers';
+} from '../../utils/combat-opponent-admin-mappers';
 import {
   mapRewardProfile,
   mapRewardProfileEntry,

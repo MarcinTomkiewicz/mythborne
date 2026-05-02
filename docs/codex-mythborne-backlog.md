@@ -3271,6 +3271,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 - No hardcoded slot list.
 - Empty opponent family/definition lists show useful empty state, not broken admin UI.
 
+**Implementation note:** M4 accepted on 2026-05-02 as a read-layer. Core combat now has `CombatOpponentAdmin`, shared combat opponent read models and mappers, and DB-backed reads for opponent families/definitions/stat baselines/natural attacks/equipment entries/equipment modes/equipment slots plus combat explainability dictionaries. Trial and encounter admin reads reuse the shared mapper instead of keeping feature-local opponent mapping. No UI, forms, direct writes, mutation RPCs, manual smoke or route smoke were added in M4. Follow-up debt: first opponent catalog UI should add readable labels for manual item-generation references and generated bucket profile references, and should distinguish "families exist but no opponent definitions" from a fully empty opponent catalog.
+
 ---
 
 ## Task M5 — Opponent combatant/loadout resolver
