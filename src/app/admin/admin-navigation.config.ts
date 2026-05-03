@@ -467,6 +467,16 @@ export const FORMULAS_PAGE_LINKS: readonly AdminTagLink[] = [
     routerLink: '/admin/config-change-sets',
     accessPolicy: 'selectedServerManagement',
   },
+  {
+    label: 'Reward profiles',
+    routerLink: '/admin/reward-profiles',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Level-up stat bonuses',
+    routerLink: '/admin/level-up-stat-bonuses',
+    accessPolicy: 'selectedServerManagement',
+  },
 ];
 
 export const COMBAT_BALANCE_PAGE_LINKS: readonly AdminTagLink[] = [

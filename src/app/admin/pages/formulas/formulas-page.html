@@ -54,6 +54,14 @@
       </div>
     </section>
 
+    <app-progression-formula-explainability-section
+      [explainability]="progressionExplainability"
+      [formulaRows]="progressionFormulaRows()"
+      [missingFormulaTargetKeys]="missingProgressionFormulaTargetKeys()"
+      [explanationRows]="progressionExplainabilityRows()"
+      [metadataGaps]="progressionMetadataGaps()"
+    />
+
     <app-formula-assignment-viewer [rows]="targetRows()" />
 
     <app-formula-impact-calculator [rows]="targetRows()" />

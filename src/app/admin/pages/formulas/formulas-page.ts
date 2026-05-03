@@ -1,8 +1,9 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { finalize, map, switchMap } from 'rxjs';
+import { finalize, forkJoin, map, switchMap } from 'rxjs';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { FormulaService } from '../../../core/services/formula/formula';
 import { FormulaEntityLabels } from '../../../core/services/formula/formula-entity-labels';
+import { ProgressionExplainabilityMetadata } from '../../../core/services/progression/progression-explainability-metadata';
 import { FORMULAS_PAGE_LINKS } from '../../admin-navigation.config';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
 import {
@@ -12,12 +13,21 @@ import {
   FormulaScopeInspectionRow,
   FormulaTargetAssignmentRow,
 } from '../../../core/types/formula-admin-view.types';
+import { UiMetadataEntryReadModel } from '../../../core/domain/admin-ui-metadata.model';
 import {
   toEntityFormulaInspectionRow,
   toFormulaTargetAssignmentRow,
 } from '../../../core/utils/formula-assignment-view';
 import { FormulaAssignmentViewer } from '../../components/formulas/formula-assignment-viewer';
 import { FormulaImpactCalculator } from '../../components/formulas/formula-impact-calculator';
+import {
+  missingProgressionFormulaTargetKeys,
+  progressionFormulaRows,
+  ProgressionFormulaExplainability,
+} from './progression-formula-explainability';
+import {
+  ProgressionFormulaExplainabilitySection,
+} from './progression-formula-explainability-section';
 
 @Component({
   selector: 'app-formulas-page',
@@ -27,16 +37,22 @@ import { FormulaImpactCalculator } from '../../components/formulas/formula-impac
     AdminTagLinks,
     FormulaAssignmentViewer,
     FormulaImpactCalculator,
+    ProgressionFormulaExplainabilitySection,
   ],
   templateUrl: './formulas-page.html',
 })
 export class FormulasPage implements OnInit {
   private readonly formulaService = inject(FormulaService);
   private readonly formulaEntityLabels = inject(FormulaEntityLabels);
+  private readonly progressionMetadata = inject(ProgressionExplainabilityMetadata);
 
   readonly links = FORMULAS_PAGE_LINKS;
   readonly data = signal(EMPTY_FORMULA_ADMIN_DATA);
   readonly entityReferences = signal(new Map<string, FormulaEntityReference>());
+  readonly progressionMetadataEntries = signal<UiMetadataEntryReadModel[]>([]);
+  readonly progressionExplainability = new ProgressionFormulaExplainability(
+    () => this.progressionMetadataEntries(),
+  );
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly formulaById = computed(
@@ -63,6 +79,18 @@ export class FormulasPage implements OnInit {
         : null;
       return toFormulaTargetAssignmentRow(target, assignment, formula);
     }),
+  );
+  readonly progressionFormulaRows = computed<FormulaTargetAssignmentRow[]>(() =>
+    progressionFormulaRows(this.targetRows()),
+  );
+  readonly missingProgressionFormulaTargetKeys = computed<string[]>(() =>
+    missingProgressionFormulaTargetKeys(this.targetRows()),
+  );
+  readonly progressionExplainabilityRows = computed(() =>
+    this.progressionExplainability.explanationRows(),
+  );
+  readonly progressionMetadataGaps = computed(() =>
+    this.progressionExplainability.missingGaps(),
   );
   readonly entityAssignmentRows = computed<EntityFormulaInspectionRow[]>(() =>
     this.data().entityAssignments.map((assignment) => {
@@ -124,16 +152,19 @@ export class FormulasPage implements OnInit {
       .getAdminData()
       .pipe(
         switchMap((data) =>
-          this.formulaEntityLabels.getEntityLabels(data.entityAssignments).pipe(
-            map((entityReferences) => ({ data, entityReferences })),
-          ),
+          forkJoin({
+            entityReferences:
+              this.formulaEntityLabels.getEntityLabels(data.entityAssignments),
+            progressionMetadata: this.progressionMetadata.getEntries(),
+          }).pipe(map((loaded) => ({ data, ...loaded }))),
         ),
         finalize(() => this.isLoading.set(false)),
       )
       .subscribe({
-        next: ({ data, entityReferences }) => {
+        next: ({ data, entityReferences, progressionMetadata }) => {
           this.data.set(data);
           this.entityReferences.set(entityReferences);
+          this.progressionMetadataEntries.set(progressionMetadata);
         },
         error: (error: unknown) =>
           this.error.set(

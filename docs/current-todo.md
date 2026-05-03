@@ -152,7 +152,9 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: N9 - level-up stat bonus rules and grant display/admin alignment.
 - Completed and confirmed: N10 - derived stat resolver cleanup, including critical damage.
 - Completed and confirmed: N11 - Character Points display, ledger and penalty sink clarity.
-- Next backlog task: N12 - Progression admin/formula/configurator explainability, after the user commit and explicit start instruction.
+- Completed and confirmed: N12 - Progression admin/formula/configurator explainability.
+- Next backlog task: N13 - Progression integration smoke and blocker report, after the user commit and explicit start instruction.
+- N12 DB/content cleanup follow-up: replace remaining formula target `hero points` wording with `Character Points`; confirm and align stat upgrade default test context keys (`hero_level`/`stat_level` vs allowed `heroLevel`/`statLevel`); seed the currently reported progression UI metadata gaps. Do not hide these with frontend fallback labels or fallback contexts.
 - N9 follow-up: if progression history receives more enrichment slices, consider extracting a dedicated enrichment service.
 - N9 DB/RLS caveat: `/admin/level-up-stat-bonuses` empty state is acceptable when no rules are seeded or current admin context intentionally cannot see them; if rules exist and should be visible, treat it as a DB/RLS/query blocker rather than adding frontend fallback rules.
 - N8 refactor follow-up: split `RewardProfilesPageState` further; after N8 it remains 317 lines and still mixes load, selection, forms, options and key sync, but this is not a blocker for accepted N8.

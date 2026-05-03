@@ -1,0 +1,135 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-col gap-xs mb-lg">
+    <p class="card-legend mb-0">Progression</p>
+    <h3 class="mg-section__title mg-section__title--xs mb-0">
+      {{ explainability().sectionTitle('page_header') }}
+    </h3>
+    <p class="muted-text mb-0">
+      {{ explainability().sectionText('page_header') }}
+    </p>
+  </div>
+
+  <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100 mb-lg">
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="muted-text">Progression formula targets</span>
+      <strong class="mg-section__title mg-section__title--xs mb-0">
+        {{ formulaRows().length }}
+      </strong>
+    </div>
+
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="muted-text">Metadata gaps</span>
+      <strong class="mg-section__title mg-section__title--xs mb-0">
+        {{ metadataGaps().length }}
+      </strong>
+    </div>
+
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="muted-text">Missing formula targets</span>
+      <strong class="mg-section__title mg-section__title--xs mb-0">
+        {{ missingFormulaTargetKeys().length }}
+      </strong>
+    </div>
+  </div>
+
+  @if (missingFormulaTargetKeys().length) {
+    <div class="mg-surface-card p-md flex-col gap-xs mb-lg">
+      <strong class="heading-color">Missing progression formula target keys</strong>
+      @for (key of missingFormulaTargetKeys(); track key) {
+        <span class="muted-text">{{ key }}</span>
+      }
+    </div>
+  }
+
+  <div class="flex-col gap-md mb-lg">
+    <div class="flex-col gap-xs">
+      <h4 class="mg-section__title mg-section__title--xs mb-0">Active progression formula assignments</h4>
+      <p class="muted-text mb-0">
+        {{ explainability().diagnosticsText('formula_targets') }}
+      </p>
+    </div>
+
+    @for (row of formulaRows(); track row.target.id) {
+      <article class="mg-surface-card p-md flex-col gap-md">
+        <div class="flex-row-between-center flex-col-sm gap-sm">
+          <div class="flex-col gap-xs">
+            <strong class="heading-color">{{ row.target.label }}</strong>
+            <span class="muted-text">{{ row.target.key }}</span>
+            @if (row.target.description) {
+              <span class="muted-text">{{ row.target.description }}</span>
+            }
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            <span class="mg-tag">{{ row.target.scopeKey }}</span>
+            <span class="mg-tag">{{ row.statusLabel }}</span>
+          </div>
+        </div>
+
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+          <div class="flex-col gap-xs min-w-0">
+            <span class="muted-text">Assigned formula</span>
+            <strong class="heading-color">{{ row.formula?.label ?? 'Missing formula' }}</strong>
+            <span class="muted-text">{{ row.formula?.key ?? row.assignment?.formulaId ?? '-' }}</span>
+            @if (row.formula?.description) {
+              <span class="muted-text">{{ row.formula?.description }}</span>
+            }
+            @if (row.formula?.expression) {
+              <pre class="mb-0 text-break"><code>{{ row.formula?.expression }}</code></pre>
+            }
+          </div>
+
+          <div class="flex-col gap-sm min-w-0">
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Allowed variables</span>
+              <strong class="heading-color">
+                {{ row.target.allowedVariables.length ? row.target.allowedVariables.join(', ') : 'None configured' }}
+              </strong>
+              <span class="muted-text">
+                {{ explainability().diagnosticsText('allowed_variables') }}
+              </span>
+            </div>
+
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Default test context</span>
+              <pre class="mb-0 text-break"><code>{{ row.target.defaultTestContext | json }}</code></pre>
+              <span class="muted-text">
+                {{ explainability().diagnosticsText('default_test_context') }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <p class="muted-text mb-0">No progression formula targets are visible to the current admin context.</p>
+    }
+  </div>
+
+  <div class="flex-col gap-md">
+    <div class="flex-col gap-xs">
+      <h4 class="mg-section__title mg-section__title--xs mb-0">Progression runtime explanation</h4>
+      <p class="muted-text mb-0">
+        Uses DB-backed UI metadata when rows are available; exact missing namespace/key gaps remain visible.
+      </p>
+    </div>
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+      @for (row of explanationRows(); track row.namespace + '/' + row.key) {
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <strong class="heading-color">{{ row.label }}</strong>
+          <span class="muted-text">{{ row.text }}</span>
+          <small class="muted-text">{{ row.namespace }}/{{ row.key }}</small>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (metadataGaps().length) {
+    <div class="mg-surface-card p-md flex-col gap-xs mt-lg">
+      <strong class="heading-color">Missing UI metadata</strong>
+      @for (gap of metadataGaps(); track gap) {
+        <span class="muted-text">{{ gap }}</span>
+      }
+    </div>
+  }
+</section>

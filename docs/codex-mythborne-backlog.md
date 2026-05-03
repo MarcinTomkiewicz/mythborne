@@ -4281,6 +4281,8 @@ Current source of truth:
 - No hardcoded formula labels/descriptions replace DB labels/descriptions.
 - Build passes.
 
+**Implementation note:** N12 accepted on 2026-05-03 after user smoke/review. `/admin/formulas` now has a read-only Progression explainability section that highlights the expected progression formula targets (`hero_stat_upgrade_cost`, `hero_stat_level_cap`, `hero_experience_to_next_level`), shows their DB-backed target/formula labels/descriptions, assigned formula expression, allowed variables and default test context, and links to the related reward profile/stat bonus admin surfaces. Progression admin metadata is loaded through `get_ui_metadata_entries(...)` for `progression_configurator_section`, `progression_diagnostics_section`, `level_up_reward_section` and `level_up_stat_bonus_section`; missing metadata is intentionally reported as exact `namespace/key` gaps instead of replaced by permanent Angular fallback copy. N12 did not add DB/RPC changes, migrations, write/grant/level-up workflows, fallback metadata or hardcoded formula labels/descriptions. Verification passed with `npx tsc --noEmit`, focused progression/formula explainability specs with 12 SUCCESS, static greps for no direct writes/no grant workflow/no durable `any`/no `label > p-select`, and `npm run build` with known budget/CommonJS warnings. Codex did not run manual smoke or route smoke; user smoke passed. Follow-up for DB/content cleanup: replace remaining formula target `hero points` wording with `Character Points`, confirm and align stat upgrade default test context keys (`hero_level`/`stat_level` vs allowed `heroLevel`/`statLevel`), and seed the currently reported UI metadata gaps.
+
 ---
 
 ## Task N13 — Progression integration smoke and blocker report
