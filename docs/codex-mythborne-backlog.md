@@ -4332,6 +4332,8 @@ Current source of truth:
 - No `hero_derived` dependency was reintroduced.
 - Remaining blockers, if any, are concrete and actionable.
 
+**Implementation note:** N13 accepted on 2026-05-03 as the post N0-N12 technical integration checkpoint. No code, DB/RPC, migration or status-changing implementation was added during the check. Frontend technical verification is green: `npx tsc --noEmit` passed; focused progression/formula/dashboard/ledger/admin specs passed with 71 SUCCESS after rerunning outside the known sandbox `spawn EPERM`; `npm run build` passed with only known budget/CommonJS warnings. Static greps found no new direct progression runtime write paths, no `hero_derived` runtime source, `stats_derived` only in generated types, grant/selection RPC names only in generated/typed-boundary context rather than Angular runtime calls, no durable `any`, and no `label > p-select`. Codex did not run manual smoke or route smoke. Pending validation is explicitly separate from blockers: real producer smoke remains pending until a representative XP-producing flow exists or is intentionally selected, and user/manual validation remains user-owned. N12 DB/content cleanup remains a follow-up, not an N13 blocker: terminology/content should use `Character Points`, stat upgrade default test context keys should be aligned with allowed variables if confirmed, and missing progression UI metadata rows should be seeded rather than hidden with frontend fallback copy.
+
 # Epic O — Estates, districts and buildings
 
 Epic O implements player-facing estate/building runtime, estate address browsing/relocation UI, and admin/balancer building configuration over the current DB/RPC estate foundation.
