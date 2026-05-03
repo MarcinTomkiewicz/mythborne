@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { FormulaAdminData } from '../../domain/formula/formula.model';
 import { FormulaService } from '../formula/formula';
 import { StatProgressionService } from './stat-progression';
@@ -104,6 +104,85 @@ describe('StatProgressionService', () => {
         },
       })
     ).toBe(10);
+  });
+
+  it('passes heroLevel, level and statLevel to the stat upgrade cost formula', () => {
+    expect(
+      service.getNextLevelCost(4, 'heroLevel + level + statLevel', {
+        heroLevel: 3,
+        statLevel: 5,
+        target: {
+          id: 'target-cost',
+          key: 'hero_stat_upgrade_cost',
+          scopeKey: 'hero_progression',
+          label: 'Hero stat upgrade cost',
+          description: null,
+          allowedVariables: ['heroLevel', 'level', 'statLevel'],
+          defaultTestContext: { heroLevel: 1, level: 1, statLevel: 1 },
+          sortOrder: 10,
+          createdAt: null,
+        },
+      })
+    ).toBe(12);
+  });
+
+  it('surfaces missing stat upgrade cost assignment as configuration error', async () => {
+    formulaService.getAdminData.and.returnValue(
+      of({
+        targets: [
+          {
+            id: 'target-cost',
+            key: 'hero_stat_upgrade_cost',
+            scopeKey: 'hero_progression',
+            label: 'Hero stat upgrade cost',
+            description: null,
+            allowedVariables: ['heroLevel', 'level', 'statLevel'],
+            defaultTestContext: { heroLevel: 1, level: 1, statLevel: 1 },
+            sortOrder: 10,
+            createdAt: null,
+          },
+          {
+            id: 'target-cap',
+            key: 'hero_stat_level_cap',
+            scopeKey: 'hero_progression',
+            label: 'Hero stat level cap',
+            description: null,
+            allowedVariables: ['heroLevel'],
+            defaultTestContext: { heroLevel: 1 },
+            sortOrder: 20,
+            createdAt: null,
+          },
+        ],
+        formulas: [
+          {
+            id: 'formula-cap',
+            key: 'hero-stat-level-cap-default',
+            scopeKey: 'hero_progression',
+            label: 'Cap',
+            expression: 'heroLevel + 4',
+            description: null,
+            isEnabled: true,
+            createdAt: null,
+            updatedAt: null,
+          },
+        ],
+        assignments: [
+          {
+            id: 'assignment-cap',
+            targetId: 'target-cap',
+            formulaId: 'formula-cap',
+            createdAt: null,
+            updatedAt: null,
+          },
+        ],
+        entityAssignments: [],
+        blocks: [],
+      } as FormulaAdminData),
+    );
+
+    await expectAsync(firstValueFrom(service.getRules())).toBeRejectedWithError(
+      'Formula target "Hero stat upgrade cost" has no enabled assigned formula.',
+    );
   });
 
   it('returns a project cap based on hero level', () => {

@@ -3943,6 +3943,8 @@ Current source of truth:
 
 ## Task N3 — Stat upgrade cost formula usage audit/fix
 
+**Status:** Done / accepted on 2026-05-03.
+
 **Goal:** Ensure stat upgrade costs use the existing DB formula target.
 
 **Scope:**
@@ -3962,6 +3964,8 @@ Current source of truth:
 - Missing/disabled formula assignment is surfaced clearly.
 - UI explains why an upgrade cannot be calculated when formula config is broken.
 - Build and focused tests pass.
+
+**Implementation note:** N3 accepted on 2026-05-03 after code review. Stat upgrade costs remain DB/formula-backed through `StatProgressionService.getRules()` and `resolveAssignedFormula(...)` for `hero_stat_upgrade_cost`; no local fallback expression, DB/RPC change or direct write path was introduced. Runtime formula context passed into `evaluateNextLevelCost(...)` / `getNextLevelCost(...)` includes `heroLevel`, `level` and `statLevel`. `/hero/attributes` no longer masks an unavailable cost as `0` spent Character Points: spent/remaining Character Points become `Unavailable`, save is blocked through `canSaveDraft()`, and row-level errors expose the exact formula/configuration issue. Verification passed with `npx tsc --noEmit`, focused stat progression/allocation/hero specs, static greps for no direct progression writes and formula target/context usage, and `npm run build` with known budget/CommonJS warnings. Follow-up: future UI polish can surface the first exact row-level cost error in the summary instead of the current generic `characterPointSummaryError()`.
 
 ---
 

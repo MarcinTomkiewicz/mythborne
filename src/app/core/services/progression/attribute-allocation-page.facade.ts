@@ -52,23 +52,38 @@ export class AttributeAllocationPageFacade {
     );
   });
 
-  readonly spentCharacterPoints = computed(() => {
+  readonly spentCharacterPoints = computed<number | null>(() => {
     const rules = this.progressionRules();
 
     if (!rules) {
       return 0;
     }
 
-    const total = this.statsList().reduce(
-      (sum, stat) => sum + this.getSpentPointsForStat(stat.key, rules.costFormula.expression),
-      0
-    );
+    let total = 0;
 
-    return Number.isFinite(total) ? total : 0;
+    for (const stat of this.statsList()) {
+      const spent = this.getSpentPointsForStat(stat.key, rules.costFormula.expression);
+
+      if (spent === null) {
+        return null;
+      }
+
+      total += spent;
+    }
+
+    return total;
   });
 
-  readonly remainingCharacterPoints = computed(
-    () => this.characterPoints() - this.spentCharacterPoints()
+  readonly remainingCharacterPoints = computed<number | null>(() => {
+    const spent = this.spentCharacterPoints();
+
+    return spent === null ? null : this.characterPoints() - spent;
+  });
+
+  readonly characterPointSummaryError = computed(() =>
+    this.spentCharacterPoints() === null
+      ? 'Stat upgrade cost cannot be calculated because the active formula configuration is broken.'
+      : null
   );
 
   readonly hasPendingChanges = computed(() =>
@@ -78,6 +93,16 @@ export class AttributeAllocationPageFacade {
       return currentValue !== plannedValue;
     })
   );
+
+  readonly canSaveDraft = computed(() => {
+    const remainingCharacterPoints = this.remainingCharacterPoints();
+
+    return (
+      this.hasPendingChanges() &&
+      remainingCharacterPoints !== null &&
+      remainingCharacterPoints >= 0
+    );
+  });
 
   readonly statRows = computed<AttributeAllocationRow[]>(() => {
     const rules = this.progressionRules();
@@ -118,6 +143,9 @@ export class AttributeAllocationPageFacade {
         increaseReason = `Cap reached for hero level ${this.heroLevel()}.`;
       } else if (nextLevelCostResult.error) {
         increaseReason = nextLevelCostResult.error;
+      } else if (remainingCharacterPoints === null) {
+        increaseReason =
+          this.characterPointSummaryError() ?? 'Stat upgrade cost cannot be calculated.';
       } else if (nextLevelCost !== null && nextLevelCost > remainingCharacterPoints) {
         increaseReason = 'Not enough Character Points for the next level.';
       }
@@ -173,7 +201,9 @@ export class AttributeAllocationPageFacade {
   }
 
   saveDraft() {
-    if (!this.hasPendingChanges() || this.remainingCharacterPoints() < 0) {
+    const remainingCharacterPoints = this.remainingCharacterPoints();
+
+    if (!this.canSaveDraft() || remainingCharacterPoints === null) {
       return;
     }
 
@@ -184,7 +214,7 @@ export class AttributeAllocationPageFacade {
       return;
     }
 
-    const nextCharacterPoints = this.remainingCharacterPoints();
+    const nextCharacterPoints = remainingCharacterPoints;
     const nextStats = {
       ...this.draftStats(),
     };
@@ -255,7 +285,7 @@ export class AttributeAllocationPageFacade {
       });
   }
 
-  private getSpentPointsForStat(statKey: string, costFormula: string): number {
+  private getSpentPointsForStat(statKey: string, costFormula: string): number | null {
     const currentValue = this.baseStats()[statKey] ?? 0;
     const plannedValue = this.draftStats()[statKey] ?? currentValue;
 
@@ -273,7 +303,7 @@ export class AttributeAllocationPageFacade {
       });
 
       if (cost === null) {
-        return Number.POSITIVE_INFINITY;
+        return null;
       }
 
       total += cost;

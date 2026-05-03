@@ -25,10 +25,12 @@
         <div class="flex-row-start-center flex-wrap gap-sm">
           <span class="tag-badge tag-badge--warn">Level {{ page.heroLevel() }}</span>
           <span class="tag-badge tag-badge--golden">
-            Available Character Points: {{ page.remainingCharacterPoints() }}
+            Available Character Points:
+            {{ page.remainingCharacterPoints() === null ? 'Unavailable' : page.remainingCharacterPoints() }}
           </span>
           <span class="tag-badge tag-badge--muted">
-            Spent Character Points: {{ page.spentCharacterPoints() }}
+            Spent Character Points:
+            {{ page.spentCharacterPoints() === null ? 'Unavailable' : page.spentCharacterPoints() }}
           </span>
           <span class="tag-badge tag-badge--info">
             Project cap:
@@ -36,6 +38,9 @@
           </span>
         </div>
       </div>
+      @if (page.characterPointSummaryError(); as summaryError) {
+        <p class="muted-text mb-0 mt-md">{{ summaryError }}</p>
+      }
     </section>
 
     <section class="mg-card p-lg w-100">
@@ -58,7 +63,7 @@
           <p-button
             label="Save allocation"
             [loading]="page.isSaving()"
-            [disabled]="page.isSaving() || !page.hasPendingChanges() || page.remainingCharacterPoints() < 0"
+            [disabled]="page.isSaving() || !page.canSaveDraft()"
             (onClick)="page.saveDraft()"
           />
         </div>
