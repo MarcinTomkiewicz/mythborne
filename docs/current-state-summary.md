@@ -28,7 +28,7 @@ This is an operational estimate, not a formal audit.
 | Prestige / reputation | 0% | Not implemented yet. |
 | Guilds / politics / sieges | 0% | Not implemented yet. |
 | Trade / economy gameplay loop | 58% | Database/RPC foundation for Character Points, direct trade, auctions, item locks, vendor scrap and anti-abuse signals exists. Direct trade and one-item auctions have initial player-facing RPC-backed UIs; vendor sell has a core service contract, while Trade Routes/building integration and real sandbox smoke coverage are still pending. |
-| Generated database types | 100% | Task A1 confirmed. `src/app/core/types/database.types.ts` has been regenerated against the current schema and includes the latest trade, auction, anti-abuse, item lifecycle, server/config/formula/audit, and hero tables/functions/enums. |
+| Generated database types | 100% | Task O1 confirmed. `src/app/core/types/database.types.ts` has been regenerated/imported against the current schema and includes the latest estate/building seconds-based contracts alongside prior trade, auction, anti-abuse, item lifecycle, server/config/formula/audit, and hero tables/functions/enums. |
 
 ## What Is Implemented
 
@@ -56,6 +56,7 @@ This is an operational estimate, not a formal audit.
   - generated bonus-template rows are mapped through defaults instead of legacy removed columns,
   - hero loading now filters by `hero.user_id` instead of assuming `hero.id === auth.uid()`.
 - Task A2 has been applied for A1 by updating this state summary and `docs/current-todo.md`.
+- Task O1 is confirmed complete as of 2026-05-03. The stale generated-type blocker was resolved after importing regenerated Supabase types: building target search RPC returns now expose `base_build_time_seconds`, not legacy `base_build_time_minutes`; `buildings.starting_level`, `buildings.base_build_time_seconds`, `get_building_progression_preview(...)`, and `start_estate_building_upgrade(...)` returning `build_time_seconds` are present. Active frontend code has no minutes-based building fallback logic and does not call internal estate helper RPCs.
 - Task B1 is confirmed complete as of 2026-04-26. The audit report is stored in `docs/b1-identity-assumptions-audit.md`.
 - B1 confirmed that RLS/onboarding SQL is a separate required database task before the project can fully rely on `hero.id != auth.uid()` in production.
 - Task B2 is confirmed complete as of 2026-04-26. The app now has a shared active server resolver in `ActiveServer`.

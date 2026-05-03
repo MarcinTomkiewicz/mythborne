@@ -154,7 +154,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: N11 - Character Points display, ledger and penalty sink clarity.
 - Completed and confirmed: N12 - Progression admin/formula/configurator explainability.
 - Completed and confirmed: N13 - Progression integration smoke and blocker report technical checkpoint.
-- Next backlog task: O1 - first Epic O task from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
+- Completed and confirmed: O1 - DB/types alignment after estate foundation cleanup.
+- Next backlog task: O2 - Estate address and capacity read layer from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
 - N13 pending validation: representative XP producer smoke remains pending until a real XP-producing flow exists or is intentionally selected; user/manual validation remains separate from technical green checks and must not be claimed by Codex.
 - N12 DB/content cleanup follow-up: replace remaining formula target `hero points` wording with `Character Points`; confirm and align stat upgrade default test context keys (`hero_level`/`stat_level` vs allowed `heroLevel`/`statLevel`); seed the currently reported progression UI metadata gaps. Do not hide these with frontend fallback labels or fallback contexts.
 - N9 follow-up: if progression history receives more enrichment slices, consider extracting a dedicated enrichment service.

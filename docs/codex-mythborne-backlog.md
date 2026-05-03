@@ -4442,6 +4442,8 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 
 ## Task O1 — DB/types alignment after estate foundation cleanup
 
+**Status:** Done / accepted on 2026-05-03.
+
 **Goal:** Synchronize generated frontend DB types and frontend expectations with the current estate/building DB contract.
 
 **Scope:**
@@ -4477,6 +4479,8 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - Frontend services use `hero.id` as the domain target and do not assume `hero.id === auth.uid()`.
 - Player-facing service contracts use owner-safe RPCs, not internal helpers.
 - Build passes after type regeneration and any required compile fixes.
+
+**Implementation note:** O1 accepted on 2026-05-03 after DB-side correction and regenerated/imported Supabase types. The prior blocker was stale generated type output from legacy `search_building_targets(...)` and `search_building_targets_page(...)` return signatures; after DB correction and type import, both expose `base_build_time_seconds` instead of `base_build_time_minutes`. Generated types include `buildings.starting_level`, `buildings.base_build_time_seconds`, `get_building_progression_preview(...)`, and `start_estate_building_upgrade(...)` returning `build_time_seconds`. Active frontend code has no `base_build_time_minutes` / `baseBuildTimeMinutes` usage, no minutes-based fallback logic, and no calls to internal estate helper RPCs. No DB/RPC/migration changes or manual generated-type edits were made by Codex. Verification passed with `npx tsc --noEmit`, focused estate/building specs with 15 SUCCESS after rerunning outside the known sandbox `spawn EPERM`, static greps, and `npm run build` with known budget/CommonJS warnings. Codex did not run manual smoke or route smoke.
 
 ---
 
