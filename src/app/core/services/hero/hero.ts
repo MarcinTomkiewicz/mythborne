@@ -4,6 +4,7 @@ import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import { Row } from '../../types/supabase.types';
 import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
+import { HeroExperienceProgress } from '../../types/hero.types';
 import { AuthState } from '../auth/auth-state';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
@@ -12,6 +13,8 @@ import {
   SaveStatAllocationResult,
   toSaveStatAllocationRpcArgs,
 } from '../../utils/stat-allocation-rpc';
+import { nonNegativeInteger, positiveInteger } from '../../utils/number';
+import { GetHeroExperienceToNextLevelRpcResult } from '../../types/hero-progression-rpc.types';
 import { SaveStatAllocationRpcRow } from '../../types/stat-allocation-rpc.types';
 import { ActiveHero } from './active-hero';
 
@@ -97,6 +100,35 @@ export class Hero {
     );
   }
 
+  getHeroExperienceProgress(): Observable<HeroExperienceProgress> {
+    return this.getHeroData().pipe(
+      switchMap((hero) => {
+        const level = positiveInteger(hero.level ?? 1);
+        const currentExperience = nonNegativeInteger(hero.experience ?? 0);
+
+        return this.backend.rpc<GetHeroExperienceToNextLevelRpcResult>(
+          RPC.get_hero_experience_to_next_level,
+          {
+            p_hero_id: hero.id,
+            p_level: level,
+            p_experience: currentExperience,
+          },
+        ).pipe(
+          map((experienceToNextLevel) =>
+            this.toHeroExperienceProgress({
+              level,
+              currentExperience,
+              totalExperienceEarned: nonNegativeInteger(
+                hero.total_experience_earned ?? 0,
+              ),
+              experienceToNextLevel,
+            }),
+          ),
+        );
+      }),
+    );
+  }
+
   saveProgressionDraft(
     stats: Record<string, number>,
     nextCharacterPoints: number,
@@ -139,5 +171,37 @@ export class Hero {
         return result;
       }),
     );
+  }
+
+  private toHeroExperienceProgress(input: {
+    level: number;
+    currentExperience: number;
+    totalExperienceEarned: number;
+    experienceToNextLevel: number;
+  }): HeroExperienceProgress {
+    const experienceToNextLevel = this.requiredPositiveExperienceThreshold(
+      input.experienceToNextLevel,
+    );
+    const remainingExperience = Math.max(0, experienceToNextLevel - input.currentExperience);
+
+    return {
+      ...input,
+      experienceToNextLevel,
+      remainingExperience,
+      experiencePercent: Math.min(
+        100,
+        Math.round((input.currentExperience / experienceToNextLevel) * 100),
+      ),
+    };
+  }
+
+  private requiredPositiveExperienceThreshold(value: unknown): number {
+    const numeric = Number(value);
+
+    if (!Number.isFinite(numeric) || numeric <= 0) {
+      throw new Error('Experience threshold must be a positive number.');
+    }
+
+    return Math.round(numeric);
   }
 }

@@ -3996,6 +3996,8 @@ Current source of truth:
 
 ## Task N5 — XP and level display over current DB/RPC contract
 
+**Status:** Done / accepted on 2026-05-03.
+
 **Goal:** Display hero XP/level progression using the current canonical DB/RPC foundation.
 
 **Scope:**
@@ -4018,6 +4020,8 @@ Current source of truth:
 - Formula/RPC errors are visible and not silently replaced by unrelated thresholds.
 - Display distinguishes current XP progress from lifetime XP.
 - Build passes.
+
+**Implementation note:** N5 accepted on 2026-05-03 after DB/RPC permission fix and user smoke. Dashboard XP display reads the current hero level/current XP/lifetime XP fields and uses canonical `get_hero_experience_to_next_level(...)` for the current threshold; the player-facing bar now displays real `XP current / threshold` values such as `XP 0 / 180`, with no misleading `XP 0 / 100`, no duplicated `Current: current / threshold` line and no player-facing lifetime XP. Formula/RPC threshold errors show `Unavailable`/error instead of a local fallback. No DB/RPC changes, migrations, XP/level mutations or direct progression writes were introduced from Angular. Verification passed with `npx tsc --noEmit`, focused hero/dashboard XP specs, static greps for no hardcoded XP threshold/no lifetime dashboard text/no direct writes/no new `any`, and `npm run build` with known budget/CommonJS warnings. The dashboard remains a provisional screen and should receive broader UI/UX rebuild later, outside N5.
 
 ---
 

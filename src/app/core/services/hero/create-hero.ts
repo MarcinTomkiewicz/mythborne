@@ -63,6 +63,7 @@ export class CreateHero {
               level: heroPayload.level ?? 1,
               rank: heroPayload.rank ?? 1,
               experience: heroPayload.experience ?? 0,
+              totalExperienceEarned: heroPayload.total_experience_earned ?? 0,
               characterPoints: heroPayload.character_points ?? 0,
               totalCharacterPointsEarned: heroPayload.total_character_points_earned ?? 0,
               originId: heroPayload.origin_id ?? null,

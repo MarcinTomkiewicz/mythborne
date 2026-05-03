@@ -6,12 +6,22 @@ export interface IHero {
   level: number;
   rank: number;
   experience: number;
+  totalExperienceEarned: number;
   characterPoints: number;
   totalCharacterPointsEarned: number;
   originId: string | null;
   estateId: string | null;
   profilePicture: string | null;
   createdAt: string | null;
+}
+
+export interface HeroExperienceProgress {
+  level: number;
+  currentExperience: number;
+  totalExperienceEarned: number;
+  experienceToNextLevel: number;
+  remainingExperience: number;
+  experiencePercent: number;
 }
 
 export interface IHeroDerived extends Record<string, number> {

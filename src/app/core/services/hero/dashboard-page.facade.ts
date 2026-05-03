@@ -1,4 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { finalize } from 'rxjs';
 import { BonusSource } from '../../domain/bonus/bonus.model';
 import { IHeroDerived } from '../../types/hero.types';
 import { OriginBonus, Origin } from '../../domain/origin/origin.model';
@@ -8,6 +9,7 @@ import { Hero } from './hero';
 import { Origins } from '../origins/origins';
 import { StatsService } from '../stats/stats';
 import { HeroDerivedStats } from './hero-derived-stats';
+import { getErrorMessage } from '../../utils/error-message';
 
 @Injectable()
 export class DashboardPageFacade {
@@ -20,7 +22,13 @@ export class DashboardPageFacade {
   level = signal(1);
   characterPoints = signal(0);
   readonly heroLevel = signal(1);
+  experience = signal(0);
+  totalExperienceEarned = signal(0);
+  experienceToNextLevel = signal<number | null>(null);
+  remainingExperience = signal<number | null>(null);
   experiencePercent = signal(0);
+  isExperienceLoading = signal(false);
+  experienceError = signal<string | null>(null);
 
   origin = signal<Origin | null>(null);
   originBonuses = signal<OriginBonus[]>([]);
@@ -56,7 +64,8 @@ export class DashboardPageFacade {
       this.level.set(hero.level ?? 1);
       this.characterPoints.set(hero.character_points ?? 0);
       this.heroLevel.set(hero.level ?? 1);
-      this.experiencePercent.set(this.calculateExperiencePercent(hero.experience));
+      this.experience.set(hero.experience ?? 0);
+      this.totalExperienceEarned.set(hero.total_experience_earned ?? 0);
 
       if (hero.origin_id) {
         this.originsService
@@ -72,15 +81,7 @@ export class DashboardPageFacade {
     this.heroDerivedStats
       .resolveActiveHeroDerivedStats()
       .subscribe(this.derivedValues.set);
-  }
-
-  private calculateExperiencePercent(xp: number | null): number {
-    if (!xp) {
-      return 0;
-    }
-
-    const levelCap = 1000;
-    return Math.min(Math.round((xp / levelCap) * 100), 100);
+    this.loadExperienceProgress();
   }
 
   private originBonusSource(): BonusSource {
@@ -96,6 +97,34 @@ export class DashboardPageFacade {
         scalingFactor: bonus.scalingFactor,
       })),
     };
+  }
+
+  private loadExperienceProgress(): void {
+    this.isExperienceLoading.set(true);
+    this.experienceError.set(null);
+
+    this.heroService
+      .getHeroExperienceProgress()
+      .pipe(finalize(() => this.isExperienceLoading.set(false)))
+      .subscribe({
+        next: (progress) => {
+          this.level.set(progress.level);
+          this.heroLevel.set(progress.level);
+          this.experience.set(progress.currentExperience);
+          this.totalExperienceEarned.set(progress.totalExperienceEarned);
+          this.experienceToNextLevel.set(progress.experienceToNextLevel);
+          this.remainingExperience.set(progress.remainingExperience);
+          this.experiencePercent.set(progress.experiencePercent);
+        },
+        error: (error: unknown) => {
+          this.experienceToNextLevel.set(null);
+          this.remainingExperience.set(null);
+          this.experiencePercent.set(0);
+          this.experienceError.set(
+            getErrorMessage(error, 'Experience threshold could not be calculated.'),
+          );
+        },
+      });
   }
 }
 

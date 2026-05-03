@@ -10,6 +10,7 @@ export function mapHero(row: HeroRow): IHero {
     level: row.level ?? 1,
     rank: row.rank ?? 1,
     experience: row.experience ?? 0,
+    totalExperienceEarned: row.total_experience_earned ?? 0,
     characterPoints: row.character_points,
     totalCharacterPointsEarned: row.total_character_points_earned,
     originId: row.origin_id,

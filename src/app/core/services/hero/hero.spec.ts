@@ -217,6 +217,54 @@ describe('Hero', () => {
     expect(backend.upsertMany).not.toHaveBeenCalled();
     expect(backend.updateWhere).not.toHaveBeenCalled();
   });
+
+  it('loads XP progress through the canonical threshold RPC', async () => {
+    activeHero.requireActiveHero.and.returnValue(
+      of({
+        heroRow: createHeroRow({
+          id: 'hero-xp',
+          level: 4,
+          experience: 125,
+          total_experience_earned: 2125,
+        }),
+        heroId: 'hero-xp',
+        hero: createHero({ id: 'hero-xp', level: 4, experience: 125 }),
+        userId: 'user-1',
+        serverId: 'server-1',
+        server: {} as never,
+      }),
+    );
+    backend.rpc.and.returnValue(of(500));
+
+    const result = await firstValueFrom(service.getHeroExperienceProgress());
+
+    expect(backend.rpc).toHaveBeenCalledWith(
+      'get_hero_experience_to_next_level',
+      {
+        p_hero_id: 'hero-xp',
+        p_level: 4,
+        p_experience: 125,
+      },
+    );
+    expect(result).toEqual({
+      level: 4,
+      currentExperience: 125,
+      totalExperienceEarned: 2125,
+      experienceToNextLevel: 500,
+      remainingExperience: 375,
+      experiencePercent: 25,
+    });
+    expect(backend.upsertMany).not.toHaveBeenCalled();
+    expect(backend.updateWhere).not.toHaveBeenCalled();
+  });
+
+  it('surfaces invalid XP threshold results instead of using a local fallback', async () => {
+    backend.rpc.and.returnValue(of(0));
+
+    await expectAsync(
+      firstValueFrom(service.getHeroExperienceProgress()),
+    ).toBeRejectedWithError('Experience threshold must be a positive number.');
+  });
 });
 
 function createHero(overrides: Partial<ReturnType<typeof baseHero>> = {}) {
@@ -235,6 +283,7 @@ function baseHero() {
     level: 1,
     rank: 1,
     experience: 0,
+    totalExperienceEarned: 0,
     characterPoints: 8,
     totalCharacterPointsEarned: 8,
     originId: null,
@@ -253,6 +302,7 @@ function createHeroRow(overrides: Record<string, unknown> = {}) {
     level: 1,
     rank: 1,
     experience: 0,
+    total_experience_earned: 0,
     character_points: 8,
     total_character_points_earned: 8,
     origin_id: null,
