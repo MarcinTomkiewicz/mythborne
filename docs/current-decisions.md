@@ -1,6 +1,6 @@
 # Mythborne — Current Decisions Log
 
-Updated: 2026-05-02
+Updated: 2026-05-03
 
 Use this file for recent design, domain, database and implementation decisions that should override older assumptions.
 
@@ -14,22 +14,63 @@ If something conflicts, prefer:
 
 This file is not a Codex status tracker. Do not mark Codex tasks as completed here unless the user explicitly asks for documentation/status updates after accepting the work.
 
-## Progression / Epic N DB-RPC Decisions — 2026-05-02 late handoff
+## Progression / Epic N DB-RPC Decisions — 2026-05-03 current state
 
-Epic N is **Stats and progression**.
+Epic N is **Stats and Progression**.
 
-- **Stats** means Character Point allocation into base stats. This already has a canonical workflow through `save_stat_allocation(...)`; Angular must not direct-write `hero_stats`, `hero.character_points`, `character_point_ledger` or audit tables.
-- **Progression** means XP, level, XP-to-next-level, level-up, Character Points generated from XP, CP penalties/sinks, level-up rewards, and level-up stat bonuses.
-- Preflight confirmed that the current DB has `hero.level`, `hero.experience`, `hero.character_points`, `hero.total_character_points_earned`, `save_stat_allocation(...)`, `evaluate_balance_formula_target(...)`, `grant_reward_profile_to_hero(...)`, and reward source placeholder `level_up`.
-- Preflight also confirmed that there is **no complete canonical XP/level-up workflow yet**: no `grant_hero_experience(...)`, no canonical XP ledger, no level-up reward matching, and no level-up stat bonus rules.
+- **Stats** means Character Point allocation into base stats.
+- **Progression** means XP, level, XP-to-next-level, level-up, Character Points generated from XP, CP penalties/sinks, level-up rewards and level-up stat bonuses.
+
+### Current DB/RPC state
+
+The DB/RPC progression foundation now exists.
+
+Current canonical foundations:
+
+- `save_stat_allocation(...)` — canonical stat allocation workflow.
+- `hero.level`.
+- `hero.experience` — current XP progress toward next level.
+- `hero.total_experience_earned` — lifetime XP earned.
+- `hero.character_points` — current spendable Character Points.
+- `hero.total_character_points_earned` — lifetime gross Character Points where relevant.
+- `character_point_ledger` — append-only Character Points balance history.
+- `apply_reward_character_points_delta(...)` — DB-owned reward/progression CP path.
+- `apply_character_point_penalty_sink(...)` — automatic sink for newly earned CP consumed by active CP penalties.
+- `hero_progression_ledger` — canonical append-only XP/progression ledger.
+- `get_hero_experience_to_next_level(...)` — server-side XP threshold helper using `hero_experience_to_next_level`.
+- `grant_hero_experience(...)` — canonical XP/level-up workflow.
+- `reward_level_match_kinds` — DB-backed level matching dictionary.
+- `reward_profile_assignments.level_match_kind`, `level_value`, `max_level_value`, `level_interval` — level-up reward matching.
+- `find_best_level_up_reward_assignment(...)`.
+- `grant_level_up_reward_to_hero(...)`.
+- `level_up_stat_bonus_rules`.
+- `level_up_stat_bonus_rule_stats`.
+- `hero_level_stat_bonus_grants`.
+- `upsert_level_up_stat_bonus_rule(...)`.
+- `upsert_level_up_stat_bonus_rule_stat(...)`.
+- `apply_level_up_stat_bonuses_to_hero(...)`.
+- Progression/admin `ui_metadata_entries` content for XP, CP, penalty sink, level-up rewards, stat bonus rules and diagnostics.
+
+### Stats and Character Point allocation
+
+Stat allocation already has a canonical workflow through `save_stat_allocation(...)`.
+
+Angular must not direct-write:
+
+- `hero_stats`;
+- `hero.character_points`;
+- `character_point_ledger`;
+- audit tables.
+
+Plus/minus stat clicks in UI are local draft state and are not audited. The final save is the persistent/auditable mutation.
 
 ### XP and Character Points
 
 Core rule: **every XP gain always grants the same gross amount of Character Points**.
 
-This must not be configurable as an optional boolean. If a hero gains `40 XP`, the hero also gains `40 Character Points` gross.
+This is not configurable as an optional boolean. If a hero gains `40 XP`, the hero also gains `40 Character Points` gross.
 
-If a hero has an active Character Point penalty/debt, the newly gained CP may be immediately consumed by the penalty sink. This does not break the XP → CP rule. The ledger should show both facts:
+If a hero has an active Character Point penalty/debt, newly gained CP may be immediately consumed by the penalty sink. This does not break the XP → CP rule. Ledger/history should show both facts:
 
 - positive CP gain from XP;
 - negative CP payment toward active penalty/debt;
@@ -37,22 +78,25 @@ If a hero has an active Character Point penalty/debt, the newly gained CP may be
 
 ### Character Point penalties
 
-The DB already models CP penalties through `character_point_penalties`, with total/paid/remaining amounts and status workflow. Existing anti-abuse/sanction workflows can create CP penalties. The missing piece is automatic consumption of future CP gains by active penalties.
+CP penalties are modeled through `character_point_penalties`, with total/paid/remaining amounts and status workflow.
 
-Epic N DB work must therefore include a CP penalty sink in the progression/reward CP gain path:
+Automatic CP penalty sink now exists through `apply_character_point_penalty_sink(...)`.
 
-- CP is first granted gross from XP;
-- active payable penalty/debt consumes as much of the new CP as possible;
-- `character_point_penalties.paid_amount` / `remaining_amount` are updated;
-- CP ledger records the gain and the sink/payment;
-- if a penalty reaches zero remaining amount, status should move to the appropriate completed/paid state according to existing sanction/penalty status semantics.
+Rules:
+
+- CP is granted gross first.
+- Active payable penalty/debt consumes as much of the newly granted CP as possible.
+- `character_point_penalties.paid_amount` / `remaining_amount` are updated.
+- CP ledger records gain and sink/payment.
+- If a penalty reaches zero remaining amount, status moves to completed according to existing sanction/penalty status semantics.
+- Frontend must not call low-level CP helpers directly.
 
 ### Experience model
 
 Use:
 
-- `hero.experience` = current XP progress toward the next level;
-- new `hero.total_experience_earned` = lifetime XP earned.
+- `hero.experience` = current XP progress toward next level.
+- `hero.total_experience_earned` = lifetime XP earned.
 
 Example:
 
@@ -60,13 +104,13 @@ Example:
 - gain `40 XP`;
 - if next-level threshold is `100`, final state is level 2, `experience = 20`, `total_experience_earned = 120`.
 
-The workflow must safely handle multiple levels gained in one XP grant, even if this should be rare in normal balance.
+`grant_hero_experience(...)` must be treated as the canonical DB/RPC workflow for this state transition. It evaluates thresholds server-side through `hero_experience_to_next_level`, supports multiple level-ups in one grant, writes `hero_progression_ledger`, grants gross Character Points and routes CP through the penalty sink.
 
 ### Level-up rewards
 
-`reward_source_kinds.level_up` exists but was previously a future placeholder. Epic N must turn it into a real runtime reward source.
+`reward_source_kinds.level_up` is now an active runtime reward source path.
 
-Level-up reward routing must support matching by reached level:
+Level-up reward routing supports matching by reached level:
 
 - `any`;
 - `exact`;
@@ -76,72 +120,59 @@ Level-up reward routing must support matching by reached level:
 
 A single reached-level event chooses **one best matching reward profile**. If that level should give several things, they must be represented as multiple `reward_profile_entries` inside one selected reward profile.
 
-Level-up reward profiles must not contain active `experience` entries, to avoid recursive loops: level-up → XP reward → new level-up → XP reward.
+Level-up reward profiles must not contain active `experience` entries, to avoid recursive loops:
+
+```text
+level-up → XP reward → new level-up → XP reward
+```
 
 ### Level-up stat bonuses
 
-Level-up stat bonuses are a core progression feature, not a future polish item.
+Level-up stat bonuses are a core progression feature.
 
-They must be configurable from the start. They must not be hidden in `metadata_json`.
+They are configurable and must not be hidden only in `metadata_json`.
 
-Important user decision: level-up stat bonuses should increase the actual base stat values in `hero_stats`, not only create separate derived bonuses. This is intentional because it makes future manual stat upgrades more expensive and therefore contributes to the Character Point sink.
+Important decision: level-up stat bonuses increase the actual base stat values in `hero_stats`, not only separate derived bonuses. This intentionally increases future manual stat upgrade costs and contributes to the Character Point sink.
 
-Example:
+Examples:
 
 - rule A: every 4 levels, +1 Strength;
 - rule B: every 5 levels, +2 Agility;
 - at level 20, both rules fire and the hero receives +1 Strength and +2 Agility.
 
-Rules must allow both:
+Rules support:
 
-- fixed-stat bonuses, e.g. `+1 Strength every 4 levels`;
-- random stat bonuses, e.g. every 10 levels roll total +2..+5 across a configured stat pool with optional weights.
+- fixed-stat bonuses;
+- random stat-pool bonuses;
+- exact/minimum/range/interval level matching.
 
-Random stat bonuses should be reportable/inspectable after the fact. The actual grants must be written to an append-only ledger/grant table with before/after stat values.
+Actual grants are written to `hero_level_stat_bonus_grants` with before/after stat values.
 
-### Planned N-DB sequence
+### Frontend implementation standard for N
 
-Do not implement frontend Epic N before the DB/RPC progression foundation exists.
+Frontend Epic N must consume existing DB/RPC contracts.
 
-Planned DB sequence:
+Do not implement:
 
-1. **N-DB0 — CP helper boundary and penalty sink**
-   - secure low-level CP helpers so arbitrary frontend cannot mutate CP;
-   - keep existing DB-owned workflows working;
-   - implement/verify penalty sink for future CP gains.
-2. **N-DB1 — Canonical hero experience and level-up workflow**
-   - add `hero.total_experience_earned`;
-   - add one XP/progression ledger table;
-   - add `grant_hero_experience(...)` returning typed table result, not JSON as the main contract;
-   - always grant gross CP equal to XP;
-   - calculate thresholds server-side through `hero_experience_to_next_level`.
-3. **N-DB2 — Level-up reward routing and level matching**
-   - add level match dictionary and fields on reward assignments;
-   - activate `level_up/completed` semantics;
-   - route one reward profile per reached level;
-   - block experience entries in level-up reward profiles.
-4. **N-DB3 — Level-up base stat bonus rules and grants**
-   - add configurable exact/minimum/range/interval stat bonus rules;
-   - support fixed-stat and random-stat-pool distribution;
-   - apply grants directly to `hero_stats`;
-   - write append-only stat bonus grant records with before/after values.
-5. **N-DB4 — Progression admin/configurator metadata**
-   - add section-level `ui_metadata_entries` so admin/balancer UIs explain XP, CP, penalty sink, level matching, stat bonus rules and ledgers.
+- a second stat allocation workflow;
+- a second XP/level-up workflow;
+- frontend-only XP threshold mutation;
+- frontend-only Character Points ledger mutation;
+- frontend-only level-up rewards;
+- frontend-only level-up stat grants.
 
-### DB/RPC implementation standard for N
+Allowed frontend work:
 
-Do not create broad, arbitrary public mutation helpers.
+- read models and mappers;
+- stat allocation draft UI using `save_stat_allocation(...)`;
+- XP/level display using `get_hero_experience_to_next_level(...)` / formula-backed data;
+- progression history UI over `hero_progression_ledger`;
+- Character Points ledger/history display over approved read paths;
+- level-up reward/stat bonus result display;
+- admin/configurator UI for existing progression rules and metadata;
+- smoke/reporting over current DB/RPC workflows.
 
-Player actions should go through concrete workflows. Examples:
-
-- stat allocation → `save_stat_allocation(...)`;
-- XP reward → `grant_reward_profile_to_hero(...)` → `grant_hero_experience(...)`;
-- trade/auction → trade/auction RPCs;
-- anti-abuse penalties → anti-abuse sanction/penalty RPCs;
-- admin correction → dedicated admin/governance RPC.
-
-Use verification SQL and rollback smoke tests after each N-DB migration. Do not pack N-DB0..N-DB4 into one giant migration unless explicitly requested.
-
+Generated Supabase types must be regenerated after N schema/RPC changes before Angular consumes the new contract.
 
 ## Admin Configurator UI Metadata Decisions — 2026-05-02 late
 
@@ -301,23 +332,6 @@ Raw keys/UUIDs are secondary metadata only. Missing or weak DB dictionary text m
 After Epic M, return to `/admin/exploration-trials` for a trial-editor explainability/layout pass analogous to L12c. Later, create/run a dedicated `UX-CFG` epic for a systematic explainability sweep of all admin/configurator screens.
 
 ---
-
-## Future Memory Notes — 2026-05-02
-
-These are side notes, not current Epic M/L work unless explicitly promoted:
-
-- After Epic M, revisit `/admin/exploration-trials` for explainability/layout cleanup.
-- Create a later `UX-CFG` epic for a systematic review of all admin/configurator UI explanations.
-- PvP attack target range must be level-limited; very low/high level targets should be blocked outside the allowed range.
-- PvP attacks cannot target members of the attacker’s own guild.
-- PvP attack travel time depends on estate/address distance.
-- PvP spying should be shorter than attack travel time.
-- PvP spying can target anyone, including own guild members, without level limits, but still uses distance-based time.
-- PvP sieges can ignore level limits but cannot target own guild members.
-- Auction watchers should later support notifications for watched-auction price/outbid/end-soon events.
-- Auction rules still need a design/config home: minimum increment, custom bid amount, auction timing, and anti-snipe/end-extension behavior.
-- Trade Routes/building integration should later define the combined active offer-slot limit across auctions and direct trade.
-- Direct trade offers received from another player should not consume the receiver’s Trade Routes/offer slot unless the receiver makes a counteroffer or otherwise creates their own commitment.
 
 ---
 

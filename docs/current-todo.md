@@ -140,7 +140,9 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: M10 - thin sandbox combat caller.
 - Completed and confirmed: M11 - combat admin/balance tooling foundation.
 - Completed and confirmed: M12 - combat opponent definitions admin configurator.
-- Next backlog task: N0 - align generated DB types after Epic N DB foundation, after the user commit and explicit start instruction.
+- Completed and confirmed: N0 - align generated DB types after Epic N DB foundation preflight.
+- Next backlog task: N1 - terminology cleanup: Health vs Character Points, after the user commit and explicit start instruction.
+- Epic N DB sanity follow-up: verify actual `balance_formula_targets`, `balance_formulas` and assignment rows for `hero_experience_to_next_level`, `hero_stat_upgrade_cost` and `hero_stat_level_cap`; generated TypeScript confirms schema/RPC signatures, not seeded content.
 - M12 follow-up: apply `AdminReasonPresetField` to the remaining M12 reason fields for consistency.
 - M12 follow-up: broader UI polish for white/native-looking inputs where global PrimeNG/theme styles are inconsistent.
 - M12 follow-up: optional later refactor of large shared combat opponent files (`combat-opponent-admin.ts`, `combat-opponent.model.ts`).

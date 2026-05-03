@@ -3807,40 +3807,83 @@ If these dictionaries are missing from generated types, regenerate database type
 
 # Epic N — Stats and progression
 
+Epic N implements frontend/domain/admin integration over the current DB/RPC stats and progression foundation.
+
 Epic N must follow the current DB/RPC reality, not the old placeholder version.
 
 Current source of truth:
 
 - stat allocation already uses canonical DB/RPC workflow from G6: `save_stat_allocation(...)`;
-- frontend must not write directly to `hero_stats`, `hero.character_points`, `character_point_ledger` or audit tables;
-- stat upgrade cost and stat cap formulas already exist: `hero_stat_upgrade_cost`, `hero_stat_level_cap`;
-- XP to next level is now formula-backed through `hero_experience_to_next_level`;
+- frontend must not write directly to `hero_stats`, `hero.character_points`, `hero.experience`, `hero.level`, `character_point_ledger`, `hero_progression_ledger` or audit tables;
+- stat upgrade cost and stat cap formulas already exist:
+  - `hero_stat_upgrade_cost`;
+  - `hero_stat_level_cap`;
+- XP to next level is formula-backed through `hero_experience_to_next_level`;
+- `get_hero_experience_to_next_level(...)` exists as a DB helper/read RPC for XP threshold display;
+- `grant_hero_experience(...)` exists as the canonical XP/level-up workflow;
+- `hero.experience` is current XP progress toward next level;
+- `hero.total_experience_earned` is lifetime XP;
+- `hero_progression_ledger` is the append-only XP/progression ledger;
+- XP always grants equal gross Character Points;
+- positive reward/progression Character Point gains flow through the CP penalty sink;
+- level-up reward routing exists through `reward_profile_assignments` level matching;
+- level-up stat bonus rules and grant history exist;
 - `critical_damage` is now a runtime derived/combat stat and active bonus target;
-- runtime derived/special stats must be resolved on the fly and must not reintroduce `hero_derived`.
+- runtime derived/special stats must be resolved on the fly and must not reintroduce `hero_derived`;
+- progression/admin metadata exists under progression-oriented `ui_metadata_entries` namespaces seeded by N-DB4.
 
-**Epic rule:** Do not implement a second stat allocation workflow. Do not hardcode progression formulas. Do not reintroduce `hero_derived`. Treat formula assignments and derived stat definitions as DB-backed balance configuration.
+**Epic rule:** Do not implement a second stat allocation workflow. Do not implement a second XP/level-up workflow. Do not hardcode progression formulas. Do not reintroduce `hero_derived`. Treat formula assignments, derived stat definitions, progression ledgers, level-up reward routing and stat bonus rules as DB-backed balance/runtime configuration.
 
 ---
 
 ## Task N0 — Align generated DB types after Epic N DB foundation
 
-**Goal:** Make frontend aware of current progression DB foundation.
+**Status:** Done / accepted on 2026-05-03 as completed preflight.
+
+**Goal:** Make frontend aware of the current progression DB/RPC foundation.
 
 **Scope:**
 
-- Confirm regenerated `database.types.ts` includes:
-  - `hero_experience_to_next_level` target/formula rows through formula read models;
-  - `critical_damage` in `derived_stat_definitions`;
+- Regenerate/update generated Supabase database types after N DB/RPC migrations.
+- Confirm generated types include:
+  - `hero.character_points`;
+  - `hero.total_character_points_earned`;
+  - `hero.experience`;
+  - `hero.total_experience_earned`;
+  - `hero.level`;
+  - `character_point_ledger`;
+  - `hero_progression_ledger`;
+  - `reward_level_match_kinds`;
+  - `reward_profile_assignments.level_match_kind`;
+  - `reward_profile_assignments.level_value`;
+  - `reward_profile_assignments.max_level_value`;
+  - `reward_profile_assignments.level_interval`;
+  - `level_up_stat_bonus_rules`;
+  - `level_up_stat_bonus_rule_stats`;
+  - `hero_level_stat_bonus_grants`;
   - current `save_stat_allocation(...)` RPC signature;
-  - current `hero.character_points` and `hero.total_character_points_earned` fields;
-  - `character_point_ledger` fields used by progression/history UI.
+  - `get_hero_experience_to_next_level(...)`;
+  - `grant_hero_experience(...)`;
+  - `grant_level_up_reward_to_hero(...)`;
+  - `upsert_level_up_stat_bonus_rule(...)`;
+  - `upsert_level_up_stat_bonus_rule_stat(...)`;
+  - current `derived_stat_definitions` / `critical_damage` read surfaces.
+- Confirm formula read models can see:
+  - `hero_stat_upgrade_cost`;
+  - `hero_stat_level_cap`;
+  - `hero_experience_to_next_level`.
 - Do not edit generated DB types manually.
+- Do not update status docs before user confirmation.
 
 **Acceptance criteria:**
 
-- Generated types match current schema.
+- Generated types match current schema/RPC signatures.
+- Missing progression tables/functions are reported before UI implementation.
 - No frontend model uses raw DB rows directly as final domain models.
 - No docs/status files are updated before user confirmation.
+- Build/typecheck passes where applicable.
+
+**Implementation note:** N0 accepted on 2026-05-03 as a completed preflight. Current generated Supabase types expose the Epic N progression schema/RPC surface required for frontend follow-up work, including hero XP/CP fields, `character_point_ledger`, `hero_progression_ledger`, level-up reward matching fields, level-up stat bonus rule/grant tables, `save_stat_allocation(...)`, `get_hero_experience_to_next_level(...)`, `grant_hero_experience(...)`, `grant_level_up_reward_to_hero(...)`, level-up stat bonus rule RPCs and `critical_damage` derived stat surfaces. No generated types were edited manually. Frontend stat allocation and derived stat paths continue to map DB/RPC rows into explicit domain/read models instead of using raw rows as final UI contracts. Verification passed with `npx tsc --noEmit`, focused progression/hero/derived-stat specs and `npm run build` with known budget/CommonJS warnings. Follow-up before relying on live balancing content: verify actual `balance_formula_targets`, `balance_formulas` and assignment rows for `hero_experience_to_next_level`, `hero_stat_upgrade_cost` and `hero_stat_level_cap`; generated TypeScript confirms schema/RPC signatures, not seeded formula content or active assignments.
 
 ---
 
@@ -3853,11 +3896,15 @@ Current source of truth:
 - Use `Health` for hit points.
 - Use `Character Points` consistently for progression/trade currency unless final product naming changes.
 - Replace legacy Hero Points / PR wording only where touched and safe.
+- Keep `drachma`, `materials`, `workforce` separate from Character Points.
+- Do not rename DB columns.
 
 **Acceptance criteria:**
 
 - UI/domain terms reduce HP/CP confusion.
+- Player-facing labels do not call Character Points “Health”, “HP”, “Hero Points” or “PR” in newly touched surfaces.
 - No schema assumptions are changed.
+- Build passes where code changes are made.
 
 ---
 
@@ -3872,6 +3919,8 @@ Current source of truth:
 - Map RPC result into an explicit domain result.
 - Refresh hero stats and Character Points after successful save.
 - Surface DB/RPC validation errors as user-readable messages.
+- Preserve current active hero/server loading rules.
+- Do not assume `hero.id === auth.uid()`.
 
 **Acceptance criteria:**
 
@@ -3880,6 +3929,7 @@ Current source of truth:
 - No direct frontend writes to `character_point_ledger`.
 - Final save is auditable through DB workflow.
 - UI draft clicks are not audited.
+- Build and focused tests pass.
 
 ---
 
@@ -3890,14 +3940,19 @@ Current source of truth:
 **Scope:**
 
 - Use `hero_stat_upgrade_cost` through current formula assignment resolver.
-- Pass the expected variables: `heroLevel`, `level`, `statLevel`.
-- Remove or isolate any old hardcoded cost fallback.
+- Pass the expected variables:
+  - `heroLevel`;
+  - `level`;
+  - `statLevel`.
+- Remove or isolate old hardcoded cost fallback.
 - Keep formula preview/admin behavior consistent with formula governance.
+- Missing/disabled formula assignment should be a configuration error or explicit technical fallback, not silently hidden as normal state.
 
 **Acceptance criteria:**
 
 - Upgrade costs are formula-driven.
-- Missing/disabled formula assignment is surfaced as configuration error or explicit technical fallback, not silently hidden.
+- Missing/disabled formula assignment is surfaced clearly.
+- UI explains why an upgrade cannot be calculated when formula config is broken.
 - Build and focused tests pass.
 
 ---
@@ -3912,116 +3967,324 @@ Current source of truth:
 - Pass `heroLevel`.
 - Ensure allocation UI prevents or clearly blocks saves above cap.
 - Ensure DB/RPC validation remains source of truth for final save.
+- Do not use hardcoded cap values as normal runtime truth.
 
 **Acceptance criteria:**
 
 - Stat cap is formula-driven.
 - UI cap messaging is understandable.
 - Final save cannot bypass DB/RPC cap validation.
+- Build and focused tests pass.
 
 ---
 
-## Task N5 — XP to next level formula read/use path
+## Task N5 — XP and level display over current DB/RPC contract
 
-**Goal:** Use the new configurable XP-to-next-level formula.
+**Goal:** Display hero XP/level progression using the current canonical DB/RPC foundation.
 
 **Scope:**
 
-- Read assigned formula for `hero_experience_to_next_level`.
-- Evaluate it with `heroLevel`.
-- Use the result for level/progression display where applicable.
+- Read:
+  - `hero.level`;
+  - `hero.experience`;
+  - `hero.total_experience_earned`;
+  - current XP threshold via `get_hero_experience_to_next_level(...)` or approved read model.
+- Use `hero.experience` as current progress toward next level.
+- Use `hero.total_experience_earned` only as lifetime total/history metric.
 - Do not hardcode XP thresholds in Angular.
+- Show clear loading/error states when formula/RPC threshold evaluation fails.
+- Do not mutate XP or level from display code.
 
 **Acceptance criteria:**
 
-- XP-to-next-level display uses formula assignment.
-- Admin/balancer can change formula without frontend code change.
-- Formula errors are visible and not silently replaced by an unrelated threshold.
+- XP-to-next-level display uses DB/RPC/formula-backed threshold.
+- Admin/balancer can change XP formula without frontend code change.
+- Formula/RPC errors are visible and not silently replaced by unrelated thresholds.
+- Display distinguishes current XP progress from lifetime XP.
+- Build passes.
 
 ---
 
-## Task N6 — Level-up workflow preflight/design
+## Task N6 — XP grant workflow integration boundary
 
-**Goal:** Inspect and define what is needed for actual hero level-up persistence.
+**Goal:** Ensure frontend and future producers treat `grant_hero_experience(...)` as the canonical XP/level-up workflow.
 
 **Scope:**
 
-- Inspect current hero `level`, `experience`, Character Points and ledger handling.
-- Determine whether level-up currently happens anywhere.
-- Define desired DB/RPC workflow for:
-  - adding experience;
-  - checking `hero_experience_to_next_level`;
-  - increasing `hero.level`;
-  - granting Character Points where applicable;
-  - writing ledger/audit.
-- Do not implement schema or workflow in this inspect task unless explicitly assigned.
+- Add or update domain/RPC types/mappers for `grant_hero_experience(...)` result.
+- Do not call `grant_hero_experience(...)` from arbitrary player UI unless a concrete approved gameplay producer/action requires it.
+- Approved DB/RPC producer workflows should use `grant_hero_experience(...)` for XP grants instead of direct hero mutations.
+- The result model should expose:
+  - XP gained;
+  - level before/after;
+  - experience before/after;
+  - total experience before/after;
+  - levels gained;
+  - reached levels;
+  - gross Character Points gained;
+  - Character Points balance after penalty sink.
+- Do not direct-write:
+  - `hero.experience`;
+  - `hero.level`;
+  - `hero.total_experience_earned`;
+  - `hero_progression_ledger`;
+  - `character_point_ledger`.
+- If a trial/encounter/reward producer lacks a proper integration point, report a producer blocker instead of creating frontend-only XP mutation.
 
 **Acceptance criteria:**
 
-- Report identifies current implementation state and blockers.
-- Proposed workflow does not bypass Character Point ledger/audit.
-- No direct frontend level/experience mutation is introduced.
+- Frontend has a typed result model for canonical XP grants.
+- No second XP/level-up workflow is introduced.
+- Producers that grant XP can use the canonical RPC/path where assigned.
+- Missing producer integration is reported explicitly.
+- Build and focused tests pass where code changes are made.
 
 ---
 
-## Task N7 — Derived stat resolver cleanup, including critical damage
+## Task N7 — Progression ledger and history read models
+
+**Goal:** Make XP/progression history readable without treating ledgers as mutable UI state.
+
+**Scope:**
+
+- Add typed read/domain models for `hero_progression_ledger`.
+- Represent at minimum:
+  - entry kind;
+  - source kind/id;
+  - experience delta;
+  - experience before/after;
+  - total experience before/after;
+  - reached level for level-up rows;
+  - parent ledger relationship where present;
+  - created_at;
+  - metadata as secondary diagnostics.
+- Add read service/helper for active hero progression history where appropriate.
+- Keep player-facing fields display-safe.
+- Do not expose staff/audit-only data in player-facing history.
+- Do not mutate ledger rows.
+
+**Acceptance criteria:**
+
+- Progression history can show XP gains and level-up events.
+- Level-up rows are distinguishable from experience gain rows.
+- History uses explicit domain models, not raw DB rows as final UI contracts.
+- No direct writes to `hero_progression_ledger`.
+- Build and focused mapper tests pass.
+
+---
+
+## Task N8 — Level-up reward visibility and routing awareness
+
+**Goal:** Make level-up reward results understandable in frontend/admin surfaces without reimplementing reward routing.
+
+**Scope:**
+
+- Model/display level-up reward grant data where available through existing reward grant/read surfaces.
+- Surface the fact that one best matching level-up reward profile is selected per reached level.
+- Display level matching metadata where useful:
+  - any;
+  - exact;
+  - minimum;
+  - range;
+  - interval.
+- Do not select reward profiles in Angular.
+- Do not grant rewards from Angular.
+- Do not allow active XP entries in level-up reward profiles.
+- If the UI needs to inspect reward assignments, use existing reward/profile dictionaries/read services.
+- If current read models cannot show the level-up reward outcome, report a read-model blocker.
+
+**Acceptance criteria:**
+
+- Level-up reward UI/admin surfaces understand current level matching semantics.
+- Angular does not implement reward assignment selection.
+- Angular does not grant level-up rewards directly.
+- XP recursion guard is preserved.
+- Build passes where code changes are made.
+
+---
+
+## Task N9 — Level-up stat bonus rules and grant display/admin alignment
+
+**Goal:** Integrate existing level-up stat bonus rules/grants into frontend/admin surfaces.
+
+**Scope:**
+
+- Add typed models/mappers for:
+  - `level_up_stat_bonus_rules`;
+  - `level_up_stat_bonus_rule_stats`;
+  - `hero_level_stat_bonus_grants`.
+- Admin/configurator surfaces should show:
+  - rule key/label/description;
+  - rule kind: fixed stat or random pool;
+  - level matching kind/value/range/interval;
+  - fixed stat and amount;
+  - random pool stat weights and max points per level;
+  - active flag and sort order;
+  - helper/admin descriptions.
+- If editing is implemented, use canonical DB/RPC paths:
+  - `upsert_level_up_stat_bonus_rule(...)`;
+  - `upsert_level_up_stat_bonus_rule_stat(...)`;
+- Player/history surfaces should show actual grants from `hero_level_stat_bonus_grants`:
+  - stat key;
+  - amount;
+  - before/after value;
+  - reached level;
+  - rule reference.
+- Do not hide actual random outcomes only in unstructured metadata.
+- Do not update `hero_stats` from Angular for level-up stat grants.
+
+**Acceptance criteria:**
+
+- Admin can inspect configured level-up stat bonus rules.
+- Player/history can display actual stat bonus grants after level-up where data exists.
+- Fixed and random stat bonus rules are both modeled.
+- Multiple rules firing on the same level are supported in display.
+- No direct writes to `hero_stats` or grant tables from Angular.
+- Build and focused tests pass.
+
+---
+
+## Task N10 — Derived stat resolver cleanup, including critical damage
 
 **Goal:** Align runtime derived/combat stat resolver with current DB dictionaries.
 
 **Scope:**
 
 - Read `derived_stat_definitions` and active bonuses.
-- Ensure runtime can resolve health, defense, min_damage, max_damage, luck, critical_chance, critical_damage and evasion_chance.
+- Ensure runtime can resolve:
+  - health;
+  - defense;
+  - min_damage;
+  - max_damage;
+  - luck;
+  - critical_chance;
+  - critical_damage;
+  - evasion_chance.
 - `critical_damage` semantics:
   - base critical damage percent = 50;
   - plus active `critical_damage` bonuses;
   - combat multiplier = `1 + finalCriticalDamagePercent / 100`.
 - Do not use `hero_derived`.
+- Do not hardcode critical x2 in the final combat path.
 
 **Acceptance criteria:**
 
 - `critical_damage` is available to combat resolver as percent.
 - Hardcoded crit x2 is not used in final combat path.
 - Derived stat resolver uses DB-backed definitions/bonus targets.
+- No new `hero_derived` dependency appears.
+- Build and focused tests pass.
 
 ---
 
-## Task N8 — Character Points display and ledger consistency
+## Task N11 — Character Points display, ledger and penalty sink clarity
 
-**Goal:** Keep Character Points display and history consistent with DB truth.
+**Goal:** Keep Character Points display/history consistent with DB truth.
 
 **Scope:**
 
-- Display current spendable/balance values from `hero.character_points` or approved helper/read model.
+- Display current spendable balance from `hero.character_points` or approved read model.
 - Use `hero.total_character_points_earned` only as lifetime/baseline where intended.
-- Use `character_point_ledger` for history views.
+- Use `character_point_ledger` for Character Points history views.
+- Show XP-derived CP as gross gain where history data supports it.
+- Show penalty sink/payment entries as separate negative ledger/payment events where history data supports it.
 - Avoid treating drachmas, resources and Character Points as interchangeable.
+- Do not calculate spendable Character Points from ledger totals client-side as source of truth.
+- Do not expose staff-only/audit-only fields to player UI.
 
 **Acceptance criteria:**
 
-- Character Points UI does not recalculate ledger totals client-side as source of truth.
+- Character Points UI uses DB balance as source of truth.
+- XP-derived CP and penalty sink/payment can be explained in history where data exists.
 - Trade/progression currency language stays clear.
 - History and balance views do not expose staff-only/audit-only fields to player UI.
+- Build passes.
 
 ---
 
-## Task N9 — Progression admin/formula preview alignment
+## Task N12 — Progression admin/formula/configurator explainability
 
-**Goal:** Make progression formulas inspectable and previewable in admin tooling.
+**Goal:** Make progression formulas and progression rules inspectable and explainable in admin tooling.
 
 **Scope:**
 
-- Ensure formula admin surfaces show `hero_stat_upgrade_cost`, `hero_stat_level_cap` and `hero_experience_to_next_level`.
+- Ensure formula admin surfaces show:
+  - `hero_stat_upgrade_cost`;
+  - `hero_stat_level_cap`;
+  - `hero_experience_to_next_level`.
 - Ensure allowed variables and default test context are visible.
-- If random is later used in progression formulas, use random preview/reroll behavior from the formula runtime/editor task.
+- Use DB-backed metadata for progression/admin sections where available.
+- Progression admin/configurator surfaces should explain:
+  - XP current vs lifetime;
+  - XP-to-next-level formula;
+  - XP → gross Character Points rule;
+  - CP penalty sink;
+  - level-up reward matching;
+  - level-up reward profile selection;
+  - level-up stat bonus rules;
+  - fixed stat bonuses;
+  - random stat-pool bonuses;
+  - append-only ledgers/grants;
+  - no direct Angular mutations.
+- Missing metadata should be reported with exact namespace/key, not permanently hardcoded in Angular.
+- Ordinary final labels/i18n polish may remain for later UI/refactor work.
 
 **Acceptance criteria:**
 
 - Admin can inspect active progression formula assignments.
-- Admin preview uses DB formula target metadata.
+- Admin can understand current progression configuration without reading SQL.
+- Metadata is DB-backed where available.
 - No hardcoded formula labels/descriptions replace DB labels/descriptions.
+- Build passes.
 
 ---
+
+## Task N13 — Progression integration smoke and blocker report
+
+**Goal:** Verify Epic N integration after N0–N12 changes.
+
+**Scope:**
+
+- Run technical checks appropriate for touched slices.
+- Smoke stat allocation where possible:
+  - local draft plus/minus;
+  - final save through `save_stat_allocation(...)`;
+  - stats refresh;
+  - Character Points refresh.
+- Smoke XP/level display:
+  - current level;
+  - current XP progress;
+  - lifetime XP;
+  - next-level threshold.
+- Smoke progression history where data exists:
+  - experience gain rows;
+  - level-up rows;
+  - reached levels;
+  - CP ledger entries.
+- Smoke derived stats:
+  - health;
+  - defense;
+  - damage;
+  - luck;
+  - critical chance;
+  - critical damage.
+- Smoke admin/configurator surfaces where implemented:
+  - formula targets;
+  - level-up reward matching;
+  - stat bonus rules;
+  - metadata explanations.
+- Do not claim full manual gameplay smoke if there is no authenticated session or representative progression data.
+- If a producer workflow cannot be tested because trial/encounter/PvP integration is not ready, report that as pending producer smoke, not as completed gameplay smoke.
+- If a DB/RPC/read-model blocker remains, report it explicitly and do not mark the relevant flow complete.
+
+**Acceptance criteria:**
+
+- Report states which N flows were technically verified.
+- Report lists pending manual smoke separately from blockers.
+- Route smoke alone is not treated as full smoke.
+- No direct writes were introduced for progression runtime.
+- No `hero_derived` dependency was reintroduced.
+- Remaining blockers, if any, are concrete and actionable.
 
 # Epic O — Estates, districts and buildings
 

@@ -1,6 +1,6 @@
 # Mythborne — Database Current Notes
 
-Updated: 2026-05-02
+Updated: 2026-05-03
 
 This file is the curated semantic index of the current database state. It is not a full `pg_dump`.
 
@@ -14,7 +14,7 @@ If this file conflicts with the actual database, generated Supabase types, or a 
 
 After every schema/RPC migration that Codex will consume, regenerate/update generated Supabase types before frontend work.
 
-## Update 2026-05-02 late — L11/L12/M12 UI metadata and Epic N progression preflight
+## Update 2026-05-03 — L11/L12/M12 UI metadata and Epic N progression DB/RPC foundation
 
 ### UI metadata content seeds
 
@@ -30,55 +30,93 @@ These are content rows in `ui_metadata_entries`; they do not require type regene
 
 Rule: section-level runtime meaning and impact should come from DB metadata where available. Basic field labels and validation copy may later be handled by i18n/refactor.
 
-### Epic N progression preflight result
+### Epic N progression DB/RPC foundation — current state
 
-Preflight confirmed:
+Epic N DB/RPC progression foundation has been implemented and should no longer be described as missing.
 
-- `hero` has `level`, `experience`, `character_points`, and `total_character_points_earned`.
-- `save_stat_allocation(...)` exists for stat allocation.
-- `evaluate_balance_formula_target(...)`, `grant_reward_profile_to_hero(...)`, `apply_reward_character_points_delta(...)`, and `apply_character_points_delta(...)` exist.
-- Reward source `level_up` exists as a dictionary placeholder/future source.
-- No canonical XP/level-up RPC was found.
-- No XP/progression ledger or level-up event table was found.
-- No level-up reward matching/rules table was found.
+Current progression tables/read surfaces:
 
-`apply_character_points_delta(...)` is a low-level helper that updates `hero.character_points` and writes `character_point_ledger`. Its body does not itself validate hero ownership/admin permission. It should be treated as an internal DB helper, not an arbitrary frontend mutation path.
+- `hero.level`;
+- `hero.experience`;
+- `hero.total_experience_earned`;
+- `hero.character_points`;
+- `hero.total_character_points_earned`;
+- `character_point_ledger`;
+- `character_point_penalties`;
+- `hero_progression_ledger`;
+- `reward_level_match_kinds`;
+- `reward_profile_assignments` level matching fields:
+  - `level_match_kind`;
+  - `level_value`;
+  - `max_level_value`;
+  - `level_interval`;
+- `level_up_stat_bonus_rules`;
+- `level_up_stat_bonus_rule_stats`;
+- `hero_level_stat_bonus_grants`.
 
-Existing CP penalty foundation:
+Current progression formulas/helpers:
 
-- `character_point_penalties` models total/paid/remaining penalty amounts;
-- anti-abuse/sanction workflows can create/manage CP penalties;
-- the missing progression integration is automatic CP penalty/debt sink for future CP gains from XP.
+- formula target `hero_experience_to_next_level`;
+- `get_hero_experience_to_next_level(...)`;
+- `evaluate_balance_formula_target(...)`.
 
-### Planned N-DB sequence
+Current stat allocation RPC:
 
-N-DB work is required before full frontend Epic N progression work:
+- `save_stat_allocation(...)`.
 
-1. **N-DB0 — CP helper boundary and penalty sink**
-   - secure low-level CP helper exposure;
-   - preserve existing workflow callers;
-   - add/verify automatic CP penalty sink for future CP gains.
-2. **N-DB1 — Canonical hero experience and level-up workflow**
-   - add `hero.total_experience_earned`;
-   - add a single XP/progression ledger;
-   - add `grant_hero_experience(...)` returning typed table result;
-   - XP always grants equal gross CP;
-   - level thresholds are evaluated server-side with `hero_experience_to_next_level`.
-3. **N-DB2 — Level-up reward routing and level matching**
-   - add level match semantics for `reward_profile_assignments`;
-   - make `level_up/completed` a real reward routing source/outcome;
-   - one reached level selects one best reward profile;
-   - level-up reward profiles may not include active `experience` entries.
-4. **N-DB3 — Level-up base stat bonus rules and grants**
-   - add fixed and random stat bonus rules for level-up;
-   - support exact/minimum/range/interval matching;
-   - apply grants directly to `hero_stats` so future stat allocation costs increase;
-   - write append-only stat bonus grant history.
-5. **N-DB4 — Progression admin/configurator metadata**
-   - add section-level `ui_metadata_entries` for progression admin/config UI.
+Current XP/progression RPCs/helpers:
 
-Do not implement these as one giant migration. Use one migration with verification/rollback smoke per step unless user explicitly asks otherwise.
+- `grant_hero_experience(...)`;
+- `apply_reward_character_points_delta(...)`;
+- `apply_character_point_penalty_sink(...)`;
+- `grant_reward_profile_to_hero(...)`;
+- `find_best_level_up_reward_assignment(...)`;
+- `grant_level_up_reward_to_hero(...)`;
+- `apply_level_up_stat_bonuses_to_hero(...)`;
+- `apply_hero_level_stat_bonus_grant(...)`.
 
+Current admin/configurator RPCs for progression reward/stat-bonus configuration:
+
+- `upsert_reward_profile_assignment(...)` supports N-DB2 level matching for `source_kind = level_up`;
+- `upsert_level_up_stat_bonus_rule(...)`;
+- `upsert_level_up_stat_bonus_rule_stat(...)`.
+
+Current triggers:
+
+- `hero_progression_ledger_level_up_reward_trigger`;
+- `hero_progression_ledger_level_up_stat_bonus_trigger`.
+
+Rules:
+
+- `hero.experience` is current progress toward next level.
+- `hero.total_experience_earned` is lifetime XP.
+- `grant_hero_experience(...)` is the canonical XP/level-up workflow.
+- XP always grants equal gross Character Points.
+- Positive reward/progression CP gains flow through `apply_reward_character_points_delta(...)`, which applies the CP penalty sink.
+- CP penalty sink consumes only newly granted CP from positive gains.
+- `hero_progression_ledger` records experience gain and level-up rows.
+- One level-up reached-level event selects one best matching reward assignment.
+- Level-up reward profiles must not contain active experience entries.
+- Level-up stat bonuses update base `hero_stats`.
+- `hero_level_stat_bonus_grants` records before/after stat values.
+- Multiple stat bonus rules may fire for the same reached level.
+- Random stat bonus results are reportable through grant rows and metadata, not hidden as unstructured-only behavior.
+
+Frontend/Codex implications:
+
+- Regenerate generated Supabase types before consuming N schema/RPC additions in Angular.
+- Frontend must not direct-write:
+  - `hero_stats`;
+  - `hero.character_points`;
+  - `hero.experience`;
+  - `hero.level`;
+  - `character_point_ledger`;
+  - `hero_progression_ledger`;
+  - level-up reward/stat bonus grant tables.
+- Frontend must use `save_stat_allocation(...)` for stat allocation saves.
+- Concrete DB/RPC producer workflows should use `grant_hero_experience(...)` for XP grants.
+- UI read/display work should map rows/RPC payloads into explicit domain models, not expose raw DB rows as final UI contracts.
+- Older references saying that canonical XP/level-up workflow is missing are obsolete after N-DB0..N-DB4.
 
 ---
 

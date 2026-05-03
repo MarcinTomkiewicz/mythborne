@@ -1,6 +1,6 @@
 # Mythborne — Project Context for Codex
 
-Updated: 2026-05-02
+Updated: 2026-05-03
 
 ## Purpose
 
@@ -20,9 +20,9 @@ This document is intentionally compact. For exact DB/RPC/helper inventory, consu
 
 ---
 
-## Current High-Priority Implementation Context — 2026-05-02 late
+## Current High-Priority Implementation Context — 2026-05-03
 
-Recent **Combat / Reward / Encounter** foundations remain current and must not be treated as cancelled or obsolete, but the live planning focus has moved toward **Epic N DB/RPC progression planning**.
+Recent Combat / Reward / Encounter foundations remain current and must not be treated as cancelled or obsolete.
 
 Recently resolved DB/RPC and explainability foundations:
 
@@ -35,48 +35,67 @@ Recently resolved DB/RPC and explainability foundations:
 - **L-Reward-DB3:** reward assignment match semantics (`any`, `exact`, `minimum`, `range`), formula reward amounts for XP/CP/resources, and failure reward assignment path.
 - **L11c/L12c metadata follow-up:** missing `ui_metadata_entries` aliases/content rows were seeded for trial and encounter configurators.
 - **M12 metadata follow-up:** combat opponent configurator has section-level metadata under `combat_opponent_configurator_section`.
+- **N-DB0:** Character Points helper boundary and automatic CP penalty sink for future CP gains.
+- **N-DB1:** canonical `grant_hero_experience(...)`, `hero.total_experience_earned`, and append-only `hero_progression_ledger`.
+- **N-DB2:** level-up reward routing, level matching on `reward_profile_assignments`, and guard against active XP entries inside level-up reward profiles.
+- **N-DB3:** level-up stat bonus rules, stat bonus rule pools, and append-only `hero_level_stat_bonus_grants`.
+- **N-DB4:** progression/admin configurator metadata for XP, CP, penalty sink, level-up rewards, stat bonus rules and diagnostics.
+- **O foundation:** estate baseline, building `starting_level`, seconds-based building time, central requirements enforcement and building/estate metadata are aligned.
+- **P-DB0/P-FIX1:** game reports read/unread state and report access boundary.
+- **P-DB1:** safe private/public report read RPCs.
+- **P-DB2:** combat section payload for report read RPCs.
+- **P-DB3:** report metadata and dictionary readability.
+- **M12 equipment slot RLS fix:** authenticated UI can now read active `equipment_slot_definitions`; frontend roles cannot mutate the slot dictionary.
 
 Generated Supabase types must be regenerated after schema/RPC/dictionary changes before Codex consumes those changes in Angular. Pure content-row seeds in existing `ui_metadata_entries` do not by themselves require type regeneration if the table/RPC are already present in generated types.
 
 Current feature state:
 
-- Epic M has been rewritten to include DB/RPC contracts and explainability requirements.
-- M12 opponent configurator is no longer blocked by missing DB write RPCs or missing section metadata.
+- Epic M has DB/RPC and explainability foundations for combat, opponent configuration and report-ready combat snapshots.
+- M12 opponent configurator is no longer blocked by missing DB write RPCs, missing section metadata, or equipment slot dictionary RLS.
 - M9 combat result persistence is no longer blocked by missing DB write RPC.
 - Combat opponent seed rows may be empty; M12 must support empty state and create first rows through canonical RPCs.
-- L12c/L13 and L11c frontend work may continue over the expanded reward/trial/encounter DB surface; they must use DB-backed dictionary/metadata text where available, but final i18n/label polish belongs in the appropriate UI/refactor backlog.
-- Main backlog and refactor backlog have been split. Refactor backlog uses `Epic Ref A/B/C...` IDs and includes former R/S/U0/UX/UX-CFG material.
+- L12c/L13 and L11c frontend work may continue over the expanded reward/trial/encounter DB surface; they must use DB-backed dictionary/metadata text where available.
+- Epic N DB/RPC progression foundation is now in place. Frontend Epic N work should consume the existing DB/RPC contract and must not redesign XP/level-up in Angular.
+- Epic O DB/RPC/schema/metadata foundation has been aligned around estate baseline, building `starting_level`, seconds-based building time, central requirements and building metadata.
+- Epic P DB/RPC/metadata foundation is ready for Reports Center, public report route and combat section rendering.
+- Current planning focus has moved to **Epic Q — Notifications**, where preflight showed the notification table/RPC boundary is currently too open for `anon` and needs planned Q-DB boundary/RLS work.
 
 Current Epic N decision state:
 
 - Epic N concerns **Stats and Progression**.
 - Stats = spending Character Points on stat allocation through `save_stat_allocation(...)`.
 - Progression = XP, level, XP-to-next-level formula, level-up, Character Points gain, penalty sink, level-up rewards and level-up stat bonuses.
-- N preflight showed that stat allocation foundation exists, but canonical XP/level-up DB/RPC workflow does not yet exist.
+- `save_stat_allocation(...)` is the canonical stat allocation workflow.
+- `grant_hero_experience(...)` is the canonical XP/level-up workflow.
+- `hero.experience` is current progress toward the next level.
+- `hero.total_experience_earned` is lifetime XP.
+- `hero_progression_ledger` is the append-only XP/progression ledger.
+- XP always grants equal gross Character Points through the canonical progression/reward CP path.
+- Active CP penalties may immediately consume newly granted CP through the penalty sink, but this does not change the XP → gross CP rule.
+- Level-up reward routing supports level matching through `reward_profile_assignments`.
+- Level-up stat bonus rules update base `hero_stats` and record append-only grant rows.
+- Multiple stat bonus rules may fire on the same reached level.
+- Random level-up stat bonuses are configurable/reportable, not hidden in `metadata_json`.
 
-Critical next DB track:
+Important current warning for N:
 
-1. **N-DB0 — CP helper boundary and penalty sink.** Secure low-level CP helpers while preserving DB-owned workflows; XP must always grant equal gross Character Points, and active CP penalties/sanctions should consume future CP gains as a ledgered sink/payment.
-2. **N-DB1 — canonical XP and level-up workflow.** Add lifetime XP, XP ledger and `grant_hero_experience(...)`; `hero.experience` is current progress toward next level, and XP threshold is evaluated server-side through `hero_experience_to_next_level`.
-3. **N-DB2 — level-up reward routing and level matching.** Add level matching for level-up rewards (`any`, `exact`, `minimum`, `range`, `interval`) and prevent level-up reward profiles from containing active XP entries that could recurse.
-4. **N-DB3 — level-up base stat bonus rules/grants.** Add configurable fixed/random stat bonus rules for level-up that directly update `hero_stats` and intentionally affect future CP stat allocation cost.
-5. **N-DB4 — progression admin/configurator section metadata.** Add section-level DB-backed explainability for XP, CP, level-up rewards, level matching, stat bonus rules, penalty sink and ledger/admin diagnostics.
+- Older Epic N task text may still describe level-up as missing or preflight-only. That wording is obsolete after N-DB0..N-DB4.
+- New frontend Epic N tasks must consume current DB/RPC reality:
+  - `save_stat_allocation(...)`;
+  - `get_hero_experience_to_next_level(...)`;
+  - `grant_hero_experience(...)`;
+  - `hero_progression_ledger`;
+  - reward level matching;
+  - `level_up_stat_bonus_rules`;
+  - `hero_level_stat_bonus_grants`;
+  - progression metadata.
+- Do not implement a second XP/level-up/stat allocation workflow in Angular.
+- Do not direct-write `hero_stats`, `hero.character_points`, `hero.experience`, `hero.level`, `character_point_ledger`, `hero_progression_ledger`, or level-up grant tables from Angular.
 
-Important user intent for N:
-
-- XP always grants equal gross Character Points. This is a core game rule, not a configurable option.
-- CP penalties/sanctions may immediately consume newly earned CP, but this is a sink/payment, not an exception to XP → CP.
-- `hero.experience` should represent progress toward the next level; `hero.total_experience_earned` should represent lifetime XP.
-- Level-up workflow must safely handle multiple levels gained in one call, even if this is expected to be rare.
-- Level-up rewards need level matching, including interval rules such as every 4 levels.
-- Level-up stat bonuses must update base `hero_stats`, intentionally increasing future CP costs for manual stat allocation.
-- Multiple stat bonus rules may fire on the same level. Example: level 20 should trigger both an interval-4 Strength rule and an interval-5 Agility rule.
-- Random level-up stat bonuses are allowed and must be configurable/reportable, not hidden in `metadata_json`.
-
-A new conversation should not start N-DB SQL until it has read the handoff and current docs. Do not mark Codex tasks complete in status documents unless the user explicitly confirms the task outcome.
+A new conversation should not start N frontend work until it has read the handoff/current docs and confirmed generated types are regenerated against the current schema. Do not mark Codex tasks complete in status documents unless the user explicitly confirms the task outcome.
 
 ---
-
 ## Current Known Gaps / Future Work Notes
 
 These are known planning gaps and memory notes. They are not current active N-DB work unless the user explicitly promotes them.
