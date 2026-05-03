@@ -33,11 +33,14 @@
             {{ page.spentCharacterPoints() === null ? 'Unavailable' : page.spentCharacterPoints() }}
           </span>
           <span class="tag-badge tag-badge--info">
-            Project cap:
-            {{ page.capPreview().error ? 'Formula error' : (page.capPreview().value ?? 0) }}
+            Stat level cap:
+            {{ page.statCapSummaryError() ? 'Formula error' : (page.capPreview().value ?? 0) }}
           </span>
         </div>
       </div>
+      @if (page.statCapSummaryError(); as capError) {
+        <p class="muted-text mb-0 mt-md">{{ capError }}</p>
+      }
       @if (page.characterPointSummaryError(); as summaryError) {
         <p class="muted-text mb-0 mt-md">{{ summaryError }}</p>
       }
@@ -49,7 +52,7 @@
           <p class="card-legend mb-0">Progression</p>
           <h3 class="mg-section__title mg-section__title--xs mb-0">Primary stats</h3>
           <p class="muted-text mb-0">
-            Limit statystyki i koszt kolejnego poziomu sa liczone z aktywnych formul przypietych w panelu admina.
+            Stat caps and next-level costs are calculated from active formulas assigned in the admin panel.
           </p>
         </div>
 

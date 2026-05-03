@@ -52,6 +52,34 @@ export class AttributeAllocationPageFacade {
     );
   });
 
+  readonly statCapSummaryError = computed(() => {
+    const capPreview = this.capPreview();
+
+    if (capPreview.error) {
+      return capPreview.error;
+    }
+
+    return capPreview.value === null
+      ? 'Stat level cap cannot be calculated because the active formula returned no value.'
+      : null;
+  });
+
+  readonly hasStatCapViolation = computed(() => {
+    const capPreview = this.capPreview();
+
+    if (capPreview.error || capPreview.value === null) {
+      return true;
+    }
+
+    const maxAllowedValue = positiveInteger(capPreview.value);
+
+    return this.statsList().some((stat) => {
+      const currentValue = this.baseStats()[stat.key] ?? 0;
+      const plannedValue = this.draftStats()[stat.key] ?? currentValue;
+      return plannedValue > maxAllowedValue;
+    });
+  });
+
   readonly spentCharacterPoints = computed<number | null>(() => {
     const rules = this.progressionRules();
 
@@ -100,7 +128,8 @@ export class AttributeAllocationPageFacade {
     return (
       this.hasPendingChanges() &&
       remainingCharacterPoints !== null &&
-      remainingCharacterPoints >= 0
+      remainingCharacterPoints >= 0 &&
+      !this.hasStatCapViolation()
     );
   });
 
@@ -113,9 +142,9 @@ export class AttributeAllocationPageFacade {
 
     const remainingCharacterPoints = this.remainingCharacterPoints();
     const capPreview = this.capPreview();
-    const maxAllowedValue = capPreview.error
+    const maxAllowedValue = capPreview.error || capPreview.value === null
       ? null
-      : positiveInteger(capPreview.value ?? 1);
+      : positiveInteger(capPreview.value);
 
     return this.statsList().map((stat) => {
       const currentValue = this.baseStats()[stat.key] ?? 0;
@@ -137,8 +166,11 @@ export class AttributeAllocationPageFacade {
 
       let increaseReason: string | null = null;
 
-      if (capPreview.error) {
-        increaseReason = capPreview.error;
+      if (capPreview.error || capPreview.value === null) {
+        increaseReason = this.statCapSummaryError();
+      } else if (maxAllowedValue !== null && plannedValue > maxAllowedValue) {
+        increaseReason =
+          `Cap exceeded for hero level ${this.heroLevel()}. Lower this stat to ${maxAllowedValue} or less before saving.`;
       } else if (maxAllowedValue !== null && plannedValue >= maxAllowedValue) {
         increaseReason = `Cap reached for hero level ${this.heroLevel()}.`;
       } else if (nextLevelCostResult.error) {
@@ -162,7 +194,7 @@ export class AttributeAllocationPageFacade {
         canIncrease: !increaseReason,
         canDecrease: plannedValue > currentValue,
         increaseReason,
-        formulaError: capPreview.error ?? nextLevelCostResult.error,
+        formulaError: this.statCapSummaryError() ?? nextLevelCostResult.error,
       };
     });
   });
@@ -204,6 +236,21 @@ export class AttributeAllocationPageFacade {
     const remainingCharacterPoints = this.remainingCharacterPoints();
 
     if (!this.canSaveDraft() || remainingCharacterPoints === null) {
+      const capError = this.statCapSummaryError();
+
+      if (capError) {
+        this.toast.show('error', 'Formula error', capError);
+        return;
+      }
+
+      if (this.hasStatCapViolation()) {
+        this.toast.show(
+          'error',
+          'Stat cap exceeded',
+          'One or more planned stats are above the current formula-driven cap.',
+        );
+      }
+
       return;
     }
 

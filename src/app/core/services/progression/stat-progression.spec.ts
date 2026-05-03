@@ -185,6 +185,65 @@ describe('StatProgressionService', () => {
     );
   });
 
+  it('surfaces missing stat level cap assignment as configuration error', async () => {
+    formulaService.getAdminData.and.returnValue(
+      of({
+        targets: [
+          {
+            id: 'target-cost',
+            key: 'hero_stat_upgrade_cost',
+            scopeKey: 'hero_progression',
+            label: 'Hero stat upgrade cost',
+            description: null,
+            allowedVariables: ['heroLevel', 'level', 'statLevel'],
+            defaultTestContext: { heroLevel: 1, level: 1, statLevel: 1 },
+            sortOrder: 10,
+            createdAt: null,
+          },
+          {
+            id: 'target-cap',
+            key: 'hero_stat_level_cap',
+            scopeKey: 'hero_progression',
+            label: 'Hero stat level cap',
+            description: null,
+            allowedVariables: ['heroLevel'],
+            defaultTestContext: { heroLevel: 1 },
+            sortOrder: 20,
+            createdAt: null,
+          },
+        ],
+        formulas: [
+          {
+            id: 'formula-cost',
+            key: 'hero-stat-upgrade-cost-default',
+            scopeKey: 'hero_progression',
+            label: 'Cost',
+            expression: 'heroLevel + level + statLevel',
+            description: null,
+            isEnabled: true,
+            createdAt: null,
+            updatedAt: null,
+          },
+        ],
+        assignments: [
+          {
+            id: 'assignment-cost',
+            targetId: 'target-cost',
+            formulaId: 'formula-cost',
+            createdAt: null,
+            updatedAt: null,
+          },
+        ],
+        entityAssignments: [],
+        blocks: [],
+      } as FormulaAdminData),
+    );
+
+    await expectAsync(firstValueFrom(service.getRules())).toBeRejectedWithError(
+      'Formula target "Hero stat level cap" has no enabled assigned formula.',
+    );
+  });
+
   it('returns a project cap based on hero level', () => {
     const target = {
       id: 'target-cap',
@@ -199,5 +258,21 @@ describe('StatProgressionService', () => {
     };
     expect(service.getStatCap(1, 'heroLevel + 4', target)).toBe(5);
     expect(service.getStatCap(5, 'heroLevel + 4', target)).toBe(9);
+  });
+
+  it('passes heroLevel to the stat level cap formula', () => {
+    expect(
+      service.getStatCap(7, 'heroLevel * 2', {
+        id: 'target-cap',
+        key: 'hero_stat_level_cap',
+        scopeKey: 'hero_progression',
+        label: 'Hero stat level cap',
+        description: null,
+        allowedVariables: ['heroLevel'],
+        defaultTestContext: { heroLevel: 1 },
+        sortOrder: 20,
+        createdAt: null,
+      })
+    ).toBe(14);
   });
 });

@@ -13,6 +13,7 @@ describe('AttributeAllocationPageFacade', () => {
   let facade: AttributeAllocationPageFacade;
   let statProgression: jasmine.SpyObj<StatProgressionService>;
   let hero: jasmine.SpyObj<Hero>;
+  let toast: jasmine.SpyObj<ToastService>;
 
   beforeEach(() => {
     hero = jasmine.createSpyObj<Hero>('Hero', [
@@ -44,6 +45,7 @@ describe('AttributeAllocationPageFacade', () => {
     statProgression.evaluateNextLevelCost.and.returnValue({ value: 3, error: null });
     statProgression.getNextLevelCost.and.returnValue(3);
     statProgression.getRules.and.returnValue(of(rules()));
+    toast = jasmine.createSpyObj<ToastService>('ToastService', ['show']);
 
     TestBed.configureTestingModule({
       providers: [
@@ -56,10 +58,7 @@ describe('AttributeAllocationPageFacade', () => {
           }),
         },
         { provide: StatProgressionService, useValue: statProgression },
-        {
-          provide: ToastService,
-          useValue: jasmine.createSpyObj<ToastService>('ToastService', ['show']),
-        },
+        { provide: ToastService, useValue: toast },
       ],
     });
     facade = TestBed.inject(AttributeAllocationPageFacade);
@@ -105,6 +104,52 @@ describe('AttributeAllocationPageFacade', () => {
     facade.saveDraft();
 
     expect(hero.saveProgressionDraft).not.toHaveBeenCalled();
+  });
+
+  it('blocks save when the stat cap formula cannot be evaluated', () => {
+    statProgression.evaluateStatCap.and.returnValue({
+      value: null,
+      error: 'Formula target "Hero stat level cap" has no enabled assigned formula.',
+    });
+
+    const row = facade.statRows()[0];
+    facade.saveDraft();
+
+    expect(facade.statCapSummaryError()).toBe(
+      'Formula target "Hero stat level cap" has no enabled assigned formula.',
+    );
+    expect(row.maxAllowedValue).toBeNull();
+    expect(row.canIncrease).toBeFalse();
+    expect(row.formulaError).toBe(
+      'Formula target "Hero stat level cap" has no enabled assigned formula.',
+    );
+    expect(hero.saveProgressionDraft).not.toHaveBeenCalled();
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Formula error',
+      'Formula target "Hero stat level cap" has no enabled assigned formula.',
+    );
+  });
+
+  it('blocks save when a planned stat is above the formula-driven cap', () => {
+    statProgression.evaluateStatCap.and.returnValue({ value: 2, error: null });
+    facade.draftStats.set({ strength: 3 });
+
+    const row = facade.statRows()[0];
+    facade.saveDraft();
+
+    expect(row.maxAllowedValue).toBe(2);
+    expect(row.canIncrease).toBeFalse();
+    expect(row.increaseReason).toBe(
+      'Cap exceeded for hero level 2. Lower this stat to 2 or less before saving.',
+    );
+    expect(facade.canSaveDraft()).toBeFalse();
+    expect(hero.saveProgressionDraft).not.toHaveBeenCalled();
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Stat cap exceeded',
+      'One or more planned stats are above the current formula-driven cap.',
+    );
   });
 
   function seedFacade(): void {

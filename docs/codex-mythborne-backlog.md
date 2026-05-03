@@ -3971,6 +3971,8 @@ Current source of truth:
 
 ## Task N4 — Stat level cap formula usage audit/fix
 
+**Status:** Done / accepted on 2026-05-03.
+
 **Goal:** Ensure stat caps use the existing DB formula target.
 
 **Scope:**
@@ -3987,6 +3989,8 @@ Current source of truth:
 - UI cap messaging is understandable.
 - Final save cannot bypass DB/RPC cap validation.
 - Build and focused tests pass.
+
+**Implementation note:** N4 accepted on 2026-05-03 after user smoke and code review. `/hero/attributes` displays `Stat level cap`, keeps next-level costs visible, shows cap-reached messaging for capped stats, and blocks increases when Character Points are unavailable. The cap path remains formula-driven through `StatProgressionService.getRules()` and `resolveAssignedFormula(...)` for `hero_stat_level_cap`, with `heroLevel` passed into cap evaluation. No local fallback expression, DB/RPC change, migration or direct write path was introduced; final save remains through `Hero.saveProgressionDraft(...)` / `save_stat_allocation(...)`. Verification passed with `npx tsc --noEmit`, focused stat progression/allocation/hero specs, static greps for no direct progression writes/no new `any`/no `label > p-select`, and `npm run build` with known budget/CommonJS warnings. Follow-up: `attribute-allocation-page.facade.ts` is 362 lines and should be split in a later refactor; this is not an N4 blocker.
 
 ---
 
@@ -5464,41 +5468,126 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 - No direct report table writes are introduced from Angular.
 - No frontend notification inserts are introduced for default report creation.
 - Remaining blockers, if any, are concrete and actionable.
+
+---
+
 # Epic Q — Notifications
 
 Epic Q implements persistent notification inbox/bell UI over the current DB-owned notification foundation.
 
-Notifications are short attention/status events. They are not game reports, audit logs, player abuse reports, or local UI-only toasts.
+Notifications are short attention/status events. They are not:
 
-Current DB foundation:
+- game reports;
+- audit logs;
+- player abuse reports;
+- anti-abuse case records;
+- local UI-only toasts.
+
+Reports have their own Reports Center and unread state. Toasts are presentation of fresh notification rows, not a separate persistence model.
+
+**Current DB/RPC foundation expected before Codex starts Q tasks:**
 
 - enum `notification_recipient_kind`: `user`, `hero`, `staff`;
 - enum `notification_severity`: `info`, `notice`, `warning`, `critical`;
 - table `notification_types`;
 - table `notifications`;
+- `notifications.read_at`;
+- `notifications.dismissed_at`;
 - internal helper `create_notification(...)`;
-- RPC `mark_notification_read(p_notification_id)`;
-- RPC `dismiss_notification(p_notification_id)`.
+- owner-safe RPC `get_my_notifications(...)`;
+- owner-safe RPC `get_my_notification_unread_count(...)`;
+- owner-safe staff RPC `get_my_staff_notifications(...)`;
+- owner-safe staff RPC `get_my_staff_notification_unread_count(...)`;
+- owner-safe RPC `mark_notification_read(p_notification_id)`;
+- owner-safe RPC `dismiss_notification(p_notification_id)`;
+- DB metadata namespaces:
+  - `notification_center_section`;
+  - `notification_staff_center_section`;
+  - `notification_type_admin_section`;
+  - `notification_hook_diagnostics_section`.
 
-Current DB-owned notification hooks:
+**Current DB-owned notification hooks:**
 
-- direct trade offer received/rejected/completed;
-- auction outbid/sold/won;
-- declaration approved/rejected;
-- abuse report resolved/dismissed;
-- anti-abuse case waiting for player/staff;
-- sanction created;
-- Character Points penalty created.
+- `notify_player_trade_offer_lifecycle`;
+- `notify_player_trade_transaction_completed`;
+- `notify_player_auction_bid_outbid`;
+- `notify_player_relationship_declaration_decision`;
+- `notify_player_abuse_report_decision`;
+- `notify_anti_abuse_case_attention`;
+- `notify_anti_abuse_sanction_created`;
+- `notify_character_point_penalty_created`;
+- `finalize_completed_estate_building_jobs(...)` creates `estate.building_job.completed`.
 
-Epic rules:
+**Epic rules:**
 
 - Frontend must not insert notification rows directly.
+- Frontend must not update `notifications.read_at` or `notifications.dismissed_at` directly.
+- Frontend must not delete notification rows.
+- Frontend must not call `create_notification(...)`.
+- `create_notification(...)` is an internal DB/service workflow helper.
+- Player/game inbox must use `get_my_notifications(...)`.
+- Player/game unread count must use `get_my_notification_unread_count(...)`.
+- Staff/admin inbox must use `get_my_staff_notifications(...)`.
+- Staff/admin unread count must use `get_my_staff_notification_unread_count(...)`.
+- Read action must use `mark_notification_read(...)`.
+- Dismiss action must use `dismiss_notification(...)`.
+- `dismiss_notification(...)` also marks the row as read.
+- Dismissed notifications are hidden from normal inbox views.
+- Notification unread means `read_at is null` and `dismissed_at is null`.
+- `notification_types` are DB-backed dictionaries. Use labels/descriptions/category/default toast behavior from DB.
+- Do not hardcode permanent notification labels/categories in Angular when DB values exist.
 - Frontend may show fresh notification rows as toasts when `notification_types.default_toast_enabled = true`.
-- Toast is presentation only; persistent `notifications` row is the source.
-- Reports have their own Reports inbox/badge and must not be treated as notifications.
-- Use DB labels/descriptions from `notification_types`, not hardcoded permanent notification labels.
+- Toast is presentation only; persistent `notifications` row remains the source of truth.
+- Reports have their own Reports inbox/badge and must not be counted as notifications.
+- Do not create default `game_report.created` notifications for every report.
+- Notifications may link to reports only for separately designed important events.
 - Use active auth user and selected server/hero context where relevant.
 - Do not expose staff-only fields in player-facing notifications.
+- Player notification inbox must not show `recipient_kind = staff`.
+- Staff notifications are server-scoped and require current staff/global access.
+- Staff action URLs are pointers, not authorization; route guards still apply.
+- Notification source entity references are contextual links, not authority to read the source.
+- If a notification hook is missing for a workflow, report a DB/RPC hook blocker. Do not compensate with frontend inserts.
+
+---
+
+## Task Q0 — Align generated DB types after notification foundation
+
+**Goal:** Synchronize generated frontend DB types with the current notification DB/RPC contract.
+
+**Scope:**
+
+- Regenerate/update generated Supabase database types after Q DB/RPC migrations.
+- Confirm generated types include:
+  - `notification_recipient_kind`;
+  - `notification_severity`;
+  - `notification_types`;
+  - `notifications`;
+  - `notifications.read_at`;
+  - `notifications.dismissed_at`;
+  - `get_my_notifications(...)`;
+  - `get_my_notification_unread_count(...)`;
+  - `get_my_staff_notifications(...)`;
+  - `get_my_staff_notification_unread_count(...)`;
+  - `mark_notification_read(...)`;
+  - `dismiss_notification(...)`.
+- Confirm generated types do not make frontend use `create_notification(...)` as a UI contract.
+- Confirm metadata read path can load:
+  - `notification_center_section`;
+  - `notification_staff_center_section`;
+  - `notification_type_admin_section`;
+  - `notification_hook_diagnostics_section`.
+- Do not edit generated DB types manually.
+- Do not update status docs before user confirmation.
+
+**Acceptance criteria:**
+
+- Generated types match current schema/RPC signatures.
+- Frontend code does not reference removed/old notification assumptions.
+- Frontend services use read/action RPCs instead of direct notification table mutations.
+- Build/typecheck passes after type regeneration and compile fixes.
+
+---
 
 ## Task Q1 — Notification domain models and mappers
 
@@ -5506,95 +5595,163 @@ Epic rules:
 
 **Scope:**
 
-- Add models/mappers for:
-  - `notification_types`,
-  - `notifications`,
-  - recipient kind,
-  - severity,
-  - read/dismiss state,
-  - source entity reference,
-  - action link metadata.
-- Map DB rows into UI-safe models.
+- Add domain/read models for:
+  - notification type dictionary;
+  - player notification list item;
+  - staff notification list item;
+  - recipient kind;
+  - severity;
+  - read/dismiss state;
+  - source entity reference;
+  - action link metadata;
+  - toast eligibility.
+- Map RPC payloads into UI-safe models.
+- Map:
+  - `read_at` → `readAt`;
+  - `dismissed_at` → `dismissedAt`;
+  - `is_unread` → `isUnread`;
+  - `is_dismissed` → `isDismissed`;
+  - `default_toast_enabled` → `defaultToastEnabled`.
+- Keep private/staff models explicit.
 - Keep raw DB rows out of components.
-- Preserve `title`, `body`, `action_label`, `action_url`, `created_at`, `read_at`, `dismissed_at`.
-- Join or load `notification_types` so UI can show labels/descriptions/category/default toast behavior.
+- Preserve:
+  - `title`;
+  - `body`;
+  - `action_label`;
+  - `action_url`;
+  - `created_at`;
+  - `read_at`;
+  - `dismissed_at`;
+  - source entity type/id.
+- Player-facing model must not expose staff-only data.
+- Raw keys/UUIDs may appear only as secondary metadata where useful for admin/debug contexts.
 
 **Acceptance criteria:**
 
 - Notification models expose readable type label/category/severity.
 - Mapper handles nullable source/action/body fields safely.
-- Player-facing model does not expose unrelated staff-only data.
-- Build and focused mapper tests pass.
+- Player-facing model does not expose staff-only fields or unrelated global account ids.
+- Staff model is distinct from player model where needed.
+- Mapper tests cover read/unread, dismissed, action link and toast eligibility.
+- Build passes.
 
 ---
 
-## Task Q2 — Notification read service and unread counts
+## Task Q2 — Player notification read service and unread count
 
-**Goal:** Load current user's notification inbox and unread counts.
+**Goal:** Load current user's player/game notification inbox and unread count through owner-safe RPCs.
 
 **Scope:**
 
-- Add a service/domain read layer for notifications belonging to `auth.uid()`.
-- Query `notifications.recipient_user_id = current user`.
+- Add service/domain read layer using `get_my_notifications(...)`.
+- Add unread count read using `get_my_notification_unread_count(...)`.
+- Use active auth user implicitly through RPC.
+- Use selected server/hero context where available.
+- Pass `hero.id`, not `auth.uid()`, where a hero id parameter is needed.
+- Normal player inbox should include:
+  - `recipient_kind = user`;
+  - `recipient_kind = hero`.
+- Normal player inbox must not include:
+  - `recipient_kind = staff`.
 - Exclude dismissed rows from normal inbox view.
-- Support unread filter where `read_at is null`.
-- Sort newest first.
-- Load notification type metadata from `notification_types`.
-- Provide unread count for topbar/bell badge.
-- Do not mix game reports unread count into notifications.
+- Support unread-only filter where useful.
+- Sort newest first by RPC result.
+- Do not mix Reports unread count into notification unread count.
+- Do not query `notifications` directly from Angular if the RPC payload covers the need.
+- Guard async responses by selected server/hero context.
 
 **Acceptance criteria:**
 
-- Current user can see their notification inbox.
-- Bell badge shows unread notification count only.
+- Current user can see their user/hero notification inbox.
+- Bell badge uses notification unread count only.
 - Dismissed notifications are hidden from normal inbox view.
+- Staff notifications do not appear in player inbox.
 - Reports remain a separate inbox/badge.
-- Build and service tests pass.
+- No direct notification table mutation is introduced.
+- Build and focused service tests pass.
 
 ---
 
-## Task Q3 — Notification bell / dropdown UI
+## Task Q3 — Staff notification read service and unread count
 
-**Goal:** Add a player/staff-visible notification bell with unread count and short notification list.
+**Goal:** Load server-scoped staff/admin notifications through owner-safe staff RPCs.
+
+**Scope:**
+
+- Add staff/admin notification read service using `get_my_staff_notifications(p_server_id, ...)`.
+- Add staff unread count using `get_my_staff_notification_unread_count(p_server_id)`.
+- Require selected server context.
+- Do not load staff notifications without an explicit server id.
+- Staff notifications should be visible only to users with current staff/global access for that server, as enforced by RPC.
+- Keep staff notifications separate from normal player inbox.
+- Surface access-denied RPC errors clearly.
+- Guard async responses by selected server context.
+- Do not expose staff notifications in player-facing shell unless a future staff shell deliberately combines badges.
+
+**Acceptance criteria:**
+
+- Staff user can see server-scoped staff notifications addressed to them.
+- Normal player does not see staff notifications.
+- Staff unread count is separate from player notification unread count.
+- Staff action links remain route-guarded and server-scoped.
+- Build and access tests pass where possible.
+
+---
+
+## Task Q4 — Notification bell / dropdown UI
+
+**Goal:** Add a player-visible notification bell with unread count and concise notification list.
 
 **Scope:**
 
 - Add notification bell entry in the app shell/topbar.
+- Use player notification read/count service from Q2.
 - Show unread count badge.
 - Dropdown/list shows newest notifications with:
-  - title,
-  - short body,
-  - type label/category/severity,
-  - created time,
-  - unread/read state,
+  - title;
+  - short body;
+  - type label/category/severity;
+  - created time;
+  - unread/read state;
   - action link if available.
-- Keep technical keys secondary or hidden unless useful for admin diagnostics.
+- Keep technical keys secondary or hidden unless useful for diagnostics.
 - Do not show raw UUIDs as primary text.
 - Do not include Reports items in the notification bell.
+- Do not include staff notifications in the normal player bell.
+- Use DB metadata from `notification_center_section` where useful for explanations/empty states.
+- Use existing shell/card/list/button/badge patterns where available.
+- Include shared/reuse report in Codex summary.
 
 **Acceptance criteria:**
 
 - User can open a concise notification dropdown/list.
 - Unread notifications are visually distinguishable.
+- Dismissed notifications do not appear in normal dropdown/list.
 - Action link navigates to the relevant route when present.
 - Empty state is clear.
+- Reports are not shown in notification bell.
+- Staff notifications are not shown in player bell.
 - Build and route smoke pass.
 
 ---
 
-## Task Q4 — Mark read / dismiss notification actions
+## Task Q5 — Mark read / dismiss notification actions
 
 **Goal:** Allow users to manage notification read/dismiss state through canonical RPCs.
 
 **Scope:**
 
-- Call `mark_notification_read(...)` for marking a notification read.
-- Call `dismiss_notification(...)` for hiding/dismissing a notification.
-- Do not direct-update `notifications.read_at` or `notifications.dismissed_at`.
+- Call `mark_notification_read(...)` for marking one notification read.
+- Call `dismiss_notification(...)` for hiding/dismissing one notification.
+- Do not direct-update `notifications.read_at`.
+- Do not direct-update `notifications.dismissed_at`.
+- Do not delete notification rows from Angular.
 - Support marking one notification read on click/open.
 - Support dismiss from dropdown/list.
 - Refresh unread count after mutation.
+- Refresh or locally remove dismissed row after successful dismiss.
 - Show RPC errors via toast/message.
+- Preserve stale guards for selected server/hero or current list state.
 
 **Acceptance criteria:**
 
@@ -5602,11 +5759,12 @@ Epic rules:
 - Notification ownership/access denial is surfaced clearly.
 - Unread badge updates after read/dismiss.
 - Dismissed notifications disappear from normal inbox view.
+- Dismissed notifications are not counted as unread.
 - Build and focused tests pass.
 
 ---
 
-## Task Q5 — Optional online toast presentation for fresh notifications
+## Task Q6 — Optional online toast presentation for fresh notifications
 
 **Goal:** Show fresh DB-created notifications as transient toasts when the user is online.
 
@@ -5615,43 +5773,61 @@ Epic rules:
 - Detect newly loaded or realtime-received notification rows for current user.
 - Show toast only when `notification_types.default_toast_enabled = true`.
 - Avoid duplicate toasts for the same notification in one session.
-- Toast content uses notification title/body/action label.
-- Toast display must not create or mutate notification rows.
+- Toast content uses:
+  - notification title;
+  - body;
+  - severity;
+  - action label where useful.
+- Toast display must not create notification rows.
+- Toast display must not mutate notification rows.
+- Toast display must not replace persistent inbox.
 - If realtime subscription is not available/reliable yet, implement a safe polling/refresh-based fallback or report the limitation.
+- Offline users should still see unread notifications later.
 
 **Acceptance criteria:**
 
 - Fresh eligible notifications can appear as toasts.
 - No duplicate toast spam for the same row in one session.
 - Toasts are presentation-only; persistent DB notification remains source of truth.
-- Offline users still see unread notifications later.
+- Disabled toast types do not show toast, but still appear in inbox if present.
 - Build and smoke pass.
 
 ---
 
-## Task Q6 — Staff notification inbox integration
+## Task Q7 — Staff notification inbox/dropdown UI
 
-**Goal:** Make staff/server-work notifications visible in the same notification system while respecting selected-server access.
+**Goal:** Provide a staff/admin-facing notification surface for server-scoped staff notifications.
 
 **Scope:**
 
-- Show staff notifications where `recipient_kind = staff`.
-- Keep recipient check by authenticated user.
-- Server-scoped staff notifications should display selected server context.
-- Do not show staff-only notifications to normal players without access.
-- Use existing access policy helpers for staff/admin visibility.
-- Keep player and staff notifications in the same inbox unless UX later splits them.
+- Add staff/admin notification UI where appropriate in admin/staff shell.
+- Use staff read/count service from Q3.
+- Require selected server context.
+- Show:
+  - unread count;
+  - title/body;
+  - type label/category/severity;
+  - created time;
+  - read/dismiss state;
+  - action link.
+- Keep staff notifications separate from normal player notifications unless the shell explicitly indicates staff context.
+- Use DB metadata from `notification_staff_center_section` where useful.
+- Do not expose staff notification body/action to normal player UI.
+- Use existing admin shell/card/list/button/badge patterns where available.
+- Include shared/reuse report in Codex summary.
 
 **Acceptance criteria:**
 
-- Staff user can see server-scoped staff notifications addressed to them.
-- Normal player does not see staff notifications.
-- Notification body does not leak staff-only case details beyond what the notification row already stores.
-- Build and access tests pass.
+- Staff user can see server-scoped staff notifications.
+- Staff unread count is visible in staff/admin context.
+- Normal player cannot access staff notifications.
+- Staff notification action links remain route-guarded.
+- Missing selected server state is handled clearly.
+- Build and access smoke pass where possible.
 
 ---
 
-## Task Q7 — Notification type/admin readability pass
+## Task Q8 — Notification type/admin readability pass
 
 **Goal:** Make notification type labels/descriptions readable in admin/debug contexts.
 
@@ -5659,82 +5835,111 @@ Epic rules:
 
 - Add a simple admin/read-only view or section for `notification_types`, or integrate into existing dictionary/admin metadata tooling.
 - Display:
-  - key,
-  - label,
-  - description,
-  - helper/admin text,
-  - category,
-  - default severity,
-  - default toast enabled,
-  - active flag / sort order.
+  - key;
+  - label;
+  - description;
+  - helper text;
+  - admin description;
+  - category;
+  - default severity;
+  - default toast enabled;
+  - active flag;
+  - sort order.
+- Use DB metadata from `notification_type_admin_section` where useful.
 - Do not implement notification type editing unless a governed write path is approved.
 - Keep technical key secondary to label/description.
+- If historical notifications reference inactive types, do not assume active-only dictionary labels are enough; report a referenced-lookup need if encountered.
 
 **Acceptance criteria:**
 
 - Admin/operator can inspect notification types and understand which events may toast.
-- No hardcoded notification type list in admin UI.
+- No hardcoded notification type list is introduced in admin UI.
+- Type labels/descriptions come from DB.
+- No raw table-editor style screen is introduced as the final UX.
 - Build passes.
 
 ---
 
-## Task Q8 — Notification smoke and hook verification
+## Task Q9 — Notification hook diagnostics/admin readability
 
-**Goal:** Verify that DB-owned notification hooks are visible to users through the frontend.
+**Goal:** Make DB-owned notification producers inspectable and prevent missing/duplicated notification hooks.
 
 **Scope:**
 
-- Use existing DB/RPC workflows where possible to trigger:
-  - trade offer received,
-  - auction outbid or sold/won,
-  - declaration approved/rejected,
-  - abuse report resolved,
-  - sanction/CP penalty created.
-- If real workflow data is unavailable, document which smoke cases are pending and why.
-- Verify notification row appears in inbox/read model.
-- Verify read/dismiss actions work.
-- Verify report creation does not create a notification.
+- Add or extend admin/debug diagnostics for DB notification producers.
+- Use DB metadata from `notification_hook_diagnostics_section`.
+- Show or report known DB-owned producers:
+  - trade offer lifecycle;
+  - trade transaction completion;
+  - auction outbid;
+  - declaration decision;
+  - player abuse report decision;
+  - anti-abuse case attention;
+  - sanction created;
+  - Character Points penalty created;
+  - estate building completion.
+- Confirm there is no default `game_report.created` hook.
+- Diagnostics may be read-only and technical.
+- Do not create frontend notification rows to compensate for missing hooks.
+- If a hook is missing for a required workflow, report it as DB/RPC blocker.
 
 **Acceptance criteria:**
 
-- At least one trade/auction notification is smoke-tested end-to-end where data exists.
-- At least one moderation/declaration notification is smoke-tested where data exists.
-- Pending smoke cases are explicitly listed with required data.
+- Admin/operator can understand which workflows produce notifications.
+- Building completion hook is visible as DB-owned.
+- Reports are documented as not default notification producers.
+- Missing hooks are reported precisely.
+- Build passes where code changes are made.
+
+---
+
+## Task Q10 — Notification smoke and hook verification
+
+**Goal:** Verify DB-owned notification hooks are visible through the frontend/read model and actions.
+
+**Scope:**
+
+- Run technical checks appropriate for the changed slice.
+- Smoke player notification flow where possible:
+  - load player inbox;
+  - show unread count;
+  - mark notification read;
+  - dismiss notification;
+  - verify dismissed row disappears from normal inbox.
+- Smoke staff notification flow where possible:
+  - load staff inbox for selected server;
+  - show staff unread count;
+  - mark/dismiss staff notification.
+- Smoke DB-owned hooks where data/workflows are available:
+  - trade offer lifecycle;
+  - trade transaction completion;
+  - auction outbid;
+  - declaration approved/rejected;
+  - abuse report resolved/dismissed;
+  - anti-abuse attention;
+  - sanction/CP penalty created;
+  - estate building completion.
+- At minimum, verify building completion notification if estate/building test data exists.
+- Verify report creation does not create a default notification.
+- Do not claim full manual gameplay smoke if there is no authenticated session or insufficient data.
+- If real workflow data is unavailable, list pending smoke cases and exact required data.
+- Do not use Angular direct insert as a smoke shortcut.
+
+**Acceptance criteria:**
+
+- Report states which Q flows were technically verified.
+- Report lists pending manual smoke separately from blockers.
+- At least one player notification read/dismiss flow is smoke-tested where data exists.
+- At least one staff notification read/dismiss flow is smoke-tested where data/access exists.
+- At least one DB-owned hook is smoke-tested end-to-end where data exists.
+- Building completion hook is smoke-tested where estate/building data exists.
+- Report creation does not create a default notification.
 - No notification is created by Angular direct insert.
+- Remaining blockers, if any, are concrete and actionable.
 
 ---
 
-# Epic R — Appeals and future moderation extensions
 
-## Task R1 — Appeals parked design note
-
-**Goal:** Keep appeal concept available without implementing yet.
-
-**Scope:**
-
-- Document that sanctions can later have formal appeals.
-- Current statuses `cancelled` and `forgiven` support manual changes meanwhile.
-
-**Acceptance criteria:**
-
-- No appeal system is built prematurely.
-
----
-
-## Task R2 — Future relationship/report types as configurable dictionaries
-
-**Goal:** Ensure future types like mercenary/equipment rental remain configurable.
-
-**Scope:**
-
-- Do not hardcode future declaration/report types.
-- Admin UI should load active DB rows.
-
-**Acceptance criteria:**
-
-- New types can be added later through dictionaries/config without frontend enum edits.
-
----
 
 # Epic S — Requirements and building district caps
 
@@ -5984,5 +6189,37 @@ Place S1-S4 after config definitions/value read models and before deeper buildin
 - Armory can show overloaded state such as `251/100`.
 - Newer/lower-priority items are hidden first when capacity is exceeded.
 - Visibility/access is not confused with ownership.
+
+---
+
+# Epic Z — Appeals and future moderation extensions
+
+## Task Z1 — Appeals parked design note
+
+**Goal:** Keep appeal concept available without implementing yet.
+
+**Scope:**
+
+- Document that sanctions can later have formal appeals.
+- Current statuses `cancelled` and `forgiven` support manual changes meanwhile.
+
+**Acceptance criteria:**
+
+- No appeal system is built prematurely.
+
+---
+
+## Task Z2 — Future relationship/report types as configurable dictionaries
+
+**Goal:** Ensure future types like mercenary/equipment rental remain configurable.
+
+**Scope:**
+
+- Do not hardcode future declaration/report types.
+- Admin UI should load active DB rows.
+
+**Acceptance criteria:**
+
+- New types can be added later through dictionaries/config without frontend enum edits.
 
 ---
