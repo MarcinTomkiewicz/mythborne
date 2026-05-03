@@ -142,7 +142,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: M12 - combat opponent definitions admin configurator.
 - Completed and confirmed: N0 - align generated DB types after Epic N DB foundation preflight.
 - Completed and confirmed: N1 - terminology cleanup: Health vs Character Points.
-- Next backlog task: N2 - stat allocation alignment with existing RPC, after the user commit and explicit start instruction.
+- Completed and confirmed: N2 - stat allocation alignment with existing RPC.
+- Next backlog task: N3 - stat upgrade cost formula usage audit/fix, after the user commit and explicit start instruction.
 - N1 visual smoke follow-up: manually check attributes, dashboard, auction/trade and anti-abuse penalty sections for layout regressions from longer `Character Points` labels.
 - Epic N DB sanity follow-up: verify actual `balance_formula_targets`, `balance_formulas` and assignment rows for `hero_experience_to_next_level`, `hero_stat_upgrade_cost` and `hero_stat_level_cap`; generated TypeScript confirms schema/RPC signatures, not seeded content.
 - M12 follow-up: apply `AdminReasonPresetField` to the remaining M12 reason fields for consistency.

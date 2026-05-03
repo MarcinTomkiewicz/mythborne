@@ -99,6 +99,90 @@ describe('Hero', () => {
     expect(backend.updateWhere).not.toHaveBeenCalled();
   });
 
+  it('uses the active hero id for stat allocation instead of the auth user id', async () => {
+    activeHero.requireActiveHero.and.returnValue(
+      of({
+        heroRow: createHeroRow({
+          id: 'hero-active',
+          user_id: 'auth-user-1',
+          server_id: 'server-1',
+        }),
+        heroId: 'hero-active',
+        hero: createHero({
+          id: 'hero-active',
+          userId: 'auth-user-1',
+          serverId: 'server-1',
+        }),
+        userId: 'auth-user-1',
+        serverId: 'server-1',
+        server: {} as never,
+      }),
+    );
+    authState.hero.and.returnValue(
+      createHero({
+        id: 'hero-active',
+        userId: 'auth-user-1',
+        serverId: 'server-1',
+      }),
+    );
+    backend.rpc.and.returnValue(
+      of([
+        {
+          audit_log_id: 'audit-2',
+          character_points_after: 4,
+          hero_id: 'hero-active',
+          server_id: 'server-1',
+          stats_json: { strength: 2 },
+        },
+      ]),
+    );
+
+    await firstValueFrom(
+      service.saveProgressionDraft(
+        { strength: 2 },
+        4,
+        {
+          previousCharacterPoints: 6,
+        },
+      ),
+    );
+
+    expect(backend.rpc).toHaveBeenCalledWith(
+      'save_stat_allocation',
+      jasmine.objectContaining({
+        p_hero_id: 'hero-active',
+      }),
+    );
+    expect(backend.rpc).not.toHaveBeenCalledWith(
+      'save_stat_allocation',
+      jasmine.objectContaining({
+        p_hero_id: 'auth-user-1',
+      }),
+    );
+  });
+
+  it('does not refresh a different active hero from a stale stat allocation result', async () => {
+    authState.hero.and.returnValue(
+      createHero({
+        id: 'hero-2',
+        serverId: 'server-1',
+        characterPoints: 11,
+      }),
+    );
+
+    await firstValueFrom(
+      service.saveProgressionDraft(
+        { strength: 2 },
+        5,
+        {
+          previousCharacterPoints: 8,
+        },
+      ),
+    );
+
+    expect(authState.setHero).not.toHaveBeenCalled();
+  });
+
   it('sends zero declared Character Points spent without direct writes', async () => {
     backend.rpc.and.returnValue(
       of([
@@ -135,7 +219,14 @@ describe('Hero', () => {
   });
 });
 
-function createHero() {
+function createHero(overrides: Partial<ReturnType<typeof baseHero>> = {}) {
+  return {
+    ...baseHero(),
+    ...overrides,
+  };
+}
+
+function baseHero() {
   return {
     id: 'hero-1',
     userId: 'user-1',
@@ -153,7 +244,7 @@ function createHero() {
   };
 }
 
-function createHeroRow() {
+function createHeroRow(overrides: Record<string, unknown> = {}) {
   return {
     id: 'hero-1',
     user_id: 'user-1',
@@ -169,5 +260,6 @@ function createHeroRow() {
     profile_picture: null,
     created_at: null,
     updated_at: null,
+    ...overrides,
   } as never;
 }

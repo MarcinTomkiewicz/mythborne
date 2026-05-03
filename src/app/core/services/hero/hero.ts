@@ -126,7 +126,10 @@ export class Hero {
         const result = mapSaveStatAllocationResult(row);
         const activeHero = this.authState.hero();
 
-        if (activeHero) {
+        if (
+          activeHero?.id === result.heroId &&
+          activeHero.serverId === result.serverId
+        ) {
           this.authState.setHero({
             ...activeHero,
             characterPoints: result.characterPointsAfter,

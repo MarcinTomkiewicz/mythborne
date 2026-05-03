@@ -3914,6 +3914,8 @@ Current source of truth:
 
 ## Task N2 — Stat allocation alignment with existing RPC
 
+**Status:** Done / accepted on 2026-05-03.
+
 **Goal:** Ensure stat allocation UI uses the existing canonical DB workflow.
 
 **Scope:**
@@ -3934,6 +3936,8 @@ Current source of truth:
 - Final save is auditable through DB workflow.
 - UI draft clicks are not audited.
 - Build and focused tests pass.
+
+**Implementation note:** N2 accepted on 2026-05-03 after DB-side blocker fix and user smoke. The `/hero/attributes` save path remains canonical through `save_stat_allocation(...)`; no frontend fallback or direct writes to `hero_stats`, `hero.character_points`, `character_point_ledger` or `hero_progression_ledger` were introduced. Frontend follow-up kept `saveProgressionDraft(...)` on the active hero context and added a stale-result guard so `AuthState.hero().characterPoints` refreshes only when the RPC result matches the current active `heroId` and `serverId`. The DB blocker was fixed in `save_stat_allocation(...)` without changing the RPC contract: the ambiguous `hero_id` conflict with the `RETURNS TABLE(hero_id uuid, ...)` output parameter was resolved by using `ON CONFLICT ON CONSTRAINT hero_stats_pkey`. Verification passed with `npx tsc --noEmit`, focused stat allocation/hero specs, static greps for no direct progression writes and no `auth.uid()`/user-id hero assumption in the stat allocation path, and `npm run build` with known budget/CommonJS warnings.
 
 ---
 
