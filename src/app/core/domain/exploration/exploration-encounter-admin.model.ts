@@ -102,6 +102,11 @@ export interface RewardProfileAssignmentReadModel {
   districtCode: string | null;
   districtMatchKind: string;
   maxDistrictCode: string | null;
+  levelMatchKind: string;
+  levelValue: number | null;
+  maxLevelValue: number | null;
+  levelInterval: number | null;
+  levelMatchLabel: string;
   description: string | null;
   helperText: string | null;
   sortOrder: number;

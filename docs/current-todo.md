@@ -148,7 +148,9 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: N5 - XP and level display over current DB/RPC contract.
 - Completed and confirmed: N6 - XP grant workflow integration boundary.
 - Completed and confirmed: N7 - progression ledger and history read models.
-- Next backlog task: N8 - level-up reward visibility and routing awareness, after the user commit and explicit start instruction.
+- Completed and confirmed: N8 - level-up reward visibility and routing awareness.
+- Next backlog task: N9 - level-up stat bonus rules and grant display/admin alignment, after the user commit and explicit start instruction.
+- N8 refactor follow-up: split `RewardProfilesPageState` further; after N8 it remains 317 lines and still mixes load, selection, forms, options and key sync, but this is not a blocker for accepted N8.
 - N7 follow-up: wire progression history into a concrete screen later; when UI/route exists, Codex should provide a manual smoke checklist for the user and must not run manual or route smoke itself.
 - N6 follow-up: decide AuthState/dashboard refresh behavior after `grantExperience(...)` at the first real XP producer integration.
 - N5 UI follow-up: dashboard remains provisional and should be rebuilt in a later UI/UX pass; do not expand N5 with further polish.

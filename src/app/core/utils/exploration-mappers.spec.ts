@@ -4,7 +4,12 @@ import {
   mapTrialDefinition,
 } from './exploration-definition-mappers';
 import { mapTrialOpportunityCurvePreview } from './exploration-preview-mappers';
-import { mapRewardGrantEntry, mapRewardProfileEntry } from './exploration-reward-mappers';
+import {
+  mapRewardGrantEntry,
+  mapRewardProfileAssignment,
+  mapRewardProfileEntry,
+  toLevelUpRewardRoutingViews,
+} from './exploration-reward-mappers';
 
 describe('exploration mappers', () => {
   it('maps DB-backed exploration definitions without dropping helper copy', () => {
@@ -116,6 +121,98 @@ describe('exploration mappers', () => {
     expect(grantEntry.newValueJson as unknown).toEqual({ itemId: 'item-1' });
   });
 
+  it('maps level-up reward assignment metadata without selecting rewards in Angular', () => {
+    const assignment = mapRewardProfileAssignment(
+      row({
+        id: 'assignment-1',
+        reward_profile_id: 'profile-1',
+        source_kind: 'level_up',
+        outcome_kind: 'level_reached',
+        trial_definition_id: null,
+        encounter_definition_id: null,
+        difficulty_key: null,
+        difficulty_match_kind: 'any',
+        max_difficulty_key: null,
+        district_code: null,
+        district_match_kind: 'any',
+        max_district_code: null,
+        level_match_kind: 'interval',
+        level_value: 5,
+        max_level_value: null,
+        level_interval: 10,
+        description: 'Every ten levels after five.',
+        helper_text: null,
+        sort_order: 10,
+        is_active: true,
+        metadata_json: {},
+        created_at: '2026-05-01T10:00:00.000Z',
+        updated_at: '2026-05-01T11:00:00.000Z',
+      } as Row<'reward_profile_assignments'>),
+    );
+
+    expect(assignment.sourceKind).toBe('level_up');
+    expect(assignment.levelMatchKind).toBe('interval');
+    expect(assignment.levelValue).toBe(5);
+    expect(assignment.levelInterval).toBe(10);
+    expect(assignment.levelMatchLabel).toBe('Every 10 levels from 5');
+  });
+
+  it('builds level-up reward routing awareness with XP recursion guard flags', () => {
+    const assignment = mapRewardProfileAssignment(
+      row({
+        id: 'assignment-1',
+        reward_profile_id: 'profile-1',
+        source_kind: 'level_up',
+        outcome_kind: 'level_reached',
+        trial_definition_id: null,
+        encounter_definition_id: null,
+        difficulty_key: null,
+        difficulty_match_kind: 'any',
+        max_difficulty_key: null,
+        district_code: null,
+        district_match_kind: 'any',
+        max_district_code: null,
+        level_match_kind: 'exact',
+        level_value: 2,
+        max_level_value: null,
+        level_interval: null,
+        description: null,
+        helper_text: null,
+        sort_order: 10,
+        is_active: true,
+        metadata_json: {},
+        created_at: '2026-05-01T10:00:00.000Z',
+        updated_at: '2026-05-01T11:00:00.000Z',
+      } as Row<'reward_profile_assignments'>),
+    );
+    const profile = rewardProfile({ id: 'profile-1', category: 'level_up' });
+    const entries = [
+      rewardProfileEntry({
+        id: 'entry-1',
+        rewardProfileId: 'profile-1',
+        entryKind: 'experience',
+        isActive: true,
+      }),
+      rewardProfileEntry({
+        id: 'entry-2',
+        rewardProfileId: 'profile-1',
+        entryKind: 'resource',
+        isActive: true,
+      }),
+    ];
+
+    const views = toLevelUpRewardRoutingViews({
+      assignments: [assignment],
+      profiles: [profile],
+      entries,
+    });
+
+    expect(views.length).toBe(1);
+    expect(views[0].selectedProfilePolicy).toBe('single_best_match');
+    expect(views[0].rewardProfile?.id).toBe('profile-1');
+    expect(views[0].hasActiveExperienceEntry).toBeTrue();
+  });
+
   it('maps preview RPC rows as read-only explainability models', () => {
     const preview = mapTrialOpportunityCurvePreview({
       difficulty_key: 'easy',
@@ -143,4 +240,59 @@ describe('exploration mappers', () => {
 
 function row<T>(value: T): T {
   return value;
+}
+
+function rewardProfile(overrides: {
+  id: string;
+  category: string;
+}) {
+  return {
+    id: overrides.id,
+    key: 'level-up-profile',
+    label: 'Level-up profile',
+    category: overrides.category,
+    description: 'Level-up reward profile.',
+    helperText: null,
+    adminDescription: null,
+    sortOrder: 10,
+    isActive: true,
+    metadataJson: {},
+    createdAt: '2026-05-01T10:00:00.000Z',
+    updatedAt: '2026-05-01T11:00:00.000Z',
+  };
+}
+
+function rewardProfileEntry(overrides: {
+  id: string;
+  rewardProfileId: string;
+  entryKind: string;
+  isActive: boolean;
+}) {
+  return {
+    id: overrides.id,
+    rewardProfileId: overrides.rewardProfileId,
+    entryKind: overrides.entryKind,
+    label: 'Entry',
+    description: 'Reward entry.',
+    helperText: null,
+    adminDescription: null,
+    amountMode: 'fixed',
+    minAmount: 1,
+    maxAmount: 1,
+    resourceType: null,
+    formulaId: null,
+    chancePercent: 100,
+    minItemCount: null,
+    maxItemCount: null,
+    maxQualityKey: null,
+    bucketProfileId: null,
+    effectDefinitionId: null,
+    transferSourceRole: null,
+    transferRecipientRole: null,
+    sortOrder: 10,
+    isActive: overrides.isActive,
+    metadataJson: {},
+    createdAt: '2026-05-01T10:00:00.000Z',
+    updatedAt: '2026-05-01T11:00:00.000Z',
+  };
 }

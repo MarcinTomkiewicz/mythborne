@@ -110,6 +110,11 @@ export interface RewardProfileAssignmentReadModel {
   districtCode: string | null;
   districtMatchKind: string;
   maxDistrictCode: string | null;
+  levelMatchKind: string;
+  levelValue: number | null;
+  maxLevelValue: number | null;
+  levelInterval: number | null;
+  levelMatchLabel: string;
   description: string | null;
   helperText: string | null;
   sortOrder: number;
@@ -117,6 +122,14 @@ export interface RewardProfileAssignmentReadModel {
   metadataJson: Json;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface LevelUpRewardRoutingReadModel {
+  assignment: RewardProfileAssignmentReadModel;
+  rewardProfile: RewardProfileReadModel | null;
+  activeEntries: RewardProfileEntryReadModel[];
+  selectedProfilePolicy: 'single_best_match';
+  hasActiveExperienceEntry: boolean;
 }
 
 export interface RewardGrantReadModel {

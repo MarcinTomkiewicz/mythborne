@@ -104,7 +104,15 @@
       </p>
     </div>
     <form class="grid-form" [formGroup]="page.autoResolveForm">
-      <label class="form-field"><span>Difficulty tier</span><p-select formControlName="difficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" /></label>
+      <div class="form-field">
+        <span>Difficulty tier</span>
+        <p-select
+          formControlName="difficultyKey"
+          [options]="page.difficultyOptions()"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </div>
       <label class="form-field">
         <span>Tested stat</span>
         <p-select formControlName="testedStatKey" [options]="page.statOptions()" optionLabel="label" optionValue="value" />

@@ -143,6 +143,12 @@ describe('RewardProfilesPageState', () => {
   it('builds entry kind, amount mode and source kind options from DB dictionaries', () => {
     page.loadInitialData();
 
+    expect(page.categoryOptions()).toEqual([
+      { label: 'Encounter', value: 'encounter' },
+      { label: 'Level Up', value: 'level_up' },
+      { label: 'Test', value: 'test' },
+      { label: 'Trial', value: 'trial' },
+    ]);
     expect(page.entryKindOptions()).toEqual([
       { label: 'Experience (experience)', value: 'experience' },
       { label: 'Resource (resource)', value: 'resource' },
@@ -156,6 +162,37 @@ describe('RewardProfilesPageState', () => {
     expect(page.sourceKindOptions()).toEqual([
       { label: 'Encounter (encounter)', value: 'encounter' },
     ]);
+  });
+
+  it('blocks active experience entries on level-up reward profiles to preserve recursion guard', () => {
+    const data = adminData();
+    admin.getAdminData.and.returnValue(of({
+      ...data,
+      profiles: [{
+        ...data.profiles[0],
+        category: 'level_up',
+      }],
+    }));
+    page.loadInitialData();
+    entryActions.startNewEntry();
+    page.entryForm.patchValue({
+      entryKind: 'experience',
+      label: 'Recursive XP',
+      description: 'Invalid level-up XP entry.',
+      amountMode: 'fixed',
+      minAmount: 10,
+      maxAmount: 10,
+      isActive: true,
+      reason: 'Test guard.',
+    });
+
+    entryActions.saveEntry();
+
+    expect(page.selectedLevelUpRoutingAwareness().isLevelUpProfile).toBeTrue();
+    expect(page.error()).toBe(
+      'Level-up reward profiles cannot contain active experience entries; this would create XP reward recursion.',
+    );
+    expect(admin.upsertEntry).not.toHaveBeenCalled();
   });
 
   it('filters reward amount modes by selected entry kind and forces none for non-numeric entries', () => {

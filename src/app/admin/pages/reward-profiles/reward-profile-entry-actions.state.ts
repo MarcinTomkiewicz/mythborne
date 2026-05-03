@@ -16,6 +16,10 @@ import {
 import { entryFormValue } from './reward-profiles-forms';
 import { RewardProfilesPageState } from './reward-profiles-page.state';
 import { runRewardProfileWorkflowAction } from './reward-profile-workflow-actions';
+import {
+  blocksLevelUpExperienceEntry,
+  LEVEL_UP_REWARD_EXPERIENCE_ENTRY_ERROR,
+} from './reward-level-up-routing-awareness';
 
 @Injectable()
 export class RewardProfileEntryActionsState {
@@ -134,6 +138,17 @@ export class RewardProfileEntryActionsState {
 
     if (!this.page.isNumericEntryKind(form.controls.entryKind.value)) {
       form.controls.amountMode.setValue(REWARD_AMOUNT_MODE.none, { emitEvent: false });
+    }
+
+    if (
+      blocksLevelUpExperienceEntry({
+        profile: this.page.selectedProfile(),
+        entryKind: form.controls.entryKind.value,
+        isActive: form.controls.isActive.value,
+      })
+    ) {
+      this.page.error.set(LEVEL_UP_REWARD_EXPERIENCE_ENTRY_ERROR);
+      invalid = true;
     }
 
     if (form.controls.entryKind.value === REWARD_ENTRY_KIND.resource) {

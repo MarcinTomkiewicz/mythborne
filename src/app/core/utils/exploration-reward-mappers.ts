@@ -1,4 +1,5 @@
 import {
+  LevelUpRewardRoutingReadModel,
   RewardGrantEntryReadModel,
   RewardGrantReadModel,
   RewardDictionaryReadModel,
@@ -8,6 +9,11 @@ import {
   RewardProfileEntryReadModel,
   RewardProfileReadModel,
 } from '../domain/exploration/exploration-reward.model';
+import {
+  REWARD_ASSIGNMENT_MATCH_KIND,
+  REWARD_ENTRY_KIND,
+  REWARD_SOURCE_KIND,
+} from '../constants/reward-runtime-keys.const';
 import { Row } from '../types/supabase.types';
 
 export function mapRewardOutcomeKind(row: Row<'reward_outcome_kinds'>): RewardOutcomeKindReadModel {
@@ -127,6 +133,11 @@ export function mapRewardProfileAssignment(
     districtCode: row.district_code,
     districtMatchKind: row.district_match_kind,
     maxDistrictCode: row.max_district_code,
+    levelMatchKind: row.level_match_kind,
+    levelValue: row.level_value,
+    maxLevelValue: row.max_level_value,
+    levelInterval: row.level_interval,
+    levelMatchLabel: rewardLevelMatchLabel(row),
     description: row.description,
     helperText: row.helper_text,
     sortOrder: row.sort_order,
@@ -152,6 +163,51 @@ export function mapRewardGrant(row: Row<'reward_grants'>): RewardGrantReadModel 
     grantedAt: row.granted_at,
     createdAt: row.created_at,
   };
+}
+
+export function toLevelUpRewardRoutingViews(input: {
+  assignments: readonly RewardProfileAssignmentReadModel[];
+  profiles: readonly RewardProfileReadModel[];
+  entries: readonly RewardProfileEntryReadModel[];
+}): LevelUpRewardRoutingReadModel[] {
+  return input.assignments
+    .filter((assignment) =>
+      assignment.isActive && assignment.sourceKind === REWARD_SOURCE_KIND.levelUp
+    )
+    .map((assignment) => {
+      const rewardProfile =
+        input.profiles.find((profile) => profile.id === assignment.rewardProfileId) ?? null;
+      const activeEntries = input.entries.filter(
+        (entry) => entry.rewardProfileId === assignment.rewardProfileId && entry.isActive,
+      );
+
+      return {
+        assignment,
+        rewardProfile,
+        activeEntries,
+        selectedProfilePolicy: 'single_best_match',
+        hasActiveExperienceEntry: activeEntries.some(
+          (entry) => entry.entryKind === REWARD_ENTRY_KIND.experience,
+        ),
+      };
+    });
+}
+
+function rewardLevelMatchLabel(row: Row<'reward_profile_assignments'>): string {
+  switch (row.level_match_kind) {
+    case REWARD_ASSIGNMENT_MATCH_KIND.any:
+      return 'Any reached level';
+    case REWARD_ASSIGNMENT_MATCH_KIND.exact:
+      return `Reached level ${row.level_value ?? 'not configured'}`;
+    case REWARD_ASSIGNMENT_MATCH_KIND.minimum:
+      return `Reached level ${row.level_value ?? 'not configured'}+`;
+    case REWARD_ASSIGNMENT_MATCH_KIND.range:
+      return `Reached levels ${row.level_value ?? 'not configured'}..${row.max_level_value ?? 'not configured'}`;
+    case REWARD_ASSIGNMENT_MATCH_KIND.interval:
+      return `Every ${row.level_interval ?? 'not configured'} levels from ${row.level_value ?? 'not configured'}`;
+    default:
+      return `${row.level_match_kind} level match`;
+  }
 }
 
 export function mapRewardGrantEntry(

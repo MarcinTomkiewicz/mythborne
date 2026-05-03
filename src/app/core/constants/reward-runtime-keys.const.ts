@@ -30,6 +30,7 @@ export const REWARD_AMOUNT_MODE_NON_NUMERIC_FALLBACKS = [
 
 export const REWARD_SOURCE_KIND = {
   encounter: 'encounter',
+  levelUp: 'level_up',
   trial: 'trial',
   test: 'test',
 } as const;
@@ -39,6 +40,7 @@ export const REWARD_SOURCE_KIND_FALLBACKS = Object.values(REWARD_SOURCE_KIND);
 export const REWARD_ASSIGNMENT_MATCH_KIND = {
   any: 'any',
   exact: 'exact',
+  interval: 'interval',
   range: 'range',
   minimum: 'minimum',
 } as const;

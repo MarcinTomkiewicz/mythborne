@@ -4103,6 +4103,8 @@ Current source of truth:
 
 ## Task N8 — Level-up reward visibility and routing awareness
 
+**Status:** Done / accepted on 2026-05-03.
+
 **Goal:** Make level-up reward results understandable in frontend/admin surfaces without reimplementing reward routing.
 
 **Scope:**
@@ -4128,6 +4130,8 @@ Current source of truth:
 - Angular does not grant level-up rewards directly.
 - XP recursion guard is preserved.
 - Build passes where code changes are made.
+
+**Implementation note:** N8 accepted on 2026-05-03 after SoC follow-up and user smoke. Admin reward profile surfaces now expose level-up reward routing awareness without reimplementing DB/RPC selection: level-up profile matching metadata includes `any`, `exact`, `minimum`, `range` and `interval`, and the UI states that DB/RPC chooses one best matching reward profile per reached level. Active `Experience` entries in `level_up` profiles are blocked by a recursion guard. Level-up routing awareness lives in `reward-level-up-routing-awareness.ts`, and amount-mode rules live in `reward-profile-entry-rules.ts`, so `RewardProfilesPageState` composes the result instead of owning those rules. N8 did not add runtime reward granting, producer integration, DB/RPC changes or migrations, and Angular does not call `grant_level_up_reward_to_hero(...)` or `find_best_level_up_reward_assignment(...)`. Verification passed with `npx tsc --noEmit`, focused reward mapper/page-state/admin specs, static greps for no direct reward grant/ledger writes, no unauthorized level-up grant/selection RPC calls, no durable `any`, and no `label > p-select`, plus `npm run build` with known budget/CommonJS warnings. Manual and route smoke were not performed by Codex; user smoke passed. Follow-up: `RewardProfilesPageState` remains 317 lines and still mixes load, selection, forms, options and key sync; split it further in a later refactor.
 
 ---
 

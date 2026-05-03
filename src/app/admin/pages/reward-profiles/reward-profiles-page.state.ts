@@ -15,8 +15,6 @@ import {
 } from '../../../core/domain/exploration/exploration-reward.model';
 import {
   REWARD_AMOUNT_MODE,
-  REWARD_AMOUNT_MODE_NON_NUMERIC_FALLBACKS,
-  REWARD_AMOUNT_MODE_NUMERIC_FALLBACKS,
   REWARD_AMOUNT_MODE_PVE_FALLBACKS,
   REWARD_ENTRY_KIND,
   REWARD_ENTRY_KIND_FALLBACKS,
@@ -47,6 +45,11 @@ import {
   outcomeKindFormValue,
   profileFormValue,
 } from './reward-profiles-forms';
+import {
+  isNumericRewardEntryKind,
+  rewardAmountModeOptionsForEntryKind,
+} from './reward-profile-entry-rules';
+import { toRewardLevelUpRoutingAwareness } from './reward-level-up-routing-awareness';
 
 @Injectable()
 export class RewardProfilesPageState {
@@ -82,6 +85,12 @@ export class RewardProfilesPageState {
 
     return (this.data()?.entries ?? []).filter((entry) => entry.rewardProfileId === profileId);
   });
+  readonly selectedLevelUpRoutingAwareness = computed(() =>
+    toRewardLevelUpRoutingAwareness({
+      profile: this.selectedProfile(),
+      entries: this.entriesForSelectedProfile(),
+    }),
+  );
   readonly selectedEntry = computed(() =>
     this.entriesForSelectedProfile().find((entry) => entry.id === this.selectedEntryId()) ?? null,
   );
@@ -254,25 +263,14 @@ export class RewardProfilesPageState {
   }
 
   amountModeOptionsForEntryKind(entryKind: string | null) {
-    const modes = (this.data()?.amountModes ?? []).filter(
-      (mode) => mode.key !== REWARD_AMOUNT_MODE.transferFormula,
-    );
-
-    return this.isNumericEntryKind(entryKind)
-      ? dictionaryOptions(
-        modes.filter((mode) => mode.key !== REWARD_AMOUNT_MODE.none),
-        REWARD_AMOUNT_MODE_NUMERIC_FALLBACKS,
-      )
-      : dictionaryOptions(
-        modes.filter((mode) => mode.key === REWARD_AMOUNT_MODE.none),
-        REWARD_AMOUNT_MODE_NON_NUMERIC_FALLBACKS,
-      );
+    return rewardAmountModeOptionsForEntryKind({
+      amountModes: this.data()?.amountModes ?? [],
+      entryKind,
+    });
   }
 
   isNumericEntryKind(entryKind: string | null): boolean {
-    return entryKind === REWARD_ENTRY_KIND.experience ||
-      entryKind === REWARD_ENTRY_KIND.characterPoints ||
-      entryKind === REWARD_ENTRY_KIND.resource;
+    return isNumericRewardEntryKind(entryKind);
   }
 
   sourceKindHelp(sourceKind: string | null): string | null {

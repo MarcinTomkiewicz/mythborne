@@ -17,6 +17,17 @@
         fallback keys; seed reward_entry_kinds and reward_entry_amount_modes before production use.
       </p-message>
     }
+    @if (page.selectedLevelUpRoutingAwareness().isLevelUpProfile) {
+      <p-message severity="info">
+        Level-up reward routing selects one best matching reward profile for each reached level.
+        Angular displays and edits profile contents only; DB/RPC routing decides the selected profile.
+      </p-message>
+    }
+    @if (page.selectedLevelUpRoutingAwareness().recursionError; as recursionError) {
+      <p-message severity="error">
+        {{ recursionError }}
+      </p-message>
+    }
   </div>
 
   <form class="flex-col gap-md w-100" [formGroup]="page.entryForm">
