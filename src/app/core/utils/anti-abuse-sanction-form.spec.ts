@@ -73,7 +73,7 @@ describe('anti-abuse sanction form model', () => {
     expect(requiredSanctionFormFieldKeys(model)).toContain('durationDays');
   });
 
-  it('shows Character Points amount for CP fine types', () => {
+  it('shows Character Points amount for Character Point fine types', () => {
     const model = createAntiAbuseSanctionFormModel(
       sanctionType({
         key: 'character_point_fine',

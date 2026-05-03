@@ -199,7 +199,7 @@ function penaltyOptionLabel(penalty: CharacterPointPenaltyDecision): string {
   return [
     displayValue(penalty.heroId),
     penalty.status,
-    `${penalty.remainingAmount}/${penalty.totalAmount} CP remaining`,
+    `${penalty.remainingAmount}/${penalty.totalAmount} Character Points remaining`,
     shortReason(penalty.reason),
   ].join(' - ');
 }

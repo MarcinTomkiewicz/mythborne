@@ -291,7 +291,7 @@ function createPenalty(
     userId: 'user-1',
     status: 'pending',
     statusReason: null,
-    reason: 'Prior CP fine.',
+    reason: 'Prior Character Point fine.',
     operatorNotes: null,
     totalAmount: 15,
     remainingAmount: 12,

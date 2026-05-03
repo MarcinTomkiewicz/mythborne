@@ -3889,6 +3889,8 @@ Current source of truth:
 
 ## Task N1 — Terminology cleanup: Health vs Character Points
 
+**Status:** Done / accepted on 2026-05-03.
+
 **Goal:** Normalize player-facing and domain terminology so Health and Character Points are not confused.
 
 **Scope:**
@@ -3905,6 +3907,8 @@ Current source of truth:
 - Player-facing labels do not call Character Points “Health”, “HP”, “Hero Points” or “PR” in newly touched surfaces.
 - No schema assumptions are changed.
 - Build passes where code changes are made.
+
+**Implementation note:** N1 accepted on 2026-05-03. Active player/admin UI labels now use `Character Points` instead of `CP`, `Hero Points` or `PR` in the touched progression, auction/trade and anti-abuse penalty surfaces. Dashboard Health display uses `Health` instead of `HP`. `AttributeAllocationPageFacade` now uses `characterPoints`, `remainingCharacterPoints` and `spentCharacterPoints` naming. No DB/RPC contract, schema assumptions or progression/ledger write paths were changed. Verification passed with `npx tsc --noEmit`, focused stat allocation/hero/anti-abuse specs, static greps for legacy HP/CP/Hero Points/PR terminology in active `src/app` paths and direct progression/ledger writes, and `npm run build` with known budget/CommonJS warnings. Pending visual smoke: attributes, dashboard, auction/trade and anti-abuse penalty sections should be checked manually for layout regressions caused by longer `Character Points` labels.
 
 ---
 

@@ -17,14 +17,19 @@
           <p class="card-legend mb-0">Hero</p>
           <h2 class="mg-section__title mg-section__title--sm mb-0">Attribute Allocation</h2>
           <p class="muted-text mb-0">
-            Rozdysponuj Character Points pomiedzy statystyki. Koszt kolejnego poziomu liczony jest osobno dla kazdej cechy, a zejscie ponizej wartosci z bazy jest zablokowane.
+            Spend Character Points on base stats. The next level cost is calculated separately
+            for each stat, and lowering a stat below its persisted value is blocked.
           </p>
         </div>
 
         <div class="flex-row-start-center flex-wrap gap-sm">
           <span class="tag-badge tag-badge--warn">Level {{ page.heroLevel() }}</span>
-          <span class="tag-badge tag-badge--golden">Available CP: {{ page.remainingHeroPoints() }}</span>
-          <span class="tag-badge tag-badge--muted">Spent: {{ page.spentHeroPoints() }}</span>
+          <span class="tag-badge tag-badge--golden">
+            Available Character Points: {{ page.remainingCharacterPoints() }}
+          </span>
+          <span class="tag-badge tag-badge--muted">
+            Spent Character Points: {{ page.spentCharacterPoints() }}
+          </span>
           <span class="tag-badge tag-badge--info">
             Project cap:
             {{ page.capPreview().error ? 'Formula error' : (page.capPreview().value ?? 0) }}
@@ -53,7 +58,7 @@
           <p-button
             label="Save allocation"
             [loading]="page.isSaving()"
-            [disabled]="page.isSaving() || !page.hasPendingChanges() || page.remainingHeroPoints() < 0"
+            [disabled]="page.isSaving() || !page.hasPendingChanges() || page.remainingCharacterPoints() < 0"
             (onClick)="page.saveDraft()"
           />
         </div>
@@ -100,7 +105,9 @@
             <td>
               <div class="flex-col gap-xs">
                 @if (row.nextLevelCost !== null) {
-                  <span class="tag-badge tag-badge--golden">{{ row.nextLevelCost }} CP</span>
+                  <span class="tag-badge tag-badge--golden">
+                    {{ row.nextLevelCost }} Character Points
+                  </span>
                 } @else {
                   <span class="tag-badge tag-badge--danger">Unavailable</span>
                 }

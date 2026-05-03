@@ -61,7 +61,7 @@ describe('AntiAbuseCasePenaltyStatusSection', () => {
     expect(emitted).toEqual([updated]);
   });
 
-  it('requires a status reason before submitting CP penalty status updates', () => {
+  it('requires a status reason before submitting Character Point penalty status updates', () => {
     component.form.patchValue({
       penaltyId: 'penalty-1',
       status: 'forgiven',
@@ -203,11 +203,12 @@ describe('AntiAbuseCasePenaltyStatusSection', () => {
     expect(component.penaltyOptions()).toEqual([
       {
         value: 'penalty-1',
-        label: 'hero-1 - pending - 20/25 CP remaining - Character Point fine.',
+        label: 'hero-1 - pending - 20/25 Character Points remaining - Character Point fine.',
       },
       {
         value: 'penalty-2',
-        label: 'hero-1 - applied - 8/25 CP remaining - Second Character Point fine.',
+        label:
+          'hero-1 - applied - 8/25 Character Points remaining - Second Character Point fine.',
       },
     ]);
   });

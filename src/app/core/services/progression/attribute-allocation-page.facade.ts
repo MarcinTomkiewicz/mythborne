@@ -26,7 +26,7 @@ export class AttributeAllocationPageFacade {
   readonly loadError = signal<string | null>(null);
 
   readonly heroLevel = signal(1);
-  readonly heroPoints = signal(0);
+  readonly characterPoints = signal(0);
   readonly statsList = signal<IStat[]>([]);
   readonly baseStats = signal<Record<string, number>>({});
   readonly draftStats = signal<Record<string, number>>({});
@@ -52,7 +52,7 @@ export class AttributeAllocationPageFacade {
     );
   });
 
-  readonly spentHeroPoints = computed(() => {
+  readonly spentCharacterPoints = computed(() => {
     const rules = this.progressionRules();
 
     if (!rules) {
@@ -67,7 +67,9 @@ export class AttributeAllocationPageFacade {
     return Number.isFinite(total) ? total : 0;
   });
 
-  readonly remainingHeroPoints = computed(() => this.heroPoints() - this.spentHeroPoints());
+  readonly remainingCharacterPoints = computed(
+    () => this.characterPoints() - this.spentCharacterPoints()
+  );
 
   readonly hasPendingChanges = computed(() =>
     this.statsList().some((stat) => {
@@ -84,7 +86,7 @@ export class AttributeAllocationPageFacade {
       return [];
     }
 
-    const remainingHeroPoints = this.remainingHeroPoints();
+    const remainingCharacterPoints = this.remainingCharacterPoints();
     const capPreview = this.capPreview();
     const maxAllowedValue = capPreview.error
       ? null
@@ -116,7 +118,7 @@ export class AttributeAllocationPageFacade {
         increaseReason = `Cap reached for hero level ${this.heroLevel()}.`;
       } else if (nextLevelCostResult.error) {
         increaseReason = nextLevelCostResult.error;
-      } else if (nextLevelCost !== null && nextLevelCost > remainingHeroPoints) {
+      } else if (nextLevelCost !== null && nextLevelCost > remainingCharacterPoints) {
         increaseReason = 'Not enough Character Points for the next level.';
       }
 
@@ -171,7 +173,7 @@ export class AttributeAllocationPageFacade {
   }
 
   saveDraft() {
-    if (!this.hasPendingChanges() || this.remainingHeroPoints() < 0) {
+    if (!this.hasPendingChanges() || this.remainingCharacterPoints() < 0) {
       return;
     }
 
@@ -182,17 +184,17 @@ export class AttributeAllocationPageFacade {
       return;
     }
 
-    const nextHeroPoints = this.remainingHeroPoints();
+    const nextCharacterPoints = this.remainingCharacterPoints();
     const nextStats = {
       ...this.draftStats(),
     };
-    const previousHeroPoints = this.heroPoints();
+    const previousCharacterPoints = this.characterPoints();
 
     this.isSaving.set(true);
 
     this.heroService
-      .saveProgressionDraft(nextStats, nextHeroPoints, {
-        previousCharacterPoints: previousHeroPoints,
+      .saveProgressionDraft(nextStats, nextCharacterPoints, {
+        previousCharacterPoints,
       })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -204,7 +206,7 @@ export class AttributeAllocationPageFacade {
           this.draftStats.set({
             ...result.stats,
           });
-          this.heroPoints.set(result.characterPointsAfter);
+          this.characterPoints.set(result.characterPointsAfter);
           this.toast.show('success', 'Attributes saved', 'Stat allocation was saved.');
         },
         error: (error: unknown) => {
@@ -234,7 +236,7 @@ export class AttributeAllocationPageFacade {
       .subscribe({
         next: ({ hero, stats, definitions, rules }) => {
           this.heroLevel.set(positiveInteger(hero.level ?? 1));
-          this.heroPoints.set(nonNegativeInteger(hero.character_points ?? 0));
+          this.characterPoints.set(nonNegativeInteger(hero.character_points ?? 0));
           this.statsList.set(definitions);
           this.baseStats.set({
             ...stats,

@@ -2,7 +2,9 @@
   <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
     <div class="flex-col gap-xs min-w-0">
       <p class="card-legend mb-0">Character Points</p>
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Update CP penalty status</h3>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        Update Character Point penalty status
+      </h3>
       <p class="muted-text mb-0">
         Complete, cancel, forgive or fail a linked Character Point penalty through the audited workflow.
       </p>
@@ -67,7 +69,7 @@
       <div class="flex-row-end-center">
         <p-button
           type="submit"
-          label="Update CP penalty status"
+          label="Update Character Point penalty status"
           [loading]="isSaving()"
           [disabled]="isSaving()"
         />
@@ -75,7 +77,7 @@
     </form>
   } @else {
     <p-message severity="info">
-      Create a Character Point fine before updating CP penalty status.
+      Create a Character Point fine before updating Character Point penalty status.
     </p-message>
   }
 </section>

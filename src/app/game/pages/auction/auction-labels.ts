@@ -8,7 +8,7 @@ export function auctionListingLabel(listing: PlayerAuctionListingReadModel): str
     listing.startingBidCharacterPoints ??
     listing.buyNowCharacterPoints;
 
-  return `${item} · ${listing.auctionMode} · ${displayValue(price)} CP`;
+  return `${item} · ${listing.auctionMode} · ${displayValue(price)} Character Points`;
 }
 
 export function auctionSellerLabel(listing: PlayerAuctionListingReadModel): string {

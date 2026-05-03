@@ -53,11 +53,11 @@
             <strong class="heading-color">{{ model.totals.warnings }}</strong>
           </div>
           <div class="mg-surface-card p-sm flex-col gap-xs">
-            <span class="muted-text">CP penalties</span>
+            <span class="muted-text">Character Point penalties</span>
             <strong class="heading-color">{{ model.totals.characterPointPenalties }}</strong>
           </div>
           <div class="mg-surface-card p-sm flex-col gap-xs">
-            <span class="muted-text">Remaining CP</span>
+            <span class="muted-text">Remaining Character Points</span>
             <strong class="heading-color">{{ model.totals.remainingCharacterPoints }}</strong>
           </div>
         </div>
@@ -89,7 +89,11 @@
                 </div>
                 <span class="muted-text text-break">Type key: {{ sanction.sanctionTypeKey }}</span>
                 <span class="heading-color text-break">Reason: {{ sanction.reason }}</span>
-                <span class="text-break">CP / duration: {{ value(sanction.amountCharacterPoints) }} / {{ value(sanction.durationDays) }}</span>
+                <span class="text-break">
+                  Character Points / duration:
+                  {{ value(sanction.amountCharacterPoints) }} /
+                  {{ value(sanction.durationDays) }}
+                </span>
               </article>
             } @empty {
               <p class="muted-text mb-0">No prior sanctions for this target.</p>
@@ -97,7 +101,9 @@
           </div>
 
           <div class="flex-col gap-sm">
-            <h4 class="mg-section__title mg-section__title--xs mb-0">CP penalties</h4>
+            <h4 class="mg-section__title mg-section__title--xs mb-0">
+              Character Point penalties
+            </h4>
             @for (penalty of model.characterPointPenalties; track penalty.id) {
               <article class="mg-surface-card p-sm flex-col gap-xs">
                 <div class="flex-row-between-center flex-col-sm gap-xs">
@@ -108,7 +114,9 @@
                 <span class="heading-color text-break">Reason: {{ penalty.reason }}</span>
               </article>
             } @empty {
-              <p class="muted-text mb-0">No prior CP penalties for this target.</p>
+              <p class="muted-text mb-0">
+                No prior Character Point penalties for this target.
+              </p>
             }
           </div>
         </div>

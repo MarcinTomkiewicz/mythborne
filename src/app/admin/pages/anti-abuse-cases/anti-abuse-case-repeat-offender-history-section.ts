@@ -66,7 +66,7 @@ export class AntiAbuseCaseRepeatOffenderHistorySection {
     }
 
     for (const penalty of detail.characterPointPenalties) {
-      addTarget(entries, 'CP penalty target', penalty.heroId, penalty.userId);
+      addTarget(entries, 'Character Point penalty target', penalty.heroId, penalty.userId);
     }
 
     return uniqueTargets(entries);

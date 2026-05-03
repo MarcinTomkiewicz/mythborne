@@ -17,7 +17,10 @@
           <span class="heading-color text-break">Status reason: {{ value(sanction.statusReason) }}</span>
           <span class="heading-color text-break">Operator notes: {{ value(sanction.operatorNotes) }}</span>
           <span class="text-break">Target: {{ value(sanction.targetHeroId ?? sanction.targetUserId) }}</span>
-          <span class="text-break">CP / duration: {{ value(sanction.amountCharacterPoints) }} / {{ value(sanction.durationDays) }}</span>
+          <span class="text-break">
+            Character Points / duration:
+            {{ value(sanction.amountCharacterPoints) }} / {{ value(sanction.durationDays) }}
+          </span>
         </article>
       } @empty {
         <p class="muted-text mb-0">No sanctions linked to this case.</p>
