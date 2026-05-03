@@ -131,6 +131,13 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'level-up-stat-bonuses',
+    loadComponent: () =>
+      import('./pages/level-up-stat-bonuses/level-up-stat-bonuses-page').then(
+        (m) => m.LevelUpStatBonusesPage,
+      ),
+  },
+  {
     path: 'formulas',
     loadComponent: () =>
       import('./pages/formulas/formulas-page').then((m) => m.FormulasPage),

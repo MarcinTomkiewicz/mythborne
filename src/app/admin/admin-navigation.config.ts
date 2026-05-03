@@ -138,6 +138,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'Progression',
+    title: 'Level-up stat bonuses',
+    description:
+      'Read-only inspection for DB-backed level-up stat bonus rules and random stat pools.',
+    routerLink: '/admin/level-up-stat-bonuses',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Audit',
     title: 'Audit dictionaries',
     description:
@@ -190,8 +198,16 @@ export const BALANCE_PAGE_LINKS: readonly AdminTagLink[] = [
 export const REWARD_PROFILES_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Encounter definitions', routerLink: '/admin/exploration-encounters', accessPolicy: 'selectedServerManagement' },
   { label: 'Trial definitions', routerLink: '/admin/exploration-trials', accessPolicy: 'selectedServerManagement' },
+  { label: 'Level-up stat bonuses', routerLink: '/admin/level-up-stat-bonuses', accessPolicy: 'selectedServerManagement' },
   { label: 'Exploration lab', routerLink: '/admin/exploration-lab', accessPolicy: 'selectedServerTesting' },
   { label: 'Formula read model', routerLink: '/admin/formulas', accessPolicy: 'selectedServerManagement' },
+];
+
+export const LEVEL_UP_STAT_BONUSES_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  { label: 'Reward profiles', routerLink: '/admin/reward-profiles', accessPolicy: 'selectedServerManagement' },
+  { label: 'Formula read model', routerLink: '/admin/formulas', accessPolicy: 'selectedServerManagement' },
+  { label: 'Config definitions', routerLink: '/admin/config-definitions', accessPolicy: 'selectedServerManagement' },
 ];
 
 export const ITEM_CATALOG_PAGE_LINKS: readonly AdminTagLink[] = [

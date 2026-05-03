@@ -37,6 +37,7 @@ export function mapHeroProgressionLedgerEntry(
       row.character_points_balance_after,
     ),
     xpThreshold: optionalPositiveInteger(row.xp_threshold),
+    statBonusGrants: [],
     createdAt: row.created_at,
     metadataJson: row.metadata_json,
   };

@@ -4137,6 +4137,8 @@ Current source of truth:
 
 ## Task N9 — Level-up stat bonus rules and grant display/admin alignment
 
+**Status:** Done / accepted on 2026-05-03.
+
 **Goal:** Integrate existing level-up stat bonus rules/grants into frontend/admin surfaces.
 
 **Scope:**
@@ -4173,6 +4175,8 @@ Current source of truth:
 - Multiple rules firing on the same level are supported in display.
 - No direct writes to `hero_stats` or grant tables from Angular.
 - Build and focused tests pass.
+
+**Implementation note:** N9 accepted on 2026-05-03 after review and user smoke. Added read-only admin visibility for level-up stat bonus rules through `/admin/level-up-stat-bonuses`, typed models/mappers for `level_up_stat_bonus_rules`, `level_up_stat_bonus_rule_stats` and `hero_level_stat_bonus_grants`, and a player/history read boundary that can attach actual stat bonus grant rows to level-up progression ledger entries. Fixed stat and random pool rules are modeled explicitly, actual grant outcomes expose stat, amount, before/after value, reached level and rule references, and level matching labels reuse the shared `levelMatchLabel(...)` helper. N9 did not add rule editing, runtime grant execution, producer integration, DB/RPC changes, migrations or direct writes to `hero_stats`, grant tables or ledgers. Verification passed with `npx tsc --noEmit`, focused level-up stat bonus mapper/service/history specs, static greps for no direct progression/stat bonus writes, no durable `any` and no `label > p-select`, plus `npm run build` with known budget/CommonJS warnings. Manual and route smoke were not performed by Codex; user route smoke passed and showed the empty-state message. Empty admin rules are acceptable if the environment has no seeded rules or RLS intentionally hides them; if rules exist and should be visible, treat it as a DB/RLS/query blocker rather than adding a frontend fallback. Follow-up: if progression history receives more enrichment slices, consider extracting a dedicated enrichment service.
 
 ---
 

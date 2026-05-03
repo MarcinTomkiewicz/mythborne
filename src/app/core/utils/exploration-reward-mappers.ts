@@ -10,11 +10,11 @@ import {
   RewardProfileReadModel,
 } from '../domain/exploration/exploration-reward.model';
 import {
-  REWARD_ASSIGNMENT_MATCH_KIND,
   REWARD_ENTRY_KIND,
   REWARD_SOURCE_KIND,
 } from '../constants/reward-runtime-keys.const';
 import { Row } from '../types/supabase.types';
+import { levelMatchLabel } from './level-match-label';
 
 export function mapRewardOutcomeKind(row: Row<'reward_outcome_kinds'>): RewardOutcomeKindReadModel {
   return {
@@ -137,7 +137,12 @@ export function mapRewardProfileAssignment(
     levelValue: row.level_value,
     maxLevelValue: row.max_level_value,
     levelInterval: row.level_interval,
-    levelMatchLabel: rewardLevelMatchLabel(row),
+    levelMatchLabel: levelMatchLabel({
+      levelMatchKind: row.level_match_kind,
+      levelValue: row.level_value,
+      maxLevelValue: row.max_level_value,
+      levelInterval: row.level_interval,
+    }),
     description: row.description,
     helperText: row.helper_text,
     sortOrder: row.sort_order,
@@ -191,23 +196,6 @@ export function toLevelUpRewardRoutingViews(input: {
         ),
       };
     });
-}
-
-function rewardLevelMatchLabel(row: Row<'reward_profile_assignments'>): string {
-  switch (row.level_match_kind) {
-    case REWARD_ASSIGNMENT_MATCH_KIND.any:
-      return 'Any reached level';
-    case REWARD_ASSIGNMENT_MATCH_KIND.exact:
-      return `Reached level ${row.level_value ?? 'not configured'}`;
-    case REWARD_ASSIGNMENT_MATCH_KIND.minimum:
-      return `Reached level ${row.level_value ?? 'not configured'}+`;
-    case REWARD_ASSIGNMENT_MATCH_KIND.range:
-      return `Reached levels ${row.level_value ?? 'not configured'}..${row.max_level_value ?? 'not configured'}`;
-    case REWARD_ASSIGNMENT_MATCH_KIND.interval:
-      return `Every ${row.level_interval ?? 'not configured'} levels from ${row.level_value ?? 'not configured'}`;
-    default:
-      return `${row.level_match_kind} level match`;
-  }
 }
 
 export function mapRewardGrantEntry(

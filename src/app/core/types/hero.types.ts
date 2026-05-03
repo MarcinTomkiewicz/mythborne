@@ -1,4 +1,5 @@
 import { Json } from './database.types';
+import { LevelUpStatBonusGrantView } from '../domain/progression/level-up-stat-bonus.model';
 
 export interface IHero {
   id: string;
@@ -77,6 +78,7 @@ export interface HeroProgressionHistoryReadModel {
   characterPointsGrossDelta: number;
   characterPointsBalanceAfter: number | null;
   xpThreshold: number | null;
+  statBonusGrants: LevelUpStatBonusGrantView[];
   createdAt: string;
   metadataJson: Json;
 }

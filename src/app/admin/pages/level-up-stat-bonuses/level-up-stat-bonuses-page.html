@@ -1,0 +1,126 @@
+<app-loading-overlay
+  [visible]="page.isLoading() && page.error() === null"
+  label="Loading level-up stat bonuses..."
+  description="Reading DB-backed stat bonus rules, random pools and stat labels."
+/>
+
+@if (page.error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ page.error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Progression</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">Level-up stat bonuses</h2>
+          <p class="muted-text mb-0">
+            Read-only inspection for DB-backed stat bonus rules applied by the level-up workflow.
+            Angular does not grant bonuses or update hero stats.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md">
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Rules</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.data().rules.length }}</strong>
+        </div>
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Active rules</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.activeRuleCount() }}</strong>
+        </div>
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Fixed stat</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.fixedRuleCount() }}</strong>
+        </div>
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Random pool</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.randomRuleCount() }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-xs mb-lg">
+        <p class="card-legend mb-0">Rules</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Configured stat bonus rules</h3>
+      </div>
+
+      @if (!page.data().ruleViews.length) {
+        <p-message severity="warn">
+          No level-up stat bonus rules are visible to the current admin context.
+        </p-message>
+      } @else {
+        <p-table [value]="page.data().ruleViews" responsiveLayout="scroll">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Rule</th>
+              <th>Kind</th>
+              <th>Level match</th>
+              <th>Amount</th>
+              <th>Stat / pool</th>
+              <th>Status</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-view>
+            <tr>
+              <td>
+                <div class="flex-col gap-xs">
+                  <strong class="heading-color">{{ view.rule.label }}</strong>
+                  <span class="muted-text">{{ view.rule.key }}</span>
+                  <span class="muted-text">{{ view.rule.description }}</span>
+                  @if (view.rule.helperText || view.rule.adminDescription) {
+                    <small class="muted-text">
+                      {{ view.rule.helperText || view.rule.adminDescription }}
+                    </small>
+                  }
+                </div>
+              </td>
+              <td>
+                <div class="flex-col gap-xs">
+                  <span>{{ view.rule.ruleKindLabel }}</span>
+                  <small class="muted-text">{{ view.rule.ruleKind }}</small>
+                </div>
+              </td>
+              <td>{{ view.rule.levelMatchLabel }}</td>
+              <td>{{ view.amountLabel }}</td>
+              <td>
+                @if (view.rule.ruleDisplayKind === 'fixed_stat') {
+                  <span>{{ view.fixedStatLabel ?? 'Fixed stat not configured' }}</span>
+                } @else if (view.randomStats.length) {
+                  <div class="flex-col gap-xs">
+                    @for (poolStat of view.randomStats; track poolStat.stat.id) {
+                      <span>
+                        {{ poolStat.statLabel }}
+                        <span class="muted-text">
+                          weight {{ poolStat.stat.weight }},
+                          max/level {{ poolStat.stat.maxPointsPerLevel ?? 'none' }}
+                        </span>
+                      </span>
+                    }
+                  </div>
+                } @else {
+                  <span class="muted-text">Random pool has no visible stat rows.</span>
+                }
+              </td>
+              <td>
+                <p-tag
+                  [severity]="view.rule.isActive ? 'success' : 'secondary'"
+                  [value]="view.rule.isActive ? 'Active' : 'Inactive'"
+                />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </section>
+  </div>
+}
