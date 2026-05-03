@@ -83,6 +83,27 @@ export interface HeroProgressionHistoryReadModel {
   metadataJson: Json;
 }
 
+export type CharacterPointHistoryEntryType =
+  | 'xp_gain'
+  | 'penalty_payment'
+  | 'spend'
+  | 'receive'
+  | 'adjustment'
+  | 'unknown';
+
+export interface CharacterPointHistoryReadModel {
+  id: string;
+  heroId: string;
+  serverId: string;
+  reason: string;
+  entryType: CharacterPointHistoryEntryType;
+  reasonLabel: string;
+  amountDelta: number;
+  amountLabel: string;
+  balanceAfter: number;
+  createdAt: string;
+}
+
 export interface IHeroDerived extends Record<string, number> {
   def: number;
   minDmg: number;

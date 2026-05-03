@@ -1,7 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize } from 'rxjs';
 import { BonusSource } from '../../domain/bonus/bonus.model';
-import { IHeroDerived } from '../../types/hero.types';
+import {
+  CharacterPointHistoryReadModel,
+  IHeroDerived,
+} from '../../types/hero.types';
 import { OriginBonus, Origin } from '../../domain/origin/origin.model';
 import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
 import { IStat } from '../../interfaces/i-stats/i-stats';
@@ -10,6 +13,7 @@ import { Origins } from '../origins/origins';
 import { StatsService } from '../stats/stats';
 import { HeroDerivedStats } from './hero-derived-stats';
 import { getErrorMessage } from '../../utils/error-message';
+import { CharacterPointHistory } from './character-point-history';
 
 interface DerivedStatRow {
   key: string;
@@ -21,12 +25,14 @@ interface DerivedStatRow {
 export class DashboardPageFacade {
   private readonly heroService = inject(Hero);
   private readonly heroDerivedStats = inject(HeroDerivedStats);
+  private readonly characterPointHistory = inject(CharacterPointHistory);
   private readonly statsService = inject(StatsService);
   private readonly originsService = inject(Origins);
 
   heroName = signal('');
   level = signal(1);
   characterPoints = signal(0);
+  totalCharacterPointsEarned = signal(0);
   readonly heroLevel = signal(1);
   experience = signal(0);
   totalExperienceEarned = signal(0);
@@ -43,6 +49,8 @@ export class DashboardPageFacade {
   statsValues = signal<IHeroStats>({} as IHeroStats);
   derivedStatsList = signal<IStat[]>([]);
   derivedValues = signal<IHeroDerived>({} as IHeroDerived);
+  characterPointHistoryEntries = signal<CharacterPointHistoryReadModel[]>([]);
+  characterPointHistoryError = signal<string | null>(null);
 
   statsDisplay = computed(() =>
     this.statsService.getFinalStats(this.statsValues(), [this.originBonusSource()], {
@@ -82,6 +90,7 @@ export class DashboardPageFacade {
       this.heroName.set(hero.name);
       this.level.set(hero.level ?? 1);
       this.characterPoints.set(hero.character_points ?? 0);
+      this.totalCharacterPointsEarned.set(hero.total_character_points_earned ?? 0);
       this.heroLevel.set(hero.level ?? 1);
       this.experience.set(hero.experience ?? 0);
       this.totalExperienceEarned.set(hero.total_experience_earned ?? 0);
@@ -100,6 +109,7 @@ export class DashboardPageFacade {
     this.heroDerivedStats
       .resolveActiveHeroDerivedStats()
       .subscribe(this.derivedValues.set);
+    this.loadCharacterPointHistory();
     this.loadExperienceProgress();
   }
 
@@ -141,6 +151,22 @@ export class DashboardPageFacade {
           this.experiencePercent.set(0);
           this.experienceError.set(
             getErrorMessage(error, 'Experience threshold could not be calculated.'),
+          );
+        },
+      });
+  }
+
+  private loadCharacterPointHistory(): void {
+    this.characterPointHistoryError.set(null);
+
+    this.characterPointHistory
+      .getActiveHeroHistory({ limit: 5 })
+      .subscribe({
+        next: (entries) => this.characterPointHistoryEntries.set(entries),
+        error: (error: unknown) => {
+          this.characterPointHistoryEntries.set([]);
+          this.characterPointHistoryError.set(
+            getErrorMessage(error, 'Character Points history could not be loaded.'),
           );
         },
       });

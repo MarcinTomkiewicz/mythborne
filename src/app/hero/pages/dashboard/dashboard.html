@@ -84,8 +84,12 @@
           <span>None</span>
         </div>
         <div class="flex-row-between-center gap-md muted-text">
-          <strong class="heading-color">Character Points</strong>
+          <strong class="heading-color">Spendable Character Points</strong>
           <span>{{ page.characterPoints() }}</span>
+        </div>
+        <div class="flex-row-between-center gap-md muted-text">
+          <strong class="heading-color">Lifetime Character Points earned</strong>
+          <span>{{ page.totalCharacterPointsEarned() }}</span>
         </div>
       </div>
     </div>
@@ -128,6 +132,34 @@
       </div>
     </section>
   </div>
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-col gap-xs mb-md">
+      <p class="card-legend mb-0">Progression</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Character Points History</h3>
+    </div>
+
+    @if (page.characterPointHistoryError(); as historyError) {
+      <p class="muted-text mb-0">{{ historyError }}</p>
+    } @else if (page.characterPointHistoryEntries().length === 0) {
+      <p class="muted-text mb-0">No Character Points history yet.</p>
+    } @else {
+      <div class="flex-col gap-sm">
+        @for (entry of page.characterPointHistoryEntries(); track entry.id) {
+          <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
+            <div class="flex-col gap-xs">
+              <strong class="heading-color">{{ entry.reasonLabel }}</strong>
+              <span>{{ entry.createdAt }}</span>
+            </div>
+            <div class="flex-col gap-xs text-right">
+              <strong class="heading-color">{{ entry.amountLabel }}</strong>
+              <span>Balance after: {{ entry.balanceAfter }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
 
   <section class="mg-card p-lg w-100">
     <div class="flex-col gap-xs mb-md">

@@ -7,6 +7,7 @@ import { HeroDerivedStats } from './hero-derived-stats';
 import { Origins } from '../origins/origins';
 import { StatsService } from '../stats/stats';
 import { DashboardPageFacade } from './dashboard-page.facade';
+import { CharacterPointHistory } from './character-point-history';
 
 describe('DashboardPageFacade', () => {
   let facade: DashboardPageFacade;
@@ -26,6 +27,7 @@ describe('DashboardPageFacade', () => {
         experience: 125,
         total_experience_earned: 2125,
         character_points: 9,
+        total_character_points_earned: 42,
         origin_id: null,
       }) as ReturnType<Hero['getHeroData']>,
     );
@@ -72,6 +74,25 @@ describe('DashboardPageFacade', () => {
             getFinalStats: { strength: 1 },
           }),
         },
+        {
+          provide: CharacterPointHistory,
+          useValue: jasmine.createSpyObj<CharacterPointHistory>('CharacterPointHistory', {
+            getActiveHeroHistory: of([
+              {
+                id: 'cp-ledger-1',
+                heroId: 'hero-1',
+                serverId: 'server-1',
+                reason: 'experience_gain',
+                entryType: 'xp_gain',
+                reasonLabel: 'XP-derived Character Points',
+                amountDelta: 25,
+                amountLabel: '+25 Character Points',
+                balanceAfter: 42,
+                createdAt: '2026-05-03T10:00:00.000Z',
+              },
+            ]),
+          }),
+        },
       ],
     });
     facade = TestBed.inject(DashboardPageFacade);
@@ -88,6 +109,21 @@ describe('DashboardPageFacade', () => {
     expect(facade.totalExperienceEarned()).toBe(2125);
     expect(facade.experiencePercent()).toBe(25);
     expect(facade.experienceError()).toBeNull();
+    expect(facade.characterPoints()).toBe(9);
+    expect(facade.totalCharacterPointsEarned()).toBe(42);
+  });
+
+  it('loads recent Character Points history without calculating current balance from it', () => {
+    facade.loadData();
+
+    expect(facade.characterPoints()).toBe(9);
+    expect(facade.characterPointHistoryEntries()).toEqual([
+      jasmine.objectContaining({
+        reasonLabel: 'XP-derived Character Points',
+        amountLabel: '+25 Character Points',
+        balanceAfter: 42,
+      }),
+    ]);
   });
 
   it('exposes ordered derived stat rows for dashboard rendering', () => {

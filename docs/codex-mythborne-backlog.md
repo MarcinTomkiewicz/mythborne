@@ -4219,6 +4219,8 @@ Current source of truth:
 
 ## Task N11 — Character Points display, ledger and penalty sink clarity
 
+**Status:** Done / accepted 2026-05-03.
+
 **Goal:** Keep Character Points display/history consistent with DB truth.
 
 **Scope:**
@@ -4239,6 +4241,8 @@ Current source of truth:
 - Trade/progression currency language stays clear.
 - History and balance views do not expose staff-only/audit-only fields to player UI.
 - Build passes.
+
+**Implementation note:** N11 accepted on 2026-05-03 after user smoke. Dashboard now displays current spendable Character Points from `hero.character_points` and `hero.total_character_points_earned` only as lifetime earned context. A typed player-safe `character_point_ledger` read boundary was added through `CharacterPointHistory`, `CharacterPointHistoryReadModel` and `mapCharacterPointLedgerEntry(...)`; it maps XP-derived CP gains and `penalty_payment` sink/payment rows as separate history events without calculating the spendable balance from ledger totals. The dashboard currently renders recent Character Points history rows from the ledger, but this placement is provisional UI/UX and may be moved or hidden in a future dashboard redesign. N11 did not add DB/RPC changes, migrations, direct writes or fallback rows, and it does not expose staff/audit-only fields such as `created_by`, internal descriptions, related entity ids, request ids or metadata in player history. Verification passed with `npx tsc --noEmit`, focused Character Points mapper/service/dashboard/progression RPC specs, static greps for no direct writes, no durable `any`, no staff/audit field exposure in N11 UI/read model and no Character Points/drachma wording mix, plus `npm run build` with known budget/CommonJS warnings. Codex did not run manual smoke or route smoke; user smoke passed.
 
 ---
 
