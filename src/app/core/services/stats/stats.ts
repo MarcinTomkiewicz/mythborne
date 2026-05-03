@@ -3,6 +3,8 @@ import { forkJoin, map, Observable } from 'rxjs';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import { TABLES } from '../../constants/tables.const';
 import { BonusSource } from '../../domain/bonus/bonus.model';
+import { FilterOperator } from '../../enums/filter-operators';
+import { Row } from '../../types/supabase.types';
 import { finalStatValue } from '../../utils/bonus-calculator';
 import { Backend } from '../backend/backend';
 
@@ -29,10 +31,14 @@ export class StatsService {
   }
 
   getDerivedStats(): Observable<IStat[]> {
-    return this.backend.getAll<IStat>({
-      table: 'stats_derived',
-      orderBy: { column: 'order', ascending: true },
-    });
+    return this.backend
+      .getAll<Row<'derived_stat_definitions'>>({
+        table: TABLES.derived_stat_definitions,
+        filters: { isActive: { operator: FilterOperator.EQ, value: true } },
+        orderBy: { column: 'sort_order', ascending: true },
+        camelCase: false,
+      })
+      .pipe(map((rows) => rows.map((row) => mapDerivedStatDefinition(row))));
   }
 
   getAllStatLabels(): Observable<Record<string, string>> {
@@ -70,4 +76,14 @@ export class StatsService {
 
     return result as Record<keyof T, number>;
   }
+}
+
+function mapDerivedStatDefinition(row: Row<'derived_stat_definitions'>): IStat {
+  return {
+    id: row.id,
+    key: row.key,
+    label: row.label,
+    order: row.sort_order,
+    description: row.description,
+  };
 }

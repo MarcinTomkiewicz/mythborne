@@ -150,7 +150,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: N7 - progression ledger and history read models.
 - Completed and confirmed: N8 - level-up reward visibility and routing awareness.
 - Completed and confirmed: N9 - level-up stat bonus rules and grant display/admin alignment.
-- Next backlog task: N10 - derived stat resolver cleanup, including critical damage, after the user commit and explicit start instruction.
+- Completed and confirmed: N10 - derived stat resolver cleanup, including critical damage.
+- Next backlog task: N11 - Character Points display, ledger and penalty sink clarity, after the user commit and explicit start instruction.
 - N9 follow-up: if progression history receives more enrichment slices, consider extracting a dedicated enrichment service.
 - N9 DB/RLS caveat: `/admin/level-up-stat-bonuses` empty state is acceptable when no rules are seeded or current admin context intentionally cannot see them; if rules exist and should be visible, treat it as a DB/RLS/query blocker rather than adding frontend fallback rules.
 - N8 refactor follow-up: split `RewardProfilesPageState` further; after N8 it remains 317 lines and still mixes load, selection, forms, options and key sync, but this is not a blocker for accepted N8.

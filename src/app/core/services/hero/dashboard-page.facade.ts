@@ -11,6 +11,12 @@ import { StatsService } from '../stats/stats';
 import { HeroDerivedStats } from './hero-derived-stats';
 import { getErrorMessage } from '../../utils/error-message';
 
+interface DerivedStatRow {
+  key: string;
+  label: string;
+  value: number | string;
+}
+
 @Injectable()
 export class DashboardPageFacade {
   private readonly heroService = inject(Hero);
@@ -47,6 +53,19 @@ export class DashboardPageFacade {
   derivedDisplay = computed(() =>
     this.derivedValues()
   );
+
+  derivedStatRows = computed<DerivedStatRow[]>(() => {
+    const derived = this.derivedDisplay();
+
+    return [
+      { key: 'defense', label: 'DEF', value: derived.def },
+      { key: 'damage', label: 'DMG', value: `${derived.minDmg} - ${derived.maxDmg}` },
+      { key: 'luck', label: 'Luck', value: derived.luck },
+      { key: 'critical_chance', label: 'Critical chance', value: derived.critical },
+      { key: 'critical_damage', label: 'Critical damage', value: derived.criticalDamage },
+      { key: 'evasion', label: 'Evasion', value: derived.evasion },
+    ];
+  });
 
   equipment = [
     { slot: 'Helmet', name: null, bonus: null },

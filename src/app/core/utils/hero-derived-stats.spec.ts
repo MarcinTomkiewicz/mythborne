@@ -133,6 +133,22 @@ describe('hero derived stats bonus mapper', () => {
 
     expect(derived[DerivedStatKey.CriticalDamage]).toBe(75);
   });
+
+  it('does not add a base stat value to critical damage percent', () => {
+    const baseStats = createBaseStats({ cunning: 40 });
+    const derived = resolveAdditiveDerivedStats(
+      baseStats,
+      [createDerivedDefinitionRow({
+        key: DerivedStatKey.CriticalDamage,
+        base_stat_key: 'cunning',
+        bonus_target_key: DerivedStatKey.CriticalDamage,
+      })],
+      [],
+      1,
+    );
+
+    expect(derived[DerivedStatKey.CriticalDamage]).toBe(50);
+  });
 });
 
 function createEntityBonusRow(

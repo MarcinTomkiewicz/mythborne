@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mythborne Report Detail Prototype</title>
+  <!--
+    VISUAL REFERENCE ONLY.
+    Do not copy this CSS into Angular feature components.
+    Translate approved visual patterns into global SCSS tokens, vendor wrappers,
+    shared components, PrimeNG wrappers, or documented layout utilities.
+
+    Mythborne Report Detail V2 — simplified linear gameplay result report.
+
+    Scope:
+    - player-facing durable report detail, not an admin/debug report;
+    - primary use case shown here: resolved Trial after an Exploration step;
+    - same layout direction can later be reused for Exploration result, Encounter result, Combat result and PvP result;
+    - report body is linear: header → result → narrative sequence → rewards/loot → actions;
+    - item names are simple references; full item detail should open the shared item popover established in the Armory prototype;
+    - no participants block, no technical-first metrics, no separate combat section in this version.
+  -->
+  <style>
+    :root {
+      --mb-bg-0: #06080c;
+      --mb-bg-1: #0b1018;
+      --mb-navy-0: #07111d;
+      --mb-navy-1: #0d2135;
+      --mb-navy-2: #163b5c;
+      --mb-navy-3: #2d6e9f;
+      --mb-gold-1: #9c6723;
+      --mb-gold-2: #c8923a;
+      --mb-gold-3: #f0c96f;
+      --mb-red: #b24b3b;
+      --mb-green: #6fa45d;
+      --mb-blue: #5ba3d5;
+      --mb-purple: #9672cc;
+      --mb-text-0: #f6edda;
+      --mb-text-1: #d7c8ab;
+      --mb-text-2: #9d8f75;
+      --mb-text-3: #6f675a;
+      --mb-line-soft: rgba(240, 201, 111, 0.12);
+      --mb-line: rgba(240, 201, 111, 0.24);
+      --mb-line-strong: rgba(240, 201, 111, 0.44);
+      --mb-shadow: rgba(0, 0, 0, 0.42);
+      --mb-sidebar-w: 16rem;
+      --mb-topbar-h: 4.25rem;
+      --mb-radius-md: .75rem;
+      --mb-radius-lg: 1rem;
+      --mb-radius-xl: 1.35rem;
+      --mb-font-display: Georgia, "Times New Roman", serif;
+      --mb-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--mb-font-ui);
+      color: var(--mb-text-0);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(200,146,58,.14), transparent 28rem),
+        radial-gradient(circle at 82% 4%, rgba(45,110,159,.20), transparent 34rem),
+        linear-gradient(135deg, var(--mb-bg-0), #080b11 38%, #050608 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .14;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+
+    .mb-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--mb-sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--mb-topbar-h) minmax(0, 1fr);
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .mb-topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(20rem, 1fr) auto minmax(20rem, 1fr);
+      align-items: center;
+      gap: 1rem;
+      padding: .55rem 1rem;
+      border-bottom: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,201,111,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem var(--mb-shadow);
+    }
+    .mb-topbar-left,
+    .mb-topbar-right { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+    .mb-topbar-right { justify-content: flex-end; }
+
+    .mb-brand { display: flex; align-items: center; justify-content: center; gap: .7rem; min-width: 16rem; }
+    .mb-brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-strong);
+      background:
+        radial-gradient(circle at 34% 24%, #fff0b9 0, var(--mb-gold-3) 22%, var(--mb-gold-1) 48%, #251509 70%, var(--mb-navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,201,111,.22);
+      position: relative;
+    }
+    .mb-brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .mb-brand-title { font-family: var(--mb-font-display); font-size: 1.65rem; letter-spacing: .11em; text-transform: uppercase; color: var(--mb-gold-3); line-height: 1; }
+    .mb-brand-subtitle { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; margin-top: .18rem; text-align: center; }
+
+    .mb-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      min-height: 2.15rem;
+      padding: .38rem .72rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: 999px;
+      color: var(--mb-text-1);
+      background: linear-gradient(180deg, rgba(15,23,33,.75), rgba(6,9,13,.78));
+      white-space: nowrap;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-chip strong { color: var(--mb-text-0); }
+    .mb-chip-icon { color: var(--mb-gold-2); }
+    .mb-chip--health strong { color: #ffc0b7; }
+    .mb-chip--resource strong { color: var(--mb-gold-3); }
+    .mb-chip-stack { display: inline-grid; gap: .08rem; line-height: 1.05; }
+    .mb-chip-stack small { color: var(--mb-text-3); font-size: .68rem; }
+    .mb-xp { min-width: 15rem; display: grid; gap: .3rem; padding: .35rem .7rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(15,23,33,.72), rgba(6,9,13,.74)); }
+    .mb-xp-meta { display: flex; justify-content: space-between; gap: .75rem; font-size: .75rem; color: var(--mb-text-2); }
+    .mb-mini-bar { height: .42rem; border-radius: 999px; background: rgba(0,0,0,.38); overflow: hidden; border: 1px solid rgba(240,201,111,.08); }
+    .mb-mini-bar > span { display: block; width: var(--value, 62%); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mb-gold-1), var(--mb-gold-3)); box-shadow: 0 0 .8rem rgba(240,201,111,.3); }
+
+    .mb-sidebar { grid-area: sidebar; padding: 1rem .8rem; border-right: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(7,11,17,.84), rgba(5,7,10,.88)); backdrop-filter: blur(12px); }
+    .mb-server-card { padding: .9rem; border: 1px solid var(--mb-line-soft); border-radius: var(--mb-radius-xl); background: linear-gradient(180deg, rgba(20,32,47,.72), rgba(8,12,18,.74)), radial-gradient(circle at 80% 0%, rgba(240,201,111,.16), transparent 10rem); box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.2); }
+    .mb-server-label { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+    .mb-server-name { display: flex; justify-content: space-between; gap: .7rem; align-items: center; font-weight: 800; color: var(--mb-text-0); }
+    .mb-prestige { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid rgba(240,201,111,.1); }
+    .mb-nav-section-title { margin: 1.05rem 0 .45rem .55rem; color: var(--mb-text-3); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; }
+    .mb-nav-list { display: grid; gap: .28rem; margin: 0; padding: 0; list-style: none; }
+    .mb-nav-link { display: flex; align-items: center; gap: .65rem; padding: .67rem .68rem; color: var(--mb-text-1); text-decoration: none; border-radius: .85rem; border: 1px solid transparent; transition: 120ms ease; }
+    .mb-nav-link:hover, .mb-nav-link.is-active { color: var(--mb-text-0); border-color: rgba(240,201,111,.16); background: linear-gradient(90deg, rgba(240,201,111,.13), rgba(45,110,159,.12)); }
+    .mb-nav-link.is-active { box-shadow: inset 3px 0 0 var(--mb-gold-2); }
+    .mb-nav-icon { width: 1.65rem; height: 1.65rem; border-radius: .55rem; display: grid; place-items: center; background: rgba(240,201,111,.08); color: var(--mb-gold-2); border: 1px solid rgba(240,201,111,.08); flex: 0 0 auto; font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+
+    .mb-main { grid-area: main; min-width: 0; padding: 1.1rem; display: grid; gap: 1rem; align-content: start; }
+    .mb-report-page { width: min(920px, 100%); margin: 0 auto; display: grid; gap: 1rem; }
+
+    .mb-page-header {
+      position: relative;
+      min-height: 9rem;
+      padding: 1rem;
+      border: 1px solid var(--mb-line);
+      border-radius: var(--mb-radius-xl);
+      overflow: hidden;
+      background:
+        linear-gradient(100deg, rgba(7,11,17,.95), rgba(12,26,41,.72), rgba(7,10,15,.9)),
+        radial-gradient(circle at 72% 18%, rgba(240,201,111,.14), transparent 22rem);
+      box-shadow: 0 .9rem 2rem rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-page-header::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(240,201,111,.08), transparent 14%, transparent 86%, rgba(240,201,111,.06)), repeating-linear-gradient(90deg, transparent 0 3.2rem, rgba(255,255,255,.025) 3.2rem 3.25rem); pointer-events: none; opacity: .75; }
+    .mb-page-header > * { position: relative; z-index: 1; }
+    .mb-kicker { color: var(--mb-gold-2); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; margin: 0 0 .45rem; }
+    .mb-title { margin: 0; font-family: var(--mb-font-display); font-size: clamp(2rem, 3.2vw, 3.1rem); line-height: 1; color: var(--mb-gold-3); }
+    .mb-report-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .75rem; color: var(--mb-text-2); font-size: .82rem; }
+
+    .mb-card { position: relative; padding: 1rem; border-radius: var(--mb-radius-xl); border: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(18,27,39,.68), rgba(7,10,15,.78)), radial-gradient(circle at top right, rgba(240,201,111,.085), transparent 13rem); box-shadow: 0 .75rem 1.9rem rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.035); overflow: hidden; backdrop-filter: blur(10px); }
+    .mb-card::after { content: ""; position: absolute; inset: .45rem; border-radius: calc(var(--mb-radius-xl) - .35rem); border: 1px solid rgba(240,201,111,.045); pointer-events: none; }
+    .mb-card > * { position: relative; z-index: 1; }
+    .mb-card--soft { background: linear-gradient(180deg, rgba(13,18,26,.62), rgba(7,9,13,.72)); }
+    .mb-card-title { margin: 0 0 .55rem; font-family: var(--mb-font-display); font-size: 1.25rem; color: var(--mb-text-0); }
+
+    .mb-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); color: var(--mb-text-1); background: rgba(7,10,14,.45); font-size: .77rem; white-space: nowrap; }
+    .mb-badge--gold { color: var(--mb-gold-3); border-color: rgba(240,201,111,.32); }
+    .mb-badge--green { color: #bde6b0; border-color: rgba(111,164,93,.46); }
+    .mb-badge--blue { color: #b9def3; border-color: rgba(91,163,213,.46); }
+    .mb-badge--red { color: #f2b4aa; border-color: rgba(178,75,59,.46); }
+    .mb-badge--purple { color: #d4c0ff; border-color: rgba(150,114,204,.46); }
+    .mb-badge--warning { color: #f1d08a; border-color: rgba(240,201,111,.34); }
+
+    .mb-result-banner {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: .85rem;
+      align-items: center;
+      padding: .95rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(111,164,93,.28);
+      background: linear-gradient(90deg, rgba(111,164,93,.14), rgba(7,10,14,.42));
+    }
+    .mb-result-banner.is-failed { border-color: rgba(178,75,59,.34); background: linear-gradient(90deg, rgba(178,75,59,.14), rgba(7,10,14,.42)); }
+    .mb-result-banner.is-muted { border-color: rgba(240,201,111,.26); background: linear-gradient(90deg, rgba(240,201,111,.1), rgba(7,10,14,.42)); }
+    .mb-result-icon { width: 3rem; height: 3rem; border-radius: .95rem; display: grid; place-items: center; border: 1px solid rgba(240,201,111,.22); color: var(--mb-gold-3); background: rgba(240,201,111,.08); font-weight: 900; }
+    .mb-result-title { margin: 0; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.55rem; }
+    .mb-result-subtitle { margin: .22rem 0 0; color: var(--mb-text-2); line-height: 1.4; }
+
+    .mb-report-copy { margin: 0; color: var(--mb-text-1); line-height: 1.65; font-size: 1rem; }
+    .mb-report-copy + .mb-report-copy { margin-top: .75rem; }
+    .mb-report-copy strong { color: var(--mb-gold-3); font-weight: 800; }
+
+    .mb-sequence { display: grid; gap: .6rem; }
+    .mb-sequence-row { display: grid; grid-template-columns: 2.15rem minmax(0, 1fr); gap: .65rem; align-items: start; }
+    .mb-sequence-step { width: 2.15rem; height: 2.15rem; border-radius: 999px; display: grid; place-items: center; border: 1px solid rgba(240,201,111,.2); color: var(--mb-gold-2); background: rgba(240,201,111,.07); font-weight: 900; font-size: .76rem; }
+    .mb-sequence-card { padding: .72rem .8rem; border-radius: .9rem; border: 1px solid rgba(240,201,111,.09); background: rgba(7,10,14,.3); }
+    .mb-sequence-card strong { display: block; color: var(--mb-text-0); margin-bottom: .18rem; }
+    .mb-sequence-card span { color: var(--mb-text-2); line-height: 1.42; font-size: .9rem; }
+
+    .mb-grace-list { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+    .mb-grace { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .65rem; border-radius: .78rem; border: 1px solid rgba(240,201,111,.14); background: rgba(7,10,14,.36); color: var(--mb-text-1); }
+    .mb-grace strong { color: var(--mb-gold-3); }
+
+    .mb-item-links { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: .75rem; }
+    .mb-item-link { border: 1px solid rgba(240,201,111,.18); background: rgba(7,10,14,.36); color: var(--mb-gold-3); padding: .48rem .65rem; border-radius: .75rem; cursor: pointer; }
+    .mb-item-link:hover, .mb-item-link:focus-visible { outline: none; border-color: rgba(240,201,111,.42); background: rgba(18,29,43,.55); }
+
+    .mb-button-row { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: .2rem; }
+    .mb-button { min-height: 2.4rem; padding: .55rem .85rem; border-radius: 999px; border: 1px solid var(--mb-line); color: var(--mb-text-0); background: linear-gradient(180deg, rgba(240,201,111,.2), rgba(91,58,19,.32)); cursor: pointer; box-shadow: inset 0 1px rgba(255,255,255,.07); }
+    .mb-button--primary { background: linear-gradient(180deg, rgba(240,201,111,.32), rgba(91,58,19,.44)); }
+    .mb-button--ghost { background: rgba(8,12,18,.54); color: var(--mb-text-1); }
+
+    .mb-small-note { color: var(--mb-text-3); font-size: .78rem; line-height: 1.4; margin-top: .75rem; }
+    .mb-debug-only { opacity: .62; border-style: dashed; }
+    .mb-debug-only .mb-card-title::after { content: "debug only"; display: inline-flex; margin-left: .55rem; padding: .16rem .45rem; border-radius: 999px; border: 1px solid rgba(240,201,111,.18); color: var(--mb-text-3); font-family: var(--mb-font-ui); font-size: .65rem; letter-spacing: .08em; text-transform: uppercase; vertical-align: middle; }
+    .mb-reward-sentence { color: var(--mb-text-1); line-height: 1.65; }
+    .mb-reward-sentence strong { color: var(--mb-gold-3); }
+    .mb-reward-sentence .mb-item-link { margin: 0 .12rem; }
+
+    @media (max-width: 1220px) {
+      .mb-topbar { grid-template-columns: 1fr; height: auto; }
+      .mb-brand { justify-content: flex-start; }
+      .mb-app-shell { grid-template-rows: auto minmax(0, 1fr); }
+    }
+    @media (max-width: 860px) {
+      .mb-app-shell { display: block; }
+      .mb-topbar { position: static; }
+      .mb-topbar-left, .mb-topbar-right { justify-content: flex-start; overflow-x: auto; }
+      .mb-sidebar { border-right: 0; border-bottom: 1px solid var(--mb-line-soft); }
+      .mb-nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .mb-nav-link { justify-content: center; }
+      .mb-nav-label, .mb-nav-section-title { display: none; }
+      .mb-main { padding: .75rem; }
+      .mb-page-header { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left" aria-label="Hero health and experience">
+        <span class="mb-chip mb-chip--health"><span class="mb-chip-icon">♥</span> Health <strong>86 / 100</strong></span>
+        <div class="mb-xp" aria-label="Experience progress">
+          <div class="mb-xp-meta"><span>Level 12</span><strong>1,240 XP to next</strong></div>
+          <div class="mb-mini-bar" style="--value: 63%"><span></span></div>
+        </div>
+      </div>
+
+      <div class="mb-brand" aria-label="Mythborne">
+        <div class="mb-brand-mark"></div>
+        <div>
+          <div class="mb-brand-title">Mythborne</div>
+          <div class="mb-brand-subtitle">Trial report prototype</div>
+        </div>
+      </div>
+
+      <div class="mb-topbar-right" aria-label="Hero resources">
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◈</span><span class="mb-chip-stack">Drachmas <strong>3,420</strong><small>+96 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">▣</span><span class="mb-chip-stack">Materials <strong>185</strong><small>+22 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◇</span><span class="mb-chip-stack">Workforce <strong>42</strong><small>+4 / h</small></span></span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-server-card" aria-label="Selected world context">
+        <div class="mb-server-label">Selected server</div>
+        <div class="mb-server-name"><span>Sandbox</span><span class="mb-badge mb-badge--green">live</span></div>
+        <div class="mb-prestige">
+          <div class="mb-server-label">Prestige</div>
+          <div class="mb-server-name"><span>Zeugitai</span><span class="mb-badge mb-badge--gold">Tier II</span></div>
+        </div>
+      </section>
+
+      <div class="mb-nav-section-title">Hero</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#dashboard"><span class="mb-nav-icon">DA</span><span class="mb-nav-label">Dashboard</span></a></li>
+        <li><a class="mb-nav-link" href="#exploration"><span class="mb-nav-icon">EX</span><span class="mb-nav-label">Exploration</span></a></li>
+        <li><a class="mb-nav-link" href="#statistics"><span class="mb-nav-icon">ST</span><span class="mb-nav-label">Statistics</span></a></li>
+        <li><a class="mb-nav-link" href="#armory"><span class="mb-nav-icon">AR</span><span class="mb-nav-label">Armory</span></a></li>
+      </ul>
+
+      <div class="mb-nav-section-title">World</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#estate"><span class="mb-nav-icon">ES</span><span class="mb-nav-label">Estate</span></a></li>
+        <li><a class="mb-nav-link" href="#trade"><span class="mb-nav-icon">TR</span><span class="mb-nav-label">Trade</span></a></li>
+        <li><a class="mb-nav-link" href="#pvp"><span class="mb-nav-icon">PV</span><span class="mb-nav-label">PvP</span></a></li>
+        <li><a class="mb-nav-link is-active" href="#reports"><span class="mb-nav-icon">RP</span><span class="mb-nav-label">Reports</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main" id="reports">
+      <div class="mb-report-page">
+        <section class="mb-page-header">
+          <p class="mb-kicker">Trial report</p>
+          <h1 class="mb-title">Trial completed: Cunning test</h1>
+          <div class="mb-report-meta">
+            <span class="mb-badge">Today · 13:42</span>
+            <span class="mb-badge">Exploration</span>
+            <span class="mb-badge mb-badge--gold">Cunning</span>
+          </div>
+        </section>
+
+        <section class="mb-card">
+          <article class="mb-result-banner">
+            <div class="mb-result-icon">✓</div>
+            <div>
+              <h2 class="mb-result-title">You passed the Trial</h2>
+              <p class="mb-result-subtitle">The omen resolved in your favor.</p>
+            </div>
+          </article>
+        </section>
+
+        <section class="mb-card mb-card--soft">
+          <h2 class="mb-card-title">What happened</h2>
+          <p class="mb-report-copy">Theron followed the smoke-lit passage beneath the old district wall. When the path split, the bronze markers on the floor formed a sign of Hermes, and the Trial awakened.</p>
+          <p class="mb-report-copy">The challenge tested <strong>Cunning</strong>. Each choice narrowed the path until the final answer was judged by the gods.</p>
+        </section>
+
+        <section class="mb-card mb-debug-only">
+          <h2 class="mb-card-title">Trial sequence</h2>
+          <div class="mb-sequence">
+            <div class="mb-sequence-row">
+              <div class="mb-sequence-step">1</div>
+              <div class="mb-sequence-card"><strong>Exploration result checked</strong><span>The pending exploration step resolved and revealed a possible Trial.</span></div>
+            </div>
+            <div class="mb-sequence-row">
+              <div class="mb-sequence-step">2</div>
+              <div class="mb-sequence-card"><strong>Trial manifested</strong><span>The Trial appeared and was resolved by auto-result. Manual Trials would show the minigame sequence here instead.</span></div>
+            </div>
+            <div class="mb-sequence-row">
+              <div class="mb-sequence-step">3</div>
+              <div class="mb-sequence-card"><strong>Trial completed</strong><span>The final result was successful and the reward profile was granted.</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mb-card">
+          <h2 class="mb-card-title">Divine favor</h2>
+          <p class="mb-report-copy">You stood bravely before the challenge sent by the gods. In reward, the gods granted you:</p>
+          <p class="mb-reward-sentence">
+            <strong>120</strong> Experience, <strong>84</strong> Drachmas,
+            <button class="mb-item-link" type="button">Outstanding Demonic Sword of Fire</button>
+            and
+            <button class="mb-item-link" type="button">Blessed Signet Ring of Wisdom</button>.
+          </p>
+          <p class="mb-small-note">Item names should open the shared item popover.</p>
+        </section>
+
+        <section class="mb-card mb-card--soft">
+          <h2 class="mb-card-title">Other possible Trial states</h2>
+          <article class="mb-result-banner is-failed" style="margin-bottom: .65rem;">
+            <div class="mb-result-icon">×</div>
+            <div>
+              <h3 class="mb-result-title">You failed the Trial</h3>
+              <p class="mb-result-subtitle">The challenge was resolved, but the answer did not satisfy the gods.</p>
+            </div>
+          </article>
+          <article class="mb-result-banner is-muted">
+            <div class="mb-result-icon">–</div>
+            <div>
+              <h3 class="mb-result-title">The Trial did not manifest</h3>
+              <p class="mb-result-subtitle">The smoke crawled along the ground and the gods did not accept the offering.</p>
+            </div>
+          </article>
+        </section>
+
+        <section class="mb-card">
+          <h2 class="mb-card-title">Actions</h2>
+          <div class="mb-button-row">
+            <button class="mb-button mb-button--primary">Return to Exploration</button>
+            <button class="mb-button mb-button--ghost">Copy report link</button>
+            <button class="mb-button mb-button--ghost">Back to Reports</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

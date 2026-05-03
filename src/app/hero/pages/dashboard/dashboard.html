@@ -119,28 +119,12 @@
       </div>
 
       <div class="flex-col gap-sm mt-md">
-        <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
-          <strong class="heading-color">DEF:</strong>
-          <span>{{ page.derivedDisplay()['def'] }}</span>
-        </div>
-        <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
-          <strong class="heading-color">DMG:</strong>
-          <span>
-            {{ page.derivedDisplay()['minDmg'] }} - {{ page.derivedDisplay()['maxDmg'] }}
-          </span>
-        </div>
-        <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
-          <strong class="heading-color">Luck:</strong>
-          <span>{{ page.derivedDisplay()['luck'] }}</span>
-        </div>
-        <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
-          <strong class="heading-color">Critical:</strong>
-          <span>{{ page.derivedDisplay()['critical'] }}</span>
-        </div>
-        <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
-          <strong class="heading-color">Evasion:</strong>
-          <span>{{ page.derivedDisplay()['evasion'] }}</span>
-        </div>
+        @for (row of page.derivedStatRows(); track row.key) {
+          <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
+            <strong class="heading-color">{{ row.label }}:</strong>
+            <span>{{ row.value }}</span>
+          </div>
+        }
       </div>
     </section>
   </div>

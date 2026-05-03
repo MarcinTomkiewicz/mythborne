@@ -224,9 +224,6 @@ function resolveCriticalDamageValue(
   heroLevel: number,
 ): number {
   const definition = findDerivedDefinition(DerivedStatKey.CriticalDamage, definitions);
-  const baseValue =
-    BASE_CRITICAL_DAMAGE_PERCENT +
-    (definition ? resolveBaseValue(definition, baseStats, DerivedStatKey.CriticalDamage) : 0);
   const bonusValue = sumBonuses(
     derivedBonusTargets(definition, DerivedStatKey.CriticalDamage),
     bonuses,
@@ -234,7 +231,10 @@ function resolveCriticalDamageValue(
     baseStats,
   );
 
-  return Math.max(definition?.min_value ?? 0, Math.floor(baseValue + bonusValue));
+  return Math.max(
+    definition?.min_value ?? 0,
+    Math.floor(BASE_CRITICAL_DAMAGE_PERCENT + bonusValue),
+  );
 }
 
 function resolveBaseValue(

@@ -48,7 +48,16 @@ describe('DashboardPageFacade', () => {
         {
           provide: HeroDerivedStats,
           useValue: jasmine.createSpyObj<HeroDerivedStats>('HeroDerivedStats', {
-            resolveActiveHeroDerivedStats: of({ health: 10 } as IHeroDerived),
+            resolveActiveHeroDerivedStats: of({
+              health: 10,
+              def: 4,
+              minDmg: 2,
+              maxDmg: 7,
+              luck: 3,
+              critical: 12,
+              criticalDamage: 50,
+              evasion: 8,
+            } as IHeroDerived),
           }),
         },
         {
@@ -79,6 +88,19 @@ describe('DashboardPageFacade', () => {
     expect(facade.totalExperienceEarned()).toBe(2125);
     expect(facade.experiencePercent()).toBe(25);
     expect(facade.experienceError()).toBeNull();
+  });
+
+  it('exposes ordered derived stat rows for dashboard rendering', () => {
+    facade.loadData();
+
+    expect(facade.derivedStatRows()).toEqual([
+      { key: 'defense', label: 'DEF', value: 4 },
+      { key: 'damage', label: 'DMG', value: '2 - 7' },
+      { key: 'luck', label: 'Luck', value: 3 },
+      { key: 'critical_chance', label: 'Critical chance', value: 12 },
+      { key: 'critical_damage', label: 'Critical damage', value: 50 },
+      { key: 'evasion', label: 'Evasion', value: 8 },
+    ]);
   });
 
   it('surfaces XP threshold errors instead of using a hardcoded display threshold', () => {

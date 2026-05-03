@@ -4182,6 +4182,8 @@ Current source of truth:
 
 ## Task N10 — Derived stat resolver cleanup, including critical damage
 
+**Status:** Done / accepted 2026-05-03.
+
 **Goal:** Align runtime derived/combat stat resolver with current DB dictionaries.
 
 **Scope:**
@@ -4210,6 +4212,8 @@ Current source of truth:
 - Derived stat resolver uses DB-backed definitions/bonus targets.
 - No new `hero_derived` dependency appears.
 - Build and focused tests pass.
+
+**Implementation note:** N10 accepted on 2026-05-03 after user smoke. Runtime derived stats continue to resolve from `derived_stat_definitions` plus active scoped bonuses, `StatsService.getDerivedStats()` now reads active `derived_stat_definitions` instead of legacy `stats_derived`, and `critical_damage` resolves as base 50 percent plus active `critical_damage` bonuses without adding a base stat value. Combat critical damage remains percent-based through multiplier `1 + finalCriticalDamagePercent / 100`; no hardcoded critical x2 was introduced in the final combat path. Dashboard derived stats now show ordered rows from `DashboardPageFacade.derivedStatRows()`, including separate `Critical chance` and `Critical damage`, instead of hardcoded critical rows in the template. N10 did not add DB/RPC changes, migrations, fallback rows, producer integration, direct writes, or a new `hero_derived` dependency. Verification passed with `npx tsc --noEmit`, focused dashboard/derived-stats/stats-service specs, static greps for no active `stats_derived` or `hero_derived` usage, no legacy `Critical:` dashboard label, no direct writes and no durable `any`, plus `npm run build` with known budget/CommonJS warnings. Codex did not run manual smoke or route smoke; user smoke passed.
 
 ---
 
