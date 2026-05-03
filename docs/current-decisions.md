@@ -1,6 +1,6 @@
 # Mythborne — Current Decisions Log
 
-Updated: 2026-05-03
+Updated: 2026-05-03 late
 
 Use this file for recent design, domain, database and implementation decisions that should override older assumptions.
 
@@ -13,6 +13,77 @@ If something conflicts, prefer:
 5. broader concept documents.
 
 This file is not a Codex status tracker. Do not mark Codex tasks as completed here unless the user explicitly asks for documentation/status updates after accepting the work.
+
+
+## PvP Foundation Decisions — 2026-05-03 late
+
+The active new Epic R is **PvP Foundation**. This is a target architecture foundation, not a throwaway MVP. Future systems may remain unimplemented where their own foundations do not exist yet, but the PvP model itself should not be knowingly temporary.
+
+### Core PvP model
+
+- PvP uses the existing combat module/combat result snapshot model. PvP supplies hero-vs-hero combatants and interprets the result.
+- Defender is another hero/player, not an admin-defined opponent.
+- PvP combat reports use `pvp_combat`, not plain low-level `combat`, when the combat is part of PvP.
+- PvP notifications are after-the-fact result notifications. Do not create an incoming-attack notification by default.
+- Manual fight window applies to the attacker only. If the attacker misses the configured window, the future runtime should auto-resolve.
+- Combat should use current loadout/stats at fight start/resolve time, not at attack-click/travel-start time.
+- Derived combat stats are resolved on the fly through current derived stat/equipment/bonus/formula runtime. Do not reintroduce `hero_derived` as a source of truth.
+
+### Targeting, travel and protection
+
+- Targeting is estate/vicinity based.
+- Attack level range is configurable through DB formula/config, not hardcoded.
+- Attack travel time is configurable through DB formula/config.
+- Spy travel time is derived from attack travel time through configurable formula; current default is attack travel time divided by 3.
+- Target protection starts when an attack starts, not when it resolves.
+- One incoming attack per target may be active at a time.
+- Protection duration is configurable and should support district-dependent behavior.
+- Protection may be visible as target/vicinity state, but the defender should not receive an incoming-attack notification by default.
+
+### Spy
+
+- Spying creates a durable spy result snapshot/report-ready object, not only a transient toast/notification.
+- Spy may show current equipment, derived combat stats, resource amounts and estate/building state.
+- Spy must not show active exploration/PvP state or staff/admin/private internals.
+- Spy results may later become shareable/public through a controlled report/surface, but current private read is owner-safe.
+
+### Rewards, resources and prestige
+
+- PvP reward routing should use existing reward foundation for XP where possible.
+- Canonical PvP reward outcomes are `attacker_victory`, `defender_victory`, `draw`.
+- XP rewards are configurable and level-difference aware: beating a stronger opponent should reward more; beating a much weaker opponent should reward little.
+- Character Points are not a separate PvP reward. CP comes from XP through the Epic N XP → gross CP progression rule.
+- Resource steal/loss is not an ordinary reward profile entry. It is a PvP-owned resource transfer/consequence workflow.
+- PvP resource consequences are limited to `drachma`, `materials`, and `workforce`.
+- PvP attack consequences do not include item transfer/steal/destruction, building loss, Character Point theft, or estate ownership transfer.
+- PvP stores context needed for future Prestige: levels, level difference, outcome, winner/loser and resource consequence summary.
+- Full hidden prestige points/ranks/scoring belong to a future Prestige epic. Prestige changes should create notifications when that system exists.
+
+### Activity lock
+
+- Central runtime activity model is `hero_runtime_activities`.
+- It covers `exploration`, `pvp_attack`, `pvp_spy`, and future `siege` from the start.
+- `hero_daily_action_counters` remains a counter/limit system, not the runtime activity lock.
+- Existing exploration runtime is now synced to `hero_runtime_activities`.
+
+### Anti-abuse and mercenary context
+
+- Anti-abuse signals are review aids, not automatic punishment.
+- Existing PvP-related signal types such as `same_ip_pvp_attack` and `pvp_feeding_pattern` should be reused by PvP producers.
+- Relationship declarations provide context and must never automatically suppress signals.
+- `mercenary_contract` is a case-by-case declaration, not a permanent “I am a mercenary” status.
+- Mercenary contracts use Character Points as the declared payment channel, require amount and expiration, and may involve more than two participants.
+- Staff/anti-abuse review should see mercenary/shared-IP/loan/group context when reviewing suspicious PvP or trade patterns.
+
+### Future boundaries
+
+- Siege is future guild/multiplayer PvP and remains inactive until guild/siege systems exist.
+- Own-guild attack/siege restriction must be enforced when guild membership exists; do not create a fake guild system inside PvP Foundation.
+- Equipment equip/unequip workflow belongs to the future item/equipment epic. The `hero_equipment` boundary is hardened, but full mutation workflow is not part of current PvP DB work.
+
+## Pending Future Decision — Player bug reporting system
+
+Plan a separate player/user bug reporting system. Preferred direction: an in-game bug report form that sends an email and creates an external board task, e.g. Trello, Jira or GitHub Issues. A Mythborne admin-panel record may also be useful, but an external board is preferred for real triage and tracking. This is a future product/ops workflow, not part of current PvP Foundation DB work.
 
 ## Progression / Epic N DB-RPC Decisions — 2026-05-03 current state
 

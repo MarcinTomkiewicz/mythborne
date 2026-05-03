@@ -29,12 +29,14 @@ import {
 } from '../../utils/hero-progression-rpc';
 import { SaveStatAllocationRpcRow } from '../../types/stat-allocation-rpc.types';
 import { ActiveHero } from './active-hero';
+import { EstateAddresses } from '../estate/estate-addresses';
 
 @Injectable({ providedIn: 'root' })
 export class Hero {
   private readonly authState = inject(AuthState);
   private readonly backend = inject(Backend);
   private readonly activeHero = inject(ActiveHero);
+  private readonly estateAddresses = inject(EstateAddresses);
 
   /**
    * Fetches base hero data (id, name, level, etc.)
@@ -69,35 +71,9 @@ export class Hero {
   }
 
   getHeroEstateAddress() {
-    return this.getHeroData()
-      .pipe(
-        switchMap((hero) =>
-          this.backend.getAll<Pick<Row<'estates'>, 'address' | 'district_code'>>({
-            table: TABLES.estates,
-            select: 'address, district_code',
-            filters: {
-              heroId: { operator: FilterOperator.EQ, value: hero.id },
-              serverId: { operator: FilterOperator.EQ, value: hero.server_id },
-            },
-            range: { from: 0, to: 0 },
-            camelCase: false,
-          })
-        )
-      )
-      .pipe(
-        map((rows) => {
-          const data = rows[0];
-          if (!data?.address) {
-            return null;
-          }
-
-          if (data.district_code) {
-            return `${data.district_code} | ${data.address}`;
-          }
-
-          return data.address;
-        })
-      );
+    return this.estateAddresses
+      .getActiveHeroCurrentAddress()
+      .pipe(map((address) => address?.addressLabel ?? null));
   }
 
   getHeroResources() {

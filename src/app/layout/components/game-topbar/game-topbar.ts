@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { forkJoin, Observable, of, Subscription } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { IHeroDerived } from '../../../core/types/hero.types';
 import { FilterOperator } from '../../../core/enums/filter-operators';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
@@ -24,6 +24,7 @@ import { AuthState } from '../../../core/services/auth/auth-state';
 import { Backend } from '../../../core/services/backend/backend';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { HeroDerivedStats } from '../../../core/services/hero/hero-derived-stats';
+import { EstateAddresses } from '../../../core/services/estate/estate-addresses';
 import { TABLES } from '../../../core/constants/tables.const';
 import { GameBar } from '../../../shared/game-bar/game-bar';
 
@@ -42,6 +43,7 @@ export class GameTopbar implements OnInit, OnDestroy {
   private readonly authState = inject(AuthState);
   private readonly activeHero = inject(ActiveHero);
   private readonly heroDerivedStats = inject(HeroDerivedStats);
+  private readonly estateAddresses = inject(EstateAddresses);
   private readonly backend = inject(Backend);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly activeHeroState$ = toObservable(this.activeHero.state);
@@ -153,32 +155,17 @@ export class GameTopbar implements OnInit, OnDestroy {
   }
 
   private loadHeroEstateAddress(hero: Row<'hero'>): Observable<string | null> {
-    return this.backend
-      .getAll<Pick<Row<'estates'>, 'address' | 'district_code'>>({
-        table: TABLES.estates,
-        select: 'address, district_code',
-        filters: {
-          heroId: { operator: FilterOperator.EQ, value: hero.id },
-          serverId: { operator: FilterOperator.EQ, value: hero.server_id },
-        },
-        range: { from: 0, to: 0 },
-        camelCase: false,
+    if (!hero.estate_id) {
+      return of(null);
+    }
+
+    return this.estateAddresses
+      .getCurrentAddress({
+        estateId: hero.estate_id,
+        heroId: hero.id,
+        serverId: hero.server_id,
       })
-      .pipe(
-        switchMap((rows) => {
-          const estate = rows[0];
-
-          if (!estate?.address) {
-            return of(null);
-          }
-
-          if (estate.district_code) {
-            return of(`${estate.district_code} | ${estate.address}`);
-          }
-
-          return of(estate.address);
-        }),
-      );
+      .pipe(map((address) => address?.addressLabel ?? null));
   }
 
   private loadHeroResources(heroId: string): Observable<HeroResourceRow[]> {

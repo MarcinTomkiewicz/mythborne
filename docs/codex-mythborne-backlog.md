@@ -4486,6 +4486,8 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 
 ## Task O2 — Estate address and capacity read layer
 
+**Status:** Done / accepted on 2026-05-03.
+
 **Goal:** Provide a typed read layer for estate address identity, district capacity and occupied-address overlays.
 
 **Scope:**
@@ -4518,6 +4520,8 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - Occupied state is server-scoped.
 - `estates.address` is not used as source of truth.
 - No direct estate mutation is introduced.
+
+**Implementation note:** O2 accepted on 2026-05-03 after user smoke and the immediate optional-filter follow-up. Added `EstateAddresses` as a read-only service plus typed estate address/capacity models and mappers. Current mansion/topbar/Hero address display now uses `district_code + address_number` labels such as `A-123` instead of legacy `estates.address`. The read layer loads active district capacities from `estate_district_address_capacities`, lists occupied `estates` rows by `server_id` with optional `districtCode`, generates paged empty address options read-model-side, and overlays occupied addresses without exposing global account/user ids. O2 did not add relocation UI, estate mutation, relocation/build-upgrade RPC calls, DB/RPC/migration changes, or frontend fallbacks. Verification passed with `npx tsc --noEmit`, focused estate address specs after rerunning outside the known sandbox `spawn EPERM`, static direct-write greps in O2 paths, and `npm run build` with known budget/CommonJS warnings. Codex did not run manual smoke or route smoke; user smoke passed for `/game/mansion` and topbar address display.
 
 ---
 

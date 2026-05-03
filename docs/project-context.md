@@ -1,6 +1,6 @@
 # Mythborne — Project Context for Codex
 
-Updated: 2026-05-03
+Updated: 2026-05-03 late
 
 ## Purpose
 
@@ -20,46 +20,69 @@ This document is intentionally compact. For exact DB/RPC/helper inventory, consu
 
 ---
 
-## Current High-Priority Implementation Context — 2026-05-03
 
-Recent Combat / Reward / Encounter foundations remain current and must not be treated as cancelled or obsolete.
+## Current High-Priority Implementation Context — 2026-05-03 late
 
-Recently resolved DB/RPC and explainability foundations:
+Current focus has moved from Epic Q to the new **Epic R — PvP Foundation**. The previous/refactor-like R/admin-IA work is parked locally by the user as a late backlog item; do not treat it as the active Epic R.
 
-- **M-DB1:** combat opponent admin/balancer write path for families, definitions, stat values, natural attack sources and equipment blueprint entries.
-- **M-DB2:** `persist_combat_result_snapshot(...)` for relational, report-ready combat result snapshots.
-- **M-Dict-DB1:** combat explainability dictionaries for source type, side, outcome, participant kind, attack source kind, candidate kind, opponent equipment mode and equipment slots.
-- **L12b:** typed resource/effect encounter payload tables and RPCs for resource, buff and debuff encounter configuration.
-- **L-Reward-DB1:** reward outcome/profile/entry admin foundation and governed reward profile write path.
-- **L-Reward-DB2:** `resource_types` dictionary and resource FK alignment.
-- **L-Reward-DB3:** reward assignment match semantics (`any`, `exact`, `minimum`, `range`), formula reward amounts for XP/CP/resources, and failure reward assignment path.
-- **L11c/L12c metadata follow-up:** missing `ui_metadata_entries` aliases/content rows were seeded for trial and encounter configurators.
-- **M12 metadata follow-up:** combat opponent configurator has section-level metadata under `combat_opponent_configurator_section`.
-- **N-DB0:** Character Points helper boundary and automatic CP penalty sink for future CP gains.
-- **N-DB1:** canonical `grant_hero_experience(...)`, `hero.total_experience_earned`, and append-only `hero_progression_ledger`.
-- **N-DB2:** level-up reward routing, level matching on `reward_profile_assignments`, and guard against active XP entries inside level-up reward profiles.
-- **N-DB3:** level-up stat bonus rules, stat bonus rule pools, and append-only `hero_level_stat_bonus_grants`.
-- **N-DB4:** progression/admin configurator metadata for XP, CP, penalty sink, level-up rewards, stat bonus rules and diagnostics.
-- **O foundation:** estate baseline, building `starting_level`, seconds-based building time, central requirements enforcement and building/estate metadata are aligned.
-- **P-DB0/P-FIX1:** game reports read/unread state and report access boundary.
-- **P-DB1:** safe private/public report read RPCs.
-- **P-DB2:** combat section payload for report read RPCs.
-- **P-DB3:** report metadata and dictionary readability.
-- **M12 equipment slot RLS fix:** authenticated UI can now read active `equipment_slot_definitions`; frontend roles cannot mutate the slot dictionary.
+### Recently completed DB/RPC foundation work after the previous context snapshot
 
-Generated Supabase types must be regenerated after schema/RPC/dictionary changes before Codex consumes those changes in Angular. Pure content-row seeds in existing `ui_metadata_entries` do not by themselves require type regeneration if the table/RPC are already present in generated types.
+- **Epic Q / Notifications foundation:**
+  - Q-DB0: notification table/RPC boundary and RLS were hardened. `anon` cannot read/mutate notifications or call notification action RPCs.
+  - Q-DB1: owner-safe player/staff notification read/count RPCs were added.
+  - Q-DB2: `mark_notification_read(...)` and `dismiss_notification(...)` were hardened; dismiss also marks read.
+  - Q-DB3: building completion now produces DB-owned `estate.building_job.completed` notifications from building job finalization.
+  - Q-DB4: notification metadata/readability rows were seeded for player center, staff center, type admin and hook diagnostics.
+- **Epic N hotfixes/follow-up:**
+  - `save_stat_allocation(...)` was fixed by changing the conflict target to `ON CONFLICT ON CONSTRAINT hero_stats_pkey` to avoid ambiguous `hero_id` with `RETURNS TABLE(hero_id ...)`.
+  - `get_hero_experience_to_next_level(...)` was granted to `authenticated`; XP display no longer needs a frontend fallback.
+  - missing progression diagnostics/configurator metadata rows were seeded.
+- **Epic O O1 blocker fix:**
+  - `search_building_targets(...)` and `search_building_targets_page(...)` now return `base_build_time_seconds`, not legacy `base_build_time_minutes`.
+  - Supabase types must be regenerated before Codex repeats O1.
+- **Pre-PvP cleanup:**
+  - `player_relationship_declaration_types.mercenary_contract` was added as a PvP/anti-abuse context declaration.
+  - `hero_equipment` boundary was hardened: `anon` has no access, `authenticated` has SELECT only through RLS, service role has full access. Full equip/unequip workflow remains for the item/equipment epic.
 
-Current feature state:
+### Current PvP Foundation state
 
-- Epic M has DB/RPC and explainability foundations for combat, opponent configuration and report-ready combat snapshots.
-- M12 opponent configurator is no longer blocked by missing DB write RPCs, missing section metadata, or equipment slot dictionary RLS.
-- M9 combat result persistence is no longer blocked by missing DB write RPC.
-- Combat opponent seed rows may be empty; M12 must support empty state and create first rows through canonical RPCs.
-- L12c/L13 and L11c frontend work may continue over the expanded reward/trial/encounter DB surface; they must use DB-backed dictionary/metadata text where available.
-- Epic N DB/RPC progression foundation is now in place. Frontend Epic N work should consume the existing DB/RPC contract and must not redesign XP/level-up in Angular.
-- Epic O DB/RPC/schema/metadata foundation has been aligned around estate baseline, building `starting_level`, seconds-based building time, central requirements and building metadata.
-- Epic P DB/RPC/metadata foundation is ready for Reports Center, public report route and combat section rendering.
-- Current planning focus has moved to **Epic Q — Notifications**, where preflight showed the notification table/RPC boundary is currently too open for `anon` and needs planned Q-DB boundary/RLS work.
+The following R/PvP DB work has been applied and verified enough to continue:
+
+- **R-AA0/R-AA1:** relationship declaration context helper and indexes:
+  - `get_hero_pair_relationship_declaration_context(...)` is internal/service-only.
+  - It returns active/pending relationship context including `mercenary_contract` and never suppresses anti-abuse signals.
+- **R-AA2:** trade/auction anti-abuse signal enrichment:
+  - `insert_trade_transaction_anti_abuse_signal(...)` enriches metadata with relationship context and `hasMercenaryContract`.
+  - It is hardened to service-only, not a frontend RPC.
+- **R-DB1:** central runtime activity foundation:
+  - `hero_runtime_activity_kinds`, `hero_runtime_activity_statuses`, `hero_runtime_activities`.
+  - blocking kinds include `exploration`, `pvp_attack`, `pvp_spy`; `siege` is future/inactive.
+  - frontend can read active activity through `get_hero_active_runtime_activity(...)`; start/finish helpers are internal/service-only.
+- **R-DB1b:** existing `hero_explorations` now sync active/exhausted/completed states to `hero_runtime_activities` through triggers.
+- **R-DB2:** PvP config/formula/dictionary foundation:
+  - `pvp_action_kinds` includes active `attack` and `spy`, inactive/future `siege`.
+  - formula targets/default assignments exist for attack level range, travel time, spy travel time, manual fight window, target protection, resource transfer percentages, XP reward and future prestige context.
+  - `pvp_configurator_section` metadata exists.
+- **R-DB3:** PvP target eligibility/protection foundation:
+  - `pvp_target_protections` internal table exists.
+  - `calculate_pvp_estate_distance_score(...)` exists as internal/service-only.
+  - `get_pvp_target_candidates(...)` is owner-safe for `authenticated` and exposes attack/spy eligibility and travel/protection preview.
+- **R-DB4:** PvP jobs/travel/protection runtime:
+  - `pvp_action_statuses` and `pvp_actions` exist.
+  - `start_pvp_action(...)` starts `attack` or `spy`; attack creates target protection immediately; both create central runtime activity.
+  - no positive start smoke was possible because the test server had no second hero with estate, but structural verification passed.
+- **R-DB5:** PvP spy result snapshot foundation:
+  - `pvp_spy_results` exists.
+  - internal snapshot helpers exist for equipment, base stats, resources, estate, buildings and derived stat definition context.
+  - `create_pvp_spy_result_from_action(...)` is service-only.
+  - `get_my_pvp_spy_result(...)` is owner-safe for `authenticated`.
+  - derived combat stats must still come from the runtime derived/combat resolver; do not use `hero_derived`.
+
+### Do not continue from the interrupted R-DB6 text blindly
+
+The conversation stopped before applying R-DB6. The next conversation should start from **R-DB6 — PvP attack result foundation / attack resolution boundary**, but it should first re-read the current DB dump and the generated types, then prepare a fresh migration. Do not assume the last in-chat R-DB6 draft is safe to run without review.
+
+Important: after R-DB6 and later schema/RPC migrations, regenerate generated Supabase types before Codex frontend work.
 
 Current Epic N decision state:
 

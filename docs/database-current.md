@@ -1,6 +1,6 @@
 # Mythborne — Database Current Notes
 
-Updated: 2026-05-03
+Updated: 2026-05-03 late
 
 This file is the curated semantic index of the current database state. It is not a full `pg_dump`.
 
@@ -13,6 +13,197 @@ If this file conflicts with the actual database, generated Supabase types, or a 
 5. this file.
 
 After every schema/RPC migration that Codex will consume, regenerate/update generated Supabase types before frontend work.
+
+
+## Update 2026-05-03 late — Epic Q completed and Epic R/PvP Foundation DB state
+
+### Epic Q — Notifications foundation
+
+Current notification DB/RPC foundation now includes:
+
+- hardened RLS/grants for `notification_types` and `notifications`;
+- internal `create_notification(...)` helper limited away from frontend roles;
+- owner-safe read RPCs:
+  - `get_my_notifications(...)`;
+  - `get_my_notification_unread_count(...)`;
+  - `get_my_staff_notifications(...)`;
+  - `get_my_staff_notification_unread_count(...)`;
+- owner-safe action RPCs:
+  - `mark_notification_read(...)`;
+  - `dismiss_notification(...)` — dismiss also marks read;
+- building completion notification hook:
+  - `estate.building_job.completed` notification type;
+  - `finalize_completed_estate_building_jobs(...)` creates DB-owned hero notification rows when building jobs are finalized;
+- DB metadata namespaces:
+  - `notification_center_section`;
+  - `notification_staff_center_section`;
+  - `notification_type_admin_section`;
+  - `notification_hook_diagnostics_section`.
+
+Rules:
+
+- Frontend must not insert, update or delete notification rows directly.
+- Frontend must not call `create_notification(...)`.
+- Reports have their own inbox/unread state and are not default notifications.
+
+### Epic N / O follow-up fixes
+
+Current DB/RPC follow-up fixes include:
+
+- `save_stat_allocation(...)` uses `ON CONFLICT ON CONSTRAINT hero_stats_pkey` and no longer trips over ambiguous `hero_id` output parameters.
+- `get_hero_experience_to_next_level(...)` is executable by authenticated users for XP/level display.
+- Progression diagnostics/configurator metadata was extended for formula targets, XP/CP, level-up rewards and stat bonus rules.
+- `search_building_targets(...)` and `search_building_targets_page(...)` now expose `base_build_time_seconds` instead of legacy `base_build_time_minutes` in return signatures and bodies.
+
+Regenerate generated Supabase types before Codex repeats O1 or consumes these RPC signatures in Angular.
+
+### Pre-PvP cleanup
+
+- `player_relationship_declaration_types` now includes `mercenary_contract`:
+  - category `pvp`;
+  - requires amount;
+  - requires expiration;
+  - min participants 2;
+  - max participants null;
+  - CP-only declared payment context by design.
+- `hero_equipment` grants/RLS were hardened:
+  - `anon`: no access;
+  - `authenticated`: SELECT only through `can_read_hero(hero_id)`;
+  - `service_role`: full;
+  - no direct frontend mutation. Full equip/unequip workflow belongs to the future item/equipment epic.
+
+### R-AA — Relationship/anti-abuse context foundation
+
+Current helper/index state:
+
+- `get_hero_pair_relationship_declaration_context(...)`:
+  - internal/service-only;
+  - returns active/pending declaration context for a hero pair;
+  - includes `mercenary_contract` and other relationship/economy context declarations;
+  - does not suppress signals and does not decide legitimacy.
+- Indexes exist for declaration context lookup on declarations and participants.
+- `insert_trade_transaction_anti_abuse_signal(...)` enriches trade/auction signal metadata with:
+  - `relationshipContext`;
+  - `hasRelationshipContext`;
+  - `hasMercenaryContract`.
+- `insert_trade_transaction_anti_abuse_signal(...)` is hardened as service-only.
+
+### R-DB1/R-DB1b — Central runtime activity foundation
+
+Current tables/dictionaries:
+
+- `hero_runtime_activity_kinds`:
+  - `exploration` active;
+  - `pvp_attack` active;
+  - `pvp_spy` active;
+  - `siege` inactive/future.
+- `hero_runtime_activity_statuses`:
+  - blocking: `active`, `resolving`;
+  - terminal: `completed`, `cancelled`, `failed`, `expired`.
+- `hero_runtime_activities`:
+  - central one-blocking-activity-per-hero lock;
+  - frontend read-only through RLS and `get_hero_active_runtime_activity(...)`.
+
+Current helpers:
+
+- `hero_has_blocking_runtime_activity(...)` internal/service-only;
+- `assert_hero_can_start_runtime_activity(...)` internal/service-only;
+- `start_hero_runtime_activity(...)` internal/service-only;
+- `finish_hero_runtime_activity(...)` internal/service-only;
+- `finish_hero_runtime_activity_by_source(...)` internal/service-only;
+- `get_hero_active_runtime_activity(...)` owner-safe authenticated read RPC.
+
+Exploration integration:
+
+- `sync_hero_exploration_runtime_activity()` trigger helper exists.
+- `hero_explorations` INSERT and status update triggers sync active/exhausted/completed/abandoned/archived state into `hero_runtime_activities`.
+
+### R-DB2 — PvP config/formula/dictionary foundation
+
+Current dictionary:
+
+- `pvp_action_kinds`:
+  - `attack` active, travel, creates runtime activity, creates combat;
+  - `spy` active, travel, creates runtime activity, creates spy result;
+  - `siege` inactive/future.
+
+Current formula targets/default assignments:
+
+- `pvp_attack_min_target_level`;
+- `pvp_attack_max_target_level`;
+- `pvp_attack_travel_time_seconds`;
+- `pvp_spy_travel_time_seconds`;
+- `pvp_manual_fight_window_seconds`;
+- `pvp_target_protection_seconds`;
+- `pvp_resource_steal_percent`;
+- `pvp_attacker_defeat_resource_loss_percent`;
+- `pvp_xp_reward`;
+- `pvp_prestige_delta_context`.
+
+Current metadata namespace:
+
+- `pvp_configurator_section`.
+
+### R-DB3 — PvP target eligibility and protection foundation
+
+Current objects:
+
+- `pvp_target_protections` internal/service-only table;
+- `calculate_pvp_estate_distance_score(...)` internal/service-only helper;
+- `get_pvp_target_candidates(...)` owner-safe authenticated RPC.
+
+`get_pvp_target_candidates(...)` returns occupied estate targets on the attacker's server with:
+
+- target hero/address/district/level;
+- distance score;
+- formula-backed attack/spy travel preview;
+- level range;
+- protection state;
+- attacker busy state;
+- `can_attack` / `can_spy` and reason keys.
+
+### R-DB4 — PvP jobs/travel/protection runtime
+
+Current objects:
+
+- `pvp_action_statuses` with blocking statuses `travelling`, `arrived`, `manual_window`, `resolving`, and terminal statuses `resolved`, `cancelled`, `failed`, `expired`.
+- `pvp_actions` internal runtime table.
+- `expire_pvp_target_protections(...)` internal/service-only helper.
+- `start_pvp_action(...)` owner-safe authenticated RPC.
+
+Rules:
+
+- `start_pvp_action(...)` supports active action kinds `attack` and `spy`.
+- `attack` creates a `pvp_actions` row, a central `hero_runtime_activities` row and a `pvp_target_protections` row immediately.
+- `spy` creates a `pvp_actions` row and a central `hero_runtime_activities` row, but no target protection.
+- No combat/spy result/report/notification is produced by R-DB4.
+
+Positive smoke for start attack/spy was not possible in the conversation because the known test server had no second hero with an estate.
+
+### R-DB5 — PvP spy result snapshot foundation
+
+Current objects:
+
+- `pvp_spy_results` durable spy result table.
+- Internal/service-only snapshot helpers:
+  - `build_pvp_spy_equipment_snapshot(...)`;
+  - `build_pvp_spy_base_stats_snapshot(...)`;
+  - `build_pvp_spy_resource_snapshot(...)`;
+  - `build_pvp_spy_estate_snapshot(...)`;
+  - `build_pvp_spy_buildings_snapshot(...)`;
+  - `build_pvp_spy_derived_combat_stats_placeholder(...)`.
+- `create_pvp_spy_result_from_action(...)` internal/service-only helper.
+- `get_my_pvp_spy_result(...)` owner-safe authenticated read RPC.
+
+Rules:
+
+- Spy result snapshots equipment, base stats, resources, estate and building state.
+- Derived combat stat values must come from the runtime derived/combat resolver integration; `hero_derived` is not a source of truth.
+- Current derived combat stats placeholder records definition context and `heroDerivedUsed = false`.
+
+### Next DB work
+
+The next migration should be **R-DB6 — PvP attack result / attack resolution boundary**, but it was not applied in the previous conversation. Re-read current dump and generated types before writing/running it.
 
 ## Update 2026-05-03 — L11/L12/M12 UI metadata and Epic N progression DB/RPC foundation
 

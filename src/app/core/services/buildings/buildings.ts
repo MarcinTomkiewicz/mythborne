@@ -17,6 +17,7 @@ import { FormulaAdminData } from '../../domain/formula/formula.model';
 import { BuildingProgressionService } from '../progression/building-progression';
 import { FormulaService } from '../formula/formula';
 import { Hero } from '../hero/hero';
+import { EstateAddresses } from '../estate/estate-addresses';
 import { resourceOrder } from '../../utils/building-display';
 import { normalizeBuildingResourceType } from '../../utils/building-admin-mappers';
 import { normalizeBonusType } from '../../utils/bonus';
@@ -27,7 +28,6 @@ import { CanonicalEntityBonusWithTemplateRow } from '../../types/bonus-governanc
 import {
   DistrictRow,
   EstateBuildingRow,
-  EstateRow,
   MansionBuildingResourceCostRow,
   MansionBuildingRow,
 } from '../../types/building-service.types';
@@ -38,6 +38,7 @@ export class BuildingsService {
   private readonly heroService = inject(Hero);
   private readonly progression = inject(BuildingProgressionService);
   private readonly formulaService = inject(FormulaService);
+  private readonly estateAddresses = inject(EstateAddresses);
 
   getMansionEstateView(): Observable<MansionEstateView> {
     return this.heroService.getHeroData().pipe(
@@ -71,20 +72,12 @@ export class BuildingsService {
             orderBy: { column: 'sort_order' },
             camelCase: false,
           }),
-          estate: hero.estate_id
-            ? this.backend
-                .getAll<EstateRow>({
-                  table: TABLES.estates,
-                  select: 'address, district_code',
-                  filters: {
-                    id: { operator: FilterOperator.EQ, value: hero.estate_id },
-                    heroId: { operator: FilterOperator.EQ, value: hero.id },
-                    serverId: { operator: FilterOperator.EQ, value: hero.server_id },
-                  },
-                  range: { from: 0, to: 0 },
-                  camelCase: false,
-                })
-                .pipe(map((rows) => rows[0] ?? null))
+          currentAddress: hero.estate_id
+            ? this.estateAddresses.getCurrentAddress({
+                estateId: hero.estate_id,
+                heroId: hero.id,
+                serverId: hero.server_id,
+              })
             : of(null),
           estateBuildings: hero.estate_id
             ? this.backend.getAll<EstateBuildingRow>({
@@ -101,8 +94,8 @@ export class BuildingsService {
             camelCase: false,
           }),
         }).pipe(
-          map(({ formulaData, buildings, entityBonuses, estate, estateBuildings, districts }) => {
-            const currentDistrictCode = estate?.district_code ?? 'A';
+          map(({ formulaData, buildings, entityBonuses, currentAddress, estateBuildings, districts }) => {
+            const currentDistrictCode = currentAddress?.districtCode ?? 'A';
             const currentDistrict = districts.find(
               (district) => district.code === currentDistrictCode
             );
@@ -125,9 +118,9 @@ export class BuildingsService {
               .filter((building) => building.districtUnlockRank <= currentDistrictRank);
 
             return {
-              currentAddress: estate?.address ?? null,
+              currentAddress: currentAddress?.addressLabel ?? null,
               currentDistrictCode,
-              currentDistrictName: currentDistrict?.name ?? null,
+              currentDistrictName: currentAddress?.districtName ?? currentDistrict?.name ?? null,
               buildings: districtBuildings,
             } satisfies MansionEstateView;
           })

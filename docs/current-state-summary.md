@@ -18,7 +18,7 @@ This is an operational estimate, not a formal audit.
 | Angular 21 / zoneless / signals architecture | 85% | Active pattern across current feature work. |
 | Auth / hero bootstrap / stat loading | 75% | Core hero data, stats, and derived stats are loaded and used in multiple screens. |
 | Item generation and balance admin | 85% | Quality tiers, bucket profiles, formulas, previews, assignments, and bonus types are live. |
-| Building admin and estate building preview | 70% | Definitions, progression formulas, requirements, costs, and previews exist. Real build execution is still placeholder. |
+| Building admin and estate building preview | 72% | Definitions, progression formulas, requirements, costs, previews, and the source-of-truth estate address read layer exist. Real build execution is still placeholder. |
 | Bonus-template based modular stats | 75% | Used across origins, items, and buildings, including `percent` and `per_4_levels`. |
 | Formula system | 85% | Targets, formulas, assignments, block library, human preview, chart, target-defined variables, and combat balance targets are implemented. |
 | Hero progression formulas | 70% | Stat cost and cap formulas are live, including support for `statLevel`. |
@@ -57,6 +57,7 @@ This is an operational estimate, not a formal audit.
   - hero loading now filters by `hero.user_id` instead of assuming `hero.id === auth.uid()`.
 - Task A2 has been applied for A1 by updating this state summary and `docs/current-todo.md`.
 - Task O1 is confirmed complete as of 2026-05-03. The stale generated-type blocker was resolved after importing regenerated Supabase types: building target search RPC returns now expose `base_build_time_seconds`, not legacy `base_build_time_minutes`; `buildings.starting_level`, `buildings.base_build_time_seconds`, `get_building_progression_preview(...)`, and `start_estate_building_upgrade(...)` returning `build_time_seconds` are present. Active frontend code has no minutes-based building fallback logic and does not call internal estate helper RPCs.
+- Task O2 is confirmed complete as of 2026-05-03. Frontend now has a read-only estate address/capacity layer through `EstateAddresses`, typed estate address read models, and mapper helpers. Current mansion/topbar/Hero address display is derived from `estates.district_code + estates.address_number` such as `A-123`, not legacy `estates.address`. Empty address options are generated read-model-side with paging limits and overlaid with occupied `estates` rows filtered by `server_id`; `districtCode` is optional for whole-server occupied-address listing. No estate mutation, relocation UI, relocation/build-upgrade RPC call, DB/RPC/migration change, or frontend fallback was introduced.
 - Task B1 is confirmed complete as of 2026-04-26. The audit report is stored in `docs/b1-identity-assumptions-audit.md`.
 - B1 confirmed that RLS/onboarding SQL is a separate required database task before the project can fully rely on `hero.id != auth.uid()` in production.
 - Task B2 is confirmed complete as of 2026-04-26. The app now has a shared active server resolver in `ActiveServer`.
