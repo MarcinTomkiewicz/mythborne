@@ -151,6 +151,38 @@ describe('EstateAddresses', () => {
     expect(result.map((entry) => entry.addressLabel)).toEqual(['A-1', 'B-2']);
   });
 
+  it('can list occupied addresses for a concrete address number range', async () => {
+    backendGetAll.and.returnValue(of([
+      estateRow('estate-a-3299', 'server-1', 'A', 3299),
+      estateRow('estate-a-3304', 'server-1', 'A', 3304),
+    ]));
+
+    const result = await firstValueFrom(
+      service.getOccupiedAddressesForAddressNumberRange({
+        serverId: 'server-1',
+        districtCode: 'A',
+        fromAddressNumber: 3291,
+        toAddressNumber: 3311,
+      }),
+    );
+
+    expect(backendGetAll).toHaveBeenCalledWith({
+      table: TABLES.estates,
+      select: 'id, server_id, district_code, address_number',
+      filters: {
+        serverId: { operator: FilterOperator.EQ, value: 'server-1' },
+        districtCode: { operator: FilterOperator.EQ, value: 'A' },
+        addressNumber: [
+          { operator: FilterOperator.GTE, value: 3291 },
+          { operator: FilterOperator.LTE, value: 3311 },
+        ],
+      },
+      orderBy: { column: 'address_number' },
+      camelCase: false,
+    });
+    expect(result.map((entry) => entry.addressLabel)).toEqual(['A-3299', 'A-3304']);
+  });
+
   it('loads the active hero current address from source-of-truth fields', async () => {
     backendGetAll.and.callFake((opts) => {
       if (opts.table === TABLES.estates) {

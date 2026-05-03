@@ -98,7 +98,7 @@ export class EstateAddresses {
           throw new Error(`Estate district "${input.districtCode}" is not active.`);
         }
 
-        return this.getOccupiedAddressesForAddressRange({
+        return this.getOccupiedAddressesForAddressNumberRange({
           serverId: input.serverId,
           districtCode: district.districtCode,
           fromAddressNumber: offset + 1,
@@ -161,7 +161,7 @@ export class EstateAddresses {
     );
   }
 
-  private getOccupiedAddressesForAddressRange(input: {
+  getOccupiedAddressesForAddressNumberRange(input: {
     serverId: string;
     districtCode: string;
     fromAddressNumber: number;

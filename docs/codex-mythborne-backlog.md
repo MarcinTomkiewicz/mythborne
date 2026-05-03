@@ -4555,6 +4555,8 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - Occupied address relocation is blocked by RPC and surfaced clearly.
 - No direct table writes are used.
 
+**Implementation note:** O3 accepted on 2026-05-03 after backend/RPC/RLS fixes and frontend invariant hardening. The relocation UI is implemented as `/game/vicinity` rather than a mansion panel or district/address dropdown form. Vicinity renders nearby address slots around the active hero estate (`address_number +/- 10`, clipped to active district capacity), highlights the current estate, disables occupied rows, and allows selecting only generated empty slots. Relocation uses only `relocate_hero_estate_to_empty_address(...)` with active `hero.id`, requires destructive confirmation, refreshes `ActiveHero`, verifies the refreshed `hero.estate_id` matches `new_estate_id`, and verifies the new estate address is readable through `EstateAddresses.getCurrentAddress(...)`. `/game/mansion` remains the estate/building screen and no longer masks a missing current estate address with fallback district `A`. No DB/RPC/migration change, generated-type edit, direct estate/hero/estate_buildings write, internal estate helper RPC, or frontend fallback was introduced by Codex. Codex did not run manual smoke or route smoke.
+
 ---
 
 ## Task O4 — Building catalog and estate building read layer

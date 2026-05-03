@@ -1,0 +1,124 @@
+<app-loading-overlay
+  [visible]="page.isLoading() && page.error() === null"
+  label="Loading vicinity..."
+  description="Loading nearby estate addresses."
+/>
+
+@if (page.error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ page.error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Vicinity</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">Nearby Estates</h2>
+          <p class="muted-text mb-0">
+            Current estate:
+            <strong class="heading-color">{{ page.currentAddressLabel() }}</strong>
+          </p>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <span class="tag-badge tag-badge--info">{{ page.currentDistrictLabel() }}</span>
+          <a routerLink="/game/mansion" class="tag-badge tag-badge--muted">Mansion</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid-2-1 gap-xl">
+      <section class="mg-card p-lg w-100">
+        <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+          <div class="flex-col gap-xs">
+            <p class="card-legend mb-0">Address range</p>
+            <h3 class="mg-section__title mg-section__title--xs mb-0">
+              {{ page.rangeLabel() ?? 'Unavailable' }}
+            </h3>
+          </div>
+          <span class="tag-badge tag-badge--muted">Around your estate</span>
+        </div>
+
+        <div class="flex-col gap-sm">
+          @for (row of page.rows(); track row.addressLabel) {
+            <button
+              type="button"
+              class="mg-card flex-row-between-center flex-col-sm gap-md p-sm text-left"
+              [class.opacity-50]="!row.isSelectable && row.kind !== 'self'"
+              [disabled]="!row.isSelectable || page.isRelocating()"
+              (click)="page.selectRow(row)"
+            >
+              <div class="flex-col gap-xs">
+                <strong class="heading-color">{{ row.addressLabel }}</strong>
+                <span class="muted-text">{{ row.occupantLabel }}</span>
+              </div>
+              <span
+                class="tag-badge"
+                [class.tag-badge--warn]="row.kind === 'self'"
+                [class.tag-badge--danger]="row.kind === 'occupied'"
+                [class.tag-badge--info]="row.kind === 'empty'"
+              >
+                @if (row.kind === 'self') {
+                  You
+                } @else if (row.kind === 'occupied') {
+                  Occupied
+                } @else {
+                  Empty
+                }
+              </span>
+            </button>
+          } @empty {
+            <p class="mb-0 muted-text">No nearby addresses available.</p>
+          }
+        </div>
+      </section>
+
+      <aside class="mg-card p-lg w-100 flex-col gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Relocation target</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            {{ page.selectedTargetLabel() }}
+          </h3>
+        </div>
+
+        <div class="mg-card flex-col gap-sm p-md">
+          <strong class="heading-color">Destructive relocation</strong>
+          <p class="muted-text mb-0">
+            Relocation destroys the current estate, building levels and active building jobs,
+            creates a new estate at the selected empty address, and initializes the target
+            district baseline.
+          </p>
+        </div>
+
+        <div class="flex-row-start-center gap-sm">
+          <p-checkbox
+            inputId="vicinity-relocation-confirm"
+            [binary]="true"
+            [ngModel]="page.destructiveConfirmed()"
+            (ngModelChange)="page.setDestructiveConfirmed($event)"
+          />
+          <span class="muted-text">
+            I understand this does not preserve old building levels.
+          </span>
+        </div>
+
+        @if (page.relocationError()) {
+          <p class="mb-0 muted-text">{{ page.relocationError() }}</p>
+        }
+        @if (page.relocationSuccess()) {
+          <p class="mb-0 muted-text">{{ page.relocationSuccess() }}</p>
+        }
+
+        <p-button
+          label="Relocate Estate"
+          severity="danger"
+          [disabled]="!page.canRelocate()"
+          [loading]="page.isRelocating()"
+          (onClick)="page.relocate()"
+        />
+      </aside>
+    </div>
+  </div>
+}

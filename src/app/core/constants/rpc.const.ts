@@ -57,6 +57,7 @@ export const RPC = {
   get_building_progression_preview: 'get_building_progression_preview',
   get_requirement_impact_preview: 'get_requirement_impact_preview',
   reorder_entity_requirements: 'reorder_entity_requirements',
+  relocate_hero_estate_to_empty_address: 'relocate_hero_estate_to_empty_address',
   get_vendor_scrap_drachma_payout_percent:
     'get_vendor_scrap_drachma_payout_percent',
   recover_scrapped_item: 'recover_scrapped_item',

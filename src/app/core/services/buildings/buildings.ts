@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
+import { forkJoin, map, Observable, switchMap } from 'rxjs';
 import { BONUS_ENTITY_TYPES } from '../../constants/bonus-entity-types.const';
 import { TABLES } from '../../constants/tables.const';
 import {
@@ -42,8 +42,12 @@ export class BuildingsService {
 
   getMansionEstateView(): Observable<MansionEstateView> {
     return this.heroService.getHeroData().pipe(
-      switchMap((hero) =>
-        forkJoin({
+      switchMap((hero) => {
+        if (!hero.estate_id) {
+          throw new Error('Active hero does not have an estate address.');
+        }
+
+        return forkJoin({
           formulaData: this.formulaService.getAdminData(),
           buildings: this.backend.getAll<
             MansionBuildingRow & {
@@ -72,22 +76,18 @@ export class BuildingsService {
             orderBy: { column: 'sort_order' },
             camelCase: false,
           }),
-          currentAddress: hero.estate_id
-            ? this.estateAddresses.getCurrentAddress({
+          currentAddress: this.estateAddresses.getCurrentAddress({
                 estateId: hero.estate_id,
                 heroId: hero.id,
                 serverId: hero.server_id,
-              })
-            : of(null),
-          estateBuildings: hero.estate_id
-            ? this.backend.getAll<EstateBuildingRow>({
+              }),
+          estateBuildings: this.backend.getAll<EstateBuildingRow>({
                 table: TABLES.estate_buildings,
                 filters: {
                   estateId: { operator: FilterOperator.EQ, value: hero.estate_id },
                 },
                 camelCase: false,
-              })
-            : of([]),
+              }),
           districts: this.backend.getAll<DistrictRow>({
             table: TABLES.estate_districts,
             orderBy: { column: 'rank' },
@@ -95,7 +95,11 @@ export class BuildingsService {
           }),
         }).pipe(
           map(({ formulaData, buildings, entityBonuses, currentAddress, estateBuildings, districts }) => {
-            const currentDistrictCode = currentAddress?.districtCode ?? 'A';
+            if (!currentAddress) {
+              throw new Error('Active hero estate address is not readable.');
+            }
+
+            const currentDistrictCode = currentAddress.districtCode;
             const currentDistrict = districts.find(
               (district) => district.code === currentDistrictCode
             );
@@ -118,14 +122,14 @@ export class BuildingsService {
               .filter((building) => building.districtUnlockRank <= currentDistrictRank);
 
             return {
-              currentAddress: currentAddress?.addressLabel ?? null,
+              currentAddress: currentAddress.addressLabel,
               currentDistrictCode,
-              currentDistrictName: currentAddress?.districtName ?? currentDistrict?.name ?? null,
+              currentDistrictName: currentAddress.districtName ?? currentDistrict?.name ?? null,
               buildings: districtBuildings,
             } satisfies MansionEstateView;
           })
-        )
-      )
+        );
+      })
     );
   }
 
@@ -152,16 +156,18 @@ export class BuildingsService {
         )
       : [];
 
+    const districtCode = requiredBuildingDistrictCode(building.district_code, building.key);
+
     return {
       id: building.id,
       key: building.key,
       name: building.name,
       description: building.description ?? null,
       imagePath:
-        resolveBuildingImagePath(building.key, building.district_code) ??
+        resolveBuildingImagePath(building.key, districtCode) ??
         building.image_path ??
         '/assets/icons/capitol.svg',
-      districtCode: building.district_code ?? 'A',
+      districtCode,
       districtUnlockRank: building.rank_required,
       sortOrder: building.sort_order ?? 0,
       maxLevel: building.max_level ?? 0,
@@ -276,4 +282,15 @@ export class BuildingsService {
 
     return mapById;
   }
+}
+
+function requiredBuildingDistrictCode(
+  districtCode: string | null,
+  buildingKey: string,
+): string {
+  if (!districtCode) {
+    throw new Error(`Building "${buildingKey}" does not have a district code.`);
+  }
+
+  return districtCode;
 }
