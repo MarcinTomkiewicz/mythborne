@@ -4,7 +4,11 @@ import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import { Row } from '../../types/supabase.types';
 import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
-import { HeroExperienceProgress } from '../../types/hero.types';
+import {
+  GrantHeroExperienceInput,
+  GrantHeroExperienceResult,
+  HeroExperienceProgress,
+} from '../../types/hero.types';
 import { AuthState } from '../auth/auth-state';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
@@ -14,7 +18,15 @@ import {
   toSaveStatAllocationRpcArgs,
 } from '../../utils/stat-allocation-rpc';
 import { nonNegativeInteger, positiveInteger } from '../../utils/number';
-import { GetHeroExperienceToNextLevelRpcResult } from '../../types/hero-progression-rpc.types';
+import {
+  GetHeroExperienceToNextLevelRpcResult,
+  GrantHeroExperienceRpcRow,
+} from '../../types/hero-progression-rpc.types';
+import {
+  firstGrantHeroExperienceRow,
+  mapGrantHeroExperienceResult,
+  toGrantHeroExperienceRpcArgs,
+} from '../../utils/hero-progression-rpc';
 import { SaveStatAllocationRpcRow } from '../../types/stat-allocation-rpc.types';
 import { ActiveHero } from './active-hero';
 
@@ -126,6 +138,23 @@ export class Hero {
           ),
         );
       }),
+    );
+  }
+
+  grantExperience(
+    input: GrantHeroExperienceInput,
+  ): Observable<GrantHeroExperienceResult> {
+    return this.getHeroData().pipe(
+      switchMap((hero) =>
+        this.backend.rpc<GrantHeroExperienceRpcRow[]>(
+          RPC.grant_hero_experience,
+          toGrantHeroExperienceRpcArgs({
+            heroId: hero.id,
+            grant: input,
+          }),
+        ),
+      ),
+      map((rows) => mapGrantHeroExperienceResult(firstGrantHeroExperienceRow(rows))),
     );
   }
 

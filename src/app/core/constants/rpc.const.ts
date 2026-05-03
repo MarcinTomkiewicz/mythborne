@@ -119,6 +119,7 @@ export const RPC = {
   upsert_reward_profile_assignment: 'upsert_reward_profile_assignment',
   deactivate_reward_profile_assignment: 'deactivate_reward_profile_assignment',
   get_hero_experience_to_next_level: 'get_hero_experience_to_next_level',
+  grant_hero_experience: 'grant_hero_experience',
   save_stat_allocation: 'save_stat_allocation',
   update_entity_requirement: 'update_entity_requirement',
 } as const;

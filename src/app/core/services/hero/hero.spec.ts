@@ -265,6 +265,69 @@ describe('Hero', () => {
       firstValueFrom(service.getHeroExperienceProgress()),
     ).toBeRejectedWithError('Experience threshold must be a positive number.');
   });
+
+  it('grants XP through the canonical progression RPC for approved producers', async () => {
+    backend.rpc.and.returnValue(
+      of([
+        {
+          progression_ledger_id: 'ledger-1',
+          hero_id: 'hero-1',
+          server_id: 'server-1',
+          experience_gained: 120,
+          level_before: 1,
+          level_after: 2,
+          experience_before: 60,
+          experience_after: 0,
+          total_experience_earned_before: 60,
+          total_experience_earned_after: 180,
+          levels_gained: 1,
+          reached_levels_json: [2],
+          character_points_gross_gained: 120,
+          character_points_balance_after: 25,
+        },
+      ]),
+    );
+
+    const result = await firstValueFrom(
+      service.grantExperience({
+        experienceAmount: 120,
+        sourceKind: 'exploration_trial',
+        sourceId: 'trial-1',
+        reason: 'Trial completion reward',
+        requestId: 'request-1',
+      }),
+    );
+
+    expect(backend.rpc).toHaveBeenCalledWith(
+      'grant_hero_experience',
+      {
+        p_hero_id: 'hero-1',
+        p_experience_amount: 120,
+        p_source_kind: 'exploration_trial',
+        p_source_id: 'trial-1',
+        p_reason: 'Trial completion reward',
+        p_request_id: 'request-1',
+      },
+    );
+    expect(result).toEqual({
+      progressionLedgerId: 'ledger-1',
+      heroId: 'hero-1',
+      serverId: 'server-1',
+      experienceGained: 120,
+      levelBefore: 1,
+      levelAfter: 2,
+      experienceBefore: 60,
+      experienceAfter: 0,
+      totalExperienceEarnedBefore: 60,
+      totalExperienceEarnedAfter: 180,
+      levelsGained: 1,
+      reachedLevels: [2],
+      characterPointsGrossGained: 120,
+      characterPointsBalanceAfter: 25,
+    });
+    expect(backend.upsertMany).not.toHaveBeenCalled();
+    expect(backend.updateWhere).not.toHaveBeenCalled();
+  });
 });
 
 function createHero(overrides: Partial<ReturnType<typeof baseHero>> = {}) {

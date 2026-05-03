@@ -4027,6 +4027,8 @@ Current source of truth:
 
 ## Task N6 — XP grant workflow integration boundary
 
+**Status:** Done / accepted on 2026-05-03.
+
 **Goal:** Ensure frontend and future producers treat `grant_hero_experience(...)` as the canonical XP/level-up workflow.
 
 **Scope:**
@@ -4058,6 +4060,8 @@ Current source of truth:
 - Producers that grant XP can use the canonical RPC/path where assigned.
 - Missing producer integration is reported explicitly.
 - Build and focused tests pass where code changes are made.
+
+**Implementation note:** N6 accepted on 2026-05-03 after blocker fix and review. Frontend now has a typed boundary for canonical `grant_hero_experience(...)`: explicit RPC args/result types, mapper helpers, first-row guard and `Hero.grantExperience(...)` service method using `RPC.grant_hero_experience`. The result model exposes XP gained, level before/after, experience before/after, total experience before/after, levels gained, reached levels, gross Character Points gained and Character Points balance after penalty sink. `experienceAmount` is validated as a positive integer and decimal input such as `25.2` throws instead of being silently rounded. No UI, producer integration, fallback XP/level-up workflow, DB/RPC change, migration or direct write path to hero XP/level/progression ledger/Character Point ledger was introduced. Verification passed with `npx tsc --noEmit`, focused hero progression RPC/hero specs with 14 SUCCESS, static greps for no direct progression writes/no new `any`, and `npm run build` with known budget/CommonJS warnings. Follow-up: decide AuthState/dashboard refresh behavior after `grantExperience(...)` at the first real XP producer integration.
 
 ---
 
