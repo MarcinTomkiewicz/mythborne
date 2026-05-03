@@ -4067,6 +4067,8 @@ Current source of truth:
 
 ## Task N7 — Progression ledger and history read models
 
+**Status:** Done / accepted on 2026-05-03.
+
 **Goal:** Make XP/progression history readable without treating ledgers as mutable UI state.
 
 **Scope:**
@@ -4094,6 +4096,8 @@ Current source of truth:
 - History uses explicit domain models, not raw DB rows as final UI contracts.
 - No direct writes to `hero_progression_ledger`.
 - Build and focused mapper tests pass.
+
+**Implementation note:** N7 accepted on 2026-05-03 after review. Frontend now has a read-only progression history boundary for `hero_progression_ledger`: `HeroProgressionHistoryReadModel`, `mapHeroProgressionLedgerEntry(...)`, `HeroProgressionHistory.getActiveHeroHistory(...)`, and the shared `TABLES.hero_progression_ledger` constant. The read model exposes display-safe XP/progression fields for XP gains and level-up rows, including entry kind/type, source kind/id, experience delta, experience before/after, total experience before/after, level before/after, reached level, parent ledger id, created timestamp and metadata diagnostics. Staff/audit-only fields such as `reason`, `request_id` and `created_by` are not exposed in the player-facing read model. The service uses `ActiveHero.requireActiveHero()` and filters by `heroId + serverId`; no UI, route, producer integration, DB/RPC change, migration or direct ledger write path was introduced. Verification passed with `npx tsc --noEmit`, focused mapper/service specs with 5 SUCCESS, static greps for no direct progression ledger writes/no new `any`, and `npm run build` with known budget/CommonJS warnings. Manual smoke and route smoke were not performed by Codex because N7 adds no player-facing flow. Follow-up: wire progression history into a concrete screen later and provide a user smoke checklist at that point.
 
 ---
 

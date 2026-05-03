@@ -1,3 +1,5 @@
+import { Json } from './database.types';
+
 export interface IHero {
   id: string;
   userId: string;
@@ -48,6 +50,35 @@ export interface GrantHeroExperienceResult {
   reachedLevels: number[];
   characterPointsGrossGained: number;
   characterPointsBalanceAfter: number;
+}
+
+export type HeroProgressionHistoryEntryType =
+  | 'experience_gain'
+  | 'level_up'
+  | 'unknown';
+
+export interface HeroProgressionHistoryReadModel {
+  id: string;
+  heroId: string;
+  serverId: string;
+  entryKind: string;
+  entryType: HeroProgressionHistoryEntryType;
+  sourceKind: string;
+  sourceId: string;
+  experienceDelta: number;
+  experienceBefore: number | null;
+  experienceAfter: number | null;
+  totalExperienceEarnedBefore: number | null;
+  totalExperienceEarnedAfter: number | null;
+  levelBefore: number | null;
+  levelAfter: number | null;
+  reachedLevel: number | null;
+  parentLedgerId: string | null;
+  characterPointsGrossDelta: number;
+  characterPointsBalanceAfter: number | null;
+  xpThreshold: number | null;
+  createdAt: string;
+  metadataJson: Json;
 }
 
 export interface IHeroDerived extends Record<string, number> {
