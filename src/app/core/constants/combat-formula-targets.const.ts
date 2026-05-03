@@ -4,4 +4,5 @@ export const COMBAT_FORMULA_TARGET = {
   criticalChance: 'combat_critical_chance',
   finalDamage: 'combat_final_damage',
   initiativeScore: 'combat_initiative_score',
+  opponentScaledStat: 'combat_opponent_scaled_stat',
 } as const;

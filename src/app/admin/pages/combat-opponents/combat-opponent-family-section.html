@@ -1,0 +1,39 @@
+<section class="mg-card p-lg w-100">
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.families)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.families)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.families)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.families)"
+  />
+
+  <div class="mt-md flex-col gap-md">
+    <div class="flex-col gap-xs">
+      <span class="muted-text">Edit existing family</span>
+      <p-select
+        [formControl]="page.familySelector"
+        [options]="page.familyOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select family"
+        emptyMessage="No opponent families configured"
+      />
+    </div>
+
+    <form [formGroup]="actions.form" class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+      <div class="flex-col gap-xs"><span>Label</span><input pInputText formControlName="label" /></div>
+      <div class="flex-col gap-xs"><span>Key</span><input pInputText formControlName="key" /></div>
+      <div class="flex-row-start-center gap-sm"><p-checkbox formControlName="allowKeyOverride" [binary]="true" inputId="family-key-override" /><span>Allow key override</span></div>
+      <div class="flex-col gap-xs"><span>Sort order</span><input pInputText type="number" formControlName="sortOrder" /></div>
+      <div class="flex-col gap-xs"><span>Description</span><textarea pTextarea rows="2" formControlName="description"></textarea></div>
+      <div class="flex-col gap-xs"><span>Helper text</span><textarea pTextarea rows="2" formControlName="helperText"></textarea></div>
+      <div class="flex-col gap-xs"><span>Admin description</span><textarea pTextarea rows="2" formControlName="adminDescription"></textarea></div>
+      <div class="flex-col gap-xs"><span>Reason</span><input pInputText formControlName="reason" /></div>
+    </form>
+
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button label="Save family" [disabled]="actions.isSaving()" (onClick)="actions.save()" />
+      <p-button label="Deactivate family" severity="danger" [disabled]="actions.isSaving() || !page.selectedFamily()" (onClick)="actions.deactivate()" />
+      @if (actions.reasonError()) { <span class="tag-badge tag-badge--warn">{{ actions.reasonError() }}</span> }
+    </div>
+  </div>
+</section>

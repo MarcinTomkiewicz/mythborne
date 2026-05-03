@@ -1,0 +1,44 @@
+<section class="mg-card p-lg w-100">
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.opponentDefinitions)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.opponentDefinitions)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.opponentDefinitions)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.scaling)"
+  />
+
+  <div class="mt-md flex-col gap-md">
+    <div class="flex-col gap-xs">
+      <span class="muted-text">Edit existing opponent</span>
+      <p-select
+        [formControl]="page.opponentSelector"
+        [options]="page.opponentOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select opponent"
+        emptyMessage="No opponent definitions configured"
+      />
+    </div>
+
+    <form [formGroup]="actions.form" class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+      <div class="flex-col gap-xs"><span>Label</span><input pInputText formControlName="label" /></div>
+      <div class="flex-col gap-xs"><span>Key</span><input pInputText formControlName="key" /></div>
+      <div class="flex-row-start-center gap-sm"><p-checkbox formControlName="allowKeyOverride" [binary]="true" inputId="opponent-key-override" /><span>Allow key override</span></div>
+      <div class="flex-col gap-xs"><span>Family</span><p-select formControlName="familyKey" [options]="page.familyOptions()" optionLabel="label" optionValue="value" placeholder="Select family" emptyMessage="No opponent families configured" /></div>
+      <div class="flex-col gap-xs"><span>Equipment mode</span><p-select formControlName="equipmentMode" [options]="page.equipmentModeOptions()" optionLabel="label" optionValue="value" placeholder="Select equipment mode" emptyMessage="No equipment modes configured" /></div>
+      <div class="flex-col gap-xs"><span>Scaling formula</span><p-select formControlName="defaultScalingFormulaId" [options]="page.formulaOptions()" optionLabel="label" optionValue="value" placeholder="Default scaling formula" emptyMessage="No combat scaling formulas available" /></div>
+      <div class="flex-col gap-xs"><span>Sort order</span><input pInputText type="number" formControlName="sortOrder" /></div>
+      <div class="flex-col gap-xs"><span>Description</span><textarea pTextarea rows="2" formControlName="description"></textarea></div>
+      <div class="flex-col gap-xs"><span>Helper text</span><textarea pTextarea rows="2" formControlName="helperText"></textarea></div>
+      <div class="flex-col gap-xs"><span>Admin description</span><textarea pTextarea rows="2" formControlName="adminDescription"></textarea></div>
+      <div class="flex-col gap-xs"><span>Reason</span><input pInputText formControlName="reason" /></div>
+    </form>
+
+    @if (page.equipmentModeHelp()) { <p class="muted-text mb-0">{{ page.equipmentModeHelp() }}</p> }
+
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button label="Save opponent" [disabled]="actions.isSaving() || page.familyOptions().length === 0" (onClick)="actions.save()" />
+      <p-button label="Deactivate opponent" severity="danger" [disabled]="actions.isSaving() || !page.selectedOpponentView()" (onClick)="actions.deactivate()" />
+      @if (actions.reasonError()) { <span class="tag-badge tag-badge--warn">{{ actions.reasonError() }}</span> }
+    </div>
+  </div>
+</section>

@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mythborne Armory V2 Prototype</title>
+  <style>
+    /*
+      Mythborne Armory V2 — equipment + inventory screen.
+
+      Scope:
+      - full Armory screen, not dashboard preview;
+      - left: equipped items in equipment layout similar to Dashboard V3; technically this can still be a paperdoll component;
+      - right/main: visible inventory limited by armory capacity;
+      - total owned item count can exceed visible armory capacity, e.g. 270 / 30;
+      - item cards are compact and hover/click should later open an item popover with full bonuses, requirements and drachma value;
+      - item cards show drachma value on its own line;
+      - inventory visibility is ordered by Armory Stands / Display Stands: higher-priority stands decide which items fit into visible Armory capacity first;
+      - stands are not filters; they are player-facing organization/visibility rules for item ordering;
+      - there are always 10 Display Stands;
+      - Stand 1 is the default and lowest priority;
+      - Stand 10 has the highest visibility priority;
+      - empty stands must remain visible so the player can assign items or reprioritize the ladder;
+      - inventory is displayed as sections by stand: Stand 10, then Stand 9, then Stand 8... down to Stand 1;
+      - stand labels should be renameable later, likely DB-backed;
+      - use existing item read models, lifecycle/status, equipment slots and vendor/shared components where possible.
+    */
+
+    :root {
+      --mb-bg-0: #06080c;
+      --mb-bg-1: #0b1018;
+      --mb-navy-0: #07111d;
+      --mb-navy-1: #0d2135;
+      --mb-navy-2: #163b5c;
+      --mb-navy-3: #2d6e9f;
+      --mb-gold-1: #9c6723;
+      --mb-gold-2: #c8923a;
+      --mb-gold-3: #f0c96f;
+      --mb-red: #b24b3b;
+      --mb-green: #6fa45d;
+      --mb-blue: #5ba3d5;
+      --mb-purple: #9672cc;
+      --mb-text-0: #f6edda;
+      --mb-text-1: #d7c8ab;
+      --mb-text-2: #9d8f75;
+      --mb-text-3: #6f675a;
+      --mb-line-soft: rgba(240, 201, 111, 0.12);
+      --mb-line: rgba(240, 201, 111, 0.24);
+      --mb-line-strong: rgba(240, 201, 111, 0.44);
+      --mb-shadow: rgba(0, 0, 0, 0.42);
+      --mb-sidebar-w: 16rem;
+      --mb-topbar-h: 4.25rem;
+      --mb-radius-md: .75rem;
+      --mb-radius-lg: 1rem;
+      --mb-radius-xl: 1.35rem;
+      --mb-font-display: Georgia, "Times New Roman", serif;
+      --mb-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--mb-font-ui);
+      color: var(--mb-text-0);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(200,146,58,.14), transparent 28rem),
+        radial-gradient(circle at 82% 4%, rgba(45,110,159,.20), transparent 34rem),
+        linear-gradient(135deg, var(--mb-bg-0), #080b11 38%, #050608 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .14;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+
+    button, input, select { font: inherit; }
+
+    .mb-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--mb-sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--mb-topbar-h) minmax(0, 1fr);
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .mb-topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(20rem, 1fr) auto minmax(20rem, 1fr);
+      align-items: center;
+      gap: 1rem;
+      padding: .55rem 1rem;
+      border-bottom: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,201,111,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem var(--mb-shadow);
+    }
+
+    .mb-topbar-left,
+    .mb-topbar-right { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+    .mb-topbar-right { justify-content: flex-end; }
+
+    .mb-brand { display: flex; align-items: center; justify-content: center; gap: .7rem; min-width: 16rem; }
+    .mb-brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-strong);
+      background:
+        radial-gradient(circle at 34% 24%, #fff0b9 0, var(--mb-gold-3) 22%, var(--mb-gold-1) 48%, #251509 70%, var(--mb-navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,201,111,.22);
+      position: relative;
+    }
+    .mb-brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .mb-brand-title { font-family: var(--mb-font-display); font-size: 1.65rem; letter-spacing: .11em; text-transform: uppercase; color: var(--mb-gold-3); line-height: 1; }
+    .mb-brand-subtitle { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; margin-top: .18rem; text-align: center; }
+
+    .mb-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      min-height: 2.15rem;
+      padding: .38rem .72rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: 999px;
+      color: var(--mb-text-1);
+      background: linear-gradient(180deg, rgba(15,23,33,.75), rgba(6,9,13,.78));
+      white-space: nowrap;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-chip strong { color: var(--mb-text-0); }
+    .mb-chip-icon { color: var(--mb-gold-2); }
+    .mb-chip--health strong { color: #ffc0b7; }
+    .mb-chip--resource strong { color: var(--mb-gold-3); }
+    .mb-chip-stack { display: inline-grid; gap: .08rem; line-height: 1.05; }
+    .mb-chip-stack small { color: var(--mb-text-3); font-size: .68rem; }
+
+    .mb-xp { min-width: 15rem; display: grid; gap: .3rem; padding: .35rem .7rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(15,23,33,.72), rgba(6,9,13,.74)); }
+    .mb-xp-meta { display: flex; justify-content: space-between; gap: .75rem; font-size: .75rem; color: var(--mb-text-2); }
+    .mb-mini-bar { height: .42rem; border-radius: 999px; background: rgba(0,0,0,.38); overflow: hidden; border: 1px solid rgba(240,201,111,.08); }
+    .mb-mini-bar > span { display: block; width: var(--value, 62%); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mb-gold-1), var(--mb-gold-3)); box-shadow: 0 0 .8rem rgba(240,201,111,.3); }
+
+    .mb-sidebar { grid-area: sidebar; padding: 1rem .8rem; border-right: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(7,11,17,.84), rgba(5,7,10,.88)); backdrop-filter: blur(12px); }
+    .mb-server-card { padding: .9rem; border: 1px solid var(--mb-line-soft); border-radius: var(--mb-radius-xl); background: linear-gradient(180deg, rgba(20,32,47,.72), rgba(8,12,18,.74)), radial-gradient(circle at 80% 0%, rgba(240,201,111,.16), transparent 10rem); box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.2); }
+    .mb-server-label { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+    .mb-server-name { display: flex; justify-content: space-between; gap: .7rem; align-items: center; font-weight: 800; color: var(--mb-text-0); }
+    .mb-prestige { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid rgba(240,201,111,.1); }
+    .mb-nav-section-title { margin: 1.05rem 0 .45rem .55rem; color: var(--mb-text-3); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; }
+    .mb-nav-list { display: grid; gap: .28rem; margin: 0; padding: 0; list-style: none; }
+    .mb-nav-link { display: flex; align-items: center; gap: .65rem; padding: .67rem .68rem; color: var(--mb-text-1); text-decoration: none; border-radius: .85rem; border: 1px solid transparent; transition: 120ms ease; }
+    .mb-nav-link:hover, .mb-nav-link.is-active { color: var(--mb-text-0); border-color: rgba(240,201,111,.16); background: linear-gradient(90deg, rgba(240,201,111,.13), rgba(45,110,159,.12)); }
+    .mb-nav-link.is-active { box-shadow: inset 3px 0 0 var(--mb-gold-2); }
+    .mb-nav-icon { width: 1.65rem; height: 1.65rem; border-radius: .55rem; display: grid; place-items: center; background: rgba(240,201,111,.08); color: var(--mb-gold-2); border: 1px solid rgba(240,201,111,.08); flex: 0 0 auto; font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+
+    .mb-main { grid-area: main; min-width: 0; padding: 1.1rem; display: grid; gap: 1rem; align-content: start; }
+
+    .mb-page-header {
+      position: relative;
+      min-height: 9rem;
+      display: grid;
+      grid-template-columns: minmax(26rem, 1.35fr) minmax(20rem, .85fr);
+      gap: 1rem;
+      padding: .95rem;
+      border: 1px solid var(--mb-line);
+      border-radius: var(--mb-radius-xl);
+      overflow: hidden;
+      background:
+        linear-gradient(100deg, rgba(7,11,17,.95), rgba(12,26,41,.72), rgba(7,10,15,.9)),
+        radial-gradient(circle at 72% 18%, rgba(240,201,111,.14), transparent 22rem);
+      box-shadow: 0 .9rem 2rem rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-page-header::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(240,201,111,.08), transparent 14%, transparent 86%, rgba(240,201,111,.06)), repeating-linear-gradient(90deg, transparent 0 3.2rem, rgba(255,255,255,.025) 3.2rem 3.25rem); pointer-events: none; opacity: .75; }
+    .mb-page-header > * { position: relative; z-index: 1; }
+    .mb-kicker { color: var(--mb-gold-2); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; margin: 0 0 .45rem; }
+    .mb-title { margin: 0; font-family: var(--mb-font-display); font-size: clamp(2rem, 3.2vw, 3.35rem); line-height: .95; color: var(--mb-gold-3); }
+    .mb-copy { margin: .75rem 0 0; max-width: 62rem; color: var(--mb-text-1); line-height: 1.45; font-size: .92rem; }
+
+    .mb-summary-card { display: grid; gap: .58rem; padding: .85rem; border-radius: var(--mb-radius-lg); border: 1px solid rgba(240,201,111,.14); background: rgba(7,10,14,.34); backdrop-filter: blur(10px); }
+    .mb-summary-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; color: var(--mb-text-2); font-size: .88rem; }
+    .mb-summary-row strong { color: var(--mb-text-0); }
+
+    .mb-grid { display: grid; gap: 1rem; }
+    .mb-grid--main { grid-template-columns: minmax(24rem, .9fr) minmax(38rem, 1.45fr); }
+
+    .mb-card {
+      position: relative;
+      padding: .95rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid var(--mb-line-soft);
+      background: linear-gradient(180deg, rgba(18,27,39,.68), rgba(7,10,15,.78)), radial-gradient(circle at top right, rgba(240,201,111,.085), transparent 13rem);
+      box-shadow: 0 .75rem 1.9rem rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.035);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+    .mb-card::after { content: ""; position: absolute; inset: .45rem; border-radius: calc(var(--mb-radius-xl) - .35rem); border: 1px solid rgba(240,201,111,.045); pointer-events: none; }
+    .mb-card > * { position: relative; z-index: 1; }
+    .mb-card--navy { background: linear-gradient(180deg, rgba(14,36,57,.72), rgba(7,11,18,.82)); }
+    .mb-card--soft { background: linear-gradient(180deg, rgba(13,18,26,.62), rgba(7,9,13,.72)); }
+
+    .mb-card-header { display: flex; justify-content: space-between; align-items: start; gap: .75rem; margin-bottom: .75rem; }
+    .mb-card-heading { display: grid; gap: .25rem; margin-bottom: .75rem; }
+    .mb-card-title-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+    .mb-card-title { margin: 0; font-family: var(--mb-font-display); font-size: 1.22rem; color: var(--mb-text-0); }
+    .mb-card-subtitle { margin: .2rem 0 0; color: var(--mb-text-2); font-size: .84rem; line-height: 1.4; }
+
+    .mb-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); color: var(--mb-text-1); background: rgba(7,10,14,.45); font-size: .77rem; white-space: nowrap; }
+    .mb-badge--gold { color: var(--mb-gold-3); border-color: rgba(240,201,111,.32); }
+    .mb-badge--green { color: #bde6b0; border-color: rgba(111,164,93,.46); }
+    .mb-badge--blue { color: #b9def3; border-color: rgba(91,163,213,.46); }
+    .mb-badge--red { color: #f2b4aa; border-color: rgba(178,75,59,.46); }
+    .mb-badge--purple { color: #d4c0ff; border-color: rgba(150,114,204,.46); }
+
+    .mb-button-row { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: .9rem; }
+    .mb-button { min-height: 2.4rem; padding: .55rem .85rem; border-radius: 999px; border: 1px solid var(--mb-line); color: var(--mb-text-0); background: linear-gradient(180deg, rgba(240,201,111,.2), rgba(91,58,19,.32)); cursor: pointer; box-shadow: inset 0 1px rgba(255,255,255,.07); }
+    .mb-button--primary { background: linear-gradient(180deg, rgba(240,201,111,.32), rgba(91,58,19,.44)); }
+    .mb-button--ghost { background: rgba(8,12,18,.54); color: var(--mb-text-1); }
+    .mb-button:disabled { opacity: .5; cursor: not-allowed; }
+
+    .mb-paperdoll-board { position: relative; min-height: 30rem; border-radius: var(--mb-radius-xl); border: 1px solid rgba(240,201,111,.12); background: radial-gradient(circle at 50% 18%, rgba(240,201,111,.13), transparent 9rem), linear-gradient(180deg, rgba(7,11,17,.46), rgba(0,0,0,.2)); overflow: hidden; }
+    .mb-paperdoll-figure { position: absolute; left: 50%; top: 51%; width: 6.2rem; height: 17.5rem; transform: translate(-50%, -50%); opacity: .9; filter: drop-shadow(0 1rem 1rem rgba(0,0,0,.45)); }
+    .mb-paperdoll-head, .mb-paperdoll-body, .mb-paperdoll-arm-left, .mb-paperdoll-arm-right, .mb-paperdoll-leg-left, .mb-paperdoll-leg-right { position: absolute; border: 1px solid rgba(240,201,111,.18); background: rgba(240,201,111,.08); }
+    .mb-paperdoll-head { left: 2rem; top: 0; width: 2.15rem; height: 2.15rem; border-radius: 999px; background: rgba(240,201,111,.13); }
+    .mb-paperdoll-body { left: 1.45rem; top: 2.8rem; width: 3.25rem; height: 6rem; border-radius: 1.5rem 1.5rem 1rem 1rem; background: linear-gradient(180deg, rgba(240,201,111,.16), rgba(22,59,92,.12)); }
+    .mb-paperdoll-arm-left { left: .35rem; top: 3.3rem; width: 1rem; height: 5.6rem; border-radius: 999px; }
+    .mb-paperdoll-arm-right { right: .35rem; top: 3.3rem; width: 1rem; height: 5.6rem; border-radius: 999px; }
+    .mb-paperdoll-leg-left { left: 1.75rem; top: 9.2rem; width: 1rem; height: 6.6rem; border-radius: 999px; }
+    .mb-paperdoll-leg-right { right: 1.75rem; top: 9.2rem; width: 1rem; height: 6.6rem; border-radius: 999px; }
+
+    .mb-paperdoll-slot { position: absolute; min-width: 7rem; padding: .45rem .55rem; border-radius: .85rem; border: 1px solid rgba(240,201,111,.13); background: rgba(12,18,27,.88); box-shadow: 0 .6rem 1.2rem rgba(0,0,0,.22); color: var(--mb-text-2); font-size: .75rem; cursor: pointer; }
+    .mb-paperdoll-slot:hover { border-color: rgba(240,201,111,.36); background: rgba(18,28,42,.95); }
+    .mb-paperdoll-slot strong { display: block; color: var(--mb-text-0); font-size: .82rem; line-height: 1.15; }
+    .slot-helmet { top: .8rem; left: 50%; transform: translateX(-50%); }
+    .slot-amulet { top: 5.1rem; left: 50%; transform: translateX(-50%); }
+    .slot-main { top: 7.4rem; left: .7rem; }
+    .slot-off { top: 7.4rem; right: .7rem; }
+    .slot-armor { top: 10.8rem; left: 50%; transform: translateX(-50%); }
+    .slot-ring1 { top: 15.2rem; left: .7rem; }
+    .slot-ring2 { top: 15.2rem; right: .7rem; }
+    .slot-pants { top: 18.6rem; left: 50%; transform: translateX(-50%); }
+    .slot-boots { bottom: 1rem; left: 50%; transform: translateX(-50%); }
+
+    .mb-capacity-panel { display: grid; gap: .75rem; margin-bottom: .9rem; }
+    .mb-capacity-top { display: flex; justify-content: space-between; gap: .75rem; align-items: center; }
+    .mb-capacity-label { color: var(--mb-text-2); font-size: .84rem; }
+    .mb-capacity-value { font-family: var(--mb-font-display); color: var(--mb-gold-3); font-size: 1.6rem; }
+    .mb-capacity-track { height: .55rem; border-radius: 999px; background: rgba(0,0,0,.35); border: 1px solid rgba(240,201,111,.08); overflow: hidden; }
+    .mb-capacity-track span { display: block; height: 100%; width: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mb-red), var(--mb-gold-2)); box-shadow: 0 0 .8rem rgba(240,201,111,.24); }
+
+    .mb-stand-panel {
+      display: grid;
+      gap: .65rem;
+      margin-bottom: .85rem;
+      padding: .8rem;
+      border-radius: var(--mb-radius-lg);
+      border: 1px solid rgba(240,201,111,.1);
+      background: rgba(0,0,0,.14);
+    }
+    .mb-stand-panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: .75rem;
+      align-items: center;
+      color: var(--mb-text-2);
+      font-size: .82rem;
+    }
+    .mb-stand-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: .55rem;
+    }
+    .mb-stand-card {
+      min-height: 5.4rem;
+      padding: .6rem .65rem;
+      border-radius: .95rem;
+      border: 1px solid rgba(240,201,111,.12);
+      background: rgba(5,8,12,.48);
+      display: grid;
+      gap: .35rem;
+      position: relative;
+    }
+    .mb-stand-card.is-priority {
+      border-color: rgba(240,201,111,.34);
+      background: linear-gradient(180deg, rgba(240,201,111,.12), rgba(45,110,159,.1));
+    }
+    .mb-stand-card.is-empty {
+      border-style: dashed;
+      opacity: .78;
+    }
+    .mb-stand-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .4rem;
+    }
+    .mb-stand-rank {
+      width: 1.45rem;
+      height: 1.45rem;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(240,201,111,.16);
+      background: rgba(240,201,111,.08);
+      color: var(--mb-gold-2);
+      font-size: .74rem;
+      font-weight: 800;
+    }
+    .mb-stand-handle {
+      color: var(--mb-text-3);
+      font-size: .95rem;
+      letter-spacing: .1em;
+    }
+    .mb-stand-name {
+      color: var(--mb-text-0);
+      font-size: .86rem;
+      font-weight: 700;
+    }
+    .mb-stand-card.is-empty .mb-stand-name {
+      color: var(--mb-text-1);
+    }
+    .mb-stand-meta {
+      color: var(--mb-text-2);
+      font-size: .74rem;
+    }
+    .mb-stand-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .4rem;
+      margin-top: auto;
+    }
+    .mb-stand-default {
+      color: var(--mb-text-3);
+      font-size: .7rem;
+    }
+
+    .mb-filter-bar { display: flex; flex-wrap: wrap; gap: .55rem; align-items: center; margin-bottom: .75rem; }
+    .mb-search, .mb-select { min-height: 2.3rem; border-radius: 999px; border: 1px solid rgba(240,201,111,.14); background: rgba(5,8,12,.55); color: var(--mb-text-1); padding: .45rem .8rem; outline: none; }
+    .mb-search { min-width: 15rem; flex: 1; }
+
+    .mb-stand-section-list { display: grid; gap: .9rem; }
+    .mb-stand-section {
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.1);
+      background: rgba(0,0,0,.12);
+      padding: .75rem;
+    }
+    .mb-stand-section.is-empty { border-style: dashed; opacity: .8; }
+    .mb-stand-section-header {
+      display: flex;
+      justify-content: space-between;
+      gap: .75rem;
+      align-items: center;
+      margin-bottom: .65rem;
+    }
+    .mb-stand-section-title {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      min-width: 0;
+    }
+    .mb-stand-section-title strong {
+      color: var(--mb-text-0);
+      font-size: .95rem;
+    }
+    .mb-stand-section-title small {
+      color: var(--mb-text-3);
+      display: block;
+      margin-top: .1rem;
+    }
+    .mb-stand-section-actions { display: flex; gap: .4rem; flex-wrap: wrap; justify-content: flex-end; }
+    .mb-empty-stand-dropzone {
+      min-height: 4.8rem;
+      border-radius: .95rem;
+      border: 1px dashed rgba(240,201,111,.18);
+      display: grid;
+      place-items: center;
+      color: var(--mb-text-3);
+      background: rgba(5,8,12,.28);
+      font-size: .84rem;
+    }
+    .mb-inventory-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .65rem; }
+    .mb-item-card { min-height: 9.4rem; padding: .68rem; border-radius: .95rem; border: 1px solid rgba(240,201,111,.1); background: linear-gradient(180deg, rgba(7,11,17,.44), rgba(0,0,0,.18)); display: grid; align-content: start; gap: .45rem; cursor: pointer; position: relative; }
+    .mb-item-card:hover { border-color: rgba(240,201,111,.32); background: linear-gradient(180deg, rgba(17,29,44,.64), rgba(0,0,0,.22)); }
+    .mb-item-card.is-equipped { border-color: rgba(111,164,93,.42); }
+    .mb-item-card.is-locked { border-color: rgba(150,114,204,.34); }
+    .mb-item-icon { width: 2.35rem; height: 2.35rem; border-radius: .75rem; border: 1px solid rgba(240,201,111,.12); display: grid; place-items: center; color: var(--mb-gold-2); background: radial-gradient(circle, rgba(240,201,111,.14), rgba(45,110,159,.1)); font-weight: 800; }
+    .mb-item-card strong { display: block; color: var(--mb-text-0); font-size: .86rem; line-height: 1.22; }
+    .mb-item-card small { color: var(--mb-text-2); line-height: 1.25; display: grid; gap: .18rem; }
+    .mb-item-value { display: block; color: var(--mb-gold-3); font-weight: 700; }
+    .mb-item-popover {
+      display: none;
+      position: absolute;
+      left: .35rem;
+      right: .35rem;
+      top: calc(100% - .35rem);
+      z-index: 20;
+      padding: .75rem;
+      border-radius: .9rem;
+      border: 1px solid rgba(240,201,111,.28);
+      background: linear-gradient(180deg, rgba(18,27,39,.98), rgba(6,9,13,.98));
+      box-shadow: 0 1rem 2rem rgba(0,0,0,.48);
+      color: var(--mb-text-2);
+      min-width: 16rem;
+    }
+    .mb-item-card:hover .mb-item-popover { display: block; }
+    .mb-popover-title { display: block; color: var(--mb-gold-3); font-family: var(--mb-font-display); font-size: 1rem; margin-bottom: .45rem; }
+    .mb-popover-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; padding: .28rem 0; border-bottom: 1px solid rgba(240,201,111,.07); font-size: .8rem; }
+    .mb-popover-row:last-child { border-bottom: 0; }
+    .mb-popover-row strong { color: var(--mb-text-0); text-align: right; }
+    .mb-item-meta { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .1rem; }
+
+    .mb-details-panel { display: grid; gap: .55rem; }
+    .mb-detail-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid rgba(240,201,111,.07); color: var(--mb-text-2); }
+    .mb-detail-row:last-child { border-bottom: 0; }
+    .mb-detail-row strong { color: var(--mb-text-0); }
+    .mb-note { padding: .75rem; border-radius: var(--mb-radius-lg); border: 1px solid rgba(91,163,213,.18); background: rgba(91,163,213,.08); color: var(--mb-text-2); font-size: .85rem; line-height: 1.45; }
+
+    @media (max-width: 1320px) {
+      .mb-inventory-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .mb-stand-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    @media (max-width: 1220px) {
+      .mb-topbar { grid-template-columns: 1fr; height: auto; }
+      .mb-brand { justify-content: flex-start; }
+      .mb-app-shell { grid-template-rows: auto minmax(0, 1fr); }
+      .mb-page-header, .mb-grid--main { grid-template-columns: 1fr; }
+      .mb-inventory-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .mb-stand-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 860px) {
+      .mb-app-shell { display: block; }
+      .mb-topbar { position: static; }
+      .mb-topbar-left, .mb-topbar-right { justify-content: flex-start; overflow-x: auto; }
+      .mb-sidebar { border-right: 0; border-bottom: 1px solid var(--mb-line-soft); }
+      .mb-nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .mb-nav-link { justify-content: center; }
+      .mb-nav-label, .mb-nav-section-title { display: none; }
+      .mb-main { padding: .75rem; }
+      .mb-inventory-grid, .mb-stand-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .mb-page-header { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left" aria-label="Hero health and experience">
+        <span class="mb-chip mb-chip--health"><span class="mb-chip-icon">♥</span> Health <strong>86 / 100</strong></span>
+        <div class="mb-xp" aria-label="Experience progress">
+          <div class="mb-xp-meta"><span>Level 12</span><strong>1,240 XP to next</strong></div>
+          <div class="mb-mini-bar" style="--value: 63%"><span></span></div>
+        </div>
+      </div>
+
+      <div class="mb-brand" aria-label="Mythborne">
+        <div class="mb-brand-mark"></div>
+        <div>
+          <div class="mb-brand-title">Mythborne</div>
+          <div class="mb-brand-subtitle">Armory prototype</div>
+        </div>
+      </div>
+
+      <div class="mb-topbar-right" aria-label="Hero resources">
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◈</span><span class="mb-chip-stack">Drachmas <strong>3,420</strong><small>+96 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">▣</span><span class="mb-chip-stack">Materials <strong>185</strong><small>+22 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◇</span><span class="mb-chip-stack">Workforce <strong>42</strong><small>+4 / h</small></span></span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-server-card" aria-label="Selected world context">
+        <div class="mb-server-label">Selected server</div>
+        <div class="mb-server-name"><span>Sandbox</span><span class="mb-badge mb-badge--green">live</span></div>
+        <div class="mb-prestige">
+          <div class="mb-server-label">Prestige</div>
+          <div class="mb-server-name"><span>Zeugitai</span><span class="mb-badge mb-badge--gold">Tier II</span></div>
+        </div>
+      </section>
+
+      <div class="mb-nav-section-title">Hero</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#dashboard"><span class="mb-nav-icon">DA</span><span class="mb-nav-label">Dashboard</span></a></li>
+        <li><a class="mb-nav-link" href="#exploration"><span class="mb-nav-icon">EX</span><span class="mb-nav-label">Exploration</span></a></li>
+        <li><a class="mb-nav-link" href="#statistics"><span class="mb-nav-icon">ST</span><span class="mb-nav-label">Statistics</span></a></li>
+        <li><a class="mb-nav-link is-active" href="#armory"><span class="mb-nav-icon">AR</span><span class="mb-nav-label">Armory</span></a></li>
+      </ul>
+
+      <div class="mb-nav-section-title">World</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#estate"><span class="mb-nav-icon">ES</span><span class="mb-nav-label">Estate</span></a></li>
+        <li><a class="mb-nav-link" href="#trade"><span class="mb-nav-icon">TR</span><span class="mb-nav-label">Trade</span></a></li>
+        <li><a class="mb-nav-link" href="#pvp"><span class="mb-nav-icon">PV</span><span class="mb-nav-label">PvP</span></a></li>
+        <li><a class="mb-nav-link" href="#reports"><span class="mb-nav-icon">RP</span><span class="mb-nav-label">Reports</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main" id="armory">
+      <section class="mb-page-header">
+        <div>
+          <p class="mb-kicker">Armory</p>
+          <h1 class="mb-title">Equipment and stored items</h1>
+          <p class="mb-copy">Full armory view: equipped items are shown in an equipment layout, while the inventory list is limited by current Armory capacity. Visibility is not random: items assigned to higher Display Stands are shown first until the visible limit is filled.</p>
+        </div>
+
+        <aside class="mb-summary-card">
+          <div class="mb-summary-row"><span>Display Stands</span><strong>10 total</strong></div>
+          <div class="mb-summary-row"><span>Default stand</span><strong>Stand 1</strong></div>
+          <div class="mb-summary-row"><span>Armory capacity</span><strong>30 visible</strong></div>
+          <div class="mb-summary-row"><span>Total items</span><strong>270 owned</strong></div>
+        </aside>
+      </section>
+
+      <section class="mb-grid mb-grid--main">
+        <aside class="mb-card mb-card--navy">
+          <div class="mb-card-heading">
+            <div class="mb-card-title-row">
+              <h2 class="mb-card-title">Equipped items</h2>
+              <span class="mb-badge mb-badge--gold">Equipment layout</span>
+            </div>
+            <p class="mb-card-subtitle">Same equipment representation as dashboard, but with full slot interaction and item popovers. “Paperdoll” remains only a technical component/layout name.</p>
+          </div>
+
+          <div class="mb-paperdoll-board" aria-label="Equipped items paperdoll">
+            <div class="mb-paperdoll-figure" aria-hidden="true">
+              <div class="mb-paperdoll-head"></div>
+              <div class="mb-paperdoll-body"></div>
+              <div class="mb-paperdoll-arm-left"></div>
+              <div class="mb-paperdoll-arm-right"></div>
+              <div class="mb-paperdoll-leg-left"></div>
+              <div class="mb-paperdoll-leg-right"></div>
+            </div>
+            <div class="mb-paperdoll-slot slot-helmet"><strong>Helmet</strong> Corinthian Helm</div>
+            <div class="mb-paperdoll-slot slot-amulet"><strong>Amulet</strong> Empty</div>
+            <div class="mb-paperdoll-slot slot-off"><strong>Off hand</strong> Balanced Xiphos</div>
+            <div class="mb-paperdoll-slot slot-main"><strong>Main hand</strong> Spear of Fire</div>
+            <div class="mb-paperdoll-slot slot-armor"><strong>Armor</strong> Outstanding Cuirass</div>
+            <div class="mb-paperdoll-slot slot-ring1"><strong>Ring 1</strong> Ring of Titans</div>
+            <div class="mb-paperdoll-slot slot-ring2"><strong>Ring 2</strong> Empty</div>
+            <div class="mb-paperdoll-slot slot-pants"><strong>Pants</strong> Bronze Guards</div>
+            <div class="mb-paperdoll-slot slot-boots"><strong>Boots</strong> Hoplite Sandals</div>
+          </div>
+
+          <article class="mb-card mb-card--soft" style="margin-top: 1rem;">
+            <div class="mb-card-header">
+              <div>
+                <h2 class="mb-card-title">Selected item</h2>
+                <p class="mb-card-subtitle">Popover/detail card pattern for hover or click.</p>
+              </div>
+              <span class="mb-badge mb-badge--green">Equipped</span>
+            </div>
+            <div class="mb-details-panel">
+              <div class="mb-detail-row"><span>Name</span><strong>Quality Spear of Fire</strong></div>
+              <div class="mb-detail-row"><span>Slot</span><strong>Main hand</strong></div>
+              <div class="mb-detail-row"><span>Damage</span><strong>18–31</strong></div>
+              <div class="mb-detail-row"><span>Bonuses</span><strong>+Fire damage, +Crit</strong></div>
+              <div class="mb-detail-row"><span>Requirements</span><strong>Strength 24</strong></div>
+              <div class="mb-detail-row"><span>Value</span><strong>1,200 drachmas</strong></div>
+            </div>
+          </article>
+        </aside>
+
+        <section class="mb-card">
+          <div class="mb-card-heading">
+            <div class="mb-card-title-row">
+              <h2 class="mb-card-title">Inventory</h2>
+              <div class="mb-button-row" style="margin-top: 0;">
+                <span class="mb-badge mb-badge--red">270 owned / 30 visible</span>
+                <span class="mb-badge mb-badge--blue">Visible by stand priority</span>
+                <span class="mb-badge">10 stands</span>
+              </div>
+            </div>
+            <p class="mb-card-subtitle">The hero owns 270 items, but current Armory capacity exposes only 30 items. Stand 10 has the highest priority, Stand 1 is the default and lowest priority. Empty stands remain visible so the player can manage the full priority ladder.</p>
+          </div>
+
+          <div class="mb-capacity-panel">
+            <div class="mb-capacity-top">
+              <div>
+                <div class="mb-capacity-label">Visible capacity currently filled</div>
+                <div class="mb-capacity-value">30 / 270</div>
+              </div>
+              <div class="mb-button-row" style="margin-top: 0;">
+                <button class="mb-button mb-button--ghost">Sort by value</button>
+                <button class="mb-button mb-button--ghost">Show equipped first</button>
+              </div>
+            </div>
+            <div class="mb-capacity-track"><span></span></div>
+          </div>
+
+          <div class="mb-stand-panel" aria-label="Armory visibility stands">
+            <div class="mb-stand-panel-header">
+              <span>Stand sections are shown from Stand 10 to Stand 1. Higher sections fill the visible 30 item capacity first. Stand names can become player-editable later.
+              <span class="mb-badge mb-badge--blue">drag & drop / move priority</span>
+            </div>
+            <div class="mb-stand-grid">
+              <div class="mb-stand-card is-priority"><div class="mb-stand-top"><span class="mb-stand-rank">10</span><span class="mb-stand-handle">⋮⋮</span></div><div class="mb-stand-name">Stand 10</div><div class="mb-stand-meta">4 items</div><div class="mb-stand-footer"><span class="mb-badge mb-badge--gold">shown first</span></div></div>
+              <div class="mb-stand-card is-empty"><div class="mb-stand-top"><span class="mb-stand-rank">9</span><span class="mb-stand-handle">⋮⋮</span></div><div class="mb-stand-name">Stand 9</div><div class="mb-stand-meta">0 items</div><div class="mb-stand-footer"><span class="mb-badge">empty</span></div></div>
+              <div class="mb-stand-card"><div class="mb-stand-top"><span class="mb-stand-rank">8</span><span class="mb-stand-handle">⋮⋮</span></div><div class="mb-stand-name">Stand 8</div><div class="mb-stand-meta">12 items</div><div class="mb-stand-footer"><span class="mb-badge">12 visible</span></div></div>
+              <div class="mb-stand-card"><div class="mb-stand-top"><span class="mb-stand-rank">7</span><span class="mb-stand-handle">⋮⋮</span></div><div class="mb-stand-name">Stand 7</div><div class="mb-stand-meta">20 items</div><div class="mb-stand-footer"><span class="mb-badge">14 visible</span></div></div>
+              <div class="mb-stand-card is-empty"><div class="mb-stand-top"><span class="mb-stand-rank">6</span><span class="mb-stand-handle">⋮⋮</span></div><div class="mb-stand-name">Stand 6</div><div class="mb-stand-meta">0 items</div><div class="mb-stand-footer"><span class="mb-badge">empty</span></div></div>
+              <div class="mb-stand-card"><div class="mb-stand-top"><span class="mb-stand-rank">5</span><span class="mb-stand-handle">⋮⋮</span></div><div class="mb-stand-name">Stand 5</div><div class="mb-stand-meta">8 items</div><div class="mb-stand-footer"><span class="mb-badge">hidden</span></div></div>
+              <div class="mb-stand-card"><div class="mb-stand-top"><span class="mb-stand-rank">4</span><span class="mb-stand-handle">⋮⋮</span></div><div class="mb-stand-name">Stand 4</div><div class="mb-stand-meta">6 items</div><div class="mb-stand-footer"><span class="mb-badge">hidden</span></div></div>
+              <div class="mb-stand-card"><div class="mb-stand-top"><span class="mb-stand-rank">3</span><span class="mb-stand-handle">⋮⋮</span></div><div class="mb-stand-name">Stand 3</div><div class="mb-stand-meta">5 items</div><div class="mb-stand-footer"><span class="mb-badge">hidden</span></div></div>
+              <div class="mb-stand-card"><div class="mb-stand-top"><span class="mb-stand-rank">2</span><span class="mb-stand-handle">⋮⋮</span></div><div class="mb-stand-name">Stand 2</div><div class="mb-stand-meta">4 items</div><div class="mb-stand-footer"><span class="mb-badge">hidden</span></div></div>
+              <div class="mb-stand-card"><div class="mb-stand-top"><span class="mb-stand-rank">1</span><span class="mb-stand-handle">⋮⋮</span></div><div class="mb-stand-name">Stand 1</div><div class="mb-stand-meta">211 items</div><div class="mb-stand-footer"><span class="mb-badge">default</span><span class="mb-stand-default">new items</span></div></div>
+            </div>
+          </div>
+
+          <div class="mb-filter-bar">
+            <input class="mb-search" value="" placeholder="Search by item name, slot or bonus..." />
+            <select class="mb-select"><option>All slots</option><option>Weapons</option><option>Armor</option><option>Jewelry</option></select>
+            <select class="mb-select"><option>All statuses</option><option>Active</option><option>Equipped</option><option>Locked trade</option><option>Locked auction</option></select>
+          </div>
+
+          <div class="mb-stand-section-list" aria-label="Visible inventory items by stand">
+            <section class="mb-stand-section">
+              <div class="mb-stand-section-header">
+                <div class="mb-stand-section-title"><span class="mb-stand-rank">10</span><div><strong>Stand 10</strong><small>Custom name later: “Best gear / showcase” · 4 items · highest priority</small></div></div>
+                <div class="mb-stand-section-actions"><span class="mb-badge mb-badge--gold">shown first</span><span class="mb-badge mb-badge--blue">drag items here</span></div>
+              </div>
+              <div class="mb-inventory-grid">
+                <div class="mb-item-card is-equipped">
+                  <div class="mb-item-icon">W</div><strong>Quality Spear of Fire</strong><small><span>Main hand · Stand 10</span><span class="mb-item-value">1,200 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge mb-badge--green">equipped</span></div>
+                  <div class="mb-item-popover" role="tooltip"><span class="mb-popover-title">Quality Spear of Fire</span><div class="mb-popover-row"><span>Bonuses</span><strong>+Fire damage, +Crit</strong></div><div class="mb-popover-row"><span>Requirements</span><strong>Strength 24</strong></div><div class="mb-popover-row"><span>Damage</span><strong>18–31</strong></div><div class="mb-popover-row"><span>Value</span><strong>1,200 drachmas</strong></div></div>
+                </div>
+                <div class="mb-item-card is-equipped"><div class="mb-item-icon">W</div><strong>Balanced Xiphos</strong><small><span>Off hand · Stand 10</span><span class="mb-item-value">720 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge mb-badge--green">equipped</span></div></div>
+                <div class="mb-item-card is-equipped"><div class="mb-item-icon">A</div><strong>Outstanding Cuirass</strong><small><span>Armor · Stand 10</span><span class="mb-item-value">2,400 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge mb-badge--green">equipped</span></div></div>
+                <div class="mb-item-card is-locked"><div class="mb-item-icon">R</div><strong>Ring of Titans</strong><small><span>Ring · Stand 10</span><span class="mb-item-value">1,100 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge mb-badge--purple">locked trade</span></div></div>
+              </div>
+            </section>
+
+            <section class="mb-stand-section is-empty">
+              <div class="mb-stand-section-header">
+                <div class="mb-stand-section-title"><span class="mb-stand-rank">9</span><div><strong>Stand 9</strong><small>Empty but visible · ready for drag & drop assignment</small></div></div>
+                <div class="mb-stand-section-actions"><span class="mb-badge">empty</span></div>
+              </div>
+              <div class="mb-empty-stand-dropzone">Drop items here to reserve this high-priority stand.</div>
+            </section>
+
+            <section class="mb-stand-section">
+              <div class="mb-stand-section-header">
+                <div class="mb-stand-section-title"><span class="mb-stand-rank">8</span><div><strong>Stand 8</strong><small>12 items · all visible within current capacity</small></div></div>
+                <div class="mb-stand-section-actions"><span class="mb-badge">12 visible</span></div>
+              </div>
+              <div class="mb-inventory-grid">
+                <div class="mb-item-card"><div class="mb-item-icon">W</div><strong>Demonic Mace</strong><small><span>Weapon · Stand 8</span><span class="mb-item-value">1,450 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge mb-badge--gold">usable</span></div></div>
+                <div class="mb-item-card"><div class="mb-item-icon">H</div><strong>Corinthian Helm</strong><small><span>Helmet · Stand 8</span><span class="mb-item-value">880 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge mb-badge--green">equipped</span></div></div>
+                <div class="mb-item-card"><div class="mb-item-icon">B</div><strong>Hoplite Sandals</strong><small><span>Boots · Stand 8</span><span class="mb-item-value">340 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge mb-badge--green">equipped</span></div></div>
+                <div class="mb-item-card"><div class="mb-item-icon">P</div><strong>Bronze Guards</strong><small><span>Pants · Stand 8</span><span class="mb-item-value">520 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge mb-badge--green">equipped</span></div></div>
+                <div class="mb-item-card"><div class="mb-item-icon">W</div><strong>Quality Dagger</strong><small><span>Weapon · Stand 8</span><span class="mb-item-value">420 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge">active</span></div></div>
+              </div>
+            </section>
+
+            <section class="mb-stand-section">
+              <div class="mb-stand-section-header">
+                <div class="mb-stand-section-title"><span class="mb-stand-rank">7</span><div><strong>Stand 7</strong><small>20 items · 14 visible, capacity cuts this section</small></div></div>
+                <div class="mb-stand-section-actions"><span class="mb-badge mb-badge--blue">partially visible</span></div>
+              </div>
+              <div class="mb-inventory-grid">
+                <div class="mb-item-card"><div class="mb-item-icon">J</div><strong>Amulet of Omen</strong><small><span>Amulet · Stand 7</span><span class="mb-item-value">980 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge mb-badge--blue">requires Wis 20</span></div></div>
+                <div class="mb-item-card"><div class="mb-item-icon">W</div><strong>Poisonous Club</strong><small><span>Weapon · Stand 7</span><span class="mb-item-value">640 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge">active</span></div></div>
+                <div class="mb-item-card"><div class="mb-item-icon">A</div><strong>Linen Armor</strong><small><span>Armor · Stand 7</span><span class="mb-item-value">300 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge">active</span></div></div>
+                <div class="mb-item-card"><div class="mb-item-icon">R</div><strong>Silver Ring</strong><small><span>Ring · Stand 7</span><span class="mb-item-value">560 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge">active</span></div></div>
+                <div class="mb-item-card is-locked"><div class="mb-item-icon">W</div><strong>Outstanding Axe</strong><small><span>Weapon · Stand 7</span><span class="mb-item-value">2,100 drachmas</span></small><div class="mb-item-meta"><span class="mb-badge mb-badge--purple">locked auction</span></div></div>
+              </div>
+            </section>
+
+            <section class="mb-stand-section is-empty">
+              <div class="mb-stand-section-header">
+                <div class="mb-stand-section-title"><span class="mb-stand-rank">6</span><div><strong>Stand 6</strong><small>Empty but still visible in the ladder</small></div></div>
+                <div class="mb-stand-section-actions"><span class="mb-badge">empty</span></div>
+              </div>
+              <div class="mb-empty-stand-dropzone">Drop items here or rename this stand later.</div>
+            </section>
+
+            <section class="mb-stand-section">
+              <div class="mb-stand-section-header">
+                <div class="mb-stand-section-title"><span class="mb-stand-rank">5</span><div><strong>Stand 5</strong><small>8 items · hidden because visible capacity is already filled</small></div></div>
+                <div class="mb-stand-section-actions"><span class="mb-badge">hidden by capacity</span></div>
+              </div>
+              <div class="mb-empty-stand-dropzone">Items exist here, but are below current visibility cutoff.</div>
+            </section>
+
+            <section class="mb-stand-section">
+              <div class="mb-stand-section-header"><div class="mb-stand-section-title"><span class="mb-stand-rank">4</span><div><strong>Stand 4</strong><small>6 items · hidden by capacity</small></div></div><div class="mb-stand-section-actions"><span class="mb-badge">hidden</span></div></div>
+            </section>
+            <section class="mb-stand-section">
+              <div class="mb-stand-section-header"><div class="mb-stand-section-title"><span class="mb-stand-rank">3</span><div><strong>Stand 3</strong><small>5 items · hidden by capacity</small></div></div><div class="mb-stand-section-actions"><span class="mb-badge">hidden</span></div></div>
+            </section>
+            <section class="mb-stand-section">
+              <div class="mb-stand-section-header"><div class="mb-stand-section-title"><span class="mb-stand-rank">2</span><div><strong>Stand 2</strong><small>4 items · hidden by capacity</small></div></div><div class="mb-stand-section-actions"><span class="mb-badge">hidden</span></div></div>
+            </section>
+            <section class="mb-stand-section">
+              <div class="mb-stand-section-header"><div class="mb-stand-section-title"><span class="mb-stand-rank">1</span><div><strong>Stand 1</strong><small>Default stand · 211 items · lowest priority</small></div></div><div class="mb-stand-section-actions"><span class="mb-badge">default</span><span class="mb-stand-default">new items</span></div></div>
+            </section>
+          </div>
+
+          <div class="mb-button-row">
+            <button class="mb-button mb-button--primary">Equip selected</button>
+            <button class="mb-button mb-button--ghost">Sell to vendor</button>
+            <button class="mb-button mb-button--ghost">Create trade offer</button>
+            <button class="mb-button mb-button--ghost">List auction</button>
+          </div>
+
+          <article class="mb-note" style="margin-top: 1rem;">
+            Inventory must use the real item read model. Armory capacity controls how many owned items are visible, while stand priority controls which items get that visibility first. Hidden items remain owned. Empty stands must still be shown so the player can assign items or reprioritize the ladder. Item actions must respect status locks and canonical RPC/domain operations.
+          </article>
+        </section>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<section class="mg-card p-lg w-100">
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.naturalAttacks)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.naturalAttacks, true)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.naturalAttacks)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.naturalAttacks)"
+  />
+
+  <div class="mt-md flex-col gap-md">
+    <p-select
+      [formControl]="page.attackSelector"
+      [options]="page.attackRowOptions()"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Select natural attack"
+      emptyMessage="No natural attacks configured"
+    />
+    <form [formGroup]="actions.form" class="mg-grid grid-cols-4 grid-cols-1-md gap-md w-100">
+      <div class="flex-col gap-xs"><span>Label</span><input pInputText formControlName="label" /></div>
+      <div class="flex-col gap-xs"><span>Key</span><input pInputText formControlName="key" /></div>
+      <div class="flex-row-start-center gap-sm"><p-checkbox formControlName="allowKeyOverride" [binary]="true" inputId="attack-key-override" /><span>Allow key override</span></div>
+      <div class="flex-col gap-xs"><span>Attack count</span><input pInputText type="number" formControlName="attackCount" /></div>
+      <div class="flex-col gap-xs"><span>Min damage</span><input pInputText type="number" formControlName="minDamage" /></div>
+      <div class="flex-col gap-xs"><span>Max damage</span><input pInputText type="number" formControlName="maxDamage" /></div>
+      <div class="flex-col gap-xs"><span>Critical chance %</span><input pInputText type="number" formControlName="criticalChance" /></div>
+      <div class="flex-col gap-xs"><span>Critical damage %</span><input pInputText type="number" formControlName="criticalDamage" /></div>
+      <div class="flex-col gap-xs"><span>Min opponent level</span><input pInputText type="number" formControlName="minOpponentLevel" /></div>
+      <div class="flex-col gap-xs"><span>Max opponent level</span><input pInputText type="number" formControlName="maxOpponentLevel" /></div>
+      <div class="flex-col gap-xs"><span>Sort order</span><input pInputText type="number" formControlName="sortOrder" /></div>
+      <div class="flex-col gap-xs"><span>Description</span><textarea pTextarea rows="2" formControlName="description"></textarea></div>
+      <div class="flex-col gap-xs"><span>Helper text</span><textarea pTextarea rows="2" formControlName="helperText"></textarea></div>
+      <div class="flex-col gap-xs"><span>Admin description</span><textarea pTextarea rows="2" formControlName="adminDescription"></textarea></div>
+      <div class="flex-col gap-xs"><span>Reason</span><input pInputText formControlName="reason" /></div>
+    </form>
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button label="Save natural attack" [disabled]="actions.isSaving() || !page.selectedOpponentView()" (onClick)="actions.save()" />
+      <p-button label="Deactivate natural attack" severity="danger" [disabled]="actions.isSaving() || !page.selectedAttackSource()" (onClick)="actions.deactivate()" />
+      @if (actions.reasonError()) { <span class="tag-badge tag-badge--warn">{{ actions.reasonError() }}</span> }
+    </div>
+  </div>
+</section>

@@ -1,9 +1,262 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Direct Trade V2</title><style>
-:root{--bg:#06080c;--surface:#101a27;--surface2:#0b1018;--gold:#f0c96f;--gold2:#c8923a;--text:#f6edda;--muted:#9d8f75;--line:rgba(240,201,111,.18);--blue:#5ba3d5;--red:#b24b3b;--green:#6fa45d}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 20% 0,rgba(200,146,58,.18),transparent 30rem),radial-gradient(circle at 80% 0,rgba(45,110,159,.18),transparent 30rem),linear-gradient(135deg,var(--bg),#050608);color:var(--text);font-family:Inter,Segoe UI,system-ui,sans-serif}.shell{display:grid;grid-template-columns:260px 1fr;min-height:100vh}.side{border-right:1px solid var(--line);background:rgba(7,11,17,.78);padding:18px}.brand{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:18px;background:rgba(240,201,111,.05);margin-bottom:18px}.mark{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#fff0b9,var(--gold) 30%,#5b3a13 70%,#07111d);color:#090705;font-family:Georgia,serif;font-weight:900;font-size:24px}.nav h4{color:var(--muted);font-size:11px;letter-spacing:.15em;text-transform:uppercase;margin:18px 8px 8px}.nav a{display:flex;gap:10px;color:#d7c8ab;text-decoration:none;padding:10px;border-radius:12px;margin:4px 0}.nav a.active{background:linear-gradient(90deg,rgba(240,201,111,.15),rgba(91,163,213,.12));box-shadow:inset 3px 0 0 var(--gold2);color:var(--text)}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid var(--line);padding:14px 18px;background:rgba(8,13,20,.85);position:sticky;top:0}.main{padding:18px;display:grid;gap:18px}.hero{display:grid;grid-template-columns:1.35fr .8fr;gap:18px;border:1px solid var(--line);border-radius:22px;padding:18px;background:linear-gradient(100deg,rgba(7,11,17,.9),rgba(12,26,41,.72));box-shadow:0 14px 28px rgba(0,0,0,.22)}h1,h2,h3{font-family:Georgia,serif;margin:0}.kicker{color:var(--gold2);letter-spacing:.18em;text-transform:uppercase;font-size:12px}.copy{color:#d7c8ab;line-height:1.45}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card,.panel{border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(18,27,39,.72),rgba(7,10,15,.78));padding:16px;box-shadow:0 12px 22px rgba(0,0,0,.2)}.value{font-family:Georgia,serif;font-size:28px;color:var(--gold)}.badge{display:inline-flex;align-items:center;padding:5px 9px;border:1px solid var(--line);border-radius:999px;color:#d7c8ab;background:rgba(0,0,0,.18);font-size:12px}.badge.gold{color:var(--gold);border-color:rgba(240,201,111,.32)}.badge.blue{color:#b9def3;border-color:rgba(91,163,213,.4)}.badge.red{color:#f2b4aa;border-color:rgba(178,75,59,.4)}.grid2{display:grid;grid-template-columns:1fr 360px;gap:18px}.list{display:grid;gap:10px}.row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;border:1px solid rgba(240,201,111,.1);border-radius:14px;background:rgba(0,0,0,.14);padding:12px}.icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;border:1px solid var(--line);color:var(--gold);background:rgba(240,201,111,.06);font-weight:800}.muted{color:var(--muted);font-size:13px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--line);border-radius:999px;background:rgba(240,201,111,.12);color:var(--text);padding:8px 12px}.btn.primary{background:linear-gradient(180deg,rgba(240,201,111,.34),rgba(91,58,19,.42))}.table{display:grid;gap:6px}.tr{display:grid;grid-template-columns:110px 1fr 80px 100px 100px 150px;gap:10px;align-items:center;padding:10px;border-radius:12px;background:rgba(0,0,0,.14);border:1px solid rgba(240,201,111,.08)}.th{color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-size:11px}.tabs{display:flex;gap:8px}.tab{padding:9px 12px;border-radius:999px;border:1px solid var(--line);color:#d7c8ab}.tab.active{color:var(--gold);background:rgba(240,201,111,.1)}@media(max-width:1100px){.shell{grid-template-columns:1fr}.side{display:none}.hero,.grid2{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}}
-</style></head><body><!--
-  VISUAL REFERENCE ONLY.
-  Do not copy this CSS into Angular feature components.
-  Translate approved visual patterns into global SCSS tokens, vendor wrappers,
-  shared components, PrimeNG wrappers, or documented layout utilities.
---><div class="shell"><aside class="side"><div class="brand"><div class="mark">M</div><div><strong>Mythborne</strong><div class="muted">UI prototype archive</div></div></div><nav class="nav"><h4>Navigation</h4><a class="" href="#"><span class="icon">DA</span>Dashboard</a><a class="" href="#"><span class="icon">EX</span>Exploration</a><a class="" href="#"><span class="icon">HE</span>Hero</a><a class="" href="#"><span class="icon">AR</span>Armory</a><a class="" href="#"><span class="icon">ES</span>Estate</a><a class="active" href="#"><span class="icon">TR</span>Trade</a><a class="" href="#"><span class="icon">PV</span>PvP</a><a class="" href="#"><span class="icon">RE</span>Reports</a><a class="" href="#"><span class="icon">AD</span>Admin</a></nav></aside><section><header class="top"><div><strong>Direct Trade V2</strong><div class="muted">Private offer builder with target response boundary</div></div><div class="actions"><span class="badge gold">Visual reference</span><span class="badge">Do not copy CSS</span></div></header><main class="main">
-<section class="hero"><div><div class="kicker">Direct Trade</div><h1>Offer to selected hero</h1><p class="copy">Creator chooses own items and Character Points only. Target response is filled later by the target.</p></div><div class="card"><h3>Market slots</h3><div class="value">3 / 5</div><p class="muted">Shared with auctions and bids.</p></div></section><section class="grid2"><div class="panel"><h2>Your offer</h2><div class="list"><div class="row"><div class="icon">W</div><div><strong>Quality Spear of Fire</strong><div class="muted">One-handed · Hand slot · locked on send</div></div><button class="btn">×</button></div><div class="row"><div class="icon">R</div><div><strong>Ring of Titans</strong><div class="muted">Ring · locked on send</div></div><button class="btn">×</button></div></div></div><aside class="panel"><h2>Pending offers</h2><p class="copy">Max 5 visible per page. Incoming empty offers do not consume target slot until response.</p></aside></section></main></section></div></body></html>
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mythborne Direct Trade V2 Prototype</title>
+  <style>
+    /*
+      Mythborne Direct Trade V2 — direct offer screen.
+
+      Contract reflected in this mock:
+      - Direct Trade is separate from Auction House.
+      - Direct Trade is a direct offer to one selected hero, separate from Auction House.
+      - Creator can include up to 5 own items + Character Points.
+      - Creator cannot request target items or target Character Points while creating the offer.
+      - Target can respond with up to 5 own items + Character Points in the response step.
+      - Player-to-player economy uses Character Points.
+      - Drachma item value is not shown as trade price, but appears in item popovers.
+      - CP-only for CP-only offers should be blocked.
+      - Trade Routes / market level controls active market slots shared by outgoing direct offers, auction listings and active bids.
+      - Incoming empty offers do not consume the target hero's market slot until the target responds with items or CP.
+      - Persistent mutations must use canonical RPC/domain operations.
+    */
+
+    :root {
+      --mb-bg-0:#06080c; --mb-bg-1:#0b1018; --mb-navy-0:#07111d; --mb-navy-1:#0d2135; --mb-navy-2:#163b5c; --mb-navy-3:#2d6e9f;
+      --mb-gold-1:#9c6723; --mb-gold-2:#c8923a; --mb-gold-3:#f0c96f; --mb-red:#b24b3b; --mb-green:#6fa45d; --mb-blue:#5ba3d5; --mb-purple:#9672cc;
+      --mb-text-0:#f6edda; --mb-text-1:#d7c8ab; --mb-text-2:#9d8f75; --mb-text-3:#6f675a;
+      --mb-line-soft:rgba(240,201,111,.12); --mb-line:rgba(240,201,111,.24); --mb-line-strong:rgba(240,201,111,.44); --mb-shadow:rgba(0,0,0,.42);
+      --mb-sidebar-w:16rem; --mb-topbar-h:4.25rem; --mb-radius-lg:1rem; --mb-radius-xl:1.35rem;
+      --mb-font-display:Georgia,"Times New Roman",serif; --mb-font-ui:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    *{box-sizing:border-box} html{color-scheme:dark}
+    body{margin:0;min-height:100vh;font-family:var(--mb-font-ui);color:var(--mb-text-0);background:radial-gradient(circle at 18% 8%,rgba(200,146,58,.14),transparent 28rem),radial-gradient(circle at 82% 4%,rgba(45,110,159,.20),transparent 34rem),linear-gradient(135deg,var(--mb-bg-0),#080b11 38%,#050608 100%);overflow-x:hidden}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.14;background-image:linear-gradient(rgba(255,255,255,.032) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.032) 1px,transparent 1px);background-size:34px 34px;mask-image:radial-gradient(circle at center,black,transparent 78%)}
+    button,input,select{font:inherit}
+
+    .mb-app-shell{min-height:100vh;display:grid;grid-template-columns:var(--mb-sidebar-w) minmax(0,1fr);grid-template-rows:var(--mb-topbar-h) minmax(0,1fr);grid-template-areas:"topbar topbar" "sidebar main";position:relative;z-index:1}
+    .mb-topbar{grid-area:topbar;position:sticky;top:0;z-index:10;display:grid;grid-template-columns:minmax(20rem,1fr) auto minmax(20rem,1fr);align-items:center;gap:1rem;padding:.55rem 1rem;border-bottom:1px solid var(--mb-line-soft);background:linear-gradient(180deg,rgba(8,13,20,.94),rgba(8,12,18,.88)),radial-gradient(circle at center top,rgba(240,201,111,.1),transparent 28rem);backdrop-filter:blur(16px);box-shadow:0 .75rem 2rem var(--mb-shadow)}
+    .mb-topbar-left,.mb-topbar-right{display:flex;align-items:center;gap:.6rem;min-width:0}.mb-topbar-right{justify-content:flex-end}
+    .mb-brand{display:flex;align-items:center;justify-content:center;gap:.7rem;min-width:16rem}.mb-brand-mark{width:2.35rem;height:2.35rem;border-radius:999px;border:1px solid var(--mb-line-strong);background:radial-gradient(circle at 34% 24%,#fff0b9 0,var(--mb-gold-3) 22%,var(--mb-gold-1) 48%,#251509 70%,var(--mb-navy-0) 100%);box-shadow:inset 0 0 0 4px rgba(0,0,0,.42),0 0 1.2rem rgba(240,201,111,.22);position:relative}.mb-brand-mark::after{content:"M";position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mb-font-display);font-size:1.35rem;font-weight:800;color:#080705}.mb-brand-title{font-family:var(--mb-font-display);font-size:1.65rem;letter-spacing:.11em;text-transform:uppercase;color:var(--mb-gold-3);line-height:1}.mb-brand-subtitle{color:var(--mb-text-3);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;margin-top:.18rem;text-align:center}
+    .mb-chip{display:inline-flex;align-items:center;gap:.42rem;min-height:2.15rem;padding:.38rem .72rem;border:1px solid var(--mb-line-soft);border-radius:999px;color:var(--mb-text-1);background:linear-gradient(180deg,rgba(15,23,33,.75),rgba(6,9,13,.78));white-space:nowrap;box-shadow:inset 0 1px rgba(255,255,255,.04)}.mb-chip strong{color:var(--mb-text-0)}.mb-chip-icon{color:var(--mb-gold-2)}.mb-chip--health strong{color:#ffc0b7}.mb-chip--resource strong{color:var(--mb-gold-3)}.mb-chip-stack{display:inline-grid;gap:.08rem;line-height:1.05}.mb-chip-stack small{color:var(--mb-text-3);font-size:.68rem}
+    .mb-xp{min-width:15rem;display:grid;gap:.3rem;padding:.35rem .7rem;border-radius:999px;border:1px solid var(--mb-line-soft);background:linear-gradient(180deg,rgba(15,23,33,.72),rgba(6,9,13,.74))}.mb-xp-meta{display:flex;justify-content:space-between;gap:.75rem;font-size:.75rem;color:var(--mb-text-2)}.mb-mini-bar{height:.42rem;border-radius:999px;background:rgba(0,0,0,.38);overflow:hidden;border:1px solid rgba(240,201,111,.08)}.mb-mini-bar>span{display:block;width:63%;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--mb-gold-1),var(--mb-gold-3));box-shadow:0 0 .8rem rgba(240,201,111,.3)}
+
+    .mb-sidebar{grid-area:sidebar;padding:1rem .8rem;border-right:1px solid var(--mb-line-soft);background:linear-gradient(180deg,rgba(7,11,17,.84),rgba(5,7,10,.88));backdrop-filter:blur(12px)}
+    .mb-server-card{padding:.9rem;border:1px solid var(--mb-line-soft);border-radius:var(--mb-radius-xl);background:linear-gradient(180deg,rgba(20,32,47,.72),rgba(8,12,18,.74)),radial-gradient(circle at 80% 0%,rgba(240,201,111,.16),transparent 10rem);box-shadow:0 .8rem 1.8rem rgba(0,0,0,.2)}.mb-server-label{color:var(--mb-text-3);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.4rem}.mb-server-name{display:flex;justify-content:space-between;gap:.7rem;align-items:center;font-weight:800;color:var(--mb-text-0)}.mb-prestige{margin-top:.75rem;padding-top:.75rem;border-top:1px solid rgba(240,201,111,.1)}
+    .mb-nav-section-title{margin:1.05rem 0 .45rem .55rem;color:var(--mb-text-3);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase}.mb-nav-list{display:grid;gap:.28rem;margin:0;padding:0;list-style:none}.mb-nav-link{display:flex;align-items:center;gap:.65rem;padding:.67rem .68rem;color:var(--mb-text-1);text-decoration:none;border-radius:.85rem;border:1px solid transparent;transition:120ms ease}.mb-nav-link:hover,.mb-nav-link.is-active{color:var(--mb-text-0);border-color:rgba(240,201,111,.16);background:linear-gradient(90deg,rgba(240,201,111,.13),rgba(45,110,159,.12))}.mb-nav-link.is-active{box-shadow:inset 3px 0 0 var(--mb-gold-2)}.mb-nav-icon{width:1.65rem;height:1.65rem;border-radius:.55rem;display:grid;place-items:center;background:rgba(240,201,111,.08);color:var(--mb-gold-2);border:1px solid rgba(240,201,111,.08);flex:0 0 auto;font-size:.74rem;font-weight:800;letter-spacing:.02em}
+
+    .mb-main{grid-area:main;min-width:0;padding:1.1rem;display:grid;gap:1rem;align-content:start}
+    .mb-page-header{position:relative;min-height:9rem;display:grid;grid-template-columns:minmax(26rem,1.35fr) minmax(20rem,.85fr);gap:1rem;padding:.95rem;border:1px solid var(--mb-line);border-radius:var(--mb-radius-xl);overflow:hidden;background:linear-gradient(100deg,rgba(7,11,17,.95),rgba(12,26,41,.72),rgba(7,10,15,.9)),radial-gradient(circle at 72% 18%,rgba(240,201,111,.14),transparent 22rem);box-shadow:0 .9rem 2rem rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.04)}.mb-page-header::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(240,201,111,.08),transparent 14%,transparent 86%,rgba(240,201,111,.06)),repeating-linear-gradient(90deg,transparent 0 3.2rem,rgba(255,255,255,.025) 3.2rem 3.25rem);pointer-events:none;opacity:.75}.mb-page-header>*{position:relative;z-index:1}.mb-kicker{color:var(--mb-gold-2);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;margin:0 0 .45rem}.mb-title{margin:0;font-family:var(--mb-font-display);font-size:clamp(2rem,3.2vw,3.35rem);line-height:.95;color:var(--mb-gold-3)}.mb-copy{margin:.75rem 0 0;max-width:62rem;color:var(--mb-text-1);line-height:1.45;font-size:.92rem}
+    .mb-summary-card{display:grid;gap:.58rem;padding:.85rem;border-radius:var(--mb-radius-lg);border:1px solid rgba(240,201,111,.14);background:rgba(7,10,14,.34);backdrop-filter:blur(10px)}.mb-summary-row{display:grid;grid-template-columns:1fr auto;gap:.75rem;color:var(--mb-text-2);font-size:.88rem}.mb-summary-row strong{color:var(--mb-text-0)}
+
+    .mb-card{position:relative;padding:.95rem;border-radius:var(--mb-radius-xl);border:1px solid var(--mb-line-soft);background:linear-gradient(180deg,rgba(18,27,39,.68),rgba(7,10,15,.78)),radial-gradient(circle at top right,rgba(240,201,111,.085),transparent 13rem);box-shadow:0 .75rem 1.9rem rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.035);overflow:hidden;backdrop-filter:blur(10px)}.mb-card::after{content:"";position:absolute;inset:.45rem;border-radius:calc(var(--mb-radius-xl) - .35rem);border:1px solid rgba(240,201,111,.045);pointer-events:none}.mb-card>*{position:relative;z-index:1}.mb-card--soft{background:linear-gradient(180deg,rgba(13,18,26,.62),rgba(7,9,13,.72))}.mb-card--navy{background:linear-gradient(180deg,rgba(14,36,57,.72),rgba(7,11,18,.82))}
+    .mb-card-heading{display:grid;gap:.25rem;margin-bottom:.75rem}.mb-card-title-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem}.mb-card-title{margin:0;font-family:var(--mb-font-display);font-size:1.22rem;color:var(--mb-text-0)}.mb-card-subtitle{margin:.2rem 0 0;color:var(--mb-text-2);font-size:.84rem;line-height:1.4}
+    .mb-badge{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .55rem;border-radius:999px;border:1px solid var(--mb-line-soft);color:var(--mb-text-1);background:rgba(7,10,14,.45);font-size:.77rem;white-space:nowrap}.mb-badge--gold{color:var(--mb-gold-3);border-color:rgba(240,201,111,.32)}.mb-badge--green{color:#bde6b0;border-color:rgba(111,164,93,.46)}.mb-badge--blue{color:#b9def3;border-color:rgba(91,163,213,.46)}.mb-badge--red{color:#f2b4aa;border-color:rgba(178,75,59,.46)}.mb-badge--purple{color:#d4c0ff;border-color:rgba(150,114,204,.46)}
+    .mb-button-row{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:.9rem}.mb-button{min-height:2.4rem;padding:.55rem .85rem;border-radius:999px;border:1px solid var(--mb-line);color:var(--mb-text-0);background:linear-gradient(180deg,rgba(240,201,111,.2),rgba(91,58,19,.32));cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.07)}.mb-button--primary{background:linear-gradient(180deg,rgba(240,201,111,.32),rgba(91,58,19,.44))}.mb-button--ghost{background:rgba(8,12,18,.54);color:var(--mb-text-1)}.mb-button:disabled{opacity:.45;cursor:not-allowed}
+
+    .mb-subnav{display:flex;gap:.55rem;flex-wrap:wrap}.mb-subnav-link{padding:.55rem .85rem;border-radius:999px;border:1px solid rgba(240,201,111,.14);background:rgba(5,8,12,.45);color:var(--mb-text-2);text-decoration:none}.mb-subnav-link.is-active{color:var(--mb-gold-3);border-color:rgba(240,201,111,.34);background:linear-gradient(180deg,rgba(240,201,111,.14),rgba(45,110,159,.12))}
+    .mb-direct-layout{display:grid;grid-template-columns:minmax(0,1fr) 20rem;gap:1rem}.mb-trade-builder{display:grid;grid-template-columns:1fr 1fr;gap:1rem}.mb-side-box{border-radius:var(--mb-radius-xl);border:1px solid rgba(240,201,111,.1);background:rgba(0,0,0,.14);padding:.85rem;display:grid;gap:.7rem}.mb-side-box.is-target{background:linear-gradient(180deg,rgba(14,36,57,.28),rgba(0,0,0,.14))}.mb-side-header{display:flex;justify-content:space-between;gap:.75rem;align-items:start}.mb-side-header h3{margin:0;font-family:var(--mb-font-display);font-size:1.2rem;color:var(--mb-text-0)}.mb-side-header small{display:block;color:var(--mb-text-2);font-size:.8rem;margin-top:.2rem}.mb-target-search{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:.8rem}.mb-search,.mb-select,.mb-input{min-height:2.35rem;border-radius:999px;border:1px solid rgba(240,201,111,.14);background:rgba(5,8,12,.55);color:var(--mb-text-1);padding:.45rem .8rem;outline:none}.mb-search{min-width:18rem;flex:1}.mb-input{width:7rem;text-align:right}
+    .mb-trade-slots{display:grid;gap:.48rem}.mb-trade-slot{min-height:3.45rem;border-radius:.9rem;border:1px solid rgba(240,201,111,.11);background:rgba(7,11,17,.44);display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.6rem;align-items:center;padding:.5rem}
+    .mb-trade-slot.is-empty{border-style:dashed;grid-template-columns:1fr;color:var(--mb-text-3);text-align:center;place-items:center}.mb-trade-slot.is-locked{border-color:rgba(150,114,204,.34)}.mb-item-icon{width:2.35rem;height:2.35rem;border-radius:.75rem;border:1px solid rgba(240,201,111,.12);display:grid;place-items:center;color:var(--mb-gold-2);background:radial-gradient(circle,rgba(240,201,111,.14),rgba(45,110,159,.1));font-weight:800}
+    .mb-popover-header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.75rem;align-items:center;margin-bottom:.55rem}
+    .mb-popover-icon{width:3rem;height:3rem;border-radius:.85rem;border:1px solid rgba(240,201,111,.32);display:grid;place-items:center;background:radial-gradient(circle at 35% 25%,rgba(240,201,111,.25),rgba(156,103,35,.16) 45%,rgba(7,17,29,.7));box-shadow:inset 0 1px rgba(255,255,255,.06),0 .45rem 1rem rgba(0,0,0,.24)}
+    .mb-popover-icon svg{width:1.75rem;height:1.75rem;fill:none;stroke:var(--mb-gold-3);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round} .mb-slot-main{min-width:0;position:relative}.mb-item-name{display:inline-block;color:var(--mb-text-0);font-weight:800;font-size:.86rem;cursor:default}.mb-slot-main small{display:block;color:var(--mb-text-2);font-size:.74rem;margin-top:.12rem}.mb-slot-action{display:flex;gap:.35rem;justify-content:flex-end}.mb-small-button{width:2rem;height:2rem;border-radius:.65rem;border:1px solid rgba(240,201,111,.14);background:rgba(0,0,0,.22);color:var(--mb-text-2);cursor:pointer}.mb-cp-row{display:flex;justify-content:space-between;gap:.75rem;align-items:center;padding-top:.55rem;border-top:1px solid rgba(240,201,111,.08)}.mb-cp-row label{color:var(--mb-text-2);font-size:.84rem}.mb-cp{color:var(--mb-gold-3)!important}.mb-summary-stack{display:grid;gap:.5rem}.mb-total-row{display:grid;grid-template-columns:1fr auto;gap:.75rem;color:var(--mb-text-2);font-size:.85rem}.mb-total-row strong{color:var(--mb-text-0)}.mb-warning{padding:.75rem;border-radius:var(--mb-radius-lg);border:1px solid rgba(178,75,59,.24);background:rgba(178,75,59,.1);color:#f2b4aa;font-size:.85rem;line-height:1.45}.mb-note{padding:.75rem;border-radius:var(--mb-radius-lg);border:1px solid rgba(91,163,213,.18);background:rgba(91,163,213,.08);color:var(--mb-text-2);font-size:.85rem;line-height:1.45}
+    .mb-offer-list{display:grid;gap:.65rem}.mb-offer-pagination{display:flex;justify-content:space-between;align-items:center;gap:.45rem;flex-wrap:wrap;margin-top:.75rem;padding:.6rem;border-radius:var(--mb-radius-lg);border:1px solid rgba(240,201,111,.1);background:rgba(0,0,0,.14)}.mb-offer-pagination-meta{color:var(--mb-text-2);font-size:.78rem}.mb-offer-pagination-meta strong{color:var(--mb-text-0)}.mb-offer-pages{display:flex;gap:.28rem;align-items:center;flex-wrap:wrap}.mb-offer-page-button{min-width:1.9rem;height:1.9rem;padding:0 .48rem;border-radius:.62rem;border:1px solid rgba(240,201,111,.12);background:rgba(5,8,12,.46);color:var(--mb-text-2);cursor:pointer;font-size:.78rem}.mb-offer-page-button.is-active{color:var(--mb-gold-3);border-color:rgba(240,201,111,.34);background:linear-gradient(180deg,rgba(240,201,111,.14),rgba(45,110,159,.12))}.mb-offer-page-button:disabled{opacity:.42;cursor:not-allowed}.mb-offer-page-ellipsis{color:var(--mb-text-3);font-size:.78rem}.mb-offer-card{display:grid;gap:.6rem;padding:.75rem;border-radius:var(--mb-radius-lg);border:1px solid rgba(240,201,111,.1);background:linear-gradient(180deg,rgba(7,11,17,.42),rgba(0,0,0,.18))}.mb-offer-card.is-attention{border-color:rgba(240,201,111,.32);background:linear-gradient(180deg,rgba(34,31,19,.42),rgba(0,0,0,.18))}.mb-offer-meta{display:flex;justify-content:space-between;gap:.75rem;align-items:start}.mb-offer-title{margin:0;color:var(--mb-text-0);font-weight:800}.mb-offer-subtitle{margin:.15rem 0 0;color:var(--mb-text-2);font-size:.82rem}.mb-offer-row{display:grid;grid-template-columns:1fr auto;gap:.75rem;color:var(--mb-text-2);font-size:.84rem;border-bottom:1px solid rgba(240,201,111,.07);padding-bottom:.4rem}.mb-offer-row:last-child{border-bottom:0;padding-bottom:0}.mb-offer-row strong{color:var(--mb-text-0);text-align:right}
+    .mb-item-popover{position:absolute;left:0;top:calc(100% + .6rem);width:22rem;padding:.8rem;border-radius:.95rem;border:1px solid rgba(240,201,111,.22);background:linear-gradient(180deg,rgba(14,20,29,.98),rgba(8,11,16,.98)),radial-gradient(circle at top right,rgba(240,201,111,.08),transparent 12rem);box-shadow:0 1rem 2.2rem rgba(0,0,0,.45);opacity:0;transform:translateY(.25rem);pointer-events:none;transition:120ms ease;z-index:20}.mb-item-name:hover + .mb-item-popover,.mb-item-popover:hover{opacity:1;transform:translateY(0);pointer-events:auto}.mb-popover-title{font-family:var(--mb-font-display);font-size:1.05rem;color:var(--mb-gold-3);margin:0 0 .45rem}.mb-popover-sub{color:var(--mb-text-2);font-size:.8rem;margin-bottom:.55rem}.mb-popover-section{border-top:1px solid rgba(240,201,111,.08);padding-top:.5rem;margin-top:.5rem;display:grid;gap:.3rem}.mb-popover-label{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mb-text-3)}.mb-popover-row{display:grid;grid-template-columns:1fr auto;gap:.7rem;font-size:.82rem;color:var(--mb-text-2)}.mb-popover-row strong{color:var(--mb-text-0);text-align:right}.mb-popover-list{margin:0;padding-left:1rem;color:var(--mb-text-1);font-size:.82rem;display:grid;gap:.2rem}
+    .mb-popover-stat{display:grid;grid-template-columns:1fr auto;gap:.7rem;align-items:center;font-size:.82rem;color:var(--mb-text-2)}.mb-popover-stat strong{color:var(--mb-text-0)}.mb-boosted{color:var(--mb-gold-3)!important;text-shadow:0 0 .55rem rgba(240,201,111,.18)}
+
+    @media(max-width:1320px){.mb-direct-layout{grid-template-columns:1fr}.mb-trade-builder{grid-template-columns:1fr}}
+    @media(max-width:1220px){.mb-topbar{grid-template-columns:1fr;height:auto}.mb-brand{justify-content:flex-start}.mb-app-shell{grid-template-rows:auto minmax(0,1fr)}.mb-page-header{grid-template-columns:1fr}}
+    @media(max-width:860px){.mb-app-shell{display:block}.mb-topbar{position:static}.mb-topbar-left,.mb-topbar-right{justify-content:flex-start;overflow-x:auto}.mb-sidebar{border-right:0;border-bottom:1px solid var(--mb-line-soft)}.mb-nav-list{grid-template-columns:repeat(4,minmax(0,1fr))}.mb-nav-link{justify-content:center}.mb-nav-label,.mb-nav-section-title{display:none}.mb-main{padding:.75rem}.mb-card-title-row{align-items:start;flex-direction:column}.mb-trade-slot{grid-template-columns:auto 1fr}.mb-slot-action{grid-column:1/-1;justify-content:flex-start}}
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left" aria-label="Hero health and experience">
+        <span class="mb-chip mb-chip--health"><span class="mb-chip-icon">♥</span> Health <strong>86 / 100</strong></span>
+        <div class="mb-xp" aria-label="Experience progress"><div class="mb-xp-meta"><span>Level 12</span><strong>1,240 XP to next</strong></div><div class="mb-mini-bar"><span></span></div></div>
+      </div>
+      <div class="mb-brand" aria-label="Mythborne"><div class="mb-brand-mark"></div><div><div class="mb-brand-title">Mythborne</div><div class="mb-brand-subtitle">Direct trade prototype</div></div></div>
+      <div class="mb-topbar-right" aria-label="Hero resources">
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">✦</span><span class="mb-chip-stack">Character Points <strong>146</strong><small>18 locked</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◈</span><span class="mb-chip-stack">Drachmas <strong>3,420</strong><small>item tooltip only</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">▣</span><span class="mb-chip-stack">Materials <strong>185</strong><small>+22 / h</small></span></span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-server-card" aria-label="Selected world context">
+        <div class="mb-server-label">Selected server</div>
+        <div class="mb-server-name"><span>Sandbox</span><span class="mb-badge mb-badge--green">live</span></div>
+        <div class="mb-prestige"><div class="mb-server-label">Prestige</div><div class="mb-server-name"><span>Zeugitai</span><span class="mb-badge mb-badge--gold">Tier II</span></div></div>
+      </section>
+      <div class="mb-nav-section-title">Hero</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#dashboard"><span class="mb-nav-icon">DA</span><span class="mb-nav-label">Dashboard</span></a></li>
+        <li><a class="mb-nav-link" href="#exploration"><span class="mb-nav-icon">EX</span><span class="mb-nav-label">Exploration</span></a></li>
+        <li><a class="mb-nav-link" href="#statistics"><span class="mb-nav-icon">ST</span><span class="mb-nav-label">Statistics</span></a></li>
+        <li><a class="mb-nav-link" href="#armory"><span class="mb-nav-icon">AR</span><span class="mb-nav-label">Armory</span></a></li>
+      </ul>
+      <div class="mb-nav-section-title">World</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#estate"><span class="mb-nav-icon">ES</span><span class="mb-nav-label">Estate</span></a></li>
+        <li><a class="mb-nav-link is-active" href="#trade"><span class="mb-nav-icon">TR</span><span class="mb-nav-label">Trade</span></a></li>
+        <li><a class="mb-nav-link" href="#pvp"><span class="mb-nav-icon">PV</span><span class="mb-nav-label">PvP</span></a></li>
+        <li><a class="mb-nav-link" href="#reports"><span class="mb-nav-icon">RP</span><span class="mb-nav-label">Reports</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main" id="direct-trade">
+      <section class="mb-page-header">
+        <div>
+          <p class="mb-kicker">Direct Trade</p>
+          <h1 class="mb-title">Offer to selected hero</h1>
+          <p class="mb-copy">Send a direct offer to one hero on the selected server. You choose your own items and Character Points only; the target decides what they add when responding. This screen is separate from the Auction House.</p>
+          <div class="mb-button-row">
+            <span class="mb-badge mb-badge--gold">Up to 5 items per side</span>
+            <span class="mb-badge mb-badge--blue">Character Points supported</span>
+            <span class="mb-badge">Target responds separately</span>
+          </div>
+        </div>
+        <aside class="mb-summary-card">
+          <div class="mb-summary-row"><span>Available CP</span><strong>146</strong></div>
+          <div class="mb-summary-row"><span>Locked CP</span><strong>18</strong></div>
+          <div class="mb-summary-row"><span>Market slots</span><strong>3 / 5 used</strong></div>
+          <div class="mb-summary-row"><span>Remaining slots</span><strong>2</strong></div>
+        </aside>
+      </section>
+
+      <section class="mb-card">
+        <div class="mb-card-heading">
+          <div class="mb-card-title-row">
+            <div>
+              <h2 class="mb-card-title">Offer builder</h2>
+              <p class="mb-card-subtitle">A clean offer composer. Hover any item to see full item details, including drachma value in the popover only.</p>
+            </div>
+            <nav class="mb-subnav" aria-label="Trade section navigation">
+              <a class="mb-subnav-link is-active" href="#direct-trade">Direct Trade</a>
+              <a class="mb-subnav-link" href="#auctions">Auctions</a>
+              <a class="mb-subnav-link" href="#my-offers">My offers</a>
+            </nav>
+          </div>
+        </div>
+
+        <div class="mb-target-search">
+          <input class="mb-search" value="Damaris" aria-label="Target hero" />
+          <span class="mb-badge mb-badge--green">Target found</span>
+          <button class="mb-button mb-button--ghost">Change target</button>
+        </div>
+
+        <div class="mb-direct-layout">
+          <div class="mb-stack">
+            <section class="mb-trade-builder" aria-label="Direct trade builder">
+              <article class="mb-side-box">
+                <div class="mb-side-header">
+                  <div><h3>Your offer</h3><small>Items and CP you send to Damaris.</small></div>
+                  <span class="mb-badge mb-badge--gold">3 / 5 items</span>
+                </div>
+                <div class="mb-trade-slots">
+                  <div class="mb-trade-slot">
+                    <div class="mb-item-icon">W</div>
+                    <div class="mb-slot-main">
+                      <span class="mb-item-name">Quality Spear of Fire</span>
+                      <div class="mb-item-popover">
+                        <div class="mb-popover-header">
+                          <div>
+                            <div class="mb-popover-title">Quality Spear of Fire</div>
+                            <div class="mb-popover-sub">One-handed weapon · Hand slot · Quality tier</div>
+                          </div>
+                          <div class="mb-popover-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 3l8 8-2 2-3-3-8 8-3 1 1-3 8-8-3-3 2-2z"/><path d="M4 20l4-1"/></svg></div>
+                        </div>
+                        <div class="mb-popover-section"><div class="mb-popover-label">Item stats</div><div class="mb-popover-stat"><span>Damage</span><strong><span class="mb-boosted">18</span>–<span class="mb-boosted">31</span></strong></div></div>
+                        <div class="mb-popover-section"><div class="mb-popover-label">Bonuses</div><ul class="mb-popover-list"><li>Fire Damage +8</li><li>Damage +16</li><li>Critical Chance +3%</li></ul></div>
+                        <div class="mb-popover-section"><div class="mb-popover-label">Requirements</div><div class="mb-popover-row"><span>Strength</span><strong>24</strong></div></div>
+                        <div class="mb-popover-section"><div class="mb-popover-label">Value</div><div class="mb-popover-row"><span>Drachma value</span><strong>1,200</strong></div></div>
+                      </div>
+                      <small>One-handed · Hand slot · will lock as locked_trade</small>
+                    </div>
+                    <div class="mb-slot-action"><button class="mb-small-button">×</button></div>
+                  </div>
+                  <div class="mb-trade-slot"><div class="mb-item-icon">R</div><div class="mb-slot-main"><span class="mb-item-name">Ring of Titans</span><small>Ring · will lock as locked_trade</small></div><div class="mb-slot-action"><button class="mb-small-button">×</button></div></div>
+                  <div class="mb-trade-slot"><div class="mb-item-icon">B</div><div class="mb-slot-main"><span class="mb-item-name">Sandals of Wind</span><small>Boots · cannot equip yet</small></div><div class="mb-slot-action"><button class="mb-small-button">×</button></div></div>
+                  <div class="mb-trade-slot is-empty">Add item slot 4</div>
+                  <div class="mb-trade-slot is-empty">Add item slot 5</div>
+                </div>
+                <div class="mb-cp-row"><label>Your Character Points</label><input class="mb-input" value="12" /></div>
+                <div class="mb-summary-stack">
+                  <div class="mb-total-row"><span>Items selected</span><strong>3 / 5</strong></div>
+                  <div class="mb-total-row"><span>CP to lock</span><strong class="mb-cp">12</strong></div>
+                </div>
+              </article>
+
+              <article class="mb-side-box is-target">
+                <div class="mb-side-header">
+                  <div><h3>Target response</h3><small>Damaris may add their own items and CP after receiving the offer.</small></div>
+                  <span class="mb-badge mb-badge--blue">response later</span>
+                </div>
+                <div class="mb-trade-slots">
+                  <div class="mb-trade-slot is-empty">Response item slot 1</div>
+                  <div class="mb-trade-slot is-empty">Response item slot 2</div>
+                  <div class="mb-trade-slot is-empty">Response item slot 3</div>
+                  <div class="mb-trade-slot is-empty">Response item slot 4</div>
+                  <div class="mb-trade-slot is-empty">Response item slot 5</div>
+                </div>
+                <div class="mb-cp-row"><label>Target Character Points</label><input class="mb-input" value="—" disabled /></div>
+                <div class="mb-note">Damaris’ response will appear here after they answer the offer.</div>
+              </article>
+            </section>
+
+            <section class="mb-card mb-card--soft">
+              <div class="mb-card-heading"><h2 class="mb-card-title">Offer review</h2><p class="mb-card-subtitle">Short summary before sending. Your selected items and CP will be locked while the offer is pending.</p></div>
+              <div class="mb-summary-stack">
+                <div class="mb-total-row"><span>Your offer</span><strong>3 items + 12 CP</strong></div>
+                <div class="mb-total-row"><span>Target response</span><strong>empty until Damaris responds</strong></div>
+                <div class="mb-total-row"><span>Locks on send</span><strong>3 items + 12 CP</strong></div>
+                <div class="mb-total-row"><span>Status after send</span><strong>Waiting for Damaris</strong></div>
+              </div>
+              <div class="mb-button-row"><button class="mb-button mb-button--primary">Send offer</button><button class="mb-button mb-button--ghost">Save draft</button><button class="mb-button mb-button--ghost">Reset</button></div>
+            </section>
+          </div>
+
+          <aside class="mb-stack">
+            <section class="mb-card mb-card--soft">
+              <div class="mb-card-heading"><div class="mb-card-title-row"><h2 class="mb-card-title">Pending offers</h2><span class="mb-badge mb-badge--gold">17 total</span></div><p class="mb-card-subtitle">Multiple offers can exist with the same or different heroes while market slot limits allow it.</p></div>
+              <div class="mb-offer-list">
+                <article class="mb-offer-card is-attention"><div class="mb-offer-meta"><div><h4 class="mb-offer-title">From Damaris</h4><p class="mb-offer-subtitle">Incoming empty offer · does not use your market slot yet</p></div><span class="mb-badge mb-badge--gold">incoming</span></div><div class="mb-offer-row"><span>They offer</span><strong>1 item + 0 CP</strong></div><div class="mb-offer-row"><span>Your response</span><strong>not set</strong></div><div class="mb-button-row"><button class="mb-button mb-button--primary">Respond</button><button class="mb-button mb-button--ghost">Reject</button></div></article>
+                <article class="mb-offer-card"><div class="mb-offer-meta"><div><h4 class="mb-offer-title">To Nikandros</h4><p class="mb-offer-subtitle">Outgoing · your assets locked · uses 1 market slot</p></div><span class="mb-badge mb-badge--purple">locked_trade</span></div><div class="mb-offer-row"><span>You offered</span><strong>3 items + 12 CP</strong></div><div class="mb-offer-row"><span>Target response</span><strong>waiting</strong></div><div class="mb-button-row"><button class="mb-button mb-button--ghost">Open</button><button class="mb-button mb-button--ghost">Cancel</button></div></article>
+                <article class="mb-offer-card"><div class="mb-offer-meta"><div><h4 class="mb-offer-title">To Damaris</h4><p class="mb-offer-subtitle">Second outgoing offer to the same hero · separate market slot</p></div><span class="mb-badge mb-badge--purple">locked_trade</span></div><div class="mb-offer-row"><span>You offered</span><strong>1 item + 0 CP</strong></div><div class="mb-offer-row"><span>Target response</span><strong>waiting</strong></div><div class="mb-button-row"><button class="mb-button mb-button--ghost">Open</button><button class="mb-button mb-button--ghost">Cancel</button></div></article>
+              </div>
+              <nav class="mb-offer-pagination" aria-label="Pending offers pagination">
+                <div class="mb-offer-pagination-meta"><strong>1–5</strong> of 17</div>
+                <div class="mb-offer-pages">
+                  <button class="mb-offer-page-button" disabled>‹</button>
+                  <button class="mb-offer-page-button is-active">1</button>
+                  <button class="mb-offer-page-button">2</button>
+                  <button class="mb-offer-page-button">3</button>
+                  <span class="mb-offer-page-ellipsis">…</span>
+                  <button class="mb-offer-page-button">4</button>
+                  <button class="mb-offer-page-button">›</button>
+                </div>
+              </nav>
+            </section>
+
+            <section class="mb-card mb-card--navy">
+              <div class="mb-card-heading"><h2 class="mb-card-title">Rules</h2><p class="mb-card-subtitle">Short player-facing constraints for direct trade.</p></div>
+              <div class="mb-summary-row"><span>Target</span><strong>1 hero</strong></div>
+              <div class="mb-summary-row"><span>Your items</span><strong>0–5</strong></div>
+              <div class="mb-summary-row"><span>Target response</span><strong>0–5 items</strong></div>
+              <div class="mb-summary-row"><span>Payment</span><strong>Character Points</strong></div>
+            </section>
+
+            <section class="mb-note">
+              Market slots are shared by outgoing offers, active auction listings and active auction bids. Incoming offers start using a slot only when you respond with items or CP.
+            </section>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -3236,6 +3236,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 
 ## Task M4 — Opponent definitions and combat dictionaries read layer
 
+**Status:** Done / accepted on 2026-05-02.
+
 **Goal:** Add frontend/domain read models for admin-defined combat opponents and DB-backed combat explainability dictionaries.
 
 **Scope:**
@@ -3279,6 +3281,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 
 ## Task M5 — Opponent combatant/loadout resolver
 
+**Status:** Done / accepted on 2026-05-02.
+
 **Goal:** Resolve an admin-defined opponent into a combatant input.
 
 **Scope:**
@@ -3308,6 +3312,8 @@ Epic M must not implement rewards, trial completion, PvP consequences, prestige 
 ---
 
 ## Task M6 — Attack plan builder
+
+**Status:** Done / accepted on 2026-05-02.
 
 **Goal:** Build concrete attack slots from hero/opponent combatants.
 
@@ -3513,6 +3519,8 @@ Current snapshot tables:
 
 ## Task M10 — Thin sandbox combat caller
 
+**Status:** Done / accepted on 2026-05-02.
+
 **Goal:** Keep `/game/combat` as a sandbox/test caller using the reusable combat core.
 
 **Scope:**
@@ -3535,6 +3543,8 @@ Current snapshot tables:
 ---
 
 ## Task M11 — Combat admin/balance tooling foundation
+
+**Status:** Done / accepted on 2026-05-02.
 
 **Goal:** Add admin/balance UI surfaces needed to test combat foundation.
 
@@ -3577,6 +3587,8 @@ Current snapshot tables:
 ---
 
 ## Task M12 — Combat opponent definitions admin configurator
+
+**Status:** Done / accepted on 2026-05-03.
 
 **Goal:** Add a write-capable admin/balancer UI for configuring reusable combat opponent definitions used by encounter and trial combat candidates.
 
@@ -3756,6 +3768,8 @@ Frontend must use these RPCs. Do not direct-write combat opponent tables from An
   - manual equipment entry upsert/deactivation,
   - generated equipment entry upsert/deactivation,
   - and explains how configured opponent content affects combat encounters/trials.
+
+**Implementation note:** M12 accepted on 2026-05-03 after user-side smoke. Added write-capable `/admin/combat-opponents` under admin Game Balance for combat opponent families, opponent definitions, baseline stats, natural attacks and equipment entries. Durable mutations use the canonical combat opponent RPCs only; Angular does not direct-write `combat_opponent_*` tables. The configurator supports empty opponent content, DB-backed section metadata, DB-backed combat/equipment/item-generation/formula options, full baseline stat grid with missing stats treated as default `0`, row-safe stat upsert/delete, bulk stat baseline save, and a reusable `AdminReasonPresetField` reason preset pattern. Equipment entries remain fight-local blueprints/loadouts and do not create player-owned `items`. The remaining equipment slot read issue found during smoke was resolved by a database/RLS fix for `equipment_slot_definitions`; no hardcoded frontend fallback slots were added. Follow-ups are not M12 blockers: apply `AdminReasonPresetField` to the remaining M12 reason fields for consistency, broader UI polish for native-looking inputs where global PrimeNG/theme styles are inconsistent, optional later refactor of large shared files (`combat-opponent-admin.ts`, `combat-opponent.model.ts`), and future UX/configurator layout refinement. Verification passed with `npx tsc --noEmit`, focused M12 specs, static greps for no direct combat opponent writes/no hardcoded slot fallback/no `label > p-select`/no durable M12 `any`, and `npm run build` with known budget/CommonJS warnings. Manual smoke was performed by the user and passed; Codex did not run manual smoke or route smoke.
 
 ---
 

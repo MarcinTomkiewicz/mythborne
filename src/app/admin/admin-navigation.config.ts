@@ -58,6 +58,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'Combat',
+    title: 'Combat opponents',
+    description:
+      'Write-capable configurator for reusable opponent families, definitions, stat baselines, natural attacks and fight-local equipment blueprints.',
+    routerLink: '/admin/combat-opponents',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Anti-abuse',
     title: 'Anti-abuse config',
     description:
@@ -448,6 +456,11 @@ export const FORMULAS_PAGE_LINKS: readonly AdminTagLink[] = [
 export const COMBAT_BALANCE_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
   {
+    label: 'Combat opponents',
+    routerLink: '/admin/combat-opponents',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     label: 'Formula read model',
     routerLink: '/admin/formulas',
     accessPolicy: 'selectedServerManagement',
@@ -466,6 +479,30 @@ export const COMBAT_BALANCE_PAGE_LINKS: readonly AdminTagLink[] = [
     label: 'Combat test surface',
     routerLink: '/game/combat',
     accessPolicy: 'playerGameplay',
+  },
+];
+
+export const COMBAT_OPPONENTS_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Combat balance',
+    routerLink: '/admin/combat-balance',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Formula read model',
+    routerLink: '/admin/formulas',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Encounter definitions',
+    routerLink: '/admin/exploration-encounters',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Trial definitions',
+    routerLink: '/admin/exploration-trials',
+    accessPolicy: 'selectedServerManagement',
   },
 ];
 

@@ -1,0 +1,54 @@
+<section class="mg-card p-lg w-100">
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.baselineStats)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.baselineStats, true)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.baselineStats)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.baselineStats)"
+  />
+
+  <div class="mt-md flex-col gap-md">
+    <app-admin-reason-preset-field
+      label="Reason for stat baseline changes"
+      [control]="actions.reason"
+      [error]="actions.reasonError()"
+    />
+
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button
+        label="Save all stat baselines"
+        [disabled]="actions.isSaving() || !page.selectedOpponentView() || page.statGridRows().length === 0"
+        (onClick)="actions.saveAll(page.statGridRows())"
+      />
+    </div>
+
+    <p-table [value]="page.statGridRows()" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr><th>Stat</th><th>Baseline</th><th>Status</th><th>Action</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>
+            <strong>{{ row.statLabel }}</strong>
+            @if (row.statDescription) { <br /><span class="muted-text">{{ row.statDescription }}</span> }
+          </td>
+          <td>
+            <input
+              pInputText
+              class="w-100"
+              type="number"
+              min="0"
+              [value]="actions.statDraftValue(row)"
+              #baseValue
+              (input)="actions.setStatDraftValue(row.statKey, baseValue.value)"
+            />
+          </td>
+          <td><span class="mg-tag">{{ row.isConfigured ? 'configured' : 'default 0' }}</span></td>
+          <td class="flex-row-start-center flex-wrap gap-xs">
+            <p-button label="Save" [disabled]="actions.isSaving() || !page.selectedOpponentView()" (onClick)="actions.save(row, actions.statDraftValue(row))" />
+            <p-button label="Delete" severity="danger" [disabled]="actions.isSaving() || !row.statValueId" (onClick)="actions.delete(row)" />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</section>

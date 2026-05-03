@@ -40,6 +40,13 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'combat-opponents',
+    loadComponent: () =>
+      import('./pages/combat-opponents/combat-opponents-page').then(
+        (m) => m.CombatOpponentsPage,
+      ),
+  },
+  {
     path: 'config-definitions',
     loadComponent: () =>
       import('./pages/config-definitions/config-definitions-page').then(

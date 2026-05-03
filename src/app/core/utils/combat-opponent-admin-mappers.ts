@@ -7,6 +7,7 @@ import {
   CombatOpponentEquipmentEntryReadModel,
   CombatOpponentEquipmentModeReadModel,
   CombatOpponentFamilyReadModel,
+  CombatOpponentStatGridRow,
   CombatOpponentStatValueReadModel,
   CombatStatDefinitionReadModel,
   EquipmentSlotDefinitionReadModel,
@@ -218,6 +219,29 @@ export function toCombatOpponentAdminViews(
       equipmentEntries: data.equipmentEntries
         .filter((entry) => entry.opponentDefinitionId === opponent.id)
         .map((entry) => toEquipmentEntryView(data, entry)),
+    };
+  });
+}
+
+export function toCombatOpponentStatGridRows(
+  data: Pick<CombatOpponentAdminData, 'stats' | 'statValues'>,
+  opponentDefinitionId: string | null,
+): CombatOpponentStatGridRow[] {
+  return data.stats.map((stat) => {
+    const value = opponentDefinitionId
+      ? data.statValues.find((entry) =>
+        entry.opponentDefinitionId === opponentDefinitionId && entry.statKey === stat.key
+      ) ?? null
+      : null;
+
+    return {
+      statKey: stat.key,
+      statLabel: `${stat.label} (${stat.key})`,
+      statDescription: stat.description ?? stat.helperText ?? stat.adminDescription ?? null,
+      statValueId: value?.id ?? null,
+      baseValue: value?.baseValue ?? 0,
+      sortOrder: value?.sortOrder ?? stat.sortOrder,
+      isConfigured: value !== null,
     };
   });
 }

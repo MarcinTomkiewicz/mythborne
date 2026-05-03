@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mythborne Auctions V2 Prototype</title>
+  <style>
+    /*
+      Mythborne Auctions V2 — corrected separate auction screen.
+
+      Scope:
+      - Auctions are a separate screen from Direct Trade.
+      - Auction listing = exactly one item.
+      - Player browses auction listings, not another hero's whole inventory.
+      - Filters focus on slot/category, requirements, price, ending time and status.
+      - Payment is Character Points.
+      - Drachma item value is intentionally not shown in the listing cards;
+      - item hover opens a shared item popover with quality, aggregated bonuses, requirements and drachma value;
+      - auction row actions depend on auction mode: bidding, buy_now, bidding_with_buy_now.
+      - auction list needs visible pagination and elegant page switching.
+      - Direct trade will be a separate screen for private offers up to 5 items + CP per side.
+    */
+
+    :root {
+      --mb-bg-0:#06080c; --mb-bg-1:#0b1018; --mb-navy-0:#07111d; --mb-navy-1:#0d2135; --mb-navy-2:#163b5c; --mb-navy-3:#2d6e9f;
+      --mb-gold-1:#9c6723; --mb-gold-2:#c8923a; --mb-gold-3:#f0c96f; --mb-red:#b24b3b; --mb-green:#6fa45d; --mb-blue:#5ba3d5; --mb-purple:#9672cc;
+      --mb-text-0:#f6edda; --mb-text-1:#d7c8ab; --mb-text-2:#9d8f75; --mb-text-3:#6f675a;
+      --mb-line-soft:rgba(240,201,111,.12); --mb-line:rgba(240,201,111,.24); --mb-line-strong:rgba(240,201,111,.44); --mb-shadow:rgba(0,0,0,.42);
+      --mb-sidebar-w:16rem; --mb-topbar-h:4.25rem; --mb-radius-lg:1rem; --mb-radius-xl:1.35rem;
+      --mb-font-display:Georgia,"Times New Roman",serif; --mb-font-ui:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+
+    *{box-sizing:border-box} html{color-scheme:dark}
+    body{margin:0;min-height:100vh;font-family:var(--mb-font-ui);color:var(--mb-text-0);background:radial-gradient(circle at 18% 8%,rgba(200,146,58,.14),transparent 28rem),radial-gradient(circle at 82% 4%,rgba(45,110,159,.20),transparent 34rem),linear-gradient(135deg,var(--mb-bg-0),#080b11 38%,#050608 100%);overflow-x:hidden}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.14;background-image:linear-gradient(rgba(255,255,255,.032) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.032) 1px,transparent 1px);background-size:34px 34px;mask-image:radial-gradient(circle at center,black,transparent 78%)}
+    button,input,select{font:inherit}
+
+    .mb-app-shell{min-height:100vh;display:grid;grid-template-columns:var(--mb-sidebar-w) minmax(0,1fr);grid-template-rows:var(--mb-topbar-h) minmax(0,1fr);grid-template-areas:"topbar topbar" "sidebar main";position:relative;z-index:1}
+    .mb-topbar{grid-area:topbar;position:sticky;top:0;z-index:10;display:grid;grid-template-columns:minmax(20rem,1fr) auto minmax(20rem,1fr);align-items:center;gap:1rem;padding:.55rem 1rem;border-bottom:1px solid var(--mb-line-soft);background:linear-gradient(180deg,rgba(8,13,20,.94),rgba(8,12,18,.88)),radial-gradient(circle at center top,rgba(240,201,111,.1),transparent 28rem);backdrop-filter:blur(16px);box-shadow:0 .75rem 2rem var(--mb-shadow)}
+    .mb-topbar-left,.mb-topbar-right{display:flex;align-items:center;gap:.6rem;min-width:0}.mb-topbar-right{justify-content:flex-end}
+    .mb-brand{display:flex;align-items:center;justify-content:center;gap:.7rem;min-width:16rem}.mb-brand-mark{width:2.35rem;height:2.35rem;border-radius:999px;border:1px solid var(--mb-line-strong);background:radial-gradient(circle at 34% 24%,#fff0b9 0,var(--mb-gold-3) 22%,var(--mb-gold-1) 48%,#251509 70%,var(--mb-navy-0) 100%);box-shadow:inset 0 0 0 4px rgba(0,0,0,.42),0 0 1.2rem rgba(240,201,111,.22);position:relative}.mb-brand-mark::after{content:"M";position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mb-font-display);font-size:1.35rem;font-weight:800;color:#080705}.mb-brand-title{font-family:var(--mb-font-display);font-size:1.65rem;letter-spacing:.11em;text-transform:uppercase;color:var(--mb-gold-3);line-height:1}.mb-brand-subtitle{color:var(--mb-text-3);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;margin-top:.18rem;text-align:center}
+    .mb-chip{display:inline-flex;align-items:center;gap:.42rem;min-height:2.15rem;padding:.38rem .72rem;border:1px solid var(--mb-line-soft);border-radius:999px;color:var(--mb-text-1);background:linear-gradient(180deg,rgba(15,23,33,.75),rgba(6,9,13,.78));white-space:nowrap;box-shadow:inset 0 1px rgba(255,255,255,.04)}.mb-chip strong{color:var(--mb-text-0)}.mb-chip-icon{color:var(--mb-gold-2)}.mb-chip--health strong{color:#ffc0b7}.mb-chip--resource strong{color:var(--mb-gold-3)}.mb-chip-stack{display:inline-grid;gap:.08rem;line-height:1.05}.mb-chip-stack small{color:var(--mb-text-3);font-size:.68rem}
+    .mb-xp{min-width:15rem;display:grid;gap:.3rem;padding:.35rem .7rem;border-radius:999px;border:1px solid var(--mb-line-soft);background:linear-gradient(180deg,rgba(15,23,33,.72),rgba(6,9,13,.74))}.mb-xp-meta{display:flex;justify-content:space-between;gap:.75rem;font-size:.75rem;color:var(--mb-text-2)}.mb-mini-bar{height:.42rem;border-radius:999px;background:rgba(0,0,0,.38);overflow:hidden;border:1px solid rgba(240,201,111,.08)}.mb-mini-bar>span{display:block;width:63%;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--mb-gold-1),var(--mb-gold-3));box-shadow:0 0 .8rem rgba(240,201,111,.3)}
+
+    .mb-sidebar{grid-area:sidebar;padding:1rem .8rem;border-right:1px solid var(--mb-line-soft);background:linear-gradient(180deg,rgba(7,11,17,.84),rgba(5,7,10,.88));backdrop-filter:blur(12px)}
+    .mb-server-card{padding:.9rem;border:1px solid var(--mb-line-soft);border-radius:var(--mb-radius-xl);background:linear-gradient(180deg,rgba(20,32,47,.72),rgba(8,12,18,.74)),radial-gradient(circle at 80% 0%,rgba(240,201,111,.16),transparent 10rem);box-shadow:0 .8rem 1.8rem rgba(0,0,0,.2)}.mb-server-label{color:var(--mb-text-3);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.4rem}.mb-server-name{display:flex;justify-content:space-between;gap:.7rem;align-items:center;font-weight:800;color:var(--mb-text-0)}.mb-prestige{margin-top:.75rem;padding-top:.75rem;border-top:1px solid rgba(240,201,111,.1)}
+    .mb-nav-section-title{margin:1.05rem 0 .45rem .55rem;color:var(--mb-text-3);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase}.mb-nav-list{display:grid;gap:.28rem;margin:0;padding:0;list-style:none}.mb-nav-link{display:flex;align-items:center;gap:.65rem;padding:.67rem .68rem;color:var(--mb-text-1);text-decoration:none;border-radius:.85rem;border:1px solid transparent;transition:120ms ease}.mb-nav-link:hover,.mb-nav-link.is-active{color:var(--mb-text-0);border-color:rgba(240,201,111,.16);background:linear-gradient(90deg,rgba(240,201,111,.13),rgba(45,110,159,.12))}.mb-nav-link.is-active{box-shadow:inset 3px 0 0 var(--mb-gold-2)}.mb-nav-icon{width:1.65rem;height:1.65rem;border-radius:.55rem;display:grid;place-items:center;background:rgba(240,201,111,.08);color:var(--mb-gold-2);border:1px solid rgba(240,201,111,.08);flex:0 0 auto;font-size:.74rem;font-weight:800;letter-spacing:.02em}
+
+    .mb-main{grid-area:main;min-width:0;padding:1.1rem;display:grid;gap:1rem;align-content:start}
+    .mb-page-header{position:relative;min-height:9rem;display:grid;grid-template-columns:minmax(26rem,1.35fr) minmax(20rem,.85fr);gap:1rem;padding:.95rem;border:1px solid var(--mb-line);border-radius:var(--mb-radius-xl);overflow:hidden;background:linear-gradient(100deg,rgba(7,11,17,.95),rgba(12,26,41,.72),rgba(7,10,15,.9)),radial-gradient(circle at 72% 18%,rgba(240,201,111,.14),transparent 22rem);box-shadow:0 .9rem 2rem rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.04)}.mb-page-header::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(240,201,111,.08),transparent 14%,transparent 86%,rgba(240,201,111,.06)),repeating-linear-gradient(90deg,transparent 0 3.2rem,rgba(255,255,255,.025) 3.2rem 3.25rem);pointer-events:none;opacity:.75}.mb-page-header>*{position:relative;z-index:1}.mb-kicker{color:var(--mb-gold-2);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;margin:0 0 .45rem}.mb-title{margin:0;font-family:var(--mb-font-display);font-size:clamp(2rem,3.2vw,3.35rem);line-height:.95;color:var(--mb-gold-3)}.mb-copy{margin:.75rem 0 0;max-width:62rem;color:var(--mb-text-1);line-height:1.45;font-size:.92rem}
+    .mb-summary-card{display:grid;gap:.58rem;padding:.85rem;border-radius:var(--mb-radius-lg);border:1px solid rgba(240,201,111,.14);background:rgba(7,10,14,.34);backdrop-filter:blur(10px)}.mb-summary-row{display:grid;grid-template-columns:1fr auto;gap:.75rem;color:var(--mb-text-2);font-size:.88rem}.mb-summary-row strong{color:var(--mb-text-0)}
+
+    .mb-card{position:relative;padding:.95rem;border-radius:var(--mb-radius-xl);border:1px solid var(--mb-line-soft);background:linear-gradient(180deg,rgba(18,27,39,.68),rgba(7,10,15,.78)),radial-gradient(circle at top right,rgba(240,201,111,.085),transparent 13rem);box-shadow:0 .75rem 1.9rem rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.035);overflow:hidden;backdrop-filter:blur(10px)}.mb-card::after{content:"";position:absolute;inset:.45rem;border-radius:calc(var(--mb-radius-xl) - .35rem);border:1px solid rgba(240,201,111,.045);pointer-events:none}.mb-card>*{position:relative;z-index:1}.mb-card--soft{background:linear-gradient(180deg,rgba(13,18,26,.62),rgba(7,9,13,.72))}.mb-card--navy{background:linear-gradient(180deg,rgba(14,36,57,.72),rgba(7,11,18,.82))}
+    .mb-card-heading{display:grid;gap:.25rem;margin-bottom:.75rem}.mb-card-title-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem}.mb-card-title{margin:0;font-family:var(--mb-font-display);font-size:1.22rem;color:var(--mb-text-0)}.mb-card-subtitle{margin:.2rem 0 0;color:var(--mb-text-2);font-size:.84rem;line-height:1.4}
+    .mb-badge{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .55rem;border-radius:999px;border:1px solid var(--mb-line-soft);color:var(--mb-text-1);background:rgba(7,10,14,.45);font-size:.77rem;white-space:nowrap}.mb-badge--gold{color:var(--mb-gold-3);border-color:rgba(240,201,111,.32)}.mb-badge--green{color:#bde6b0;border-color:rgba(111,164,93,.46)}.mb-badge--blue{color:#b9def3;border-color:rgba(91,163,213,.46)}.mb-badge--red{color:#f2b4aa;border-color:rgba(178,75,59,.46)}.mb-badge--purple{color:#d4c0ff;border-color:rgba(150,114,204,.46)}
+    .mb-button-row{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:.9rem}.mb-button{min-height:2.4rem;padding:.55rem .85rem;border-radius:999px;border:1px solid var(--mb-line);color:var(--mb-text-0);background:linear-gradient(180deg,rgba(240,201,111,.2),rgba(91,58,19,.32));cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.07)}.mb-button--primary{background:linear-gradient(180deg,rgba(240,201,111,.32),rgba(91,58,19,.44))}.mb-button--ghost{background:rgba(8,12,18,.54);color:var(--mb-text-1)}.mb-button:disabled{opacity:.45;cursor:not-allowed}
+
+    .mb-subnav{display:flex;gap:.55rem;flex-wrap:wrap}.mb-subnav-link{padding:.55rem .85rem;border-radius:999px;border:1px solid rgba(240,201,111,.14);background:rgba(5,8,12,.45);color:var(--mb-text-2);text-decoration:none}.mb-subnav-link.is-active{color:var(--mb-gold-3);border-color:rgba(240,201,111,.34);background:linear-gradient(180deg,rgba(240,201,111,.14),rgba(45,110,159,.12))}
+    .mb-auction-layout{display:grid;grid-template-columns:minmax(0,1fr) 18rem;gap:1rem}.mb-filter-panel{display:grid;gap:.7rem;align-content:start}.mb-filter-group{display:grid;gap:.45rem}.mb-filter-label{font-size:.72rem;letter-spacing:.13em;text-transform:uppercase;color:var(--mb-text-3)}.mb-search,.mb-select{min-height:2.35rem;border-radius:999px;border:1px solid rgba(240,201,111,.14);background:rgba(5,8,12,.55);color:var(--mb-text-1);padding:.45rem .8rem;outline:none;width:100%}.mb-slot-pills{display:flex;gap:.4rem;flex-wrap:wrap}.mb-slot-pill{border:1px solid rgba(240,201,111,.12);border-radius:999px;background:rgba(5,8,12,.42);color:var(--mb-text-2);padding:.42rem .65rem;cursor:pointer}.mb-slot-pill.is-active{color:var(--mb-gold-3);border-color:rgba(240,201,111,.32);background:rgba(240,201,111,.1)}
+    .mb-list-toolbar{display:flex;justify-content:space-between;gap:.8rem;align-items:center;flex-wrap:wrap;margin-bottom:.75rem}.mb-list-meta{display:flex;gap:.45rem;flex-wrap:wrap}.mb-auction-list{display:grid;gap:.65rem}.mb-listing-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.75rem;align-items:center;padding:.75rem;border-radius:var(--mb-radius-lg);border:1px solid rgba(240,201,111,.1);background:linear-gradient(180deg,rgba(7,11,17,.44),rgba(0,0,0,.18))}.mb-listing-card:hover{border-color:rgba(240,201,111,.3);background:linear-gradient(180deg,rgba(17,29,44,.6),rgba(0,0,0,.22))}.mb-listing-card.is-mine{border-color:rgba(150,114,204,.34)}.mb-item-icon{width:3rem;height:3rem;border-radius:.85rem;border:1px solid rgba(240,201,111,.12);display:grid;place-items:center;color:var(--mb-gold-2);background:radial-gradient(circle,rgba(240,201,111,.14),rgba(45,110,159,.1));font-weight:800}.mb-listing-main strong{display:block;color:var(--mb-text-0);font-size:.96rem}.mb-listing-main small{display:block;color:var(--mb-text-2);font-size:.8rem;margin-top:.18rem}
+    .mb-item-name{display:inline-block;position:relative;color:var(--mb-text-0);font-weight:800;font-size:.96rem;cursor:default}
+    .mb-danger-note{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .55rem;border-radius:999px;border:1px solid rgba(178,75,59,.46);background:rgba(178,75,59,.18);color:#f2b4aa;font-size:.77rem;white-space:nowrap}
+    .mb-item-popover{position:absolute;left:0;top:calc(100% + .6rem);width:22rem;padding:.8rem;border-radius:.95rem;border:1px solid rgba(240,201,111,.22);background:linear-gradient(180deg,rgba(14,20,29,.98),rgba(8,11,16,.98)),radial-gradient(circle at top right,rgba(240,201,111,.08),transparent 12rem);box-shadow:0 1rem 2.2rem rgba(0,0,0,.45);opacity:0;transform:translateY(.25rem);pointer-events:none;transition:120ms ease;z-index:20}
+    .mb-item-name:hover + .mb-item-popover,.mb-item-popover:hover{opacity:1;transform:translateY(0);pointer-events:auto}
+    .mb-popover-title{font-family:var(--mb-font-display);font-size:1.05rem;color:var(--mb-gold-3);margin:0 0 .45rem}.mb-popover-sub{color:var(--mb-text-2);font-size:.8rem;margin-bottom:.55rem}.mb-popover-section{border-top:1px solid rgba(240,201,111,.08);padding-top:.5rem;margin-top:.5rem;display:grid;gap:.3rem}.mb-popover-label{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mb-text-3)}.mb-popover-row{display:grid;grid-template-columns:1fr auto;gap:.7rem;font-size:.82rem;color:var(--mb-text-2)}.mb-popover-row strong{color:var(--mb-text-0);text-align:right}.mb-popover-list{margin:0;padding-left:1rem;color:var(--mb-text-1);font-size:.82rem;display:grid;gap:.2rem}.mb-listing-meta{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.4rem}.mb-listing-price{text-align:right;display:grid;gap:.25rem}.mb-price{font-family:var(--mb-font-display);font-size:1.35rem;color:var(--mb-gold-3);white-space:nowrap}.mb-buy-now{color:var(--mb-text-2);font-size:.8rem}.mb-card-actions{display:flex;justify-content:flex-end;gap:.45rem;flex-wrap:wrap;margin-top:.45rem}.mb-owned-listing{color:var(--mb-purple);font-weight:700}.mb-note{padding:.75rem;border-radius:var(--mb-radius-lg);border:1px solid rgba(91,163,213,.18);background:rgba(91,163,213,.08);color:var(--mb-text-2);font-size:.85rem;line-height:1.45}
+    .mb-pagination{display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap;margin-top:.9rem;padding:.75rem;border-radius:var(--mb-radius-lg);border:1px solid rgba(240,201,111,.1);background:rgba(0,0,0,.14)}
+    .mb-pagination-meta{display:grid;gap:.12rem;color:var(--mb-text-2);font-size:.82rem}.mb-pagination-meta strong{color:var(--mb-text-0)}
+    .mb-page-controls{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}.mb-page-button{min-width:2.25rem;height:2.25rem;padding:0 .65rem;border-radius:.75rem;border:1px solid rgba(240,201,111,.12);background:rgba(5,8,12,.46);color:var(--mb-text-2);cursor:pointer}.mb-page-button:hover{border-color:rgba(240,201,111,.3);color:var(--mb-text-0)}.mb-page-button.is-active{color:var(--mb-gold-3);border-color:rgba(240,201,111,.36);background:linear-gradient(180deg,rgba(240,201,111,.14),rgba(45,110,159,.12))}.mb-page-button:disabled{opacity:.42;cursor:not-allowed}.mb-page-ellipsis{color:var(--mb-text-3);padding:0 .25rem}.mb-page-size{display:flex;align-items:center;gap:.45rem;color:var(--mb-text-2);font-size:.82rem}.mb-page-size select{min-height:2.25rem;border-radius:999px;border:1px solid rgba(240,201,111,.14);background:rgba(5,8,12,.55);color:var(--mb-text-1);padding:.35rem .65rem}
+
+    @media(max-width:1320px){.mb-auction-layout{grid-template-columns:1fr}.mb-filter-panel{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:1220px){.mb-topbar{grid-template-columns:1fr;height:auto}.mb-brand{justify-content:flex-start}.mb-app-shell{grid-template-rows:auto minmax(0,1fr)}.mb-page-header{grid-template-columns:1fr}}
+    @media(max-width:860px){.mb-app-shell{display:block}.mb-topbar{position:static}.mb-topbar-left,.mb-topbar-right{justify-content:flex-start;overflow-x:auto}.mb-sidebar{border-right:0;border-bottom:1px solid var(--mb-line-soft)}.mb-nav-list{grid-template-columns:repeat(4,minmax(0,1fr))}.mb-nav-link{justify-content:center}.mb-nav-label,.mb-nav-section-title{display:none}.mb-main{padding:.75rem}.mb-auction-layout{display:grid}.mb-filter-panel{grid-template-columns:1fr}.mb-listing-card{grid-template-columns:auto 1fr}.mb-listing-price{grid-column:1/-1;text-align:left}.mb-card-title-row{align-items:start;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left" aria-label="Hero health and experience">
+        <span class="mb-chip mb-chip--health"><span class="mb-chip-icon">♥</span> Health <strong>86 / 100</strong></span>
+        <div class="mb-xp" aria-label="Experience progress"><div class="mb-xp-meta"><span>Level 12</span><strong>1,240 XP to next</strong></div><div class="mb-mini-bar"><span></span></div></div>
+      </div>
+      <div class="mb-brand" aria-label="Mythborne"><div class="mb-brand-mark"></div><div><div class="mb-brand-title">Mythborne</div><div class="mb-brand-subtitle">Auction house prototype</div></div></div>
+      <div class="mb-topbar-right" aria-label="Hero resources">
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">✦</span><span class="mb-chip-stack">Character Points <strong>146</strong><small>18 locked</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◈</span><span class="mb-chip-stack">Drachmas <strong>3,420</strong><small>item tooltip only</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">▣</span><span class="mb-chip-stack">Materials <strong>185</strong><small>+22 / h</small></span></span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-server-card" aria-label="Selected world context">
+        <div class="mb-server-label">Selected server</div>
+        <div class="mb-server-name"><span>Sandbox</span><span class="mb-badge mb-badge--green">live</span></div>
+        <div class="mb-prestige"><div class="mb-server-label">Prestige</div><div class="mb-server-name"><span>Zeugitai</span><span class="mb-badge mb-badge--gold">Tier II</span></div></div>
+      </section>
+      <div class="mb-nav-section-title">Hero</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#dashboard"><span class="mb-nav-icon">DA</span><span class="mb-nav-label">Dashboard</span></a></li>
+        <li><a class="mb-nav-link" href="#exploration"><span class="mb-nav-icon">EX</span><span class="mb-nav-label">Exploration</span></a></li>
+        <li><a class="mb-nav-link" href="#statistics"><span class="mb-nav-icon">ST</span><span class="mb-nav-label">Statistics</span></a></li>
+        <li><a class="mb-nav-link" href="#armory"><span class="mb-nav-icon">AR</span><span class="mb-nav-label">Armory</span></a></li>
+      </ul>
+      <div class="mb-nav-section-title">World</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#estate"><span class="mb-nav-icon">ES</span><span class="mb-nav-label">Estate</span></a></li>
+        <li><a class="mb-nav-link is-active" href="#trade"><span class="mb-nav-icon">TR</span><span class="mb-nav-label">Trade</span></a></li>
+        <li><a class="mb-nav-link" href="#pvp"><span class="mb-nav-icon">PV</span><span class="mb-nav-label">PvP</span></a></li>
+        <li><a class="mb-nav-link" href="#reports"><span class="mb-nav-icon">RP</span><span class="mb-nav-label">Reports</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main" id="auction-house">
+      <section class="mb-page-header">
+        <div>
+          <p class="mb-kicker">Auction House</p>
+          <h1 class="mb-title">Browse one-item listings</h1>
+          <p class="mb-copy">Auctions are separate from direct trade. Each auction listing contains exactly one item, priced in Character Points. Hover an item name to see the full item summary: quality, aggregated bonuses, requirements and drachma value.</p>
+          <div class="mb-button-row">
+            <span class="mb-badge mb-badge--gold">Payment: Character Points</span>
+            <span class="mb-badge mb-badge--blue">One item per auction</span>
+            <span class="mb-badge">Popover includes drachma value</span>
+          </div>
+        </div>
+        <aside class="mb-summary-card">
+          <div class="mb-summary-row"><span>Available CP</span><strong>146</strong></div>
+          <div class="mb-summary-row"><span>Locked CP</span><strong>18</strong></div>
+          <div class="mb-summary-row"><span>Active bids</span><strong>4</strong></div>
+          <div class="mb-summary-row"><span>Your listings</span><strong>2</strong></div>
+        </aside>
+      </section>
+
+      <section class="mb-card">
+        <div class="mb-card-heading">
+          <div class="mb-card-title-row">
+            <div>
+              <h2 class="mb-card-title">Auction listings</h2>
+              <p class="mb-card-subtitle">A list-first browsing screen. Direct trade offers belong to a separate Direct Trade screen.</p>
+            </div>
+            <nav class="mb-subnav" aria-label="Trade section navigation">
+              <a class="mb-subnav-link" href="#direct-trade">Direct Trade</a>
+              <a class="mb-subnav-link is-active" href="#auctions">Auctions</a>
+              <a class="mb-subnav-link" href="#my-listings">My listings</a>
+            </nav>
+          </div>
+        </div>
+
+        <div class="mb-auction-layout">
+          <section>
+            <div class="mb-list-toolbar">
+              <div class="mb-list-meta">
+                <span class="mb-badge mb-badge--gold">126 active listings</span>
+                <span class="mb-badge">Showing 1–12</span>
+                <span class="mb-badge mb-badge--blue">Filtered: Weapons + Jewelry</span>
+              </div>
+              <div class="mb-button-row" style="margin-top:0;">
+                <button class="mb-button mb-button--primary">Create auction</button>
+                <button class="mb-button mb-button--ghost">Refresh</button>
+              </div>
+            </div>
+
+            <div class="mb-auction-list">
+              <article class="mb-listing-card">
+                <div class="mb-item-icon">W</div>
+                <div class="mb-listing-main">
+                  <span class="mb-item-name">Quality Demonic Mace</span>
+                  <div class="mb-item-popover">
+                    <div class="mb-popover-title">Quality Demonic Mace</div>
+                    <div class="mb-popover-sub">Weapon · One-handed · Quality</div>
+                    <div class="mb-popover-section"><div class="mb-popover-label">Aggregated bonuses</div><ul class="mb-popover-list"><li>Damage +18–26</li><li>Strength +6</li><li>Critical Chance +4%</li><li>PvP Damage +3%</li></ul></div>
+                    <div class="mb-popover-section"><div class="mb-popover-label">Requirements</div><div class="mb-popover-row"><span>Strength</span><strong>24</strong></div><div class="mb-popover-row"><span>Agility</span><strong>12</strong></div></div>
+                    <div class="mb-popover-section"><div class="mb-popover-label">Value</div><div class="mb-popover-row"><span>Drachma value</span><strong>1,200</strong></div></div>
+                  </div>
+                  <small>Weapon · one-handed · seller: Damaris · ends in 28m</small>
+                  <div class="mb-listing-meta"><span class="mb-badge mb-badge--blue">Requires Strength 24</span><span class="mb-badge mb-badge--green">usable</span></div>
+                </div>
+                <div class="mb-listing-price"><span class="mb-price">38 CP</span><span class="mb-buy-now">Buy now 55 CP</span><div class="mb-card-actions"><button class="mb-button mb-button--primary">Bid</button><button class="mb-button mb-button--ghost">Watch</button><button class="mb-button mb-button--ghost">Buy now</button></div></div>
+              </article>
+
+              <article class="mb-listing-card">
+                <div class="mb-item-icon">A</div>
+                <div class="mb-listing-main">
+                  <span class="mb-item-name">Outstanding Cuirass</span>
+                  <div class="mb-item-popover">
+                    <div class="mb-popover-title">Outstanding Cuirass</div>
+                    <div class="mb-popover-sub">Armor · Chest · Outstanding</div>
+                    <div class="mb-popover-section"><div class="mb-popover-label">Aggregated bonuses</div><ul class="mb-popover-list"><li>Defense +31</li><li>Endurance +8</li><li>Health +48</li><li>PvP Defense +5%</li></ul></div>
+                    <div class="mb-popover-section"><div class="mb-popover-label">Requirements</div><div class="mb-popover-row"><span>Endurance</span><strong>28</strong></div></div>
+                    <div class="mb-popover-section"><div class="mb-popover-label">Value</div><div class="mb-popover-row"><span>Drachma value</span><strong>2,400</strong></div></div>
+                  </div>
+                  <small>Armor · chest · seller: Nikandros · ends in 4h</small>
+                  <div class="mb-listing-meta"><span class="mb-badge mb-badge--blue">Requires Endurance 28</span><span class="mb-danger-note">Cannot equip yet</span></div>
+                </div>
+                <div class="mb-listing-price"><span class="mb-price">92 CP</span><span class="mb-buy-now">Bidding only</span><div class="mb-card-actions"><button class="mb-button mb-button--primary">Bid</button><button class="mb-button mb-button--ghost">Watch</button></div></div>
+              </article>
+
+              <article class="mb-listing-card is-mine">
+                <div class="mb-item-icon">J</div>
+                <div class="mb-listing-main">
+                  <span class="mb-item-name">Amulet of Omen</span>
+                  <div class="mb-item-popover">
+                    <div class="mb-popover-title">Amulet of Omen</div>
+                    <div class="mb-popover-sub">Amulet · Jewelry · Quality</div>
+                    <div class="mb-popover-section"><div class="mb-popover-label">Aggregated bonuses</div><ul class="mb-popover-list"><li>Defense Health +8%</li><li>Spirituality +4</li><li>Manifest Chance +3%</li></ul></div>
+                    <div class="mb-popover-section"><div class="mb-popover-label">Requirements</div><div class="mb-popover-row"><span>Wisdom</span><strong>20</strong></div></div>
+                    <div class="mb-popover-section"><div class="mb-popover-label">Value</div><div class="mb-popover-row"><span>Drachma value</span><strong>980</strong></div></div>
+                  </div>
+                  <small>Amulet · your listing · ends in 1h 12m</small>
+                  <div class="mb-listing-meta"><span class="mb-badge mb-badge--purple">locked_auction</span><span class="mb-badge">No bids</span></div>
+                </div>
+                <div class="mb-listing-price"><span class="mb-price">24 CP</span><span class="mb-buy-now">Buy now only</span><div class="mb-card-actions"><button class="mb-button mb-button--primary">Buy now</button></div></div>
+              </article>
+
+              <article class="mb-listing-card">
+                <div class="mb-item-icon">R</div>
+                <div class="mb-listing-main"><strong>Ring of Titans</strong><small>Ring · jewelry · seller: Eukleia · ends in 2h</small><div class="mb-listing-meta"><span class="mb-badge mb-badge--gold">current bid 44 CP</span><span class="mb-badge mb-badge--blue">requires Strength 24</span></div></div>
+                <div class="mb-listing-price"><span class="mb-price">44 CP</span><span class="mb-buy-now">Buy now 70 CP</span><div class="mb-card-actions"><button class="mb-button mb-button--primary">Bid</button><button class="mb-button mb-button--ghost">Details</button></div></div>
+              </article>
+
+              <article class="mb-listing-card">
+                <div class="mb-item-icon">B</div>
+                <div class="mb-listing-main"><strong>Sandals of Wind</strong><small>Boots · seller: Philemon · ends in 6h</small><div class="mb-listing-meta"><span class="mb-badge mb-badge--gold">current bid 31 CP</span><span class="mb-badge mb-badge--blue">requires Agility 24</span></div></div>
+                <div class="mb-listing-price"><span class="mb-price">31 CP</span><span class="mb-buy-now">Bidding only</span><div class="mb-card-actions"><button class="mb-button mb-button--primary">Bid</button><button class="mb-button mb-button--ghost">Watch</button></div></div>
+              </article>
+
+              <article class="mb-listing-card">
+                <div class="mb-item-icon">H</div>
+                <div class="mb-listing-main"><strong>Corinthian Helm</strong><small>Helmet · seller: Thales · ends tomorrow</small><div class="mb-listing-meta"><span class="mb-badge mb-badge--gold">starting bid 18 CP</span><span class="mb-badge">no bids</span></div></div>
+                <div class="mb-listing-price"><span class="mb-price">18 CP</span><span class="mb-buy-now">Buy now 29 CP</span><div class="mb-card-actions"><button class="mb-button mb-button--primary">Bid</button><button class="mb-button mb-button--ghost">Details</button></div></div>
+              </article>
+            </div>
+
+            <nav class="mb-pagination" aria-label="Auction pagination">
+              <div class="mb-pagination-meta">
+                <strong>Page 1 of 11</strong>
+                <span>Showing 1–12 of 126 active listings</span>
+              </div>
+              <div class="mb-page-controls">
+                <button class="mb-page-button" disabled>‹ Prev</button>
+                <button class="mb-page-button is-active">1</button>
+                <button class="mb-page-button">2</button>
+                <button class="mb-page-button">3</button>
+                <span class="mb-page-ellipsis">…</span>
+                <button class="mb-page-button">11</button>
+                <button class="mb-page-button">Next ›</button>
+              </div>
+              <label class="mb-page-size">
+                <span>Per page</span>
+                <select>
+                  <option>12</option>
+                  <option>24</option>
+                  <option>48</option>
+                </select>
+              </label>
+            </nav>
+          </section>
+
+          <aside class="mb-filter-panel">
+            <section class="mb-card mb-card--soft">
+              <div class="mb-card-heading"><h2 class="mb-card-title">Filters</h2><p class="mb-card-subtitle">Browse when you do not know exactly what you want.</p></div>
+              <div class="mb-filter-group"><label class="mb-filter-label">Search</label><input class="mb-search" placeholder="Item, affix, seller, requirement..." /></div>
+              <div class="mb-filter-group"><label class="mb-filter-label">Slot</label><div class="mb-slot-pills"><button class="mb-slot-pill is-active">All</button><button class="mb-slot-pill">Weapon</button><button class="mb-slot-pill">Head</button><button class="mb-slot-pill">Chest</button><button class="mb-slot-pill">Boots</button><button class="mb-slot-pill">Ring</button><button class="mb-slot-pill">Amulet</button></div></div>
+              <div class="mb-filter-group"><label class="mb-filter-label">Price</label><select class="mb-select"><option>Any CP price</option><option>Up to 25 CP</option><option>26–50 CP</option><option>51–100 CP</option><option>100+ CP</option></select></div>
+              <div class="mb-filter-group"><label class="mb-filter-label">Sort</label><select class="mb-select"><option>Ending soon</option><option>Lowest current bid</option><option>Buy now first</option><option>Newest listings</option></select></div>
+              <div class="mb-filter-group"><label class="mb-filter-label">Usability</label><select class="mb-select"><option>All items</option><option>Can equip now</option><option>Requirements not met</option><option>My listings hidden</option></select></div>
+            </section>
+
+            <section class="mb-card mb-card--navy">
+              <div class="mb-card-heading"><h2 class="mb-card-title">Auction rules</h2><p class="mb-card-subtitle">Short player-facing reminders.</p></div>
+              <div class="mb-summary-row"><span>Listing size</span><strong>1 item</strong></div>
+              <div class="mb-summary-row"><span>Payment</span><strong>Character Points</strong></div>
+              <div class="mb-summary-row"><span>Your bid</span><strong>locks CP</strong></div>
+              <div class="mb-summary-row"><span>Your listing</span><strong>locks item</strong></div>
+            </section>
+
+            <section class="mb-note">Direct Trade should be a separate screen with private hero-to-hero offers: up to five items per side plus Character Points. This auction screen intentionally does not include that builder.</section>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

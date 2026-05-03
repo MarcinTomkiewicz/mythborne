@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-05-02
+Updated: 2026-05-03
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -139,7 +139,12 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: M9 - persist combat result snapshot through canonical RPC.
 - Completed and confirmed: M10 - thin sandbox combat caller.
 - Completed and confirmed: M11 - combat admin/balance tooling foundation.
-- Next backlog task: M12 - combat opponent definitions admin configurator, after the user commit and explicit start instruction.
+- Completed and confirmed: M12 - combat opponent definitions admin configurator.
+- Next backlog task: N0 - align generated DB types after Epic N DB foundation, after the user commit and explicit start instruction.
+- M12 follow-up: apply `AdminReasonPresetField` to the remaining M12 reason fields for consistency.
+- M12 follow-up: broader UI polish for white/native-looking inputs where global PrimeNG/theme styles are inconsistent.
+- M12 follow-up: optional later refactor of large shared combat opponent files (`combat-opponent-admin.ts`, `combat-opponent.model.ts`).
+- M12 follow-up: future UX/configurator pass can further improve tabbing/section layout; current M12 is functionally accepted.
 - Epic O follow-up: fully integrate central `entity_requirements` / `requirement_definitions` into the building UI/read model. The M9-adjacent compile-only hotfix removed active legacy `building_requirements` reads and leaves building runtime requirements as an empty placeholder until the proper O slice.
 - M2 follow-up debt: after the canonical combat runtime is implemented and integrated, retire the temporary `/game/combat` sandbox/prototype flow and remove `combat-sandbox.model.ts` instead of developing it as the target system.
 - M4 follow-up debt: first opponent catalog UI should add readable labels for manual item-generation references and generated bucket references, and should distinguish "families exist but no opponent definitions" from a fully empty opponent catalog.

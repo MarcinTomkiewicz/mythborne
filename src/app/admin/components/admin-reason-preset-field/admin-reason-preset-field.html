@@ -1,0 +1,27 @@
+<div class="flex-col gap-xs">
+  <span>{{ label }}</span>
+  <div class="mg-grid grid-cols-2 grid-cols-1-md gap-sm w-100">
+    <p-select
+      [formControl]="preset"
+      [options]="presetOptions"
+      optionLabel="label"
+      optionValue="key"
+      placeholder="Select reason preset"
+      emptyMessage="No reason presets available"
+      (onChange)="applyReason()"
+    />
+
+    @if (isOther()) {
+      <input
+        pInputText
+        [formControl]="customReason"
+        placeholder="Enter custom reason"
+        (input)="applyReason()"
+      />
+    }
+  </div>
+
+  @if (error || (control.touched && control.invalid)) {
+    <small class="error-text">{{ error ?? 'Reason is required.' }}</small>
+  }
+</div>

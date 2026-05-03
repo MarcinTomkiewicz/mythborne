@@ -1,0 +1,78 @@
+<section class="mg-card p-lg w-100">
+  <app-admin-section-intro
+    [legend]="page.uiMetadata.sectionLegend(page.uiMetadata.section.equipment)"
+    [title]="page.uiMetadata.sectionTitle(page.uiMetadata.section.equipment, true)"
+    [text]="page.uiMetadata.sectionText(page.uiMetadata.section.equipment)"
+    [secondaryText]="page.uiMetadata.sectionSecondaryText(page.uiMetadata.section.equipment)"
+  />
+
+  @if (actions.hasSlotConfigurationGap()) {
+    <div class="mg-surface-card p-md mt-md">
+      <p class="mb-0 muted-text">{{ actions.configurationGapMessage }}</p>
+    </div>
+  }
+
+  <div class="mt-md flex-col gap-md">
+    <p-select
+      [formControl]="page.equipmentSelector"
+      [options]="page.equipmentRowOptions()"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Select equipment entry"
+      emptyMessage="No opponent equipment entries configured"
+    />
+
+    <form [formGroup]="actions.form" class="mg-grid grid-cols-4 grid-cols-1-md gap-md w-100">
+      <div class="flex-col gap-xs">
+        <span>Slot</span>
+        <p-select
+          formControlName="slotKey"
+          [options]="actions.slotOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select equipment slot"
+          emptyMessage="No active equipment slots configured"
+        />
+      </div>
+      <div class="flex-col gap-xs">
+        <span>Entry mode</span>
+        <p-select
+          formControlName="entryMode"
+          [options]="page.equipmentEntryModeOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select entry mode"
+          emptyMessage="No manual/generated equipment modes configured"
+        />
+      </div>
+      <div class="flex-col gap-xs"><span>Min opponent level</span><input pInputText type="number" formControlName="minOpponentLevel" /></div>
+      <div class="flex-col gap-xs"><span>Max opponent level</span><input pInputText type="number" formControlName="maxOpponentLevel" /></div>
+
+      @if (!actions.isGeneratedEntry()) {
+        <div class="flex-col gap-xs"><span>Manual base</span><p-select formControlName="manualBaseId" [options]="actions.baseOptions()" optionLabel="label" optionValue="value" placeholder="Select manual base" emptyMessage="No item bases available" /></div>
+        <div class="flex-col gap-xs"><span>Manual quality</span><p-select formControlName="manualQualityKey" [options]="actions.qualityOptions()" optionLabel="label" optionValue="value" placeholder="Select manual quality" emptyMessage="No item qualities available" /></div>
+        <div class="flex-col gap-xs"><span>Prefix</span><p-select formControlName="manualPrefixAffixId" [options]="actions.prefixOptions()" optionLabel="label" optionValue="value" placeholder="No prefix" emptyMessage="No prefixes available" /></div>
+        <div class="flex-col gap-xs"><span>Suffix</span><p-select formControlName="manualSuffixAffixId" [options]="actions.suffixOptions()" optionLabel="label" optionValue="value" placeholder="No suffix" emptyMessage="No suffixes available" /></div>
+      } @else {
+        <div class="flex-col gap-xs"><span>Generated bucket profile</span><p-select formControlName="generatedBucketProfileId" [options]="actions.bucketProfileOptions()" optionLabel="label" optionValue="value" placeholder="Select generated bucket profile" emptyMessage="No bucket profiles available" /></div>
+        <div class="flex-col gap-xs"><span>Generated max quality</span><p-select formControlName="generatedMaxQualityKey" [options]="actions.qualityOptions()" optionLabel="label" optionValue="value" placeholder="Select generated max quality" emptyMessage="No item qualities available" /></div>
+      }
+
+      <div class="flex-col gap-xs"><span>Sort order</span><input pInputText type="number" formControlName="sortOrder" /></div>
+      <div class="flex-col gap-xs"><span>Reason</span><input pInputText formControlName="reason" /></div>
+    </form>
+
+    @if (actions.entryModeHelp()) { <p class="muted-text mb-0">{{ actions.entryModeHelp() }}</p> }
+    <p class="muted-text mb-0">
+      {{ actions.isGeneratedEntry()
+        ? page.uiMetadata.sectionText(page.uiMetadata.section.generatedEquipment)
+        : page.uiMetadata.sectionText(page.uiMetadata.section.manualEquipment) }}
+    </p>
+
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button label="Save equipment entry" [disabled]="actions.isSaving() || actions.hasSlotConfigurationGap() || !page.selectedOpponentView()" (onClick)="actions.save()" />
+      <p-button label="Deactivate equipment entry" severity="danger" [disabled]="actions.isSaving() || !page.selectedEquipmentEntry()" (onClick)="actions.deactivate()" />
+      @if (actions.reasonError()) { <span class="tag-badge tag-badge--warn">{{ actions.reasonError() }}</span> }
+    </div>
+  </div>
+</section>

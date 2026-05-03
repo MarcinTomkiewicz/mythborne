@@ -1,0 +1,1118 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mythborne Exploration V2 Prototype</title>
+  <style>
+    /*
+      Mythborne Exploration V2 — corrected player-facing exploration screen.
+
+      Scope:
+      - no invented route names / map fiction;
+      - screen starts from difficulty choice and current exploration status;
+      - shows Trial availability/chance previews and pending step state;
+      - difficulty cards show compact approximate chances;
+      - detailed per-stat Trial chances are shown as an optional compact breakdown with separate manifestation and auto-result bars;
+      - pending step is primarily a modal/dialog; after dismissing the backdrop it collapses into an inline compact progress strip.
+      - walking hoplite/sprite strip is only a visual timer for a DB-backed step;
+      - actual outcomes are resolved by backend/RPC/gameplay layer.
+    */
+
+    :root {
+      --mb-bg-0: #06080c;
+      --mb-bg-1: #0b1018;
+      --mb-bg-2: #101a27;
+      --mb-bg-3: #152437;
+
+      --mb-navy-0: #07111d;
+      --mb-navy-1: #0d2135;
+      --mb-navy-2: #163b5c;
+      --mb-navy-3: #2d6e9f;
+
+      --mb-gold-0: #5b3a13;
+      --mb-gold-1: #9c6723;
+      --mb-gold-2: #c8923a;
+      --mb-gold-3: #f0c96f;
+      --mb-bronze: #87582a;
+
+      --mb-red: #b24b3b;
+      --mb-green: #6fa45d;
+      --mb-blue: #5ba3d5;
+      --mb-purple: #9672cc;
+
+      --mb-text-0: #f6edda;
+      --mb-text-1: #d7c8ab;
+      --mb-text-2: #9d8f75;
+      --mb-text-3: #6f675a;
+
+      --mb-line-soft: rgba(240, 201, 111, 0.12);
+      --mb-line: rgba(240, 201, 111, 0.24);
+      --mb-line-strong: rgba(240, 201, 111, 0.44);
+      --mb-shadow: rgba(0, 0, 0, 0.42);
+
+      --mb-sidebar-w: 16rem;
+      --mb-topbar-h: 4.25rem;
+      --mb-radius-md: 0.75rem;
+      --mb-radius-lg: 1rem;
+      --mb-radius-xl: 1.35rem;
+
+      --mb-font-display: Georgia, "Times New Roman", serif;
+      --mb-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--mb-font-ui);
+      color: var(--mb-text-0);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(200,146,58,0.14), transparent 28rem),
+        radial-gradient(circle at 82% 4%, rgba(45,110,159,0.22), transparent 34rem),
+        linear-gradient(135deg, var(--mb-bg-0), #080b11 38%, #050608 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.15;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+
+    button { font: inherit; }
+
+    .mb-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--mb-sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--mb-topbar-h) minmax(0, 1fr);
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .mb-topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(20rem, 1fr) auto minmax(20rem, 1fr);
+      align-items: center;
+      gap: 1rem;
+      padding: 0.55rem 1rem;
+      border-bottom: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,0.94), rgba(8,12,18,0.88)),
+        radial-gradient(circle at center top, rgba(240,201,111,0.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 0.75rem 2rem var(--mb-shadow);
+    }
+
+    .mb-topbar-left,
+    .mb-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      min-width: 0;
+    }
+
+    .mb-topbar-right { justify-content: flex-end; }
+
+    .mb-brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+      min-width: 16rem;
+    }
+
+    .mb-brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-strong);
+      background:
+        radial-gradient(circle at 34% 24%, #fff0b9 0, var(--mb-gold-3) 22%, var(--mb-gold-1) 48%, #251509 70%, var(--mb-navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,0.42), 0 0 1.2rem rgba(240,201,111,0.22);
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .mb-brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+      text-shadow: 0 1px rgba(255,255,255,0.3);
+    }
+
+    .mb-brand-title {
+      font-family: var(--mb-font-display);
+      font-size: 1.65rem;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: var(--mb-gold-3);
+      line-height: 1;
+      text-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.5);
+    }
+
+    .mb-brand-subtitle {
+      color: var(--mb-text-3);
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-top: 0.18rem;
+      text-align: center;
+    }
+
+    .mb-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.42rem;
+      min-height: 2.15rem;
+      padding: 0.38rem 0.72rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: 999px;
+      color: var(--mb-text-1);
+      background: linear-gradient(180deg, rgba(15,23,33,0.75), rgba(6,9,13,0.78));
+      white-space: nowrap;
+      box-shadow: inset 0 1px rgba(255,255,255,0.04);
+    }
+
+    .mb-chip strong { color: var(--mb-text-0); font-weight: 700; }
+    .mb-chip-icon { color: var(--mb-gold-2); }
+    .mb-chip--health strong { color: #ffc0b7; }
+    .mb-chip--resource strong { color: var(--mb-gold-3); }
+
+    .mb-chip-stack { display: inline-grid; gap: 0.08rem; line-height: 1.05; }
+    .mb-chip-stack small { color: var(--mb-text-3); font-size: 0.68rem; }
+
+    .mb-xp {
+      min-width: 15rem;
+      display: grid;
+      gap: 0.3rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-soft);
+      background: linear-gradient(180deg, rgba(15,23,33,0.72), rgba(6,9,13,0.74));
+    }
+
+    .mb-xp-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--mb-text-2);
+    }
+
+    .mb-mini-bar {
+      height: 0.42rem;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.38);
+      overflow: hidden;
+      border: 1px solid rgba(240,201,111,0.08);
+    }
+
+    .mb-mini-bar > span {
+      display: block;
+      width: var(--value, 62%);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--mb-gold-1), var(--mb-gold-3));
+      box-shadow: 0 0 0.8rem rgba(240,201,111,0.3);
+    }
+
+    .mb-sidebar {
+      grid-area: sidebar;
+      padding: 1rem 0.8rem;
+      border-right: 1px solid var(--mb-line-soft);
+      background: linear-gradient(180deg, rgba(7,11,17,0.84), rgba(5,7,10,0.88));
+      backdrop-filter: blur(12px);
+    }
+
+    .mb-server-card {
+      padding: 0.9rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: var(--mb-radius-xl);
+      background:
+        linear-gradient(180deg, rgba(20,32,47,0.72), rgba(8,12,18,0.74)),
+        radial-gradient(circle at 80% 0%, rgba(240,201,111,0.16), transparent 10rem);
+      box-shadow: 0 0.8rem 1.8rem rgba(0,0,0,0.2);
+    }
+
+    .mb-server-label {
+      color: var(--mb-text-3);
+      font-size: 0.68rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+
+    .mb-server-name {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.7rem;
+      align-items: center;
+      font-weight: 800;
+      color: var(--mb-text-0);
+    }
+
+    .mb-prestige { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(240,201,111,0.1); }
+
+    .mb-nav-section-title {
+      margin: 1.05rem 0 0.45rem 0.55rem;
+      color: var(--mb-text-3);
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .mb-nav-list { display: grid; gap: 0.28rem; margin: 0; padding: 0; list-style: none; }
+
+    .mb-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.67rem 0.68rem;
+      color: var(--mb-text-1);
+      text-decoration: none;
+      border-radius: 0.85rem;
+      border: 1px solid transparent;
+      background: transparent;
+      transition: 120ms ease;
+    }
+
+    .mb-nav-link:hover,
+    .mb-nav-link.is-active {
+      color: var(--mb-text-0);
+      border-color: rgba(240,201,111,0.16);
+      background: linear-gradient(90deg, rgba(240,201,111,0.13), rgba(45,110,159,0.12));
+    }
+
+    .mb-nav-link.is-active { box-shadow: inset 3px 0 0 var(--mb-gold-2); }
+
+    .mb-nav-icon {
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 0.55rem;
+      display: grid;
+      place-items: center;
+      background: rgba(240,201,111,0.08);
+      color: var(--mb-gold-2);
+      border: 1px solid rgba(240,201,111,0.08);
+      flex: 0 0 auto;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .mb-main {
+      grid-area: main;
+      min-width: 0;
+      padding: 1.1rem;
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+
+    .mb-page-header {
+      position: relative;
+      min-height: 10rem;
+      display: grid;
+      grid-template-columns: minmax(24rem, 1.35fr) minmax(18rem, 0.85fr);
+      gap: 1rem;
+      padding: 0.95rem;
+      border: 1px solid var(--mb-line);
+      border-radius: var(--mb-radius-xl);
+      overflow: hidden;
+      background:
+        linear-gradient(100deg, rgba(7,11,17,0.95), rgba(12,26,41,0.72), rgba(7,10,15,0.9)),
+        radial-gradient(circle at 72% 18%, rgba(240,201,111,0.14), transparent 22rem);
+      box-shadow: 0 0.9rem 2rem rgba(0,0,0,0.24), inset 0 1px rgba(255,255,255,0.04);
+    }
+
+    .mb-page-header::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(240,201,111,0.08), transparent 14%, transparent 86%, rgba(240,201,111,0.06)),
+        repeating-linear-gradient(90deg, transparent 0 3.2rem, rgba(255,255,255,0.025) 3.2rem 3.25rem);
+      pointer-events: none;
+      opacity: 0.75;
+    }
+
+    .mb-page-header > * { position: relative; z-index: 1; }
+
+    .mb-kicker {
+      color: var(--mb-gold-2);
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin: 0 0 0.45rem;
+    }
+
+    .mb-title {
+      margin: 0;
+      font-family: var(--mb-font-display);
+      font-size: clamp(2rem, 3.2vw, 3.35rem);
+      line-height: 0.95;
+      color: var(--mb-gold-3);
+      text-shadow: 0 0.35rem 0.65rem rgba(0,0,0,0.45);
+    }
+
+    .mb-copy {
+      margin: 0.75rem 0 0;
+      max-width: 60rem;
+      color: var(--mb-text-1);
+      line-height: 1.45;
+      font-size: 0.92rem;
+    }
+
+    .mb-status-panel {
+      align-self: stretch;
+      display: grid;
+      gap: 0.58rem;
+      padding: 0.85rem;
+      border-radius: var(--mb-radius-lg);
+      border: 1px solid rgba(240,201,111,0.14);
+      background: rgba(7,10,14,0.34);
+      backdrop-filter: blur(10px);
+    }
+
+    .mb-status-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      color: var(--mb-text-2);
+      font-size: 0.88rem;
+    }
+
+    .mb-status-row strong { color: var(--mb-text-0); }
+
+    .mb-grid { display: grid; gap: 1rem; }
+    .mb-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mb-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .mb-card {
+      position: relative;
+      padding: 0.95rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(18,27,39,0.68), rgba(7,10,15,0.78)),
+        radial-gradient(circle at top right, rgba(240,201,111,0.085), transparent 13rem);
+      box-shadow: 0 0.75rem 1.9rem rgba(0,0,0,0.22), inset 0 1px rgba(255,255,255,0.035);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .mb-card::after {
+      content: "";
+      position: absolute;
+      inset: 0.45rem;
+      border-radius: calc(var(--mb-radius-xl) - 0.35rem);
+      border: 1px solid rgba(240,201,111,0.045);
+      pointer-events: none;
+    }
+
+    .mb-card > * { position: relative; z-index: 1; }
+    .mb-card--navy { background: linear-gradient(180deg, rgba(14,36,57,0.72), rgba(7,11,18,0.82)); }
+    .mb-card--soft { background: linear-gradient(180deg, rgba(13,18,26,0.62), rgba(7,9,13,0.72)); }
+    .mb-card--locked { opacity: 0.7; }
+
+    .mb-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .mb-card-title {
+      margin: 0;
+      font-family: var(--mb-font-display);
+      font-size: 1.22rem;
+      color: var(--mb-text-0);
+    }
+
+    .mb-card-subtitle {
+      margin: 0.2rem 0 0;
+      color: var(--mb-text-2);
+      font-size: 0.84rem;
+      line-height: 1.4;
+    }
+
+    .mb-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-soft);
+      color: var(--mb-text-1);
+      background: rgba(7,10,14,0.45);
+      font-size: 0.77rem;
+      white-space: nowrap;
+    }
+
+    .mb-badge--gold { color: var(--mb-gold-3); border-color: rgba(240,201,111,0.32); }
+    .mb-badge--green { color: #bde6b0; border-color: rgba(111,164,93,0.46); }
+    .mb-badge--red { color: #f2b4aa; border-color: rgba(178,75,59,0.46); }
+    .mb-badge--blue { color: #b9def3; border-color: rgba(91,163,213,0.46); }
+    .mb-badge--purple { color: #d4c0ff; border-color: rgba(150,114,204,0.46); }
+
+    .mb-button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 0.9rem;
+    }
+
+    .mb-button {
+      min-height: 2.4rem;
+      padding: 0.55rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line);
+      color: var(--mb-text-0);
+      background: linear-gradient(180deg, rgba(240,201,111,0.2), rgba(91,58,19,0.32));
+      cursor: pointer;
+      box-shadow: inset 0 1px rgba(255,255,255,0.07);
+    }
+
+    .mb-button--primary {
+      background: linear-gradient(180deg, rgba(240,201,111,0.32), rgba(91,58,19,0.44));
+      box-shadow: 0 0 1rem rgba(240,201,111,0.12), inset 0 1px rgba(255,255,255,0.08);
+    }
+
+    .mb-button--ghost { background: rgba(8,12,18,0.54); color: var(--mb-text-1); }
+    .mb-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .mb-difficulty-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    .mb-difficulty-card {
+      min-height: 18.5rem;
+      padding: 0.85rem;
+      border-radius: var(--mb-radius-lg);
+      border: 1px solid rgba(240,201,111,0.12);
+      background: linear-gradient(180deg, rgba(13,21,31,0.55), rgba(5,7,10,0.44));
+      display: grid;
+      gap: 0.75rem;
+      align-content: start;
+    }
+
+    .mb-difficulty-card.is-selected {
+      border-color: rgba(240,201,111,0.38);
+      background:
+        linear-gradient(180deg, rgba(240,201,111,0.12), rgba(13,21,31,0.56)),
+        radial-gradient(circle at top, rgba(240,201,111,0.08), transparent 10rem);
+    }
+
+    .mb-difficulty-card.is-locked { opacity: 0.62; }
+
+    .mb-difficulty-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 0.75rem;
+    }
+
+    .mb-difficulty-title {
+      margin: 0;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+    }
+
+    .mb-difficulty-copy {
+      margin: 0;
+      color: var(--mb-text-2);
+      font-size: 0.84rem;
+      line-height: 1.4;
+    }
+
+    .mb-metric-list {
+      display: grid;
+      gap: 0.42rem;
+    }
+
+    .mb-metric-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid rgba(240,201,111,0.06);
+      color: var(--mb-text-2);
+      font-size: 0.86rem;
+    }
+
+    .mb-metric-row:last-child { border-bottom: 0; }
+    .mb-metric-row strong { color: var(--mb-text-0); }
+
+    .mb-odds-bar {
+      height: 0.55rem;
+      border-radius: 999px;
+      border: 1px solid rgba(240,201,111,0.1);
+      background: rgba(0,0,0,0.32);
+      overflow: hidden;
+    }
+
+    .mb-odds-bar span {
+      display: block;
+      height: 100%;
+      width: var(--value, 50%);
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--mb-navy-3), var(--mb-gold-3));
+      box-shadow: 0 0 0.8rem rgba(240,201,111,0.18);
+    }
+
+    .mb-inline-active-step {
+      padding: 0.75rem 0.9rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,0.18);
+      background:
+        linear-gradient(180deg, rgba(9,19,30,0.68), rgba(5,7,10,0.58)),
+        radial-gradient(circle at 42% 0%, rgba(240,201,111,0.08), transparent 14rem);
+      box-shadow: 0 0.55rem 1.3rem rgba(0,0,0,0.18);
+    }
+
+    .mb-inline-active-step .mb-card-header { margin-bottom: 0.45rem; }
+
+    .mb-compact-progress-track,
+    .mb-modal-progress-track {
+      position: relative;
+      height: 0.68rem;
+      border-radius: 999px;
+      border: 1px solid rgba(240,201,111,0.24);
+      background:
+        linear-gradient(90deg, rgba(240,201,111,0.22) var(--progress, 42%), rgba(7,10,14,0.76) var(--progress, 42%)),
+        repeating-linear-gradient(90deg, transparent 0 2.2rem, rgba(255,255,255,0.035) 2.2rem 2.25rem);
+      overflow: visible;
+    }
+
+    .mb-modal-progress-track {
+      height: 0.9rem;
+      margin-top: 0.75rem;
+    }
+
+    .mb-walker {
+      --walker-size: 1.35rem;
+      position: absolute;
+      bottom: -0.34rem;
+      left: var(--progress, 42%);
+      width: var(--walker-size);
+      height: var(--walker-size);
+      transform: translateX(-50%);
+      display: grid;
+      place-items: center;
+      color: var(--mb-gold-3);
+      font-size: 0.9rem;
+      filter: drop-shadow(0 0.22rem 0.25rem rgba(0,0,0,0.65));
+      animation: mbWalkerMove 2.4s linear infinite;
+    }
+
+    .mb-sprite-walker {
+      position: absolute;
+      left: var(--progress, 42%);
+      bottom: 0.42rem;
+      width: 2.1rem;
+      height: 1.75rem;
+      transform: translateX(-50%);
+      filter: drop-shadow(0 0.22rem 0.25rem rgba(0,0,0,0.65));
+      animation: mbSpriteTravel 2.4s linear infinite;
+    }
+
+    .mb-sprite-walker::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0.12rem;
+      width: 0.62rem;
+      height: 1.35rem;
+      transform: translateX(-50%);
+      border-radius: 0.4rem 0.4rem 0.2rem 0.2rem;
+      background: linear-gradient(180deg, var(--mb-gold-3), var(--mb-gold-1) 48%, var(--mb-navy-2) 49%, #080a0f 100%);
+      clip-path: polygon(50% 0, 64% 10%, 74% 28%, 66% 45%, 84% 78%, 64% 100%, 36% 100%, 16% 78%, 34% 45%, 26% 28%, 36% 10%);
+    }
+
+    .mb-sprite-walker::after {
+      content: "";
+      position: absolute;
+      left: 0.3rem;
+      right: 0.3rem;
+      bottom: 0;
+      height: 0.38rem;
+      background:
+        linear-gradient(90deg, transparent 0 15%, var(--mb-gold-2) 15% 28%, transparent 28% 62%, var(--mb-gold-2) 62% 75%, transparent 75% 100%);
+      transform-origin: center;
+      animation: mbSpriteLegs 0.56s steps(8) infinite;
+    }
+
+    @keyframes mbWalkerMove {
+      0% { translate: -0.28rem 0; }
+      25% { translate: 0 -0.10rem; }
+      50% { translate: 0.28rem 0; }
+      75% { translate: 0 -0.10rem; }
+      100% { translate: -0.28rem 0; }
+    }
+
+    @keyframes mbSpriteTravel {
+      0% { translate: -0.16rem 0; }
+      25% { translate: 0 -0.06rem; }
+      50% { translate: 0.16rem 0; }
+      75% { translate: 0 -0.06rem; }
+      100% { translate: -0.16rem 0; }
+    }
+
+    @keyframes mbSpriteLegs {
+      0% { transform: skewX(-12deg) scaleX(1.05); }
+      50% { transform: skewX(12deg) scaleX(0.92); }
+      100% { transform: skewX(-12deg) scaleX(1.05); }
+    }
+
+    .mb-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: grid;
+      place-items: center;
+      padding: 1.2rem;
+      background: rgba(0,0,0,0.58);
+      backdrop-filter: blur(7px);
+    }
+
+    .mb-step-modal {
+      width: min(42rem, 100%);
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,0.28);
+      background:
+        linear-gradient(180deg, rgba(18,27,39,0.96), rgba(7,10,15,0.96)),
+        radial-gradient(circle at top right, rgba(240,201,111,0.12), transparent 16rem);
+      box-shadow: 0 1.8rem 4rem rgba(0,0,0,0.55), inset 0 1px rgba(255,255,255,0.04);
+      padding: 1rem;
+    }
+
+    .mb-step-modal-title {
+      margin: 0;
+      font-family: var(--mb-font-display);
+      color: var(--mb-gold-3);
+      font-size: 1.55rem;
+    }
+
+    .mb-step-modal-copy {
+      margin: 0.45rem 0 0;
+      color: var(--mb-text-2);
+      line-height: 1.45;
+      font-size: 0.9rem;
+    }
+
+    .mb-trial-detail-card {
+      margin-top: 1rem;
+    }
+
+    .mb-stat-trial-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .mb-stat-trial-row {
+      padding: 0.62rem;
+      border-radius: 0.9rem;
+      border: 1px solid rgba(240,201,111,0.09);
+      background: rgba(0,0,0,0.16);
+    }
+
+    .mb-stat-trial-row header {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.45rem;
+    }
+
+    .mb-stat-trial-row strong { color: var(--mb-text-0); font-size: 0.88rem; }
+    .mb-stat-trial-row small { color: var(--mb-text-3); font-size: 0.72rem; }
+
+    .mb-stat-trial-bars {
+      display: grid;
+      gap: 0.42rem;
+    }
+
+    .mb-stat-trial-bar-row {
+      display: grid;
+      grid-template-columns: 5.5rem 1fr 2.4rem;
+      gap: 0.5rem;
+      align-items: center;
+      color: var(--mb-text-2);
+      font-size: 0.72rem;
+    }
+
+    .mb-stat-trial-bar-row strong {
+      color: var(--mb-text-1);
+      font-size: 0.72rem;
+      text-align: right;
+    }
+
+    .mb-info-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .mb-info-tile {
+      padding: 0.75rem;
+      border-radius: var(--mb-radius-lg);
+      border: 1px solid rgba(240,201,111,0.1);
+      background: rgba(0,0,0,0.16);
+    }
+
+    .mb-info-tile span {
+      display: block;
+      color: var(--mb-text-2);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .mb-info-tile strong {
+      display: block;
+      margin-top: 0.28rem;
+      color: var(--mb-gold-3);
+      font-size: 1.18rem;
+    }
+
+    .mb-state-stack { display: grid; gap: 0.75rem; }
+
+    .mb-state-card {
+      padding: 0.78rem;
+      border-radius: var(--mb-radius-lg);
+      border: 1px solid rgba(240,201,111,0.1);
+      background: rgba(0,0,0,0.16);
+    }
+
+    .mb-state-card h3 {
+      margin: 0 0 0.25rem;
+      font-family: var(--mb-font-display);
+      font-size: 1.05rem;
+    }
+
+    .mb-state-card p {
+      margin: 0;
+      color: var(--mb-text-2);
+      line-height: 1.4;
+      font-size: 0.84rem;
+    }
+
+    .mb-note {
+      color: var(--mb-text-2);
+      line-height: 1.5;
+      font-size: 0.88rem;
+    }
+
+    @media (max-width: 1220px) {
+      .mb-topbar { grid-template-columns: 1fr; height: auto; }
+      .mb-brand { justify-content: flex-start; }
+      .mb-app-shell { grid-template-rows: auto minmax(0, 1fr); }
+      .mb-page-header, .mb-grid--2, .mb-grid--3, .mb-difficulty-grid, .mb-info-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 860px) {
+      .mb-app-shell { display: block; }
+      .mb-topbar { position: static; }
+      .mb-topbar-left, .mb-topbar-right { justify-content: flex-start; overflow-x: auto; }
+      .mb-sidebar { border-right: 0; border-bottom: 1px solid var(--mb-line-soft); }
+      .mb-nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .mb-nav-link { justify-content: center; }
+      .mb-nav-label, .mb-nav-section-title { display: none; }
+      .mb-main { padding: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left" aria-label="Hero health and experience">
+        <span class="mb-chip mb-chip--health"><span class="mb-chip-icon">♥</span> Health <strong>86 / 100</strong></span>
+        <div class="mb-xp" aria-label="Experience progress">
+          <div class="mb-xp-meta"><span>Level 12</span><strong>1,240 XP to next</strong></div>
+          <div class="mb-mini-bar" style="--value: 63%"><span></span></div>
+        </div>
+      </div>
+
+      <div class="mb-brand" aria-label="Mythborne">
+        <div class="mb-brand-mark"></div>
+        <div>
+          <div class="mb-brand-title">Mythborne</div>
+          <div class="mb-brand-subtitle">Exploration prototype</div>
+        </div>
+      </div>
+
+      <div class="mb-topbar-right" aria-label="Hero resources">
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◈</span><span class="mb-chip-stack">Drachmas <strong>3,420</strong><small>+96 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">▣</span><span class="mb-chip-stack">Materials <strong>185</strong><small>+22 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◇</span><span class="mb-chip-stack">Workforce <strong>42</strong><small>+4 / h</small></span></span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-server-card" aria-label="Selected world context">
+        <div class="mb-server-label">Selected server</div>
+        <div class="mb-server-name"><span>Sandbox</span><span class="mb-badge mb-badge--green">live</span></div>
+        <div class="mb-prestige">
+          <div class="mb-server-label">Prestige</div>
+          <div class="mb-server-name"><span>Zeugitai</span><span class="mb-badge mb-badge--gold">Tier II</span></div>
+        </div>
+      </section>
+
+      <div class="mb-nav-section-title">Hero</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#dashboard"><span class="mb-nav-icon">DA</span><span class="mb-nav-label">Dashboard</span></a></li>
+        <li><a class="mb-nav-link is-active" href="#exploration"><span class="mb-nav-icon">EX</span><span class="mb-nav-label">Exploration</span></a></li>
+        <li><a class="mb-nav-link" href="#hero"><span class="mb-nav-icon">HE</span><span class="mb-nav-label">Hero</span></a></li>
+        <li><a class="mb-nav-link" href="#armory"><span class="mb-nav-icon">AR</span><span class="mb-nav-label">Armory</span></a></li>
+      </ul>
+
+      <div class="mb-nav-section-title">World</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#estate"><span class="mb-nav-icon">ES</span><span class="mb-nav-label">Estate</span></a></li>
+        <li><a class="mb-nav-link" href="#trade"><span class="mb-nav-icon">TR</span><span class="mb-nav-label">Trade</span></a></li>
+        <li><a class="mb-nav-link" href="#pvp"><span class="mb-nav-icon">PV</span><span class="mb-nav-label">PvP</span></a></li>
+        <li><a class="mb-nav-link" href="#reports"><span class="mb-nav-icon">RP</span><span class="mb-nav-label">Reports</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main" id="exploration">
+      <section class="mb-page-header">
+        <div>
+          <p class="mb-kicker">Exploration</p>
+          <h1 class="mb-title">Choose difficulty and depart</h1>
+          <p class="mb-copy">This screen does not invent named routes. It shows the current exploration state, daily Trial availability, backend-provided chance previews and the action to start or continue an exploration step.</p>
+          <div class="mb-button-row">
+            <span class="mb-badge mb-badge--gold">Trials remaining: 2</span>
+            <span class="mb-badge">Current streak: 3 non-Trial steps</span>
+            <span class="mb-badge mb-badge--green">Active effect: Clear Omen</span>
+            <span class="mb-badge mb-badge--blue">State: ready to start</span>
+          </div>
+        </div>
+
+        <aside class="mb-status-panel" aria-label="Current exploration state">
+          <div class="mb-status-row"><span>Exploration</span><strong>Ready</strong></div>
+          <div class="mb-status-row"><span>Selected difficulty</span><strong>Medium</strong></div>
+          <div class="mb-status-row"><span>Daily reset</span><strong>13h 42m</strong></div>
+          <div class="mb-status-row"><span>Blocking content</span><strong>None</strong></div>
+        </aside>
+      </section>
+
+      <section class="mb-inline-active-step" aria-label="Dismissed active step inline state">
+        <div class="mb-card-header">
+          <div>
+            <h2 class="mb-card-title">Active exploration step</h2>
+            <p class="mb-card-subtitle">Inline compact state shown after dismissing the modal backdrop. Re-entering Exploration can show the modal first again.</p>
+          </div>
+          <span class="mb-badge mb-badge--blue">02:18 remaining</span>
+        </div>
+        <div class="mb-compact-progress-track" style="--progress: 42%">
+          <div class="mb-sprite-walker" aria-label="Walking hoplite sprite preview"></div>
+        </div>
+        <div class="mb-button-row">
+          <button class="mb-button" disabled>Check result</button>
+          <span class="mb-badge mb-badge--gold">Outcome hidden until ready</span>
+        </div>
+      </section>
+
+      <section class="mb-card mb-card--navy">
+        <div class="mb-card-header">
+          <div>
+            <h2 class="mb-card-title">Difficulty selection</h2>
+            <p class="mb-card-subtitle">Cards show compact approximate values. Detailed chances can be opened below, because each of the nine base stats has its own Trial archetype.</p>
+          </div>
+          <span class="mb-badge mb-badge--blue">Preview values</span>
+        </div>
+
+        <div class="mb-difficulty-grid">
+          <article class="mb-difficulty-card">
+            <div class="mb-difficulty-top">
+              <div>
+                <h3 class="mb-difficulty-title">Easy</h3>
+                <p class="mb-difficulty-copy">Lower risk, shorter step time, safer Trial completion profile.</p>
+              </div>
+              <span class="mb-badge mb-badge--green">Available</span>
+            </div>
+            <div class="mb-metric-list">
+              <div class="mb-metric-row"><span>Step time</span><strong>01:00</strong></div>
+              <div class="mb-metric-row"><span>Trial opportunity</span><strong>18%</strong></div>
+              <div class="mb-odds-bar" style="--value:18%"><span></span></div>
+              <div class="mb-metric-row"><span>Approx. manifestation</span><strong>72%</strong></div>
+              <div class="mb-odds-bar" style="--value:72%"><span></span></div>
+              <div class="mb-metric-row"><span>Approx. auto result</span><strong>81%</strong></div>
+              <div class="mb-metric-row"><span>Reward profile</span><strong>Safe</strong></div>
+            </div>
+            <div class="mb-button-row"><button class="mb-button mb-button--ghost">Select easy</button></div>
+          </article>
+
+          <article class="mb-difficulty-card is-selected">
+            <div class="mb-difficulty-top">
+              <div>
+                <h3 class="mb-difficulty-title">Medium</h3>
+                <p class="mb-difficulty-copy">Balanced risk and reward. Current recommended difficulty for this hero.</p>
+              </div>
+              <span class="mb-badge mb-badge--gold">Selected</span>
+            </div>
+            <div class="mb-metric-list">
+              <div class="mb-metric-row"><span>Step time</span><strong>02:30</strong></div>
+              <div class="mb-metric-row"><span>Trial opportunity</span><strong>27%</strong></div>
+              <div class="mb-odds-bar" style="--value:27%"><span></span></div>
+              <div class="mb-metric-row"><span>Approx. manifestation</span><strong>56%</strong></div>
+              <div class="mb-odds-bar" style="--value:56%"><span></span></div>
+              <div class="mb-metric-row"><span>Approx. auto result</span><strong>62%</strong></div>
+              <div class="mb-metric-row"><span>Reward profile</span><strong>Balanced</strong></div>
+            </div>
+            <div class="mb-button-row"><button class="mb-button mb-button--primary">Start exploration</button></div>
+          </article>
+
+          <article class="mb-difficulty-card">
+            <div class="mb-difficulty-top">
+              <div>
+                <h3 class="mb-difficulty-title">Hard</h3>
+                <p class="mb-difficulty-copy">Longer waits and sharper challenge checks, with better reward profile.</p>
+              </div>
+              <span class="mb-badge mb-badge--red">High risk</span>
+            </div>
+            <div class="mb-metric-list">
+              <div class="mb-metric-row"><span>Step time</span><strong>05:00</strong></div>
+              <div class="mb-metric-row"><span>Trial opportunity</span><strong>34%</strong></div>
+              <div class="mb-odds-bar" style="--value:34%"><span></span></div>
+              <div class="mb-metric-row"><span>Approx. manifestation</span><strong>41%</strong></div>
+              <div class="mb-odds-bar" style="--value:41%"><span></span></div>
+              <div class="mb-metric-row"><span>Approx. auto result</span><strong>38%</strong></div>
+              <div class="mb-metric-row"><span>Reward profile</span><strong>High</strong></div>
+            </div>
+            <div class="mb-button-row"><button class="mb-button mb-button--ghost">Select hard</button></div>
+          </article>
+        </div>
+      </section>
+      <section class="mb-card mb-trial-detail-card">
+        <div class="mb-card-header">
+          <div>
+            <h2 class="mb-card-title">Trial detail by stat</h2>
+            <p class="mb-card-subtitle">Optional compact breakdown for the selected difficulty. Each stat shows two different previews: Trial manifestation and auto-result success.</p>
+          </div>
+          <span class="mb-badge mb-badge--purple">Manifestation + Auto</span>
+        </div>
+
+        <div class="mb-stat-trial-grid">
+          <div class="mb-stat-trial-row">
+            <header><strong>Strength</strong><small>Impact</small></header>
+            <div class="mb-stat-trial-bars">
+              <div class="mb-stat-trial-bar-row"><span>Manifest</span><div class="mb-odds-bar" style="--value:64%"><span></span></div><strong>64%</strong></div>
+              <div class="mb-stat-trial-bar-row"><span>Auto result</span><div class="mb-odds-bar" style="--value:57%"><span></span></div><strong>57%</strong></div>
+            </div>
+          </div>
+          <div class="mb-stat-trial-row">
+            <header><strong>Dexterity</strong><small>Precision</small></header>
+            <div class="mb-stat-trial-bars">
+              <div class="mb-stat-trial-bar-row"><span>Manifest</span><div class="mb-odds-bar" style="--value:58%"><span></span></div><strong>58%</strong></div>
+              <div class="mb-stat-trial-bar-row"><span>Auto result</span><div class="mb-odds-bar" style="--value:63%"><span></span></div><strong>63%</strong></div>
+            </div>
+          </div>
+          <div class="mb-stat-trial-row">
+            <header><strong>Endurance</strong><small>Resilience</small></header>
+            <div class="mb-stat-trial-bars">
+              <div class="mb-stat-trial-bar-row"><span>Manifest</span><div class="mb-odds-bar" style="--value:61%"><span></span></div><strong>61%</strong></div>
+              <div class="mb-stat-trial-bar-row"><span>Auto result</span><div class="mb-odds-bar" style="--value:66%"><span></span></div><strong>66%</strong></div>
+            </div>
+          </div>
+          <div class="mb-stat-trial-row">
+            <header><strong>Agility</strong><small>Mobility</small></header>
+            <div class="mb-stat-trial-bars">
+              <div class="mb-stat-trial-bar-row"><span>Manifest</span><div class="mb-odds-bar" style="--value:54%"><span></span></div><strong>54%</strong></div>
+              <div class="mb-stat-trial-bar-row"><span>Auto result</span><div class="mb-odds-bar" style="--value:59%"><span></span></div><strong>59%</strong></div>
+            </div>
+          </div>
+          <div class="mb-stat-trial-row">
+            <header><strong>Cunning</strong><small>Tactics</small></header>
+            <div class="mb-stat-trial-bars">
+              <div class="mb-stat-trial-bar-row"><span>Manifest</span><div class="mb-odds-bar" style="--value:48%"><span></span></div><strong>48%</strong></div>
+              <div class="mb-stat-trial-bar-row"><span>Auto result</span><div class="mb-odds-bar" style="--value:52%"><span></span></div><strong>52%</strong></div>
+            </div>
+          </div>
+          <div class="mb-stat-trial-row">
+            <header><strong>Charisma</strong><small>Influence</small></header>
+            <div class="mb-stat-trial-bars">
+              <div class="mb-stat-trial-bar-row"><span>Manifest</span><div class="mb-odds-bar" style="--value:42%"><span></span></div><strong>42%</strong></div>
+              <div class="mb-stat-trial-bar-row"><span>Auto result</span><div class="mb-odds-bar" style="--value:45%"><span></span></div><strong>45%</strong></div>
+            </div>
+          </div>
+          <div class="mb-stat-trial-row">
+            <header><strong>Wisdom</strong><small>Judgment</small></header>
+            <div class="mb-stat-trial-bars">
+              <div class="mb-stat-trial-bar-row"><span>Manifest</span><div class="mb-odds-bar" style="--value:51%"><span></span></div><strong>51%</strong></div>
+              <div class="mb-stat-trial-bar-row"><span>Auto result</span><div class="mb-odds-bar" style="--value:60%"><span></span></div><strong>60%</strong></div>
+            </div>
+          </div>
+          <div class="mb-stat-trial-row">
+            <header><strong>Intelligence</strong><small>Reasoning</small></header>
+            <div class="mb-stat-trial-bars">
+              <div class="mb-stat-trial-bar-row"><span>Manifest</span><div class="mb-odds-bar" style="--value:67%"><span></span></div><strong>67%</strong></div>
+              <div class="mb-stat-trial-bar-row"><span>Auto result</span><div class="mb-odds-bar" style="--value:72%"><span></span></div><strong>72%</strong></div>
+            </div>
+          </div>
+          <div class="mb-stat-trial-row">
+            <header><strong>Spirituality</strong><small>Ritual</small></header>
+            <div class="mb-stat-trial-bars">
+              <div class="mb-stat-trial-bar-row"><span>Manifest</span><div class="mb-odds-bar" style="--value:36%"><span></span></div><strong>36%</strong></div>
+              <div class="mb-stat-trial-bar-row"><span>Auto result</span><div class="mb-odds-bar" style="--value:41%"><span></span></div><strong>41%</strong></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal preview state is intentionally commented out so the underlying dismissed/inline UI is visible in canvas preview.
+       In production: show this p-dialog first after starting/returning to active exploration; backdrop dismiss collapses to the inline strip above Difficulty selection.
+  <div class="mb-modal-backdrop" aria-label="Active exploration modal preview">
+    <section class="mb-step-modal" role="dialog" aria-modal="true" aria-labelledby="active-step-title">
+      <div class="mb-card-header">
+        <div>
+          <p class="mb-kicker">Exploration in progress</p>
+          <h2 class="mb-step-modal-title" id="active-step-title">Your hero is travelling</h2>
+          <p class="mb-step-modal-copy">Primary state after starting exploration. Clicking the backdrop would dismiss this dialog and collapse it into the compact inline progress strip on the page.</p>
+        </div>
+        <span class="mb-badge mb-badge--blue">02:18 remaining</span>
+      </div>
+      <div class="mb-modal-progress-track" style="--progress: 42%">
+        <div class="mb-walker" aria-label="Walking hoplite">𐀪</div>
+      </div>
+      <div class="mb-button-row">
+        <button class="mb-button" disabled>Check result</button>
+        <button class="mb-button mb-button--ghost">Dismiss backdrop</button>
+        <span class="mb-badge mb-badge--gold">Outcome hidden until ready</span>
+      </div>
+    </section>
+  </div>
+  -->
+</body>
+</html>

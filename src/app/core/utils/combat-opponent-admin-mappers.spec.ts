@@ -10,6 +10,7 @@ import {
   mapCombatStatDefinition,
   mapEquipmentSlotDefinition,
   toCombatOpponentAdminViews,
+  toCombatOpponentStatGridRows,
 } from './combat-opponent-admin-mappers';
 
 describe('combat opponent admin mappers', () => {
@@ -81,6 +82,59 @@ describe('combat opponent admin mappers', () => {
     expect(view.equipmentEntries[0].slotLabel).toBe('Main hand (main_hand)');
     expect(view.equipmentEntries[0].entryModeLabel).toBe('Manual (manual)');
   });
+
+  it('renders a full stat grid with missing stat baselines as default 0 rows', () => {
+    const rows = toCombatOpponentStatGridRows({
+      stats: [
+        mapCombatStatDefinition(statRow('strength', 'Strength', 10)),
+        mapCombatStatDefinition(statRow('dexterity', 'Dexterity', 20)),
+      ],
+      statValues: [mapCombatOpponentStatValue(statValueRow('stat-value-1', 'strength', 12))],
+    }, 'opponent-1');
+
+    expect(rows).toEqual([
+      jasmine.objectContaining({
+        statKey: 'strength',
+        statValueId: 'stat-value-1',
+        baseValue: 12,
+        isConfigured: true,
+      }),
+      jasmine.objectContaining({
+        statKey: 'dexterity',
+        statValueId: null,
+        baseValue: 0,
+        isConfigured: false,
+      }),
+    ]);
+  });
+
+  it('keeps separate stat baselines visible after multiple canonical stats are configured', () => {
+    const rows = toCombatOpponentStatGridRows({
+      stats: [
+        mapCombatStatDefinition(statRow('strength', 'Strength', 10)),
+        mapCombatStatDefinition(statRow('dexterity', 'Dexterity', 20)),
+      ],
+      statValues: [
+        mapCombatOpponentStatValue(statValueRow('strength-row', 'strength', 12)),
+        mapCombatOpponentStatValue(statValueRow('dexterity-row', 'dexterity', 8)),
+      ],
+    }, 'opponent-1');
+
+    expect(rows).toEqual([
+      jasmine.objectContaining({
+        statKey: 'strength',
+        statValueId: 'strength-row',
+        baseValue: 12,
+        isConfigured: true,
+      }),
+      jasmine.objectContaining({
+        statKey: 'dexterity',
+        statValueId: 'dexterity-row',
+        baseValue: 8,
+        isConfigured: true,
+      }),
+    ]);
+  });
 });
 
 function familyRow(): Row<'combat_opponent_families'> {
@@ -115,12 +169,16 @@ function opponentRow(): Row<'combat_opponent_definitions'> {
   };
 }
 
-function statValueRow(): Row<'combat_opponent_stat_values'> {
+function statValueRow(
+  id = 'stat-value-1',
+  statKey = 'strength',
+  baseValue = 12,
+): Row<'combat_opponent_stat_values'> {
   return {
-    id: 'stat-value-1',
+    id,
     opponent_definition_id: 'opponent-1',
-    stat_key: 'strength',
-    base_value: 12,
+    stat_key: statKey,
+    base_value: baseValue,
     sort_order: 10,
     created_at: '2026-05-01T10:00:00.000Z',
     updated_at: '2026-05-01T10:00:00.000Z',
@@ -200,15 +258,15 @@ function slotRow(): Row<'equipment_slot_definitions'> {
   };
 }
 
-function statRow(): Row<'stats'> {
+function statRow(key = 'strength', label = 'Strength', order = 10): Row<'stats'> {
   return {
-    id: 'stat-1',
-    key: 'strength',
-    label: 'Strength',
-    description: 'Strength stat.',
+    id: `stat-${key}`,
+    key,
+    label,
+    description: `${label} stat.`,
     helper_text: 'Stat helper.',
     admin_description: 'Stat admin.',
-    order: 10,
+    order,
   };
 }
 

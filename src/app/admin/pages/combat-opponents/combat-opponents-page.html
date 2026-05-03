@@ -1,0 +1,23 @@
+<app-loading-overlay
+  [visible]="page.isLoading() && page.error() === null"
+  label="Loading combat opponents..."
+  description="Loading opponent definitions, dictionaries, formulas and item-generation options."
+/>
+
+@if (page.error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ page.error() }}</p>
+  </section>
+}
+
+<div class="flex-col gap-xl w-100">
+  <app-combat-opponent-header-section [links]="links" />
+  <app-combat-opponent-overview-section />
+  <app-combat-opponent-family-section />
+  <app-combat-opponent-definition-section />
+  <app-combat-opponent-stats-section />
+  <app-combat-opponent-attack-section />
+  <app-combat-opponent-equipment-section />
+  <app-combat-opponent-usage-section />
+</div>

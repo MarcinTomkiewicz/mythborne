@@ -1,4 +1,12 @@
 import { Json } from '../../types/database.types';
+import { UiMetadataEntryReadModel } from '../admin-ui-metadata.model';
+import { BalanceFormula, FormulaAssignment, FormulaTarget } from '../formula/formula.model';
+import {
+  EditableItemGenerationAffix,
+  EditableItemGenerationBase,
+  EditableItemGenerationBucketProfile,
+  EditableItemGenerationQuality,
+} from '../item/item-generation-admin.model';
 import {
   CombatAttackSourceSnapshot,
   CombatParticipantInput,
@@ -146,6 +154,16 @@ export interface CombatOpponentStatBaselineView {
   statDescription: string | null;
 }
 
+export interface CombatOpponentStatGridRow {
+  statKey: string;
+  statLabel: string;
+  statDescription: string | null;
+  statValueId: string | null;
+  baseValue: number;
+  sortOrder: number;
+  isConfigured: boolean;
+}
+
 export interface CombatOpponentAttackSourceView {
   attack: CombatOpponentAttackSourceReadModel;
   damageLabel: string;
@@ -183,8 +201,94 @@ export interface CombatOpponentAdminData {
     attackSourceKinds: CombatDictionaryReadModel[];
     candidateKinds: CombatDictionaryReadModel[];
   };
+  formulas?: BalanceFormula[];
+  formulaTargets?: FormulaTarget[];
+  assignments?: FormulaAssignment[];
+  itemCatalog?: {
+    bases: EditableItemGenerationBase[];
+    prefixes: EditableItemGenerationAffix[];
+    suffixes: EditableItemGenerationAffix[];
+  };
+  itemBalance?: {
+    qualities: EditableItemGenerationQuality[];
+    bucketProfiles: EditableItemGenerationBucketProfile[];
+  };
+  uiMetadataEntries?: UiMetadataEntryReadModel[];
   opponentViews: CombatOpponentAdminView[];
   emptyState: CombatOpponentEmptyState | null;
+}
+
+export interface CombatOpponentFamilyDraft {
+  key: string;
+  label: string;
+  description: string | null;
+  helperText: string | null;
+  adminDescription: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  reason: string;
+}
+
+export interface CombatOpponentDefinitionDraft {
+  opponentDefinitionId: string | null;
+  key: string;
+  label: string;
+  description: string | null;
+  helperText: string | null;
+  adminDescription: string | null;
+  familyKey: string;
+  equipmentMode: string;
+  defaultScalingFormulaId: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  reason: string;
+}
+
+export interface CombatOpponentStatValueDraft {
+  statValueId: string | null;
+  opponentDefinitionId: string;
+  statKey: string;
+  baseValue: number;
+  sortOrder: number;
+  reason: string;
+}
+
+export interface CombatOpponentAttackSourceDraft {
+  attackSourceId: string | null;
+  opponentDefinitionId: string;
+  key: string;
+  label: string;
+  description: string | null;
+  helperText: string | null;
+  adminDescription: string | null;
+  minOpponentLevel: number | null;
+  maxOpponentLevel: number | null;
+  attackCount: number;
+  minDamage: number;
+  maxDamage: number;
+  criticalChance: number;
+  criticalDamage: number;
+  sortOrder: number;
+  isActive: boolean;
+  reason: string;
+}
+
+export interface CombatOpponentEquipmentEntryDraft {
+  equipmentEntryId: string | null;
+  opponentDefinitionId: string;
+  slotKey: string;
+  entryMode: string;
+  manualBaseId: string | null;
+  manualQualityKey: string | null;
+  manualPrefixAffixId: string | null;
+  manualSuffixAffixId: string | null;
+  generatedBucketProfileId: string | null;
+  generatedMaxQualityKey: string | null;
+  minOpponentLevel: number | null;
+  maxOpponentLevel: number | null;
+  sortOrder: number;
+  isActive: boolean;
+  reason: string;
 }
 
 export interface ResolveCombatOpponentInput {

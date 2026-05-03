@@ -1,16 +1,26 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
+import { RPC } from '../../constants/rpc.const';
 import { Row } from '../../types/supabase.types';
+import { FormulaService } from '../formula/formula';
+import { ItemGenerationAdminService } from '../items/item-generation-admin';
 import { Backend } from '../backend/backend';
 import { CombatOpponentAdmin } from './combat-opponent-admin';
 
 describe('CombatOpponentAdmin', () => {
   let backend: jasmine.SpyObj<Backend>;
+  let formulas: jasmine.SpyObj<FormulaService>;
+  let itemGeneration: jasmine.SpyObj<ItemGenerationAdminService>;
   let service: CombatOpponentAdmin;
 
   beforeEach(() => {
-    backend = jasmine.createSpyObj<Backend>('Backend', ['getAll']);
+    backend = jasmine.createSpyObj<Backend>('Backend', ['getAll', 'rpc']);
+    formulas = jasmine.createSpyObj<FormulaService>('FormulaService', ['getAdminData']);
+    itemGeneration = jasmine.createSpyObj<ItemGenerationAdminService>(
+      'ItemGenerationAdminService',
+      ['getCatalogData', 'getBalanceData'],
+    );
     backend.getAll.and.callFake(((opts: { table: string }) => {
       switch (opts.table) {
         case TABLES.combat_opponent_families:
@@ -40,9 +50,42 @@ describe('CombatOpponentAdmin', () => {
           return of([]);
       }
     }) as Backend['getAll']);
+    backend.rpc.and.callFake(((fn: string) => {
+      if (fn === RPC.get_ui_metadata_entries) {
+        return of([uiMetadataRow()]);
+      }
+
+      return of(null);
+    }) as Backend['rpc']);
+    formulas.getAdminData.and.returnValue(of({
+      targets: [],
+      formulas: [],
+      assignments: [],
+      entityAssignments: [],
+      blocks: [],
+    }));
+    itemGeneration.getCatalogData.and.returnValue(of({
+      baseTypes: [],
+      baseTypeTargets: [],
+      bases: [],
+      prefixes: [],
+      suffixes: [],
+      bonusTemplates: [],
+      bonusTargets: [],
+      bonusCategories: [],
+    }));
+    itemGeneration.getBalanceData.and.returnValue(of({
+      qualities: [],
+      bucketProfiles: [],
+    }));
 
     TestBed.configureTestingModule({
-      providers: [CombatOpponentAdmin, { provide: Backend, useValue: backend }],
+      providers: [
+        CombatOpponentAdmin,
+        { provide: Backend, useValue: backend },
+        { provide: FormulaService, useValue: formulas },
+        { provide: ItemGenerationAdminService, useValue: itemGeneration },
+      ],
     });
     service = TestBed.inject(CombatOpponentAdmin);
   });
@@ -69,6 +112,7 @@ describe('CombatOpponentAdmin', () => {
     expect(data.opponentViews[0].statBaselines[0].statLabel).toBe('Strength (strength)');
     expect(data.opponentViews[0].naturalAttacks[0].damageLabel).toBe('3-6');
     expect(data.opponentViews[0].equipmentEntries[0].slotLabel).toBe('Main hand (main_hand)');
+    expect(data.uiMetadataEntries?.[0].key).toBe('page_header');
     expect(data.emptyState).toBeNull();
   });
 
@@ -97,6 +141,32 @@ describe('CombatOpponentAdmin', () => {
         camelCase: false,
       }),
     );
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.get_ui_metadata_entries, {
+      p_namespace: 'combat_opponent_configurator_section',
+    });
+  });
+
+  it('routes combat opponent mutations through canonical RPCs', async () => {
+    backend.rpc.and.returnValue(of(familyRow()));
+
+    await firstValueFrom(service.saveFamily({
+      key: 'beasts',
+      label: 'Beasts',
+      description: null,
+      helperText: null,
+      adminDescription: null,
+      sortOrder: 20,
+      isActive: true,
+      reason: 'Balance pass.',
+    }));
+
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.upsert_combat_opponent_family, {
+      p_key: 'beasts',
+      p_label: 'Beasts',
+      p_sort_order: 20,
+      p_is_active: true,
+      p_reason: 'Balance pass.',
+    });
   });
 
   it('treats empty opponent catalog as a valid configuration state', async () => {
@@ -250,6 +320,26 @@ function dictionaryRow(table: string): Row<'combat_attack_source_kind_definition
     description: `${table} description`,
     helper_text: `${table} helper`,
     admin_description: `${table} admin`,
+    metadata_json: {},
+    sort_order: 10,
+    is_active: true,
+    created_at: '2026-05-01T10:00:00.000Z',
+    updated_at: '2026-05-01T10:00:00.000Z',
+  };
+}
+
+function uiMetadataRow(): Row<'ui_metadata_entries'> {
+  return {
+    id: 'metadata-1',
+    namespace: 'combat_opponent_configurator_section',
+    key: 'page_header',
+    label: 'Combat opponents',
+    description: 'Configure opponents.',
+    helper_text: null,
+    impact_summary: null,
+    warning_text: null,
+    ui_group_key: null,
+    ui_group_label: null,
     metadata_json: {},
     sort_order: 10,
     is_active: true,

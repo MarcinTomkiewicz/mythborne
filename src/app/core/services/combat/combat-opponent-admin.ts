@@ -1,7 +1,15 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable } from 'rxjs';
+import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
-import { CombatOpponentAdminData } from '../../domain/combat/combat-opponent.model';
+import {
+  CombatOpponentAdminData,
+  CombatOpponentAttackSourceDraft,
+  CombatOpponentDefinitionDraft,
+  CombatOpponentEquipmentEntryDraft,
+  CombatOpponentFamilyDraft,
+  CombatOpponentStatValueDraft,
+} from '../../domain/combat/combat-opponent.model';
 import {
   mapCombatDictionary,
   mapCombatOpponentAttackSource,
@@ -14,12 +22,32 @@ import {
   mapEquipmentSlotDefinition,
   toCombatOpponentAdminViews,
 } from '../../utils/combat-opponent-admin-mappers';
+import {
+  toDeactivateCombatOpponentAttackSourceRpcArgs,
+  toDeactivateCombatOpponentDefinitionRpcArgs,
+  toDeactivateCombatOpponentEquipmentEntryRpcArgs,
+  toDeactivateCombatOpponentFamilyRpcArgs,
+  toDeleteCombatOpponentStatValueRpcArgs,
+  toUpsertCombatOpponentAttackSourceRpcArgs,
+  toUpsertCombatOpponentDefinitionRpcArgs,
+  toUpsertCombatOpponentEquipmentEntryRpcArgs,
+  toUpsertCombatOpponentFamilyRpcArgs,
+  toUpsertCombatOpponentStatValueRpcArgs,
+} from '../../utils/combat-opponent-admin-rpc';
+import { mapUiMetadataEntry } from '../../utils/admin-ui-metadata';
 import { Row } from '../../types/supabase.types';
 import { Backend } from '../backend/backend';
+import { FormulaService } from '../formula/formula';
+import { ItemGenerationAdminService } from '../items/item-generation-admin';
+import {
+  COMBAT_OPPONENT_CONFIGURATOR_SECTION_METADATA_NAMESPACE,
+} from '../../constants/combat-opponent-ui-metadata.const';
 
 @Injectable({ providedIn: 'root' })
 export class CombatOpponentAdmin {
   private readonly backend = inject(Backend);
+  private readonly formulas = inject(FormulaService);
+  private readonly itemGeneration = inject(ItemGenerationAdminService);
 
   getAdminData(): Observable<CombatOpponentAdminData> {
     return forkJoin({
@@ -110,6 +138,10 @@ export class CombatOpponentAdmin {
         this.backend,
         TABLES.combat_candidate_kind_definitions,
       ),
+      formulaData: this.formulas.getAdminData(),
+      itemCatalog: this.itemGeneration.getCatalogData(),
+      itemBalance: this.itemGeneration.getBalanceData(),
+      uiMetadataEntries: getUiMetadataEntries(this.backend),
     }).pipe(
       map((rows) => {
         const data = {
@@ -129,6 +161,19 @@ export class CombatOpponentAdmin {
             attackSourceKinds: rows.attackSourceKinds.map(mapCombatDictionary),
             candidateKinds: rows.candidateKinds.map(mapCombatDictionary),
           },
+          formulas: rows.formulaData.formulas,
+          formulaTargets: rows.formulaData.targets,
+          assignments: rows.formulaData.assignments,
+          itemCatalog: {
+            bases: rows.itemCatalog.bases,
+            prefixes: rows.itemCatalog.prefixes,
+            suffixes: rows.itemCatalog.suffixes,
+          },
+          itemBalance: {
+            qualities: rows.itemBalance.qualities,
+            bucketProfiles: rows.itemBalance.bucketProfiles,
+          },
+          uiMetadataEntries: rows.uiMetadataEntries.map(mapUiMetadataEntry),
         };
 
         return {
@@ -143,6 +188,96 @@ export class CombatOpponentAdmin {
         };
       }),
     );
+  }
+
+  saveFamily(input: CombatOpponentFamilyDraft) {
+    return this.backend
+      .rpc<Row<'combat_opponent_families'>>(
+        RPC.upsert_combat_opponent_family,
+        toUpsertCombatOpponentFamilyRpcArgs(input),
+      )
+      .pipe(map(mapCombatOpponentFamily));
+  }
+
+  deactivateFamily(familyKey: string, reason: string) {
+    return this.backend
+      .rpc<Row<'combat_opponent_families'>>(
+        RPC.deactivate_combat_opponent_family,
+        toDeactivateCombatOpponentFamilyRpcArgs(familyKey, reason),
+      )
+      .pipe(map(mapCombatOpponentFamily));
+  }
+
+  saveDefinition(input: CombatOpponentDefinitionDraft) {
+    return this.backend
+      .rpc<Row<'combat_opponent_definitions'>>(
+        RPC.upsert_combat_opponent_definition,
+        toUpsertCombatOpponentDefinitionRpcArgs(input),
+      )
+      .pipe(map(mapCombatOpponentDefinition));
+  }
+
+  deactivateDefinition(opponentDefinitionId: string, reason: string) {
+    return this.backend
+      .rpc<Row<'combat_opponent_definitions'>>(
+        RPC.deactivate_combat_opponent_definition,
+        toDeactivateCombatOpponentDefinitionRpcArgs(opponentDefinitionId, reason),
+      )
+      .pipe(map(mapCombatOpponentDefinition));
+  }
+
+  saveStatValue(input: CombatOpponentStatValueDraft) {
+    return this.backend
+      .rpc<Row<'combat_opponent_stat_values'>>(
+        RPC.upsert_combat_opponent_stat_value,
+        toUpsertCombatOpponentStatValueRpcArgs(input),
+      )
+      .pipe(map(mapCombatOpponentStatValue));
+  }
+
+  deleteStatValue(statValueId: string, reason: string) {
+    return this.backend
+      .rpc<Row<'combat_opponent_stat_values'>>(
+        RPC.delete_combat_opponent_stat_value,
+        toDeleteCombatOpponentStatValueRpcArgs(statValueId, reason),
+      )
+      .pipe(map(mapCombatOpponentStatValue));
+  }
+
+  saveAttackSource(input: CombatOpponentAttackSourceDraft) {
+    return this.backend
+      .rpc<Row<'combat_opponent_attack_sources'>>(
+        RPC.upsert_combat_opponent_attack_source,
+        toUpsertCombatOpponentAttackSourceRpcArgs(input),
+      )
+      .pipe(map(mapCombatOpponentAttackSource));
+  }
+
+  deactivateAttackSource(attackSourceId: string, reason: string) {
+    return this.backend
+      .rpc<Row<'combat_opponent_attack_sources'>>(
+        RPC.deactivate_combat_opponent_attack_source,
+        toDeactivateCombatOpponentAttackSourceRpcArgs(attackSourceId, reason),
+      )
+      .pipe(map(mapCombatOpponentAttackSource));
+  }
+
+  saveEquipmentEntry(input: CombatOpponentEquipmentEntryDraft) {
+    return this.backend
+      .rpc<Row<'combat_opponent_equipment_entries'>>(
+        RPC.upsert_combat_opponent_equipment_entry,
+        toUpsertCombatOpponentEquipmentEntryRpcArgs(input),
+      )
+      .pipe(map(mapCombatOpponentEquipmentEntry));
+  }
+
+  deactivateEquipmentEntry(equipmentEntryId: string, reason: string) {
+    return this.backend
+      .rpc<Row<'combat_opponent_equipment_entries'>>(
+        RPC.deactivate_combat_opponent_equipment_entry,
+        toDeactivateCombatOpponentEquipmentEntryRpcArgs(equipmentEntryId, reason),
+      )
+      .pipe(map(mapCombatOpponentEquipmentEntry));
   }
 }
 
@@ -163,4 +298,10 @@ function dictionaryRows<T extends object>(backend: Backend, table: string) {
     { column: 'sort_order', ascending: true },
     { column: 'key', ascending: true },
   ]);
+}
+
+function getUiMetadataEntries(backend: Backend) {
+  return backend.rpc<Row<'ui_metadata_entries'>[]>(RPC.get_ui_metadata_entries, {
+    p_namespace: COMBAT_OPPONENT_CONFIGURATOR_SECTION_METADATA_NAMESPACE,
+  });
 }

@@ -1,0 +1,1274 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mythborne Dashboard V3 Prototype</title>
+  <style>
+    /*
+      Mythborne Dashboard V3 — modern browser RPG UI stylized with ancient-Greek flavor.
+      Goal: preview-first HTML/CSS direction for later Angular + PrimeNG + SCSS translation.
+
+      Direction after feedback:
+      - lighter and more modern than V1;
+      - dashboard is hero-centric, not system/admin-centric;
+      - topbar: Health + XP left, brand center, Drachmas/Materials/Workforce right;
+      - sidebar top: selected server + prestige context;
+      - dashboard body: hero portrait, core stats, derived stats, equipment preview;
+      - no heavy right sidebar on dashboard;
+      - Walking Dead timing style preserved as a future combat pattern preview.
+    */
+
+    :root {
+      --mb-bg-0: #06080c;
+      --mb-bg-1: #0b1018;
+      --mb-bg-2: #101a27;
+      --mb-bg-3: #152437;
+
+      --mb-panel-0: rgba(9, 13, 20, 0.82);
+      --mb-panel-1: rgba(14, 22, 32, 0.78);
+      --mb-panel-2: rgba(19, 31, 45, 0.72);
+      --mb-panel-glass: rgba(12, 18, 27, 0.64);
+
+      --mb-navy-0: #07111d;
+      --mb-navy-1: #0d2135;
+      --mb-navy-2: #163b5c;
+      --mb-navy-3: #2d6e9f;
+
+      --mb-stone: #252019;
+      --mb-stone-soft: #3a3227;
+      --mb-marble: #c9bea2;
+
+      --mb-gold-0: #5b3a13;
+      --mb-gold-1: #9c6723;
+      --mb-gold-2: #c8923a;
+      --mb-gold-3: #f0c96f;
+      --mb-bronze: #87582a;
+
+      --mb-red: #b24b3b;
+      --mb-green: #6fa45d;
+      --mb-blue: #5ba3d5;
+      --mb-purple: #9672cc;
+
+      --mb-text-0: #f6edda;
+      --mb-text-1: #d7c8ab;
+      --mb-text-2: #9d8f75;
+      --mb-text-3: #6f675a;
+
+      --mb-line-soft: rgba(240, 201, 111, 0.12);
+      --mb-line: rgba(240, 201, 111, 0.24);
+      --mb-line-strong: rgba(240, 201, 111, 0.44);
+      --mb-shadow: rgba(0, 0, 0, 0.42);
+      --mb-glow: rgba(240, 201, 111, 0.22);
+
+      --mb-sidebar-w: 16rem;
+      --mb-topbar-h: 4.25rem;
+      --mb-radius-sm: 0.45rem;
+      --mb-radius-md: 0.75rem;
+      --mb-radius-lg: 1rem;
+      --mb-radius-xl: 1.35rem;
+      --mb-gap: 1rem;
+
+      --mb-font-display: Georgia, "Times New Roman", serif;
+      --mb-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { color-scheme: dark; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--mb-font-ui);
+      color: var(--mb-text-0);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(200, 146, 58, 0.14), transparent 28rem),
+        radial-gradient(circle at 82% 4%, rgba(45, 110, 159, 0.22), transparent 34rem),
+        linear-gradient(135deg, var(--mb-bg-0), #080b11 38%, #050608 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.16;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(240,201,111,0.035), transparent 18%, transparent 82%, rgba(240,201,111,0.035)),
+        radial-gradient(circle at bottom, rgba(7,17,29,0.4), transparent 42rem);
+    }
+
+    button, input, select { font: inherit; }
+
+    .mb-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--mb-sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--mb-topbar-h) minmax(0, 1fr);
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    /* TOPBAR */
+    .mb-topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(20rem, 1fr) auto minmax(20rem, 1fr);
+      align-items: center;
+      gap: 1rem;
+      padding: 0.55rem 1rem;
+      border-bottom: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(8, 13, 20, 0.94), rgba(8, 12, 18, 0.88)),
+        radial-gradient(circle at center top, rgba(240,201,111,0.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 0.75rem 2rem var(--mb-shadow);
+    }
+
+    .mb-topbar-left,
+    .mb-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      min-width: 0;
+    }
+
+    .mb-topbar-right { justify-content: flex-end; }
+
+    .mb-brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+      min-width: 16rem;
+    }
+
+    .mb-brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-strong);
+      background:
+        radial-gradient(circle at 34% 24%, #fff0b9 0, var(--mb-gold-3) 22%, var(--mb-gold-1) 48%, #251509 70%, var(--mb-navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,0.42), 0 0 1.2rem rgba(240,201,111,0.22);
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .mb-brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+      text-shadow: 0 1px rgba(255,255,255,0.3);
+    }
+
+    .mb-brand-title {
+      font-family: var(--mb-font-display);
+      font-size: 1.65rem;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: var(--mb-gold-3);
+      line-height: 1;
+      text-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.5);
+    }
+
+    .mb-brand-subtitle {
+      color: var(--mb-text-3);
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-top: 0.18rem;
+      text-align: center;
+    }
+
+    .mb-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.42rem;
+      min-height: 2.15rem;
+      max-width: 100%;
+      padding: 0.38rem 0.72rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: 999px;
+      color: var(--mb-text-1);
+      background: linear-gradient(180deg, rgba(15,23,33,0.75), rgba(6,9,13,0.78));
+      white-space: nowrap;
+      box-shadow: inset 0 1px rgba(255,255,255,0.04);
+    }
+
+    .mb-chip strong { color: var(--mb-text-0); font-weight: 700; }
+    .mb-chip-icon { color: var(--mb-gold-2); }
+    .mb-chip--health strong { color: #ffc0b7; }
+    .mb-chip--resource strong { color: var(--mb-gold-3); }
+
+    .mb-xp {
+      min-width: 15rem;
+      display: grid;
+      gap: 0.3rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-soft);
+      background: linear-gradient(180deg, rgba(15,23,33,0.72), rgba(6,9,13,0.74));
+    }
+
+    .mb-xp-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--mb-text-2);
+    }
+
+    .mb-mini-bar {
+      height: 0.42rem;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.38);
+      overflow: hidden;
+      border: 1px solid rgba(240,201,111,0.08);
+    }
+
+    .mb-mini-bar > span {
+      display: block;
+      width: var(--value, 62%);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--mb-gold-1), var(--mb-gold-3));
+      box-shadow: 0 0 0.8rem rgba(240,201,111,0.3);
+    }
+
+    /* SIDEBAR */
+    .mb-sidebar {
+      grid-area: sidebar;
+      padding: 1rem 0.8rem;
+      border-right: 1px solid var(--mb-line-soft);
+      background: linear-gradient(180deg, rgba(7,11,17,0.84), rgba(5,7,10,0.88));
+      backdrop-filter: blur(12px);
+    }
+
+    .mb-server-card {
+      padding: 0.9rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: var(--mb-radius-xl);
+      background:
+        linear-gradient(180deg, rgba(20,32,47,0.72), rgba(8,12,18,0.74)),
+        radial-gradient(circle at 80% 0%, rgba(240,201,111,0.16), transparent 10rem);
+      box-shadow: 0 0.8rem 1.8rem rgba(0,0,0,0.2);
+    }
+
+    .mb-server-label {
+      color: var(--mb-text-3);
+      font-size: 0.68rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+
+    .mb-server-name {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.7rem;
+      align-items: center;
+      font-weight: 800;
+      color: var(--mb-text-0);
+    }
+
+    .mb-prestige {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(240,201,111,0.1);
+    }
+
+    .mb-nav-section-title {
+      margin: 1.05rem 0 0.45rem 0.55rem;
+      color: var(--mb-text-3);
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .mb-nav-list {
+      display: grid;
+      gap: 0.28rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .mb-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.67rem 0.68rem;
+      color: var(--mb-text-1);
+      text-decoration: none;
+      border-radius: 0.85rem;
+      border: 1px solid transparent;
+      background: transparent;
+      transition: 120ms ease;
+    }
+
+    .mb-nav-link:hover,
+    .mb-nav-link.is-active {
+      color: var(--mb-text-0);
+      border-color: rgba(240,201,111,0.16);
+      background: linear-gradient(90deg, rgba(240,201,111,0.13), rgba(45,110,159,0.12));
+    }
+
+    .mb-nav-link.is-active {
+      box-shadow: inset 3px 0 0 var(--mb-gold-2);
+    }
+
+    .mb-nav-icon {
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 0.55rem;
+      display: grid;
+      place-items: center;
+      background: rgba(240,201,111,0.08);
+      color: var(--mb-gold-2);
+      border: 1px solid rgba(240,201,111,0.08);
+      flex: 0 0 auto;
+    }
+
+    .mb-sidebar-footer {
+      margin-top: 1.1rem;
+      padding: 0.8rem;
+      border: 1px dashed rgba(240,201,111,0.15);
+      border-radius: var(--mb-radius-lg);
+      color: var(--mb-text-2);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      background: rgba(0,0,0,0.18);
+    }
+
+    /* MAIN */
+    .mb-main {
+      grid-area: main;
+      min-width: 0;
+      padding: 1.1rem;
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+
+    .mb-hero-banner {
+      position: relative;
+      min-height: 9.75rem;
+      display: grid;
+      grid-template-columns: minmax(10rem, 0.42fr) minmax(24rem, 1.58fr);
+      gap: 0.85rem;
+      padding: 0.85rem;
+      border: 1px solid var(--mb-line);
+      border-radius: var(--mb-radius-xl);
+      overflow: hidden;
+      background:
+        linear-gradient(100deg, rgba(7,11,17,0.95), rgba(12,26,41,0.72), rgba(7,10,15,0.9)),
+        radial-gradient(circle at 72% 18%, rgba(240,201,111,0.14), transparent 22rem);
+      box-shadow: 0 0.9rem 2rem rgba(0,0,0,0.24), inset 0 1px rgba(255,255,255,0.04);
+    }
+
+    .mb-hero-banner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(240,201,111,0.08), transparent 14%, transparent 86%, rgba(240,201,111,0.06)),
+        repeating-linear-gradient(90deg, transparent 0 3.2rem, rgba(255,255,255,0.025) 3.2rem 3.25rem);
+      pointer-events: none;
+      opacity: 0.75;
+    }
+
+    .mb-hero-banner > * { position: relative; z-index: 1; }
+
+    .mb-portrait-card {
+      min-height: 8rem;
+      border-radius: var(--mb-radius-lg);
+      border: 1px solid rgba(240,201,111,0.16);
+      background:
+        radial-gradient(circle at 48% 22%, rgba(240,201,111,0.16), transparent 6rem),
+        linear-gradient(180deg, rgba(17,33,50,0.7), rgba(5,8,12,0.82));
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .mb-hero-silhouette {
+      width: min(68%, 8.5rem);
+      aspect-ratio: 3 / 4;
+      position: relative;
+      filter: drop-shadow(0 1rem 1.2rem rgba(0,0,0,0.58));
+    }
+
+    .mb-hero-silhouette::before {
+      content: "";
+      position: absolute;
+      inset: 8% 28% 10% 28%;
+      border-radius: 45% 45% 34% 34%;
+      background: linear-gradient(180deg, var(--mb-gold-3), var(--mb-gold-1) 42%, var(--mb-navy-1) 43%, #07080b 100%);
+      clip-path: polygon(50% 0, 62% 8%, 72% 21%, 67% 40%, 80% 64%, 65% 100%, 35% 100%, 20% 64%, 33% 40%, 28% 21%, 38% 8%);
+    }
+
+    .mb-hero-silhouette::after {
+      content: "";
+      position: absolute;
+      left: 40%;
+      top: 0;
+      width: 22%;
+      height: 20%;
+      border-radius: 45% 45% 35% 35%;
+      background: linear-gradient(180deg, #101927, #05070a);
+      box-shadow: 0 0 0 0.18rem var(--mb-bronze), 0 -1.2rem 0 -0.25rem #0c1421;
+    }
+
+    .mb-hero-intro {
+      align-self: center;
+    }
+
+    .mb-kicker {
+      color: var(--mb-gold-2);
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin: 0 0 0.45rem;
+    }
+
+    .mb-title {
+      margin: 0;
+      font-family: var(--mb-font-display);
+      font-size: clamp(2rem, 3.2vw, 3.35rem);
+      line-height: 0.95;
+      color: var(--mb-gold-3);
+      text-shadow: 0 0.35rem 0.65rem rgba(0,0,0,0.45);
+    }
+
+    .mb-copy {
+      margin: 0.75rem 0 0;
+      max-width: 56rem;
+      color: var(--mb-text-1);
+      line-height: 1.45;
+      font-size: 0.92rem;
+    }
+
+    .mb-hero-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.75rem;
+    }
+
+    .mb-action-panel {
+      align-self: stretch;
+      display: grid;
+      gap: 0.7rem;
+      padding: 0.85rem;
+      border-radius: var(--mb-radius-lg);
+      border: 1px solid rgba(240,201,111,0.14);
+      background: rgba(7,10,14,0.34);
+      backdrop-filter: blur(10px);
+    }
+
+    .mb-action-panel h3 {
+      margin: 0;
+      font-family: var(--mb-font-display);
+      font-size: 1.15rem;
+    }
+
+    .mb-action-button {
+      min-height: 2.55rem;
+      padding: 0.55rem 0.8rem;
+      border-radius: 0.85rem;
+      border: 1px solid var(--mb-line);
+      color: var(--mb-text-0);
+      background: linear-gradient(180deg, rgba(240,201,111,0.22), rgba(139,88,42,0.34));
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: inset 0 1px rgba(255,255,255,0.07);
+    }
+
+    .mb-action-button.is-primary {
+      background: linear-gradient(180deg, rgba(240,201,111,0.34), rgba(139,88,42,0.5));
+      box-shadow: 0 0 1.2rem rgba(240,201,111,0.12), inset 0 1px rgba(255,255,255,0.1);
+    }
+
+    .mb-action-button small { color: var(--mb-text-2); }
+
+    .mb-grid { display: grid; gap: 1rem; }
+    .mb-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mb-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .mb-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .mb-grid--hero { grid-template-columns: minmax(20rem, 0.95fr) minmax(22rem, 1.05fr); }
+
+    .mb-card {
+      position: relative;
+      padding: 0.95rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(18, 27, 39, 0.68), rgba(7, 10, 15, 0.78)),
+        radial-gradient(circle at top right, rgba(240,201,111,0.085), transparent 13rem);
+      box-shadow: 0 0.75rem 1.9rem rgba(0,0,0,0.22), inset 0 1px rgba(255,255,255,0.035);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .mb-card::after {
+      content: "";
+      position: absolute;
+      inset: 0.45rem;
+      border-radius: calc(var(--mb-radius-xl) - 0.35rem);
+      border: 1px solid rgba(240,201,111,0.045);
+      pointer-events: none;
+    }
+
+    .mb-card--flat::after { display: none; }
+    .mb-card--navy { background: linear-gradient(180deg, rgba(14,36,57,0.72), rgba(7,11,18,0.82)); }
+    .mb-card--soft { background: linear-gradient(180deg, rgba(13,18,26,0.62), rgba(7,9,13,0.72)); }
+
+    .mb-card-header {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .mb-card-title {
+      margin: 0;
+      font-family: var(--mb-font-display);
+      font-size: 1.22rem;
+      color: var(--mb-text-0);
+    }
+
+    .mb-card-subtitle {
+      margin: 0.2rem 0 0;
+      color: var(--mb-text-2);
+      font-size: 0.84rem;
+      line-height: 1.4;
+    }
+
+    .mb-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-soft);
+      color: var(--mb-text-1);
+      background: rgba(7, 10, 14, 0.45);
+      font-size: 0.77rem;
+      white-space: nowrap;
+    }
+
+    .mb-badge--gold { color: var(--mb-gold-3); border-color: rgba(240,201,111,0.32); }
+    .mb-badge--green { color: #bde6b0; border-color: rgba(111,164,93,0.46); }
+    .mb-badge--red { color: #f2b4aa; border-color: rgba(178,75,59,0.46); }
+    .mb-badge--blue { color: #b9def3; border-color: rgba(91,163,213,0.46); }
+    .mb-badge--purple { color: #d4c0ff; border-color: rgba(150,114,204,0.46); }
+
+    .mb-button-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 0.9rem;
+    }
+
+    .mb-button {
+      min-height: 2.4rem;
+      padding: 0.55rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line);
+      color: var(--mb-text-0);
+      background: linear-gradient(180deg, rgba(240,201,111,0.2), rgba(91,58,19,0.32));
+      cursor: pointer;
+      box-shadow: inset 0 1px rgba(255,255,255,0.07);
+    }
+
+    .mb-button--ghost {
+      background: rgba(8,12,18,0.54);
+      color: var(--mb-text-1);
+    }
+
+    .mb-stat-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .mb-stat-tile {
+      padding: 0.65rem;
+      border-radius: 0.85rem;
+      border: 1px solid rgba(240,201,111,0.11);
+      background: rgba(0,0,0,0.18);
+    }
+
+    .mb-stat-tile span {
+      display: block;
+      color: var(--mb-text-2);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .mb-stat-tile strong {
+      display: block;
+      margin-top: 0.25rem;
+      color: var(--mb-gold-3);
+      font-size: 1.3rem;
+      line-height: 1;
+    }
+
+    .mb-derived-list {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .mb-stat-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      padding: 0.48rem 0;
+      border-bottom: 1px solid rgba(240,201,111,0.07);
+      color: var(--mb-text-1);
+    }
+
+    .mb-stat-row:last-child { border-bottom: 0; }
+    .mb-stat-row strong { color: var(--mb-text-0); }
+
+    .mb-equipment-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .mb-slot {
+      min-height: 6.1rem;
+      padding: 0.62rem;
+      border-radius: 0.9rem;
+      border: 1px solid rgba(240,201,111,0.12);
+      background: linear-gradient(180deg, rgba(7,11,17,0.42), rgba(0,0,0,0.18));
+    }
+
+    .mb-slot-icon {
+      width: 2.15rem;
+      height: 2.15rem;
+      display: grid;
+      place-items: center;
+      border-radius: 0.68rem;
+      background: rgba(240,201,111,0.08);
+      border: 1px solid rgba(240,201,111,0.12);
+      margin-bottom: 0.45rem;
+      color: var(--mb-gold-2);
+    }
+
+    .mb-slot strong {
+      display: block;
+      font-size: 0.88rem;
+      color: var(--mb-text-0);
+      line-height: 1.2;
+    }
+
+    .mb-slot small {
+      display: block;
+      margin-top: 0.25rem;
+      color: var(--mb-text-2);
+      line-height: 1.25;
+    }
+
+    .mb-chip-stack {
+      display: inline-grid;
+      gap: 0.08rem;
+      line-height: 1.05;
+    }
+
+    .mb-chip-stack small {
+      color: var(--mb-text-3);
+      font-size: 0.68rem;
+    }
+
+    .mb-equipment-paperdoll {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(16rem, 0.8fr) minmax(18rem, 1fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .mb-paperdoll-board {
+      position: relative;
+      min-height: 28rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,0.12);
+      background:
+        radial-gradient(circle at 50% 18%, rgba(240,201,111,0.13), transparent 9rem),
+        linear-gradient(180deg, rgba(7,11,17,0.46), rgba(0,0,0,0.2));
+      overflow: hidden;
+    }
+
+    .mb-paperdoll-figure {
+      position: absolute;
+      left: 50%;
+      top: 51%;
+      width: 6.2rem;
+      height: 17.5rem;
+      transform: translate(-50%, -50%);
+      opacity: 0.9;
+      filter: drop-shadow(0 1rem 1rem rgba(0,0,0,0.45));
+    }
+
+    .mb-paperdoll-head,
+    .mb-paperdoll-body,
+    .mb-paperdoll-arm-left,
+    .mb-paperdoll-arm-right,
+    .mb-paperdoll-leg-left,
+    .mb-paperdoll-leg-right {
+      position: absolute;
+      border: 1px solid rgba(240,201,111,0.18);
+      background: rgba(240,201,111,0.08);
+    }
+
+    .mb-paperdoll-head {
+      left: 2rem;
+      top: 0;
+      width: 2.15rem;
+      height: 2.15rem;
+      border-radius: 999px;
+      background: rgba(240,201,111,0.13);
+    }
+
+    .mb-paperdoll-body {
+      left: 1.45rem;
+      top: 2.8rem;
+      width: 3.25rem;
+      height: 6rem;
+      border-radius: 1.5rem 1.5rem 1rem 1rem;
+      background: linear-gradient(180deg, rgba(240,201,111,0.16), rgba(22,59,92,0.12));
+    }
+
+    .mb-paperdoll-arm-left { left: 0.35rem; top: 3.3rem; width: 1rem; height: 5.6rem; border-radius: 999px; }
+    .mb-paperdoll-arm-right { right: 0.35rem; top: 3.3rem; width: 1rem; height: 5.6rem; border-radius: 999px; }
+    .mb-paperdoll-leg-left { left: 1.75rem; top: 9.2rem; width: 1rem; height: 6.6rem; border-radius: 999px; }
+    .mb-paperdoll-leg-right { right: 1.75rem; top: 9.2rem; width: 1rem; height: 6.6rem; border-radius: 999px; }
+
+    .mb-paperdoll-slot {
+      position: absolute;
+      min-width: 7rem;
+      padding: 0.45rem 0.55rem;
+      border-radius: 0.85rem;
+      border: 1px solid rgba(240,201,111,0.13);
+      background: rgba(12,18,27,0.88);
+      box-shadow: 0 0.6rem 1.2rem rgba(0,0,0,0.22);
+      color: var(--mb-text-2);
+      font-size: 0.75rem;
+    }
+
+    .mb-paperdoll-slot strong {
+      display: block;
+      color: var(--mb-text-0);
+      font-size: 0.82rem;
+      line-height: 1.15;
+    }
+
+    .mb-paperdoll-slot--helmet { top: 0.8rem; left: 50%; transform: translateX(-50%); }
+    .mb-paperdoll-slot--amulet { top: 5.1rem; left: 50%; transform: translateX(-50%); }
+    .mb-paperdoll-slot--main { top: 7.4rem; right: 0.7rem; }
+    .mb-paperdoll-slot--off { top: 7.4rem; left: 0.7rem; }
+    .mb-paperdoll-slot--armor { top: 10.8rem; left: 50%; transform: translateX(-50%); }
+    .mb-paperdoll-slot--ring1 { top: 15.2rem; left: 0.7rem; }
+    .mb-paperdoll-slot--ring2 { top: 15.2rem; right: 0.7rem; }
+    .mb-paperdoll-slot--pants { top: 14.25rem; left: 50%; transform: translateX(-50%); }
+    .mb-paperdoll-slot--boots { bottom: 0.8rem; left: 50%; transform: translateX(-50%); }
+
+    .mb-equipped-list {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .mb-equipped-item {
+      padding: 0.7rem 0.75rem;
+      border: 1px solid rgba(240,201,111,0.09);
+      border-radius: 0.9rem;
+      background: rgba(0,0,0,0.16);
+    }
+
+    .mb-equipped-item strong { display: block; color: var(--mb-text-0); }
+    .mb-equipped-item small { display: block; margin-top: 0.2rem; color: var(--mb-text-2); }
+
+    .mb-timer-card {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .mb-progress-track {
+      position: relative;
+      height: 3rem;
+      border-radius: 999px;
+      border: 1px solid rgba(240,201,111,0.24);
+      background:
+        linear-gradient(90deg, rgba(240,201,111,0.2) var(--progress, 42%), rgba(7,10,14,0.76) var(--progress, 42%)),
+        repeating-linear-gradient(90deg, transparent 0 2.2rem, rgba(255,255,255,0.035) 2.2rem 2.25rem);
+      overflow: hidden;
+    }
+
+    .mb-progress-track::before {
+      content: "";
+      position: absolute;
+      inset: 0.55rem;
+      border-radius: 999px;
+      border: 1px dashed rgba(240,201,111,0.14);
+    }
+
+    .mb-walker {
+      --walker-size: 2.45rem;
+      position: absolute;
+      bottom: 0.12rem;
+      left: var(--progress, 42%);
+      width: var(--walker-size);
+      height: var(--walker-size);
+      transform: translateX(-50%);
+      display: grid;
+      place-items: center;
+      color: var(--mb-gold-3);
+      font-size: 1.55rem;
+      filter: drop-shadow(0 0.22rem 0.25rem rgba(0,0,0,0.65));
+      animation: mbWalkerBob 0.64s steps(2) infinite;
+    }
+
+    @keyframes mbWalkerBob {
+      0%, 100% { translate: 0 0; }
+      50% { translate: 0 -0.16rem; }
+    }
+
+    .mb-feed-list {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .mb-feed-list li {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.65rem;
+      align-items: center;
+      padding: 0.62rem 0.68rem;
+      border: 1px solid rgba(240,201,111,0.08);
+      border-radius: 0.85rem;
+      background: rgba(0,0,0,0.16);
+      color: var(--mb-text-1);
+      font-size: 0.88rem;
+    }
+
+    .mb-feed-icon { color: var(--mb-gold-2); }
+    .mb-feed-list time { color: var(--mb-text-3); font-size: 0.78rem; }
+
+    .mb-lower-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .mb-link-card {
+      position: relative;
+      min-height: 7rem;
+      padding: 0.8rem;
+      border-radius: var(--mb-radius-lg);
+      border: 1px solid rgba(240,201,111,0.11);
+      background: linear-gradient(180deg, rgba(13,21,31,0.5), rgba(5,7,10,0.44));
+      overflow: hidden;
+    }
+
+    .mb-link-card::before {
+      content: "";
+      position: absolute;
+      right: -2rem;
+      bottom: -2rem;
+      width: 7rem;
+      height: 7rem;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(240,201,111,0.11), transparent 65%);
+    }
+
+    .mb-link-card strong {
+      position: relative;
+      z-index: 1;
+      display: block;
+      margin-top: 0.55rem;
+      font-family: var(--mb-font-display);
+      font-size: 1.05rem;
+    }
+
+    .mb-link-card p {
+      position: relative;
+      z-index: 1;
+      margin: 0.25rem 0 0;
+      color: var(--mb-text-2);
+      font-size: 0.83rem;
+      line-height: 1.35;
+    }
+
+    .mb-icon-tile {
+      position: relative;
+      z-index: 1;
+      width: 2.45rem;
+      height: 2.45rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(240,201,111,0.14);
+      background: radial-gradient(circle, rgba(240,201,111,0.15), rgba(45,110,159,0.12));
+      display: grid;
+      place-items: center;
+      color: var(--mb-gold-2);
+      font-size: 1.25rem;
+    }
+
+    /* Future combat preview — intentionally compact, kept because visual direction worked. */
+    .mb-combat-preview {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr 1fr;
+      gap: 0.75rem;
+      align-items: stretch;
+    }
+
+    .mb-combatant {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 0.55rem;
+      padding: 0.75rem;
+      border-radius: var(--mb-radius-lg);
+      border: 1px solid rgba(240,201,111,0.1);
+      background: rgba(0,0,0,0.18);
+    }
+
+    .mb-healthbar {
+      height: 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(240,201,111,0.18);
+      background: rgba(0,0,0,0.44);
+      overflow: hidden;
+    }
+
+    .mb-healthbar > span {
+      display: block;
+      width: var(--health, 70%);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--mb-red), var(--mb-gold-2));
+    }
+
+    .mb-minigame {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      align-content: center;
+      gap: 0.75rem;
+      padding: 0.85rem;
+      border-radius: var(--mb-radius-lg);
+      border: 1px solid rgba(240,201,111,0.18);
+      background: linear-gradient(180deg, rgba(9, 19, 30, 0.68), rgba(5, 7, 10, 0.62));
+    }
+
+    .mb-hit-zone-track {
+      position: relative;
+      height: 1.05rem;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.42);
+      border: 1px solid rgba(240,201,111,0.14);
+      overflow: hidden;
+    }
+
+    .mb-hit-zone {
+      position: absolute;
+      inset-block: 0;
+      left: 46%;
+      width: 14%;
+      background: linear-gradient(90deg, rgba(111,164,93,0.35), rgba(130,218,105,0.68));
+      box-shadow: 0 0 0.8rem rgba(130,218,105,0.24);
+    }
+
+    .mb-hit-indicator {
+      position: absolute;
+      top: -0.32rem;
+      left: 62%;
+      width: 0.24rem;
+      height: 1.72rem;
+      background: var(--mb-gold-3);
+      box-shadow: 0 0 0.65rem rgba(240,201,111,0.5);
+    }
+
+    @media (max-width: 1220px) {
+      .mb-topbar { grid-template-columns: 1fr auto; grid-template-areas: "brand brand" "left right"; height: auto; }
+      .mb-brand { grid-area: brand; justify-content: flex-start; }
+      .mb-topbar-left { grid-area: left; }
+      .mb-topbar-right { grid-area: right; }
+      .mb-app-shell { grid-template-rows: auto minmax(0, 1fr); }
+      .mb-hero-banner { grid-template-columns: 18rem 1fr; }
+      .mb-action-panel { grid-column: 1 / -1; }
+      .mb-grid--hero, .mb-grid--2, .mb-grid--3, .mb-grid--4 { grid-template-columns: 1fr; }
+      .mb-lower-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .mb-combat-preview { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 860px) {
+      .mb-app-shell { display: block; }
+      .mb-topbar { position: static; display: grid; grid-template-columns: 1fr; }
+      .mb-topbar-left, .mb-topbar-right { justify-content: flex-start; overflow-x: auto; }
+      .mb-sidebar { border-right: 0; border-bottom: 1px solid var(--mb-line-soft); }
+      .mb-nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .mb-nav-link { justify-content: center; }
+      .mb-nav-label, .mb-nav-section-title, .mb-sidebar-footer { display: none; }
+      .mb-server-card { margin-bottom: 0.75rem; }
+      .mb-main { padding: 0.75rem; }
+      .mb-hero-banner { grid-template-columns: 1fr; }
+      .mb-portrait-card { min-height: 10rem; }
+      .mb-stat-grid, .mb-equipment-grid, .mb-lower-tabs { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left" aria-label="Hero health and experience">
+        <span class="mb-chip mb-chip--health"><span class="mb-chip-icon">♥</span> Health <strong>86 / 100</strong></span>
+        <div class="mb-xp" aria-label="Experience progress">
+          <div class="mb-xp-meta"><span>Level 12</span><strong>1,240 XP to next</strong></div>
+          <div class="mb-mini-bar" style="--value: 63%"><span></span></div>
+        </div>
+      </div>
+
+      <div class="mb-brand" aria-label="Mythborne">
+        <div class="mb-brand-mark"></div>
+        <div>
+          <div class="mb-brand-title">Mythborne</div>
+          <div class="mb-brand-subtitle">Modern mythic RPG interface</div>
+        </div>
+      </div>
+
+      <div class="mb-topbar-right" aria-label="Hero resources">
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◈</span><span class="mb-chip-stack">Drachmas <strong>3,420</strong><small>+96 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">▣</span><span class="mb-chip-stack">Materials <strong>185</strong><small>+22 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◇</span><span class="mb-chip-stack">Workforce <strong>42</strong><small>+4 / h</small></span></span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-server-card" aria-label="Selected world context">
+        <div class="mb-server-label">Selected server</div>
+        <div class="mb-server-name"><span>Sandbox</span><span class="mb-badge mb-badge--green">live</span></div>
+        <div class="mb-prestige">
+          <div class="mb-server-label">Prestige</div>
+          <div class="mb-server-name"><span>Zeugitai</span><span class="mb-badge mb-badge--gold">Tier II</span></div>
+        </div>
+      </section>
+
+      <div class="mb-nav-section-title">Hero</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link is-active" href="#dashboard"><span class="mb-nav-icon">🏛</span><span class="mb-nav-label">Dashboard</span></a></li>
+        <li><a class="mb-nav-link" href="#exploration"><span class="mb-nav-icon">🧭</span><span class="mb-nav-label">Exploration</span></a></li>
+        <li><a class="mb-nav-link" href="#hero"><span class="mb-nav-icon">⚔</span><span class="mb-nav-label">Hero</span></a></li>
+        <li><a class="mb-nav-link" href="#armory"><span class="mb-nav-icon">🛡</span><span class="mb-nav-label">Armory</span></a></li>
+      </ul>
+
+      <div class="mb-nav-section-title">World</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#estate"><span class="mb-nav-icon">🏺</span><span class="mb-nav-label">Estate</span></a></li>
+        <li><a class="mb-nav-link" href="#trade"><span class="mb-nav-icon">⚖</span><span class="mb-nav-label">Trade</span></a></li>
+        <li><a class="mb-nav-link" href="#pvp"><span class="mb-nav-icon">🏹</span><span class="mb-nav-label">PvP</span></a></li>
+        <li><a class="mb-nav-link" href="#reports"><span class="mb-nav-icon">📜</span><span class="mb-nav-label">Reports</span></a></li>
+      </ul>
+
+      <div class="mb-nav-section-title">Operations</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#admin"><span class="mb-nav-icon">⚙</span><span class="mb-nav-label">Staff tools</span></a></li>
+      </ul>
+
+      <div class="mb-sidebar-footer">
+        Staff/admin remains separate from player gameplay. Normal dashboard stays focused on the active hero.
+      </div>
+    </aside>
+
+    <main class="mb-main" id="dashboard">
+      <section class="mb-hero-banner">
+        <div class="mb-portrait-card" aria-label="Hero portrait preview">
+          <div class="mb-hero-silhouette"></div>
+        </div>
+
+        <div class="mb-hero-intro">
+          <p class="mb-kicker">Active hero</p>
+          <h1 class="mb-title">Theron</h1>
+          <p class="mb-copy">Dashboard skupia się na bohaterze: postaci, bazowych statystykach, derived stats oraz ekwipunku. Dom i okolica są kontekstem świata, ale nie powinny zamieniać głównego widoku w listę skrótów ani panel operacyjny.</p>
+          <div class="mb-hero-meta-row">
+            <span class="mb-badge mb-badge--gold">Origin: Athenian</span>
+            <span class="mb-badge">District A</span>
+            <span class="mb-badge mb-badge--blue">Character Points: 14 available</span>
+            <span class="mb-badge mb-badge--green">Membership: active</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-grid mb-grid--hero">
+        <article class="mb-card mb-card--navy">
+          <div class="mb-card-header">
+            <div>
+              <h2 class="mb-card-title">Base stats</h2>
+              <p class="mb-card-subtitle">Canonical hero attributes. Values here are UI read models, not hardcoded gameplay lists.</p>
+            </div>
+            <span class="mb-badge mb-badge--gold">14 CP</span>
+          </div>
+          <div class="mb-stat-grid">
+            <div class="mb-stat-tile"><span>Strength</span><strong>32</strong></div>
+            <div class="mb-stat-tile"><span>Dexterity</span><strong>27</strong></div>
+            <div class="mb-stat-tile"><span>Endurance</span><strong>25</strong></div>
+            <div class="mb-stat-tile"><span>Agility</span><strong>21</strong></div>
+            <div class="mb-stat-tile"><span>Cunning</span><strong>19</strong></div>
+            <div class="mb-stat-tile"><span>Charisma</span><strong>16</strong></div>
+            <div class="mb-stat-tile"><span>Wisdom</span><strong>18</strong></div>
+            <div class="mb-stat-tile"><span>Intelligence</span><strong>22</strong></div>
+            <div class="mb-stat-tile"><span>Spirituality</span><strong>14</strong></div>
+          </div>
+        </article>
+
+        <article class="mb-card">
+          <div class="mb-card-header">
+            <div>
+              <h2 class="mb-card-title">Derived stats</h2>
+              <p class="mb-card-subtitle">Computed from stats, equipment, bonuses and formula-backed rules.</p>
+            </div>
+            <span class="mb-badge mb-badge--blue">formula-backed</span>
+          </div>
+          <div class="mb-derived-list">
+            <div class="mb-stat-row"><span>Health</span><strong>86 / 100</strong></div>
+            <div class="mb-stat-row"><span>Defense</span><strong>48</strong></div>
+            <div class="mb-stat-row"><span>Main-hand damage</span><strong>18–31</strong></div>
+            <div class="mb-stat-row"><span>Off-hand damage</span><strong>9–16</strong></div>
+            <div class="mb-stat-row"><span>Luck</span><strong>12</strong></div>
+            <div class="mb-stat-row"><span>Critical chance</span><strong>9%</strong></div>
+            <div class="mb-stat-row"><span>Critical damage</span><strong>+50%</strong></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="mb-grid">
+        <article class="mb-card">
+          <div class="mb-card-header">
+            <div>
+              <h2 class="mb-card-title">Equipment preview</h2>
+              <p class="mb-card-subtitle">Paperdoll-style layout: sloty są rozmieszczone wokół sylwetki, a dwie bronie i dwa pierścienie są jawnie widoczne.</p>
+            </div>
+            <button class="mb-button mb-button--ghost">Open Armory</button>
+          </div>
+
+          <div class="mb-equipment-paperdoll">
+            <div class="mb-paperdoll-board" aria-label="Equipment paperdoll preview">
+              <div class="mb-paperdoll-figure" aria-hidden="true">
+                <div class="mb-paperdoll-head"></div>
+                <div class="mb-paperdoll-body"></div>
+                <div class="mb-paperdoll-arm-left"></div>
+                <div class="mb-paperdoll-arm-right"></div>
+                <div class="mb-paperdoll-leg-left"></div>
+                <div class="mb-paperdoll-leg-right"></div>
+              </div>
+              <div class="mb-paperdoll-slot mb-paperdoll-slot--helmet"><strong>Helmet</strong> Corinthian Helm</div>
+              <div class="mb-paperdoll-slot mb-paperdoll-slot--amulet"><strong>Amulet</strong> Empty</div>
+              <div class="mb-paperdoll-slot mb-paperdoll-slot--off"><strong>Off hand</strong> Balanced Xiphos</div>
+              <div class="mb-paperdoll-slot mb-paperdoll-slot--main"><strong>Main hand</strong> Spear of Fire</div>
+              <div class="mb-paperdoll-slot mb-paperdoll-slot--armor"><strong>Armor</strong> Outstanding Cuirass</div>
+              <div class="mb-paperdoll-slot mb-paperdoll-slot--ring1"><strong>Ring 1</strong> Ring of Titans</div>
+              <div class="mb-paperdoll-slot mb-paperdoll-slot--ring2"><strong>Ring 2</strong> Empty</div>
+              <div class="mb-paperdoll-slot mb-paperdoll-slot--pants"><strong>Pants</strong> Bronze Guards</div>
+              <div class="mb-paperdoll-slot mb-paperdoll-slot--boots"><strong>Boots</strong> Hoplite Sandals</div>
+            </div>
+
+            <div class="mb-equipped-list">
+              <div class="mb-equipped-item"><strong>Main hand · Quality Spear of Fire</strong><small>Damage 18–31 · primary attack profile</small></div>
+              <div class="mb-equipped-item"><strong>Off hand · Balanced Xiphos</strong><small>Damage 9–16 · secondary attack profile</small></div>
+              <div class="mb-equipped-item"><strong>Helmet · Corinthian Helm</strong><small>+Defense · +Endurance</small></div>
+              <div class="mb-equipped-item"><strong>Armor · Outstanding Cuirass</strong><small>+Health · +Defense</small></div>
+              <div class="mb-equipped-item"><strong>Pants · Bronze Guards</strong><small>+Agility resistance profile</small></div>
+              <div class="mb-equipped-item"><strong>Boots · Hoplite Sandals</strong><small>+Agility · movement modifier</small></div>
+              <div class="mb-equipped-item"><strong>Amulet · Empty</strong><small>Available jewelry slot</small></div>
+              <div class="mb-equipped-item"><strong>Ring 1 · Ring of Titans</strong><small>+Strength · affects both attack plans</small></div>
+              <div class="mb-equipped-item"><strong>Ring 2 · Empty</strong><small>Available jewelry slot</small></div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="mb-grid mb-grid--2">
+        <article class="mb-card mb-card--soft">
+          <div class="mb-card-header">
+            <div>
+              <h2 class="mb-card-title">Home & vicinity</h2>
+              <p class="mb-card-subtitle">Lekki kontekst posiadłości. Kliknięcie domu może otworzyć okolicę: adresy w zakresie np. ±10 od aktualnego.</p>
+            </div>
+            <button class="mb-button mb-button--ghost">Open vicinity</button>
+          </div>
+          <div class="mb-derived-list">
+            <div class="mb-stat-row"><span>Estate</span><strong>A-2374</strong></div>
+            <div class="mb-stat-row"><span>District</span><strong>A</strong></div>
+            <div class="mb-stat-row"><span>Nearby range</span><strong>A-2364 — A-2384</strong></div>
+            <div class="mb-stat-row"><span>Vicinity view</span><strong>±10 addresses</strong></div>
+          </div>
+        </article>
+
+        <article class="mb-card mb-card--soft">
+          <div class="mb-card-header">
+            <div>
+              <h2 class="mb-card-title">Persistent state</h2>
+              <p class="mb-card-subtitle">Krótki stan stały zamiast dużego timera eksploracji na dashboardzie.</p>
+            </div>
+          </div>
+          <div class="mb-derived-list">
+            <div class="mb-stat-row"><span>Exploration</span><strong>Step pending</strong></div>
+            <div class="mb-stat-row"><span>Trials remaining</span><strong>2</strong></div>
+            <div class="mb-stat-row"><span>Active effect</span><strong>Clear Omen</strong></div>
+            <div class="mb-stat-row"><span>Building job</span><strong>No building in progress</strong></div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
