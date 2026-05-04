@@ -100,7 +100,7 @@ export class BuildingsService {
           stats: this.backend.getAll<StatLabelRow>({
             table: TABLES.stats,
             select: 'key, label',
-            orderBy: { column: 'sort_order' },
+            orderBy: { column: 'order' },
             camelCase: false,
           }),
           entityBonuses: this.backend.getAll<CanonicalEntityBonusWithTemplateRow>({

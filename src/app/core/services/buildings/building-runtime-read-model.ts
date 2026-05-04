@@ -124,42 +124,50 @@ function mapBuildingRequirement(
     );
   }
 
+  const display = requirementDisplay(row, definition.value_type, statLabels);
+
   return {
     requirementDefinitionKey: row.requirement_definition_key,
-    label: definition.label,
-    valueLabel: requirementValueLabel(row, definition.value_type, statLabels),
+    label: display.label ?? definition.label,
+    valueLabel: display.valueLabel,
     description: row.description ?? definition.helper_text ?? definition.description ?? null,
     appliesFromLevel: row.applies_from_level,
     sortOrder: row.sort_order,
   };
 }
 
-function requirementValueLabel(
+function requirementDisplay(
   row: MansionBuildingRequirementRow,
   valueType: BuildingRequirementValueType,
   statLabels: ReadonlyMap<string, string>,
-): string {
+): { label: string | null; valueLabel: string } {
   switch (valueType) {
     case REQUIREMENT_VALUE_TYPES.Integer:
-      return String(requiredNumber(row.required_value_integer, row));
+      return valueOnly(String(requiredNumber(row.required_value_integer, row)));
     case REQUIREMENT_VALUE_TYPES.Decimal:
-      return String(requiredNumber(row.required_value_decimal, row));
+      return valueOnly(String(requiredNumber(row.required_value_decimal, row)));
     case REQUIREMENT_VALUE_TYPES.Boolean:
-      return requiredBoolean(row.required_value_boolean, row) ? 'Required' : 'Not required';
+      return valueOnly(
+        requiredBoolean(row.required_value_boolean, row) ? 'Required' : 'Not required',
+      );
     case REQUIREMENT_VALUE_TYPES.StatKey:
-      return statRequirementValueLabel(row, statLabels);
+      return statRequirementDisplay(row, statLabels);
     case REQUIREMENT_VALUE_TYPES.BuildingKey:
-      return requiredText(row.required_building_key, row);
+      return valueOnly(requiredText(row.required_building_key, row));
     case REQUIREMENT_VALUE_TYPES.ResourceType:
-      return requiredText(row.required_resource_type, row);
+      return valueOnly(requiredText(row.required_resource_type, row));
     case REQUIREMENT_VALUE_TYPES.DistrictCode:
-      return requiredText(row.required_district_code, row);
+      return valueOnly(requiredText(row.required_district_code, row));
     case REQUIREMENT_VALUE_TYPES.String:
     case REQUIREMENT_VALUE_TYPES.EnumRef:
-      return requiredText(row.required_value_text, row);
+      return valueOnly(requiredText(row.required_value_text, row));
     default:
       throw new Error(`Unsupported requirement value type: ${valueType}`);
   }
+}
+
+function valueOnly(valueLabel: string): { label: string | null; valueLabel: string } {
+  return { label: null, valueLabel };
 }
 
 export function buildStatLabelMap(
@@ -168,13 +176,16 @@ export function buildStatLabelMap(
   return new Map(rows.map((row) => [row.key, row.label]));
 }
 
-function statRequirementValueLabel(
+function statRequirementDisplay(
   row: MansionBuildingRequirementRow,
   statLabels: ReadonlyMap<string, string>,
-): string {
+): { label: string; valueLabel: string } {
   const statKey = requiredText(row.required_stat_key, row);
   const minValue = requiredNumber(row.required_value_integer, row);
-  return `${statLabels.get(statKey) ?? statKey} >= ${minValue}`;
+  return {
+    label: statLabels.get(statKey) ?? statKey,
+    valueLabel: String(minValue),
+  };
 }
 
 function requiredText(

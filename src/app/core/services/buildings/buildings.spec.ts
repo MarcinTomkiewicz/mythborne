@@ -152,8 +152,8 @@ describe('BuildingsService', () => {
         }),
         jasmine.objectContaining({
           requirementDefinitionKey: 'hero_stat',
-          label: 'Hero stat',
-          valueLabel: 'Strength >= 2',
+          label: 'Strength',
+          valueLabel: '2',
           appliesFromLevel: 1,
         }),
       ]);
@@ -216,6 +216,11 @@ describe('BuildingsService', () => {
 
     expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
       table: TABLES.building_district_level_caps,
+    }));
+    expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
+      table: TABLES.stats,
+      select: 'key, label',
+      orderBy: { column: 'order' },
     }));
     expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
       table: TABLES.entity_requirements,

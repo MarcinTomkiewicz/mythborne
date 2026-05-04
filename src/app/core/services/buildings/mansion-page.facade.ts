@@ -63,6 +63,12 @@ export class MansionPageFacade {
   toRequirementValue(requirement: BuildingRequirementPreview): string {
     const value = requirement.valueLabel;
 
+    if (!value) {
+      return requirement.appliesFromLevel <= 1
+        ? ''
+        : `From level ${requirement.appliesFromLevel}`;
+    }
+
     if (requirement.appliesFromLevel <= 1) {
       return value;
     }

@@ -124,7 +124,7 @@
 
             <div class="mg-card flex-col gap-sm p-md">
               <p class="card-legend mb-0">Requirements</p>
-              @for (requirement of building.activeRequirements; track requirement.requirementDefinitionKey + requirement.appliesFromLevel) {
+              @for (requirement of building.activeRequirements; track requirement.requirementDefinitionKey + requirement.appliesFromLevel + requirement.sortOrder + requirement.label) {
                 <div class="flex-row-between-center gap-md muted-text">
                   <strong class="heading-color">{{ page.toRequirementLabel(requirement) }}</strong>
                   <span>{{ page.toRequirementValue(requirement) }}</span>
