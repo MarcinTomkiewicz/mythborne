@@ -1,6 +1,6 @@
-# Mythborne — Project Context for Codex
+# Mythsworn — Project Context for Codex
 
-Updated: 2026-05-03 late
+Updated: 2026-05-04
 
 ## Purpose
 
@@ -119,13 +119,43 @@ Important current warning for N:
 A new conversation should not start N frontend work until it has read the handoff/current docs and confirmed generated types are regenerated against the current schema. Do not mark Codex tasks complete in status documents unless the user explicitly confirms the task outcome.
 
 ---
+
+## Item / Equipment Decision Scope — 2026-05-04
+
+The item/equipment decision scope is now closed enough for future DB/RPC foundation work. Frontend implementation remains blocked until the DB/RPC workflow exists.
+
+Core rules:
+
+- `hero_equipment` is the source of equipped state. There is no `items.status = equipped`.
+- Frontend must not directly mutate `hero_equipment`. Equip/unequip must go through canonical DB/RPC workflow.
+- Items can be equipped while owned by the hero and not `scrapped`. Runtime-equipped statuses are `active`, `locked_trade`, and `locked_auction`; `scrapped` is excluded.
+- `locked_trade` and `locked_auction` reserve the item for market workflow but do not block wearing it and do not auto-unequip. Ownership transfer or scrap clears equipment.
+- Player equip/unequip has no user-provided reason and is not a heavy audit workflow. Staff/admin recovery, transfer, sanction and lifecycle corrections must be audited.
+- No-affix items are hard-deleted on scrap. Affix items become `scrapped`, are staff/admin recoverable, and are automatically cleaned after configurable retention; default retention is 30 days.
+- Item requirements are equip/use requirements based on hero level and primary/base stats only. They do not use resources, prestige, building level, district access or trade routes.
+- There are no item instance requirements. Requirements derive from base/prefix/suffix and quality requirement multiplier.
+- Requirement calculation semantics: aggregate base/prefix/suffix requirements by the global item requirement rule, then apply the quality requirement multiplier. The exact DB/config shape belongs to the DB migration track.
+- Item bonuses from layers sum absolutely.
+- Candidate item bonuses cannot help that same item meet its own requirements. Later loss of requirements does not unequip already equipped items.
+- Failed normal equip does not remove the currently equipped item being replaced. Bulk equip processes in input order, equips what can be equipped, and reports failures.
+- Hand and ring rotation are DB/RPC workflow responsibilities. Two-handed/ranged weapons use both hands and are stored in `main_hand`; one-handed rotation is `off_hand -> main_hand`, new item -> `off_hand`, old `main_hand` unequipped; ring rotation is `ring_2 -> ring_1`, new ring -> `ring_2`, old `ring_1` unequipped.
+- Equipment affects PvE, PvP, combat/autoresolve, manual combat, spy snapshots and runtime hero capability. Manual combat must use per-turn loadout/stat checks.
+- Saved equipment configurations are `preset` / `loadout preset`, not item sets. `set` is reserved for future item set bonuses.
+- Presets store exact item IDs per literal slot, apply available items without touching the rest of equipment, can partially succeed, and bypass requirements for exact item IDs if the preset was legal when saved. Preset privilege survives transfer away and later reacquisition of the same item ID.
+- Presets are relational DB state, not JSON authority. A hero has a fixed number of preset slots, target range 5–10, as a flat configurable value.
+- Armory shelves are inventory organization, not equipment state. DB/code may use `shelf`; final UI naming is UI/UX scope. There are always 10 shelves; shelf 1 is default for drops; shelf number persists on item transfer; armory building level affects visible item count only.
+
+Current implementation warning:
+
+- Any resolver that filters equipped runtime items to `status = active` only is inconsistent with current decisions and must be corrected by the DB/runtime migration track.
+
 ## Current Known Gaps / Future Work Notes
 
 These are known planning gaps and memory notes. They are not current active N-DB work unless the user explicitly promotes them.
 
 - **Trial editor explainability:** after Epic M, return to `/admin/exploration-trials` for an explainability/layout pass analogous to L12c.
 - **Admin configurator sweep:** later create/run a dedicated `UX-CFG` epic for systematic review of all admin/configurator UI explanations, DB-backed dictionary text and runtime meaning.
-- **Equipment equip/unequip:** `hero_equipment` exists, but there is no approved player-facing equip/unequip DB/RPC workflow yet. Angular must not invent direct writes for this.
+- **Equipment equip/unequip:** domain decisions are now closed enough for DB/RPC foundation work. `hero_equipment` exists, but player-facing equip/unequip, bulk equip and preset apply still need canonical DB/RPC workflow before Angular can implement them. Angular must not invent direct writes.
 - **PvP MVP:** combat/report foundations can support PvP sources, but target selection, level range, guild restrictions, attack travel time, spying, siege rules, protection/cooldowns, resource stealing/loss, PvP consequences and PvP report production still need a dedicated epic/workflow.
 - **PvP memory notes:** attacks should be level-range limited and cannot target own guild; attack travel time depends on estate/address distance; spying is shorter, has no level limit and can target own guild; sieges ignore level limits but cannot target own guild.
 - **Auction watchers:** later design/implement watched auctions and notifications for watched auction changes.
@@ -138,11 +168,11 @@ Memory notes are intentionally short. Do not expand them into design work unless
 
 ## Project Name
 
-The canonical project/game name is **Mythborne**.
+The canonical project/game name is **Mythsworn**.
 
 Older names such as Monster Hunt, MythHunter, MythBurn, Mythos Hunter, etc. may still appear in legacy filenames or older discussion. They should not be treated as current canonical naming.
 
-Use **Mythborne** for new conceptual, UI-facing and documentation work unless explicitly instructed otherwise.
+Use **Mythsworn** for new conceptual, UI-facing and documentation work unless explicitly instructed otherwise.
 
 ---
 
@@ -160,7 +190,7 @@ Memory/side notes are not the place for active task details. Keep current task d
 
 ## Game Overview
 
-Mythborne is a browser RPG inspired by ancient Greece.
+Mythsworn is a browser RPG inspired by ancient Greece.
 
 The game combines:
 

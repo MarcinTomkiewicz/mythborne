@@ -6,6 +6,7 @@ import { FormulaAdminData } from '../../domain/formula/formula.model';
 import { FilterOperator } from '../../enums/filter-operators';
 import {
   BuildingDistrictLevelCapRow,
+  EstateBuildingJobRow,
   DistrictRow,
   EstateBuildingRow,
   MansionBuildingRequirementRow,
@@ -19,6 +20,7 @@ import { EstateAddresses } from '../estate/estate-addresses';
 import { FormulaService } from '../formula/formula';
 import { Hero } from '../hero/hero';
 import { BuildingProgressionService } from '../progression/building-progression';
+import { BuildingJobs } from './building-jobs';
 import { BuildingsService } from './buildings';
 
 describe('BuildingsService', () => {
@@ -28,6 +30,7 @@ describe('BuildingsService', () => {
   let backend: jasmine.SpyObj<Backend>;
   let formulaService: jasmine.SpyObj<FormulaService>;
   let progression: jasmine.SpyObj<BuildingProgressionService>;
+  let buildingJobs: jasmine.SpyObj<BuildingJobs>;
 
   beforeEach(() => {
     heroService = jasmine.createSpyObj<Hero>('Hero', ['getHeroData']);
@@ -40,6 +43,10 @@ describe('BuildingsService', () => {
       'BuildingProgressionService',
       ['resolveRulesForBuilding', 'getUpgradeTimeSeconds', 'getUpgradeCost', 'getBonusValue'],
     );
+    buildingJobs = jasmine.createSpyObj<BuildingJobs>('BuildingJobs', [
+      'finalizeHeroEstateBuildingJobs',
+      'getRecentJobsForEstate',
+    ]);
 
     formulaService.getAdminData.and.returnValue(
       of({} as unknown as FormulaAdminData),
@@ -50,6 +57,13 @@ describe('BuildingsService', () => {
     progression.getUpgradeTimeSeconds.and.returnValue(120);
     progression.getUpgradeCost.and.callFake((_level, baseValue) => baseValue);
     progression.getBonusValue.and.returnValue(0);
+    buildingJobs.finalizeHeroEstateBuildingJobs.and.returnValue(of({
+      heroId: 'hero-1',
+      serverId: 'server-1',
+      estateId: 'estate-1',
+      completedCount: 0,
+    }));
+    buildingJobs.getRecentJobsForEstate.and.returnValue(of([]));
 
     TestBed.configureTestingModule({
       providers: [
@@ -59,6 +73,7 @@ describe('BuildingsService', () => {
         { provide: Backend, useValue: backend },
         { provide: FormulaService, useValue: formulaService },
         { provide: BuildingProgressionService, useValue: progression },
+        { provide: BuildingJobs, useValue: buildingJobs },
       ],
     });
     service = TestBed.inject(BuildingsService);
@@ -72,6 +87,7 @@ describe('BuildingsService', () => {
 
     expect(estateAddresses.getCurrentAddress).not.toHaveBeenCalled();
     expect(backend.getAll).not.toHaveBeenCalled();
+    expect(buildingJobs.finalizeHeroEstateBuildingJobs).not.toHaveBeenCalled();
   });
 
   it('does not use district fallback when hero estate address is not readable', async () => {
@@ -85,6 +101,7 @@ describe('BuildingsService', () => {
       heroId: 'hero-1',
       serverId: 'server-1',
     });
+    expect(buildingJobs.finalizeHeroEstateBuildingJobs).toHaveBeenCalledWith('hero-1');
     expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
       table: TABLES.buildings,
     }));
@@ -125,7 +142,12 @@ describe('BuildingsService', () => {
 
     const view = await firstValueFrom(service.getMansionEstateView());
 
+    expect(buildingJobs.finalizeHeroEstateBuildingJobs).toHaveBeenCalledWith('hero-1');
+    expect(buildingJobs.getRecentJobsForEstate).toHaveBeenCalledWith('estate-1');
     expect(view.currentDistrictCode).toBe('C');
+    expect(view.activeBuildingJob).toBeNull();
+    expect(view.recentBuildingJobs).toEqual([]);
+    expect(view.finalizedBuildingJobsCount).toBe(0);
     expect(view.buildings.map((building) => building.key)).toEqual([
       'well',
       'workshop',
@@ -161,6 +183,64 @@ describe('BuildingsService', () => {
       .allArgs()
       .find((args) => args[0] === 0);
     expect(unbuiltTimeArgs?.slice(0, 3)).toEqual([0, 120, 3]);
+  });
+
+  it('surfaces active and recent building job state after finalization', async () => {
+    heroService.getHeroData.and.returnValue(of(heroRow('estate-1')));
+    estateAddresses.getCurrentAddress.and.returnValue(of(currentAddress('A')));
+    buildingJobs.finalizeHeroEstateBuildingJobs.and.returnValue(of({
+      heroId: 'hero-1',
+      serverId: 'server-1',
+      estateId: 'estate-1',
+      completedCount: 1,
+    }));
+    buildingJobs.getRecentJobsForEstate.and.returnValue(of([
+      estateBuildingJobRow('active-job', 'building-a', 'active'),
+      estateBuildingJobRow('completed-job', 'building-a', 'completed'),
+    ]));
+    backend.getAll.and.callFake(<T extends object>(opts: { table: string }) => {
+      const rowsByTable: Record<string, readonly object[]> = {
+        [TABLES.buildings]: [buildingRow('building-a', 'well', 'A')],
+        [TABLES.building_district_level_caps]: [],
+        [TABLES.entity_requirements]: [],
+        [TABLES.stats]: [],
+        [TABLES.entity_bonuses]: [],
+        [TABLES.estate_buildings]: [estateBuildingRow('building-a', 1)],
+        [TABLES.estate_districts]: districtRows(),
+      };
+
+      return of((rowsByTable[opts.table] ?? []) as T[]);
+    });
+
+    const view = await firstValueFrom(service.getMansionEstateView());
+
+    expect(view.finalizedBuildingJobsCount).toBe(1);
+    expect(view.activeBuildingJob).toEqual(jasmine.objectContaining({
+      id: 'active-job',
+      buildingName: 'well',
+      status: 'active',
+      targetLevel: 2,
+    }));
+    expect(view.recentBuildingJobs).toEqual([
+      jasmine.objectContaining({
+        id: 'completed-job',
+        status: 'completed',
+      }),
+    ]);
+  });
+
+  it('rejects stale finalization results for a different hero estate', async () => {
+    heroService.getHeroData.and.returnValue(of(heroRow('estate-1')));
+    estateAddresses.getCurrentAddress.and.returnValue(of(currentAddress('A')));
+    buildingJobs.finalizeHeroEstateBuildingJobs.and.returnValue(of({
+      heroId: 'hero-1',
+      serverId: 'server-1',
+      estateId: 'other-estate',
+      completedCount: 0,
+    }));
+
+    await expectAsync(firstValueFrom(service.getMansionEstateView()))
+      .toBeRejectedWithError('Building job finalization returned a stale hero estate result.');
   });
 
   it('preserves duplicate active central requirements for data/admin visibility', async () => {
@@ -296,6 +376,24 @@ function estateBuildingRow(buildingId: string, level: number): EstateBuildingRow
     building_id: buildingId,
     level,
   } as EstateBuildingRow;
+}
+
+function estateBuildingJobRow(
+  id: string,
+  buildingId: string,
+  status: EstateBuildingJobRow['status'],
+): EstateBuildingJobRow {
+  return {
+    id,
+    estate_id: 'estate-1',
+    building_id: buildingId,
+    target_level: 2,
+    status,
+    started_at: '2026-05-04T10:00:00.000Z',
+    completes_at: '2026-05-04T10:10:00.000Z',
+    created_at: '2026-05-04T10:00:00.000Z',
+    updated_at: '2026-05-04T10:10:00.000Z',
+  } as EstateBuildingJobRow;
 }
 
 function levelCapRow(

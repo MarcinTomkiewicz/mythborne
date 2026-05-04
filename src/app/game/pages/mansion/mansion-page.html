@@ -32,6 +32,65 @@
       </div>
     </section>
 
+    @if (page.activeBuildingJob(); as job) {
+      <section class="mg-card flex-col gap-md p-lg w-100">
+        <div class="flex-row-between-center flex-col-sm gap-md">
+          <div class="flex-col gap-xs">
+            <p class="card-legend mb-0">Building job</p>
+            <h3 class="mg-section__title mg-section__title--xs mb-0">
+              {{ job.buildingName }} to level {{ job.targetLevel }}
+            </h3>
+            <p class="muted-text mb-0">
+              Started {{ page.toDateTimeLabel(job.startedAt) }} | Completes {{ page.toDateTimeLabel(job.completesAt) }}
+            </p>
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            <span class="tag-badge tag-badge--warn">{{ job.status }}</span>
+            <span class="tag-badge tag-badge--muted">
+              {{ page.toDurationLabel(job.remainingSeconds) }} remaining
+            </span>
+            <span class="tag-badge tag-badge--info">
+              {{ job.progressPercent }}%
+            </span>
+          </div>
+        </div>
+      </section>
+    } @else if (page.finalizedBuildingJobsCount() > 0) {
+      <section class="mg-card flex-row-between-center flex-col-sm gap-md p-lg w-100">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Building job</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Completed jobs finalized</h3>
+        </div>
+        <span class="tag-badge tag-badge--info">
+          {{ page.finalizedBuildingJobsCount() }} completed
+        </span>
+      </section>
+    }
+
+    @if (page.recentBuildingJobs().length > 0) {
+      <section class="mg-card flex-col gap-md p-lg w-100">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Recent</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Building Job History</h3>
+        </div>
+
+        <div class="flex-col gap-sm">
+          @for (job of page.recentBuildingJobs(); track job.id) {
+            <div class="mg-card flex-row-between-center flex-col-sm gap-md p-sm muted-text">
+              <div class="flex-col gap-xs">
+                <strong class="heading-color">
+                  {{ job.buildingName }} to level {{ job.targetLevel }}
+                </strong>
+                <span>{{ page.toDateTimeLabel(job.startedAt) }} - {{ page.toDateTimeLabel(job.completesAt) }}</span>
+              </div>
+              <span class="tag-badge tag-badge--muted">{{ job.status }}</span>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
     <div class="mg-grid grid-cols-2 grid-cols-1-md gap-xl w-100">
       @for (building of page.visibleBuildings(); track page.trackByBuilding($index, building)) {
         <section class="mg-card flex-col gap-md p-lg w-100">

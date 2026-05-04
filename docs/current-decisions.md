@@ -1,6 +1,6 @@
-# Mythborne — Current Decisions Log
+# Mythsworn — Current Decisions Log
 
-Updated: 2026-05-03 late
+Updated: 2026-05-04
 
 Use this file for recent design, domain, database and implementation decisions that should override older assumptions.
 
@@ -83,7 +83,7 @@ The active new Epic R is **PvP Foundation**. This is a target architecture found
 
 ## Pending Future Decision — Player bug reporting system
 
-Plan a separate player/user bug reporting system. Preferred direction: an in-game bug report form that sends an email and creates an external board task, e.g. Trello, Jira or GitHub Issues. A Mythborne admin-panel record may also be useful, but an external board is preferred for real triage and tracking. This is a future product/ops workflow, not part of current PvP Foundation DB work.
+Plan a separate player/user bug reporting system. Preferred direction: an in-game bug report form that sends an email and creates an external board task, e.g. Trello, Jira or GitHub Issues. A Mythsworn admin-panel record may also be useful, but an external board is preferred for real triage and tracking. This is a future product/ops workflow, not part of current PvP Foundation DB work.
 
 ## Progression / Epic N DB-RPC Decisions — 2026-05-03 current state
 
@@ -269,7 +269,7 @@ Do not spend excessive time now perfecting every small label. The mandatory stan
 The implementation backlog was split into:
 
 - main feature backlog: active feature/foundation epics;
-- `Codex Mythborne Refactor Backlog`: refactor/cleanup/retro epics.
+- `Codex Mythsworn Refactor Backlog`: refactor/cleanup/retro epics.
 
 The refactor backlog uses `Epic Ref A`, `Epic Ref B`, etc. to avoid colliding with the main feature backlog letters. It contains the former R/S/U0/UX/UX-CFG material.
 
@@ -495,7 +495,7 @@ If the user mentions notes for memory, treat them as side notes or unrelated rem
 
 ## Project Name and Terminology
 
-The canonical project/game name is **Mythborne**.
+The canonical project/game name is **Mythsworn**.
 
 Older names such as Monster Hunt, MythHunter, MythBurn or Mythos Hunter may appear in legacy files. Do not use them as current canonical naming in new documentation, UI labels or Codex prompts unless explicitly referencing old source material.
 
@@ -766,6 +766,160 @@ High economic value does not guarantee direct usefulness. A player may drop a va
 Luck should improve opportunities, not guarantee perfect rewards. It can influence value bucket, quality and affix chances, but a full Luck strategy must carry opportunity costs in challenge success.
 
 Item requirements are a critical progression safety valve. A player may obtain an item before being able to equip it.
+
+---
+
+## Item / Equipment / Armory Decisions — 2026-05-04
+
+### Item identity and ownership
+
+- Items use a layered identity: quality + optional prefix + base item + optional suffix.
+- Item ownership changes through `items.hero_id`; items are not copied on transfer.
+- `hero_equipment` is the source of equipped state.
+- There is no `items.status = equipped`.
+- Frontend must not mutate `hero_equipment` directly.
+- Equip/unequip must go through canonical DB/RPC workflow.
+
+### Equipped item statuses and market locks
+
+- An item may be equipped if it belongs to the hero and is not `scrapped`.
+- Equipped usable item statuses are:
+  - `active`;
+  - `locked_trade`;
+  - `locked_auction`.
+- `locked_trade` and `locked_auction` reserve the item for trade/auction workflow. They block listing the same item elsewhere and block scrap/vendor sale, but they do not block wearing the item.
+- Locked items still count for current loadout and runtime equipment effects while they remain in `hero_equipment`.
+- Trade/auction lock does not automatically unequip the item.
+- Ownership transfer or scrap clears the item from the previous owner's `hero_equipment`.
+- A player may manually unequip locked items. There are no cursed/non-removable items in the current equipment foundation.
+- Unequip does not change item ownership, item status or trade/auction lock state.
+
+### Scrap, vendor sale and recovery
+
+- Active equipped items may be scrapped or sold to vendor; this auto-unequips the item.
+- UI should not require confirmation for every scrap/vendor sale, because players may clean many items.
+- Items without affixes are hard-deleted from the database on scrap.
+- Items with affixes move to `scrapped` state on scrap and are recoverable only through staff/admin/operator workflow.
+- Scrapped affix items are automatically cleaned after a retention period.
+- Default scrapped-affix-item retention is 30 days.
+- Scrapped-affix-item retention is configurable from admin configuration.
+- Historical references such as trade offers, counteroffers, reports or other records do not justify retaining no-affix items.
+- Staff/admin recovery, transfer, sanction and lifecycle corrections must be audited.
+- Normal player equip/unequip changes are not classic audit-log workflows.
+- Player equip/unequip RPCs must not require user-provided reason. Optional technical `request_id` is acceptable.
+
+### Item requirements
+
+- Item requirements are equip/use requirements, not item generation requirements.
+- Item requirements apply to normal equip and bulk equip.
+- Item requirements are checked at equip time.
+- If a hero later stops meeting requirements, already equipped items remain equipped.
+- Item requirements may use hero level and primary/base stats.
+- Item requirements do not use resources, prestige, building level, district access or trade routes.
+- Item instance requirements are not part of the system. Concrete `items.id` rows must not have arbitrary unique requirements.
+- Requirements derive from definitional item layers:
+  - base;
+  - prefix;
+  - suffix;
+  - quality requirement multiplier.
+- Requirements from base/prefix/suffix are aggregated by a global item requirement rule.
+- The highest requirement is the base; lower requirements add configurable partial contributions.
+- Quality has a separate requirement multiplier independent from quality bonus/value multiplier.
+- Requirement calculation order is: aggregate base/prefix/suffix requirements, then apply quality requirement multiplier.
+- Exact formulas, coefficients, rounding and config storage are DB/balancer implementation details, but the global semantic rule above is the target.
+- Candidate item bonuses cannot help that same item meet its own requirements.
+- Already equipped items may help meet requirements for another item.
+- Items equipped earlier in a bulk operation may help later items.
+
+### Item bonuses and runtime loadout
+
+- Item bonuses from base/prefix/suffix sum absolutely.
+- Example: prefix `+5 Strength` and suffix `+10 Strength` result in `+15 Strength`.
+- Runtime loadout usable statuses are `active`, `locked_trade`, and `locked_auction`; `scrapped` is excluded.
+- Any resolver that ignores equipped `locked_trade` or `locked_auction` items is inconsistent with current decisions and must be corrected.
+- Equipment affects PvE, PvP, combat/autoresolve, manual combat, spy snapshots and runtime hero capability.
+- PvE/PvP checks use current loadout at the relevant resolve/check moment.
+- Manual combat must do per-turn loadout/stat checks.
+
+### Slot compatibility and normal equip
+
+- `item_generation_bases.base_type_key` is the source of truth for equip slot compatibility.
+- `item_generation_bases.slot` is legacy/deprecated for equip workflow.
+- One item cannot occupy multiple slots.
+- One slot cannot contain multiple items.
+- Normal equip may receive an explicit `slot_key`.
+- With explicit `slot_key`, RPC attempts the literal target slot if compatible.
+- Without explicit `slot_key`, RPC uses default behavior for the item base type:
+  - one-handed weapon: hand rotation;
+  - ring: ring rotation;
+  - two-handed/ranged weapon: `main_hand`;
+  - shield: `off_hand`;
+  - single-slot armor/jewelry pieces: their matching slot.
+- A failed normal equip must not remove the currently equipped item being replaced.
+- RPC results must be readable enough to show what was equipped, shifted, unequipped, failed or skipped, plus final equipment state. The exact payload shape is a DB/RPC implementation detail.
+
+### Hand slots
+
+- Hand slots are `main_hand` and `off_hand`.
+- Two-handed and ranged weapons use both hands and are stored in `main_hand`.
+- Shields are off-hand only.
+- One-handed weapons use hand slots.
+- Equipping a two-handed or ranged weapon removes current `main_hand` and `off_hand` items as needed, then equips the new item in `main_hand`.
+- Equipping an off-hand item while a two-handed/ranged weapon is equipped removes the two-handed/ranged weapon first, then applies the off-hand equip result.
+- One-handed weapon rotation is deterministic:
+  - current `off_hand` moves to `main_hand`;
+  - new item goes to `off_hand`;
+  - old `main_hand` is unequipped.
+- If only one hand slot is occupied, a one-handed weapon fills the other hand where possible.
+- If hands are empty and no explicit slot is passed, a one-handed weapon uses `main_hand` by default.
+
+### Ring slots
+
+- Ring slots are `ring_1` and `ring_2`.
+- Rings use deterministic rotation analogous to one-handed weapons:
+  - current `ring_2` moves to `ring_1`;
+  - new ring goes to `ring_2`;
+  - old `ring_1` is unequipped.
+- If an explicit ring slot is passed, RPC replaces that literal slot if compatible.
+
+### Bulk equip
+
+- Bulk equip processes items in explicit input order.
+- Bulk equip equips what can be equipped and reports failures.
+- Failure of one item does not stop the whole bulk operation.
+- Failed bulk items should not unnecessarily remove current equipped items.
+- Each step sees the loadout produced by earlier successful steps.
+- Bulk result must report equipped, shifted, unequipped, failed/skipped entries and final equipment state.
+
+### Presets / loadout presets
+
+- The word `set` is reserved for future item set bonuses.
+- Saved equipment configurations are called `preset` / `loadout preset`.
+- Presets are a convenience workflow, not an item-set-bonus mechanic.
+- Presets store exact `item_id` values per literal slot.
+- Presets do not match by name, base, quality, prefix, suffix or other similarity.
+- Preset apply uses literal saved slots and does not use hand/ring rotation.
+- Preset apply equips available items from the preset and does not touch the rest of the current equipment.
+- Preset apply can partially succeed.
+- Preset preview should show which saved items the hero has, which are missing/unavailable, and their saved slots.
+- A preset that was legal when saved may re-equip the same exact item IDs without rechecking item requirements.
+- Preset privilege survives sale/transfer away and later reacquisition of the same item ID.
+- Presets can be edited, renamed, cleared or overwritten.
+- Presets are not deleted; a hero has a fixed number of preset slots.
+- Target range is 5–10 presets per hero; the final count should be a flat configurable value, not a formula.
+- Presets should be stored relationally, not as JSON authority.
+
+### Armory shelves
+
+- Armory shelves are inventory organization, not equipment state.
+- DB/code may use `shelf`; final UI naming belongs to UI/UX backlog.
+- There are always 10 shelves.
+- Shelf `1` is the default/lowest shelf and new drops go there.
+- `hero_armory_shelves` stores hero-local shelf names.
+- `items.armory_shelf_position` stores the item shelf number.
+- Item shelf number persists when the item transfers to another hero, even though that hero may have a different local name for that shelf number.
+- Armory building level affects how many items are visible in the armory.
+- Items outside the visible range do not disappear. Items disappear only through explicit scrap/transfer/lifecycle workflow.
 
 ---
 

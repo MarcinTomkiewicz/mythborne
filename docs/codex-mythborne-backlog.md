@@ -4635,6 +4635,10 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - No internal helper RPC is used from frontend services.
 - Stale responses do not update the wrong selected hero/server state.
 
+**Implementation note:** O5 accepted on 2026-05-04 after review. The mansion building read path now calls owner-safe `finalize_hero_estate_building_jobs(p_hero_id)` before reading current `estate_buildings` state, treats `completed_count = 0` as normal, and validates the returned hero/server/estate identifiers before trusting finalized state. Building job reads use typed `estate_building_jobs` rows plus generated RPC return typing from `Database['public']['Functions']['finalize_hero_estate_building_jobs']['Returns'][number]`; no local hand-written RPC return interface is maintained. Mansion exposes active/recent job read models, calculates progress/remaining from `started_at` and `completes_at`, and guards stale async responses in `MansionPageFacade`. O5 did not add build-start, cancel, claim, DB/RPC/migration changes, direct writes to estate/building job tables, internal helper RPC calls, or manual/route smoke by Codex. Pending user/manual validation remains for real active/completed job data: active job panel, progress/remaining, completed finalization banner and recent job history.
+
+**Status:** Done / accepted on 2026-05-04.
+
 ---
 
 ## Task O6 — Start building construction/upgrade flow

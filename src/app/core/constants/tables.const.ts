@@ -26,6 +26,7 @@ export const TABLES = {
   requirement_definitions: 'requirement_definitions',
   resource_types: 'resource_types',
   estate_buildings: 'estate_buildings',
+  estate_building_jobs: 'estate_building_jobs',
   estate_district_address_capacities: 'estate_district_address_capacities',
   estate_districts: 'estate_districts',
   hero: 'hero',

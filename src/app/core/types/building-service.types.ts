@@ -1,4 +1,5 @@
 import { Row } from './supabase.types';
+import { Database } from './database.types';
 
 export type BuildingPayload = {
   key: string;
@@ -13,6 +14,7 @@ export type BuildingPayload = {
 
 export type MansionBuildingRow = Row<'buildings'>;
 export type EstateBuildingRow = Row<'estate_buildings'>;
+export type EstateBuildingJobRow = Row<'estate_building_jobs'>;
 export type BuildingDistrictLevelCapRow = Row<'building_district_level_caps'>;
 export type MansionBuildingResourceCostRow = Row<'building_resource_costs'>;
 export type MansionBuildingRequirementRow = Row<'entity_requirements'> & {
@@ -20,3 +22,6 @@ export type MansionBuildingRequirementRow = Row<'entity_requirements'> & {
 };
 export type DistrictRow = Row<'estate_districts'>;
 export type StatLabelRow = Pick<Row<'stats'>, 'key' | 'label'>;
+
+export type FinalizeHeroEstateBuildingJobsRpcRow =
+  Database['public']['Functions']['finalize_hero_estate_building_jobs']['Returns'][number];

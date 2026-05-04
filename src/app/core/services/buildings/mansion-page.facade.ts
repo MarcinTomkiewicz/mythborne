@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import {
+  MansionBuildingJob,
   BuildingRequirementPreview,
   BuildingResourceType,
   MansionBuilding,
@@ -22,22 +23,42 @@ export class MansionPageFacade {
   readonly currentAddress = signal<string | null>(null);
   readonly currentDistrictCode = signal<string | null>(null);
   readonly currentDistrictName = signal<string | null>(null);
+  readonly activeBuildingJob = signal<MansionBuildingJob | null>(null);
+  readonly recentBuildingJobs = signal<MansionBuildingJob[]>([]);
+  readonly finalizedBuildingJobsCount = signal(0);
   readonly buildings = signal<MansionBuilding[]>([]);
   readonly visibleBuildings = computed(() =>
     this.buildings().filter((building) => building.isOwned || building.isUnlocked)
   );
+  private loadRequestId = 0;
 
   loadData() {
+    const requestId = ++this.loadRequestId;
+
+    this.isLoading.set(true);
+    this.error.set(null);
+
     this.buildingsService.getMansionEstateView().subscribe({
       next: (view) => {
+        if (requestId !== this.loadRequestId) {
+          return;
+        }
+
         this.currentAddress.set(view.currentAddress);
         this.currentDistrictCode.set(view.currentDistrictCode);
         this.currentDistrictName.set(view.currentDistrictName);
+        this.activeBuildingJob.set(view.activeBuildingJob);
+        this.recentBuildingJobs.set(view.recentBuildingJobs);
+        this.finalizedBuildingJobsCount.set(view.finalizedBuildingJobsCount);
         this.buildings.set(view.buildings);
         this.error.set(null);
         this.isLoading.set(false);
       },
       error: (error: unknown) => {
+        if (requestId !== this.loadRequestId) {
+          return;
+        }
+
         this.error.set(getErrorMessage(error, 'Failed to load estate buildings.'));
         this.isLoading.set(false);
       },
@@ -78,6 +99,10 @@ export class MansionPageFacade {
 
   toDurationLabel(seconds: number | null): string {
     return toBuildingDurationLabel(seconds);
+  }
+
+  toDateTimeLabel(value: string): string {
+    return new Date(value).toLocaleString();
   }
 
   resourceLabel(type: BuildingResourceType): string {

@@ -68,6 +68,32 @@ export interface MansionBuilding {
   bonuses: BuildingBonusPreview[];
 }
 
+export type EstateBuildingJobStatus = 'active' | 'completed' | 'cancelled' | 'failed';
+
+export interface MansionBuildingJob {
+  id: string;
+  estateId: string;
+  buildingId: string;
+  buildingKey: string;
+  buildingName: string;
+  targetLevel: number;
+  status: EstateBuildingJobStatus;
+  startedAt: string;
+  completesAt: string;
+  durationSeconds: number;
+  remainingSeconds: number;
+  progressPercent: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MansionBuildingJobFinalization {
+  heroId: string;
+  serverId: string;
+  estateId: string;
+  completedCount: number;
+}
+
 export interface EditableBuildingBonus {
   templateId: string | null;
   target: string;
@@ -267,8 +293,13 @@ export interface BuildingBonusImpactPreview {
 }
 
 export interface MansionEstateView {
+  heroId: string;
+  serverId: string;
   currentAddress: string | null;
   currentDistrictCode: string | null;
   currentDistrictName: string | null;
+  activeBuildingJob: MansionBuildingJob | null;
+  recentBuildingJobs: MansionBuildingJob[];
+  finalizedBuildingJobsCount: number;
   buildings: MansionBuilding[];
 }
