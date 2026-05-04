@@ -58,6 +58,8 @@
             [class]="widthClass()"
             [formControlName]="field.controlName"
             [attr.step]="field.step ?? null"
+            [attr.min]="field.min ?? null"
+            [attr.max]="field.max ?? null"
             [readOnly]="field.readonly ?? false"
             [attr.autocomplete]="field.autocomplete ?? null"
           />

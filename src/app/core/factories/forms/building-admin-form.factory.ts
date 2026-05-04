@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { NonNullableFormBuilder } from '@angular/forms';
+import { NonNullableFormBuilder, Validators } from '@angular/forms';
 import {
   BuildingAdminData,
   BuildingResourceType,
@@ -48,6 +48,11 @@ export class BuildingAdminFormFactory {
       imagePath: this.fb.control(''),
       districtCode: this.fb.control('A'),
       sortOrder: this.fb.control(0),
+      startingLevel: this.fb.control(0, [
+        Validators.required,
+        Validators.min(0),
+        Validators.pattern(/^\d+$/),
+      ]),
       baseBuildTimeSeconds: this.fb.control(60),
       maxLevel: this.fb.control(0),
       formulaOverrides: this.fb.group({
@@ -69,6 +74,7 @@ export class BuildingAdminFormFactory {
       imagePath: '',
       districtCode: data.districts[0]?.code ?? 'A',
       sortOrder: 0,
+      startingLevel: 0,
       baseBuildTimeSeconds: 60,
       maxLevel: 0,
       formulaOverrides: {
@@ -116,6 +122,7 @@ export class BuildingAdminFormFactory {
       imagePath: draft.imagePath,
       districtCode: draft.districtCode,
       sortOrder: draft.sortOrder,
+      startingLevel: draft.startingLevel,
       baseBuildTimeSeconds: draft.baseBuildTimeSeconds,
       maxLevel: draft.maxLevel,
       formulaOverrides: draft.formulaOverrides,
@@ -142,6 +149,7 @@ export class BuildingAdminFormFactory {
       imagePath: trimText(value.imagePath),
       districtCode: value.districtCode,
       sortOrder: roundedNumber(value.sortOrder),
+      startingLevel: roundedNumber(value.startingLevel),
       baseBuildTimeSeconds: roundedNumber(value.baseBuildTimeSeconds),
       maxLevel: roundedNumber(value.maxLevel),
       formulaOverrides: {

@@ -42,6 +42,7 @@ export function mapEditableBuilding(
     imagePath: resolveBuildingImagePath(row.key, row.district_code) ?? row.image_path ?? '',
     districtCode: row.district_code ?? 'A',
     sortOrder: row.sort_order ?? 0,
+    startingLevel: row.starting_level ?? 0,
     baseBuildTimeSeconds: row.base_build_time_seconds ?? 0,
     maxLevel: row.max_level ?? 0,
     formulaOverrides: mapBuildingFormulaOverrides(row.id, formulaData),

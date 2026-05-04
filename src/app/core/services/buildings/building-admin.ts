@@ -127,6 +127,7 @@ export class BuildingAdminService {
         null,
       districtCode: draft.districtCode,
       sortOrder: nonNegativeInteger(draft.sortOrder),
+      startingLevel: requiredNonNegativeInteger(draft.startingLevel, 'startingLevel'),
       baseBuildTimeSeconds: nonNegativeInteger(draft.baseBuildTimeSeconds),
       maxLevel: nonNegativeInteger(draft.maxLevel),
     };
@@ -272,4 +273,14 @@ export class BuildingAdminService {
 
     return mapById;
   }
+}
+
+function requiredNonNegativeInteger(value: unknown, field: string): number {
+  const normalized = Number(value);
+
+  if (!Number.isInteger(normalized) || normalized < 0) {
+    throw new Error(`${field} must be a non-negative integer.`);
+  }
+
+  return normalized;
 }

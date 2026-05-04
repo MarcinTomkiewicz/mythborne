@@ -29,6 +29,7 @@ import { BuildingFormulaAdminFacade } from './building-formula-admin.facade';
 import { BuildingImpactPreviewState } from './building-impact-preview.state';
 import { BuildingProgressionPreviewState } from './building-progression-preview.state';
 import { BuildingRequirementsState } from './building-requirements.state';
+import { buildingAdminValueFlags } from './building-admin-value-flags';
 import { BuildingUiMetadata } from './building-ui-metadata';
 
 const EMPTY_ADMIN_DATA: BuildingAdminData = {
@@ -135,6 +136,19 @@ export class BuildingsPageFacade {
       this.formulaRangePreview(),
     )
   );
+  readonly advancedValueFlags = computed(() => {
+    this.editorValue();
+
+    return buildingAdminValueFlags(
+      this.formFactory.toDraft(this.building.editorForm),
+      {
+        fieldLabel: (key) => this.uiMetadata.adminFieldLabel(key),
+        duration: this.format.duration,
+        resource: this.format.resource,
+      },
+    );
+  });
+  private saveRequestId = 0;
 
   constructor() {
     this.building.editorForm.controls.name.valueChanges
@@ -211,19 +225,34 @@ export class BuildingsPageFacade {
 
   saveBuilding() {
     const draft = this.building.draft();
+    const requestId = ++this.saveRequestId;
+    const selectionKey = this.saveSelectionKey();
+
     this.isSaving.set(true);
     this.adminService
       .saveBuilding(draft)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.isSaving.set(false))
+        finalize(() => {
+          if (requestId === this.saveRequestId) {
+            this.isSaving.set(false);
+          }
+        })
       )
       .subscribe({
         next: () => {
+          if (requestId !== this.saveRequestId || selectionKey !== this.saveSelectionKey()) {
+            return;
+          }
+
           this.toast.show('success', 'Building saved', `${draft.name} was saved.`);
           this.loadData(draft.key);
         },
         error: (error: unknown) => {
+          if (requestId !== this.saveRequestId || selectionKey !== this.saveSelectionKey()) {
+            return;
+          }
+
           this.toast.show(
             'error',
             'Save failed',
@@ -270,5 +299,12 @@ export class BuildingsPageFacade {
       costs: this.costEditor.controls.map((control) => control.getRawValue()),
       bonuses: this.bonusEditor.controls.map((control) => control.getRawValue()),
     };
+  }
+
+  private saveSelectionKey(): string {
+    return [
+      this.building.editorForm.controls.id.value,
+      this.building.editorForm.controls.key.value,
+    ].join('|');
   }
 }

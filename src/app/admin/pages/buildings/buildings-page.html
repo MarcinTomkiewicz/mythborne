@@ -130,6 +130,19 @@
           <app-form-fields [form]="page.building.editorForm" [fields]="progressionFields()" />
         </div>
 
+        @if (page.advancedValueFlags().length > 0) {
+          <section class="mg-card flex-col gap-sm p-md">
+            <p class="card-legend mb-0">
+              {{ page.uiMetadata.adminSectionTitle(page.uiMetadata.adminSection.diagnostics) }}
+            </p>
+            <div class="flex-row-start-center flex-wrap gap-sm">
+              @for (flag of page.advancedValueFlags(); track flag) {
+                <span class="tag-badge tag-badge--warn">{{ flag }}</span>
+              }
+            </div>
+          </section>
+        }
+
         <app-building-local-formulas-section [page]="page" />
         <app-building-resource-costs-section [page]="page" />
         <app-building-requirements-section [page]="page" />

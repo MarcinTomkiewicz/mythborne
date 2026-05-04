@@ -57,6 +57,7 @@ export type BuildingEditorForm = FormGroup<{
   imagePath: FormControl<string>;
   districtCode: FormControl<string>;
   sortOrder: FormControl<number>;
+  startingLevel: FormControl<number>;
   baseBuildTimeSeconds: FormControl<number>;
   maxLevel: FormControl<number>;
   formulaOverrides: FormGroup<{

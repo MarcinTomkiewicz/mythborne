@@ -160,10 +160,10 @@ Order reflects implementation priority, not final business priority.
 - Completed and conditionally accepted: O4 - Building catalog and estate building read layer, including the formula editor/tester variable-contract follow-up after BUILDING-FORMULA-DB-FIX2/FIX3.
 - Completed and confirmed: O5 - Building job read layer and lazy finalization.
 - Completed and confirmed: O6 - Start building construction/upgrade flow, settled mansion runtime state and active/completed job smoke.
-- Completed and confirmed: O7 - Building and estate configurator explainability with DB-backed UI metadata.
-- Next backlog task: O8 - Building configurator edit alignment from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
+- Completed and confirmed: O8 - Building configurator edit alignment.
+- Next backlog task: O9 - Estate vicinity/address browser and relocation picker UI from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
 - O6 user smoke confirmed real job behavior: start job, active job panel, route leave/return, browser refresh during an active job, completed-job settlement, and the new building level after `completes_at`.
-- O7 user smoke confirmed admin/runtime explainability; missing metadata remains a DB/content seed gap, not a frontend fallback target.
+- O8 user smoke confirmed building admin save/read behavior for `startingLevel = 0`. The editor now treats `starting_level = 0` as a legal not-built definition state, preserves it through mapping/form/save payload, keeps `startingLevel = 2` round-tripping, exposes `min=0`/`step=1`, and rejects negative/non-integer values instead of silently clamping.
 - Formula balance refactor follow-up: before the next larger item generation/formula balance task, split `ItemGenerationFormulaBalanceFacade` further. It remains about 447 lines after the accepted variable-contract fix and must not absorb more workflow responsibilities.
 - N13 pending validation: representative XP producer smoke remains pending until a real XP-producing flow exists or is intentionally selected; user/manual validation remains separate from technical green checks and must not be claimed by Codex.
 - N12 DB/content cleanup follow-up: replace remaining formula target `hero points` wording with `Character Points`; confirm and align stat upgrade default test context keys (`hero_level`/`stat_level` vs allowed `heroLevel`/`statLevel`); seed the currently reported progression UI metadata gaps. Do not hide these with frontend fallback labels or fallback contexts.

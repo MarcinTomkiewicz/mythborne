@@ -89,6 +89,7 @@ function createBuilding() {
     imagePath: '',
     districtCode: 'A',
     sortOrder: 1,
+    startingLevel: 1,
     baseBuildTimeSeconds: 10,
     maxLevel: 15,
     formulaOverrides: {

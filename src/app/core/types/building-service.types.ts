@@ -8,6 +8,7 @@ export type BuildingPayload = {
   imagePath: string | null;
   districtCode: string;
   sortOrder: number;
+  startingLevel: number;
   baseBuildTimeSeconds: number;
   maxLevel: number;
 };

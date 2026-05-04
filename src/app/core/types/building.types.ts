@@ -137,6 +137,7 @@ export interface EditableBuilding {
   imagePath: string;
   districtCode: string;
   sortOrder: number;
+  startingLevel: number;
   baseBuildTimeSeconds: number;
   maxLevel: number;
   formulaOverrides: BuildingFormulaOverrides;

@@ -74,6 +74,13 @@ export function createBuildingProgressionFields(
     { type: FormFieldType.Number, controlName: 'sortOrder', label: fieldLabel('sort_order', 'Sort order') },
     {
       type: FormFieldType.Number,
+      controlName: 'startingLevel',
+      label: fieldLabel('starting_level', 'Starting level'),
+      min: 0,
+      step: 1,
+    },
+    {
+      type: FormFieldType.Number,
       controlName: 'baseBuildTimeSeconds',
       label: fieldLabel('base_build_time_seconds', 'Base build time (sec)'),
     },

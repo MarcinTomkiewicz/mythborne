@@ -4795,6 +4795,8 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - Save paths use approved DB/RPC/governance operations or are explicitly reported as blockers.
 - Build passes.
 
+**Implementation note:** O8 accepted on 2026-05-04 after reviewer follow-up and user smoke. The building admin editor now maps, displays and saves `starting_level` through the existing building editor path. `starting_level = 0` is an explicitly legal not-built definition state and is preserved through DB row mapping, reactive form draft conversion and save payloads instead of being normalized to `1`; `startingLevel = 2` continues to round-trip. The shared form field config now supports numeric `min`/`max`, with the starting-level input configured as `min=0` and `step=1`, and the save service rejects negative/non-integer starting levels without clamping. O8 reused existing admin layout, DB-backed metadata labels, building resource cost editing, entity bonus editing and formula assignment/preview paths. It did not add write paths for `building_district_level_caps` or `entity_requirements`; those remain governed/read-preview areas until an approved write boundary exists. Verification passed with `npx tsc --noEmit`, focused building/admin specs with 47 SUCCESS, and `npm run build` with known existing warnings. Codex did not run manual or route smoke.
+
 ---
 
 ## Task O9 — Estate vicinity/address browser and relocation picker UI

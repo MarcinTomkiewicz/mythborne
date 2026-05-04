@@ -14,6 +14,8 @@ export interface FormFieldConfig {
   options?: readonly FormSelectOption[];
   rows?: number;
   step?: string | number;
+  min?: string | number;
+  max?: string | number;
   readonly?: boolean;
   autocomplete?: string;
   showIcon?: boolean;

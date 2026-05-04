@@ -2,8 +2,10 @@ import { BONUS_ENTITY_TYPES } from '../constants/bonus-entity-types.const';
 import { BonusTemplate } from '../types/bonus.types';
 import { CanonicalEntityBonusWithTemplateRow } from '../types/bonus-governance.types';
 import { BonusImpactPreviewRpcRow } from '../types/building-impact-preview-rpc.types';
+import { EditableBuildingRow } from '../types/building-admin-row.types';
 import { BuildingProgressionPreviewRpcRow } from '../types/building-preview-rpc.types';
 import {
+  mapEditableBuilding,
   mapBuildingBonusImpactPreview,
   mapBuildingProgressionPreview,
   mapEditableBuildingEntityBonus,
@@ -12,6 +14,33 @@ import {
 } from './building-admin-mappers';
 
 describe('building admin mappers', () => {
+  it('maps current building editor fields including starting level', () => {
+    const building = mapEditableBuilding(
+      createEditableBuildingRow({
+        starting_level: 2,
+        base_build_time_seconds: 90,
+        max_level: 0,
+      }),
+      [],
+    );
+
+    expect(building).toEqual(jasmine.objectContaining({
+      key: 'market',
+      startingLevel: 2,
+      baseBuildTimeSeconds: 90,
+      maxLevel: 0,
+    }));
+  });
+
+  it('preserves starting level 0 from the DB row', () => {
+    const building = mapEditableBuilding(
+      createEditableBuildingRow({ starting_level: 0 }),
+      [],
+    );
+
+    expect(building.startingLevel).toBe(0);
+  });
+
   it('maps building bonus from canonical entity bonus rows', () => {
     const bonus = mapEditableBuildingEntityBonus(
       createEntityBonusRow({
@@ -161,6 +190,26 @@ describe('building admin mappers', () => {
     );
   });
 });
+
+function createEditableBuildingRow(
+  overrides: Partial<EditableBuildingRow> = {},
+): EditableBuildingRow {
+  return {
+    id: 'building-1',
+    key: 'market',
+    name: 'Market',
+    description: 'Trade building.',
+    image_path: null,
+    district_code: 'A',
+    sort_order: 10,
+    starting_level: 1,
+    base_cost: 100,
+    base_build_time_seconds: 60,
+    max_level: 10,
+    building_resource_costs: [],
+    ...overrides,
+  } as EditableBuildingRow;
+}
 
 function createEntityBonusRow(
   overrides: Partial<CanonicalEntityBonusWithTemplateRow> = {},
