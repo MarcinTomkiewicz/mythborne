@@ -57,23 +57,17 @@ export class MansionPageFacade {
   }
 
   toRequirementLabel(requirement: BuildingRequirementPreview): string {
-    if (requirement.type === 'hero_level') {
-      return 'Hero level';
-    }
-
-    if (requirement.type === 'hero_rank') {
-      return 'Hero rank';
-    }
-
-    return requirement.statLabel ?? requirement.statKey ?? 'Stat';
+    return requirement.label;
   }
 
   toRequirementValue(requirement: BuildingRequirementPreview): string {
+    const value = requirement.valueLabel;
+
     if (requirement.appliesFromLevel <= 1) {
-      return `${requirement.minValue}`;
+      return value;
     }
 
-    return `${requirement.minValue} from level ${requirement.appliesFromLevel}`;
+    return `${value} from level ${requirement.appliesFromLevel}`;
   }
 
   toDurationLabel(seconds: number | null): string {

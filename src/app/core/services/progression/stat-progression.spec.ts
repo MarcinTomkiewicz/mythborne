@@ -18,8 +18,8 @@ describe('StatProgressionService', () => {
             scopeKey: 'hero_progression',
             label: 'Hero stat upgrade cost',
             description: null,
-            allowedVariables: ['heroLevel', 'level', 'statLevel'],
-            defaultTestContext: { heroLevel: 1, level: 1, statLevel: 1 } as Record<string, number>,
+            allowedVariables: ['statCurrentLevel'],
+            defaultTestContext: { statCurrentLevel: 1 } as Record<string, number>,
             sortOrder: 10,
             createdAt: null,
           },
@@ -29,8 +29,8 @@ describe('StatProgressionService', () => {
             scopeKey: 'hero_progression',
             label: 'Hero stat level cap',
             description: null,
-            allowedVariables: ['heroLevel'],
-            defaultTestContext: { heroLevel: 1 } as Record<string, number>,
+            allowedVariables: ['currentLevel'],
+            defaultTestContext: { currentLevel: 1 } as Record<string, number>,
             sortOrder: 20,
             createdAt: null,
           },
@@ -41,7 +41,7 @@ describe('StatProgressionService', () => {
             key: 'hero-stat-upgrade-cost-default',
             scopeKey: 'hero_progression',
             label: 'Cost',
-            expression: 'roundUp(4 + level * 2 + pow(level, 1.45), 5)',
+            expression: 'roundUp(4 + statCurrentLevel * 2 + pow(statCurrentLevel, 1.45), 5)',
             description: null,
             isEnabled: true,
             createdAt: null,
@@ -52,7 +52,7 @@ describe('StatProgressionService', () => {
             key: 'hero-stat-level-cap-default',
             scopeKey: 'hero_progression',
             label: 'Cap',
-            expression: 'heroLevel + 4',
+            expression: 'currentLevel + 4',
             description: null,
             isEnabled: true,
             createdAt: null,
@@ -88,17 +88,15 @@ describe('StatProgressionService', () => {
 
   it('returns a next level cost from the active formula', () => {
     expect(
-      service.getNextLevelCost(1, 'roundUp(4 + statLevel * 2 + heroLevel, 5)', {
-        heroLevel: 3,
-        statLevel: 1,
+      service.getNextLevelCost(1, 'roundUp(4 + statCurrentLevel * 2, 5)', {
         target: {
           id: 'target-cost',
           key: 'hero_stat_upgrade_cost',
           scopeKey: 'hero_progression',
           label: 'Hero stat upgrade cost',
           description: null,
-          allowedVariables: ['heroLevel', 'level', 'statLevel'],
-          defaultTestContext: { heroLevel: 1, level: 1, statLevel: 1 },
+          allowedVariables: ['statCurrentLevel'],
+          defaultTestContext: { statCurrentLevel: 1 },
           sortOrder: 10,
           createdAt: null,
         },
@@ -106,19 +104,17 @@ describe('StatProgressionService', () => {
     ).toBe(10);
   });
 
-  it('passes heroLevel, level and statLevel to the stat upgrade cost formula', () => {
+  it('passes statCurrentLevel to the stat upgrade cost formula', () => {
     expect(
-      service.getNextLevelCost(4, 'heroLevel + level + statLevel', {
-        heroLevel: 3,
-        statLevel: 5,
+      service.getNextLevelCost(4, 'statCurrentLevel * 3', {
         target: {
           id: 'target-cost',
           key: 'hero_stat_upgrade_cost',
           scopeKey: 'hero_progression',
           label: 'Hero stat upgrade cost',
           description: null,
-          allowedVariables: ['heroLevel', 'level', 'statLevel'],
-          defaultTestContext: { heroLevel: 1, level: 1, statLevel: 1 },
+          allowedVariables: ['statCurrentLevel'],
+          defaultTestContext: { statCurrentLevel: 1 },
           sortOrder: 10,
           createdAt: null,
         },
@@ -136,8 +132,8 @@ describe('StatProgressionService', () => {
             scopeKey: 'hero_progression',
             label: 'Hero stat upgrade cost',
             description: null,
-            allowedVariables: ['heroLevel', 'level', 'statLevel'],
-            defaultTestContext: { heroLevel: 1, level: 1, statLevel: 1 },
+            allowedVariables: ['statCurrentLevel'],
+            defaultTestContext: { statCurrentLevel: 1 },
             sortOrder: 10,
             createdAt: null,
           },
@@ -147,8 +143,8 @@ describe('StatProgressionService', () => {
             scopeKey: 'hero_progression',
             label: 'Hero stat level cap',
             description: null,
-            allowedVariables: ['heroLevel'],
-            defaultTestContext: { heroLevel: 1 },
+            allowedVariables: ['currentLevel'],
+            defaultTestContext: { currentLevel: 1 },
             sortOrder: 20,
             createdAt: null,
           },
@@ -159,7 +155,7 @@ describe('StatProgressionService', () => {
             key: 'hero-stat-level-cap-default',
             scopeKey: 'hero_progression',
             label: 'Cap',
-            expression: 'heroLevel + 4',
+            expression: 'currentLevel + 4',
             description: null,
             isEnabled: true,
             createdAt: null,
@@ -195,8 +191,8 @@ describe('StatProgressionService', () => {
             scopeKey: 'hero_progression',
             label: 'Hero stat upgrade cost',
             description: null,
-            allowedVariables: ['heroLevel', 'level', 'statLevel'],
-            defaultTestContext: { heroLevel: 1, level: 1, statLevel: 1 },
+            allowedVariables: ['statCurrentLevel'],
+            defaultTestContext: { statCurrentLevel: 1 },
             sortOrder: 10,
             createdAt: null,
           },
@@ -206,8 +202,8 @@ describe('StatProgressionService', () => {
             scopeKey: 'hero_progression',
             label: 'Hero stat level cap',
             description: null,
-            allowedVariables: ['heroLevel'],
-            defaultTestContext: { heroLevel: 1 },
+            allowedVariables: ['currentLevel'],
+            defaultTestContext: { currentLevel: 1 },
             sortOrder: 20,
             createdAt: null,
           },
@@ -218,7 +214,7 @@ describe('StatProgressionService', () => {
             key: 'hero-stat-upgrade-cost-default',
             scopeKey: 'hero_progression',
             label: 'Cost',
-            expression: 'heroLevel + level + statLevel',
+            expression: 'statCurrentLevel',
             description: null,
             isEnabled: true,
             createdAt: null,
@@ -244,32 +240,32 @@ describe('StatProgressionService', () => {
     );
   });
 
-  it('returns a project cap based on hero level', () => {
+  it('returns a project cap based on current level', () => {
     const target = {
       id: 'target-cap',
       key: 'hero_stat_level_cap',
       scopeKey: 'hero_progression',
       label: 'Hero stat level cap',
       description: null,
-      allowedVariables: ['heroLevel'],
-      defaultTestContext: { heroLevel: 1 } as Record<string, number>,
+      allowedVariables: ['currentLevel'],
+      defaultTestContext: { currentLevel: 1 } as Record<string, number>,
       sortOrder: 20,
       createdAt: null,
     };
-    expect(service.getStatCap(1, 'heroLevel + 4', target)).toBe(5);
-    expect(service.getStatCap(5, 'heroLevel + 4', target)).toBe(9);
+    expect(service.getStatCap(1, 'currentLevel + 4', target)).toBe(5);
+    expect(service.getStatCap(5, 'currentLevel + 4', target)).toBe(9);
   });
 
-  it('passes heroLevel to the stat level cap formula', () => {
+  it('passes currentLevel to the stat level cap formula', () => {
     expect(
-      service.getStatCap(7, 'heroLevel * 2', {
+      service.getStatCap(7, 'currentLevel * 2', {
         id: 'target-cap',
         key: 'hero_stat_level_cap',
         scopeKey: 'hero_progression',
         label: 'Hero stat level cap',
         description: null,
-        allowedVariables: ['heroLevel'],
-        defaultTestContext: { heroLevel: 1 },
+        allowedVariables: ['currentLevel'],
+        defaultTestContext: { currentLevel: 1 },
         sortOrder: 20,
         createdAt: null,
       })

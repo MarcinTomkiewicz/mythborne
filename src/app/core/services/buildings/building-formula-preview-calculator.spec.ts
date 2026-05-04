@@ -23,7 +23,7 @@ describe('BuildingFormulaPreviewCalculator', () => {
       building: createBuilding(),
       rules: {
         costExpression: 'baseCost',
-        timeExpression: 'baseTime',
+        timeExpression: 'baseTimeSeconds',
         bonusExpression: 'baseBonus',
       },
       costs: [
@@ -39,12 +39,34 @@ describe('BuildingFormulaPreviewCalculator', () => {
     ]);
   });
 
+  it('builds preview variables from current and target level without legacy level', () => {
+    const preview = calculator.singleLevelPreview(0, {
+      building: createBuilding(),
+      rules: {
+        costExpression: 'baseCost + currentLevel + targetLevel',
+        timeExpression: 'baseTimeSeconds + currentLevel + targetLevel',
+        bonusExpression: 'baseBonus + currentLevel',
+      },
+      costs: [
+        { id: null, resourceType: 'drachma', baseValue: 100, appliesFromLevel: 1 },
+      ],
+      bonuses: [],
+    });
+
+    expect(preview.currentLevel).toBe(0);
+    expect(preview.targetLevel).toBe(1);
+    expect(preview.nextCosts).toEqual([
+      { resourceType: 'drachma', amount: 101, reason: null },
+    ]);
+    expect(preview.nextTime).toBe(11);
+  });
+
   it('explains when no editable cost row applies to the preview level', () => {
     const preview = calculator.singleLevelPreview(1, {
       building: createBuilding(),
       rules: {
         costExpression: 'baseCost',
-        timeExpression: 'baseTime',
+        timeExpression: 'baseTimeSeconds',
         bonusExpression: 'baseBonus',
       },
       costs: [{ id: null, resourceType: 'drachma', baseValue: 100, appliesFromLevel: 5 }],
@@ -53,7 +75,7 @@ describe('BuildingFormulaPreviewCalculator', () => {
 
     expect(preview.nextCosts).toEqual([]);
     expect(preview.costUnavailableReason).toBe(
-      'No editable resource cost row applies to level 2. The first configured row starts at level 5.',
+      'No editable resource cost row applies to targetLevel 2. The first configured row starts at level 5.',
     );
   });
 });

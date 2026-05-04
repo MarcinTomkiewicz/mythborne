@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-05-03
+Updated: 2026-05-04
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -157,7 +157,9 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: O1 - DB/types alignment after estate foundation cleanup.
 - Completed and confirmed: O2 - Estate address and capacity read layer.
 - Completed and confirmed: O3 - Empty-address relocation flow through the Vicinity picker.
-- Next backlog task: O4 - Building catalog and estate building read layer from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
+- Completed and conditionally accepted: O4 - Building catalog and estate building read layer, including the formula editor/tester variable-contract follow-up after BUILDING-FORMULA-DB-FIX2/FIX3.
+- Next backlog task: O5 - Building job read layer and lazy finalization from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
+- Formula balance refactor follow-up: before the next larger item generation/formula balance task, split `ItemGenerationFormulaBalanceFacade` further. It remains about 447 lines after the accepted variable-contract fix and must not absorb more workflow responsibilities.
 - N13 pending validation: representative XP producer smoke remains pending until a real XP-producing flow exists or is intentionally selected; user/manual validation remains separate from technical green checks and must not be claimed by Codex.
 - N12 DB/content cleanup follow-up: replace remaining formula target `hero points` wording with `Character Points`; confirm and align stat upgrade default test context keys (`hero_level`/`stat_level` vs allowed `heroLevel`/`statLevel`); seed the currently reported progression UI metadata gaps. Do not hide these with frontend fallback labels or fallback contexts.
 - N9 follow-up: if progression history receives more enrichment slices, consider extracting a dedicated enrichment service.

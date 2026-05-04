@@ -13,6 +13,10 @@ export type BuildingPayload = {
 
 export type MansionBuildingRow = Row<'buildings'>;
 export type EstateBuildingRow = Row<'estate_buildings'>;
+export type BuildingDistrictLevelCapRow = Row<'building_district_level_caps'>;
 export type MansionBuildingResourceCostRow = Row<'building_resource_costs'>;
+export type MansionBuildingRequirementRow = Row<'entity_requirements'> & {
+  requirement_definitions: Row<'requirement_definitions'> | null;
+};
 export type DistrictRow = Row<'estate_districts'>;
 export type StatLabelRow = Pick<Row<'stats'>, 'key' | 'label'>;

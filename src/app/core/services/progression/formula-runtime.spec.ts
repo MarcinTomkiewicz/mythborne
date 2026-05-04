@@ -10,8 +10,8 @@ describe('FormulaRuntimeService', () => {
   });
 
   it('evaluates formulas with whitelisted helpers', () => {
-    const result = service.evaluate('roundUp(4 + level * 2 + pow(level, 2), 5)', {
-      level: 3,
+    const result = service.evaluate('roundUp(4 + currentLevel * 2 + pow(currentLevel, 2), 5)', {
+      currentLevel: 3,
     });
 
     expect(result.error).toBeNull();
@@ -19,7 +19,7 @@ describe('FormulaRuntimeService', () => {
   });
 
   it('rejects unknown identifiers', () => {
-    const result = service.evaluate('fetch(level)', { level: 3 });
+    const result = service.evaluate('fetch(currentLevel)', { currentLevel: 3 });
 
     expect(result.value).toBeNull();
     expect(result.error).toContain('Unknown token');
@@ -36,7 +36,7 @@ describe('FormulaRuntimeService', () => {
     expect(ranged.error).toBeNull();
     expect(ranged.value).toBe(12.5);
     expect(service.isNonDeterministic('round(random(1, 6))')).toBeTrue();
-    expect(service.isNonDeterministic('round(level * 1.2)')).toBeFalse();
+    expect(service.isNonDeterministic('round(currentLevel * 1.2)')).toBeFalse();
   });
 
   it('rejects unsupported random arity with a specific validation error', () => {

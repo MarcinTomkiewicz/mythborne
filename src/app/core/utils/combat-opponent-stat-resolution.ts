@@ -9,16 +9,12 @@ import {
 } from '../domain/combat/combat-opponent.model';
 import { opponentLevel } from './combat-opponent-range';
 
-export function scalingContext(baseValue: number, input: ResolveCombatOpponentInput) {
-  const level = opponentLevel(input);
+export function scalingVariables(baseValue: number, input: ResolveCombatOpponentInput) {
+  const currentLevel = opponentLevel(input);
 
   return {
     baseValue,
-    baselineValue: baseValue,
-    statBaseValue: baseValue,
-    heroLevel: input.heroLevel,
-    opponentLevel: level,
-    level,
+    currentLevel,
     difficultyMultiplier: input.difficultyMultiplier,
   };
 }

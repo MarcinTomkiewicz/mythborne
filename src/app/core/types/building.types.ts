@@ -26,11 +26,12 @@ export interface BuildingResourceCostTotal {
 }
 
 export interface BuildingRequirementPreview {
-  type: BuildingRequirementType;
-  statKey: string | null;
-  statLabel: string | null;
-  minValue: number;
+  requirementDefinitionKey: string;
+  label: string;
+  valueLabel: string;
+  description: string | null;
   appliesFromLevel: number;
+  sortOrder: number;
 }
 
 export interface BuildingFormulaOverrides {
@@ -47,8 +48,13 @@ export interface MansionBuilding {
   imagePath: string | null;
   districtCode: string;
   districtUnlockRank: number;
+  rankRequired: number;
   sortOrder: number;
+  startingLevel: number;
+  baseCost: number;
   maxLevel: number;
+  effectiveMaxLevel: number;
+  isUnlimited: boolean;
   currentLevel: number;
   nextLevel: number;
   baseBuildTimeSeconds: number;

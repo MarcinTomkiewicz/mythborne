@@ -4604,6 +4604,8 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - Legacy building requirements are not referenced.
 - No direct mutation is added.
 
+**Implementation note:** O4 was conditionally accepted on 2026-05-04 after user smoke/review and the formula-variable follow-up after BUILDING-FORMULA-DB-FIX2/FIX3. The player mansion/building read layer uses the current estate address, seconds-based build times, level 0/unbuilt rows, central `entity_requirements`, DB-backed stat labels for `hero_stat` requirement display, and canonical building formula preview variables. Formula tester/scope variables for building targets now come from the selected target contract: `building_upgrade_cost` uses `currentLevel`, `targetLevel`, `baseCost`, `rank`; `building_upgrade_time` uses `currentLevel`, `targetLevel`, `baseTimeSeconds`, `rank`; `hero_stat_upgrade_cost` keeps `statCurrentLevel` isolated. `currentLevel -> targetLevel` sync and derived `targetLevel` display are handled in frontend preview/tester code only; durable building upgrade remains backend/RPC-owned through the canonical upgrade workflow. No DB/RPC/migration/generated-type edit, direct write path, legacy variable fallback mapping, legacy requirements read, or manual/route smoke by Codex was introduced. Follow-up: `ItemGenerationFormulaBalanceFacade` remains about 447 lines and must be split further before the next larger item generation/formula balance task adds responsibilities.
+
 ---
 
 ## Task O5 — Building job read layer and lazy finalization
@@ -5981,7 +5983,714 @@ Reports have their own Reports Center and unread state. Toasts are presentation 
 
 ---
 
+# Epic R — PvP Foundation
 
+Epic R implements the frontend and admin/balancer integration for the current DB-owned PvP Foundation.
+
+PvP Foundation covers:
+
+- estate/vicinity based player target selection;
+- attack and spy action start;
+- central runtime activity display for PvP attack/spy;
+- durable spy result display;
+- durable PvP attack result display;
+- PvP combat report integration;
+- after-the-fact PvP notification routing;
+- admin/balancer surfaces for PvP targeting, travel, protection, resources, rewards, Prestige context, reports and anti-abuse explainability.
+
+PvP Foundation is not:
+
+- a guild/siege implementation;
+- a generic formula editor cleanup epic;
+- a generic notification epic;
+- a generic reports epic;
+- an item/equipment mutation epic;
+- a combat engine rewrite;
+- a relocation/empty-address browser epic.
+
+**Current DB/RPC foundation expected before Codex starts R tasks:**
+
+- generated `database.types.ts` is regenerated after the latest PvP and formula-variable DB migrations;
+- `get_pvp_target_candidates(...)`;
+- `start_pvp_action(...)`;
+- `get_my_pvp_spy_result(...)`;
+- `get_my_pvp_attack_result(...)`;
+- `get_hero_active_runtime_activity(...)`;
+- `get_ui_metadata_entries(...)`;
+- current notification read/action RPCs;
+- current report read path;
+- tables/dictionaries:
+  - `pvp_action_kinds`;
+  - `pvp_action_statuses`;
+  - `pvp_actions`;
+  - `pvp_target_protections`;
+  - `pvp_spy_results`;
+  - `pvp_attack_outcome_kinds`;
+  - `pvp_attack_results`;
+  - `game_report_types`;
+  - `notification_types`;
+  - `anti_abuse_signal_types`;
+- metadata namespaces:
+  - `pvp_configurator_section`;
+  - `pvp_runtime_section`;
+  - `pvp_targeting_section`;
+  - `pvp_spy_section`;
+  - `pvp_reward_section`;
+  - `pvp_resource_transfer_section`;
+  - `pvp_anti_abuse_section`;
+  - `pvp_report_section`.
+
+**Epic rules:**
+
+- Use `/game/vicinity` for the PvP target surface.
+- Do not add `/game/neighborhood`.
+- Do not assume `hero.id === auth.uid()`.
+- Use selected server and active hero context for player-owned PvP reads.
+- Frontend must not directly insert, update or delete PvP, combat, report, notification, reward, resource, protection or anti-abuse rows.
+- Start attack/spy only through `start_pvp_action(...)`.
+- Load PvP target candidates only through `get_pvp_target_candidates(...)`.
+- Load spy results only through `get_my_pvp_spy_result(...)`.
+- Load attack results only through `get_my_pvp_attack_result(...)`.
+- Do not call DB internal producer helpers from Angular.
+- Do not create frontend fallbacks for missing DB contracts.
+- Do not create incoming attack notifications.
+- Do not create target spy notifications.
+- Do not expose staff/admin/anti-abuse internals in player-facing PvP UI.
+- Do not use `hero_derived`.
+- PvP target selection is not a combat preview screen.
+- PvP target selection is not a combat log screen.
+- Ordinary PvP does not transfer items, buildings, Character Points or estate ownership.
+- PvP resource consequences are limited to `drachma`, `materials` and `workforce`.
+- Character Points come from XP through progression, not from a separate PvP CP reward.
+- Prestige is future context only until a dedicated Prestige epic exists.
+- Relationship declarations, including `mercenary_contract`, are anti-abuse context only and must not suppress signals.
+
+---
+
+## Task R0 — Generated DB types alignment
+
+**Goal:** Align frontend generated DB types with the current PvP DB/RPC contract.
+
+**Scope:**
+
+- Regenerate generated Supabase DB types.
+- Fix compile errors caused by changed PvP and formula-variable contracts.
+- Confirm frontend code consumes current RPC signatures and generated table/function types.
+- Do not edit generated DB types manually.
+
+**Acceptance criteria:**
+
+- Frontend compiles against regenerated types.
+- PvP services can type RPC calls without local hand-written DB row substitutes.
+- Old generated-type assumptions do not remain in PvP code.
+
+---
+
+## Task R1 — PvP domain models
+
+**Goal:** Add typed frontend domain models for PvP player and admin surfaces.
+
+**Scope:**
+
+- Add domain models for:
+  - PvP target candidate;
+  - PvP action start result;
+  - PvP runtime activity summary;
+  - PvP spy result;
+  - PvP attack result;
+  - PvP report link/context;
+  - PvP dictionary/metadata items where needed.
+- Keep player-facing and admin-facing models distinct where needed.
+- Keep generated DB rows out of components.
+
+**Acceptance criteria:**
+
+- PvP UI uses domain models instead of raw RPC payloads in components.
+- Player-facing models do not expose anti-abuse or staff-only fields.
+
+---
+
+## Task R2 — PvP mappers
+
+**Goal:** Map current DB/RPC PvP payloads into the R1 domain models.
+
+**Scope:**
+
+- Map:
+  - target eligibility flags;
+  - target reason keys;
+  - travel/protection seconds;
+  - spy snapshot sections;
+  - attack outcome;
+  - resource consequence summary;
+  - XP/reward summary;
+  - report context;
+  - notification route context where needed.
+
+**Acceptance criteria:**
+
+- Null/optional metadata fields are handled safely.
+- Mapping preserves enough information for both player UI and admin read-only surfaces.
+- No anti-abuse metadata leaks into player-facing models.
+
+---
+
+## Task R3 — PvP player RPC service
+
+**Goal:** Add the player PvP service boundary.
+
+**Scope:**
+
+- Add service methods for:
+  - `get_pvp_target_candidates(...)`;
+  - `start_pvp_action(...)`;
+  - `get_my_pvp_spy_result(...)`;
+  - `get_my_pvp_attack_result(...)`.
+- Use selected server and active hero context.
+- Surface RPC errors clearly.
+- Do not query or mutate PvP tables directly from Angular.
+
+**Acceptance criteria:**
+
+- Player PvP reads and actions go through canonical RPCs.
+- Service code does not assume `hero.id === auth.uid()`.
+- Service code does not call internal producer helpers.
+
+---
+
+## Task R4 — PvP metadata read layer
+
+**Goal:** Add read access to DB-backed PvP metadata for player/admin explainability.
+
+**Scope:**
+
+- Load PvP metadata through `get_ui_metadata_entries(...)`.
+- Support the current PvP metadata namespaces:
+  - `pvp_configurator_section`;
+  - `pvp_runtime_section`;
+  - `pvp_targeting_section`;
+  - `pvp_spy_section`;
+  - `pvp_reward_section`;
+  - `pvp_resource_transfer_section`;
+  - `pvp_anti_abuse_section`;
+  - `pvp_report_section`.
+- Map metadata entries to shared UI metadata models.
+
+**Acceptance criteria:**
+
+- PvP screens can use DB-backed labels/help text where available.
+- Missing metadata does not become a gameplay fallback.
+
+---
+
+## Task R5 — Vicinity page route
+
+**Goal:** Add the player-facing PvP target route.
+
+**Scope:**
+
+- Add `/game/vicinity`.
+- Use existing game shell/page layout patterns.
+- Render loading, empty and invariant/error states.
+- Do not add `/game/neighborhood`.
+
+**Acceptance criteria:**
+
+- Player can navigate to `/game/vicinity`.
+- Missing active hero/current estate is shown as an invariant/error state, not masked with fake data.
+- Route uses existing player access guards.
+
+---
+
+## Task R6 — Vicinity navigation entry
+
+**Goal:** Add navigation to the Vicinity page.
+
+**Scope:**
+
+- Add player navigation/sidebar entry labeled `Vicinity`.
+- Link to `/game/vicinity`.
+- Preserve existing route guard behavior.
+- Do not rename unrelated mansion/estate routes.
+
+**Acceptance criteria:**
+
+- Vicinity is reachable from player navigation.
+- No `Neighborhood` player route/label is introduced.
+
+---
+
+## Task R7 — Vicinity target candidate state
+
+**Goal:** Add state/facade for loading PvP target candidates.
+
+**Scope:**
+
+- Load candidates for the active hero through PvP player service.
+- Support the UI’s current needs for:
+  - loading;
+  - error;
+  - empty state;
+  - district filter;
+  - search;
+  - pagination.
+- Guard async responses by active hero/server context.
+
+**Acceptance criteria:**
+
+- Candidate state is driven by `get_pvp_target_candidates(...)`.
+- Frontend does not recompute PvP eligibility independently.
+- Stale responses cannot overwrite current active hero/server state.
+
+---
+
+## Task R8 — Vicinity target list UI
+
+**Goal:** Render PvP target candidates in the Vicinity page.
+
+**Scope:**
+
+- Render occupied target rows/cards.
+- Show:
+  - target hero display name;
+  - target estate address;
+  - target level;
+  - distance score where useful;
+  - attack travel time;
+  - spy travel time;
+  - protection state;
+  - attack/spy eligibility.
+- Current/self row must not be attackable if present.
+- Empty plots are not PvP attack targets.
+
+**Acceptance criteria:**
+
+- Target list uses RPC candidate data.
+- Target rows do not expose private account/staff fields.
+- Target selection does not show combat preview/log.
+
+---
+
+## Task R9 — Vicinity eligibility reason display
+
+**Goal:** Show readable attack/spy disabled reasons.
+
+**Scope:**
+
+- Display reason states for:
+  - attacker busy;
+  - target protected;
+  - target below level range;
+  - target above level range;
+  - action unavailable.
+- Use DB-backed labels/metadata where available.
+- Keep raw reason keys secondary.
+
+**Acceptance criteria:**
+
+- Disabled attack/spy states are understandable.
+- Eligibility display matches RPC output.
+
+---
+
+## Task R10 — Start spy action
+
+**Goal:** Start a spy action from the Vicinity target list.
+
+**Scope:**
+
+- Call `start_pvp_action(...)` with action kind `spy`.
+- Disable duplicate submit while pending.
+- Refresh runtime activity after success.
+- Refresh candidate state where useful.
+- Use existing success/error message patterns.
+
+**Acceptance criteria:**
+
+- Spy starts through canonical RPC.
+- No target spy notification is created or implied by frontend.
+- No direct PvP table write is introduced.
+
+---
+
+## Task R11 — Start attack action
+
+**Goal:** Start an attack action from the Vicinity target list.
+
+**Scope:**
+
+- Call `start_pvp_action(...)` with action kind `attack`.
+- Show confirmation copy if current UI pattern requires it.
+- Disable duplicate submit while pending.
+- Refresh runtime activity after success.
+- Refresh candidate/protection state after success.
+
+**Acceptance criteria:**
+
+- Attack starts through canonical RPC.
+- Frontend does not create incoming attack notification UI.
+- No direct PvP table write is introduced.
+
+---
+
+## Task R12 — PvP runtime activity display
+
+**Goal:** Display active PvP attack/spy runtime state through the shared runtime activity model.
+
+**Scope:**
+
+- Reuse `get_hero_active_runtime_activity(...)` read path.
+- Display active `pvp_attack` or `pvp_spy` state in relevant player surfaces.
+- Include arrival/deadline data where available.
+- Do not create a separate PvP busy flag.
+
+**Acceptance criteria:**
+
+- PvP runtime state is visible to the player.
+- Exploration and PvP use the same central runtime model.
+
+---
+
+## Task R13 — Spy result read state
+
+**Goal:** Add state/facade for reading one durable spy result.
+
+**Scope:**
+
+- Read through `get_my_pvp_spy_result(...)`.
+- Handle:
+  - loading;
+  - missing result;
+  - no access;
+  - RPC error.
+- Map result data through PvP spy result mapper.
+
+**Acceptance criteria:**
+
+- Spy result reads use the owner-safe RPC.
+- State does not guess result ownership or target data.
+
+---
+
+## Task R14 — Spy result UI
+
+**Goal:** Add player-facing spy result display.
+
+**Scope:**
+
+- Display safe spy snapshot sections:
+  - target summary;
+  - base stats;
+  - resources;
+  - equipment snapshot if present;
+  - estate/building snapshot.
+- Do not expose:
+  - active exploration state;
+  - active PvP runtime state;
+  - staff/admin internals;
+  - anti-abuse internals.
+
+**Acceptance criteria:**
+
+- Spy result is readable and player-safe.
+- Target hero does not get implied access or notification.
+
+---
+
+## Task R15 — Attack result read state
+
+**Goal:** Add state/facade for reading one PvP attack result.
+
+**Scope:**
+
+- Read through `get_my_pvp_attack_result(...)`.
+- Handle:
+  - loading;
+  - missing result;
+  - no access;
+  - RPC error.
+- Map:
+  - outcome;
+  - resource context;
+  - reward context;
+  - Prestige future context;
+  - report context.
+
+**Acceptance criteria:**
+
+- Attack result reads use the owner-safe RPC.
+- Player state does not expose anti-abuse metadata.
+
+---
+
+## Task R16 — Attack result UI
+
+**Goal:** Add player-facing PvP attack result display.
+
+**Scope:**
+
+- Display:
+  - outcome;
+  - attacker/defender role labels;
+  - resource consequence summary;
+  - XP/reward summary;
+  - report link if available.
+- Prestige context may be shown only as future/non-final context.
+- Do not show item/building/estate/CP transfer as ordinary PvP consequences.
+
+**Acceptance criteria:**
+
+- PvP attack result is understandable after the fact.
+- Display matches DB result context.
+
+---
+
+## Task R17 — PvP report integration
+
+**Goal:** Integrate `pvp_combat` reports into the existing Reports UI.
+
+**Scope:**
+
+- Handle report type `pvp_combat`.
+- Handle report source `pvp_result`.
+- Render combat section through existing report data path.
+- Preserve report access rules.
+- Do not duplicate combat result attacks in frontend state.
+
+**Acceptance criteria:**
+
+- PvP combat reports are readable through the Reports UI.
+- Player-facing report wrapper is `pvp_result`.
+
+---
+
+## Task R18 — PvP notification routing
+
+**Goal:** Route PvP notifications to the correct player surfaces.
+
+**Scope:**
+
+- Handle:
+  - `pvp.attack_result.attacker`;
+  - `pvp.attack_result.defender`;
+  - `pvp.spy_result.ready`.
+- Route attack result notifications to result/report surface.
+- Route spy result notifications to spy result/PvP surface.
+- Use existing notification center/action link patterns.
+
+**Acceptance criteria:**
+
+- PvP notification actions are useful.
+- No incoming attack notification behavior is introduced.
+- No target spy notification behavior is introduced.
+
+---
+
+## Task R19 — PvP admin overview
+
+**Goal:** Add read-only admin/balancer overview for PvP Foundation.
+
+**Scope:**
+
+- Show high-level PvP foundation sections from DB metadata.
+- Summarize:
+  - action kinds;
+  - targeting;
+  - runtime;
+  - spy;
+  - resources;
+  - rewards;
+  - reports;
+  - anti-abuse.
+- Use existing admin layout patterns.
+
+**Acceptance criteria:**
+
+- Admin overview is DB metadata backed.
+- Overview does not imply unimplemented siege/guild/Prestige functionality exists.
+
+---
+
+## Task R20 — PvP action lifecycle admin surface
+
+**Goal:** Show PvP action kinds and action statuses in admin/balancer UI.
+
+**Scope:**
+
+- Display `pvp_action_kinds`.
+- Display `pvp_action_statuses`.
+- Show active/future state for attack, spy and siege.
+- Show blocking/terminal lifecycle meaning where available.
+
+**Acceptance criteria:**
+
+- Admin can understand PvP action lifecycle.
+- Siege is clearly future/inactive.
+
+---
+
+## Task R21 — PvP targeting/protection balancer surface
+
+**Goal:** Add admin/balancer surface for PvP target eligibility and protection.
+
+**Scope:**
+
+- Show attack min/max target level formula targets.
+- Show target protection formula target.
+- Show target protection metadata/explanation.
+- Show one-incoming-attack rule explanation from DB metadata.
+- Use existing formula admin/read patterns.
+
+**Acceptance criteria:**
+
+- Balancer can inspect targeting/protection configuration.
+- UI does not hardcode formula variables or expressions.
+
+---
+
+## Task R22 — PvP travel/manual-window balancer surface
+
+**Goal:** Add admin/balancer surface for PvP travel and manual fight timing.
+
+**Scope:**
+
+- Show attack travel time formula target.
+- Show spy travel time formula target.
+- Show manual fight window formula target.
+- Display seconds units clearly.
+- Use existing formula admin/read patterns.
+
+**Acceptance criteria:**
+
+- Balancer can inspect travel/manual window configuration.
+- Time unit is clear.
+
+---
+
+## Task R23 — PvP resource consequence balancer surface
+
+**Goal:** Add admin/balancer surface for PvP resource consequences.
+
+**Scope:**
+
+- Show eligible resources:
+  - drachma;
+  - materials;
+  - workforce.
+- Show attacker victory transfer formula.
+- Show defender victory attacker-loss sink formula.
+- Show ordinary PvP forbidden consequence boundaries.
+
+**Acceptance criteria:**
+
+- Balancer can inspect resource consequence settings.
+- UI does not imply CP/item/building/estate transfer.
+
+---
+
+## Task R24 — PvP XP/reward balancer surface
+
+**Goal:** Add admin/balancer surface for PvP XP reward routing.
+
+**Scope:**
+
+- Show PvP reward outcomes:
+  - attacker_victory;
+  - defender_victory;
+  - draw.
+- Show reward profile assignments for PvP outcomes.
+- Show `pvp_xp_reward` formula target.
+- Explain CP derived from XP.
+
+**Acceptance criteria:**
+
+- Balancer can inspect PvP reward routing.
+- UI does not imply standalone PvP CP rewards.
+
+---
+
+## Task R25 — PvP Prestige context admin surface
+
+**Goal:** Add read-only admin/balancer surface for future PvP Prestige context.
+
+**Scope:**
+
+- Show `pvp_prestige_delta_context`.
+- Show:
+  - recipientLevel;
+  - opponentLevel;
+  - opponentLevelDelta;
+  - outcomeMultiplier.
+- Make clear this is future context only.
+
+**Acceptance criteria:**
+
+- Prestige context is understandable.
+- UI does not claim hidden Prestige points/ranks are implemented.
+
+---
+
+## Task R26 — PvP anti-abuse explainability surface
+
+**Goal:** Add staff/admin explainability for PvP anti-abuse signals.
+
+**Scope:**
+
+- Show:
+  - `same_ip_pvp_attack`;
+  - `pvp_feeding_pattern`;
+  - relationship declaration context;
+  - `mercenary_contract` as context, not allowlist.
+- Make clear signals are review aids only.
+- Do not expose raw IP/device identifiers.
+
+**Acceptance criteria:**
+
+- Staff/admin can understand PvP anti-abuse signal meaning.
+- UI does not imply automatic punishment or declaration-based suppression.
+
+---
+
+## Task R27 — PvP report producer admin surface
+
+**Goal:** Add admin read-only surface explaining PvP report production.
+
+**Scope:**
+
+- Show `pvp_combat` report type.
+- Show `source_entity_type = pvp_result`.
+- Show that combat section resolves through linked combat result.
+- Explain that combat attacks are not duplicated into report tables.
+
+**Acceptance criteria:**
+
+- Admin can understand PvP report wrapping.
+- UI does not imply low-level combat report duplication.
+
+---
+
+## Task R28 — PvP foundation diagnostic admin surface
+
+**Goal:** Add admin read-only surface for PvP foundation diagnostics if project architecture supports it.
+
+**Scope:**
+
+- Display `inspect_pvp_foundation_integration_state(...)` through an approved admin/service boundary.
+- Show:
+  - structural status;
+  - formula status;
+  - missing functions/triggers;
+  - incoming notification count;
+  - positive smoke prerequisites.
+- If browser access to this service-only diagnostic is not allowed, show a clear backend/admin dependency instead.
+
+**Acceptance criteria:**
+
+- Admin can understand current PvP foundation readiness.
+- No service-role secret is exposed to the browser.
+- No test data is created.
+
+---
 
 # Epic S — Requirements and building district caps
 

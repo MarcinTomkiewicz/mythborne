@@ -72,16 +72,26 @@
 
           @if (editableVariables().length > 0) {
             <div class="mg-surface-card p-md flex-col gap-md">
-              <p class="card-legend mb-0">Context variables</p>
+              <p class="card-legend mb-0">Input variables</p>
+              @if (derivedTargetLevel() !== null) {
+                <div class="flex-row-between-center gap-md muted-text">
+                  <strong class="heading-color">targetLevel</strong>
+                  <span>{{ derivedTargetLevel() }}</span>
+                </div>
+              }
               <div class="mg-grid grid-cols-2 grid-cols-1-xs gap-md w-100">
                 @for (variable of editableVariables(); track variable) {
                   <label class="flex-col gap-sm">
-                    <span class="muted-text">{{ variable }}</span>
+                    <span
+                      class="muted-text"
+                      [pTooltip]="variableHelpText(variable)"
+                      tooltipPosition="top"
+                    >{{ variable }}</span>
                     <input
                       pInputText
                       type="number"
                       class="w-100"
-                      [formControl]="contextControl(variable)"
+                      [formControl]="variableControl(variable)"
                     />
                   </label>
                 }
@@ -89,8 +99,15 @@
             </div>
           } @else {
             <p class="muted-text mb-0">
-              The selected formula target has no additional context variables beyond the sweep variable.
+              The selected formula target has no additional input variables beyond the sweep variable.
             </p>
+          }
+
+          @if (buildingTargetLevelWarning(); as warning) {
+            <div class="mg-surface-card p-md flex-col gap-xs">
+              <strong class="heading-color">Building preview warning</strong>
+              <span class="muted-text">{{ warning }}</span>
+            </div>
           }
 
           <div class="mg-surface-card p-md flex-col gap-sm">
@@ -118,7 +135,7 @@
             <div class="flex-col gap-xs">
               <p class="card-legend mb-0">Output table</p>
               <strong class="heading-color">
-                {{ sweepVariable() }} {{ formValue().fromValue }} -> {{ formValue().toValue }}
+                {{ outputSummary() }}
               </strong>
               @if (isSelectedFormulaNonDeterministic()) {
                 <span class="muted-text">

@@ -5,6 +5,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { FormFields } from '../../../shared/form-fields/form-fields';
 import { ItemGenerationBalancePageFacade } from '../../../core/services/items/item-generation-balance-page.facade';
 import { createFormulaAssignmentFields } from '../../../core/config/forms/balance-form.config';
+import { humanizeFormulaScope } from './formula-library-helpers';
 
 @Component({
   selector: 'app-formula-assignment-balance-section',
@@ -18,7 +19,7 @@ export class FormulaAssignmentBalanceSection {
   readonly fields = computed(() =>
     createFormulaAssignmentFields(
       this.page.formulas.data(),
-      (scope) => this.page.formulas.humanizeScope(scope),
+      (scope) => humanizeFormulaScope(scope),
       this.page.formulas.formulasForSelectedTarget().map((formula) => ({
         value: formula.id,
         label: formula.label,

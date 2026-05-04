@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mythborne Combat Report — Attacker Victory Prototype</title>
+  <!--
+    VISUAL REFERENCE ONLY.
+    Do not copy this CSS into Angular feature components.
+    Translate approved visual patterns into global SCSS tokens, vendor wrappers,
+    shared components, PrimeNG wrappers, or documented layout utilities.
+
+    Mythborne Combat Report V1 — viewer perspective: attacker victory.
+
+    Scope:
+    - player-facing completed combat report/wrap;
+    - not an active minigame;
+    - shows final attacker/defender stats, health outcome, combat log and rewards;
+    - this version represents the attacker player's perspective after winning the attack;
+    - outcome color is viewer-relative: green if the viewing hero won, red if the viewing hero lost.
+  -->
+  <style>
+    :root {
+      --mb-bg-0: #06080c;
+      --mb-bg-1: #0b1018;
+      --mb-navy-0: #07111d;
+      --mb-navy-1: #0d2135;
+      --mb-navy-2: #163b5c;
+      --mb-gold-1: #9c6723;
+      --mb-gold-2: #c8923a;
+      --mb-gold-3: #f0c96f;
+      --mb-red: #b24b3b;
+      --mb-green: #6fa45d;
+      --mb-blue: #5ba3d5;
+      --mb-text-0: #f6edda;
+      --mb-text-1: #d7c8ab;
+      --mb-text-2: #9d8f75;
+      --mb-text-3: #6f675a;
+      --mb-line-soft: rgba(240, 201, 111, 0.12);
+      --mb-line: rgba(240, 201, 111, 0.24);
+      --mb-line-strong: rgba(240, 201, 111, 0.44);
+      --mb-shadow: rgba(0, 0, 0, 0.42);
+      --mb-sidebar-w: 16rem;
+      --mb-topbar-h: 4.25rem;
+      --mb-radius-lg: 1rem;
+      --mb-radius-xl: 1.35rem;
+      --mb-font-display: Georgia, "Times New Roman", serif;
+      --mb-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--mb-font-ui);
+      color: var(--mb-text-0);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(200,146,58,.14), transparent 28rem),
+        radial-gradient(circle at 82% 4%, rgba(45,110,159,.20), transparent 34rem),
+        linear-gradient(135deg, var(--mb-bg-0), #080b11 38%, #050608 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .14;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+    button { font: inherit; color: inherit; }
+
+    .mb-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--mb-sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--mb-topbar-h) minmax(0, 1fr);
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .mb-topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(20rem, 1fr) auto minmax(20rem, 1fr);
+      align-items: center;
+      gap: 1rem;
+      padding: .55rem 1rem;
+      border-bottom: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,201,111,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem var(--mb-shadow);
+    }
+    .mb-topbar-left,
+    .mb-topbar-right { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+    .mb-topbar-right { justify-content: flex-end; }
+
+    .mb-brand { display: flex; align-items: center; justify-content: center; gap: .7rem; min-width: 16rem; }
+    .mb-brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-strong);
+      background:
+        radial-gradient(circle at 34% 24%, #fff0b9 0, var(--mb-gold-3) 22%, var(--mb-gold-1) 48%, #251509 70%, var(--mb-navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,201,111,.22);
+      position: relative;
+    }
+    .mb-brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .mb-brand-title { font-family: var(--mb-font-display); font-size: 1.65rem; letter-spacing: .11em; text-transform: uppercase; color: var(--mb-gold-3); line-height: 1; }
+    .mb-brand-subtitle { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; margin-top: .18rem; text-align: center; }
+
+    .mb-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      min-height: 2.15rem;
+      padding: .38rem .72rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: 999px;
+      color: var(--mb-text-1);
+      background: linear-gradient(180deg, rgba(15,23,33,.75), rgba(6,9,13,.78));
+      white-space: nowrap;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-chip strong { color: var(--mb-text-0); }
+    .mb-chip-icon { color: var(--mb-gold-2); }
+    .mb-chip--health strong { color: #ffc0b7; }
+    .mb-chip--resource strong { color: var(--mb-gold-3); }
+    .mb-chip-stack { display: inline-grid; gap: .08rem; line-height: 1.05; }
+    .mb-chip-stack small { color: var(--mb-text-3); font-size: .68rem; }
+    .mb-xp { min-width: 15rem; display: grid; gap: .3rem; padding: .35rem .7rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(15,23,33,.72), rgba(6,9,13,.74)); }
+    .mb-xp-meta { display: flex; justify-content: space-between; gap: .75rem; font-size: .75rem; color: var(--mb-text-2); }
+    .mb-mini-bar { height: .42rem; border-radius: 999px; background: rgba(0,0,0,.38); overflow: hidden; border: 1px solid rgba(240,201,111,.08); }
+    .mb-mini-bar > span { display: block; width: var(--value, 62%); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mb-gold-1), var(--mb-gold-3)); box-shadow: 0 0 .8rem rgba(240,201,111,.3); }
+
+    .mb-sidebar { grid-area: sidebar; padding: 1rem .8rem; border-right: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(7,11,17,.84), rgba(5,7,10,.88)); backdrop-filter: blur(12px); }
+    .mb-server-card { padding: .9rem; border: 1px solid var(--mb-line-soft); border-radius: var(--mb-radius-xl); background: linear-gradient(180deg, rgba(20,32,47,.72), rgba(8,12,18,.74)), radial-gradient(circle at 80% 0%, rgba(240,201,111,.16), transparent 10rem); box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.2); }
+    .mb-server-label { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+    .mb-server-name { display: flex; justify-content: space-between; gap: .7rem; align-items: center; font-weight: 800; color: var(--mb-text-0); }
+    .mb-prestige { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid rgba(240,201,111,.1); }
+    .mb-nav-section-title { margin: 1.05rem 0 .45rem .55rem; color: var(--mb-text-3); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; }
+    .mb-nav-list { display: grid; gap: .28rem; margin: 0; padding: 0; list-style: none; }
+    .mb-nav-link { display: flex; align-items: center; gap: .65rem; padding: .67rem .68rem; color: var(--mb-text-1); text-decoration: none; border-radius: .85rem; border: 1px solid transparent; transition: 120ms ease; }
+    .mb-nav-link:hover, .mb-nav-link.is-active { color: var(--mb-text-0); border-color: rgba(240,201,111,.16); background: linear-gradient(90deg, rgba(240,201,111,.13), rgba(45,110,159,.12)); }
+    .mb-nav-link.is-active { box-shadow: inset 3px 0 0 var(--mb-gold-2); }
+    .mb-nav-icon { width: 1.65rem; height: 1.65rem; border-radius: .55rem; display: grid; place-items: center; background: rgba(240,201,111,.08); color: var(--mb-gold-2); border: 1px solid rgba(240,201,111,.08); flex: 0 0 auto; font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+
+    .mb-main { grid-area: main; min-width: 0; padding: 1.1rem; display: grid; gap: 1rem; align-content: start; }
+    .mb-report-page { width: min(1180px, 100%); margin: 0 auto; display: grid; gap: 1rem; }
+
+    .mb-page-header {
+      position: relative;
+      min-height: 9rem;
+      padding: 1rem;
+      border: 1px solid var(--mb-line);
+      border-radius: var(--mb-radius-xl);
+      overflow: hidden;
+      background:
+        linear-gradient(100deg, rgba(7,11,17,.95), rgba(12,26,41,.72), rgba(7,10,15,.9)),
+        radial-gradient(circle at 72% 18%, rgba(240,201,111,.14), transparent 22rem);
+      box-shadow: 0 .9rem 2rem rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-page-header::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(240,201,111,.08), transparent 14%, transparent 86%, rgba(240,201,111,.06)), repeating-linear-gradient(90deg, transparent 0 3.2rem, rgba(255,255,255,.025) 3.2rem 3.25rem); pointer-events: none; opacity: .75; }
+    .mb-page-header > * { position: relative; z-index: 1; }
+    .mb-kicker { color: var(--mb-gold-2); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; margin: 0 0 .45rem; }
+    .mb-title { margin: 0; font-family: var(--mb-font-display); font-size: clamp(2rem, 3.2vw, 3.1rem); line-height: 1; color: var(--mb-gold-3); }
+    .mb-report-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .75rem; color: var(--mb-text-2); font-size: .82rem; }
+
+    .mb-card { position: relative; padding: 1rem; border-radius: var(--mb-radius-xl); border: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(18,27,39,.68), rgba(7,10,15,.78)), radial-gradient(circle at top right, rgba(240,201,111,.085), transparent 13rem); box-shadow: 0 .75rem 1.9rem rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.035); overflow: hidden; backdrop-filter: blur(10px); }
+    .mb-card::after { content: ""; position: absolute; inset: .45rem; border-radius: calc(var(--mb-radius-xl) - .35rem); border: 1px solid rgba(240,201,111,.045); pointer-events: none; }
+    .mb-card > * { position: relative; z-index: 1; }
+    .mb-card--soft { background: linear-gradient(180deg, rgba(13,18,26,.62), rgba(7,9,13,.72)); }
+    .mb-card-title { margin: 0 0 .55rem; font-family: var(--mb-font-display); font-size: 1.25rem; color: var(--mb-text-0); }
+    .mb-card-subtitle { margin: 0; color: var(--mb-text-2); line-height: 1.45; font-size: .9rem; }
+
+    .mb-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); color: var(--mb-text-1); background: rgba(7,10,14,.45); font-size: .77rem; white-space: nowrap; }
+    .mb-badge--gold { color: var(--mb-gold-3); border-color: rgba(240,201,111,.32); }
+    .mb-badge--green { color: #bde6b0; border-color: rgba(111,164,93,.46); }
+    .mb-badge--blue { color: #b9def3; border-color: rgba(91,163,213,.46); }
+    .mb-badge--red { color: #f2b4aa; border-color: rgba(178,75,59,.46); }
+    .mb-badge--warning { color: #f1d08a; border-color: rgba(240,201,111,.34); }
+
+    .mb-outcome-banner {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: .85rem;
+      align-items: center;
+      padding: .95rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(111,164,93,.28);
+      background: linear-gradient(90deg, rgba(111,164,93,.14), rgba(7,10,14,.42));
+    }
+    .mb-outcome-banner.is-win {
+      border-color: rgba(111,164,93,.28);
+      background: linear-gradient(90deg, rgba(111,164,93,.14), rgba(7,10,14,.42));
+    }
+    .mb-outcome-banner.is-loss {
+      border-color: rgba(178,75,59,.34);
+      background: linear-gradient(90deg, rgba(178,75,59,.16), rgba(7,10,14,.42));
+    }
+    .mb-outcome-icon { width: 3.1rem; height: 3.1rem; border-radius: .95rem; display: grid; place-items: center; border: 1px solid rgba(240,201,111,.22); color: var(--mb-gold-3); background: rgba(240,201,111,.08); font-weight: 900; }
+    .mb-outcome-title { margin: 0; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.55rem; }
+    .mb-outcome-copy { margin: .22rem 0 0; color: var(--mb-text-2); line-height: 1.4; }
+
+    .mb-combat-summary { display: grid; grid-template-columns: minmax(17rem, .82fr) minmax(26rem, 1.25fr) minmax(17rem, .82fr); gap: 1rem; align-items: start; }
+    .mb-combatant-card { display: grid; gap: .85rem; }
+    .mb-combatant-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+    .mb-combatant-name { margin: 0; font-family: var(--mb-font-display); font-size: 1.42rem; color: var(--mb-text-0); }
+    .mb-combatant-meta { color: var(--mb-text-2); font-size: .82rem; margin-top: .2rem; }
+    .mb-health-block { display: grid; gap: .45rem; }
+    .mb-health-line { display: flex; justify-content: space-between; gap: .8rem; color: var(--mb-text-2); font-size: .82rem; }
+    .mb-health-line strong { color: var(--mb-text-0); }
+    .mb-health-bar { height: .72rem; border-radius: 999px; border: 1px solid rgba(240,201,111,.1); background: rgba(0,0,0,.4); overflow: hidden; }
+    .mb-health-bar span { display: block; height: 100%; width: var(--hp, 100%); border-radius: inherit; background: linear-gradient(90deg, #6fa45d, #cfeaa8); box-shadow: 0 0 .8rem rgba(111,164,93,.2); }
+    .mb-health-bar.enemy span { background: linear-gradient(90deg, #b24b3b, #f2b4aa); }
+
+    .mb-stats-subtitle { color: var(--mb-text-3); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; margin: .3rem 0 .1rem; }
+    .mb-combat-stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .42rem; }
+    .mb-combat-stat { padding: .44rem .5rem; border-radius: .72rem; border: 1px solid rgba(240,201,111,.09); background: rgba(7,10,14,.35); min-width: 0; }
+    .mb-combat-stat span { display:block; color: var(--mb-text-3); font-size: .6rem; letter-spacing: .07em; text-transform: uppercase; }
+    .mb-combat-stat strong { display:block; margin-top:.1rem; color: var(--mb-gold-3); font-size: .88rem; }
+    .mb-combat-stat.is-derived { border-color: rgba(91,163,213,.18); background: rgba(91,163,213,.07); }
+
+    .mb-combat-log-panel { display: grid; gap: .65rem; }
+    .mb-log-list { display: grid; gap: .52rem; padding-right: 0; }
+    .mb-log-turn-group { display: grid; gap: .38rem; padding: .62rem; border-radius: .95rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.2); }
+    .mb-log-turn-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; color: var(--mb-text-3); font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; }
+    .mb-log-row { display: grid; grid-template-columns: 6.4rem minmax(0,1fr) auto; gap: .55rem; align-items: center; padding: .5rem .55rem; border-radius: .72rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.34); }
+    .mb-log-turn { color: var(--mb-text-3); font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; padding-top: .1rem; }
+    .mb-log-actor { color: var(--mb-text-0); font-weight: 800; }
+    .mb-log-result { color: var(--mb-gold-3); font-weight: 900; white-space: nowrap; }
+    .mb-log-result.is-miss, .mb-log-result.is-evade { color: #b9def3; }
+    .mb-log-result.is-crit { color: #f2b4aa; text-shadow: 0 0 .6rem rgba(178,75,59,.28); }
+    .mb-log-row strong { color: var(--mb-text-0); display: block; margin-bottom: .1rem; }
+    .mb-log-row span { color: var(--mb-text-2); font-size: .86rem; line-height: 1.38; }
+    .mb-log-row.is-critical { border-color: rgba(178,75,59,.32); background: rgba(178,75,59,.1); }
+    .mb-log-row.is-damage { border-color: rgba(178,75,59,.18); }
+    .mb-log-row.is-defense { border-color: rgba(91,163,213,.18); }
+
+    .mb-reward-line { color: var(--mb-text-1); line-height: 1.65; margin: 0; }
+    .mb-reward-line strong { color: var(--mb-gold-3); }
+    .mb-reward-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-top: .8rem; }
+    .mb-reward-card { padding: .8rem; border-radius: .95rem; border: 1px solid rgba(240,201,111,.12); background: rgba(7,10,14,.34); }
+    .mb-reward-card span { display:block; color: var(--mb-text-3); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
+    .mb-reward-card strong { display:block; color: var(--mb-gold-3); margin-top: .25rem; font-size: 1.22rem; }
+
+    .mb-button-row { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: .9rem; }
+    .mb-button { min-height: 2.4rem; padding: .55rem .85rem; border-radius: 999px; border: 1px solid var(--mb-line); color: var(--mb-text-0); background: linear-gradient(180deg, rgba(240,201,111,.2), rgba(91,58,19,.32)); cursor: pointer; box-shadow: inset 0 1px rgba(255,255,255,.07); }
+    .mb-button--primary { background: linear-gradient(180deg, rgba(240,201,111,.32), rgba(91,58,19,.44)); }
+    .mb-button--ghost { background: rgba(8,12,18,.54); color: var(--mb-text-1); }
+
+    @media (max-width: 1220px) {
+      .mb-topbar { grid-template-columns: 1fr; height: auto; }
+      .mb-brand { justify-content: flex-start; }
+      .mb-app-shell { grid-template-rows: auto minmax(0, 1fr); }
+      .mb-combat-summary { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 860px) {
+      .mb-app-shell { display: block; }
+      .mb-topbar { position: static; }
+      .mb-topbar-left, .mb-topbar-right { justify-content: flex-start; overflow-x: auto; }
+      .mb-sidebar { border-right: 0; border-bottom: 1px solid var(--mb-line-soft); }
+      .mb-nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .mb-nav-link { justify-content: center; }
+      .mb-nav-label, .mb-nav-section-title { display: none; }
+      .mb-main { padding: .75rem; }
+      .mb-page-header { min-height: auto; }
+      .mb-combat-stats, .mb-reward-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left" aria-label="Hero health and experience">
+        <span class="mb-chip mb-chip--health"><span class="mb-chip-icon">♥</span> Health <strong>68 / 100</strong></span>
+        <div class="mb-xp" aria-label="Experience progress">
+          <div class="mb-xp-meta"><span>Level 12</span><strong>1,240 XP to next</strong></div>
+          <div class="mb-mini-bar" style="--value: 63%"><span></span></div>
+        </div>
+      </div>
+
+      <div class="mb-brand" aria-label="Mythborne">
+        <div class="mb-brand-mark"></div>
+        <div>
+          <div class="mb-brand-title">Mythborne</div>
+          <div class="mb-brand-subtitle">Combat report prototype</div>
+        </div>
+      </div>
+
+      <div class="mb-topbar-right" aria-label="Hero resources">
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◈</span><span class="mb-chip-stack">Drachmas <strong>3,420</strong><small>+96 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">▣</span><span class="mb-chip-stack">Materials <strong>185</strong><small>+22 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◇</span><span class="mb-chip-stack">Workforce <strong>42</strong><small>+4 / h</small></span></span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-server-card" aria-label="Selected world context">
+        <div class="mb-server-label">Selected server</div>
+        <div class="mb-server-name"><span>Sandbox</span><span class="mb-badge mb-badge--blue">live</span></div>
+        <div class="mb-prestige">
+          <div class="mb-server-label">Prestige</div>
+          <div class="mb-server-name"><span>Zeugitai</span><span class="mb-badge mb-badge--gold">Tier II</span></div>
+        </div>
+      </section>
+
+      <div class="mb-nav-section-title">Hero</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#dashboard"><span class="mb-nav-icon">DA</span><span class="mb-nav-label">Dashboard</span></a></li>
+        <li><a class="mb-nav-link" href="#exploration"><span class="mb-nav-icon">EX</span><span class="mb-nav-label">Exploration</span></a></li>
+        <li><a class="mb-nav-link" href="#statistics"><span class="mb-nav-icon">ST</span><span class="mb-nav-label">Statistics</span></a></li>
+        <li><a class="mb-nav-link" href="#armory"><span class="mb-nav-icon">AR</span><span class="mb-nav-label">Armory</span></a></li>
+      </ul>
+
+      <div class="mb-nav-section-title">World</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#estate"><span class="mb-nav-icon">ES</span><span class="mb-nav-label">Estate</span></a></li>
+        <li><a class="mb-nav-link" href="#trade"><span class="mb-nav-icon">TR</span><span class="mb-nav-label">Trade</span></a></li>
+        <li><a class="mb-nav-link is-active" href="#pvp"><span class="mb-nav-icon">PV</span><span class="mb-nav-label">PvP</span></a></li>
+        <li><a class="mb-nav-link" href="#reports"><span class="mb-nav-icon">RP</span><span class="mb-nav-label">Reports</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main" id="combat-report">
+      <div class="mb-report-page">
+        <section class="mb-page-header">
+          <p class="mb-kicker">Combat report</p>
+          <h1 class="mb-title">Attack won: Theron defeated Bandit Spearman</h1>
+          <div class="mb-report-meta">
+            <span class="mb-badge">Today · 13:49</span>
+            <span class="mb-badge">PvP vicinity</span>
+            <span class="mb-badge mb-badge--gold">Attacker victory</span>
+            <span class="mb-badge">Turn 5 / 10</span>
+          </div>
+        </section>
+
+        <section class="mb-card">
+          <article class="mb-outcome-banner is-win">
+            <div class="mb-outcome-icon">✓</div>
+            <div>
+              <h2 class="mb-outcome-title">You won the attack</h2>
+              <p class="mb-outcome-copy">Theron defeated Bandit Spearman before the tenth turn.</p>
+            </div>
+            <span class="mb-badge mb-badge--green">victory</span>
+          </article>
+        </section>
+
+        <section class="mb-combat-summary">
+          <article class="mb-card mb-combatant-card">
+            <div class="mb-combatant-head">
+              <div>
+                <h2 class="mb-combatant-name">Theron</h2>
+                <div class="mb-combatant-meta">Attacker · Hero · Level 12</div>
+              </div>
+              <span class="mb-badge mb-badge--green">winner</span>
+            </div>
+
+            <div class="mb-health-block">
+              <div class="mb-health-line"><span>Final health</span><strong>68 / 100</strong></div>
+              <div class="mb-health-bar" style="--hp:68%"><span></span></div>
+              <div class="mb-stats-subtitle">Base stats</div>
+              <div class="mb-combat-stats">
+                <div class="mb-combat-stat"><span>Strength</span><strong>32</strong></div>
+                <div class="mb-combat-stat"><span>Dexterity</span><strong>27</strong></div>
+                <div class="mb-combat-stat"><span>Endurance</span><strong>25</strong></div>
+                <div class="mb-combat-stat"><span>Agility</span><strong>21</strong></div>
+                <div class="mb-combat-stat"><span>Cunning</span><strong>19</strong></div>
+                <div class="mb-combat-stat"><span>Charisma</span><strong>16</strong></div>
+                <div class="mb-combat-stat"><span>Wisdom</span><strong>18</strong></div>
+                <div class="mb-combat-stat"><span>Intelligence</span><strong>17</strong></div>
+                <div class="mb-combat-stat"><span>Spirituality</span><strong>14</strong></div>
+              </div>
+              <div class="mb-stats-subtitle">Combat stats</div>
+              <div class="mb-combat-stats">
+                <div class="mb-combat-stat is-derived"><span>Damage</span><strong>20–27</strong></div>
+                <div class="mb-combat-stat is-derived"><span>Defense</span><strong>22</strong></div>
+                <div class="mb-combat-stat is-derived"><span>Crit damage</span><strong>+64%</strong></div>
+                <div class="mb-combat-stat is-derived"><span>Luck</span><strong>18</strong></div>
+                <div class="mb-combat-stat is-derived"><span>Attack count</span><strong>2</strong></div>
+              </div>
+            </div>
+          </article>
+
+          <section class="mb-card mb-combat-log-panel">
+            <h2 class="mb-card-title">Combat log</h2>
+            <p class="mb-card-subtitle">Full readable combat resolution. The report does not show Walking Dead, only the saved result.</p>
+            <div class="mb-log-list">
+              <div class="mb-log-turn-group">
+                <div class="mb-log-turn-heading"><span>Start</span></div>
+                <div class="mb-log-row"><div class="mb-log-actor">Theron</div><span>Attacks Bandit Spearman with Outstanding Demonic Sword of Fire.</span><div class="mb-log-result">ready</div></div>
+                <div class="mb-log-row"><div class="mb-log-actor">Bandit Spearman</div><span>Defends with Rusted Spear.</span><div class="mb-log-result">ready</div></div>
+              </div>
+
+              <div class="mb-log-turn-group">
+                <div class="mb-log-turn-heading"><span>Turn 1</span></div>
+                <div class="mb-log-row is-damage"><div class="mb-log-actor">Theron</div><span>Uses Outstanding Demonic Sword of Fire and hits Bandit Spearman.</span><div class="mb-log-result">18 dmg</div></div>
+                <div class="mb-log-row is-damage"><div class="mb-log-actor">Theron</div><span>Uses off-hand unarmed strike and hits Bandit Spearman.</span><div class="mb-log-result">5 dmg</div></div>
+                <div class="mb-log-row is-damage"><div class="mb-log-actor">Bandit Spearman</div><span>Uses Rusted Spear and hits Theron.</span><div class="mb-log-result">7 dmg</div></div>
+              </div>
+
+              <div class="mb-log-turn-group">
+                <div class="mb-log-turn-heading"><span>Turn 2</span></div>
+                <div class="mb-log-row is-defense"><div class="mb-log-actor">Theron</div><span>Uses Outstanding Demonic Sword of Fire, but Bandit Spearman evades.</span><div class="mb-log-result is-evade">evade</div></div>
+                <div class="mb-log-row is-damage"><div class="mb-log-actor">Theron</div><span>Uses off-hand unarmed strike and hits Bandit Spearman.</span><div class="mb-log-result">3 dmg</div></div>
+                <div class="mb-log-row is-damage"><div class="mb-log-actor">Bandit Spearman</div><span>Uses Rusted Spear and hits Theron.</span><div class="mb-log-result">11 dmg</div></div>
+              </div>
+
+              <div class="mb-log-turn-group">
+                <div class="mb-log-turn-heading"><span>Turn 3</span></div>
+                <div class="mb-log-row is-critical"><div class="mb-log-actor">Theron</div><span>Uses Outstanding Demonic Sword of Fire and critically hits Bandit Spearman.</span><div class="mb-log-result is-crit">31 dmg</div></div>
+                <div class="mb-log-row is-defense"><div class="mb-log-actor">Theron</div><span>Uses off-hand unarmed strike, but misses Bandit Spearman.</span><div class="mb-log-result is-miss">miss</div></div>
+                <div class="mb-log-row is-defense"><div class="mb-log-actor">Bandit Spearman</div><span>Uses Rusted Spear, but misses Theron.</span><div class="mb-log-result is-miss">miss</div></div>
+              </div>
+
+              <div class="mb-log-turn-group">
+                <div class="mb-log-turn-heading"><span>Turn 4</span></div>
+                <div class="mb-log-row is-damage"><div class="mb-log-actor">Theron</div><span>Uses Outstanding Demonic Sword of Fire and hits Bandit Spearman.</span><div class="mb-log-result">16 dmg</div></div>
+                <div class="mb-log-row is-defense"><div class="mb-log-actor">Theron</div><span>Uses off-hand unarmed strike, but Bandit Spearman evades.</span><div class="mb-log-result is-evade">evade</div></div>
+                <div class="mb-log-row is-damage"><div class="mb-log-actor">Bandit Spearman</div><span>Uses Rusted Spear and hits Theron.</span><div class="mb-log-result">9 dmg</div></div>
+              </div>
+
+              <div class="mb-log-turn-group">
+                <div class="mb-log-turn-heading"><span>Turn 5</span></div>
+                <div class="mb-log-row is-damage"><div class="mb-log-actor">Theron</div><span>Uses Outstanding Demonic Sword of Fire and hits Bandit Spearman.</span><div class="mb-log-result">20 dmg</div></div>
+                <div class="mb-log-row is-damage"><div class="mb-log-actor">Theron</div><span>Uses off-hand unarmed strike and hits Bandit Spearman. Bandit Spearman falls.</span><div class="mb-log-result">4 dmg</div></div>
+              </div>
+            </div>
+          </section>
+
+          <article class="mb-card mb-combatant-card">
+            <div class="mb-combatant-head">
+              <div>
+                <h2 class="mb-combatant-name">Bandit Spearman</h2>
+                <div class="mb-combatant-meta">Defender · Hero · Level 11</div>
+              </div>
+              <span class="mb-badge mb-badge--red">defeated</span>
+            </div>
+
+            <div class="mb-health-block">
+              <div class="mb-health-line"><span>Final health</span><strong>0 / 74</strong></div>
+              <div class="mb-health-bar enemy" style="--hp:0%"><span></span></div>
+              <div class="mb-stats-subtitle">Base stats</div>
+              <div class="mb-combat-stats">
+                <div class="mb-combat-stat"><span>Strength</span><strong>18</strong></div>
+                <div class="mb-combat-stat"><span>Dexterity</span><strong>14</strong></div>
+                <div class="mb-combat-stat"><span>Endurance</span><strong>16</strong></div>
+                <div class="mb-combat-stat"><span>Agility</span><strong>13</strong></div>
+                <div class="mb-combat-stat"><span>Cunning</span><strong>10</strong></div>
+                <div class="mb-combat-stat"><span>Charisma</span><strong>7</strong></div>
+                <div class="mb-combat-stat"><span>Wisdom</span><strong>8</strong></div>
+                <div class="mb-combat-stat"><span>Intelligence</span><strong>8</strong></div>
+                <div class="mb-combat-stat"><span>Spirituality</span><strong>6</strong></div>
+              </div>
+              <div class="mb-stats-subtitle">Combat stats</div>
+              <div class="mb-combat-stats">
+                <div class="mb-combat-stat is-derived"><span>Damage</span><strong>11–18</strong></div>
+                <div class="mb-combat-stat is-derived"><span>Defense</span><strong>14</strong></div>
+                <div class="mb-combat-stat is-derived"><span>Crit damage</span><strong>+32%</strong></div>
+                <div class="mb-combat-stat is-derived"><span>Luck</span><strong>9</strong></div>
+                <div class="mb-combat-stat is-derived"><span>Attack count</span><strong>1</strong></div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="mb-card">
+          <h2 class="mb-card-title">Rewards</h2>
+          <p class="mb-reward-line">For winning the attack, you receive <strong>160 Experience</strong> and seize resources from the defeated defender: <strong>126 Drachmas</strong>, <strong>42 Materials</strong> and <strong>9 Workforce</strong>.</p>
+          <div class="mb-reward-grid">
+            <div class="mb-reward-card"><span>Experience</span><strong>160</strong></div>
+            <div class="mb-reward-card"><span>Drachmas seized</span><strong>126</strong></div>
+            <div class="mb-reward-card"><span>Materials seized</span><strong>42</strong></div>
+            <div class="mb-reward-card"><span>Workforce seized</span><strong>9</strong></div>
+          </div>
+        </section>
+
+        <section class="mb-card mb-card--soft">
+          <h2 class="mb-card-title">Actions</h2>
+          <div class="mb-button-row">
+            <button class="mb-button mb-button--primary">Return to Vicinity</button>
+            <button class="mb-button mb-button--ghost">Copy report link</button>
+            <button class="mb-button mb-button--ghost">Back to Reports</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

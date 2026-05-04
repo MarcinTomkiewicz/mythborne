@@ -18,8 +18,8 @@ export interface BuildingFormulaCostPreview {
 }
 
 export interface BuildingFormulaLevelPreview {
-  level: number;
-  nextLevel: number;
+  currentLevel: number;
+  targetLevel: number;
   nextCosts: BuildingFormulaCostPreview[];
   costUnavailableReason: string | null;
   nextTime: number | null;
@@ -82,7 +82,7 @@ export class BuildingFormulaPreviewCalculator {
     dbRows: readonly BuildingProgressionPreview[],
     formulaRows: readonly BuildingFormulaLevelPreview[],
   ): BuildingProgressionImpactRow[] {
-    const formulaByLevel = new Map(formulaRows.map((row) => [row.level, row]));
+    const formulaByLevel = new Map(formulaRows.map((row) => [row.currentLevel, row]));
 
     return dbRows.map((row) => {
       const formula = formulaByLevel.get(row.previewLevel) ?? null;
@@ -104,16 +104,17 @@ export class BuildingFormulaPreviewCalculator {
   }
 
   private previewForLevel(
-    level: number,
+    currentLevel: number,
     input: FormulaPreviewInput,
   ): BuildingFormulaLevelPreview {
     const rank = 1;
-    const costPreview = this.costPreviewForLevel(level, rank, input);
-    const timePreview = this.timePreviewForLevel(level, rank, input);
+    const targetLevel = currentLevel + 1;
+    const costPreview = this.costPreviewForLevel(currentLevel, rank, input);
+    const timePreview = this.timePreviewForLevel(currentLevel, rank, input);
 
     return {
-      level,
-      nextLevel: level + 1,
+      currentLevel,
+      targetLevel,
       nextCosts: costPreview.costs,
       costUnavailableReason: costPreview.reason,
       nextTime: timePreview.amount,
@@ -122,15 +123,15 @@ export class BuildingFormulaPreviewCalculator {
         target: bonus.target,
         type: bonus.type,
         current:
-          this.buildingProgression.getBonusValue(level, Number(bonus.value), input.rules) ?? 0,
+          this.buildingProgression.getBonusValue(currentLevel, Number(bonus.value), input.rules) ?? 0,
         next:
-          this.buildingProgression.getBonusValue(level + 1, Number(bonus.value), input.rules) ?? 0,
+          this.buildingProgression.getBonusValue(targetLevel, Number(bonus.value), input.rules) ?? 0,
       })),
     };
   }
 
   private costPreviewForLevel(
-    level: number,
+    currentLevel: number,
     rank: number,
     input: FormulaPreviewInput,
   ): { costs: BuildingFormulaCostPreview[]; reason: string | null } {
@@ -148,23 +149,23 @@ export class BuildingFormulaPreviewCalculator {
       };
     }
 
-    const nextLevel = level + 1;
+    const targetLevel = currentLevel + 1;
     const applicableCosts = input.costs.filter(
-      (cost) => Number(cost.appliesFromLevel) <= nextLevel,
+      (cost) => Number(cost.appliesFromLevel) <= targetLevel,
     );
 
     if (!applicableCosts.length) {
       const firstLevel = Math.min(...input.costs.map((cost) => Number(cost.appliesFromLevel)));
       return {
         costs: [],
-        reason: `No editable resource cost row applies to level ${nextLevel}. The first configured row starts at level ${firstLevel}.`,
+        reason: `No editable resource cost row applies to targetLevel ${targetLevel}. The first configured row starts at level ${firstLevel}.`,
       };
     }
 
     const costs = applicableCosts.reduce((acc, cost) => {
       const baseValue = Number(cost.baseValue);
       const evaluation = Number.isFinite(baseValue)
-        ? this.buildingProgression.getUpgradeCostResult(level, baseValue, rank, input.rules)
+        ? this.buildingProgression.getUpgradeCostResult(currentLevel, baseValue, rank, input.rules)
         : { value: null, error: 'Cost row base value is not a finite number.' };
       const reason = evaluation.error
         ? `${toResourceLabel(cost.resourceType)} cost formula failed: ${evaluation.error}`
@@ -197,7 +198,7 @@ export class BuildingFormulaPreviewCalculator {
   }
 
   private timePreviewForLevel(
-    level: number,
+    currentLevel: number,
     rank: number,
     input: FormulaPreviewInput,
   ): { amount: number | null; reason: string | null } {
@@ -209,7 +210,7 @@ export class BuildingFormulaPreviewCalculator {
     }
 
     const result = this.buildingProgression.getUpgradeTimeSecondsResult(
-      level,
+      currentLevel,
       Number(input.building.baseBuildTimeSeconds ?? 0),
       rank,
       input.rules,

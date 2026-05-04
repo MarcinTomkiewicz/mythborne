@@ -10,6 +10,7 @@ import { nonNegativeInteger } from '../../utils/number';
 import { resolveAssignedFormula } from '../../utils/formula-assignment-resolution';
 import { FormulaService } from '../formula/formula';
 import { FormulaRuntimeService } from './formula-runtime';
+import { buildBuildingUpgradeFormulaVariables } from '../../utils/building-upgrade-formula-variables';
 
 @Injectable({ providedIn: 'root' })
 export class BuildingProgressionService {
@@ -34,65 +35,69 @@ export class BuildingProgressionService {
   }
 
   getUpgradeCost(
-    level: number,
+    currentLevel: number,
     baseCost: number,
     rank: number,
     rules: BuildingProgressionRules
   ): number | null {
-    return this.getUpgradeCostResult(level, baseCost, rank, rules).value;
+    return this.getUpgradeCostResult(currentLevel, baseCost, rank, rules).value;
   }
 
   getUpgradeCostResult(
-    level: number,
+    currentLevel: number,
     baseCost: number,
     rank: number,
     rules: BuildingProgressionRules
   ): BuildingProgressionFormulaResult {
     return this.evaluateNumeric(
       rules.costExpression,
-      { level, baseCost, base_cost: baseCost, rank },
+      buildBuildingUpgradeFormulaVariables({ currentLevel, baseCost, rank }),
       true
     );
   }
 
   getUpgradeTimeSeconds(
-    level: number,
-    baseTime: number,
+    currentLevel: number,
+    baseTimeSeconds: number,
     rank: number,
     rules: BuildingProgressionRules
   ): number | null {
-    return this.getUpgradeTimeSecondsResult(level, baseTime, rank, rules).value;
+    return this.getUpgradeTimeSecondsResult(currentLevel, baseTimeSeconds, rank, rules).value;
   }
 
   getUpgradeTimeSecondsResult(
-    level: number,
-    baseTime: number,
+    currentLevel: number,
+    baseTimeSeconds: number,
     rank: number,
     rules: BuildingProgressionRules
   ): BuildingProgressionFormulaResult {
     return this.evaluateNumeric(
       rules.timeExpression,
-      { level, baseTime, base_time: baseTime, rank },
+      buildBuildingUpgradeFormulaVariables({
+        currentLevel,
+        baseTimeSeconds,
+        rank,
+      }),
       true
     );
   }
 
   getBonusValue(
-    level: number,
+    currentLevel: number,
     baseBonus: number,
     rules: BuildingProgressionRules
   ): number | null {
-    return this.getBonusValueResult(level, baseBonus, rules).value;
+    return this.getBonusValueResult(currentLevel, baseBonus, rules).value;
   }
 
   getBonusValueResult(
-    level: number,
+    currentLevel: number,
     baseBonus: number,
     rules: BuildingProgressionRules
   ): BuildingProgressionFormulaResult {
     return this.evaluateNumeric(
       rules.bonusExpression,
-      { level, baseBonus, base_bonus: baseBonus },
+      { currentLevel, baseBonus },
       false
     );
   }
@@ -125,10 +130,10 @@ export class BuildingProgressionService {
 
   private evaluateNumeric(
     expression: string,
-    context: Record<string, number>,
+    variables: Record<string, number>,
     integerOnly: boolean
   ): BuildingProgressionFormulaResult {
-    const result = this.runtime.evaluate(expression, context);
+    const result = this.runtime.evaluate(expression, variables);
 
     if (result.error || result.value === null || result.value === undefined) {
       return { value: null, error: result.error ?? 'Formula did not return a value.' };

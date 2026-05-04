@@ -154,8 +154,6 @@ export class AttributeAllocationPageFacade {
         plannedValue,
         rules.costFormula.expression,
         {
-          heroLevel: this.heroLevel(),
-          statLevel: plannedValue,
           target: rules.costTarget,
         }
       );
@@ -344,8 +342,6 @@ export class AttributeAllocationPageFacade {
 
     for (let level = currentValue; level < plannedValue; level += 1) {
       const cost = this.statProgression.getNextLevelCost(level, costFormula, {
-        heroLevel: this.heroLevel(),
-        statLevel: level,
         target: this.progressionRules()?.costTarget ?? undefined,
       });
 

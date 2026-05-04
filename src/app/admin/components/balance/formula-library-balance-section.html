@@ -105,7 +105,7 @@
                 type="number"
                 class="w-100"
                 [value]="page.formulas.getTesterValue(variable)"
-                (input)="page.formulas.updateTesterContext(variable, $any($event.target).value)"
+                (input)="page.formulas.updateTesterVariable(variable, $any($event.target).value)"
               />
             </label>
           }

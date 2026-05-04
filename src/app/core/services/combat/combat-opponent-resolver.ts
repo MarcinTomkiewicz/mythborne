@@ -26,7 +26,7 @@ import {
 import {
   coreStatsFrom,
   participantStats,
-  scalingContext,
+  scalingVariables,
 } from '../../utils/combat-opponent-stat-resolution';
 import { opponentLevel } from '../../utils/combat-opponent-range';
 import { FormulaRuntimeService } from '../progression/formula-runtime';
@@ -159,7 +159,7 @@ export class CombatOpponentResolver {
       .map((entry) => {
         const result = this.formulaRuntime.evaluate(
           scaling.formula.expression,
-          scalingContext(entry.baseValue, input),
+          scalingVariables(entry.baseValue, input),
           scaling.target.allowedVariables,
         );
 

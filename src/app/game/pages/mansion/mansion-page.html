@@ -17,7 +17,7 @@
           <p class="card-legend mb-0">Estate</p>
           <h2 class="mg-section__title mg-section__title--sm mb-0">Buildings</h2>
           <p class="muted-text mb-0">
-            District {{ page.currentDistrictCode() ?? 'A' }}{{ page.currentDistrictName() ? ' - ' + page.currentDistrictName() : '' }}
+            District {{ page.currentDistrictCode() }}{{ page.currentDistrictName() ? ' - ' + page.currentDistrictName() : '' }}
             @if (page.currentAddress()) {
               <span> | {{ page.currentAddress() }}</span>
             }
@@ -53,9 +53,14 @@
                 </div>
 
                 <div class="flex-row-start-center flex-wrap gap-sm">
-                  <span class="tag-badge tag-badge--warn">Level {{ building.currentLevel }}</span>
-                  @if (building.maxLevel > 0) {
-                    <span class="tag-badge tag-badge--muted">Max {{ building.maxLevel }}</span>
+                  @if (building.currentLevel > 0) {
+                    <span class="tag-badge tag-badge--warn">Level {{ building.currentLevel }}</span>
+                  } @else {
+                    <span class="tag-badge tag-badge--info">Unbuilt</span>
+                  }
+                  <span class="tag-badge tag-badge--muted">Starts {{ building.startingLevel }}</span>
+                  @if (!building.isUnlimited) {
+                    <span class="tag-badge tag-badge--muted">Max {{ building.effectiveMaxLevel }}</span>
                   } @else {
                     <span class="tag-badge tag-badge--muted">No cap</span>
                   }
@@ -119,7 +124,7 @@
 
             <div class="mg-card flex-col gap-sm p-md">
               <p class="card-legend mb-0">Requirements</p>
-              @for (requirement of building.activeRequirements; track requirement.type + (requirement.statKey ?? '') + requirement.appliesFromLevel) {
+              @for (requirement of building.activeRequirements; track requirement.requirementDefinitionKey + requirement.appliesFromLevel) {
                 <div class="flex-row-between-center gap-md muted-text">
                   <strong class="heading-color">{{ page.toRequirementLabel(requirement) }}</strong>
                   <span>{{ page.toRequirementValue(requirement) }}</span>

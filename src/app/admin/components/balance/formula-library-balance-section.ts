@@ -14,9 +14,17 @@ import { FormulaActionGroup, FormulaActionViewItem } from './formula-action-grou
 import { FormulaExpressionPreview } from './formula-expression-preview';
 import {
   FormulaBlock,
-  FormulaFunctionGuide,
   FormulaTemplateGuide,
 } from '../../../core/domain/formula/formula.model';
+import {
+  formulaBlockTooltip,
+  formulaFunctionGuide,
+  formulaFunctionGuideByKey,
+  formulaFunctionGuideTooltip,
+  formulaTemplateTooltip,
+  humanizeFormulaScope,
+  resolveFormulaTemplateExpression,
+} from './formula-library-helpers';
 
 interface FormulaActionSection {
   key: string;
@@ -46,13 +54,13 @@ export class FormulaLibraryBalanceSection {
   readonly selectorFields = computed(() =>
     createFormulaSelectorFields(
       this.page.formulas.data(),
-      (scope) => this.page.formulas.humanizeScope(scope)
+      (scope) => humanizeFormulaScope(scope)
     )
   );
   readonly editorMetaFields = computed(() =>
     createFormulaEditorMetaFields(
       this.page.formulas.availableScopes(),
-      (scope) => this.page.formulas.humanizeScope(scope)
+      (scope) => humanizeFormulaScope(scope)
     )
   );
   readonly descriptionFields = [FORMULA_DESCRIPTION_FIELD] as const;
@@ -74,21 +82,21 @@ export class FormulaLibraryBalanceSection {
 
   handleBlockAction(action: FormulaActionViewItem) {
     const block = this.findBlock(action.id);
-    block && this.page.formulas.appendBlockTemplate(block);
+    block && this.appendBlockTemplate(block);
   }
 
   handleVariableAction(action: FormulaActionViewItem) {
-    this.page.formulas.appendBlock(action.id);
+    this.appendBlock(action.id);
   }
 
   handleTemplateAction(action: FormulaActionViewItem) {
     const template = this.findTemplate(action.id);
-    template && this.page.formulas.applyTemplate(template);
+    template && this.applyTemplate(template);
   }
 
   handleFunctionAction(action: FormulaActionViewItem) {
-    const guide = this.findFunctionGuide(action.id);
-    guide && this.page.formulas.appendBlock(guide.insertTemplate);
+    const guide = formulaFunctionGuideByKey(this.page.formulas.functionGuides(), action.id);
+    guide && this.appendBlock(guide.insertTemplate);
   }
 
   handleSectionAction(sectionKey: string, action: FormulaActionViewItem) {
@@ -109,15 +117,21 @@ export class FormulaLibraryBalanceSection {
   }
 
   private createBlockSection(category: string, title: string): FormulaActionSection | null {
-    const items = this.page.formulas.blocksFor(category).map((block) => ({
+    const items = this.blocksFor(category).map((block) => {
+      const guide = formulaFunctionGuide(this.page.formulas.functionGuides(), block);
+
+      return {
       id: block.id,
       label: block.label,
-      tooltip: category === 'functions' ? this.page.formulas.blockTooltip(block) : block.helperText ?? '',
+      tooltip: category === 'functions'
+        ? formulaBlockTooltip({ block, guide })
+        : block.helperText ?? '',
       secondaryLabel:
         category === 'functions'
-          ? this.page.formulas.functionGuide(block)?.friendlySyntax ?? block.token
+          ? guide?.friendlySyntax ?? block.token
           : undefined,
-    }));
+      };
+    });
 
     if (items.length === 0) {
       return null;
@@ -159,7 +173,7 @@ export class FormulaLibraryBalanceSection {
       id: guide.key,
       label: guide.label,
       secondaryLabel: guide.friendlySyntax,
-      tooltip: this.page.formulas.functionGuideTooltip(guide),
+      tooltip: formulaFunctionGuideTooltip(guide),
     }));
 
     if (items.length === 0) {
@@ -204,7 +218,10 @@ export class FormulaLibraryBalanceSection {
     const items = this.page.formulas.formulaTemplates().map((template) => ({
       id: template.key,
       label: template.label,
-      tooltip: this.page.formulas.templateTooltip(template),
+      tooltip: formulaTemplateTooltip({
+        template,
+        variable: this.page.formulas.templateVariable(),
+      }),
     }));
 
     if (items.length === 0) {
@@ -229,7 +246,23 @@ export class FormulaLibraryBalanceSection {
     return this.page.formulas.formulaTemplates().find((template) => template.key === key) ?? null;
   }
 
-  private findFunctionGuide(key: string): FormulaFunctionGuide | null {
-    return this.page.formulas.functionGuideByKey(key);
+  private blocksFor(category: string): FormulaBlock[] {
+    return this.page.formulas.blocks().filter((block) => block.category === category);
+  }
+
+  private appendBlock(token: string) {
+    const control = this.page.formulas.editorForm.controls.expression;
+    control.setValue(`${control.value ?? ''}${token}`.trim());
+  }
+
+  private appendBlockTemplate(block: FormulaBlock) {
+    const guide = formulaFunctionGuide(this.page.formulas.functionGuides(), block);
+    this.appendBlock(guide?.insertTemplate ?? block.token);
+  }
+
+  private applyTemplate(template: FormulaTemplateGuide) {
+    this.page.formulas.editorForm.controls.expression.setValue(
+      resolveFormulaTemplateExpression(template, this.page.formulas.templateVariable()),
+    );
   }
 }

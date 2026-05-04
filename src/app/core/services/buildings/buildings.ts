@@ -2,35 +2,44 @@ import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable, switchMap } from 'rxjs';
 import { BONUS_ENTITY_TYPES } from '../../constants/bonus-entity-types.const';
 import { TABLES } from '../../constants/tables.const';
-import {
-  BuildingBonusPreview,
-  BuildingRequirementPreview,
-  BuildingResourceCostPreview,
-  BuildingResourceCostTotal,
-  BuildingResourceType,
-  MansionBuilding,
-  MansionEstateView,
-} from '../../domain/building/building.model';
+import { MansionBuilding, MansionEstateView } from '../../domain/building/building.model';
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
-import { BuildingProgressionRules } from '../../domain/progression/building-progression.model';
 import { FormulaAdminData } from '../../domain/formula/formula.model';
 import { BuildingProgressionService } from '../progression/building-progression';
 import { FormulaService } from '../formula/formula';
 import { Hero } from '../hero/hero';
 import { EstateAddresses } from '../estate/estate-addresses';
-import { resourceOrder } from '../../utils/building-display';
-import { normalizeBuildingResourceType } from '../../utils/building-admin-mappers';
-import { normalizeBonusType } from '../../utils/bonus';
-import { mapResolvedBonus } from '../../utils/bonus-governance';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
 import { CanonicalEntityBonusWithTemplateRow } from '../../types/bonus-governance.types';
 import {
+  BuildingDistrictLevelCapRow,
   DistrictRow,
   EstateBuildingRow,
   MansionBuildingResourceCostRow,
+  MansionBuildingRequirementRow,
   MansionBuildingRow,
+  StatLabelRow,
 } from '../../types/building-service.types';
+import {
+  buildStatLabelMap,
+  buildDistrictRankMap,
+  effectiveBuildingMaxLevel,
+  groupEstateBuildingsByBuildingId,
+  groupLevelCapsByBuildingIdAndDistrict,
+  groupRequirementsByBuildingId,
+  isUnlimitedBuildingCap,
+  mapActiveBuildingRequirements,
+  requiredBuildingDistrictCode,
+  requiredDistrictRank,
+  requiredEstateBuildingLevel,
+} from './building-runtime-read-model';
+import {
+  aggregateCostTotals,
+  groupBonusesByEntityId,
+  mapActiveCostRules,
+  mapBuildingBonuses,
+} from './building-runtime-calculation';
 
 @Injectable({ providedIn: 'root' })
 export class BuildingsService {
@@ -64,6 +73,36 @@ export class BuildingsService {
             ],
             camelCase: false,
           }),
+          levelCaps: this.backend.getAll<BuildingDistrictLevelCapRow>({
+            table: TABLES.building_district_level_caps,
+            camelCase: false,
+          }),
+          requirements: this.backend.getAll<MansionBuildingRequirementRow>({
+            table: TABLES.entity_requirements,
+            select: '*, requirement_definitions(*)',
+            filters: {
+              entityType: {
+                operator: FilterOperator.EQ,
+                value: 'building_definition',
+              },
+              isActive: {
+                operator: FilterOperator.EQ,
+                value: true,
+              },
+            },
+            orderBy: [
+              { column: 'entity_id' },
+              { column: 'sort_order' },
+              { column: 'applies_from_level' },
+            ],
+            camelCase: false,
+          }),
+          stats: this.backend.getAll<StatLabelRow>({
+            table: TABLES.stats,
+            select: 'key, label',
+            orderBy: { column: 'sort_order' },
+            camelCase: false,
+          }),
           entityBonuses: this.backend.getAll<CanonicalEntityBonusWithTemplateRow>({
             table: TABLES.entity_bonuses,
             select: '*, bonus_templates (*)',
@@ -94,32 +133,52 @@ export class BuildingsService {
             camelCase: false,
           }),
         }).pipe(
-          map(({ formulaData, buildings, entityBonuses, currentAddress, estateBuildings, districts }) => {
+          map(({
+            formulaData,
+            buildings,
+            levelCaps,
+            requirements,
+            stats,
+            entityBonuses,
+            currentAddress,
+            estateBuildings,
+            districts,
+          }) => {
             if (!currentAddress) {
               throw new Error('Active hero estate address is not readable.');
             }
 
             const currentDistrictCode = currentAddress.districtCode;
-            const currentDistrict = districts.find(
-              (district) => district.code === currentDistrictCode
-            );
-            const currentDistrictRank = currentDistrict?.rank ?? 1;
-            const ownedMap = new Map(
-              estateBuildings.map((entry) => [entry.building_id, entry.level])
-            );
-            const bonusesByBuildingId = this.groupBonusesByEntityId(entityBonuses);
+            const currentDistrict = requiredCurrentDistrict(districts, currentDistrictCode);
+            const districtRanks = buildDistrictRankMap(districts);
+            const currentDistrictRank = currentDistrict.rank;
+            const estateBuildingsByBuildingId =
+              groupEstateBuildingsByBuildingId(estateBuildings);
+            const levelCapsByBuildingAndDistrict =
+              groupLevelCapsByBuildingIdAndDistrict(levelCaps);
+            const requirementsByBuildingId = groupRequirementsByBuildingId(requirements);
+            const statLabels = buildStatLabelMap(stats);
+            const bonusesByBuildingId = groupBonusesByEntityId(entityBonuses);
 
             const districtBuildings = buildings
+              .filter((row) => {
+                const districtCode = requiredBuildingDistrictCode(row);
+                return requiredDistrictRank(districtCode, districtRanks) <= currentDistrictRank;
+              })
               .map((row) =>
                 this.mapMansionBuilding(
                   row,
                   bonusesByBuildingId.get(row.id) ?? [],
-                  ownedMap,
+                  estateBuildingsByBuildingId,
+                  levelCapsByBuildingAndDistrict,
+                  requirementsByBuildingId.get(row.id) ?? [],
+                  statLabels,
                   currentDistrictRank,
+                  currentDistrictCode,
+                  districtRanks,
                   formulaData
                 )
-              )
-              .filter((building) => building.districtUnlockRank <= currentDistrictRank);
+              );
 
             return {
               currentAddress: currentAddress.addressLabel,
@@ -138,25 +197,36 @@ export class BuildingsService {
       building_resource_costs: MansionBuildingResourceCostRow[];
     },
     bonuses: CanonicalEntityBonusWithTemplateRow[],
-    ownedMap: Map<string, number>,
+    estateBuildingsByBuildingId: ReadonlyMap<string, EstateBuildingRow>,
+    levelCaps: ReadonlyMap<string, BuildingDistrictLevelCapRow>,
+    requirements: readonly MansionBuildingRequirementRow[],
+    statLabels: ReadonlyMap<string, string>,
     currentDistrictRank: number,
+    currentDistrictCode: string,
+    districtRanks: ReadonlyMap<string, number>,
     formulaData: FormulaAdminData
   ): MansionBuilding {
-    const currentLevel = ownedMap.get(building.id) ?? 0;
+    const districtCode = requiredBuildingDistrictCode(building);
+    const buildingDistrictRank = requiredDistrictRank(districtCode, districtRanks);
+    const currentLevel = requiredEstateBuildingLevel(estateBuildingsByBuildingId, building);
     const nextLevel = currentLevel + 1;
-    const hasLimit = (building.max_level ?? 0) > 0;
-    const canUpgrade = !hasLimit || currentLevel < (building.max_level ?? 0);
+    const effectiveMaxLevel = effectiveBuildingMaxLevel({
+      building,
+      currentDistrictCode,
+      levelCaps,
+    });
+    const isUnlimited = isUnlimitedBuildingCap(effectiveMaxLevel);
+    const canUpgrade = isUnlimited || currentLevel < effectiveMaxLevel;
     const rules = this.progression.resolveRulesForBuilding(building.id, formulaData);
     const activeCostRules = canUpgrade
-      ? this.mapActiveCostRules(
+      ? mapActiveCostRules(
           building.building_resource_costs ?? [],
           currentLevel,
           building.rank_required,
-          rules
+          rules,
+          this.progression.getUpgradeCost.bind(this.progression),
         )
       : [];
-
-    const districtCode = requiredBuildingDistrictCode(building.district_code, building.key);
 
     return {
       id: building.id,
@@ -168,14 +238,19 @@ export class BuildingsService {
         building.image_path ??
         '/assets/icons/capitol.svg',
       districtCode,
-      districtUnlockRank: building.rank_required,
+      districtUnlockRank: buildingDistrictRank,
+      rankRequired: building.rank_required,
       sortOrder: building.sort_order ?? 0,
+      startingLevel: building.starting_level,
+      baseCost: building.base_cost,
       maxLevel: building.max_level ?? 0,
+      effectiveMaxLevel,
+      isUnlimited,
       currentLevel,
       nextLevel,
       baseBuildTimeSeconds: building.base_build_time_seconds ?? 0,
       isOwned: currentLevel > 0,
-      isUnlocked: currentDistrictRank >= building.rank_required,
+      isUnlocked: buildingDistrictRank <= currentDistrictRank,
       canUpgrade,
       nextUpgradeTimeSeconds: canUpgrade
         ? this.progression.getUpgradeTimeSeconds(
@@ -185,112 +260,32 @@ export class BuildingsService {
             rules
           )
         : null,
-      nextUpgradeCosts: this.aggregateCostTotals(activeCostRules),
+      nextUpgradeCosts: aggregateCostTotals(activeCostRules),
       activeCostRules,
-      activeRequirements: this.mapActiveRequirements(nextLevel),
-      bonuses: this.mapBonuses(bonuses, currentLevel, rules),
+      activeRequirements: mapActiveBuildingRequirements(
+        requirements,
+        nextLevel,
+        statLabels,
+      ),
+      bonuses: mapBuildingBonuses(
+        bonuses,
+        currentLevel,
+        rules,
+        this.progression.getBonusValue.bind(this.progression),
+      ),
     };
-  }
-
-  private mapBonuses(
-    rows: CanonicalEntityBonusWithTemplateRow[],
-    currentLevel: number,
-    rules: BuildingProgressionRules
-  ): BuildingBonusPreview[] {
-    return rows.map((row) => {
-      const resolved = mapResolvedBonus(row);
-
-      if (resolved.qualityScalesLevelInterval) {
-        throw new Error('entity_bonuses.quality_scales_level_interval must remain false.');
-      }
-
-      return {
-        templateId: resolved.templateId,
-        target: resolved.targetKey,
-        type: normalizeBonusType(resolved.typeKey),
-        description: row.description ?? row.bonus_templates?.description ?? null,
-        baseValue: resolved.value,
-        currentValue:
-          this.progression.getBonusValue(currentLevel, resolved.value, rules) ?? 0,
-        nextValue:
-          this.progression.getBonusValue(currentLevel + 1, resolved.value, rules) ?? 0,
-      };
-    });
-  }
-
-  private mapActiveCostRules(
-    rows: MansionBuildingResourceCostRow[],
-    currentLevel: number,
-    rank: number,
-    rules: BuildingProgressionRules
-  ): BuildingResourceCostPreview[] {
-    const nextLevel = currentLevel + 1;
-
-    return rows
-      .filter((row) => row.applies_from_level <= nextLevel)
-      .sort((left, right) => {
-        if (left.sort_order !== right.sort_order) {
-          return left.sort_order - right.sort_order;
-        }
-
-        return left.applies_from_level - right.applies_from_level;
-      })
-      .map((row) => ({
-        resourceType: normalizeBuildingResourceType(row.resource_type),
-        appliesFromLevel: row.applies_from_level,
-        baseValue: row.base_value,
-        nextValue:
-          this.progression.getUpgradeCost(currentLevel, row.base_value, rank, rules) ?? 0,
-      }));
-  }
-
-  private aggregateCostTotals(
-    rows: BuildingResourceCostPreview[]
-  ): BuildingResourceCostTotal[] {
-    const totals = rows.reduce((acc, row) => {
-      acc.set(row.resourceType, (acc.get(row.resourceType) ?? 0) + row.nextValue);
-      return acc;
-    }, new Map<BuildingResourceType, number>());
-
-    return Array.from(totals.entries())
-      .map(([resourceType, amount]) => ({
-        resourceType,
-        amount,
-      }))
-      .sort(
-        (left, right) =>
-          resourceOrder(left.resourceType) - resourceOrder(right.resourceType)
-      );
-  }
-
-  private mapActiveRequirements(
-    _nextLevel: number
-  ): BuildingRequirementPreview[] {
-    return [];
-  }
-
-  private groupBonusesByEntityId(
-    rows: CanonicalEntityBonusWithTemplateRow[]
-  ): Map<string, CanonicalEntityBonusWithTemplateRow[]> {
-    const mapById = new Map<string, CanonicalEntityBonusWithTemplateRow[]>();
-
-    for (const row of rows) {
-      const existing = mapById.get(row.entity_id) ?? [];
-      existing.push(row);
-      mapById.set(row.entity_id, existing);
-    }
-
-    return mapById;
   }
 }
 
-function requiredBuildingDistrictCode(
-  districtCode: string | null,
-  buildingKey: string,
-): string {
-  if (!districtCode) {
-    throw new Error(`Building "${buildingKey}" does not have a district code.`);
+function requiredCurrentDistrict(
+  districts: readonly DistrictRow[],
+  currentDistrictCode: string,
+): DistrictRow {
+  const district = districts.find((row) => row.code === currentDistrictCode);
+
+  if (!district) {
+    throw new Error(`Estate district "${currentDistrictCode}" is not configured.`);
   }
 
-  return districtCode;
+  return district;
 }

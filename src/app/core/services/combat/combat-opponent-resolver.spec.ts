@@ -353,8 +353,8 @@ function formulaAdminData(): FormulaAdminData {
   return {
     targets: [formulaTarget()],
     formulas: [
-      formula('candidate-formula', 'Candidate scaling', 'round(baseValue * difficultyMultiplier + heroLevel)'),
-      formula('default-formula', 'Default scaling', 'round(baseValue + heroLevel)'),
+      formula('candidate-formula', 'Candidate scaling', 'round(baseValue * difficultyMultiplier + currentLevel)'),
+      formula('default-formula', 'Default scaling', 'round(baseValue + currentLevel)'),
     ],
     assignments: [],
     entityAssignments: [],
@@ -371,11 +371,7 @@ function formulaTarget() {
     description: null,
     allowedVariables: [
       'baseValue',
-      'baselineValue',
-      'statBaseValue',
-      'heroLevel',
-      'opponentLevel',
-      'level',
+      'currentLevel',
       'difficultyMultiplier',
     ],
     defaultTestContext: {},

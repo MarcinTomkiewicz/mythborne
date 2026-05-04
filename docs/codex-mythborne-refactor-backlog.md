@@ -1805,3 +1805,275 @@ Required report format must follow current Mythborne Codex review standards:
 - verification;
 - acceptance criteria mapping;
 - pending manual smoke if needed.
+
+# Epic Ref F — Requirements and building caps cleanup
+
+Original source: former main Epic S.
+
+Epic Ref F is a cleanup/follow-up over the existing estate/building requirements and district cap foundation.
+
+This epic must not duplicate completed Epic O / building admin / central requirements work. It should close remaining active frontend gaps around central requirements and district cap read/edit surfaces.
+
+Requirements and building caps are not new gameplay systems here. They are existing DB-owned balance/configuration systems that need frontend alignment.
+
+**Current DB/RPC foundation expected before Codex starts Ref F tasks:**
+
+- `requirement_definitions`;
+- `entity_requirements`;
+- `building_district_level_caps`;
+- `buildings.district_code`;
+- `buildings.max_level`;
+- `buildings.starting_level`;
+- `buildings.base_build_time_seconds`;
+- `get_requirement_impact_preview(...)`;
+- `get_building_progression_preview(...)`;
+- `get_building_max_level_for_district(...)`;
+- `assert_hero_meets_building_requirements(...)`;
+- `start_estate_building_upgrade(...)`.
+
+**Epic rules:**
+
+- Do not use legacy `building_requirements` as an active frontend source of truth.
+- Do not use legacy `buildings.requirements` as an active frontend source of truth.
+- Do not use `rank_required`.
+- Do not use `base_build_time_minutes`.
+- `buildings.district_code` is the minimum district where a building can be built.
+- Building is available in that district and higher districts.
+- `buildings.max_level = 0` means unlimited.
+- `building_district_level_caps` stores only district override caps.
+- Missing district cap override falls back to `buildings.max_level`.
+- Requirements are central:
+  - `requirement_definitions`;
+  - `entity_requirements`.
+- Requirements are not costs.
+- Requirements are not bonuses.
+- Frontend must not invent local requirement/cap logic if DB/RPC preview already returns the effective value.
+- If a needed write path for requirements/caps is missing, report a DB/RPC/governance blocker instead of adding direct table mutation.
+
+---
+
+## Task Ref F1 — Requirements and caps active usage audit
+
+**Goal:** Identify the remaining active frontend usage of legacy requirement/cap fields and confirm which current central paths are already implemented.
+
+**Scope:**
+
+- Inspect building admin, mansion/estate building surfaces, building services, mappers and preview code.
+- Check active usage of:
+  - `requirement_definitions`;
+  - `entity_requirements`;
+  - `building_district_level_caps`;
+  - `get_requirement_impact_preview(...)`;
+  - `get_building_progression_preview(...)`.
+- Identify active legacy usage of:
+  - `building_requirements`;
+  - `buildings.requirements`;
+  - `rank_required`;
+  - `base_build_time_minutes`.
+- Classify findings as:
+  - already implemented;
+  - active code gap;
+  - legacy/generated type only;
+  - cleanup candidate;
+  - DB/RPC blocker.
+
+**Acceptance criteria:**
+
+- Report lists exact active files and code paths.
+- Report clearly separates real active blockers from generated-type/history references.
+- No broad implementation rewrite is done in this task.
+
+---
+
+## Task Ref F2 — Building requirement read model alignment
+
+**Goal:** Ensure active building player/admin read models use central requirements.
+
+**Scope:**
+
+- Replace any active frontend read path still relying on legacy building requirement sources.
+- Use central requirement data from current DB/RPC/read models.
+- Use `get_requirement_impact_preview(...)` where the UI needs readable requirement impact.
+- Preserve existing domain model + mapper architecture.
+- Do not add new JSON requirement fields.
+
+**Acceptance criteria:**
+
+- Active building requirement UI reads from central requirements.
+- Legacy requirement fields are not used as source of truth in active UI paths.
+- Missing DB/RPC support is reported as blocker, not hidden with fallback.
+
+---
+
+## Task Ref F3 — Building district cap read model alignment
+
+**Goal:** Ensure active building player/admin read models display district caps and effective max levels correctly.
+
+**Scope:**
+
+- Use current building cap data and/or `get_building_progression_preview(...)`.
+- Display:
+  - base/global max level;
+  - district cap override where present;
+  - effective max level;
+  - cap source;
+  - unlimited semantics for `max_level = 0`.
+- Do not duplicate effective cap logic in Angular if DB preview already returns it.
+
+**Acceptance criteria:**
+
+- Building max-level display matches DB rules.
+- Missing cap override falls back to `buildings.max_level`.
+- Unlimited cap semantics are readable.
+
+---
+
+## Task Ref F4 — Mansion/building preview requirements and caps
+
+**Goal:** Align player-facing mansion/building preview with central requirements and effective district caps.
+
+**Scope:**
+
+- Update mansion/building preview surfaces to show:
+  - whether the building is available in the current district;
+  - current level;
+  - target level;
+  - effective max level;
+  - unmet requirements;
+  - cap/requirement block reason where relevant.
+- Use DB/RPC preview data where available.
+- Do not treat unavailable buildings as hidden if current design expects visible locked/available states.
+- Do not mask missing current estate/address invariant states.
+
+**Acceptance criteria:**
+
+- Player sees why a building can or cannot be upgraded.
+- Preview does not use legacy requirements/caps.
+- Preview does not calculate authoritative upgrade eligibility locally.
+
+---
+
+## Task Ref F5 — Building admin requirements display alignment
+
+**Goal:** Align building admin display with central entity requirements.
+
+**Scope:**
+
+- Show current requirements for building definitions through central requirement read models.
+- Display requirement labels/descriptions from DB dictionaries/metadata where available.
+- Keep technical keys secondary.
+- Reuse existing requirement editor/display components if present.
+
+**Acceptance criteria:**
+
+- Building admin shows central requirements clearly.
+- Legacy building requirement display is not used for active data.
+- Existing requirement UI patterns are reused where possible.
+
+---
+
+## Task Ref F6 — Building admin district cap display alignment
+
+**Goal:** Align building admin display with district cap overrides and fallback semantics.
+
+**Scope:**
+
+- Show building base max level.
+- Show district-specific cap overrides.
+- Show effective cap per district.
+- Show `0 = unlimited` semantics.
+- Make missing override vs explicit override readable.
+- Reuse existing building/admin patterns where possible.
+
+**Acceptance criteria:**
+
+- Admin can understand district cap configuration for a building.
+- Fallback from missing override to base max level is clear.
+- UI does not imply every district must have a cap row.
+
+---
+
+## Task Ref F7 — Building requirements edit path alignment
+
+**Goal:** Ensure building requirement editing uses the existing central requirement/governance path.
+
+**Scope:**
+
+- Inspect existing central requirement editor/write path.
+- Reuse it for building definitions if available.
+- If no governed write path exists, show read-only data and report DB/RPC/governance blocker.
+- Do not add direct table writes to `entity_requirements` unless that is already the accepted admin pattern.
+
+**Acceptance criteria:**
+
+- Building requirement edits do not use legacy requirement tables/columns.
+- Missing write contract is reported instead of bypassed.
+- Requirement editing preserves reason/governance patterns where the project already has them.
+
+---
+
+## Task Ref F8 — Building district cap edit path alignment
+
+**Goal:** Ensure building district cap editing uses an approved admin/governance path.
+
+**Scope:**
+
+- Inspect current config governance/entity edit support for `building_district_level_cap`.
+- Reuse existing admin/config governance path if present.
+- If no governed write path exists, keep cap view read-only and report DB/RPC/governance blocker.
+- Do not add direct writes to `building_district_level_caps` from Angular unless that is already the accepted pattern.
+
+**Acceptance criteria:**
+
+- Cap edits do not bypass governance.
+- Read-only fallback is explicit when write path is missing.
+- Admin UI does not pretend caps were saved if no canonical write exists.
+
+---
+
+## Task Ref F9 — Legacy building requirement/cap UI removal
+
+**Goal:** Remove or quarantine active frontend UI that still presents legacy building requirements/caps as current truth.
+
+**Scope:**
+
+- Remove active usage of:
+  - legacy requirement display based on `building_requirements`;
+  - legacy JSON display from `buildings.requirements`;
+  - `rank_required`;
+  - `base_build_time_minutes`.
+- Preserve historical/debug references only if they are clearly not active source of truth.
+- Report any remaining DB cleanup candidates.
+
+**Acceptance criteria:**
+
+- Active building UI no longer presents legacy requirement/cap data.
+- Remaining legacy references are classified and justified.
+- Cleanup candidates are reported, not silently dropped.
+
+---
+
+## Task Ref F10 — Requirements/caps admin copy and metadata alignment
+
+**Goal:** Make requirements and cap semantics readable in admin/player UI.
+
+**Scope:**
+
+- Use existing DB metadata/dictionaries where available.
+- Ensure UI copy distinguishes:
+  - requirements;
+  - costs;
+  - bonuses;
+  - district availability;
+  - district cap override;
+  - base max level;
+  - unlimited max level.
+- Do not hardcode permanent gameplay explanations if DB metadata exists or should exist.
+
+**Acceptance criteria:**
+
+- Admin/player wording does not confuse requirements, costs and bonuses.
+- District cap fallback semantics are readable.
+- Missing DB metadata is reported as metadata gap if needed.
+
+---

@@ -14,8 +14,8 @@ describe('BuildingProgressionService', () => {
         scopeKey: 'building_balance',
         label: 'Building upgrade cost',
         description: null,
-        allowedVariables: ['level', 'baseCost', 'rank'],
-        defaultTestContext: { level: 1, baseCost: 10, rank: 1 },
+        allowedVariables: ['currentLevel', 'targetLevel', 'baseCost', 'rank'],
+        defaultTestContext: { currentLevel: 0, targetLevel: 1, baseCost: 10, rank: 1 },
         sortOrder: 10,
         createdAt: null,
       },
@@ -25,8 +25,8 @@ describe('BuildingProgressionService', () => {
         scopeKey: 'building_balance',
         label: 'Building upgrade time',
         description: null,
-        allowedVariables: ['level', 'baseTime', 'rank'],
-        defaultTestContext: { level: 1, baseTime: 10, rank: 1 },
+        allowedVariables: ['currentLevel', 'targetLevel', 'baseTimeSeconds', 'rank'],
+        defaultTestContext: { currentLevel: 0, targetLevel: 1, baseTimeSeconds: 10, rank: 1 },
         sortOrder: 20,
         createdAt: null,
       },
@@ -36,8 +36,8 @@ describe('BuildingProgressionService', () => {
         scopeKey: 'building_balance',
         label: 'Building bonus growth',
         description: null,
-        allowedVariables: ['level', 'baseBonus'],
-        defaultTestContext: { level: 1, baseBonus: 1 },
+        allowedVariables: ['currentLevel', 'baseBonus'],
+        defaultTestContext: { currentLevel: 1, baseBonus: 1 },
         sortOrder: 30,
         createdAt: null,
       },
@@ -48,7 +48,7 @@ describe('BuildingProgressionService', () => {
         key: 'global-cost',
         scopeKey: 'building_balance',
         label: 'Global cost',
-        expression: 'baseCost + level',
+        expression: 'baseCost + targetLevel',
         description: null,
         isEnabled: true,
         createdAt: null,
@@ -59,7 +59,7 @@ describe('BuildingProgressionService', () => {
         key: 'local-cost',
         scopeKey: 'building_balance',
         label: 'Local cost',
-        expression: 'baseCost + level + 100',
+        expression: 'baseCost + targetLevel + 100',
         description: null,
         isEnabled: true,
         createdAt: null,
@@ -70,7 +70,7 @@ describe('BuildingProgressionService', () => {
         key: 'global-time',
         scopeKey: 'building_balance',
         label: 'Global time',
-        expression: 'baseTime + level',
+        expression: 'baseTimeSeconds + targetLevel',
         description: null,
         isEnabled: true,
         createdAt: null,
@@ -81,7 +81,7 @@ describe('BuildingProgressionService', () => {
         key: 'global-bonus',
         scopeKey: 'building_balance',
         label: 'Global bonus',
-        expression: 'baseBonus + level',
+        expression: 'baseBonus + currentLevel',
         description: null,
         isEnabled: true,
         createdAt: null,
@@ -141,7 +141,7 @@ describe('BuildingProgressionService', () => {
     const rules = service.resolveRulesForBuilding('building-local', adminData);
 
     expect(rules.costFormulaId).toBe('formula-local-cost');
-    expect(rules.costExpression).toBe('baseCost + level + 100');
+    expect(rules.costExpression).toBe('baseCost + targetLevel + 100');
     expect(rules.timeFormulaId).toBe('formula-global-time');
   });
 
@@ -149,27 +149,27 @@ describe('BuildingProgressionService', () => {
     const rules = service.resolveRulesForBuilding('building-without-override', adminData);
 
     expect(rules.costFormulaId).toBe('formula-global-cost');
-    expect(rules.costExpression).toBe('baseCost + level');
+    expect(rules.costExpression).toBe('baseCost + targetLevel');
   });
 
-  it('calculates upgrade cost from the positive base cost and level', () => {
+  it('calculates upgrade cost from the positive base cost and target level', () => {
     const rules = service.resolveRulesForBuilding('building-without-override', adminData);
 
-    expect(service.getUpgradeCost(3, 100, 1, rules)).toBe(103);
+    expect(service.getUpgradeCost(2, 100, 1, rules)).toBe(103);
   });
 
-  it('supports snake_case formula variables used by persisted formula data', () => {
+  it('passes current and target level without legacy level for upgrade formulas', () => {
     const rules = {
       costFormulaId: 'formula-snake-cost',
       timeFormulaId: 'formula-snake-time',
       bonusFormulaId: 'formula-snake-bonus',
-      costExpression: 'base_cost + level',
-      timeExpression: 'base_time + level',
-      bonusExpression: 'base_bonus + level',
+      costExpression: 'baseCost + currentLevel + targetLevel',
+      timeExpression: 'baseTimeSeconds + currentLevel + targetLevel',
+      bonusExpression: 'baseBonus + currentLevel',
     };
 
-    expect(service.getUpgradeCost(3, 100, 1, rules)).toBe(103);
-    expect(service.getUpgradeTimeSeconds(3, 20, 1, rules)).toBe(23);
+    expect(service.getUpgradeCost(2, 100, 1, rules)).toBe(105);
+    expect(service.getUpgradeTimeSeconds(2, 20, 1, rules)).toBe(25);
     expect(service.getBonusValue(3, 7, rules)).toBe(10);
   });
 
@@ -182,7 +182,7 @@ describe('BuildingProgressionService', () => {
         costFormulaId: 'formula-invalid-cost',
         timeFormulaId: null,
         bonusFormulaId: null,
-        costExpression: 'base_cost + missing_variable',
+        costExpression: 'baseCost + missing_variable',
         timeExpression: '',
         bonusExpression: '',
       },

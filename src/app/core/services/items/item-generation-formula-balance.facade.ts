@@ -5,17 +5,12 @@ import {
   BalanceFormula,
   EditableBalanceFormula,
   FormulaAdminData,
-  FormulaBlock,
-  FormulaFunctionGuide,
   FormulaTarget,
-  FormulaTemplateGuide,
-  FormulaVariableDefinition,
 } from '../../domain/formula/formula.model';
 import { ItemGenerationBalanceFormFactory } from '../../factories/forms/item-generation-balance-form.factory';
 import { FormulaBalanceSelection } from '../../types/item-generation-formula-balance.types';
 import { toFormulaChartState } from '../../utils/formula-chart';
 import {
-  toFormulaVariableContext,
   toFormulaVariableDefinitions,
   toFormulaVariableKey,
   validateFormulaVariables,
@@ -24,6 +19,25 @@ import { getErrorMessage } from '../../utils/error-message';
 import { FormulaService } from '../formula/formula';
 import { FormulaRuntimeService } from '../progression/formula-runtime';
 import { ToastService } from '../ui/toast';
+import {
+  buildScopeVariableCatalog,
+  ScopeVariableCatalogItem,
+} from './formula-target-variable-catalog';
+import {
+  effectiveFormulaTesterVariables,
+  formulaTesterDefinitions,
+  formulaTesterVariableKeys,
+  reconcileFormulaTesterVariables,
+  updateFormulaTesterVariable,
+} from './formula-tester-variables';
+import {
+  buildFormulaChartSamples,
+  preferredFormulaChartVariable,
+} from './formula-chart-variables';
+import {
+  formulaValidationMessage,
+  formulaVariableTooltip,
+} from './formula-validation-messages';
 
 const EMPTY_FORMULA_DATA: FormulaAdminData = {
   targets: [],
@@ -32,13 +46,6 @@ const EMPTY_FORMULA_DATA: FormulaAdminData = {
   entityAssignments: [],
   blocks: [],
 };
-
-interface ScopeVariableCatalogItem {
-  key: string;
-  label: string;
-  helperText: string;
-  targetLabels: string[];
-}
 
 @Injectable()
 export class ItemGenerationFormulaBalanceFacade {
@@ -50,9 +57,11 @@ export class ItemGenerationFormulaBalanceFacade {
 
   readonly isSaving = signal(false);
   readonly data = signal<FormulaAdminData>(EMPTY_FORMULA_DATA);
-  readonly testerContext = signal<Record<string, number>>({});
+  readonly testerVariableValues = signal<Record<string, number>>({});
   readonly testerTargetId = signal('');
-  readonly selectedTargetVariablesDraft = signal<FormulaVariableDefinition[]>([]);
+  readonly selectedTargetVariablesDraft = signal<ReturnType<typeof toFormulaVariableDefinitions>>([]);
+  private readonly selectedAssignmentTargetId = signal('');
+  private readonly selectedAssignmentFormulaId = signal('');
   private readonly previewRerollTick = signal(0);
   readonly selectorForm = this.formFactory.createFormulaSelectorForm();
   readonly editorForm = this.formFactory.createFormulaEditorForm();
@@ -61,16 +70,11 @@ export class ItemGenerationFormulaBalanceFacade {
     this.editorForm.valueChanges.pipe(startWith(this.editorForm.getRawValue())),
     { initialValue: this.editorForm.getRawValue() }
   );
-  readonly assignmentValue = toSignal(
-    this.assignmentForm.valueChanges.pipe(startWith(this.assignmentForm.getRawValue())),
-    { initialValue: this.assignmentForm.getRawValue() }
-  );
-
   readonly selectedTarget = computed(
-    () => this.data().targets.find((target) => target.id === this.assignmentValue().targetId) ?? null
+    () => this.data().targets.find((target) => target.id === this.selectedAssignmentTargetId()) ?? null
   );
   readonly selectedAssignedFormula = computed(
-    () => this.data().formulas.find((formula) => formula.id === this.assignmentValue().formulaId) ?? null
+    () => this.data().formulas.find((formula) => formula.id === this.selectedAssignmentFormulaId()) ?? null
   );
   readonly selectedEditorFormula = computed(
     () => this.data().formulas.find((formula) => formula.id === this.selectorForm.controls.selectedId.value) ?? null
@@ -90,19 +94,15 @@ export class ItemGenerationFormulaBalanceFacade {
   readonly selectedTargetVariablesError = computed(() =>
     validateFormulaVariables(this.selectedTargetVariablesDraft())
   );
-  readonly previewVariableDefinitions = computed(() => {
-    const referenceTarget = this.testerReferenceTarget();
-
-    if (!referenceTarget) {
-      return [];
-    }
-
-    return this.selectedTarget()?.id === referenceTarget.id
-      ? this.selectedTargetVariablesDraft()
-      : toFormulaVariableDefinitions(referenceTarget);
-  });
+  readonly previewVariableDefinitions = computed(() =>
+    formulaTesterDefinitions({
+      selectedTarget: this.selectedTarget(),
+      referenceTarget: this.testerReferenceTarget(),
+      selectedTargetVariables: this.selectedTargetVariablesDraft(),
+    })
+  );
   readonly testerVariables = computed(() =>
-    this.previewVariableDefinitions().map((variable) => variable.key).filter((variable) => !!variable)
+    formulaTesterVariableKeys(this.previewVariableDefinitions())
   );
   readonly expressionVariables = computed(() =>
     this.formulaRuntime.getVariables(this.editorValue().expression ?? '')
@@ -114,62 +114,31 @@ export class ItemGenerationFormulaBalanceFacade {
     )
   );
   readonly formulaValidationError = computed(() => {
-    if (this.selectedTarget()?.id === this.testerReferenceTarget()?.id && this.selectedTargetVariablesError()) {
-      return this.selectedTargetVariablesError();
-    }
-
-    if (this.unknownVariables().length > 0) {
-      const variable = this.unknownVariables()[0];
-      const testerTarget = this.testerReferenceTarget();
-      const availableVariables = this.testerVariables().join(', ') || 'none';
-      const scopeVariable = this.scopeVariables().find((entry) => entry.key === variable);
-      const availabilityHint =
-        scopeVariable?.targetLabels.length
-          ? ` Available in: ${scopeVariable.targetLabels.join(', ')}.`
-          : '';
-
-      return `Unknown variable: ${variable}. Tester target "${testerTarget?.label ?? 'none'}" allows: ${availableVariables}.${availabilityHint} Choose the correct tester target or add the variable to that target first.`;
-    }
-
-    return null;
+    return formulaValidationMessage({
+      selectedTarget: this.selectedTarget(),
+      testerTarget: this.testerReferenceTarget(),
+      selectedVariablesError: this.selectedTargetVariablesError(),
+      unknownVariables: this.unknownVariables(),
+      testerVariables: this.testerVariables(),
+      scopeVariables: this.scopeVariables(),
+    });
   });
-  readonly testerBaseContext = computed(() =>
-    toFormulaVariableContext(this.previewVariableDefinitions())
+  readonly testerBaseVariables = computed(() =>
+    reconcileFormulaTesterVariables({
+      currentValues: {},
+      definitions: this.previewVariableDefinitions(),
+      targetKey: this.testerReferenceTarget()?.key,
+    })
   );
   readonly blocks = computed(() =>
     this.data().blocks.filter((block) => block.scopeKey === this.currentScope())
   );
   readonly scopeVariables = computed<ScopeVariableCatalogItem[]>(() => {
-    const items = new Map<string, ScopeVariableCatalogItem>();
-
-    for (const block of this.blocksFor('variables')) {
-      items.set(block.token, {
-        key: block.token,
-        label: block.label,
-        helperText: block.helperText ?? '',
-        targetLabels: [],
-      });
-    }
-
-    for (const target of this.targetsForCurrentScope()) {
-      for (const key of target.allowedVariables) {
-        const current = items.get(key);
-
-        if (current) {
-          current.targetLabels = [...current.targetLabels, target.label];
-          continue;
-        }
-
-        items.set(key, {
-          key,
-          label: key,
-          helperText: '',
-          targetLabels: [target.label],
-        });
-      }
-    }
-
-    return Array.from(items.values()).sort((left, right) => left.label.localeCompare(right.label));
+    return buildScopeVariableCatalog({
+      target: this.testerReferenceTarget(),
+      variables: this.previewVariableDefinitions(),
+      blocks: this.blocks().filter((block) => block.category === 'variables'),
+    });
   });
   readonly preview = computed(() => {
     this.previewRerollTick();
@@ -184,7 +153,7 @@ export class ItemGenerationFormulaBalanceFacade {
 
     return this.formulaRuntime.evaluate(
       this.editorValue().expression ?? '',
-      this.effectiveTesterContext(),
+      this.effectiveTesterVariables(),
       this.testerVariables()
     );
   });
@@ -197,56 +166,25 @@ export class ItemGenerationFormulaBalanceFacade {
   readonly functionGuides = computed(() => this.formulaRuntime.getFunctionGuides());
   readonly formulaTemplates = computed(() => this.formulaRuntime.getTemplateGuides());
   readonly chartVariable = computed(() => {
-    const variables = this.testerVariables();
-    return (
-      variables.find((variable) => variable === 'statLevel') ??
-      variables.find((variable) => variable === 'level') ??
-      variables.find((variable) => variable === 'heroLevel') ??
-      variables[0] ??
-      null
-    );
+    return preferredFormulaChartVariable({
+      variables: this.testerVariables(),
+      targetKey: this.testerReferenceTarget()?.key,
+    });
   });
   readonly templateVariable = computed(
-    () => this.chartVariable() ?? this.testerVariables()[0] ?? 'level'
+    () => this.chartVariable() ?? this.testerVariables()[0] ?? 'currentLevel'
   );
   readonly chartSamples = computed(() => {
-    const variable = this.chartVariable();
-    const expression = this.editorValue().expression ?? '';
-
-    if (
-      !variable ||
-      !expression.trim() ||
-      this.formulaValidationError() ||
-      this.isFormulaNonDeterministic()
-    ) {
-      return [];
-    }
-
-    const baseContext = this.effectiveTesterContext();
-    const start = variable.toLowerCase().includes('level') ? 1 : 0;
-    const end = variable.toLowerCase().includes('level')
-      ? Math.max(start + 11, Number(baseContext[variable] ?? 1) + 11)
-      : Math.max(start + 11, Number(baseContext[variable] ?? 0) + 10);
-    const points: Array<{ x: number; y: number }> = [];
-
-    for (let x = start; x <= end; x += 1) {
-      const result = this.formulaRuntime.evaluate(
-        expression,
-        {
-          ...baseContext,
-          [variable]: x,
-        },
-        this.testerVariables()
-      );
-
-      if (result.error || result.value === null) {
-        return [];
-      }
-
-      points.push({ x, y: result.value });
-    }
-
-    return points;
+    return buildFormulaChartSamples({
+      runtime: this.formulaRuntime,
+      target: this.testerReferenceTarget(),
+      variable: this.chartVariable(),
+      expression: this.editorValue().expression ?? '',
+      variables: this.testerVariables(),
+      baseValues: this.effectiveTesterVariables(),
+      hasValidationError: !!this.formulaValidationError(),
+      isNonDeterministic: this.isFormulaNonDeterministic(),
+    });
   });
   readonly chartState = computed(() => toFormulaChartState(this.chartSamples()));
 
@@ -257,7 +195,14 @@ export class ItemGenerationFormulaBalanceFacade {
 
     this.assignmentForm.controls.targetId.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((id) => this.applyTargetSelection(id));
+      .subscribe((id) => {
+        this.selectedAssignmentTargetId.set(id);
+        this.applyTargetSelection(id);
+      });
+
+    this.assignmentForm.controls.formulaId.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((id) => this.selectedAssignmentFormulaId.set(id));
   }
 
   setData(data: FormulaAdminData, preferred?: FormulaBalanceSelection) {
@@ -265,6 +210,7 @@ export class ItemGenerationFormulaBalanceFacade {
     const target =
       data.targets.find((entry) => entry.key === preferred?.targetKey) ?? data.targets[0] ?? null;
     this.assignmentForm.controls.targetId.setValue(target?.id ?? '', { emitEvent: false });
+    this.selectedAssignmentTargetId.set(target?.id ?? '');
     this.applyTargetSelection(target?.id ?? '');
 
     const formula =
@@ -274,7 +220,7 @@ export class ItemGenerationFormulaBalanceFacade {
       data.formulas[0];
 
     this.selectorForm.controls.selectedId.setValue(formula?.id ?? '', { emitEvent: false });
-    this.patchEditor(formula);
+    this.patchEditor(formula, !!preferred?.formulaKey);
   }
 
   refresh(preferred?: FormulaBalanceSelection) {
@@ -363,14 +309,14 @@ export class ItemGenerationFormulaBalanceFacade {
       ...variables,
       { key: '', defaultValue: 0 },
     ]);
-    this.reconcileTesterContext();
+    this.reconcileTesterVariables();
   }
 
   removeSelectedTargetVariable(index: number) {
     this.selectedTargetVariablesDraft.update((variables) =>
       variables.filter((_, currentIndex) => currentIndex !== index)
     );
-    this.reconcileTesterContext();
+    this.reconcileTesterVariables();
   }
 
   updateSelectedTargetVariableKey(index: number, value: string) {
@@ -380,7 +326,7 @@ export class ItemGenerationFormulaBalanceFacade {
         currentIndex === index ? { ...variable, key } : variable
       )
     );
-    this.reconcileTesterContext();
+    this.reconcileTesterVariables();
   }
 
   updateSelectedTargetVariableDefault(index: number, value: string) {
@@ -392,15 +338,20 @@ export class ItemGenerationFormulaBalanceFacade {
           : variable
       )
     );
-    this.reconcileTesterContext();
+    this.reconcileTesterVariables();
   }
 
-  updateTesterContext(variable: string, value: string) {
+  updateTesterVariable(variable: string, value: string) {
     const numericValue = Number(value);
-    this.testerContext.update((current) => ({
-      ...current,
-      [variable]: Number.isFinite(numericValue) ? numericValue : 0,
-    }));
+    const nextValue = Number.isFinite(numericValue) ? numericValue : 0;
+    this.testerVariableValues.update((current) =>
+      updateFormulaTesterVariable({
+        currentValues: current,
+        variable,
+        value: nextValue,
+        targetKey: this.testerReferenceTarget()?.key,
+      }),
+    );
   }
 
   rerollPreview() {
@@ -408,60 +359,12 @@ export class ItemGenerationFormulaBalanceFacade {
   }
 
   getTesterValue(variable: string): number {
-    return this.effectiveTesterContext()[variable] ?? 0;
+    return this.effectiveTesterVariables()[variable] ?? 0;
   }
 
   selectTesterTarget(targetId: string) {
     this.testerTargetId.set(targetId);
-    this.reconcileTesterContext();
-  }
-
-  blocksFor(category: string): FormulaBlock[] {
-    return this.blocks().filter((block) => block.category === category);
-  }
-
-  appendBlock(token: string) {
-    const currentValue = this.editorForm.controls.expression.value ?? '';
-    this.editorForm.controls.expression.setValue(`${currentValue}${token}`.trim());
-  }
-
-  appendBlockTemplate(block: FormulaBlock) {
-    const guide = this.functionGuide(block);
-    this.appendBlock(guide?.insertTemplate ?? block.token);
-  }
-
-  applyTemplate(template: FormulaTemplateGuide) {
-    this.editorForm.controls.expression.setValue(this.resolveTemplateExpression(template));
-  }
-
-  blockTooltip(block: FormulaBlock): string {
-    const guide = this.functionGuide(block);
-    const parts = [
-      guide?.humanSyntax ? `Human: ${guide.humanSyntax}` : null,
-      guide?.description ?? null,
-      guide?.example ? `Example: ${guide.example}` : null,
-      guide?.exampleHuman ? `Meaning: ${guide.exampleHuman}` : null,
-      !guide ? block.helperText : null,
-    ].filter((part): part is string => !!part);
-
-    return parts.join('\n');
-  }
-
-  templateTooltip(template: FormulaTemplateGuide): string {
-    return [
-      `Expression: ${this.resolveTemplateExpression(template)}`,
-      `Human: ${this.resolveTemplateHuman(template)}`,
-      template.summary,
-      `Effect: ${template.effect}`,
-      'Click to replace the current expression with this template.',
-    ].join('\n');
-  }
-
-  humanizeScope(scopeKey: string): string {
-    return scopeKey
-      .split('_')
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(' ');
+    this.reconcileTesterVariables();
   }
 
   currentFormulaKey(): string {
@@ -472,68 +375,26 @@ export class ItemGenerationFormulaBalanceFacade {
     return this.selectedTarget()?.key;
   }
 
-  functionGuide(block: FormulaBlock): FormulaFunctionGuide | null {
-    const key = block.token.replace(/\(.*/, '');
-    return this.functionGuideByKey(key);
-  }
-
-  functionGuideByKey(key: string): FormulaFunctionGuide | null {
-    return this.functionGuides().find((guide) => guide.key === key) ?? null;
-  }
-
-  functionGuideTooltip(guide: FormulaFunctionGuide): string {
-    return [
-      `Human: ${guide.humanSyntax}`,
-      guide.description,
-      `Example: ${guide.example}`,
-      `Meaning: ${guide.exampleHuman}`,
-    ].join('\n');
-  }
-
   variableTooltip(key: string, fallback = ''): string {
-    const previewVariable =
-      this.previewVariableDefinitions().find((variable) => variable.key === key) ?? null;
-    const scopeVariable = this.scopeVariables().find((variable) => variable.key === key) ?? null;
-    const testerTarget = this.testerReferenceTarget();
-    const scopeLine = scopeVariable?.helperText || fallback;
-    const availabilityLine =
-      scopeVariable?.targetLabels.length
-        ? `Available in: ${scopeVariable.targetLabels.join(', ')}`
-        : null;
-    const targetLine = testerTarget
-      ? previewVariable
-        ? `Tester target "${testerTarget.label}" default: ${previewVariable.defaultValue}`
-        : `Tester target "${testerTarget.label}" does not expose this variable.`
-      : null;
-
-    return [scopeLine, availabilityLine, targetLine]
-      .filter((line): line is string => !!line)
-      .join('\n');
-  }
-
-  resolveTemplateExpression(template: FormulaTemplateGuide): string {
-    return template.expressionTemplate.replaceAll('{{x}}', this.templateVariable());
-  }
-
-  resolveTemplateHuman(template: FormulaTemplateGuide): string {
-    return template.humanTemplate.replaceAll('{{x}}', this.templateVariable());
+    return formulaVariableTooltip({
+      key,
+      fallback,
+      previewVariables: this.previewVariableDefinitions(),
+      scopeVariables: this.scopeVariables(),
+      testerTarget: this.testerReferenceTarget(),
+    });
   }
 
   private currentDraft(): EditableBalanceFormula {
     return this.formFactory.toFormula(this.editorForm);
   }
 
-  private effectiveTesterContext(): Record<string, number> {
-    const baseContext = this.testerBaseContext();
-    const currentContext = this.testerContext();
-
-    return this.testerVariables().reduce(
-      (acc, key) => {
-        acc[key] = Number(currentContext[key] ?? baseContext[key] ?? 0);
-        return acc;
-      },
-      {} as Record<string, number>
-    );
+  private effectiveTesterVariables(): Record<string, number> {
+    return effectiveFormulaTesterVariables({
+      keys: this.testerVariables(),
+      baseValues: this.testerBaseVariables(),
+      currentValues: this.testerVariableValues(),
+    });
   }
 
   private applyTargetSelection(targetId: string) {
@@ -547,9 +408,10 @@ export class ItemGenerationFormulaBalanceFacade {
       '';
 
     this.assignmentForm.controls.formulaId.setValue(formulaId, { emitEvent: false });
+    this.selectedAssignmentFormulaId.set(formulaId);
     this.selectedTargetVariablesDraft.set(toFormulaVariableDefinitions(target));
     this.syncTesterTargetSelection();
-    this.reconcileTesterContext();
+    this.reconcileTesterVariables();
   }
 
   private formulasFor(target: FormulaTarget | null): BalanceFormula[] {
@@ -558,24 +420,23 @@ export class ItemGenerationFormulaBalanceFacade {
       : this.data().formulas;
   }
 
-  private patchEditor(formula?: EditableBalanceFormula | BalanceFormula) {
+  private patchEditor(
+    formula?: EditableBalanceFormula | BalanceFormula,
+    syncTesterByFormula = true,
+  ) {
     const draft = formula ?? this.formFactory.createFormulaDraft(this.selectedTarget()?.scopeKey);
     this.formFactory.patchFormula(this.editorForm, draft);
-    this.syncTesterTargetSelection(draft.id ?? null);
-    this.reconcileTesterContext();
+    this.syncTesterTargetSelection(syncTesterByFormula ? draft.id ?? null : null);
+    this.reconcileTesterVariables();
   }
 
-  private reconcileTesterContext(variables = this.previewVariableDefinitions()) {
-    const current = this.testerContext();
-
-    this.testerContext.set(
-      variables.reduce(
-        (acc, variable) => {
-          acc[variable.key] = Number(current[variable.key] ?? variable.defaultValue ?? 0);
-          return acc;
-        },
-        {} as Record<string, number>
-      )
+  private reconcileTesterVariables(variables = this.previewVariableDefinitions()) {
+    this.testerVariableValues.set(
+      reconcileFormulaTesterVariables({
+        currentValues: this.testerVariableValues(),
+        definitions: variables,
+        targetKey: this.testerReferenceTarget()?.key,
+      }),
     );
   }
 
