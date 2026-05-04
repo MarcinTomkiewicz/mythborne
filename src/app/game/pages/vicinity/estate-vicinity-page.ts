@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { InputTextModule } from 'primeng/inputtext';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { EstateVicinityPageState } from './estate-vicinity-page.state';
 
@@ -13,6 +14,7 @@ import { EstateVicinityPageState } from './estate-vicinity-page.state';
     ButtonModule,
     CheckboxModule,
     FormsModule,
+    InputTextModule,
     LoadingOverlay,
     RouterLink,
   ],

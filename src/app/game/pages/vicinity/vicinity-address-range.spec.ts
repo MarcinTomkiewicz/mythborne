@@ -40,6 +40,30 @@ describe('buildVicinityAddressRange', () => {
     expect(highRange.rangeLabel).toBe('A-8 - A-20');
   });
 
+  it('can browse a non-current district without marking a self row', () => {
+    const range = buildVicinityAddressRange({
+      currentAddress: currentAddress(11),
+      district: {
+        ...district(20),
+        districtCode: 'B',
+        label: 'District B',
+      },
+      centerAddressNumber: 5,
+      occupiedAddresses: [
+        {
+          ...occupiedAddress(4),
+          districtCode: 'B',
+          addressLabel: 'B-4',
+        },
+      ],
+    });
+
+    expect(range.rangeLabel).toBe('B-1 - B-15');
+    expect(range.rows.some((row) => row.kind === 'self')).toBeFalse();
+    expect(range.rows.find((row) => row.addressNumber === 4)?.kind).toBe('occupied');
+    expect(range.rows.find((row) => row.addressNumber === 5)?.kind).toBe('empty');
+  });
+
   it('classifies self, occupied and empty address rows', () => {
     const range = buildVicinityAddressRange({
       currentAddress: currentAddress(11),

@@ -4863,6 +4863,8 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - No empty address rows are persisted.
 - Build passes.
 
+**Implementation note:** O9 accepted on 2026-05-04 after user smoke. `/game/vicinity` now supports district selection, center-address browsing, compact generated address ranges, and all/empty/occupied filtering over the O2 address read layer. Current estate rows are identifiable, occupied rows stay generic/safe, empty rows are selectable, and relocation continues through canonical `EstateRelocation.relocateActiveHeroEstate(...)` / `relocate_hero_estate_to_empty_address(...)` without direct `estates` writes. Stale guards cover load/reload and relocation responses, and controls are disabled/ignored while relocation is pending. No `/game/neighborhood`, PvP attack/spy/siege/takeover/protection/travel mechanics, empty-address persistence, hardcoded production capacities, DB/RPC migration, or Angular resource-production fallback was introduced. Verification passed with `npx tsc --noEmit`, focused vicinity/estate/building specs, static grep checks, and `npm run build` with known budget/CommonJS warnings; Codex did not run manual or route smoke. Follow-up: resource production after destructive relocation remains a non-blocking DB/runtime/topbar consistency issue. If `hero_resources.per_hour` remains stale after relocation or mansion settlement, return to backend/migrator; if DB values are correct, fix the topbar reload/cache path. Do not solve it with local Angular production recalculation.
+
 ---
 
 ## Task O10 — Player estate overview and building dashboard UI

@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { forkJoin, map, switchMap } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import {
   MansionBuildingJob,
   BuildingRequirementPreview,
@@ -57,7 +57,14 @@ export class MansionPageFacade {
     forkJoin({
       view: this.buildingsService.getMansionEstateView(),
       uiMetadataEntries: this.explainabilityMetadata.getRuntimeEntries(),
-    }).subscribe({
+    }).pipe(
+      switchMap((payload) =>
+        this.activeHero.loadActiveHero().pipe(
+          map(() => payload),
+          catchError(() => of(payload)),
+        ),
+      ),
+    ).subscribe({
       next: ({ view, uiMetadataEntries }) => {
         if (requestId !== this.loadRequestId) {
           return;

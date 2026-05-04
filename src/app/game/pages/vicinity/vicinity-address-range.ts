@@ -31,14 +31,14 @@ export function buildVicinityAddressRange(input: {
   district: EstateDistrictCapacityReadModel;
   occupiedAddresses: readonly OccupiedEstateAddressReadModel[];
   radius?: number;
+  centerAddressNumber?: number;
 }): VicinityAddressRange {
   const radius = normalizeRadius(input.radius ?? VICINITY_ADDRESS_RADIUS);
 
-  if (input.currentAddress.districtCode !== input.district.districtCode) {
-    throw new Error('Current estate district does not match vicinity district.');
-  }
-
-  const centerAddressNumber = input.currentAddress.addressNumber;
+  const centerAddressNumber = normalizeCenterAddressNumber(
+    input.centerAddressNumber ?? input.currentAddress.addressNumber,
+    input.district,
+  );
   const fromAddressNumber = Math.max(1, centerAddressNumber - radius);
   const toAddressNumber = Math.min(
     input.district.addressCapacity,
@@ -56,7 +56,10 @@ export function buildVicinityAddressRange(input: {
   ) {
     const occupied = occupiedByNumber.get(addressNumber);
 
-    if (addressNumber === centerAddressNumber) {
+    if (
+      input.currentAddress.districtCode === input.district.districtCode &&
+      addressNumber === input.currentAddress.addressNumber
+    ) {
       rows.push(toSelfRow(input.currentAddress));
       continue;
     }
@@ -124,6 +127,17 @@ function toEmptyRow(
     isSelectable: true,
     occupantLabel: 'Empty plot',
   };
+}
+
+function normalizeCenterAddressNumber(
+  value: number,
+  district: EstateDistrictCapacityReadModel,
+): number {
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error('Vicinity center address must be a positive integer.');
+  }
+
+  return Math.min(value, district.addressCapacity);
 }
 
 function normalizeRadius(value: number): number {

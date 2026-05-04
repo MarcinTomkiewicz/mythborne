@@ -80,6 +80,7 @@ describe('MansionPageFacade', () => {
     expect(facade.finalizedBuildingJobsCount()).toBe(0);
     expect(facade.visibleBuildings()).toEqual([]);
     expect(explainabilityMetadata.getRuntimeEntries).toHaveBeenCalled();
+    expect(activeHero.loadActiveHero).toHaveBeenCalled();
 
     const exposedKeys = Object.keys(facade as unknown as Record<string, unknown>);
     expect(exposedKeys.some((key) => key.toLowerCase().includes('relocation'))).toBeFalse();
