@@ -159,8 +159,9 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: O3 - Empty-address relocation flow through the Vicinity picker.
 - Completed and conditionally accepted: O4 - Building catalog and estate building read layer, including the formula editor/tester variable-contract follow-up after BUILDING-FORMULA-DB-FIX2/FIX3.
 - Completed and confirmed: O5 - Building job read layer and lazy finalization.
-- Next backlog task: O6 - Start building construction/upgrade flow from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
-- O5 pending user/manual validation with real job data: active job panel, progress/remaining, completed job finalization banner and recent job history. This is not an O5 blocker because O5 did not add build-start flow.
+- Completed and confirmed: O6 - Start building construction/upgrade flow, settled mansion runtime state and active/completed job smoke.
+- Next backlog task: O7 - Building and estate configurator explainability from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
+- O6 user smoke confirmed real job behavior: start job, active job panel, route leave/return, browser refresh during an active job, completed-job settlement, and the new building level after `completes_at`.
 - Formula balance refactor follow-up: before the next larger item generation/formula balance task, split `ItemGenerationFormulaBalanceFacade` further. It remains about 447 lines after the accepted variable-contract fix and must not absorb more workflow responsibilities.
 - N13 pending validation: representative XP producer smoke remains pending until a real XP-producing flow exists or is intentionally selected; user/manual validation remains separate from technical green checks and must not be claimed by Codex.
 - N12 DB/content cleanup follow-up: replace remaining formula target `hero points` wording with `Character Points`; confirm and align stat upgrade default test context keys (`hero_level`/`stat_level` vs allowed `heroLevel`/`statLevel`); seed the currently reported progression UI metadata gaps. Do not hide these with frontend fallback labels or fallback contexts.
@@ -272,9 +273,9 @@ Order reflects implementation priority, not final business priority.
 ## Buildings / Estates TODO
 
 ### Building execution
-- Implement real building upgrades instead of preview-only UX.
-- Add cost spending, build-time progression, and resulting level changes.
-- Define how build timers are stored and resolved.
+- O6 implemented player build/upgrade start through canonical `start_estate_building_upgrade(...)` and settled mansion runtime reads through `get_hero_estate_runtime_state(p_hero_id)`.
+- Keep cost spending, resource materialization, build timers, active/recent jobs and completed level changes backend/RPC-owned; do not reintroduce Angular direct writes or local resource authority.
+- Future building execution work should cover product-approved follow-up flows only, such as cancel/admin correction/claim UX if those become explicit backlog tasks.
 
 ### Estate progression
 - Implement claiming / occupying a new empty estate.

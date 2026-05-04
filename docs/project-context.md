@@ -170,7 +170,7 @@ Memory notes are intentionally short. Do not expand them into design work unless
 
 The canonical project/game name is **Mythsworn**.
 
-Older names such as Monster Hunt, MythHunter, MythBurn, Mythos Hunter, etc. may still appear in legacy filenames or older discussion. They should not be treated as current canonical naming.
+Older names such as Monster Hunt, MythHunter, MythBurn, etc. may still appear in legacy filenames or older discussion. They should not be treated as current canonical naming.
 
 Use **Mythsworn** for new conceptual, UI-facing and documentation work unless explicitly instructed otherwise.
 

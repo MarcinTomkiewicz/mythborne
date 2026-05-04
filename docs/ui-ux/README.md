@@ -1,4 +1,4 @@
-# Mythborne UI/UX prototype archive
+# Mythsworn UI/UX prototype archive
 
 These HTML files are visual references only. They are not Angular production source.
 

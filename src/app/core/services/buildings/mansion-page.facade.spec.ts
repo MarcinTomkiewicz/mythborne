@@ -1,23 +1,62 @@
+import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
-import { MansionEstateView } from '../../domain/building/building.model';
+import {
+  MansionBuilding,
+  MansionEstateView,
+  StartBuildingUpgradeResult,
+} from '../../domain/building/building.model';
+import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
+import { ActiveHero } from '../hero/active-hero';
 import { BuildingsService } from './buildings';
 import { MansionPageFacade } from './mansion-page.facade';
 
 describe('MansionPageFacade', () => {
   let facade: MansionPageFacade;
   let buildingsService: jasmine.SpyObj<BuildingsService>;
+  let activeHero: jasmine.SpyObj<ActiveHero>;
+  let activeHeroState: WritableSignal<ActiveHeroState | null>;
 
   beforeEach(() => {
     buildingsService = jasmine.createSpyObj<BuildingsService>('BuildingsService', [
       'getMansionEstateView',
+      'startBuildingUpgrade',
     ]);
+    activeHeroState = signal<ActiveHeroState | null>({
+      heroId: 'hero-1',
+      serverId: 'server-1',
+      userId: 'user-1',
+      hero: {} as never,
+      heroRow: {} as never,
+      server: {} as never,
+    });
+    activeHero = jasmine.createSpyObj<ActiveHero>(
+      'ActiveHero',
+      ['loadActiveHero'],
+      { state: activeHeroState.asReadonly() },
+    );
     buildingsService.getMansionEstateView.and.returnValue(of(mansionView()));
+    buildingsService.startBuildingUpgrade.and.returnValue(of({
+      auditLogId: 'audit-1',
+      buildTimeSeconds: 120,
+      buildingId: 'building-1',
+      completesAt: '2026-05-04T10:02:00.000Z',
+      estateId: 'estate-1',
+      jobId: 'job-1',
+      startedAt: '2026-05-04T10:00:00.000Z',
+      status: 'active',
+      targetLevel: 1,
+      resourceCosts: [
+        { resourceType: 'drachma', cost: 100, balanceAfter: 900 },
+      ],
+    }));
+    activeHero.loadActiveHero.and.returnValue(of(null));
 
     TestBed.configureTestingModule({
       providers: [
         MansionPageFacade,
         { provide: BuildingsService, useValue: buildingsService },
+        { provide: ActiveHero, useValue: activeHero },
       ],
     });
     facade = TestBed.inject(MansionPageFacade);
@@ -59,6 +98,82 @@ describe('MansionPageFacade', () => {
 
     expect(facade.currentAddress()).toBe('A-3302');
   });
+
+  it('starts a build action, refreshes active hero and reloads mansion data', () => {
+    facade.loadData();
+
+    facade.startBuildingUpgrade(building());
+
+    expect(buildingsService.startBuildingUpgrade).toHaveBeenCalledWith('building-1');
+    expect(activeHero.loadActiveHero).toHaveBeenCalled();
+    expect(buildingsService.getMansionEstateView).toHaveBeenCalledTimes(2);
+    expect(facade.lastStartedJob()).toEqual(jasmine.objectContaining({
+      jobId: 'job-1',
+      targetLevel: 1,
+    }));
+    expect(facade.actionSuccess()).toBe('Agora started to level 1.');
+    expect(facade.actionError()).toBeNull();
+    expect(facade.canStartBuilding(building())).toBeFalse();
+    expect(facade.disabledBuildReason(building()))
+      .toBe('A building job has just started and estate state is refreshing.');
+  });
+
+  it('blocks build action locally while another building job is active', () => {
+    facade.activeBuildingJob.set({
+      id: 'job-active',
+      estateId: 'estate-1',
+      buildingId: 'building-2',
+      buildingKey: 'farm',
+      buildingName: 'Farm',
+      targetLevel: 2,
+      status: 'active',
+      startedAt: '2026-05-04T10:00:00.000Z',
+      completesAt: '2026-05-04T10:10:00.000Z',
+      durationSeconds: 600,
+      remainingSeconds: 600,
+      progressPercent: 0,
+      createdAt: '2026-05-04T10:00:00.000Z',
+      updatedAt: '2026-05-04T10:00:00.000Z',
+    });
+
+    facade.startBuildingUpgrade(building());
+
+    expect(buildingsService.startBuildingUpgrade).not.toHaveBeenCalled();
+    expect(facade.actionError()).toBe('Another estate building job is already active.');
+  });
+
+  it('ignores stale building action responses after active hero context changes', () => {
+    const action = new Subject<StartBuildingUpgradeResult>();
+    buildingsService.startBuildingUpgrade.and.returnValue(action.asObservable());
+
+    facade.loadData();
+    facade.startBuildingUpgrade(building());
+
+    activeHeroState.set({
+      heroId: 'hero-2',
+      serverId: 'server-1',
+      userId: 'user-1',
+      hero: {} as never,
+      heroRow: {} as never,
+      server: {} as never,
+    });
+    action.next({
+      auditLogId: 'audit-1',
+      buildTimeSeconds: 120,
+      buildingId: 'building-1',
+      completesAt: '2026-05-04T10:02:00.000Z',
+      estateId: 'estate-1',
+      jobId: 'job-1',
+      startedAt: '2026-05-04T10:00:00.000Z',
+      status: 'active',
+      targetLevel: 1,
+      resourceCosts: [],
+    });
+
+    expect(facade.lastStartedJob()).toBeNull();
+    expect(facade.actionSuccess()).toBeNull();
+    expect(facade.startingBuildingId()).toBeNull();
+  });
 });
 
 function mansionView(): MansionEstateView {
@@ -72,5 +187,35 @@ function mansionView(): MansionEstateView {
     recentBuildingJobs: [],
     finalizedBuildingJobsCount: 0,
     buildings: [],
+  };
+}
+
+function building(): MansionBuilding {
+  return {
+    id: 'building-1',
+    key: 'agora',
+    name: 'Agora',
+    description: null,
+    imagePath: null,
+    districtCode: 'A',
+    districtUnlockRank: 1,
+    rankRequired: 1,
+    sortOrder: 10,
+    startingLevel: 1,
+    baseCost: 100,
+    maxLevel: 0,
+    effectiveMaxLevel: 0,
+    isUnlimited: true,
+    currentLevel: 0,
+    nextLevel: 1,
+    baseBuildTimeSeconds: 120,
+    isOwned: false,
+    isUnlocked: true,
+    canUpgrade: true,
+    nextUpgradeTimeSeconds: 120,
+    nextUpgradeCosts: [{ resourceType: 'drachma', amount: 100 }],
+    activeCostRules: [],
+    activeRequirements: [],
+    bonuses: [],
   };
 }

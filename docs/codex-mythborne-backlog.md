@@ -1,4 +1,4 @@
-# Codex Backlog — Mythborne Implementation Backlog
+# Codex Backlog — Mythsworn Implementation Backlog
 
 Purpose: this backlog translates current project decisions into small, promptable implementation tasks for Codex.
 
@@ -4685,6 +4685,10 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - No direct table writes are introduced.
 - Build passes.
 
+**Implementation note:** O6 accepted on 2026-05-04 after frontend rewire to the central settled estate runtime model and user smoke. Mansion starts construction/upgrades only through `start_estate_building_upgrade(...)` with active `hero.id`, then refreshes active hero state and reloads mansion data from `get_hero_estate_runtime_state(p_hero_id)`. Active/recent job state, finalized completed count, current building levels and resource snapshots come from the settled runtime RPC; direct `estate_building_jobs` reads and separate mansion finalization are no longer the mansion source of truth. Runtime JSON payloads inside `buildings_json`, `active_job_json` and `recent_jobs_json` are parsed as camelCase (`buildingId`, `jobId`, `targetLevel`, `startedAt`, `completesAt`, etc.) with no fallback to snake_case JSON. O6 introduced no Angular resource materialization, no direct writes to estate/building job/resource tables, no internal helper RPC use, and no Codex-run manual/route smoke. User smoke confirmed start, active job panel, route leave/return, browser refresh during an active job, completed-job settlement and the new building level after `completes_at`.
+
+**Status:** Done / accepted on 2026-05-04.
+
 ---
 
 ## Task O7 — Building and estate configurator explainability
@@ -6696,254 +6700,718 @@ PvP Foundation is not:
 
 ---
 
-# Epic S — Requirements and building district caps
+# Epic S — Item Equipment, Armory and Loadout Presets
 
-## Task S1 — Requirements read models
+Epic S implements player-facing and admin-facing integration for the DB-owned item/equipment foundation.
 
-**Goal:** Add typed frontend/domain models for the central requirements foundation.
+This epic covers:
 
-**Scope:**
+- current equipment/loadout read models;
+- equip and unequip workflows;
+- bulk equip workflows;
+- loadout presets;
+- armory shelves;
+- item requirements display;
+- item lifecycle display for active, locked and scrapped items;
+- item runtime usability alignment for PvE, PvP, combat, spy and derived stat resolution;
+- admin/balancer surfaces for item requirement aggregation and item lifecycle configuration.
 
-- Add models/mappers/loaders for:
-  - `requirement_definitions`,
-  - `entity_requirements`.
-- Include labels, descriptions, helper text, value type and active/sort fields.
-- Treat old `building_requirements` and `buildings.requirements` as legacy/transitional.
+Epic S is not:
 
-**Acceptance criteria:**
+- a generic item generation epic;
+- a generic formula editor cleanup epic;
+- a generic trade/auction epic;
+- a future item set bonus epic;
+- a combat engine rewrite;
+- a PvP epic;
+- a UI/UX naming polish epic for final shelf copy.
 
-- Requirements can be listed and attached requirements can be read by entity.
-- New code does not add fresh JSON requirement fields.
+**Current DB/RPC foundation expected before Codex starts S tasks:**
 
----
+- generated `database.types.ts` is regenerated after the S DB/RPC migrations;
+- `hero_equipment` remains the source of equipped state;
+- `items.status` includes:
+  - `active`;
+  - `scrapped`;
+  - `locked_trade`;
+  - `locked_auction`;
+- owner-safe equipment read RPC exists;
+- owner-safe equip/unequip RPCs exist;
+- owner-safe bulk equip RPC exists;
+- owner-safe preset read/write/apply RPCs exist;
+- owner-safe armory/shelf read/write RPCs exist where needed;
+- item requirement preview/read RPC exists where needed;
+- runtime/equipment resolver treats `active`, `locked_trade`, `locked_auction` as usable equipped statuses;
+- scrapped item retention/cleanup rules exist in DB;
+- DB-owned result payloads for equip/bulk/preset apply return a readable operation journal.
 
-## Task S2 — Building district cap read model
+If any of these DB/RPC contracts are missing, Codex must report a DB dependency instead of creating direct table mutations or frontend fallback logic.
 
-**Goal:** Make building district max-level overrides available to admin/building logic.
+**Epic rules:**
 
-**Scope:**
-
-- Add models/mappers/loaders for `building_district_level_caps`.
-- Resolve effective max level:
-  1. district override if present,
-  2. otherwise `buildings.max_level`,
-  3. `0` means unlimited.
-- Do not assume every building/district pair has a row.
-
-**Acceptance criteria:**
-
-- Building admin/preview can show global cap and district-specific overrides.
-- Effective max level calculation matches database semantics.
-
----
-
-## Task S3 — Building availability and requirement migration cleanup
-
-**Goal:** Align building UI/runtime with the new requirements and district rules.
-
-**Scope:**
-
-- Treat `buildings.district_code` as the minimum district where the building can be built.
-- A building is available in that district and every higher district.
-- Use central `entity_requirements` for prestige/level/stat/building/resource gates.
-- Do not rely on `rank_required` as the primary availability rule.
-- Keep old fields only for transitional compatibility.
-
-**Acceptance criteria:**
-
-- Building availability is district-based.
-- Prestige/rank gates come from requirements.
-- No new dependency is introduced on legacy `buildings.requirements` JSON.
-
----
-
-## Task S4 — Building admin UI for requirements and caps
-
-**Goal:** Expose requirements and district caps as building balance configuration.
-
-**Scope:**
-
-- In building admin/config UI, show and edit:
-  - global/default `buildings.max_level`,
-  - district cap overrides,
-  - attached `entity_requirements`.
-- Preserve reason/change-set requirements through config governance where applicable.
-- Missing district override should be displayed as “uses global/default”.
-
-**Acceptance criteria:**
-
-- Admin can manage building requirements and district cap overrides without hardcoding.
-- UI clearly explains `0 = unlimited`.
-
----
-
-## Recommended order update
-
-Place S1-S4 after config definitions/value read models and before deeper building execution, because building runtime/admin logic now depends on central requirements and district cap semantics.
-
----
-
-# Epic T — Item generation and equipment foundation integration
-
-## Task T1 — Regenerate database types after item generation/equipment migration
-
-**Goal:** Synchronize frontend generated Supabase types with the newly migrated item generation and equipment schema.
-
-**Scope:**
-
-- Regenerate/update `src/app/core/types/database.types.ts`.
-- Confirm generated types include:
-  - `item_generation_base_types`,
-  - `item_generation_base_type_targets`,
-  - `item_generation_bases.base_type_key`,
-  - generated item columns on `items`,
-  - `hero_equipment`,
-  - `hero_armory_shelves`,
-  - newly available combat targets such as `attack_count` and `critical_damage` where applicable.
-
-**Acceptance criteria:**
-
-- App compiles.
-- No domain model is replaced by raw DB rows.
-- No existing backlog task status is changed unless user confirms it.
+- Frontend must not directly insert, update or delete `hero_equipment`.
+- Frontend must not directly mutate durable item lifecycle state.
+- Frontend must not invent equipment eligibility rules outside DB/RPC results.
+- Frontend must not assume `hero.id === auth.uid()`.
+- Player-owned reads use selected server and active hero.
+- Equip/unequip/bulk/preset apply must use canonical RPCs.
+- There is no `items.status = equipped`.
+- `hero_equipment` is the source of equipped state.
+- Item can be equipped if it belongs to the hero and is not `scrapped`.
+- Runtime usable equipped statuses are:
+  - `active`;
+  - `locked_trade`;
+  - `locked_auction`.
+- `scrapped` items are excluded from runtime loadout.
+- `locked_trade` and `locked_auction` block new market/lifecycle actions where appropriate, but do not block wearing.
+- Locked equipped items still count for runtime loadout.
+- Trade/auction lock does not auto-unequip.
+- Ownership transfer or scrap clears equipment.
+- Player can unequip locked items.
+- Equip/unequip does not require a user-provided reason.
+- Normal player equip/unequip changes are not classic audit-log workflows.
+- Staff/admin recovery, transfer, sanction and lifecycle corrections must be auditable.
+- Item requirements are equip/use requirements, not generation requirements.
+- Item requirements use hero level and primary/base stats.
+- Item requirements do not use resources, prestige, buildings, districts or trade routes.
+- No item instance requirements.
+- Requirements come from base/prefix/suffix and quality requirement multiplier.
+- Bonus values from item layers sum absolutely.
+- Requirements use global item aggregation rules.
+- Candidate item cannot help itself equip.
+- Later requirement loss does not unequip an item.
+- Failed single equip does not remove the currently equipped item.
+- Bulk equip applies what can be applied and reports failures.
+- Hand and ring rotation are DB/RPC workflow behavior.
+- Two-handed and ranged items use both hands and are stored in `main_hand`.
+- Preset uses literal slots and exact item IDs.
+- Preset is not an item set.
+- The word `set` is reserved for future item set bonuses.
+- Shelves are armory organization, not equipment state.
+- There are always 10 shelves.
+- Shelf 1 is the default drop shelf.
+- Final player-facing shelf naming belongs to UI/UX later; DB/code may use `shelf`.
 
 ---
 
-## Task T2 — Update item generation domain models and mappers
+## Task S0 — Generated DB types alignment after item/equipment foundation
 
-**Goal:** Teach frontend item-generation code the new base type model.
+**Goal:** Align generated frontend DB types with the current item/equipment DB/RPC foundation.
 
 **Scope:**
 
-- Add typed models/mappers for `item_generation_base_types` and `item_generation_base_type_targets`.
-- Update `item_generation_bases` domain model to use `baseTypeKey` as source of truth.
-- Keep old `slot` as legacy/deprecated only if generated types still expose it.
-- Do not hardcode the required target list in Angular.
+- Regenerate generated Supabase database types after S DB/RPC migrations.
+- Fix compile errors caused by new/changed item/equipment RPC signatures.
+- Confirm generated types expose the current item/equipment/preset/shelf contracts.
+- Do not edit generated DB types manually.
+- Do not create frontend substitutes for missing RPCs.
 
 **Acceptance criteria:**
 
-- Item generation admin/read models expose base type information.
-- UI/domain code no longer treats old `slot` as semantic source of truth.
-- Required/optional native target information comes from DB dictionaries.
+- Frontend compiles against regenerated types.
+- S services can type canonical RPC calls.
+- No manual generated-type edits exist.
 
 ---
 
-## Task T3 — Update base item admin form to use DB-defined native targets
+## Task S1 — Item and equipment domain models
 
-**Goal:** Base item creation/editing should be driven by `item_generation_base_type_targets`.
+**Goal:** Add typed frontend domain models for item equipment, armory and presets.
 
 **Scope:**
 
-- When admin selects a base type, show required and optional native targets from DB.
-- Required targets must be present before save.
-- Support grouped requirement for ring identity: `charisma OR cunning` through `required_group_key` / `min_required_in_group` semantics.
-- Store concrete values through the central bonus model for `entity_type = item_generation_base`.
-- Preserve quality scaling semantics for generated item native values.
+- Add domain models for:
+  - item summary;
+  - item lifecycle state;
+  - item equipment slot;
+  - current equipment/loadout;
+  - equipment operation journal;
+  - item requirement preview;
+  - armory shelf;
+  - loadout preset;
+  - loadout preset slot item.
+- Keep generated DB/RPC rows behind mappers.
+- Keep player-facing and admin-facing models separate where needed.
+- Preserve exact item IDs for equipment and preset flows.
 
 **Acceptance criteria:**
 
-- Admin cannot save a weapon without min/max damage and attack count.
-- Admin cannot save armor pieces without defense.
-- Ring requires at least one identity target from the DB-defined group.
-- No hardcoded required field list in component code.
+- Components do not consume raw DB rows directly.
+- Models distinguish item lifecycle, current equipment and armory organization.
+- Preset models use exact item IDs and literal slots.
 
 ---
 
-## Task T4 — Update item generation preview to use new native bonus model
+## Task S2 — Item and equipment mappers
 
-**Goal:** Generated item preview should read base item native values from `entity_bonuses` and base type metadata.
+**Goal:** Map current DB/RPC item/equipment payloads into domain models.
 
 **Scope:**
 
-- Resolve base item native values from `entity_bonuses`.
-- Use quality scaling where `quality_scales_value = true`.
-- Include `attack_count` and `critical_damage` in preview where present.
-- Continue reading qualities from `item_generation_qualities`, not hardcoded quality names/count.
+- Map:
+  - current equipment;
+  - equipped item display data;
+  - armory item display data;
+  - lifecycle status;
+  - requirement preview;
+  - equipment operation journal;
+  - preset read/apply result;
+  - shelf display data.
+- Preserve operation result fields:
+  - equipped;
+  - shifted;
+  - unequipped;
+  - failed;
+  - skipped;
+  - final equipment.
+- Do not hide partial success/failure details.
 
 **Acceptance criteria:**
 
-- Preview shows correct base item combat/defense/jewelry values.
-- Existing quality scaling remains consistent.
-- No reliance on old `item_generation_base_bonuses` as the main model.
+- Mappers handle nullable item layers and missing preset items safely.
+- Player-facing mapping does not expose staff/admin-only fields.
+- Operation journals remain readable to UI.
 
 ---
 
-## Task T5 — Add Armory shelf read/edit UI foundation
+## Task S3 — Equipment RPC service
 
-**Goal:** Allow player/admin-facing code to display and edit hero-local Armory shelf names.
+**Goal:** Add player equipment service methods over canonical DB/RPC contracts.
 
 **Scope:**
 
-- Add typed read/write models for `hero_armory_shelves`.
-- Support shelf name max 30 trimmed characters.
-- Show item `armory_shelf_position` as the transferred item-owned shelf position.
-- Do not model item shelf as FK to `hero_armory_shelves`.
+- Add service methods for:
+  - current equipment read;
+  - single item equip;
+  - slot unequip;
+  - bulk equip;
+  - operation result reload if needed.
+- Use active hero and selected server scope.
+- Do not direct-write `hero_equipment`.
+- Do not add local equip eligibility fallback.
 
 **Acceptance criteria:**
 
-- Hero has default shelf position `0` named `Default`.
-- User can rename shelf positions without changing item ownership.
-- Item transfer semantics remain position-based, not FK-based.
+- Equip/unequip calls go through canonical RPCs.
+- Service does not require user-provided reason.
+- Service preserves DB operation journal payload.
 
 ---
 
-## Task T6 — Add hero equipment read model
+## Task S4 — Current equipment read state
 
-**Goal:** Frontend can read current equipment from `hero_equipment`.
+**Goal:** Add state/facade for reading and refreshing the current hero equipment.
 
 **Scope:**
 
-- Add domain model/mapper for `hero_equipment`.
-- Join or aggregate item details where needed for display.
-- Respect active hero context (`hero.id`, not `auth.uid()`).
-- Treat `hero_equipment` as source of equipped state.
-- Do not use `items.status = equipped`; such status does not exist.
+- Load current equipment for active hero.
+- Expose current equipment by slot.
+- Expose loading/error/empty state.
+- Refresh after equip, unequip, bulk equip and preset apply.
+- Guard async responses by active hero/server scope.
 
 **Acceptance criteria:**
 
-- Equipped items can be displayed by slot.
-- `locked_trade` / `locked_auction` items may still display as equipped.
-- Scrapped items cannot appear as equipped if DB lifecycle triggers are functioning.
+- Current equipment state is sourced from DB/RPC.
+- Stale responses do not overwrite current active hero/server state.
+- Missing active hero is surfaced as an invariant/error state.
 
 ---
 
-## Task T7 — Prepare equip/unequip DB workflow design, do not implement ad hoc
+## Task S5 — Equipment paperdoll UI
 
-**Goal:** Before coding equip/unequip gameplay, identify required RPC/domain operations and ask for DB contract if missing.
+**Goal:** Render current equipment by slot.
 
 **Scope:**
 
-- Review current docs for equip/unequip, single equip, bulk equip, saved equipment sets.
-- Do not directly implement critical equipment mutations from generic UI table writes.
-- Report missing RPC/domain contract as blocker if needed.
+- Display:
+  - `main_hand`;
+  - `off_hand`;
+  - `helmet`;
+  - `armor`;
+  - `pants`;
+  - `boots`;
+  - `amulet`;
+  - `ring_1`;
+  - `ring_2`.
+- Show item name/layers/status where useful.
+- Show empty slots.
+- Show locked status without implying the item is unusable.
+- Do not implement equip action in this task unless already provided by S7.
 
 **Acceptance criteria:**
 
-- Codex does not invent equip/unequip RPC names.
-- Any required DB mutations are proposed for conceptual/database-track approval first.
-- No critical equipment workflow bypasses the approved DB/domain contract.
+- Player can see current equipment.
+- Locked equipped item is shown as equipped, not hidden.
+- Empty slot and item lifecycle states are clear.
 
 ---
 
-## Task T8 — Update Armory visible filtering to use capacity, shelf position and generation time
+## Task S6 — Armory shelf read state
 
-**Goal:** Align Armory item visibility with the new DB-backed visibility model.
+**Goal:** Add state/facade for armory inventory organized by shelves.
 
 **Scope:**
 
-- Use resolved `visible_item_capacity` from the bonus/runtime model as visible capacity.
-- Display owned item count / visible capacity.
-- Use item priority rules:
-  - equipped and market-locked/listed items first,
-  - higher `armory_shelf_position` next,
-  - within a priority/shelf group, older `generated_at` first.
-- Treat hidden items as still owned; hidden does not mean deleted.
+- Load armory items for active hero.
+- Load shelf names/metadata.
+- Preserve 10 shelf structure.
+- Treat shelf 1 as default drop shelf.
+- Respect current DB visibility rules for armory/building limits.
+- Do not delete or hide item rows because they are outside visible range.
+- Respect armory building level visibility limit.
+- Load/read only the visible item range according to DB/RPC.
+- Do not treat non-visible items as deleted.
+- Surface visibility limit metadata if DB/RPC returns it.
 
 **Acceptance criteria:**
 
-- Armory can show overloaded state such as `251/100`.
-- Newer/lower-priority items are hidden first when capacity is exceeded.
-- Visibility/access is not confused with ownership.
+- Armory state distinguishes visible items from existing-but-not-visible items where DB supports it.
+- Shelf number is preserved.
+- Shelf organization is not confused with equipment state.
+
+---
+
+## Task S7 — Armory shelf UI
+
+**Goal:** Render player armory shelves and item lists.
+
+**Scope:**
+
+- Show 10 shelves.
+- Show hero-local shelf names where available.
+- Show item cards/list entries per visible shelf.
+- Show item lifecycle status:
+  - active;
+  - locked_trade;
+  - locked_auction;
+  - scrapped where relevant/admin-safe surfaces expose it.
+- Show locked items as wearable if equipped/equippable according to DB result.
+- Do not create final UI naming polish for shelves here.
+- Show that the armory building level limits how many items are visible.
+- If DB/RPC exposes it, show visible count / total owned count / next visibility upgrade hint.
+- Do not imply hidden items are gone.
+
+**Acceptance criteria:**
+
+- Player can browse visible armory items by shelf.
+- Locked items are not incorrectly treated as unusable equipment.
+- Shelf UI does not imply hidden items were deleted.
+
+---
+
+## Task S8 — Armory shelf management
+
+**Goal:** Add player-facing shelf organization actions through canonical RPCs.
+
+**Scope:**
+
+- Rename shelf where DB/RPC supports it.
+- Move item to another shelf where DB/RPC supports it.
+- Preserve item shelf number through mappers.
+- Do not mutate `items.armory_shelf_position` directly from Angular.
+
+**Acceptance criteria:**
+
+- Shelf rename/move uses canonical RPCs.
+- Item movement does not change equipment state.
+- Missing DB write path is reported as dependency.
+
+---
+
+## Task S9 — Item detail / popover equipment data
+
+**Goal:** Show item details needed for equipment decisions.
+
+**Scope:**
+
+- Display:
+  - quality;
+  - prefix;
+  - base;
+  - suffix;
+  - status;
+  - shelf;
+  - current equipped state;
+  - requirement preview;
+  - bonuses;
+  - drachma value.
+- Distinguish:
+  - economic value;
+  - requirements;
+  - bonuses;
+  - lifecycle status.
+- Do not imply expensive item is always useful.
+
+**Acceptance criteria:**
+
+- Item detail makes requirements and bonuses readable.
+- Locked status is explained as market/lifecycle reservation, not equipment ban.
+- Scrapped items are not shown as normal usable items.
+
+---
+
+## Task S10 — Item requirement display
+
+**Goal:** Display resolved item equip requirements from DB/RPC.
+
+**Scope:**
+
+- Show final resolved requirements for:
+  - hero level;
+  - primary/base stats.
+- Show source/layer breakdown if DB/RPC exposes it:
+  - base;
+  - prefix;
+  - suffix;
+  - quality requirement multiplier.
+- Do not show resources/prestige/building/district/trade route requirements for item equip.
+- Do not compute final requirement values locally if DB/RPC provides them.
+
+**Acceptance criteria:**
+
+- Requirement display matches DB result.
+- UI distinguishes requirements from costs and bonuses.
+- Item instance requirements are not introduced.
+
+---
+
+## Task S11 — Equip single item action
+
+**Goal:** Wire single item equip through canonical RPC.
+
+**Scope:**
+
+- Equip selected item from armory/item detail.
+- Support explicit slot where the UI provides it.
+- Otherwise use DB/RPC automatic behavior.
+- Display operation journal result:
+  - equipped;
+  - shifted;
+  - unequipped;
+  - failed.
+- Failed equip must leave previous UI state consistent with DB result.
+
+**Acceptance criteria:**
+
+- Single equip uses canonical RPC.
+- No direct `hero_equipment` write exists.
+- Failure message shows why the item did not equip.
+- Existing item is not shown as removed when DB did not remove it.
+
+---
+
+## Task S12 — Unequip slot action
+
+**Goal:** Wire unequip through canonical RPC.
+
+**Scope:**
+
+- Unequip a selected slot.
+- Allow unequip of locked items.
+- Do not change item status.
+- Do not cancel trade/auction lock.
+- Refresh current equipment and armory state after success.
+
+**Acceptance criteria:**
+
+- Unequip uses canonical RPC.
+- Locked item can be unequipped without cancelling its lock.
+- UI state refreshes from DB after action.
+
+---
+
+## Task S13 — Bulk equip action
+
+**Goal:** Add player-facing bulk equip workflow where the UI needs multi-item equip.
+
+**Scope:**
+
+- Submit ordered item list through canonical bulk equip RPC.
+- Preserve input order.
+- Display per-step result:
+  - equipped;
+  - shifted;
+  - unequipped;
+  - failed;
+  - skipped.
+- Do not stop client-side on first failure unless DB result says operation stopped.
+- Do not locally simulate requirements.
+
+**Acceptance criteria:**
+
+- Bulk equip uses canonical RPC.
+- Partial success is visible.
+- Failed items do not hide successful earlier steps.
+
+---
+
+## Task S14 — Preset domain service
+
+**Goal:** Add service methods for loadout preset read/write/apply.
+
+**Scope:**
+
+- Add service methods for:
+  - read presets;
+  - rename preset;
+  - clear preset;
+  - overwrite preset with current equipment;
+  - apply preset;
+  - preview preset if DB/RPC supports it.
+- Preserve exact item IDs and literal slots.
+- Do not use JSON as frontend authority if DB returns relational rows.
+
+**Acceptance criteria:**
+
+- Preset operations use canonical RPCs.
+- Service preserves exact item ID mapping.
+- Missing preset RPC is reported as DB dependency.
+
+---
+
+## Task S15 — Preset management UI
+
+**Goal:** Add player-facing management for loadout presets.
+
+**Scope:**
+
+- Show available preset slots.
+- Allow rename.
+- Allow clear.
+- Allow overwrite with current equipment.
+- Do not delete preset rows.
+- Do not use the word `set` for this feature.
+
+**Acceptance criteria:**
+
+- Player can manage preset names and contents.
+- Preset slots remain stable.
+- UI copy avoids confusing presets with future item sets.
+
+---
+
+## Task S16 — Preset preview UI
+
+**Goal:** Show what a preset contains before applying it.
+
+**Scope:**
+
+- Display preset slots and exact items.
+- Show:
+  - item owned and available;
+  - item missing;
+  - item no longer owned;
+  - item scrapped;
+  - empty slot.
+- Show literal target slots.
+- Do not run local requirement checks for preset privilege.
+
+**Acceptance criteria:**
+
+- Player can see what will be applied and what is missing.
+- Missing/unavailable preset items are clear.
+- Preview does not imply similar items can substitute exact IDs.
+
+---
+
+## Task S17 — Apply preset action
+
+**Goal:** Apply a loadout preset through canonical RPC.
+
+**Scope:**
+
+- Apply available exact item IDs into literal saved slots.
+- Do not move unrelated current equipment unless DB result says it changed.
+- Do not use hand/ring rotation.
+- Display DB operation journal:
+  - applied;
+  - skipped;
+  - failed;
+  - final equipment.
+- Refresh current equipment and armory after success.
+
+**Acceptance criteria:**
+
+- Preset apply uses canonical RPC.
+- Preset applies what is available and does not disturb the rest.
+- Requirement recheck is not done on the frontend.
+- Partial result is visible.
+
+---
+
+## Task S18 — Preset update suggestion
+
+**Goal:** Add a non-intrusive UI suggestion when current equipment differs from a preset.
+
+**Scope:**
+
+- Compare current equipment with selected preset where data is available.
+- Offer a non-blocking action to overwrite preset with current equipment.
+- Do not auto-update preset.
+- Do not nag the player repeatedly.
+
+**Acceptance criteria:**
+
+- Player can intentionally update a preset.
+- Suggestion is non-intrusive.
+- Preset update still uses canonical RPC.
+
+---
+
+## Task S19 — Item lifecycle actions alignment
+
+**Goal:** Align item lifecycle UI with current DB rules.
+
+**Scope:**
+
+- Ensure active item scrap/vendor flows respect canonical RPCs.
+- Show that scrapping equipped active item removes it from equipment after DB action.
+- Show locked item cannot be scrapped/vendor sold while locked.
+- Do not require a confirmation for every scrap action unless an existing batch/destructive pattern requires it.
+- Refresh armory/equipment after lifecycle actions.
+
+**Acceptance criteria:**
+
+- Scrap/vendor uses canonical DB/RPC path.
+- Equipped item disappears from equipment after successful scrap/vendor.
+- Locked items are not offered as scrap/vendor candidates.
+
+---
+
+## Task S20 — Scrapped item staff recovery surface
+
+**Goal:** Align staff/admin scrapped item recovery UI with affix-item retention rules.
+
+**Scope:**
+
+- Show recoverable scrapped affix items where staff/admin RPC allows it.
+- Do not imply no-affix items are recoverable after hard delete.
+- Show retention/expiry if DB exposes it.
+- Recovery uses canonical staff/admin RPC.
+- Staff/admin recovery remains auditable through DB workflow.
+
+**Acceptance criteria:**
+
+- Staff/admin can inspect recoverable scrapped affix items.
+- Recovery UI does not imply ordinary no-affix item recovery.
+- Recovery uses canonical RPC.
+
+---
+
+## Task S21 — Equipment runtime usability alignment
+
+**Goal:** Align frontend runtime/read-model assumptions with DB usable equipment statuses.
+
+**Scope:**
+
+- Ensure current equipment/read-model consumers treat these equipped statuses as usable:
+  - active;
+  - locked_trade;
+  - locked_auction.
+- Ensure `scrapped` is excluded.
+- Update affected item/equipment display and derived-runtime consumers after DB resolver migration.
+- Do not reintroduce frontend-only filtering that contradicts DB.
+
+**Acceptance criteria:**
+
+- Locked equipped items still appear in current loadout.
+- Locked equipped items are not treated as bonusless merely because they are locked.
+- Runtime display matches DB/resolver behavior.
+
+---
+
+## Task S22 — PvE equipment integration read alignment
+
+**Goal:** Ensure PvE player surfaces consume current loadout/equipment state consistently.
+
+**Scope:**
+
+- Align exploration/trial/encounter read displays with current equipment behavior where the UI shows relevant stats/loadout.
+- Do not compute authoritative PvE stat checks in Angular.
+- Surface DB/runtime data where available.
+- Respect live/per-turn loadout decision where DB/runtime exposes it.
+
+**Acceptance criteria:**
+
+- PvE surfaces do not show stale assumptions about active-only equipment.
+- Frontend does not fake resolver behavior.
+
+---
+
+## Task S23 — Combat/manual equipment display alignment
+
+**Goal:** Ensure combat/manual surfaces display equipment/runtime stat assumptions consistently.
+
+**Scope:**
+
+- Show current equipment/stat data as provided by DB/runtime.
+- Do not assume manual combat uses a static equipment snapshot if DB/runtime provides per-turn/live state.
+- Do not recalculate authoritative walking-dead or hit-window values locally unless the DB/RPC contract marks it as preview-only.
+
+**Acceptance criteria:**
+
+- Combat UI messaging matches current loadout/stat decision.
+- Manual combat display does not contradict per-turn loadout behavior.
+
+---
+
+## Task S24 — PvP and spy equipment display alignment
+
+**Goal:** Ensure PvP and spy surfaces consume equipment snapshot/loadout decisions correctly.
+
+**Scope:**
+
+- Spy result displays current equipment snapshot from DB.
+- PvP target/result/report surfaces do not imply item transfer/loss from ordinary PvP.
+- PvP surfaces treat equipment as part of runtime stat/loadout resolution, not as PvP reward/consequence.
+
+**Acceptance criteria:**
+
+- Spy equipment snapshot is displayed safely.
+- PvP UI does not imply item theft/destruction.
+- PvP equipment assumptions match DB/runtime.
+
+---
+
+## Task S25 — Item requirement admin/balancer surface
+
+**Goal:** Add admin/balancer readability for item requirement aggregation.
+
+**Scope:**
+
+- Show global item requirement aggregation configuration once DB exposes it.
+- Show quality requirement multiplier separately from bonus/value multiplier.
+- Show base/prefix/suffix requirement contributions.
+- Do not create per-item instance requirement UI.
+- Do not create per-stat local rules unless DB foundation explicitly exposes them.
+- If DB/RPC exposes armory building visibility rules, admin/balancer UI may show them as part of building/armory balance.
+- Do not create a separate admin surface just for shelf visibility unless needed later.
+
+**Acceptance criteria:**
+
+- Balancer can understand how final item requirements are formed.
+- UI does not imply item instance requirements exist.
+- Quality requirement multiplier is distinct from bonus/value multiplier.
+
+---
+
+## Task S26 — Item quality admin/balancer alignment
+
+**Goal:** Align item quality admin UI with separate value/bonus and requirement multipliers.
+
+**Scope:**
+
+- Show quality label/key.
+- Show value/bonus multiplier.
+- Show requirement multiplier.
+- Preserve current quality generation semantics.
+- Do not hardcode multipliers in Angular.
+
+**Acceptance criteria:**
+
+- Admin can distinguish power/value scaling from requirement scaling.
+- Quality settings come from DB/config/read model.
 
 ---
 

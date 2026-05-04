@@ -1,4 +1,4 @@
-# Codex Backlog — Mythborne Refactor Backlog
+# Codex Backlog — Mythsworn Refactor Backlog
 
 Purpose: this backlog translates current project decisions into small, promptable implementation tasks for Codex.
 
@@ -1798,7 +1798,7 @@ Every Epic Ref E report must include:
 - build/test results;
 - manual smoke result or pending manual smoke reason.
 
-Required report format must follow current Mythborne Codex review standards:
+Required report format must follow current Mythsworn Codex review standards:
 
 - decision-ready summary;
 - concrete changed files;

@@ -2,18 +2,19 @@ import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
 import { BONUS_ENTITY_TYPES } from '../../constants/bonus-entity-types.const';
 import { TABLES } from '../../constants/tables.const';
-import { MansionEstateView } from '../../domain/building/building.model';
+import {
+  MansionEstateView,
+  StartBuildingUpgradeResult,
+} from '../../domain/building/building.model';
 import { BuildingProgressionService } from '../progression/building-progression';
 import { FormulaService } from '../formula/formula';
 import { Hero } from '../hero/hero';
-import { EstateAddresses } from '../estate/estate-addresses';
 import { Backend } from '../backend/backend';
 import { FilterOperator } from '../../enums/filter-operators';
 import { CanonicalEntityBonusWithTemplateRow } from '../../types/bonus-governance.types';
 import {
   BuildingDistrictLevelCapRow,
   DistrictRow,
-  EstateBuildingRow,
   MansionBuildingResourceCostRow,
   MansionBuildingRequirementRow,
   MansionBuildingRow,
@@ -39,7 +40,6 @@ export class BuildingsService {
   private readonly heroService = inject(Hero);
   private readonly progression = inject(BuildingProgressionService);
   private readonly formulaService = inject(FormulaService);
-  private readonly estateAddresses = inject(EstateAddresses);
   private readonly buildingJobs = inject(BuildingJobs);
 
   getMansionEstateView(): Observable<MansionEstateView> {
@@ -50,10 +50,10 @@ export class BuildingsService {
         }
         const estateId = hero.estate_id;
 
-        return this.buildingJobs.finalizeHeroEstateBuildingJobs(hero.id).pipe(
-          switchMap((finalization) =>
+        return this.buildingJobs.getHeroEstateRuntimeState(hero.id).pipe(
+          switchMap((runtimeState) =>
             forkJoin({
-              finalization: of(finalization),
+              runtimeState: of(runtimeState),
               formulaData: this.formulaService.getAdminData(),
               buildings: this.getBuildings(),
               levelCaps: this.backend.getAll<BuildingDistrictLevelCapRow>({
@@ -63,19 +63,6 @@ export class BuildingsService {
               requirements: this.getRequirements(),
               stats: this.getStats(),
               entityBonuses: this.getEntityBonuses(),
-              currentAddress: this.estateAddresses.getCurrentAddress({
-                estateId,
-                heroId: hero.id,
-                serverId: hero.server_id,
-              }),
-              estateBuildings: this.backend.getAll<EstateBuildingRow>({
-                table: TABLES.estate_buildings,
-                filters: {
-                  estateId: { operator: FilterOperator.EQ, value: estateId },
-                },
-                camelCase: false,
-              }),
-              buildingJobs: this.buildingJobs.getRecentJobsForEstate(estateId),
               districts: this.backend.getAll<DistrictRow>({
                 table: TABLES.estate_districts,
                 orderBy: { column: 'rank' },
@@ -84,42 +71,42 @@ export class BuildingsService {
             }),
           ),
           map(({
-            finalization,
+            runtimeState,
             formulaData,
             buildings,
             levelCaps,
             requirements,
             stats,
             entityBonuses,
-            currentAddress,
-            estateBuildings,
-            buildingJobs,
             districts,
           }) => {
-            if (!currentAddress) {
-              throw new Error('Active hero estate address is not readable.');
-            }
             if (
-              finalization.heroId !== hero.id ||
-              finalization.serverId !== hero.server_id ||
-              finalization.estateId !== estateId
+              runtimeState.heroId !== hero.id ||
+              runtimeState.serverId !== hero.server_id ||
+              runtimeState.estateId !== estateId
             ) {
-              throw new Error('Building job finalization returned a stale hero estate result.');
+              throw new Error('Hero estate runtime state returned a stale hero estate result.');
             }
 
-            const currentDistrictCode = currentAddress.districtCode;
+            const currentDistrictCode = runtimeState.districtCode;
             const currentDistrict = requiredCurrentDistrict(districts, currentDistrictCode);
             const districtRanks = buildDistrictRankMap(districts);
             const currentDistrictRank = currentDistrict.rank;
             const estateBuildingsByBuildingId =
-              groupEstateBuildingsByBuildingId(estateBuildings);
+              groupEstateBuildingsByBuildingId(runtimeState.estateBuildings);
             const levelCapsByBuildingAndDistrict =
               groupLevelCapsByBuildingIdAndDistrict(levelCaps);
             const requirementsByBuildingId = groupRequirementsByBuildingId(requirements);
             const statLabels = buildStatLabelMap(stats);
             const bonusesByBuildingId = groupBonusesByEntityId(entityBonuses);
-            const mansionBuildingJobs = mapMansionBuildingJobs({
-              rows: buildingJobs,
+            const activeJobs = runtimeState.activeJob
+              ? mapMansionBuildingJobs({
+                  rows: [runtimeState.activeJob],
+                  buildings,
+                })
+              : [];
+            const recentJobs = mapMansionBuildingJobs({
+              rows: runtimeState.recentJobs,
               buildings,
             });
 
@@ -154,20 +141,46 @@ export class BuildingsService {
             return {
               heroId: hero.id,
               serverId: hero.server_id,
-              currentAddress: currentAddress.addressLabel,
+              currentAddress: runtimeState.address,
               currentDistrictCode,
-              currentDistrictName: currentAddress.districtName ?? currentDistrict?.name ?? null,
-              activeBuildingJob:
-                mansionBuildingJobs.find((job) => job.status === 'active') ?? null,
-              recentBuildingJobs: mansionBuildingJobs.filter(
+              currentDistrictName: currentDistrict.name ?? null,
+              activeBuildingJob: activeJobs[0] ?? null,
+              recentBuildingJobs: recentJobs.filter(
                 (job) => job.status !== 'active',
               ),
-              finalizedBuildingJobsCount: finalization.completedCount,
+              finalizedBuildingJobsCount: runtimeState.settledCompletedCount,
               buildings: districtBuildings,
             } satisfies MansionEstateView;
           })
         );
       })
+    );
+  }
+
+  startBuildingUpgrade(buildingId: string): Observable<StartBuildingUpgradeResult> {
+    return this.heroService.getHeroData().pipe(
+      switchMap((hero) => {
+        if (!hero.estate_id) {
+          throw new Error('Active hero does not have an estate address.');
+        }
+
+        return this.buildingJobs.startHeroEstateBuildingUpgrade({
+          heroId: hero.id,
+          buildingId,
+          reason: 'Player started estate building construction or upgrade.',
+        }).pipe(
+          map((result) => {
+            if (
+              result.estateId !== hero.estate_id ||
+              result.buildingId !== buildingId
+            ) {
+              throw new Error('Building upgrade start returned a stale hero estate result.');
+            }
+
+            return result;
+          }),
+        );
+      }),
     );
   }
 

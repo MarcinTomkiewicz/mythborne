@@ -32,6 +32,46 @@
       </div>
     </section>
 
+    @if (page.actionError(); as actionError) {
+      <section class="mg-card flex-col gap-sm p-lg w-100">
+        <p class="card-legend mb-0">Building action</p>
+        <p class="mb-0 muted-text">{{ actionError }}</p>
+      </section>
+    }
+
+    @if (page.lastStartedJob(); as startedJob) {
+      <section class="mg-card flex-col gap-md p-lg w-100">
+        <div class="flex-row-between-center flex-col-sm gap-md">
+          <div class="flex-col gap-xs">
+            <p class="card-legend mb-0">Building action</p>
+            <h3 class="mg-section__title mg-section__title--xs mb-0">
+              {{ page.actionSuccess() }}
+            </h3>
+            <p class="muted-text mb-0">
+              Started {{ page.toDateTimeLabel(startedJob.startedAt) }} | Completes {{ page.toDateTimeLabel(startedJob.completesAt) }}
+            </p>
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            <span class="tag-badge tag-badge--warn">Level {{ startedJob.targetLevel }}</span>
+            <span class="tag-badge tag-badge--muted">
+              {{ page.toDurationLabel(startedJob.buildTimeSeconds) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+          @for (cost of startedJob.resourceCosts; track cost.resourceType) {
+            <div class="mg-card flex-col gap-xs p-md muted-text">
+              <strong class="heading-color">{{ page.resourceLabel(cost.resourceType) }}</strong>
+              <span>Cost: {{ cost.cost }}</span>
+              <span>Balance after: {{ cost.balanceAfter }}</span>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
     @if (page.activeBuildingJob(); as job) {
       <section class="mg-card flex-col gap-md p-lg w-100">
         <div class="flex-row-between-center flex-col-sm gap-md">
@@ -192,9 +232,10 @@
                 <p class="mb-0 muted-text">No additional requirements.</p>
               }
               <p-button
-                label="Build"
-                [disabled]="true"
+                [label]="page.buildButtonLabel(building)"
+                [disabled]="!page.canStartBuilding(building)"
                 styleClass="mt-md"
+                (onClick)="page.startBuildingUpgrade(building)"
               />
             </div>
           </div>

@@ -1,4 +1,4 @@
-# Mythborne — UI/UX Backlog v2
+# Mythsworn — UI/UX Backlog v2
 
 Status: working draft / canvas edition after reviewer hardening pass
 Updated: 2026-05-03 — po hardening pass z uwag reviewera
@@ -24,7 +24,7 @@ Reviewer hardening pass został wpleciony w dokument. Ten wariant zawiera dodatk
 
 Ten backlog służy do:
 
-- definiowania kierunku wizualnego Mythborne,
+- definiowania kierunku wizualnego Mythsworn,
 - porządkowania zaakceptowanych prototypów HTML,
 - tworzenia promptowalnych UI/UX tasków dla Codexa,
 - ograniczania lokalnego SCSS,
@@ -117,7 +117,7 @@ UI-CORE jest phase zero dla większych ekranów, ale nie może stać się długi
 
 Zanim Codex zacznie implementować pierwszy większy player-facing ekran z prototypu, minimalny wymagany zestaw UI-CORE to:
 
-1. **UI-CORE-1 — Mythborne UI style contract extraction**.
+1. **UI-CORE-1 — Mythsworn UI style contract extraction**.
 2. **UI-CORE-2 — Global SCSS and shared pattern inventory**.
 3. **UI-CORE-3 — Local SCSS budget and style report checklist**.
 4. **UI-CORE-11 — Prototype-to-production SCSS mapping**.
@@ -337,7 +337,7 @@ Required Codex report dla workflow UI musi zawierać także:
 
 ## 1.7. Accessibility and responsive baseline
 
-Mythborne jest desktop-first browser RPG, ale ekran nie może całkowicie rozpadać się na mniejszych viewportach i nie może być obsługiwany wyłącznie myszą/hoverem.
+Mythsworn jest desktop-first browser RPG, ale ekran nie może całkowicie rozpadać się na mniejszych viewportach i nie może być obsługiwany wyłącznie myszą/hoverem.
 
 Minimum accessibility baseline:
 
@@ -374,7 +374,7 @@ Required Codex report dla większego UI taska musi zawierać także:
 
 ## 2.1. Existing SCSS modernization decision
 
-Obecny katalog `src/scss` pochodzi częściowo ze starszego projektu i nadal używa prefiksów `mg-*` / Monster Hunt. To nie jest docelowy branding Mythborne, ale jest realną production foundation.
+Obecny katalog `src/scss` pochodzi częściowo ze starszego projektu i nadal używa prefiksów `mg-*` / Monster Hunt. To nie jest docelowy branding Mythsworn, ale jest realną production foundation.
 
 Decyzje:
 
@@ -481,13 +481,13 @@ Istnieją wrappers dla core PrimeNG surfaces. Codex ma je sprawdzać i używać/
 | Popover/Tooltip | `_p-popover.scss`, `_tooltip.scss` | item popover, explainability | extend globally if needed |
 | Tabs/Stepper/Accordion | `_p-tabs.scss`, `_p-stepper.scss`, `_p-accordion.scss` | admin configurators, reports tabs | avoid one long form |
 | Dialog/Drawer/Confirm | `_p-dialogs.scss`, `_p-drawer.scss`, confirm files | confirmations, side panels | no ad hoc modal CSS |
-| Toasts | `_p-toasts.scss` | notification/toast contract | map `mg-toast` to Mythborne severities |
+| Toasts | `_p-toasts.scss` | notification/toast contract | map `mg-toast` to Mythsworn severities |
 | Custom icons | `_p-custom-icons.scss`, `_primeicons-local.scss`, `_custom-icons.scss` | PrimeIcons-like classes | no emoji final icons |
 
 Concrete cleanup candidates:
 
 - review `_p-select.scss` broad selector scope,
-- map `mg-toast` variants to Mythborne notification severities,
+- map `mg-toast` variants to Mythsworn notification severities,
 - verify popover/tooltip as base for item popover and admin explainability,
 - make paginator/table default basis for dense lists where appropriate,
 - document custom icons registry.
@@ -509,7 +509,7 @@ Concrete cleanup candidates:
 
 ---
 
-# 3. Mythborne visual language
+# 3. Mythsworn visual language
 
 Accepted direction: modern premium browser RPG UI stylized with ancient-Greek flavor.
 
@@ -709,7 +709,7 @@ Naming decisions should be reflected in prototypes and implementation tasks. If 
 ## UI-NAME-1 — Player action and CTA naming contract
 
 **Goal:**  
-Ujednolicić nazwy klików, CTA i akcji na player-facing ekranach Mythborne, zanim Codex zacznie masowo przenosić prototypy do Angulara.
+Ujednolicić nazwy klików, CTA i akcji na player-facing ekranach Mythsworn, zanim Codex zacznie masowo przenosić prototypy do Angulara.
 
 **Scope:**
 - przejrzeć zaakceptowane prototypy player-facing:
@@ -779,7 +779,7 @@ Cel: ustabilizować wspólne wzorce, globalne SCSS, reuse rules, vendor wrapper 
 
 ## UI-CORE task index
 
-- UI-CORE-1 / formerly UI-28 — Mythborne UI style contract extraction
+- UI-CORE-1 / formerly UI-28 — Mythsworn UI style contract extraction
 - UI-CORE-2 — Global SCSS and shared pattern inventory
 - UI-CORE-3 — Local SCSS budget and style report checklist
 - UI-CORE-4 — Shared surface/card/badge/chip/page-header patterns
@@ -795,7 +795,7 @@ Cel: ustabilizować wspólne wzorce, globalne SCSS, reuse rules, vendor wrapper 
 - UI-CORE-14 — PrimeNG table/paginator/list pattern decision
 - UI-CORE-15 — Layout utilities and section pattern cleanup
 
-## UI-CORE-1 / formerly UI-28 — Mythborne UI style contract extraction
+## UI-CORE-1 / formerly UI-28 — Mythsworn UI style contract extraction
 
 **Goal:**  
 Zebrać zaakceptowane style z prototypów i rozmowy w praktyczny style contract dla Codexa, bez kopiowania canvas CSS do Angulara.
@@ -1101,14 +1101,14 @@ Zdefiniować jeden item popover pattern dla całej aplikacji: armory, auction, d
 ## UI-CORE-7 — Legacy Monster Hunt / `mg-*` SCSS modernization plan
 
 **Goal:**  
-Ustalić, co zostaje jako compatibility layer, co dostaje Mythborne alias, a co wymaga refaktoru.
+Ustalić, co zostaje jako compatibility layer, co dostaje Mythsworn alias, a co wymaga refaktoru.
 
 **Scope:**
 - audit public `mg-*` variables/classes/mixins,
-- mapping legacy `mg-*` → Mythborne intent,
+- mapping legacy `mg-*` → Mythsworn intent,
 - identify empty placeholders: `functions.scss`, `base/_icons.scss`,
 - identify wrappers/patterns safe to keep,
-- identify aliases needed for future Mythborne naming.
+- identify aliases needed for future Mythsworn naming.
 
 **Out of scope:**
 - big-bang rename,
@@ -1316,7 +1316,7 @@ Stworzyć mapping zaakceptowanych prototypes na production patterns.
 ## UI-CORE-12 — PrimeNG/vendor wrapper modernization and lookup order
 
 **Goal:**  
-Dopasować vendor wrappers do Mythborne i wymusić ich używanie/rozszerzanie przed lokalnym stylem.
+Dopasować vendor wrappers do Mythsworn i wymusić ich używanie/rozszerzanie przed lokalnym stylem.
 
 **Scope:**
 - review `src/scss/vendors/*`,
@@ -1501,7 +1501,7 @@ Cel: ustabilizować globalny game shell, dashboard foundation, topbar/sidebar i 
 ## UI-SHELL-1 / formerly UI-1 — Game shell style foundation
 
 **Goal:**  
-Ustabilizować globalny player-facing game shell z topbarem, sidebarem i main content, zgodny z zaakceptowanym kierunkiem Mythborne visual language.
+Ustabilizować globalny player-facing game shell z topbarem, sidebarem i main content, zgodny z zaakceptowanym kierunkiem Mythsworn visual language.
 
 **Scope:**
 - sprawdzić istniejące layout/shell components w `src/app/layout`, `src/app/shared`, route shells,
@@ -1628,7 +1628,7 @@ Ujednolicić topbar resource chips jako reusable player-facing pattern.
 
 **Scope:**
 - left side: Health, XP progress, Level, XP missing to next,
-- center: Mythborne brand/logo mark,
+- center: Mythsworn brand/logo mark,
 - right side: Drachmas, Materials, Workforce,
 - each production/resource chip should show current value and per-hour where meaningful,
 - Character Points may appear in context-specific screens, but not as generic per-hour production resource unless context requires it.
@@ -4068,7 +4068,7 @@ Opisać i/lub wdrożyć kontrakt między online toastami a persistent notificati
 
 **UI/SCSS rules:**
 - use PrimeNG/vendor toast wrapper,
-- severities map to Mythborne notification severity names,
+- severities map to Mythsworn notification severity names,
 - toast content short and action-oriented.
 
 **Dependencies/blockers:**

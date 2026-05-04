@@ -94,6 +94,25 @@ export interface MansionBuildingJobFinalization {
   completedCount: number;
 }
 
+export interface BuildingUpgradeResourceCostResult {
+  resourceType: BuildingResourceType;
+  cost: number;
+  balanceAfter: number;
+}
+
+export interface StartBuildingUpgradeResult {
+  auditLogId: string;
+  buildTimeSeconds: number;
+  buildingId: string;
+  completesAt: string;
+  estateId: string;
+  jobId: string;
+  startedAt: string;
+  status: EstateBuildingJobStatus;
+  targetLevel: number;
+  resourceCosts: BuildingUpgradeResourceCostResult[];
+}
+
 export interface EditableBuildingBonus {
   templateId: string | null;
   target: string;

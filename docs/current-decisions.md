@@ -497,7 +497,7 @@ If the user mentions notes for memory, treat them as side notes or unrelated rem
 
 The canonical project/game name is **Mythsworn**.
 
-Older names such as Monster Hunt, MythHunter, MythBurn or Mythos Hunter may appear in legacy files. Do not use them as current canonical naming in new documentation, UI labels or Codex prompts unless explicitly referencing old source material.
+Older names such as Monster Hunt, MythHunter or MythBurn may appear in legacy files. Do not use them as current canonical naming in new documentation, UI labels or Codex prompts unless explicitly referencing old source material.
 
 Canonical gameplay terms:
 

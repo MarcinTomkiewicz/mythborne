@@ -25,3 +25,13 @@ export type StatLabelRow = Pick<Row<'stats'>, 'key' | 'label'>;
 
 export type FinalizeHeroEstateBuildingJobsRpcRow =
   Database['public']['Functions']['finalize_hero_estate_building_jobs']['Returns'][number];
+
+export type GetHeroEstateRuntimeStateRpcArgs =
+  Database['public']['Functions']['get_hero_estate_runtime_state']['Args'];
+export type GetHeroEstateRuntimeStateRpcRow =
+  Database['public']['Functions']['get_hero_estate_runtime_state']['Returns'][number];
+
+export type StartEstateBuildingUpgradeRpcArgs =
+  Database['public']['Functions']['start_estate_building_upgrade']['Args'];
+export type StartEstateBuildingUpgradeRpcRow =
+  Database['public']['Functions']['start_estate_building_upgrade']['Returns'][number];

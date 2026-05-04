@@ -1,8 +1,8 @@
-# AGENTS.md — Mythborne implementation guidance
+# AGENTS.md — Mythsworn implementation guidance
 
 ## Purpose
 
-This file is the short execution-oriented guide for coding agents working on **Mythborne**.
+This file is the short execution-oriented guide for coding agents working on **Mythsworn**.
 
 Prefer this file for fast implementation context. For broader detail, also consult:
 
@@ -22,7 +22,7 @@ If there is a conflict, prefer:
 5. `project-context.md`;
 6. this file.
 
-Older Monster Hunt wording may remain in legacy source files, but new implementation, UI-facing text and documentation should use **Mythborne** unless the user explicitly asks otherwise.
+Older Monster Hunt wording may remain in legacy source files, but new implementation, UI-facing text and documentation should use **Mythsworn** unless the user explicitly asks otherwise.
 
 ---
 
