@@ -36,6 +36,7 @@ import { toEntityBonusPayload } from '../../utils/entity-bonus-governance';
 import { BonusTemplateAdminService } from '../bonus/bonus-template-admin';
 import { FormulaService } from '../formula/formula';
 import { BUILDING_PROGRESSION_TARGET_KEYS } from '../../domain/progression/building-progression.model';
+import { BuildingExplainabilityMetadata } from './building-explainability-metadata';
 
 @Injectable({ providedIn: 'root' })
 export class BuildingAdminService {
@@ -43,6 +44,7 @@ export class BuildingAdminService {
   private readonly progression = inject(BuildingProgressionService);
   private readonly bonusTemplates = inject(BonusTemplateAdminService);
   private readonly formulaService = inject(FormulaService);
+  private readonly explainabilityMetadata = inject(BuildingExplainabilityMetadata);
 
   getAdminData(): Observable<BuildingAdminData> {
     return forkJoin({
@@ -74,8 +76,9 @@ export class BuildingAdminService {
         camelCase: false,
       }),
       formulaData: this.formulaService.getAdminData(),
+      uiMetadataEntries: this.explainabilityMetadata.getAdminEntries(),
     }).pipe(
-      map(({ buildings, entityBonuses, bonusData, districts, stats, formulaData }) => {
+      map(({ buildings, entityBonuses, bonusData, districts, stats, formulaData, uiMetadataEntries }) => {
         const bonusTemplateById = new Map(
           bonusData.templates.map((template) => [template.id, template])
         );
@@ -96,6 +99,7 @@ export class BuildingAdminService {
           bonusTemplateMetadata: mapBuildingBonusTemplateMetadata(bonusData.templates),
           districts: mapBuildingDistricts(districts),
           stats: mapBuildingStats(stats),
+          uiMetadataEntries,
         };
       })
     );

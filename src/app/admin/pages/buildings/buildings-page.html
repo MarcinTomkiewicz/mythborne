@@ -15,9 +15,11 @@
       <div class="flex-row-between-center flex-col-sm gap-md">
         <div class="flex-col gap-xs">
           <p class="card-legend mb-0">Admin</p>
-          <h2 class="mg-section__title mg-section__title--sm mb-0">Buildings</h2>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            {{ page.uiMetadata.adminSectionTitle(page.uiMetadata.adminSection.pageHeader) }}
+          </h2>
           <p class="muted-text mb-0">
-            Building definitions, district placement, costs, requirements and progression formulas.
+            {{ page.uiMetadata.adminSectionText(page.uiMetadata.adminSection.pageHeader) }}
           </p>
         </div>
 
@@ -28,13 +30,26 @@
       </div>
     </section>
 
+    @if (page.uiMetadata.missingAdminGaps().length > 0) {
+      <section class="mg-card flex-col gap-sm p-lg w-100">
+        <strong class="heading-color">Missing DB UI metadata</strong>
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          @for (gap of page.uiMetadata.missingAdminGaps(); track gap) {
+            <span class="tag-badge tag-badge--warn">{{ gap }}</span>
+          }
+        </div>
+      </section>
+    }
+
     <section class="mg-card p-lg w-100">
       <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
         <div class="flex-col gap-xs">
           <p class="card-legend mb-0">Formulas</p>
-          <h3 class="mg-section__title mg-section__title--xs mb-0">Building progression</h3>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            {{ page.uiMetadata.adminSectionTitle(page.uiMetadata.adminSection.formulaAssignments) }}
+          </h3>
           <p class="mb-0 muted-text">
-            Cost, build time and bonus growth are global formulas assigned to building targets.
+            {{ page.uiMetadata.adminSectionText(page.uiMetadata.adminSection.formulaAssignments) }}
           </p>
         </div>
 
@@ -57,7 +72,12 @@
       <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
         <div class="flex-col gap-xs">
           <p class="card-legend mb-0">Selector</p>
-          <h3 class="mg-section__title mg-section__title--xs mb-0">Edited building</h3>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            {{ page.uiMetadata.adminSectionTitle(page.uiMetadata.adminSection.editedBuilding) }}
+          </h3>
+          <p class="mb-0 muted-text">
+            {{ page.uiMetadata.adminSectionText(page.uiMetadata.adminSection.editedBuilding) }}
+          </p>
         </div>
 
         <p-button label="New building" [text]="true" (onClick)="page.building.new()" />
@@ -68,6 +88,15 @@
       </form>
 
       <form [formGroup]="page.building.editorForm" class="mg-surface-card flex-col gap-lg p-lg">
+        <section class="mg-card flex-col gap-sm p-md">
+          <p class="card-legend mb-0">
+            {{ page.uiMetadata.adminSectionTitle(page.uiMetadata.adminSection.buildingIdentity) }}
+          </p>
+          <p class="mb-0 muted-text">
+            {{ page.uiMetadata.adminSectionText(page.uiMetadata.adminSection.buildingIdentity) }}
+          </p>
+        </section>
+
         <div class="flex-row-start-center flex-col-sm gap-lg align-items-center">
           <span class="image__preview image__preview--square w-px-200 w-100-sm">
             <img
@@ -82,14 +111,23 @@
             <app-form-fields [form]="page.building.editorForm" [fields]="primaryEditorFields()" />
 
             <label class="flex-col gap-sm">
-              <span class="muted-text">Image path</span>
+              <span class="muted-text">{{ page.uiMetadata.adminFieldLabel('image_path') }}</span>
               <input pInputText class="w-100" [value]="page.imagePreviewPath()" readonly />
             </label>
           </div>
         </div>
 
+        <section class="mg-card flex-col gap-sm p-md">
+          <p class="card-legend mb-0">
+            {{ page.uiMetadata.adminSectionTitle(page.uiMetadata.adminSection.buildingProgression) }}
+          </p>
+          <p class="mb-0 muted-text">
+            {{ page.uiMetadata.adminSectionText(page.uiMetadata.adminSection.buildingProgression) }}
+          </p>
+        </section>
+
         <div class="mg-grid grid-cols-4 grid-cols-2-sm grid-cols-1-xs gap-md w-100">
-          <app-form-fields [form]="page.building.editorForm" [fields]="progressionFields" />
+          <app-form-fields [form]="page.building.editorForm" [fields]="progressionFields()" />
         </div>
 
         <app-building-local-formulas-section [page]="page" />

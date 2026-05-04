@@ -8,12 +8,14 @@ import {
 } from '../../domain/building/building.model';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
 import { ActiveHero } from '../hero/active-hero';
+import { BuildingExplainabilityMetadata } from './building-explainability-metadata';
 import { BuildingsService } from './buildings';
 import { MansionPageFacade } from './mansion-page.facade';
 
 describe('MansionPageFacade', () => {
   let facade: MansionPageFacade;
   let buildingsService: jasmine.SpyObj<BuildingsService>;
+  let explainabilityMetadata: jasmine.SpyObj<BuildingExplainabilityMetadata>;
   let activeHero: jasmine.SpyObj<ActiveHero>;
   let activeHeroState: WritableSignal<ActiveHeroState | null>;
 
@@ -22,6 +24,10 @@ describe('MansionPageFacade', () => {
       'getMansionEstateView',
       'startBuildingUpgrade',
     ]);
+    explainabilityMetadata = jasmine.createSpyObj<BuildingExplainabilityMetadata>(
+      'BuildingExplainabilityMetadata',
+      ['getRuntimeEntries'],
+    );
     activeHeroState = signal<ActiveHeroState | null>({
       heroId: 'hero-1',
       serverId: 'server-1',
@@ -36,6 +42,7 @@ describe('MansionPageFacade', () => {
       { state: activeHeroState.asReadonly() },
     );
     buildingsService.getMansionEstateView.and.returnValue(of(mansionView()));
+    explainabilityMetadata.getRuntimeEntries.and.returnValue(of([]));
     buildingsService.startBuildingUpgrade.and.returnValue(of({
       auditLogId: 'audit-1',
       buildTimeSeconds: 120,
@@ -56,6 +63,7 @@ describe('MansionPageFacade', () => {
       providers: [
         MansionPageFacade,
         { provide: BuildingsService, useValue: buildingsService },
+        { provide: BuildingExplainabilityMetadata, useValue: explainabilityMetadata },
         { provide: ActiveHero, useValue: activeHero },
       ],
     });
@@ -71,6 +79,7 @@ describe('MansionPageFacade', () => {
     expect(facade.recentBuildingJobs()).toEqual([]);
     expect(facade.finalizedBuildingJobsCount()).toBe(0);
     expect(facade.visibleBuildings()).toEqual([]);
+    expect(explainabilityMetadata.getRuntimeEntries).toHaveBeenCalled();
 
     const exposedKeys = Object.keys(facade as unknown as Record<string, unknown>);
     expect(exposedKeys.some((key) => key.toLowerCase().includes('relocation'))).toBeFalse();
@@ -91,10 +100,12 @@ describe('MansionPageFacade', () => {
       ...mansionView(),
       currentAddress: 'A-3302',
     });
+    second.complete();
     first.next({
       ...mansionView(),
       currentAddress: 'A-3301',
     });
+    first.complete();
 
     expect(facade.currentAddress()).toBe('A-3302');
   });

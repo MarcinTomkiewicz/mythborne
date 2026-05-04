@@ -1,17 +1,18 @@
 <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="page().building.editorForm">
   <div class="flex-row-between-center flex-col-sm gap-md">
     <div class="flex-col gap-xs">
-      <p class="card-legend mb-0">Local formulas</p>
+      <p class="card-legend mb-0">
+        {{ page().uiMetadata.adminSectionTitle(page().uiMetadata.adminSection.localFormulas) }}
+      </p>
       <p class="mb-0 muted-text">
-        Leave empty to use the global default. Set a formula here only when this building should override the shared
-        progression rule.
+        {{ page().uiMetadata.adminSectionText(page().uiMetadata.adminSection.localFormulas) }}
       </p>
     </div>
   </div>
 
   <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100" formGroupName="formulaOverrides">
-    <label class="flex-col gap-sm">
-      <span class="muted-text">Upgrade cost formula</span>
+    <div class="flex-col gap-sm">
+      <span class="muted-text">{{ page().uiMetadata.adminFieldLabel('upgrade_cost_formula') }}</span>
       <p-select
         formControlName="upgradeCostFormulaId"
         [options]="formulaOptions('building_upgrade_cost')"
@@ -19,10 +20,10 @@
         optionValue="value"
         styleClass="w-100"
       />
-    </label>
+    </div>
 
-    <label class="flex-col gap-sm">
-      <span class="muted-text">Upgrade time formula</span>
+    <div class="flex-col gap-sm">
+      <span class="muted-text">{{ page().uiMetadata.adminFieldLabel('upgrade_time_formula') }}</span>
       <p-select
         formControlName="upgradeTimeFormulaId"
         [options]="formulaOptions('building_upgrade_time')"
@@ -30,10 +31,10 @@
         optionValue="value"
         styleClass="w-100"
       />
-    </label>
+    </div>
 
-    <label class="flex-col gap-sm">
-      <span class="muted-text">Bonus growth formula</span>
+    <div class="flex-col gap-sm">
+      <span class="muted-text">{{ page().uiMetadata.adminFieldLabel('bonus_growth_formula') }}</span>
       <p-select
         formControlName="bonusGrowthFormulaId"
         [options]="formulaOptions('building_bonus_growth')"
@@ -41,6 +42,6 @@
         optionValue="value"
         styleClass="w-100"
       />
-    </label>
+    </div>
   </div>
 </div>

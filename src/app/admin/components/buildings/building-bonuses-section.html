@@ -1,8 +1,12 @@
 <div class="mg-surface-card flex-col gap-md p-md">
   <div class="flex-row-between-center flex-col-sm gap-md">
     <div class="flex-col gap-xs">
-      <p class="card-legend mb-0">Bonuses</p>
-      <p class="mb-0 muted-text">Base bonus values used by the global building bonus formula.</p>
+      <p class="card-legend mb-0">
+        {{ page().uiMetadata.adminSectionTitle(page().uiMetadata.adminSection.buildingBonuses) }}
+      </p>
+      <p class="mb-0 muted-text">
+        {{ page().uiMetadata.adminSectionText(page().uiMetadata.adminSection.buildingBonuses) }}
+      </p>
     </div>
 
     <p-button label="Add bonus" [text]="true" (onClick)="page().bonusEditor.add()" />
@@ -14,8 +18,8 @@
         <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
           <div class="flex-col gap-md">
             <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100 align-items-center">
-              <label class="flex-col gap-sm">
-                <span class="muted-text">Template</span>
+              <div class="flex-col gap-sm">
+                <span class="muted-text">{{ page().uiMetadata.adminFieldLabel('bonus_template') }}</span>
                 <p-select
                   formControlName="templateId"
                   [options]="page().bonusTemplateOptions()"
@@ -25,25 +29,25 @@
                   styleClass="w-100"
                   (onChange)="page().applyTemplate($index, $event.value)"
                 />
-              </label>
+              </div>
 
               <label class="flex-col gap-sm">
-                <span class="muted-text">Base value</span>
+                <span class="muted-text">{{ page().uiMetadata.adminFieldLabel('bonus_base_value') }}</span>
                 <input pInputText type="number" class="w-100" formControlName="value" />
               </label>
 
               <label class="flex-col gap-sm">
-                <span class="muted-text">Target</span>
+                <span class="muted-text">{{ page().uiMetadata.adminFieldLabel('bonus_target') }}</span>
                 <input pInputText class="w-100" formControlName="target" readonly />
               </label>
 
               <label class="flex-col gap-sm">
-                <span class="muted-text">Type</span>
+                <span class="muted-text">{{ page().uiMetadata.adminFieldLabel('bonus_type') }}</span>
                 <input pInputText class="w-100" formControlName="type" readonly />
               </label>
 
               <label class="flex-col gap-sm grid-col-span-2">
-                <span class="muted-text">Description</span>
+                <span class="muted-text">{{ page().uiMetadata.adminFieldLabel('bonus_description') }}</span>
                 <input pInputText class="w-100" formControlName="description" />
               </label>
             </div>
@@ -70,13 +74,15 @@
   </div>
 
   <section class="mg-card flex-col gap-md p-md">
-    <div class="flex-row-between-center flex-col-sm gap-md">
-      <div class="flex-col gap-xs">
-        <strong class="heading-color">Saved canonical bonus impact</strong>
-        <span>
-          This DB-backed section shows saved canonical entity bonus rows only. It is not a live preview of unsaved editor rows; save the building and refresh impact to include changes.
-        </span>
-      </div>
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <strong class="heading-color">
+            {{ page().uiMetadata.adminSectionTitle(page().uiMetadata.adminSection.buildingBonuses) }}
+          </strong>
+          <span>
+            {{ page().uiMetadata.adminSectionText(page().uiMetadata.adminSection.buildingBonuses) }}
+          </span>
+        </div>
 
       <p-button
         label="Refresh impact"

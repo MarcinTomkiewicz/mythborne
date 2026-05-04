@@ -1,4 +1,13 @@
 <div class="mg-surface-card flex-col gap-md p-md mt-lg">
+  <div class="flex-col gap-xs">
+    <p class="card-legend mb-0">
+      {{ page().uiMetadata.adminSectionTitle(page().uiMetadata.adminSection.preview) }}
+    </p>
+    <p class="mb-0 muted-text">
+      {{ page().uiMetadata.adminSectionText(page().uiMetadata.adminSection.preview) }}
+    </p>
+  </div>
+
   <app-building-single-level-preview-section [page]="page()" />
   <app-building-progression-range-preview-section [page]="page()" />
 </div>

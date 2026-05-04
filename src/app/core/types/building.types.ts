@@ -1,4 +1,5 @@
 import { BonusScope, BonusType } from './bonus.types';
+import { UiMetadataEntryReadModel } from '../domain/admin-ui-metadata.model';
 
 export type BuildingResourceType = 'drachma' | 'materials' | 'workforce';
 export type BuildingRequirementType = 'hero_level' | 'hero_rank' | 'hero_stat';
@@ -161,6 +162,7 @@ export interface BuildingAdminData {
   bonusTemplateMetadata: BuildingBonusTemplateMetadata[];
   districts: BuildingDistrictOption[];
   stats: BuildingStatOption[];
+  uiMetadataEntries: UiMetadataEntryReadModel[];
 }
 
 export interface BuildingBonusTemplateMetadata {

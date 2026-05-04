@@ -2,7 +2,7 @@
   <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
     <div class="flex-col gap-md">
       <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100 align-items-center">
-        <label class="flex-col gap-sm">
+        <div class="flex-col gap-sm">
           <span class="muted-text">Requirement definition</span>
           <p-select
             formControlName="requirementDefinitionKey"
@@ -12,7 +12,7 @@
             styleClass="w-100"
             (onChange)="page().requirements.onDefinitionChange(index())"
           />
-        </label>
+        </div>
 
         <label class="flex-col gap-sm">
           <span class="muted-text">From building level</span>

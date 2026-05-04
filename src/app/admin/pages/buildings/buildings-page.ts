@@ -19,9 +19,9 @@ import { BuildingRequirementsSection } from '../../components/buildings/building
 import { BuildingResourceCostsSection } from '../../components/buildings/building-resource-costs-section';
 import { BUILDINGS_PAGE_LINKS } from '../../admin-navigation.config';
 import {
-  BUILDING_PROGRESSION_FIELDS,
   createBuildingFormulaFields,
   createBuildingPrimaryEditorFields,
+  createBuildingProgressionFields,
   createBuildingSelectorFields,
 } from '../../../core/config/forms/buildings-form.config';
 
@@ -63,19 +63,42 @@ export class BuildingsPage implements OnInit {
           value: formula.id,
           label: formula.label,
         })),
-      (targetKey) => this.page.formulas.toControlName(targetKey)
+      (targetKey) => this.page.formulas.toControlName(targetKey),
+      (targetKey, fallback) => this.formulaFieldLabel(targetKey, fallback),
     )
   );
   readonly selectorFields = computed(() =>
     createBuildingSelectorFields(this.page.building.items())
   );
   readonly primaryEditorFields = computed(() =>
-    createBuildingPrimaryEditorFields(this.page.adminData())
+    createBuildingPrimaryEditorFields(
+      this.page.adminData(),
+      (key, fallback) => this.fieldLabel(key, fallback),
+    )
   );
-  readonly progressionFields = BUILDING_PROGRESSION_FIELDS;
+  readonly progressionFields = computed(() =>
+    createBuildingProgressionFields((key, fallback) => this.fieldLabel(key, fallback))
+  );
 
   ngOnInit(): void {
     this.page.loadData();
+  }
+
+  private fieldLabel(key: string, fallback: string): string {
+    const label = this.page.uiMetadata.adminFieldLabel(key);
+
+    return label || fallback;
+  }
+
+  private formulaFieldLabel(targetKey: string, fallback: string): string {
+    const fieldKeyByTarget: Record<string, string> = {
+      building_upgrade_cost: 'upgrade_cost_formula',
+      building_upgrade_time: 'upgrade_time_formula',
+      building_bonus_growth: 'bonus_growth_formula',
+    };
+    const fieldKey = fieldKeyByTarget[targetKey];
+
+    return fieldKey ? this.fieldLabel(fieldKey, fallback) : fallback;
   }
 }
 

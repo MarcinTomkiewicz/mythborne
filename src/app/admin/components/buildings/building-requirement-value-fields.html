@@ -24,7 +24,7 @@
       </label>
     }
     @case (valueTypes.Boolean) {
-      <label class="flex-col gap-sm">
+      <div class="flex-col gap-sm">
         <span class="muted-text">Required state</span>
         <p-select
           formControlName="requiredValueBoolean"
@@ -33,7 +33,7 @@
           optionValue="value"
           styleClass="w-100"
         />
-      </label>
+      </div>
     }
     @case (valueTypes.String) {
       <label class="flex-col gap-sm">
@@ -42,7 +42,7 @@
       </label>
     }
     @case (valueTypes.StatKey) {
-      <label class="flex-col gap-sm">
+      <div class="flex-col gap-sm">
         <span class="muted-text">Stat</span>
         <p-select
           formControlName="requiredStatKey"
@@ -51,7 +51,7 @@
           optionValue="value"
           styleClass="w-100"
         />
-      </label>
+      </div>
 
       <label class="flex-col gap-sm">
         <span class="muted-text">Minimum stat value</span>
@@ -64,7 +64,7 @@
       </label>
     }
     @case (valueTypes.BuildingKey) {
-      <label class="flex-col gap-sm">
+      <div class="flex-col gap-sm">
         <span class="muted-text">Required building</span>
         <p-select
           formControlName="requiredBuildingKey"
@@ -73,7 +73,7 @@
           optionValue="value"
           styleClass="w-100"
         />
-      </label>
+      </div>
 
       <label class="flex-col gap-sm">
         <span class="muted-text">Required building level</span>
@@ -86,7 +86,7 @@
       </label>
     }
     @case (valueTypes.ResourceType) {
-      <label class="flex-col gap-sm">
+      <div class="flex-col gap-sm">
         <span class="muted-text">Resource</span>
         <p-select
           formControlName="requiredResourceType"
@@ -95,7 +95,7 @@
           optionValue="value"
           styleClass="w-100"
         />
-      </label>
+      </div>
 
       <label class="flex-col gap-sm">
         <span class="muted-text">Required amount</span>
@@ -109,7 +109,7 @@
       </label>
     }
     @case (valueTypes.DistrictCode) {
-      <label class="flex-col gap-sm">
+      <div class="flex-col gap-sm">
         <span class="muted-text">District</span>
         <p-select
           formControlName="requiredDistrictCode"
@@ -118,7 +118,7 @@
           optionValue="value"
           styleClass="w-100"
         />
-      </label>
+      </div>
     }
     @case (valueTypes.EnumRef) {
       <label class="flex-col gap-sm">

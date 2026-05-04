@@ -1,9 +1,11 @@
 <div class="mg-surface-card flex-col gap-md p-md">
   <div class="flex-row-between-center flex-col-sm gap-md">
     <div class="flex-col gap-xs">
-      <p class="card-legend mb-0">Resource costs</p>
+      <p class="card-legend mb-0">
+        {{ page().uiMetadata.adminSectionTitle(page().uiMetadata.adminSection.resourceCosts) }}
+      </p>
       <p class="mb-0 muted-text">
-        Each row uses the global building cost formula and can start from a chosen building level.
+        {{ page().uiMetadata.adminSectionText(page().uiMetadata.adminSection.resourceCosts) }}
       </p>
     </div>
 
@@ -14,8 +16,8 @@
     @for (costGroup of page().costEditor.controls; track $index) {
       <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="costGroup">
         <div class="mg-grid grid-cols-4 grid-cols-1-sm gap-md w-100 align-items-center">
-          <label class="flex-col gap-sm">
-            <span class="muted-text">Resource</span>
+          <div class="flex-col gap-sm">
+            <span class="muted-text">{{ page().uiMetadata.adminFieldLabel('cost_resource_type') }}</span>
             <p-select
               formControlName="resourceType"
               [options]="resourceTypeOptions"
@@ -23,15 +25,15 @@
               optionValue="value"
               styleClass="w-100"
             />
-          </label>
+          </div>
 
           <label class="flex-col gap-sm">
-            <span class="muted-text">Base value</span>
+            <span class="muted-text">{{ page().uiMetadata.adminFieldLabel('cost_base_value') }}</span>
             <input pInputText type="number" class="w-100" formControlName="baseValue" />
           </label>
 
           <label class="flex-col gap-sm">
-            <span class="muted-text">From building level</span>
+            <span class="muted-text">{{ page().uiMetadata.adminFieldLabel('cost_applies_from_level') }}</span>
             <input pInputText type="number" class="w-100" formControlName="appliesFromLevel" />
           </label>
 

@@ -4745,6 +4745,12 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 
 ---
 
+**Implementation note:** O7 accepted on 2026-05-04 after reviewer fixes and user smoke. Building admin explainability now uses DB-backed `building_configurator_section` metadata for section titles/text and `building_configurator_field` metadata for selected field labels, with missing entries shown as exact `namespace/key` gaps. Mansion runtime explainability uses `estate_runtime_section` and `estate_building_runtime_section`. O7 loads metadata via canonical `get_ui_metadata_entries(...)` and generated function return typing. The touched building/admin/shared select templates no longer nest `p-select` inside native `<label>` elements. Permanent local gameplay/admin explainability copy was removed from touched O7 sections; remaining local copy is limited to short operational UI labels and empty states. Verification passed with `npx tsc --noEmit`, 31 focused building specs, and `npm run build` with known existing warnings. Codex did not run manual or route smoke.
+
+**Status:** Done / accepted on 2026-05-04.
+
+---
+
 ## Task O8 — Building configurator edit alignment
 
 **Goal:** Align the existing building admin/editor surface with the current building DB model and safety rules.

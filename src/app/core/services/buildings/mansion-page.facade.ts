@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { map, switchMap } from 'rxjs';
+import { forkJoin, map, switchMap } from 'rxjs';
 import {
   MansionBuildingJob,
   BuildingRequirementPreview,
@@ -16,11 +16,15 @@ import {
 } from '../../utils/building-display';
 import { getErrorMessage } from '../../utils/error-message';
 import { ActiveHero } from '../hero/active-hero';
+import { BuildingExplainabilityMetadata } from './building-explainability-metadata';
+import { BuildingUiMetadata } from './building-ui-metadata';
+import { UiMetadataEntryReadModel } from '../../domain/admin-ui-metadata.model';
 
 @Injectable()
 export class MansionPageFacade {
   private readonly buildingsService = inject(BuildingsService);
   private readonly activeHero = inject(ActiveHero);
+  private readonly explainabilityMetadata = inject(BuildingExplainabilityMetadata);
 
   readonly isLoading = signal(true);
   readonly error = signal<string | null>(null);
@@ -36,6 +40,8 @@ export class MansionPageFacade {
   readonly recentBuildingJobs = signal<MansionBuildingJob[]>([]);
   readonly finalizedBuildingJobsCount = signal(0);
   readonly buildings = signal<MansionBuilding[]>([]);
+  readonly uiMetadataEntries = signal<UiMetadataEntryReadModel[]>([]);
+  readonly uiMetadata = new BuildingUiMetadata(() => this.uiMetadataEntries());
   readonly visibleBuildings = computed(() =>
     this.buildings().filter((building) => building.isOwned || building.isUnlocked)
   );
@@ -48,12 +54,16 @@ export class MansionPageFacade {
     this.isLoading.set(true);
     this.error.set(null);
 
-    this.buildingsService.getMansionEstateView().subscribe({
-      next: (view) => {
+    forkJoin({
+      view: this.buildingsService.getMansionEstateView(),
+      uiMetadataEntries: this.explainabilityMetadata.getRuntimeEntries(),
+    }).subscribe({
+      next: ({ view, uiMetadataEntries }) => {
         if (requestId !== this.loadRequestId) {
           return;
         }
 
+        this.uiMetadataEntries.set(uiMetadataEntries);
         this.currentAddress.set(view.currentAddress);
         this.currentDistrictCode.set(view.currentDistrictCode);
         this.currentDistrictName.set(view.currentDistrictName);

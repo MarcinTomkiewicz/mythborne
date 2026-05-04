@@ -25,7 +25,7 @@
       }
 
       @case (fieldType.Select) {
-        <label [class]="fieldClass(field)">
+        <div [class]="fieldClass(field)">
           <span class="muted-text">{{ field.label }}</span>
           <p-select
             [styleClass]="widthClass()"
@@ -34,7 +34,7 @@
             optionLabel="label"
             optionValue="value"
           />
-        </label>
+        </div>
       }
 
       @case (fieldType.Date) {

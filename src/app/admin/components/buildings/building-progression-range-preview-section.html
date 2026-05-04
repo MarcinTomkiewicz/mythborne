@@ -1,13 +1,14 @@
 <section class="mg-surface-card flex-col gap-md p-md">
   <div class="flex-row-between-center flex-col-sm gap-md">
     <div class="flex-col gap-xs">
-      <p class="card-legend mb-0">Progression impact</p>
+      <p class="card-legend mb-0">
+        {{ page().uiMetadata.adminSectionTitle(page().uiMetadata.adminSection.preview) }}
+      </p>
       <h4 class="mg-section__title mg-section__title--xs mb-0">
-        District level range preview
+        {{ page().uiMetadata.adminSectionTitle(page().uiMetadata.adminSection.buildingProgression) }}
       </h4>
       <p class="mb-0 muted-text">
-        Database preview validates district availability, persisted base values, effective max level and cap semantics.
-        Editable formula output below uses the current form values before save.
+        {{ page().uiMetadata.adminSectionText(page().uiMetadata.adminSection.preview) }}
       </p>
     </div>
 
@@ -23,7 +24,7 @@
     [formGroup]="page().progression.form"
     class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100"
   >
-    <label class="flex-col gap-sm min-w-0">
+    <div class="flex-col gap-sm min-w-0">
       <span class="muted-text">District context</span>
       <p-select
         formControlName="districtCode"
@@ -40,7 +41,7 @@
           {{ page().progression.validationMessage('districtCode') }}
         </small>
       }
-    </label>
+    </div>
 
     <label class="flex-col gap-sm min-w-0">
       <span class="muted-text">From level</span>
@@ -127,10 +128,11 @@
 
   <div class="flex-col gap-sm">
     <div class="flex-col gap-xs">
-      <strong class="heading-color">Progression impact</strong>
+      <strong class="heading-color">
+        {{ page().uiMetadata.adminSectionTitle(page().uiMetadata.adminSection.preview) }}
+      </strong>
       <span class="muted-text">
-        Each step combines database district/cap status with cost, time and bonus output from the current editable
-        form formulas.
+        {{ page().uiMetadata.adminSectionText(page().uiMetadata.adminSection.buildingProgression) }}
       </span>
     </div>
 

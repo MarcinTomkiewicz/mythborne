@@ -15,7 +15,9 @@
       <div class="flex-row-between-center flex-col-sm gap-md">
         <div class="flex-col gap-xs">
           <p class="card-legend mb-0">Estate</p>
-          <h2 class="mg-section__title mg-section__title--sm mb-0">Buildings</h2>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            {{ page.uiMetadata.runtimeSectionTitle(page.uiMetadata.runtimeSection.pageHeader) }}
+          </h2>
           <p class="muted-text mb-0">
             District {{ page.currentDistrictCode() }}{{ page.currentDistrictName() ? ' - ' + page.currentDistrictName() : '' }}
             @if (page.currentAddress()) {
@@ -29,6 +31,57 @@
           <a routerLink="/admin/buildings" class="tag-badge tag-badge--muted">Admin buildings</a>
           <a routerLink="/admin/balance" class="tag-badge tag-badge--muted">Formulas</a>
         </div>
+      </div>
+    </section>
+
+    @if (page.uiMetadata.missingRuntimeGaps().length > 0) {
+      <section class="mg-card flex-col gap-sm p-lg w-100">
+        <strong class="heading-color">Missing DB UI metadata</strong>
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          @for (gap of page.uiMetadata.missingRuntimeGaps(); track gap) {
+            <span class="tag-badge tag-badge--warn">{{ gap }}</span>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md">
+        <article class="flex-col gap-xs">
+          <p class="card-legend mb-0">
+            {{ page.uiMetadata.runtimeSectionTitle(page.uiMetadata.runtimeSection.addressModel) }}
+          </p>
+          <p class="mb-0 muted-text">
+            {{ page.uiMetadata.runtimeSectionText(page.uiMetadata.runtimeSection.addressModel) }}
+          </p>
+        </article>
+
+        <article class="flex-col gap-xs">
+          <p class="card-legend mb-0">
+            {{ page.uiMetadata.buildingRuntimeTitle(page.uiMetadata.buildingRuntimeSection.districtInheritance) }}
+          </p>
+          <p class="mb-0 muted-text">
+            {{ page.uiMetadata.buildingRuntimeText(page.uiMetadata.buildingRuntimeSection.districtInheritance) }}
+          </p>
+        </article>
+
+        <article class="flex-col gap-xs">
+          <p class="card-legend mb-0">
+            {{ page.uiMetadata.buildingRuntimeTitle(page.uiMetadata.buildingRuntimeSection.activeJobModel) }}
+          </p>
+          <p class="mb-0 muted-text">
+            {{ page.uiMetadata.buildingRuntimeText(page.uiMetadata.buildingRuntimeSection.activeJobModel) }}
+          </p>
+        </article>
+
+        <article class="flex-col gap-xs">
+          <p class="card-legend mb-0">
+            {{ page.uiMetadata.buildingRuntimeTitle(page.uiMetadata.buildingRuntimeSection.previewVsAuthoritativeRpc) }}
+          </p>
+          <p class="mb-0 muted-text">
+            {{ page.uiMetadata.buildingRuntimeText(page.uiMetadata.buildingRuntimeSection.previewVsAuthoritativeRpc) }}
+          </p>
+        </article>
       </div>
     </section>
 
@@ -76,7 +129,9 @@
       <section class="mg-card flex-col gap-md p-lg w-100">
         <div class="flex-row-between-center flex-col-sm gap-md">
           <div class="flex-col gap-xs">
-            <p class="card-legend mb-0">Building job</p>
+            <p class="card-legend mb-0">
+              {{ page.uiMetadata.buildingRuntimeTitle(page.uiMetadata.buildingRuntimeSection.activeJobModel) }}
+            </p>
             <h3 class="mg-section__title mg-section__title--xs mb-0">
               {{ job.buildingName }} to level {{ job.targetLevel }}
             </h3>
@@ -99,7 +154,9 @@
     } @else if (page.finalizedBuildingJobsCount() > 0) {
       <section class="mg-card flex-row-between-center flex-col-sm gap-md p-lg w-100">
         <div class="flex-col gap-xs">
-          <p class="card-legend mb-0">Building job</p>
+          <p class="card-legend mb-0">
+            {{ page.uiMetadata.buildingRuntimeTitle(page.uiMetadata.buildingRuntimeSection.lazyFinalization) }}
+          </p>
           <h3 class="mg-section__title mg-section__title--xs mb-0">Completed jobs finalized</h3>
         </div>
         <span class="tag-badge tag-badge--info">

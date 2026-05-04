@@ -12,12 +12,13 @@ export const BUILDING_RESOURCE_TYPE_OPTIONS = [
 export function createBuildingFormulaFields(
   targets: readonly FormulaTarget[],
   formulasFor: (targetKey: string) => readonly { value: string; label: string }[],
-  toControlName: (targetKey: string) => string
+  toControlName: (targetKey: string) => string,
+  labelFor: (targetKey: string, fallback: string) => string = (_targetKey, fallback) => fallback,
 ): readonly FormFieldConfig[] {
   return targets.map((target) => ({
     type: FormFieldType.Select,
     controlName: toControlName(target.key),
-    label: target.label,
+    label: labelFor(target.key, target.label),
     options: [{ label: 'Choose formula', value: '' }, ...formulasFor(target.key)],
   }));
 }
@@ -42,21 +43,22 @@ export function createBuildingSelectorFields(
 }
 
 export function createBuildingPrimaryEditorFields(
-  adminData: BuildingAdminData
+  adminData: BuildingAdminData,
+  fieldLabel: (key: string, fallback: string) => string = (_key, fallback) => fallback,
 ): readonly FormFieldConfig[] {
   return [
-    { type: FormFieldType.Text, controlName: 'key', label: 'Key', readonly: true },
-    { type: FormFieldType.Text, controlName: 'name', label: 'Name' },
+    { type: FormFieldType.Text, controlName: 'key', label: fieldLabel('key', 'Key'), readonly: true },
+    { type: FormFieldType.Text, controlName: 'name', label: fieldLabel('name', 'Name') },
     {
       type: FormFieldType.Textarea,
       controlName: 'description',
-      label: 'Description',
+      label: fieldLabel('description', 'Description'),
       rows: 3,
     },
     {
       type: FormFieldType.Select,
       controlName: 'districtCode',
-      label: 'District',
+      label: fieldLabel('district_code', 'District'),
       options: adminData.districts.map((district) => ({
         label: `${district.code} - ${district.name}`,
         value: district.code,
@@ -65,8 +67,16 @@ export function createBuildingPrimaryEditorFields(
   ];
 }
 
-export const BUILDING_PROGRESSION_FIELDS: readonly FormFieldConfig[] = [
-  { type: FormFieldType.Number, controlName: 'sortOrder', label: 'Sort order' },
-  { type: FormFieldType.Number, controlName: 'baseBuildTimeSeconds', label: 'Base build time (sec)' },
-  { type: FormFieldType.Number, controlName: 'maxLevel', label: 'Max level' },
-];
+export function createBuildingProgressionFields(
+  fieldLabel: (key: string, fallback: string) => string = (_key, fallback) => fallback,
+): readonly FormFieldConfig[] {
+  return [
+    { type: FormFieldType.Number, controlName: 'sortOrder', label: fieldLabel('sort_order', 'Sort order') },
+    {
+      type: FormFieldType.Number,
+      controlName: 'baseBuildTimeSeconds',
+      label: fieldLabel('base_build_time_seconds', 'Base build time (sec)'),
+    },
+    { type: FormFieldType.Number, controlName: 'maxLevel', label: fieldLabel('max_level', 'Max level') },
+  ];
+}

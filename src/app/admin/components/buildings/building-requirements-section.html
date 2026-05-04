@@ -1,10 +1,11 @@
 <div class="mg-surface-card flex-col gap-md p-md">
   <div class="flex-row-between-center flex-col-sm gap-md">
     <div class="flex-col gap-xs">
-      <p class="card-legend mb-0">Central requirements</p>
+      <p class="card-legend mb-0">
+        {{ page().uiMetadata.adminSectionTitle(page().uiMetadata.adminSection.centralRequirements) }}
+      </p>
       <p class="mb-0 muted-text">
-        Requirement types come from DB requirement definitions. Create, update and deactivate
-        building requirements through the central entity requirement RPC workflow.
+        {{ page().uiMetadata.adminSectionText(page().uiMetadata.adminSection.centralRequirements) }}
       </p>
     </div>
 
@@ -64,10 +65,11 @@
     <div class="flex-col gap-sm">
       <div class="flex-row-between-center flex-col-sm gap-sm">
         <div class="flex-col gap-xs">
-          <p class="card-legend mb-0">Inactive requirements</p>
+          <p class="card-legend mb-0">
+            {{ page().uiMetadata.adminSectionTitle(page().uiMetadata.adminSection.centralRequirements) }}
+          </p>
           <p class="mb-0 muted-text">
-            Inactive rows are returned by the canonical preview read model and are not part
-            of the active editor list.
+            {{ page().uiMetadata.adminSectionText(page().uiMetadata.adminSection.centralRequirements) }}
           </p>
         </div>
 

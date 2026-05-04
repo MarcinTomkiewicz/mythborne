@@ -29,6 +29,7 @@ import { BuildingFormulaAdminFacade } from './building-formula-admin.facade';
 import { BuildingImpactPreviewState } from './building-impact-preview.state';
 import { BuildingProgressionPreviewState } from './building-progression-preview.state';
 import { BuildingRequirementsState } from './building-requirements.state';
+import { BuildingUiMetadata } from './building-ui-metadata';
 
 const EMPTY_ADMIN_DATA: BuildingAdminData = {
   buildings: [],
@@ -36,6 +37,7 @@ const EMPTY_ADMIN_DATA: BuildingAdminData = {
   bonusTemplateMetadata: [],
   districts: [],
   stats: [],
+  uiMetadataEntries: [],
 };
 
 @Injectable()
@@ -51,6 +53,7 @@ export class BuildingsPageFacade {
   readonly impact = inject(BuildingImpactPreviewState);
   readonly progression = inject(BuildingProgressionPreviewState);
   readonly requirements = inject(BuildingRequirementsState);
+  readonly uiMetadata = new BuildingUiMetadata(() => this.adminData().uiMetadataEntries);
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
   readonly error = signal<string | null>(null);
