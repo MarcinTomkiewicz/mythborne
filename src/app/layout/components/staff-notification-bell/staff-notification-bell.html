@@ -1,0 +1,108 @@
+@if (state.shouldRender()) {
+  <div class="dropdown-anchor">
+    <button
+      type="button"
+      class="dropdown-trigger mg-card flex-row-center-center gap-xs p-sm cursor-pointer"
+      [attr.aria-expanded]="state.isOpen()"
+      aria-label="Staff notifications"
+      (click)="state.toggleDropdown()"
+    >
+      <i class="pi pi-shield"></i>
+      <span class="muted-text">Staff</span>
+      @if (state.unreadCount() > 0) {
+        <span
+          class="notification-badge"
+          [class.wider]="state.unreadCount() > 9 && state.unreadCount() <= 99"
+          [class.widest]="state.unreadCount() > 99"
+        >
+          {{ state.unreadCountLabel() }}
+        </span>
+      }
+    </button>
+
+    @if (state.isOpen()) {
+      <section class="dropdown-panel mg-card flex-col gap-md p-md">
+        <div class="flex-row-between-center gap-md">
+          <div class="flex-col gap-xs">
+            <strong class="heading-color">Staff notifications</strong>
+            <span class="muted-text">
+              {{ state.selectedServer()?.name ?? 'Select a server' }}
+            </span>
+          </div>
+          @if (state.unreadCount() > 0) {
+            <span class="tag-badge tag-badge--warn">
+              {{ state.unreadCountLabel() }} unread
+            </span>
+          }
+        </div>
+
+        @if (state.missingSelectedServer()) {
+          <p class="mb-0 muted-text">Select a server to view staff notifications.</p>
+        } @else if (state.isLoading()) {
+          <p class="mb-0 muted-text">Loading staff notifications...</p>
+        } @else if (state.error()) {
+          <p class="mb-0 tag-badge tag-badge--warn">{{ state.error() }}</p>
+        } @else if (state.hasNotifications()) {
+          <div class="flex-col gap-sm dropdown-list">
+            @for (notification of state.notifications(); track notification.notificationId) {
+              <article
+                class="list-card-item mg-card flex-col gap-xs p-sm"
+                [class.list-card-item--highlight]="notification.readState.isUnread"
+              >
+                <div class="flex-row-between-center flex-col-sm gap-sm">
+                  <strong class="heading-color">{{ notification.title }}</strong>
+                  <div class="flex-row-start-center flex-wrap gap-xs">
+                    @if (notification.readState.isDismissed) {
+                      <span class="tag-badge tag-badge--muted">Dismissed</span>
+                    } @else if (notification.readState.isUnread) {
+                      <span class="tag-badge tag-badge--warn">Unread</span>
+                    } @else {
+                      <span class="tag-badge tag-badge--muted">Read</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  <span [class]="state.severityBadgeClass(notification)">
+                    {{ notification.severity }}
+                  </span>
+                  <span class="tag-badge tag-badge--muted">
+                    {{ notification.type.label }}
+                  </span>
+                  <span class="tag-badge tag-badge--muted">
+                    {{ notification.type.category }}
+                  </span>
+                </div>
+
+                @if (state.shortBody(notification); as body) {
+                  <p class="mb-0 muted-text">{{ body }}</p>
+                }
+
+                <div class="flex-row-between-center flex-col-sm gap-sm">
+                  <span class="muted-text">
+                    {{ state.toDateTimeLabel(notification.createdAt) }}
+                  </span>
+                  <div class="flex-row-start-center flex-wrap gap-xs">
+                    @if (notification.actorHeroId) {
+                      <span class="tag-badge tag-badge--muted">Actor linked</span>
+                    }
+                    @if (notification.recipientHeroId) {
+                      <span class="tag-badge tag-badge--muted">Recipient linked</span>
+                    }
+                    @if (state.actionRoute(notification); as route) {
+                      <a class="tag-badge tag-badge--info" [routerLink]="route">
+                        {{ notification.actionLink?.label ?? 'Open' }}
+                      </a>
+                    }
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="mb-0 muted-text">No staff notifications.</p>
+        }
+      </section>
+    }
+  </div>
+}

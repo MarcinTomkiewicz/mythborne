@@ -5971,6 +5971,14 @@ Reports have their own Reports Center and unread state. Toasts are presentation 
 - Missing selected server state is handled clearly.
 - Build and access smoke pass where possible.
 
+**Status:** Accepted on 2026-05-05.
+
+**Acceptance summary:** Q7 added a separate staff/admin notification bell in the shell header for server-scoped staff notifications. The surface uses `NotificationInbox.getStaffNotifications(serverId, ...)` and `getStaffUnreadCount(serverId)` from Q3, requires selected server context, and is gated through `resolveStaffAccessPolicy(...)` so normal player access does not render the staff bell or call staff RPCs. Missing selected server shows a clear no-RPC state, loss of staff access resets the UI, and switching selected server immediately clears stale `notifications`, `unreadCount` and `error` while the new load is pending to avoid cross-server leakage. The dropdown shows unread count, title/body, type label/category/severity, created time, read/dismiss state and guarded action links. Staff action routes are allowlisted from real `adminRoutes`, allowing declared admin routes while blocking `ViewState`, `/game/...`, `/report/...`, `/admin/missing` and `/admin/access-denied`. Styling uses shared dropdown/list utilities with no local SCSS. No direct notification writes, frontend `create_notification(...)` calls, staff/player mixing or staff notification exposure in the player bell were added.
+
+**Verification:** `npx tsc --noEmit` passed; focused notification bell specs passed with 26 SUCCESS; `npm run build` passed with known bundle budget and Supabase `cookie` CommonJS warnings; static greps passed for no direct notification writes and no staff RPC usage in the player bell/topbar.
+
+**Manual smoke:** Pending real staff user + selected server + seeded/generated staff notification row. Later smoke should verify real DB/RLS visibility and real staff action URL content.
+
 ---
 
 ## Task Q8 — Notification type/admin readability pass

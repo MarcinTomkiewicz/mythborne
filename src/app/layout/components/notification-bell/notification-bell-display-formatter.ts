@@ -1,9 +1,14 @@
 import { Injectable } from '@angular/core';
-import { PlayerNotificationListItem } from '../../../core/domain/notifications/notification.model';
+import { NotificationSeverity } from '../../../core/types/notification-rpc.types';
+
+interface NotificationDisplayItem {
+  body: string | null;
+  severity: NotificationSeverity;
+}
 
 @Injectable()
 export class NotificationBellDisplayFormatter {
-  severityBadgeClass(notification: PlayerNotificationListItem): string {
+  severityBadgeClass(notification: NotificationDisplayItem): string {
     switch (notification.severity) {
       case 'critical':
         return 'tag-badge tag-badge--danger';
@@ -20,7 +25,7 @@ export class NotificationBellDisplayFormatter {
     return new Date(value).toLocaleString();
   }
 
-  shortBody(notification: PlayerNotificationListItem): string | null {
+  shortBody(notification: NotificationDisplayItem): string | null {
     if (!notification.body) {
       return null;
     }

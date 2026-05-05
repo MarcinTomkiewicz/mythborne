@@ -182,10 +182,12 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: Q4 - Notification bell / dropdown UI.
 - Completed and confirmed: Q5 - Mark read / dismiss notification actions.
 - Completed and confirmed: Q6 - Optional online toast presentation for fresh notifications.
-- Next backlog task: Q7 - Staff notification inbox/dropdown UI from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
+- Completed and confirmed: Q7 - Staff notification inbox/dropdown UI.
+- Next backlog task: Q8 - Notification type/admin readability pass from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
 - Q4 pending manual smoke: check a real DB row for `estate.building_job.completed`; source `action_url` must be `/game/mansion`. If it still returns `ViewState`, fix DB/content producer source and do not add a frontend remap.
 - Q5 pending manual smoke: open bell, mark read, dismiss and action link; real DB/RLS denied-action smoke only if suitable test data/access exists.
 - Q6 pending manual smoke: basic bell UI can be smoke-tested, but full fresh-toast validation needs a real DB producer notification. Eligible unread fresh rows should toast once; read rows and `default_toast_enabled = false` rows should remain inbox-only.
+- Q7 pending manual smoke: real staff user + selected server + seeded/generated staff notification row; verify DB/RLS visibility and real staff action URL content.
 - P2-P11 follow-ups: full manual smoke for list/detail/public-route/combat-rendering/item-reference rendering/unread/remove, low-level combat report creation, reward-drop attachment, contextual trial/encounter/PvP/siege readiness and deletion semantics needs authenticated session plus representative report producer/combat result/item/contextual/multi-access data.
 - O6 user smoke confirmed real job behavior: start job, active job panel, route leave/return, browser refresh during an active job, completed-job settlement, and the new building level after `completes_at`.
 - O8 user smoke confirmed building admin save/read behavior for `startingLevel = 0`. The editor now treats `starting_level = 0` as a legal not-built definition state, preserves it through mapping/form/save payload, keeps `startingLevel = 2` round-tripping, exposes `min=0`/`step=1`, and rejects negative/non-integer values instead of silently clamping.
