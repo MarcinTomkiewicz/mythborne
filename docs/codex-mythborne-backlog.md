@@ -6294,6 +6294,8 @@ PvP Foundation is not:
 - Service code does not assume `hero.id === auth.uid()`.
 - Service code does not call internal producer helpers.
 
+**Implementation note:** R3 accepted on 2026-05-05. Added the thin `PlayerPvp` service over canonical player PvP RPCs using `ActiveHero.requireActiveHero()` and R2 mappers. No UI, routes, direct PvP table reads/writes or internal producer/helper RPC usage were added.
+
 ---
 
 ## Task R4 — PvP metadata read layer
