@@ -46,6 +46,54 @@
     }
 
     <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-md">
+        <div class="flex-row-between-center flex-col-sm gap-md">
+          <div class="flex-col gap-xs">
+            <p class="card-legend mb-0">Estate overview</p>
+            <h3 class="mg-section__title mg-section__title--xs mb-0">
+              {{ page.currentAddress() || 'No address' }}
+            </h3>
+            <p class="mb-0 muted-text">
+              District {{ page.currentDistrictCode() }}
+              @if (page.currentDistrictName()) {
+                <span> - {{ page.currentDistrictName() }}</span>
+              }
+              @if (page.currentDistrictRank()) {
+                <span> | Rank {{ page.currentDistrictRank() }}</span>
+              }
+            </p>
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            <span class="tag-badge tag-badge--info">
+              {{ page.availableBuildingCount() }} buildings
+            </span>
+            <span class="tag-badge tag-badge--muted">
+              {{ page.unbuiltBuildingCount() }} unbuilt
+            </span>
+            @if (page.activeBuildingJob()) {
+              <span class="tag-badge tag-badge--warn">One active job</span>
+            } @else {
+              <span class="tag-badge tag-badge--muted">No active job</span>
+            }
+          </div>
+        </div>
+
+        <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+          @for (balance of page.resourceBalances(); track balance.resourceType) {
+            <article class="mg-card flex-col gap-xs p-md">
+              <span class="muted-text">{{ page.resourceLabel(balance.resourceType) }}</span>
+              <strong class="heading-color">{{ balance.amount }}</strong>
+              <span class="muted-text">{{ page.resourceRateLabel(balance) }}</span>
+            </article>
+          } @empty {
+            <p class="mb-0 muted-text">No settled resource balances returned.</p>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
       <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md">
         <article class="flex-col gap-xs">
           <p class="card-legend mb-0">
@@ -225,7 +273,7 @@
 
               <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
                 <div class="mg-card flex-col gap-xs p-md">
-                  <span class="muted-text">Next build cost</span>
+                  <span class="muted-text">Preview cost</span>
                   <div class="flex-col gap-xs">
                     @for (cost of building.nextUpgradeCosts; track cost.resourceType) {
                       <div class="flex-row-start-center gap-sm">
@@ -252,7 +300,7 @@
                 <div class="mg-card flex-col gap-xs p-md">
                   <div class="flex-row-start-center gap-sm">
                     <i class="pi pi-sundial muted-text"></i>
-                    <span class="muted-text">Next build time</span>
+                    <span class="muted-text">Preview time</span>
                   </div>
                   <strong class="heading-color">
                     {{ page.toDurationLabel(building.nextUpgradeTimeSeconds) }}

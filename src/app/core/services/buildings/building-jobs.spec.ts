@@ -69,6 +69,11 @@ describe('BuildingJobs', () => {
         level: 0,
       }),
     ]);
+    expect(result.resourceBalances).toEqual([
+      { resourceType: 'drachma', amount: 900, perHour: 10 },
+      { resourceType: 'materials', amount: 450, perHour: 0 },
+      { resourceType: 'workforce', amount: 100, perHour: 0 },
+    ]);
   });
 
   it('starts building upgrades through the canonical owner-safe RPC', async () => {
@@ -164,6 +169,11 @@ describe('building job read model', () => {
           building_id: 'building-1',
         }),
         settledCompletedCount: 0,
+        resourceBalances: [
+          { resourceType: 'drachma', amount: 900, perHour: 10 },
+          { resourceType: 'materials', amount: 450, perHour: 0 },
+          { resourceType: 'workforce', amount: 100, perHour: 0 },
+        ],
       }));
   });
 
@@ -180,6 +190,21 @@ describe('building job read model', () => {
         ],
       }]),
     ).toThrowError('buildingId must be a non-empty string.');
+  });
+
+  it('requires camelCase keys inside settled runtime resource JSON payloads', () => {
+    expect(() =>
+      firstHeroEstateRuntimeStateRow([{
+        ...heroEstateRuntimeStateRow(),
+        resources_json: [
+          {
+            resource_type: 'drachma',
+            amount: 900,
+            per_hour: 10,
+          },
+        ],
+      }]),
+    ).toThrowError('resourceType must be a non-empty string.');
   });
 });
 
@@ -263,8 +288,19 @@ function heroEstateRuntimeStateRow() {
     recent_jobs_json: [],
     resources_json: [
       {
-        resource_type: 'drachma',
+        resourceType: 'drachma',
         amount: 900,
+        perHour: 10,
+      },
+      {
+        resourceType: 'materials',
+        amount: 450,
+        perHour: 0,
+      },
+      {
+        resourceType: 'workforce',
+        amount: 100,
+        perHour: 0,
       },
     ],
   };

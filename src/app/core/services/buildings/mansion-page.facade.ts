@@ -5,6 +5,7 @@ import {
   BuildingRequirementPreview,
   BuildingResourceType,
   MansionBuilding,
+  MansionResourceBalance,
   StartBuildingUpgradeResult,
 } from '../../domain/building/building.model';
 import { BuildingsService } from './buildings';
@@ -36,6 +37,8 @@ export class MansionPageFacade {
   readonly currentAddress = signal<string | null>(null);
   readonly currentDistrictCode = signal<string | null>(null);
   readonly currentDistrictName = signal<string | null>(null);
+  readonly currentDistrictRank = signal<number | null>(null);
+  readonly resourceBalances = signal<MansionResourceBalance[]>([]);
   readonly activeBuildingJob = signal<MansionBuildingJob | null>(null);
   readonly recentBuildingJobs = signal<MansionBuildingJob[]>([]);
   readonly finalizedBuildingJobsCount = signal(0);
@@ -44,6 +47,10 @@ export class MansionPageFacade {
   readonly uiMetadata = new BuildingUiMetadata(() => this.uiMetadataEntries());
   readonly visibleBuildings = computed(() =>
     this.buildings().filter((building) => building.isOwned || building.isUnlocked)
+  );
+  readonly availableBuildingCount = computed(() => this.visibleBuildings().length);
+  readonly unbuiltBuildingCount = computed(
+    () => this.visibleBuildings().filter((building) => building.currentLevel === 0).length,
   );
   private loadRequestId = 0;
   private actionRequestId = 0;
@@ -74,6 +81,8 @@ export class MansionPageFacade {
         this.currentAddress.set(view.currentAddress);
         this.currentDistrictCode.set(view.currentDistrictCode);
         this.currentDistrictName.set(view.currentDistrictName);
+        this.currentDistrictRank.set(view.currentDistrictRank);
+        this.resourceBalances.set(view.resourceBalances);
         this.activeBuildingJob.set(view.activeBuildingJob);
         this.recentBuildingJobs.set(view.recentBuildingJobs);
         this.finalizedBuildingJobsCount.set(view.finalizedBuildingJobsCount);
@@ -266,6 +275,10 @@ export class MansionPageFacade {
 
   resourceLabel(type: BuildingResourceType): string {
     return toResourceLabel(type);
+  }
+
+  resourceRateLabel(balance: MansionResourceBalance): string {
+    return `${balance.perHour >= 0 ? '+' : ''}${balance.perHour}/h`;
   }
 
   handleImageError(event: Event) {

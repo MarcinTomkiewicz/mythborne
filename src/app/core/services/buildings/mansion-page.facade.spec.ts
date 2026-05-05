@@ -75,6 +75,12 @@ describe('MansionPageFacade', () => {
 
     expect(facade.currentAddress()).toBe('A-3301');
     expect(facade.currentDistrictCode()).toBe('A');
+    expect(facade.currentDistrictRank()).toBe(1);
+    expect(facade.resourceBalances()).toEqual([
+      { resourceType: 'drachma', amount: 900, perHour: 10 },
+      { resourceType: 'materials', amount: 450, perHour: 0 },
+      { resourceType: 'workforce', amount: 100, perHour: 0 },
+    ]);
     expect(facade.activeBuildingJob()).toBeNull();
     expect(facade.recentBuildingJobs()).toEqual([]);
     expect(facade.finalizedBuildingJobsCount()).toBe(0);
@@ -195,6 +201,12 @@ function mansionView(): MansionEstateView {
     currentAddress: 'A-3301',
     currentDistrictCode: 'A',
     currentDistrictName: 'District A',
+    currentDistrictRank: 1,
+    resourceBalances: [
+      { resourceType: 'drachma', amount: 900, perHour: 10 },
+      { resourceType: 'materials', amount: 450, perHour: 0 },
+      { resourceType: 'workforce', amount: 100, perHour: 0 },
+    ],
     activeBuildingJob: null,
     recentBuildingJobs: [],
     finalizedBuildingJobsCount: 0,

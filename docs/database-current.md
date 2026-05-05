@@ -1,6 +1,6 @@
 # Mythsworn — Database Current Notes
 
-Updated: 2026-05-03 late
+Updated: 2026-05-05
 
 This file is the curated semantic index of the current database state. It is not a full `pg_dump`.
 
@@ -14,6 +14,228 @@ If this file conflicts with the actual database, generated Supabase types, or a 
 
 After every schema/RPC migration that Codex will consume, regenerate/update generated Supabase types before frontend work.
 
+
+
+## Update 2026-05-05 — O6 runtime settlement, PvP continuation and Epic S item/equipment foundation
+
+This update records the DB/RPC migrations applied after the previous 2026-05-03 snapshot. It intentionally updates only the semantic current-state notes; it is not a full dump.
+
+### O6 — Estate runtime settlement and resource materialization
+
+Estate/building runtime is now centralized around settlement functions rather than frontend route-specific finalization.
+
+Current settlement helpers/RPCs:
+
+- `settle_estate_runtime(p_estate_id, p_as_of default now())`:
+  - service/internal estate settlement helper;
+  - finalizes due `estate_building_jobs` up to `p_as_of`;
+  - ensures estate building baseline;
+  - writes completed building level to `estate_buildings`;
+  - marks completed jobs with `updated_at = completes_at`, so the effective gameplay completion time is preserved even if settlement runs later;
+  - refreshes hero resource production rates after building completion where relevant.
+- `settle_hero_estate_runtime(p_hero_id, p_as_of default now())`:
+  - authenticated owner-safe hero estate settlement wrapper.
+- `settle_hero_runtime_state(p_hero_id, p_as_of default now())`:
+  - central runtime state settlement helper;
+  - settles estate/building jobs and materializes hero resources together;
+  - should be called by DB workflows that need current durable hero/estate/resource state before decisions.
+- `finalize_completed_estate_building_jobs(...)` and `finalize_hero_estate_building_jobs(...)` now delegate to the settlement path rather than owning separate finalization logic.
+
+Owner-safe estate runtime read:
+
+- `get_hero_estate_runtime_state(p_hero_id)` is the canonical frontend read RPC for `/game/mansion` / estate runtime state.
+- It performs runtime settlement to DB `now()` before returning.
+- It returns scalar identity/context fields such as `hero_id`, `server_id`, `estate_id`, district/address data and `estate_rank`.
+- It returns:
+  - `active_job_json` as a JSON object or JSON null;
+  - `recent_jobs_json` as a JSON array;
+  - `buildings_json` as a JSON array;
+  - `resources_json` as a JSON array.
+- After it returns, overdue active building jobs should already be completed and should not remain as active due jobs.
+- Frontend should replace direct `estate_building_jobs` active/recent reads and route-specific finalize calls with this RPC as source of truth.
+
+Resource materialization:
+
+- `materialize_hero_resource(p_hero_id, p_resource_type, p_as_of default now(), ...)` materializes one resource row based on `amount`, `per_hour` and `updated_at`.
+- `materialize_hero_resources(p_hero_id, p_as_of default now(), ...)` materializes all relevant hero resources.
+- `apply_hero_resource_delta_with_ledger(...)` and `apply_reward_resource_delta(...)` materialize accrued resources before durable spend/add operations.
+- `hero_resources` now has a unique `(hero_id, resource_type)` contract through `hero_resources_hero_resource_type_uidx`; resource helper functions rely on that uniqueness rather than selecting “latest” duplicate rows.
+- Materialization writes ledger rows with reason such as `resource_accrual_materialized` when accrued amount is persisted.
+
+Building/resource production:
+
+- `resolve_hero_resource_production_rates(p_hero_id)` resolves current production rates from effective building state and configured building bonuses.
+- `refresh_hero_resource_production_rates(p_hero_id, p_as_of default now(), ...)` materializes resources before changing `per_hour`, then updates production rates.
+- Building completion settlement refreshes production after applying completed building levels.
+
+Building upgrade start:
+
+- `start_estate_building_upgrade(...)` now calls central runtime settlement before pricing/starting a new job.
+- It materializes hero resources before spending, so returned `*_balance_after` values should match the durable balances visible after refreshing runtime state.
+- It no longer depends on the old direct `finalize_completed_estate_building_jobs(...)` path.
+
+### Exploration runtime cleanup after central activity lock
+
+A stale active exploration runtime lock was found and the DB path was adjusted so exploration read/start paths settle stale exploration runtime state before blocking other gameplay.
+
+Current rule:
+
+- exploration runtime activity locks must be released/archived when the underlying exploration is stale or terminal;
+- `get_hero_exploration_state(...)` and `start_or_get_hero_exploration(...)` should call the exploration runtime settlement path before returning/starting state;
+- `hero_runtime_activities` remains the central blocking activity model for exploration, PvP attack and PvP spy.
+
+### PvP Foundation after R-DB5 — attack result, resource, XP, prestige, anti-abuse and reports
+
+The older note saying that R-DB6 was not applied is now obsolete. The current DB/RPC state includes the post-R-DB5 PvP foundation layers.
+
+Current PvP attack result flow:
+
+- `pvp_attack_results` is the durable PvP attack outcome table produced from persisted PvP `combat_results`.
+- `create_pvp_attack_result_from_combat_result(p_combat_result_id, p_request_id default null)` creates the PvP attack result from a `combat_result` with `source_type = 'pvp'`.
+- `after_pvp_combat_result_insert_create_attack_result()` automatically creates a PvP attack result after a PvP combat result insert.
+- Outcome keys are `attacker_victory`, `defender_victory`, and `draw`.
+- `level_difference` means `attacker_level_snapshot - defender_level_snapshot`.
+
+PvP resource consequences:
+
+- `apply_pvp_resource_consequences(p_pvp_attack_result_id, p_request_id default null)` applies resource consequences to `drachma`, `materials`, and `workforce` only.
+- Before calculating transfers/losses it settles runtime state for both attacker and defender via `settle_hero_runtime_state(...)`.
+- Attacker victory transfers a configured percentage from defender to attacker.
+- Defender victory applies configured attacker loss as a sink.
+- Draw has no resource consequence.
+- PvP resource consequences never transfer items, Character Points, buildings or estate ownership.
+- A trigger wrapper applies resource consequences after `pvp_attack_results` insert.
+
+PvP XP rewards:
+
+- `apply_pvp_xp_rewards(...)` exists as the PvP XP reward workflow.
+- It routes XP through the canonical progression workflow (`grant_hero_experience(...)`) so Character Points remain generated by the XP/progression rule, not by a separate PvP CP reward.
+- A trigger wrapper applies XP rewards after `pvp_attack_results` insert.
+
+PvP future prestige context:
+
+- `refresh_pvp_attack_result_prestige_context(...)` records future Prestige context without implementing prestige ranks/points.
+- Insert/update trigger wrappers refresh prestige context when PvP results and resource/reward contexts change.
+
+PvP anti-abuse and reports:
+
+- `generate_pvp_attack_anti_abuse_signals(...)` produces review-only anti-abuse signals from PvP attack results.
+- A trigger wrapper runs PvP anti-abuse signal generation after result insert.
+- `create_pvp_attack_game_report(...)` creates the contextual PvP combat report wrapper.
+- A trigger wrapper creates the PvP report after result insert.
+
+Rules:
+
+- PvP result triggers are DB-owned workflow wiring; frontend must not direct-write PvP result/resource/reward/report tables.
+- PvP spy/attack resolution must use current settled runtime state for estate/building/resource effects.
+- PvP still must not use `hero_derived` as runtime source of truth.
+
+### Epic S — Item/equipment foundation current state
+
+Epic S database/RPC foundation is now complete through S-DB9 final verification.
+
+Armory shelves and item shelf position:
+
+- `hero_armory_shelves` represents player-managed shelves only.
+- Player shelf positions are `1..10`.
+- Position `0` is intentionally not a shelf row.
+- `items.armory_shelf_position` supports `0..10`:
+  - `0` means general/default unshelved/drop area;
+  - `1..10` point at player shelves.
+- `ensure_default_hero_armory_shelf()` now seeds shelves `1..10`, not position `0`.
+- `generate_reward_item_for_hero(...)` creates dropped/reward items at `armory_shelf_position = 0`.
+
+Equipment runtime read model:
+
+- `hero_equipment` remains the relational current-equipment table.
+- `get_hero_equipment_runtime_slots(p_hero_id)` is the canonical owner-safe runtime slots read RPC.
+- `get_hero_equipment_runtime_bonus_rows(p_hero_id)` returns relational/effective bonus rows for equipped items.
+- `get_hero_equipment_runtime_bonus_totals(p_hero_id)` aggregates from `get_hero_equipment_runtime_bonus_rows(...)`.
+- Runtime equipment/bonus reads include `locked_trade` and `locked_auction` as runtime-usable item statuses where appropriate.
+- Runtime read models are not JSON-payload authority; JSON output fields are only returned where an RPC deliberately packages a final view/journal for UI convenience.
+
+Equipment mutation workflows:
+
+- `equip_hero_item(p_hero_id, p_item_id, p_slot_key, p_request_id default null)` is the canonical single-item equip RPC.
+- `unequip_hero_item(p_hero_id, p_slot_key, p_item_id default null, p_request_id default null)` is the canonical unequip RPC.
+- `bulk_equip_hero_items(p_hero_id, p_items_json, p_request_id default null)` processes a JSON array input for UI batch-equipping but calls the single-item equip workflow per entry and returns per-entry journal data.
+- Player equipment workflows do not write classic `audit_logs`; they are gameplay-state mutations with returned journals.
+- Hand conflicts are resolved by workflow logic, not by frontend direct table writes.
+
+Item requirements:
+
+- `item_generation_qualities.requirement_multiplier` is part of the quality tier contract.
+- `item_requirement_aggregation_settings` stores the global relational aggregation settings for item requirements.
+- `get_item_requirement_component_rows(p_item_id)` returns requirement components from item layers.
+- `get_item_effective_requirements(p_item_id)` resolves final effective requirements using quality requirement multiplier and aggregation settings.
+- `check_hero_meets_item_requirements(p_hero_id, p_item_id)` is the canonical requirement check RPC for equip flows.
+- Requirement aggregation currently uses highest component value plus configurable fraction of additional component values, with configured rounding/minimum rules.
+
+Loadout presets:
+
+- Loadout presets are relational, not JSON authority:
+  - `hero_loadout_preset_settings` stores the configured preset limit, clamped to 5..10;
+  - `hero_loadout_presets` stores hero/preset headers;
+  - `hero_loadout_preset_slots` stores exact item ids per preset slot.
+- `get_hero_loadout_preset_limit()` returns the active configured preset limit.
+- `ensure_hero_loadout_presets(p_hero_id)` creates missing preset header rows up to the configured limit.
+- `get_hero_loadout_presets(p_hero_id)` returns the owner-safe list.
+- `save_current_hero_loadout_preset(p_hero_id, p_preset_number, p_name default null, p_request_id default null)` saves current equipment into relational slot rows.
+- `clear_hero_loadout_preset(p_hero_id, p_preset_number, p_request_id default null)` clears slot rows while keeping the preset header.
+- `preview_hero_loadout_preset(p_hero_id, p_preset_number)` reports whether saved exact item ids are still available/missing/scrapped/no-longer-owned.
+- `apply_hero_loadout_preset(p_hero_id, p_preset_number, p_request_id default null)` applies exact saved item ids to literal slots:
+  - uses `ON CONFLICT ON CONSTRAINT hero_equipment_pkey`;
+  - skips missing/scrapped/no-longer-owned items;
+  - does not recheck requirements for saved exact ids;
+  - leaves unrelated slots unchanged except unavoidable hand conflicts;
+  - returns a journal JSON and final equipment JSON for UI convenience.
+
+Item lifecycle / scrap:
+
+- `scrapped_affix_item_retention_days` is a global config definition for recoverable scrapped affix items.
+- `get_scrapped_affix_item_retention_days()` returns the configured value clamped to `1..365`.
+- `scrap_hero_item(...)` is the canonical owner-safe scrap workflow:
+  - no-affix items are always hard-deleted from `items` after audit;
+  - affix items move to `scrapped` with `scrapped_at` and `recoverable_until` using configured retention unless an explicit future `p_recoverable_until` is provided;
+  - equipment is cleared as part of lifecycle.
+- `vendor_scrap_hero_item(...)` uses `scrap_hero_item(...)` plus configured vendor payout logic.
+- `recover_scrapped_item(...)` remains the staff/admin recovery workflow for recoverable scrapped items.
+- No-affix hard delete means such items are not recoverable through `recover_scrapped_item(...)` after scrap.
+
+Staff/admin ownership correction:
+
+- `staff_transfer_item_ownership(p_item_id, p_target_hero_id, p_reason, p_request_id default null)` is the canonical staff/admin ownership correction RPC.
+- It requires anti-abuse/sanction management permission for the item server.
+- It only transfers active items.
+- It requires same-server target hero.
+- It explicitly clears `hero_equipment` before changing `items.hero_id`.
+- It writes `item.owner_changed` audit.
+- Scrapped recovery stays in `recover_scrapped_item(...)`; locked trade/auction items must be resolved through their dedicated workflows before staff transfer.
+
+RLS/grants after S:
+
+- `hero_equipment` is read-only for authenticated users through `can_read_hero(hero_id)`; workflow mutations are RPC-owned.
+- `hero_loadout_preset_settings`, `hero_loadout_presets`, and `hero_loadout_preset_slots` have RLS enabled and authenticated read policies/grants.
+- `item_requirement_aggregation_settings` has RLS enabled and authenticated read access, with config-governance management.
+- `trial_definitions` read policy was fixed so authenticated users can read active trial definitions while config-governance staff can also see/manage inactive rows.
+
+UI metadata content:
+
+- Building/estate configurator UI metadata rows were extended so admin-facing descriptions/helper texts are DB-backed and precise.
+- For admin-facing configuration descriptions in this area, Polish explanatory text is preferred for now.
+
+Final S verification:
+
+- S-DB9 final smoke passed for the known test hero:
+  - 9 runtime equipment slots;
+  - configured loadout preset count;
+  - shelf rows 1..10;
+  - no player shelf row 0;
+  - preset limit and scrap retention helper values in configured range.
+
+Generated types:
+
+- After O6/S migrations, regenerate Supabase generated types before frontend work consumes the new/changed tables/RPCs.
 
 ## Update 2026-05-03 late — Epic Q completed and Epic R/PvP Foundation DB state
 
@@ -201,9 +423,9 @@ Rules:
 - Derived combat stat values must come from the runtime derived/combat resolver integration; `hero_derived` is not a source of truth.
 - Current derived combat stats placeholder records definition context and `heroDerivedUsed = false`.
 
-### Next DB work
+### R-DB6+ note
 
-The next migration should be **R-DB6 — PvP attack result / attack resolution boundary**, but it was not applied in the previous conversation. Re-read current dump and generated types before writing/running it.
+The earlier R-DB6 “next work” warning is superseded by the 2026-05-05 update above. Current database state includes the PvP attack result, resource consequence, XP reward, future prestige context, anti-abuse signal and report trigger layers.
 
 ## Update 2026-05-03 — L11/L12/M12 UI metadata and Epic N progression DB/RPC foundation
 

@@ -4869,6 +4869,8 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 
 ## Task O10 — Player estate overview and building dashboard UI
 
+**Status:** Done / conditionally accepted on 2026-05-05 after user smoke.
+
 **Goal:** Build the main player-facing estate screen that shows the current estate, available buildings, levels, jobs, resources and build/upgrade actions.
 
 **Scope:**
@@ -4919,6 +4921,10 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - RPC result updates job/resources/building state.
 - No direct estate/building/resource writes are introduced.
 - Build passes.
+
+**Implementation note:** O10 was conditionally accepted on 2026-05-05 after blocker follow-up and user smoke. `/game/mansion` now shows a player-facing estate overview with current district/address/rank, available/unbuilt building counts, active job state and settled resource cards for drachma/materials/workforce from `get_hero_estate_runtime_state(...)`. Building cards keep district-inherited availability, level 0/unbuilt display, preview cost/time labels, active/completed job state and build/upgrade through `start_estate_building_upgrade(...)`; no cancel/claim action or direct estate/building/resource write path was added. The runtime JSON mapper was aligned with the DB contract: SQL return columns remain snake_case, while nested JSON payloads use camelCase, including `resources_json.resourceType`, `amount` and `perHour` with no snake_case fallback. Verification passed with `npx tsc --noEmit`, focused building/mansion specs with 34 SUCCESS, static greps for no direct writes/no legacy finalization or job-table source/no auth-user hero id assumption/no legacy minutes or requirements/no durable `any`, and `npm run build` with known budget/CommonJS warnings. Codex did not run manual or route smoke; user smoke passed.
+
+**Follow-up:** Resource production after destructive relocation remains a DB/runtime consistency issue, not a frontend fallback task. After relocating to a new estate with level 0 buildings, `hero_resources.per_hour` for drachma may remain stale, for example `+18/h`, until a later build/finalize path recalculates production to the new value, for example `+12/h`. Do not mask this in Angular or locally recalculate production. Check `relocate_hero_estate_to_empty_address(...)`, `settle_hero_runtime_state(...)`, `get_hero_estate_runtime_state(...)` and `refresh_hero_resource_production_rates(...)`.
 
 ---
 

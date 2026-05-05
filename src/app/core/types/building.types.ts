@@ -26,6 +26,12 @@ export interface BuildingResourceCostTotal {
   amount: number;
 }
 
+export interface MansionResourceBalance {
+  resourceType: BuildingResourceType;
+  amount: number;
+  perHour: number;
+}
+
 export interface BuildingRequirementPreview {
   requirementDefinitionKey: string;
   label: string;
@@ -320,6 +326,8 @@ export interface MansionEstateView {
   currentAddress: string | null;
   currentDistrictCode: string | null;
   currentDistrictName: string | null;
+  currentDistrictRank: number | null;
+  resourceBalances: MansionResourceBalance[];
   activeBuildingJob: MansionBuildingJob | null;
   recentBuildingJobs: MansionBuildingJob[];
   finalizedBuildingJobsCount: number;

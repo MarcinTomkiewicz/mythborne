@@ -144,6 +144,12 @@ describe('BuildingsService', () => {
 
     expect(buildingJobs.getHeroEstateRuntimeState).toHaveBeenCalledWith('hero-1');
     expect(view.currentDistrictCode).toBe('C');
+    expect(view.currentDistrictRank).toBe(3);
+    expect(view.resourceBalances).toEqual([
+      { resourceType: 'drachma', amount: 900, perHour: 10 },
+      { resourceType: 'materials', amount: 450, perHour: 0 },
+      { resourceType: 'workforce', amount: 100, perHour: 0 },
+    ]);
     expect(view.activeBuildingJob).toBeNull();
     expect(view.recentBuildingJobs).toEqual([]);
     expect(view.finalizedBuildingJobsCount).toBe(0);
@@ -597,6 +603,7 @@ function runtimeState(input: {
   estateBuildings?: EstateBuildingRow[];
   activeJob?: EstateBuildingJobRow | null;
   recentJobs?: EstateBuildingJobRow[];
+  resources?: Array<{ resourceType: string; amount: number; perHour?: number }>;
 } = {}): GetHeroEstateRuntimeStateRpcRow {
   const districtCode = input.districtCode ?? 'A';
 
@@ -614,10 +621,21 @@ function runtimeState(input: {
       .map(estateBuildingJson),
     active_job_json: input.activeJob ? estateBuildingJobJson(input.activeJob) : null,
     recent_jobs_json: (input.recentJobs ?? []).map(estateBuildingJobJson),
-    resources_json: [
+    resources_json: input.resources ?? [
       {
-        resource_type: 'drachma',
+        resourceType: 'drachma',
         amount: 900,
+        perHour: 10,
+      },
+      {
+        resourceType: 'materials',
+        amount: 450,
+        perHour: 0,
+      },
+      {
+        resourceType: 'workforce',
+        amount: 100,
+        perHour: 0,
       },
     ],
   };

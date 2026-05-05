@@ -1,6 +1,8 @@
 import {
+  BuildingResourceType,
   MansionBuildingJob,
   MansionBuildingJobFinalization,
+  MansionResourceBalance,
   StartBuildingUpgradeResult,
 } from '../../domain/building/building.model';
 import {
@@ -23,6 +25,7 @@ export interface HeroEstateRuntimeStateReadModel {
   estateRank: number;
   settledAsOf: string;
   settledCompletedCount: number;
+  resourceBalances: MansionResourceBalance[];
   estateBuildings: EstateBuildingRow[];
   activeJob: EstateBuildingJobRow | null;
   recentJobs: EstateBuildingJobRow[];
@@ -83,6 +86,7 @@ export function firstHeroEstateRuntimeStateRow(
     estateRank: row.estate_rank,
     settledAsOf: row.settled_as_of,
     settledCompletedCount: row.settled_completed_count,
+    resourceBalances: parseResourceBalancesJson(row.resources_json),
     estateBuildings: parseEstateBuildingsJson(row.buildings_json, row.estate_id),
     activeJob: parseOptionalEstateBuildingJobJson(row.active_job_json, row.estate_id),
     recentJobs: parseEstateBuildingJobsJson(row.recent_jobs_json, row.estate_id),
@@ -164,6 +168,20 @@ function parseEstateBuildingJobsJson(
   );
 }
 
+function parseResourceBalancesJson(value: Json): MansionResourceBalance[] {
+  return requiredJsonArray(value, 'resources_json').map((entry) => {
+    const record = requiredJsonRecord(entry, 'resources_json entry');
+
+    return {
+      resourceType: requiredResourceType(record['resourceType']),
+      amount: requiredJsonNumber(record['amount'], 'amount'),
+      perHour: optionalJsonNumber(record['perHour']) ?? 0,
+    };
+  }).sort((left, right) =>
+    resourceSortOrder(left.resourceType) - resourceSortOrder(right.resourceType),
+  );
+}
+
 function parseEstateBuildingJobJson(
   value: Json,
   estateId: string,
@@ -221,6 +239,28 @@ function requiredJsonNumber(value: Json | undefined, fieldName: string): number 
   }
 
   return value;
+}
+
+function optionalJsonNumber(value: Json | undefined): number | null {
+  return typeof value === 'number' ? value : null;
+}
+
+function requiredResourceType(value: Json | undefined): BuildingResourceType {
+  const resourceType = requiredJsonString(value, 'resourceType');
+
+  if (
+    resourceType !== 'drachma' &&
+    resourceType !== 'materials' &&
+    resourceType !== 'workforce'
+  ) {
+    throw new Error(`Unsupported mansion resource type "${resourceType}".`);
+  }
+
+  return resourceType;
+}
+
+function resourceSortOrder(type: BuildingResourceType): number {
+  return type === 'drachma' ? 1 : type === 'materials' ? 2 : 3;
 }
 
 function mapMansionBuildingJob(

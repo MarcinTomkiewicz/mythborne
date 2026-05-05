@@ -144,6 +144,8 @@ export class BuildingsService {
               currentAddress: runtimeState.address,
               currentDistrictCode,
               currentDistrictName: currentDistrict.name ?? null,
+              currentDistrictRank: currentDistrictRank,
+              resourceBalances: runtimeState.resourceBalances,
               activeBuildingJob: activeJobs[0] ?? null,
               recentBuildingJobs: recentJobs.filter(
                 (job) => job.status !== 'active',
