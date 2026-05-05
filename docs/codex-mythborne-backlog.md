@@ -6388,6 +6388,8 @@ PvP Foundation is not:
 - Frontend does not recompute PvP eligibility independently.
 - Stale responses cannot overwrite current active hero/server state.
 
+**Implementation note:** R7 accepted on 2026-05-05. Added `VicinityTargetCandidatesState` as a UI-state/facade boundary for PvP target candidates with loading, error, empty, district, search and pagination state. Candidate loading goes through `PlayerPvp.getTargetCandidates(...)`; owner-safe active hero resolution remains inside `PlayerPvp`, while the state uses `activeHero.state()` only for context-key snapshots and stale response guards. Missing active hero/server context surfaces a local invariant error and skips the PvP service. Attack/spy eligibility stays passthrough from RPC/mappers, with no frontend recomputation, no action-start workflow and no direct PvP table access.
+
 ---
 
 ## Task R8 — Vicinity target list UI

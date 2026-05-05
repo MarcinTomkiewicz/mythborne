@@ -6,6 +6,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { EstateVicinityPageState } from './estate-vicinity-page.state';
+import { VicinityTargetCandidatesState } from './vicinity-target-candidates.state';
 import { VicinityRelocationRunner } from './vicinity-relocation-runner';
 
 @Component({
@@ -19,11 +20,16 @@ import { VicinityRelocationRunner } from './vicinity-relocation-runner';
     LoadingOverlay,
     RouterLink,
   ],
-  providers: [EstateVicinityPageState, VicinityRelocationRunner],
+  providers: [
+    EstateVicinityPageState,
+    VicinityRelocationRunner,
+    VicinityTargetCandidatesState,
+  ],
   templateUrl: './estate-vicinity-page.html',
 })
 export class EstateVicinityPage implements OnInit {
   readonly page = inject(EstateVicinityPageState);
+  readonly pvpTargets = inject(VicinityTargetCandidatesState);
 
   ngOnInit(): void {
     this.page.loadData();
