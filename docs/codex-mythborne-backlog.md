@@ -5934,6 +5934,10 @@ Reports have their own Reports Center and unread state. Toasts are presentation 
 - Disabled toast types do not show toast, but still appear in inbox if present.
 - Build and smoke pass.
 
+**Status:** Accepted on 2026-05-05.
+
+**Acceptance summary:** Q6 added presentation-only fresh notification toasts for the player bell using a safe 60s polling fallback over the persistent inbox. Initial/historical rows are seeded per active hero/server context and do not toast; first successful recovery payload after an initial load failure also seeds instead of spamming old unread rows. Later successful payloads present only unseen, unread notifications whose `defaultToastEnabled` is true, while read rows and disabled-toast rows remain inbox-only. The implementation keeps `NotificationBell` as a thin wrapper and splits responsibilities across `NotificationBellState` for context/load/polling/signals, `NotificationBellActionRunner` for read/dismiss mutations and stale guards, `NotificationActionRoutePolicy` for player route allowlisting through `MENU_LOGGED_IN`, `NotificationBellDisplayFormatter` for display formatting and `NotificationFreshToastPresenter` for toast dedupe/presentation. No realtime dependency, direct notification writes, frontend `create_notification(...)` calls or frontend action-route remap were added. Verification passed with `npx tsc --noEmit`, focused notification-bell specs with 18 SUCCESS, static greps and `npm run build` with known warnings. Full fresh-toast smoke remains pending until real DB producer notification data exists.
+
 ---
 
 ## Task Q7 — Staff notification inbox/dropdown UI

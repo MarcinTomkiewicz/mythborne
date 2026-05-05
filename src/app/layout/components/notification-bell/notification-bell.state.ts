@@ -1,45 +1,51 @@
 import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { catchError, forkJoin, map, of, Subscription, switchMap } from 'rxjs';
-import { MENU_LOGGED_IN } from '../../../core/config/menu-config';
+import { catchError, forkJoin, map, merge, Observable, of, Subscription, switchMap, timer } from 'rxjs';
 import { PlayerNotificationListItem } from '../../../core/domain/notifications/notification.model';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { NotificationInbox } from '../../../core/services/notifications/notification-inbox';
-import { ToastService } from '../../../core/services/ui/toast';
-import { getErrorMessage } from '../../../core/utils/error-message';
+import { NotificationActionRoutePolicy } from './notification-action-route-policy';
+import {
+  NotificationBellActionContext,
+  NotificationBellActionRunner,
+} from './notification-bell-action-runner';
+import { NotificationBellDisplayFormatter } from './notification-bell-display-formatter';
+import { NotificationFreshToastPresenter } from './notification-fresh-toast-presenter';
 
 const DROPDOWN_NOTIFICATION_LIMIT = 6;
-const ALLOWED_PLAYER_ACTION_ROUTES = new Set(
-  MENU_LOGGED_IN
-    .map((item) => typeof item['url'] === 'string' ? item['url'] : null)
-    .filter((url): url is string =>
-      url !== null &&
-      url.startsWith('/game/') &&
-      url !== '/game/reports',
-    ),
-);
+const NOTIFICATION_TOAST_POLL_INTERVAL_MS = 60_000;
 
 interface NotificationBellPayload {
   notifications: PlayerNotificationListItem[];
   unreadCount: number;
 }
 
+interface NotificationBellLoadResult {
+  contextKey: string;
+  isInitial: boolean;
+  payload?: NotificationBellPayload;
+  error?: true;
+}
+
 @Injectable()
 export class NotificationBellState implements OnDestroy {
   private readonly activeHero = inject(ActiveHero);
   private readonly notificationInbox = inject(NotificationInbox);
-  private readonly toast = inject(ToastService);
+  private readonly actionRoutePolicy = inject(NotificationActionRoutePolicy);
+  private readonly actionRunner = inject(NotificationBellActionRunner);
+  private readonly displayFormatter = inject(NotificationBellDisplayFormatter);
+  private readonly freshToastPresenter = inject(NotificationFreshToastPresenter);
   private readonly activeHeroState$ = toObservable(this.activeHero.state);
   private subscription?: Subscription;
-  private readonly actionSubscriptions = new Subscription();
   private contextKey = signal<string | null>(null);
+  private seededContextKey: string | null = null;
 
   readonly isOpen = signal(false);
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly notifications = signal<PlayerNotificationListItem[]>([]);
-  readonly actionNotificationIds = signal<string[]>([]);
+  readonly actionNotificationIds = this.actionRunner.actionNotificationIds;
   readonly unreadCount = signal(0);
   readonly hasNotifications = computed(() => this.notifications().length > 0);
   readonly unreadCountLabel = computed(() => {
@@ -52,10 +58,13 @@ export class NotificationBellState implements OnDestroy {
       .pipe(
         switchMap((state) => {
           const contextKey = toContextKey(state);
+          const shouldSeedInitialLoad =
+            contextKey !== null && contextKey !== this.seededContextKey;
           this.contextKey.set(contextKey);
-          this.actionNotificationIds.set([]);
+          this.actionRunner.clearPending();
 
           if (!contextKey) {
+            this.seededContextKey = null;
             this.reset();
             return of(null);
           }
@@ -63,14 +72,14 @@ export class NotificationBellState implements OnDestroy {
           this.isLoading.set(true);
           this.error.set(null);
 
-          return forkJoin({
-            notifications: this.notificationInbox.getPlayerNotifications({
-              limit: DROPDOWN_NOTIFICATION_LIMIT,
-            }),
-            unreadCount: this.notificationInbox.getPlayerUnreadCount(),
-          }).pipe(
-            map((payload) => ({ contextKey, payload })),
-            catchError(() => of({ contextKey, error: true })),
+          return merge(
+            this.loadPayload(contextKey, shouldSeedInitialLoad),
+            timer(
+              NOTIFICATION_TOAST_POLL_INTERVAL_MS,
+              NOTIFICATION_TOAST_POLL_INTERVAL_MS,
+            ).pipe(
+              switchMap(() => this.loadPayload(contextKey, false)),
+            ),
           );
         }),
       )
@@ -79,18 +88,19 @@ export class NotificationBellState implements OnDestroy {
           return;
         }
 
-        if ('error' in result) {
-          this.failLoad();
+        if (result.error) {
+          if (result.isInitial) {
+            this.failLoad();
+          }
           return;
         }
 
-        this.applyPayload(result.payload);
+        this.applyPayload(result.payload, result.contextKey);
       });
   }
 
   ngOnDestroy(): void {
     this.subscription?.unsubscribe();
-    this.actionSubscriptions.unsubscribe();
   }
 
   toggleDropdown(): void {
@@ -102,131 +112,41 @@ export class NotificationBellState implements OnDestroy {
   }
 
   severityBadgeClass(notification: PlayerNotificationListItem): string {
-    switch (notification.severity) {
-      case 'critical':
-        return 'tag-badge tag-badge--danger';
-      case 'warning':
-        return 'tag-badge tag-badge--warn';
-      case 'notice':
-        return 'tag-badge tag-badge--info';
-      default:
-        return 'tag-badge tag-badge--muted';
-    }
+    return this.displayFormatter.severityBadgeClass(notification);
   }
 
   toDateTimeLabel(value: string): string {
-    return new Date(value).toLocaleString();
+    return this.displayFormatter.toDateTimeLabel(value);
   }
 
   shortBody(notification: PlayerNotificationListItem): string | null {
-    if (!notification.body) {
-      return null;
-    }
-
-    return notification.body.length > 140
-      ? `${notification.body.slice(0, 137)}...`
-      : notification.body;
+    return this.displayFormatter.shortBody(notification);
   }
 
   actionRoute(notification: PlayerNotificationListItem): string | null {
-    const url = notification.actionLink?.url ?? null;
-    return this.isAllowedPlayerRoute(url) ? url : null;
+    return this.actionRoutePolicy.actionRoute(notification);
   }
 
   isActionPending(notification: PlayerNotificationListItem): boolean {
-    return this.actionNotificationIds().includes(notification.notificationId);
+    return this.actionRunner.isPending(notification);
   }
 
   markRead(notification: PlayerNotificationListItem): void {
-    if (!notification.readState.isUnread || this.isActionPending(notification)) {
+    const context = this.actionContext();
+    if (!context) {
       return;
     }
 
-    const contextKey = this.contextKey();
-
-    if (!contextKey) {
-      return;
-    }
-
-    this.addPendingNotification(notification.notificationId);
-
-    const subscription = this.notificationInbox
-      .markPlayerNotificationRead(notification.notificationId)
-      .subscribe({
-        next: (result) => {
-          if (contextKey !== this.contextKey()) {
-            this.removePendingNotification(notification.notificationId);
-            return;
-          }
-
-          this.notifications.update((items) =>
-            items.map((item) =>
-              item.notificationId === result.notificationId
-                ? { ...item, readState: result.readState }
-                : item,
-            ),
-          );
-          this.refreshUnreadCount(contextKey);
-          this.removePendingNotification(notification.notificationId);
-        },
-        error: (error: unknown) => {
-          if (contextKey !== this.contextKey()) {
-            this.removePendingNotification(notification.notificationId);
-            return;
-          }
-
-          const message = getErrorMessage(error, 'Failed to mark notification read.');
-          this.error.set(message);
-          this.toast.show('error', 'Notification update failed', message);
-          this.removePendingNotification(notification.notificationId);
-        },
-      });
-
-    this.actionSubscriptions.add(subscription);
+    this.actionRunner.markRead(notification, context);
   }
 
   dismissNotification(notification: PlayerNotificationListItem): void {
-    if (this.isActionPending(notification)) {
+    const context = this.actionContext();
+    if (!context) {
       return;
     }
 
-    const contextKey = this.contextKey();
-
-    if (!contextKey) {
-      return;
-    }
-
-    this.addPendingNotification(notification.notificationId);
-
-    const subscription = this.notificationInbox
-      .dismissPlayerNotification(notification.notificationId)
-      .subscribe({
-        next: (result) => {
-          if (contextKey !== this.contextKey()) {
-            this.removePendingNotification(notification.notificationId);
-            return;
-          }
-
-          this.notifications.update((items) =>
-            items.filter((item) => item.notificationId !== result.notificationId),
-          );
-          this.refreshUnreadCount(contextKey);
-          this.removePendingNotification(notification.notificationId);
-        },
-        error: (error: unknown) => {
-          if (contextKey !== this.contextKey()) {
-            this.removePendingNotification(notification.notificationId);
-            return;
-          }
-
-          const message = getErrorMessage(error, 'Failed to dismiss notification.');
-          this.error.set(message);
-          this.toast.show('error', 'Notification dismiss failed', message);
-          this.removePendingNotification(notification.notificationId);
-        },
-      });
-
-    this.actionSubscriptions.add(subscription);
+    this.actionRunner.dismiss(notification, context);
   }
 
   openActionLink(notification: PlayerNotificationListItem): void {
@@ -234,16 +154,48 @@ export class NotificationBellState implements OnDestroy {
     this.closeDropdown();
   }
 
-  private applyPayload(payload: NotificationBellPayload): void {
-    this.actionNotificationIds.set([]);
+  private loadPayload(
+    contextKey: string,
+    isInitial: boolean,
+  ): Observable<NotificationBellLoadResult> {
+    return forkJoin({
+      notifications: this.notificationInbox.getPlayerNotifications({
+        limit: DROPDOWN_NOTIFICATION_LIMIT,
+      }),
+      unreadCount: this.notificationInbox.getPlayerUnreadCount(),
+    }).pipe(
+      map((payload) => ({ contextKey, isInitial, payload })),
+      catchError(() => of({ contextKey, isInitial, error: true as const })),
+    );
+  }
+
+  private applyPayload(
+    payload: NotificationBellPayload | undefined,
+    contextKey: string,
+  ): void {
+    if (!payload) {
+      return;
+    }
+
+    const shouldSeedContext = this.seededContextKey !== contextKey;
+
+    this.actionRunner.clearPending();
     this.notifications.set(payload.notifications);
     this.unreadCount.set(payload.unreadCount);
+    this.error.set(null);
     this.isLoading.set(false);
+
+    if (shouldSeedContext) {
+      this.freshToastPresenter.seed(payload.notifications);
+      this.seededContextKey = contextKey;
+    } else {
+      this.freshToastPresenter.presentFresh(payload.notifications);
+    }
   }
 
   private reset(): void {
     this.notifications.set([]);
-    this.actionNotificationIds.set([]);
+    this.actionRunner.clearPending();
     this.unreadCount.set(0);
     this.error.set(null);
     this.isLoading.set(false);
@@ -252,52 +204,25 @@ export class NotificationBellState implements OnDestroy {
 
   private failLoad(): void {
     this.notifications.set([]);
-    this.actionNotificationIds.set([]);
+    this.actionRunner.clearPending();
     this.unreadCount.set(0);
     this.error.set('Notifications unavailable.');
     this.isLoading.set(false);
   }
 
-  private isAllowedPlayerRoute(url: string | null): url is string {
-    if (!url) {
-      return false;
+  private actionContext(): NotificationBellActionContext | null {
+    const contextKey = this.contextKey();
+
+    if (!contextKey) {
+      return null;
     }
 
-    const path = url.split(/[?#]/, 1)[0];
-    return ALLOWED_PLAYER_ACTION_ROUTES.has(path);
-  }
-
-  private refreshUnreadCount(contextKey: string): void {
-    const subscription = this.notificationInbox.getPlayerUnreadCount().subscribe({
-      next: (count) => {
-        if (contextKey === this.contextKey()) {
-          this.unreadCount.set(count);
-        }
-      },
-      error: () => {
-        if (contextKey === this.contextKey()) {
-          this.toast.show(
-            'warn',
-            'Notification count unavailable',
-            'Unread count refresh failed.',
-          );
-        }
-      },
-    });
-
-    this.actionSubscriptions.add(subscription);
-  }
-
-  private addPendingNotification(notificationId: string): void {
-    this.actionNotificationIds.update((ids) =>
-      ids.includes(notificationId) ? ids : [...ids, notificationId],
-    );
-  }
-
-  private removePendingNotification(notificationId: string): void {
-    this.actionNotificationIds.update((ids) =>
-      ids.filter((id) => id !== notificationId),
-    );
+    return {
+      isCurrentContext: () => contextKey === this.contextKey(),
+      setError: (message) => this.error.set(message),
+      setUnreadCount: (count) => this.unreadCount.set(count),
+      updateNotifications: (updater) => this.notifications.update(updater),
+    };
   }
 }
 

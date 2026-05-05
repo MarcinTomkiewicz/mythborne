@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { of, Subject, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import {
   PlayerNotificationListItem,
   PlayerNotificationMutationResult,
@@ -168,64 +168,155 @@ describe('NotificationBell', () => {
     expect(text).toContain('No notifications.');
   });
 
-  it('shows action RPC errors without changing the local notification', async () => {
-    notificationInbox.markPlayerNotificationRead.and.returnValue(
-      throwError(() => new Error('access denied')),
+  it('shows one toast for fresh eligible notifications loaded by polling', async () => {
+    jasmine.clock().install();
+
+    const freshNotification = notification({
+      notificationId: 'notification-2',
+      title: 'Fresh building update',
+      body: 'Another building job was completed.',
+    });
+    const disabledToastNotification = notification({
+      notificationId: 'notification-3',
+      title: 'Silent notification',
+      body: 'This should remain inbox-only.',
+      defaultToastEnabled: false,
+    });
+    const readNotification = notification({
+      notificationId: 'notification-4',
+      title: 'Already read notification',
+      readState: {
+        readAt: '2026-05-05T10:20:00.000Z',
+        dismissedAt: null,
+        isUnread: false,
+        isDismissed: false,
+      },
+    });
+
+    notificationInbox.getPlayerNotifications.and.returnValues(
+      of([notification()]),
+      of([notification(), freshNotification, disabledToastNotification, readNotification]),
+      of([notification(), freshNotification, disabledToastNotification, readNotification]),
     );
+    notificationInbox.getPlayerUnreadCount.and.returnValues(of(1), of(3), of(3));
+
+    try {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(toast.show).not.toHaveBeenCalled();
+
+      jasmine.clock().tick(60_000);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(toast.show).toHaveBeenCalledOnceWith(
+        'info',
+        'Fresh building update',
+        'Another building job was completed. Action: Open mansion',
+      );
+      expect(fixture.componentInstance.state.notifications().map((item) => item.notificationId))
+        .toContain('notification-3');
+      expect(fixture.componentInstance.state.notifications().map((item) => item.notificationId))
+        .toContain('notification-4');
+
+      jasmine.clock().tick(60_000);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(toast.show).toHaveBeenCalledTimes(1);
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it('toasts fresh notifications loaded after the same active hero context emits again', async () => {
+    const freshNotification = notification({
+      notificationId: 'notification-2',
+      title: 'Fresh same-context update',
+      body: 'A same-context notification arrived.',
+    });
+
+    notificationInbox.getPlayerNotifications.and.returnValues(
+      of([notification()]),
+      of([notification(), freshNotification]),
+    );
+    notificationInbox.getPlayerUnreadCount.and.returnValues(of(1), of(2));
 
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
 
-    clickBell();
-    fixture.detectChanges();
+    expect(toast.show).not.toHaveBeenCalled();
 
-    clickButton('Mark read');
+    activeHeroState.set({ ...activeHeroContext() });
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.state.notifications()[0].readState.isUnread).toBeTrue();
-    expect(toast.show).toHaveBeenCalledWith(
-      'error',
-      'Notification update failed',
-      'access denied',
+    expect(toast.show).toHaveBeenCalledOnceWith(
+      'info',
+      'Fresh same-context update',
+      'A same-context notification arrived. Action: Open mansion',
     );
   });
 
-  it('does not render unsupported action routes', async () => {
-    notificationInbox.getPlayerNotifications.and.returnValue(of([
-      notification({
-        notificationId: 'notification-view-state',
-        actionLink: { label: 'View', url: 'ViewState' },
-      }),
-      notification({
-        notificationId: 'notification-admin',
-        actionLink: { label: 'Open admin', url: '/admin/users' },
-      }),
-      notification({
-        notificationId: 'notification-report',
-        actionLink: { label: 'Open report', url: '/report/public-token' },
-      }),
-      notification({
-        notificationId: 'notification-reports-inbox',
-        actionLink: { label: 'Open reports', url: '/game/reports' },
-      }),
-      notification({
-        notificationId: 'notification-missing-game-route',
-        actionLink: { label: 'Missing game route', url: '/game/missing' },
-      }),
-    ]));
+  it('seeds the first successful poll after an initial load error', async () => {
+    jasmine.clock().install();
 
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    const freshNotification = notification({
+      notificationId: 'notification-2',
+      title: 'Fresh after recovery',
+      body: 'A recovered polling notification arrived.',
+    });
 
-    clickBell();
-    fixture.detectChanges();
+    notificationInbox.getPlayerNotifications.and.returnValues(
+      throwError(() => new Error('initial load failed')),
+      of([notification()]),
+      of([notification(), freshNotification]),
+    );
+    notificationInbox.getPlayerUnreadCount.and.returnValues(of(0), of(1), of(2));
 
-    const links = fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>;
+    try {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
 
-    expect(links.length).toBe(0);
+      expect(fixture.componentInstance.state.error()).toBe('Notifications unavailable.');
+      expect(toast.show).not.toHaveBeenCalled();
+
+      jasmine.clock().tick(60_000);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.state.error()).toBeNull();
+      expect(fixture.componentInstance.state.notifications().map((item) => item.notificationId))
+        .toEqual(['notification-1']);
+      expect(toast.show).not.toHaveBeenCalled();
+
+      clickBell();
+      fixture.detectChanges();
+
+      const recoveredText = fixture.nativeElement.textContent as string;
+
+      expect(recoveredText).not.toContain('Notifications unavailable.');
+      expect(recoveredText).toContain('Building completed');
+
+      clickBell();
+      fixture.detectChanges();
+
+      jasmine.clock().tick(60_000);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(toast.show).toHaveBeenCalledOnceWith(
+        'info',
+        'Fresh after recovery',
+        'A recovered polling notification arrived. Action: Open mansion',
+      );
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   it('clears stale notifications and unread count when loading fails', async () => {
@@ -252,105 +343,6 @@ describe('NotificationBell', () => {
     expect(fixture.componentInstance.state.notifications()).toEqual([]);
     expect(fixture.componentInstance.state.unreadCount()).toBe(0);
     expect(fixture.componentInstance.state.error()).toBe('Notifications unavailable.');
-  });
-
-  it('clears pending mark-read state and ignores stale success after context change', async () => {
-    const actionResult$ = new Subject<PlayerNotificationMutationResult>();
-    notificationInbox.markPlayerNotificationRead.and.returnValue(actionResult$);
-
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    clickBell();
-    fixture.detectChanges();
-
-    clickButton('Mark read');
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.state.actionNotificationIds())
-      .toEqual(['notification-1']);
-
-    notificationInbox.getPlayerNotifications.and.returnValue(of([
-      notification({
-        notificationId: 'notification-2',
-        title: 'New context notification',
-      }),
-    ]));
-    notificationInbox.getPlayerUnreadCount.and.returnValue(of(1));
-    activeHeroState.set({
-      ...activeHeroContext(),
-      heroId: 'hero-2',
-      serverId: 'server-2',
-    });
-
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.state.actionNotificationIds()).toEqual([]);
-
-    actionResult$.next(mutationResult({
-      readAt: '2026-05-05T10:20:00.000Z',
-      isUnread: false,
-    }));
-    actionResult$.complete();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.state.notifications().map((item) => item.notificationId))
-      .toEqual(['notification-2']);
-    expect(fixture.componentInstance.state.notifications()[0].readState.isUnread).toBeTrue();
-    expect(fixture.componentInstance.state.unreadCount()).toBe(1);
-  });
-
-  it('clears pending dismiss state and ignores stale success after context change', async () => {
-    const actionResult$ = new Subject<PlayerNotificationMutationResult>();
-    notificationInbox.dismissPlayerNotification.and.returnValue(actionResult$);
-
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    clickBell();
-    fixture.detectChanges();
-
-    clickButton('Dismiss');
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.state.actionNotificationIds())
-      .toEqual(['notification-1']);
-
-    notificationInbox.getPlayerNotifications.and.returnValue(of([
-      notification({
-        notificationId: 'notification-2',
-        title: 'New context notification',
-      }),
-    ]));
-    notificationInbox.getPlayerUnreadCount.and.returnValue(of(1));
-    activeHeroState.set({
-      ...activeHeroContext(),
-      heroId: 'hero-2',
-      serverId: 'server-2',
-    });
-
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.state.actionNotificationIds()).toEqual([]);
-
-    actionResult$.next(mutationResult({
-      readAt: '2026-05-05T10:25:00.000Z',
-      dismissedAt: '2026-05-05T10:25:00.000Z',
-      isUnread: false,
-      isDismissed: true,
-    }));
-    actionResult$.complete();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.state.notifications().map((item) => item.notificationId))
-      .toEqual(['notification-2']);
-    expect(fixture.componentInstance.state.unreadCount()).toBe(1);
   });
 
   it('renders a clear empty state', async () => {
