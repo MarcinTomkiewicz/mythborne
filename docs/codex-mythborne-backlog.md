@@ -5569,6 +5569,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 - No frontend notification inserts are introduced for default report creation.
 - Remaining blockers, if any, are concrete and actionable.
 
+**Implementation note:** P11 accepted on 2026-05-05 as the Epic P technical checkpoint. Codex verified the implemented report slice with `npx tsc --noEmit`, focused report specs with 49 SUCCESS, static grep checks and `npm run build` with known budget/CommonJS warnings. Covered technical paths include `/game/reports`, `/game/reports/:reportId`, root `/report/:publicToken`, private list/detail state, public not-found state, strict private/public mapper boundaries, shared combat/item renderer, low-level producer boundaries and static checks for no direct report table writes, no default frontend notification inserts, no fake contextual producers and no public raw-id leaks in the checked paths. Codex did not claim full manual gameplay smoke because there was no authenticated session or representative seeded/generated report data in this run. Pending manual smoke remains: private list/unread/detail/mark-read/remove/copy public link, public route shellless/not-found/private-data checks, combat timeline rendering, item-reference rendering and deletion semantics with multi-access reports. No new blocker was found in the technical checkpoint.
+
 ---
 
 # Epic Q — Notifications
