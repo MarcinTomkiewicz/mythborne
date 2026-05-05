@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
@@ -16,6 +17,7 @@ import { ReportsPageState } from './reports-page.state';
     InputTextModule,
     LoadingOverlay,
     ReactiveFormsModule,
+    RouterLink,
     SelectModule,
   ],
   providers: [ReportsPageState],

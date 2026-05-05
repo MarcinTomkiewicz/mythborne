@@ -5277,6 +5277,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 - Detail does not expose staff/audit/anti-abuse data.
 - Build passes.
 
+**Implementation note:** P3 accepted on 2026-05-05. `/game/reports/:reportId` now renders private report detail through `GameReports` using active-hero RPC boundaries: `get_hero_game_report_detail(p_hero_id, p_report_id)`, `mark_game_report_read(p_hero_id, p_report_id)`, `get_hero_game_report_unread_count(p_hero_id)` and `delete_game_report_for_hero(...)`. Mark-read updates only the active hero read state, refreshes unread count from the authoritative RPC and leaves the previous count unchanged if that refresh fails. Detail uses `report_detail_section` metadata, includes remove and copy-token actions, and keeps public `/report/:publicToken` routing as P4 scope. No direct report table writes or frontend notification writes were added. Verification passed with `npx tsc --noEmit`, focused report specs with 22 SUCCESS, static greps and `npm run build` with known warnings. Manual smoke remains pending until representative report producer data exists.
+
 ---
 
 ## Task P4 — Public report route

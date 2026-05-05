@@ -66,6 +66,11 @@ export const gameRoutes: Routes = [
       import('./pages/reports/reports-page').then((m) => m.ReportsPage),
   },
   {
+    path: 'reports/:reportId',
+    loadComponent: () =>
+      import('./pages/reports/report-detail-page').then((m) => m.ReportDetailPage),
+  },
+  {
     path: 'trade',
     loadComponent: () =>
       import('./pages/trade/trade-page').then((m) => m.TradePage),

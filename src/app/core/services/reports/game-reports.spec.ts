@@ -3,7 +3,9 @@ import { firstValueFrom, of } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
   DeleteGameReportForHeroRpcRow,
+  GetHeroGameReportDetailRpcRow,
   GetHeroGameReportsRpcRow,
+  MarkGameReportReadRpcReturn,
 } from '../../types/game-report-rpc.types';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
@@ -85,6 +87,57 @@ describe('GameReports', () => {
     );
   });
 
+  it('loads active hero report detail through the owner-safe detail RPC', async () => {
+    backend.rpc.and.returnValue(of([detailRow()]));
+
+    const detail = await firstValueFrom(
+      service.getActiveHeroReportDetail('report-1'),
+    );
+
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_hero_game_report_detail,
+      {
+        p_hero_id: 'hero-1',
+        p_report_id: 'report-1',
+      },
+    );
+    expect(detail).toEqual(jasmine.objectContaining({
+      reportId: 'report-1',
+      reportTypeLabel: 'Combat',
+      itemReferences: [
+        jasmine.objectContaining({
+          displayName: 'Fine Bronze Blade',
+        }),
+      ],
+      combatSection: jasmine.objectContaining({
+        outcome: 'initiator_victory',
+      }),
+    }));
+    expect(backend.getAll).not.toHaveBeenCalled();
+  });
+
+  it('marks active hero report read through mark_game_report_read', async () => {
+    backend.rpc.and.returnValue(of(markReadRow()));
+
+    const result = await firstValueFrom(
+      service.markActiveHeroReportRead('report-1'),
+    );
+
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.mark_game_report_read,
+      {
+        p_hero_id: 'hero-1',
+        p_report_id: 'report-1',
+      },
+    );
+    expect(result).toEqual({
+      reportId: 'report-1',
+      heroId: 'hero-1',
+      accessRole: 'owner',
+      readAt: '2026-05-05T10:05:00.000Z',
+    });
+  });
+
   it('removes active hero report access through delete_game_report_for_hero', async () => {
     backend.rpc.and.returnValue(of([deleteRow()]));
 
@@ -133,6 +186,68 @@ function listRow(): GetHeroGameReportsRpcRow {
     summary: 'A combat was completed.',
     title: 'Training combat',
   } as unknown as GetHeroGameReportsRpcRow;
+}
+
+function detailRow(): GetHeroGameReportDetailRpcRow {
+  return {
+    ...listRow(),
+    report_type_description: 'Combat report.',
+    item_references_json: [
+      {
+        sourceKind: 'reward_drop',
+        sourceItemId: 'item-1',
+        displayName: 'Fine Bronze Blade',
+        qualityKey: 'fine',
+        baseId: 'base-1',
+        prefixAffixId: null,
+        suffixAffixId: 'suffix-1',
+        sortOrder: 10,
+      },
+    ],
+    combat_section_json: {
+      outcome: 'initiator_victory',
+      turnsCompleted: 1,
+      participants: [
+        {
+          side: 'initiator',
+          participantKind: 'hero',
+          displayName: 'Hero One',
+          level: 7,
+          healthStart: 30,
+          healthEnd: 18,
+          maxHealth: 30,
+        },
+      ],
+      attacks: [
+        {
+          turnNumber: 1,
+          attackOrder: 10,
+          actorSide: 'initiator',
+          targetSide: 'defender',
+          sourceKind: 'item',
+          sourceLabel: 'Bronze blade',
+          timingHit: true,
+          evaded: false,
+          critical: true,
+          finalDamage: 12,
+          targetHealthBefore: 24,
+          targetHealthAfter: 12,
+          displayText: 'Hero One strikes.',
+        },
+      ],
+    },
+  } as unknown as GetHeroGameReportDetailRpcRow;
+}
+
+function markReadRow(): MarkGameReportReadRpcReturn {
+  return {
+    access_role: 'owner',
+    created_at: '2026-05-05T10:00:00.000Z',
+    hero_id: 'hero-1',
+    id: 'access-1',
+    read_at: '2026-05-05T10:05:00.000Z',
+    report_id: 'report-1',
+  };
 }
 
 function deleteRow(): DeleteGameReportForHeroRpcRow {

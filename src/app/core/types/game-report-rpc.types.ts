@@ -22,6 +22,12 @@ export type GetHeroGameReportUnreadCountRpcReturn =
   Database['public']['Functions']['get_hero_game_report_unread_count']['Returns'];
 export type GetHeroGameReportDetailRpcRow =
   Database['public']['Functions']['get_hero_game_report_detail']['Returns'][number];
+export type GetHeroGameReportDetailRpcArgs =
+  Database['public']['Functions']['get_hero_game_report_detail']['Args'];
+export type MarkGameReportReadRpcArgs =
+  Database['public']['Functions']['mark_game_report_read']['Args'];
+export type MarkGameReportReadRpcReturn =
+  Database['public']['Functions']['mark_game_report_read']['Returns'];
 export type GetPublicGameReportByTokenRpcRow =
   Database['public']['Functions']['get_public_game_report_by_token']['Returns'][number];
 export type DeleteGameReportForHeroRpcArgs =

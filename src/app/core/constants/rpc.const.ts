@@ -62,8 +62,10 @@ export const RPC = {
   get_hero_estate_runtime_state: 'get_hero_estate_runtime_state',
   start_estate_building_upgrade: 'start_estate_building_upgrade',
   delete_game_report_for_hero: 'delete_game_report_for_hero',
+  get_hero_game_report_detail: 'get_hero_game_report_detail',
   get_hero_game_report_unread_count: 'get_hero_game_report_unread_count',
   get_hero_game_reports: 'get_hero_game_reports',
+  mark_game_report_read: 'mark_game_report_read',
   get_vendor_scrap_drachma_payout_percent:
     'get_vendor_scrap_drachma_payout_percent',
   recover_scrapped_item: 'recover_scrapped_item',

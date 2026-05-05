@@ -139,6 +139,12 @@
           </p>
 
           <div class="flex-row-start-center flex-wrap gap-sm">
+            <a
+              class="tag-badge tag-badge--info"
+              [routerLink]="['/game/reports', report.reportId]"
+            >
+              Open
+            </a>
             <span class="tag-badge tag-badge--muted">Public route pending</span>
             <p-button
               label="Copy token"

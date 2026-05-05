@@ -110,6 +110,13 @@ export interface DeleteGameReportResult {
   auditLogId: string;
 }
 
+export interface MarkGameReportReadResult {
+  reportId: string;
+  heroId: string;
+  accessRole: GameReportAccessRole;
+  readAt: string | null;
+}
+
 export interface PrivateGameReportDetail extends Omit<
   PrivateGameReportListItem,
   'itemReferencesCount'

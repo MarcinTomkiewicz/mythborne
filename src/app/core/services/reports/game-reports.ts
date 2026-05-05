@@ -4,17 +4,26 @@ import { RPC } from '../../constants/rpc.const';
 import {
   DeleteGameReportResult,
   GameReportServerFilters,
+  MarkGameReportReadResult,
+  PrivateGameReportDetail,
   PrivateGameReportListItem,
 } from '../../domain/reports/game-report.model';
 import {
   DeleteGameReportForHeroRpcArgs,
   DeleteGameReportForHeroRpcRow,
+  GetHeroGameReportDetailRpcArgs,
+  GetHeroGameReportDetailRpcRow,
   GetHeroGameReportsRpcArgs,
   GetHeroGameReportsRpcRow,
   GetHeroGameReportUnreadCountRpcArgs,
   GetHeroGameReportUnreadCountRpcReturn,
+  MarkGameReportReadRpcArgs,
+  MarkGameReportReadRpcReturn,
 } from '../../types/game-report-rpc.types';
-import { mapPrivateGameReportListItem } from '../../utils/game-report-mappers';
+import {
+  mapPrivateGameReportDetail,
+  mapPrivateGameReportListItem,
+} from '../../utils/game-report-mappers';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
@@ -65,6 +74,40 @@ export class GameReports {
     );
   }
 
+  getActiveHeroReportDetail(reportId: string): Observable<PrivateGameReportDetail> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: GetHeroGameReportDetailRpcArgs = {
+          p_hero_id: context.heroId,
+          p_report_id: reportId,
+        };
+
+        return this.backend.rpc<GetHeroGameReportDetailRpcRow[]>(
+          RPC.get_hero_game_report_detail,
+          args,
+        );
+      }),
+      map((rows) => mapPrivateGameReportDetail(firstGameReportDetailRow(rows))),
+    );
+  }
+
+  markActiveHeroReportRead(reportId: string): Observable<MarkGameReportReadResult> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: MarkGameReportReadRpcArgs = {
+          p_hero_id: context.heroId,
+          p_report_id: reportId,
+        };
+
+        return this.backend.rpc<MarkGameReportReadRpcReturn>(
+          RPC.mark_game_report_read,
+          args,
+        );
+      }),
+      map(mapMarkGameReportReadResult),
+    );
+  }
+
   deleteActiveHeroReport(reportId: string): Observable<DeleteGameReportResult> {
     return this.activeHero.requireActiveHero().pipe(
       switchMap((context) => {
@@ -82,6 +125,18 @@ export class GameReports {
       map((rows) => mapDeleteGameReportResult(firstDeleteGameReportRow(rows))),
     );
   }
+}
+
+function firstGameReportDetailRow(
+  rows: readonly GetHeroGameReportDetailRpcRow[],
+): GetHeroGameReportDetailRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error('get_hero_game_report_detail returned no result.');
+  }
+
+  return row;
 }
 
 function firstDeleteGameReportRow(
@@ -107,5 +162,16 @@ function mapDeleteGameReportResult(
     deletedReport: row.deleted_report,
     remainingAccessCount: row.remaining_access_count,
     auditLogId: row.audit_log_id,
+  };
+}
+
+function mapMarkGameReportReadResult(
+  row: MarkGameReportReadRpcReturn,
+): MarkGameReportReadResult {
+  return {
+    reportId: row.report_id,
+    heroId: row.hero_id,
+    accessRole: row.access_role,
+    readAt: row.read_at,
   };
 }
