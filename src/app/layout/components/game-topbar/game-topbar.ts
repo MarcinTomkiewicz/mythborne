@@ -27,6 +27,7 @@ import { HeroDerivedStats } from '../../../core/services/hero/hero-derived-stats
 import { EstateAddresses } from '../../../core/services/estate/estate-addresses';
 import { TABLES } from '../../../core/constants/tables.const';
 import { GameBar } from '../../../shared/game-bar/game-bar';
+import { NotificationBell } from '../notification-bell/notification-bell';
 
 const RESOURCE_DEFINITIONS: GameTopbarResourceDefinition[] = [
   { type: 'drachma', label: 'Drachma' },
@@ -36,7 +37,7 @@ const RESOURCE_DEFINITIONS: GameTopbarResourceDefinition[] = [
 
 @Component({
   selector: 'app-game-topbar',
-  imports: [GameBar],
+  imports: [GameBar, NotificationBell],
   templateUrl: './game-topbar.html',
 })
 export class GameTopbar implements OnInit, OnDestroy {

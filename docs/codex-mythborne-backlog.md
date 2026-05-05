@@ -5859,6 +5859,14 @@ Reports have their own Reports Center and unread state. Toasts are presentation 
 - Staff notifications are not shown in player bell.
 - Build and route smoke pass.
 
+**Status:** Accepted on 2026-05-05.
+
+**Acceptance summary:** Q4 added a player notification bell in the game topbar backed by `NotificationInbox.getPlayerNotifications(...)` and `getPlayerUnreadCount()`. The dropdown shows a concise player-only list with unread badge/state, type label/category/severity, short body, created time and route action links. Action links are allowlisted from player-safe `MENU_LOGGED_IN` game routes: `/game/mansion` is allowed, while `ViewState`, `/admin/...`, `/report/...`, `/game/reports` and unknown `/game/...` routes are blocked. Load errors clear stale notifications and unread count. Styling uses shared dropdown/list utility classes, with no local `notification-bell.scss`. No staff notifications, Reports items, direct notification writes or frontend `create_notification(...)` calls were added.
+
+**Verification:** `npx tsc --noEmit` passed; focused notification bell/service/mapper specs passed with 21 SUCCESS; `npm run build` passed with known bundle budget and Supabase `cookie` CommonJS warnings; static greps passed for no direct notification writes and no `ViewState`/staff/report/admin links in bell/topbar.
+
+**Manual smoke:** Pending real DB row check for building-completed notifications. The source `action_url` must be `/game/mansion`; if DB/content still returns `ViewState`, fix the producer/content source rather than adding a frontend remap.
+
 ---
 
 ## Task Q5 — Mark read / dismiss notification actions
@@ -8122,6 +8130,971 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - No-guild and in-guild states are clear.
 - Route does not imply siege/Argonautics are implemented.
 - Build and focused route/component tests pass.
+
+---
+
+# Epic U — Luck Foundation
+
+Epic U wires the DB-owned Luck Foundation into frontend/domain/admin surfaces after the Luck Foundation DB/RPC migrations are complete.
+
+Luck is a global RNG/opportunity stat. It is not only an item-drop stat.
+
+Luck affects gameplay RNG where the roll can help the player, unless that configurable RNG surface is explicitly Luck-excluded. Luck never guarantees success.
+
+Epic U is not:
+
+- Luck Lab;
+- a full balancing UI with sliders and charts;
+- a redesign of the admin information architecture;
+- a new item generation model;
+- a new trial/minigame framework;
+- a Maze/Harpy/minigame implementation;
+- a replacement for reward profiles;
+- a frontend formula authority.
+
+Luck Lab belongs to the next follow-up epic.
+
+**Current DB/RPC foundation expected before Codex starts Epic U tasks:**
+
+- regenerated `database.types.ts` after Luck Foundation DB migrations;
+- DB-owned RNG surface inventory/read model or equivalent metadata/read RPC;
+- DB/formula/config support for `luckInfluence` or equivalent;
+- DB/formula/config support for `trial_power`;
+- Luck-aware trial opportunity computation;
+- Luck-aware trial manifestation computation;
+- Luck-aware challenge auto-resolve computation;
+- Luck-aware exploration encounter fallback computation;
+- Luck-aware combat RNG formula/config contracts where applicable:
+  - hit chance;
+  - evasion chance;
+  - critical chance;
+  - critical damage;
+- drop generator audited or adjusted so Luck influence remains consistent with the current bucket/value/quality/prefix/suffix model;
+- reward amount range Luck behavior decided and exposed if applicable;
+- DB metadata/explainability for Luck/RNG surfaces where admin UI should show labels/descriptions.
+
+If the DB/RPC contract is missing, Codex must report a DB dependency instead of hardcoding Luck formulas in Angular.
+
+**Epic rules:**
+
+- Angular must not become authoritative for Luck formulas.
+- Frontend previews may display DB/RPC/formula outputs, but durable gameplay decisions are DB/RPC-owned.
+- Do not hardcode Luck multipliers, Luck caps, encounter chance, trial chance, manifestation chance, hit/evasion/crit formulas or drop formulas in Angular.
+- Do not create a second item rarity system.
+- Do not add rarity flags for prefix/suffix/component combinations.
+- Item rarity/frequency continues to come from drachma value, bucket budget and item-generation rules.
+- `trial_power` is the canonical domain name for effective trial strength.
+- `trial_power` is conceptually `testedStatValue + luckInfluence`.
+- `luckInfluence` is not raw `luckValue` and is not 1:1.
+- Difficulty and district affect formulas/caps/pressure that consume `trial_power`; they are not part of `trial_power` itself.
+- `nothing` is not a separate RNG surface; it is the deterministic fallback when trial opportunity and encounter rolls fail.
+- Anti-abuse is not gameplay RNG and must not be affected by Luck.
+- Siege/Argonautics are future systems; they inherit Luck only through combat/trial-like mechanics later.
+- Luck Lab is out of scope except for minimal display/readiness hooks.
+
+---
+
+## Task U0 — Align generated DB types after Luck Foundation DB migrations
+
+**Goal:** Synchronize frontend generated DB types with the Luck Foundation DB/RPC contract.
+
+**Scope:**
+
+- Regenerate/update generated Supabase database types.
+- Fix compile errors caused by new/changed Luck Foundation RPCs, formula targets, metadata rows or read models.
+- Confirm generated types include the new/updated contracts for:
+  - Luck/RNG surface read model;
+  - `trial_power`;
+  - Luck-aware trial opportunity;
+  - Luck-aware trial manifestation;
+  - Luck-aware auto-resolve;
+  - Luck-aware encounter fallback;
+  - Luck-aware combat RNG surfaces;
+  - Luck-aware drop/reward read or preview contracts where exposed.
+- Do not edit generated DB types manually.
+- Do not add frontend fallback formulas.
+
+**Acceptance criteria:**
+
+- Generated types match the current schema/RPC signatures.
+- Frontend compiles against regenerated types.
+- No manual edits to generated DB types exist.
+- Missing DB/RPC contracts are reported as blockers, not replaced with Angular logic.
+
+---
+
+## Task U1 — Luck domain models and mappers
+
+**Goal:** Add typed frontend domain models for Luck Foundation read data.
+
+**Scope:**
+
+- Add domain/read models for:
+  - Luck RNG surface;
+  - Luck influence config/read state;
+  - Trial Power preview/read result;
+  - Luck-aware chance preview/result;
+  - Luck-excluded flag/state where DB exposes it;
+  - RNG surface category;
+  - RNG surface formula/config status.
+- Map DB/RPC payloads into domain-safe models.
+- Keep raw generated DB rows out of components.
+- Preserve labels/descriptions/helper/admin text from DB metadata.
+- Do not invent permanent category names if DB exposes them.
+
+**Acceptance criteria:**
+
+- Components/services consume typed Luck domain models.
+- Mapper distinguishes raw `luckValue`, `luckInfluence`, and `trialPower`.
+- Mapper handles nullable/missing preview values safely.
+- Build and focused mapper tests pass.
+
+---
+
+## Task U2 — Luck RNG surface read service
+
+**Goal:** Add a service layer for reading Luck-related RNG surfaces from DB/RPC/metadata.
+
+**Scope:**
+
+- Load the DB-owned list of RNG surfaces affected by Luck.
+- Expose categories such as:
+  - exploration;
+  - trial;
+  - auto-resolve;
+  - combat;
+  - drops;
+  - rewards, if applicable.
+- Show whether each surface is:
+  - Luck-aware;
+  - Luck-excluded;
+  - formula/config-owned;
+  - fallback/ad hoc, if DB reports that state;
+  - missing required config, if DB reports that state.
+- Do not compute these classifications locally unless DB explicitly returns enough metadata.
+
+**Acceptance criteria:**
+
+- Admin/front-end read layer can list Luck-relevant RNG surfaces.
+- Luck-excluded is represented only where DB exposes it.
+- Unknown/missing state is explicit.
+- No direct table mutation is introduced.
+
+---
+
+## Task U3 — Trial Power read/preview integration
+
+**Goal:** Wire DB-owned `trial_power` into frontend domain/read surfaces.
+
+**Scope:**
+
+- Add service/read helpers for `trial_power` preview where DB exposes it.
+- Display/represent:
+  - tested stat key/value;
+  - raw Luck value;
+  - Luck influence;
+  - final Trial Power.
+- Use DB-backed stat labels where available.
+- Do not include difficulty or district as part of Trial Power.
+- If DB returns formula explanation, preserve it for admin/explainability views.
+
+**Acceptance criteria:**
+
+- Frontend can show `testedStatValue + luckInfluence = trialPower`.
+- Raw Luck and Luck influence are not confused.
+- Difficulty/district are not shown as Trial Power ingredients.
+- No Angular hardcoded Trial Power formula exists.
+
+---
+
+## Task U4 — Exploration RNG read-state alignment
+
+**Goal:** Align exploration step outcome read models with Luck-aware DB results.
+
+**Scope:**
+
+- Update exploration result/read models to preserve DB-returned:
+  - trial opportunity chance;
+  - trial opportunity roll;
+  - encounter chance;
+  - encounter roll;
+  - final outcome.
+- Ensure `nothing` is represented as fallback outcome, not independent RNG roll.
+- If DB exposes Luck contribution/explanation, preserve it in diagnostic/admin-friendly fields.
+- Player UI should remain readable and not expose noisy math by default.
+
+**Acceptance criteria:**
+
+- Exploration read model reflects trial opportunity → encounter → nothing sequence.
+- Luck-aware values from DB are preserved.
+- Player-facing view does not imply `nothing` was separately rolled.
+- Build and focused exploration mapper/service tests pass.
+
+---
+
+## Task U5 — Trial manifestation read-state alignment
+
+**Goal:** Align trial manifestation read models with Luck-aware DB results.
+
+**Scope:**
+
+- Preserve DB-returned manifestation chance, roll and result where exposed.
+- Preserve Luck influence/explanation where exposed.
+- Keep manifestation distinct from trial opportunity.
+- Surface misconfigured/no-manifestation states as DB/config issues where applicable.
+
+**Acceptance criteria:**
+
+- Trial opportunity and manifestation remain distinct in domain models.
+- Luck-aware manifestation values are available for admin/explainability.
+- Player-facing UI remains concise.
+- No frontend manifestation formula is added.
+
+---
+
+## Task U6 — Challenge auto-resolve Luck integration
+
+**Goal:** Align challenge auto-resolve UI/services with DB-owned Luck-aware auto-resolve.
+
+**Scope:**
+
+- Update auto-resolve read/action service to use DB/RPC result fields for:
+  - success chance;
+  - tested stat;
+  - Luck influence;
+  - Trial Power;
+  - difficulty/cap/explanation where exposed.
+- Remove or quarantine any frontend fallback auto-resolve chance logic if present.
+- Preserve binary success/failure result.
+- Do not add partial-success behavior.
+
+**Acceptance criteria:**
+
+- Auto-resolve display comes from DB/RPC output.
+- Luck influence and Trial Power are not computed in Angular.
+- Auto-resolve remains binary success/failure.
+- Build and focused challenge/auto-resolve tests pass.
+
+---
+
+## Task U7 — Combat RNG Luck alignment
+
+**Goal:** Align frontend combat/domain models with DB-owned Luck-aware combat RNG.
+
+**Scope:**
+
+- Update combat read models/mappers to preserve:
+  - hit chance / green-zone output where exposed;
+  - evasion chance;
+  - critical chance;
+  - critical damage;
+  - Luck contribution/explanation where DB exposes it.
+- Reuse existing combat formula/read paths where they exist.
+- Do not create duplicate formula target names in Angular.
+- Do not hardcode Luck impact on hit/evasion/crit/critical damage.
+
+**Acceptance criteria:**
+
+- Combat read models can show Luck-aware RNG values where DB exposes them.
+- Existing combat formula targets are reused rather than duplicated in frontend code.
+- Luck impact is displayed as DB/formula output, not Angular calculation.
+- Combat remains symmetric: damager dexterity vs target agility for hit/evasion-related logic.
+
+---
+
+## Task U8 — Drop generator Luck alignment
+
+**Goal:** Align item-generation preview/read surfaces with Luck Foundation without changing the bucket philosophy.
+
+**Scope:**
+
+- Preserve current item generation model:
+  - value bucket;
+  - quality;
+  - base item;
+  - prefix;
+  - suffix;
+  - optional upgrade/spare-budget pass.
+- Ensure UI/read models can show DB-returned Luck inputs and roll breakdown.
+- Do not add rarity flags or rare-combination logic.
+- Ensure one-roll previews do not claim Luck guarantees better single outcomes.
+- Where DB exposes distribution preview/simulation, map it for future Luck Lab reuse.
+
+**Acceptance criteria:**
+
+- Item generation preview still follows current bucket/value model.
+- Prefix/suffix rarity is not represented as a separate flag.
+- Luck is shown as influencing bucket/quality/prefix/suffix opportunity, not guaranteeing a specific item.
+- No item generation rewrite is introduced.
+
+---
+
+## Task U9 — Reward range Luck option alignment
+
+**Goal:** Align reward amount range UI/read models with Luck Foundation where DB exposes Luck-aware reward range behavior.
+
+**Scope:**
+
+- Inspect reward profile/entry read models for random amount ranges.
+- If DB exposes an “include Luck” / Luck-aware reward-range flag or equivalent, map and display it.
+- Keep reward profiles as the reward authority.
+- Do not invent new reward calculation in Angular.
+- Do not make reward range Luck behavior a blocker if DB explicitly leaves it unsupported.
+
+**Acceptance criteria:**
+
+- Reward amount ranges remain reward-profile owned.
+- Any DB-exposed Luck-aware toggle/state is visible in admin read/edit surfaces where appropriate.
+- No local reward RNG formula is added.
+- Missing DB support is reported clearly if needed.
+
+---
+
+## Task U10 — Luck metadata and admin readability
+
+**Goal:** Make Luck Foundation readable in existing admin/balance surfaces without building full Luck Lab.
+
+**Scope:**
+
+- Show DB-backed metadata/explanations for Luck-related surfaces where available.
+- Integrate Luck surface labels/descriptions into existing admin/balance/formula views.
+- Show `trial_power` and `luckInfluence` meanings clearly.
+- Mark fallback/ad hoc surfaces if DB reports them.
+- Do not add slider-heavy visualization or distribution lab in this task.
+
+**Acceptance criteria:**
+
+- Admin can understand what Luck affects at a high level.
+- `trial_power` is explained as tested stat plus Luck influence.
+- Luck surfaces are readable without raw-only keys.
+- This task does not become Luck Lab.
+
+---
+
+## Task U11 — Formula admin integration for Luck targets
+
+**Goal:** Ensure existing formula admin surfaces can inspect/edit Luck Foundation formula targets.
+
+**Scope:**
+
+- Make `trial_power`, Luck influence target/helper and Luck-aware combat/trial/drop formula targets visible through existing formula admin patterns.
+- Use existing formula target/assignment/read/edit services.
+- Do not build a separate formula editor.
+- Preserve target-defined variables and variable help metadata.
+- Ensure variable labels distinguish:
+  - `luckValue`;
+  - `luckInfluence`;
+  - `testedStatValue`;
+  - `trialPower`.
+
+**Acceptance criteria:**
+
+- Luck-related formula targets are visible and editable where existing formula governance allows it.
+- Variable help prevents confusing raw Luck with Luck influence.
+- Formula target UI does not reintroduce ambiguous bare `level`-style variable naming.
+- Build and focused formula admin tests pass.
+
+---
+
+## Task U12 — Player-facing Luck explanation pass
+
+**Goal:** Add concise player-facing explanations where Luck appears in gameplay results.
+
+**Scope:**
+
+- In player-facing exploration/trial/drop/combat result surfaces touched by Epic U, show only concise explanations.
+- Avoid exposing full formulas or admin math to players.
+- Use wording such as:
+  - Luck improved your odds;
+  - Luck helped this opportunity;
+  - Luck contributed to Trial Power;
+  - Luck influenced this roll.
+- Keep exact formula/math for admin/explainability views.
+- Do not redesign result screens.
+
+**Acceptance criteria:**
+
+- Player sees readable Luck explanations where DB returns Luck contribution.
+- Player UI does not become formula-heavy.
+- Admin-only details are not exposed in normal player surfaces.
+- Build passes.
+
+---
+
+## Task U13 — Luck Foundation cleanup and integration pass
+
+**Goal:** Remove stale frontend fallback assumptions and align touched systems with DB-owned Luck Foundation.
+
+**Scope:**
+
+- Search touched exploration/trial/combat/item/reward frontend code for hardcoded Luck multipliers or fallback chance formulas.
+- Replace with DB/RPC/formula outputs where contracts exist.
+- If a fallback remains necessary because DB does not expose a contract, report it explicitly as a DB dependency.
+- Confirm no unrelated systems were pulled into Luck Foundation.
+- Keep Luck Lab out of scope.
+
+**Acceptance criteria:**
+
+- No new hardcoded Luck constants are introduced.
+- Known old fallback formulas are removed or explicitly isolated with blocker notes.
+- Luck Foundation surfaces consistently use DB/RPC/formula-owned values.
+- Build and focused integration tests pass.
+
+---
+
+## Task U14 — Luck Foundation status/reporting handoff
+
+**Goal:** Produce the final implementation report and DB follow-up list for Luck Foundation.
+
+**Scope:**
+
+- Summarize which Luck surfaces are wired.
+- List remaining DB/config gaps if any.
+- List Luck Lab dependencies discovered during U tasks.
+- List any formula target / metadata / generated type blockers.
+- Do not update status docs before user confirmation.
+
+**Acceptance criteria:**
+
+- Report clearly maps Epic U scope to implemented surfaces.
+- Remaining Luck Lab work is separated from Luck Foundation blockers.
+- DB cleanup/follow-up candidates are concrete.
+- User can decide whether to accept Epic U and move to Luck Lab.
+
+---
+
+## Deferred to Epic V — Luck Lab
+
+Luck Lab should be a separate full epic after Luck Foundation.
+
+Expected Luck Lab scope:
+
+- `luckValue` slider;
+- `testedStatValue` slider;
+- difficulty selector;
+- district selector;
+- `luckInfluence` preview;
+- `trial_power` preview;
+- trial opportunity preview;
+- trial manifestation preview;
+- auto-resolve preview;
+- encounter fallback preview;
+- combat hit/evasion/critical/critical damage preview;
+- drop single-roll preview;
+- drop distribution simulation;
+- Luck 0 vs Luck X comparisons;
+- human-readable explanations of what changed.
+
+Luck Lab is required for real balancing, because Luck cannot be meaningfully validated by a few manual exploration clicks.
+
+---
+
+# Epic V — Luck Lab
+
+Epic V implements the admin/balancer-facing **Luck Lab** after Epic U / Luck Foundation DB-RPC contracts are available.
+
+Luck Lab is a visual balancing and explainability tool. It exists because Luck cannot be meaningfully validated by a few manual exploration clicks.
+
+Luck Lab should let an admin/balancer understand how raw Luck changes:
+
+- Luck influence;
+- Trial Power;
+- trial opportunity;
+- trial manifestation;
+- challenge auto-resolve;
+- exploration encounter fallback;
+- combat hit/evasion/critical/critical damage;
+- item drop bucket/quality/prefix/suffix outcomes;
+- distribution over many rolls, not only one roll.
+
+Epic V is not:
+
+- Luck Foundation;
+- a replacement for DB formulas;
+- a player-facing feature;
+- a new item generation system;
+- a new combat system;
+- a new trial/minigame system;
+- a config governance rewrite;
+- an admin information architecture refactor;
+- a local Angular formula simulator used as authority.
+
+**Current DB/RPC foundation expected before Codex starts Epic V tasks:**
+
+- Epic U / Luck Foundation is accepted or at least DB/RPC contracts are available;
+- generated `database.types.ts` includes Luck Foundation read/preview/simulation RPCs;
+- DB exposes read/preview contracts for:
+  - Luck influence;
+  - Trial Power;
+  - trial opportunity;
+  - trial manifestation;
+  - challenge auto-resolve;
+  - exploration encounter fallback;
+  - combat RNG previews;
+  - item generation single roll and/or distribution simulation;
+- DB exposes labels/descriptions/helper text for Luck-related formula targets and RNG surfaces;
+- existing formula governance/admin read models can inspect Luck-related formula targets;
+- item generation preview/simulation remains DB-owned.
+
+If a required DB/RPC contract is missing, Codex must report a DB dependency instead of implementing a local authoritative formula simulator in Angular.
+
+**Epic rules:**
+
+- Luck Lab displays DB/RPC/formula outputs.
+- Luck Lab must not become gameplay authority.
+- Angular must not hardcode Luck multipliers, caps, curves, or final formulas.
+- Angular may format values, calculate simple UI-only comparisons from already-returned values, and render charts/tables.
+- Any simulation of actual game rolls must come from DB/RPC or an explicitly non-authoritative preview endpoint.
+- Luck Lab must separate:
+  - raw `luckValue`;
+  - `luckInfluence`;
+  - `trialPower`;
+  - difficulty/district caps;
+  - final displayed chance.
+- Luck Lab must make clear that a single roll does not prove Luck works or does not work.
+- Drop preview must preserve the bucket/value philosophy: no rarity flags, no rare-combination model.
+- Use existing admin/balance/formula UI patterns and services where possible.
+- Do not reorganize the whole admin panel in this epic.
+- Do not implement Maze, Harpy shooting, or other minigames in this epic.
+
+---
+
+## Task V0 — Align generated DB types after Luck Lab contracts
+
+**Goal:** Synchronize frontend generated DB types with Luck Lab preview/simulation RPCs.
+
+**Scope:**
+
+- Regenerate/update Supabase database types after Luck Lab DB/RPC contracts exist.
+- Confirm generated types include available preview/simulation contracts for:
+  - Luck influence;
+  - Trial Power;
+  - trial opportunity;
+  - trial manifestation;
+  - auto-resolve;
+  - encounter fallback;
+  - combat RNG;
+  - drop single-roll preview;
+  - drop distribution simulation.
+- Fix compile issues caused by new/changed signatures.
+- Do not edit generated DB types manually.
+- Do not add local fallback formula logic.
+
+**Acceptance criteria:**
+
+- Generated types match current DB/RPC signatures.
+- Frontend compiles against regenerated types.
+- Missing preview/simulation contracts are reported as DB dependencies.
+
+---
+
+## Task V1 — Luck Lab domain models and mappers
+
+**Goal:** Add typed frontend models for Luck Lab inputs, previews, comparisons and distributions.
+
+**Scope:**
+
+- Add domain/read models for:
+  - Luck Lab input state;
+  - Luck preview result;
+  - Luck influence;
+  - Trial Power preview;
+  - chance preview;
+  - combat RNG preview;
+  - drop single-roll preview;
+  - drop distribution summary;
+  - comparison row;
+  - explanation row.
+- Map DB/RPC payloads into domain models.
+- Preserve labels, descriptions and helper text from DB metadata.
+- Keep raw generated rows out of components.
+
+**Acceptance criteria:**
+
+- Luck Lab UI consumes typed domain models.
+- Raw Luck, Luck influence and Trial Power are distinct in models.
+- Mapper handles missing/unsupported preview sections safely.
+- Build and focused mapper tests pass.
+
+---
+
+## Task V2 — Luck Lab service and state
+
+**Goal:** Add a state/service layer for running Luck Lab previews.
+
+**Scope:**
+
+- Create service methods for available DB/RPC previews:
+  - Trial Power preview;
+  - trial opportunity preview;
+  - manifestation preview;
+  - auto-resolve preview;
+  - encounter fallback preview;
+  - combat RNG preview;
+  - drop preview/distribution.
+- Add signal-based state for:
+  - `luckValue`;
+  - `testedStatValue`;
+  - difficulty;
+  - district;
+  - selected trial/minigame where supported;
+  - selected combat profile where supported;
+  - selected drop profile where supported.
+- Debounce slider-driven requests where needed.
+- Guard stale async responses.
+- Do not compute authoritative formulas locally.
+
+**Acceptance criteria:**
+
+- Slider changes trigger safe preview reloads without stale overwrites.
+- Loading/error states are section-specific.
+- Missing DB preview contracts are represented clearly.
+- No hardcoded Luck formulas are added.
+
+---
+
+## Task V3 — Luck Lab admin route and shell
+
+**Goal:** Add the main admin/balancer Luck Lab page.
+
+**Scope:**
+
+- Add an admin route/page for Luck Lab in the appropriate admin/balance area.
+- Use existing admin layout/page-header/card/section patterns.
+- Show concise page explanation:
+  - Luck is global RNG/opportunity stat;
+  - this page previews DB-owned formulas;
+  - values are balancing previews, not player-facing promises.
+- Add shared input controls:
+  - Luck slider;
+  - tested stat slider;
+  - difficulty selector;
+  - district selector;
+  - optional trial selector if DB supports it.
+- Keep page component thin.
+
+**Acceptance criteria:**
+
+- Admin can open Luck Lab route.
+- Core controls are visible and usable.
+- Page does not imply it changes config directly.
+- Build and route smoke pass where Codex can run route smoke.
+
+---
+
+## Task V4 — Trial Power preview panel
+
+**Goal:** Show how raw Luck contributes to Trial Power.
+
+**Scope:**
+
+- Display:
+  - tested stat value;
+  - raw Luck value;
+  - Luck influence;
+  - final Trial Power.
+- Show a readable equation-like summary:
+  - `testedStatValue + luckInfluence = trialPower`.
+- Show DB/formula explanation where available.
+- Show comparison rows such as:
+  - current sliders;
+  - Luck 0 with same stat;
+  - same Luck with higher/lower tested stat where useful.
+- Do not include difficulty/district as Trial Power ingredients.
+
+**Acceptance criteria:**
+
+- Admin can see the difference between raw Luck and Luck influence.
+- Trial Power is clear and not confused with raw stat.
+- Difficulty/district are visually separated from Trial Power.
+- Values come from DB/RPC preview.
+
+---
+
+## Task V5 — Trial opportunity and manifestation preview panel
+
+**Goal:** Show how Luck affects reaching and manifesting trials.
+
+**Scope:**
+
+- Display trial opportunity chance from DB/RPC preview.
+- Display trial manifestation chance from DB/RPC preview.
+- Display expected/average steps where DB exposes it.
+- Show the selected difficulty/district context where applicable.
+- Show comparison:
+  - Luck 0;
+  - current Luck;
+  - optional high Luck sample.
+- Explain that Luck improves chances but does not guarantee trial appearance or manifestation.
+- Do not repeat full trial flow text unnecessarily.
+
+**Acceptance criteria:**
+
+- Opportunity and manifestation are separate.
+- Admin can see how Luck shifts chances.
+- Expected step changes are visible if DB exposes them.
+- No local chance formulas are introduced.
+
+---
+
+## Task V6 — Auto-resolve preview panel
+
+**Goal:** Show how Luck and Trial Power affect challenge auto-resolve.
+
+**Scope:**
+
+- Display DB-owned auto-resolve chance.
+- Display:
+  - tested stat;
+  - Luck influence;
+  - Trial Power;
+  - difficulty/district cap where exposed;
+  - final auto-resolve chance.
+- Show binary success/failure framing.
+- Explain that auto-resolve is intended to be less favorable than good manual play.
+- Support selected trial/minigame where DB exposes it.
+
+**Acceptance criteria:**
+
+- Admin can inspect auto-resolve odds for selected inputs.
+- Luck contribution is visible.
+- Caps/multipliers are shown where available.
+- No partial-success UI is introduced.
+
+---
+
+## Task V7 — Exploration encounter fallback preview panel
+
+**Goal:** Show how Luck affects encounter chance after no trial opportunity occurs.
+
+**Scope:**
+
+- Display DB-owned encounter fallback chance.
+- Show base chance and Luck-influenced chance if DB exposes both.
+- Make clear that `nothing` is deterministic fallback after failed trial and encounter rolls.
+- Show comparison across Luck values.
+- Keep resource event as encounter subtype; do not create separate resource-event RNG model in UI unless DB exposes one.
+
+**Acceptance criteria:**
+
+- Encounter fallback is understandable.
+- `nothing` is not shown as independent RNG roll.
+- Luck impact on encounter chance is visible.
+- No client-side encounter chance formula exists.
+
+---
+
+## Task V8 — Combat RNG preview panel
+
+**Goal:** Show how Luck affects combat RNG surfaces.
+
+**Scope:**
+
+- Display preview rows for:
+  - hit chance;
+  - evasion chance;
+  - critical chance;
+  - critical damage.
+- Use DB/RPC/formula preview results.
+- Show relevant input stats where DB exposes them:
+  - damager dexterity;
+  - target agility;
+  - Luck;
+  - Luck influence/contribution;
+  - final chance/result.
+- Preserve combat symmetry: each side can be modeled as damager vs target.
+- If initiative has Luck influence and DB exposes it, show it as optional/additional row.
+- Do not build a new combat simulator.
+
+**Acceptance criteria:**
+
+- Combat RNG preview shows Luck impact clearly.
+- Hit/evasion/crit/critical damage are distinct.
+- Existing DB formula target labels are used.
+- No duplicate frontend formula target naming is introduced.
+
+---
+
+## Task V9 — Drop single-roll preview panel
+
+**Goal:** Show a single item-generation roll while explaining its limits.
+
+**Scope:**
+
+- Use DB/RPC item generation preview.
+- Display:
+  - selected Luck;
+  - selected bucket profile;
+  - rolled bucket;
+  - quality;
+  - base item;
+  - prefix;
+  - suffix;
+  - final value;
+  - spare-budget/upgrade pass result where DB exposes it.
+- Explain that one roll does not prove Luck effect.
+- Preserve current bucket/value model.
+- Do not add rarity flags.
+
+**Acceptance criteria:**
+
+- Single roll preview is readable.
+- Roll breakdown matches DB output.
+- UI does not imply higher Luck guarantees a better single item.
+- No item generation model rewrite is introduced.
+
+---
+
+## Task V10 — Drop distribution simulation panel
+
+**Goal:** Show distribution-level Luck impact on item generation.
+
+**Scope:**
+
+- Use DB/RPC distribution simulation if available.
+- Display summary metrics:
+  - roll count;
+  - average value;
+  - median value if exposed;
+  - bucket distribution;
+  - quality distribution;
+  - prefix hit rate;
+  - suffix hit rate;
+  - outstanding/high-value rate where DB exposes it.
+- Compare Luck 0 vs current Luck.
+- Optionally show simple charts/tables using existing chart patterns.
+- Do not run heavy simulation in Angular if DB/RPC is expected to do it.
+
+**Acceptance criteria:**
+
+- Admin can see statistical Luck effect on drops.
+- Luck 0 vs Luck X comparison is visible.
+- Distribution view prevents misleading conclusions from one roll.
+- Simulation workload is not implemented as uncontrolled browser loops.
+
+---
+
+## Task V11 — Luck comparison presets
+
+**Goal:** Add quick comparison presets for common Luck values.
+
+**Scope:**
+
+- Add comparison presets:
+  - Luck 0;
+  - low Luck;
+  - medium Luck;
+  - high Luck;
+  - current slider value.
+- Values should come from DB/config where exposed, or be UI-only labels if DB does not define presets.
+- Show comparisons across main panels where useful:
+  - Trial Power;
+  - opportunity;
+  - manifestation;
+  - auto-resolve;
+  - combat RNG;
+  - drop distribution.
+- Keep comparison UI compact.
+
+**Acceptance criteria:**
+
+- Admin can quickly compare current Luck to known baselines.
+- Comparisons use DB/RPC preview values.
+- UI remains readable and does not become a huge wall of numbers.
+
+---
+
+## Task V12 — Human-readable Luck explanations
+
+**Goal:** Make Luck Lab understandable without requiring the user to understand formula syntax.
+
+**Scope:**
+
+- Add explanation helpers/components for:
+  - raw Luck vs Luck influence;
+  - Trial Power;
+  - opportunity vs manifestation;
+  - auto-resolve vs manual difficulty;
+  - single roll vs distribution;
+  - combat RNG surfaces.
+- Use DB metadata/helper text where available.
+- Avoid unexplained Greek-letter constants or raw formula-only presentation.
+- Keep raw formula access available through existing formula admin links/diagnostics where appropriate.
+
+**Acceptance criteria:**
+
+- A non-technical balancer can understand what changed.
+- Formula details are available but not the only explanation.
+- Labels/descriptions come from DB metadata where available.
+- No permanent hardcoded gameplay labels replace DB metadata.
+
+---
+
+## Task V13 — Luck Lab formula navigation links
+
+**Goal:** Connect Luck Lab previews to existing formula governance screens.
+
+**Scope:**
+
+- Add links or references from Luck Lab sections to related formula targets where existing routes allow it:
+  - `trial_power`;
+  - Luck influence;
+  - trial opportunity;
+  - manifestation;
+  - auto-resolve;
+  - combat RNG;
+  - drop-related formula/config surfaces if exposed.
+- Do not implement a new formula editor.
+- If formula route/deep-link does not exist, show target key as secondary metadata only.
+
+**Acceptance criteria:**
+
+- Admin can navigate from preview to formula governance where supported.
+- Missing deep links do not break the page.
+- Luck Lab does not duplicate the formula editor.
+
+---
+
+## Task V14 — Luck Lab performance and stale-response hardening
+
+**Goal:** Ensure slider-heavy previews are safe and responsive.
+
+**Scope:**
+
+- Debounce high-frequency slider inputs.
+- Cancel/ignore stale requests.
+- Keep section-level loading states.
+- Avoid running expensive previews until required inputs are valid.
+- Add user feedback for slow simulations.
+- Prevent distribution simulation from running on every tiny slider movement unless explicitly requested or debounced safely.
+
+**Acceptance criteria:**
+
+- Fast slider movement does not create stale UI.
+- Expensive simulations are controlled.
+- Errors stay scoped to the relevant panel.
+- Build and focused state tests pass.
+
+---
+
+## Task V15 — Luck Lab final integration report
+
+**Goal:** Produce final Epic V implementation report and remaining balancing notes.
+
+**Scope:**
+
+- Report which panels are implemented.
+- Report which DB/RPC preview contracts were used.
+- Report which surfaces remain unsupported by DB.
+- Report known Luck Lab limitations.
+- Report follow-up needs for admin IA/refactor if discovered.
+- Do not update status docs before user confirmation.
+
+**Acceptance criteria:**
+
+- Report clearly separates implemented Luck Lab from missing DB contracts.
+- Remaining limitations are concrete.
+- Luck Foundation vs Luck Lab boundaries remain clear.
 
 ---
 

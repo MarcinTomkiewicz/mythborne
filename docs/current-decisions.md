@@ -655,17 +655,6 @@ Moving to an empty address is destructive and DB-owned through `relocate_hero_es
 
 Siege/takeover of an occupied estate is a future guild/PvP workflow and must not delete estate/building state as if it were a relocation.
 
-If an estate changes owner during a successful siege/takeover while an estate building job is active, the building job is interrupted/cancelled. The building remains at the level it had before the job started. The active construction job does not transfer together with the estate.
-
-Relocation and future siege/takeover timing rules are DB/config-owned, not frontend constants:
-
-- A hero that completes active estate relocation cannot actively relocate again for a configurable duration. Default: 12 hours.
-- A hero that completes a siege/takeover-driven estate move as initiator cannot start another outgoing siege/takeover for a configurable duration after process completion. Default: 12 hours.
-- A defender affected by a completed, interrupted, cancelled or repelled incoming siege/takeover receives a configurable protection window against new incoming sieges/takeovers. Default: 12 hours.
-- Defender siege/takeover protection blocks new incoming sieges/takeovers but does not block that hero from initiating an outgoing siege/takeover.
-- An active incoming siege/takeover blocks voluntary relocation by the target owner/hero; the defender cannot escape a contested estate to deny the attacker estate/building outcome.
-- Siege/takeover-specific protection is separate from ordinary PvP attack target protection.
-
 Building construction/upgrades are DB-owned:
 
 - one active `estate_building_jobs` row per estate;
@@ -779,6 +768,92 @@ Luck should improve opportunities, not guarantee perfect rewards. It can influen
 Item requirements are a critical progression safety valve. A player may obtain an item before being able to equip it.
 
 ---
+
+
+## Luck Foundation Decisions — 2026-05-05
+
+Luck is a global RNG/opportunity stat, not only an item-drop stat.
+
+Core rule: every gameplay RNG roll that can help the player should include Luck by default, unless that configurable roll is explicitly marked as Luck-excluded. Do not add a standalone Luck-excluded switch as the only configurable option for a surface that is otherwise not configurable.
+
+Luck helps but must never guarantee success.
+
+### Drop opportunity
+
+Luck improves drop opportunities through the existing item generation model:
+
+- value bucket / drachma budget shaping;
+- quality roll;
+- prefix roll;
+- suffix roll;
+- optional spare-budget upgrade / worst-outcome suppression where configured.
+
+Do not add separate rarity flags or rare-combination chances for prefixes, suffixes, bases or combinations. Component rarity comes from drachma value, bucket budget and whether the component can fit into the generated item budget.
+
+A high-value item may still be build-wise awkward or situational. This is intentional.
+
+### Exploration RNG
+
+Exploration RNG should follow this order:
+
+1. roll for trial opportunity;
+2. if no trial opportunity, roll for encounter;
+3. if no encounter, the result is `nothing`.
+
+`nothing` is not a separate RNG surface; it is the deterministic fallback after the prior rolls fail.
+
+Luck increases trial opportunity chance. If trial opportunity does not occur, Luck can increase encounter chance. Encounter chance should be configurable; 50% is an acceptable default after failed trial opportunity, but actual Luck impact belongs to balance config and can be stronger at high Luck if balancing says so.
+
+Resource events are encounter outcomes, not a separate privileged RNG category.
+
+### Trial manifestation and Trial Power
+
+Luck affects three trial stages:
+
+- trial opportunity;
+- trial manifestation;
+- trial success through `trial_power`.
+
+`trial_power` is the global formula/helper target for effective trial strength:
+
+```text
+trial_power = testedStatValue + luckInfluence
+```
+
+`testedStatValue` comes from the trial's `tested_stat_key`. `luckInfluence` is a global configurable function/formula of Luck and is not the same as raw `luckValue`. Luck does not add 1:1 to the tested stat.
+
+The Luck contribution model for `trial_power` is global for all trials. Do not create separate Luck models per Strength, Agility, Endurance, Intelligence, etc.
+
+Difficulty tier and district are not part of `trial_power` itself. They apply later through formulas/config for chances, caps, challenge pressure and minigame payload difficulty.
+
+Manual minigames receive difficulty/payload already shaped by `trial_power`; they do not need to interpret Luck directly as a global rule. A minigame may later use Luck internally only if that minigame explicitly defines an additional mechanic.
+
+Auto-resolve uses the same statistical meaning as manual resolution, but should be less favorable than good manual play. Trial results remain binary: success or failure.
+
+### Combat RNG
+
+Luck should be available to combat RNG formulas/configs, especially:
+
+- hit chance;
+- evasion chance;
+- critical chance;
+- critical damage, if configured by balance.
+
+Hit chance is based on the attacker's/damager's Dexterity versus the target's Agility, symmetrically for both sides of combat. Luck may modify this through config/formulas but does not replace combat stats.
+
+Critical damage may receive Luck influence if the active formula/config says so. Do not hardcode caps only to protect balance; caps, if needed, should be part of formula/config.
+
+### Reward amount ranges
+
+Reward profile amount ranges, such as XP/resource amount ranges, may expose a simple Luck-aware option where useful. This should stay a reward-profile/config decision rather than a new independent reward system.
+
+### Luck Foundation vs Luck Lab
+
+Luck Foundation is the DB/RPC/config/formula integration layer. It should audit and connect Luck to current RNG surfaces.
+
+Luck Lab is a separate follow-up epic for admin/balancer visualization. It should provide sliders and live previews for Luck, tested stat, difficulty/district, `luckInfluence`, `trial_power`, opportunity, manifestation, auto-resolve, encounter fallback, combat RNG and drop distributions.
+
+Luck Foundation should not depend on ordinary manual clicking for validation, because Luck effects are distributional and cannot be judged from a few player actions.
 
 ## Item / Equipment / Armory Decisions — 2026-05-04
 
@@ -924,186 +999,77 @@ Item requirements are a critical progression safety valve. A player may obtain a
 
 - Armory shelves are inventory organization, not equipment state.
 - DB/code may use `shelf`; final UI naming belongs to UI/UX backlog.
-- There are always 10 player organization shelves.
-- Dropped/newly generated items enter shelf `0`, meaning unsorted / no player shelf.
-- Shelf `1` through shelf `10` are player organization shelves, not the default drop bucket.
-- `hero_armory_shelves` stores hero-local shelf names for shelves `1` through `10`.
-- `items.armory_shelf_position` stores the item shelf number; `0` means unsorted/no shelf.
+- There are always 10 shelves.
+- Shelf `1` is the default/lowest shelf and new drops go there.
+- `hero_armory_shelves` stores hero-local shelf names.
+- `items.armory_shelf_position` stores the item shelf number.
 - Item shelf number persists when the item transfers to another hero, even though that hero may have a different local name for that shelf number.
 - Armory building level affects how many items are visible in the armory.
 - Items outside the visible range do not disappear. Items disappear only through explicit scrap/transfer/lifecycle workflow.
 
 ---
 
+
 ## Guild Foundation Decisions — 2026-05-05
 
-The first guild foundation should be deliberately simple. Guilds primarily support shared item logistics, future Argonautics/group expeditions, and future siege/defense support. Do not turn guilds into a broad parallel progression empire by default.
+Guild decisions are clear enough for future DB/RPC foundation planning, but guild armory work depends on the player item/equipment/armory foundation where it touches shared items.
 
-### Guild scope
+### Core guild model
 
-- Guilds support:
-  - hero-based membership;
-  - simple roles;
-  - guild armory loans;
-  - emergency leader election;
-  - future hooks for siege and Argonautics.
-- Guilds do not currently implement:
-  - guild-to-guild diplomacy;
-  - alliances;
-  - non-aggression pacts;
-  - war declarations as a diplomacy system;
-  - district influence;
-  - guild reputation;
-  - guild buildings in the first foundation;
-  - generic assistance by arbitrary non-guild friends.
-- Guild actions do not affect a member's private Prestige/reputation in the first foundation.
-- Help from other players in siege/defense or Argonautics should be organized through guild membership. Solo attempts may exist, but group support uses the guild.
-- Guild buildings are parked/future scope and may never be needed. If they return, they should be designed separately and should not create a parallel estate-building treadmill by default.
-
-### Guild identity, creation and membership
-
-- A guild is server-scoped.
-- Guild membership is hero-based, not user-based.
-- A hero may belong to only one guild on a server.
+- Guilds are server-scoped.
+- Guild membership is hero-based.
+- A hero may belong to one guild per server.
 - Any active hero without a guild may create a guild.
-- Creating a guild has a configurable cost. Exact resource/currency/default amount belongs to DB/balance implementation.
-- Guild name must be unique on the server.
-- Guild tag is part of guild identity/display/search and should be unique on the server. It has no gameplay meaning in the first foundation.
-- Guild membership can be started through either:
-  - guild invite;
-  - request-to-join.
-- Invite and request-to-join are first-foundation flows, not future-only polish.
-- A leader cannot simply leave the guild. The leader must dissolve the guild or transfer leadership through an approved workflow.
-- A leader may dissolve the guild.
-- A guild cannot be dissolved while an active siege/takeover involving the guild is in progress.
-- Dissolution ends active guild loans, removes active guild armory availability, and removes members from active guild membership. Player-facing guild state should disappear as an active organization; any archival/status shape is DB implementation detail.
-
-### Guild member capacity
-
-- Guild member capacity depends on the leader hero's level.
-- The member-capacity rule is admin-configurable through formula/config.
-- Inactive leaders create a real growth problem because their level does not increase and therefore guild capacity does not grow; emergency leader election exists partly to solve this.
-
-### Guild roles and permissions
-
-- First foundation roles are:
-  - leader;
-  - officer;
-  - member.
-- The leader has full guild permissions.
-- The leader can promote one officer.
-- There is only one officer.
-- The officer acts as a real deputy. The officer may:
-  - invite heroes;
-  - accept/reject join requests;
-  - kick members;
-  - remove items from guild armory;
-  - force-return borrowed guild armory items;
-  - block/unblock guild armory access per member.
+- Guild creation has a configurable cost. Exact resource/currency/default amount belongs to DB/balance implementation.
+- Guild name must be unique per server.
+- Guild tag is part of identity/display/search, should be unique per server, and has no gameplay meaning in the first foundation.
+- Guild join flows include both invite and request-to-join.
+- Roles are leader, one officer, and member.
+- The leader has full permissions, can promote one officer, and can dissolve the guild.
+- The officer can invite, accept/reject join requests, kick, remove guild armory items, force-return borrowed items, and block/unblock guild armory access per member.
 - The officer cannot dissolve the guild.
-- Members may use guild armory unless their guild armory access is blocked.
+- Guild member capacity depends on the leader hero's level through admin-configurable formula/config.
+- Guild buildings are not part of the first foundation and may never be needed. Do not design a parallel estate-building treadmill.
+- Guilds do not currently implement guild-to-guild diplomacy, alliances, non-aggression pacts, war declarations, district influence or guild reputation.
+- Guild actions do not affect private hero Prestige/reputation in the first foundation.
+- Help from other players in future siege/defense and Argonautics is organized through guild membership. Solo attempts may exist, but group support should use the guild.
 
 ### Emergency leader election
 
 - Emergency leader election exists from the first foundation to recover from an inactive leader.
-- The election chooses a new leader; it is not merely a vote to remove the old leader.
-- Any current guild member may start an emergency leader election if the leader is inactive.
-- Leader inactivity is counted from the leader hero's last activity.
-- Default inactivity threshold is 15 days. The threshold is configurable.
-- Election has a nomination phase and a voting phase.
-- Default nomination phase duration is 6 hours. It is configurable.
-- Default voting phase duration is 12 hours. It is configurable.
-- Maximum candidate count defaults to 3. It is configurable.
+- It chooses a new leader, not merely whether to remove the current leader.
+- Any current guild member may start it if the leader is inactive.
+- Leader inactivity is counted from the leader hero's last activity; default threshold is 15 days and configurable.
+- Default nomination phase is 6 hours; default voting phase is 12 hours. Both are configurable.
+- Maximum candidates defaults to 3 and is configurable. One candidate is enough.
 - Candidate can be any current member except the inactive leader. Candidate consent is not required.
-- One candidate is enough for the election to proceed.
-- Members vote if they want and manage to do so before voting closes.
-- There is no quorum and no 50%+1 all-member threshold.
-- The candidate with the highest vote count wins.
-- Ties are resolved by earlier nomination time.
-- The result automatically changes guild leadership at the end of voting.
-- Eligible voters are current guild members who can normally access gameplay. Banned/suspended users should be blocked by normal access rules.
-- If a candidate leaves the guild during the election, that candidate cannot win.
-- If there are no valid candidates or no valid votes at the end, the election ends without leadership change.
+- There is no quorum and no 50%+1 all-member threshold. The candidate with the most votes wins; ties go to earlier nomination.
+- If there are no valid candidates or votes at the end, the election ends without leadership change.
 
-### Guild armory nature
+### Guild armory
 
 - Guild armory is a lending/borrowing system, not trade.
-- Depositing an item into guild armory does not change `items.hero_id`.
-- The item remains owned by the depositing/owner hero.
-- Borrowing an item is a loan/use permission, not ownership transfer.
-- Borrowed guild armory items may be equipped.
-- Borrowed guild armory items count in runtime loadout.
-- Borrowed guild armory items may appear in loadout presets.
-- If a preset references guild-borrowed item IDs that later become unavailable, that preset can partially fail/break as expected.
-- User-facing guild armory item availability has only active states:
-  - `available`;
-  - `borrowed` with the borrower shown.
-- If an owner withdraws an item or leader/officer removes it from guild armory, it is no longer shown in guild armory. It does not remain as a fake removed/withdrawn item.
-
-### Guild armory deposit, withdraw and removal
-
-- Any member with guild armory access may deposit their own item into guild armory.
-- An equipped item cannot be deposited into guild armory. The owner must unequip it first.
-- Deposit does not auto-unequip.
-- A deposited item keeps its shelf number.
-- The owner may withdraw their own item from guild armory at any time.
-- The leader may remove any item from guild armory.
-- The officer may remove any item from guild armory.
-- Removing an item from guild armory is not confiscation and does not change ownership. The item returns to the owner's private state.
-- Removal exists to prevent guild armory spam with junk items.
-
-### Guild armory borrowing and access control
-
-- Any member may borrow items unless their guild armory access is blocked.
-- Guild armory access can be blocked per member.
-- The leader can block/unblock guild armory access per member.
-- The officer can block/unblock guild armory access per member.
-- A blocked member cannot borrow items.
-- A blocked member cannot deposit items.
-- A blocked member can still return borrowed items.
-- A blocked member may still see the guild armory as read-only.
+- Depositing an item does not change `items.hero_id`; the owner remains the item owner.
+- User-facing armory item states are only available or borrowed. Removed/withdrawn items disappear from guild armory and return to owner-private state.
+- Borrowed guild armory items may be equipped, count in runtime loadout, and can be part of loadout presets.
 - Borrower cannot sell, trade, auction-list, vendor-sell or scrap a borrowed item.
 - Owner can still sell, trade, auction-list, vendor-sell, scrap, withdraw or force-return their own item.
-- If the owner wants to use their own deposited item, they withdraw it from guild armory first, then equip it normally.
+- Equipped items cannot be deposited; the owner must unequip first. Deposit does not auto-unequip.
+- Owner, leader and officer can force-return borrowed guild armory items.
+- Leader/officer can remove an item from guild armory to prevent shared armory spam; this is not confiscation and the item returns to owner-private state.
+- Guild armory access lock is per member. A blocked member cannot borrow or deposit, but can return borrowed items and may see armory read-only if DB/RPC allows it.
+- Guild armory loans have no expiration in the first foundation. They end through return, force-return, withdraw/remove, ownership change, scrap, guild leave or guild dissolution.
+- Guild armory capacity is configurable. `0` means unlimited. Capacity counts all items assigned to guild armory, including borrowed items.
+- Guild armory may use shelves. Technically `shelf` is acceptable. Items deposited to guild armory keep their shelf number.
+- Do not create a player-facing history feed of every guild armory click. UI may show current state such as borrowed by whom; admin/operator/anti-abuse logs may exist where needed.
 
-### Guild armory return and loan end
+### Guild dissolution
 
-- Borrower can manually return a borrowed item.
-- Owner can force-return their own borrowed item for any reason.
-- The leader can force-return borrowed guild armory items.
-- The officer can force-return borrowed guild armory items.
-- Force-return may remove the item from the borrower's equipment.
-- A normal return puts the item back into the guild armory pool.
-- A withdraw/remove operation returns the item to the owner's private state and removes it from the guild armory pool.
-- Guild armory loans do not expire in the first foundation.
-- Loans end through:
-  - borrower return;
-  - owner force-return;
-  - leader/officer force-return;
-  - owner withdraw;
-  - leader/officer remove from guild armory;
-  - ownership change;
-  - scrap;
-  - owner leaving the guild;
-  - borrower leaving the guild;
-  - guild dissolution.
-
-### Guild armory shelves and capacity
-
-- Guild armory may use shelves; DB/code may use `shelf`.
-- Guild armory can mirror the 10-shelf concept from player armory unless DB implementation finds a better reason not to.
-- A deposited item keeps its shelf number.
-- Guild armory capacity is configurable.
-- `0` guild armory capacity means unlimited.
-- Capacity counts every item assigned to guild armory, including currently borrowed items.
-
-### Guild logs and audit
-
-- Do not create a player-facing history/feed of every guild armory click.
-- Player UI may show current state such as `borrowed by X`, but not a full social activity log by default.
-- Admin/operator/anti-abuse audit or inspection may exist where needed, especially for suspicious shared-item patterns.
-
----
+- Leader can dissolve the guild.
+- Officer/member cannot dissolve the guild.
+- Guild cannot be dissolved while an active siege-related state exists for that guild.
+- Dissolution ends active loans, removes borrowed items from borrower use at the next relevant settlement/check, returns armory items to owner-private state and ends active membership.
+- The exact DB archival/status model belongs to the DB migration track; player-facing semantics are that the guild no longer exists as an active organization.
 
 ## Vendor Scrap / Sell Decisions — 2026-05-01
 

@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Myth Sworn — Trial of Hermes Shifting Seals Prototype</title>
+  <!--
+    VISUAL REFERENCE ONLY.
+    Do not copy this CSS into Angular feature components.
+    Translate approved visual patterns into global SCSS tokens, vendor wrappers,
+    shared components, PrimeNG wrappers, or documented layout utilities.
+
+    Myth Sworn Trial Minigame V2 — Trial of Hermes / Shifting Seals.
+
+    Scope:
+    - player-facing manual Trial minigame for Cunning;
+    - Trial belongs to Hermes;
+    - player watches the true seal, Hermes shuffles four seals, player chooses the seal that carried the light;
+    - no text-riddle database, no clue authoring burden, no combat, no map, no invented location names;
+    - seal count, preview time, shuffle swaps, shuffle speed, rounds and mistakes allowed are configuration candidates;
+    - Cunning can increase preview time, slow shuffle speed, reduce fake motion, or increase mistakes allowed;
+    - after preview the true seal must not remain visibly marked;
+    - visible seal numbers are position labels and must always read 1-4 from left to right after each shuffle;
+    - this prototype uses HTML/CSS/JS only to show visual direction and interaction model.
+  -->
+  <style>
+    :root {
+      --mb-bg-0: #06080c;
+      --mb-navy-0: #07111d;
+      --mb-navy-1: #0d2135;
+      --mb-gold-1: #9c6723;
+      --mb-gold-2: #c8923a;
+      --mb-gold-3: #f0c96f;
+      --mb-red: #b24b3b;
+      --mb-green: #6fa45d;
+      --mb-blue: #5ba3d5;
+      --mb-purple: #9672cc;
+      --mb-text-0: #f6edda;
+      --mb-text-1: #d7c8ab;
+      --mb-text-2: #9d8f75;
+      --mb-text-3: #6f675a;
+      --mb-line-soft: rgba(240, 201, 111, 0.12);
+      --mb-line: rgba(240, 201, 111, 0.24);
+      --mb-line-strong: rgba(240, 201, 111, 0.44);
+      --mb-sidebar-w: 16rem;
+      --mb-topbar-h: 4.25rem;
+      --mb-radius-xl: 1.35rem;
+      --mb-font-display: Georgia, "Times New Roman", serif;
+      --mb-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--mb-font-ui);
+      color: var(--mb-text-0);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(200,146,58,.14), transparent 28rem),
+        radial-gradient(circle at 82% 4%, rgba(91,163,213,.18), transparent 34rem),
+        linear-gradient(135deg, var(--mb-bg-0), #080b11 38%, #050608 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .14;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+    button { font: inherit; color: inherit; }
+
+    .mb-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--mb-sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--mb-topbar-h) minmax(0, 1fr);
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .mb-topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(20rem, 1fr) auto minmax(20rem, 1fr);
+      align-items: center;
+      gap: 1rem;
+      padding: .55rem 1rem;
+      border-bottom: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,201,111,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem rgba(0,0,0,.42);
+    }
+    .mb-topbar-left,
+    .mb-topbar-right { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+    .mb-topbar-right { justify-content: flex-end; }
+
+    .mb-brand { display: flex; align-items: center; justify-content: center; gap: .7rem; min-width: 16rem; }
+    .mb-brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-strong);
+      background:
+        radial-gradient(circle at 34% 24%, #fff0b9 0, var(--mb-gold-3) 22%, var(--mb-gold-1) 48%, #251509 70%, var(--mb-navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,201,111,.22);
+      position: relative;
+    }
+    .mb-brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .mb-brand-title { font-family: var(--mb-font-display); font-size: 1.65rem; letter-spacing: .11em; text-transform: uppercase; color: var(--mb-gold-3); line-height: 1; }
+    .mb-brand-subtitle { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; margin-top: .18rem; text-align: center; }
+
+    .mb-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      min-height: 2.15rem;
+      padding: .38rem .72rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: 999px;
+      color: var(--mb-text-1);
+      background: linear-gradient(180deg, rgba(15,23,33,.75), rgba(6,9,13,.78));
+      white-space: nowrap;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-chip strong { color: var(--mb-text-0); }
+    .mb-chip-icon { color: var(--mb-gold-2); }
+    .mb-chip--health strong { color: #ffc0b7; }
+    .mb-chip--resource strong { color: var(--mb-gold-3); }
+    .mb-chip-stack { display: inline-grid; gap: .08rem; line-height: 1.05; }
+    .mb-chip-stack small { color: var(--mb-text-3); font-size: .68rem; }
+    .mb-xp { min-width: 15rem; display: grid; gap: .3rem; padding: .35rem .7rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(15,23,33,.72), rgba(6,9,13,.74)); }
+    .mb-xp-meta { display: flex; justify-content: space-between; gap: .75rem; font-size: .75rem; color: var(--mb-text-2); }
+    .mb-mini-bar { height: .42rem; border-radius: 999px; background: rgba(0,0,0,.38); overflow: hidden; border: 1px solid rgba(240,201,111,.08); }
+    .mb-mini-bar > span { display: block; width: var(--value, 62%); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mb-gold-1), var(--mb-gold-3)); box-shadow: 0 0 .8rem rgba(240,201,111,.3); }
+
+    .mb-sidebar { grid-area: sidebar; padding: 1rem .8rem; border-right: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(7,11,17,.84), rgba(5,7,10,.88)); backdrop-filter: blur(12px); }
+    .mb-server-card { padding: .9rem; border: 1px solid var(--mb-line-soft); border-radius: var(--mb-radius-xl); background: linear-gradient(180deg, rgba(20,32,47,.72), rgba(8,12,18,.74)), radial-gradient(circle at 80% 0%, rgba(240,201,111,.16), transparent 10rem); box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.2); }
+    .mb-server-label { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+    .mb-server-name { display: flex; justify-content: space-between; gap: .7rem; align-items: center; font-weight: 800; color: var(--mb-text-0); }
+    .mb-prestige { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid rgba(240,201,111,.1); }
+    .mb-nav-section-title { margin: 1.05rem 0 .45rem .55rem; color: var(--mb-text-3); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; }
+    .mb-nav-list { display: grid; gap: .28rem; margin: 0; padding: 0; list-style: none; }
+    .mb-nav-link { display: flex; align-items: center; gap: .65rem; padding: .67rem .68rem; color: var(--mb-text-1); text-decoration: none; border-radius: .85rem; border: 1px solid transparent; transition: 120ms ease; }
+    .mb-nav-link:hover, .mb-nav-link.is-active { color: var(--mb-text-0); border-color: rgba(240,201,111,.16); background: linear-gradient(90deg, rgba(240,201,111,.13), rgba(45,110,159,.12)); }
+    .mb-nav-link.is-active { box-shadow: inset 3px 0 0 var(--mb-gold-2); }
+    .mb-nav-icon { width: 1.65rem; height: 1.65rem; border-radius: .55rem; display: grid; place-items: center; background: rgba(240,201,111,.08); color: var(--mb-gold-2); border: 1px solid rgba(240,201,111,.08); flex: 0 0 auto; font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+
+    .mb-main { grid-area: main; min-width: 0; padding: 1.1rem; display: grid; align-content: start; }
+    .mb-trial-page { width: min(1220px, 100%); margin: 0 auto; }
+
+    .mb-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); color: var(--mb-text-1); background: rgba(7,10,14,.45); font-size: .77rem; white-space: nowrap; }
+    .mb-badge--gold { color: var(--mb-gold-3); border-color: rgba(240,201,111,.32); }
+    .mb-badge--green { color: #bde6b0; border-color: rgba(111,164,93,.46); }
+    .mb-badge--blue { color: #b9def3; border-color: rgba(91,163,213,.46); }
+    .mb-badge--red { color: #f2b4aa; border-color: rgba(178,75,59,.46); }
+    .mb-badge--warning { color: #f1d08a; border-color: rgba(240,201,111,.34); }
+
+    .mb-hermes-stage {
+      min-height: calc(100vh - var(--mb-topbar-h) - 2.2rem);
+      position: relative;
+      display: grid;
+      grid-template-rows: auto minmax(34rem, 1fr) auto;
+      gap: 1rem;
+      overflow: hidden;
+      padding: 1rem;
+      border-radius: 1.65rem;
+      border: 1px solid rgba(240,201,111,.20);
+      background:
+        radial-gradient(circle at 50% 12%, rgba(240,201,111,.13), transparent 20rem),
+        radial-gradient(circle at 77% 58%, rgba(91,163,213,.22), transparent 24rem),
+        radial-gradient(circle at 18% 72%, rgba(150,114,204,.13), transparent 24rem),
+        linear-gradient(145deg, rgba(6,9,14,.9), rgba(8,20,33,.72), rgba(5,7,10,.95));
+      box-shadow: 0 1rem 2.6rem rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.05);
+    }
+    .mb-hermes-stage::before {
+      content: "";
+      position: absolute;
+      inset: 1rem;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(240,201,111,.07);
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(240,201,111,.055), transparent 13%, transparent 87%, rgba(240,201,111,.05)),
+        repeating-linear-gradient(45deg, transparent 0 2.25rem, rgba(255,255,255,.018) 2.25rem 2.3rem),
+        radial-gradient(circle at 50% 48%, rgba(91,163,213,.08), transparent 25rem);
+    }
+    .mb-hermes-stage::after {
+      content: "ΕΡΜΗΣ";
+      position: absolute;
+      left: 50%;
+      top: 48%;
+      transform: translate(-50%, -50%) rotate(-7deg);
+      font-family: var(--mb-font-display);
+      font-size: clamp(4rem, 12vw, 11rem);
+      letter-spacing: .22em;
+      color: rgba(240,201,111,.034);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .mb-stage-header,
+    .mb-stage-footer { position: relative; z-index: 1; }
+    .mb-kicker { color: var(--mb-gold-2); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; margin: 0 0 .45rem; }
+    .mb-title { margin: 0; font-family: var(--mb-font-display); font-size: clamp(2.25rem, 4vw, 4rem); line-height: .98; color: var(--mb-gold-3); text-shadow: 0 0 1.4rem rgba(240,201,111,.12); }
+    .mb-copy { margin: .7rem 0 0; max-width: 66rem; color: var(--mb-text-1); line-height: 1.55; }
+    .mb-meta-row { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .75rem; }
+
+    .mb-hermes-layout {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(34rem, 1fr) minmax(18rem, .46fr);
+      gap: 1rem;
+      align-items: stretch;
+      min-height: 35rem;
+    }
+
+    .mb-seal-panel {
+      position: relative;
+      min-height: 100%;
+      padding: 1rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.18);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(91,163,213,.1), transparent 18rem),
+        linear-gradient(180deg, rgba(9,15,23,.78), rgba(6,9,13,.86));
+      box-shadow: inset 0 1px rgba(255,255,255,.04), 0 1rem 2.2rem rgba(0,0,0,.28);
+      overflow: hidden;
+    }
+    .mb-seal-panel::before {
+      content: "";
+      position: absolute;
+      inset: .65rem;
+      border-radius: calc(var(--mb-radius-xl) - .45rem);
+      border: 1px solid rgba(240,201,111,.055);
+      pointer-events: none;
+    }
+    .mb-seal-header {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: .85rem;
+    }
+    .mb-seal-header h2 { margin: 0; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.35rem; }
+    .mb-seal-header p { margin: .18rem 0 0; color: var(--mb-text-2); font-size: .86rem; }
+
+    .mb-trick-field {
+      position: relative;
+      min-height: 31rem;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: .9rem;
+      padding: .9rem;
+      border-radius: 1.2rem;
+      overflow: hidden;
+      border: 1px solid rgba(240,201,111,.12);
+      background:
+        radial-gradient(circle at 50% 18%, rgba(240,201,111,.12), transparent 13rem),
+        radial-gradient(circle at 50% 80%, rgba(91,163,213,.16), transparent 18rem),
+        linear-gradient(180deg, rgba(15,28,44,.9), rgba(7,12,19,.96) 62%, rgba(5,7,10,.98));
+      box-shadow: inset 0 0 0 .45rem rgba(0,0,0,.16), 0 1.25rem 2.5rem rgba(0,0,0,.26);
+    }
+    .mb-trick-field::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at center, transparent 0, transparent 55%, rgba(0,0,0,.42) 100%),
+        linear-gradient(90deg, rgba(0,0,0,.36), transparent 22%, transparent 78%, rgba(0,0,0,.36));
+      z-index: 4;
+    }
+    .mb-caduceus-glow {
+      position: absolute;
+      left: 50%;
+      top: 44%;
+      width: 22rem;
+      height: 22rem;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(240,201,111,.13), rgba(91,163,213,.09) 38%, transparent 70%);
+      filter: blur(.5px);
+      pointer-events: none;
+      z-index: 0;
+      animation: glow-pulse 1200ms ease-in-out infinite alternate;
+    }
+    @keyframes glow-pulse {
+      from { opacity: .5; transform: translate(-50%, -50%) scale(.96); }
+      to { opacity: .9; transform: translate(-50%, -50%) scale(1.04); }
+    }
+
+    .mb-trick-hud {
+      position: relative;
+      z-index: 6;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: .55rem;
+    }
+    .mb-hud-card {
+      padding: .62rem;
+      border-radius: .9rem;
+      border: 1px solid rgba(240,201,111,.12);
+      background: rgba(7,10,14,.55);
+      box-shadow: inset 0 1px rgba(255,255,255,.035);
+    }
+    .mb-hud-card span { display:block; color: var(--mb-text-3); font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; }
+    .mb-hud-card strong { display:block; margin-top:.18rem; color: var(--mb-gold-3); }
+
+    .mb-shuffle-stage {
+      position: relative;
+      z-index: 6;
+      min-height: 22rem;
+      display: grid;
+      align-content: center;
+      gap: 1rem;
+    }
+    .mb-oracle-message {
+      max-width: 46rem;
+      margin: 0 auto;
+      padding: .9rem 1rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(240,201,111,.18);
+      background: linear-gradient(180deg, rgba(7,10,14,.66), rgba(7,10,14,.46));
+      text-align: center;
+      box-shadow: inset 0 1px rgba(255,255,255,.035), 0 .9rem 1.8rem rgba(0,0,0,.2);
+    }
+    .mb-oracle-message strong { display:block; color: var(--mb-gold-3); font-family: var(--mb-font-display); font-size:1.2rem; }
+    .mb-oracle-message span { display:block; color: var(--mb-text-2); margin-top:.25rem; line-height:1.4; }
+
+    .mb-seal-board {
+      position: relative;
+      height: 14rem;
+      max-width: 46rem;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .mb-seal-card {
+      position: absolute;
+      top: 0;
+      width: calc((100% - 2.4rem) / 4);
+      min-height: 14rem;
+      padding: .9rem;
+      border-radius: 1.05rem;
+      border: 1px solid rgba(240,201,111,.16);
+      background:
+        radial-gradient(circle at 50% 10%, rgba(240,201,111,.08), transparent 7rem),
+        linear-gradient(180deg, rgba(18,29,42,.86), rgba(7,10,14,.82));
+      cursor: pointer;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: .65rem;
+      text-align: center;
+      box-shadow: inset 0 1px rgba(255,255,255,.04), 0 .9rem 1.8rem rgba(0,0,0,.24);
+      transition: left 360ms cubic-bezier(.2,.8,.2,1), transform 160ms ease, border-color 140ms ease, background 140ms ease, opacity 140ms ease;
+      overflow: hidden;
+    }
+    .mb-seal-card[data-slot="0"] { left: 0; }
+    .mb-seal-card[data-slot="1"] { left: calc((100% - 2.4rem) / 4 + .8rem); }
+    .mb-seal-card[data-slot="2"] { left: calc(((100% - 2.4rem) / 4 + .8rem) * 2); }
+    .mb-seal-card[data-slot="3"] { left: calc(((100% - 2.4rem) / 4 + .8rem) * 3); }
+    .mb-seal-card::before {
+      content: "";
+      position: absolute;
+      inset: .45rem;
+      border-radius: .8rem;
+      border: 1px solid rgba(240,201,111,.045);
+      pointer-events: none;
+    }
+    .mb-seal-card:hover,
+    .mb-seal-card:focus-visible {
+      outline: none;
+      transform: translateY(-2px);
+      border-color: rgba(240,201,111,.46);
+      background:
+        radial-gradient(circle at 50% 10%, rgba(240,201,111,.14), transparent 7rem),
+        linear-gradient(180deg, rgba(25,42,60,.9), rgba(7,10,14,.84));
+    }
+    .mb-seal-card[disabled] { cursor: default; }
+    .mb-seal-card[disabled]:hover { transform: none; border-color: rgba(240,201,111,.16); }
+    .mb-seal-card.is-preview {
+      border-color: rgba(240,201,111,.65);
+      background:
+        radial-gradient(circle at 50% 10%, rgba(255,240,185,.36), transparent 7rem),
+        linear-gradient(180deg, rgba(45,48,45,.95), rgba(11,12,11,.88));
+      box-shadow: 0 0 1.8rem rgba(240,201,111,.32), inset 0 1px rgba(255,255,255,.08);
+    }
+    .mb-seal-card.is-echo {
+      border-color: rgba(91,163,213,.42);
+      box-shadow: 0 0 1.2rem rgba(91,163,213,.22), inset 0 1px rgba(255,255,255,.04), 0 .9rem 1.8rem rgba(0,0,0,.24);
+    }
+    .mb-seal-card.is-chosen-good { border-color: rgba(111,164,93,.5); background: radial-gradient(circle at 50% 15%, rgba(111,164,93,.2), rgba(7,10,14,.82)); }
+    .mb-seal-card.is-chosen-bad { border-color: rgba(178,75,59,.5); background: radial-gradient(circle at 50% 15%, rgba(178,75,59,.18), rgba(7,10,14,.82)); }
+    .mb-seal-card.is-shuffling { animation: seal-waver 260ms ease-in-out infinite alternate; }
+    @keyframes seal-waver {
+      from { filter: brightness(1); }
+      to { filter: brightness(1.16); }
+    }
+    .mb-seal-mark {
+      width: 3.25rem;
+      height: 3.25rem;
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: .9rem;
+      border: 1px solid rgba(240,201,111,.22);
+      background: rgba(240,201,111,.08);
+      color: var(--mb-gold-3);
+      font-size: 1.35rem;
+      font-weight: 900;
+      font-family: var(--mb-font-display);
+      box-shadow: 0 0 1rem rgba(240,201,111,.12);
+    }
+    .mb-seal-card.is-preview .mb-seal-mark { background: rgba(240,201,111,.24); color: #fff0b9; border-color: rgba(255,255,255,.38); }
+    .mb-seal-card h3 { margin:0; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size:1.08rem; }
+    .mb-seal-card p { margin:0; color: var(--mb-text-2); line-height:1.35; font-size:.78rem; }
+    .mb-seal-card small { color: var(--mb-text-3); font-size:.72rem; }
+    .mb-seal-shine {
+      position:absolute;
+      left:-20%;
+      top:-50%;
+      width:30%;
+      height:200%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+      transform: rotate(18deg);
+      animation: shine 2600ms linear infinite;
+      pointer-events:none;
+    }
+    @keyframes shine {
+      from { left: -35%; }
+      to { left: 125%; }
+    }
+
+    .mb-control-row {
+      position: relative;
+      z-index: 6;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: .65rem;
+    }
+    .mb-choice-button {
+      min-height: 3.1rem;
+      padding: .6rem .95rem;
+      border-radius: 999px;
+      border: 1px solid rgba(240,201,111,.16);
+      background: linear-gradient(180deg, rgba(240,201,111,.12), rgba(7,10,14,.58));
+      cursor: pointer;
+      color: var(--mb-text-0);
+      font-weight: 800;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-choice-button:hover,
+    .mb-choice-button:focus-visible { outline:none; border-color: rgba(240,201,111,.42); background: rgba(240,201,111,.13); }
+    .mb-choice-button[disabled] { opacity:.45; cursor:not-allowed; }
+
+    .mb-side-panel { display: grid; gap: 1rem; }
+    .mb-info-card {
+      position: relative;
+      padding: .95rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.13);
+      background: linear-gradient(180deg, rgba(9,15,23,.72), rgba(6,9,13,.78));
+      box-shadow: inset 0 1px rgba(255,255,255,.035);
+    }
+    .mb-info-card h3 { margin: 0 0 .55rem; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.15rem; }
+    .mb-info-card p { margin: 0; color: var(--mb-text-2); line-height: 1.45; font-size: .88rem; }
+    .mb-stat-list { display: grid; gap: .5rem; }
+    .mb-stat-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; padding: .5rem .55rem; border-radius: .75rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.34); }
+    .mb-stat-row span { color: var(--mb-text-3); font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; }
+    .mb-stat-row strong { color: var(--mb-gold-3); }
+
+    .mb-trust-meter { display:grid; gap:.4rem; margin-top:.7rem; }
+    .mb-trust-line { display:flex; justify-content:space-between; color:var(--mb-text-2); font-size:.82rem; }
+    .mb-trust-bar { height:.58rem; border-radius:999px; border:1px solid rgba(240,201,111,.12); background:rgba(0,0,0,.34); overflow:hidden; }
+    .mb-trust-bar span { display:block; height:100%; width:var(--trust, 62%); background:linear-gradient(90deg, var(--mb-blue), var(--mb-gold-3)); box-shadow:0 0 .75rem rgba(240,201,111,.22); }
+
+    .mb-log-list { display: grid; gap: .45rem; margin-top: .7rem; }
+    .mb-log-row { display: grid; grid-template-columns: 2.4rem minmax(0,1fr); gap: .55rem; align-items: start; padding: .55rem; border-radius: .8rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.32); }
+    .mb-log-icon { width: 2.4rem; height: 2.4rem; display: grid; place-items: center; border-radius: .7rem; border: 1px solid rgba(240,201,111,.14); color: var(--mb-gold-3); background: rgba(240,201,111,.07); font-weight: 900; }
+    .mb-log-row strong { display:block; color: var(--mb-text-0); }
+    .mb-log-row span { display:block; color: var(--mb-text-2); line-height: 1.35; font-size: .84rem; margin-top: .12rem; }
+    .mb-log-row.is-success { border-color: rgba(111,164,93,.25); background: rgba(111,164,93,.07); }
+    .mb-log-row.is-danger { border-color: rgba(178,75,59,.25); background: rgba(178,75,59,.08); }
+    .mb-log-row.is-info { border-color: rgba(91,163,213,.25); background: rgba(91,163,213,.07); }
+    .mb-log-row.is-warning { border-color: rgba(240,201,111,.25); background: rgba(240,201,111,.07); }
+
+    .mb-stage-footer {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: center;
+      padding: .85rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.12);
+      background: linear-gradient(180deg, rgba(9,15,23,.72), rgba(6,9,13,.78));
+    }
+    .mb-footer-title { margin: 0; color: var(--mb-text-0); font-weight: 800; }
+    .mb-footer-copy { margin: .18rem 0 0; color: var(--mb-text-2); line-height: 1.4; font-size: .9rem; }
+    .mb-button-row { display: flex; flex-wrap: wrap; gap: .55rem; }
+    .mb-button { min-height: 2.4rem; padding: .55rem .85rem; border-radius: 999px; border: 1px solid var(--mb-line); color: var(--mb-text-0); background: linear-gradient(180deg, rgba(240,201,111,.2), rgba(91,58,19,.32)); cursor: pointer; box-shadow: inset 0 1px rgba(255,255,255,.07); }
+    .mb-button--primary { background: linear-gradient(180deg, rgba(240,201,111,.32), rgba(91,58,19,.44)); }
+    .mb-button--ghost { background: rgba(8,12,18,.54); color: var(--mb-text-1); }
+    .mb-button--danger { border-color: rgba(178,75,59,.42); background: rgba(178,75,59,.12); color: #f2b4aa; }
+
+    .mb-state-toggle { display: flex; gap: .4rem; margin-top: .75rem; flex-wrap: wrap; }
+    .mb-toggle-button { min-height: 2rem; padding: .35rem .65rem; border-radius: 999px; border: 1px solid rgba(240,201,111,.14); background: rgba(7,10,14,.44); color: var(--mb-text-2); cursor: pointer; }
+    .mb-toggle-button.is-active { color: var(--mb-gold-3); border-color: rgba(240,201,111,.34); background: rgba(240,201,111,.1); }
+
+    @media (max-width: 1220px) {
+      .mb-topbar { grid-template-columns: 1fr; height: auto; }
+      .mb-brand { justify-content: flex-start; }
+      .mb-app-shell { grid-template-rows: auto minmax(0, 1fr); }
+      .mb-hermes-layout { grid-template-columns: 1fr; }
+      .mb-stage-footer { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .mb-app-shell { display: block; }
+      .mb-topbar { position: static; }
+      .mb-topbar-left, .mb-topbar-right { justify-content: flex-start; overflow-x: auto; }
+      .mb-sidebar { border-right: 0; border-bottom: 1px solid var(--mb-line-soft); }
+      .mb-nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .mb-nav-link { justify-content: center; }
+      .mb-nav-label, .mb-nav-section-title { display: none; }
+      .mb-main { padding: .75rem; }
+      .mb-hermes-stage { min-height: auto; }
+      .mb-trick-hud { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .mb-seal-board { height: auto; display: grid; grid-template-columns: 1fr; gap: .7rem; }
+      .mb-seal-card { position: relative; left: auto !important; top: auto; width: 100%; min-height: 9rem; }
+      .mb-stage-footer { align-items: start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left" aria-label="Hero health and experience">
+        <span class="mb-chip mb-chip--health"><span class="mb-chip-icon">♥</span> Health <strong>86 / 100</strong></span>
+        <div class="mb-xp" aria-label="Experience progress">
+          <div class="mb-xp-meta"><span>Level 12</span><strong>1,240 XP to next</strong></div>
+          <div class="mb-mini-bar" style="--value: 63%"><span></span></div>
+        </div>
+      </div>
+
+      <div class="mb-brand" aria-label="Myth Sworn">
+        <div class="mb-brand-mark"></div>
+        <div>
+          <div class="mb-brand-title">Myth Sworn</div>
+          <div class="mb-brand-subtitle">Trial of Hermes prototype</div>
+        </div>
+      </div>
+
+      <div class="mb-topbar-right" aria-label="Hero resources">
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◈</span><span class="mb-chip-stack">Drachmas <strong>3,420</strong><small>+96 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">▣</span><span class="mb-chip-stack">Materials <strong>185</strong><small>+22 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◇</span><span class="mb-chip-stack">Workforce <strong>42</strong><small>+4 / h</small></span></span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-server-card" aria-label="Selected world context">
+        <div class="mb-server-label">Selected server</div>
+        <div class="mb-server-name"><span>Sandbox</span><span class="mb-badge mb-badge--blue">live</span></div>
+        <div class="mb-prestige">
+          <div class="mb-server-label">Prestige</div>
+          <div class="mb-server-name"><span>Zeugitai</span><span class="mb-badge mb-badge--gold">Tier II</span></div>
+        </div>
+      </section>
+
+      <div class="mb-nav-section-title">Hero</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#dashboard"><span class="mb-nav-icon">DA</span><span class="mb-nav-label">Dashboard</span></a></li>
+        <li><a class="mb-nav-link is-active" href="#exploration"><span class="mb-nav-icon">EX</span><span class="mb-nav-label">Exploration</span></a></li>
+        <li><a class="mb-nav-link" href="#statistics"><span class="mb-nav-icon">ST</span><span class="mb-nav-label">Statistics</span></a></li>
+        <li><a class="mb-nav-link" href="#armory"><span class="mb-nav-icon">AR</span><span class="mb-nav-label">Armory</span></a></li>
+      </ul>
+
+      <div class="mb-nav-section-title">World</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#estate"><span class="mb-nav-icon">ES</span><span class="mb-nav-label">Estate</span></a></li>
+        <li><a class="mb-nav-link" href="#trade"><span class="mb-nav-icon">TR</span><span class="mb-nav-label">Trade</span></a></li>
+        <li><a class="mb-nav-link" href="#pvp"><span class="mb-nav-icon">PV</span><span class="mb-nav-label">PvP</span></a></li>
+        <li><a class="mb-nav-link" href="#reports"><span class="mb-nav-icon">RP</span><span class="mb-nav-label">Reports</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main" id="trial-hermes-shifting-seals">
+      <div class="mb-trial-page">
+        <section class="mb-hermes-stage">
+          <header class="mb-stage-header">
+            <p class="mb-kicker">Trial of Hermes</p>
+            <h1 class="mb-title">Shifting Seals</h1>
+            <p class="mb-copy">Watch the true seal, then follow it while Hermes swaps all four seals. This Cunning Trial is procedural: no written riddle database, only configurable preview time, shuffle speed, number of swaps, rounds and mistakes.</p>
+            <div class="mb-meta-row">
+              <span class="mb-badge">Stat: Cunning</span>
+              <span class="mb-badge mb-badge--gold">Hermes</span>
+              <span class="mb-badge">Manual Trial</span>
+              <span class="mb-badge mb-badge--warning">Memory / tracking</span>
+              <span class="mb-badge">4 seals</span>
+            </div>
+            <div class="mb-state-toggle" aria-label="Prototype difficulty toggle">
+              <button class="mb-toggle-button is-active" type="button" data-mode="steady">Clear shuffle</button>
+              <button class="mb-toggle-button" type="button" data-mode="trickster">Low Cunning</button>
+            </div>
+          </header>
+
+          <section class="mb-hermes-layout" aria-label="Hermes shifting seals minigame">
+            <article class="mb-seal-panel">
+              <div class="mb-seal-header">
+                <div>
+                  <h2 id="sealTitle">Hermes waits for your attention</h2>
+                  <p id="sealSubtitle">Press Start, watch the true seal, then choose it after the shuffle.</p>
+                </div>
+                <span class="mb-badge mb-badge--blue" id="sealStateBadge">ready</span>
+              </div>
+
+              <div class="mb-trick-field" aria-label="Hermes trick field">
+                <div class="mb-caduceus-glow"></div>
+
+                <div class="mb-trick-hud">
+                  <section class="mb-hud-card"><span>Round</span><strong id="roundValue">1 / 5</strong></section>
+                  <section class="mb-hud-card"><span>Trust</span><strong id="trustValue">2 / 2</strong></section>
+                  <section class="mb-hud-card"><span>Phase</span><strong id="phaseValue">ready</strong></section>
+                  <section class="mb-hud-card"><span>Swaps</span><strong id="swapValue">0 / 8</strong></section>
+                </div>
+
+                <div class="mb-shuffle-stage">
+                  <div class="mb-oracle-message">
+                    <strong id="oracleTitle">The seals are still</strong>
+                    <span id="oracleText">Start the round. Hermes will reveal the true seal for a moment before the shuffle begins.</span>
+                  </div>
+
+                  <div class="mb-seal-board" id="sealBoard">
+                    <button class="mb-seal-card" type="button" data-seal="0" data-slot="0">
+                      <i class="mb-seal-shine"></i>
+                      <div class="mb-seal-mark">1</div>
+                      <h3>Seal 1</h3>
+                      <p>Watch where the light goes.</p>
+                      <small>Position 1</small>
+                    </button>
+                    <button class="mb-seal-card" type="button" data-seal="1" data-slot="1">
+                      <i class="mb-seal-shine"></i>
+                      <div class="mb-seal-mark">2</div>
+                      <h3>Seal 2</h3>
+                      <p>Hermes swaps without warning.</p>
+                      <small>Position 2</small>
+                    </button>
+                    <button class="mb-seal-card" type="button" data-seal="2" data-slot="2">
+                      <i class="mb-seal-shine"></i>
+                      <div class="mb-seal-mark">3</div>
+                      <h3>Seal 3</h3>
+                      <p>False motion is part of the trial.</p>
+                      <small>Position 3</small>
+                    </button>
+                    <button class="mb-seal-card" type="button" data-seal="3" data-slot="3">
+                      <i class="mb-seal-shine"></i>
+                      <div class="mb-seal-mark">4</div>
+                      <h3>Seal 4</h3>
+                      <p>The true road keeps its light.</p>
+                      <small>Position 4</small>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="mb-control-row">
+                  <button class="mb-choice-button" id="startButton" type="button">Start round</button>
+                  <button class="mb-choice-button" id="autoWinButton" type="button">Preview success</button>
+                  <button class="mb-choice-button" id="resetRoundButton" type="button">Reset trial</button>
+                </div>
+              </div>
+            </article>
+
+            <aside class="mb-side-panel">
+              <section class="mb-info-card">
+                <h3>Trial parameters</h3>
+                <div class="mb-stat-list">
+                  <div class="mb-stat-row"><span>Hero cunning</span><strong id="cunningValue">33</strong></div>
+                  <div class="mb-stat-row"><span>Difficulty target</span><strong id="targetValue">28</strong></div>
+                  <div class="mb-stat-row"><span>Seal count</span><strong id="sealCountPanel">4</strong></div>
+                  <div class="mb-stat-row"><span>Preview time</span><strong id="previewPanel">1.5s</strong></div>
+                  <div class="mb-stat-row"><span>Shuffle swaps</span><strong id="swapPanel">8</strong></div>
+                  <div class="mb-stat-row"><span>Mistakes allowed</span><strong id="mistakesPanel">2</strong></div>
+                </div>
+              </section>
+
+              <section class="mb-info-card">
+                <h3>Hermes pressure</h3>
+                <p id="pressureCopy">Higher Cunning gives a longer reveal and slower swaps. The seal itself stays the same; only its position changes.</p>
+                <div class="mb-trust-meter">
+                  <div class="mb-trust-line"><span>Trust</span><strong id="trustPercent">100%</strong></div>
+                  <div class="mb-trust-bar" style="--trust:100%"><span></span></div>
+                </div>
+              </section>
+
+              <section class="mb-info-card">
+                <h3>Trial log</h3>
+                <div class="mb-log-list" id="trialLog">
+                  <div class="mb-log-row is-info"><div class="mb-log-icon">1</div><div><strong>Trial ready</strong><span>Hermes places four seals at the crossroads.</span></div></div>
+                </div>
+              </section>
+            </aside>
+          </section>
+
+          <footer class="mb-stage-footer">
+            <div>
+              <p class="mb-footer-title" id="footerTitle">Track the true seal through the shuffle</p>
+              <p class="mb-footer-copy" id="footerCopy">The Trial resolves after enough correct rounds or when trust is lost. This avoids hand-written riddles and can be balanced entirely through configuration.</p>
+            </div>
+            <div class="mb-button-row">
+              <button class="mb-button mb-button--primary" id="restartButton" type="button">Restart trial</button>
+              <button class="mb-button mb-button--danger" type="button">Resolve automatically</button>
+              <button class="mb-button mb-button--ghost" type="button">Back to Trial</button>
+            </div>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const configs = {
+      steady: {
+        cunning: 33,
+        target: 28,
+        previewMs: 1500,
+        swapMs: 520,
+        swaps: 8,
+        mistakes: 2,
+rounds: 5,
+        pressure: 'Higher Cunning gives a longer reveal and slower swaps. The true seal is hidden after preview; only position labels stay visible.'
+      },
+      trickster: {
+        cunning: 21,
+        target: 34,
+        previewMs: 850,
+        swapMs: 300,
+        swaps: 13,
+        mistakes: 1,
+rounds: 5,
+        pressure: 'Low Cunning shortens the reveal and speeds up swaps. No persistent highlight remains after preview.'
+      }
+    };
+
+    let mode = 'steady';
+    let phase = 'ready';
+    let roundIndex = 0;
+    let mistakes = 0;
+    let logIndex = 2;
+    let trueSeal = 0;
+    let swapsDone = 0;
+    let completed = false;
+    let sealSlots = [0, 1, 2, 3];
+    let intervalId = null;
+    let timeoutId = null;
+
+    const sealCards = [...document.querySelectorAll('.mb-seal-card')];
+    const sealTitle = document.getElementById('sealTitle');
+    const sealSubtitle = document.getElementById('sealSubtitle');
+    const sealStateBadge = document.getElementById('sealStateBadge');
+    const roundValue = document.getElementById('roundValue');
+    const trustValue = document.getElementById('trustValue');
+    const phaseValue = document.getElementById('phaseValue');
+    const swapValue = document.getElementById('swapValue');
+    const oracleTitle = document.getElementById('oracleTitle');
+    const oracleText = document.getElementById('oracleText');
+    const startButton = document.getElementById('startButton');
+    const autoWinButton = document.getElementById('autoWinButton');
+    const resetRoundButton = document.getElementById('resetRoundButton');
+    const restartButton = document.getElementById('restartButton');
+    const trialLog = document.getElementById('trialLog');
+    const trustPercent = document.getElementById('trustPercent');
+    const trustBar = document.querySelector('.mb-trust-bar');
+    const pressureCopy = document.getElementById('pressureCopy');
+    const cunningValue = document.getElementById('cunningValue');
+    const targetValue = document.getElementById('targetValue');
+    const previewPanel = document.getElementById('previewPanel');
+    const swapPanel = document.getElementById('swapPanel');
+    const mistakesPanel = document.getElementById('mistakesPanel');
+    const footerTitle = document.getElementById('footerTitle');
+    const footerCopy = document.getElementById('footerCopy');
+
+    function config() { return configs[mode]; }
+
+    function addLog(kind, title, copy) {
+      const row = document.createElement('div');
+      row.className = `mb-log-row ${kind}`;
+      row.innerHTML = `<div class="mb-log-icon">${logIndex}</div><div><strong>${title}</strong><span>${copy}</span></div>`;
+      trialLog.prepend(row);
+      logIndex += 1;
+      while (trialLog.children.length > 6) trialLog.removeChild(trialLog.lastChild);
+    }
+
+    function setPhase(next) {
+      phase = next;
+      phaseValue.textContent = next;
+      sealStateBadge.textContent = completed ? sealStateBadge.textContent : next;
+      sealCards.forEach(card => {
+        card.disabled = phase !== 'choose';
+        card.classList.toggle('is-shuffling', phase === 'shuffle');
+      });
+      startButton.disabled = phase !== 'ready' || completed;
+      autoWinButton.disabled = completed || phase === 'shuffle' || phase === 'preview';
+    }
+
+    function randomTrueSeal() {
+      trueSeal = Math.floor(Math.random() * 4);
+    }
+
+    function renderSlots() {
+sealCards.forEach((card, sealId) => {
+        card.dataset.slot = String(sealSlots[sealId]);
+      });
+      renderPositionLabels();
+    }
+
+function renderPositionLabels() {
+      sealCards.forEach(card => {
+        const slot = Number(card.dataset.slot || '0');
+        const visibleNumber = slot + 1;
+        const mark = card.querySelector('.mb-seal-mark');
+        const title = card.querySelector('h3');
+        const small = card.querySelector('small');
+        if (mark) mark.textContent = String(visibleNumber);
+        if (title) title.textContent = `Seal ${visibleNumber}`;
+        if (small) small.textContent = `Position ${visibleNumber}`;
+      });
+    }
+
+    function resetSealVisuals() {
+      sealCards.forEach(card => {
+        card.classList.remove('is-preview', 'is-echo', 'is-chosen-good', 'is-chosen-bad', 'is-shuffling');
+      });
+    }
+
+    function renderHud() {
+      const c = config();
+      const trustLeft = Math.max(0, c.mistakes - mistakes);
+      const trustTotal = c.mistakes;
+      const trustRatio = trustTotal === 0 ? 0 : Math.max(0, Math.round((trustLeft / trustTotal) * 100));
+      roundValue.textContent = `${Math.min(roundIndex + 1, c.rounds)} / ${c.rounds}`;
+      trustValue.textContent = `${trustLeft} / ${trustTotal}`;
+      swapValue.textContent = `${swapsDone} / ${c.swaps}`;
+      trustPercent.textContent = `${trustRatio}%`;
+      trustBar.style.setProperty('--trust', `${trustRatio}%`);
+      cunningValue.textContent = c.cunning;
+      targetValue.textContent = c.target;
+      previewPanel.textContent = `${(c.previewMs / 1000).toFixed(1)}s`;
+      swapPanel.textContent = String(c.swaps);
+      mistakesPanel.textContent = String(c.mistakes);
+      pressureCopy.textContent = c.pressure;
+    }
+
+    function swapTwoSlots() {
+      let a = Math.floor(Math.random() * 4);
+      let b = Math.floor(Math.random() * 4);
+      while (b === a) b = Math.floor(Math.random() * 4);
+      const slotA = sealSlots[a];
+      sealSlots[a] = sealSlots[b];
+      sealSlots[b] = slotA;
+      renderSlots();
+    }
+
+    function startRound() {
+      if (completed || phase !== 'ready') return;
+      const c = config();
+      clearTimers();
+      resetSealVisuals();
+      randomTrueSeal();
+      swapsDone = 0;
+      sealSlots = [0, 1, 2, 3];
+      renderSlots();
+      renderHud();
+      setPhase('preview');
+      sealTitle.textContent = 'Watch the true seal';
+      sealSubtitle.textContent = 'Hermes reveals the light for a moment.';
+      oracleTitle.textContent = 'The true seal is lit';
+      oracleText.textContent = 'Keep your eyes on the seal that carries Hermes’ light.';
+      sealCards[trueSeal].classList.add('is-preview');
+      addLog('is-info', 'Reveal', `Hermes marks Seal ${trueSeal + 1}.`);
+
+      timeoutId = setTimeout(() => {
+  sealCards[trueSeal].classList.remove('is-preview');
+        startShuffle();
+      }, c.previewMs);
+    }
+
+    function startShuffle() {
+      const c = config();
+      setPhase('shuffle');
+      sealTitle.textContent = 'Hermes shifts the seals';
+      sealSubtitle.textContent = 'Follow the seal, not the position where it began.';
+      oracleTitle.textContent = 'The shuffle begins';
+      oracleText.textContent = 'The true seal is moving through the exchange. Choose only after the shuffle stops.';
+      addLog('is-warning', 'Shuffle', 'Hermes begins swapping the seals.');
+
+      intervalId = setInterval(() => {
+        swapsDone += 1;
+        swapTwoSlots();
+        renderHud();
+        if (swapsDone >= c.swaps) {
+          clearInterval(intervalId);
+          intervalId = null;
+          sealCards.forEach(card => card.classList.remove('is-shuffling'));
+sealCards[trueSeal].classList.remove('is-echo', 'is-preview');
+          setPhase('choose');
+          sealTitle.textContent = 'Choose the seal that carried the light';
+          sealSubtitle.textContent = 'The shuffle is over. Pick one seal.';
+          oracleTitle.textContent = 'Choose now';
+          oracleText.textContent = 'If you tracked Hermes’ trick, the true seal is still there.';
+          addLog('is-info', 'Choose', 'The seals stop moving.');
+        }
+      }, c.swapMs);
+    }
+
+    function chooseSeal(sealId) {
+      if (phase !== 'choose' || completed) return;
+      sealCards.forEach(card => card.disabled = true);
+      if (sealId === trueSeal) {
+        sealCards[sealId].classList.add('is-chosen-good');
+        addLog('is-success', 'Correct seal', `Seal ${sealId + 1} still carries the light.`);
+        roundIndex += 1;
+        if (roundIndex >= config().rounds) {
+          complete(true);
+        } else {
+          setPhase('ready');
+          sealTitle.textContent = 'Hermes resets the seals';
+          sealSubtitle.textContent = 'Start the next round when ready.';
+          oracleTitle.textContent = 'Round passed';
+          oracleText.textContent = 'Hermes smiles. The next shuffle will begin when you start it.';
+        }
+      } else {
+        sealCards[sealId].classList.add('is-chosen-bad');
+  sealCards[trueSeal].classList.add('is-preview');
+        mistakes += 1;
+addLog('is-danger', 'Wrong seal', `The chosen seal was empty. The true seal flashes only after the mistake.`);
+        if (mistakes >= config().mistakes) {
+          complete(false);
+        } else {
+          setPhase('ready');
+          sealTitle.textContent = 'Hermes lets you try again';
+          sealSubtitle.textContent = 'Start the next round when ready.';
+          oracleTitle.textContent = 'Trust is damaged';
+          oracleText.textContent = 'You followed the wrong motion, but the trial has not ended yet.';
+        }
+      }
+      renderHud();
+    }
+
+    function complete(success) {
+      completed = true;
+      setPhase('complete');
+      if (success) {
+        sealTitle.textContent = 'Hermes opens the road';
+        sealSubtitle.textContent = 'The tricks were tracked without losing the true seal.';
+        sealStateBadge.textContent = 'success';
+        sealStateBadge.className = 'mb-badge mb-badge--green';
+        footerTitle.textContent = 'Trial completed';
+        footerCopy.textContent = 'Theron followed the true seal through every shift. The completed Trial report can now show narrative and rewards.';
+        oracleTitle.textContent = 'Trial completed';
+        oracleText.textContent = 'Hermes accepts the cunning answer.';
+        addLog('is-success', 'Trial completed', 'Every true seal was found.');
+      } else {
+        sealTitle.textContent = 'Hermes closes the road';
+        sealSubtitle.textContent = 'Too many false seals were chosen.';
+        sealStateBadge.textContent = 'failed';
+        sealStateBadge.className = 'mb-badge mb-badge--red';
+        footerTitle.textContent = 'Trial failed';
+        footerCopy.textContent = 'The failed Trial report can explain that Theron lost the true seal during Hermes’ shuffle.';
+        oracleTitle.textContent = 'Trial failed';
+        oracleText.textContent = 'The road folds back into itself.';
+        addLog('is-danger', 'Trial failed', 'Hermes takes the road away.');
+      }
+      startButton.disabled = true;
+      autoWinButton.disabled = true;
+      renderHud();
+    }
+
+    function previewSuccess() {
+      if (completed || phase === 'shuffle' || phase === 'preview') return;
+      roundIndex = Math.max(0, config().rounds - 1);
+      mistakes = 0;
+      randomTrueSeal();
+      resetSealVisuals();
+      sealCards[trueSeal].classList.add('is-chosen-good');
+      complete(true);
+    }
+
+    function clearTimers() {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+      timeoutId = null;
+      intervalId = null;
+    }
+
+    function resetTrial(newMode = mode) {
+      clearTimers();
+      mode = newMode;
+      document.querySelectorAll('[data-mode]').forEach(button => button.classList.toggle('is-active', button.dataset.mode === mode));
+      phase = 'ready';
+      roundIndex = 0;
+      mistakes = 0;
+      logIndex = 2;
+      completed = false;
+      swapsDone = 0;
+      trueSeal = 0;
+      sealSlots = [0, 1, 2, 3];
+      resetSealVisuals();
+      renderSlots();
+      sealTitle.textContent = 'Hermes waits for your attention';
+      sealSubtitle.textContent = 'Press Start, watch the true seal, then choose it after the shuffle.';
+      sealStateBadge.textContent = 'ready';
+      sealStateBadge.className = 'mb-badge mb-badge--blue';
+      oracleTitle.textContent = 'The seals are still';
+      oracleText.textContent = 'Start the round. Hermes will reveal the true seal for a moment before the shuffle begins.';
+      footerTitle.textContent = 'Track the true seal through the shuffle';
+      footerCopy.textContent = 'The Trial resolves after enough correct rounds or when trust is lost. This avoids hand-written riddles and can be balanced entirely through configuration.';
+      trialLog.innerHTML = '<div class="mb-log-row is-info"><div class="mb-log-icon">1</div><div><strong>Trial ready</strong><span>Hermes places four seals at the crossroads.</span></div></div>';
+      setPhase('ready');
+      renderHud();
+    }
+
+    startButton.addEventListener('click', startRound);
+    autoWinButton.addEventListener('click', previewSuccess);
+    resetRoundButton.addEventListener('click', () => resetTrial(mode));
+    restartButton.addEventListener('click', () => resetTrial(mode));
+    sealCards.forEach(card => card.addEventListener('click', () => chooseSeal(Number(card.dataset.seal))));
+    document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => resetTrial(button.dataset.mode)));
+
+    resetTrial('steady');
+  </script>
+</body>
+</html>

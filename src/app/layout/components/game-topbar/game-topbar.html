@@ -39,6 +39,8 @@
       </div>
 
       <div class="flex-row-start-center flex-wrap gap-md">
+        <app-notification-bell />
+
         @for (resource of resourceDisplay(); track resource.type) {
           <div class="flex-row-start-center gap-xs">
             @switch (resource.type) {

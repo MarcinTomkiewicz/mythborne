@@ -1,0 +1,30 @@
+.dropdown-anchor {
+  position: relative !important;
+}
+
+.dropdown-trigger {
+  position: relative;
+  border: 0;
+  background: transparent;
+}
+
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 1100;
+  width: min(360px, calc(100vw - 2rem));
+}
+
+.dropdown-list {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.list-card-item {
+  border-color: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.list-card-item--highlight {
+  border-color: var(--p-button-warn-border-color, currentColor);
+}

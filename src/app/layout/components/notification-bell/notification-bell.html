@@ -1,0 +1,90 @@
+<div class="dropdown-anchor">
+  <button
+    type="button"
+    class="dropdown-trigger mg-card flex-row-center-center gap-xs p-sm cursor-pointer"
+    [attr.aria-expanded]="isOpen()"
+    aria-label="Notifications"
+    (click)="toggleDropdown()"
+  >
+    <i class="pi pi-bell"></i>
+    <span class="muted-text">Notifications</span>
+    @if (unreadCount() > 0) {
+      <span
+        class="notification-badge"
+        [class.wider]="unreadCount() > 9 && unreadCount() <= 99"
+        [class.widest]="unreadCount() > 99"
+      >
+        {{ unreadCountLabel() }}
+      </span>
+    }
+  </button>
+
+  @if (isOpen()) {
+    <section class="dropdown-panel mg-card flex-col gap-md p-md">
+      <div class="flex-row-between-center gap-md">
+        <div class="flex-col gap-xs">
+          <strong class="heading-color">Notifications</strong>
+          <span class="muted-text">Latest player inbox items</span>
+        </div>
+        @if (unreadCount() > 0) {
+          <span class="tag-badge tag-badge--warn">{{ unreadCountLabel() }} unread</span>
+        }
+      </div>
+
+      @if (isLoading()) {
+        <p class="mb-0 muted-text">Loading notifications...</p>
+      } @else if (error()) {
+        <p class="mb-0 tag-badge tag-badge--warn">{{ error() }}</p>
+      } @else if (hasNotifications()) {
+        <div class="flex-col gap-sm dropdown-list">
+          @for (notification of notifications(); track notification.notificationId) {
+            <article
+              class="list-card-item mg-card flex-col gap-xs p-sm"
+              [class.list-card-item--highlight]="notification.readState.isUnread"
+            >
+              <div class="flex-row-between-center flex-col-sm gap-sm">
+                <strong class="heading-color">{{ notification.title }}</strong>
+                @if (notification.readState.isUnread) {
+                  <span class="tag-badge tag-badge--warn">Unread</span>
+                } @else {
+                  <span class="tag-badge tag-badge--muted">Read</span>
+                }
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span [class]="severityBadgeClass(notification)">
+                  {{ notification.severity }}
+                </span>
+                <span class="tag-badge tag-badge--muted">
+                  {{ notification.type.label }}
+                </span>
+                <span class="tag-badge tag-badge--muted">
+                  {{ notification.type.category }}
+                </span>
+              </div>
+
+              @if (shortBody(notification); as body) {
+                <p class="mb-0 muted-text">{{ body }}</p>
+              }
+
+              <div class="flex-row-between-center flex-col-sm gap-sm">
+                <span class="muted-text">{{ toDateTimeLabel(notification.createdAt) }}</span>
+                @if (actionRoute(notification); as route) {
+                  <a
+                    class="tag-badge tag-badge--info"
+                    [routerLink]="route"
+                    (click)="closeDropdown()"
+                  >
+                    {{ notification.actionLink?.label ?? 'Open' }}
+                  </a>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <p class="mb-0 muted-text">No notifications.</p>
+      }
+    </section>
+  }
+</div>
