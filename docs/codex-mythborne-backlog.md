@@ -6053,6 +6053,14 @@ Reports have their own Reports Center and unread state. Toasts are presentation 
 - Missing hooks are reported precisely.
 - Build passes where code changes are made.
 
+**Status:** Accepted on 2026-05-05.
+
+**Acceptance summary:** Q9 added a read-only `/admin/notification-hooks` diagnostics surface backed by the canonical DB/RPC producer diagnostics contract. The frontend consumes `get_admin_notification_db_owned_producer_diagnostics(...)` through generated project types and maps the current RPC row shape: Polish admin label/description/helper/status/summary copy, notification type keys, notification type JSON snapshots, missing and inactive notification type keys, producer function names, producer function JSON snapshots, missing producer function names, producer table/trigger metadata, diagnostic status and explicit non-producer flags. The page renders real DB/RPC rows rather than a generic missing-source placeholder and does not contain a frontend hardcoded producer registry. `game_report_created_is_not_default_notification_producer` is handled as an explicit non-producer, and missing type/function arrays are shown per row as DB/content blockers. No frontend insert/update/upsert/delete path for `notifications` and no frontend `create_notification(...)` call was added.
+
+**Verification:** `npx tsc --noEmit` passed; focused Q9 mapper/service/page specs passed with 7 SUCCESS; `npm run build` passed with known bundle budget and Supabase `cookie` CommonJS warnings; static greps passed for no `NOTIFICATION_HOOK_PRODUCERS`, no frontend producer registry, canonical `get_admin_notification_db_owned_producer_diagnostics(...)` usage, and no direct notification writes in the touched Q9 paths.
+
+**Manual smoke:** Pending `/admin/notification-hooks` with real admin/operator access and live rows from `get_admin_notification_db_owned_producer_diagnostics(...)`, including confirmation of producer rows, per-row blockers if any, and `game_report_created_is_not_default_notification_producer` as an explicit non-producer.
+
 ---
 
 ## Task Q10 — Notification smoke and hook verification
@@ -9123,6 +9131,484 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Report clearly separates implemented Luck Lab from missing DB contracts.
 - Remaining limitations are concrete.
 - Luck Foundation vs Luck Lab boundaries remain clear.
+
+---
+
+# Epic W — Exploration Core Completion
+
+Epic W completes the core Exploration runtime so the player-facing loop works end-to-end:
+
+direction → timer → step result → Trial / Encounter / Nothing → resolution or immediate outcome → reward/effect → continue exploration.
+
+After Epic W, new Trials, Encounters and Minigames should be content/modules plugged into a stable runtime, not reasons to redesign the exploration foundation.
+
+## DB/RPC foundation expected before Codex starts W tasks
+
+Migrator must first complete the DB/RPC preflight and any required migrations for:
+
+- Trial readiness / eligibility model.
+- Encounter readiness / eligibility model.
+- Stable readiness reason codes.
+- DB-backed metadata for readiness reason codes.
+- Runtime filtering so only complete active Trials and Encounters can be selected.
+- Selection/debug payload for step result resolution.
+- Reward execution/debug payload for reward and item generation.
+- Exploration step timer config audit/fix.
+- Sandbox-only helper/RPC access for:
+  - adding daily Trial attempts / remaining Trial actions;
+  - skipping or finishing the current exploration step timer.
+- Minimal complete smoke content:
+  - one Combat Trial;
+  - one Combat Encounter;
+  - one Resource Encounter;
+  - one Buff Encounter;
+  - one Debuff Encounter;
+  - one Trial reward with item generation;
+  - one Combat Encounter reward with XP;
+  - one Resource Encounter reward with resources;
+  - one Buff Encounter effect;
+  - one Debuff Encounter effect.
+
+If any DB/RPC contract is missing, Codex must report the DB dependency instead of faking runtime behavior in Angular.
+
+## Epic rules
+
+- Use canonical domain words: Trial, Encounter, Nothing, Combat, Minigame.
+- Do not use player-facing “Challenge” wording for the domain, even if DB internals still have attempt/state names.
+- Normal runtime may select only complete active Trials and Encounters.
+- Misconfigured Trials/Encounters may exist in admin config, but they must not enter normal runtime selection.
+- Trial must have reward in normal runtime.
+- Encounter must have reward or effect in normal runtime.
+- Combat Encounter without reward is not eligible.
+- Resource Encounter is reward-only and does not require manual resolve.
+- Buff Encounter is complete when it applies a buff effect.
+- Debuff Encounter is complete when it applies a debuff effect.
+- The only negative exploration outcome currently allowed is a debuff from Debuff Encounter.
+- Active unresolved Trial or Encounter blocks the next exploration step.
+- If a Trial or Encounter requires resolution, UI must show a working manual resolve or auto-resolve action.
+- Auto-resolve-only Trial is allowed only when explicitly configured.
+- Tester/admin tools are sandbox-server-only.
+- Live servers must not show add-attempt or skip-timer tools.
+- Force outcome / force resolve is not part of Epic W.
+- Step duration must be DB/config-owned, not hardcoded in Angular.
+- Reward/drop path must be tested through real exploration flow, not only the admin item generator.
+- Frontend copy for statuses, errors and diagnostics in this slice should be Polish-facing where practical.
+- DB-backed metadata/dictionaries should provide stable labels/descriptions for readiness reasons; Angular must not invent a separate permanent translation system.
+
+---
+
+## Task W0 — Align generated DB types after Exploration Core migrations
+
+**Goal:** Synchronize frontend generated DB types with the Exploration Core Completion DB/RPC contract.
+
+**Scope:**
+
+- Regenerate/update generated Supabase database types after W DB/RPC migrations.
+- Fix compile errors caused by changed exploration/trial/encounter/reward contracts.
+- Confirm generated types include available contracts for:
+  - Trial readiness / eligibility;
+  - Encounter readiness / eligibility;
+  - readiness reason codes / metadata;
+  - step selection/debug payload;
+  - reward execution/debug payload;
+  - sandbox add-action helper;
+  - sandbox skip/finish timer helper;
+  - exploration step duration config/read model, if exposed.
+- Do not edit generated DB types manually.
+- Do not add frontend fallback eligibility logic.
+
+**Acceptance criteria:**
+
+- Generated types match the current DB/RPC signatures.
+- Frontend compiles against regenerated types.
+- Missing DB/RPC contracts are reported as blockers.
+
+---
+
+## Task W1 — Exploration readiness domain models and mappers
+
+**Goal:** Add typed domain models for Trial/Encounter readiness and selection diagnostics.
+
+**Scope:**
+
+- Add models/mappers for:
+  - Trial readiness row;
+  - Encounter readiness row;
+  - readiness status;
+  - readiness reason;
+  - readiness reason metadata;
+  - eligible selected definition;
+  - skipped/incomplete selected definition;
+  - step selection journal/debug payload.
+- Keep UI-facing model names aligned with canonical domain language:
+  - Trial;
+  - Encounter;
+  - Nothing;
+  - Combat;
+  - Minigame.
+- Preserve raw technical ids/keys only as secondary metadata.
+- Do not expose raw DB rows directly to components.
+
+**Acceptance criteria:**
+
+- Frontend can represent complete/incomplete Trials and Encounters.
+- Reason codes and DB-backed labels/descriptions are preserved.
+- Mappers do not invent player-facing “Challenge” terminology.
+- Mapper handles missing optional debug payload safely.
+
+---
+
+## Task W2 — Exploration runtime result model cleanup
+
+**Goal:** Align exploration step result models with the completed runtime contract.
+
+**Scope:**
+
+- Ensure step result model represents only:
+  - Trial;
+  - Encounter;
+  - Nothing.
+- Represent Nothing as fallback result, not an independent RNG roll.
+- Preserve DB-returned selection/debug payload if present.
+- Preserve selected Trial/Encounter identity and readiness diagnostics where DB returns them.
+- Ensure UI can distinguish:
+  - Combat Trial;
+  - Combat Encounter;
+  - Resource Encounter;
+  - Buff Encounter;
+  - Debuff Encounter.
+- Do not add new runtime selection logic in Angular.
+
+**Acceptance criteria:**
+
+- Step result UI/domain state uses canonical outcome names.
+- Resource/Buff/Debuff Encounters do not appear as unresolved minigame-like Trial states.
+- Selection diagnostics can be shown in sandbox/tester mode.
+- Normal player view remains concise.
+
+---
+
+## Task W3 — Sandbox exploration diagnostics panel
+
+**Goal:** Show useful sandbox-only diagnostics for step selection without dumping noisy full pools by default.
+
+**Scope:**
+
+- Add or update sandbox/tester diagnostics in `/game/exploration`.
+- Show:
+  - what outcome was selected;
+  - why it was selected;
+  - when it was selected;
+  - if something was skipped due to incomplete config, what was skipped and why;
+  - what complete definition was used instead, if applicable;
+  - final outcome: Trial / Encounter / Nothing.
+- Add expandable raw/debug payload view for deeper inspection.
+- Do not show a giant always-visible list of every rejected Trial/Encounter.
+- Gate diagnostics to sandbox/tester/admin context.
+- Normal players must not see this diagnostic panel.
+
+**Acceptance criteria:**
+
+- Tester can tell whether a result came from RNG or configuration filtering.
+- Incomplete selected/skipped definitions show reason codes and readable labels.
+- Debug details are expandable/collapsed, not noisy by default.
+- No sandbox diagnostics are shown on live servers.
+
+---
+
+## Task W4 — Trial readiness display in admin configurator
+
+**Goal:** Make Trial configuration completeness visible in admin tooling.
+
+**Scope:**
+
+- Add readiness status to existing Trial admin/configurator surfaces.
+- Show which Trials are complete and eligible for runtime.
+- Show incomplete Trials with reason codes and DB-backed labels/descriptions.
+- Highlight missing:
+  - inactive definition;
+  - unsupported minigame;
+  - missing resolver;
+  - missing reward assignment;
+  - missing combat candidate for combat Trial;
+  - no eligible combat candidate due to bounds/config;
+  - missing config/metadata where relevant.
+- Allow saving incomplete Trial config; do not block admin edits just because the Trial is incomplete.
+- Clearly state that incomplete Trials are not selected by normal runtime.
+
+**Acceptance criteria:**
+
+- Admin can see at a glance which Trials are runtime-ready.
+- Incomplete Trials are explainable without SQL.
+- Readiness display uses DB/RPC readiness model, not Angular-only recomputation.
+- Admin can still work on incomplete definitions incrementally.
+
+---
+
+## Task W5 — Encounter readiness display in admin configurator
+
+**Goal:** Make Encounter configuration completeness visible in admin tooling.
+
+**Scope:**
+
+- Add readiness status to existing Encounter admin/configurator surfaces.
+- Show which Encounters are complete and eligible for runtime.
+- Show incomplete Encounters with reason codes and DB-backed labels/descriptions.
+- Handle existing Encounter types:
+  - Combat Encounter;
+  - Resource Encounter;
+  - Buff Encounter;
+  - Debuff Encounter.
+- Highlight missing:
+  - inactive definition;
+  - missing combat candidate for Combat Encounter;
+  - no eligible combat candidate due to bounds/config;
+  - missing resource payload/reward for Resource Encounter;
+  - missing effect payload for Buff/Debuff Encounter;
+  - missing config/metadata where relevant.
+- Allow saving incomplete Encounter config.
+- Clearly state that incomplete Encounters are not selected by normal runtime.
+
+**Acceptance criteria:**
+
+- Admin can see at a glance which Encounters are runtime-ready.
+- Resource/Buff/Debuff Encounter readiness follows their existing payload/effect model.
+- Readiness display uses DB/RPC readiness model.
+- Incomplete Encounters are explainable without SQL.
+
+---
+
+## Task W6 — Exploration timer config visibility
+
+**Goal:** Make exploration step duration configuration discoverable and readable.
+
+**Scope:**
+
+- Locate and use DB/RPC/config read paths for:
+  - base step duration;
+  - difficulty multiplier;
+  - step duration multiplier;
+  - global/server override if present.
+- Show current effective step duration configuration in the relevant admin/balancer area or existing exploration config surface.
+- If config is missing from DB/RPC, report exact DB/config dependency.
+- Do not hardcode timer values in Angular.
+- Do not implement a full admin IA refactor.
+
+**Acceptance criteria:**
+
+- Admin/tester can find where exploration step duration comes from.
+- UI explains base duration and multipliers clearly.
+- Missing config is reported as a DB/config blocker.
+- Player-facing timer continues to use DB-owned runtime values.
+
+---
+
+## Task W7 — Sandbox timer skip / finish workflow
+
+**Goal:** Allow sandbox testers to skip waiting during exploration step testing.
+
+**Scope:**
+
+- Add sandbox-only UI action to skip/finish the current exploration step timer.
+- Use canonical DB/RPC helper if it exists.
+- If helper is missing, report DB dependency.
+- Show current timer normally before/after skip action.
+- Refresh step state after successful skip/finish.
+- Hide action on live servers.
+- Hide action from normal players.
+
+**Acceptance criteria:**
+
+- Tester can start a step, see timer, skip/finish it, and then check result.
+- Normal gameplay timer remains intact.
+- No frontend direct table mutation is introduced.
+- Live server never exposes skip timer control.
+
+---
+
+## Task W8 — Sandbox daily Trial attempts / remaining actions workflow
+
+**Goal:** Allow sandbox testers to add Trial attempts/actions without leaving the exploration screen.
+
+**Scope:**
+
+- Add sandbox-only UI for daily Trial attempts / remaining Trial actions.
+- Use existing canonical helper/RPC where possible.
+- Show current available Trial count.
+- Allow tester to increase count through a simple draft control and confirm.
+- Refresh count after successful mutation.
+- Hide action on live servers.
+- Hide action from normal players.
+- Use Polish-facing action labels and feedback.
+
+**Acceptance criteria:**
+
+- Tester can add Trial attempts/actions from the exploration testing context.
+- UI shows current and updated value clearly.
+- Helper/RPC errors are shown in readable Polish copy.
+- No direct table update is introduced.
+
+---
+
+## Task W9 — Exploration Trial/Encounter resolution UI cleanup
+
+**Goal:** Ensure visible Trials and Encounters have the correct resolution/outcome UI.
+
+**Scope:**
+
+- Update `/game/exploration` active state rendering for:
+  - Combat Trial;
+  - Combat Encounter;
+  - Resource Encounter;
+  - Buff Encounter;
+  - Debuff Encounter;
+  - Nothing outcome.
+- Show manual resolve where supported.
+- Show auto-resolve where configured.
+- Do not show resolve buttons for Resource Encounter if it resolves as immediate outcome/reward flow.
+- Do not show unresolved “ready” states without a working action.
+- Use canonical Trial/Encounter wording in UI.
+- Show clear blocker/error when DB reports an impossible state.
+
+**Acceptance criteria:**
+
+- “Trial ready” without action no longer appears in normal gameplay.
+- Resource Encounter does not masquerade as a minigame Trial.
+- Buff/Debuff Encounter shows applied effect outcome where DB returns it.
+- Combat Trial/Encounter can be resolved through the supported action path.
+
+---
+
+## Task W10 — Exploration reward and item drop display hardening
+
+**Goal:** Make reward and item drop results durable, readable and failure-aware.
+
+**Scope:**
+
+- Use DB/RPC reward result payloads for display.
+- Show reward grant / reward entries where available.
+- If item generation was attempted, show generated item id/display data where available.
+- If item generation failed, show reason if DB provides one.
+- If reward was configured but not granted, show reason if DB provides one.
+- Ensure refresh does not duplicate reward display or regenerate rewards.
+- Link or surface the generated item through item/armory read path where available.
+- Use Polish-facing success/error/status copy.
+
+**Acceptance criteria:**
+
+- Reward display reflects durable DB state.
+- Item drops from exploration are real item rows.
+- Missing/failed reward generation is visible and explainable.
+- Refresh is safe and does not create duplicate rewards.
+
+---
+
+## Task W11 — Exploration reward execution diagnostics
+
+**Goal:** Expose reward execution debug details for sandbox/admin users.
+
+**Scope:**
+
+- Add sandbox/admin diagnostic display for reward execution payload.
+- Show:
+  - reward assignment lookup;
+  - reward profile used;
+  - reward entries processed;
+  - item generation attempted;
+  - item generation result;
+  - skipped entries and reasons where DB returns them;
+  - final summary.
+- Keep diagnostics collapsed by default.
+- Do not show raw JSON as the only UI.
+- Normal players should not see full diagnostics.
+
+**Acceptance criteria:**
+
+- Tester can understand why a configured item reward did or did not appear.
+- Diagnostics use DB/RPC payload, not frontend guesses.
+- Normal player reward UI remains concise.
+
+---
+
+## Task W12 — Minimal exploration smoke content visibility
+
+**Goal:** Ensure the minimal complete content set for exploration smoke is visible and usable from admin/tester surfaces.
+
+**Scope:**
+
+- Surface or confirm the configured minimal content set:
+  - one complete Combat Trial;
+  - one complete Combat Encounter;
+  - one complete Resource Encounter;
+  - one complete Buff Encounter;
+  - one complete Debuff Encounter;
+  - Trial reward with item generation;
+  - Combat Encounter XP reward;
+  - Resource Encounter resource reward;
+  - Buff Encounter buff effect;
+  - Debuff Encounter debuff effect.
+- If these already exist, do not duplicate them.
+- If any are missing or incomplete, show the specific readiness reason.
+- Do not seed content from Angular.
+
+**Acceptance criteria:**
+
+- Admin/tester can identify the minimum content needed for full exploration smoke.
+- Missing pieces are visible and actionable.
+- No duplicate definitions are created by frontend work.
+
+---
+
+## Task W13 — Exploration full loop player/sandbox integration
+
+**Goal:** Tie the completed runtime pieces into one stable player/sandbox exploration loop.
+
+**Scope:**
+
+- Ensure the flow works across:
+  - start exploration;
+  - direction selection;
+  - step timer;
+  - skip timer in sandbox;
+  - check result;
+  - Nothing;
+  - Combat Trial;
+  - Combat Encounter;
+  - Resource Encounter;
+  - Buff/Debuff Encounter;
+  - reward/effect display;
+  - continue exploration.
+- Preserve stale guards on selected server/active hero/exploration state.
+- Surface errors in Polish.
+- Do not hide DB/RPC failures behind generic fallback success.
+
+**Acceptance criteria:**
+
+- Core exploration loop can be followed end-to-end.
+- Sandbox tester can accelerate waiting without breaking runtime.
+- Player-facing flow remains concise.
+- Errors and impossible states are explicit.
+
+---
+
+## Task W14 — Exploration Core completion report and docs handoff
+
+**Goal:** Report final state of Exploration Core Completion and prepare next-step acceptance.
+
+**Scope:**
+
+- Summarize which runtime pieces are now wired.
+- Summarize which DB/RPC contracts were consumed.
+- List any remaining DB/config blockers.
+- List any missing minimal smoke content.
+- List any UI/UX follow-ups.
+- Do not update status docs before user confirmation.
+
+**Acceptance criteria:**
+
+- Report clearly states whether exploration core is ready for user smoke.
+- Remaining blockers are concrete and actionable.
+- Report separates core runtime issues from future minigames/UI redesign.
 
 ---
 

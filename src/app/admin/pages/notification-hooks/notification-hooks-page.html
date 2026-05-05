@@ -1,0 +1,182 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Ladowanie diagnostyki producentow powiadomien..."
+  description="Ladowanie typow powiadomien i metadanych diagnostyki."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Blad</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Powiadomienia</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            {{ pageHeaderLabel() }}
+          </h2>
+          <p class="muted-text mb-0">{{ pageHeaderText() }}</p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Producenci z RPC DB</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ producerCount() }}
+          </strong>
+        </div>
+
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">DB/RPC blockery</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ missingCount() }}
+          </strong>
+        </div>
+
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Jawne non-producery</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ nonProducerCount() }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-xs mb-lg">
+        <p class="card-legend mb-0">Diagnostyka</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">
+          DB-owned notification producers
+        </h3>
+        <p class="muted-text mb-0">{{ producerListText() }}</p>
+        <p class="muted-text mb-0">{{ coverageSummaryText() }}</p>
+        <p class="muted-text mb-0">{{ reportBoundaryText() }}</p>
+      </div>
+
+      <div class="flex-col gap-md">
+        @for (diagnostic of diagnostics(); track diagnostic.producerKey) {
+          <article class="mg-surface-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <h4 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ diagnostic.adminLabelPl }}
+                </h4>
+                <p class="card-legend mb-0">{{ diagnostic.producerKey }}</p>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span [class]="statusBadgeClass(diagnostic)">
+                  {{ statusLabel(diagnostic) }}
+                </span>
+                <span class="tag-badge tag-badge--muted">
+                  {{ diagnostic.workflowKey }}
+                </span>
+                @if (diagnostic.isExplicitNonProducer) {
+                  <span class="tag-badge tag-badge--muted">
+                    explicit non-producer
+                  </span>
+                }
+              </div>
+            </div>
+
+            <p class="mb-0 muted-text">{{ diagnostic.adminDescriptionPl }}</p>
+            <p class="mb-0 muted-text">{{ diagnostic.helperTextPl }}</p>
+            <p class="mb-0 muted-text">{{ diagnostic.diagnosticsSummaryPl }}</p>
+
+            <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Rodzaj producenta</span>
+                <strong class="heading-color">{{ diagnostic.producerKind }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Tabela producenta</span>
+                <strong class="heading-color">
+                  {{ diagnostic.producerTableName ?? 'brak' }}
+                </strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Trigger</span>
+                <strong class="heading-color">
+                  {{ diagnostic.producerTriggerName ?? 'brak' }}
+                </strong>
+              </div>
+            </div>
+
+            @if (
+              diagnostic.missingNotificationTypeKeys.length > 0 ||
+              diagnostic.missingProducerFunctionNames.length > 0
+            ) {
+              <div class="mg-card p-sm flex-col gap-xs">
+                <span class="muted-text">DB/content blocker</span>
+                @if (diagnostic.missingNotificationTypeKeys.length > 0) {
+                  <span class="heading-color">
+                    Brakujace notification type keys:
+                    {{ diagnostic.missingNotificationTypeKeys.join(', ') }}
+                  </span>
+                }
+                @if (diagnostic.missingProducerFunctionNames.length > 0) {
+                  <span class="heading-color">
+                    Brakujace funkcje producenta:
+                    {{ diagnostic.missingProducerFunctionNames.join(', ') }}
+                  </span>
+                }
+                @if (diagnostic.blockerHelpTextPl) {
+                  <span class="muted-text">{{ diagnostic.blockerHelpTextPl }}</span>
+                }
+              </div>
+            }
+
+            @if (diagnostic.notificationTypeKeys.length > 0) {
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Notification type keys z DB</span>
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  @for (key of diagnostic.notificationTypeKeys; track key) {
+                    <span class="tag-badge tag-badge--info">{{ key }}</span>
+                  }
+                </div>
+              </div>
+            } @else if (!diagnostic.isExplicitNonProducer) {
+              <p class="mb-0 muted-text">
+                RPC nie zwrocilo notification type keys dla tego producenta.
+              </p>
+            }
+
+            @if (diagnostic.producerFunctionNames.length > 0) {
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Funkcje producenta z DB</span>
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  @for (name of diagnostic.producerFunctionNames; track name) {
+                    <span class="tag-badge tag-badge--muted">{{ name }}</span>
+                  }
+                </div>
+              </div>
+            }
+
+            @if (diagnostic.inactiveNotificationTypeKeys.length > 0) {
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Nieaktywne notification type keys</span>
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  @for (key of diagnostic.inactiveNotificationTypeKeys; track key) {
+                    <span class="tag-badge tag-badge--warn">{{ key }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">{{ emptyStateText() }}</p>
+        }
+      </div>
+    </section>
+  </div>
+}

@@ -161,4 +161,11 @@ export const adminRoutes: Routes = [
         (m) => m.NotificationTypesPage,
       ),
   },
+  {
+    path: 'notification-hooks',
+    loadComponent: () =>
+      import('./pages/notification-hooks/notification-hooks-page').then(
+        (m) => m.NotificationHooksPage,
+      ),
+  },
 ];

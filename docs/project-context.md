@@ -143,16 +143,15 @@ Core rules:
 - Saved equipment configurations are `preset` / `loadout preset`, not item sets. `set` is reserved for future item set bonuses.
 - Presets store exact item IDs per literal slot, apply available items without touching the rest of equipment, can partially succeed, and bypass requirements for exact item IDs if the preset was legal when saved. Preset privilege survives transfer away and later reacquisition of the same item ID.
 - Presets are relational DB state, not JSON authority. A hero has a fixed number of preset slots, target range 5–10, as a flat configurable value.
-- Armory shelves are inventory organization, not equipment state. DB/code may use `shelf`; final UI naming is UI/UX scope. There are always 10 shelves; shelf 1 is default for drops; shelf number persists on item transfer; armory building level affects visible item count only.
+- Armory shelves are inventory organization, not equipment state. DB/code may use `shelf`; final UI naming is UI/UX scope. There are always 10 player-organizable shelves; new drops enter shelf `0` / unsorted / no shelf; shelf number persists on item transfer; armory building level affects visible item count only.
 
 Current implementation warning:
 
 - Any resolver that filters equipped runtime items to `status = active` only is inconsistent with current decisions and must be corrected by the DB/runtime migration track.
 
+## Guild Foundation Decision Scope — 2026-05-04
 
-## Guild Foundation Decision Scope — 2026-05-05
-
-Guild decisions are clear enough for future DB/RPC foundation planning, but guild armory work depends on the player item/equipment/armory foundation where it touches shared items.
+Guild decisions are now clear enough for future DB/RPC foundation planning, but guild work depends on the player item/equipment/armory foundation where it touches shared items.
 
 Core guild rules:
 
@@ -160,12 +159,12 @@ Core guild rules:
 - Guild membership is hero-based.
 - A hero may belong to one guild per server.
 - Any active hero without a guild may create a guild.
-- Guild creation has a configurable cost. Exact resource/currency/default amount belongs to DB/balance implementation.
+- Guild creation has a cost.
 - Guild name must be unique per server.
-- Guild tag is part of identity/display/search, should be unique per server, and has no gameplay meaning in the first foundation.
 - Guild join flows include both invite and request-to-join.
-- Roles are leader, one officer, and member.
-- The leader has full permissions, can promote one officer, and can dissolve the guild.
+- First-foundation roles are `leader`, `officer`, and `member`.
+- There is one officer.
+- The leader has full permissions and can dissolve the guild.
 - The officer can invite, accept/reject join requests, kick, remove guild armory items, force-return borrowed items, and block/unblock guild armory access per member.
 - The officer cannot dissolve the guild.
 - Guild member capacity depends on the leader hero's level through admin-configurable formula/config.
@@ -173,33 +172,36 @@ Core guild rules:
 - Guilds do not currently implement guild-to-guild diplomacy, alliances, non-aggression pacts, war declarations, district influence or guild reputation.
 - Guild actions do not affect private hero Prestige/reputation in the first foundation.
 - Help from other players in future siege/defense and Argonautics is organized through guild membership. Solo attempts may exist, but group support should use the guild.
-- Emergency leader election exists as recovery for inactive leaders: default 15 days inactivity, 6h nomination, 12h voting, max 3 candidates, no quorum, most votes wins and ties go to earlier nomination.
-- Guild armory is lending/borrowing, not trade. Deposit/loan does not change `items.hero_id`; owner remains owner.
-- Borrowed items can be equipped and used in loadout presets, but borrower cannot sell/trade/auction/vendor-sell/scrap them.
-- Owner can withdraw/force-return/manage their own item; leader/officer can remove or force-return guild armory items.
-- Guild armory access lock is per member and blocks borrow/deposit but not return.
-- Guild armory capacity is configurable; `0` means unlimited.
 
+Emergency leader election:
 
-## Luck Foundation Decision Scope — 2026-05-05
+- Emergency leader election exists to recover from inactive leadership.
+- It can be started by any current member if the leader hero has been inactive for the configured threshold.
+- Default inactivity threshold is 15 days.
+- Election is a new-leader election, not a removal vote.
+- Election has 6h nomination phase plus 12h voting phase by default; both values are configurable.
+- Maximum candidate count defaults to 3 and is configurable.
+- Any current member except the inactive leader can be nominated; candidate consent is not required.
+- There is no quorum and no 50% + 1 threshold.
+- The candidate with the most votes wins; ties go to the earlier nomination.
+- The result automatically changes leadership when voting ends.
 
-Luck is a global RNG/opportunity stat, not only a drop stat.
+Guild armory:
 
-Current design direction:
+- Guild armory is a lending/borrowing system, not trade.
+- Depositing or borrowing does not change `items.hero_id`; the owner remains the owner.
+- Borrowed guild armory items may be equipped, count in runtime loadout, and can be part of loadout presets.
+- Borrower cannot sell, trade, auction, scrap or vendor-sell a borrowed item.
+- Owner can still sell, trade, auction, scrap, withdraw or force-return their own item.
+- An equipped item cannot be deposited; the owner must unequip it first.
+- Owner can withdraw their item from guild armory.
+- Leader/officer can remove any item from guild armory; this is not confiscation and returns the item to the owner's private state.
+- Leader/officer/owner can force-return borrowed items; force-return may unequip the item from the borrower.
+- Guild armory access can be blocked per member by leader/officer; blocked members can still return borrowed items.
+- Loans do not expire in the first foundation. They end through return, force-return, withdraw/remove, ownership change, scrap, guild leave or guild dissolution.
+- Guild armory may use shelves; deposited items preserve shelf number.
+- Guild armory capacity is configurable; `0` means unlimited and borrowed items count toward capacity.
 
-- Gameplay RNG that can help the player should include Luck by default, unless a configurable RNG surface is explicitly Luck-excluded.
-- Luck-excluded is future-safe for configurable RNG surfaces only; do not add a standalone disable-Luck switch as the only configurable option.
-- Luck never guarantees success.
-- Drop opportunity uses bucket value, drachma budget, quality, base item, prefix, suffix and optional spare-budget upgrade pass. Do not add separate rarity flags for prefix/suffix/combination rarity; rarity comes from drachma value and budget fit.
-- Exploration RNG order is trial opportunity, then encounter fallback, then deterministic nothing.
-- Luck improves trial opportunity, trial manifestation, encounter fallback, auto-resolve and combat RNG according to DB/config/formula-owned rules.
-- `trial_power` is the global trial strength helper/target: `testedStatValue + luckInfluence`.
-- `luckInfluence` is a configurable function/formula of raw Luck and is not a 1:1 addition.
-- `trial_power` uses one global Luck model for all trial stats; do not create different Luck models per Strength/Agility/Endurance/etc.
-- Difficulty/district are not part of `trial_power`; they apply later through chance caps, pressure and payload formulas/config.
-- Combat RNG should expose Luck-aware configurable behavior for hit chance, evasion chance, critical chance and critical damage where formula/config says so.
-- Reward amount ranges may expose simple Luck-aware behavior where useful, but should stay part of reward configuration.
-- Luck Foundation is separate from the future Luck Lab. Luck Foundation wires DB/RPC/config/formula contracts; Luck Lab will be the admin/balancer visualization tool with sliders, comparisons and distribution previews.
 
 ## Current Known Gaps / Future Work Notes
 
@@ -397,6 +399,24 @@ Codex rule: after schema changes in this area, generated Supabase types must be 
 
 ---
 
+## Exploration Core Completion Scope — 2026-05-05
+
+Epic W should complete the core exploration runtime before new minigames are implemented. The target loop is: choose direction, wait for the step timer, check the result, receive Trial / Encounter / Nothing, resolve the Trial or Encounter when needed, receive reward/effect, and continue exploration.
+
+Runtime selection must use only active and complete Trial / Encounter definitions. Incomplete definitions may be saved in admin configuration but must not enter normal gameplay selection. A Trial requires a supported minigame/resolver or explicit auto-resolve-only mode plus a reward assignment. Combat Trials and Combat Encounters require eligible combat candidates. Resource Encounters require resource reward/payload. Buff/Debuff Encounters require effect payloads. Debuff is the only intended negative exploration outcome.
+
+Epic W should provide a DB/RPC-owned readiness/eligibility model and DB-backed reason metadata so admin UI can show which Trials and Encounters are wired and which are incomplete. UI should use canonical terms Trial, Encounter, Nothing, Combat and Minigame; avoid player-facing `Challenge` terminology.
+
+Sandbox-only tester tools should allow authorized testers/admins to add daily Trial attempts / remaining Trial actions and skip or finish the current step timer. These tools must not appear on live/standard gameplay servers.
+
+Step duration must be DB/config-owned and discoverable in admin/balancer tooling. Epic W should verify base step duration, difficulty duration multipliers and any global/server overrides.
+
+Exploration rewards must run through the real reward profile/assignment flow. Item rewards must create real `items` rows, be visible through item/armory read paths, and remain refresh-safe. Tester/admin diagnostics should show what was rolled or attempted, what was skipped because it was incomplete, what replaced it, and why reward or item generation failed when that reason is known.
+
+Epic W should ensure a minimal smoke content set: one Combat Trial, one Combat Encounter with XP, one Resource Encounter, one Buff Encounter, one Debuff Encounter and one Trial reward assignment that can generate an item. Reuse/fix existing definitions where possible instead of creating duplicates.
+
+---
+
 ## Estate / Buildings Current Direction
 
 Empty estate addresses are not database rows. The database stores occupied estates only.
@@ -412,6 +432,18 @@ Frontend may generate possible address ranges from `estate_district_address_capa
 Moving to an empty address is destructive and DB-owned through `relocate_hero_estate_to_empty_address(...)`. It deletes the current estate row and its buildings/jobs via cascade, then creates the new estate at the selected empty address. It is not the same as siege/takeover.
 
 Siege/takeover of an occupied estate is a future guild/PvP workflow. It should swap/transfer estate ownership or hero assignment without deleting estate/building state.
+
+If an estate changes owner during a successful siege/takeover while an estate building job is active, the building job is interrupted/cancelled. The building remains at the level it had before the job started. The active construction job does not transfer together with the estate.
+
+Relocation/siege timing rules for future DB work:
+
+- Active estate relocation has a configurable cooldown after successful relocation completion; default 12h.
+- A hero that completes a siege/takeover-driven estate move as initiator cannot start another outgoing siege/takeover for a configurable duration after completion; default 12h.
+- A defender receives configurable protection from new incoming sieges/takeovers after completed/interrupted/cancelled/repelled incoming siege; default 12h.
+- Defender protection blocks incoming siege/takeover only; it does not block the protected hero from starting outgoing siege/takeover.
+- Active incoming siege/takeover blocks voluntary relocation by the target owner/hero.
+- These values are DB/config-owned and must not become frontend constants.
+
 
 Building construction/upgrades are DB-owned:
 

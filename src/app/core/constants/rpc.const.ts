@@ -71,6 +71,8 @@ export const RPC = {
   get_my_notifications: 'get_my_notifications',
   get_my_staff_notification_unread_count: 'get_my_staff_notification_unread_count',
   get_my_staff_notifications: 'get_my_staff_notifications',
+  get_admin_notification_db_owned_producer_diagnostics:
+    'get_admin_notification_db_owned_producer_diagnostics',
   get_public_game_report_by_token: 'get_public_game_report_by_token',
   dismiss_notification: 'dismiss_notification',
   mark_notification_read: 'mark_notification_read',

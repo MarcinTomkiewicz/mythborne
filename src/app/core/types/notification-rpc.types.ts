@@ -34,3 +34,14 @@ export type DismissNotificationRpcArgs =
   Database['public']['Functions']['dismiss_notification']['Args'];
 export type DismissNotificationRpcReturn =
   Database['public']['Functions']['dismiss_notification']['Returns'];
+
+export type NotificationDbOwnedProducerDiagnosticRow =
+  Row<'notification_db_owned_producer_diagnostics'>;
+export type GetAdminNotificationDbOwnedProducerDiagnosticsRpcArgs =
+  Database['public']['Functions']['get_admin_notification_db_owned_producer_diagnostics']['Args'];
+export type GetAdminNotificationDbOwnedProducerDiagnosticsRpcRow =
+  Database['public']['Functions']['get_admin_notification_db_owned_producer_diagnostics']['Returns'][number];
+export type GetNotificationHookDiagnosticsRpcArgs =
+  Database['public']['Functions']['get_notification_hook_diagnostics']['Args'];
+export type GetNotificationHookDiagnosticsRpcRow =
+  Database['public']['Functions']['get_notification_hook_diagnostics']['Returns'][number];

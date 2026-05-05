@@ -169,6 +169,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     routerLink: '/admin/notification-types',
     accessPolicy: 'adminShell',
   },
+  {
+    legend: 'Notifications',
+    title: 'Diagnostyka producentow powiadomien',
+    description:
+      'Read-only diagnostyka DB-owned notification producers i pokrycia typami powiadomien.',
+    routerLink: '/admin/notification-hooks',
+    accessPolicy: 'adminShell',
+  },
 ];
 
 export const ADMIN_DASHBOARD_LINKS: readonly AdminTagLink[] = [
@@ -516,6 +524,20 @@ export const COMBAT_BALANCE_PAGE_LINKS: readonly AdminTagLink[] = [
   },
 ];
 
+export const NOTIFICATION_DIAGNOSTICS_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Notification types',
+    routerLink: '/admin/notification-types',
+    accessPolicy: 'adminShell',
+  },
+  {
+    label: 'Diagnostyka producentow',
+    routerLink: '/admin/notification-hooks',
+    accessPolicy: 'adminShell',
+  },
+];
+
 export const COMBAT_OPPONENTS_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
   {
@@ -580,6 +602,11 @@ export const AUDIT_LOGS_PAGE_LINKS: readonly AdminTagLink[] = [
 
 export const NOTIFICATION_TYPES_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Diagnostyka producentow',
+    routerLink: '/admin/notification-hooks',
+    accessPolicy: 'adminShell',
+  },
   {
     label: 'Audit logs',
     routerLink: '/admin/audit-logs',
