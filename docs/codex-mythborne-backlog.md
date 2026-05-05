@@ -6242,6 +6242,37 @@ PvP Foundation is not:
 - PvP UI uses domain models instead of raw RPC payloads in components.
 - Player-facing models do not expose anti-abuse or staff-only fields.
 
+**Status:** Accepted on 2026-05-05.
+
+**Implementation note:** R1 added the typed model/RPC foundation for PvP without UI, services or write paths.
+
+**Acceptance summary:**
+
+- Generated PvP table/RPC aliases: pass.
+- Player-facing PvP read models: pass.
+- Admin-facing PvP models are separate: pass.
+- No Angular services, RPC calls, direct table reads or direct table writes: pass.
+- No UI, routes or manual flow: pass.
+
+**Verification:**
+
+- `npx tsc --noEmit`: pass.
+- Focused specs: N/A for this type/model-only slice.
+- `npm run build`: pass with known bundle budget and Supabase `cookie` warnings.
+- Static grep: pass, no PvP services, direct table reads/writes or Angular RPC calls.
+
+**Clean code:** DRY/KISS/SoC/file size: pass.
+
+**Reuse:**
+
+| reused | checked but not reused | new |
+|---|---|---|
+| generated Supabase table/RPC types, existing `Json` | services/UI/write paths/manual PvP flows | PvP RPC type aliases, PvP domain models |
+
+**Manual smoke:** N/A for this model/type-only slice.
+
+**Follow-up:** `Json` fields for spy/resource/reward/report/notification contexts are model-only DB snapshot/context placeholders. Future slices must not render those blobs directly in UI or treat them as public-safe without an explicit mapper/contract review.
+
 ---
 
 ## Task R2 — PvP mappers
