@@ -6107,6 +6107,14 @@ Reports have their own Reports Center and unread state. Toasts are presentation 
 - No notification is created by Angular direct insert.
 - Remaining blockers, if any, are concrete and actionable.
 
+**Status:** Accepted on 2026-05-05 as a technical checkpoint.
+
+**Acceptance summary:** Q10 verified the implemented notification slice technically without claiming unavailable manual DB smoke. Covered paths include notification type/admin read-only surfaces, player and staff notification list/count RPC boundaries, player mark-read/dismiss RPC actions, player/staff bell state and route-guard behavior, fresh-toast eligibility/dedupe rules, and Q9 DB-owned producer diagnostics through `get_admin_notification_db_owned_producer_diagnostics(...)`. No code or DB/RPC behavior was changed during Q10.
+
+**Verification:** `npx tsc --noEmit` passed; focused notification specs passed with 57 SUCCESS; `npm run build` passed with known bundle budget and Supabase `cookie` CommonJS warnings; static greps found no direct notification writes, no `TABLES.notifications`, no `.from('notifications')`, and `create_notification` only in generated `database.types.ts`.
+
+**Manual smoke:** Not claimed by Codex because no authenticated session, live admin/staff/player access or representative workflow data was available in the run. Pending manual checks remain: player inbox load/count/mark-read/dismiss; staff selected-server inbox list/count/RLS; `/admin/notification-hooks` live rows from `get_admin_notification_db_owned_producer_diagnostics(...)`; real producer smoke for building completion plus trade/auction/anti-abuse where data exists; and confirmation that report creation does not create a default notification.
+
 ---
 
 # Epic R — PvP Foundation
