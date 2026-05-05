@@ -53,6 +53,12 @@ export interface PlayerNotificationListItem {
   defaultToastEnabled: boolean;
 }
 
+export interface PlayerNotificationFilters {
+  readonly limit: number;
+  readonly offset: number;
+  readonly unreadOnly: boolean;
+}
+
 export interface StaffNotificationListItem {
   notificationId: string;
   type: NotificationTypeSnapshot;

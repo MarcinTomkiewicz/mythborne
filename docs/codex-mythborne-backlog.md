@@ -5780,6 +5780,14 @@ Reports have their own Reports Center and unread state. Toasts are presentation 
 - No direct notification table mutation is introduced.
 - Build and focused service tests pass.
 
+**Status:** Accepted on 2026-05-05.
+
+**Acceptance summary:** Q2 added the RPC-only `NotificationInbox` service for player/user/hero notification reads. `getPlayerNotifications(...)` uses `ActiveHero.requireActiveHero()` with `get_my_notifications(...)`, passes active `heroId` and `serverId`, requests non-dismissed rows, supports unread/limit/offset filters, maps through the Q1 player mapper and defensively filters dismissed rows. `getPlayerUnreadCount()` uses `get_my_notification_unread_count(...)` only, keeping Reports unread count separate. Staff rows remain blocked by the player mapper boundary. No UI, action service, direct table read/write or frontend notification write path was added.
+
+**Verification:** `npx tsc --noEmit` passed; focused notification service/mapper specs passed with 11 SUCCESS after rerunning outside the known sandbox `spawn EPERM`; `npm run build` passed with known bundle budget and Supabase `cookie` CommonJS warnings; static greps passed for no direct notification writes, no report unread RPC mixing and no durable `any` in the checked Q2 paths.
+
+**Manual smoke:** N/A for service-only slice.
+
 ---
 
 ## Task Q3 — Staff notification read service and unread count

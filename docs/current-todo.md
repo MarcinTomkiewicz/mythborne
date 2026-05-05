@@ -177,7 +177,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: P10 - Future PvP and siege report placeholders.
 - Completed and confirmed: P11 - Reports Center prototype UI smoke and blocker report technical checkpoint.
 - Completed and confirmed: Q1 - Notification domain models and mappers.
-- Next backlog task: Q2 - Player notification read service and unread count from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
+- Completed and confirmed: Q2 - Player notification read service and unread count.
+- Next backlog task: Q3 - Staff notification read service and unread count from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
 - P2-P11 follow-ups: full manual smoke for list/detail/public-route/combat-rendering/item-reference rendering/unread/remove, low-level combat report creation, reward-drop attachment, contextual trial/encounter/PvP/siege readiness and deletion semantics needs authenticated session plus representative report producer/combat result/item/contextual/multi-access data.
 - O6 user smoke confirmed real job behavior: start job, active job panel, route leave/return, browser refresh during an active job, completed-job settlement, and the new building level after `completes_at`.
 - O8 user smoke confirmed building admin save/read behavior for `startingLevel = 0`. The editor now treats `starting_level = 0` as a legal not-built definition state, preserves it through mapping/form/save payload, keeps `startingLevel = 2` round-tripping, exposes `min=0`/`step=1`, and rejects negative/non-integer values instead of silently clamping.
