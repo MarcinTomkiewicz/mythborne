@@ -59,6 +59,25 @@ describe('GameSidebar', () => {
     expect(urls).toContain('/game/auction');
   });
 
+  it('shows the vicinity navigation entry without introducing neighborhood labels', () => {
+    const items = component.menuItems();
+
+    expect(items).toEqual(jasmine.arrayContaining([
+      jasmine.objectContaining({
+        title: 'Vicinity',
+        url: '/game/vicinity',
+      }),
+    ]));
+    expect(items).toEqual(jasmine.arrayContaining([
+      jasmine.objectContaining({
+        title: 'Mansion',
+        url: '/game/mansion',
+      }),
+    ]));
+    expect(items.some((item) => item.title === 'Neighborhood')).toBeFalse();
+    expect(items.some((item) => item.url === '/game/neighborhood')).toBeFalse();
+  });
+
   it('hides the admin link for normal logged-in players', () => {
     const urls = component.menuItems().map((item) => item.url);
 
@@ -91,6 +110,7 @@ describe('GameSidebar', () => {
 
     expect(urls).not.toContain('/hero/dashboard');
     expect(urls).not.toContain('/game/combat');
+    expect(urls).not.toContain('/game/vicinity');
     expect(urls).not.toContain('/game/auction');
     expect(urls).toContain('/admin');
   });

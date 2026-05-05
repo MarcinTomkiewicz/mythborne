@@ -6362,6 +6362,8 @@ PvP Foundation is not:
 - Vicinity is reachable from player navigation.
 - No `Neighborhood` player route/label is introduced.
 
+**Implementation note:** R6 accepted on 2026-05-05. The player sidebar navigation has `Vicinity` pointing to `/game/vicinity`, keeps `Mansion` at `/game/mansion`, and does not introduce `Neighborhood` / `/game/neighborhood`. Sidebar regression coverage verifies that staff-blocked standard server context hides `/game/vicinity`, so the link stays on the same `MENU_LOGGED_IN` gameplay filtering path as other player gameplay links. No UI/workflow/PvP logic was added.
+
 ---
 
 ## Task R7 — Vicinity target candidate state
