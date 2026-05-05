@@ -1,6 +1,7 @@
 import {
   GameReportCombatAttack,
   GameReportCombatParticipant,
+  GameReportCombatParticipantStat,
   GameReportCombatSection,
 } from '../domain/reports/game-report.model';
 import { Json } from '../types/database.types';
@@ -25,8 +26,13 @@ export function parseGameReportCombatSectionJson(
   const record = requiredJsonRecord(value, 'combat_section_json');
 
   return {
+    sourceType: optionalJsonString(readJsonField(record, 'sourceType')),
     outcome: requiredJsonString(readJsonField(record, 'outcome'), 'outcome'),
+    winnerSide: optionalJsonString(readJsonField(record, 'winnerSide')),
+    loserSide: optionalJsonString(readJsonField(record, 'loserSide')),
     turnsCompleted: optionalJsonNumber(readJsonField(record, 'turnsCompleted')),
+    startedAt: optionalJsonString(readJsonField(record, 'startedAt')),
+    completedAt: optionalJsonString(readJsonField(record, 'completedAt')),
     participants: parseCombatParticipants(readJsonField(record, 'participants')),
     attacks: parseCombatAttacks(readJsonField(record, 'attacks')),
   };
@@ -47,6 +53,31 @@ function parseCombatParticipants(value: Json | undefined): GameReportCombatParti
       healthStart: optionalJsonNumber(readJsonField(record, 'healthStart')),
       healthEnd: optionalJsonNumber(readJsonField(record, 'healthEnd')),
       maxHealth: optionalJsonNumber(readJsonField(record, 'maxHealth')),
+      defense: optionalJsonNumber(readJsonField(record, 'defense')),
+      minDamage: optionalJsonNumber(readJsonField(record, 'minDamage')),
+      maxDamage: optionalJsonNumber(readJsonField(record, 'maxDamage')),
+      luck: optionalJsonNumber(readJsonField(record, 'luck')),
+      criticalChance: optionalJsonNumber(readJsonField(record, 'criticalChance')),
+      criticalDamage: optionalJsonNumber(readJsonField(record, 'criticalDamage')),
+      evasionChance: optionalJsonNumber(readJsonField(record, 'evasionChance')),
+      stats: parseCombatParticipantStats(readJsonField(record, 'stats')),
+    };
+  });
+}
+
+function parseCombatParticipantStats(
+  value: Json | undefined,
+): GameReportCombatParticipantStat[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  return requiredJsonArray(value, 'participant stats').map((entry) => {
+    const record = requiredJsonRecord(entry, 'participant stats entry');
+
+    return {
+      statKey: requiredJsonString(readJsonField(record, 'statKey'), 'statKey'),
+      statValue: requiredJsonNumber(readJsonField(record, 'statValue'), 'statValue'),
     };
   });
 }
@@ -65,6 +96,8 @@ function parseCombatAttacks(value: Json | undefined): GameReportCombatAttack[] {
       timingHit: optionalJsonBoolean(readJsonField(record, 'timingHit')),
       evaded: optionalJsonBoolean(readJsonField(record, 'evaded')) ?? false,
       critical: optionalJsonBoolean(readJsonField(record, 'critical')) ?? false,
+      criticalDamage: optionalJsonNumber(readJsonField(record, 'criticalDamage')),
+      rolledDamage: optionalJsonNumber(readJsonField(record, 'rolledDamage')),
       finalDamage: requiredJsonNumber(readJsonField(record, 'finalDamage'), 'finalDamage'),
       targetHealthBefore: optionalJsonNumber(readJsonField(record, 'targetHealthBefore')),
       targetHealthAfter: optionalJsonNumber(readJsonField(record, 'targetHealthAfter')),

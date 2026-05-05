@@ -49,22 +49,114 @@
 
   @if (report().combatSection; as combat) {
     <div class="flex-row-start-center flex-wrap gap-sm">
+      @if (combat.sourceType) {
+        <span class="tag-badge tag-badge--muted">{{ combat.sourceType }}</span>
+      }
       <span class="tag-badge tag-badge--info">{{ combat.outcome }}</span>
+      @if (combat.winnerSide) {
+        <span class="tag-badge tag-badge--warn">Winner {{ combat.winnerSide }}</span>
+      }
+      @if (combat.loserSide) {
+        <span class="tag-badge tag-badge--muted">Loser {{ combat.loserSide }}</span>
+      }
       @if (combat.turnsCompleted !== null) {
         <span class="tag-badge tag-badge--muted">{{ combat.turnsCompleted }} turns</span>
+      }
+    </div>
+
+    @if (combat.startedAt || combat.completedAt) {
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+        <div class="mg-card flex-col gap-xs p-md">
+          <span class="muted-text">Started</span>
+          <strong class="heading-color">{{ toDateTimeLabel(combat.startedAt) }}</strong>
+        </div>
+        <div class="mg-card flex-col gap-xs p-md">
+          <span class="muted-text">Completed</span>
+          <strong class="heading-color">{{ toDateTimeLabel(combat.completedAt) }}</strong>
+        </div>
+      </div>
+    }
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+      @for (participant of combat.participants; track $index) {
+        <div class="mg-card flex-col gap-sm p-md">
+          <div class="flex-row-between-center flex-col-sm gap-sm">
+            <div class="flex-col gap-xs">
+              <strong class="heading-color">{{ participant.displayName }}</strong>
+              <span class="muted-text">
+                {{ participant.side }} / {{ participant.participantKind }}
+              </span>
+            </div>
+            @if (participant.level !== null) {
+              <span class="tag-badge tag-badge--muted">Level {{ participant.level }}</span>
+            }
+          </div>
+
+          <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-sm">
+            <div class="flex-col gap-xs">
+              <span class="muted-text">HP start</span>
+              <strong class="heading-color">{{ toOptionalNumberLabel(participant.healthStart) }}</strong>
+            </div>
+            <div class="flex-col gap-xs">
+              <span class="muted-text">HP end</span>
+              <strong class="heading-color">{{ toOptionalNumberLabel(participant.healthEnd) }}</strong>
+            </div>
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Max HP</span>
+              <strong class="heading-color">{{ toOptionalNumberLabel(participant.maxHealth) }}</strong>
+            </div>
+          </div>
+
+          @if (hasCombatStats(participant)) {
+            <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-sm">
+              <span class="muted-text">Def {{ toOptionalNumberLabel(participant.defense) }}</span>
+              <span class="muted-text">
+                Damage {{ toOptionalNumberLabel(participant.minDamage) }}-{{ toOptionalNumberLabel(participant.maxDamage) }}
+              </span>
+              <span class="muted-text">Luck {{ toOptionalNumberLabel(participant.luck) }}</span>
+              <span class="muted-text">Crit {{ toOptionalNumberLabel(participant.criticalChance) }}</span>
+              <span class="muted-text">Crit dmg {{ toOptionalNumberLabel(participant.criticalDamage) }}</span>
+              <span class="muted-text">Evasion {{ toOptionalNumberLabel(participant.evasionChance) }}</span>
+            </div>
+
+            @if (participant.stats.length > 0) {
+              <div class="flex-row-start-center flex-wrap gap-sm">
+                @for (stat of participant.stats; track stat.statKey) {
+                  <span class="tag-badge tag-badge--muted">
+                    {{ stat.statKey }} {{ stat.statValue }}
+                  </span>
+                }
+              </div>
+            }
+          }
+        </div>
       }
     </div>
 
     <div class="flex-col gap-sm">
       @for (attack of combat.attacks; track attack.turnNumber + '-' + attack.attackOrder) {
         <div class="mg-card flex-col gap-xs p-md">
-          <strong class="heading-color">
-            Turn {{ attack.turnNumber }} / {{ attack.sourceLabel }}
-          </strong>
+          <div class="flex-row-between-center flex-col-sm gap-sm">
+            <strong class="heading-color">
+              Turn {{ attack.turnNumber }} / order {{ attack.attackOrder }}
+            </strong>
+            <span class="tag-badge tag-badge--info">{{ attack.sourceLabel }}</span>
+          </div>
           <span class="muted-text">{{ attack.displayText }}</span>
-          <span class="muted-text">
-            Damage {{ attack.finalDamage }} | Critical {{ attack.critical ? 'yes' : 'no' }}
-          </span>
+          <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-sm">
+            <span class="muted-text">Actor {{ attack.actorSide }}</span>
+            <span class="muted-text">Target {{ attack.targetSide }}</span>
+            <span class="muted-text">Source {{ attack.sourceKind ?? 'n/a' }}</span>
+            <span class="muted-text">Timing hit {{ toBooleanLabel(attack.timingHit) }}</span>
+            <span class="muted-text">Evaded {{ toBooleanLabel(attack.evaded) }}</span>
+            <span class="muted-text">Critical {{ toBooleanLabel(attack.critical) }}</span>
+            <span class="muted-text">Rolled {{ toOptionalNumberLabel(attack.rolledDamage) }}</span>
+            <span class="muted-text">Critical dmg {{ toOptionalNumberLabel(attack.criticalDamage) }}</span>
+            <span class="muted-text">Final {{ attack.finalDamage }}</span>
+            <span class="muted-text">
+              Target HP {{ toHpChangeLabel(attack.targetHealthBefore, attack.targetHealthAfter) }}
+            </span>
+          </div>
         </div>
       }
     </div>

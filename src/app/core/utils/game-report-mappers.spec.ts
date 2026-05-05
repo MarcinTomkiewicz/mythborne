@@ -81,6 +81,7 @@ describe('game report mappers', () => {
           turnNumber: 1,
           actorSide: 'initiator',
           sourceLabel: 'Bronze blade',
+          rolledDamage: 8,
           finalDamage: 12,
         }),
       ],
@@ -123,12 +124,20 @@ describe('game report mappers', () => {
     );
     expect(Object.keys(report.combatSection?.participants[0] ?? {}).sort()).toEqual([
       'displayName',
+      'criticalChance',
+      'criticalDamage',
+      'defense',
+      'evasionChance',
       'healthEnd',
       'healthStart',
       'level',
+      'luck',
+      'maxDamage',
       'maxHealth',
+      'minDamage',
       'participantKind',
       'side',
+      'stats',
     ].sort());
     expect(report.combatSection?.participants[0] as unknown as Record<string, unknown>)
       .not.toEqual(jasmine.objectContaining({
@@ -140,9 +149,11 @@ describe('game report mappers', () => {
       'actorSide',
       'attackOrder',
       'critical',
+      'criticalDamage',
       'displayText',
       'evaded',
       'finalDamage',
+      'rolledDamage',
       'sourceKind',
       'sourceLabel',
       'targetHealthAfter',
@@ -195,6 +206,55 @@ describe('game report mappers', () => {
         },
       })),
     ).toThrowError('attacks must be a JSON array.');
+  });
+
+  it('orders combat attacks by historical turn and attack order', () => {
+    const combat = combatSectionJson() as Record<string, unknown>;
+    combat['attacks'] = [
+      {
+        turnNumber: 2,
+        attackOrder: 20,
+        actorSide: 'defender',
+        targetSide: 'initiator',
+        sourceKind: 'natural',
+        sourceLabel: 'Claws',
+        timingHit: null,
+        evaded: false,
+        critical: false,
+        criticalDamage: null,
+        rolledDamage: 4,
+        finalDamage: 4,
+        targetHealthBefore: 18,
+        targetHealthAfter: 14,
+        displayText: 'Training Shade claws Hero One.',
+      },
+      {
+        turnNumber: 1,
+        attackOrder: 10,
+        actorSide: 'initiator',
+        targetSide: 'defender',
+        sourceKind: 'item',
+        sourceLabel: 'Bronze blade',
+        timingHit: true,
+        evaded: false,
+        critical: true,
+        criticalDamage: 12,
+        rolledDamage: 8,
+        finalDamage: 12,
+        targetHealthBefore: 24,
+        targetHealthAfter: 12,
+        displayText: 'Hero One strikes Training Shade.',
+      },
+    ];
+
+    const detail = mapPrivateGameReportDetail(privateDetailRow({
+      combat_section_json: combat as Json,
+    }));
+
+    expect(detail.combatSection?.attacks.map((attack) => attack.turnNumber))
+      .toEqual([1, 2]);
+    expect(detail.combatSection?.attacks.map((attack) => attack.attackOrder))
+      .toEqual([10, 20]);
   });
 
   it('maps dictionary and raw row helpers into explicit read models', () => {
@@ -311,8 +371,13 @@ function itemReferencesJson(): Json {
 
 function combatSectionJson(): Json {
   return {
+    sourceType: 'sandbox',
     outcome: 'initiator_victory',
+    winnerSide: 'initiator',
+    loserSide: 'defender',
     turnsCompleted: 2,
+    startedAt: '2026-05-05T09:59:00.000Z',
+    completedAt: '2026-05-05T10:00:00.000Z',
     participants: [
       {
         side: 'initiator',
@@ -323,6 +388,19 @@ function combatSectionJson(): Json {
         healthStart: 30,
         healthEnd: 18,
         maxHealth: 30,
+        defense: 4,
+        minDamage: 5,
+        maxDamage: 10,
+        luck: 2,
+        criticalChance: 0.15,
+        criticalDamage: 1.5,
+        evasionChance: 0.05,
+        stats: [
+          {
+            statKey: 'strength',
+            statValue: 7,
+          },
+        ],
       },
       {
         side: 'defender',
@@ -333,6 +411,14 @@ function combatSectionJson(): Json {
         healthStart: 24,
         healthEnd: 0,
         maxHealth: 24,
+        defense: 2,
+        minDamage: 3,
+        maxDamage: 8,
+        luck: 1,
+        criticalChance: 0.05,
+        criticalDamage: 1.25,
+        evasionChance: 0.02,
+        stats: [],
       },
     ],
     attacks: [
@@ -348,6 +434,8 @@ function combatSectionJson(): Json {
         timingHit: true,
         evaded: false,
         critical: true,
+        criticalDamage: 12,
+        rolledDamage: 8,
         finalDamage: 12,
         targetHealthBefore: 24,
         targetHealthAfter: 12,

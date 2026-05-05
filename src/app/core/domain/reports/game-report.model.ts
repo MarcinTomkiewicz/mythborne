@@ -53,6 +53,19 @@ export interface GameReportCombatParticipant {
   healthStart: number | null;
   healthEnd: number | null;
   maxHealth: number | null;
+  defense: number | null;
+  minDamage: number | null;
+  maxDamage: number | null;
+  luck: number | null;
+  criticalChance: number | null;
+  criticalDamage: number | null;
+  evasionChance: number | null;
+  stats: GameReportCombatParticipantStat[];
+}
+
+export interface GameReportCombatParticipantStat {
+  statKey: string;
+  statValue: number;
 }
 
 export interface GameReportCombatAttack {
@@ -65,6 +78,8 @@ export interface GameReportCombatAttack {
   timingHit: boolean | null;
   evaded: boolean;
   critical: boolean;
+  criticalDamage: number | null;
+  rolledDamage: number | null;
   finalDamage: number;
   targetHealthBefore: number | null;
   targetHealthAfter: number | null;
@@ -72,8 +87,13 @@ export interface GameReportCombatAttack {
 }
 
 export interface GameReportCombatSection {
+  sourceType: string | null;
   outcome: string;
+  winnerSide: string | null;
+  loserSide: string | null;
   turnsCompleted: number | null;
+  startedAt: string | null;
+  completedAt: string | null;
   participants: GameReportCombatParticipant[];
   attacks: GameReportCombatAttack[];
 }

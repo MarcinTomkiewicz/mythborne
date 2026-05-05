@@ -5364,6 +5364,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 - Public renderer does not require internal combat ids.
 - Build passes.
 
+**Implementation note:** P5 accepted on 2026-05-05. The shared `GameReportContent` renderer now renders persisted `combat_section_json` for both private report detail and public reports, including source/outcome/winner/loser/timestamps where present, participant HP/combat/base-stat snapshots, and historical attack timeline fields for turn/order/sides/source label/timing/evasion/critical/rolled/final damage/target HP/display text. The renderer does not recompute combat state, does not read live hero/opponent stats, and public rendering remains based on the public-safe report model without internal combat ids or full equipment/loadout exposure. Historical participant snapshot rendering uses `$index` tracking rather than non-unique domain fields such as combat side. Verification passed with `npx tsc --noEmit`, focused report specs with 26 SUCCESS, static greps and `npm run build` with known warnings. Manual smoke remains pending until representative combat report data exists.
+
 ---
 
 ## Task P6 — Combat report creation integration
