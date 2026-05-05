@@ -1,13 +1,21 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
-import { GetMyNotificationsRpcRow } from '../../types/notification-rpc.types';
+import {
+  GetMyNotificationsRpcRow,
+  GetMyStaffNotificationsRpcRow,
+} from '../../types/notification-rpc.types';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 import { NotificationInbox } from './notification-inbox';
 
 type NotificationRowOverride = {
   [Key in keyof GetMyNotificationsRpcRow]: GetMyNotificationsRpcRow[Key] | null;
+};
+
+type StaffNotificationRowOverride = {
+  [Key in keyof GetMyStaffNotificationsRpcRow]:
+    GetMyStaffNotificationsRpcRow[Key] | null;
 };
 
 describe('NotificationInbox', () => {
@@ -140,6 +148,93 @@ describe('NotificationInbox', () => {
     expect(backend.delete).not.toHaveBeenCalled();
     expect(backend.upsert).not.toHaveBeenCalled();
   });
+
+  it('loads staff notifications through the server-scoped staff RPC', async () => {
+    backend.rpc.and.returnValue(of([staffNotificationRow()]));
+
+    const notifications = await firstValueFrom(
+      service.getStaffNotifications(' server-1 ', {
+        limit: 10,
+        offset: 5,
+        unreadOnly: true,
+      }),
+    );
+
+    expect(activeHero.requireActiveHero).not.toHaveBeenCalled();
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_my_staff_notifications,
+      {
+        p_include_dismissed: false,
+        p_limit: 10,
+        p_offset: 5,
+        p_server_id: 'server-1',
+        p_unread_only: true,
+      },
+    );
+    expect(notifications[0]).toEqual(jasmine.objectContaining({
+      notificationId: 'staff-notification-1',
+      recipientKind: 'staff',
+      serverId: 'server-1',
+      actorHeroId: 'hero-actor-1',
+      recipientHeroId: null,
+      title: 'Case needs review',
+    }));
+  });
+
+  it('loads staff unread count through the staff count RPC only', async () => {
+    backend.rpc.and.returnValue(of(2));
+
+    await expectAsync(firstValueFrom(service.getStaffUnreadCount('server-1')))
+      .toBeResolvedTo(2);
+
+    expect(activeHero.requireActiveHero).not.toHaveBeenCalled();
+    expect(backend.rpc).toHaveBeenCalledOnceWith(
+      RPC.get_my_staff_notification_unread_count,
+      { p_server_id: 'server-1' },
+    );
+  });
+
+  it('does not load staff notifications without an explicit server id', () => {
+    expect(() => service.getStaffNotifications(' '))
+      .toThrowError('serverId is required for staff notifications.');
+    expect(() => service.getStaffUnreadCount(''))
+      .toThrowError('serverId is required for staff notifications.');
+    expect(backend.rpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects non-staff rows returned to the staff inbox boundary', async () => {
+    backend.rpc.and.returnValue(of([
+      staffNotificationRow({ recipient_kind: 'hero' }),
+    ]));
+
+    await expectAsync(firstValueFrom(service.getStaffNotifications('server-1')))
+      .toBeRejectedWithError(
+        'Non-staff notifications must not be mapped into the staff inbox.',
+      );
+  });
+
+  it('keeps dismissed staff notifications out of the normal staff result', async () => {
+    backend.rpc.and.returnValue(of([
+      staffNotificationRow(),
+      staffNotificationRow({
+        dismissed_at: '2026-05-05T10:15:00.000Z',
+        is_dismissed: true,
+        notification_id: 'staff-notification-2',
+        title: 'Dismissed staff notification',
+      }),
+    ]));
+
+    const notifications = await firstValueFrom(
+      service.getStaffNotifications('server-1'),
+    );
+
+    expect(notifications.map((notification) => notification.notificationId))
+      .toEqual(['staff-notification-1']);
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_my_staff_notifications,
+      jasmine.objectContaining({ p_include_dismissed: false }),
+    );
+  });
 });
 
 function notificationRow(
@@ -170,4 +265,34 @@ function notificationRow(
     title: 'Building completed',
     ...overrides,
   } as unknown as GetMyNotificationsRpcRow;
+}
+
+function staffNotificationRow(
+  overrides: Partial<StaffNotificationRowOverride> = {},
+): GetMyStaffNotificationsRpcRow {
+  return {
+    action_label: 'Open case',
+    action_url: '/admin/anti-abuse-cases/case-1',
+    actor_hero_id: 'hero-actor-1',
+    body: 'A staff case needs review.',
+    created_at: '2026-05-05T10:00:00.000Z',
+    default_toast_enabled: true,
+    dismissed_at: null,
+    is_dismissed: false,
+    is_unread: true,
+    notification_id: 'staff-notification-1',
+    notification_type_category: 'staff',
+    notification_type_helper_text: 'Staff review updates.',
+    notification_type_key: 'anti_abuse.case_attention',
+    notification_type_label: 'Case attention',
+    read_at: null,
+    recipient_hero_id: null,
+    recipient_kind: 'staff',
+    server_id: 'server-1',
+    severity: 'warning',
+    source_entity_id: 'case-1',
+    source_entity_type: 'anti_abuse_case',
+    title: 'Case needs review',
+    ...overrides,
+  } as unknown as GetMyStaffNotificationsRpcRow;
 }

@@ -4,14 +4,24 @@ import { RPC } from '../../constants/rpc.const';
 import {
   PlayerNotificationFilters,
   PlayerNotificationListItem,
+  StaffNotificationFilters,
+  StaffNotificationListItem,
 } from '../../domain/notifications/notification.model';
 import {
   GetMyNotificationUnreadCountRpcArgs,
   GetMyNotificationUnreadCountRpcReturn,
   GetMyNotificationsRpcArgs,
   GetMyNotificationsRpcRow,
+  GetMyStaffNotificationUnreadCountRpcArgs,
+  GetMyStaffNotificationUnreadCountRpcReturn,
+  GetMyStaffNotificationsRpcArgs,
+  GetMyStaffNotificationsRpcRow,
 } from '../../types/notification-rpc.types';
-import { mapPlayerNotificationListItem } from '../../utils/notification-mappers';
+import {
+  mapPlayerNotificationListItem,
+  mapStaffNotificationListItem,
+} from '../../utils/notification-mappers';
+import { trimText } from '../../utils/normalize-text';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
@@ -64,4 +74,52 @@ export class NotificationInbox {
       }),
     );
   }
+
+  getStaffNotifications(
+    serverId: string,
+    filters: Partial<StaffNotificationFilters> = {},
+  ): Observable<StaffNotificationListItem[]> {
+    const normalizedServerId = requiredServerId(serverId);
+    const args: GetMyStaffNotificationsRpcArgs = {
+      p_include_dismissed: false,
+      p_limit: filters.limit ?? DEFAULT_NOTIFICATION_LIMIT,
+      p_offset: filters.offset ?? 0,
+      p_server_id: normalizedServerId,
+      p_unread_only: filters.unreadOnly ?? false,
+    };
+
+    return this.backend.rpc<GetMyStaffNotificationsRpcRow[]>(
+      RPC.get_my_staff_notifications,
+      args,
+    ).pipe(
+      map((rows) =>
+        rows
+          .map(mapStaffNotificationListItem)
+          .filter((notification) => !notification.readState.isDismissed),
+      ),
+    );
+  }
+
+  getStaffUnreadCount(
+    serverId: string,
+  ): Observable<GetMyStaffNotificationUnreadCountRpcReturn> {
+    const args: GetMyStaffNotificationUnreadCountRpcArgs = {
+      p_server_id: requiredServerId(serverId),
+    };
+
+    return this.backend.rpc<GetMyStaffNotificationUnreadCountRpcReturn>(
+      RPC.get_my_staff_notification_unread_count,
+      args,
+    );
+  }
+}
+
+function requiredServerId(value: string): string {
+  const normalized = trimText(value);
+
+  if (!normalized) {
+    throw new Error('serverId is required for staff notifications.');
+  }
+
+  return normalized;
 }

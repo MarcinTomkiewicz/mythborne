@@ -5814,6 +5814,14 @@ Reports have their own Reports Center and unread state. Toasts are presentation 
 - Staff action links remain route-guarded and server-scoped.
 - Build and access tests pass where possible.
 
+**Status:** Accepted on 2026-05-05.
+
+**Acceptance summary:** Q3 extended the RPC-only `NotificationInbox` service with explicit server-scoped staff list/count methods. `getStaffNotifications(serverId, ...)` requires a non-empty server id, uses `get_my_staff_notifications(...)`, requests non-dismissed rows, supports unread/limit/offset filters, maps through the Q1 staff mapper and defensively filters dismissed rows. `getStaffUnreadCount(serverId)` uses `get_my_staff_notification_unread_count(...)` only. Staff methods do not call `ActiveHero.requireActiveHero()`, do not use player notification/count RPCs and do not expose staff notifications through a player UI. Non-staff rows returned by the staff RPC are rejected by the mapper. No UI, action service, direct table read/write or frontend notification write path was added.
+
+**Verification:** `npx tsc --noEmit` passed; focused notification service/mapper specs passed with 16 SUCCESS; `npm run build` passed with known bundle budget and Supabase `cookie` CommonJS warnings; static greps passed for no direct notification writes and no durable `any` in the checked Q3 paths.
+
+**Manual smoke:** N/A for service-only slice.
+
 ---
 
 ## Task Q4 — Notification bell / dropdown UI

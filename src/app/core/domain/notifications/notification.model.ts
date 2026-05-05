@@ -59,6 +59,12 @@ export interface PlayerNotificationFilters {
   readonly unreadOnly: boolean;
 }
 
+export interface StaffNotificationFilters {
+  readonly limit: number;
+  readonly offset: number;
+  readonly unreadOnly: boolean;
+}
+
 export interface StaffNotificationListItem {
   notificationId: string;
   type: NotificationTypeSnapshot;
