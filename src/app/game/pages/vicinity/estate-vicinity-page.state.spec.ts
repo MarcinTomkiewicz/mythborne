@@ -9,13 +9,16 @@ import { EstateRelocationResult } from '../../../core/domain/estate/estate-reloc
 import { EstateAddresses } from '../../../core/services/estate/estate-addresses';
 import { EstateRelocation } from '../../../core/services/estate/estate-relocation';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
+import { ToastService } from '../../../core/services/ui/toast';
 import { EstateVicinityPageState } from './estate-vicinity-page.state';
+import { VicinityRelocationRunner } from './vicinity-relocation-runner';
 
 describe('EstateVicinityPageState', () => {
   let state: EstateVicinityPageState;
   let activeHero: jasmine.SpyObj<ActiveHero>;
   let estateAddresses: jasmine.SpyObj<EstateAddresses>;
   let estateRelocation: jasmine.SpyObj<EstateRelocation>;
+  let toast: jasmine.SpyObj<ToastService>;
 
   beforeEach(() => {
     activeHero = jasmine.createSpyObj<ActiveHero>('ActiveHero', ['requireActiveHero']);
@@ -27,6 +30,7 @@ describe('EstateVicinityPageState', () => {
     estateRelocation = jasmine.createSpyObj<EstateRelocation>('EstateRelocation', [
       'relocateActiveHeroEstate',
     ]);
+    toast = jasmine.createSpyObj<ToastService>('ToastService', ['show']);
 
     activeHero.requireActiveHero.and.returnValue(of({
       heroRow: { id: 'hero-1' } as never,
@@ -50,9 +54,11 @@ describe('EstateVicinityPageState', () => {
     TestBed.configureTestingModule({
       providers: [
         EstateVicinityPageState,
+        VicinityRelocationRunner,
         { provide: ActiveHero, useValue: activeHero },
         { provide: EstateAddresses, useValue: estateAddresses },
         { provide: EstateRelocation, useValue: estateRelocation },
+        { provide: ToastService, useValue: toast },
       ],
     });
     state = TestBed.inject(EstateVicinityPageState);
@@ -220,7 +226,14 @@ describe('EstateVicinityPageState', () => {
       confirmDestroyExistingEstate: true,
       reason: 'Player estate relocation from vicinity page.',
     });
-    expect(state.relocationSuccess()).toBe('Estate relocated to A-3300.');
+    expect(state.relocationSuccess()).toBe(
+      'Estate relocated to A-3300. The previous estate was reset and the new district baseline was initialized.',
+    );
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Estate relocated',
+      'Estate relocated to A-3300. The previous estate was reset and the new district baseline was initialized.',
+    );
     expect(state.error()).toBeNull();
     expect(state.currentAddressLabel()).toBe('A-3300');
     expect(state.rangeLabel()).toBe('A-3290 - A-3310');
@@ -246,6 +259,19 @@ describe('EstateVicinityPageState', () => {
     expect(state.relocationError()).toBeNull();
     expect(state.currentAddressLabel()).toBe('A-3301');
     expect(state.isRelocating()).toBeFalse();
+  });
+
+  it('shows local feedback when relocation is attempted without confirmation', () => {
+    state.relocate();
+
+    expect(estateRelocation.relocateActiveHeroEstate).not.toHaveBeenCalled();
+    expect(state.relocationError())
+      .toBe('Choose an empty vicinity address and confirm the destructive reset.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'warn',
+      'Relocation unavailable',
+      'Choose an empty vicinity address and confirm the destructive reset.',
+    );
   });
 });
 

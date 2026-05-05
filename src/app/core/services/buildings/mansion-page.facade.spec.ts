@@ -11,12 +11,14 @@ import { ActiveHero } from '../hero/active-hero';
 import { BuildingExplainabilityMetadata } from './building-explainability-metadata';
 import { BuildingsService } from './buildings';
 import { MansionPageFacade } from './mansion-page.facade';
+import { ToastService } from '../ui/toast';
 
 describe('MansionPageFacade', () => {
   let facade: MansionPageFacade;
   let buildingsService: jasmine.SpyObj<BuildingsService>;
   let explainabilityMetadata: jasmine.SpyObj<BuildingExplainabilityMetadata>;
   let activeHero: jasmine.SpyObj<ActiveHero>;
+  let toast: jasmine.SpyObj<ToastService>;
   let activeHeroState: WritableSignal<ActiveHeroState | null>;
 
   beforeEach(() => {
@@ -41,6 +43,7 @@ describe('MansionPageFacade', () => {
       ['loadActiveHero'],
       { state: activeHeroState.asReadonly() },
     );
+    toast = jasmine.createSpyObj<ToastService>('ToastService', ['show']);
     buildingsService.getMansionEstateView.and.returnValue(of(mansionView()));
     explainabilityMetadata.getRuntimeEntries.and.returnValue(of([]));
     buildingsService.startBuildingUpgrade.and.returnValue(of({
@@ -65,6 +68,7 @@ describe('MansionPageFacade', () => {
         { provide: BuildingsService, useValue: buildingsService },
         { provide: BuildingExplainabilityMetadata, useValue: explainabilityMetadata },
         { provide: ActiveHero, useValue: activeHero },
+        { provide: ToastService, useValue: toast },
       ],
     });
     facade = TestBed.inject(MansionPageFacade);
@@ -130,6 +134,11 @@ describe('MansionPageFacade', () => {
       targetLevel: 1,
     }));
     expect(facade.actionSuccess()).toBe('Agora started to level 1.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Building started',
+      'Agora started to level 1. Completion is tracked by the active building job.',
+    );
     expect(facade.actionError()).toBeNull();
     expect(facade.canStartBuilding(building())).toBeFalse();
     expect(facade.disabledBuildReason(building()))
@@ -158,6 +167,11 @@ describe('MansionPageFacade', () => {
 
     expect(buildingsService.startBuildingUpgrade).not.toHaveBeenCalled();
     expect(facade.actionError()).toBe('Another estate building job is already active.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'warn',
+      'Building action unavailable',
+      'Another estate building job is already active.',
+    );
   });
 
   it('ignores stale building action responses after active hero context changes', () => {

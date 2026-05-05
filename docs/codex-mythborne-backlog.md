@@ -4930,6 +4930,8 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 
 ## Task O11 — Estate/building feedback and notification integration
 
+**Status:** Done / accepted on 2026-05-05 after user smoke and clean-code review.
+
 **Goal:** Ensure estate/building actions provide correct immediate feedback and produce persistent notifications only where appropriate.
 
 **Scope:**
@@ -4965,6 +4967,8 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - Relocation does not create persistent notifications unless a separate design decision explicitly requires it.
 - Notification action links route to the estate/building UI.
 - Build passes.
+
+**Implementation note:** O11 accepted on 2026-05-05 after functional smoke and SoC blocker follow-up. Immediate estate/building action feedback now uses local inline state plus `ToastService`: relocation success/failure and missing confirmation are handled by `VicinityRelocationRunner` / `VicinityRelocationFeedback`, and build/upgrade success/failure/unavailable states are handled by `MansionBuildingActionRunner` / `MansionBuildingActionFeedback`. Relocation success feedback includes the new address, destructive reset and new district baseline initialization. The vicinity page state was split so range loading lives in `VicinityBrowserRangeLoader`, relocation RPC workflow/stale relocation guard/reload-after-success live in `VicinityRelocationRunner`, and the page state coordinates signals, selection/filter state and apply-result only. `EstateVicinityPageState` was reduced from about 414 to about 289 lines; `MansionPageFacade` remains about 229 lines after the mansion action split. Building completion notification production is DB-owned: current DB notes expose `estate.building_job.completed`, produced by the building finalization workflow, and Angular does not call `create_notification(...)` or insert/update notification rows. No DB/RPC contract change, frontend notification write, direct estate write, direct `estate_building_jobs` source, PvP action, game report, or local production fallback was added. Verification passed with `npx tsc --noEmit`, focused mansion/vicinity specs with 49 SUCCESS, static greps for notification/runtime boundaries, and `npm run build` with known budget/CommonJS warnings. Codex did not run manual or route smoke; user smoke passed. Known UI debt: vicinity still uses native selects / `ngModel` and should move to project/PrimeNG reactive-form patterns in a future UI pass.
 
 ---
 
@@ -7428,6 +7432,642 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 
 - Admin can distinguish power/value scaling from requirement scaling.
 - Quality settings come from DB/config/read model.
+
+---
+
+# Epic T — Guild Foundation
+
+Epic T implements the player-facing guild foundation over DB/RPC-owned guild contracts.
+
+Guilds in Mythsworn are a simple organization layer for:
+
+- shared guild armory / item lending;
+- future siege support;
+- future Argonautics support;
+- emergency leadership recovery.
+
+Epic T is not:
+
+- siege implementation;
+- Argonautics implementation;
+- guild-to-guild diplomacy;
+- alliances / non-aggression pacts / war declarations;
+- district influence;
+- guild reputation;
+- guild buildings;
+- a social activity feed;
+- a player-facing audit/history log for every guild action.
+
+**Current DB/RPC foundation expected before Codex starts Epic T tasks:**
+
+- generated `database.types.ts` regenerated after Guild DB/RPC migrations;
+- guild identity/read RPCs exist;
+- guild creation RPC exists;
+- guild membership read RPCs exist;
+- invite and request-to-join RPCs exist;
+- accept/reject invite/request RPCs exist;
+- kick/leave/disband/leadership RPCs exist where relevant;
+- emergency leader election RPCs exist;
+- guild armory read/write/loan RPCs exist;
+- guild armory access lock RPCs exist;
+- guild config/read model exists for:
+  - creation cost;
+  - member limit formula/config;
+  - emergency leader inactivity threshold;
+  - nomination duration;
+  - voting duration;
+  - max candidates;
+  - guild armory capacity.
+- DB enforces hero/server ownership and guild membership rules.
+- DB enforces that guild armory loan does not change `items.hero_id`.
+- DB enforces that borrowed guild items cannot be traded/auctioned/scrapped/vendor-sold by borrower.
+- DB enforces that owner/leader/officer force-return and withdraw/remove end loans where needed.
+- DB/RPC returns readable operation results for guild armory actions.
+
+If any of these DB/RPC contracts are missing, Codex must report a DB dependency instead of creating direct table writes or frontend fallback logic.
+
+**Epic rules:**
+
+- Frontend must not direct-insert/update/delete guild, membership, election, invite, request, armory or loan rows.
+- Frontend must not mutate `items.hero_id` for guild armory loans.
+- Frontend must not mutate `hero_equipment` directly.
+- Frontend must not fake guild membership or guild role state.
+- Frontend must not assume `hero.id === auth.uid()`.
+- All player guild actions use active hero and selected server.
+- A hero can belong to only one guild on a server.
+- Guild is server-scoped.
+- Membership is hero-based.
+- Roles are:
+  - leader;
+  - officer;
+  - member.
+- There is one officer.
+- Leader has full guild authority.
+- Officer can invite, accept/reject requests, kick, manage guild armory, force-return guild items and block armory access per member.
+- Officer cannot disband the guild.
+- Leader can disband the guild.
+- Guild creation has DB/config-owned cost.
+- Guild name is unique per server.
+- Guild tag is guild identity/display/search data where DB exposes it.
+- Member limit depends on leader level and DB/config/formula.
+- Guild armory is lending, not trade.
+- Guild armory deposit/loan does not change item owner.
+- Borrowed guild item can be equipped and can be part of presets.
+- Borrower cannot trade, auction, scrap or vendor-sell borrowed item.
+- Owner can withdraw/force-return/sell/trade/auction/scrap their own item according to DB rules.
+- Leader/officer can remove items from guild armory.
+- Removed/withdrawn item disappears from guild armory; it does not remain as a visible historical item.
+- Guild armory user-facing item states are only:
+  - available;
+  - borrowed.
+- Guild armory access lock is per member.
+- Blocked member cannot borrow or deposit.
+- Blocked member can return borrowed items.
+- Blocked member may still view guild armory read-only if DB/RPC allows it.
+- No player-facing full click history/log of guild armory actions.
+- UI may show current state such as “borrowed by X”.
+- Emergency leader election is a recovery election, not a normal confidence vote.
+- Emergency leader election starts only when leader inactivity threshold is met.
+- Election has nomination phase and voting phase.
+- No quorum.
+- Candidate with most votes wins; tie goes to earlier nomination.
+- Siege/Argonautics are future systems and must not be implemented in Epic T.
+
+---
+
+## Task T0 — Align generated DB types after guild foundation
+
+**Goal:** Synchronize generated frontend DB types with the current guild DB/RPC contract.
+
+**Scope:**
+
+- Regenerate/update Supabase database types after guild DB/RPC migrations.
+- Fix compile errors caused by new/changed guild RPC signatures.
+- Confirm generated types expose current guild contracts:
+  - guild read models;
+  - guild creation;
+  - membership;
+  - invites;
+  - join requests;
+  - roles;
+  - officer management;
+  - emergency election;
+  - guild armory;
+  - guild armory loans;
+  - armory access locks;
+  - guild config/read models.
+- Do not edit generated DB types manually.
+- Do not add frontend substitutes for missing RPCs.
+
+**Acceptance criteria:**
+
+- Frontend compiles against regenerated types.
+- Guild services can type canonical RPC calls.
+- No manual generated-type edits exist.
+
+---
+
+## Task T1 — Guild domain models and mappers
+
+**Goal:** Add typed frontend domain models for guild identity, membership, roles and configuration.
+
+**Scope:**
+
+- Add models for:
+  - guild summary;
+  - guild detail;
+  - guild role;
+  - guild membership;
+  - guild member list item;
+  - guild invite;
+  - guild join request;
+  - guild config summary;
+  - current hero guild state.
+- Map DB/RPC payloads through explicit mappers.
+- Preserve selected server and active hero boundaries.
+- Keep raw DB rows out of components.
+- Keep guild staff/admin fields separate from player-facing models if DB exposes them.
+
+**Acceptance criteria:**
+
+- Components consume domain models, not raw DB rows.
+- Guild role and membership state are explicit.
+- Mapper handles missing/null optional fields safely.
+- Build and focused mapper tests pass.
+
+---
+
+## Task T2 — Guild read service and current guild state
+
+**Goal:** Add a player-facing service/state layer for the current hero’s guild.
+
+**Scope:**
+
+- Load current hero guild membership through canonical RPC/read contract.
+- Load guild summary/detail for current hero’s guild.
+- Expose:
+  - no guild state;
+  - member state;
+  - officer state;
+  - leader state;
+  - loading/error state.
+- Guard async responses by selected server and active hero.
+- Do not query or mutate guild tables directly if RPC/read model exists.
+
+**Acceptance criteria:**
+
+- Current guild state resolves from active hero/server.
+- No-guild state is explicit.
+- Role-specific capabilities are derived from DB/RPC state.
+- Stale responses do not overwrite current selected server/hero state.
+
+---
+
+## Task T3 — Guild discovery and search
+
+**Goal:** Add player-facing guild discovery/search over DB/RPC read models.
+
+**Scope:**
+
+- Add service/state for guild list/search.
+- Search by guild name and tag where DB supports it.
+- Show:
+  - name;
+  - tag;
+  - member count;
+  - member limit;
+  - whether current hero can request to join;
+  - current request/invite status if available.
+- Do not expose staff-only metadata.
+- Do not fake member counts client-side.
+
+**Acceptance criteria:**
+
+- Player can browse/search guilds on selected server.
+- Name/tag display comes from DB.
+- Join availability reflects DB/RPC state.
+- No direct guild table mutation is introduced.
+
+---
+
+## Task T4 — Create guild flow
+
+**Goal:** Allow an eligible hero to create a guild through the canonical RPC.
+
+**Scope:**
+
+- Add create guild service action.
+- Add create guild UI/form where appropriate.
+- Include:
+  - guild name;
+  - guild tag if DB requires/exposes it.
+- Show DB/config-owned creation cost.
+- Submit through create guild RPC.
+- Refresh current guild state after success.
+- Surface uniqueness/cost/eligibility errors from RPC.
+
+**Acceptance criteria:**
+
+- Guild creation uses canonical RPC only.
+- Creation cost is displayed from DB/read model, not hardcoded.
+- Name/tag uniqueness errors are readable.
+- Hero already in a guild cannot create another guild.
+
+---
+
+## Task T5 — Guild invites
+
+**Goal:** Implement invite flow through DB/RPC contracts.
+
+**Scope:**
+
+- Leader/officer can invite an eligible hero.
+- Invited hero can accept or reject invite.
+- Show pending invites relevant to current hero.
+- Show pending outgoing invites where leader/officer view supports it.
+- Use canonical RPCs for invite, accept and reject.
+- Do not implement direct membership insertion.
+
+**Acceptance criteria:**
+
+- Invite workflow uses RPC only.
+- Leader/officer permissions come from DB/RPC.
+- Accepting invite refreshes current guild state.
+- Rejected/expired/invalid invite states are surfaced clearly.
+
+---
+
+## Task T6 — Request-to-join flow
+
+**Goal:** Implement request-to-join flow through DB/RPC contracts.
+
+**Scope:**
+
+- Hero without guild can request to join a guild.
+- Leader/officer can accept or reject join requests.
+- Current hero can see own pending requests.
+- Guild leader/officer can see incoming requests.
+- Use canonical RPCs only.
+- Refresh current guild and discovery state after mutations.
+
+**Acceptance criteria:**
+
+- Request-to-join is available in addition to invites.
+- Accepting request creates membership through DB/RPC workflow.
+- Rejection/duplicate/ineligible states are readable.
+- No direct guild membership table mutation exists.
+
+---
+
+## Task T7 — Guild member management
+
+**Goal:** Add guild member list and role-aware member actions.
+
+**Scope:**
+
+- Show guild member list:
+  - hero name;
+  - role;
+  - membership status where exposed;
+  - last activity if DB/RPC exposes it;
+  - armory access lock state if exposed.
+- Leader/officer can kick members according to DB/RPC rules.
+- Leader can promote/demote the single officer according to DB/RPC rules.
+- Officer cannot disband guild.
+- Member actions use canonical RPCs.
+- Refresh member list and current guild state after actions.
+
+**Acceptance criteria:**
+
+- Member list is role-aware.
+- Officer management respects one-officer rule.
+- Kick/promote/demote uses RPC only.
+- Current user cannot perform actions not allowed by their role.
+
+---
+
+## Task T8 — Guild leave and disband actions
+
+**Goal:** Wire guild leave/disband behavior through canonical RPCs.
+
+**Scope:**
+
+- Member/officer can leave guild where DB rules allow.
+- Leader cannot simply leave if DB requires disband or leadership transfer.
+- Leader can disband guild through canonical RPC.
+- Disband action is clearly destructive.
+- If DB blocks disband during active siege-related state, surface that error.
+- Refresh current guild state after success.
+
+**Acceptance criteria:**
+
+- Leave/disband use RPC only.
+- Leader restrictions are respected.
+- Disband is not available to officer/member.
+- Active-siege blocker is surfaced if DB returns it.
+- No frontend deletion of guild rows exists.
+
+---
+
+## Task T9 — Emergency leader election read state
+
+**Goal:** Add read state for emergency leader election.
+
+**Scope:**
+
+- Load current emergency election state for current guild.
+- Display:
+  - whether election can be started;
+  - leader inactivity threshold/status where DB exposes it;
+  - nomination phase;
+  - voting phase;
+  - candidates;
+  - votes summary if DB exposes it;
+  - time remaining.
+- Do not compute leader inactivity locally if DB/RPC provides the decision.
+- Do not create normal confidence-vote UI.
+
+**Acceptance criteria:**
+
+- Player can see whether emergency election is available.
+- Election phase is clear.
+- UI reflects DB/RPC timing and eligibility.
+- No quorum/50% requirement is shown.
+
+---
+
+## Task T10 — Emergency leader election actions
+
+**Goal:** Implement emergency leader election actions through canonical RPCs.
+
+**Scope:**
+
+- Any member can start election when DB allows it.
+- During nomination phase, eligible members can nominate candidates.
+- Candidate consent is not required.
+- Enforce max candidate count through DB/RPC result.
+- During voting phase, eligible members can vote.
+- Show result after completion.
+- Refresh guild state when election changes leader.
+
+**Acceptance criteria:**
+
+- Start/nominate/vote actions use RPC only.
+- 6h nomination + 12h voting semantics are represented from DB/RPC data.
+- Max 3 candidates is shown from DB/config where exposed.
+- Most votes wins; earlier nomination tie-breaker is presented in explanatory copy if useful.
+- No client-side election result calculation is authoritative.
+
+---
+
+## Task T11 — Guild armory domain models and service
+
+**Goal:** Add frontend models and service methods for guild armory and loans.
+
+**Scope:**
+
+- Add models for:
+  - guild armory item;
+  - guild armory item state;
+  - guild armory shelf;
+  - guild armory loan;
+  - guild armory operation result;
+  - armory access lock state.
+- Add service methods for:
+  - read guild armory;
+  - deposit item;
+  - borrow item;
+  - return borrowed item;
+  - force-return item;
+  - withdraw own item;
+  - remove item from armory;
+  - lock/unlock member armory access.
+- Use canonical RPCs only.
+- Do not mutate item ownership from Angular.
+
+**Acceptance criteria:**
+
+- Guild armory item states are limited to available/borrowed in player-facing models.
+- Borrowed item owner and borrower are represented clearly where DB exposes them.
+- Service preserves operation result details.
+- No direct writes to guild armory, loans, items or hero_equipment tables exist.
+
+---
+
+## Task T12 — Guild armory read UI
+
+**Goal:** Display guild armory with shelves and available/borrowed state.
+
+**Scope:**
+
+- Show guild armory items grouped by shelf where DB/RPC exposes shelf data.
+- Show item display data:
+  - item name/layers;
+  - owner;
+  - available or borrowed;
+  - borrower if borrowed;
+  - shelf number/name if exposed.
+- Show capacity summary:
+  - current count;
+  - limit;
+  - `0 = unlimited` handling.
+- Do not show removed/withdrawn items as guild armory items.
+- Do not show full historical click log.
+
+**Acceptance criteria:**
+
+- Player can see current guild armory state.
+- Available vs borrowed is clear.
+- Borrowed-by information is current-state display, not a full log.
+- Capacity display handles unlimited.
+
+---
+
+## Task T13 — Guild armory deposit and withdraw
+
+**Goal:** Allow members to deposit and owners to withdraw items through canonical RPCs.
+
+**Scope:**
+
+- Deposit own eligible item into guild armory.
+- Do not allow depositing currently equipped item; surface DB/RPC error or prevalidated disabled state if RPC/read model exposes it.
+- Preserve item shelf number from DB/RPC behavior.
+- Owner can withdraw own item.
+- Leader/officer can remove any item from guild armory.
+- Removed/withdrawn item disappears from guild armory view.
+- Refresh guild armory and current equipment/armory state after success where relevant.
+
+**Acceptance criteria:**
+
+- Deposit/withdraw/remove uses RPC only.
+- Equipped item cannot be deposited.
+- Owner withdraw and leader/officer remove are distinct actions.
+- Removed item is not shown as a historical guild armory row.
+
+---
+
+## Task T14 — Guild armory borrow and return
+
+**Goal:** Allow members to borrow and return guild armory items.
+
+**Scope:**
+
+- Borrow available item through canonical RPC.
+- Return own borrowed item through canonical RPC.
+- Blocked member cannot borrow.
+- Blocked member can still return borrowed item.
+- Borrowed item may be equipped through player equipment workflow if DB/RPC allows it.
+- Do not create item transfer/trade behavior.
+
+**Acceptance criteria:**
+
+- Borrow/return uses RPC only.
+- Borrowing does not change `items.hero_id` in frontend assumptions.
+- Borrower cannot be offered trade/auction/scrap/vendor actions for borrowed item.
+- Return remains available even when armory access is locked.
+
+---
+
+## Task T15 — Guild armory force-return actions
+
+**Goal:** Add owner/leader/officer force-return actions.
+
+**Scope:**
+
+- Owner can force-return own borrowed item.
+- Leader/officer can force-return borrowed guild item.
+- Show clear warning that borrower may lose equipped item.
+- Operation uses canonical RPC.
+- Refresh guild armory, member state and current equipment/armory state where relevant.
+- Do not build a player-facing action history log.
+
+**Acceptance criteria:**
+
+- Force-return uses RPC only.
+- Action availability follows role/ownership.
+- Borrower equipment state is refreshed from DB/RPC after action.
+- UI shows current state after force-return.
+
+---
+
+## Task T16 — Guild armory access lock
+
+**Goal:** Allow leader/officer to block or unblock a member’s guild armory access.
+
+**Scope:**
+
+- Leader/officer can lock/unlock armory access per member.
+- Locked member:
+  - cannot borrow;
+  - cannot deposit;
+  - can return borrowed items;
+  - may see armory read-only.
+- Show lock state in member list and guild armory where relevant.
+- Use canonical RPCs only.
+
+**Acceptance criteria:**
+
+- Access lock actions use RPC only.
+- Locked member’s allowed/blocked actions match guild rules.
+- Officer can manage locks like leader.
+- Member cannot manage locks.
+
+---
+
+## Task T17 — Guild armory item action integration with player item UI
+
+**Goal:** Align player item action availability with guild armory/loan state.
+
+**Scope:**
+
+- In player item detail/armory surfaces, indicate when item is:
+  - owned private item;
+  - deposited in guild armory;
+  - borrowed from guild armory;
+  - borrowed by someone else.
+- Hide or disable invalid actions according to DB/RPC state:
+  - borrower cannot trade/auction/scrap/vendor borrowed item;
+  - owner can manage own item according to DB rules;
+  - deposited item must be withdrawn before owner uses it privately.
+- Do not implement local authority for these rules; use read model/RPC result.
+
+**Acceptance criteria:**
+
+- Item action availability does not contradict guild loan rules.
+- Borrowed/deposited state is clear.
+- No client-side item ownership transfer is introduced.
+
+---
+
+## Task T18 — Guild support placeholders for future siege and Argonautics
+
+**Goal:** Add minimal UI/read-model placeholders showing guild as the future group-support boundary.
+
+**Scope:**
+
+- Where existing navigation or guild page makes sense, show concise future notes:
+  - group support for future siege requires guild membership;
+  - group support for future Argonautics requires guild membership.
+- Do not implement siege.
+- Do not implement Argonautics.
+- Do not implement friend-based support.
+- Do not create guild diplomacy.
+
+**Acceptance criteria:**
+
+- Guild page can communicate why guilds matter beyond armory.
+- No fake siege/Argonautics functionality is shown.
+- No diplomacy/influence/reputation UI is introduced.
+
+---
+
+## Task T19 — Admin/balancer guild config read surface
+
+**Goal:** Make guild config readable in admin/balancer tooling where DB exposes it.
+
+**Scope:**
+
+- Display DB/config-backed guild settings:
+  - guild creation cost;
+  - member limit formula/config;
+  - leader inactivity threshold;
+  - nomination duration;
+  - voting duration;
+  - max candidate count;
+  - guild armory capacity.
+- Use existing config governance/read patterns.
+- Do not hardcode values in Angular.
+- Do not implement unrelated guild admin moderation.
+
+**Acceptance criteria:**
+
+- Admin can inspect current guild configuration.
+- Values come from DB/config read model.
+- `0 = unlimited` guild armory capacity is displayed clearly.
+- No direct config mutation is added unless existing config governance flow supports it.
+
+---
+
+## Task T20 — Guild route/page integration
+
+**Goal:** Add guild entry points to the player-facing game shell.
+
+**Scope:**
+
+- Add route/page entry for guilds where project routing conventions place it.
+- Show correct state:
+  - no guild: create/search/request/invite entry points;
+  - in guild: guild overview/member/armory/election sections.
+- Use existing shell/navigation patterns.
+- Keep page composition thin.
+- Do not implement custom visual redesign beyond existing patterns.
+
+**Acceptance criteria:**
+
+- Player can reach guild functionality from game UI.
+- No-guild and in-guild states are clear.
+- Route does not imply siege/Argonautics are implemented.
+- Build and focused route/component tests pass.
 
 ---
 

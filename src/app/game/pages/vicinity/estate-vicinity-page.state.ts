@@ -1,37 +1,30 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { forkJoin, map, switchMap } from 'rxjs';
 import {
   CurrentEstateAddressReadModel,
   EmptyEstateAddressOption,
   EstateDistrictCapacityReadModel,
 } from '../../../core/domain/estate/estate-address.model';
-import { EstateAddresses } from '../../../core/services/estate/estate-addresses';
-import { EstateRelocation } from '../../../core/services/estate/estate-relocation';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import {
-  buildVicinityAddressRange,
   toEmptyAddressOption,
-  VICINITY_ADDRESS_RADIUS,
   VicinityAddressRange,
   VicinityAddressRow,
 } from './vicinity-address-range';
 import {
   createBrowserSelectionSnapshot,
-  createRelocationSnapshot,
-  findVicinityDistrict,
   matchesBrowserSelection,
-  matchesRelocationSnapshot,
   VicinityBrowserRangeResult,
   VicinityBrowserSelectionSnapshot,
-  VicinityRelocationSnapshot,
 } from './vicinity-state-guards';
+import { VicinityBrowserRangeLoader } from './vicinity-browser-range-loader';
+import { VicinityRelocationRunner } from './vicinity-relocation-runner';
 
 type AddressKindFilter = 'all' | 'empty' | 'occupied';
 
 @Injectable()
 export class EstateVicinityPageState {
-  private readonly estateAddresses = inject(EstateAddresses);
-  private readonly estateRelocation = inject(EstateRelocation);
+  private readonly browserRangeLoader = inject(VicinityBrowserRangeLoader);
+  private readonly relocationRunner = inject(VicinityRelocationRunner);
 
   readonly isLoading = signal(true);
   readonly isRelocating = signal(false);
@@ -92,7 +85,6 @@ export class EstateVicinityPageState {
     () => !!this.selectedTarget() && this.destructiveConfirmed() && !this.isRelocating(),
   );
   private loadRequestId = 0;
-  private relocationRequestId = 0;
 
   loadData(): void {
     const requestId = ++this.loadRequestId;
@@ -220,58 +212,17 @@ export class EstateVicinityPageState {
   }
 
   relocate(): void {
-    const target = this.selectedTarget();
-
-    if (!target || !this.destructiveConfirmed()) {
-      this.relocationError.set('Choose an empty vicinity address and confirm the destructive reset.');
-      return;
-    }
-
-    const requestId = ++this.relocationRequestId;
-    const snapshot = createRelocationSnapshot({
-      districtCode: target.districtCode,
-      addressNumber: target.addressNumber,
-    });
-
-    this.isRelocating.set(true);
-    this.relocationError.set(null);
-    this.relocationSuccess.set(null);
-
-    this.estateRelocation.relocateActiveHeroEstate({
-      districtCode: target.districtCode,
-      addressNumber: target.addressNumber,
-      confirmDestroyExistingEstate: true,
-      reason: 'Player estate relocation from vicinity page.',
-    }).pipe(
-      switchMap((result) =>
-        this.loadBrowserRange().pipe(
-          map((browserResult) => {
-            return { result, browserResult };
-          }),
-        ),
-      ),
-    ).subscribe({
-      next: ({ result, browserResult }) => {
-        if (!this.isCurrentRelocationRequest(requestId, snapshot)) {
-          this.clearStaleRelocationRequest(requestId);
-          return;
-        }
-
-        this.applyBrowserRangeResult(browserResult);
-        this.relocationSuccess.set(`Estate relocated to ${result.addressLabel}.`);
-        this.selectedTarget.set(null);
-        this.destructiveConfirmed.set(false);
-        this.isRelocating.set(false);
-      },
-      error: (error: unknown) => {
-        if (!this.isCurrentRelocationRequest(requestId, snapshot)) {
-          this.clearStaleRelocationRequest(requestId);
-          return;
-        }
-
-        this.relocationError.set(getErrorMessage(error, 'Estate relocation failed.'));
-        this.isRelocating.set(false);
-      },
+    this.relocationRunner.relocate({
+      target: this.selectedTarget(),
+      destructiveConfirmed: this.destructiveConfirmed(),
+      currentTarget: () => this.selectedTarget(),
+      loadBrowserRange: () => this.loadBrowserRange(),
+      applyBrowserRangeResult: (result) => this.applyBrowserRangeResult(result),
+      setIsRelocating: (value) => this.isRelocating.set(value),
+      setRelocationError: (value) => this.relocationError.set(value),
+      setRelocationSuccess: (value) => this.relocationSuccess.set(value),
+      setSelectedTarget: (value) => this.selectedTarget.set(value),
+      setDestructiveConfirmed: (value) => this.destructiveConfirmed.set(value),
     });
   }
 
@@ -305,54 +256,11 @@ export class EstateVicinityPageState {
   }
 
   private loadBrowserRange(options: { useExistingSelection?: boolean } = {}) {
-    return forkJoin({
-      currentAddress: this.estateAddresses.getActiveHeroCurrentAddress(),
-      districts: this.estateAddresses.getDistrictCapacities(),
-    }).pipe(
-      switchMap(({ currentAddress, districts }) => {
-        if (!currentAddress) {
-          throw new Error('Active hero does not have an estate address.');
-        }
-
-        const selectedDistrictCode = options.useExistingSelection
-          ? this.selectedDistrictCode()
-          : this.selectedDistrictCode() ?? currentAddress.districtCode;
-        const district = findVicinityDistrict(districts, selectedDistrictCode);
-        const centerAddressNumber = options.useExistingSelection
-          ? this.centerAddressNumber()
-          : currentAddress.districtCode === district.districtCode
-            ? currentAddress.addressNumber
-            : 1;
-        const fromAddressNumber = Math.max(
-          1,
-          centerAddressNumber - VICINITY_ADDRESS_RADIUS,
-        );
-        const toAddressNumber = Math.min(
-          district.addressCapacity,
-          centerAddressNumber + VICINITY_ADDRESS_RADIUS,
-        );
-
-        return this.estateAddresses.getOccupiedAddressesForAddressNumberRange({
-          serverId: currentAddress.serverId,
-          districtCode: district.districtCode,
-          fromAddressNumber,
-          toAddressNumber,
-        }).pipe(
-          map((occupiedAddresses) => ({
-            currentAddress,
-            districts: [...districts],
-            selectedDistrictCode: district.districtCode,
-            centerAddressNumber,
-            range: buildVicinityAddressRange({
-              currentAddress,
-              district,
-              occupiedAddresses,
-              centerAddressNumber,
-            }),
-          })),
-        );
-      }),
-    );
+    return this.browserRangeLoader.load({
+      selectedDistrictCode: this.selectedDistrictCode(),
+      centerAddressNumber: this.centerAddressNumber(),
+      useExistingSelection: options.useExistingSelection,
+    });
   }
 
   private applyBrowserRangeResult(result: VicinityBrowserRangeResult): void {
@@ -377,23 +285,5 @@ export class EstateVicinityPageState {
 
   private isCurrentLoadRequest(requestId: number): boolean {
     return requestId === this.loadRequestId;
-  }
-
-  private isCurrentRelocationRequest(
-    requestId: number,
-    snapshot: VicinityRelocationSnapshot,
-  ): boolean {
-    const target = this.selectedTarget();
-
-    return (
-      requestId === this.relocationRequestId &&
-      matchesRelocationSnapshot(target ? createRelocationSnapshot(target) : null, snapshot)
-    );
-  }
-
-  private clearStaleRelocationRequest(requestId: number): void {
-    if (requestId === this.relocationRequestId) {
-      this.isRelocating.set(false);
-    }
   }
 }

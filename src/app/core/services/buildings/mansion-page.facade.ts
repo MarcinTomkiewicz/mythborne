@@ -17,6 +17,7 @@ import {
 } from '../../utils/building-display';
 import { getErrorMessage } from '../../utils/error-message';
 import { ActiveHero } from '../hero/active-hero';
+import { MansionBuildingActionRunner } from './mansion-building-action-runner';
 import { BuildingExplainabilityMetadata } from './building-explainability-metadata';
 import { BuildingUiMetadata } from './building-ui-metadata';
 import { UiMetadataEntryReadModel } from '../../domain/admin-ui-metadata.model';
@@ -26,6 +27,7 @@ export class MansionPageFacade {
   private readonly buildingsService = inject(BuildingsService);
   private readonly activeHero = inject(ActiveHero);
   private readonly explainabilityMetadata = inject(BuildingExplainabilityMetadata);
+  private readonly actionRunner = inject(MansionBuildingActionRunner);
 
   readonly isLoading = signal(true);
   readonly error = signal<string | null>(null);
@@ -53,7 +55,6 @@ export class MansionPageFacade {
     () => this.visibleBuildings().filter((building) => building.currentLevel === 0).length,
   );
   private loadRequestId = 0;
-  private actionRequestId = 0;
 
   loadData() {
     const requestId = ++this.loadRequestId;
@@ -105,48 +106,17 @@ export class MansionPageFacade {
   }
 
   startBuildingUpgrade(building: MansionBuilding): void {
-    if (!this.canStartBuilding(building)) {
-      this.actionError.set(this.disabledBuildReason(building));
-      return;
-    }
-    const requestId = ++this.actionRequestId;
-    const context = this.currentActionContext();
-
-    this.startingBuildingId.set(building.id);
-    this.actionError.set(null);
-    this.actionSuccess.set(null);
-    this.lastStartedJob.set(null);
-
-    this.buildingsService.startBuildingUpgrade(building.id).pipe(
-      switchMap((result) =>
-        this.activeHero.loadActiveHero().pipe(map(() => result)),
-      ),
-    ).subscribe({
-      next: (result) => {
-        if (!this.isCurrentAction(requestId, context)) {
-          this.clearStaleActionRequest(requestId);
-          return;
-        }
-
-        this.lastStartedJob.set(result);
-        this.actionSuccess.set(
-          `${building.name} started to level ${result.targetLevel}.`,
-        );
-        this.startedJobPendingRefresh.set(true);
-        this.startingBuildingId.set(null);
-        this.loadData();
-      },
-      error: (error: unknown) => {
-        if (!this.isCurrentAction(requestId, context)) {
-          this.clearStaleActionRequest(requestId);
-          return;
-        }
-
-        this.actionError.set(
-          getErrorMessage(error, 'Building construction could not be started.'),
-        );
-        this.startingBuildingId.set(null);
-      },
+    this.actionRunner.start({
+      building,
+      currentAddress: () => this.currentAddress(),
+      canStart: () => this.canStartBuilding(building),
+      disabledReason: () => this.disabledBuildReason(building),
+      setStartingBuildingId: (value) => this.startingBuildingId.set(value),
+      setActionError: (value) => this.actionError.set(value),
+      setActionSuccess: (value) => this.actionSuccess.set(value),
+      setLastStartedJob: (value) => this.lastStartedJob.set(value),
+      setStartedJobPendingRefresh: (value) => this.startedJobPendingRefresh.set(value),
+      reload: () => this.loadData(),
     });
   }
 
@@ -201,40 +171,6 @@ export class MansionPageFacade {
     }
 
     return 'Building action is unavailable.';
-  }
-
-  private currentActionContext(): {
-    heroId: string | null;
-    serverId: string | null;
-    address: string | null;
-  } {
-    const state = this.activeHero.state();
-
-    return {
-      heroId: state?.heroId ?? null,
-      serverId: state?.serverId ?? null,
-      address: this.currentAddress(),
-    };
-  }
-
-  private isCurrentAction(
-    requestId: number,
-    context: { heroId: string | null; serverId: string | null; address: string | null },
-  ): boolean {
-    const current = this.currentActionContext();
-
-    return (
-      requestId === this.actionRequestId &&
-      current.heroId === context.heroId &&
-      current.serverId === context.serverId &&
-      current.address === context.address
-    );
-  }
-
-  private clearStaleActionRequest(requestId: number): void {
-    if (requestId === this.actionRequestId) {
-      this.startingBuildingId.set(null);
-    }
   }
 
   toBonusLabel(target: string): string {

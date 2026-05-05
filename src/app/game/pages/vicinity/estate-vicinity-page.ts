@@ -6,6 +6,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { EstateVicinityPageState } from './estate-vicinity-page.state';
+import { VicinityRelocationRunner } from './vicinity-relocation-runner';
 
 @Component({
   selector: 'app-estate-vicinity-page',
@@ -18,7 +19,7 @@ import { EstateVicinityPageState } from './estate-vicinity-page.state';
     LoadingOverlay,
     RouterLink,
   ],
-  providers: [EstateVicinityPageState],
+  providers: [EstateVicinityPageState, VicinityRelocationRunner],
   templateUrl: './estate-vicinity-page.html',
 })
 export class EstateVicinityPage implements OnInit {

@@ -1,6 +1,6 @@
 # Mythsworn — Current Decisions Log
 
-Updated: 2026-05-04 late
+Updated: 2026-05-05
 
 Use this file for recent design, domain, database and implementation decisions that should override older assumptions.
 
@@ -657,6 +657,15 @@ Siege/takeover of an occupied estate is a future guild/PvP workflow and must not
 
 If an estate changes owner during a successful siege/takeover while an estate building job is active, the building job is interrupted/cancelled. The building remains at the level it had before the job started. The active construction job does not transfer together with the estate.
 
+Relocation and future siege/takeover timing rules are DB/config-owned, not frontend constants:
+
+- A hero that completes active estate relocation cannot actively relocate again for a configurable duration. Default: 12 hours.
+- A hero that completes a siege/takeover-driven estate move as initiator cannot start another outgoing siege/takeover for a configurable duration after process completion. Default: 12 hours.
+- A defender affected by a completed, interrupted, cancelled or repelled incoming siege/takeover receives a configurable protection window against new incoming sieges/takeovers. Default: 12 hours.
+- Defender siege/takeover protection blocks new incoming sieges/takeovers but does not block that hero from initiating an outgoing siege/takeover.
+- An active incoming siege/takeover blocks voluntary relocation by the target owner/hero; the defender cannot escape a contested estate to deny the attacker estate/building outcome.
+- Siege/takeover-specific protection is separate from ordinary PvP attack target protection.
+
 Building construction/upgrades are DB-owned:
 
 - one active `estate_building_jobs` row per estate;
@@ -915,7 +924,7 @@ Item requirements are a critical progression safety valve. A player may obtain a
 
 - Armory shelves are inventory organization, not equipment state.
 - DB/code may use `shelf`; final UI naming belongs to UI/UX backlog.
-- There are always 10 player-organizable shelves, numbered `1` through `10`.
+- There are always 10 player organization shelves.
 - Dropped/newly generated items enter shelf `0`, meaning unsorted / no player shelf.
 - Shelf `1` through shelf `10` are player organization shelves, not the default drop bucket.
 - `hero_armory_shelves` stores hero-local shelf names for shelves `1` through `10`.
@@ -926,16 +935,15 @@ Item requirements are a critical progression safety valve. A player may obtain a
 
 ---
 
-## Guild Foundation Decisions — 2026-05-04
+## Guild Foundation Decisions — 2026-05-05
 
 The first guild foundation should be deliberately simple. Guilds primarily support shared item logistics, future Argonautics/group expeditions, and future siege/defense support. Do not turn guilds into a broad parallel progression empire by default.
 
-### Scope and explicit non-goals
+### Guild scope
 
 - Guilds support:
-  - membership;
-  - roles;
-  - invite/request-to-join;
+  - hero-based membership;
+  - simple roles;
   - guild armory loans;
   - emergency leader election;
   - future hooks for siege and Argonautics.
@@ -943,13 +951,14 @@ The first guild foundation should be deliberately simple. Guilds primarily suppo
   - guild-to-guild diplomacy;
   - alliances;
   - non-aggression pacts;
-  - war declarations as a separate diplomacy system;
+  - war declarations as a diplomacy system;
   - district influence;
   - guild reputation;
   - guild buildings in the first foundation;
   - generic assistance by arbitrary non-guild friends.
 - Guild actions do not affect a member's private Prestige/reputation in the first foundation.
 - Help from other players in siege/defense or Argonautics should be organized through guild membership. Solo attempts may exist, but group support uses the guild.
+- Guild buildings are parked/future scope and may never be needed. If they return, they should be designed separately and should not create a parallel estate-building treadmill by default.
 
 ### Guild identity, creation and membership
 
@@ -957,35 +966,35 @@ The first guild foundation should be deliberately simple. Guilds primarily suppo
 - Guild membership is hero-based, not user-based.
 - A hero may belong to only one guild on a server.
 - Any active hero without a guild may create a guild.
-- Creating a guild has a cost. Exact resource/currency/config belongs to DB/balance implementation.
+- Creating a guild has a configurable cost. Exact resource/currency/default amount belongs to DB/balance implementation.
 - Guild name must be unique on the server.
-- If guild tags are introduced, they should also be unique on the server.
+- Guild tag is part of guild identity/display/search and should be unique on the server. It has no gameplay meaning in the first foundation.
 - Guild membership can be started through either:
   - guild invite;
   - request-to-join.
-- Invite and request-to-join are both first-foundation flows, not deferred features.
+- Invite and request-to-join are first-foundation flows, not future-only polish.
 - A leader cannot simply leave the guild. The leader must dissolve the guild or transfer leadership through an approved workflow.
+- A leader may dissolve the guild.
+- A guild cannot be dissolved while an active siege/takeover involving the guild is in progress.
+- Dissolution ends active guild loans, removes active guild armory availability, and removes members from active guild membership. Player-facing guild state should disappear as an active organization; any archival/status shape is DB implementation detail.
 
-### Member limit
+### Guild member capacity
 
 - Guild member capacity depends on the leader hero's level.
-- Member capacity is calculated through admin-configurable formula/config.
-- The exact config/formula model belongs to DB/balance implementation.
+- The member-capacity rule is admin-configurable through formula/config.
 - Inactive leaders create a real growth problem because their level does not increase and therefore guild capacity does not grow; emergency leader election exists partly to solve this.
 
-### Roles and permissions
+### Guild roles and permissions
 
-- First-foundation roles are:
-  - `leader`;
-  - `officer`;
-  - `member`.
-- There is one officer.
+- First foundation roles are:
+  - leader;
+  - officer;
+  - member.
 - The leader has full guild permissions.
-- The leader can dissolve the guild.
 - The leader can promote one officer.
-- The officer acts as the leader's deputy.
-- The officer may:
-  - invite members;
+- There is only one officer.
+- The officer acts as a real deputy. The officer may:
+  - invite heroes;
   - accept/reject join requests;
   - kick members;
   - remove items from guild armory;
@@ -996,38 +1005,40 @@ The first guild foundation should be deliberately simple. Guilds primarily suppo
 
 ### Emergency leader election
 
-Emergency leader election is a recovery tool for inactive leadership. It is not a normal vote to remove an active leader.
-
+- Emergency leader election exists from the first foundation to recover from an inactive leader.
+- The election chooses a new leader; it is not merely a vote to remove the old leader.
 - Any current guild member may start an emergency leader election if the leader is inactive.
-- Leader inactivity is based on the leader hero's last activity.
-- Default leader inactivity threshold is 15 days.
-- The inactivity threshold is configurable.
-- Emergency election chooses a new leader; it does not merely vote to remove the old one.
-- Election has two phases:
-  - nomination phase: default 6 hours;
-  - voting phase: default 12 hours.
-- Phase durations are configurable.
-- Maximum candidate count defaults to 3 and is configurable.
-- Any current member except the inactive leader can be nominated as a candidate.
-- Candidate consent is not required.
-- Members vote if they want and manage to do so before voting ends.
-- There is no quorum.
-- There is no 50% + 1 requirement.
-- The candidate with the most votes when voting ends becomes the new leader.
+- Leader inactivity is counted from the leader hero's last activity.
+- Default inactivity threshold is 15 days. The threshold is configurable.
+- Election has a nomination phase and a voting phase.
+- Default nomination phase duration is 6 hours. It is configurable.
+- Default voting phase duration is 12 hours. It is configurable.
+- Maximum candidate count defaults to 3. It is configurable.
+- Candidate can be any current member except the inactive leader. Candidate consent is not required.
+- One candidate is enough for the election to proceed.
+- Members vote if they want and manage to do so before voting closes.
+- There is no quorum and no 50%+1 all-member threshold.
+- The candidate with the highest vote count wins.
 - Ties are resolved by earlier nomination time.
 - The result automatically changes guild leadership at the end of voting.
 - Eligible voters are current guild members who can normally access gameplay. Banned/suspended users should be blocked by normal access rules.
+- If a candidate leaves the guild during the election, that candidate cannot win.
+- If there are no valid candidates or no valid votes at the end, the election ends without leadership change.
 
 ### Guild armory nature
 
 - Guild armory is a lending/borrowing system, not trade.
 - Depositing an item into guild armory does not change `items.hero_id`.
-- The item owner remains the owner.
-- Borrowing an item does not transfer ownership.
+- The item remains owned by the depositing/owner hero.
+- Borrowing an item is a loan/use permission, not ownership transfer.
 - Borrowed guild armory items may be equipped.
 - Borrowed guild armory items count in runtime loadout.
 - Borrowed guild armory items may appear in loadout presets.
 - If a preset references guild-borrowed item IDs that later become unavailable, that preset can partially fail/break as expected.
+- User-facing guild armory item availability has only active states:
+  - `available`;
+  - `borrowed` with the borrower shown.
+- If an owner withdraws an item or leader/officer removes it from guild armory, it is no longer shown in guild armory. It does not remain as a fake removed/withdrawn item.
 
 ### Guild armory deposit, withdraw and removal
 
@@ -1040,7 +1051,6 @@ Emergency leader election is a recovery tool for inactive leadership. It is not 
 - The officer may remove any item from guild armory.
 - Removing an item from guild armory is not confiscation and does not change ownership. The item returns to the owner's private state.
 - Removal exists to prevent guild armory spam with junk items.
-- If the removed/withdrawn item is currently borrowed, the loan ends and the borrower loses access/equipment at the next relevant refresh/check.
 
 ### Guild armory borrowing and access control
 
@@ -1048,23 +1058,25 @@ Emergency leader election is a recovery tool for inactive leadership. It is not 
 - Guild armory access can be blocked per member.
 - The leader can block/unblock guild armory access per member.
 - The officer can block/unblock guild armory access per member.
-- A blocked member cannot borrow new items and should not deposit new items.
+- A blocked member cannot borrow items.
+- A blocked member cannot deposit items.
 - A blocked member can still return borrowed items.
-- A borrower cannot sell, trade, auction, scrap or vendor-sell a borrowed item.
-- The owner can still sell, trade, auction, scrap, withdraw or force-return their own item.
+- A blocked member may still see the guild armory as read-only.
+- Borrower cannot sell, trade, auction-list, vendor-sell or scrap a borrowed item.
+- Owner can still sell, trade, auction-list, vendor-sell, scrap, withdraw or force-return their own item.
 - If the owner wants to use their own deposited item, they withdraw it from guild armory first, then equip it normally.
-- Deposited items are not simultaneously private-equipped by the owner and borrowable by others.
 
-### Force return and loan lifecycle
+### Guild armory return and loan end
 
-- The item owner can force-return their own borrowed item for any reason.
+- Borrower can manually return a borrowed item.
+- Owner can force-return their own borrowed item for any reason.
 - The leader can force-return borrowed guild armory items.
 - The officer can force-return borrowed guild armory items.
-- Force-return may unequip the item from the borrower.
+- Force-return may remove the item from the borrower's equipment.
 - A normal return puts the item back into the guild armory pool.
 - A withdraw/remove operation returns the item to the owner's private state and removes it from the guild armory pool.
 - Guild armory loans do not expire in the first foundation.
-- A loan ends through:
+- Loans end through:
   - borrower return;
   - owner force-return;
   - leader/officer force-return;
@@ -1084,17 +1096,14 @@ Emergency leader election is a recovery tool for inactive leadership. It is not 
 - Guild armory capacity is configurable.
 - `0` guild armory capacity means unlimited.
 - Capacity counts every item assigned to guild armory, including currently borrowed items.
-- Exact DB/config model belongs to the DB migration track.
 
-### Guild dissolution
+### Guild logs and audit
 
-- Only the leader can dissolve the guild.
-- Dissolution should end active guild armory loans.
-- Borrowed items should be unequipped/removed from borrowers when loans end through dissolution.
-- Guild armory items return to their owners' private state.
-- Membership should become inactive/dissolved according to DB workflow.
-- Guild history should remain available for logs/anti-abuse; dissolution should not erase everything without trace.
+- Do not create a player-facing history/feed of every guild armory click.
+- Player UI may show current state such as `borrowed by X`, but not a full social activity log by default.
+- Admin/operator/anti-abuse audit or inspection may exist where needed, especially for suspicious shared-item patterns.
 
+---
 
 ## Vendor Scrap / Sell Decisions — 2026-05-01
 
