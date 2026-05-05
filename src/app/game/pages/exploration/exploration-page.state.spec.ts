@@ -44,6 +44,7 @@ describe('ExplorationPageState', () => {
       'resolveHeroExplorationStep',
       'completeHeroExplorationChallengeAttempt',
       'autoResolveHeroExplorationChallengeAttempt',
+      'submitExplorationChallengeCombatResolution',
     ]);
 
     activeHero.requireActiveHero.and.returnValue(of(activeHeroContext()));
@@ -62,6 +63,16 @@ describe('ExplorationPageState', () => {
     );
     explorations.autoResolveHeroExplorationChallengeAttempt.and.returnValue(
       of(challengeCompletionWorkflow('easy', { completionMode: 'auto' })),
+    );
+    explorations.submitExplorationChallengeCombatResolution.and.returnValue(
+      of(challengeCompletionWorkflow('easy', {
+        completionMode: 'combat',
+        combatResultId: 'combat-result-1',
+        combatOutcome: 'initiator_victory',
+        turnsCompleted: 3,
+        participantsCreated: 2,
+        attacksCreated: 6,
+      })),
     );
     rewards.getLatestChallengeReward.and.returnValue(of(null));
 
@@ -238,6 +249,89 @@ describe('ExplorationPageState', () => {
     expect(feedback.successMessage()).toBe('Challenge completed.');
   });
 
+  it('routes combat minigame challenges through the DB-owned combat resolver', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', 'combat'),
+    );
+
+    expect(page.isCombatChallenge()).toBeTrue();
+    expect(page.canCompleteChallenge()).toBeFalse();
+
+    page.startCombatChallenge();
+    expect(page.isCombatRunning()).toBeTrue();
+
+    page.submitCombatChallengeStrike();
+
+    expect(explorations.completeHeroExplorationChallengeAttempt).not.toHaveBeenCalled();
+    expect(explorations.submitExplorationChallengeCombatResolution)
+      .toHaveBeenCalledOnceWith(jasmine.objectContaining({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        challengeAttemptId: 'challenge-1',
+        timingHitsJson: jasmine.any(Array),
+        requestId: jasmine.stringMatching(/^exploration-combat:challenge-1:/),
+      }));
+    const input = explorations.submitExplorationChallengeCombatResolution
+      .calls.mostRecent().args[0];
+
+    expect(JSON.stringify(input)).not.toContain('damage');
+    expect(JSON.stringify(input)).not.toContain('equipment');
+    expect(JSON.stringify(input)).not.toContain('opponent');
+    expect(page.currentChallengeResult()?.combatResultId).toBe('combat-result-1');
+    expect(feedback.successMessage()).toBe('Walka została zapisana.');
+  });
+
+  it('shows DB draw combat results as failed exploration challenges', () => {
+    explorations.submitExplorationChallengeCombatResolution.and.returnValue(
+      of(challengeCompletionWorkflow('easy', {
+        completionMode: 'combat',
+        combatResultId: 'combat-result-1',
+        combatOutcome: 'draw',
+        success: false,
+      })),
+    );
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', 'combat'),
+    );
+
+    page.startCombatChallenge();
+    page.submitCombatChallengeStrike();
+
+    expect(page.currentChallengeResult()?.success).toBeFalse();
+    expect(page.challengeResultTitle()).toBe('Challenge failed');
+    expect(feedback.successMessage()).toBe('Walka została zapisana jako porażka.');
+  });
+
+  it('renders persisted combat summary and reward diagnostics after combat resolution', async () => {
+    rewards.getLatestChallengeReward.and.returnValue(of(null));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    const componentPage = fixture.componentInstance.page;
+    componentPage.startSelectedDifficulty();
+    componentPage.overview.setStateFromWorkflow(
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', 'combat'),
+    );
+
+    componentPage.startCombatChallenge();
+    componentPage.submitCombatChallengeStrike();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('combat-result-1');
+    expect(text).toContain('initiator_victory');
+    expect(text).toContain('Turns');
+    expect(text).toContain('Szczegółowy timeline ataków wymaga DB read modelu');
+    expect(text).toContain('Reward grant reward-1');
+    expect(text).not.toContain('damage');
+    expect(explorations.submitExplorationChallengeCombatResolution).toHaveBeenCalled();
+  });
+
   it('auto-resolves active challenges as a database fallback', () => {
     page.loadData();
     page.startSelectedDifficulty();
@@ -407,6 +501,7 @@ function activeExplorationState(
   withActiveChallenge = false,
   activeStepTiming = { startedAt: '2026-05-01T10:00:00.000Z', resolvesAt: '2026-05-01T10:05:00.000Z' },
   explorationId = 'exploration-1',
+  minigameKey = 'timing',
 ): HeroExplorationStateReadModel {
   return {
     ...noExplorationState(difficultyKey),
@@ -455,7 +550,7 @@ function activeExplorationState(
           districtCode: 'district-a',
           trialDefinitionId: 'trial-1',
           encounterDefinitionId: null,
-          minigameKey: 'timing',
+          minigameKey,
           testedStatKey: 'dexterity',
           manifestationStatus: 'manifested',
           manifestationChance: 40,

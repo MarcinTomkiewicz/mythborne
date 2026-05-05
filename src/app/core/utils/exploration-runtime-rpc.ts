@@ -17,6 +17,8 @@ import {
   StartHeroExplorationStepRpcRow,
   StartOrGetHeroExplorationRpcArgs,
   StartOrGetHeroExplorationRpcRow,
+  SubmitExplorationChallengeCombatResolutionRpcArgs,
+  SubmitExplorationChallengeCombatResolutionRpcRow,
 } from '../types/exploration-runtime-rpc.types';
 import { Json } from '../types/database.types';
 import { trimText, trimToNull } from './normalize-text';
@@ -126,6 +128,30 @@ export function toAutoResolveHeroExplorationChallengeAttemptRpcArgs(input: {
   return args;
 }
 
+export function toSubmitExplorationChallengeCombatResolutionRpcArgs(input: {
+  challengeAttemptId: string | null | undefined;
+  timingHitsJson?: Json;
+  requestId?: string | null;
+}): SubmitExplorationChallengeCombatResolutionRpcArgs {
+  const args: SubmitExplorationChallengeCombatResolutionRpcArgs = {
+    p_challenge_attempt_id: requiredText(
+      input.challengeAttemptId,
+      'challengeAttemptId',
+    ),
+  };
+  const requestId = trimToNull(input.requestId);
+
+  if (input.timingHitsJson !== undefined) {
+    args.p_timing_hits_json = input.timingHitsJson;
+  }
+
+  if (requestId) {
+    args.p_request_id = requestId;
+  }
+
+  return args;
+}
+
 export function toPreviewTrialOpportunityCurveRpcArgs(input: {
   difficultyKey: string | null | undefined;
   startingDryStepCount?: number | null;
@@ -212,6 +238,18 @@ export function firstAutoResolveHeroExplorationChallengeAttemptRow(
   return row;
 }
 
+export function firstSubmitExplorationChallengeCombatResolutionRow(
+  rows: readonly SubmitExplorationChallengeCombatResolutionRpcRow[],
+): SubmitExplorationChallengeCombatResolutionRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error('Wynik walki nie został zapisany.');
+  }
+
+  return row;
+}
+
 export function mapResolveHeroExplorationStepResult(
   row: ResolveHeroExplorationStepRpcRow,
 ): HeroExplorationStepResolutionReadModel {
@@ -260,6 +298,28 @@ export function mapAutoResolveHeroExplorationChallengeResult(
     explorationStatus: null,
     autoResolveChance: row.auto_resolve_chance,
     autoResolveRoll: row.auto_resolve_roll,
+  };
+}
+
+export function mapSubmitExplorationChallengeCombatResolutionResult(
+  row: SubmitExplorationChallengeCombatResolutionRpcRow,
+): HeroExplorationChallengeCompletionReadModel {
+  return {
+    challengeAttemptId: row.challenge_attempt_id,
+    status: row.status,
+    success: row.outcome === 'draw' ? false : row.success,
+    completionMode: row.completion_mode,
+    rewardGrantId: row.reward_grant_id,
+    remainingTrials: row.remaining_trials,
+    explorationStatus: row.exploration_status,
+    autoResolveChance: null,
+    autoResolveRoll: null,
+    combatResultId: row.combat_result_id,
+    combatOutcome: row.outcome,
+    turnsCompleted: row.turns_completed,
+    participantsCreated: row.participants_created,
+    participantStatsCreated: row.participant_stats_created,
+    attacksCreated: row.attacks_created,
   };
 }
 

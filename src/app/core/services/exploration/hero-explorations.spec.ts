@@ -2,7 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
+import { SubmitExplorationChallengeCombatResolutionRpcRow } from '../../types/exploration-runtime-rpc.types';
 import { Row } from '../../types/supabase.types';
+import { mapSubmitExplorationChallengeCombatResolutionResult } from '../../utils/exploration-runtime-rpc';
 import { Backend } from '../backend/backend';
 import { HeroExplorations } from './hero-explorations';
 
@@ -33,6 +35,8 @@ describe('HeroExplorations', () => {
           return of([completeChallengeRow()]);
         case RPC.auto_resolve_hero_exploration_challenge_attempt:
           return of([autoResolveChallengeRow()]);
+        case RPC.submit_exploration_challenge_combat_resolution:
+          return of([combatResolutionRow()]);
         case RPC.preview_trial_opportunity_curve:
           return of([trialOpportunityPreviewRow()]);
         default:
@@ -217,6 +221,63 @@ describe('HeroExplorations', () => {
     expect(backend.delete).not.toHaveBeenCalled();
   });
 
+  it('submits exploration combat resolution through the DB-owned resolver only with timing input', async () => {
+    const workflow = await firstValueFrom(
+      service.submitExplorationChallengeCombatResolution({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        challengeAttemptId: 'challenge-1',
+        timingHitsJson: [{ indicatorPosition: 50 }],
+        requestId: 'request-1',
+      }),
+    );
+
+    expect(workflow.result).toEqual(
+      jasmine.objectContaining({
+        challengeAttemptId: 'challenge-1',
+        combatResultId: 'combat-result-1',
+        combatOutcome: 'initiator_victory',
+        success: true,
+        remainingTrials: 1,
+        turnsCompleted: 3,
+        participantsCreated: 2,
+        attacksCreated: 6,
+      }),
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.submit_exploration_challenge_combat_resolution,
+      {
+        p_challenge_attempt_id: 'challenge-1',
+        p_timing_hits_json: [{ indicatorPosition: 50 }],
+        p_request_id: 'request-1',
+      },
+    );
+    const combatRpcArgs = backend.rpc.calls.all()
+      .find((call) =>
+        call.args[0] === RPC.submit_exploration_challenge_combat_resolution,
+      )?.args[1];
+
+    expect(JSON.stringify(combatRpcArgs)).not.toContain('damage');
+    expect(JSON.stringify(combatRpcArgs)).not.toContain('equipment');
+    expect(JSON.stringify(combatRpcArgs)).not.toContain('opponent');
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.get_hero_exploration_state, {
+      p_hero_id: 'hero-1',
+      p_difficulty_key: 'easy',
+    });
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+  });
+
+  it('maps DB draw combat resolution as failed PvE challenge completion', () => {
+    const result = mapSubmitExplorationChallengeCombatResolutionResult(
+      combatResolutionRow({ outcome: 'draw', success: true }),
+    );
+
+    expect(result.combatOutcome).toBe('draw');
+    expect(result.success).toBeFalse();
+  });
+
   it('loads trial opportunity curve as read-only preview data', async () => {
     const result = await firstValueFrom(
       service.previewTrialOpportunityCurve({
@@ -330,6 +391,28 @@ function autoResolveChallengeRow() {
     reward_grant_id: 'reward-1',
     status: 'completed',
     success: true,
+  };
+}
+
+function combatResolutionRow(
+  patch: Partial<SubmitExplorationChallengeCombatResolutionRpcRow> = {},
+): SubmitExplorationChallengeCombatResolutionRpcRow {
+  return {
+    attacks_created: 6,
+    challenge_attempt_id: 'challenge-1',
+    combat_result_id: 'combat-result-1',
+    completion_mode: 'combat',
+    exploration_status: 'active',
+    metadata_json: {},
+    outcome: 'initiator_victory',
+    participant_stats_created: 2,
+    participants_created: 2,
+    remaining_trials: 1,
+    reward_grant_id: 'reward-1',
+    status: 'completed',
+    success: true,
+    turns_completed: 3,
+    ...patch,
   };
 }
 

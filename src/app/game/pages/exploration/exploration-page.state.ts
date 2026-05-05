@@ -33,6 +33,14 @@ export class ExplorationPageState {
   readonly edges = this.movement.edges;
   readonly activeStep = this.step.activeStep;
   readonly activeChallenge = this.challenge.activeChallenge;
+  readonly isCombatChallenge = this.challenge.isCombatChallenge;
+  readonly canStartCombat = this.challenge.canStartCombat;
+  readonly canSubmitCombatStrike = this.challenge.canSubmitCombatStrike;
+  readonly combatHitWindow = this.challenge.combatHitWindow;
+  readonly combatWalkingSpeed = this.challenge.combatWalkingSpeed;
+  readonly combatStrikeCount = this.challenge.combatStrikeCount;
+  readonly isCombatRunning = this.challenge.isCombatRunning;
+  readonly walkingPosition = this.challenge.walkingPosition;
   readonly activeStepProgressPercent = this.step.activeStepProgressPercent;
   readonly activeStepRemainingLabel = this.step.activeStepRemainingLabel;
   readonly activeStepStatusLabel = this.step.activeStepStatusLabel;
@@ -80,6 +88,14 @@ export class ExplorationPageState {
 
   autoResolveChallenge(): void {
     this.challenge.autoResolve();
+  }
+
+  startCombatChallenge(): void {
+    this.challenge.startCombat();
+  }
+
+  submitCombatChallengeStrike(): void {
+    this.challenge.submitCombatStrike();
   }
 
   chooseDirection(edge: HeroExplorationEdgeReadModel): void {

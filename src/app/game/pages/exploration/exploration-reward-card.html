@@ -48,4 +48,25 @@
   <div class="mg-card p-md">
     <span class="tag-badge tag-badge--muted">Loading reward</span>
   </div>
+} @else if (page.currentChallengeResult(); as result) {
+  <div class="mg-card p-md">
+    <div class="flex-col gap-sm">
+      <strong>Reward diagnostic</strong>
+      @if (result.success && !result.rewardGrantId) {
+        <p class="muted-text mb-0">
+          DB zakończyła challenge sukcesem, ale nie zwróciła `reward_grant_id`.
+          Sprawdź konfigurację reward profile dla tego Triala/Encountera.
+        </p>
+      } @else if (result.success) {
+        <p class="muted-text mb-0">
+          Reward grant {{ result.rewardGrantId }} został zwrócony przez resolver,
+          ale trwały reward nie został jeszcze odczytany przez istniejący reward read path.
+        </p>
+      } @else {
+        <p class="muted-text mb-0">
+          Challenge zakończył się porażką, więc DB nie przyznała rewardu.
+        </p>
+      }
+    </div>
+  </div>
 }

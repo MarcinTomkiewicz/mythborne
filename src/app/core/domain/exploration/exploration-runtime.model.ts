@@ -211,6 +211,12 @@ export interface HeroExplorationChallengeCompletionReadModel {
   explorationStatus: string | null;
   autoResolveChance: number | null;
   autoResolveRoll: number | null;
+  combatResultId?: string | null;
+  combatOutcome?: string | null;
+  turnsCompleted?: number | null;
+  participantsCreated?: number | null;
+  participantStatsCreated?: number | null;
+  attacksCreated?: number | null;
 }
 
 export interface HeroExplorationChallengeCompletionWorkflowResult {

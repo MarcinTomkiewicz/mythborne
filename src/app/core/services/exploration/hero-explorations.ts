@@ -19,7 +19,9 @@ import {
   ResolveHeroExplorationStepRpcRow,
   StartHeroExplorationStepRpcRow,
   StartOrGetHeroExplorationRpcRow,
+  SubmitExplorationChallengeCombatResolutionRpcRow,
 } from '../../types/exploration-runtime-rpc.types';
+import { Json } from '../../types/database.types';
 import { mapExplorationDifficultyTier } from '../../utils/exploration-definition-mappers';
 import { mapTrialOpportunityCurvePreview } from '../../utils/exploration-preview-mappers';
 import { mapHeroExplorationStateJson } from '../../utils/exploration-runtime-json-mappers';
@@ -30,10 +32,12 @@ import {
   firstCompleteHeroExplorationChallengeAttemptRow,
   firstStartHeroExplorationStepRow,
   firstStartOrGetHeroExplorationRow,
+  firstSubmitExplorationChallengeCombatResolutionRow,
   explorationStepResolutionWorkflowResult,
   mapAutoResolveHeroExplorationChallengeResult,
   mapCompleteHeroExplorationChallengeResult,
   mapResolveHeroExplorationStepResult,
+  mapSubmitExplorationChallengeCombatResolutionResult,
   toAutoResolveHeroExplorationChallengeAttemptRpcArgs,
   toCompleteHeroExplorationChallengeAttemptRpcArgs,
   toGetHeroExplorationStateRpcArgs,
@@ -41,6 +45,7 @@ import {
   toResolveHeroExplorationStepRpcArgs,
   toStartHeroExplorationStepRpcArgs,
   toStartOrGetHeroExplorationRpcArgs,
+  toSubmitExplorationChallengeCombatResolutionRpcArgs,
 } from '../../utils/exploration-runtime-rpc';
 import { Backend } from '../backend/backend';
 
@@ -201,6 +206,36 @@ export class HeroExplorations {
             map((state) =>
               explorationChallengeCompletionWorkflowResult(
                 mapAutoResolveHeroExplorationChallengeResult(row),
+                state,
+              ),
+            ),
+          ),
+        ),
+      );
+  }
+
+  submitExplorationChallengeCombatResolution(input: {
+    heroId: string;
+    difficultyKey: string;
+    challengeAttemptId: string;
+    timingHitsJson?: Json;
+    requestId?: string | null;
+  }): Observable<HeroExplorationChallengeCompletionWorkflowResult> {
+    return this.backend
+      .rpc<SubmitExplorationChallengeCombatResolutionRpcRow[]>(
+        RPC.submit_exploration_challenge_combat_resolution,
+        toSubmitExplorationChallengeCombatResolutionRpcArgs(input),
+      )
+      .pipe(
+        map(firstSubmitExplorationChallengeCombatResolutionRow),
+        switchMap((row) =>
+          this.getHeroExplorationState({
+            heroId: input.heroId,
+            difficultyKey: input.difficultyKey,
+          }).pipe(
+            map((state) =>
+              explorationChallengeCompletionWorkflowResult(
+                mapSubmitExplorationChallengeCombatResolutionResult(row),
                 state,
               ),
             ),

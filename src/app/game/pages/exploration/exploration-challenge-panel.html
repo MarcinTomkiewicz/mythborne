@@ -20,33 +20,71 @@
         }
       </div>
 
-      <p class="muted-text mb-0">{{ page.autoResolveExplanation() }}</p>
+      @if (page.isCombatChallenge()) {
+        <p class="muted-text mb-0">
+          Walka jest rozstrzygana przez DB. Frontend wysyła tylko próbkę timingu
+          dla aktywnego Triala/Encountera, bez statów, ekwipunku, obrażeń ani wyniku.
+        </p>
 
-      <div class="flex-row-start-center flex-wrap gap-sm">
-        <button
-          pButton
-          type="button"
-          label="Record prototype success"
-          [disabled]="!page.canCompleteChallenge()"
-          (click)="page.completeChallenge(true)"
-        ></button>
-        <button
-          pButton
-          type="button"
-          label="Record prototype fail"
-          severity="secondary"
-          [disabled]="!page.canCompleteChallenge()"
-          (click)="page.completeChallenge(false)"
-        ></button>
-        <button
-          pButton
-          type="button"
-          label="Auto-resolve"
-          severity="warn"
-          [disabled]="!page.canCompleteChallenge()"
-          (click)="page.autoResolveChallenge()"
-        ></button>
-      </div>
+        @if (page.isCombatRunning()) {
+          <app-walking-dead-meter
+            [position]="page.walkingPosition()"
+            [zoneStart]="page.combatHitWindow().start"
+            [zoneEnd]="page.combatHitWindow().end"
+            [zoneWidth]="page.combatHitWindow().width"
+            [speed]="page.combatWalkingSpeed()"
+            [streak]="page.combatStrikeCount()"
+            [disabled]="!page.canSubmitCombatStrike()"
+            (strike)="page.submitCombatChallengeStrike()"
+          />
+        } @else {
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            <button
+              pButton
+              type="button"
+              label="Rozpocznij walkę"
+              [disabled]="!page.canStartCombat()"
+              (click)="page.startCombatChallenge()"
+            ></button>
+            <button
+              pButton
+              type="button"
+              label="Auto-resolve"
+              severity="warn"
+              [disabled]="page.isCompletingChallenge()"
+              (click)="page.autoResolveChallenge()"
+            ></button>
+          </div>
+        }
+      } @else {
+        <p class="muted-text mb-0">{{ page.autoResolveExplanation() }}</p>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <button
+            pButton
+            type="button"
+            label="Record prototype success"
+            [disabled]="!page.canCompleteChallenge()"
+            (click)="page.completeChallenge(true)"
+          ></button>
+          <button
+            pButton
+            type="button"
+            label="Record prototype fail"
+            severity="secondary"
+            [disabled]="!page.canCompleteChallenge()"
+            (click)="page.completeChallenge(false)"
+          ></button>
+          <button
+            pButton
+            type="button"
+            label="Auto-resolve"
+            severity="warn"
+            [disabled]="!page.canCompleteChallenge()"
+            (click)="page.autoResolveChallenge()"
+          ></button>
+        </div>
+      }
     </div>
   </div>
 }

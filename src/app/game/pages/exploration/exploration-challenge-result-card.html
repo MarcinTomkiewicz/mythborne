@@ -23,6 +23,45 @@
           </span>
         }
       </div>
+
+      @if (result.combatResultId) {
+        <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-sm">
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Combat result</span>
+            <strong class="heading-color">{{ result.combatResultId }}</strong>
+          </div>
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Outcome</span>
+            <strong class="heading-color">{{ result.combatOutcome ?? 'N/D' }}</strong>
+          </div>
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Turns</span>
+            <strong class="heading-color">{{ result.turnsCompleted ?? 'N/D' }}</strong>
+          </div>
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Participants</span>
+            <strong class="heading-color">{{ result.participantsCreated ?? 'N/D' }}</strong>
+          </div>
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Attacks</span>
+            <strong class="heading-color">{{ result.attacksCreated ?? 'N/D' }}</strong>
+          </div>
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Exploration</span>
+            <strong class="heading-color">{{ result.explorationStatus ?? 'N/D' }}</strong>
+          </div>
+        </div>
+
+        <p class="muted-text mb-0">
+          Szczegółowy timeline ataków wymaga DB read modelu dla combat result.
+          UI pokazuje tylko trwałe summary zwrócone przez resolver i nie rekonstruuje logu z timingu.
+        </p>
+
+        <p class="muted-text mb-0">
+          Raport walki będzie widoczny przez istniejące ścieżki raportów, gdy DB producer udostępni go dla bohatera.
+          Ten widok nie wywołuje ponownie resolvera po odświeżeniu strony.
+        </p>
+      }
     </div>
   </div>
 }

@@ -9667,3 +9667,130 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 - New types can be added later through dictionaries/config without frontend enum edits.
 
 ---
+## Task HOTFIX-COMBAT-1 — Podłącz DB-owned combat resolver do exploration Trial/Encounter
+
+**Goal:** Exploration Trial/Encounter z `minigame_key = combat` ma uruchamiać combat UI i kończyć walkę przez canonical DB RPC `submit_exploration_challenge_combat_resolution(...)`.
+
+**Scope:**
+
+- Sprawdź aktualny model aktywnego Triala/Encountera w `/game/exploration`.
+- Gdy aktywny Trial/Encounter ma `minigame_key = combat`, nie traktuj go jako zwykły resolved/no-op state.
+- Pokaż istniejący combat/timing UI albo najbliższy istniejący komponent walki, który da się bezpiecznie użyć.
+- Po manualnym input gracza wywołaj canonical RPC:
+
+  `submit_exploration_challenge_combat_resolution(challenge_attempt_id, timing_hits_json, request_id)`
+
+- Nazwy argumentów RPC weź z aktualnych wygenerowanych `database.types.ts`; nie zgaduj, czy mają prefiks `p_`.
+- Frontend wysyła wyłącznie:
+  - `challenge_attempt_id`;
+  - `timing_hits_json`;
+  - `request_id`.
+- Frontend nie wysyła:
+  - statów;
+  - equipment;
+  - luck;
+  - damage;
+  - opponent data;
+  - final outcome.
+- DB jest autorytetem walki.
+- Po sukcesie RPC zapisz/odśwież stan exploration na podstawie pól zwróconych przez RPC:
+  - `combat_result_id`;
+  - `outcome`;
+  - `success`;
+  - `status`;
+  - `completion_mode`;
+  - `reward_grant_id`;
+  - `exploration_status`;
+  - `remaining_trials`;
+  - `turns_completed`;
+  - `participants_created`;
+  - `attacks_created`.
+- Dla Trial/Encounter `draw` traktuj jako failure zgodnie z kontraktem DB.
+- Nie używaj tego RPC dla PvP.
+- Jeśli obecny frontend nadal używa generic completion RPC jako manual combat resolvera, zastąp tę ścieżkę dla `minigame_key = combat`.
+- Dodaj czytelne polskie komunikaty błędów:
+  - nie można uruchomić walki;
+  - brak danych aktywnego Triala/Encountera;
+  - RPC odrzucił próbę;
+  - wynik walki nie został zapisany.
+
+**Acceptance criteria:**
+
+- Combat Trial/Encounter w eksploracji pokazuje UI walki zamiast martwego “ready” state.
+- Manualne rozstrzygnięcie walki idzie przez `submit_exploration_challenge_combat_resolution(...)`.
+- Angular nie liczy wyniku walki jako gameplay authority.
+- Angular nie wysyła statów/equipment/luck/damage/opponent data.
+- Po sukcesie RPC exploration state i remaining trials są odświeżone.
+- Draw w PvE Trial/Encounter jest pokazany jako porażka.
+- Build przechodzi.
+
+## Task HOTFIX-COMBAT-2 — Pokaż wynik, reward i combat report po exploration combat resolution
+
+**Goal:** Po zakończeniu combat Trial/Encounter przez DB RPC gracz widzi trwały wynik walki, reward i może kontynuować eksplorację.
+
+**Scope:**
+
+- Po `submit_exploration_challenge_combat_resolution(...)` pokaż wynik walki na podstawie DB-returned payload:
+  - outcome;
+  - success/failure;
+  - completion mode;
+  - turns completed;
+  - reward grant id, jeśli istnieje.
+- Jeśli `combat_result_id` istnieje:
+  - użyj istniejącego combat result/read API, jeśli jest dostępne;
+  - pokaż podstawowe informacje o walce;
+  - jeśli istniejący read model pozwala, pokaż attack log / timeline.
+- Jeśli nie ma istniejącego read modelu do attack logu:
+  - pokaż summary z pól RPC;
+  - zgłoś w raporcie DB/frontend dependency na combat result read model;
+  - nie próbuj rekonstruować logu lokalnie z timing inputu.
+- Odśwież reward display po `reward_grant_id`.
+- Jeśli reward miał wygenerować item, pokaż wygenerowany item przez istniejący reward/item/armory read path, jeśli jest dostępny.
+- Jeśli `reward_grant_id` jest null przy sukcesie albo DB zwraca informację o braku rewardu, pokaż czytelny komunikat diagnostyczny po polsku.
+- Po completion odblokuj możliwość kontynuacji eksploracji zgodnie z DB state.
+- Refresh strony nie może ponownie submitować walki ani duplikować rewardu.
+
+**Acceptance criteria:**
+
+- Po combat Trial/Encounter gracz widzi wynik walki.
+- Reward display korzysta z trwałego DB reward state.
+- Generated item, jeśli istnieje, jest widoczny przez istniejący item/reward path.
+- Brak attack log read API nie blokuje pokazania summary, ale jest zgłoszony jako dependency.
+- Refresh nie powtarza RPC i nie duplikuje rewardu.
+- Gracz może kontynuować exploration po completed state.
+- Build przechodzi.
+
+## Task HOTFIX-COMBAT-3 — Reuse Walking Dead timing UI for exploration combat
+
+**Goal:** Existing Walking Dead / green-zone combat timing UI becomes the normal manual resolver UI for exploration Combat Trial and Combat Encounter.
+
+**Scope:**
+
+- Locate the current sandbox combat / Walking Dead / green-zone timing UI used by `/game/combat` or combat sandbox.
+- Extract or reuse the timing UI as a reusable combat minigame component/service, without making `/game/combat` the production authority.
+- Keep `/game/combat` as sandbox/test caller only.
+- Render the reusable timing UI from `/game/exploration` when the active Trial/Encounter has `minigame_key = combat`.
+- The UI should collect only timing input needed for `timing_hits_json`.
+- The UI must not compute final combat outcome, damage, evasion, crits, rewards or opponent state as gameplay authority.
+- After timing input is collected, pass it to the exploration combat submit path from HOTFIX-COMBAT-1:
+  `submit_exploration_challenge_combat_resolution(challenge_attempt_id, timing_hits_json, request_id)`.
+- If the current Walking Dead UI depends on sandbox-only data, split the reusable timing input layer from sandbox-only preview/debug state.
+- If DB/read model does not provide enough information to render the timing UI safely, report the missing DB/read contract instead of fabricating combat data in Angular.
+- Use Polish-facing copy for player-visible labels/errors where touched.
+
+**Acceptance criteria:**
+
+- Exploration Combat Trial/Encounter renders the green-zone / Walking Dead timing UI.
+- `/game/combat` still works as sandbox/test surface.
+- Timing input can be submitted to the DB-owned exploration combat resolver.
+- Angular sends timing input only, not stats/equipment/luck/damage/opponent data.
+- Final combat result remains DB-owned.
+- No sandbox-only combat state becomes production source of truth.
+- Build passes.
+
+---
+
+## Accepted hotfix implementation notes
+
+- HOTFIX-COMBAT-1 accepted on 2026-05-05. Exploration challenges with `minigameKey === 'combat'` now use the DB-owned `submit_exploration_challenge_combat_resolution(...)` RPC instead of the generic manual completion RPC. The frontend sends only `p_challenge_attempt_id`, `p_timing_hits_json` and `p_request_id`; it does not send stats, equipment, luck, damage, opponent data or final outcome. The service maps DB-returned combat fields and refreshes canonical exploration state through `getHeroExplorationState(...)`; PvE `draw` is presented as failure. This path is scoped to exploration and does not touch PvP. Manual smoke remains pending for a real combat Trial/Encounter.
+- HOTFIX-COMBAT-2 accepted on 2026-05-05. After exploration combat resolution, the challenge result card displays the durable DB resolver summary: `combat_result_id`, outcome, success/failure, completion mode, turns completed, participants, attacks, exploration status and `reward_grant_id`. Reward display continues to use the existing durable exploration reward read path and shows Polish diagnostics when `reward_grant_id` is null or the reward has not yet been read. The UI does not reconstruct an attack log from timing input; it explicitly reports the dependency on a future DB combat result read model for detailed timeline/log display. Refreshing the page does not resubmit the resolver or duplicate rewards.

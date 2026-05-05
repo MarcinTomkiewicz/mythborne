@@ -89,6 +89,8 @@ export const RPC = {
     'auto_resolve_hero_exploration_challenge_attempt',
   complete_hero_exploration_challenge_attempt:
     'complete_hero_exploration_challenge_attempt',
+  submit_exploration_challenge_combat_resolution:
+    'submit_exploration_challenge_combat_resolution',
   force_complete_hero_exploration_challenge_attempt:
     'force_complete_hero_exploration_challenge_attempt',
   get_hero_exploration_debug_state: 'get_hero_exploration_debug_state',
