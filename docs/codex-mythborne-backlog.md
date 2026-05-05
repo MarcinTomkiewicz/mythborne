@@ -5737,6 +5737,14 @@ Reports have their own Reports Center and unread state. Toasts are presentation 
 - Mapper tests cover read/unread, dismissed, action link and toast eligibility.
 - Build passes.
 
+**Status:** Accepted on 2026-05-05.
+
+**Acceptance summary:** Q1 added generated notification RPC/table aliases, typed notification read models and mapper tests for player/staff list items, read/dismiss state, nullable body/action/source fields, toast eligibility and staff/player boundary guards. `StaffNotificationListItem.recipientKind` is narrowed to `staff`; player mapping rejects staff rows and staff mapping rejects non-staff rows. No UI, service, write path or frontend notification writes were added.
+
+**Verification:** `npx tsc --noEmit` passed; focused notification mapper specs passed with 6 SUCCESS; `npm run build` passed with known bundle budget and Supabase `cookie` CommonJS warnings; static greps passed for no direct notification writes, no durable `any`, and no user/account id exposure in the checked notification model/mapper paths.
+
+**Manual smoke:** N/A for mapper-only slice.
+
 ---
 
 ## Task Q2 — Player notification read service and unread count
