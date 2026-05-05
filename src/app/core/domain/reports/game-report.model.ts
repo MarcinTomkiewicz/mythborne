@@ -137,6 +137,24 @@ export interface MarkGameReportReadResult {
   readAt: string | null;
 }
 
+export interface CreateCombatGameReportInput {
+  combatResultId: string;
+  ownerHeroId?: string | null;
+  reason?: string | null;
+  requestId?: string | null;
+}
+
+export interface CreatedCombatGameReport {
+  reportId: string;
+  reportTypeKey: string;
+  publicToken: string;
+  combatResultId: string;
+  serverId: string;
+  participantsCreated: number;
+  accessRowsCreated: number;
+  auditLogId: string;
+}
+
 export interface PrivateGameReportDetail extends Omit<
   PrivateGameReportListItem,
   'itemReferencesCount'

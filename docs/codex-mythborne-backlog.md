@@ -5370,6 +5370,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 
 ## Task P6 — Combat report creation integration
 
+**Status:** Done / confirmed 2026-05-05.
+
 **Goal:** Use the current DB producer to create/get reports for combat results where a low-level combat result should become a report.
 
 **Scope:**
@@ -5393,6 +5395,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 - Repeated creation attempts return/reuse the existing report rather than creating duplicates.
 - No direct report inserts are introduced.
 - Build passes where code changes are made.
+
+**Implementation note:** P6 accepted on 2026-05-05. Frontend now exposes a low-level, RPC-only `GameReportProducers.createCombatReportFromResult(...)` boundary for `create_game_report_from_combat_result(...)`, with generated RPC args/return aliases and focused mapper/service tests. The boundary treats idempotence as DB/RPC-owned, does not add contextual gameplay producers, UI buttons, direct report table writes, frontend idempotence logic, notification writes or duplication of `combat_result_attacks`. Verification passed with `npx tsc --noEmit`, focused report producer/mapper specs with 20 SUCCESS, static greps and `npm run build` with known warnings. Manual smoke is not applicable until representative persisted combat result data exists.
 
 ---
 

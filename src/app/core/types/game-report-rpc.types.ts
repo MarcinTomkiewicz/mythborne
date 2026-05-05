@@ -12,6 +12,10 @@ export type GameReportTypeRow = Row<'game_report_types'>;
 export type GameReportParticipantRow = Row<'game_report_participants'>;
 export type GameReportItemReferenceRow = Row<'game_report_item_references'>;
 
+export type CreateGameReportFromCombatResultRpcArgs =
+  Database['public']['Functions']['create_game_report_from_combat_result']['Args'];
+export type CreateGameReportFromCombatResultRpcRow =
+  Database['public']['Functions']['create_game_report_from_combat_result']['Returns'][number];
 export type GetHeroGameReportsRpcRow =
   Database['public']['Functions']['get_hero_game_reports']['Returns'][number];
 export type GetHeroGameReportsRpcArgs =
