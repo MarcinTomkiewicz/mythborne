@@ -196,8 +196,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: R8 - Vicinity target list UI.
 - Completed and confirmed: HOTFIX-COMBAT-1 - DB-owned exploration combat resolver.
 - Completed and confirmed: HOTFIX-COMBAT-2 - exploration combat result/reward/report display.
-- Next backlog task: HOTFIX-COMBAT-3 - reuse Walking Dead timing UI for exploration combat from `docs/codex-mythborne-backlog.md`.
-- R9 remains next PvP backlog task after the accepted combat hotfix run.
+- Completed and confirmed: HOTFIX-COMBAT-3 - reuse Walking Dead timing UI for exploration combat.
+- Next backlog task: R9 - start attack/spy action UI, unless another accepted hotfix supersedes it.
 - Q4 pending manual smoke: check a real DB row for `estate.building_job.completed`; source `action_url` must be `/game/mansion`. If it still returns `ViewState`, fix DB/content producer source and do not add a frontend remap.
 - Q5 pending manual smoke: open bell, mark read, dismiss and action link; real DB/RLS denied-action smoke only if suitable test data/access exists.
 - Q6 pending manual smoke: basic bell UI can be smoke-tested, but full fresh-toast validation needs a real DB producer notification. Eligible unread fresh rows should toast once; read rows and `default_toast_enabled = false` rows should remain inbox-only.

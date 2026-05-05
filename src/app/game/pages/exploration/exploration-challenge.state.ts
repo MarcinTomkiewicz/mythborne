@@ -8,6 +8,7 @@ import {
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { Json } from '../../../core/types/database.types';
 import {
+  advanceWalkingDeadTimingFrame,
   toWalkingDeadSpeed,
   toWalkingDeadZone,
 } from '../../../core/utils/combat-walking-dead';
@@ -393,21 +394,13 @@ export class ExplorationChallengeState {
     this.stopCombatTiming();
 
     this.walkingTimer = window.setInterval(() => {
-      const next = this.walkingPosition() + this.walkingDirection() * this.combatWalkingSpeed();
+      const next = advanceWalkingDeadTimingFrame({
+        position: this.walkingPosition(),
+        direction: this.walkingDirection(),
+      }, this.combatWalkingSpeed());
 
-      if (next >= 100) {
-        this.walkingPosition.set(100);
-        this.walkingDirection.set(-1);
-        return;
-      }
-
-      if (next <= 0) {
-        this.walkingPosition.set(0);
-        this.walkingDirection.set(1);
-        return;
-      }
-
-      this.walkingPosition.set(Number(next.toFixed(2)));
+      this.walkingPosition.set(next.position);
+      this.walkingDirection.set(next.direction);
     }, 16);
   }
 

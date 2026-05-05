@@ -12,6 +12,7 @@ import {
 import { OriginBonus, Origin } from '../../domain/origin/origin.model';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import {
+  advanceWalkingDeadTimingFrame,
   toWalkingDeadSpeed,
   toWalkingDeadZone,
 } from '../../utils/combat-walking-dead';
@@ -266,21 +267,13 @@ export class CombatPageFacade {
     const step = this.walkingSpeed();
 
     this.walkingTimer = window.setInterval(() => {
-      const next = this.walkingPosition() + this.walkingDirection() * step;
+      const next = advanceWalkingDeadTimingFrame({
+        position: this.walkingPosition(),
+        direction: this.walkingDirection(),
+      }, step);
 
-      if (next >= 100) {
-        this.walkingPosition.set(100);
-        this.walkingDirection.set(-1);
-        return;
-      }
-
-      if (next <= 0) {
-        this.walkingPosition.set(0);
-        this.walkingDirection.set(1);
-        return;
-      }
-
-      this.walkingPosition.set(Number(next.toFixed(2)));
+      this.walkingPosition.set(next.position);
+      this.walkingDirection.set(next.direction);
     }, 16);
   }
 

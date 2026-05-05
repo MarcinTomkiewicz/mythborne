@@ -21,3 +21,28 @@ export const toWalkingDeadSpeed = (streak: number) =>
 
 export const isInsideWalkingDeadZone = (position: number, start: number, end: number) =>
   position >= start && position <= end;
+
+export interface WalkingDeadTimingFrame {
+  position: number;
+  direction: 1 | -1;
+}
+
+export function advanceWalkingDeadTimingFrame(
+  frame: WalkingDeadTimingFrame,
+  step: number,
+): WalkingDeadTimingFrame {
+  const next = frame.position + frame.direction * step;
+
+  if (next >= 100) {
+    return { position: 100, direction: -1 };
+  }
+
+  if (next <= 0) {
+    return { position: 0, direction: 1 };
+  }
+
+  return {
+    position: Number(next.toFixed(2)),
+    direction: frame.direction,
+  };
+}
