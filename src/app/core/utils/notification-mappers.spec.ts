@@ -23,6 +23,7 @@ describe('notification mappers', () => {
       label: 'Building completed',
       description: 'A building job completed.',
       helperText: 'Shown when estate construction finishes.',
+      adminDescription: 'Internal admin note.',
       category: 'estate',
       defaultSeverity: 'notice',
       defaultToastEnabled: true,

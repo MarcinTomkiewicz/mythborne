@@ -161,6 +161,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     routerLink: '/admin/audit-logs',
     accessPolicy: 'selectedServerManagement',
   },
+  {
+    legend: 'Notifications',
+    title: 'Notification types',
+    description:
+      'Read-only inspection of DB-backed notification labels, categories, severity and toast defaults.',
+    routerLink: '/admin/notification-types',
+    accessPolicy: 'adminShell',
+  },
 ];
 
 export const ADMIN_DASHBOARD_LINKS: readonly AdminTagLink[] = [
@@ -566,6 +574,20 @@ export const AUDIT_LOGS_PAGE_LINKS: readonly AdminTagLink[] = [
   {
     label: 'Anti-abuse config',
     routerLink: '/admin/anti-abuse-config',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const NOTIFICATION_TYPES_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Audit logs',
+    routerLink: '/admin/audit-logs',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Audit dictionaries',
+    routerLink: '/admin/audit-dictionaries',
     accessPolicy: 'selectedServerManagement',
   },
 ];

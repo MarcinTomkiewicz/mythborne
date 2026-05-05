@@ -23,6 +23,7 @@ export function mapNotificationType(row: NotificationTypeRow): NotificationTypeE
     label: row.label,
     description: row.description,
     helperText: nullableText(row.helper_text),
+    adminDescription: nullableText(row.admin_description),
     category: row.category,
     defaultSeverity: row.default_severity,
     defaultToastEnabled: row.default_toast_enabled,

@@ -57,6 +57,7 @@ export const TABLES = {
   audit_action_types: 'audit_action_types',
   audit_entity_types: 'audit_entity_types',
   audit_logs: 'audit_logs',
+  notification_types: 'notification_types',
   moderation_action_types: 'moderation_action_types',
   moderation_actions: 'moderation_actions',
   anti_abuse_case_audit_logs: 'anti_abuse_case_audit_logs',

@@ -8,6 +8,7 @@ export interface NotificationTypeEntry {
   label: string;
   description: string;
   helperText: string | null;
+  adminDescription: string | null;
   category: string;
   defaultSeverity: NotificationSeverity;
   defaultToastEnabled: boolean;

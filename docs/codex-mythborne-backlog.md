@@ -6012,6 +6012,14 @@ Reports have their own Reports Center and unread state. Toasts are presentation 
 - No raw table-editor style screen is introduced as the final UX.
 - Build passes.
 
+**Status:** Accepted on 2026-05-05.
+
+**Acceptance summary:** Q8 added a read-only `/admin/notification-types` admin surface backed by DB `notification_types` rows. The page exposes key, label, description, helper text, admin description, category, default severity, default toast behavior, active flag and sort order without hardcoded notification type lists. Inactive rows remain visible, `adminDescription` is part of the notification type model and mapper, and UI copy comes from `notification_type_admin_section` metadata with explicit fallbacks. The admin page is not a raw table editor and has no Save/Edit/Delete/Create controls. No notification write path or frontend `create_notification(...)` call was added.
+
+**Verification:** `npx tsc --noEmit` passed; focused notification mapper/service/admin notification-type specs passed with 24 SUCCESS; `npm run build` passed with known bundle budget and Supabase `cookie` CommonJS warnings; static greps passed for no direct notification writes in the touched notification-type paths.
+
+**Manual smoke:** Pending `/admin/notification-types` with real admin/operator access, seeded `notification_types` and `notification_type_admin_section` rows, confirmation of admin navigation card/link, and confirmation that no Save/Edit/Delete/Create controls are exposed.
+
 ---
 
 ## Task Q9 — Notification hook diagnostics/admin readability

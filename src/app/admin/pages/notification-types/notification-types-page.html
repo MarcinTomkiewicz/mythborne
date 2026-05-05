@@ -1,0 +1,130 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading notification types..."
+  description="Loading notification type dictionary rows."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Notifications</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            {{ pageHeaderLabel() }}
+          </h2>
+          <p class="muted-text mb-0">{{ pageHeaderText() }}</p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Registered types</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ types().length }}
+          </strong>
+        </div>
+
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Active types</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ activeCount() }}
+          </strong>
+        </div>
+
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="muted-text">Toast-enabled defaults</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ toastEnabledCount() }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-xs mb-lg">
+        <p class="card-legend mb-0">Dictionary</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Notification types</h3>
+        <p class="muted-text mb-0">{{ typeListText() }}</p>
+        <p class="muted-text mb-0">{{ toastBehaviorText() }}</p>
+      </div>
+
+      <div class="flex-col gap-md">
+        @for (type of types(); track type.key) {
+          <article class="mg-surface-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <h4 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ type.label }}
+                </h4>
+                <p class="card-legend mb-0">{{ type.key }}</p>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="tag-badge tag-badge--muted">{{ type.category }}</span>
+                <span [class]="severityBadgeClass(type)">
+                  {{ type.defaultSeverity }}
+                </span>
+                @if (type.defaultToastEnabled) {
+                  <span class="tag-badge tag-badge--info">toast default</span>
+                } @else {
+                  <span class="tag-badge tag-badge--muted">inbox only</span>
+                }
+                @if (type.isActive) {
+                  <span class="tag-badge tag-badge--info">active</span>
+                } @else {
+                  <span class="tag-badge tag-badge--warn">inactive</span>
+                }
+              </div>
+            </div>
+
+            <p class="mb-0 muted-text">{{ type.description }}</p>
+
+            @if (type.helperText) {
+              <p class="mb-0 muted-text">{{ type.helperText }}</p>
+            }
+
+            @if (type.adminDescription) {
+              <div class="mg-card p-sm flex-col gap-xs">
+                <span class="muted-text">Admin note</span>
+                <span class="heading-color">{{ type.adminDescription }}</span>
+              </div>
+            }
+
+            <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Sort order</span>
+                <strong class="heading-color">{{ type.sortOrder }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Toast default</span>
+                <strong class="heading-color">
+                  {{ type.defaultToastEnabled ? 'Enabled' : 'Disabled' }}
+                </strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Active flag</span>
+                <strong class="heading-color">
+                  {{ type.isActive ? 'Active' : 'Inactive' }}
+                </strong>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">{{ emptyStateText() }}</p>
+        }
+      </div>
+    </section>
+  </div>
+}

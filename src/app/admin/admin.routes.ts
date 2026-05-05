@@ -154,4 +154,11 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./pages/audit-logs/audit-logs-page').then((m) => m.AuditLogsPage),
   },
+  {
+    path: 'notification-types',
+    loadComponent: () =>
+      import('./pages/notification-types/notification-types-page').then(
+        (m) => m.NotificationTypesPage,
+      ),
+  },
 ];
