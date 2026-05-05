@@ -6342,6 +6342,8 @@ PvP Foundation is not:
 - Missing active hero/current estate is shown as an invariant/error state, not masked with fake data.
 - Route uses existing player access guards.
 
+**Implementation note:** R5 accepted on 2026-05-05. `/game/vicinity` is covered by a route contract spec under the guarded `/game` shell, with `requireOnboardedHeroGuard` verified through `canActivateChild`. The slice also locks out `/game/neighborhood` / `neighborhood` route aliases and adds a regression that missing current estate is surfaced as an invariant error without loading occupied address ranges or building fake range data. No new PvP table reads/writes/workflows were added.
+
 ---
 
 ## Task R6 — Vicinity navigation entry

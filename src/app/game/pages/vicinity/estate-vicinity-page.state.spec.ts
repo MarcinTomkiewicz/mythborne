@@ -84,6 +84,18 @@ describe('EstateVicinityPageState', () => {
     expect(state.rows().find((row) => row.addressNumber === 3300)?.isSelectable).toBeTrue();
   });
 
+  it('shows an invariant error when the active hero has no current estate address', () => {
+    estateAddresses.getActiveHeroCurrentAddress.and.returnValue(of(null));
+
+    state.loadData();
+
+    expect(estateAddresses.getOccupiedAddressesForAddressNumberRange).not.toHaveBeenCalled();
+    expect(state.isLoading()).toBeFalse();
+    expect(state.currentAddress()).toBeNull();
+    expect(state.vicinityRange()).toBeNull();
+    expect(state.error()).toBe('Active hero does not have an estate address.');
+  });
+
   it('ignores stale initial vicinity load responses', () => {
     const staleOccupied = new Subject<OccupiedEstateAddressReadModel[]>();
     const currentOccupied = new Subject<OccupiedEstateAddressReadModel[]>();
