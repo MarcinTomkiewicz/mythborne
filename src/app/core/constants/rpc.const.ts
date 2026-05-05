@@ -72,6 +72,8 @@ export const RPC = {
   get_my_staff_notification_unread_count: 'get_my_staff_notification_unread_count',
   get_my_staff_notifications: 'get_my_staff_notifications',
   get_public_game_report_by_token: 'get_public_game_report_by_token',
+  dismiss_notification: 'dismiss_notification',
+  mark_notification_read: 'mark_notification_read',
   mark_game_report_read: 'mark_game_report_read',
   get_vendor_scrap_drachma_payout_percent:
     'get_vendor_scrap_drachma_payout_percent',

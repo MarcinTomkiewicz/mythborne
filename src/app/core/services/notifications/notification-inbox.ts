@@ -4,10 +4,13 @@ import { RPC } from '../../constants/rpc.const';
 import {
   PlayerNotificationFilters,
   PlayerNotificationListItem,
+  PlayerNotificationMutationResult,
   StaffNotificationFilters,
   StaffNotificationListItem,
 } from '../../domain/notifications/notification.model';
 import {
+  DismissNotificationRpcArgs,
+  DismissNotificationRpcReturn,
   GetMyNotificationUnreadCountRpcArgs,
   GetMyNotificationUnreadCountRpcReturn,
   GetMyNotificationsRpcArgs,
@@ -16,9 +19,12 @@ import {
   GetMyStaffNotificationUnreadCountRpcReturn,
   GetMyStaffNotificationsRpcArgs,
   GetMyStaffNotificationsRpcRow,
+  MarkNotificationReadRpcArgs,
+  MarkNotificationReadRpcReturn,
 } from '../../types/notification-rpc.types';
 import {
   mapPlayerNotificationListItem,
+  mapPlayerNotificationMutationResult,
   mapStaffNotificationListItem,
 } from '../../utils/notification-mappers';
 import { trimText } from '../../utils/normalize-text';
@@ -75,6 +81,36 @@ export class NotificationInbox {
     );
   }
 
+  markPlayerNotificationRead(
+    notificationId: string,
+  ): Observable<PlayerNotificationMutationResult> {
+    const args: MarkNotificationReadRpcArgs = {
+      p_notification_id: requiredNotificationId(notificationId),
+    };
+
+    return this.backend.rpc<MarkNotificationReadRpcReturn>(
+      RPC.mark_notification_read,
+      args,
+    ).pipe(
+      map(mapPlayerNotificationMutationResult),
+    );
+  }
+
+  dismissPlayerNotification(
+    notificationId: string,
+  ): Observable<PlayerNotificationMutationResult> {
+    const args: DismissNotificationRpcArgs = {
+      p_notification_id: requiredNotificationId(notificationId),
+    };
+
+    return this.backend.rpc<DismissNotificationRpcReturn>(
+      RPC.dismiss_notification,
+      args,
+    ).pipe(
+      map(mapPlayerNotificationMutationResult),
+    );
+  }
+
   getStaffNotifications(
     serverId: string,
     filters: Partial<StaffNotificationFilters> = {},
@@ -119,6 +155,16 @@ function requiredServerId(value: string): string {
 
   if (!normalized) {
     throw new Error('serverId is required for staff notifications.');
+  }
+
+  return normalized;
+}
+
+function requiredNotificationId(value: string): string {
+  const normalized = trimText(value);
+
+  if (!normalized) {
+    throw new Error('notificationId is required for notification actions.');
   }
 
   return normalized;

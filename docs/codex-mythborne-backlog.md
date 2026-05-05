@@ -5896,6 +5896,14 @@ Reports have their own Reports Center and unread state. Toasts are presentation 
 - Dismissed notifications are not counted as unread.
 - Build and focused tests pass.
 
+**Status:** Accepted on 2026-05-05.
+
+**Acceptance summary:** Q5 added canonical player notification read/dismiss actions through `NotificationInbox.markPlayerNotificationRead(...)` and `dismissPlayerNotification(...)`, backed only by `mark_notification_read(...)` and `dismiss_notification(...)`. The bell can mark unread rows read, dismiss rows from the normal dropdown and refresh unread count through `get_my_notification_unread_count(...)` after successful mutations, without frontend count guessing. `NotificationBell` remains a thin wrapper and `NotificationBellState` owns loading, pending state, stale guards, action errors and toast feedback. Stale mark-read/dismiss responses after active hero/server changes are ignored and pending ids are cleared on context change, new payload and stale response cleanup. No direct notification table writes, direct `read_at`/`dismissed_at` updates, deletes or frontend `create_notification(...)` calls were added.
+
+**Verification:** `npx tsc --noEmit` passed; focused notification bell/service/mapper specs passed with 30 SUCCESS; `npm run build` passed with known bundle budget and Supabase `cookie` CommonJS warnings; static greps passed for no direct notification writes. `.update(...)` grep hits are Angular signal updates only.
+
+**Manual smoke:** Pending user run: open bell, mark read, dismiss, action link. Denied/invalid action behavior is covered by spec/mock; real DB/RLS denied-action smoke remains pending if suitable data/access exists.
+
 ---
 
 ## Task Q6 — Optional online toast presentation for fresh notifications

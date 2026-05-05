@@ -4,12 +4,15 @@ import {
   NotificationSourceEntityReference,
   NotificationTypeEntry,
   NotificationTypeSnapshot,
+  PlayerNotificationMutationResult,
   PlayerNotificationListItem,
   StaffNotificationListItem,
 } from '../domain/notifications/notification.model';
 import {
+  DismissNotificationRpcReturn,
   GetMyNotificationsRpcRow,
   GetMyStaffNotificationsRpcRow,
+  MarkNotificationReadRpcReturn,
   NotificationRecipientKind,
   NotificationTypeRow,
 } from '../types/notification-rpc.types';
@@ -72,6 +75,28 @@ export function mapStaffNotificationListItem(
     serverId: requiredText(row.server_id, 'serverId'),
     actorHeroId: nullableText(row.actor_hero_id),
     recipientHeroId: nullableText(row.recipient_hero_id),
+  };
+}
+
+export function mapPlayerNotificationMutationResult(
+  row: MarkNotificationReadRpcReturn | DismissNotificationRpcReturn,
+): PlayerNotificationMutationResult {
+  if (row.recipient_kind === 'staff') {
+    throw new Error('Staff notifications must not be mapped into the player inbox.');
+  }
+
+  const readAt = nullableText(row.read_at);
+  const dismissedAt = nullableText(row.dismissed_at);
+
+  return {
+    notificationId: requiredText(row.id, 'notificationId'),
+    recipientKind: row.recipient_kind as Exclude<NotificationRecipientKind, 'staff'>,
+    readState: {
+      readAt,
+      dismissedAt,
+      isUnread: readAt === null,
+      isDismissed: dismissedAt !== null,
+    },
   };
 }
 

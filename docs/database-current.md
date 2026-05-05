@@ -16,6 +16,328 @@ After every schema/RPC migration that Codex will consume, regenerate/update gene
 
 
 
+## Update 2026-05-05 — Epic T Guild Foundation DB/RPC foundation
+
+Epic T guild foundation is now implemented and verified on the database/RPC side. This section records the semantic contract that frontend/Codex should consume after generated Supabase types are regenerated. It is a curated index, not a full dump.
+
+Final verification passed with:
+
+- 19 expected guild-related tables present;
+- 47 expected guild/equipment/item-hardening functions present;
+- 19 expected guild-related tables with RLS enabled, at least one policy, and authenticated SELECT grant;
+- 9 active guild dictionary tables at expected row counts;
+- 8 active guild config definitions and 8 active guild config values;
+- `get_guild_config_summary()` returning a valid config summary;
+- `items_block_current_guild_armory_mutations` enabled on `items`;
+- runtime contracts for borrowed guild armory equipment, loadout presets, requirement checks, staff transfer and item mutation guards verified.
+
+### Guild foundation scope
+
+Guilds are a simple server-scoped organization layer for shared item logistics and future group-support hooks. The first foundation includes:
+
+- hero-based guild membership;
+- roles: `leader`, `officer`, `member`;
+- one active officer per guild;
+- invite and request-to-join flows;
+- kick/promote/demote/leave/disband/leadership-transfer workflows;
+- emergency leader election for inactive-leader recovery;
+- guild armory deposit/borrow/return/force-return/withdraw/remove flows;
+- per-member guild armory access lock;
+- frontend-ready relational read models for dashboard, invite/request rows, armory rows, loan rows and emergency election rows.
+
+Not included in Epic T foundation:
+
+- siege implementation;
+- Argonautics implementation;
+- guild-to-guild diplomacy;
+- alliances / non-aggression pacts / war declarations;
+- district influence;
+- guild reputation;
+- guild buildings;
+- player-facing full activity feed/history for every guild armory click.
+
+### Guild dictionaries and config
+
+Active dictionary tables now include:
+
+- `guild_statuses` — active guild lifecycle/status labels;
+- `guild_roles` — first-foundation roles `leader`, `officer`, `member`;
+- `guild_membership_statuses`;
+- `guild_invite_statuses`;
+- `guild_join_request_statuses`;
+- `guild_emergency_election_statuses`;
+- `guild_armory_item_statuses`;
+- `guild_armory_loan_statuses`;
+- `guild_armory_access_statuses`.
+
+Guild config is exposed through `get_guild_config_summary()` and backed by `config_definitions` / `global_config_values` under the guild managed entity key. Current config summary fields include:
+
+- `creation_drachma_cost`;
+- `member_base_limit`;
+- `member_limit_per_leader_level`;
+- `leader_inactivity_threshold_days`;
+- `nomination_duration_minutes`;
+- `voting_duration_minutes`;
+- `emergency_max_candidates`;
+- `armory_capacity`;
+- `armory_capacity_is_unlimited`.
+
+`armory_capacity = 0` means unlimited. Frontend/admin UI must read guild config from DB/RPC/config governance and must not hardcode these values.
+
+### Core guild identity and membership tables
+
+Core tables:
+
+- `guilds` — server-scoped guild identity and lifecycle state.
+- `guild_memberships` — hero-based membership rows.
+- `guild_invites` — invite workflow rows.
+- `guild_join_requests` — request-to-join workflow rows.
+
+Core identity/membership constraints and indexes include:
+
+- guild names are unique per server for active guilds;
+- guild tags are unique per server for active guilds;
+- one active guild membership per hero/server;
+- one active leader per guild;
+- one active officer per guild.
+
+Rules:
+
+- `guild.id` is server-scoped through `guilds.server_id`.
+- Membership is hero-based, not user-based.
+- A hero may have only one active guild membership on a server.
+- A leader cannot simply leave; leader must transfer leadership or disband the guild.
+- Officer can act as deputy for invites, join requests, member kick, guild armory removal/force-return and member armory access lock.
+- Officer cannot disband the guild.
+
+### Core guild RPCs
+
+Core creation/read RPCs:
+
+- `create_guild(p_leader_hero_id, p_name, p_tag, p_description, p_reason, p_request_id)`:
+  - owner-safe;
+  - creates active guild and leader membership;
+  - charges configurable creation drachma cost;
+  - returns `guild_id`, `server_id`, `leader_hero_id`, `membership_id`, display fields, cost/balance, and audit id.
+- `get_guild_member_limit(p_guild_id)`:
+  - resolves member limit from guild config and leader level.
+- `get_hero_guild_state(p_hero_id)`:
+  - owner-safe current guild state row.
+- `get_hero_guild_members(p_hero_id)`:
+  - owner-safe member list for current hero's guild.
+
+Invite/request RPCs:
+
+- `create_guild_invite(p_actor_hero_id, p_target_hero_id, p_reason, p_expires_at, p_request_id)`;
+- `respond_guild_invite(p_invite_id, p_target_hero_id, p_accept, p_reason, p_request_id)`;
+- `cancel_guild_invite(p_invite_id, p_actor_hero_id, p_reason, p_request_id)`;
+- `create_guild_join_request(p_requester_hero_id, p_guild_id, p_reason, p_expires_at, p_request_id)`;
+- `review_guild_join_request(p_join_request_id, p_actor_hero_id, p_accept, p_reason, p_request_id)`;
+- `cancel_guild_join_request(p_join_request_id, p_requester_hero_id, p_reason, p_request_id)`.
+
+Member/officer/leadership RPCs:
+
+- `kick_guild_member(p_actor_hero_id, p_target_hero_id, p_reason, p_request_id)`:
+  - leader/officer workflow;
+  - officer can kick regular members only;
+  - leader cannot be kicked through this workflow.
+- `promote_guild_member_to_officer(p_actor_hero_id, p_target_hero_id, p_reason, p_request_id)`:
+  - leader-only;
+  - target must be active regular member;
+  - one active officer rule enforced.
+- `demote_guild_officer(p_actor_hero_id, p_target_hero_id, p_reason, p_request_id)`:
+  - leader-only;
+  - target must be active officer.
+- `transfer_guild_leadership(p_actor_hero_id, p_target_hero_id, p_reason, p_request_id)`:
+  - leader-only;
+  - target must be active member/officer of same guild;
+  - old leader becomes member and target becomes leader.
+- `leave_guild(p_actor_hero_id, p_reason, p_request_id)`:
+  - member/officer leave workflow;
+  - active leader is blocked and must transfer leadership or disband.
+- `disband_guild(p_actor_hero_id, p_reason, p_request_id)`:
+  - leader-only;
+  - ends active memberships and cancels pending invites/join requests.
+
+All guild mutation RPCs are `SECURITY DEFINER`, require authenticated context, validate ownership/role/server state, require reasons where decisions are made, and write audit rows where relevant. Frontend must use these RPCs and must not direct-insert/update/delete guild, membership, invite or join request rows.
+
+### Emergency leader election
+
+Emergency election tables:
+
+- `guild_emergency_elections`;
+- `guild_emergency_election_nominations`;
+- `guild_emergency_election_votes`.
+
+Emergency leader election rules:
+
+- Recovery workflow only; it is not a normal confidence vote.
+- Any active non-leader member may start an emergency election if the current leader is inactive past the configured threshold.
+- Candidate can be any active member except the inactive leader.
+- Candidate consent is not required.
+- One candidate is enough to proceed.
+- There is no quorum and no 50%+1 all-member threshold.
+- Highest vote count wins; ties resolve by earliest nomination.
+- If there are no votes, finalization fails without leadership change.
+
+Emergency election RPCs:
+
+- `start_guild_emergency_election(p_actor_hero_id, p_reason, p_request_id)`:
+  - validates active membership, non-leader actor, and leader inactivity;
+  - creates nomination phase;
+  - nomination duration is clamped and built as `minutes * interval '1 minute'`.
+- `nominate_guild_emergency_leader_candidate(p_election_id, p_actor_hero_id, p_candidate_hero_id, p_reason, p_request_id)`:
+  - validates active nomination phase, active member actor, active member candidate, candidate limit.
+- `start_guild_emergency_election_voting(p_election_id, p_actor_hero_id, p_reason, p_request_id)`:
+  - moves nomination to voting after nomination window closes and at least one candidate exists;
+  - voting duration is clamped and built as `minutes * interval '1 minute'`.
+- `vote_guild_emergency_election(p_election_id, p_voter_hero_id, p_candidate_hero_id, p_reason, p_request_id)`:
+  - one vote per voter;
+  - candidate must be nominated.
+- `finalize_guild_emergency_election(p_election_id, p_actor_hero_id, p_reason, p_request_id)`:
+  - after voting window closes;
+  - selects winner by vote count then earliest nomination;
+  - updates `guilds.leader_hero_id` and membership roles.
+
+### Guild armory and loans
+
+Guild armory tables:
+
+- `guild_armory_items` — current deposited item state and terminal withdrawn/removed rows;
+- `guild_armory_loans` — active and terminal loan rows;
+- `guild_armory_access_locks` — one access state row per guild/member.
+
+Current user-facing guild armory item states are only:
+
+- `available`;
+- `borrowed`.
+
+Withdrawn/removed items are terminal/history state and disappear from player-facing current armory read models.
+
+Guild armory rules:
+
+- Guild armory is lending/borrowing, not trade.
+- Depositing an item into guild armory does not change `items.hero_id`.
+- Borrowing an item creates use permission/loan and does not change ownership.
+- Borrowed guild armory items may be equipped.
+- Borrowed guild armory items count in runtime loadout.
+- Borrowed guild armory items may appear in loadout presets.
+- Blocked members cannot borrow or deposit.
+- Blocked members can return borrowed items and may still view armory read-only.
+- Owner can withdraw own available item.
+- Leader/officer can remove available items from guild armory; this is not confiscation and ownership does not change.
+- Borrower can return active loan.
+- Owner/leader/officer can force-return active loan.
+- Return/force-return clears borrower equipment defensively where needed.
+- Guild armory loans do not expire in the first foundation.
+
+Guild armory RPCs:
+
+- `guild_member_has_armory_access(p_guild_id, p_member_hero_id)`:
+  - internal/helper read of allowed/blocked state.
+- `deposit_guild_armory_item(p_actor_hero_id, p_item_id, p_reason, p_request_id)`:
+  - owner-safe;
+  - actor must own item and be active guild member with armory access;
+  - item must be active;
+  - no ownership transfer.
+- `borrow_guild_armory_item(p_actor_hero_id, p_armory_item_id, p_reason, p_request_id)`:
+  - active member with access borrows available item owned by another hero;
+  - creates active loan;
+  - no ownership transfer.
+- `return_guild_armory_loan(p_actor_hero_id, p_loan_id, p_reason, p_request_id)`:
+  - borrower-only normal return;
+  - returns item to `available` armory state.
+- `force_return_guild_armory_loan(p_actor_hero_id, p_loan_id, p_reason, p_request_id)`:
+  - owner or leader/officer force-return;
+  - returns item to `available` armory state.
+- `withdraw_guild_armory_item(p_actor_hero_id, p_armory_item_id, p_reason, p_request_id)`:
+  - owner-only withdrawal of available item;
+  - item leaves current guild armory view.
+- `remove_guild_armory_item(p_actor_hero_id, p_armory_item_id, p_reason, p_request_id)`:
+  - leader/officer removal of available item;
+  - item leaves current guild armory view without ownership transfer.
+- `set_guild_armory_member_access(p_actor_hero_id, p_member_hero_id, p_status_key, p_reason, p_request_id)`:
+  - leader/officer updates `allowed`/`blocked` for a member;
+  - uses named unique constraint `guild_armory_access_locks_guild_member_key`.
+
+### Guild armory integration with items, equipment and presets
+
+Current helper functions:
+
+- `get_current_guild_armory_item_state(p_item_id)`:
+  - returns current `available`/`borrowed` guild armory state and active loan, if any.
+- `assert_item_not_in_current_guild_armory(p_item_id, p_action)`:
+  - blocks forbidden economic/lifecycle actions for current guild armory items.
+- `end_current_guild_armory_state_for_item(p_item_id, p_terminal_status, p_reason, p_actor_hero_id, p_request_id)`:
+  - terminalizes guild armory/loan state for controlled ownership/lifecycle workflows;
+  - clears equipment if an active borrower loan exists.
+- `can_hero_runtime_use_item(p_hero_id, p_item_id)`:
+  - normal owner can use owned active/locked items unless item is in current guild armory state;
+  - active borrower can use borrowed active guild armory item without ownership transfer.
+
+Equipment and requirement integration:
+
+- `enforce_hero_equipment_item_valid()` now uses `can_hero_runtime_use_item(...)`, so active guild armory borrowers can equip borrowed active items while owners cannot equip deposited/borrowed-away items.
+- `equip_hero_item(p_hero_id, p_item_id, p_target_slot_key, p_request_id)` uses `can_hero_runtime_use_item(...)`, checks requirements against the equipping/runtime hero, and journals borrowed guild armory equipment with `ownershipTransferred = false`.
+- `check_hero_meets_item_requirements(p_hero_id, p_item_id)` uses runtime usability instead of strict `items.hero_id` ownership. This allows active guild armory borrowers to check/equip borrowed active items without ownership transfer.
+- `apply_hero_loadout_preset(p_hero_id, p_preset_number, p_request_id)` uses `can_hero_runtime_use_item(...)` and can apply borrowed guild armory item IDs saved in a preset without ownership transfer. It journals `preset_apply_borrowed_guild_armory_item` where relevant.
+- `staff_transfer_item_ownership(...)` calls `end_current_guild_armory_state_for_item(...)` before changing `items.hero_id`, so staff ownership correction ends active guild armory/loan state safely.
+
+Item mutation hardening:
+
+- Trigger `items_block_current_guild_armory_mutations` is enabled on `items` before `UPDATE OF status, hero_id` and before `DELETE`.
+- Trigger function `enforce_item_not_in_current_guild_armory_for_item_mutation()` blocks:
+  - `active -> locked_trade`;
+  - `active -> locked_auction`;
+  - `active -> scrapped`;
+  - direct `DELETE`;
+  - direct `hero_id` ownership change;
+  while the item is currently `available` or `borrowed` in guild armory.
+- Controlled staff transfer must first terminalize guild armory state through `end_current_guild_armory_state_for_item(...)`.
+
+Frontend consequences:
+
+- Angular must not mutate `items.hero_id` for guild loans.
+- Angular must not direct-write `hero_equipment`.
+- Angular must not offer trade/auction/scrap/vendor actions for current guild armory borrowed/deposited items unless a DB/RPC read model says the action is valid.
+- Guild armory/equipment state must be refreshed from DB/RPC after borrow/return/force-return/withdraw/remove/equip/preset actions.
+
+### Frontend-ready guild read models
+
+Owner-safe read RPCs added for Epic T frontend:
+
+- `get_hero_guild_dashboard(p_hero_id)`:
+  - returns current guild/membership state, role, member counts, invite/request counts, active election ids/status, armory counts, personal loan/deposit counts, armory access state and role-derived capability booleans.
+- `get_hero_guild_invitation_rows(p_hero_id, p_include_terminal default false)`:
+  - relational invite rows visible to the hero and, if leader/officer, outgoing guild invites.
+- `get_hero_guild_join_request_rows(p_hero_id, p_include_terminal default false)`:
+  - relational join request rows visible to requester and, if leader/officer, incoming guild requests.
+- `get_hero_guild_armory_item_rows(p_hero_id)`:
+  - current available/borrowed armory rows with item display fields, owner/borrower context and action booleans.
+- `get_hero_guild_armory_loan_rows(p_hero_id, p_include_terminal default false)`:
+  - active loan rows by default and terminal history if requested.
+- `get_hero_guild_emergency_election_summary(p_hero_id)`:
+  - current active nomination/voting election summary for hero's guild, if one exists.
+- `get_hero_guild_emergency_election_candidate_rows(p_hero_id)`:
+  - candidate rows for current active emergency election, with vote counts and my-vote flags.
+
+Read model rules:
+
+- These read RPCs are `SECURITY DEFINER` and owner-safe through `can_read_hero(...)`.
+- They return relational/scalar rows, not JSON authority payloads.
+- They use `hero.id`, not `auth.uid()`, as gameplay identity.
+- Frontend must map these RPC rows into domain models rather than exposing raw generated rows inside components.
+
+### Security, RLS and grants
+
+Guild-related tables now have RLS enabled and authenticated SELECT grants. Player-facing writes are via RPC. Service role has broader table grants where needed.
+
+All player-facing guild mutation RPCs are `SECURITY DEFINER`, authenticate `auth.uid()`, and validate hero ownership/active membership/role/capacity/server state. Critical workflows require `reason`/`status_reason` where appropriate and write audit records.
+
+Frontend Epic T must use generated Supabase types after regeneration and must not create direct-table fallback paths if a guild RPC/read model is missing.
+
+
+
 ## Update 2026-05-05 — O6 runtime settlement, PvP continuation and Epic S item/equipment foundation
 
 This update records the DB/RPC migrations applied after the previous 2026-05-03 snapshot. It intentionally updates only the semantic current-state notes; it is not a full dump.
