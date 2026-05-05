@@ -93,6 +93,23 @@ export interface PrivateGameReportListItem {
   itemReferencesCount: number;
 }
 
+export interface GameReportServerFilters {
+  reportTypeKey: string | null;
+  unreadOnly: boolean;
+  limit: number;
+  offset: number;
+}
+
+export interface DeleteGameReportResult {
+  reportId: string;
+  heroId: string;
+  publicToken: string;
+  removedAccess: boolean;
+  deletedReport: boolean;
+  remainingAccessCount: number;
+  auditLogId: string;
+}
+
 export interface PrivateGameReportDetail extends Omit<
   PrivateGameReportListItem,
   'itemReferencesCount'

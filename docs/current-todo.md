@@ -166,7 +166,9 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: O11 - Estate/building feedback and notification integration.
 - Completed and confirmed: O12 - Estate/building integration smoke and blocker report technical checkpoint.
 - Completed and confirmed: P1 - Game report domain models and mappers.
-- Next backlog task: P2 - Private Reports list / Reports tab prototype from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
+- Completed and confirmed: P2 - Private Reports list / Reports tab prototype.
+- Next backlog task: P3 - Private report detail and mark-read flow from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
+- P2 follow-ups: full manual smoke for list/unread/remove needs representative report producer data; future detail/mark-read/delete flow should add action stale guards; public `/report/:publicToken` route remains P4 scope.
 - O6 user smoke confirmed real job behavior: start job, active job panel, route leave/return, browser refresh during an active job, completed-job settlement, and the new building level after `completes_at`.
 - O8 user smoke confirmed building admin save/read behavior for `startingLevel = 0`. The editor now treats `starting_level = 0` as a legal not-built definition state, preserves it through mapping/form/save payload, keeps `startingLevel = 2` round-tripping, exposes `min=0`/`step=1`, and rejects negative/non-integer values instead of silently clamping.
 - O12 pending manual smoke: Codex completed only the technical checkpoint. User-owned manual validation remains for `/game/mansion` resources versus topbar, build start/active/completion states, `/game/vicinity` district/center/filter and relocation, `/admin/buildings` save/reload for starting level/costs/formulas/metadata, and notification DB smoke for building-completion rows/action URLs when representative data exists.

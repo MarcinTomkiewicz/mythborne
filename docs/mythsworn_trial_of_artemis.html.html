@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Myth Sworn — Trial of Artemis Harpy Hunt Prototype</title>
+  <!--
+    VISUAL REFERENCE ONLY.
+    Do not copy this CSS into Angular feature components.
+    Translate approved visual patterns into global SCSS tokens, vendor wrappers,
+    shared components, PrimeNG wrappers, or documented layout utilities.
+
+    Myth Sworn Trial Minigame V1 — Trial of Artemis / Harpy Hunt.
+
+    Scope:
+    - player-facing manual Trial minigame for Dexterity;
+    - Trial belongs to Artemis;
+    - player aims with a crosshair and shoots moving harpies;
+    - lower effective Dexterity / higher trial difficulty can increase crosshair jitter, target speed, target count, required hits, or reduce arrows/time;
+    - this prototype uses HTML/CSS/JS only to show the visual direction and a light interaction model;
+    - production implementation may use Canvas 2D or a dedicated lightweight renderer, but Angular remains the state/workflow shell.
+  -->
+  <style>
+    :root {
+      --mb-bg-0: #06080c;
+      --mb-navy-0: #07111d;
+      --mb-navy-1: #0d2135;
+      --mb-gold-1: #9c6723;
+      --mb-gold-2: #c8923a;
+      --mb-gold-3: #f0c96f;
+      --mb-red: #b24b3b;
+      --mb-green: #6fa45d;
+      --mb-blue: #5ba3d5;
+      --mb-purple: #9672cc;
+      --mb-text-0: #f6edda;
+      --mb-text-1: #d7c8ab;
+      --mb-text-2: #9d8f75;
+      --mb-text-3: #6f675a;
+      --mb-line-soft: rgba(240, 201, 111, 0.12);
+      --mb-line: rgba(240, 201, 111, 0.24);
+      --mb-line-strong: rgba(240, 201, 111, 0.44);
+      --mb-sidebar-w: 16rem;
+      --mb-topbar-h: 4.25rem;
+      --mb-radius-xl: 1.35rem;
+      --mb-font-display: Georgia, "Times New Roman", serif;
+      --mb-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--mb-font-ui);
+      color: var(--mb-text-0);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(200,146,58,.14), transparent 28rem),
+        radial-gradient(circle at 82% 4%, rgba(45,110,159,.20), transparent 34rem),
+        linear-gradient(135deg, var(--mb-bg-0), #080b11 38%, #050608 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .14;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+    button { font: inherit; color: inherit; }
+
+    .mb-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--mb-sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--mb-topbar-h) minmax(0, 1fr);
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .mb-topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(20rem, 1fr) auto minmax(20rem, 1fr);
+      align-items: center;
+      gap: 1rem;
+      padding: .55rem 1rem;
+      border-bottom: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,201,111,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem rgba(0,0,0,.42);
+    }
+    .mb-topbar-left,
+    .mb-topbar-right { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+    .mb-topbar-right { justify-content: flex-end; }
+
+    .mb-brand { display: flex; align-items: center; justify-content: center; gap: .7rem; min-width: 16rem; }
+    .mb-brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-strong);
+      background:
+        radial-gradient(circle at 34% 24%, #fff0b9 0, var(--mb-gold-3) 22%, var(--mb-gold-1) 48%, #251509 70%, var(--mb-navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,201,111,.22);
+      position: relative;
+    }
+    .mb-brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .mb-brand-title { font-family: var(--mb-font-display); font-size: 1.65rem; letter-spacing: .11em; text-transform: uppercase; color: var(--mb-gold-3); line-height: 1; }
+    .mb-brand-subtitle { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; margin-top: .18rem; text-align: center; }
+
+    .mb-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      min-height: 2.15rem;
+      padding: .38rem .72rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: 999px;
+      color: var(--mb-text-1);
+      background: linear-gradient(180deg, rgba(15,23,33,.75), rgba(6,9,13,.78));
+      white-space: nowrap;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-chip strong { color: var(--mb-text-0); }
+    .mb-chip-icon { color: var(--mb-gold-2); }
+    .mb-chip--health strong { color: #ffc0b7; }
+    .mb-chip--resource strong { color: var(--mb-gold-3); }
+    .mb-chip-stack { display: inline-grid; gap: .08rem; line-height: 1.05; }
+    .mb-chip-stack small { color: var(--mb-text-3); font-size: .68rem; }
+    .mb-xp { min-width: 15rem; display: grid; gap: .3rem; padding: .35rem .7rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(15,23,33,.72), rgba(6,9,13,.74)); }
+    .mb-xp-meta { display: flex; justify-content: space-between; gap: .75rem; font-size: .75rem; color: var(--mb-text-2); }
+    .mb-mini-bar { height: .42rem; border-radius: 999px; background: rgba(0,0,0,.38); overflow: hidden; border: 1px solid rgba(240,201,111,.08); }
+    .mb-mini-bar > span { display: block; width: var(--value, 62%); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mb-gold-1), var(--mb-gold-3)); box-shadow: 0 0 .8rem rgba(240,201,111,.3); }
+
+    .mb-sidebar { grid-area: sidebar; padding: 1rem .8rem; border-right: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(7,11,17,.84), rgba(5,7,10,.88)); backdrop-filter: blur(12px); }
+    .mb-server-card { padding: .9rem; border: 1px solid var(--mb-line-soft); border-radius: var(--mb-radius-xl); background: linear-gradient(180deg, rgba(20,32,47,.72), rgba(8,12,18,.74)), radial-gradient(circle at 80% 0%, rgba(240,201,111,.16), transparent 10rem); box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.2); }
+    .mb-server-label { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+    .mb-server-name { display: flex; justify-content: space-between; gap: .7rem; align-items: center; font-weight: 800; color: var(--mb-text-0); }
+    .mb-prestige { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid rgba(240,201,111,.1); }
+    .mb-nav-section-title { margin: 1.05rem 0 .45rem .55rem; color: var(--mb-text-3); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; }
+    .mb-nav-list { display: grid; gap: .28rem; margin: 0; padding: 0; list-style: none; }
+    .mb-nav-link { display: flex; align-items: center; gap: .65rem; padding: .67rem .68rem; color: var(--mb-text-1); text-decoration: none; border-radius: .85rem; border: 1px solid transparent; transition: 120ms ease; }
+    .mb-nav-link:hover, .mb-nav-link.is-active { color: var(--mb-text-0); border-color: rgba(240,201,111,.16); background: linear-gradient(90deg, rgba(240,201,111,.13), rgba(45,110,159,.12)); }
+    .mb-nav-link.is-active { box-shadow: inset 3px 0 0 var(--mb-gold-2); }
+    .mb-nav-icon { width: 1.65rem; height: 1.65rem; border-radius: .55rem; display: grid; place-items: center; background: rgba(240,201,111,.08); color: var(--mb-gold-2); border: 1px solid rgba(240,201,111,.08); flex: 0 0 auto; font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+
+    .mb-main { grid-area: main; min-width: 0; padding: 1.1rem; display: grid; align-content: start; }
+    .mb-trial-page { width: min(1220px, 100%); margin: 0 auto; }
+
+    .mb-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); color: var(--mb-text-1); background: rgba(7,10,14,.45); font-size: .77rem; white-space: nowrap; }
+    .mb-badge--gold { color: var(--mb-gold-3); border-color: rgba(240,201,111,.32); }
+    .mb-badge--green { color: #bde6b0; border-color: rgba(111,164,93,.46); }
+    .mb-badge--blue { color: #b9def3; border-color: rgba(91,163,213,.46); }
+    .mb-badge--red { color: #f2b4aa; border-color: rgba(178,75,59,.46); }
+    .mb-badge--warning { color: #f1d08a; border-color: rgba(240,201,111,.34); }
+
+    .mb-hunt-stage {
+      min-height: calc(100vh - var(--mb-topbar-h) - 2.2rem);
+      position: relative;
+      display: grid;
+      grid-template-rows: auto minmax(34rem, 1fr) auto;
+      gap: 1rem;
+      overflow: hidden;
+      padding: 1rem;
+      border-radius: 1.65rem;
+      border: 1px solid rgba(240,201,111,.20);
+      background:
+        radial-gradient(circle at 50% 38%, rgba(240,201,111,.12), transparent 20rem),
+        radial-gradient(circle at 72% 56%, rgba(178,75,59,.16), transparent 26rem),
+        radial-gradient(circle at 22% 22%, rgba(91,163,213,.18), transparent 23rem),
+        linear-gradient(145deg, rgba(6,9,14,.88), rgba(9,20,32,.7), rgba(5,7,10,.94));
+      box-shadow: 0 1rem 2.6rem rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.05);
+    }
+    .mb-hunt-stage::before {
+      content: "";
+      position: absolute;
+      inset: 1rem;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(240,201,111,.07);
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(240,201,111,.05), transparent 13%, transparent 87%, rgba(240,201,111,.05)),
+        repeating-linear-gradient(45deg, transparent 0 2.25rem, rgba(255,255,255,.018) 2.25rem 2.3rem),
+        radial-gradient(circle at center, transparent 0, rgba(240,201,111,.035) 55%, transparent 70%);
+    }
+    .mb-hunt-stage::after {
+      content: "ΑΡΤΕΜΙΣ";
+      position: absolute;
+      left: 50%;
+      top: 47%;
+      transform: translate(-50%, -50%) rotate(-7deg);
+      font-family: var(--mb-font-display);
+      font-size: clamp(4rem, 12vw, 11rem);
+      letter-spacing: .20em;
+      color: rgba(240,201,111,.034);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .mb-stage-header,
+    .mb-stage-footer { position: relative; z-index: 1; }
+    .mb-kicker { color: var(--mb-gold-2); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; margin: 0 0 .45rem; }
+    .mb-title { margin: 0; font-family: var(--mb-font-display); font-size: clamp(2.25rem, 4vw, 4rem); line-height: .98; color: var(--mb-gold-3); text-shadow: 0 0 1.4rem rgba(240,201,111,.12); }
+    .mb-copy { margin: .7rem 0 0; max-width: 64rem; color: var(--mb-text-1); line-height: 1.55; }
+    .mb-meta-row { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .75rem; }
+
+    .mb-hunt-layout {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(34rem, 1fr) minmax(18rem, .46fr);
+      gap: 1rem;
+      align-items: stretch;
+      min-height: 35rem;
+    }
+
+    .mb-field-panel {
+      position: relative;
+      min-height: 100%;
+      padding: 1rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.18);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(240,201,111,.08), transparent 18rem),
+        linear-gradient(180deg, rgba(9,15,23,.76), rgba(6,9,13,.84));
+      box-shadow: inset 0 1px rgba(255,255,255,.04), 0 1rem 2.2rem rgba(0,0,0,.28);
+      overflow: hidden;
+    }
+    .mb-field-panel::before {
+      content: "";
+      position: absolute;
+      inset: .65rem;
+      border-radius: calc(var(--mb-radius-xl) - .45rem);
+      border: 1px solid rgba(240,201,111,.055);
+      pointer-events: none;
+    }
+    .mb-field-header {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: .85rem;
+    }
+    .mb-field-header h2 { margin: 0; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.35rem; }
+    .mb-field-header p { margin: .18rem 0 0; color: var(--mb-text-2); font-size: .86rem; }
+
+    .mb-hunt-field {
+      position: relative;
+      min-height: 31rem;
+      border-radius: 1.2rem;
+      overflow: hidden;
+      cursor: crosshair;
+      user-select: none;
+      border: 1px solid rgba(240,201,111,.12);
+      background:
+        radial-gradient(circle at 24% 16%, rgba(240,201,111,.16), transparent 14rem),
+        radial-gradient(circle at 70% 28%, rgba(91,163,213,.22), transparent 20rem),
+        linear-gradient(180deg, rgba(16,34,54,.86), rgba(7,12,19,.94) 62%, rgba(5,7,10,.98)),
+        repeating-linear-gradient(0deg, transparent 0 3rem, rgba(255,255,255,.025) 3rem 3.05rem);
+      box-shadow: inset 0 0 0 .45rem rgba(0,0,0,.16), 0 1.25rem 2.5rem rgba(0,0,0,.26);
+    }
+    .mb-hunt-field::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at center, transparent 0, transparent 52%, rgba(0,0,0,.35) 100%),
+        linear-gradient(90deg, rgba(0,0,0,.35), transparent 22%, transparent 78%, rgba(0,0,0,.34));
+      pointer-events: none;
+      z-index: 5;
+    }
+    .mb-hunt-field::after {
+      content: "";
+      position: absolute;
+      left: -8%;
+      right: -8%;
+      bottom: -1rem;
+      height: 9rem;
+      background:
+        radial-gradient(ellipse at 15% 85%, rgba(5,7,10,.9), transparent 16rem),
+        radial-gradient(ellipse at 70% 80%, rgba(5,7,10,.9), transparent 18rem),
+        linear-gradient(180deg, transparent, rgba(0,0,0,.68));
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .mb-moon {
+      position: absolute;
+      width: 6.5rem;
+      height: 6.5rem;
+      border-radius: 50%;
+      right: 8%;
+      top: 9%;
+      background: radial-gradient(circle at 35% 30%, #fff5c7, #f0c96f 34%, rgba(240,201,111,.12) 68%, transparent 70%);
+      opacity: .36;
+      filter: blur(.2px);
+      box-shadow: 0 0 3rem rgba(240,201,111,.22);
+    }
+    .mb-cloud {
+      position: absolute;
+      height: .18rem;
+      border-radius: 999px;
+      background: rgba(240,201,111,.18);
+      box-shadow: 0 0 1rem rgba(91,163,213,.22);
+      opacity: .55;
+    }
+    .mb-cloud.one { width: 28%; left: 8%; top: 22%; }
+    .mb-cloud.two { width: 20%; left: 48%; top: 38%; opacity: .38; }
+    .mb-cloud.three { width: 34%; left: 18%; top: 64%; opacity: .26; }
+
+    .mb-harpy {
+      --size: 3.25rem;
+      position: absolute;
+      width: var(--size);
+      height: var(--size);
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: #f2b4aa;
+      border: 1px solid rgba(178,75,59,.46);
+      background:
+        radial-gradient(circle at 50% 45%, rgba(178,75,59,.44), rgba(45,13,15,.9) 60%, rgba(7,10,14,.72));
+      box-shadow: 0 0 1.4rem rgba(178,75,59,.22), inset 0 1px rgba(255,255,255,.08);
+      z-index: 3;
+      animation-name: harpy-flight;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+      animation-duration: var(--duration, 8s);
+      animation-delay: var(--delay, 0s);
+    }
+    .mb-harpy::before,
+    .mb-harpy::after {
+      content: "";
+      position: absolute;
+      top: 42%;
+      width: 2rem;
+      height: .75rem;
+      border-radius: 999px 999px .25rem .25rem;
+      border: 1px solid rgba(240,201,111,.22);
+      background: rgba(178,75,59,.28);
+      transform-origin: center right;
+      animation: wing-beat .55s ease-in-out infinite alternate;
+    }
+    .mb-harpy::before { right: 66%; transform: rotate(-18deg); }
+    .mb-harpy::after { left: 66%; transform: scaleX(-1) rotate(-18deg); }
+    .mb-harpy span { position: relative; z-index: 1; font-weight: 900; font-size: 1.05rem; text-shadow: 0 0 .5rem rgba(0,0,0,.7); }
+    .mb-harpy.fast { --duration: 5.8s; --size: 2.8rem; }
+    .mb-harpy.slow { --duration: 9.5s; --size: 3.6rem; }
+    .mb-harpy.reverse { animation-name: harpy-flight-reverse; }
+    .mb-harpy.hit {
+      animation-play-state: paused;
+      opacity: .28;
+      transform: scale(.8);
+      filter: grayscale(.6);
+    }
+
+    @keyframes harpy-flight {
+      0% { transform: translateX(-9rem) translateY(0) rotate(-4deg); }
+      25% { transform: translateX(18vw) translateY(-1.1rem) rotate(4deg); }
+      50% { transform: translateX(44vw) translateY(.7rem) rotate(-2deg); }
+      75% { transform: translateX(68vw) translateY(-.9rem) rotate(6deg); }
+      100% { transform: translateX(calc(100% + 58vw)) translateY(.2rem) rotate(-4deg); }
+    }
+    @keyframes harpy-flight-reverse {
+      0% { transform: translateX(calc(100% + 58vw)) translateY(.2rem) rotate(4deg); }
+      25% { transform: translateX(68vw) translateY(-1.2rem) rotate(-5deg); }
+      50% { transform: translateX(44vw) translateY(.8rem) rotate(2deg); }
+      75% { transform: translateX(18vw) translateY(-.7rem) rotate(-4deg); }
+      100% { transform: translateX(-9rem) translateY(.1rem) rotate(4deg); }
+    }
+    @keyframes wing-beat {
+      from { transform: rotate(-28deg) translateY(-.14rem); }
+      to { transform: rotate(18deg) translateY(.14rem); }
+    }
+
+    .mb-crosshair {
+      --x: 50%;
+      --y: 50%;
+      --jitter-x: 0px;
+      --jitter-y: 0px;
+      position: absolute;
+      left: calc(var(--x) + var(--jitter-x));
+      top: calc(var(--y) + var(--jitter-y));
+      width: 5.2rem;
+      height: 5.2rem;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      border: 2px solid rgba(240,201,111,.78);
+      box-shadow: 0 0 1.2rem rgba(240,201,111,.28), inset 0 0 1rem rgba(240,201,111,.08);
+      pointer-events: none;
+      z-index: 8;
+    }
+    .mb-crosshair::before,
+    .mb-crosshair::after {
+      content: "";
+      position: absolute;
+      background: rgba(240,201,111,.9);
+      box-shadow: 0 0 .75rem rgba(240,201,111,.28);
+    }
+    .mb-crosshair::before { left: 50%; top: -.75rem; bottom: -.75rem; width: 2px; transform: translateX(-50%); }
+    .mb-crosshair::after { top: 50%; left: -.75rem; right: -.75rem; height: 2px; transform: translateY(-50%); }
+    .mb-crosshair-core {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: .45rem;
+      height: .45rem;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      background: #fff5c7;
+      box-shadow: 0 0 .8rem rgba(240,201,111,.65);
+    }
+    .mb-crosshair-ghost {
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      width: 1.2rem;
+      height: 1.2rem;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      border: 1px dashed rgba(185,222,243,.46);
+      z-index: 7;
+      pointer-events: none;
+      opacity: .68;
+    }
+
+    .mb-shot-flash {
+      position: absolute;
+      left: calc(var(--x) + var(--jitter-x));
+      top: calc(var(--y) + var(--jitter-y));
+      width: 6.5rem;
+      height: 6.5rem;
+      border-radius: 999px;
+      transform: translate(-50%, -50%) scale(.1);
+      border: 1px solid rgba(240,201,111,.72);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 9;
+    }
+    .mb-shot-flash.is-live { animation: shot-flash .32s ease-out; }
+    @keyframes shot-flash {
+      0% { opacity: .85; transform: translate(-50%, -50%) scale(.15); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+    }
+
+    .mb-hunt-hud {
+      position: absolute;
+      left: .9rem;
+      right: .9rem;
+      top: .9rem;
+      display: flex;
+      justify-content: space-between;
+      gap: .5rem;
+      flex-wrap: wrap;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .mb-hud-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      min-height: 2rem;
+      padding: .32rem .58rem;
+      border-radius: .7rem;
+      border: 1px solid rgba(240,201,111,.14);
+      background: rgba(7,10,14,.58);
+      color: var(--mb-text-2);
+      font-size: .78rem;
+      backdrop-filter: blur(8px);
+    }
+    .mb-hud-pill strong { color: var(--mb-gold-3); }
+
+    .mb-aim-meter {
+      display: grid;
+      gap: .4rem;
+      margin-top: .7rem;
+    }
+    .mb-aim-line { display: flex; justify-content: space-between; color: var(--mb-text-2); font-size: .82rem; }
+    .mb-aim-bar { height: .58rem; border-radius: 999px; border: 1px solid rgba(240,201,111,.14); background: rgba(0,0,0,.34); overflow: hidden; }
+    .mb-aim-bar span { display: block; height: 100%; width: var(--aim, 42%); background: linear-gradient(90deg, var(--mb-green), var(--mb-gold-3), var(--mb-red)); box-shadow: 0 0 .75rem rgba(240,201,111,.22); }
+
+    .mb-side-panel { display: grid; gap: 1rem; }
+    .mb-info-card {
+      position: relative;
+      padding: .95rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.13);
+      background: linear-gradient(180deg, rgba(9,15,23,.72), rgba(6,9,13,.78));
+      box-shadow: inset 0 1px rgba(255,255,255,.035);
+    }
+    .mb-info-card h3 { margin: 0 0 .55rem; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.15rem; }
+    .mb-info-card p { margin: 0; color: var(--mb-text-2); line-height: 1.45; font-size: .88rem; }
+    .mb-stat-list { display: grid; gap: .5rem; }
+    .mb-stat-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; padding: .5rem .55rem; border-radius: .75rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.34); }
+    .mb-stat-row span { color: var(--mb-text-3); font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; }
+    .mb-stat-row strong { color: var(--mb-gold-3); }
+
+    .mb-log-list { display: grid; gap: .45rem; margin-top: .7rem; }
+    .mb-log-row { display: grid; grid-template-columns: 2.4rem minmax(0,1fr); gap: .55rem; align-items: start; padding: .55rem; border-radius: .8rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.32); }
+    .mb-log-icon { width: 2.4rem; height: 2.4rem; display: grid; place-items: center; border-radius: .7rem; border: 1px solid rgba(240,201,111,.14); color: var(--mb-gold-3); background: rgba(240,201,111,.07); font-weight: 900; }
+    .mb-log-row strong { display:block; color: var(--mb-text-0); }
+    .mb-log-row span { display:block; color: var(--mb-text-2); line-height: 1.35; font-size: .84rem; margin-top: .12rem; }
+    .mb-log-row.is-success { border-color: rgba(111,164,93,.25); background: rgba(111,164,93,.07); }
+    .mb-log-row.is-danger { border-color: rgba(178,75,59,.25); background: rgba(178,75,59,.08); }
+
+    .mb-stage-footer {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: center;
+      padding: .85rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.12);
+      background: linear-gradient(180deg, rgba(9,15,23,.72), rgba(6,9,13,.78));
+    }
+    .mb-footer-title { margin: 0; color: var(--mb-text-0); font-weight: 800; }
+    .mb-footer-copy { margin: .18rem 0 0; color: var(--mb-text-2); line-height: 1.4; font-size: .9rem; }
+    .mb-button-row { display: flex; flex-wrap: wrap; gap: .55rem; }
+    .mb-button { min-height: 2.4rem; padding: .55rem .85rem; border-radius: 999px; border: 1px solid var(--mb-line); color: var(--mb-text-0); background: linear-gradient(180deg, rgba(240,201,111,.2), rgba(91,58,19,.32)); cursor: pointer; box-shadow: inset 0 1px rgba(255,255,255,.07); }
+    .mb-button--primary { background: linear-gradient(180deg, rgba(240,201,111,.32), rgba(91,58,19,.44)); }
+    .mb-button--ghost { background: rgba(8,12,18,.54); color: var(--mb-text-1); }
+    .mb-button--danger { border-color: rgba(178,75,59,.42); background: rgba(178,75,59,.12); color: #f2b4aa; }
+
+    .mb-state-toggle { display: flex; gap: .4rem; margin-top: .75rem; flex-wrap: wrap; }
+    .mb-toggle-button { min-height: 2rem; padding: .35rem .65rem; border-radius: 999px; border: 1px solid rgba(240,201,111,.14); background: rgba(7,10,14,.44); color: var(--mb-text-2); cursor: pointer; }
+    .mb-toggle-button.is-active { color: var(--mb-gold-3); border-color: rgba(240,201,111,.34); background: rgba(240,201,111,.1); }
+
+    @media (max-width: 1220px) {
+      .mb-topbar { grid-template-columns: 1fr; height: auto; }
+      .mb-brand { justify-content: flex-start; }
+      .mb-app-shell { grid-template-rows: auto minmax(0, 1fr); }
+      .mb-hunt-layout { grid-template-columns: 1fr; }
+      .mb-stage-footer { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .mb-app-shell { display: block; }
+      .mb-topbar { position: static; }
+      .mb-topbar-left, .mb-topbar-right { justify-content: flex-start; overflow-x: auto; }
+      .mb-sidebar { border-right: 0; border-bottom: 1px solid var(--mb-line-soft); }
+      .mb-nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .mb-nav-link { justify-content: center; }
+      .mb-nav-label, .mb-nav-section-title { display: none; }
+      .mb-main { padding: .75rem; }
+      .mb-hunt-stage { min-height: auto; }
+      .mb-hunt-field { min-height: 24rem; }
+      .mb-stage-footer { align-items: start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left" aria-label="Hero health and experience">
+        <span class="mb-chip mb-chip--health"><span class="mb-chip-icon">♥</span> Health <strong>86 / 100</strong></span>
+        <div class="mb-xp" aria-label="Experience progress">
+          <div class="mb-xp-meta"><span>Level 12</span><strong>1,240 XP to next</strong></div>
+          <div class="mb-mini-bar" style="--value: 63%"><span></span></div>
+        </div>
+      </div>
+
+      <div class="mb-brand" aria-label="Myth Sworn">
+        <div class="mb-brand-mark"></div>
+        <div>
+          <div class="mb-brand-title">Myth Sworn</div>
+          <div class="mb-brand-subtitle">Trial of Artemis prototype</div>
+        </div>
+      </div>
+
+      <div class="mb-topbar-right" aria-label="Hero resources">
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◈</span><span class="mb-chip-stack">Drachmas <strong>3,420</strong><small>+96 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">▣</span><span class="mb-chip-stack">Materials <strong>185</strong><small>+22 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◇</span><span class="mb-chip-stack">Workforce <strong>42</strong><small>+4 / h</small></span></span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-server-card" aria-label="Selected world context">
+        <div class="mb-server-label">Selected server</div>
+        <div class="mb-server-name"><span>Sandbox</span><span class="mb-badge mb-badge--blue">live</span></div>
+        <div class="mb-prestige">
+          <div class="mb-server-label">Prestige</div>
+          <div class="mb-server-name"><span>Zeugitai</span><span class="mb-badge mb-badge--gold">Tier II</span></div>
+        </div>
+      </section>
+
+      <div class="mb-nav-section-title">Hero</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#dashboard"><span class="mb-nav-icon">DA</span><span class="mb-nav-label">Dashboard</span></a></li>
+        <li><a class="mb-nav-link is-active" href="#exploration"><span class="mb-nav-icon">EX</span><span class="mb-nav-label">Exploration</span></a></li>
+        <li><a class="mb-nav-link" href="#statistics"><span class="mb-nav-icon">ST</span><span class="mb-nav-label">Statistics</span></a></li>
+        <li><a class="mb-nav-link" href="#armory"><span class="mb-nav-icon">AR</span><span class="mb-nav-label">Armory</span></a></li>
+      </ul>
+
+      <div class="mb-nav-section-title">World</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#estate"><span class="mb-nav-icon">ES</span><span class="mb-nav-label">Estate</span></a></li>
+        <li><a class="mb-nav-link" href="#trade"><span class="mb-nav-icon">TR</span><span class="mb-nav-label">Trade</span></a></li>
+        <li><a class="mb-nav-link" href="#pvp"><span class="mb-nav-icon">PV</span><span class="mb-nav-label">PvP</span></a></li>
+        <li><a class="mb-nav-link" href="#reports"><span class="mb-nav-icon">RP</span><span class="mb-nav-label">Reports</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main" id="trial-artemis-harpy-hunt">
+      <div class="mb-trial-page">
+        <section class="mb-hunt-stage">
+          <header class="mb-stage-header">
+            <p class="mb-kicker">Trial of Artemis</p>
+            <h1 class="mb-title">Hunt of the Harpies</h1>
+            <p class="mb-copy">Aim with the crosshair and shoot the harpies before the time runs out. This is a Dexterity Trial: low effective Dexterity can make the crosshair shake harder, speed up the targets, reduce arrows, or increase the required hits.</p>
+            <div class="mb-meta-row">
+              <span class="mb-badge">Stat: Dexterity</span>
+              <span class="mb-badge mb-badge--gold">Artemis</span>
+              <span class="mb-badge">Manual Trial</span>
+              <span class="mb-badge mb-badge--warning">Moving targets</span>
+            </div>
+            <div class="mb-state-toggle" aria-label="Prototype difficulty toggle">
+              <button class="mb-toggle-button is-active" type="button" data-mode="steady">Steady aim</button>
+              <button class="mb-toggle-button" type="button" data-mode="shaky">Low Dexterity</button>
+            </div>
+          </header>
+
+          <section class="mb-hunt-layout" aria-label="Harpy hunt minigame">
+            <article class="mb-field-panel">
+              <div class="mb-field-header">
+                <div>
+                  <h2 id="huntTitle">The harpies cross the moonlit pass</h2>
+                  <p id="huntSubtitle">Move the cursor inside the field. Click to shoot. This prototype uses simplified hit detection.</p>
+                </div>
+                <span class="mb-badge mb-badge--blue" id="huntStateBadge">active</span>
+              </div>
+
+              <div class="mb-hunt-field" id="huntField" aria-label="Harpy hunting field">
+                <div class="mb-moon"></div>
+                <div class="mb-cloud one"></div>
+                <div class="mb-cloud two"></div>
+                <div class="mb-cloud three"></div>
+
+                <div class="mb-hunt-hud">
+                  <span class="mb-hud-pill">Time <strong id="timeValue">00:24</strong></span>
+                  <span class="mb-hud-pill">Hits <strong id="hitsValue">2 / 6</strong></span>
+                  <span class="mb-hud-pill">Arrows <strong id="arrowsValue">10</strong></span>
+                  <span class="mb-hud-pill">Jitter <strong id="jitterValue">low</strong></span>
+                </div>
+
+                <button class="mb-harpy slow" type="button" data-harpy="1" style="top: 24%; --delay: -2s;"><span>H</span></button>
+                <button class="mb-harpy reverse fast" type="button" data-harpy="2" style="top: 44%; --delay: -3.5s;"><span>H</span></button>
+                <button class="mb-harpy" type="button" data-harpy="3" style="top: 63%; --delay: -1.2s;"><span>H</span></button>
+                <button class="mb-harpy reverse" type="button" data-harpy="4" style="top: 15%; --delay: -5.4s;"><span>H</span></button>
+
+                <div class="mb-crosshair-ghost" id="ghostAim"></div>
+                <div class="mb-crosshair" id="crosshair"><span class="mb-crosshair-core"></span></div>
+                <div class="mb-shot-flash" id="shotFlash"></div>
+              </div>
+            </article>
+
+            <aside class="mb-side-panel">
+              <section class="mb-info-card">
+                <h3>Trial parameters</h3>
+                <div class="mb-stat-list">
+                  <div class="mb-stat-row"><span>Hero dexterity</span><strong>31</strong></div>
+                  <div class="mb-stat-row"><span>Difficulty target</span><strong>27</strong></div>
+                  <div class="mb-stat-row"><span>Required hits</span><strong id="requiredHitsPanel">6</strong></div>
+                  <div class="mb-stat-row"><span>Arrows</span><strong id="arrowsPanel">12</strong></div>
+                  <div class="mb-stat-row"><span>Target speed</span><strong id="speedPanel">medium</strong></div>
+                  <div class="mb-stat-row"><span>Crosshair jitter</span><strong id="jitterPanel">low</strong></div>
+                </div>
+              </section>
+
+              <section class="mb-info-card">
+                <h3>Aim stability</h3>
+                <p id="aimCopy">The shot lands near the cursor. Higher difficulty or lower Dexterity can make the actual shot point drift away from the player’s cursor.</p>
+                <div class="mb-aim-meter">
+                  <div class="mb-aim-line"><span>Instability</span><strong id="aimValue">18%</strong></div>
+                  <div class="mb-aim-bar" style="--aim:18%"><span></span></div>
+                </div>
+              </section>
+
+              <section class="mb-info-card">
+                <h3>Hunt log</h3>
+                <div class="mb-log-list" id="huntLog">
+                  <div class="mb-log-row is-success"><div class="mb-log-icon">2</div><div><strong>Hit</strong><span>Theron shot down a harpy crossing from the west.</span></div></div>
+                  <div class="mb-log-row"><div class="mb-log-icon">1</div><div><strong>Shot</strong><span>The arrow clipped feathers but missed the target.</span></div></div>
+                  <div class="mb-log-row is-success"><div class="mb-log-icon">0</div><div><strong>Hit</strong><span>The first harpy fell before reaching the moonlit ridge.</span></div></div>
+                </div>
+              </section>
+            </aside>
+          </section>
+
+          <footer class="mb-stage-footer">
+            <div>
+              <p class="mb-footer-title" id="footerTitle">Shoot 6 harpies before time runs out</p>
+              <p class="mb-footer-copy" id="footerCopy">The Trial resolves when the required hits are reached, arrows run out, or the timer ends. Final rewards come from the Trial report, not this minigame screen.</p>
+            </div>
+            <div class="mb-button-row">
+              <button class="mb-button mb-button--primary" id="shootButton" type="button">Shoot</button>
+              <button class="mb-button mb-button--danger" type="button">Resolve automatically</button>
+              <button class="mb-button mb-button--ghost" type="button">Back to Trial</button>
+            </div>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const huntField = document.getElementById('huntField');
+    const crosshair = document.getElementById('crosshair');
+    const ghostAim = document.getElementById('ghostAim');
+    const shotFlash = document.getElementById('shotFlash');
+    const shootButton = document.getElementById('shootButton');
+    const hitsValue = document.getElementById('hitsValue');
+    const arrowsValue = document.getElementById('arrowsValue');
+    const jitterValue = document.getElementById('jitterValue');
+    const jitterPanel = document.getElementById('jitterPanel');
+    const speedPanel = document.getElementById('speedPanel');
+    const aimValue = document.getElementById('aimValue');
+    const aimCopy = document.getElementById('aimCopy');
+    const aimBar = document.querySelector('.mb-aim-bar');
+    const huntLog = document.getElementById('huntLog');
+
+    let hits = 2;
+    let arrows = 10;
+    let required = 6;
+    let shotIndex = 3;
+    let mode = 'steady';
+    let cursor = { x: 50, y: 50 };
+
+    function setAim(x, y) {
+      cursor = { x, y };
+      const t = performance.now() / 1000;
+      const jitterAmount = mode === 'shaky' ? 4.8 : 1.2;
+      const jitterX = Math.sin(t * 13) * jitterAmount;
+      const jitterY = Math.cos(t * 17) * jitterAmount;
+      crosshair.style.setProperty('--x', `${x}%`);
+      crosshair.style.setProperty('--y', `${y}%`);
+      crosshair.style.setProperty('--jitter-x', `${jitterX}%`);
+      crosshair.style.setProperty('--jitter-y', `${jitterY}%`);
+      ghostAim.style.setProperty('--x', `${x}%`);
+      ghostAim.style.setProperty('--y', `${y}%`);
+      shotFlash.style.setProperty('--x', `${x}%`);
+      shotFlash.style.setProperty('--y', `${y}%`);
+      shotFlash.style.setProperty('--jitter-x', `${jitterX}%`);
+      shotFlash.style.setProperty('--jitter-y', `${jitterY}%`);
+      requestAnimationFrame(() => setAim(cursor.x, cursor.y));
+    }
+
+    huntField.addEventListener('pointermove', event => {
+      const rect = huntField.getBoundingClientRect();
+      const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
+      const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
+      cursor = { x, y };
+    });
+
+    function addLog(kind, title, copy) {
+      const row = document.createElement('div');
+      row.className = `mb-log-row ${kind}`;
+      row.innerHTML = `<div class="mb-log-icon">${shotIndex}</div><div><strong>${title}</strong><span>${copy}</span></div>`;
+      huntLog.prepend(row);
+      shotIndex += 1;
+    }
+
+    function shoot() {
+      if (arrows <= 0 || hits >= required) return;
+      arrows -= 1;
+      const roll = Math.random();
+      const threshold = mode === 'shaky' ? 0.38 : 0.62;
+      const didHit = roll < threshold;
+
+      shotFlash.classList.remove('is-live');
+      void shotFlash.offsetWidth;
+      shotFlash.classList.add('is-live');
+
+      if (didHit) {
+        hits += 1;
+        const target = [...document.querySelectorAll('.mb-harpy:not(.hit)')][0];
+        if (target) target.classList.add('hit');
+        addLog('is-success', 'Hit', 'The arrow found a harpy in flight.');
+      } else {
+        addLog('is-danger', 'Miss', 'The shot drifted past the target.');
+      }
+
+      hitsValue.textContent = `${hits} / ${required}`;
+      arrowsValue.textContent = `${arrows}`;
+
+      if (hits >= required) {
+        document.getElementById('huntStateBadge').textContent = 'success';
+        document.getElementById('footerTitle').textContent = 'Trial completed';
+        document.getElementById('footerCopy').textContent = 'Theron shot down enough harpies. The completed Trial report can now show narrative and rewards.';
+      } else if (arrows <= 0) {
+        document.getElementById('huntStateBadge').textContent = 'failed';
+        document.getElementById('footerTitle').textContent = 'Trial failed';
+        document.getElementById('footerCopy').textContent = 'Theron ran out of arrows before enough harpies were brought down.';
+      }
+    }
+
+    shootButton.addEventListener('click', shoot);
+    huntField.addEventListener('pointerdown', shoot);
+
+    document.querySelectorAll('[data-mode]').forEach(button => {
+      button.addEventListener('click', () => {
+        mode = button.dataset.mode;
+        document.querySelectorAll('[data-mode]').forEach(item => item.classList.toggle('is-active', item === button));
+        if (mode === 'shaky') {
+          jitterValue.textContent = 'high';
+          jitterPanel.textContent = 'high';
+          speedPanel.textContent = 'fast';
+          aimValue.textContent = '62%';
+          aimBar.style.setProperty('--aim', '62%');
+          aimCopy.textContent = 'The crosshair now drifts far from the cursor. This represents high difficulty or low effective Dexterity.';
+        } else {
+          jitterValue.textContent = 'low';
+          jitterPanel.textContent = 'low';
+          speedPanel.textContent = 'medium';
+          aimValue.textContent = '18%';
+          aimBar.style.setProperty('--aim', '18%');
+          aimCopy.textContent = 'The shot lands near the cursor. Higher difficulty or lower Dexterity can make the actual shot point drift away from the player’s cursor.';
+        }
+      });
+    });
+
+    setAim(50, 50);
+  </script>
+</body>
+</html>

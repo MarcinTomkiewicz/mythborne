@@ -61,6 +61,11 @@ export const gameRoutes: Routes = [
       import('./pages/vicinity/estate-vicinity-page').then((m) => m.EstateVicinityPage),
   },
   {
+    path: 'reports',
+    loadComponent: () =>
+      import('./pages/reports/reports-page').then((m) => m.ReportsPage),
+  },
+  {
     path: 'trade',
     loadComponent: () =>
       import('./pages/trade/trade-page').then((m) => m.TradePage),

@@ -1,0 +1,167 @@
+<app-loading-overlay
+  [visible]="page.isLoading() && page.error() === null"
+  label="Loading reports..."
+  description="Loading reports available to the active hero."
+/>
+
+<div class="flex-col gap-xl w-100">
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Reports</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">
+          {{ page.uiMetadata.sectionTitle(page.uiMetadata.section.pageHeader) }}
+        </h2>
+        <p class="muted-text mb-0">
+          {{ page.uiMetadata.sectionText(page.uiMetadata.section.pageHeader) }}
+        </p>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <span class="tag-badge tag-badge--warn">Unread: {{ page.unreadCount() }}</span>
+        <span class="tag-badge tag-badge--muted">Visible: {{ page.visibleReports().length }}</span>
+      </div>
+    </div>
+  </section>
+
+  @if (page.error(); as message) {
+    <section class="mg-card flex-col gap-sm p-lg w-100">
+      <p class="card-legend mb-0">Error</p>
+      <p class="mb-0 muted-text">{{ message }}</p>
+    </section>
+  }
+
+  @if (page.uiMetadata.missingGaps().length > 0) {
+    <section class="mg-card flex-col gap-sm p-lg w-100">
+      <strong class="heading-color">Missing UI metadata</strong>
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        @for (gap of page.uiMetadata.missingGaps(); track gap) {
+          <span class="tag-badge tag-badge--warn">{{ gap }}</span>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="mg-card p-lg w-100" [formGroup]="page.form">
+    <div class="flex-col gap-xs mb-md">
+      <p class="card-legend mb-0">
+        {{ page.uiMetadata.sectionTitle(page.uiMetadata.section.filters) }}
+      </p>
+      <p class="muted-text mb-0">
+        {{ page.uiMetadata.sectionText(page.uiMetadata.section.filters) }}
+      </p>
+    </div>
+
+    <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md align-items-end">
+      <div class="flex-col gap-sm">
+        <span class="muted-text">Report type</span>
+        <p-select
+          styleClass="w-100"
+          formControlName="reportTypeKey"
+          [options]="page.reportTypeFilterOptions()"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </div>
+
+      <label class="flex-row-start-center gap-sm">
+        <p-checkbox
+          formControlName="unreadOnly"
+          [binary]="true"
+        />
+        <span class="muted-text">Unread only</span>
+      </label>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Search</span>
+        <input
+          pInputText
+          type="search"
+          class="w-100"
+          formControlName="searchText"
+          autocomplete="off"
+        />
+      </label>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <p-button
+          label="Apply"
+          [disabled]="page.isLoading()"
+          (onClick)="page.applyFilters()"
+        />
+        <p-button
+          label="Clear"
+          severity="secondary"
+          [disabled]="page.isLoading()"
+          (onClick)="page.clearFilters()"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="flex-col gap-md w-100">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">
+        {{ page.uiMetadata.sectionTitle(page.uiMetadata.section.reportList) }}
+      </p>
+      <p class="muted-text mb-0">
+        {{ page.uiMetadata.sectionText(page.uiMetadata.section.reportList) }}
+      </p>
+    </div>
+
+    @for (report of page.visibleReports(); track report.reportId) {
+      <article class="mg-card flex-col gap-md p-lg w-100">
+        <div class="flex-row-between-center flex-col-sm gap-md">
+          <div class="flex-col gap-xs">
+            <div class="flex-row-start-center flex-wrap gap-sm">
+              <span class="tag-badge tag-badge--info">{{ report.reportTypeLabel }}</span>
+              @if (report.readState.isUnread) {
+                <span class="tag-badge tag-badge--warn">Unread</span>
+              } @else {
+                <span class="tag-badge tag-badge--muted">Read</span>
+              }
+            </div>
+            <h3 class="mg-section__title mg-section__title--xs mb-0">{{ report.title }}</h3>
+            @if (report.summary) {
+              <p class="muted-text mb-0">{{ report.summary }}</p>
+            }
+          </div>
+
+          <div class="flex-col gap-xs text-right">
+            <span class="muted-text">{{ page.toDateTimeLabel(report.createdAt) }}</span>
+            <span class="muted-text">Items: {{ report.itemReferencesCount }}</span>
+          </div>
+        </div>
+
+        <div class="flex-row-between-center flex-col-sm gap-md">
+          <p class="muted-text mb-0">
+            Participants: {{ page.participantSummary(report) }}
+          </p>
+
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            <span class="tag-badge tag-badge--muted">Public route pending</span>
+            <p-button
+              label="Copy token"
+              severity="secondary"
+              (onClick)="page.copyPublicToken(report)"
+            />
+            <p-button
+              label="Remove"
+              severity="danger"
+              [loading]="page.deletingReportId() === report.reportId"
+              [disabled]="page.deletingReportId() !== null"
+              (onClick)="page.removeReport(report)"
+            />
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <section class="mg-card flex-col gap-sm p-lg w-100">
+        <p class="card-legend mb-0">Reports</p>
+        <p class="mb-0 muted-text">
+          {{ page.uiMetadata.sectionText(page.uiMetadata.section.emptyState) }}
+        </p>
+      </section>
+    }
+  </section>
+</div>

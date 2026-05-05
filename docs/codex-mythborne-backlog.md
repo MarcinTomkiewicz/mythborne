@@ -5237,6 +5237,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 - No default notification row is created for listing a report.
 - Build passes.
 
+**Implementation note:** P2 accepted on 2026-05-05. `/game/reports` now provides a minimal private Reports tab backed by `get_hero_game_reports(p_hero_id)`, `get_hero_game_report_unread_count(p_hero_id)` and `delete_game_report_for_hero(...)` through typed active-hero service boundaries. Server filters cover report type and unread-only; search is explicitly local over the loaded page. The page shows type label, title, summary, created time, participant summary, item-reference count, read/unread state, unread count, remove action and copy-token sharing. Public `/report/:publicToken` routing remains a P4 non-goal, so P2 does not render a fake public link. UI section copy uses `reports_center_section` metadata and exact missing metadata gaps. No direct report table reads/writes or frontend notification writes were added. Verification passed with `npx tsc --noEmit`, focused report specs with 15 SUCCESS, static greps and `npm run build` with known warnings. Manual smoke remains pending until representative report producers/data exist.
+
 ---
 
 ## Task P3 — Private report detail and mark-read flow

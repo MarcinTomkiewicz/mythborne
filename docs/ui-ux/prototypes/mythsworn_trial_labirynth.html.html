@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Myth Sworn — Trial of Hera Labyrinth Prototype</title>
+  <!--
+    VISUAL REFERENCE ONLY.
+    Do not copy this CSS into Angular feature components.
+    Translate approved visual patterns into global SCSS tokens, vendor wrappers,
+    shared components, PrimeNG wrappers, or documented layout utilities.
+
+    Myth Sworn Trial Minigame V1 — Trial of Hera / Labyrinth of the Minotaur.
+
+    Scope:
+    - player-facing manual Trial minigame for Intelligence;
+    - Trial belongs to Hera;
+    - player must escape a maze before the Minotaur catches them;
+    - no combat is triggered when the Minotaur catches the player: caught = fail;
+    - difficulty is driven by selected trial difficulty configuration and hero Intelligence;
+    - higher effective difficulty may increase maze size, wall density, fog, Minotaur speed, max turns, clue count or exit visibility;
+    - this prototype uses a static 9x9 maze and small scripted state buttons only to demonstrate UI states.
+  -->
+  <style>
+    :root {
+      --mb-bg-0: #06080c;
+      --mb-navy-0: #07111d;
+      --mb-navy-1: #0d2135;
+      --mb-gold-1: #9c6723;
+      --mb-gold-2: #c8923a;
+      --mb-gold-3: #f0c96f;
+      --mb-red: #b24b3b;
+      --mb-green: #6fa45d;
+      --mb-blue: #5ba3d5;
+      --mb-purple: #9672cc;
+      --mb-text-0: #f6edda;
+      --mb-text-1: #d7c8ab;
+      --mb-text-2: #9d8f75;
+      --mb-text-3: #6f675a;
+      --mb-line-soft: rgba(240, 201, 111, 0.12);
+      --mb-line: rgba(240, 201, 111, 0.24);
+      --mb-line-strong: rgba(240, 201, 111, 0.44);
+      --mb-sidebar-w: 16rem;
+      --mb-topbar-h: 4.25rem;
+      --mb-radius-xl: 1.35rem;
+      --mb-font-display: Georgia, "Times New Roman", serif;
+      --mb-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--mb-font-ui);
+      color: var(--mb-text-0);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(200,146,58,.14), transparent 28rem),
+        radial-gradient(circle at 82% 4%, rgba(45,110,159,.20), transparent 34rem),
+        linear-gradient(135deg, var(--mb-bg-0), #080b11 38%, #050608 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .14;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+    button { font: inherit; color: inherit; }
+
+    .mb-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--mb-sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--mb-topbar-h) minmax(0, 1fr);
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .mb-topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(20rem, 1fr) auto minmax(20rem, 1fr);
+      align-items: center;
+      gap: 1rem;
+      padding: .55rem 1rem;
+      border-bottom: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,201,111,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem rgba(0,0,0,.42);
+    }
+    .mb-topbar-left,
+    .mb-topbar-right { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+    .mb-topbar-right { justify-content: flex-end; }
+
+    .mb-brand { display: flex; align-items: center; justify-content: center; gap: .7rem; min-width: 16rem; }
+    .mb-brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-strong);
+      background:
+        radial-gradient(circle at 34% 24%, #fff0b9 0, var(--mb-gold-3) 22%, var(--mb-gold-1) 48%, #251509 70%, var(--mb-navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,201,111,.22);
+      position: relative;
+    }
+    .mb-brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .mb-brand-title { font-family: var(--mb-font-display); font-size: 1.65rem; letter-spacing: .11em; text-transform: uppercase; color: var(--mb-gold-3); line-height: 1; }
+    .mb-brand-subtitle { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; margin-top: .18rem; text-align: center; }
+
+    .mb-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      min-height: 2.15rem;
+      padding: .38rem .72rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: 999px;
+      color: var(--mb-text-1);
+      background: linear-gradient(180deg, rgba(15,23,33,.75), rgba(6,9,13,.78));
+      white-space: nowrap;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-chip strong { color: var(--mb-text-0); }
+    .mb-chip-icon { color: var(--mb-gold-2); }
+    .mb-chip--health strong { color: #ffc0b7; }
+    .mb-chip--resource strong { color: var(--mb-gold-3); }
+    .mb-chip-stack { display: inline-grid; gap: .08rem; line-height: 1.05; }
+    .mb-chip-stack small { color: var(--mb-text-3); font-size: .68rem; }
+    .mb-xp { min-width: 15rem; display: grid; gap: .3rem; padding: .35rem .7rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(15,23,33,.72), rgba(6,9,13,.74)); }
+    .mb-xp-meta { display: flex; justify-content: space-between; gap: .75rem; font-size: .75rem; color: var(--mb-text-2); }
+    .mb-mini-bar { height: .42rem; border-radius: 999px; background: rgba(0,0,0,.38); overflow: hidden; border: 1px solid rgba(240,201,111,.08); }
+    .mb-mini-bar > span { display: block; width: var(--value, 62%); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mb-gold-1), var(--mb-gold-3)); box-shadow: 0 0 .8rem rgba(240,201,111,.3); }
+
+    .mb-sidebar { grid-area: sidebar; padding: 1rem .8rem; border-right: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(7,11,17,.84), rgba(5,7,10,.88)); backdrop-filter: blur(12px); }
+    .mb-server-card { padding: .9rem; border: 1px solid var(--mb-line-soft); border-radius: var(--mb-radius-xl); background: linear-gradient(180deg, rgba(20,32,47,.72), rgba(8,12,18,.74)), radial-gradient(circle at 80% 0%, rgba(240,201,111,.16), transparent 10rem); box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.2); }
+    .mb-server-label { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+    .mb-server-name { display: flex; justify-content: space-between; gap: .7rem; align-items: center; font-weight: 800; color: var(--mb-text-0); }
+    .mb-prestige { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid rgba(240,201,111,.1); }
+    .mb-nav-section-title { margin: 1.05rem 0 .45rem .55rem; color: var(--mb-text-3); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; }
+    .mb-nav-list { display: grid; gap: .28rem; margin: 0; padding: 0; list-style: none; }
+    .mb-nav-link { display: flex; align-items: center; gap: .65rem; padding: .67rem .68rem; color: var(--mb-text-1); text-decoration: none; border-radius: .85rem; border: 1px solid transparent; transition: 120ms ease; }
+    .mb-nav-link:hover, .mb-nav-link.is-active { color: var(--mb-text-0); border-color: rgba(240,201,111,.16); background: linear-gradient(90deg, rgba(240,201,111,.13), rgba(45,110,159,.12)); }
+    .mb-nav-link.is-active { box-shadow: inset 3px 0 0 var(--mb-gold-2); }
+    .mb-nav-icon { width: 1.65rem; height: 1.65rem; border-radius: .55rem; display: grid; place-items: center; background: rgba(240,201,111,.08); color: var(--mb-gold-2); border: 1px solid rgba(240,201,111,.08); flex: 0 0 auto; font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+
+    .mb-main { grid-area: main; min-width: 0; padding: 1.1rem; display: grid; align-content: start; }
+    .mb-trial-page { width: min(1220px, 100%); margin: 0 auto; }
+
+    .mb-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); color: var(--mb-text-1); background: rgba(7,10,14,.45); font-size: .77rem; white-space: nowrap; }
+    .mb-badge--gold { color: var(--mb-gold-3); border-color: rgba(240,201,111,.32); }
+    .mb-badge--green { color: #bde6b0; border-color: rgba(111,164,93,.46); }
+    .mb-badge--blue { color: #b9def3; border-color: rgba(91,163,213,.46); }
+    .mb-badge--red { color: #f2b4aa; border-color: rgba(178,75,59,.46); }
+    .mb-badge--warning { color: #f1d08a; border-color: rgba(240,201,111,.34); }
+
+    .mb-labyrinth-stage {
+      min-height: calc(100vh - var(--mb-topbar-h) - 2.2rem);
+      position: relative;
+      display: grid;
+      grid-template-rows: auto minmax(32rem, 1fr) auto;
+      gap: 1rem;
+      overflow: hidden;
+      padding: 1rem;
+      border-radius: 1.65rem;
+      border: 1px solid rgba(240,201,111,.20);
+      background:
+        radial-gradient(circle at 50% 43%, rgba(240,201,111,.13), transparent 20rem),
+        radial-gradient(circle at 78% 58%, rgba(178,75,59,.16), transparent 23rem),
+        radial-gradient(circle at 18% 14%, rgba(91,163,213,.16), transparent 20rem),
+        linear-gradient(145deg, rgba(6,9,14,.88), rgba(10,22,34,.66), rgba(5,7,10,.94));
+      box-shadow: 0 1rem 2.6rem rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.05);
+    }
+    .mb-labyrinth-stage::before {
+      content: "";
+      position: absolute;
+      inset: 1rem;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(240,201,111,.07);
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(240,201,111,.055), transparent 13%, transparent 87%, rgba(240,201,111,.05)),
+        repeating-linear-gradient(45deg, transparent 0 2.25rem, rgba(255,255,255,.018) 2.25rem 2.3rem),
+        radial-gradient(circle at center, transparent 0, rgba(240,201,111,.035) 55%, transparent 70%);
+    }
+    .mb-labyrinth-stage::after {
+      content: "ΗΡΑ";
+      position: absolute;
+      left: 50%;
+      top: 49%;
+      transform: translate(-50%, -50%) rotate(-7deg);
+      font-family: var(--mb-font-display);
+      font-size: clamp(6rem, 16vw, 14rem);
+      letter-spacing: .24em;
+      color: rgba(240,201,111,.034);
+      pointer-events: none;
+    }
+
+    .mb-stage-header,
+    .mb-stage-footer { position: relative; z-index: 1; }
+    .mb-kicker { color: var(--mb-gold-2); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; margin: 0 0 .45rem; }
+    .mb-title { margin: 0; font-family: var(--mb-font-display); font-size: clamp(2.25rem, 4vw, 4rem); line-height: .98; color: var(--mb-gold-3); text-shadow: 0 0 1.4rem rgba(240,201,111,.12); }
+    .mb-copy { margin: .7rem 0 0; max-width: 64rem; color: var(--mb-text-1); line-height: 1.55; }
+    .mb-meta-row { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .75rem; }
+
+    .mb-labyrinth-layout {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(28rem, 1fr) minmax(18rem, .48fr);
+      gap: 1rem;
+      align-items: stretch;
+      min-height: 34rem;
+    }
+
+    .mb-maze-panel {
+      position: relative;
+      min-height: 100%;
+      padding: 1rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.18);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(240,201,111,.08), transparent 18rem),
+        linear-gradient(180deg, rgba(9,15,23,.76), rgba(6,9,13,.84));
+      box-shadow: inset 0 1px rgba(255,255,255,.04), 0 1rem 2.2rem rgba(0,0,0,.28);
+      overflow: hidden;
+    }
+    .mb-maze-panel::before {
+      content: "";
+      position: absolute;
+      inset: .65rem;
+      border-radius: calc(var(--mb-radius-xl) - .45rem);
+      border: 1px solid rgba(240,201,111,.055);
+      pointer-events: none;
+    }
+    .mb-maze-header {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: .85rem;
+    }
+    .mb-maze-header h2 { margin: 0; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.35rem; }
+    .mb-maze-header p { margin: .18rem 0 0; color: var(--mb-text-2); font-size: .86rem; }
+
+    .mb-maze-wrap {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 31rem;
+      padding: 1rem;
+      border-radius: 1.2rem;
+      background:
+        radial-gradient(circle at center, rgba(240,201,111,.09), transparent 18rem),
+        rgba(0,0,0,.18);
+      border: 1px solid rgba(240,201,111,.09);
+    }
+    .mb-maze-grid {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      grid-template-rows: repeat(9, minmax(0, 1fr));
+      width: min(31rem, 100%);
+      aspect-ratio: 1 / 1;
+      gap: .2rem;
+      padding: .55rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(240,201,111,.2);
+      background:
+        linear-gradient(180deg, rgba(21,29,41,.86), rgba(4,6,9,.86)),
+        repeating-linear-gradient(45deg, transparent 0 1.2rem, rgba(255,255,255,.02) 1.2rem 1.25rem);
+      box-shadow: inset 0 0 0 .4rem rgba(0,0,0,.18), 0 1.25rem 2.5rem rgba(0,0,0,.26);
+    }
+    .mb-cell {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      border-radius: .34rem;
+      border: 1px solid rgba(240,201,111,.055);
+      background: rgba(11,17,25,.78);
+      display: grid;
+      place-items: center;
+      color: var(--mb-text-2);
+      font-weight: 900;
+      font-size: .78rem;
+      overflow: hidden;
+    }
+    .mb-cell.floor { background: radial-gradient(circle, rgba(240,201,111,.08), rgba(12,19,28,.72)); }
+    .mb-cell.wall { background: linear-gradient(135deg, rgba(58,47,33,.92), rgba(19,17,17,.9)); border-color: rgba(240,201,111,.12); box-shadow: inset 0 0 .55rem rgba(0,0,0,.3); }
+    .mb-cell.fog { background: rgba(3,5,8,.78); border-color: rgba(255,255,255,.025); }
+    .mb-cell.fog::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle, rgba(91,163,213,.07), rgba(0,0,0,.2));
+    }
+    .mb-cell.exit { border-color: rgba(111,164,93,.36); background: radial-gradient(circle, rgba(111,164,93,.22), rgba(12,19,28,.72)); color: #bde6b0; }
+    .mb-token {
+      width: 1.72rem;
+      height: 1.72rem;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(240,201,111,.32);
+      background: rgba(7,10,14,.88);
+      box-shadow: 0 0 1rem rgba(240,201,111,.22);
+      z-index: 2;
+    }
+    .mb-token.hero { color: var(--mb-gold-3); }
+    .mb-token.minotaur { color: #f2b4aa; border-color: rgba(178,75,59,.42); box-shadow: 0 0 1rem rgba(178,75,59,.25); }
+    .mb-token.exit { color: #bde6b0; border-color: rgba(111,164,93,.42); box-shadow: 0 0 1rem rgba(111,164,93,.22); }
+
+    .mb-maze-controls {
+      display: grid;
+      grid-template-columns: repeat(3, 3.1rem);
+      grid-template-rows: repeat(3, 3.1rem);
+      justify-content: center;
+      gap: .45rem;
+      margin-top: .9rem;
+    }
+    .mb-move-button {
+      border-radius: .85rem;
+      border: 1px solid rgba(240,201,111,.18);
+      background: linear-gradient(180deg, rgba(240,201,111,.12), rgba(7,10,14,.5));
+      color: var(--mb-gold-3);
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-move-button:hover, .mb-move-button:focus-visible { outline: none; border-color: rgba(240,201,111,.45); background: rgba(240,201,111,.16); }
+    .mb-move-button[disabled] { opacity: .28; cursor: not-allowed; }
+    .move-up { grid-column: 2; grid-row: 1; }
+    .move-left { grid-column: 1; grid-row: 2; }
+    .move-right { grid-column: 3; grid-row: 2; }
+    .move-down { grid-column: 2; grid-row: 3; }
+
+    .mb-side-panel { display: grid; gap: 1rem; }
+    .mb-info-card {
+      position: relative;
+      padding: .95rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.13);
+      background: linear-gradient(180deg, rgba(9,15,23,.72), rgba(6,9,13,.78));
+      box-shadow: inset 0 1px rgba(255,255,255,.035);
+    }
+    .mb-info-card h3 { margin: 0 0 .55rem; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.15rem; }
+    .mb-info-card p { margin: 0; color: var(--mb-text-2); line-height: 1.45; font-size: .88rem; }
+
+    .mb-stat-list { display: grid; gap: .5rem; }
+    .mb-stat-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; padding: .5rem .55rem; border-radius: .75rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.34); }
+    .mb-stat-row span { color: var(--mb-text-3); font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; }
+    .mb-stat-row strong { color: var(--mb-gold-3); }
+
+    .mb-danger-meter { display: grid; gap: .4rem; margin-top: .7rem; }
+    .mb-danger-line { display: flex; justify-content: space-between; color: var(--mb-text-2); font-size: .82rem; }
+    .mb-danger-bar { height: .58rem; border-radius: 999px; border: 1px solid rgba(178,75,59,.18); background: rgba(0,0,0,.34); overflow: hidden; }
+    .mb-danger-bar span { display: block; height: 100%; width: var(--danger, 44%); background: linear-gradient(90deg, var(--mb-gold-1), var(--mb-red)); box-shadow: 0 0 .75rem rgba(178,75,59,.22); }
+
+    .mb-log-list { display: grid; gap: .45rem; margin-top: .7rem; }
+    .mb-log-row { display: grid; grid-template-columns: 2.4rem minmax(0,1fr); gap: .55rem; align-items: start; padding: .55rem; border-radius: .8rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.32); }
+    .mb-log-icon { width: 2.4rem; height: 2.4rem; display: grid; place-items: center; border-radius: .7rem; border: 1px solid rgba(240,201,111,.14); color: var(--mb-gold-3); background: rgba(240,201,111,.07); font-weight: 900; }
+    .mb-log-row strong { display:block; color: var(--mb-text-0); }
+    .mb-log-row span { display:block; color: var(--mb-text-2); line-height: 1.35; font-size: .84rem; margin-top: .12rem; }
+    .mb-log-row.is-danger { border-color: rgba(178,75,59,.25); background: rgba(178,75,59,.08); }
+    .mb-log-row.is-success { border-color: rgba(111,164,93,.25); background: rgba(111,164,93,.07); }
+
+    .mb-stage-footer {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: center;
+      padding: .85rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.12);
+      background: linear-gradient(180deg, rgba(9,15,23,.72), rgba(6,9,13,.78));
+    }
+    .mb-footer-title { margin: 0; color: var(--mb-text-0); font-weight: 800; }
+    .mb-footer-copy { margin: .18rem 0 0; color: var(--mb-text-2); line-height: 1.4; font-size: .9rem; }
+    .mb-button-row { display: flex; flex-wrap: wrap; gap: .55rem; }
+    .mb-button { min-height: 2.4rem; padding: .55rem .85rem; border-radius: 999px; border: 1px solid var(--mb-line); color: var(--mb-text-0); background: linear-gradient(180deg, rgba(240,201,111,.2), rgba(91,58,19,.32)); cursor: pointer; box-shadow: inset 0 1px rgba(255,255,255,.07); }
+    .mb-button--primary { background: linear-gradient(180deg, rgba(240,201,111,.32), rgba(91,58,19,.44)); }
+    .mb-button--ghost { background: rgba(8,12,18,.54); color: var(--mb-text-1); }
+    .mb-button--danger { border-color: rgba(178,75,59,.42); background: rgba(178,75,59,.12); color: #f2b4aa; }
+
+    .mb-state-toggle { display: flex; gap: .4rem; margin-top: .75rem; flex-wrap: wrap; }
+    .mb-toggle-button { min-height: 2rem; padding: .35rem .65rem; border-radius: 999px; border: 1px solid rgba(240,201,111,.14); background: rgba(7,10,14,.44); color: var(--mb-text-2); cursor: pointer; }
+    .mb-toggle-button.is-active { color: var(--mb-gold-3); border-color: rgba(240,201,111,.34); background: rgba(240,201,111,.1); }
+
+    @media (max-width: 1220px) {
+      .mb-topbar { grid-template-columns: 1fr; height: auto; }
+      .mb-brand { justify-content: flex-start; }
+      .mb-app-shell { grid-template-rows: auto minmax(0, 1fr); }
+      .mb-labyrinth-layout { grid-template-columns: 1fr; }
+      .mb-stage-footer { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .mb-app-shell { display: block; }
+      .mb-topbar { position: static; }
+      .mb-topbar-left, .mb-topbar-right { justify-content: flex-start; overflow-x: auto; }
+      .mb-sidebar { border-right: 0; border-bottom: 1px solid var(--mb-line-soft); }
+      .mb-nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .mb-nav-link { justify-content: center; }
+      .mb-nav-label, .mb-nav-section-title { display: none; }
+      .mb-main { padding: .75rem; }
+      .mb-labyrinth-stage { min-height: auto; }
+      .mb-maze-grid { width: min(100%, 25rem); }
+      .mb-stage-footer { align-items: start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left" aria-label="Hero health and experience">
+        <span class="mb-chip mb-chip--health"><span class="mb-chip-icon">♥</span> Health <strong>86 / 100</strong></span>
+        <div class="mb-xp" aria-label="Experience progress">
+          <div class="mb-xp-meta"><span>Level 12</span><strong>1,240 XP to next</strong></div>
+          <div class="mb-mini-bar" style="--value: 63%"><span></span></div>
+        </div>
+      </div>
+
+      <div class="mb-brand" aria-label="Myth Sworn">
+        <div class="mb-brand-mark"></div>
+        <div>
+          <div class="mb-brand-title">Myth Sworn</div>
+          <div class="mb-brand-subtitle">Trial of Hera prototype</div>
+        </div>
+      </div>
+
+      <div class="mb-topbar-right" aria-label="Hero resources">
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◈</span><span class="mb-chip-stack">Drachmas <strong>3,420</strong><small>+96 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">▣</span><span class="mb-chip-stack">Materials <strong>185</strong><small>+22 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◇</span><span class="mb-chip-stack">Workforce <strong>42</strong><small>+4 / h</small></span></span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-server-card" aria-label="Selected world context">
+        <div class="mb-server-label">Selected server</div>
+        <div class="mb-server-name"><span>Sandbox</span><span class="mb-badge mb-badge--blue">live</span></div>
+        <div class="mb-prestige">
+          <div class="mb-server-label">Prestige</div>
+          <div class="mb-server-name"><span>Zeugitai</span><span class="mb-badge mb-badge--gold">Tier II</span></div>
+        </div>
+      </section>
+
+      <div class="mb-nav-section-title">Hero</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#dashboard"><span class="mb-nav-icon">DA</span><span class="mb-nav-label">Dashboard</span></a></li>
+        <li><a class="mb-nav-link is-active" href="#exploration"><span class="mb-nav-icon">EX</span><span class="mb-nav-label">Exploration</span></a></li>
+        <li><a class="mb-nav-link" href="#statistics"><span class="mb-nav-icon">ST</span><span class="mb-nav-label">Statistics</span></a></li>
+        <li><a class="mb-nav-link" href="#armory"><span class="mb-nav-icon">AR</span><span class="mb-nav-label">Armory</span></a></li>
+      </ul>
+
+      <div class="mb-nav-section-title">World</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#estate"><span class="mb-nav-icon">ES</span><span class="mb-nav-label">Estate</span></a></li>
+        <li><a class="mb-nav-link" href="#trade"><span class="mb-nav-icon">TR</span><span class="mb-nav-label">Trade</span></a></li>
+        <li><a class="mb-nav-link" href="#pvp"><span class="mb-nav-icon">PV</span><span class="mb-nav-label">PvP</span></a></li>
+        <li><a class="mb-nav-link" href="#reports"><span class="mb-nav-icon">RP</span><span class="mb-nav-label">Reports</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main" id="trial-hera-labyrinth">
+      <div class="mb-trial-page">
+        <section class="mb-labyrinth-stage">
+          <header class="mb-stage-header">
+            <p class="mb-kicker">Trial of Hera</p>
+            <h1 class="mb-title">Labyrinth of the Minotaur</h1>
+            <p class="mb-copy">Find the exit before the Minotaur reaches you. This is an Intelligence Trial: the maze grows harder as trial difficulty rises beyond the hero’s effective Intelligence. If the Minotaur catches Theron, the Trial fails. No combat starts.</p>
+            <div class="mb-meta-row">
+              <span class="mb-badge">Stat: Intelligence</span>
+              <span class="mb-badge mb-badge--gold">Hera</span>
+              <span class="mb-badge">Manual Trial</span>
+              <span class="mb-badge mb-badge--warning">No combat on catch</span>
+            </div>
+            <div class="mb-state-toggle" aria-label="Prototype state toggle">
+              <button class="mb-toggle-button is-active" type="button" data-state="active">Active</button>
+              <button class="mb-toggle-button" type="button" data-state="success">Success</button>
+              <button class="mb-toggle-button" type="button" data-state="caught">Caught</button>
+            </div>
+          </header>
+
+          <section class="mb-labyrinth-layout" aria-label="Labyrinth minigame">
+            <article class="mb-maze-panel">
+              <div class="mb-maze-header">
+                <div>
+                  <h2 id="mazeTitle">The Minotaur is searching</h2>
+                  <p id="mazeSubtitle">Move through the revealed corridors. Unknown tiles remain hidden by the maze.</p>
+                </div>
+                <span class="mb-badge mb-badge--blue" id="mazeStateBadge">turn 7 / 24</span>
+              </div>
+
+              <div class="mb-maze-wrap">
+                <div class="mb-maze-grid" id="mazeGrid" aria-label="9 by 9 labyrinth grid">
+                  <div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div>
+                  <div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell floor"></div><div class="mb-cell floor"><span class="mb-token hero">H</span></div><div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell floor"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div>
+                  <div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div>
+                  <div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell floor"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div>
+                  <div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell floor"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell floor"><span class="mb-token minotaur">M</span></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div>
+                  <div class="mb-cell wall"></div><div class="mb-cell fog"></div><div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div>
+                  <div class="mb-cell wall"></div><div class="mb-cell fog"></div><div class="mb-cell floor"></div><div class="mb-cell floor"></div><div class="mb-cell floor"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell wall"></div>
+                  <div class="mb-cell wall"></div><div class="mb-cell fog"></div><div class="mb-cell fog"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell floor"></div><div class="mb-cell floor"></div><div class="mb-cell exit"><span class="mb-token exit">E</span></div><div class="mb-cell wall"></div>
+                  <div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div><div class="mb-cell wall"></div>
+                </div>
+              </div>
+
+              <div class="mb-maze-controls" aria-label="Movement controls">
+                <button class="mb-move-button move-up" type="button">↑</button>
+                <button class="mb-move-button move-left" type="button">←</button>
+                <button class="mb-move-button move-right" type="button">→</button>
+                <button class="mb-move-button move-down" type="button">↓</button>
+              </div>
+            </article>
+
+            <aside class="mb-side-panel">
+              <section class="mb-info-card">
+                <h3>Trial parameters</h3>
+                <div class="mb-stat-list">
+                  <div class="mb-stat-row"><span>Hero intelligence</span><strong>34</strong></div>
+                  <div class="mb-stat-row"><span>Difficulty target</span><strong>28</strong></div>
+                  <div class="mb-stat-row"><span>Maze size</span><strong>9 × 9</strong></div>
+                  <div class="mb-stat-row"><span>Visibility</span><strong>2 tiles</strong></div>
+                  <div class="mb-stat-row"><span>Max turns</span><strong>24</strong></div>
+                  <div class="mb-stat-row"><span>Minotaur move</span><strong>every turn</strong></div>
+                </div>
+              </section>
+
+              <section class="mb-info-card">
+                <h3>Minotaur pressure</h3>
+                <p id="dangerCopy">The Minotaur has heard Theron. It moves after each player step and tries to close the distance through the maze.</p>
+                <div class="mb-danger-meter">
+                  <div class="mb-danger-line"><span>Danger</span><strong id="dangerValue">44%</strong></div>
+                  <div class="mb-danger-bar" style="--danger:44%"><span></span></div>
+                </div>
+              </section>
+
+              <section class="mb-info-card">
+                <h3>Labyrinth log</h3>
+                <div class="mb-log-list" id="labyrinthLog">
+                  <div class="mb-log-row"><div class="mb-log-icon">7</div><div><strong>Turn 7</strong><span>Theron sees the exit marking through the eastern corridor.</span></div></div>
+                  <div class="mb-log-row is-danger"><div class="mb-log-icon">6</div><div><strong>Turn 6</strong><span>The Minotaur turns toward the sound of Theron’s steps.</span></div></div>
+                  <div class="mb-log-row"><div class="mb-log-icon">5</div><div><strong>Turn 5</strong><span>A hidden passage opens into the lower corridor.</span></div></div>
+                </div>
+              </section>
+            </aside>
+          </section>
+
+          <footer class="mb-stage-footer">
+            <div>
+              <p class="mb-footer-title" id="footerTitle">Escape the labyrinth</p>
+              <p class="mb-footer-copy" id="footerCopy">Reach the exit before the Minotaur catches Theron. The Trial resolves only when the hero escapes, is caught, or runs out of turns.</p>
+            </div>
+            <div class="mb-button-row">
+              <button class="mb-button mb-button--danger" type="button">Resolve automatically</button>
+              <button class="mb-button mb-button--ghost" type="button">Back to Trial</button>
+            </div>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const states = {
+      active: {
+        title: 'The Minotaur is searching',
+        subtitle: 'Move through the revealed corridors. Unknown tiles remain hidden by the maze.',
+        badge: 'turn 7 / 24',
+        danger: '44%',
+        dangerCopy: 'The Minotaur has heard Theron. It moves after each player step and tries to close the distance through the maze.',
+        footerTitle: 'Escape the labyrinth',
+        footerCopy: 'Reach the exit before the Minotaur catches Theron. The Trial resolves only when the hero escapes, is caught, or runs out of turns.',
+        logClass: '',
+        log: [
+          ['7', 'Turn 7', 'Theron sees the exit marking through the eastern corridor.', ''],
+          ['6', 'Turn 6', 'The Minotaur turns toward the sound of Theron’s steps.', 'is-danger'],
+          ['5', 'Turn 5', 'A hidden passage opens into the lower corridor.', '']
+        ]
+      },
+      success: {
+        title: 'Theron escaped the labyrinth',
+        subtitle: 'The exit seal opens before the Minotaur can reach him.',
+        badge: 'success',
+        danger: '0%',
+        dangerCopy: 'The Minotaur is left behind in the inner maze. The Trial of Hera is complete.',
+        footerTitle: 'Trial completed',
+        footerCopy: 'The completed Trial report can now show the narrative and rewards from the Trial reward profile.',
+        log: [
+          ['12', 'Turn 12', 'Theron reaches the exit before the Minotaur closes the distance.', 'is-success'],
+          ['11', 'Turn 11', 'The Minotaur enters the wrong passage.', ''],
+          ['10', 'Turn 10', 'The final corridor opens toward the exit seal.', '']
+        ]
+      },
+      caught: {
+        title: 'The Minotaur caught Theron',
+        subtitle: 'The Trial fails immediately. No combat begins.',
+        badge: 'failed',
+        danger: '100%',
+        dangerCopy: 'The Minotaur reaches Theron inside the maze. This is a failure condition, not a combat encounter.',
+        footerTitle: 'Trial failed',
+        footerCopy: 'The failed Trial report can now explain that the Minotaur caught the hero before he escaped.',
+        log: [
+          ['9', 'Turn 9', 'The Minotaur enters Theron’s tile. The Trial fails.', 'is-danger'],
+          ['8', 'Turn 8', 'Theron chooses the wrong corridor and loses distance.', ''],
+          ['7', 'Turn 7', 'The Minotaur is close enough to hear every step.', 'is-danger']
+        ]
+      }
+    };
+
+    const mazeTitle = document.getElementById('mazeTitle');
+    const mazeSubtitle = document.getElementById('mazeSubtitle');
+    const mazeStateBadge = document.getElementById('mazeStateBadge');
+    const dangerCopy = document.getElementById('dangerCopy');
+    const dangerValue = document.getElementById('dangerValue');
+    const dangerBar = document.querySelector('.mb-danger-bar');
+    const footerTitle = document.getElementById('footerTitle');
+    const footerCopy = document.getElementById('footerCopy');
+    const labyrinthLog = document.getElementById('labyrinthLog');
+
+    function setState(key) {
+      const state = states[key];
+      document.querySelectorAll('[data-state]').forEach(button => button.classList.toggle('is-active', button.dataset.state === key));
+      mazeTitle.textContent = state.title;
+      mazeSubtitle.textContent = state.subtitle;
+      mazeStateBadge.textContent = state.badge;
+      dangerCopy.textContent = state.dangerCopy;
+      dangerValue.textContent = state.danger;
+      dangerBar.style.setProperty('--danger', state.danger);
+      footerTitle.textContent = state.footerTitle;
+      footerCopy.textContent = state.footerCopy;
+      labyrinthLog.innerHTML = state.log.map(([icon, title, copy, cls]) => `
+        <div class="mb-log-row ${cls}"><div class="mb-log-icon">${icon}</div><div><strong>${title}</strong><span>${copy}</span></div></div>
+      `).join('');
+    }
+
+    document.querySelectorAll('[data-state]').forEach(button => button.addEventListener('click', () => setState(button.dataset.state)));
+  </script>
+</body>
+</html>
