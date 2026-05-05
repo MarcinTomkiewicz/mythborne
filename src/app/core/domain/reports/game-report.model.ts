@@ -100,6 +100,13 @@ export interface GameReportCombatSection {
   attacks: GameReportCombatAttack[];
 }
 
+export interface GameReportContextualReadiness {
+  reportTypeKey: string;
+  title: string;
+  producerStatus: string;
+  expectedSections: string[];
+}
+
 export interface PrivateGameReportListItem {
   reportId: string;
   publicToken: string;
@@ -182,6 +189,7 @@ export interface PrivateGameReportDetail extends Omit<
   reportTypeDescription: string;
   itemReferences: GameReportItemReference[];
   combatSection: GameReportCombatSection | null;
+  contextualReadiness: GameReportContextualReadiness | null;
 }
 
 export interface PublicGameReport {
@@ -196,4 +204,5 @@ export interface PublicGameReport {
   participants: GameReportParticipant[];
   itemReferences: PublicGameReportItemReference[];
   combatSection: GameReportCombatSection | null;
+  contextualReadiness: GameReportContextualReadiness | null;
 }

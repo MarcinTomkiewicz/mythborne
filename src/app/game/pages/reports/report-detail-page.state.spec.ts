@@ -150,6 +150,7 @@ function detail(
     participants: [],
     itemReferences: [],
     combatSection: null,
+    contextualReadiness: null,
     ...overrides,
   };
 }

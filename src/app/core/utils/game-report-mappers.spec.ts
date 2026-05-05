@@ -53,6 +53,7 @@ describe('game report mappers', () => {
       readAt: '2026-05-05T10:30:00.000Z',
       isUnread: false,
     });
+    expect(detail.contextualReadiness).toBeNull();
     expect(detail.itemReferences).toEqual([
       jasmine.objectContaining({
         sourceKind: 'reward_drop',
@@ -98,6 +99,7 @@ describe('game report mappers', () => {
 
     expect(Object.keys(report).sort()).toEqual([
       'combatSection',
+      'contextualReadiness',
       'createdAt',
       'itemReferences',
       'participants',
@@ -113,6 +115,7 @@ describe('game report mappers', () => {
       publicToken: 'public-token-1',
       reportTypeLabel: 'Combat',
       sourceEntityType: 'combat_result',
+      contextualReadiness: null,
     }));
     expect(Object.keys(report.participants[0]).sort()).toEqual([
       'displayName',
@@ -216,6 +219,60 @@ describe('game report mappers', () => {
     expect(detail.itemReferences[0].displayDetails.join(' ')).not.toContain('base-1');
     expect(detail.itemReferences[0].displayDetails.join(' ')).not.toContain('prefix-1');
     expect(detail.itemReferences[0].displayDetails.join(' ')).not.toContain('suffix-1');
+  });
+
+  it('maps trial report details to safe producer readiness without raw runtime rows', () => {
+    const detail = mapPrivateGameReportDetail(privateDetailRow({
+      combat_section_json: null,
+      item_references_json: [],
+      participants_json: [],
+      report_type_key: 'trial',
+      report_type_label: 'Trial',
+      source_entity_id: 'trial-result-1',
+      source_entity_type: 'trial_result',
+    }));
+
+    expect(detail.contextualReadiness).toEqual({
+      reportTypeKey: 'trial',
+      title: 'Trial report producer pending',
+      producerStatus: 'Waiting for completed trial result producer.',
+      expectedSections: [
+        'Trial outcome',
+        'Reward summary',
+        'Optional combat section',
+        'Reward drop item references',
+      ],
+    });
+    expect(detail.combatSection).toBeNull();
+    expect(detail.itemReferences).toEqual([]);
+    expect(JSON.stringify(detail.contextualReadiness)).not.toContain('trial_attempt');
+    expect(JSON.stringify(detail.contextualReadiness)).not.toContain('exploration_graph');
+  });
+
+  it('maps public encounter reports to safe producer readiness', () => {
+    const report = mapPublicGameReport(publicReportRow({
+      combat_section_json: null,
+      item_references_json: [],
+      participants_json: [],
+      report_type_key: 'encounter',
+      report_type_label: 'Encounter',
+      source_entity_type: 'encounter_result',
+    }));
+
+    expect(report.contextualReadiness).toEqual({
+      reportTypeKey: 'encounter',
+      title: 'Encounter report producer pending',
+      producerStatus: 'Waiting for completed encounter result producer.',
+      expectedSections: [
+        'Encounter outcome',
+        'Reward, resource or effect summary',
+        'Optional combat section',
+        'Reward drop item references',
+      ],
+    });
+    expect(Object.keys(report).sort()).not.toContain('sourceEntityId');
+    expect(JSON.stringify(report)).not.toContain('challenge_attempt');
+    expect(JSON.stringify(report)).not.toContain('hero_exploration');
   });
 
   it('fails on snake_case participant payload instead of masking the JSON contract', () => {
@@ -361,7 +418,9 @@ function privateDetailRow(
   } as unknown as GetHeroGameReportDetailRpcRow;
 }
 
-function publicReportRow(): GetPublicGameReportByTokenRpcRow {
+function publicReportRow(
+  overrides: Partial<GetPublicGameReportByTokenRpcRow> = {},
+): GetPublicGameReportByTokenRpcRow {
   return {
     combat_section_json: combatSectionJson(),
     created_at: '2026-05-05T10:00:00.000Z',
@@ -374,6 +433,7 @@ function publicReportRow(): GetPublicGameReportByTokenRpcRow {
     source_entity_type: 'combat_result',
     summary: 'A training fight was completed.',
     title: 'Training combat',
+    ...overrides,
   };
 }
 

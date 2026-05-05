@@ -2,6 +2,7 @@ import { Component, input } from '@angular/core';
 import {
   GameReportCombatSection,
   GameReportCombatParticipant,
+  GameReportContextualReadiness,
   GameReportItemReference,
   GameReportParticipant,
   PublicGameReportItemReference,
@@ -11,6 +12,7 @@ export interface GameReportContentReadModel {
   participants: GameReportParticipant[];
   itemReferences: Array<GameReportItemReference | PublicGameReportItemReference>;
   combatSection: GameReportCombatSection | null;
+  contextualReadiness: GameReportContextualReadiness | null;
 }
 
 @Component({
@@ -56,6 +58,20 @@ export class GameReportContent {
     item: GameReportItemReference | PublicGameReportItemReference,
   ): string {
     return `${item.sourceKind}-${item.displayName}-${item.sortOrder}-${index}`;
+  }
+
+  contextualReadiness(): GameReportContextualReadiness | null {
+    const report = this.report();
+
+    if (
+      report.participants.length > 0 ||
+      report.itemReferences.length > 0 ||
+      report.combatSection !== null
+    ) {
+      return null;
+    }
+
+    return report.contextualReadiness;
   }
 
   hasCombatStats(participant: GameReportCombatParticipant): boolean {

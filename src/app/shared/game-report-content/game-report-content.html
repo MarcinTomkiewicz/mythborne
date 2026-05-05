@@ -20,6 +20,21 @@
   </div>
 </section>
 
+@if (contextualReadiness(); as readiness) {
+  <section class="mg-card flex-col gap-md p-lg w-100">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">{{ readiness.title }}</p>
+      <p class="muted-text mb-0">{{ readiness.producerStatus }}</p>
+    </div>
+
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      @for (section of readiness.expectedSections; track section) {
+        <span class="tag-badge tag-badge--muted">{{ section }}</span>
+      }
+    </div>
+  </section>
+}
+
 <section class="mg-card flex-col gap-md p-lg w-100">
   <div class="flex-col gap-xs">
     <p class="card-legend mb-0">{{ itemReferencesTitle() }}</p>

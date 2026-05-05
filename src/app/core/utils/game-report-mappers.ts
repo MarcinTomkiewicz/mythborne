@@ -11,6 +11,7 @@ import {
   GetHeroGameReportsRpcRow,
   GetPublicGameReportByTokenRpcRow,
 } from '../types/game-report-rpc.types';
+import { resolveGameReportContextualReadiness } from './game-report-contextual-readiness';
 import { parseGameReportCombatSectionJson } from './game-report-combat-mappers';
 import {
   parseGameReportItemReferencesJson,
@@ -76,6 +77,10 @@ export function mapPrivateGameReportDetail(
     participants: parseGameReportParticipantsJson(row.participants_json),
     itemReferences: parseGameReportItemReferencesJson(row.item_references_json),
     combatSection: parseGameReportCombatSectionJson(row.combat_section_json),
+    contextualReadiness: resolveGameReportContextualReadiness({
+      reportTypeKey: row.report_type_key,
+      sourceEntityType: row.source_entity_type,
+    }),
   };
 }
 
@@ -94,6 +99,10 @@ export function mapPublicGameReport(
     participants: parseGameReportParticipantsJson(row.participants_json),
     itemReferences: parsePublicGameReportItemReferencesJson(row.item_references_json),
     combatSection: parseGameReportCombatSectionJson(row.combat_section_json),
+    contextualReadiness: resolveGameReportContextualReadiness({
+      reportTypeKey: row.report_type_key,
+      sourceEntityType: row.source_entity_type,
+    }),
   };
 }
 

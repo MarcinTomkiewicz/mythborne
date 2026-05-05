@@ -72,5 +72,6 @@ function report(): PublicGameReport {
     participants: [],
     itemReferences: [],
     combatSection: null,
+    contextualReadiness: null,
   };
 }

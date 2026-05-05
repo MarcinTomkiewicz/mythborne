@@ -5487,6 +5487,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 - Reward grants are represented without re-triggering reward generation.
 - No raw exploration graph/step/challenge runtime rows are exposed as public report snapshots.
 
+**Implementation note:** P9 accepted on 2026-05-05. Frontend now has a safe contextual readiness model for trial and encounter reports. `PrivateGameReportDetail` and `PublicGameReport` expose `contextualReadiness` for `trial` / `trial_result` and `encounter` / `encounter_result` payloads, while `GameReportContent` renders the readiness placeholder only when the report has no participants, item references or combat section. This keeps trial/encounter report UI ready without faking producers from raw exploration/challenge/runtime rows, without re-triggering rewards, without report table writes and without frontend notification writes. Existing report mappers, strict JSON model and P5 combat renderer are reused; reward/drop references remain on the approved producer path. Verification passed with `npx tsc --noEmit`, focused report specs with 47 SUCCESS, static greps and `npm run build` with known warnings. Manual smoke is pending until real or seeded trial/encounter reports exist. Follow-up: during the next report UI pass, consider hiding otherwise-empty sections while contextual readiness is active and keep future consumers aligned with the same "placeholder only when no safe payload exists" rule.
+
 ---
 
 ## Task P10 — Future PvP and siege report placeholders
