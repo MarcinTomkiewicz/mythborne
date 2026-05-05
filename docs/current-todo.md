@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-05-04
+Updated: 2026-05-05
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -162,12 +162,15 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: O6 - Start building construction/upgrade flow, settled mansion runtime state and active/completed job smoke.
 - Completed and confirmed: O8 - Building configurator edit alignment.
 - Completed and confirmed: O9 - Estate vicinity/address browser and relocation picker UI.
-- Completed and conditionally accepted: O10 - Player estate overview and building dashboard UI.
+- Completed and confirmed: O10 - Player estate overview and building dashboard UI.
 - Completed and confirmed: O11 - Estate/building feedback and notification integration.
-- Next backlog task: O12 - Estate/building integration smoke and blocker report from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
+- Completed and confirmed: O12 - Estate/building integration smoke and blocker report technical checkpoint.
+- Completed and confirmed: P1 - Game report domain models and mappers.
+- Next backlog task: P2 - Private Reports list / Reports tab prototype from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
 - O6 user smoke confirmed real job behavior: start job, active job panel, route leave/return, browser refresh during an active job, completed-job settlement, and the new building level after `completes_at`.
 - O8 user smoke confirmed building admin save/read behavior for `startingLevel = 0`. The editor now treats `starting_level = 0` as a legal not-built definition state, preserves it through mapping/form/save payload, keeps `startingLevel = 2` round-tripping, exposes `min=0`/`step=1`, and rejects negative/non-integer values instead of silently clamping.
-- O9/O10 follow-up: resource production after destructive relocation remains a non-blocking DB/runtime consistency issue. After relocating to a new estate with level 0 buildings, `hero_resources.per_hour` for drachma may remain stale (for example `+18/h`) until a later build/finalize path recalculates production (for example `+12/h`). Check `relocate_hero_estate_to_empty_address(...)`, `settle_hero_runtime_state(...)`, `get_hero_estate_runtime_state(...)` and `refresh_hero_resource_production_rates(...)`; do not add Angular-side production recalculation or local override.
+- O12 pending manual smoke: Codex completed only the technical checkpoint. User-owned manual validation remains for `/game/mansion` resources versus topbar, build start/active/completion states, `/game/vicinity` district/center/filter and relocation, `/admin/buildings` save/reload for starting level/costs/formulas/metadata, and notification DB smoke for building-completion rows/action URLs when representative data exists.
+- O9/O10/O12 follow-up: resource production after destructive relocation remains a non-blocking DB/runtime consistency issue. After relocating to a new estate with level 0 buildings, `hero_resources.per_hour` for drachma may remain stale (for example `+18/h`) until a later build/finalize path recalculates production (for example `+12/h`). Check `relocate_hero_estate_to_empty_address(...)`, `settle_hero_runtime_state(...)`, `get_hero_estate_runtime_state(...)` and `refresh_hero_resource_production_rates(...)`; do not add Angular-side production recalculation or local override.
 - O11 UI debt: vicinity still uses native selects / `ngModel`. Keep it as temporary accepted debt; future UI pass should move it to project/PrimeNG reactive-form patterns without adding PvP/spy/protection workflows to `EstateVicinityPageState`.
 - Formula balance refactor follow-up: before the next larger item generation/formula balance task, split `ItemGenerationFormulaBalanceFacade` further. It remains about 447 lines after the accepted variable-contract fix and must not absorb more workflow responsibilities.
 - N13 pending validation: representative XP producer smoke remains pending until a real XP-producing flow exists or is intentionally selected; user/manual validation remains separate from technical green checks and must not be claimed by Codex.

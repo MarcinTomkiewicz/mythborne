@@ -5019,6 +5019,8 @@ This is not a fresh placeholder design. The DB foundation exists and must be tre
 - No legacy building requirements/time fields are used.
 - Remaining blockers, if any, are concrete and actionable.
 
+**Implementation note:** O12 accepted on 2026-05-05 as the post O1-O11 technical integration checkpoint. No code, DB/RPC, migration, status-changing runtime implementation, frontend notification write or Angular production fallback was added during the check. Frontend technical verification is green: `npx tsc --noEmit` passed; focused O-slice specs passed with 80 SUCCESS after rerunning outside the known sandbox `spawn EPERM`; `npm run build` passed with the known bundle budget and Supabase `cookie` CommonJS warnings. Static greps found no new `create_notification`, frontend notification writes, direct `TABLES.estate_building_jobs` mansion source, legacy finalization RPC, `auth.uid` / `userId` hero-id assumption, legacy `base_build_time_minutes`, legacy `building_requirements` / `buildings.requirements`, `label > p-select`, or durable `any` in the checked O paths. Codex did not run manual or route smoke and does not claim it. Pending manual smoke remains user-owned: `/game/mansion` resources versus topbar, build start/active/completion states, `/game/vicinity` district/center/filter and relocation, `/admin/buildings` save/reload for starting level/costs/formulas/metadata, and notification DB smoke for building-completion rows/action URLs where representative data exists. Non-blocking follow-up remains: after destructive relocation, `hero_resources.per_hour` can remain stale until later settlement/build/finalize; diagnose `relocate_hero_estate_to_empty_address(...)`, `settle_hero_runtime_state(...)`, `get_hero_estate_runtime_state(...)` and `refresh_hero_resource_production_rates(...)`, and do not mask this with Angular-side production recalculation.
+
 # Epic P — Reports and snapshots
 
 Epic P implements player-facing gameplay reports over the DB-backed game report foundation.
@@ -5188,6 +5190,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 - Raw DB rows are mapped to explicit domain/UI models.
 - Mapper tests cover read/unread, participants, item references and combat section payload.
 - Build passes.
+
+**Implementation note:** P1 accepted on 2026-05-05. Added typed game report read-model foundation and mappers only; no UI, service, report write path, producer, notification write or status docs were changed during implementation. Private list/detail and public report models are separated. Private models may carry `reportId`, active-hero access role and read state, while public models omit internal report ids, `sourceEntityId`, access/read state, hero/user/account ids, internal combat ids and raw item/content ids. Public item references use a separate safe model with only `sourceKind`, `displayName`, `qualityKey` and `sortOrder`. The report mappers use generated RPC/table types, derive `isUnread` from `readAt === null`, parse nested JSON as strict camelCase without snake_case fallback, and fail on malformed combat payloads. Verification passed with `npx tsc --noEmit`, focused report mapper specs with 6 SUCCESS, static grep checks and `npm run build` with known budget/CommonJS warnings. Manual smoke is not applicable for this model/mapper-only slice.
 
 ---
 
