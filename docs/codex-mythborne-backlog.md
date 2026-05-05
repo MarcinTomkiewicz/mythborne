@@ -5518,6 +5518,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 - No fake PvP/siege workflow is built inside P.
 - Public/private renderers handle future report types gracefully.
 
+**Implementation note:** P10 accepted on 2026-05-05. Frontend now extends the existing contextual readiness path for future `pvp_combat` / `pvp_result` and `siege` / `siege_result` reports. Public and private report mapping can surface safe readiness placeholders for these future types, while `GameReportContent` keeps the P9 rule that readiness is rendered only when the report has no safe payload: no participants, no item references and no combat section. P10 did not build PvP or siege producers, did not fake workflow results from raw runtime payloads, did not add report writes and did not add frontend notification writes. Verification passed with `npx tsc --noEmit`, focused report specs with 49 SUCCESS, static greps and `npm run build` with known warnings. Manual smoke is pending until real or seeded PvP/siege reports exist.
+
 ---
 
 ## Task P11 — Reports Center prototype UI smoke and blocker report

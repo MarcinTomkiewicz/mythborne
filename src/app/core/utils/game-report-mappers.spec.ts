@@ -275,6 +275,59 @@ describe('game report mappers', () => {
     expect(JSON.stringify(report)).not.toContain('hero_exploration');
   });
 
+  it('maps future private PvP combat reports to safe producer readiness', () => {
+    const detail = mapPrivateGameReportDetail(privateDetailRow({
+      combat_section_json: null,
+      item_references_json: [],
+      participants_json: [],
+      report_type_key: 'pvp_combat',
+      report_type_label: 'PvP Combat',
+      source_entity_id: 'pvp-result-1',
+      source_entity_type: 'pvp_result',
+    }));
+
+    expect(detail.contextualReadiness).toEqual({
+      reportTypeKey: 'pvp_combat',
+      title: 'PvP report producer pending',
+      producerStatus: 'Waiting for future PvP consequence producer.',
+      expectedSections: [
+        'Combat section',
+        'Resource outcome',
+        'Prestige or standing changes where allowed',
+        'Participant access rows',
+      ],
+    });
+    expect(detail.combatSection).toBeNull();
+    expect(detail.itemReferences).toEqual([]);
+    expect(JSON.stringify(detail)).not.toContain('pvp_attack_log');
+  });
+
+  it('maps future public siege reports to safe producer readiness', () => {
+    const report = mapPublicGameReport(publicReportRow({
+      combat_section_json: null,
+      item_references_json: [],
+      participants_json: [],
+      report_type_key: 'siege',
+      report_type_label: 'Siege',
+      source_entity_type: 'siege_result',
+    }));
+
+    expect(report.contextualReadiness).toEqual({
+      reportTypeKey: 'siege',
+      title: 'Siege report producer pending',
+      producerStatus: 'Waiting for future siege consequence producer.',
+      expectedSections: [
+        'Multi-participant outcome',
+        'Hero access rows',
+        'Guild or siege context',
+        'Optional combat sections',
+      ],
+    });
+    expect(Object.keys(report).sort()).not.toContain('sourceEntityId');
+    expect(JSON.stringify(report)).not.toContain('guild_id');
+    expect(JSON.stringify(report)).not.toContain('siege_internal');
+  });
+
   it('fails on snake_case participant payload instead of masking the JSON contract', () => {
     expect(() =>
       mapPrivateGameReportListItem(privateListRow({
