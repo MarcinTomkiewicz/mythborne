@@ -193,7 +193,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: R5 - Vicinity page route.
 - Completed and confirmed: R6 - Vicinity navigation entry.
 - Completed and confirmed: R7 - Vicinity target candidate state.
-- Next backlog task: R8 - Vicinity target list UI from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
+- Completed and confirmed: R8 - Vicinity target list UI.
+- Next backlog task: R9 - Vicinity eligibility reason display from `docs/codex-mythborne-backlog.md`, after the user commit and explicit start instruction.
 - Q4 pending manual smoke: check a real DB row for `estate.building_job.completed`; source `action_url` must be `/game/mansion`. If it still returns `ViewState`, fix DB/content producer source and do not add a frontend remap.
 - Q5 pending manual smoke: open bell, mark read, dismiss and action link; real DB/RLS denied-action smoke only if suitable test data/access exists.
 - Q6 pending manual smoke: basic bell UI can be smoke-tested, but full fresh-toast validation needs a real DB producer notification. Eligible unread fresh rows should toast once; read rows and `default_toast_enabled = false` rows should remain inbox-only.

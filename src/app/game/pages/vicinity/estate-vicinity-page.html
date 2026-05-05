@@ -11,7 +11,7 @@
   </section>
 } @else {
   <div class="flex-col gap-xl w-100">
-    <section class="mg-card p-lg w-100">
+    <section class="p-lg w-100">
       <div class="flex-row-between-center flex-col-sm gap-md">
         <div class="flex-col gap-xs">
           <p class="card-legend mb-0">Vicinity</p>
@@ -176,5 +176,138 @@
         />
       </aside>
     </div>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">PvP targets</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            Nearby occupied estates
+          </h3>
+        </div>
+        <p-button
+          label="Refresh"
+          severity="secondary"
+          [loading]="pvpTargets.isLoading()"
+          (onClick)="pvpTargets.loadCandidates()"
+        />
+      </div>
+
+      <div class="p-md mb-md">
+        <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md align-items-end">
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Target district</span>
+            <select
+              class="w-100"
+              [ngModel]="pvpTargets.districtCode() ?? ''"
+              [disabled]="pvpTargets.isLoading()"
+              (ngModelChange)="pvpTargets.setDistrictCode($event || null)"
+            >
+              <option value="">All districts</option>
+              @for (district of page.districts(); track district.districtCode) {
+                <option [value]="district.districtCode">
+                  {{ district.label }} ({{ district.districtCode }})
+                </option>
+              }
+            </select>
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Search</span>
+            <input
+              pInputText
+              type="search"
+              class="w-100"
+              [ngModel]="pvpTargets.search()"
+              [disabled]="pvpTargets.isLoading()"
+              (ngModelChange)="pvpTargets.setSearch($event)"
+            />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Page size</span>
+            <select
+              class="w-100"
+              [ngModel]="pvpTargets.limit()"
+              [disabled]="pvpTargets.isLoading()"
+              (ngModelChange)="pvpTargets.setPageSize(+$event)"
+            >
+              <option [value]="10">10 targets</option>
+              <option [value]="20">20 targets</option>
+              <option [value]="50">50 targets</option>
+            </select>
+          </label>
+
+          <div class="flex-row-start-center gap-sm">
+            <p-button
+              label="Previous"
+              severity="secondary"
+              [disabled]="!pvpTargets.canGoPrevious()"
+              (onClick)="pvpTargets.previousPage()"
+            />
+            <p-button
+              label="Next"
+              severity="secondary"
+              [disabled]="!pvpTargets.canGoNext()"
+              (onClick)="pvpTargets.nextPage()"
+            />
+          </div>
+        </div>
+      </div>
+
+      @if (pvpTargets.error()) {
+        <p class="mb-0 muted-text">{{ pvpTargets.error() }}</p>
+      } @else if (pvpTargets.isLoading()) {
+        <p class="mb-0 muted-text">Loading PvP targets...</p>
+      } @else if (pvpTargets.isEmpty()) {
+        <p class="mb-0 muted-text">No PvP targets match the current filters.</p>
+      } @else {
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
+          @for (candidate of pvpTargets.candidates(); track candidate.targetAddress.address) {
+            <article class="mg-card p-md flex-col gap-md">
+              <div class="flex-row-between-center flex-col-sm gap-sm">
+                <div class="flex-col gap-xs">
+                  <strong class="heading-color">{{ candidate.targetDisplayName }}</strong>
+                  <span class="muted-text">
+                    Level {{ candidate.targetLevel }} &middot; {{ candidate.targetAddress.address }}
+                  </span>
+                </div>
+                <span class="tag-badge tag-badge--muted">
+                  Distance {{ candidate.distanceScore }}
+                </span>
+              </div>
+
+              <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-sm">
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Attack travel</span>
+                  <strong class="heading-color">
+                    {{ durationLabel(candidate.attackEligibility.travelTimeSeconds) }}
+                  </strong>
+                </div>
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Spy travel</span>
+                  <strong class="heading-color">
+                    {{ durationLabel(candidate.spyEligibility.travelTimeSeconds) }}
+                  </strong>
+                </div>
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Protection</span>
+                  <strong class="heading-color">{{ protectionLabel(candidate) }}</strong>
+                </div>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-sm">
+                <span [class]="eligibilityBadgeClass(candidate.attackEligibility)">
+                  Attack {{ eligibilityLabel(candidate.attackEligibility) }}
+                </span>
+                <span [class]="eligibilityBadgeClass(candidate.spyEligibility)">
+                  Spy {{ eligibilityLabel(candidate.spyEligibility) }}
+                </span>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
   </div>
 }

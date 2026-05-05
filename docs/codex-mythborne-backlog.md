@@ -6417,6 +6417,8 @@ PvP Foundation is not:
 - Target rows do not expose private account/staff fields.
 - Target selection does not show combat preview/log.
 
+**Implementation note:** R8 accepted on 2026-05-05. `/game/vicinity` now renders a read-only PvP target list from `VicinityTargetCandidatesState` / `PlayerPvp.getTargetCandidates(...)`, with filters for target district, search, page size and pagination. Target rows show player-safe candidate data only: display name, level, estate address, distance score, attack/spy travel time, protection state and attack/spy eligibility. Empty vicinity plots are not used as PvP targets, private target/estate ids are not rendered, eligibility remains RPC/mapper passthrough, and no start attack/spy workflow, combat preview/log, `start_pvp_action(...)` call or direct PvP table access was added.
+
 ---
 
 ## Task R9 — Vicinity eligibility reason display

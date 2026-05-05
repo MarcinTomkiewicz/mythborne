@@ -4,6 +4,10 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
+import {
+  PvpActionEligibility,
+  PvpTargetCandidate,
+} from '../../../core/domain/pvp/pvp.model';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { EstateVicinityPageState } from './estate-vicinity-page.state';
 import { VicinityTargetCandidatesState } from './vicinity-target-candidates.state';
@@ -33,5 +37,39 @@ export class EstateVicinityPage implements OnInit {
 
   ngOnInit(): void {
     this.page.loadData();
+    this.pvpTargets.loadCandidates();
+  }
+
+  durationLabel(seconds: number): string {
+    if (seconds < 60) {
+      return `${seconds}s`;
+    }
+
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    return remainingSeconds > 0
+      ? `${minutes}m ${remainingSeconds}s`
+      : `${minutes}m`;
+  }
+
+  protectionLabel(candidate: PvpTargetCandidate): string {
+    if (!candidate.underProtection) {
+      return 'No active protection';
+    }
+
+    return candidate.protectionExpiresAt
+      ? `Protected until ${new Date(candidate.protectionExpiresAt).toLocaleString()}`
+      : 'Protected';
+  }
+
+  eligibilityLabel(eligibility: PvpActionEligibility): string {
+    return eligibility.canStart ? 'Available' : 'Unavailable';
+  }
+
+  eligibilityBadgeClass(eligibility: PvpActionEligibility): string {
+    return eligibility.canStart
+      ? 'tag-badge tag-badge--info'
+      : 'tag-badge tag-badge--muted';
   }
 }
