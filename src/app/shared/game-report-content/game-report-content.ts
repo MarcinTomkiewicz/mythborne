@@ -47,6 +47,17 @@ export class GameReportContent {
     return value ? new Date(value).toLocaleString() : 'n/a';
   }
 
+  toItemSourceKindLabel(value: string): string {
+    return value === 'reward_drop' ? 'Reward drop' : value;
+  }
+
+  itemReferenceTrackKey(
+    index: number,
+    item: GameReportItemReference | PublicGameReportItemReference,
+  ): string {
+    return `${item.sourceKind}-${item.displayName}-${item.sortOrder}-${index}`;
+  }
+
   hasCombatStats(participant: GameReportCombatParticipant): boolean {
     return (
       participant.maxHealth !== null ||

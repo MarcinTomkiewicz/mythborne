@@ -35,6 +35,7 @@ export interface GameReportItemReference {
   baseId: string | null;
   prefixAffixId: string | null;
   suffixAffixId: string | null;
+  displayDetails: string[];
   sortOrder: number;
 }
 
@@ -42,6 +43,7 @@ export interface PublicGameReportItemReference {
   sourceKind: GameReportItemSourceKind;
   displayName: string;
   qualityKey: string | null;
+  displayDetails: string[];
   sortOrder: number;
 }
 

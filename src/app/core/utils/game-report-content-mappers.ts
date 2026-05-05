@@ -49,6 +49,13 @@ export function parseGameReportItemReferencesJson(value: Json): GameReportItemRe
       baseId: optionalJsonString(readJsonField(record, 'baseId')),
       prefixAffixId: optionalJsonString(readJsonField(record, 'prefixAffixId')),
       suffixAffixId: optionalJsonString(readJsonField(record, 'suffixAffixId')),
+      displayDetails: safeItemReferenceDisplayDetails({
+        qualityKey: optionalJsonString(readJsonField(record, 'qualityKey')),
+        displayDetails: optionalJsonStringArray(
+          readJsonField(record, 'displayDetails'),
+          'displayDetails',
+        ),
+      }),
       sortOrder: optionalJsonNumber(readJsonField(record, 'sortOrder')) ?? 0,
     };
   }).sort((left, right) => left.sortOrder - right.sortOrder);
@@ -61,6 +68,7 @@ export function parsePublicGameReportItemReferencesJson(
     sourceKind: reference.sourceKind,
     displayName: reference.displayName,
     qualityKey: reference.qualityKey,
+    displayDetails: reference.displayDetails,
     sortOrder: reference.sortOrder,
   }));
 }
@@ -88,6 +96,32 @@ export function mapGameReportItemReferenceRow(
     baseId: row.base_id,
     prefixAffixId: row.prefix_affix_id,
     suffixAffixId: row.suffix_affix_id,
+    displayDetails: safeItemReferenceDisplayDetails({
+      qualityKey: row.quality_key,
+      displayDetails: [],
+    }),
     sortOrder: row.sort_order,
   };
+}
+
+function safeItemReferenceDisplayDetails(input: {
+  qualityKey: string | null;
+  displayDetails: string[];
+}): string[] {
+  return input.displayDetails.length > 0
+    ? input.displayDetails
+    : input.qualityKey ? [`Quality ${input.qualityKey}`] : [];
+}
+
+function optionalJsonStringArray(
+  value: Json | undefined,
+  fieldName: string,
+): string[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  return requiredJsonArray(value, fieldName).map((entry, index) =>
+    requiredJsonString(entry, `${fieldName}[${index}]`),
+  );
 }

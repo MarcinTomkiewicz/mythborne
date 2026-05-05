@@ -5402,6 +5402,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 
 ## Task P7 — Reward/drop item reference display
 
+**Status:** Done / confirmed 2026-05-05.
+
 **Goal:** Render public showcase drop item references in reports.
 
 **Scope:**
@@ -5425,6 +5427,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 - Missing item row falls back gracefully.
 - Used weapons/equipment are not automatically rendered as public item cards.
 - Build passes.
+
+**Implementation note:** P7 accepted on 2026-05-05. Private and public report item references now render through shared `GameReportContent` using safe report `displayName`, `qualityKey` and optional RPC-provided `displayDetails`. Angular does not build player-facing copy from raw `baseId`, `prefixAffixId` or `suffixAffixId`; if safe component labels are absent, the fallback is only `displayName` plus safe `Quality ...`. Public report item references still omit `sourceItemId`, `baseId`, `prefixAffixId` and `suffixAffixId`. No live item fetch, report write path, notification write or equipment-source rendering was added. Verification passed with `npx tsc --noEmit`, focused report specs with 35 SUCCESS, static greps and `npm run build` with known warnings. Manual smoke remains pending until representative report item-reference data exists.
 
 ---
 

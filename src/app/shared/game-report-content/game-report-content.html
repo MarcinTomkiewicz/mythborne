@@ -27,12 +27,16 @@
   </div>
 
   <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
-    @for (item of report().itemReferences; track item.displayName + item.sortOrder) {
+    @for (item of report().itemReferences; track itemReferenceTrackKey($index, item)) {
       <div class="mg-card flex-col gap-xs p-md">
         <strong class="heading-color">{{ item.displayName }}</strong>
-        <span class="muted-text">{{ item.sourceKind }}</span>
-        @if (item.qualityKey) {
-          <span class="tag-badge tag-badge--info">{{ item.qualityKey }}</span>
+        <span class="muted-text">{{ toItemSourceKindLabel(item.sourceKind) }}</span>
+        @if (item.displayDetails.length > 0) {
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            @for (detail of item.displayDetails; track detail) {
+              <span class="tag-badge tag-badge--muted">{{ detail }}</span>
+            }
+          </div>
         }
       </div>
     } @empty {

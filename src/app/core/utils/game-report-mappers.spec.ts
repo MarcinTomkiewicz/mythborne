@@ -59,6 +59,11 @@ describe('game report mappers', () => {
         sourceItemId: 'item-1',
         displayName: 'Fine Bronze Blade',
         qualityKey: 'fine',
+        displayDetails: [
+          'Fine quality',
+          'Bronze blade',
+          'Dawn suffix',
+        ],
       }),
     ]);
     expect(detail.combatSection).toEqual(jasmine.objectContaining({
@@ -169,11 +174,17 @@ describe('game report mappers', () => {
         sourceItemId: jasmine.any(String),
       }));
     expect(Object.keys(report.itemReferences[0]).sort()).toEqual([
+      'displayDetails',
       'displayName',
       'qualityKey',
       'sortOrder',
       'sourceKind',
     ].sort());
+    expect(report.itemReferences[0].displayDetails).toEqual([
+      'Fine quality',
+      'Bronze blade',
+      'Dawn suffix',
+    ]);
     expect(report.itemReferences[0] as unknown as Record<string, unknown>)
       .not.toEqual(jasmine.objectContaining({
         sourceItemId: jasmine.any(String),
@@ -181,6 +192,30 @@ describe('game report mappers', () => {
         prefixAffixId: jasmine.any(String),
         suffixAffixId: jasmine.any(String),
       }));
+    expect(report.itemReferences[0].displayDetails.join(' ')).not.toContain('base-1');
+    expect(report.itemReferences[0].displayDetails.join(' ')).not.toContain('suffix-1');
+  });
+
+  it('does not build item display details from raw component ids when safe details are absent', () => {
+    const detail = mapPrivateGameReportDetail(privateDetailRow({
+      item_references_json: [
+        {
+          sourceKind: 'reward_drop',
+          sourceItemId: 'item-1',
+          displayName: 'Fine Bronze Blade',
+          qualityKey: 'fine',
+          baseId: 'base-1',
+          prefixAffixId: 'prefix-1',
+          suffixAffixId: 'suffix-1',
+          sortOrder: 10,
+        },
+      ],
+    }));
+
+    expect(detail.itemReferences[0].displayDetails).toEqual(['Quality fine']);
+    expect(detail.itemReferences[0].displayDetails.join(' ')).not.toContain('base-1');
+    expect(detail.itemReferences[0].displayDetails.join(' ')).not.toContain('prefix-1');
+    expect(detail.itemReferences[0].displayDetails.join(' ')).not.toContain('suffix-1');
   });
 
   it('fails on snake_case participant payload instead of masking the JSON contract', () => {
@@ -281,6 +316,7 @@ describe('game report mappers', () => {
       baseId: 'base-1',
       prefixAffixId: null,
       suffixAffixId: 'suffix-1',
+      displayDetails: ['Quality fine'],
       sortOrder: 10,
     });
   });
@@ -364,6 +400,11 @@ function itemReferencesJson(): Json {
       baseId: 'base-1',
       prefixAffixId: null,
       suffixAffixId: 'suffix-1',
+      displayDetails: [
+        'Fine quality',
+        'Bronze blade',
+        'Dawn suffix',
+      ],
       sortOrder: 10,
     },
   ];

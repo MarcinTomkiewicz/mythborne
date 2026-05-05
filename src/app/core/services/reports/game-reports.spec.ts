@@ -159,6 +159,7 @@ describe('GameReports', () => {
           sourceKind: 'reward_drop',
           displayName: 'Fine Bronze Blade',
           qualityKey: 'fine',
+          displayDetails: ['Quality fine'],
           sortOrder: 10,
         },
       ],
