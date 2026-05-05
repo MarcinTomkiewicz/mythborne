@@ -32,6 +32,7 @@ export const RPC = {
   can_read_full_moderation_history: 'can_read_full_moderation_history',
   can_search_moderation_targets: 'can_search_moderation_targets',
   create_moderation_action: 'create_moderation_action',
+  attach_reward_drop_item_to_game_report: 'attach_reward_drop_item_to_game_report',
   create_game_report_from_combat_result: 'create_game_report_from_combat_result',
   get_full_hero_moderation_history: 'get_full_hero_moderation_history',
   get_full_user_moderation_history: 'get_full_user_moderation_history',

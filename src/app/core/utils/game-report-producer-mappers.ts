@@ -1,8 +1,12 @@
 import {
+  AttachedRewardDropItemReference,
+  AttachRewardDropItemToReportInput,
   CreateCombatGameReportInput,
   CreatedCombatGameReport,
 } from '../domain/reports/game-report.model';
 import {
+  AttachRewardDropItemToGameReportRpcArgs,
+  AttachRewardDropItemToGameReportRpcRow,
   CreateGameReportFromCombatResultRpcArgs,
   CreateGameReportFromCombatResultRpcRow,
 } from '../types/game-report-rpc.types';
@@ -49,12 +53,80 @@ export function mapCreatedCombatGameReport(
   };
 }
 
-function requiredText(value: string | null | undefined, field: string): string {
+export function toAttachRewardDropItemToGameReportRpcArgs(
+  input: AttachRewardDropItemToReportInput,
+): AttachRewardDropItemToGameReportRpcArgs {
+  const args: AttachRewardDropItemToGameReportRpcArgs = {
+    p_report_id: requiredText(
+      input.reportId,
+      'reportId',
+      'game report item attachment',
+    ),
+    p_item_id: requiredText(
+      input.itemId,
+      'itemId',
+      'game report item attachment',
+    ),
+  };
+
+  const sortOrder = optionalInteger(input.sortOrder, 'sortOrder');
+  const reason = trimText(input.reason);
+  const requestId = trimText(input.requestId);
+
+  if (sortOrder !== null) {
+    args.p_sort_order = sortOrder;
+  }
+
+  if (reason) {
+    args.p_reason = reason;
+  }
+
+  if (requestId) {
+    args.p_request_id = requestId;
+  }
+
+  return args;
+}
+
+export function mapAttachedRewardDropItemReference(
+  row: AttachRewardDropItemToGameReportRpcRow,
+): AttachedRewardDropItemReference {
+  return {
+    reportId: requiredText(row.report_id, 'reportId'),
+    itemReferenceId: requiredText(row.item_reference_id, 'itemReferenceId'),
+    sourceItemId: requiredText(row.source_item_id, 'sourceItemId'),
+    displayName: requiredText(row.display_name_fallback, 'displayName'),
+    qualityKey: requiredText(row.quality_key, 'qualityKey'),
+    sortOrder: row.sort_order,
+    auditLogId: requiredText(row.audit_log_id, 'auditLogId'),
+  };
+}
+
+function requiredText(
+  value: string | null | undefined,
+  field: string,
+  operation = 'combat game report creation',
+): string {
   const normalized = trimText(value);
 
   if (!normalized) {
-    throw new Error(`${field} is required for combat game report creation.`);
+    throw new Error(`${field} is required for ${operation}.`);
   }
 
   return normalized;
+}
+
+function optionalInteger(
+  value: number | null | undefined,
+  field: string,
+): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (!Number.isInteger(value)) {
+    throw new Error(`${field} must be an integer for game report item attachment.`);
+  }
+
+  return value;
 }

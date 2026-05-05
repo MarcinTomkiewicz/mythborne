@@ -5434,6 +5434,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 
 ## Task P8 — Attach reward drops to reports through approved producer path
 
+**Status:** Done / confirmed 2026-05-05.
+
 **Goal:** Use DB helper to attach dropped/generated reward items to reports from approved gameplay producers.
 
 **Scope:**
@@ -5451,6 +5453,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 - Duplicate report/item references are prevented by DB.
 - No direct report item reference writes from Angular.
 - Missing producer workflow is reported explicitly instead of faked.
+
+**Implementation note:** P8 accepted on 2026-05-05. Frontend now exposes a typed, low-level `GameReportProducers.attachRewardDropItemToReport(...)` boundary for `attach_reward_drop_item_to_game_report(...)`, using generated RPC args/return aliases and the existing producer mapper pattern. The call goes through `Backend.rpc` only, leaves item-reference idempotence to DB/RPC, maps a small result model for approved producers, and does not add UI hooks, arbitrary Angular calls, direct `game_report_item_references` writes, notification writes or contextual gameplay producer fakes. Verification passed with `npx tsc --noEmit`, focused report specs with 43 SUCCESS, static greps and `npm run build` with known warnings. Manual smoke is not applicable until an approved producer workflow supplies real `reportId` and `itemId` data. Follow-up: clarify the attach reward drop error-message context and confirm whether `sortOrder` should be non-negative before the next touch.
 
 ---
 

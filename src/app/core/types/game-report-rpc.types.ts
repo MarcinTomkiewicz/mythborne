@@ -16,6 +16,10 @@ export type CreateGameReportFromCombatResultRpcArgs =
   Database['public']['Functions']['create_game_report_from_combat_result']['Args'];
 export type CreateGameReportFromCombatResultRpcRow =
   Database['public']['Functions']['create_game_report_from_combat_result']['Returns'][number];
+export type AttachRewardDropItemToGameReportRpcArgs =
+  Database['public']['Functions']['attach_reward_drop_item_to_game_report']['Args'];
+export type AttachRewardDropItemToGameReportRpcRow =
+  Database['public']['Functions']['attach_reward_drop_item_to_game_report']['Returns'][number];
 export type GetHeroGameReportsRpcRow =
   Database['public']['Functions']['get_hero_game_reports']['Returns'][number];
 export type GetHeroGameReportsRpcArgs =

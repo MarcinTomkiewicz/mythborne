@@ -157,6 +157,24 @@ export interface CreatedCombatGameReport {
   auditLogId: string;
 }
 
+export interface AttachRewardDropItemToReportInput {
+  reportId: string;
+  itemId: string;
+  sortOrder?: number | null;
+  reason?: string | null;
+  requestId?: string | null;
+}
+
+export interface AttachedRewardDropItemReference {
+  reportId: string;
+  itemReferenceId: string;
+  sourceItemId: string;
+  displayName: string;
+  qualityKey: string;
+  sortOrder: number;
+  auditLogId: string;
+}
+
 export interface PrivateGameReportDetail extends Omit<
   PrivateGameReportListItem,
   'itemReferencesCount'
