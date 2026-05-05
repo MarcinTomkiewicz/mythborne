@@ -78,6 +78,11 @@ const appShellRoutes: Routes = [
 
 export const routes: Routes = [
   {
+    path: 'report/:publicToken',
+    loadComponent: () =>
+      import('./public/pages/report/public-report-page').then((m) => m.PublicReportPage),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./layout/components/app-shell/app-shell').then((m) => m.AppShell),

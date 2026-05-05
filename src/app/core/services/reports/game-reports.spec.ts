@@ -5,6 +5,7 @@ import {
   DeleteGameReportForHeroRpcRow,
   GetHeroGameReportDetailRpcRow,
   GetHeroGameReportsRpcRow,
+  GetPublicGameReportByTokenRpcRow,
   MarkGameReportReadRpcReturn,
 } from '../../types/game-report-rpc.types';
 import { Backend } from '../backend/backend';
@@ -138,6 +139,34 @@ describe('GameReports', () => {
     });
   });
 
+  it('loads public reports by token without active hero context or direct table reads', async () => {
+    backend.rpc.and.returnValue(of([publicRow()]));
+
+    const report = await firstValueFrom(
+      service.getPublicReportByToken('public-token-1'),
+    );
+
+    expect(activeHero.requireActiveHero).not.toHaveBeenCalled();
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_public_game_report_by_token,
+      { p_public_token: 'public-token-1' },
+    );
+    expect(report).toEqual(jasmine.objectContaining({
+      publicToken: 'public-token-1',
+      reportTypeLabel: 'Combat',
+      itemReferences: [
+        {
+          sourceKind: 'reward_drop',
+          displayName: 'Fine Bronze Blade',
+          qualityKey: 'fine',
+          sortOrder: 10,
+        },
+      ],
+    }));
+    expect(Object.keys(report).sort()).not.toContain('reportId');
+    expect(backend.getAll).not.toHaveBeenCalled();
+  });
+
   it('removes active hero report access through delete_game_report_for_hero', async () => {
     backend.rpc.and.returnValue(of([deleteRow()]));
 
@@ -237,6 +266,24 @@ function detailRow(): GetHeroGameReportDetailRpcRow {
       ],
     },
   } as unknown as GetHeroGameReportDetailRpcRow;
+}
+
+function publicRow(): GetPublicGameReportByTokenRpcRow {
+  const detail = detailRow();
+
+  return {
+    combat_section_json: detail.combat_section_json,
+    created_at: detail.created_at,
+    item_references_json: detail.item_references_json,
+    participants_json: detail.participants_json,
+    public_token: detail.public_token,
+    report_type_description: detail.report_type_description,
+    report_type_key: detail.report_type_key,
+    report_type_label: detail.report_type_label,
+    source_entity_type: detail.source_entity_type,
+    summary: detail.summary,
+    title: detail.title,
+  } as unknown as GetPublicGameReportByTokenRpcRow;
 }
 
 function markReadRow(): MarkGameReportReadRpcReturn {

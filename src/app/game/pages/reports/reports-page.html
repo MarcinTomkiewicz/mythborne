@@ -145,7 +145,12 @@
             >
               Open
             </a>
-            <span class="tag-badge tag-badge--muted">Public route pending</span>
+            <a
+              class="tag-badge tag-badge--muted"
+              [routerLink]="['/report', report.publicToken]"
+            >
+              Public
+            </a>
             <p-button
               label="Copy token"
               severity="secondary"

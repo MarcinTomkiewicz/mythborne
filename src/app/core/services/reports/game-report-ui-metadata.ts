@@ -1,6 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import {
+  PUBLIC_REPORT_SECTION_METADATA_KEYS,
+  PUBLIC_REPORT_SECTION_METADATA_NAMESPACE,
   REPORT_DETAIL_SECTION_METADATA_KEYS,
   REPORT_DETAIL_SECTION_METADATA_NAMESPACE,
   REPORTS_CENTER_SECTION_METADATA_KEYS,
@@ -30,6 +32,13 @@ export class GameReportUiMetadataService {
     return this.getEntries(
       REPORT_DETAIL_SECTION_METADATA_NAMESPACE,
       REPORT_DETAIL_SECTION_METADATA_KEYS,
+    );
+  }
+
+  getPublicReportEntries(): Observable<UiMetadataEntryReadModel[]> {
+    return this.getEntries(
+      PUBLIC_REPORT_SECTION_METADATA_NAMESPACE,
+      PUBLIC_REPORT_SECTION_METADATA_KEYS,
     );
   }
 

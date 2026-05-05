@@ -84,7 +84,7 @@ describe('ReportsPageState', () => {
     });
   });
 
-  it('exposes public share token without assuming the future public route exists', () => {
+  it('exposes public share token for the public report route', () => {
     expect(state.publicShareToken(report())).toBe('public-token-1');
   });
 

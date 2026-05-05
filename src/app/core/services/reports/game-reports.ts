@@ -7,6 +7,7 @@ import {
   MarkGameReportReadResult,
   PrivateGameReportDetail,
   PrivateGameReportListItem,
+  PublicGameReport,
 } from '../../domain/reports/game-report.model';
 import {
   DeleteGameReportForHeroRpcArgs,
@@ -17,12 +18,15 @@ import {
   GetHeroGameReportsRpcRow,
   GetHeroGameReportUnreadCountRpcArgs,
   GetHeroGameReportUnreadCountRpcReturn,
+  GetPublicGameReportByTokenRpcArgs,
+  GetPublicGameReportByTokenRpcRow,
   MarkGameReportReadRpcArgs,
   MarkGameReportReadRpcReturn,
 } from '../../types/game-report-rpc.types';
 import {
   mapPrivateGameReportDetail,
   mapPrivateGameReportListItem,
+  mapPublicGameReport,
 } from '../../utils/game-report-mappers';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
@@ -91,6 +95,19 @@ export class GameReports {
     );
   }
 
+  getPublicReportByToken(publicToken: string): Observable<PublicGameReport> {
+    const args: GetPublicGameReportByTokenRpcArgs = {
+      p_public_token: publicToken,
+    };
+
+    return this.backend.rpc<GetPublicGameReportByTokenRpcRow[]>(
+      RPC.get_public_game_report_by_token,
+      args,
+    ).pipe(
+      map((rows) => mapPublicGameReport(firstPublicGameReportRow(rows))),
+    );
+  }
+
   markActiveHeroReportRead(reportId: string): Observable<MarkGameReportReadResult> {
     return this.activeHero.requireActiveHero().pipe(
       switchMap((context) => {
@@ -146,6 +163,18 @@ function firstDeleteGameReportRow(
 
   if (!row) {
     throw new Error('delete_game_report_for_hero returned no result.');
+  }
+
+  return row;
+}
+
+function firstPublicGameReportRow(
+  rows: readonly GetPublicGameReportByTokenRpcRow[],
+): GetPublicGameReportByTokenRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error('get_public_game_report_by_token returned no result.');
   }
 
   return row;

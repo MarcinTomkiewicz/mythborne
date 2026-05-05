@@ -2,12 +2,13 @@ import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { GameReportContent } from '../../../shared/game-report-content/game-report-content';
 import { ReportDetailPageState } from './report-detail-page.state';
 
 @Component({
   selector: 'app-report-detail-page',
   standalone: true,
-  imports: [ButtonModule, LoadingOverlay, RouterLink],
+  imports: [ButtonModule, GameReportContent, LoadingOverlay, RouterLink],
   providers: [ReportDetailPageState],
   templateUrl: './report-detail-page.html',
 })

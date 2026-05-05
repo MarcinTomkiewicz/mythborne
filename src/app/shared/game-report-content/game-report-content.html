@@ -1,0 +1,74 @@
+<section class="mg-card flex-col gap-md p-lg w-100">
+  <div class="flex-col gap-xs">
+    <p class="card-legend mb-0">{{ participantsTitle() }}</p>
+    <p class="muted-text mb-0">{{ participantsText() }}</p>
+  </div>
+
+  <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+    @for (participant of report().participants; track participant.displayName + participant.sortOrder) {
+      <div class="mg-card flex-col gap-xs p-md">
+        <strong class="heading-color">{{ participant.displayName }}</strong>
+        <span class="muted-text">{{ participant.participantRole }}</span>
+        @if (participant.sideLabel) {
+          <span class="tag-badge tag-badge--muted">{{ participant.sideLabel }}</span>
+        }
+        @if (participant.levelSnapshot !== null) {
+          <span class="muted-text">Level {{ participant.levelSnapshot }}</span>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<section class="mg-card flex-col gap-md p-lg w-100">
+  <div class="flex-col gap-xs">
+    <p class="card-legend mb-0">{{ itemReferencesTitle() }}</p>
+    <p class="muted-text mb-0">{{ itemReferencesText() }}</p>
+  </div>
+
+  <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+    @for (item of report().itemReferences; track item.displayName + item.sortOrder) {
+      <div class="mg-card flex-col gap-xs p-md">
+        <strong class="heading-color">{{ item.displayName }}</strong>
+        <span class="muted-text">{{ item.sourceKind }}</span>
+        @if (item.qualityKey) {
+          <span class="tag-badge tag-badge--info">{{ item.qualityKey }}</span>
+        }
+      </div>
+    } @empty {
+      <p class="mb-0 muted-text">No item references.</p>
+    }
+  </div>
+</section>
+
+<section class="mg-card flex-col gap-md p-lg w-100">
+  <div class="flex-col gap-xs">
+    <p class="card-legend mb-0">{{ combatSectionTitle() }}</p>
+    <p class="muted-text mb-0">{{ combatSectionText() }}</p>
+  </div>
+
+  @if (report().combatSection; as combat) {
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <span class="tag-badge tag-badge--info">{{ combat.outcome }}</span>
+      @if (combat.turnsCompleted !== null) {
+        <span class="tag-badge tag-badge--muted">{{ combat.turnsCompleted }} turns</span>
+      }
+    </div>
+
+    <div class="flex-col gap-sm">
+      @for (attack of combat.attacks; track attack.turnNumber + '-' + attack.attackOrder) {
+        <div class="mg-card flex-col gap-xs p-md">
+          <strong class="heading-color">
+            Turn {{ attack.turnNumber }} / {{ attack.sourceLabel }}
+          </strong>
+          <span class="muted-text">{{ attack.displayText }}</span>
+          <span class="muted-text">
+            Damage {{ attack.finalDamage }} | Critical {{ attack.critical ? 'yes' : 'no' }}
+          </span>
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="mb-0 muted-text">No combat section for this report.</p>
+  }
+</section>

@@ -5314,6 +5314,8 @@ This epic must provide enough prototype UI to smoke-test report creation, listin
 - Public and private report content use shared rendering where practical.
 - Build passes.
 
+**Implementation note:** P4 accepted on 2026-05-05. `/report/:publicToken` is registered in root routes outside the game shell, with SSR configured for the dynamic public token route. Public report loading uses `get_public_game_report_by_token(p_public_token)` through `GameReports`, generated RPC args/returns and the public-safe report mapper; it does not require active hero context or direct report table reads. Missing/deleted/no-access tokens show a safe not-found state. Public/private report content shares the read-only `GameReportContent` renderer, while public view uses `public_report_section` metadata and omits private ids, read/access state, account/user ids, staff/audit/anti-abuse data and internal combat ids. Verification passed with `npx tsc --noEmit`, focused report specs with 25 SUCCESS, static greps and `npm run build` with known warnings. Manual smoke remains pending until representative report producer data exists.
+
 ---
 
 ## Task P5 — Combat report renderer

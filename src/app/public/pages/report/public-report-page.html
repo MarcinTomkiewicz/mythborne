@@ -1,0 +1,78 @@
+<div class="flex-col min-h-full">
+  <header class="mg-card flex-row-between-center flex-col-sm gap-md py-md px-lg">
+    <h1 class="mg-section__title mg-section__title--sm mg-section__title--no-margin">
+      Mythsworn
+    </h1>
+    <a routerLink="/public" class="tag-badge tag-badge--muted">Home</a>
+  </header>
+
+  <main class="mg-container py-lg w-100">
+    <app-loading-overlay
+      [visible]="page.isLoading() && !page.isNotFound()"
+      label="Loading report..."
+      description="Loading the public game report."
+    />
+
+    @if (page.isNotFound()) {
+      <section class="mg-card flex-col gap-sm p-lg w-100">
+        <p class="card-legend mb-0">
+          {{ page.uiMetadata.sectionTitle(page.uiMetadata.section.notFound) }}
+        </p>
+        <p class="mb-0 muted-text">
+          {{ page.uiMetadata.sectionText(page.uiMetadata.section.notFound) }}
+        </p>
+      </section>
+    } @else if (page.report(); as report) {
+      <div class="flex-col gap-xl w-100">
+        <section class="mg-card p-lg w-100">
+          <div class="flex-row-between-center flex-col-sm gap-md">
+            <div class="flex-col gap-xs">
+              <p class="card-legend mb-0">{{ report.reportTypeLabel }}</p>
+              <h2 class="mg-section__title mg-section__title--sm mb-0">{{ report.title }}</h2>
+              @if (report.summary) {
+                <p class="muted-text mb-0">{{ report.summary }}</p>
+              }
+            </div>
+
+            <div class="flex-row-start-center flex-wrap gap-sm">
+              <span class="tag-badge tag-badge--info">
+                Created {{ page.toDateTimeLabel(report.createdAt) }}
+              </span>
+              <span class="tag-badge tag-badge--muted">{{ report.sourceEntityType }}</span>
+            </div>
+          </div>
+        </section>
+
+        @if (page.uiMetadata.missingGaps().length > 0) {
+          <section class="mg-card flex-col gap-sm p-lg w-100">
+            <strong class="heading-color">Missing UI metadata</strong>
+            <div class="flex-row-start-center flex-wrap gap-sm">
+              @for (gap of page.uiMetadata.missingGaps(); track gap) {
+                <span class="tag-badge tag-badge--warn">{{ gap }}</span>
+              }
+            </div>
+          </section>
+        }
+
+        <section class="mg-card flex-col gap-md p-lg w-100">
+          <p class="card-legend mb-0">
+            {{ page.uiMetadata.sectionTitle(page.uiMetadata.section.pageHeader) }}
+          </p>
+          <p class="muted-text mb-0">
+            {{ page.uiMetadata.sectionText(page.uiMetadata.section.pageHeader) }}
+          </p>
+        </section>
+
+        <app-game-report-content
+          [report]="report"
+          [participantsTitle]="page.uiMetadata.sectionTitle(page.uiMetadata.section.participants)"
+          [participantsText]="page.uiMetadata.sectionText(page.uiMetadata.section.participants)"
+          [itemReferencesTitle]="page.uiMetadata.sectionTitle(page.uiMetadata.section.itemReferences)"
+          [itemReferencesText]="page.uiMetadata.sectionText(page.uiMetadata.section.itemReferences)"
+          [combatSectionTitle]="page.uiMetadata.sectionTitle(page.uiMetadata.section.combatSection)"
+          [combatSectionText]="page.uiMetadata.sectionText(page.uiMetadata.section.combatSection)"
+        />
+      </div>
+    }
+  </main>
+</div>

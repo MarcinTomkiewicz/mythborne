@@ -30,6 +30,8 @@ export type MarkGameReportReadRpcReturn =
   Database['public']['Functions']['mark_game_report_read']['Returns'];
 export type GetPublicGameReportByTokenRpcRow =
   Database['public']['Functions']['get_public_game_report_by_token']['Returns'][number];
+export type GetPublicGameReportByTokenRpcArgs =
+  Database['public']['Functions']['get_public_game_report_by_token']['Args'];
 export type DeleteGameReportForHeroRpcArgs =
   Database['public']['Functions']['delete_game_report_for_hero']['Args'];
 export type DeleteGameReportForHeroRpcRow =
