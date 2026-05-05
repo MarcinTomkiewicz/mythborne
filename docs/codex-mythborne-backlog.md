@@ -6321,6 +6321,8 @@ PvP Foundation is not:
 - PvP screens can use DB-backed labels/help text where available.
 - Missing metadata does not become a gameplay fallback.
 
+**Implementation note:** R4 accepted on 2026-05-05. Added the `PvpUiMetadata` service and PvP metadata namespace constants for DB-backed explainability copy through `get_ui_metadata_entries(...)`. Public service methods return shared `UiMetadataEntryReadModel` values only; raw generated RPC rows are confined to the private RPC helper. No `p_keys` gameplay fallback contract, direct `ui_metadata_entries` reads/writes, direct PvP table access, UI or routes were added.
+
 ---
 
 ## Task R5 — Vicinity page route
