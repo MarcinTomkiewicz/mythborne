@@ -1,6 +1,6 @@
 # Mythsworn — Current Decisions Log
 
-Updated: 2026-05-05
+Updated: 2026-05-06
 
 Use this file for recent design, domain, database and implementation decisions that should override older assumptions.
 
@@ -14,6 +14,50 @@ If something conflicts, prefer:
 
 This file is not a Codex status tracker. Do not mark Codex tasks as completed here unless the user explicitly asks for documentation/status updates after accepting the work.
 
+
+
+## Epic X — Onboarding / Start Flow Completion Decisions — 2026-05-06
+
+Epic X covers the canonical player entry flow from server selection to active hero gameplay entry. It is not a tutorial epic and it must not turn Angular into the authority for creating gameplay state.
+
+### Entry and routing
+
+- Player entry starts from server selection.
+- Server availability for new character creation must account for whether the selected standard server can still provide a free starting estate address in district A.
+- If the selected standard server has no hero for the current user, the user enters hero creation.
+- If the selected server has an existing hero for the current user, the user enters the game dashboard/game shell by default.
+- After hero creation, the player is already inside the game and is routed by default to stat allocation.
+- The initial stat allocation screen is not a mandatory tutorial/wizard lock. The player may leave it and return later.
+- On later entries, an existing hero is routed to the dashboard/game shell by default, not back to stat allocation.
+
+### Sandbox and multi-hero behavior
+
+- Sandbox/test servers may allow privileged users such as staff/testers to have multiple heroes.
+- For sandbox/test multi-hero contexts, the default active hero is the earliest created hero, treated as the likely main/default test hero.
+- The UI must allow switching to another sandbox/test hero.
+- A combined server-and-hero selector is acceptable, and a server-first then hero selector is also acceptable, as long as the selected server -> active hero semantics stay explicit.
+- Users with access to multiple servers or sandbox/test heroes must be able to switch active context without logging out.
+
+### Hero creation semantics
+
+- Hero creation must be one coherent domain/DB-RPC workflow, not a series of direct frontend table writes.
+- Hero names are unique per server. The same name may exist on different servers.
+- Origin is selected once during hero creation and immediately affects hero identity and bonuses.
+- Origin should not be changed after creation except through a future explicit admin/correction workflow if one is ever designed.
+- Origin screen/content must be admin-configurable, including descriptions, lore and bonus presentation. Angular must not hardcode final origin content as the long-term source of truth.
+- New heroes start with 1000 Character Points.
+- Starting Character Points do not have to be spent immediately.
+- Every new hero must receive an estate during creation. A hero without an estate after creation is an integrity error.
+- The starting estate address is randomly selected from free addresses in district A.
+- Starting estate addresses must not be assigned sequentially as A1, A2, A3, etc.
+- The player does not choose or preview the exact starting address before hero creation.
+
+### Source-of-truth boundary
+
+- All entry flow logic must use selected server -> active hero and must not assume `hero.id === auth.uid()`.
+- The DB/RPC contract for hero creation must exist before frontend implementation consumes the flow.
+- Codex must not implement Epic X by direct-writing hero, origin, Character Points, estate, resource, audit or related onboarding tables from Angular.
+- Preparing a DB/RPC handoff for the migrator and later frontend tasks for Codex are implementation consequences of these decisions, not open design questions.
 
 ## PvP Foundation Decisions — 2026-05-03 late
 
@@ -703,6 +747,80 @@ Epic W should ensure or repair minimal working content rather than creating dupl
 Frontend copy touched by Epic W should prioritize Polish for player, tester and admin feedback. Error handling is part of the contract: missing resolver, missing reward, failed reward grant, failed item generation, skipped configuration or unavailable action must be communicated clearly instead of failing silently.
 
 ---
+
+
+## Luck Foundation Decisions — 2026-05-05
+
+Luck Foundation is a closed decision topic. It must not be reopened unless a migrator, Codex or Reviewer returns a real blocker.
+
+Luck is a global RNG/opportunity stat. It is not only an item-drop stat and it is not a guarantee of success or perfect rewards.
+
+### Core semantics
+
+- Luck affects helpful gameplay RNG surfaces unless a specific RNG surface is explicitly Luck-excluded through configuration/design.
+- Luck improves opportunities and odds; it must not make success deterministic.
+- `luckInfluence` is the canonical derived influence value used by formulas. It is not raw Luck and must not be treated as 1:1 with `luckValue`.
+- `trial_power` is the canonical effective trial strength concept.
+- Conceptually, `trial_power = testedStatValue + luckInfluence`.
+- Difficulty, district and pressure/caps consume `trial_power` through their own formulas/config; they are not part of `trial_power` itself.
+- `nothing` is not a separate RNG surface. It is the deterministic fallback when trial opportunity and encounter rolls do not produce an outcome.
+- Anti-abuse is not gameplay RNG and must not be affected by Luck.
+
+### Gameplay surfaces affected by Luck
+
+Luck Foundation covers, at minimum:
+
+- item/drop opportunity, value bucket, quality and affix chances;
+- reward amount and reward item-count ranges where DB reward contracts expose Luck-aware behavior;
+- trial opportunity;
+- trial manifestation;
+- trial power;
+- challenge auto-resolve success chance;
+- manual trial/minigame difficulty through `trial_power`, not by giving the frontend formula authority;
+- exploration encounter fallback / non-trial encounter chance;
+- combat RNG surfaces such as hit, evasion, critical chance and critical-damage context where the DB formula/config contract exposes them.
+
+### Item generation and rewards
+
+- The existing item generation model remains: value bucket, quality, base item, optional prefix, optional suffix and existing budget behavior.
+- Do not create a second item rarity system for Luck.
+- Do not add separate rarity flags for prefix/suffix/component combinations.
+- Item rarity/frequency continues to come from drachma value, bucket budget and item-generation rules.
+- Luck may increase the chance of a better opportunity, but a single roll can still produce an ordinary or awkward item.
+- Reward profiles remain the reward authority. Luck-aware reward amount/item-count behavior must come from DB/RPC/formula contracts, not Angular-side calculations.
+
+### Combat and manual gameplay boundary
+
+- Luck may influence combat RNG where configured, especially hit/evasion/critical surfaces.
+- Luck should not be turned into direct frontend-owned damage, HP or victory math.
+- Manual minigames and manual combat surfaces may show Luck contribution, but durable gameplay results must remain DB/RPC-owned.
+
+### DB/RPC and frontend authority
+
+- Luck formulas, caps, chances, reward ranges and item-generation effects are DB/RPC/formula-owned.
+- Angular may display DB/RPC preview/explainability outputs, but must not hardcode Luck curves, chance formulas, reward ranges or item-generation Luck effects.
+- If a needed Luck contract is missing, Codex must report a DB/RPC dependency rather than creating a frontend fallback formula.
+- Generated Supabase types must be regenerated after Luck-related DB/RPC migrations before frontend consumption.
+
+### Luck Lab boundary
+
+Luck Lab is a separate admin/balancer epic, not part of Luck Foundation.
+
+Luck Lab should provide visual preview/simulation tools such as sliders and comparisons for:
+
+- raw `luckValue`;
+- `luckInfluence`;
+- `testedStatValue`;
+- `trial_power`;
+- trial opportunity;
+- trial manifestation;
+- auto-resolve chance;
+- encounter fallback;
+- combat hit/evasion/critical/critical-damage context;
+- drop and reward/item-generation outcomes;
+- distribution over many rolls, not only one manual result.
+
+Luck cannot be meaningfully balanced through a few manual gameplay clicks; Luck Lab is required for real balancing/explainability.
 
 ## Formula Runtime Decisions — 2026-05-01
 

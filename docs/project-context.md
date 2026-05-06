@@ -1,6 +1,6 @@
 # Mythsworn — Project Context for Codex
 
-Updated: 2026-05-05
+Updated: 2026-05-06
 
 ## Purpose
 
@@ -342,6 +342,36 @@ Server staff permissions are server-scoped.
 
 ---
 
+
+## Epic X / Onboarding Start Flow Current Direction — 2026-05-06
+
+Epic X is the canonical entry flow from server selection to active hero gameplay entry. It is not a tutorial epic.
+
+Player entry starts from server selection. If the selected standard server has no hero for the current user, route to hero creation. If a hero exists on the selected server, route to the game dashboard/game shell by default.
+
+Server availability for new character creation must account for starting estate capacity in district A. A standard server that cannot provide a free starting district-A address is unavailable for new hero creation and should be presented as full/unavailable for that purpose.
+
+Sandbox/test servers may allow privileged users to have multiple heroes. In sandbox/test multi-hero contexts, default to the earliest created hero as the likely main/default test hero, but the UI must allow switching to another hero. A combined server-and-hero selector is acceptable if it preserves explicit selected server -> active hero semantics.
+
+Hero creation must be a single domain/DB-RPC workflow. Angular must not direct-write hero, origin, Character Points, estate, resource, audit or related onboarding tables.
+
+Hero creation rules:
+
+- hero name is unique per server;
+- origin is selected once during hero creation and immediately affects hero identity and bonuses;
+- origin screen/content is admin-configurable, including descriptions, lore and bonus presentation;
+- new heroes start with 1000 Character Points;
+- starting Character Points do not have to be spent immediately;
+- every new hero receives an estate during creation;
+- missing estate after hero creation is an integrity error;
+- starting estate address is randomly selected from free addresses in district A;
+- starting addresses must not be assigned sequentially as A1, A2, A3, etc.;
+- the player does not choose or preview the exact starting address before creation.
+
+After hero creation, the player is inside the game and is routed by default to stat allocation. This is a default first screen, not a mandatory wizard lock; the player can leave it and return later. On later entries with an existing hero, route to the dashboard/game shell by default.
+
+All Epic X implementation must preserve selected server -> active hero loading and must not assume `hero.id === auth.uid()`.
+
 ## Exploration / Trials Current Direction
 
 Exploration runtime tables are RLS-protected and readable by the owning hero/user through SELECT policies. Frontend read models may read owner-visible exploration state, but persistent mutations must go through PvE RPCs.
@@ -416,6 +446,32 @@ Exploration rewards must run through the real reward profile/assignment flow. It
 Epic W should ensure a minimal smoke content set: one Combat Trial, one Combat Encounter with XP, one Resource Encounter, one Buff Encounter, one Debuff Encounter and one Trial reward assignment that can generate an item. Reuse/fix existing definitions where possible instead of creating duplicates.
 
 ---
+
+
+## Luck Foundation Decision Scope — 2026-05-05
+
+Luck Foundation is a closed decision topic and must stay visible as its own project context area.
+
+Current direction:
+
+- Luck is a global RNG/opportunity stat, not only an item-drop stat.
+- Luck affects helpful gameplay RNG surfaces unless a specific surface is explicitly excluded by configuration/design.
+- Luck never guarantees success or perfect rewards.
+- `luckInfluence` is the formula-derived influence value and must not be treated as raw Luck or 1:1 with `luckValue`.
+- `trial_power` is the canonical effective trial strength concept and is conceptually `testedStatValue + luckInfluence`.
+- Difficulty, district and caps consume `trial_power`; they are not part of `trial_power` itself.
+- Luck applies to trial opportunity, trial manifestation, trial power, auto-resolve, manual trial difficulty through trial power, exploration encounter fallback, item/drop opportunity, reward/item generation and combat RNG surfaces where DB contracts expose them.
+- `nothing` is a deterministic fallback after other exploration outcome rolls fail, not a separate Luck surface.
+- Anti-abuse is not gameplay RNG and must not be affected by Luck.
+- Angular must not hardcode Luck formulas, chances, caps, reward ranges, drop curves or combat Luck math.
+- Frontend and admin tooling should consume DB/RPC/formula outputs and report missing contracts as DB dependencies.
+- Luck Lab is separate from Luck Foundation and belongs to its own admin/balancer epic with sliders, previews and distribution simulations.
+
+Current DB/RPC state summary:
+
+- `database-current.md` records Epic U Luck Foundation as DB-ready.
+- Core helpers/RPCs include effective Luck, Luck breakdown, Luck influence, `trial_power`, Luck-aware exploration/trial helpers, reward/item-generation Luck contracts and combat Luck preview.
+- Frontend work must regenerate Supabase types after Luck DB/RPC migrations before consuming those contracts.
 
 ## Estate / Buildings Current Direction
 

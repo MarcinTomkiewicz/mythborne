@@ -12,8 +12,8 @@ Order reflects implementation priority, not final business priority.
 
 ## Current Codex Backlog Position
 
-- UI/UX foundation accepted: UI-CORE-1 - Mythsworn UI style contract extraction, UI-CORE-2 - Global SCSS and shared pattern inventory, UI-CORE-3 - Local SCSS budget and style report checklist, and UI-CORE-11 - Prototype-to-production SCSS mapping.
-- Next UI/UX foundation task: UI-CORE-12 - PrimeNG/vendor wrapper modernization and lookup order.
+- UI/UX foundation accepted: UI-CORE-1 - Mythsworn UI style contract extraction, UI-CORE-2 - Global SCSS and shared pattern inventory, UI-CORE-3 - Local SCSS budget and style report checklist, UI-CORE-4 - Shared surface/card/badge/chip/page-header patterns, UI-CORE-5 - Icon placeholder and Game Icons mapping contract, UI-CORE-6 - Item popover shared component contract, UI-CORE-7 - Legacy Monster Hunt / `mg-*` SCSS modernization plan, UI-CORE-8 - Text utility semantics and `muted-text` cleanup, UI-CORE-9 - Surface/card/badge/chip production pattern expansion, UI-CORE-10 - Custom icons and brand asset registry, UI-CORE-11 - Prototype-to-production SCSS mapping, UI-CORE-12 - PrimeNG/vendor wrapper modernization and lookup order, UI-CORE-13 - Utility class audit, semantics and usage pass, UI-CORE-14 - PrimeNG table/paginator/list pattern decision, and UI-CORE-15 - Layout utilities and section pattern cleanup.
+- UI/UX foundation docs UI-CORE-1 through UI-CORE-15 are accepted. Next UI task will be selected after the pending combat hotfix.
 - Completed and confirmed: A1 - regenerate/update Supabase database types.
 - Current documentation sync applied: A2 - this TODO and `current-state-summary.md` were updated after A1 confirmation.
 - Completed and confirmed: B1 - audit old identity assumptions.

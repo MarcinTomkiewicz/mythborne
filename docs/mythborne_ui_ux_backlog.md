@@ -947,6 +947,8 @@ Wprowadzić egzekwowalny local SCSS budget i styling report checklist dla wszyst
 
 ## UI-CORE-4 — Shared surface/card/badge/chip/page-header patterns
 
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/shared-surface-patterns.md`.
+
 **Goal:**  
 Ujednolicić najczęstsze powierzchnie UI jako globalne klocki, które zastąpią lokalne kopiowanie prototypowego CSS.
 
@@ -1004,6 +1006,8 @@ Ujednolicić najczęstsze powierzchnie UI jako globalne klocki, które zastąpi�
 
 ## UI-CORE-5 — Icon placeholder and Game Icons mapping contract
 
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/icon-placeholder-mapping.md`.
+
 **Goal:**  
 Opisać docelowe użycie custom icons i placeholderów ikon, żeby Codex nie używał emoji ani losowych bibliotek.
 
@@ -1049,6 +1053,8 @@ Opisać docelowe użycie custom icons i placeholderów ikon, żeby Codex nie uż
 - not added intentionally:
 
 ## UI-CORE-6 — Item popover shared component contract
+
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/item-popover-contract.md`.
 
 **Goal:**  
 Zdefiniować jeden item popover pattern dla całej aplikacji: armory, auction, direct trade, reports, rewards.
@@ -1106,6 +1112,8 @@ Zdefiniować jeden item popover pattern dla całej aplikacji: armory, auction, d
 
 ## UI-CORE-7 — Legacy Monster Hunt / `mg-*` SCSS modernization plan
 
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/legacy-mg-scss-modernization-plan.md`.
+
 **Goal:**  
 Ustalić, co zostaje jako compatibility layer, co dostaje Mythsworn alias, a co wymaga refaktoru.
 
@@ -1152,6 +1160,8 @@ Ustalić, co zostaje jako compatibility layer, co dostaje Mythsworn alias, a co 
 
 ## UI-CORE-8 — Text utility semantics and `muted-text` cleanup
 
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/text-utility-semantics.md`.
+
 **Goal:**  
 Ograniczyć nadużycie `muted-text` i status text, nie usuwając przydatnych utilities.
 
@@ -1192,6 +1202,8 @@ Ograniczyć nadużycie `muted-text` i status text, nie usuwając przydatnych uti
 - why kept:
 
 ## UI-CORE-9 — Surface/card/badge/chip production pattern expansion
+
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/surface-badge-pattern-expansion.md`.
 
 **Goal:**  
 Rozszerzyć globalne surface/badge patterns do potrzeb zaakceptowanych prototypów.
@@ -1237,6 +1249,8 @@ Rozszerzyć globalne surface/badge patterns do potrzeb zaakceptowanych prototyp�
 - local SCSS avoided:
 
 ## UI-CORE-10 — Custom icons and brand asset registry
+
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/icon-brand-registry.md`.
 
 **Goal:**  
 Ujednolicić custom icons i brand assets.
@@ -1323,6 +1337,8 @@ Stworzyć mapping zaakceptowanych prototypes na production patterns.
 
 ## UI-CORE-12 — PrimeNG/vendor wrapper modernization and lookup order
 
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/primeng-vendor-wrapper-lookup.md`.
+
 **Goal:**  
 Dopasować vendor wrappers do Mythsworn i wymusić ich używanie/rozszerzanie przed lokalnym stylem.
 
@@ -1369,6 +1385,8 @@ Dopasować vendor wrappers do Mythsworn i wymusić ich używanie/rozszerzanie pr
 
 ## UI-CORE-13 — Utility class audit, semantics and usage pass
 
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/utility-class-audit.md`.
+
 **Goal:**  
 Korzystać z global utilities zamiast lokalnego CSS, ale bez losowego/defensywnego składania klas.
 
@@ -1408,6 +1426,8 @@ Korzystać z global utilities zamiast lokalnego CSS, ale bez losowego/defensywne
 - kept intentionally:
 
 ## UI-CORE-14 — PrimeNG table/paginator/list pattern decision
+
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/table-paginator-list-decision.md`.
 
 **Goal:**  
 Ustalić, kiedy używać PrimeNG table/paginator, a kiedy custom list/card row.
@@ -1450,6 +1470,8 @@ Ustalić, kiedy używać PrimeNG table/paginator, a kiedy custom list/card row.
 - pagination source:
 
 ## UI-CORE-15 — Layout utilities and section pattern cleanup
+
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/layout-section-pattern-cleanup.md`.
 
 **Goal:**  
 Uporządkować layout utilities i section/header patterns.

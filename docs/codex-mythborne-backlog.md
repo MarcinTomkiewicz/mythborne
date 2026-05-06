@@ -9640,6 +9640,407 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 
 ---
 
+# Epic X — Onboarding / Start Flow Completion
+
+## Epic goal
+
+Domknąć kanoniczny start flow gracza: wybór serwera → wybór albo utworzenie bohatera → aktywny kontekst gry → stat allocation tylko po stworzeniu nowej postaci, a przy późniejszych wejściach dashboard/game shell.
+
+Epic X nie jest tutorialem. To brama wejścia do gry oparta o selected server → active hero i DB/RPC-owned hero creation.
+
+## Epic rules
+
+- Nie zakładaj `hero.id === auth.uid()`.
+- Konto użytkownika jest globalne; hero jest server-specific.
+- Cały player flow działa przez selected/current server → active hero → hero-owned data.
+- Standardowy gracz ma maksymalnie jednego bohatera na standard serverze.
+- Sandbox/test servers mogą pozwalać staff/testerom na wiele hero.
+- Sandbox multi-hero default: wybierz najwcześniej utworzonego bohatera, ale pozwól przełączyć na innego.
+- Hero creation musi iść przez canonical DB/RPC/domain workflow, nie przez direct table writes.
+- Hero name jest unikalny per server.
+- Origin jest wybierany raz podczas hero creation i nie jest później zmieniany.
+- Origin content/opisy/bonusy mają pochodzić z DB/config/admin contentu, nie z hardcoded frontendu.
+- Nowy hero startuje z 1000 Character Points.
+- Nowy hero musi od razu dostać estate.
+- Startowe estate dostaje losowy wolny adres w district A; frontend nie wybiera ani nie pokazuje adresu przed utworzeniem hero.
+- Jeśli district A jest pełny, server jest niedostępny dla nowej postaci i UI pokazuje server full / brak wolnych miejsc.
+- Po hero creation gracz jest już w grze, ale domyślnie trafia na stat allocation.
+- Przy późniejszych wejściach z istniejącym hero gracz trafia na dashboard/game shell.
+- Nie aktualizuj `current-todo.md`, `current-state-summary.md` ani statusów backlogu.
+
+---
+
+## Task X1 — Start-flow DB/RPC contract integration layer
+
+**Goal:**  
+Podłączyć frontendowy start flow do zatwierdzonego DB/RPC kontraktu dla server availability, origin read, active hero context i atomic hero creation.
+
+**Scope:**
+
+- Zacznij od `git status --short`; jeśli working tree nie jest czysty, zgłoś to i czekaj na decyzję użytkownika.
+- Przeczytaj:
+  - `docs/current-decisions.md`;
+  - `docs/project-context.md`;
+  - `docs/database-current.md`;
+  - `AGENTS.md`;
+  - aktualne generated database types.
+- Sprawdź, czy generated types zawierają zatwierdzony kontrakt DB/RPC dla:
+  - dostępnych serwerów / server picker data;
+  - liczby wolnych miejsc w district A albo równoważnej eligibility/capacity informacji;
+  - DB-backed origins z bonusami/opisem;
+  - atomic hero creation z originem, 1000 Character Points i losowym estate w district A;
+  - active hero reload po utworzeniu postaci.
+- Jeśli kontraktu nie ma w generated types/schema, nie implementuj workaroundu — zgłoś DB/RPC blocker.
+- Jeśli kontrakt istnieje, dodaj lub dostosuj typed domain models/mappers/services dla start flow:
+  - server option / server availability;
+  - origin option / origin bonus display;
+  - hero creation request;
+  - hero creation result;
+  - active hero context refresh.
+- Użyj istniejących core services, mappers, validators, factories i state patterns przed dodaniem nowych helperów.
+- Nie twórz nowych nazw RPC, tabel ani enumów z głowy.
+
+**Out of scope:**
+
+- Brak DB migration.
+- Brak direct insert/update/upsert do `hero`, `hero_stats`, `estates`, `hero_resources`, `character_point_ledger` albo origin/bonus tables.
+- Brak pełnego UI redesignu.
+- Brak status docs updates.
+
+**Acceptance criteria:**
+
+- Frontend ma typed integration layer dla start flow oparty o istniejący/generated DB/RPC contract.
+- Brak direct table writes dla hero creation.
+- Brak fallbacku typu „stwórz hero w Angularze kilkoma insertami”.
+- Missing DB/RPC contract jest zgłoszony jako blocker, nie obchodzony.
+- Active hero reload po creation jest przygotowany przez istniejący active hero/server context path.
+- Build/typecheck przechodzi, jeśli kod został zmieniony.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused specs dla nowych mapperów/services/state, jeśli dodane
+- `npm run build`
+- static grep:
+  - brak direct writes do hero/estate/CP workflow tables z onboarding/start-flow kodu;
+  - brak `hero.id === auth.uid()` / auth uid jako hero id;
+  - brak hardcoded origin bonusów jako runtime source.
+
+**Required Codex report:**
+
+- task scope;
+- non-goals;
+- acceptance mapping;
+- verification;
+- clean-code check;
+- reused / checked but not reused / new table;
+- DB/RPC blocker, jeśli wystąpił;
+- manual smoke checklist, jeśli flow jest już możliwy do kliknięcia.
+
+---
+
+## Task X2 — Server picker and entry routing
+
+**Goal:**  
+Zbudować player entry routing od wyboru serwera do właściwego ekranu: hero creation, dashboard albo sandbox hero selection.
+
+**Scope:**
+
+- Użyj integration layer z X1.
+- Server picker ma pokazywać dostępne serwery dla obecnego użytkownika.
+- Dla standard serverów pokaż stan dostępności do stworzenia postaci:
+  - available / can create;
+  - full / district A full;
+  - unavailable / no permission where applicable.
+- Standard player:
+  - jeśli ma hero na wybranym serverze → dashboard/game shell;
+  - jeśli nie ma hero i server jest dostępny → hero creation;
+  - jeśli nie ma hero i district A jest full → pokaż czytelny blocker.
+- Multi-server user/staff:
+  - może przełączać server bez ponownego logowania.
+- Sandbox/test server:
+  - jeśli użytkownik ma wiele hero, flow ma prowadzić do sandbox hero selection albo użyć default active hero i dać zmianę hero.
+  - default sandbox hero = najwcześniej utworzony hero.
+- Zachowaj selected server → active hero → hero-owned data.
+- Dodaj stale guards na zmianę selected server podczas async load.
+
+**Out of scope:**
+
+- Brak hero creation form w tym tasku, poza routingiem do miejsca docelowego.
+- Brak DB migration.
+- Brak refaktoru duplicate helper cleanup poza dotkniętymi ścieżkami.
+- Brak status docs updates.
+
+**Acceptance criteria:**
+
+- Użytkownik może wybrać serwer i trafić do właściwego flow.
+- Standard server z istniejącym hero prowadzi do dashboard/game shell.
+- Standard server bez hero prowadzi do hero creation tylko jeśli można stworzyć hero.
+- Full district A blokuje tworzenie postaci na tym serverze.
+- Sandbox multi-hero ma domyślny hero oraz możliwość zmiany.
+- Nie ma auth uid jako hero id.
+- Async stale response nie nadpisuje aktualnego selected server/hero contextu.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused specs dla server picker / routing state, jeśli istnieje test harness
+- `npm run build`
+- static grep:
+  - brak `hero.id === auth.uid()`;
+  - brak direct writes;
+  - brak hardcoded server availability.
+
+**Manual smoke checklist:**
+
+- Konto bez hero na dostępnym standard serverze → hero creation.
+- Konto z hero na standard serverze → dashboard.
+- Standard server full → czytelny blocker.
+- Staff/tester na sandboxie z wieloma hero → default najwcześniej utworzony + możliwość przełączenia.
+- Zmiana servera nie wymaga relogowania.
+
+---
+
+## Task X3 — Hero creation UI with DB-backed origin selection
+
+**Goal:**  
+Zaimplementować hero creation UI, które pozwala wybrać nazwę i origin, a następnie wywołuje canonical hero creation RPC/domain workflow.
+
+**Scope:**
+
+- Użyj DB-backed origin read model z X1.
+- Pokaż origins z:
+  - nazwą;
+  - opisem/lore;
+  - bonusami;
+  - czytelną informacją, że origin wybiera się raz.
+- Hero creation form zawiera:
+  - hero name;
+  - origin selection;
+  - submit.
+- Hero name uniqueness per server jest walidowana autorytatywnie przez DB/RPC.
+- Frontend może robić lekką walidację UX, ale nie może być źródłem prawdy dla unikalności.
+- Submit wywołuje atomic hero creation workflow.
+- Po sukcesie:
+  - odśwież active hero context;
+  - nie pokazuj ani nie wybieraj startowego adresu przed creation;
+  - jeżeli wynik zwraca adres, można pokazać go dopiero po creation jako informację.
+- Po błędzie:
+  - pokaż czytelny błąd po polsku;
+  - szczególnie obsłuż duplicate name, server full/district A full, invalid origin, permission/membership error.
+- Użyj reactive forms / project form patterns, nie `ngModel`.
+- Użyj istniejących shared UI/patternów; nie kopiuj CSS z prototypów.
+
+**Out of scope:**
+
+- Brak direct writes do `hero`, `hero_stats`, `estates`, `character_point_ledger`.
+- Brak admin origin editora w tym tasku.
+- Brak ręcznego ustawiania 1000 CP w Angularze.
+- Brak ręcznego wyboru estate address przez gracza.
+- Brak status docs updates.
+
+**Acceptance criteria:**
+
+- Origin screen jest DB-backed/config-backed.
+- Hero creation idzie jednym canonical DB/RPC workflow.
+- Nowy hero dostaje origin, 1000 Character Points i estate po stronie DB/RPC.
+- Frontend nie tworzy estate ani CP ledger client-side.
+- Duplicate name i full server/district są pokazane jako czytelne błędy.
+- Po sukcesie active hero context jest odświeżony.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused specs dla form/state/service, jeśli dodane
+- `npm run build`
+- static grep:
+  - brak `.insert(` / `.upsert(` / `.update(` do hero creation tables w start-flow kodzie;
+  - brak hardcoded origin bonus content jako source of truth;
+  - brak `ngModel` w nowym hero creation form.
+
+**Manual smoke checklist:**
+
+- Originy ładują się z DB/config.
+- Wybranie originu pokazuje opis i bonusy.
+- Próba stworzenia z zajętą nazwą pokazuje błąd.
+- Próba stworzenia na full serverze pokazuje błąd.
+- Udane stworzenie hero odświeża active hero i przechodzi dalej do stat allocation.
+
+---
+
+## Task X4 — Post-creation routing and stat allocation entry
+
+**Goal:**  
+Po stworzeniu hero wejść do gry i domyślnie otworzyć stat allocation, ale nie blokować gracza w tutorial/wizard flow.
+
+**Scope:**
+
+- Po successful hero creation routing prowadzi do in-game stat allocation screen.
+- Stat allocation jest normalnym ekranem gry, nie osobnym obowiązkowym wizardem.
+- Gracz może opuścić stat allocation i przejść do dashboard/game shell.
+- Późniejsze wejścia z istniejącym hero prowadzą domyślnie do dashboard/game shell, nie znowu do stat allocation.
+- Zachowaj istniejący canonical `save_stat_allocation(...)` dla zapisu statów.
+- Nie zmieniaj zasad stat allocation poza routingiem/entry.
+- Jeśli stat allocation route/page już istnieje, użyj go zamiast tworzyć duplikat.
+- Jeśli istniejący ekran zakłada stare identity assumptions, popraw tylko zakres potrzebny dla Epic X.
+
+**Out of scope:**
+
+- Brak przebudowy całego stats/progression systemu.
+- Brak zmian DB/RPC w `save_stat_allocation(...)`.
+- Brak obowiązkowego tutoriala.
+- Brak status docs updates.
+
+**Acceptance criteria:**
+
+- Freshly created hero → stat allocation.
+- Existing hero returning to selected server → dashboard/game shell.
+- Stat allocation można opuścić.
+- Stat save nadal idzie przez canonical stat allocation RPC.
+- Nie ma auth uid jako hero id.
+- Routing nie tworzy pętli ani nie wraca na creation po refreshu z istniejącym hero.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused routing/state specs, jeśli istnieją
+- `npm run build`
+- manual route smoke dla fresh-created vs returning hero.
+
+**Manual smoke checklist:**
+
+- Po creation trafiam na stat allocation.
+- Mogę wyjść ze stat allocation.
+- Refresh / ponowne wejście z tym samym hero prowadzi na dashboard.
+- Zapis statów nadal działa przez istniejący canonical flow.
+
+---
+
+## Task X5 — Sandbox multi-hero switcher
+
+**Goal:**  
+Dodać albo domknąć sandbox/test multi-hero selection/switching dla staff/testerów bez naruszania standard server one-hero rule.
+
+**Scope:**
+
+- Użyj istniejącej roli/membership/staff access layer.
+- Sandbox/test server może pokazać listę hero dostępnych dla użytkownika na tym serverze.
+- Default selection:
+  - najwcześniej utworzony hero;
+  - jeśli istniejący active hero na tym sandboxie jest już ustawiony i nadal dostępny, można go zachować w bieżącej sesji, ale canonical fallback to earliest created.
+- UI pozwala przełączyć active hero.
+- Po przełączeniu:
+  - active hero context reload;
+  - hero-owned data reload;
+  - route zostaje w sensownym miejscu albo wraca do dashboardu, jeśli obecny route nie pasuje do nowego hero.
+- Standard server nie pokazuje multi-hero switchera dla normalnego gracza.
+- Jeśli użytkownik ma uprawnienie do tworzenia kolejnego sandbox hero, UI może prowadzić do hero creation dla sandboxa.
+
+**Out of scope:**
+
+- Brak zmian standard server one-hero rule.
+- Brak staff management refactoru.
+- Brak direct hero writes.
+- Brak status docs updates.
+
+**Acceptance criteria:**
+
+- Sandbox/test multi-hero user widzi możliwość zmiany hero.
+- Default sandbox hero to najwcześniej utworzony.
+- Zmiana hero odświeża active hero i hero-owned data.
+- Normalny standard-server gracz nie widzi niepotrzebnego hero switchera.
+- Uprawnienia sandbox/test są respektowane przez istniejący access layer/DB.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused specs dla multi-hero selection state, jeśli dodane
+- `npm run build`
+- static grep:
+  - brak globalnego założenia one hero per account;
+  - brak auth uid jako hero id;
+  - brak direct writes.
+
+**Manual smoke checklist:**
+
+- Staff/tester na sandboxie z wieloma hero widzi switcher.
+- Default wskazuje najwcześniej utworzonego hero.
+- Przełączenie hero zmienia aktywny kontekst i dane.
+- Normalny gracz na standard serverze nie dostaje sandbox switchera.
+
+---
+
+## Task X6 — Start flow final integration and smoke hardening
+
+**Goal:**  
+Domknąć end-to-end start flow i usunąć niespójności między server picker, hero creation, sandbox switcher, active hero resolver i post-creation routing.
+
+**Scope:**
+
+- Przejdź pełne flow w kodzie:
+  - auth/session ready;
+  - server picker;
+  - selected server;
+  - active hero resolve;
+  - no hero → hero creation;
+  - creation success → active hero reload → stat allocation;
+  - existing hero → dashboard;
+  - sandbox multi-hero → switcher/default/switch;
+  - server full / district A full → blocker.
+- Napraw realne integracyjne błędy znalezione w tych ścieżkach.
+- Ujednolić error handling i loading states:
+  - permission/membership error;
+  - no accessible servers;
+  - server full;
+  - duplicate hero name;
+  - origin unavailable/inactive;
+  - hero creation RPC failure;
+  - active hero reload failure.
+- Dodać stale guards tam, gdzie async response zależy od selected server / active hero / route context.
+- Zachować cienkie route pages; większą logikę trzymać w state/service/facade zgodnie z istniejącymi patternami.
+- Nie maskować DB/RPC blockerów frontendowymi sukcesami.
+
+**Out of scope:**
+
+- Brak nowej DB migration.
+- Brak status docs updates.
+- Brak UI redesignu poza koniecznym uporządkowaniem start flow.
+- Brak unrelated refactoru.
+
+**Acceptance criteria:**
+
+- Start flow działa jako spójna brama do gry.
+- Fresh account/player może wybrać server, stworzyć hero i trafić do stat allocation.
+- Returning player trafia do dashboard.
+- Sandbox multi-hero działa bez relogu.
+- Full server/district A pokazuje czytelny blocker.
+- Żaden workflow hero creation nie używa direct table writes.
+- Nie ma `hero.id === auth.uid()` assumptions.
+- Build przechodzi.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused specs dla dotkniętych states/services/routes
+- `npm run build`
+- static grep:
+  - no direct writes for hero creation workflow;
+  - no auth uid as hero id;
+  - no hardcoded origins as source of truth;
+  - no Angular-side CP/estate creation.
+
+**Manual smoke checklist:**
+
+- Nowy użytkownik / no hero → server picker → hero creation → stat allocation.
+- Returning user / existing hero → server picker or remembered server → dashboard.
+- Sandbox tester z wieloma hero → default earliest created → switch hero.
+- Full standard server → blocker, brak creation submit.
+- Duplicate name → czytelny błąd.
+- Refresh po creation nie wraca do hero creation.
+- Zmiana servera nie wymaga relogowania.
+
+---
+
 # Epic Z — Appeals and future moderation extensions
 
 ## Task Z1 — Appeals parked design note
