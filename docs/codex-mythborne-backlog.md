@@ -6505,6 +6505,8 @@ PvP Foundation is not:
 - PvP runtime state is visible to the player.
 - Exploration and PvP use the same central runtime model.
 
+**Implementation note:** R12 accepted on 2026-05-06. `/game/vicinity` now loads and renders active PvP runtime activity through the existing `PlayerPvp.getActiveRuntimeActivity()` service boundary, which uses canonical `get_hero_active_runtime_activity(...)`. A pure `pvp-runtime-activity-display` helper filters the shared `HeroActiveRuntimeActivity` read model to `pvp_attack` / `pvp_spy` only and formats status, start, arrival and deadline facts without creating a separate PvP busy source of truth. `VicinityTargetCandidatesState` owns runtime activity loading and active hero/server stale guards, and the page refresh action reloads both runtime activity and target candidates. Start attack/spy still goes through `PlayerPvp.startAction(...)`; no direct PvP table access/write, notification UI, combat preview/log or PvP result read was added. Verification passed with `npx tsc --noEmit`, focused runtime helper/vicinity state/page specs with 24 SUCCESS, static greps and `npm run build` with known budget/Supabase `cookie` warnings. Manual smoke for real start attack/spy remains N/A without a second hero/player target; if active PvP runtime activity exists, smoke should check the runtime card and refresh. Follow-up: split `VicinityTargetCandidatesState` before the next larger touch, move combined refresh into a state method, consider partial refresh instead of all-or-nothing `forkJoin`, and avoid expanding `ngModel` in new UI work.
+
 ---
 
 ## Task R13 — Spy result read state

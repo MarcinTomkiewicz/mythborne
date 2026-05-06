@@ -45,6 +45,7 @@ export class EstateVicinityPage implements OnInit {
 
   ngOnInit(): void {
     this.page.loadData();
+    this.pvpTargets.loadActiveRuntimeActivity();
     this.pvpTargets.loadCandidates();
     this.loadPvpTargetingMetadata();
   }

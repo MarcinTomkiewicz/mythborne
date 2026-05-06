@@ -189,9 +189,37 @@
           label="Refresh"
           severity="secondary"
           [loading]="pvpTargets.isLoading()"
-          (onClick)="pvpTargets.loadCandidates()"
+          (onClick)="pvpTargets.loadActiveRuntimeActivity(); pvpTargets.loadCandidates()"
         />
       </div>
+
+      @if (pvpTargets.isLoadingRuntimeActivity()) {
+        <p class="mb-md muted-text">Loading PvP runtime activity...</p>
+      }
+      @if (pvpTargets.runtimeActivityError()) {
+        <p class="mb-md muted-text">{{ pvpTargets.runtimeActivityError() }}</p>
+      }
+      @if (pvpTargets.activePvpRuntimeActivity(); as activity) {
+        <div class="mg-card p-md mb-md flex-col gap-sm">
+          <div class="flex-row-between-center flex-col-sm gap-sm">
+            <div class="flex-col gap-xs">
+              <strong class="heading-color">{{ activity.title }}</strong>
+              <span class="muted-text">
+                Active PvP runtime state from the shared activity model.
+              </span>
+            </div>
+            <span class="tag-badge tag-badge--info">{{ activity.statusLabel }}</span>
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @for (fact of activity.facts; track fact.label) {
+              <span class="tag-badge tag-badge--muted">
+                {{ fact.label }}: {{ fact.value }}
+              </span>
+            }
+          </div>
+        </div>
+      }
 
       <div class="p-md mb-md">
         <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md align-items-end">

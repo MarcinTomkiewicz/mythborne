@@ -10,6 +10,9 @@ import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../core/services/pvp/player-pvp';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { trimText, trimToNull } from '../../../core/utils/normalize-text';
+import {
+  pvpRuntimeActivityDisplay,
+} from '../../../core/utils/pvp-runtime-activity-display';
 
 const DEFAULT_TARGET_LIMIT = 20;
 type PvpStartActionKind = 'attack' | 'spy';
@@ -24,10 +27,13 @@ export class VicinityTargetCandidatesState {
   private readonly activeHero = inject(ActiveHero);
   private readonly playerPvp = inject(PlayerPvp);
   private loadRequestId = 0;
+  private runtimeActivityRequestId = 0;
   private actionRequestId = 0;
 
   readonly isLoading = signal(false);
+  readonly isLoadingRuntimeActivity = signal(false);
   readonly error = signal<string | null>(null);
+  readonly runtimeActivityError = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
   readonly actionSuccess = signal<string | null>(null);
   readonly lastStartedAction = signal<PvpActionStartResult | null>(null);
@@ -49,6 +55,9 @@ export class VicinityTargetCandidatesState {
     () => this.candidates().length === this.limit() && !this.isLoading(),
   );
   readonly isStartingAction = computed(() => this.pendingAction() !== null);
+  readonly activePvpRuntimeActivity = computed(() =>
+    pvpRuntimeActivityDisplay(this.activeRuntimeActivity()),
+  );
 
   isSpyPending(targetHeroId: string): boolean {
     return this.pendingSpyTargetIds().has(targetHeroId);
@@ -130,6 +139,55 @@ export class VicinityTargetCandidatesState {
         this.candidates.set([]);
         this.error.set(getErrorMessage(error, 'Failed to load PvP targets.'));
         this.isLoading.set(false);
+      },
+    });
+  }
+
+  loadActiveRuntimeActivity(): void {
+    const requestId = ++this.runtimeActivityRequestId;
+    const requestContextKey = this.currentContextKey();
+
+    this.isLoadingRuntimeActivity.set(true);
+    this.runtimeActivityError.set(null);
+
+    if (!requestContextKey) {
+      this.activeRuntimeActivity.set(null);
+      this.runtimeActivityError.set('No active hero for PvP runtime activity.');
+      this.isLoadingRuntimeActivity.set(false);
+      return;
+    }
+
+    this.playerPvp.getActiveRuntimeActivity().subscribe({
+      next: (activity) => {
+        if (requestId !== this.runtimeActivityRequestId) {
+          return;
+        }
+
+        if (requestContextKey !== this.currentContextKey()) {
+          this.activeRuntimeActivity.set(null);
+          this.isLoadingRuntimeActivity.set(false);
+          return;
+        }
+
+        this.activeRuntimeActivity.set(activity);
+        this.isLoadingRuntimeActivity.set(false);
+      },
+      error: (error: unknown) => {
+        if (requestId !== this.runtimeActivityRequestId) {
+          return;
+        }
+
+        if (requestContextKey !== this.currentContextKey()) {
+          this.activeRuntimeActivity.set(null);
+          this.isLoadingRuntimeActivity.set(false);
+          return;
+        }
+
+        this.activeRuntimeActivity.set(null);
+        this.runtimeActivityError.set(
+          getErrorMessage(error, 'Failed to load PvP runtime activity.'),
+        );
+        this.isLoadingRuntimeActivity.set(false);
       },
     });
   }

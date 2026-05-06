@@ -45,15 +45,20 @@ describe('EstateVicinityPage', () => {
     fixture.detectChanges();
 
     expect(page.loadData).toHaveBeenCalled();
+    expect(pvpTargets.loadActiveRuntimeActivity).toHaveBeenCalled();
     expect(pvpTargets.loadCandidates).toHaveBeenCalled();
   });
 
-  it('renders safe PvP target candidate data with attack and spy actions', () => {
+  it('renders active PvP runtime state and safe target candidate data with attack and spy actions', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
 
     expect(text).toContain('PvP targets');
+    expect(text).toContain('PvP attack');
+    expect(text).toContain('Active PvP runtime state');
+    expect(text).toContain('Arrival:');
+    expect(text).toContain('Deadline:');
     expect(text).toContain('Target Hero');
     expect(text).toContain('Level 12');
     expect(text).toContain('B-120');
@@ -148,6 +153,17 @@ function pvpTargetStateStub() {
     error: signal<string | null>(null),
     actionError: signal<string | null>(null),
     actionSuccess: signal<string | null>(null),
+    isLoadingRuntimeActivity: signal(false),
+    runtimeActivityError: signal<string | null>(null),
+    activePvpRuntimeActivity: signal({
+      title: 'PvP attack',
+      statusLabel: 'Traveling',
+      facts: [
+        { label: 'Status', value: 'Traveling' },
+        { label: 'Arrival', value: '2026-05-06 10:03' },
+        { label: 'Deadline', value: '2026-05-06 10:08' },
+      ],
+    }),
     isEmpty: signal(false),
     candidates: signal([candidate()]),
     districtCode: signal<string | null>(null),
@@ -160,6 +176,7 @@ function pvpTargetStateStub() {
     isSpyPending: jasmine.createSpy('isSpyPending').and.returnValue(false),
     startAttack: jasmine.createSpy('startAttack'),
     startSpy: jasmine.createSpy('startSpy'),
+    loadActiveRuntimeActivity: jasmine.createSpy('loadActiveRuntimeActivity'),
     loadCandidates: jasmine.createSpy('loadCandidates'),
     setDistrictCode: jasmine.createSpy('setDistrictCode'),
     setSearch: jasmine.createSpy('setSearch'),

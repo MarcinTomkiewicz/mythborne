@@ -203,7 +203,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: R9 - Vicinity eligibility reason display.
 - Completed and confirmed: R10 - Start spy action.
 - Completed and confirmed: R11 - Start attack action.
-- Next backlog task: R12 - PvP runtime activity display.
+- Completed and confirmed: R12 - PvP runtime activity display.
+- Next backlog task: R13 - Spy result read state.
 - Q4 pending manual smoke: check a real DB row for `estate.building_job.completed`; source `action_url` must be `/game/mansion`. If it still returns `ViewState`, fix DB/content producer source and do not add a frontend remap.
 - Q5 pending manual smoke: open bell, mark read, dismiss and action link; real DB/RLS denied-action smoke only if suitable test data/access exists.
 - Q6 pending manual smoke: basic bell UI can be smoke-tested, but full fresh-toast validation needs a real DB producer notification. Eligible unread fresh rows should toast once; read rows and `default_toast_enabled = false` rows should remain inbox-only.
@@ -219,6 +220,8 @@ Order reflects implementation priority, not final business priority.
 - O11 UI debt: vicinity still uses native selects / `ngModel`. Keep it as temporary accepted debt; future UI pass should move it to project/PrimeNG reactive-form patterns without adding PvP/spy/protection workflows to `EstateVicinityPageState`.
 - R9 follow-up: real PvP data smoke should confirm DB metadata labels for the main target eligibility reason keys. If player-facing copy should be fully Polish, seed/adjust DB metadata or later local fallback copy rather than changing the RPC contract.
 - R10 follow-up resolved by R11: PvP start action now uses a global `pendingAction` lock across attack/spy and targets.
+- R12 follow-up: `VicinityTargetCandidatesState` is now too large; next larger Vicinity touch should split candidates/action/runtime activity state, move refresh into a state method such as `refreshTargetsAndRuntime()`, and consider partial refresh instead of all-or-nothing `forkJoin` after action start.
+- R12 UI follow-up: do not expand `ngModel` in new UI work; when Vicinity filters are refactored, use project reactive-form patterns or evaluate Signal Forms if the project Angular version supports it.
 - HOTFIX-COMBAT-LIVE manual smoke pending: real combat Trial/Encounter, ensure session, refresh during combat, one Walking Dead click equals one `submit_combat_player_action(...)`, DB response updates HP/log/current actor/manifest, finalization updates result/reward path, and no duplicate submit after refresh.
 - HOTFIX-COMBAT-LIVE accepted follow-up: participant mapping now consumes DB-shaped `healthCurrent` and `healthMax` / `health_max`, so UI HP labels should not show `N/D` for max HP when DB returns `healthMax`. Submit payload remains limited to `p_session_id`, `p_timing_input_json.positionPercent` and `p_request_id`; manifest, streak, green-zone and speed remain DB-owned.
 - HOTFIX-COMBAT-LIVE follow-up: add a stale-context regression for completed live combat state after difficulty/hero/context changes, and consider wiring `get_combat_live_state(...)` into an explicit delta/recovery refresh path if idempotent `ensure_exploration_combat_session(...)` is no longer sufficient. If post-DB-H2 green zone or speed still do not change after hits, treat it as a DB manifest issue rather than adding a frontend workaround.

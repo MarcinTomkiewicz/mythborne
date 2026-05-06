@@ -66,6 +66,72 @@ describe('VicinityTargetCandidatesState', () => {
     expect(activeHero.requireActiveHero).not.toHaveBeenCalled();
   });
 
+  it('loads active PvP runtime activity through the shared runtime model', () => {
+    playerPvp.getActiveRuntimeActivity.and.returnValue(of(activeRuntimeActivity({
+      activityKind: 'pvp_attack',
+      activityKindLabel: 'PvP attack',
+      status: 'traveling',
+      statusLabel: 'Traveling',
+      availableAt: '2026-05-06T10:03:00.000Z',
+      expiresAt: '2026-05-06T10:08:00.000Z',
+    })));
+
+    state.loadActiveRuntimeActivity();
+
+    expect(playerPvp.getActiveRuntimeActivity).toHaveBeenCalled();
+    expect(state.activeRuntimeActivity()).toEqual(jasmine.objectContaining({
+      activityKind: 'pvp_attack',
+    }));
+    expect(state.activePvpRuntimeActivity()).toEqual(jasmine.objectContaining({
+      title: 'PvP attack',
+      statusLabel: 'Traveling',
+    }));
+    expect(state.activePvpRuntimeActivity()?.facts.map((fact) => fact.label))
+      .toContain('Arrival');
+    expect(state.activePvpRuntimeActivity()?.facts.map((fact) => fact.label))
+      .toContain('Deadline');
+    expect(state.isLoadingRuntimeActivity()).toBeFalse();
+  });
+
+  it('does not expose non-PvP runtime activity as a PvP runtime display', () => {
+    playerPvp.getActiveRuntimeActivity.and.returnValue(of(activeRuntimeActivity({
+      activityKind: 'exploration_step',
+      activityKindLabel: 'Exploration step',
+    })));
+
+    state.loadActiveRuntimeActivity();
+
+    expect(state.activeRuntimeActivity()?.activityKind).toBe('exploration_step');
+    expect(state.activePvpRuntimeActivity()).toBeNull();
+  });
+
+  it('ignores stale runtime activity responses after active hero or server changes', () => {
+    const staleActivity = new Subject<HeroActiveRuntimeActivity | null>();
+    const currentActivity = new Subject<HeroActiveRuntimeActivity | null>();
+    playerPvp.getActiveRuntimeActivity.and.returnValues(
+      staleActivity.asObservable(),
+      currentActivity.asObservable(),
+    );
+
+    state.loadActiveRuntimeActivity();
+    activeHeroState.set(activeHeroContext('server-2', 'hero-2'));
+    state.loadActiveRuntimeActivity();
+
+    currentActivity.next(activeRuntimeActivity({ heroId: 'hero-2', serverId: 'server-2' }));
+    currentActivity.complete();
+
+    expect(state.activeRuntimeActivity()).toEqual(jasmine.objectContaining({
+      heroId: 'hero-2',
+      serverId: 'server-2',
+    }));
+
+    staleActivity.next(activeRuntimeActivity({ activityId: 'stale-runtime' }));
+    staleActivity.complete();
+
+    expect(state.activeRuntimeActivity()?.activityId).not.toBe('stale-runtime');
+    expect(state.isLoadingRuntimeActivity()).toBeFalse();
+  });
+
   it('passes district, search and pagination filters without recomputing eligibility', () => {
     state.setDistrictCode(' B ');
     state.setSearch('  target name  ');
