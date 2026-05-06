@@ -5,8 +5,8 @@
         <div class="flex-col gap-xs">
           <strong>{{ page.challengeTitle() }}</strong>
           <span class="muted-text">
-            Prototype manual completion records a sandbox outcome through the
-            database RPC until a minigame submits the real result.
+            Challenge runtime jest własnością DB. Frontend pokazuje odczytany stan
+            i wysyła tylko dozwolony input gracza.
           </span>
         </div>
         <span class="tag-badge tag-badge--info">{{ challenge.status }}</span>
@@ -22,9 +22,52 @@
 
       @if (page.isCombatChallenge()) {
         <p class="muted-text mb-0">
-          Walka jest rozstrzygana przez DB. Frontend wysyła tylko próbkę timingu
-          dla aktywnego Triala/Encountera, bez statów, ekwipunku, obrażeń ani wyniku.
+          Walka live jest rozstrzygana przez DB. Frontend wysyła tylko pozycję timingu
+          aktualnej akcji, bez statów, ekwipunku, obrażeń, HP ani wyniku.
         </p>
+
+        @if (page.isEnsuringCombatSession()) {
+          <span class="tag-badge tag-badge--muted">Ładowanie sesji walki</span>
+        }
+
+        @if (page.combatLiveState(); as combat) {
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            <span class="tag-badge tag-badge--info">{{ page.combatStatusLabel() }}</span>
+            <span class="tag-badge tag-badge--muted">{{ page.combatRoundLabel() }}</span>
+            <span class="tag-badge tag-badge--muted">Eventy: {{ combat.eventCount }}</span>
+            @if (page.currentCombatActor(); as actor) {
+              <span class="tag-badge tag-badge--golden">Aktor: {{ actor.displayName }}</span>
+            }
+            @if (combat.awaitingPlayerAction) {
+              <span class="tag-badge tag-badge--warn">Czeka na akcję gracza</span>
+            }
+          </div>
+
+          <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-sm">
+            @for (participant of page.combatParticipants(); track participant.participantId) {
+              <article class="mg-card p-sm flex-col gap-xs">
+                <div class="flex-row-between-center flex-col-sm gap-xs">
+                  <strong class="heading-color">{{ participant.displayName }}</strong>
+                  <span class="tag-badge tag-badge--muted">
+                    {{ participant.statusLabel ?? participant.statusKey ?? 'N/D' }}
+                  </span>
+                </div>
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  <span class="tag-badge tag-badge--info">
+                    HP: {{ page.participantHpLabel(participant) }}
+                  </span>
+                  @if (participant.side) {
+                    <span class="tag-badge tag-badge--muted">{{ participant.side }}</span>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+
+          <p class="muted-text mb-0">
+            Manifest: {{ page.timingManifestLabel(page.combatTimingManifest()) }}
+          </p>
+        }
 
         @if (page.isCombatRunning()) {
           <app-walking-dead-meter
@@ -33,7 +76,7 @@
             [zoneEnd]="page.combatHitWindow().end"
             [zoneWidth]="page.combatHitWindow().width"
             [speed]="page.combatWalkingSpeed()"
-            [streak]="page.combatStrikeCount()"
+            [statusLabel]="page.combatStatusLabel()"
             [disabled]="!page.canSubmitCombatStrike()"
             (strike)="page.submitCombatChallengeStrike()"
           />
@@ -42,18 +85,29 @@
             <button
               pButton
               type="button"
-              label="Rozpocznij walkę"
+              label="Rozpocznij akcję"
               [disabled]="!page.canStartCombat()"
               (click)="page.startCombatChallenge()"
             ></button>
-            <button
-              pButton
-              type="button"
-              label="Auto-resolve"
-              severity="warn"
-              [disabled]="page.isCompletingChallenge()"
-              (click)="page.autoResolveChallenge()"
-            ></button>
+          </div>
+        }
+
+        @if (page.combatEvents().length) {
+          <div class="flex-col gap-xs">
+            <strong>Log DB</strong>
+            @for (event of page.combatEvents(); track event.eventIndex) {
+              <article class="mg-card p-sm flex-col gap-xs">
+                <div class="flex-row-between-center flex-col-sm gap-xs">
+                  <span class="heading-color">{{ event.label }}</span>
+                  <span class="tag-badge tag-badge--muted">
+                    {{ page.combatEventMetaLabel(event) }}
+                  </span>
+                </div>
+                @for (detail of event.details; track detail) {
+                  <span class="muted-text">{{ detail }}</span>
+                }
+              </article>
+            }
           </div>
         }
       } @else {

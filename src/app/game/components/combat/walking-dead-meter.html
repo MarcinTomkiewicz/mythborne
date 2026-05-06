@@ -4,14 +4,20 @@
       <p class="card-legend mb-0">Walking Dead</p>
       <h3 class="mg-section__title mg-section__title--xs mb-0">Timing strike</h3>
       <p class="muted-text mb-0">
-        Kliknij bezpośrednio w pole walki, gdy wskaźnik przechodzi przez zieloną strefę. Każde czyste trafienie zwiększa streak, zwęża strefę i przyspiesza wskaźnik.
+        Kliknij bezpośrednio w pole walki, gdy wskaźnik przechodzi przez zieloną strefę.
+        DB rozstrzyga trafienie, unik, obrażenia, HP i dalszy przebieg po odpowiedzi RPC.
       </p>
     </div>
 
     <div class="flex-row-start-center flex-wrap gap-sm">
       <span class="tag-badge tag-badge--muted">Zone {{ zoneWidth() | number:'1.0-2' }}%</span>
       <span class="tag-badge tag-badge--muted">Speed {{ speed() | number:'1.2-2' }}</span>
-      <span class="tag-badge tag-badge--warn">Streak {{ streak() }}</span>
+      @if (statusLabel(); as status) {
+        <span class="tag-badge tag-badge--warn">{{ status }}</span>
+      }
+      @if (streak() !== null) {
+        <span class="tag-badge tag-badge--muted">Streak {{ streak() }}</span>
+      }
     </div>
   </div>
 

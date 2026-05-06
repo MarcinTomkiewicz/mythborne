@@ -1,4 +1,87 @@
-@if (page.currentChallengeResult(); as result) {
+@if (page.completedCombatLiveState(); as combat) {
+  <div class="mg-card p-md">
+    <div class="flex-col gap-sm">
+      <div class="flex-row-between-center flex-col-sm gap-sm">
+        <div class="flex-col gap-xs">
+          <strong>Walka zakończona</strong>
+          <span class="muted-text">
+            Wynik, HP i log pochodzą z live combat DB state.
+          </span>
+        </div>
+        <span class="tag-badge tag-badge--info">{{ combat.statusLabel }}</span>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-xs">
+        <span class="tag-badge tag-badge--muted">
+          Combat result: {{ combat.finalCombatResultId ?? 'N/D' }}
+        </span>
+        <span class="tag-badge tag-badge--muted">Eventy: {{ combat.eventCount }}</span>
+        <span class="tag-badge tag-badge--muted">{{ page.combatRoundLabel() }}</span>
+      </div>
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-sm">
+        @for (participant of page.combatParticipants(); track participant.participantId) {
+          <article class="mg-card p-sm flex-col gap-xs">
+            <div class="flex-row-between-center flex-col-sm gap-xs">
+              <strong class="heading-color">{{ participant.displayName }}</strong>
+              <span class="tag-badge tag-badge--muted">
+                {{ participant.statusLabel ?? participant.statusKey ?? 'N/D' }}
+              </span>
+            </div>
+            <div class="flex-row-start-center flex-wrap gap-xs">
+              <span class="tag-badge tag-badge--info">
+                HP: {{ page.participantHpLabel(participant) }}
+              </span>
+              @if (participant.side) {
+                <span class="tag-badge tag-badge--muted">{{ participant.side }}</span>
+              }
+            </div>
+          </article>
+        }
+      </div>
+
+      @if (page.combatEvents().length) {
+        <div class="flex-col gap-xs">
+          <strong>Log DB</strong>
+          @for (event of page.combatEvents(); track event.eventIndex) {
+            <article class="mg-card p-sm flex-col gap-xs">
+              <div class="flex-row-between-center flex-col-sm gap-xs">
+                <span class="heading-color">{{ event.label }}</span>
+                <span class="tag-badge tag-badge--muted">
+                  {{ page.combatEventMetaLabel(event) }}
+                </span>
+              </div>
+              @for (detail of event.details; track detail) {
+                <span class="muted-text">{{ detail }}</span>
+              }
+            </article>
+          }
+        </div>
+      }
+
+      @if (page.combatResultDetail(); as detail) {
+        <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-sm">
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Outcome</span>
+            <strong class="heading-color">{{ detail.outcome }}</strong>
+          </div>
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Winner</span>
+            <strong class="heading-color">{{ detail.winnerSide ?? 'N/D' }}</strong>
+          </div>
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Turns</span>
+            <strong class="heading-color">{{ detail.turnsCompleted }}</strong>
+          </div>
+        </div>
+      } @else if (combat.finalCombatResultId) {
+        <p class="muted-text mb-0">
+          Szczegóły combat result są ładowane z DB. UI nie rekonstruuje wyniku lokalnie.
+        </p>
+      }
+    </div>
+  </div>
+} @else if (page.currentChallengeResult(); as result) {
   <div class="mg-card p-md">
     <div class="flex-col gap-sm">
       <div class="flex-row-between-center flex-col-sm gap-sm">

@@ -13,7 +13,7 @@ Order reflects implementation priority, not final business priority.
 ## Current Codex Backlog Position
 
 - UI/UX foundation accepted: UI-CORE-1 - Mythsworn UI style contract extraction, UI-CORE-2 - Global SCSS and shared pattern inventory, UI-CORE-3 - Local SCSS budget and style report checklist, UI-CORE-4 - Shared surface/card/badge/chip/page-header patterns, UI-CORE-5 - Icon placeholder and Game Icons mapping contract, UI-CORE-6 - Item popover shared component contract, UI-CORE-7 - Legacy Monster Hunt / `mg-*` SCSS modernization plan, UI-CORE-8 - Text utility semantics and `muted-text` cleanup, UI-CORE-9 - Surface/card/badge/chip production pattern expansion, UI-CORE-10 - Custom icons and brand asset registry, UI-CORE-11 - Prototype-to-production SCSS mapping, UI-CORE-12 - PrimeNG/vendor wrapper modernization and lookup order, UI-CORE-13 - Utility class audit, semantics and usage pass, UI-CORE-14 - PrimeNG table/paginator/list pattern decision, and UI-CORE-15 - Layout utilities and section pattern cleanup.
-- UI/UX foundation docs UI-CORE-1 through UI-CORE-15 are accepted. Next UI task will be selected after the pending combat hotfix.
+- UI/UX foundation docs UI-CORE-1 through UI-CORE-15 are accepted. HOTFIX-COMBAT-LIVE is accepted; next task will be selected by user.
 - Completed and confirmed: A1 - regenerate/update Supabase database types.
 - Current documentation sync applied: A2 - this TODO and `current-state-summary.md` were updated after A1 confirmation.
 - Completed and confirmed: B1 - audit old identity assumptions.
@@ -199,6 +199,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: HOTFIX-COMBAT-1 - DB-owned exploration combat resolver.
 - Completed and confirmed: HOTFIX-COMBAT-2 - exploration combat result/reward/report display.
 - Completed and confirmed: HOTFIX-COMBAT-3 - reuse Walking Dead timing UI for exploration combat.
+- Completed and confirmed: HOTFIX-COMBAT-LIVE - exploration combat live DB/RPC runtime.
 - Completed and confirmed: R9 - Vicinity eligibility reason display.
 - Completed and confirmed: R10 - Start spy action.
 - Next backlog task: R11 - Start attack action.
@@ -217,6 +218,8 @@ Order reflects implementation priority, not final business priority.
 - O11 UI debt: vicinity still uses native selects / `ngModel`. Keep it as temporary accepted debt; future UI pass should move it to project/PrimeNG reactive-form patterns without adding PvP/spy/protection workflows to `EstateVicinityPageState`.
 - R9 follow-up: real PvP data smoke should confirm DB metadata labels for the main target eligibility reason keys. If player-facing copy should be fully Polish, seed/adjust DB metadata or later local fallback copy rather than changing the RPC contract.
 - R10 follow-up: pending submit state is currently per target, which satisfies duplicate-submit protection for the clicked target. If product UX should block parallel attempts against different targets before the DB responds, add a global PvP action pending state in a later slice.
+- HOTFIX-COMBAT-LIVE manual smoke pending: real combat Trial/Encounter, ensure session, refresh during combat, one Walking Dead click equals one `submit_combat_player_action(...)`, DB response updates HP/log/current actor/manifest, finalization updates result/reward path, and no duplicate submit after refresh.
+- HOTFIX-COMBAT-LIVE follow-up: add a stale-context regression for completed live combat state after difficulty/hero/context changes, and consider wiring `get_combat_live_state(...)` into an explicit delta/recovery refresh path if idempotent `ensure_exploration_combat_session(...)` is no longer sufficient.
 - Formula balance refactor follow-up: before the next larger item generation/formula balance task, split `ItemGenerationFormulaBalanceFacade` further. It remains about 447 lines after the accepted variable-contract fix and must not absorb more workflow responsibilities.
 - N13 pending validation: representative XP producer smoke remains pending until a real XP-producing flow exists or is intentionally selected; user/manual validation remains separate from technical green checks and must not be claimed by Codex.
 - N12 DB/content cleanup follow-up: replace remaining formula target `hero points` wording with `Character Points`; confirm and align stat upgrade default test context keys (`hero_level`/`stat_level` vs allowed `heroLevel`/`statLevel`); seed the currently reported progression UI metadata gaps. Do not hide these with frontend fallback labels or fallback contexts.

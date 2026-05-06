@@ -43,6 +43,10 @@ export const RPC = {
   create_entity_requirement: 'create_entity_requirement',
   get_ui_metadata_entries: 'get_ui_metadata_entries',
   get_combat_turn_limit: 'get_combat_turn_limit',
+  ensure_exploration_combat_session: 'ensure_exploration_combat_session',
+  get_combat_live_state: 'get_combat_live_state',
+  submit_combat_player_action: 'submit_combat_player_action',
+  get_combat_result_detail: 'get_combat_result_detail',
   persist_combat_result_snapshot: 'persist_combat_result_snapshot',
   upsert_combat_opponent_family: 'upsert_combat_opponent_family',
   deactivate_combat_opponent_family: 'deactivate_combat_opponent_family',
@@ -90,8 +94,6 @@ export const RPC = {
     'auto_resolve_hero_exploration_challenge_attempt',
   complete_hero_exploration_challenge_attempt:
     'complete_hero_exploration_challenge_attempt',
-  submit_exploration_challenge_combat_resolution:
-    'submit_exploration_challenge_combat_resolution',
   force_complete_hero_exploration_challenge_attempt:
     'force_complete_hero_exploration_challenge_attempt',
   get_hero_exploration_debug_state: 'get_hero_exploration_debug_state',

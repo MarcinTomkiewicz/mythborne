@@ -38,8 +38,18 @@ export class ExplorationPageState {
   readonly canSubmitCombatStrike = this.challenge.canSubmitCombatStrike;
   readonly combatHitWindow = this.challenge.combatHitWindow;
   readonly combatWalkingSpeed = this.challenge.combatWalkingSpeed;
-  readonly combatStrikeCount = this.challenge.combatStrikeCount;
   readonly isCombatRunning = this.challenge.isCombatRunning;
+  readonly isEnsuringCombatSession = this.challenge.isEnsuringCombatSession;
+  readonly isSubmittingCombatAction = this.challenge.isSubmittingCombatAction;
+  readonly combatLiveState = this.challenge.combatLiveState;
+  readonly combatResultDetail = this.challenge.combatResultDetail;
+  readonly combatTimingManifest = this.challenge.combatTimingManifest;
+  readonly combatParticipants = this.challenge.combatParticipants;
+  readonly combatEvents = this.challenge.combatEvents;
+  readonly completedCombatLiveState = this.challenge.completedCombatLiveState;
+  readonly currentCombatActor = this.challenge.currentCombatActor;
+  readonly combatStatusLabel = this.challenge.combatStatusLabel;
+  readonly combatRoundLabel = this.challenge.combatRoundLabel;
   readonly walkingPosition = this.challenge.walkingPosition;
   readonly activeStepProgressPercent = this.step.activeStepProgressPercent;
   readonly activeStepRemainingLabel = this.step.activeStepRemainingLabel;
@@ -121,4 +131,7 @@ export class ExplorationPageState {
   rewardEntryLabel = this.rewardState.entryLabel.bind(this.rewardState);
   rewardItemLabel = this.rewardState.itemLabel.bind(this.rewardState);
   rewardItemDetails = this.rewardState.itemDetails.bind(this.rewardState);
+  participantHpLabel = this.challenge.participantHpLabel.bind(this.challenge);
+  combatEventMetaLabel = this.challenge.eventMetaLabel.bind(this.challenge);
+  timingManifestLabel = this.challenge.timingManifestLabel.bind(this.challenge);
 }

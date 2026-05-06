@@ -14,7 +14,8 @@ export class WalkingDeadMeter {
   readonly zoneEnd = input.required<number>();
   readonly zoneWidth = input.required<number>();
   readonly speed = input.required<number>();
-  readonly streak = input.required<number>();
+  readonly statusLabel = input<string | null>(null);
+  readonly streak = input<number | null>(null);
   readonly disabled = input(false);
 
   readonly strike = output<void>();

@@ -1,5 +1,9 @@
-import { TestBed } from '@angular/core/testing';
+﻿import { TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
+import {
+  CombatLiveStateReadModel,
+  CombatResultDetailReadModel,
+} from '../../../core/domain/combat/combat-live.model';
 import { ExplorationDifficultyTierReadModel } from '../../../core/domain/exploration/exploration-definition.model';
 import { TrialOpportunityCurvePreview } from '../../../core/domain/exploration/exploration-preview.model';
 import { ExplorationChallengeRewardReadModel } from '../../../core/domain/exploration/exploration-reward.model';
@@ -9,11 +13,13 @@ import {
   HeroExplorationStepResolutionWorkflowResult,
 } from '../../../core/domain/exploration/exploration-runtime.model';
 import { RequiredActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
+import { ExplorationLiveCombat } from '../../../core/services/combat/exploration-live-combat';
 import { HeroExplorationRewards } from '../../../core/services/exploration/hero-exploration-rewards';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
+import { ExplorationLiveCombatState } from './exploration-live-combat.state';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationPage } from './exploration-page';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -26,6 +32,7 @@ import { ExplorationStartState } from './exploration-start.state';
 describe('ExplorationPageState', () => {
   let activeHero: jasmine.SpyObj<ActiveHero>;
   let explorations: jasmine.SpyObj<HeroExplorations>;
+  let liveCombat: jasmine.SpyObj<ExplorationLiveCombat>;
   let rewards: jasmine.SpyObj<HeroExplorationRewards>;
   let page: ExplorationPageState;
   let feedback: ExplorationFeedbackState;
@@ -34,6 +41,12 @@ describe('ExplorationPageState', () => {
     activeHero = jasmine.createSpyObj<ActiveHero>('ActiveHero', ['requireActiveHero']);
     rewards = jasmine.createSpyObj<HeroExplorationRewards>('HeroExplorationRewards', [
       'getLatestChallengeReward',
+    ]);
+    liveCombat = jasmine.createSpyObj<ExplorationLiveCombat>('ExplorationLiveCombat', [
+      'ensureSession',
+      'getState',
+      'submitPlayerAction',
+      'getResultDetail',
     ]);
     explorations = jasmine.createSpyObj<HeroExplorations>('HeroExplorations', [
       'getActiveDifficultyTiers',
@@ -44,7 +57,6 @@ describe('ExplorationPageState', () => {
       'resolveHeroExplorationStep',
       'completeHeroExplorationChallengeAttempt',
       'autoResolveHeroExplorationChallengeAttempt',
-      'submitExplorationChallengeCombatResolution',
     ]);
 
     activeHero.requireActiveHero.and.returnValue(of(activeHeroContext()));
@@ -64,22 +76,21 @@ describe('ExplorationPageState', () => {
     explorations.autoResolveHeroExplorationChallengeAttempt.and.returnValue(
       of(challengeCompletionWorkflow('easy', { completionMode: 'auto' })),
     );
-    explorations.submitExplorationChallengeCombatResolution.and.returnValue(
-      of(challengeCompletionWorkflow('easy', {
-        completionMode: 'combat',
-        combatResultId: 'combat-result-1',
-        combatOutcome: 'initiator_victory',
-        turnsCompleted: 3,
-        participantsCreated: 2,
-        attacksCreated: 6,
-      })),
-    );
+    liveCombat.ensureSession.and.returnValue(of(combatLiveState()));
+    liveCombat.getState.and.returnValue(of(combatLiveState()));
+    liveCombat.submitPlayerAction.and.returnValue(of(combatLiveState({
+      awaitingPlayerAction: true,
+      eventCount: 2,
+      events: [combatEvent(1), combatEvent(2)],
+    })));
+    liveCombat.getResultDetail.and.returnValue(of(combatResultDetail()));
     rewards.getLatestChallengeReward.and.returnValue(of(null));
 
     TestBed.configureTestingModule({
       imports: [ExplorationPage],
       providers: [
         ExplorationFeedbackState,
+        ExplorationLiveCombatState,
         ExplorationPreviewState,
         ExplorationOverviewState,
         ExplorationMovementState,
@@ -90,6 +101,7 @@ describe('ExplorationPageState', () => {
         ExplorationPageState,
         { provide: ActiveHero, useValue: activeHero },
         { provide: HeroExplorations, useValue: explorations },
+        { provide: ExplorationLiveCombat, useValue: liveCombat },
         { provide: HeroExplorationRewards, useValue: rewards },
       ],
     });
@@ -249,15 +261,22 @@ describe('ExplorationPageState', () => {
     expect(feedback.successMessage()).toBe('Challenge completed.');
   });
 
-  it('routes combat minigame challenges through the DB-owned combat resolver', () => {
+  it('ensures live combat session and submits one DB player action per strike', () => {
     page.loadData();
     page.startSelectedDifficulty();
     page.overview.setStateFromWorkflow(
       activeExplorationState('easy', false, true, undefined, 'exploration-1', 'combat'),
     );
+    TestBed.flushEffects();
 
     expect(page.isCombatChallenge()).toBeTrue();
     expect(page.canCompleteChallenge()).toBeFalse();
+    expect(liveCombat.ensureSession).toHaveBeenCalledWith(jasmine.objectContaining({
+      challengeAttemptId: 'challenge-1',
+      requestId: jasmine.stringMatching(/^exploration-combat:ensure:challenge-1:/),
+    }));
+    expect(page.combatParticipants().length).toBe(2);
+    expect(page.combatEvents().length).toBe(1);
 
     page.startCombatChallenge();
     expect(page.isCombatRunning()).toBeTrue();
@@ -265,48 +284,69 @@ describe('ExplorationPageState', () => {
     page.submitCombatChallengeStrike();
 
     expect(explorations.completeHeroExplorationChallengeAttempt).not.toHaveBeenCalled();
-    expect(explorations.submitExplorationChallengeCombatResolution)
+    expect(liveCombat.submitPlayerAction)
       .toHaveBeenCalledOnceWith(jasmine.objectContaining({
-        heroId: 'hero-1',
-        difficultyKey: 'easy',
-        challengeAttemptId: 'challenge-1',
-        timingHitsJson: jasmine.any(Array),
-        requestId: jasmine.stringMatching(/^exploration-combat:challenge-1:/),
+        sessionId: 'session-1',
+        timingInput: jasmine.objectContaining({
+          positionPercent: jasmine.any(Number),
+        }),
+        requestId: jasmine.stringMatching(/^exploration-combat:action:challenge-1:/),
       }));
-    const input = explorations.submitExplorationChallengeCombatResolution
-      .calls.mostRecent().args[0];
+    const input = liveCombat.submitPlayerAction.calls.mostRecent().args[0];
 
     expect(JSON.stringify(input)).not.toContain('damage');
     expect(JSON.stringify(input)).not.toContain('equipment');
     expect(JSON.stringify(input)).not.toContain('opponent');
-    expect(page.currentChallengeResult()?.combatResultId).toBe('combat-result-1');
-    expect(feedback.successMessage()).toBe('Walka została zapisana.');
+    expect(JSON.stringify(input)).not.toContain('outcome');
+    expect(page.combatEvents().map((event) => event.eventIndex)).toEqual([1, 2]);
   });
 
-  it('shows DB draw combat results as failed exploration challenges', () => {
-    explorations.submitExplorationChallengeCombatResolution.and.returnValue(
-      of(challengeCompletionWorkflow('easy', {
-        completionMode: 'combat',
-        combatResultId: 'combat-result-1',
-        combatOutcome: 'draw',
-        success: false,
-      })),
+  it('loads final live combat result detail and refreshes exploration state after DB completion', () => {
+    liveCombat.submitPlayerAction.and.returnValue(of(combatLiveState({
+      statusKey: 'completed',
+      statusLabel: 'Completed',
+      awaitingPlayerAction: false,
+      finalCombatResultId: 'combat-result-1',
+      eventCount: 2,
+      events: [combatEvent(1), combatEvent(2, { eventKind: 'session_completed' })],
+    })));
+    explorations.getHeroExplorationState.and.returnValues(
+      of(noExplorationState('easy')),
+      of(noExplorationState('easy')),
+      of(activeExplorationState('easy')),
     );
     page.loadData();
     page.startSelectedDifficulty();
     page.overview.setStateFromWorkflow(
       activeExplorationState('easy', false, true, undefined, 'exploration-1', 'combat'),
     );
+    TestBed.flushEffects();
 
     page.startCombatChallenge();
     page.submitCombatChallengeStrike();
 
-    expect(page.currentChallengeResult()?.success).toBeFalse();
-    expect(page.challengeResultTitle()).toBe('Challenge failed');
-    expect(feedback.successMessage()).toBe('Walka została zapisana jako porażka.');
+    expect(page.combatLiveState()?.statusKey).toBe('completed');
+    expect(page.combatResultDetail()?.combatResultId).toBe('combat-result-1');
+    expect(liveCombat.getResultDetail).toHaveBeenCalledOnceWith({
+      combatResultId: 'combat-result-1',
+    });
+    expect(explorations.getHeroExplorationState).toHaveBeenCalledWith({
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+    });
+    expect(feedback.successMessage()).toBe('Walka została zakończona przez DB.');
   });
 
-  it('renders persisted combat summary and reward diagnostics after combat resolution', async () => {
+  it('renders live combat participants, events and final detail without legacy resolver', async () => {
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    liveCombat.ensureSession.and.returnValue(of(combatLiveState({
+      statusKey: 'completed',
+      statusLabel: 'Completed',
+      awaitingPlayerAction: false,
+      finalCombatResultId: 'combat-result-1',
+      eventCount: 2,
+      events: [combatEvent(1), combatEvent(2, { eventKind: 'session_completed' })],
+    })));
     rewards.getLatestChallengeReward.and.returnValue(of(null));
     const fixture = TestBed.createComponent(ExplorationPage);
 
@@ -316,22 +356,21 @@ describe('ExplorationPageState', () => {
     componentPage.overview.setStateFromWorkflow(
       activeExplorationState('easy', false, true, undefined, 'exploration-1', 'combat'),
     );
+    TestBed.flushEffects();
 
-    componentPage.startCombatChallenge();
-    componentPage.submitCombatChallengeStrike();
     await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('combat-result-1');
     expect(text).toContain('initiator_victory');
-    expect(text).toContain('Turns');
-    expect(text).toContain('Szczegółowy timeline ataków wymaga DB read modelu');
-    expect(text).toContain('Reward grant reward-1');
+    expect(text).toContain('Hero');
+    expect(text).toContain('Opponent');
+    expect(text).toContain('Log DB');
     expect(text).not.toContain('damage');
-    expect(explorations.submitExplorationChallengeCombatResolution).toHaveBeenCalled();
+    expect(liveCombat.ensureSession).toHaveBeenCalled();
+    expect(liveCombat.submitPlayerAction).not.toHaveBeenCalled();
   });
-
   it('auto-resolves active challenges as a database fallback', () => {
     page.loadData();
     page.startSelectedDifficulty();
@@ -614,6 +653,101 @@ function challengeCompletionWorkflow(
       ...patch,
     },
     state: activeExplorationState(difficultyKey),
+  };
+}
+
+function combatLiveState(
+  patch: Partial<CombatLiveStateReadModel> = {},
+): CombatLiveStateReadModel {
+  return {
+    sessionId: 'session-1',
+    serverId: 'server-1',
+    sourceType: 'exploration_challenge',
+    sourceEntityType: 'hero_exploration_challenge_attempt',
+    sourceEntityId: 'challenge-1',
+    statusKey: 'awaiting_player',
+    statusLabel: 'Awaiting player',
+    currentRoundNumber: 1,
+    currentActionIndex: 1,
+    currentActorParticipantId: 'participant-hero',
+    awaitingPlayerAction: true,
+    currentTimingManifest: {
+      zoneStartPercent: 35,
+      zoneEndPercent: 65,
+      zoneWidthPercent: 30,
+      speed: 1.25,
+      label: 'Strike window',
+      rawJson: {},
+    },
+    participants: [
+      {
+        participantId: 'participant-hero',
+        side: 'initiator',
+        displayName: 'Hero',
+        statusKey: 'active',
+        statusLabel: 'Active',
+        currentHp: 42,
+        maxHp: 50,
+        heroId: 'hero-1',
+        opponentDefinitionId: null,
+        rawJson: {},
+      },
+      {
+        participantId: 'participant-opponent',
+        side: 'defender',
+        displayName: 'Opponent',
+        statusKey: 'active',
+        statusLabel: 'Active',
+        currentHp: 30,
+        maxHp: 30,
+        heroId: null,
+        opponentDefinitionId: 'opponent-1',
+        rawJson: {},
+      },
+    ],
+    events: [combatEvent(1)],
+    finalCombatResultId: null,
+    eventCount: 1,
+    updatedAt: '2026-05-01T10:10:00.000Z',
+    rawJson: {},
+    ...patch,
+  };
+}
+
+function combatEvent(
+  eventIndex: number,
+  patch: Partial<CombatLiveStateReadModel['events'][number]> = {},
+): CombatLiveStateReadModel['events'][number] {
+  return {
+    eventIndex,
+    eventKind: 'player_action_requested',
+    label: `Event ${eventIndex}`,
+    actorParticipantId: 'participant-hero',
+    targetParticipantId: 'participant-opponent',
+    roundNumber: 1,
+    actionIndex: eventIndex,
+    happenedAt: '2026-05-01T10:10:00.000Z',
+    details: [`Detail ${eventIndex}`],
+    rawJson: {},
+    ...patch,
+  };
+}
+
+function combatResultDetail(
+  patch: Partial<CombatResultDetailReadModel> = {},
+): CombatResultDetailReadModel {
+  return {
+    combatResultId: 'combat-result-1',
+    outcome: 'initiator_victory',
+    winnerSide: 'initiator',
+    loserSide: 'defender',
+    turnsCompleted: 2,
+    startedAt: '2026-05-01T10:10:00.000Z',
+    completedAt: '2026-05-01T10:11:00.000Z',
+    participants: [],
+    attacks: [],
+    rawJson: {},
+    ...patch,
   };
 }
 

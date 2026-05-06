@@ -3,6 +3,8 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
+import { ExplorationLiveCombat } from '../../../core/services/combat/exploration-live-combat';
+import { ExplorationLiveCombatState } from './exploration-live-combat.state';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
@@ -18,6 +20,8 @@ import { ExplorationStartState } from './exploration-start.state';
   imports: [ButtonModule, MessageModule, ExplorationStatusSection],
   providers: [
     ExplorationFeedbackState,
+    ExplorationLiveCombat,
+    ExplorationLiveCombatState,
     ExplorationPreviewState,
     ExplorationOverviewState,
     ExplorationMovementState,
