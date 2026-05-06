@@ -4,6 +4,7 @@ import { RPC } from '../../constants/rpc.const';
 import {
   GetMyPvpAttackResultRpcRow,
   GetMyPvpSpyResultRpcRow,
+  GetHeroActiveRuntimeActivityRpcRow,
   GetPvpTargetCandidatesRpcRow,
   StartPvpActionRpcRow,
 } from '../../types/pvp-rpc.types';
@@ -127,6 +128,31 @@ describe('PlayerPvp', () => {
       targetHeroId: 'target-hero-1',
     }));
     expect(JSON.stringify(result)).not.toContain('requestId');
+  });
+
+  it('loads active runtime activity through canonical owner-safe RPC', async () => {
+    backend.rpc.and.returnValue(of([activeRuntimeActivityRow()]));
+
+    const result = await firstValueFrom(service.getActiveRuntimeActivity());
+
+    expect(backend.rpc).toHaveBeenCalledOnceWith(
+      RPC.get_hero_active_runtime_activity,
+      {
+        p_hero_id: 'active-hero-1',
+      },
+    );
+    expect(result).toEqual(jasmine.objectContaining({
+      activityId: 'runtime-1',
+      activityKind: 'pvp_spy',
+      sourceEntityId: 'pvp-action-1',
+    }));
+  });
+
+  it('returns null when active runtime activity RPC returns no rows', async () => {
+    backend.rpc.and.returnValue(of([]));
+
+    await expectAsync(firstValueFrom(service.getActiveRuntimeActivity()))
+      .toBeResolvedTo(null);
   });
 
   it('loads my attack result through canonical owner-safe RPC', async () => {
@@ -264,6 +290,30 @@ function spyResultRow(
     target_hero_id: 'target-hero-1',
     target_level_snapshot: 10,
     visibility_key: 'standard',
+    ...overrides,
+  };
+}
+
+function activeRuntimeActivityRow(
+  overrides: Partial<GetHeroActiveRuntimeActivityRpcRow> = {},
+): GetHeroActiveRuntimeActivityRpcRow {
+  return {
+    activity_id: 'runtime-1',
+    activity_kind: 'pvp_spy',
+    activity_kind_label: 'PvP spy',
+    available_at: '2026-05-06T10:01:30.000Z',
+    ended_at: '',
+    expires_at: '',
+    hero_id: 'active-hero-1',
+    metadata_json: { travelTimeSeconds: 90 },
+    reason: '',
+    request_id: 'request-1',
+    server_id: 'server-1',
+    source_entity_id: 'pvp-action-1',
+    source_entity_type: 'pvp_action',
+    started_at: '2026-05-06T10:00:00.000Z',
+    status: 'active',
+    status_label: 'Active',
     ...overrides,
   };
 }

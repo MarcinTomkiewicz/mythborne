@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
+  HeroActiveRuntimeActivity,
   PvpActionStartResult,
   PvpAttackResult,
   PvpSpyResult,
@@ -12,6 +13,8 @@ import {
   GetMyPvpAttackResultRpcRow,
   GetMyPvpSpyResultRpcArgs,
   GetMyPvpSpyResultRpcRow,
+  GetHeroActiveRuntimeActivityRpcArgs,
+  GetHeroActiveRuntimeActivityRpcRow,
   GetPvpTargetCandidatesRpcArgs,
   GetPvpTargetCandidatesRpcRow,
   PvpActionKindKey,
@@ -25,6 +28,7 @@ import {
   mapPvpSpyResult,
   mapPvpTargetCandidate,
 } from '../../utils/pvp-mappers';
+import { mapHeroActiveRuntimeActivity } from '../../utils/runtime-activity-mappers';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
@@ -95,6 +99,22 @@ export class PlayerPvp {
       map((rows) =>
         mapPvpActionStartResult(requiredSingleRow(rows, 'start_pvp_action')),
       ),
+    );
+  }
+
+  getActiveRuntimeActivity(): Observable<HeroActiveRuntimeActivity | null> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: GetHeroActiveRuntimeActivityRpcArgs = {
+          p_hero_id: context.heroId,
+        };
+
+        return this.backend.rpc<GetHeroActiveRuntimeActivityRpcRow[]>(
+          RPC.get_hero_active_runtime_activity,
+          args,
+        );
+      }),
+      map((rows) => rows[0] ? mapHeroActiveRuntimeActivity(rows[0]) : null),
     );
   }
 

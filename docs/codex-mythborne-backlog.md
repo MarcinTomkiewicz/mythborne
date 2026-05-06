@@ -6463,6 +6463,8 @@ PvP Foundation is not:
 - No target spy notification is created or implied by frontend.
 - No direct PvP table write is introduced.
 
+**Implementation note:** R10 accepted on 2026-05-06. `/game/vicinity` now starts eligible spy actions from the PvP target list through `PlayerPvp.startAction(...)` / canonical `start_pvp_action(...)` with `actionKind = spy`. `VicinityPvpTargetCard` remains a thin UI boundary that emits `startSpy`, while `VicinityTargetCandidatesState` owns per-target pending state, success/error feedback, active hero/server stale guards, candidate refresh after success and owner-safe runtime activity refresh through `get_hero_active_runtime_activity(...)`. The frontend did not add Start Attack, combat preview/log, target notification UI, notification writes or direct PvP table access. Verification passed with `npx tsc --noEmit`, focused vicinity/PvP service specs with 48 SUCCESS, static greps and `npm run build` with known budget/Supabase `cookie` warnings. Follow-up: pending submit state is per target; add a global action pending state later only if UX should block parallel attempts against different targets before DB response.
+
 ---
 
 ## Task R11 — Start attack action

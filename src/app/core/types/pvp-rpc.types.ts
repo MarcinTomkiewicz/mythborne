@@ -19,6 +19,11 @@ export type GetPvpTargetCandidatesRpcArgs =
 export type GetPvpTargetCandidatesRpcRow =
   Database['public']['Functions']['get_pvp_target_candidates']['Returns'][number];
 
+export type GetHeroActiveRuntimeActivityRpcArgs =
+  Database['public']['Functions']['get_hero_active_runtime_activity']['Args'];
+export type GetHeroActiveRuntimeActivityRpcRow =
+  Database['public']['Functions']['get_hero_active_runtime_activity']['Returns'][number];
+
 export type StartPvpActionRpcArgs =
   Database['public']['Functions']['start_pvp_action']['Args'];
 export type StartPvpActionRpcRow =

@@ -262,6 +262,12 @@
       } @else if (pvpTargets.isEmpty()) {
         <p class="mb-0 muted-text">No PvP targets match the current filters.</p>
       } @else {
+        @if (pvpTargets.actionError()) {
+          <p class="mb-md muted-text">{{ pvpTargets.actionError() }}</p>
+        }
+        @if (pvpTargets.actionSuccess()) {
+          <p class="mb-md muted-text">{{ pvpTargets.actionSuccess() }}</p>
+        }
         @if (pvpTargetingMetadataError()) {
           <p class="mb-md muted-text">{{ pvpTargetingMetadataError() }}</p>
         }
@@ -271,6 +277,8 @@
             <app-vicinity-pvp-target-card
               [candidate]="candidate"
               [metadataEntries]="pvpTargetingMetadata()"
+              [spyPending]="pvpTargets.isSpyPending(candidate.targetHeroId)"
+              (startSpy)="pvpTargets.startSpy($event)"
             />
           }
         </div>

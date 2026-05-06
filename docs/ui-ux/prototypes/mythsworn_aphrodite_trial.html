@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Myth Sworn — Trial of Aphrodite Graces' Court Prototype</title>
+  <!--
+    VISUAL REFERENCE ONLY.
+    Do not copy this CSS into Angular feature components.
+    Translate approved visual patterns into global SCSS tokens, vendor wrappers,
+    shared components, PrimeNG wrappers, or documented layout utilities.
+
+    Myth Sworn Trial Minigame V2 — Trial of Aphrodite / The Graces' Court.
+
+    Scope:
+    - player-facing manual Trial minigame for Charisma;
+    - Trial belongs to Aphrodite;
+    - player must read the social moment and respond when the active Grace is receptive;
+    - no dialogue/riddle database, no balance-scale mechanic, no combat, no map;
+    - no fast flashing, no strobe, no rapid contrast flicker;
+    - interaction is based on timing, turn-taking and composed response;
+    - the receptive arc rotates against the dial hand, so the timing window is moving rather than static;
+    - Charisma can widen the receptive window, slow the court rhythm, allow more faux pas, or reduce pressure.
+  -->
+  <style>
+    :root {
+      --mb-bg-0: #06080c;
+      --mb-navy-0: #07111d;
+      --mb-gold-1: #9c6723;
+      --mb-gold-2: #c8923a;
+      --mb-gold-3: #f0c96f;
+      --mb-rose-1: #8b415f;
+      --mb-rose-2: #c47993;
+      --mb-rose-3: #efb8c9;
+      --mb-red: #b24b3b;
+      --mb-green: #6fa45d;
+      --mb-blue: #5ba3d5;
+      --mb-purple: #9672cc;
+      --mb-text-0: #f6edda;
+      --mb-text-1: #d7c8ab;
+      --mb-text-2: #9d8f75;
+      --mb-text-3: #6f675a;
+      --mb-line-soft: rgba(240, 201, 111, 0.12);
+      --mb-line: rgba(240, 201, 111, 0.24);
+      --mb-line-strong: rgba(240, 201, 111, 0.44);
+      --mb-sidebar-w: 16rem;
+      --mb-topbar-h: 4.25rem;
+      --mb-radius-xl: 1.35rem;
+      --mb-font-display: Georgia, "Times New Roman", serif;
+      --mb-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--mb-font-ui);
+      color: var(--mb-text-0);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(200,146,58,.13), transparent 28rem),
+        radial-gradient(circle at 82% 4%, rgba(196,121,147,.18), transparent 34rem),
+        radial-gradient(circle at 50% 82%, rgba(150,114,204,.12), transparent 32rem),
+        linear-gradient(135deg, var(--mb-bg-0), #080b11 38%, #050608 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .12;
+      background-image:
+        linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+    button { font: inherit; color: inherit; }
+
+    .mb-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--mb-sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--mb-topbar-h) minmax(0, 1fr);
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .mb-topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(20rem, 1fr) auto minmax(20rem, 1fr);
+      align-items: center;
+      gap: 1rem;
+      padding: .55rem 1rem;
+      border-bottom: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,201,111,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem rgba(0,0,0,.42);
+    }
+    .mb-topbar-left,
+    .mb-topbar-right { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+    .mb-topbar-right { justify-content: flex-end; }
+
+    .mb-brand { display: flex; align-items: center; justify-content: center; gap: .7rem; min-width: 16rem; }
+    .mb-brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-strong);
+      background:
+        radial-gradient(circle at 34% 24%, #fff0b9 0, var(--mb-gold-3) 22%, var(--mb-gold-1) 48%, #251509 70%, var(--mb-navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,201,111,.22);
+      position: relative;
+    }
+    .mb-brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .mb-brand-title { font-family: var(--mb-font-display); font-size: 1.65rem; letter-spacing: .11em; text-transform: uppercase; color: var(--mb-gold-3); line-height: 1; }
+    .mb-brand-subtitle { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; margin-top: .18rem; text-align: center; }
+
+    .mb-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      min-height: 2.15rem;
+      padding: .38rem .72rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: 999px;
+      color: var(--mb-text-1);
+      background: linear-gradient(180deg, rgba(15,23,33,.75), rgba(6,9,13,.78));
+      white-space: nowrap;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-chip strong { color: var(--mb-text-0); }
+    .mb-chip-icon { color: var(--mb-gold-2); }
+    .mb-chip--health strong { color: #ffc0b7; }
+    .mb-chip--resource strong { color: var(--mb-gold-3); }
+    .mb-chip-stack { display: inline-grid; gap: .08rem; line-height: 1.05; }
+    .mb-chip-stack small { color: var(--mb-text-3); font-size: .68rem; }
+    .mb-xp { min-width: 15rem; display: grid; gap: .3rem; padding: .35rem .7rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(15,23,33,.72), rgba(6,9,13,.74)); }
+    .mb-xp-meta { display: flex; justify-content: space-between; gap: .75rem; font-size: .75rem; color: var(--mb-text-2); }
+    .mb-mini-bar { height: .42rem; border-radius: 999px; background: rgba(0,0,0,.38); overflow: hidden; border: 1px solid rgba(240,201,111,.08); }
+    .mb-mini-bar > span { display: block; width: var(--value, 63%); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mb-gold-1), var(--mb-gold-3)); box-shadow: 0 0 .8rem rgba(240,201,111,.3); }
+
+    .mb-sidebar { grid-area: sidebar; padding: 1rem .8rem; border-right: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(7,11,17,.84), rgba(5,7,10,.88)); backdrop-filter: blur(12px); }
+    .mb-server-card { padding: .9rem; border: 1px solid var(--mb-line-soft); border-radius: var(--mb-radius-xl); background: linear-gradient(180deg, rgba(20,32,47,.72), rgba(8,12,18,.74)), radial-gradient(circle at 80% 0%, rgba(240,201,111,.16), transparent 10rem); box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.2); }
+    .mb-server-label { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+    .mb-server-name { display: flex; justify-content: space-between; gap: .7rem; align-items: center; font-weight: 800; color: var(--mb-text-0); }
+    .mb-prestige { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid rgba(240,201,111,.1); }
+    .mb-nav-section-title { margin: 1.05rem 0 .45rem .55rem; color: var(--mb-text-3); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; }
+    .mb-nav-list { display: grid; gap: .28rem; margin: 0; padding: 0; list-style: none; }
+    .mb-nav-link { display: flex; align-items: center; gap: .65rem; padding: .67rem .68rem; color: var(--mb-text-1); text-decoration: none; border-radius: .85rem; border: 1px solid transparent; transition: 120ms ease; }
+    .mb-nav-link:hover, .mb-nav-link.is-active { color: var(--mb-text-0); border-color: rgba(240,201,111,.16); background: linear-gradient(90deg, rgba(240,201,111,.13), rgba(45,110,159,.12)); }
+    .mb-nav-link.is-active { box-shadow: inset 3px 0 0 var(--mb-gold-2); }
+    .mb-nav-icon { width: 1.65rem; height: 1.65rem; border-radius: .55rem; display: grid; place-items: center; background: rgba(240,201,111,.08); color: var(--mb-gold-2); border: 1px solid rgba(240,201,111,.08); flex: 0 0 auto; font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+
+    .mb-main { grid-area: main; min-width: 0; padding: 1.1rem; display: grid; align-content: start; }
+    .mb-trial-page { width: min(1240px, 100%); margin: 0 auto; }
+
+    .mb-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); color: var(--mb-text-1); background: rgba(7,10,14,.45); font-size: .77rem; white-space: nowrap; }
+    .mb-badge--gold { color: var(--mb-gold-3); border-color: rgba(240,201,111,.32); }
+    .mb-badge--green { color: #bde6b0; border-color: rgba(111,164,93,.46); }
+    .mb-badge--blue { color: #b9def3; border-color: rgba(91,163,213,.46); }
+    .mb-badge--red { color: #f2b4aa; border-color: rgba(178,75,59,.46); }
+    .mb-badge--warning { color: #f1d08a; border-color: rgba(240,201,111,.34); }
+    .mb-badge--rose { color: #efb8c9; border-color: rgba(196,121,147,.42); }
+
+    .mb-aphrodite-stage {
+      min-height: calc(100vh - var(--mb-topbar-h) - 2.2rem);
+      position: relative;
+      display: grid;
+      grid-template-rows: auto minmax(34rem, 1fr) auto;
+      gap: 1rem;
+      overflow: hidden;
+      padding: 1rem;
+      border-radius: 1.65rem;
+      border: 1px solid rgba(240,201,111,.20);
+      background:
+        radial-gradient(circle at 50% 14%, rgba(240,201,111,.13), transparent 22rem),
+        radial-gradient(circle at 74% 52%, rgba(196,121,147,.22), transparent 26rem),
+        radial-gradient(circle at 18% 78%, rgba(150,114,204,.14), transparent 22rem),
+        linear-gradient(145deg, rgba(6,9,14,.9), rgba(32,14,28,.72), rgba(5,7,10,.95));
+      box-shadow: 0 1rem 2.6rem rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.05);
+    }
+    .mb-aphrodite-stage::before {
+      content: "";
+      position: absolute;
+      inset: 1rem;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(240,201,111,.07);
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(240,201,111,.055), transparent 13%, transparent 87%, rgba(240,201,111,.05)),
+        repeating-linear-gradient(45deg, transparent 0 2.25rem, rgba(255,255,255,.018) 2.25rem 2.3rem),
+        radial-gradient(circle at 50% 48%, rgba(196,121,147,.08), transparent 25rem);
+    }
+    .mb-aphrodite-stage::after {
+      content: "ΑΦΡΟΔΙΤΗ";
+      position: absolute;
+      left: 50%;
+      top: 48%;
+      transform: translate(-50%, -50%) rotate(-7deg);
+      font-family: var(--mb-font-display);
+      font-size: clamp(3.5rem, 10vw, 9rem);
+      letter-spacing: .18em;
+      color: rgba(240,201,111,.032);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .mb-stage-header,
+    .mb-stage-footer { position: relative; z-index: 1; }
+    .mb-kicker { color: var(--mb-gold-2); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; margin: 0 0 .45rem; }
+    .mb-title { margin: 0; font-family: var(--mb-font-display); font-size: clamp(2.25rem, 4vw, 4rem); line-height: .98; color: var(--mb-gold-3); text-shadow: 0 0 1.4rem rgba(240,201,111,.12); }
+    .mb-copy { margin: .7rem 0 0; max-width: 72rem; color: var(--mb-text-1); line-height: 1.55; }
+    .mb-meta-row { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .75rem; }
+    .mb-state-toggle { display: flex; gap: .4rem; margin-top: .75rem; flex-wrap: wrap; }
+    .mb-toggle-button { min-height: 2rem; padding: .35rem .65rem; border-radius: 999px; border: 1px solid rgba(240,201,111,.14); background: rgba(7,10,14,.44); color: var(--mb-text-2); cursor: pointer; }
+    .mb-toggle-button.is-active { color: var(--mb-gold-3); border-color: rgba(240,201,111,.34); background: rgba(240,201,111,.1); }
+
+    .mb-aphrodite-layout {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(36rem, 1fr) minmax(18rem, .46fr);
+      gap: 1rem;
+      align-items: stretch;
+      min-height: 35rem;
+    }
+    .mb-court-panel {
+      position: relative;
+      padding: 1rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.18);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(196,121,147,.12), transparent 18rem),
+        linear-gradient(180deg, rgba(13,13,25,.78), rgba(6,9,13,.86));
+      box-shadow: inset 0 1px rgba(255,255,255,.04), 0 1rem 2.2rem rgba(0,0,0,.28);
+      overflow: hidden;
+    }
+    .mb-court-panel::before { content: ""; position: absolute; inset: .65rem; border-radius: calc(var(--mb-radius-xl) - .45rem); border: 1px solid rgba(240,201,111,.055); pointer-events: none; }
+    .mb-court-header { position: relative; display: flex; justify-content: space-between; align-items: center; gap: .75rem; margin-bottom: .85rem; }
+    .mb-court-header h2 { margin: 0; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.35rem; }
+    .mb-court-header p { margin: .18rem 0 0; color: var(--mb-text-2); font-size: .86rem; }
+
+    .mb-court-field {
+      position: relative;
+      min-height: 31rem;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: .9rem;
+      padding: .9rem;
+      border-radius: 1.2rem;
+      overflow: hidden;
+      border: 1px solid rgba(240,201,111,.12);
+      background:
+        radial-gradient(circle at 50% 18%, rgba(240,201,111,.10), transparent 13rem),
+        radial-gradient(circle at 50% 76%, rgba(196,121,147,.16), transparent 18rem),
+        linear-gradient(180deg, rgba(28,17,34,.9), rgba(11,12,22,.96) 62%, rgba(5,7,10,.98));
+      box-shadow: inset 0 0 0 .45rem rgba(0,0,0,.16), 0 1.25rem 2.5rem rgba(0,0,0,.26);
+    }
+    .mb-court-field::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at center, transparent 0, transparent 55%, rgba(0,0,0,.42) 100%),
+        linear-gradient(90deg, rgba(0,0,0,.36), transparent 22%, transparent 78%, rgba(0,0,0,.36));
+      z-index: 4;
+    }
+    .mb-court-glow { position:absolute; left:50%; top:52%; width:27rem; height:27rem; transform:translate(-50%,-50%); border-radius:999px; background:radial-gradient(circle, rgba(239,184,201,.13), rgba(240,201,111,.08) 42%, transparent 70%); pointer-events:none; z-index:0; }
+
+    .mb-court-hud { position: relative; z-index: 6; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .55rem; }
+    .mb-hud-card { padding: .62rem; border-radius: .9rem; border: 1px solid rgba(240,201,111,.12); background: rgba(7,10,14,.55); box-shadow: inset 0 1px rgba(255,255,255,.035); }
+    .mb-hud-card span { display:block; color: var(--mb-text-3); font-size:.67rem; letter-spacing:.08em; text-transform:uppercase; }
+    .mb-hud-card strong { display:block; margin-top:.18rem; color: var(--mb-gold-3); }
+
+    .mb-court-stage { position: relative; z-index: 6; display:grid; align-content:center; gap:1rem; min-height:22rem; }
+    .mb-grace-row { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:.8rem; }
+    .mb-grace-card {
+      position: relative;
+      min-height: 18rem;
+      padding: .85rem;
+      border-radius: 1.15rem;
+      border: 1px solid rgba(240,201,111,.13);
+      background:
+        radial-gradient(circle at top, rgba(239,184,201,.12), transparent 8rem),
+        linear-gradient(180deg, rgba(23,19,34,.78), rgba(7,10,14,.74));
+      box-shadow: inset 0 1px rgba(255,255,255,.035), 0 .9rem 1.7rem rgba(0,0,0,.22);
+      display:grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap:.55rem;
+      overflow:hidden;
+      transition: border-color 160ms ease, transform 160ms ease, opacity 160ms ease;
+    }
+    .mb-grace-card.is-active { border-color: rgba(240,201,111,.46); box-shadow: 0 0 1.6rem rgba(240,201,111,.14), inset 0 1px rgba(255,255,255,.05), 0 .9rem 1.7rem rgba(0,0,0,.22); transform: translateY(-2px); }
+    .mb-grace-card.is-muted { opacity:.62; }
+    .mb-grace-name { text-align:center; }
+    .mb-grace-name strong { display:block; font-family:var(--mb-font-display); color:var(--mb-text-0); font-size:1.2rem; }
+    .mb-grace-name span { display:block; color:var(--mb-text-3); font-size:.75rem; margin-top:.1rem; }
+
+    .mb-grace-dial {
+      position: relative;
+      width: min(11rem, 100%);
+      aspect-ratio: 1 / 1;
+      margin: .25rem auto;
+      border-radius: 999px;
+      border: 1px solid rgba(240,201,111,.18);
+      background:
+        conic-gradient(from var(--arc-angle, -18deg), rgba(240,201,111,.38) 0deg var(--window-deg, 52deg), transparent var(--window-deg, 52deg) 360deg),
+        radial-gradient(circle, rgba(7,10,14,.84) 0 55%, rgba(196,121,147,.12) 56% 70%, rgba(7,10,14,.72) 71%);
+      box-shadow: inset 0 0 0 .5rem rgba(0,0,0,.16), 0 0 1.4rem rgba(196,121,147,.12);
+      overflow:hidden;
+    }
+    .mb-grace-dial::before {
+      content:"";
+      position:absolute;
+      inset: 18%;
+      border-radius:999px;
+      border:1px solid rgba(240,201,111,.12);
+      background:radial-gradient(circle, rgba(240,201,111,.08), transparent 70%);
+    }
+    .mb-dial-pointer {
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:2px;
+      height:42%;
+      transform-origin: center bottom;
+      transform: translate(-50%, -100%) rotate(var(--angle, 0deg));
+      background: linear-gradient(180deg, var(--mb-rose-3), var(--mb-gold-3));
+      border-radius:999px;
+      box-shadow:0 0 .8rem rgba(240,201,111,.26);
+      transition: transform 40ms linear;
+    }
+    .mb-dial-center {
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:2.7rem;
+      height:2.7rem;
+      transform:translate(-50%, -50%);
+      border-radius:999px;
+      border:1px solid rgba(240,201,111,.24);
+      background:rgba(7,10,14,.86);
+      display:grid;
+      place-items:center;
+      color:var(--mb-gold-3);
+      font-family:var(--mb-font-display);
+      font-weight:900;
+    }
+    .mb-receptive-label { text-align:center; color:var(--mb-text-2); font-size:.82rem; line-height:1.35; }
+    .mb-grace-card.is-active .mb-receptive-label { color:var(--mb-gold-3); }
+
+    .mb-court-actions { position: relative; z-index: 6; display:flex; justify-content:center; flex-wrap:wrap; gap:.6rem; }
+    .mb-choice-button { min-height: 2.8rem; padding: .55rem .85rem; border-radius:999px; border:1px solid rgba(240,201,111,.16); background:linear-gradient(180deg, rgba(240,201,111,.12), rgba(7,10,14,.58)); cursor:pointer; color:var(--mb-text-0); font-weight:800; }
+    .mb-choice-button:hover,.mb-choice-button:focus-visible { outline:none; border-color:rgba(240,201,111,.42); background:rgba(240,201,111,.13); }
+    .mb-choice-button[disabled] { opacity:.45; cursor:not-allowed; }
+
+    .mb-safe-note { color:var(--mb-text-3); text-align:center; font-size:.78rem; line-height:1.35; }
+
+    .mb-side-panel { display: grid; gap: 1rem; }
+    .mb-info-card { position: relative; padding: .95rem; border-radius: var(--mb-radius-xl); border: 1px solid rgba(240,201,111,.13); background: linear-gradient(180deg, rgba(9,15,23,.72), rgba(6,9,13,.78)); box-shadow: inset 0 1px rgba(255,255,255,.035); }
+    .mb-info-card h3 { margin: 0 0 .55rem; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.15rem; }
+    .mb-info-card p { margin: 0; color: var(--mb-text-2); line-height: 1.45; font-size: .88rem; }
+    .mb-stat-list { display: grid; gap: .5rem; }
+    .mb-stat-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; padding: .5rem .55rem; border-radius: .75rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.34); }
+    .mb-stat-row span { color: var(--mb-text-3); font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; }
+    .mb-stat-row strong { color: var(--mb-gold-3); }
+
+    .mb-meter-stack { display:grid; gap:.7rem; }
+    .mb-meter-row { display:grid; gap:.35rem; }
+    .mb-meter-line { display:flex; justify-content:space-between; color:var(--mb-text-2); font-size:.82rem; }
+    .mb-meter { height:.58rem; border-radius:999px; border:1px solid rgba(240,201,111,.12); background:rgba(0,0,0,.34); overflow:hidden; }
+    .mb-meter span { display:block; height:100%; width:var(--value, 0%); transition: width 160ms ease; }
+    .mb-meter--influence span { background:linear-gradient(90deg, var(--mb-rose-1), var(--mb-rose-3), var(--mb-gold-3)); box-shadow:0 0 .75rem rgba(196,121,147,.22); }
+    .mb-meter--fauxpas span { background:linear-gradient(90deg, var(--mb-gold-2), var(--mb-red)); box-shadow:0 0 .75rem rgba(178,75,59,.22); }
+
+    .mb-log-list { display:grid; gap:.45rem; margin-top:.7rem; }
+    .mb-log-row { display:grid; grid-template-columns:2.4rem minmax(0,1fr); gap:.55rem; align-items:start; padding:.55rem; border-radius:.8rem; border:1px solid rgba(240,201,111,.08); background:rgba(7,10,14,.32); }
+    .mb-log-icon { width:2.4rem; height:2.4rem; display:grid; place-items:center; border-radius:.7rem; border:1px solid rgba(240,201,111,.14); color:var(--mb-gold-3); background:rgba(240,201,111,.07); font-weight:900; }
+    .mb-log-row strong { display:block; color:var(--mb-text-0); }
+    .mb-log-row span { display:block; color:var(--mb-text-2); line-height:1.35; font-size:.84rem; margin-top:.12rem; }
+    .mb-log-row.is-success { border-color:rgba(111,164,93,.25); background:rgba(111,164,93,.07); }
+    .mb-log-row.is-danger { border-color:rgba(178,75,59,.25); background:rgba(178,75,59,.08); }
+    .mb-log-row.is-info { border-color:rgba(91,163,213,.25); background:rgba(91,163,213,.07); }
+    .mb-log-row.is-warning { border-color:rgba(240,201,111,.25); background:rgba(240,201,111,.07); }
+
+    .mb-stage-footer { position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:1rem; align-items:center; padding:.85rem; border-radius:var(--mb-radius-xl); border:1px solid rgba(240,201,111,.12); background:linear-gradient(180deg, rgba(9,15,23,.72), rgba(6,9,13,.78)); }
+    .mb-footer-title { margin:0; color:var(--mb-text-0); font-weight:800; }
+    .mb-footer-copy { margin:.18rem 0 0; color:var(--mb-text-2); line-height:1.4; font-size:.9rem; }
+    .mb-button-row { display:flex; flex-wrap:wrap; gap:.55rem; }
+    .mb-button { min-height:2.4rem; padding:.55rem .85rem; border-radius:999px; border:1px solid var(--mb-line); color:var(--mb-text-0); background:linear-gradient(180deg, rgba(240,201,111,.2), rgba(91,58,19,.32)); cursor:pointer; box-shadow:inset 0 1px rgba(255,255,255,.07); }
+    .mb-button--primary { background:linear-gradient(180deg, rgba(240,201,111,.32), rgba(91,58,19,.44)); }
+    .mb-button--ghost { background:rgba(8,12,18,.54); color:var(--mb-text-1); }
+    .mb-button--danger { border-color:rgba(178,75,59,.42); background:rgba(178,75,59,.12); color:#f2b4aa; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+
+    body.reduce-motion .mb-dial-pointer { transition: none !important; }
+
+    @media (max-width: 1220px) {
+      .mb-topbar { grid-template-columns: 1fr; height: auto; }
+      .mb-brand { justify-content: flex-start; }
+      .mb-app-shell { grid-template-rows: auto minmax(0, 1fr); }
+      .mb-aphrodite-layout { grid-template-columns: 1fr; }
+      .mb-stage-footer { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .mb-app-shell { display: block; }
+      .mb-topbar { position: static; }
+      .mb-topbar-left, .mb-topbar-right { justify-content: flex-start; overflow-x: auto; }
+      .mb-sidebar { border-right: 0; border-bottom: 1px solid var(--mb-line-soft); }
+      .mb-nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .mb-nav-link { justify-content: center; }
+      .mb-nav-label, .mb-nav-section-title { display: none; }
+      .mb-main { padding: .75rem; }
+      .mb-aphrodite-stage { min-height: auto; }
+      .mb-court-hud { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .mb-grace-row { grid-template-columns: 1fr; }
+      .mb-stage-footer { align-items: start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left" aria-label="Hero health and experience">
+        <span class="mb-chip mb-chip--health"><span class="mb-chip-icon">♥</span> Health <strong>86 / 100</strong></span>
+        <div class="mb-xp" aria-label="Experience progress">
+          <div class="mb-xp-meta"><span>Level 12</span><strong>1,240 XP to next</strong></div>
+          <div class="mb-mini-bar" style="--value: 63%"><span></span></div>
+        </div>
+      </div>
+
+      <div class="mb-brand" aria-label="Myth Sworn">
+        <div class="mb-brand-mark"></div>
+        <div>
+          <div class="mb-brand-title">Myth Sworn</div>
+          <div class="mb-brand-subtitle">Trial of Aphrodite prototype</div>
+        </div>
+      </div>
+
+      <div class="mb-topbar-right" aria-label="Hero resources">
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◈</span><span class="mb-chip-stack">Drachmas <strong>3,420</strong><small>+96 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">▣</span><span class="mb-chip-stack">Materials <strong>185</strong><small>+22 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◇</span><span class="mb-chip-stack">Workforce <strong>42</strong><small>+4 / h</small></span></span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-server-card" aria-label="Selected world context">
+        <div class="mb-server-label">Selected server</div>
+        <div class="mb-server-name"><span>Sandbox</span><span class="mb-badge mb-badge--blue">live</span></div>
+        <div class="mb-prestige">
+          <div class="mb-server-label">Prestige</div>
+          <div class="mb-server-name"><span>Zeugitai</span><span class="mb-badge mb-badge--gold">Tier II</span></div>
+        </div>
+      </section>
+
+      <div class="mb-nav-section-title">Hero</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#dashboard"><span class="mb-nav-icon">DA</span><span class="mb-nav-label">Dashboard</span></a></li>
+        <li><a class="mb-nav-link is-active" href="#exploration"><span class="mb-nav-icon">EX</span><span class="mb-nav-label">Exploration</span></a></li>
+        <li><a class="mb-nav-link" href="#statistics"><span class="mb-nav-icon">ST</span><span class="mb-nav-label">Statistics</span></a></li>
+        <li><a class="mb-nav-link" href="#armory"><span class="mb-nav-icon">AR</span><span class="mb-nav-label">Armory</span></a></li>
+      </ul>
+
+      <div class="mb-nav-section-title">World</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#estate"><span class="mb-nav-icon">ES</span><span class="mb-nav-label">Estate</span></a></li>
+        <li><a class="mb-nav-link" href="#trade"><span class="mb-nav-icon">TR</span><span class="mb-nav-label">Trade</span></a></li>
+        <li><a class="mb-nav-link" href="#pvp"><span class="mb-nav-icon">PV</span><span class="mb-nav-label">PvP</span></a></li>
+        <li><a class="mb-nav-link" href="#reports"><span class="mb-nav-icon">RP</span><span class="mb-nav-label">Reports</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main" id="trial-aphrodite-graces-court">
+      <div class="mb-trial-page">
+        <section class="mb-aphrodite-stage">
+          <header class="mb-stage-header">
+            <p class="mb-kicker">Trial of Aphrodite</p>
+            <h1 class="mb-title">The Graces' Court</h1>
+            <p class="mb-copy">Aphrodite does not ask for a speech. She asks for timing. Watch the active Grace and respond while her dial crosses the receptive golden arc. Good timing builds Influence; a mistimed answer is a faux pas.</p>
+            <div class="mb-meta-row">
+              <span class="mb-badge">Stat: Charisma</span>
+              <span class="mb-badge mb-badge--rose">Aphrodite</span>
+              <span class="mb-badge">Manual Trial</span>
+              <span class="mb-badge mb-badge--warning">Timing / presence</span>
+              <span class="mb-badge">No flashing / no strobe</span>
+            </div>
+            <div class="mb-state-toggle" aria-label="Prototype difficulty toggle">
+              <button class="mb-toggle-button is-active" type="button" data-mode="graceful">Graceful</button>
+              <button class="mb-toggle-button" type="button" data-mode="awkward">Low Charisma</button>
+              <button class="mb-toggle-button" type="button" id="motionButton">Reduce motion</button>
+            </div>
+          </header>
+
+          <section class="mb-aphrodite-layout" aria-label="Aphrodite Graces' Court minigame">
+            <article class="mb-court-panel">
+              <div class="mb-court-header">
+                <div>
+                  <h2 id="trialTitle">The court is waiting</h2>
+                  <p id="trialSubtitle">Start the trial. Respond when the active Grace is receptive.</p>
+                </div>
+                <span class="mb-badge mb-badge--blue" id="trialStateBadge">ready</span>
+              </div>
+
+              <div class="mb-court-field" aria-label="Graces' Court field">
+                <div class="mb-court-glow"></div>
+
+                <div class="mb-court-hud">
+                  <section class="mb-hud-card"><span>Influence</span><strong id="influenceValue">0 / 9</strong></section>
+                  <section class="mb-hud-card"><span>Faux pas</span><strong id="fauxPasValue">0 / 3</strong></section>
+                  <section class="mb-hud-card"><span>Active Grace</span><strong id="activeGraceValue">—</strong></section>
+                  <section class="mb-hud-card"><span>Window</span><strong id="windowValue">wide</strong></section>
+                </div>
+
+                <div class="mb-court-stage">
+                  <div class="mb-grace-row" id="graceRow">
+                    <section class="mb-grace-card is-muted" data-grace="0">
+                      <div class="mb-grace-name"><strong>Aglaia</strong><span>radiance</span></div>
+                      <div class="mb-grace-dial"><div class="mb-dial-pointer" id="pointer0"></div><div class="mb-dial-center">A</div></div>
+                      <div class="mb-receptive-label">Answer when the hand enters the golden arc.</div>
+                    </section>
+                    <section class="mb-grace-card is-muted" data-grace="1">
+                      <div class="mb-grace-name"><strong>Euphrosyne</strong><span>delight</span></div>
+                      <div class="mb-grace-dial"><div class="mb-dial-pointer" id="pointer1"></div><div class="mb-dial-center">E</div></div>
+                      <div class="mb-receptive-label">Do not answer too early.</div>
+                    </section>
+                    <section class="mb-grace-card is-muted" data-grace="2">
+                      <div class="mb-grace-name"><strong>Thalia</strong><span>flourishing</span></div>
+                      <div class="mb-grace-dial"><div class="mb-dial-pointer" id="pointer2"></div><div class="mb-dial-center">T</div></div>
+                      <div class="mb-receptive-label">Do not answer too late.</div>
+                    </section>
+                  </div>
+
+                  <p class="mb-safe-note">The receptive arc now moves against the dial hand. It stays smooth and non-flashing; production should keep this safe-motion behavior and support reduced motion.</p>
+                </div>
+
+                <div class="mb-court-actions">
+                  <button class="mb-choice-button" id="startButton" type="button">Start court</button>
+                  <button class="mb-choice-button" id="respondButton" type="button" disabled>Respond now</button>
+                  <button class="mb-choice-button" id="resetButton" type="button">Reset trial</button>
+                </div>
+              </div>
+            </article>
+
+            <aside class="mb-side-panel">
+              <section class="mb-info-card">
+                <h3>Trial parameters</h3>
+                <div class="mb-stat-list">
+                  <div class="mb-stat-row"><span>Hero charisma</span><strong id="charismaPanel">33</strong></div>
+                  <div class="mb-stat-row"><span>Difficulty target</span><strong id="difficultyPanel">28</strong></div>
+                  <div class="mb-stat-row"><span>Responses needed</span><strong id="goalPanel">9</strong></div>
+                  <div class="mb-stat-row"><span>Mistakes allowed</span><strong id="mistakePanel">3</strong></div>
+                  <div class="mb-stat-row"><span>Window size</span><strong id="windowPanel">wide</strong></div>
+                  <div class="mb-stat-row"><span>Motion safety</span><strong id="motionPanel">safe</strong></div>
+                </div>
+              </section>
+
+              <section class="mb-info-card">
+                <h3>Presence</h3>
+                <p id="ruleCopy">Charisma widens the receptive arc and slows the court rhythm. The challenge is turn-taking and timing, not memorized dialogue.</p>
+                <div class="mb-meter-stack" style="margin-top:.75rem;">
+                  <div class="mb-meter-row">
+                    <div class="mb-meter-line"><span>Influence</span><strong id="influenceMeterText">0%</strong></div>
+                    <div class="mb-meter mb-meter--influence" style="--value:0%"><span></span></div>
+                  </div>
+                  <div class="mb-meter-row">
+                    <div class="mb-meter-line"><span>Faux pas pressure</span><strong id="fauxPasMeterText">0%</strong></div>
+                    <div class="mb-meter mb-meter--fauxpas" style="--value:0%"><span></span></div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="mb-info-card">
+                <h3>Court log</h3>
+                <div class="mb-log-list" id="courtLog">
+                  <div class="mb-log-row is-info"><div class="mb-log-icon">1</div><div><strong>Trial ready</strong><span>Aphrodite calls the Graces into the court.</span></div></div>
+                </div>
+              </section>
+            </aside>
+          </section>
+
+          <footer class="mb-stage-footer">
+            <div>
+              <p class="mb-footer-title" id="footerTitle">Answer at the right moment</p>
+              <p class="mb-footer-copy" id="footerCopy">The Trial resolves when enough graceful responses are made or faux pas pressure reaches the limit. This avoids dialogue content and avoids unsafe flashing visuals.</p>
+            </div>
+            <div class="mb-button-row">
+              <button class="mb-button mb-button--primary" id="restartButton" type="button">Restart trial</button>
+              <button class="mb-button mb-button--danger" type="button">Resolve automatically</button>
+              <button class="mb-button mb-button--ghost" type="button">Back to Trial</button>
+            </div>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const configs = {
+      graceful: {
+        charisma: 33,
+        difficulty: 28,
+        goal: 9,
+        mistakes: 3,
+        windowDeg: 64,
+        speed: 38,
+        arcSpeed: 18,
+        windowLabel: 'wide',
+        rule: 'Charisma widens the receptive arc and slows both the dial and the moving receptive window. The challenge is turn-taking and timing, not memorized dialogue.'
+      },
+      awkward: {
+        charisma: 21,
+        difficulty: 35,
+        goal: 9,
+        mistakes: 2,
+        windowDeg: 38,
+        speed: 58,
+        arcSpeed: 32,
+        windowLabel: 'narrow',
+        rule: 'Low Charisma narrows the receptive moment and speeds up both the dial and the moving receptive window, but the motion remains smooth and non-flashing.'
+      }
+    };
+
+    let mode = 'graceful';
+    let running = false;
+    let completed = false;
+    let reduceMotion = false;
+    let influence = 0;
+    let fauxPas = 0;
+    let activeGrace = 0;
+    let logIndex = 2;
+    let lastTime = 0;
+    let rafId = 0;
+    const angles = [238, 82, 154];
+    const arcAngles = [342, 24, 306];
+
+    const graceCards = [...document.querySelectorAll('.mb-grace-card')];
+    const dials = [...document.querySelectorAll('.mb-grace-dial')];
+    const pointers = [document.getElementById('pointer0'), document.getElementById('pointer1'), document.getElementById('pointer2')];
+    const startButton = document.getElementById('startButton');
+    const respondButton = document.getElementById('respondButton');
+    const resetButton = document.getElementById('resetButton');
+    const restartButton = document.getElementById('restartButton');
+    const motionButton = document.getElementById('motionButton');
+    const trialTitle = document.getElementById('trialTitle');
+    const trialSubtitle = document.getElementById('trialSubtitle');
+    const trialStateBadge = document.getElementById('trialStateBadge');
+    const influenceValue = document.getElementById('influenceValue');
+    const fauxPasValue = document.getElementById('fauxPasValue');
+    const activeGraceValue = document.getElementById('activeGraceValue');
+    const windowValue = document.getElementById('windowValue');
+    const charismaPanel = document.getElementById('charismaPanel');
+    const difficultyPanel = document.getElementById('difficultyPanel');
+    const goalPanel = document.getElementById('goalPanel');
+    const mistakePanel = document.getElementById('mistakePanel');
+    const windowPanel = document.getElementById('windowPanel');
+    const motionPanel = document.getElementById('motionPanel');
+    const ruleCopy = document.getElementById('ruleCopy');
+    const influenceMeterText = document.getElementById('influenceMeterText');
+    const fauxPasMeterText = document.getElementById('fauxPasMeterText');
+    const influenceMeter = document.querySelector('.mb-meter--influence');
+    const fauxPasMeter = document.querySelector('.mb-meter--fauxpas');
+    const courtLog = document.getElementById('courtLog');
+    const footerTitle = document.getElementById('footerTitle');
+    const footerCopy = document.getElementById('footerCopy');
+
+    function config() { return configs[mode]; }
+    function clamp(value, min = 0, max = 100) { return Math.max(min, Math.min(max, value)); }
+
+    function addLog(kind, title, copy) {
+      const row = document.createElement('div');
+      row.className = `mb-log-row ${kind}`;
+      row.innerHTML = `<div class="mb-log-icon">${logIndex}</div><div><strong>${title}</strong><span>${copy}</span></div>`;
+      courtLog.prepend(row);
+      logIndex += 1;
+      while (courtLog.children.length > 6) courtLog.removeChild(courtLog.lastChild);
+    }
+
+    function graceName(index) {
+      return ['Aglaia', 'Euphrosyne', 'Thalia'][index] || 'Grace';
+    }
+
+    function normalizeAngle(angle) {
+      return ((angle % 360) + 360) % 360;
+    }
+
+    function isReceptive(index) {
+      const angle = normalizeAngle(angles[index]);
+      const arcStart = normalizeAngle(arcAngles[index]);
+      const relative = normalizeAngle(angle - arcStart);
+      return relative <= config().windowDeg;
+    }
+
+    function render() {
+      const c = config();
+      document.documentElement.style.setProperty('--window-deg', `${c.windowDeg}deg`);
+      pointers.forEach((pointer, index) => pointer.style.setProperty('--angle', `${angles[index]}deg`));
+      dials.forEach((dial, index) => dial.style.setProperty('--arc-angle', `${arcAngles[index]}deg`));
+      graceCards.forEach((card, index) => {
+        card.classList.toggle('is-active', index === activeGrace && running && !completed);
+        card.classList.toggle('is-muted', index !== activeGrace || !running || completed);
+      });
+      influenceValue.textContent = `${influence} / ${c.goal}`;
+      fauxPasValue.textContent = `${fauxPas} / ${c.mistakes}`;
+      activeGraceValue.textContent = running && !completed ? graceName(activeGrace) : '—';
+      windowValue.textContent = c.windowLabel;
+      charismaPanel.textContent = c.charisma;
+      difficultyPanel.textContent = c.difficulty;
+      goalPanel.textContent = c.goal;
+      mistakePanel.textContent = c.mistakes;
+      windowPanel.textContent = c.windowLabel;
+      motionPanel.textContent = reduceMotion ? 'reduced' : 'safe';
+      ruleCopy.textContent = c.rule;
+      influenceMeterText.textContent = `${Math.round((influence / c.goal) * 100)}%`;
+      fauxPasMeterText.textContent = `${Math.round((fauxPas / c.mistakes) * 100)}%`;
+      influenceMeter.style.setProperty('--value', `${clamp((influence / c.goal) * 100)}%`);
+      fauxPasMeter.style.setProperty('--value', `${clamp((fauxPas / c.mistakes) * 100)}%`);
+      respondButton.disabled = !running || completed;
+      startButton.disabled = running && !completed;
+      document.body.classList.toggle('reduce-motion', reduceMotion);
+      motionButton.textContent = reduceMotion ? 'Enable motion' : 'Reduce motion';
+    }
+
+    function startTrial() {
+      if (completed) reset(mode);
+      running = true;
+      completed = false;
+      trialTitle.textContent = 'The court begins';
+      trialSubtitle.textContent = 'Respond when the active Grace enters the golden receptive arc.';
+      trialStateBadge.textContent = 'active';
+      trialStateBadge.className = 'mb-badge mb-badge--rose';
+      footerTitle.textContent = 'Read the moment and answer with grace';
+      footerCopy.textContent = 'Correct timing builds Influence. Early or late responses create faux pas pressure.';
+      addLog('is-info', 'Trial started', `${graceName(activeGrace)} is the first to receive an answer.`);
+      lastTime = performance.now();
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(loop);
+      render();
+    }
+
+    function loop(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+      if (running && !completed && !reduceMotion) {
+        const c = config();
+        angles[0] = normalizeAngle(angles[0] + c.speed * dt);
+        angles[1] = normalizeAngle(angles[1] + c.speed * 0.82 * dt);
+        angles[2] = normalizeAngle(angles[2] + c.speed * 1.12 * dt);
+        arcAngles[0] = normalizeAngle(arcAngles[0] - c.arcSpeed * 0.9 * dt);
+        arcAngles[1] = normalizeAngle(arcAngles[1] - c.arcSpeed * 1.05 * dt);
+        arcAngles[2] = normalizeAngle(arcAngles[2] - c.arcSpeed * 0.82 * dt);
+        render();
+      }
+      if (running && !completed) rafId = requestAnimationFrame(loop);
+    }
+
+    function respond() {
+      if (!running || completed) return;
+      const receptive = isReceptive(activeGrace);
+      if (receptive) {
+        influence += 1;
+        addLog('is-success', 'Graceful response', `${graceName(activeGrace)} accepts the answer.`);
+        activeGrace = (activeGrace + 1) % 3;
+        if (influence >= config().goal) {
+          complete(true);
+        }
+      } else {
+        fauxPas += 1;
+        addLog('is-danger', 'Faux pas', `The answer to ${graceName(activeGrace)} came at the wrong moment.`);
+        activeGrace = (activeGrace + 1) % 3;
+        if (fauxPas >= config().mistakes) {
+          complete(false);
+        }
+      }
+      render();
+    }
+
+    function complete(success) {
+      running = false;
+      completed = true;
+      cancelAnimationFrame(rafId);
+      if (success) {
+        trialTitle.textContent = 'Aphrodite accepts the courtly answer';
+        trialSubtitle.textContent = 'The Graces received each response at the right moment.';
+        trialStateBadge.textContent = 'success';
+        trialStateBadge.className = 'mb-badge mb-badge--green';
+        footerTitle.textContent = 'Trial completed';
+        footerCopy.textContent = 'Theron held the rhythm of the court. The completed Trial report can now show narrative and rewards.';
+        addLog('is-success', 'Trial completed', 'Influence filled the court without too many faux pas.');
+      } else {
+        trialTitle.textContent = 'The court falls silent';
+        trialSubtitle.textContent = 'Too many answers came too early or too late.';
+        trialStateBadge.textContent = 'failed';
+        trialStateBadge.className = 'mb-badge mb-badge--red';
+        footerTitle.textContent = 'Trial failed';
+        footerCopy.textContent = 'The failed Trial report can explain that Theron lost the timing of Aphrodite’s court.';
+        addLog('is-danger', 'Trial failed', 'Faux pas pressure reached the limit.');
+      }
+      render();
+    }
+
+    function reset(newMode = mode) {
+      cancelAnimationFrame(rafId);
+      mode = newMode;
+      document.querySelectorAll('[data-mode]').forEach(button => button.classList.toggle('is-active', button.dataset.mode === mode));
+      running = false;
+      completed = false;
+      influence = 0;
+      fauxPas = 0;
+      activeGrace = 0;
+      logIndex = 2;
+      angles[0] = 238;
+      angles[1] = 82;
+      angles[2] = 154;
+      arcAngles[0] = 342;
+      arcAngles[1] = 24;
+      arcAngles[2] = 306;
+      trialTitle.textContent = 'The court is waiting';
+      trialSubtitle.textContent = 'Start the trial. Respond when the active Grace is receptive.';
+      trialStateBadge.textContent = 'ready';
+      trialStateBadge.className = 'mb-badge mb-badge--blue';
+      footerTitle.textContent = 'Answer at the right moment';
+      footerCopy.textContent = 'The Trial resolves when enough graceful responses are made or faux pas pressure reaches the limit. This avoids dialogue content and avoids unsafe flashing visuals.';
+      courtLog.innerHTML = '<div class="mb-log-row is-info"><div class="mb-log-icon">1</div><div><strong>Trial ready</strong><span>Aphrodite calls the Graces into the court.</span></div></div>';
+      render();
+    }
+
+    startButton.addEventListener('click', startTrial);
+    respondButton.addEventListener('click', respond);
+    resetButton.addEventListener('click', () => reset(mode));
+    restartButton.addEventListener('click', () => reset(mode));
+    motionButton.addEventListener('click', () => {
+      reduceMotion = !reduceMotion;
+      render();
+    });
+    document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => reset(button.dataset.mode)));
+    document.addEventListener('keydown', event => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        respond();
+      }
+    });
+
+    reset('graceful');
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-05-05
+Updated: 2026-05-06
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -198,7 +198,8 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: HOTFIX-COMBAT-2 - exploration combat result/reward/report display.
 - Completed and confirmed: HOTFIX-COMBAT-3 - reuse Walking Dead timing UI for exploration combat.
 - Completed and confirmed: R9 - Vicinity eligibility reason display.
-- Next backlog task: R10 - Start spy action.
+- Completed and confirmed: R10 - Start spy action.
+- Next backlog task: R11 - Start attack action.
 - Q4 pending manual smoke: check a real DB row for `estate.building_job.completed`; source `action_url` must be `/game/mansion`. If it still returns `ViewState`, fix DB/content producer source and do not add a frontend remap.
 - Q5 pending manual smoke: open bell, mark read, dismiss and action link; real DB/RLS denied-action smoke only if suitable test data/access exists.
 - Q6 pending manual smoke: basic bell UI can be smoke-tested, but full fresh-toast validation needs a real DB producer notification. Eligible unread fresh rows should toast once; read rows and `default_toast_enabled = false` rows should remain inbox-only.
@@ -213,6 +214,7 @@ Order reflects implementation priority, not final business priority.
 - O9/O10/O12 follow-up: resource production after destructive relocation remains a non-blocking DB/runtime consistency issue. After relocating to a new estate with level 0 buildings, `hero_resources.per_hour` for drachma may remain stale (for example `+18/h`) until a later build/finalize path recalculates production (for example `+12/h`). Check `relocate_hero_estate_to_empty_address(...)`, `settle_hero_runtime_state(...)`, `get_hero_estate_runtime_state(...)` and `refresh_hero_resource_production_rates(...)`; do not add Angular-side production recalculation or local override.
 - O11 UI debt: vicinity still uses native selects / `ngModel`. Keep it as temporary accepted debt; future UI pass should move it to project/PrimeNG reactive-form patterns without adding PvP/spy/protection workflows to `EstateVicinityPageState`.
 - R9 follow-up: real PvP data smoke should confirm DB metadata labels for the main target eligibility reason keys. If player-facing copy should be fully Polish, seed/adjust DB metadata or later local fallback copy rather than changing the RPC contract.
+- R10 follow-up: pending submit state is currently per target, which satisfies duplicate-submit protection for the clicked target. If product UX should block parallel attempts against different targets before the DB responds, add a global PvP action pending state in a later slice.
 - Formula balance refactor follow-up: before the next larger item generation/formula balance task, split `ItemGenerationFormulaBalanceFacade` further. It remains about 447 lines after the accepted variable-contract fix and must not absorb more workflow responsibilities.
 - N13 pending validation: representative XP producer smoke remains pending until a real XP-producing flow exists or is intentionally selected; user/manual validation remains separate from technical green checks and must not be claimed by Codex.
 - N12 DB/content cleanup follow-up: replace remaining formula target `hero points` wording with `Character Points`; confirm and align stat upgrade default test context keys (`hero_level`/`stat_level` vs allowed `heroLevel`/`statLevel`); seed the currently reported progression UI metadata gaps. Do not hide these with frontend fallback labels or fallback contexts.

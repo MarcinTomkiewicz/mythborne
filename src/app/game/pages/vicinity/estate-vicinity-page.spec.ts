@@ -48,7 +48,7 @@ describe('EstateVicinityPage', () => {
     expect(pvpTargets.loadCandidates).toHaveBeenCalled();
   });
 
-  it('renders safe PvP target candidate data without action workflow controls', () => {
+  it('renders safe PvP target candidate data with spy action only', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
@@ -73,7 +73,25 @@ describe('EstateVicinityPage', () => {
     expect(text).not.toContain('Combat preview');
     expect(text).not.toContain('Combat log');
     expect(text).not.toContain('Start attack');
-    expect(text).not.toContain('Start spy');
+    expect(text).toContain('Start spy');
+  });
+
+  it('delegates start spy from PvP target card without exposing attack workflow', () => {
+    fixture.detectChanges();
+
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+    const spyButton = buttons.find((button) =>
+      button.textContent?.includes('Start spy')
+    );
+
+    expect(spyButton).toBeDefined();
+    spyButton?.click();
+
+    expect(pvpTargets.startSpy).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({ targetHeroId: 'target-hero-private-id' }),
+    );
   });
 });
 
@@ -123,6 +141,8 @@ function pvpTargetStateStub() {
   return {
     isLoading: signal(false),
     error: signal<string | null>(null),
+    actionError: signal<string | null>(null),
+    actionSuccess: signal<string | null>(null),
     isEmpty: signal(false),
     candidates: signal([candidate()]),
     districtCode: signal<string | null>(null),
@@ -130,6 +150,8 @@ function pvpTargetStateStub() {
     limit: signal(20),
     canGoPrevious: signal(false),
     canGoNext: signal(false),
+    isSpyPending: jasmine.createSpy('isSpyPending').and.returnValue(false),
+    startSpy: jasmine.createSpy('startSpy'),
     loadCandidates: jasmine.createSpy('loadCandidates'),
     setDistrictCode: jasmine.createSpy('setDistrictCode'),
     setSearch: jasmine.createSpy('setSearch'),

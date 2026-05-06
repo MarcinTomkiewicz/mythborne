@@ -69,6 +69,7 @@ export const RPC = {
   get_hero_game_reports: 'get_hero_game_reports',
   get_my_notification_unread_count: 'get_my_notification_unread_count',
   get_my_notifications: 'get_my_notifications',
+  get_hero_active_runtime_activity: 'get_hero_active_runtime_activity',
   get_pvp_target_candidates: 'get_pvp_target_candidates',
   get_my_pvp_spy_result: 'get_my_pvp_spy_result',
   get_my_pvp_attack_result: 'get_my_pvp_attack_result',

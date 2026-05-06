@@ -37,6 +37,14 @@
     <span [class]="eligibilityBadgeClass(candidate().spyEligibility.canStart)">
       Spy {{ spyDisplay().statusLabel }}
     </span>
+    <button
+      type="button"
+      class="tag-badge tag-badge--info"
+      [disabled]="!canStartSpy()"
+      (click)="onStartSpy()"
+    >
+      {{ spyPending() ? 'Starting spy...' : 'Start spy' }}
+    </button>
   </div>
 
   @if (hasReason(attackDisplay()) || hasReason(spyDisplay())) {

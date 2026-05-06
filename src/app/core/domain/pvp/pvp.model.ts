@@ -84,6 +84,25 @@ export interface PvpActionStartResult {
   targetProtectionSeconds: number | null;
 }
 
+export interface HeroActiveRuntimeActivity {
+  activityId: string;
+  heroId: string;
+  serverId: string;
+  activityKind: string;
+  activityKindLabel: string;
+  status: string;
+  statusLabel: string;
+  sourceEntityType: string | null;
+  sourceEntityId: string | null;
+  startedAt: string;
+  availableAt: string | null;
+  expiresAt: string | null;
+  endedAt: string | null;
+  reason: string | null;
+  requestId: string | null;
+  metadataJson: Json;
+}
+
 export interface PvpRuntimeActivitySummary {
   pvpActionId: string;
   runtimeActivityId: string | null;

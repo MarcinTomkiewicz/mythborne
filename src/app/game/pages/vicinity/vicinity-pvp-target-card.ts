@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { UiMetadataEntryReadModel } from '../../../core/domain/admin-ui-metadata.model';
 import { PvpTargetCandidate } from '../../../core/domain/pvp/pvp.model';
 import {
@@ -14,6 +14,8 @@ import {
 export class VicinityPvpTargetCard {
   readonly candidate = input.required<PvpTargetCandidate>();
   readonly metadataEntries = input<readonly UiMetadataEntryReadModel[]>([]);
+  readonly spyPending = input(false);
+  readonly startSpy = output<PvpTargetCandidate>();
 
   readonly attackDisplay = computed(() =>
     pvpEligibilityDisplay({
@@ -63,5 +65,17 @@ export class VicinityPvpTargetCard {
 
   hasReason(display: PvpEligibilityDisplay): boolean {
     return display.reasonLabel !== null;
+  }
+
+  canStartSpy(): boolean {
+    return this.candidate().spyEligibility.canStart && !this.spyPending();
+  }
+
+  onStartSpy(): void {
+    if (!this.canStartSpy()) {
+      return;
+    }
+
+    this.startSpy.emit(this.candidate());
   }
 }
