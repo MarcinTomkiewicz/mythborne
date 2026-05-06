@@ -2,6 +2,11 @@
 
 These HTML files are visual references only. They are not Angular production source.
 
+Production mapping:
+- `mythsworn-style-contract.md` is the UI-CORE-1 style contract for translating accepted prototype direction into Angular/global SCSS usage.
+- `global-scss-shared-inventory.md` is the UI-CORE-2 inventory of global SCSS, vendor wrappers and shared/layout components to check before UI implementation.
+- `local-scss-budget-checklist.md` is the UI-CORE-3 local SCSS budget and required styling report checklist.
+
 Rules:
 - Do not copy CSS into feature components.
 - Translate approved patterns into global SCSS, vendor wrappers, shared components, PrimeNG wrappers or documented utilities.

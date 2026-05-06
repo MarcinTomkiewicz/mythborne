@@ -12,6 +12,8 @@ Order reflects implementation priority, not final business priority.
 
 ## Current Codex Backlog Position
 
+- UI/UX foundation accepted: UI-CORE-1 - Mythsworn UI style contract extraction, UI-CORE-2 - Global SCSS and shared pattern inventory, and UI-CORE-3 - Local SCSS budget and style report checklist.
+- Next UI/UX foundation task: UI-CORE-11 - Prototype-to-production SCSS mapping.
 - Completed and confirmed: A1 - regenerate/update Supabase database types.
 - Current documentation sync applied: A2 - this TODO and `current-state-summary.md` were updated after A1 confirmation.
 - Completed and confirmed: B1 - audit old identity assumptions.

@@ -1,6 +1,6 @@
 # Mythsworn — Database Current Notes
 
-Updated: 2026-05-05
+Updated: 2026-05-06
 
 This file is the curated semantic index of the current database state. It is not a full `pg_dump`.
 
@@ -14,6 +14,157 @@ If this file conflicts with the actual database, generated Supabase types, or a 
 
 After every schema/RPC migration that Codex will consume, regenerate/update generated Supabase types before frontend work.
 
+
+
+## Update 2026-05-06 — Epic U Luck Foundation, U-DB8 DB combat authority and Q9 diagnostics
+
+This section records the semantic DB/RPC contract added and verified after Epic T. It is intentionally a curated index, not a full dump.
+
+Frontend/Codex must regenerate Supabase database types before consuming these contracts.
+
+### Epic U — Luck Foundation DB/RPC/formula/config foundation
+
+Epic U Luck Foundation is DB-ready.
+
+Final checks passed for the core Luck foundation:
+
+- expected Luck/combat/reward formula targets are present, assigned and enabled;
+- expected Luck-related config definitions are active;
+- Luck resolver and trial power helpers exist and no longer use the old hardcoded exploration Luck fallback;
+- exploration/trial runtime helpers use DB formula runtime and Luck-aware runtime inputs;
+- exploration/trial Luck Lab preview functions use DB formula runtime, not Angular-side authority;
+- reward amount and item-count helpers route through Luck-aware formula targets;
+- item generation runtime is wired through Luck-aware DB helpers;
+- combat Luck preview exists as a DB read/preview contract.
+
+Core Luck helpers/RPCs include:
+
+- `get_hero_luck_breakdown(p_hero_id)` — DB-side explanation of effective Luck sources;
+- `get_hero_luck_value(p_hero_id)` — effective hero Luck;
+- `get_hero_exploration_luck_value(p_hero_id)` — exploration Luck value, now routed through runtime Luck;
+- `calculate_luck_influence(p_luck_value)` — DB formula-backed Luck influence;
+- `calculate_trial_power(p_tested_stat_value, p_luck_value)` — DB formula-backed tested stat + Luck influence power;
+- `get_hero_trial_power(p_hero_id, p_tested_stat_key)` — hero-specific trial power read helper;
+- `preview_luck_influence_and_trial_power(...)` — admin/Luck Lab preview helper.
+
+Luck-aware exploration/trial runtime helpers include:
+
+- `get_trial_opportunity_chance(p_exploration_id)`;
+- `get_trial_manifestation_chance(p_exploration_id, p_trial_definition_id)`;
+- `get_challenge_auto_resolve_success_chance(p_challenge_attempt_id)`;
+- `get_non_trial_encounter_chance(p_exploration_id)`.
+
+Luck Lab / preview RPCs include:
+
+- `preview_trial_opportunity_curve(...)`;
+- `simulate_trial_opportunity_runs(...)`;
+- `preview_trial_manifestation_chance(...)`;
+- `preview_challenge_auto_resolve_success_chance(...)`;
+- `preview_non_trial_encounter_chance(...)`;
+- `preview_exploration_luck_rng_chain(...)`;
+- `preview_reward_profile_luck(...)`;
+- `preview_reward_generated_item_luck(...)`;
+- `preview_combat_luck_formula_context(...)`.
+
+Reward and item-generation Luck contracts:
+
+- `reward_entry_amount` is Luck-aware for range amount calculation;
+- `reward_entry_item_count` is Luck-aware for item-generation count calculation;
+- `evaluate_reward_profile_entry_amount(...)` uses the reward amount formula target;
+- `evaluate_reward_profile_entry_item_count(...)` uses the item-count formula target;
+- `grant_reward_profile_to_hero(...)` delegates to the amount and item-count helpers, then calls the existing item generator;
+- `reward_item_budget_bucket_index`, `reward_item_quality_adjusted_weight` and `reward_item_affix_chance` drive Luck-aware item generation;
+- `generate_reward_item_for_hero(...)` now uses Luck-aware helper logic and writes Luck-aware metadata;
+- legacy comparison helpers such as `compute_reward_item_budget(...)` and `pick_reward_item_quality_key(...)` remain available for compatibility/admin comparison.
+
+Combat Luck preview contract:
+
+- `preview_combat_luck_formula_context(...)` is read-only and formula-backed;
+- it exposes how Luck affects critical chance and evasion chance;
+- it does not persist combat and does not apply combat consequences.
+
+Epic U does not require Angular to simulate formula authority. Frontend/Luck Lab must consume these DB/RPC outputs and should not hardcode Luck curves, chance formulas, reward ranges or item-generation Luck effects.
+
+### U-DB8 — DB-owned manual combat authority foundation
+
+U-DB8 adds the missing DB-owned manual combat runtime layer that was not covered by the earlier combat persistence foundation.
+
+This is not the same as `auto_resolve_hero_exploration_challenge_attempt(...)`. Auto-resolve is a binary success/failure workflow. U-DB8 resolves a full combat log with initiative, hit, evasion, critical, damage and health transitions.
+
+U-DB8 verified stages:
+
+- U-DB8A — internal DB combat RNG resolver core;
+- U-DB8B — trusted DB snapshot builders for hero and opponent combatants;
+- U-DB8C — service-only resolve-and-persist wrapper;
+- U-DB8D — service-only exploration challenge combat-result attachment wrapper;
+- U-DB8E / FIX1 — authenticated owner-safe manual exploration combat submit RPC using valid `completion_mode = 'manual'`;
+- U-DB8F — owner-safe combat result detail read model and hardening of raw snapshot persistence;
+- U-DB8G — positive rollback smoke for full public submit flow;
+- U-DB8H — final concise verification of ACL, contracts and ownership boundaries.
+
+Service-only/internal functions:
+
+- `get_combat_snapshot_stat_value(p_stats_json, p_stat_key, p_fallback)`;
+- `internal_resolve_combat_from_trusted_snapshots(...)` — resolves trusted combat snapshots using DB RNG and combat formula targets;
+- `build_hero_combatant_snapshot_for_resolver(p_hero_id, p_side)` — builds hero snapshot from DB base stats, Luck, runtime equipment bonus totals and runtime equipment slots; it sets local owner auth context for owner-safe helper calls and does not read `hero_derived` as gameplay authority;
+- `build_opponent_combatant_snapshot_for_resolver(p_opponent_definition_id, p_side, p_reference_level, p_difficulty_multiplier)` — builds opponent snapshot from `combat_opponent_definitions`, `combat_opponent_stat_values.base_value` and active `combat_opponent_attack_sources`, with fallback natural attack;
+- `resolve_and_persist_combat_from_trusted_snapshots(...)` — resolves trusted snapshots and persists through `persist_combat_result_snapshot(...)`; does not complete challenges, grant rewards, apply PvP consequences, create reports or notifications;
+- `resolve_and_attach_exploration_challenge_combat_result(...)` — resolves and persists combat for a non-terminal exploration combat challenge attempt and attaches `combatResolver` metadata; does not complete the challenge or grant rewards.
+
+Authenticated/frontend-facing functions:
+
+- `submit_exploration_challenge_combat_resolution(p_challenge_attempt_id, p_timing_hits_json, p_request_id)`:
+  - owner-safe authenticated RPC;
+  - checks `auth.uid()` and `hero.user_id`, never assumes `hero.id = auth.uid()`;
+  - accepts only combat input/timing JSON, not frontend-provided stats/equipment/Luck/damage;
+  - builds trusted hero/opponent snapshots from DB;
+  - resolves and persists combat;
+  - completes the challenge through `complete_hero_exploration_challenge_attempt(...)` with `completion_mode = 'manual'`;
+  - for trial/encounter combat, `initiator_victory` means success, while `defender_victory` and `draw` mean failure;
+  - is not a PvP wrapper and must not be used for PvP draw semantics.
+- `get_combat_result_detail(p_combat_result_id)`:
+  - owner-safe read model using `can_read_combat_result(...)`;
+  - returns combat result header, participants with stats and ordered attack log.
+
+Raw persistence hardening:
+
+- `persist_combat_result_snapshot(...)` is now service-only. Frontend must not call it directly or persist arbitrary combat snapshots.
+
+Manual exploration combat frontend flow should use:
+
+1. exploration/challenge state exposes a combat `challenge_attempt_id`;
+2. frontend opens combat UI and collects timing/manual input only;
+3. frontend calls `submit_exploration_challenge_combat_resolution(...)`;
+4. frontend uses returned `combat_result_id`;
+5. frontend calls `get_combat_result_detail(...)` to render participants and attack log.
+
+PvP remains a separate domain wrapper. Current PvP decisions still apply: PvP uses the combat module/combat result snapshot model, supplies hero-vs-hero combatants and interprets the result. For PvP, draw remains draw.
+
+### Q9 — Notification Hook Diagnostics DB/RPC source
+
+Q9 backend diagnostics source is implemented and verified.
+
+Current DB source:
+
+- `notification_db_owned_producer_diagnostics` — DB-backed registry of DB-owned notification producers and explicit non-producers;
+- `get_admin_notification_db_owned_producer_diagnostics()` — canonical admin/staff diagnostics RPC;
+- `get_notification_hook_diagnostics()` — compatibility wrapper;
+- `notification_hook_diagnostics_section` metadata rows exist in `ui_metadata_entries`.
+
+Verification passed with:
+
+- 11 diagnostics rows;
+- 10 OK producer rows;
+- 1 explicit non-producer row;
+- `blockerCount = 0`;
+- `game_report_created_is_not_default_notification_producer` is an explicit non-producer with empty missing arrays;
+- diagnostics RPCs do not create or mutate `notifications`.
+
+Q9 frontend should consume the diagnostics RPC/source. Missing producers or missing notification types should be treated as DB/RPC blockers, not patched through Angular insert logic.
+
+### Type regeneration reminder
+
+Regenerate Supabase generated database types before frontend/Codex work that consumes Epic U, U-DB8 or Q9 contracts. New or changed RPCs include the Luck preview/runtime helpers, combat resolver/submit/detail functions, and Q9 diagnostics functions.
 
 
 ## Update 2026-05-05 — Epic T Guild Foundation DB/RPC foundation

@@ -797,6 +797,8 @@ Cel: ustabilizować wspólne wzorce, globalne SCSS, reuse rules, vendor wrapper 
 
 ## UI-CORE-1 / formerly UI-28 — Mythsworn UI style contract extraction
 
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/mythsworn-style-contract.md`.
+
 **Goal:**  
 Zebrać zaakceptowane style z prototypów i rozmowy w praktyczny style contract dla Codexa, bez kopiowania canvas CSS do Angulara.
 
@@ -851,6 +853,8 @@ Zebrać zaakceptowane style z prototypów i rozmowy w praktyczny style contract 
 
 ## UI-CORE-2 — Global SCSS and shared pattern inventory
 
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/global-scss-shared-inventory.md`.
+
 **Goal:**  
 Stworzyć inventory globalnych SCSS, utilities, layouts, vendor wrappers i shared components, które Codex ma sprawdzać przed implementacją UI.
 
@@ -896,6 +900,8 @@ Stworzyć inventory globalnych SCSS, utilities, layouts, vendor wrappers i share
 - scope kept minimal:
 
 ## UI-CORE-3 — Local SCSS budget and style report checklist
+
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/local-scss-budget-checklist.md`.
 
 **Goal:**  
 Wprowadzić egzekwowalny local SCSS budget i styling report checklist dla wszystkich większych UI tasków.
@@ -5096,4 +5102,3 @@ Required Codex report:
 - local SCSS added:
 - why local SCSS was necessary:
 - copied from prototype: yes/no
-
