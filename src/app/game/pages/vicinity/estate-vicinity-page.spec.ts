@@ -48,7 +48,7 @@ describe('EstateVicinityPage', () => {
     expect(pvpTargets.loadCandidates).toHaveBeenCalled();
   });
 
-  it('renders safe PvP target candidate data with spy action only', () => {
+  it('renders safe PvP target candidate data with attack and spy actions', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
@@ -63,32 +63,37 @@ describe('EstateVicinityPage', () => {
     expect(text).toContain('Spy travel');
     expect(text).toContain('1m 30s');
     expect(text).toContain('No active protection');
-    expect(text).toContain('Attack Unavailable');
-    expect(text).toContain('Attack:');
-    expect(text).toContain('Attacker busy');
-    expect(text).toContain('attacker_busy');
+    expect(text).toContain('Attack Available');
     expect(text).toContain('Spy Available');
     expect(text).not.toContain('target-hero-private-id');
     expect(text).not.toContain('estate-private-id');
     expect(text).not.toContain('Combat preview');
     expect(text).not.toContain('Combat log');
-    expect(text).not.toContain('Start attack');
+    expect(text).toContain('Start attack');
     expect(text).toContain('Start spy');
   });
 
-  it('delegates start spy from PvP target card without exposing attack workflow', () => {
+  it('delegates attack and spy starts from PvP target card without direct PvP table access', () => {
     fixture.detectChanges();
 
     const buttons = Array.from(
       fixture.nativeElement.querySelectorAll('button'),
     ) as HTMLButtonElement[];
+    const attackButton = buttons.find((button) =>
+      button.textContent?.includes('Start attack')
+    );
     const spyButton = buttons.find((button) =>
       button.textContent?.includes('Start spy')
     );
 
+    expect(attackButton).toBeDefined();
     expect(spyButton).toBeDefined();
+    attackButton?.click();
     spyButton?.click();
 
+    expect(pvpTargets.startAttack).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({ targetHeroId: 'target-hero-private-id' }),
+    );
     expect(pvpTargets.startSpy).toHaveBeenCalledOnceWith(
       jasmine.objectContaining({ targetHeroId: 'target-hero-private-id' }),
     );
@@ -150,7 +155,10 @@ function pvpTargetStateStub() {
     limit: signal(20),
     canGoPrevious: signal(false),
     canGoNext: signal(false),
+    isStartingAction: signal(false),
+    isAttackPending: jasmine.createSpy('isAttackPending').and.returnValue(false),
     isSpyPending: jasmine.createSpy('isSpyPending').and.returnValue(false),
+    startAttack: jasmine.createSpy('startAttack'),
     startSpy: jasmine.createSpy('startSpy'),
     loadCandidates: jasmine.createSpy('loadCandidates'),
     setDistrictCode: jasmine.createSpy('setDistrictCode'),
@@ -177,12 +185,12 @@ function candidate(): PvpTargetCandidate {
     underProtection: false,
     protectionExpiresAt: null,
     attackEligibility: {
-      canStart: false,
-      blockReason: 'attacker_busy',
+      canStart: true,
+      blockReason: null,
       travelTimeSeconds: 180,
       minTargetLevel: 8,
       maxTargetLevel: 16,
-      attackerHasBlockingActivity: true,
+      attackerHasBlockingActivity: false,
     },
     spyEligibility: {
       canStart: true,

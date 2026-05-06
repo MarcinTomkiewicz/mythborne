@@ -277,7 +277,10 @@
             <app-vicinity-pvp-target-card
               [candidate]="candidate"
               [metadataEntries]="pvpTargetingMetadata()"
+              [actionPending]="pvpTargets.isStartingAction()"
+              [attackPending]="pvpTargets.isAttackPending(candidate.targetHeroId)"
               [spyPending]="pvpTargets.isSpyPending(candidate.targetHeroId)"
+              (startAttack)="pvpTargets.startAttack($event)"
               (startSpy)="pvpTargets.startSpy($event)"
             />
           }

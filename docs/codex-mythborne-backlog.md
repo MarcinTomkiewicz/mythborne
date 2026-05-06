@@ -6485,6 +6485,8 @@ PvP Foundation is not:
 - Frontend does not create incoming attack notification UI.
 - No direct PvP table write is introduced.
 
+**Implementation note:** R11 accepted on 2026-05-06. `/game/vicinity` now starts eligible attack actions from `VicinityPvpTargetCard` through `VicinityTargetCandidatesState` and `PlayerPvp.startAction(...)`, which calls canonical `start_pvp_action(...)` with `actionKind = attack`. Attack and spy share the same start-action path, but the state uses a global `pendingAction` lock so only one PvP action start request can be active at a time. The lock blocks attack->spy, spy->attack and target-A->target-B submits, stays active through owner-safe runtime activity refresh and target-candidate refresh after success, and clears on success, error or stale hero/server response. The card receives global `actionPending` and disables both Start Attack and Start Spy without knowing the RPC boundary. No incoming attack notification UI, combat preview/log, notification write, PvP table write or direct PvP table read was added. Verification passed with `npx tsc --noEmit`, focused vicinity state/card/page specs with 20 SUCCESS, static greps and `npm run build` with known budget/Supabase `cookie` warnings. Manual smoke is N/A in the current environment because no second hero/player target is available.
+
 ---
 
 ## Task R12 — PvP runtime activity display

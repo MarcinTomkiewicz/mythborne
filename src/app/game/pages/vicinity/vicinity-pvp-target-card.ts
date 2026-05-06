@@ -14,7 +14,10 @@ import {
 export class VicinityPvpTargetCard {
   readonly candidate = input.required<PvpTargetCandidate>();
   readonly metadataEntries = input<readonly UiMetadataEntryReadModel[]>([]);
+  readonly actionPending = input(false);
+  readonly attackPending = input(false);
   readonly spyPending = input(false);
+  readonly startAttack = output<PvpTargetCandidate>();
   readonly startSpy = output<PvpTargetCandidate>();
 
   readonly attackDisplay = computed(() =>
@@ -68,7 +71,23 @@ export class VicinityPvpTargetCard {
   }
 
   canStartSpy(): boolean {
-    return this.candidate().spyEligibility.canStart && !this.spyPending();
+    return this.candidate().spyEligibility.canStart
+      && !this.actionPending()
+      && !this.spyPending();
+  }
+
+  canStartAttack(): boolean {
+    return this.candidate().attackEligibility.canStart
+      && !this.actionPending()
+      && !this.attackPending();
+  }
+
+  onStartAttack(): void {
+    if (!this.canStartAttack()) {
+      return;
+    }
+
+    this.startAttack.emit(this.candidate());
   }
 
   onStartSpy(): void {

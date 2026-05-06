@@ -16,11 +16,11 @@ After every schema/RPC migration that Codex will consume, regenerate/update gene
 
 
 
-## Update 2026-05-06 — Epic U Luck Foundation, U-DB8 DB combat authority and Q9 diagnostics
+## Update 2026-05-06 — Epic U/V Luck, live manual combat and Epic W Exploration Core
 
-This section records the semantic DB/RPC contract added and verified after Epic T. It is intentionally a curated index, not a full dump.
+This section supersedes the earlier 2026-05-06 combat notes that still described `submit_exploration_challenge_combat_resolution(...)` as the player-facing manual combat endpoint. The current dump shows the live combat session model and the old full-resolution exploration combat RPC is removed.
 
-Frontend/Codex must regenerate Supabase database types before consuming these contracts.
+Frontend/Codex must regenerate Supabase database types before consuming the contracts in this section.
 
 ### Epic U — Luck Foundation DB/RPC/formula/config foundation
 
@@ -30,9 +30,8 @@ Final checks passed for the core Luck foundation:
 
 - expected Luck/combat/reward formula targets are present, assigned and enabled;
 - expected Luck-related config definitions are active;
-- Luck resolver and trial power helpers exist and no longer use the old hardcoded exploration Luck fallback;
+- Luck resolver and trial power helpers use DB formula/runtime state rather than Angular-side authority;
 - exploration/trial runtime helpers use DB formula runtime and Luck-aware runtime inputs;
-- exploration/trial Luck Lab preview functions use DB formula runtime, not Angular-side authority;
 - reward amount and item-count helpers route through Luck-aware formula targets;
 - item generation runtime is wired through Luck-aware DB helpers;
 - combat Luck preview exists as a DB read/preview contract.
@@ -41,7 +40,7 @@ Core Luck helpers/RPCs include:
 
 - `get_hero_luck_breakdown(p_hero_id)` — DB-side explanation of effective Luck sources;
 - `get_hero_luck_value(p_hero_id)` — effective hero Luck;
-- `get_hero_exploration_luck_value(p_hero_id)` — exploration Luck value, now routed through runtime Luck;
+- `get_hero_exploration_luck_value(p_hero_id)` — exploration Luck value routed through runtime Luck;
 - `calculate_luck_influence(p_luck_value)` — DB formula-backed Luck influence;
 - `calculate_trial_power(p_tested_stat_value, p_luck_value)` — DB formula-backed tested stat + Luck influence power;
 - `get_hero_trial_power(p_hero_id, p_tested_stat_key)` — hero-specific trial power read helper;
@@ -74,71 +73,266 @@ Reward and item-generation Luck contracts:
 - `evaluate_reward_profile_entry_item_count(...)` uses the item-count formula target;
 - `grant_reward_profile_to_hero(...)` delegates to the amount and item-count helpers, then calls the existing item generator;
 - `reward_item_budget_bucket_index`, `reward_item_quality_adjusted_weight` and `reward_item_affix_chance` drive Luck-aware item generation;
-- `generate_reward_item_for_hero(...)` now uses Luck-aware helper logic and writes Luck-aware metadata;
+- `generate_reward_item_for_hero(...)` uses Luck-aware helper logic and writes Luck-aware metadata;
 - legacy comparison helpers such as `compute_reward_item_budget(...)` and `pick_reward_item_quality_key(...)` remain available for compatibility/admin comparison.
 
 Combat Luck preview contract:
 
 - `preview_combat_luck_formula_context(...)` is read-only and formula-backed;
-- it exposes how Luck affects critical chance and evasion chance;
+- it exposes how Luck affects critical chance and evasion chance where the DB/formula layer exposes those surfaces;
 - it does not persist combat and does not apply combat consequences.
 
-Epic U does not require Angular to simulate formula authority. Frontend/Luck Lab must consume these DB/RPC outputs and should not hardcode Luck curves, chance formulas, reward ranges or item-generation Luck effects.
+Epic U does not require Angular to simulate formula authority. Frontend/Luck Lab must consume DB/RPC outputs and should not hardcode Luck curves, chance formulas, reward ranges or item-generation Luck effects.
 
-### U-DB8 — DB-owned manual combat authority foundation
+### Epic V — Luck Lab registry/read model
 
-U-DB8 adds the missing DB-owned manual combat runtime layer that was not covered by the earlier combat persistence foundation.
+Epic V DB/RPC readiness is implemented for the first Luck Lab frontend slice.
 
-This is not the same as `auto_resolve_hero_exploration_challenge_attempt(...)`. Auto-resolve is a binary success/failure workflow. U-DB8 resolves a full combat log with initiative, hit, evasion, critical, damage and health transitions.
+Current Luck Lab registry RPC:
 
-U-DB8 verified stages:
+- `get_luck_lab_preview_contracts()` — authenticated read model listing Luck Lab preview/simulation contracts, labels, descriptions, helper text, RPC names, signatures, result type strings, availability flags, ACL flags, sort order and lightweight metadata.
 
-- U-DB8A — internal DB combat RNG resolver core;
-- U-DB8B — trusted DB snapshot builders for hero and opponent combatants;
-- U-DB8C — service-only resolve-and-persist wrapper;
-- U-DB8D — service-only exploration challenge combat-result attachment wrapper;
-- U-DB8E / FIX1 — authenticated owner-safe manual exploration combat submit RPC using valid `completion_mode = 'manual'`;
-- U-DB8F — owner-safe combat result detail read model and hardening of raw snapshot persistence;
-- U-DB8G — positive rollback smoke for full public submit flow;
-- U-DB8H — final concise verification of ACL, contracts and ownership boundaries.
+The registry currently covers 10 contracts across panels:
 
-Service-only/internal functions:
+- `core` — Luck influence / Trial Power;
+- `exploration` — opportunity curve, multi-roll simulation, manifestation chance, non-Trial Encounter chance and RNG-chain preview;
+- `trial` — challenge auto-resolve preview;
+- `rewards` — reward profile Luck preview;
+- `drops` — generated item Luck preview;
+- `combat` — combat Luck formula context preview.
 
-- `get_combat_snapshot_stat_value(p_stats_json, p_stat_key, p_fallback)`;
-- `internal_resolve_combat_from_trusted_snapshots(...)` — resolves trusted combat snapshots using DB RNG and combat formula targets;
-- `build_hero_combatant_snapshot_for_resolver(p_hero_id, p_side)` — builds hero snapshot from DB base stats, Luck, runtime equipment bonus totals and runtime equipment slots; it sets local owner auth context for owner-safe helper calls and does not read `hero_derived` as gameplay authority;
-- `build_opponent_combatant_snapshot_for_resolver(p_opponent_definition_id, p_side, p_reference_level, p_difficulty_multiplier)` — builds opponent snapshot from `combat_opponent_definitions`, `combat_opponent_stat_values.base_value` and active `combat_opponent_attack_sources`, with fallback natural attack;
-- `resolve_and_persist_combat_from_trusted_snapshots(...)` — resolves trusted snapshots and persists through `persist_combat_result_snapshot(...)`; does not complete challenges, grant rewards, apply PvP consequences, create reports or notifications;
-- `resolve_and_attach_exploration_challenge_combat_result(...)` — resolves and persists combat for a non-terminal exploration combat challenge attempt and attaches `combatResolver` metadata; does not complete the challenge or grant rewards.
+Luck Lab preview RPC ACL was hardened:
 
-Authenticated/frontend-facing functions:
+- `authenticated` can execute the 10 Luck Lab preview/simulation RPCs;
+- `anon` and `PUBLIC` execute were removed;
+- `get_luck_lab_preview_contracts()` is authenticated-only.
 
-- `submit_exploration_challenge_combat_resolution(p_challenge_attempt_id, p_timing_hits_json, p_request_id)`:
-  - owner-safe authenticated RPC;
-  - checks `auth.uid()` and `hero.user_id`, never assumes `hero.id = auth.uid()`;
-  - accepts only combat input/timing JSON, not frontend-provided stats/equipment/Luck/damage;
-  - builds trusted hero/opponent snapshots from DB;
-  - resolves and persists combat;
-  - completes the challenge through `complete_hero_exploration_challenge_attempt(...)` with `completion_mode = 'manual'`;
-  - for trial/encounter combat, `initiator_victory` means success, while `defender_victory` and `draw` mean failure;
-  - is not a PvP wrapper and must not be used for PvP draw semantics.
-- `get_combat_result_detail(p_combat_result_id)`:
-  - owner-safe read model using `can_read_combat_result(...)`;
-  - returns combat result header, participants with stats and ordered attack log.
+Luck Lab metadata:
 
-Raw persistence hardening:
+- `ui_metadata_entries` includes `luck_lab_section` rows for overview/core/exploration/combat/drops/comparison/formula navigation;
+- `ui_metadata_entries` includes `luck_lab_runtime_rule` rows for DB/RPC authority and single-roll/RNG interpretation.
 
-- `persist_combat_result_snapshot(...)` is now service-only. Frontend must not call it directly or persist arbitrary combat snapshots.
+Frontend rule:
 
-Manual exploration combat frontend flow should use:
+- Luck Lab must start from `get_luck_lab_preview_contracts()` instead of hardcoding the preview surface list;
+- Angular may format, compare and chart DB-returned values;
+- Angular must not compute Luck formulas, caps, multipliers, chance curves, drop behavior or combat Luck context as authority;
+- expensive simulations such as `simulate_trial_opportunity_runs(...)` should be explicit/debounced in UI, not fired on every slider tick.
 
-1. exploration/challenge state exposes a combat `challenge_attempt_id`;
-2. frontend opens combat UI and collects timing/manual input only;
-3. frontend calls `submit_exploration_challenge_combat_resolution(...)`;
-4. frontend uses returned `combat_result_id`;
-5. frontend calls `get_combat_result_detail(...)` to render participants and attack log.
+### Live manual combat runtime — DB-owned per player action
 
-PvP remains a separate domain wrapper. Current PvP decisions still apply: PvP uses the combat module/combat result snapshot model, supplies hero-vs-hero combatants and interprets the result. For PvP, draw remains draw.
+Manual combat now uses a DB-owned live session model. This replaces the removed public full-resolution exploration combat endpoint.
+
+Removed legacy public RPC:
+
+- `submit_exploration_challenge_combat_resolution(uuid, jsonb, text)` — removed intentionally. Frontend must not call it.
+
+Current live combat tables:
+
+- `combat_live_session_statuses`;
+- `combat_live_participant_statuses`;
+- `combat_live_event_kinds`;
+- `combat_live_sessions`;
+- `combat_live_participants`;
+- `combat_live_events`;
+- `combat_live_action_requests`.
+
+Purpose of the live model:
+
+- `combat_live_sessions` stores active combat state between player clicks;
+- `combat_live_participants` stores hero/opponent participants with HP, streak, snapshot and manual-input flags;
+- `combat_live_events` stores round/action/system events such as `round_started`, `manifest_generated`, `attack_resolved` and `combat_completed`;
+- `combat_live_action_requests` stores idempotency by `(session_id, request_id)`.
+
+Frontend-facing live combat RPCs:
+
+- `ensure_exploration_combat_session(p_challenge_attempt_id uuid, p_request_id text)`:
+  - authenticated owner-safe RPC;
+  - validates exploration combat Trial/Encounter attempts through `hero.user_id`, never `hero.id = auth.uid()`;
+  - builds hero/opponent participants from trusted DB snapshots;
+  - starts a round/order and returns state;
+  - if the first action requires player input, returns a DB-generated Walking Dead timing manifest.
+- `get_combat_live_state(p_session_id uuid, p_since_event_index integer)`:
+  - authenticated owner-safe read model;
+  - returns current session state, participants, current manifest, event delta, final result id and event count;
+  - does not resolve actions.
+- `submit_combat_player_action(p_session_id uuid, p_timing_input_json jsonb, p_request_id text)`:
+  - authenticated owner-safe mutation RPC;
+  - resolves exactly one current player-controlled action;
+  - then automatically resolves non-player/opponent actions until the next player input, terminal combat, draw/turn limit or error state;
+  - stores idempotency in `combat_live_action_requests`;
+  - if the live exploration combat ends, finalizes to `combat_result` and exploration completion workflow.
+
+Internal/service-only live combat helpers include:
+
+- `combat_live_snapshot_number(...)` and `combat_live_snapshot_text(...)`;
+- `pick_exploration_combat_live_opponent(...)`;
+- `build_combat_live_action_manifest(...)`;
+- `start_combat_live_round(...)`;
+- `combat_live_formula_value(...)`;
+- `combat_live_timing_input_percent(...)`;
+- `combat_live_attack_source_kind_from_text(...)`;
+- `resolve_combat_live_attack(...)`;
+- `advance_combat_live_to_next_player_action(...)`;
+- `mark_combat_live_session_completed_if_terminal(...)`;
+- `get_combat_live_session_outcome(...)`;
+- `build_combat_live_participants_snapshot_json(...)`;
+- `build_combat_live_attacks_snapshot_json(...)`;
+- `persist_completed_combat_live_session_result(...)`;
+- `finalize_exploration_combat_session(...)`.
+
+Live combat timing manifest contract:
+
+- `current_timing_manifest_json` is the canonical DB-owned manifest for exactly one current player-controlled action;
+- current canonical fields emitted by `build_combat_live_action_manifest(...)` include:
+  - `manifestId`;
+  - `sessionId`;
+  - `roundNumber`;
+  - `actionIndex`;
+  - `attackIndex`;
+  - `actorParticipantId`;
+  - `targetParticipantId`;
+  - `actorSide`;
+  - `targetSide`;
+  - `greenZonePercent`;
+  - `hitChancePercent`;
+  - `speedMultiplier`;
+  - `streakBefore`;
+  - `requiresManualInput`;
+  - `isPlayerControlled`;
+  - `generatedAt`;
+  - `source`;
+  - `notes`.
+- `greenZonePercent` is the DB-owned width/chance value used for the current Walking Dead green zone;
+- `speedMultiplier` is the DB-owned animation speed hint;
+- `streakBefore` is the current streak before resolving this action;
+- frontend must adapt to this DB manifest shape rather than requiring aliases such as `greenZoneWidth`, `greenZoneWidthPercent`, `speed` or `currentStreak`;
+- frontend may animate locally, but it must not show hit/miss/evade/critical/damage/HP outcome before `submit_combat_player_action(...)` returns.
+
+Recommended timing input payload:
+
+```json
+{
+  "positionPercent": 50
+}
+```
+
+The DB helper also accepts a few alternate input key names for robustness, but the frontend contract should standardize on `positionPercent`.
+
+Live combat finalization:
+
+- live combat persists final combat snapshots through `persist_combat_result_snapshot(...)`;
+- `combat_results`, `combat_result_participants`, `combat_result_participant_stats` and `combat_result_attacks` remain the report-ready persistence model;
+- `finalize_exploration_combat_session(...)` completes Trial/Encounter attempts through `complete_hero_exploration_challenge_attempt(...)`;
+- draw counts as failure for exploration Trial/Encounter;
+- reward grants remain caller/completion-owned, not frontend-computed.
+
+Verified live combat behavior:
+
+- table/schema/RLS/ACL foundation verified;
+- one player action produces DB events;
+- opponent/auto action catch-up reaches the next player action;
+- the next player manifest is generated by DB;
+- retry with the same `request_id` does not create new events;
+- final `combat_result` snapshot persistence passed rollback smoke;
+- old full-resolution exploration combat RPC was removed.
+
+Open live-combat smoke note:
+
+- synthetic/transactional smoke passed for step resolution, auto catch-up and final snapshot;
+- representative full player-flow smoke on a real completed exploration combat Trial/Encounter should still be rerun when data/UI is convenient, especially reward-once behavior after a real victory;
+- current observed live session already showed a DB manifest with `manifestId`, participants, `greenZonePercent`, `hitChancePercent`, `speedMultiplier` and `streakBefore`; the UI parser must consume the DB manifest rather than report it missing.
+
+PvP boundary:
+
+- PvP should use the same generic live combat/session/result foundations when wired, but it must use a PvP-specific wrapper/finalizer and must not call exploration-specific ensure/finalize RPCs.
+
+### Epic W — Exploration Core Completion DB/RPC foundation
+
+Epic W DB/RPC foundation is implemented far enough for frontend/runtime consumption.
+
+Scope completed:
+
+- readiness reason dictionary and metadata;
+- Trial/Encounter readiness read models;
+- runtime selection guard through readiness-aware pickers;
+- selection diagnostics read model;
+- reward/effect execution diagnostics read model;
+- config-backed exploration step timer.
+
+Readiness dictionary:
+
+- `exploration_readiness_reason_codes` stores DB-backed reason codes with label, description, severity, `is_blocking`, sort order and metadata;
+- `ui_metadata_entries` includes `exploration_readiness_section` and `exploration_readiness_reason` metadata.
+
+Readiness RPCs:
+
+- `get_trial_definition_readiness(p_trial_definition_id uuid default null)`:
+  - authenticated read model;
+  - returns Trial readiness with `is_ready`, `blocking_reason_count`, `reasons_json`, reward assignment count and combat candidate count;
+  - current conservative Trial readiness supports combat minigame and blocks unsupported/unwired minigames.
+- `get_encounter_definition_readiness(p_encounter_definition_id uuid default null)`:
+  - authenticated read model;
+  - returns Encounter readiness with `is_ready`, `blocking_reason_count`, `reasons_json`, reward assignment count, combat candidate count and effect payload count;
+  - current supported encounter kinds are `combat`, `resource`, `buff`, `debuff`;
+  - combat Encounter readiness requires an active concrete opponent candidate;
+  - resource Encounter readiness requires active reward profile/entry resource payload;
+  - buff/debuff Encounter readiness requires active `encounter_effect_payloads` pointing to an active `exploration_effect_definitions` row of matching effect kind.
+
+Runtime selection guard:
+
+- `pick_random_trial_definition()` now joins `get_trial_definition_readiness(...)` and only returns ready Trials;
+- `pick_random_encounter_definition(p_exploration_id)` now joins `get_encounter_definition_readiness(...)`, preserves existing difficulty/district/effect filters, and only returns ready Encounters;
+- if no ready eligible Encounter exists, the picker returns an empty composite rather than raising;
+- `resolve_hero_exploration_step(p_step_id)` now records a safe `nothing` outcome with metadata such as `readinessGuarded = true` and `encounterSelectionSkippedReason = no_ready_encounter_definition` when an Encounter roll happens but no ready eligible Encounter exists.
+
+Selection diagnostic RPC:
+
+- `get_exploration_step_selection_diagnostic(p_step_id)`:
+  - authenticated owner-safe read model;
+  - explains step outcome using DB-owned chance/roll fields, selected Trial/Encounter readiness, challenge status/reward id and resolver metadata;
+  - handles steps with no Trial/Encounter without unassigned-record runtime errors;
+  - does not mutate gameplay state.
+
+Reward/effect execution diagnostic RPC:
+
+- `get_exploration_reward_execution_diagnostic(p_challenge_attempt_id)`:
+  - authenticated owner-safe read model;
+  - joins challenge attempt, `reward_grants`, `reward_grant_entries`, `encounter_effect_payloads` and `hero_exploration_effects`;
+  - uses `reward_grants.recipient_hero_id` as the hero ownership column;
+  - exposes JSON arrays for reward entries, effect payloads and hero effects plus diagnostic flags;
+  - does not mutate gameplay state.
+
+Exploration timer config:
+
+- config definition `exploration_step_base_duration_seconds` exists and is active;
+- active global config value currently defaults to `60`;
+- `get_exploration_step_duration_seconds(p_server_id, p_difficulty_key)` returns DB/config-owned step duration in seconds;
+- final duration is `exploration_step_base_duration_seconds × exploration_difficulty_tiers.step_duration_multiplier`, with a safe lower bound;
+- `start_hero_exploration_step(...)` now consumes `get_exploration_step_duration_seconds(...)` and writes metadata:
+  - `durationSeconds`;
+  - `durationSource = config_exploration_step_base_duration_seconds`;
+  - `durationConfigKey = exploration_step_base_duration_seconds`;
+  - `difficultyMultiplier`.
+- frontend should display timers from DB `started_at` / `resolves_at`, not from a hardcoded Angular duration.
+
+Verified Epic W behavior:
+
+- readiness RPCs exist and are authenticated-only;
+- readiness reason table has RLS/policy and metadata;
+- readiness smoke returned rows and JSON-array reasons;
+- runtime pickers choose ready Trial/Encounter only;
+- sample picker smoke returned a ready Trial and ready resource Encounter;
+- `resolve_hero_exploration_step(...)` smoke resolved a real in-progress step into a ready Encounter and diagnostic confirmed `readinessGuarded = true`;
+- reward/effect diagnostic smoke worked on a real completed challenge attempt;
+- step duration config/helper/metadata is structurally verified;
+- start-step positive smoke was pending when no startable exploration existed, but active UI state later showed DB `started_at`/`resolves_at` with a 60-second duration consistent with the config.
+
+Content readiness snapshot from verification:
+
+- active combat Trials existed, but readiness reduced them to a smaller ready subset;
+- readiness verification showed 1 ready Trial and 2 ready Encounters at the time of smoke;
+- some configured Encounter content remained blocked, including combat and debuff examples, which is expected because readiness is conservative and exposes missing candidates/effect payloads rather than letting incomplete content enter runtime.
 
 ### Q9 — Notification Hook Diagnostics DB/RPC source
 
@@ -164,8 +358,7 @@ Q9 frontend should consume the diagnostics RPC/source. Missing producers or miss
 
 ### Type regeneration reminder
 
-Regenerate Supabase generated database types before frontend/Codex work that consumes Epic U, U-DB8 or Q9 contracts. New or changed RPCs include the Luck preview/runtime helpers, combat resolver/submit/detail functions, and Q9 diagnostics functions.
-
+Regenerate Supabase generated database types before frontend/Codex work that consumes Epic U/V, live combat, Epic W or Q9 contracts. New or changed RPCs include Luck preview/runtime helpers, Luck Lab registry, live combat session/read/submit/finalizer functions, exploration readiness/diagnostic functions and the config-backed exploration step timer helper.
 
 ## Update 2026-05-05 — Epic T Guild Foundation DB/RPC foundation
 

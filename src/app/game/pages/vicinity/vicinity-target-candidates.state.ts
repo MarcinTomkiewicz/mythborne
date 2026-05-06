@@ -1,4 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import {
   HeroActiveRuntimeActivity,
   PvpActionStartResult,
@@ -11,6 +12,12 @@ import { getErrorMessage } from '../../../core/utils/error-message';
 import { trimText, trimToNull } from '../../../core/utils/normalize-text';
 
 const DEFAULT_TARGET_LIMIT = 20;
+type PvpStartActionKind = 'attack' | 'spy';
+
+interface PendingPvpAction {
+  actionKind: PvpStartActionKind;
+  targetHeroId: string;
+}
 
 @Injectable()
 export class VicinityTargetCandidatesState {
@@ -26,6 +33,8 @@ export class VicinityTargetCandidatesState {
   readonly lastStartedAction = signal<PvpActionStartResult | null>(null);
   readonly activeRuntimeActivity = signal<HeroActiveRuntimeActivity | null>(null);
   readonly candidates = signal<PvpTargetCandidate[]>([]);
+  readonly pendingAction = signal<PendingPvpAction | null>(null);
+  readonly pendingAttackTargetIds = signal<ReadonlySet<string>>(new Set<string>());
   readonly pendingSpyTargetIds = signal<ReadonlySet<string>>(new Set<string>());
   readonly districtCode = signal<string | null>(null);
   readonly search = signal('');
@@ -39,60 +48,38 @@ export class VicinityTargetCandidatesState {
   readonly canGoNext = computed(
     () => this.candidates().length === this.limit() && !this.isLoading(),
   );
+  readonly isStartingAction = computed(() => this.pendingAction() !== null);
 
   isSpyPending(targetHeroId: string): boolean {
     return this.pendingSpyTargetIds().has(targetHeroId);
   }
 
+  isAttackPending(targetHeroId: string): boolean {
+    return this.pendingAttackTargetIds().has(targetHeroId);
+  }
+
+  startAttack(candidate: PvpTargetCandidate): void {
+    if (
+      !candidate.attackEligibility.canStart ||
+      this.isStartingAction() ||
+      this.isAttackPending(candidate.targetHeroId)
+    ) {
+      return;
+    }
+
+    this.startAction(candidate, 'attack');
+  }
+
   startSpy(candidate: PvpTargetCandidate): void {
-    if (!candidate.spyEligibility.canStart || this.isSpyPending(candidate.targetHeroId)) {
+    if (
+      !candidate.spyEligibility.canStart ||
+      this.isStartingAction() ||
+      this.isSpyPending(candidate.targetHeroId)
+    ) {
       return;
     }
 
-    const requestId = ++this.actionRequestId;
-    const requestContextKey = this.currentContextKey();
-    const targetHeroId = candidate.targetHeroId;
-
-    this.actionError.set(null);
-    this.actionSuccess.set(null);
-    this.lastStartedAction.set(null);
-
-    if (!requestContextKey) {
-      this.actionError.set('No active hero for PvP spy action.');
-      return;
-    }
-
-    this.addPendingSpyTarget(targetHeroId);
-
-    this.playerPvp.startAction({
-      actionKind: 'spy',
-      targetHeroId,
-      requestId: pvpSpyRequestId(targetHeroId),
-    }).subscribe({
-      next: (result) => {
-        if (!this.isCurrentAction(requestId, requestContextKey)) {
-          this.clearPendingSpyTarget(targetHeroId);
-          return;
-        }
-
-        this.lastStartedAction.set(result);
-        this.refreshActiveRuntimeActivity(requestId, requestContextKey);
-        this.actionSuccess.set(
-          `Spy travel started. Arrival in ${durationLabel(result.travelTimeSeconds)}.`,
-        );
-        this.clearPendingSpyTarget(targetHeroId);
-        this.loadCandidates();
-      },
-      error: (error: unknown) => {
-        if (!this.isCurrentAction(requestId, requestContextKey)) {
-          this.clearPendingSpyTarget(targetHeroId);
-          return;
-        }
-
-        this.actionError.set(getErrorMessage(error, 'Failed to start spy action.'));
-        this.clearPendingSpyTarget(targetHeroId);
-      },
-    });
+    this.startAction(candidate, 'spy');
   }
 
   loadCandidates(): void {
@@ -143,6 +130,60 @@ export class VicinityTargetCandidatesState {
         this.candidates.set([]);
         this.error.set(getErrorMessage(error, 'Failed to load PvP targets.'));
         this.isLoading.set(false);
+      },
+    });
+  }
+
+  private startAction(
+    candidate: PvpTargetCandidate,
+    actionKind: PvpStartActionKind,
+  ): void {
+    if (this.isStartingAction()) {
+      return;
+    }
+
+    const requestId = ++this.actionRequestId;
+    const requestContextKey = this.currentContextKey();
+    const targetHeroId = candidate.targetHeroId;
+
+    this.actionError.set(null);
+    this.actionSuccess.set(null);
+    this.lastStartedAction.set(null);
+
+    if (!requestContextKey) {
+      this.actionError.set(`No active hero for PvP ${actionKind} action.`);
+      return;
+    }
+
+    this.setPendingAction(actionKind, targetHeroId);
+
+    this.playerPvp.startAction({
+      actionKind,
+      targetHeroId,
+      requestId: pvpActionRequestId(actionKind, targetHeroId),
+    }).subscribe({
+      next: (result) => {
+        if (!this.isCurrentAction(requestId, requestContextKey)) {
+          this.clearPendingAction(actionKind, targetHeroId);
+          return;
+        }
+
+        this.actionSuccess.set(
+          `${actionLabel(actionKind)} travel started. Arrival in ${durationLabel(result.travelTimeSeconds)}.`,
+        );
+        this.lastStartedAction.set(result);
+        this.refreshAfterActionStart(requestId, requestContextKey, actionKind, targetHeroId);
+      },
+      error: (error: unknown) => {
+        if (!this.isCurrentAction(requestId, requestContextKey)) {
+          this.clearPendingAction(actionKind, targetHeroId);
+          return;
+        }
+
+        this.actionError.set(
+          getErrorMessage(error, `Failed to start ${actionKind} action.`),
+        );
+        this.clearPendingAction(actionKind, targetHeroId);
       },
     });
   }
@@ -199,39 +240,68 @@ export class VicinityTargetCandidatesState {
       && contextKey === this.currentContextKey();
   }
 
-  private refreshActiveRuntimeActivity(requestId: number, contextKey: string): void {
-    this.playerPvp.getActiveRuntimeActivity().subscribe({
-      next: (activity) => {
-        if (requestId !== this.actionRequestId || contextKey !== this.currentContextKey()) {
+  private refreshAfterActionStart(
+    requestId: number,
+    contextKey: string,
+    actionKind: PvpStartActionKind,
+    targetHeroId: string,
+  ): void {
+    forkJoin({
+      activity: this.playerPvp.getActiveRuntimeActivity(),
+      candidates: this.playerPvp.getTargetCandidates({
+        districtCode: this.districtCode(),
+        limit: this.limit(),
+        offset: this.offset(),
+        search: trimText(this.search()),
+      }),
+    }).subscribe({
+      next: ({ activity, candidates }) => {
+        if (!this.isCurrentAction(requestId, contextKey)) {
+          this.clearPendingAction(actionKind, targetHeroId);
           return;
         }
 
         this.activeRuntimeActivity.set(activity);
+        this.candidates.set(candidates);
+        this.clearPendingAction(actionKind, targetHeroId);
       },
       error: (error: unknown) => {
-        if (requestId !== this.actionRequestId || contextKey !== this.currentContextKey()) {
+        if (!this.isCurrentAction(requestId, contextKey)) {
+          this.clearPendingAction(actionKind, targetHeroId);
           return;
         }
 
         this.actionError.set(
-          getErrorMessage(error, 'Spy started, but active runtime activity refresh failed.'),
+          getErrorMessage(error, 'PvP action started, but runtime activity or target refresh failed.'),
         );
+        this.clearPendingAction(actionKind, targetHeroId);
       },
     });
   }
 
-  private addPendingSpyTarget(targetHeroId: string): void {
-    this.pendingSpyTargetIds.update((current) =>
-      new Set([...current, targetHeroId]),
-    );
+  private setPendingAction(actionKind: PvpStartActionKind, targetHeroId: string): void {
+    this.pendingAction.set({ actionKind, targetHeroId });
+    this.pendingSignal(actionKind).update((current) => new Set([...current, targetHeroId]));
   }
 
-  private clearPendingSpyTarget(targetHeroId: string): void {
-    this.pendingSpyTargetIds.update((current) => {
+  private clearPendingAction(actionKind: PvpStartActionKind, targetHeroId: string): void {
+    const pending = this.pendingAction();
+
+    if (pending?.actionKind === actionKind && pending.targetHeroId === targetHeroId) {
+      this.pendingAction.set(null);
+    }
+
+    this.pendingSignal(actionKind).update((current) => {
       const next = new Set(current);
       next.delete(targetHeroId);
       return next;
     });
+  }
+
+  private pendingSignal(actionKind: PvpStartActionKind) {
+    return actionKind === 'attack'
+      ? this.pendingAttackTargetIds
+      : this.pendingSpyTargetIds;
   }
 }
 
@@ -241,12 +311,16 @@ function toContextKey(state: Pick<ActiveHeroState, 'serverId' | 'heroId'> | null
     : null;
 }
 
-function pvpSpyRequestId(targetHeroId: string): string {
+function pvpActionRequestId(actionKind: PvpStartActionKind, targetHeroId: string): string {
   const randomId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-  return `pvp-spy:${targetHeroId}:${randomId}`;
+  return `pvp-${actionKind}:${targetHeroId}:${randomId}`;
+}
+
+function actionLabel(actionKind: PvpStartActionKind): string {
+  return actionKind === 'attack' ? 'Attack' : 'Spy';
 }
 
 function durationLabel(seconds: number): string {
