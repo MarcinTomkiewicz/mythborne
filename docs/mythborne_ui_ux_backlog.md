@@ -1280,6 +1280,8 @@ Ujednolicić custom icons i brand assets.
 
 ## UI-CORE-11 — Prototype-to-production SCSS mapping
 
+**Status:** accepted 2026-05-06. Production artifact: `docs/ui-ux/prototype-production-mapping.md`.
+
 **Goal:**  
 Stworzyć mapping zaakceptowanych prototypes na production patterns.
 
