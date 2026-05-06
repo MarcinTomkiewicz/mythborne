@@ -187,50 +187,48 @@ function mapTimingManifest(value: Json): CombatTimingManifestReadModel | null {
     return null;
   }
 
-  const start = firstNumber(record, [
-    'zoneStartPercent',
-    'zone_start_percent',
-    'greenZoneStartPercent',
-    'green_zone_start_percent',
-    'zoneStart',
-    'zone_start',
-  ]);
-  const end = firstNumber(record, [
-    'zoneEndPercent',
-    'zone_end_percent',
-    'greenZoneEndPercent',
-    'green_zone_end_percent',
-    'zoneEnd',
-    'zone_end',
-  ]);
-  const width = firstNumber(record, [
-    'zoneWidthPercent',
-    'zone_width_percent',
-    'greenZoneWidthPercent',
-    'green_zone_width_percent',
-    'zoneWidth',
-    'zone_width',
-  ]);
-  const speed = firstNumber(record, [
-    'speed',
-    'indicatorSpeed',
-    'indicator_speed',
-    'walkingSpeed',
-    'walking_speed',
-  ]);
+  const manifestId = firstString(record, ['manifestId']);
+  const actorParticipantId = firstString(record, ['actorParticipantId']);
+  const targetParticipantId = firstString(record, ['targetParticipantId']);
+  const greenZonePercent = firstNumber(record, ['greenZonePercent']);
+  const speedMultiplier = firstNumber(record, ['speedMultiplier']);
+  const requiresManualInput = record['requiresManualInput'] === true;
+  const isPlayerControlled = record['isPlayerControlled'] === true;
 
-  if (start === null || end === null || speed === null) {
+  if (
+    !manifestId ||
+    !actorParticipantId ||
+    !targetParticipantId ||
+    greenZonePercent === null ||
+    speedMultiplier === null ||
+    !requiresManualInput ||
+    !isPlayerControlled
+  ) {
     return null;
   }
 
+  const zoneWidthPercent = normalizedPercent(greenZonePercent);
+  const zoneStartPercent = normalizedPercent((100 - zoneWidthPercent) / 2);
+  const zoneEndPercent = normalizedPercent(zoneStartPercent + zoneWidthPercent);
+
   return {
-    zoneStartPercent: normalizedPercent(start),
-    zoneEndPercent: normalizedPercent(end),
-    zoneWidthPercent: width === null
-      ? Math.max(0, normalizedPercent(end) - normalizedPercent(start))
-      : normalizedPercent(width),
-    speed: Math.max(0, speed),
-    label: firstString(record, ['label', 'manifestLabel', 'manifest_label']),
+    manifestId,
+    actorParticipantId,
+    targetParticipantId,
+    greenZonePercent: zoneWidthPercent,
+    hitChancePercent: firstNumber(record, ['hitChancePercent']),
+    speedMultiplier: Math.max(0, speedMultiplier),
+    streakBefore: firstNumber(record, ['streakBefore']),
+    roundNumber: firstNumber(record, ['roundNumber']),
+    actionIndex: firstNumber(record, ['actionIndex']),
+    attackIndex: firstNumber(record, ['attackIndex']),
+    requiresManualInput,
+    isPlayerControlled,
+    zoneStartPercent,
+    zoneEndPercent,
+    zoneWidthPercent,
+    speed: Math.max(0, speedMultiplier),
+    label: firstString(record, ['label']),
     rawJson: value,
   };
 }
@@ -272,7 +270,14 @@ function mapParticipant(value: unknown): CombatLiveParticipantReadModel | null {
       'health_current',
       'hp',
     ]),
-    maxHp: firstNumber(record, ['maxHp', 'max_hp', 'maxHealth', 'max_health']),
+    maxHp: firstNumber(record, [
+      'maxHp',
+      'max_hp',
+      'healthMax',
+      'health_max',
+      'maxHealth',
+      'max_health',
+    ]),
     heroId: firstString(record, ['heroId', 'hero_id']),
     opponentDefinitionId: firstString(record, [
       'opponentDefinitionId',

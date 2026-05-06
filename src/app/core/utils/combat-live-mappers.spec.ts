@@ -18,9 +18,16 @@ describe('combat live mappers', () => {
     expect(state.statusKey).toBe('awaiting_player');
     expect(state.awaitingPlayerAction).toBeTrue();
     expect(state.currentTimingManifest).toEqual(jasmine.objectContaining({
-      zoneStartPercent: 30,
-      zoneEndPercent: 70,
-      speed: 1.5,
+      manifestId: 'manifest-1',
+      actorParticipantId: 'participant-hero',
+      targetParticipantId: 'participant-opponent',
+      greenZonePercent: 50,
+      zoneStartPercent: 25,
+      zoneEndPercent: 75,
+      zoneWidthPercent: 50,
+      speed: 1,
+      speedMultiplier: 1,
+      streakBefore: 0,
     }));
     expect(state.participants[0]).toEqual(jasmine.objectContaining({
       displayName: 'Hero',
@@ -49,6 +56,68 @@ describe('combat live mappers', () => {
     expect(JSON.stringify(args)).not.toContain('damage');
     expect(JSON.stringify(args)).not.toContain('outcome');
     expect(JSON.stringify(args)).not.toContain('reward');
+  });
+
+  it('maps DB participant healthCurrent and healthMax fields', () => {
+    const state = mapCombatLiveState(liveStateRow({
+      participants_json: [
+        {
+          participantId: 'participant-hero',
+          displayName: 'Hero',
+          healthCurrent: 37,
+          healthMax: 50,
+        },
+      ],
+    }));
+
+    expect(state.participants[0]).toEqual(jasmine.objectContaining({
+      currentHp: 37,
+      maxHp: 50,
+    }));
+  });
+
+  it('maps the current DB timing manifest contract with centered render zone', () => {
+    const state = mapCombatLiveState(liveStateRow({
+      current_timing_manifest_json: dbTimingManifest(),
+    }));
+
+    expect(state.currentTimingManifest).toEqual(jasmine.objectContaining({
+      manifestId: 'manifest-1',
+      actorParticipantId: 'participant-hero',
+      targetParticipantId: 'participant-opponent',
+      greenZonePercent: 50,
+      hitChancePercent: 50,
+      speedMultiplier: 1,
+      streakBefore: 0,
+      roundNumber: 1,
+      actionIndex: 0,
+      attackIndex: 1,
+      requiresManualInput: true,
+      isPlayerControlled: true,
+      zoneStartPercent: 25,
+      zoneEndPercent: 75,
+      zoneWidthPercent: 50,
+      speed: 1,
+    }));
+  });
+
+  it('rejects invalid DB timing manifests without falling back to legacy aliases', () => {
+    const missingManifestId = mapCombatLiveState(liveStateRow({
+      current_timing_manifest_json: {
+        ...dbTimingManifestRecord(),
+        manifestId: undefined,
+      } as Json,
+    }));
+    const legacyOnly = mapCombatLiveState(liveStateRow({
+      current_timing_manifest_json: {
+        zoneStartPercent: 30,
+        zoneEndPercent: 70,
+        speed: 1.5,
+      },
+    }));
+
+    expect(missingManifestId.currentTimingManifest).toBeNull();
+    expect(legacyOnly.currentTimingManifest).toBeNull();
   });
 
   it('merges live event deltas by event index to avoid retry duplication', () => {
@@ -88,11 +157,7 @@ function liveStateRow(
     current_action_index: 1,
     current_actor_participant_id: 'participant-hero',
     current_round_number: 1,
-    current_timing_manifest_json: {
-      zoneStartPercent: 30,
-      zoneEndPercent: 70,
-      speed: 1.5,
-    },
+    current_timing_manifest_json: dbTimingManifest(),
     event_count: 2,
     events_json: [eventRow(2), eventRow(1)],
     final_combat_result_id: null as unknown as string,
@@ -124,6 +189,27 @@ function liveStateRow(
     status_label: 'Awaiting player',
     updated_at: '2026-05-06T10:00:00.000Z',
     ...patch,
+  };
+}
+
+function dbTimingManifest(): Json {
+  return dbTimingManifestRecord() as Json;
+}
+
+function dbTimingManifestRecord(): Record<string, unknown> {
+  return {
+    manifestId: 'manifest-1',
+    actorParticipantId: 'participant-hero',
+    targetParticipantId: 'participant-opponent',
+    greenZonePercent: 50,
+    hitChancePercent: 50,
+    speedMultiplier: 1,
+    streakBefore: 0,
+    roundNumber: 1,
+    actionIndex: 0,
+    attackIndex: 1,
+    requiresManualInput: true,
+    isPlayerControlled: true,
   };
 }
 

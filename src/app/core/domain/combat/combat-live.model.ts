@@ -22,6 +22,18 @@ export interface CombatLiveStateReadModel {
 }
 
 export interface CombatTimingManifestReadModel {
+  manifestId: string;
+  actorParticipantId: string;
+  targetParticipantId: string;
+  greenZonePercent: number;
+  hitChancePercent: number | null;
+  speedMultiplier: number;
+  streakBefore: number | null;
+  roundNumber: number | null;
+  actionIndex: number | null;
+  attackIndex: number | null;
+  requiresManualInput: boolean;
+  isPlayerControlled: boolean;
   zoneStartPercent: number;
   zoneEndPercent: number;
   zoneWidthPercent: number;

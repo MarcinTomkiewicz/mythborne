@@ -267,8 +267,19 @@ export class ExplorationLiveCombatState {
       return 'DB nie zwróciła manifestu timingu.';
     }
 
+    const hitChance = manifest.hitChancePercent === null
+      ? null
+      : `szansa ${manifest.hitChancePercent}%`;
+    const streak = manifest.streakBefore === null
+      ? null
+      : `seria ${manifest.streakBefore}`;
+
     return manifest.label
-      ?? `Strefa ${manifest.zoneStartPercent}-${manifest.zoneEndPercent}%`;
+      ?? [
+        `Strefa ${manifest.zoneStartPercent}-${manifest.zoneEndPercent}%`,
+        hitChance,
+        streak,
+      ].filter(Boolean).join(', ');
   }
 
   private ensureCombatSession(

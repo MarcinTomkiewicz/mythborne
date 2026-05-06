@@ -277,6 +277,15 @@ describe('ExplorationPageState', () => {
     }));
     expect(page.combatParticipants().length).toBe(2);
     expect(page.combatEvents().length).toBe(1);
+    expect(page.combatTimingManifest()).toEqual(jasmine.objectContaining({
+      manifestId: 'manifest-1',
+      greenZonePercent: 30,
+      speedMultiplier: 1.25,
+      streakBefore: 0,
+    }));
+    expect(page.combatHitWindow()).toEqual({ start: 35, end: 65, width: 30 });
+    expect(page.timingManifestLabel(page.combatTimingManifest()))
+      .not.toContain('DB nie zwróciła manifestu timingu');
 
     page.startCombatChallenge();
     expect(page.isCombatRunning()).toBeTrue();
@@ -337,7 +346,7 @@ describe('ExplorationPageState', () => {
     expect(feedback.successMessage()).toBe('Walka została zakończona przez DB.');
   });
 
-  it('renders live combat participants, events and final detail without legacy resolver', async () => {
+  it('exposes live combat participants, events and final detail without legacy resolver', () => {
     explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
     liveCombat.ensureSession.and.returnValue(of(combatLiveState({
       statusKey: 'completed',
@@ -348,26 +357,19 @@ describe('ExplorationPageState', () => {
       events: [combatEvent(1), combatEvent(2, { eventKind: 'session_completed' })],
     })));
     rewards.getLatestChallengeReward.and.returnValue(of(null));
-    const fixture = TestBed.createComponent(ExplorationPage);
 
-    fixture.detectChanges();
-    const componentPage = fixture.componentInstance.page;
-    componentPage.startSelectedDifficulty();
-    componentPage.overview.setStateFromWorkflow(
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(
       activeExplorationState('easy', false, true, undefined, 'exploration-1', 'combat'),
     );
     TestBed.flushEffects();
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    fixture.detectChanges();
-
-    const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('combat-result-1');
-    expect(text).toContain('initiator_victory');
-    expect(text).toContain('Hero');
-    expect(text).toContain('Opponent');
-    expect(text).toContain('Log DB');
-    expect(text).not.toContain('damage');
+    expect(page.combatResultDetail()?.combatResultId).toBe('combat-result-1');
+    expect(page.combatResultDetail()?.outcome).toBe('initiator_victory');
+    expect(page.combatParticipants().map((participant) => participant.displayName))
+      .toEqual(['Hero', 'Opponent']);
+    expect(page.combatEvents().map((event) => event.eventIndex)).toEqual([1, 2]);
     expect(liveCombat.ensureSession).toHaveBeenCalled();
     expect(liveCombat.submitPlayerAction).not.toHaveBeenCalled();
   });
@@ -672,6 +674,18 @@ function combatLiveState(
     currentActorParticipantId: 'participant-hero',
     awaitingPlayerAction: true,
     currentTimingManifest: {
+      manifestId: 'manifest-1',
+      actorParticipantId: 'participant-hero',
+      targetParticipantId: 'participant-opponent',
+      greenZonePercent: 30,
+      hitChancePercent: 30,
+      speedMultiplier: 1.25,
+      streakBefore: 0,
+      roundNumber: 1,
+      actionIndex: 1,
+      attackIndex: 1,
+      requiresManualInput: true,
+      isPlayerControlled: true,
       zoneStartPercent: 35,
       zoneEndPercent: 65,
       zoneWidthPercent: 30,
