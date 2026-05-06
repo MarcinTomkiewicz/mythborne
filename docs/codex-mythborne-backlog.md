@@ -6441,6 +6441,8 @@ PvP Foundation is not:
 - Disabled attack/spy states are understandable.
 - Eligibility display matches RPC output.
 
+**Implementation note:** R9 accepted on 2026-05-06. `/game/vicinity` now renders PvP target eligibility through a page-local `VicinityPvpTargetCard` and pure `pvp-eligibility-display` helper. Attack/Spy disabled reasons are derived from the RPC-mapped `blockReason` values, use `pvp_targeting_section` UI metadata first when matching reason metadata exists, and keep the raw reason key visible as secondary diagnostics. Fallback display covers attacker busy, target protected, target below/above attack level range and action unavailable without recomputing `can_attack` / `can_spy` or changing the RPC contract. No start attack/spy workflow, combat preview/log, `start_pvp_action(...)` call or direct PvP table access was added. Verification passed with `npx tsc --noEmit`, focused vicinity/PvP eligibility specs with 27 SUCCESS, static greps and `npm run build` with known budget/Supabase `cookie` warnings. Follow-up: real PvP data smoke should confirm metadata labels for main reason keys; fully Polish fallback copy can be handled later or covered through DB metadata.
+
 ---
 
 ## Task R10 — Start spy action

@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { computed, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { PvpTargetCandidate } from '../../../core/domain/pvp/pvp.model';
+import { PvpUiMetadata } from '../../../core/services/pvp/pvp-ui-metadata';
 import { EstateVicinityPage } from './estate-vicinity-page';
 import { EstateVicinityPageState } from './estate-vicinity-page.state';
 import { VicinityTargetCandidatesState } from './vicinity-target-candidates.state';
@@ -18,7 +20,13 @@ describe('EstateVicinityPage', () => {
 
     TestBed.configureTestingModule({
       imports: [EstateVicinityPage],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        {
+          provide: PvpUiMetadata,
+          useValue: { getNamespaceEntries: jasmine.createSpy().and.returnValue(of([])) },
+        },
+      ],
     });
     TestBed.overrideComponent(EstateVicinityPage, {
       set: {
@@ -56,6 +64,9 @@ describe('EstateVicinityPage', () => {
     expect(text).toContain('1m 30s');
     expect(text).toContain('No active protection');
     expect(text).toContain('Attack Unavailable');
+    expect(text).toContain('Attack:');
+    expect(text).toContain('Attacker busy');
+    expect(text).toContain('attacker_busy');
     expect(text).toContain('Spy Available');
     expect(text).not.toContain('target-hero-private-id');
     expect(text).not.toContain('estate-private-id');
@@ -145,7 +156,7 @@ function candidate(): PvpTargetCandidate {
     protectionExpiresAt: null,
     attackEligibility: {
       canStart: false,
-      blockReason: 'db_owned_block_reason',
+      blockReason: 'attacker_busy',
       travelTimeSeconds: 180,
       minTargetLevel: 8,
       maxTargetLevel: 16,

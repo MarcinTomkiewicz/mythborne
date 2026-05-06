@@ -1,16 +1,18 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
-import {
-  PvpActionEligibility,
-  PvpTargetCandidate,
-} from '../../../core/domain/pvp/pvp.model';
+import { PVP_TARGETING_SECTION_METADATA_NAMESPACE } from '../../../core/constants/pvp-ui-metadata.const';
+import { UiMetadataEntryReadModel } from '../../../core/domain/admin-ui-metadata.model';
+import { PvpUiMetadata } from '../../../core/services/pvp/pvp-ui-metadata';
+import { getErrorMessage } from '../../../core/utils/error-message';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { EstateVicinityPageState } from './estate-vicinity-page.state';
 import { VicinityTargetCandidatesState } from './vicinity-target-candidates.state';
+import { VicinityPvpTargetCard } from './vicinity-pvp-target-card';
 import { VicinityRelocationRunner } from './vicinity-relocation-runner';
 
 @Component({
@@ -23,6 +25,7 @@ import { VicinityRelocationRunner } from './vicinity-relocation-runner';
     InputTextModule,
     LoadingOverlay,
     RouterLink,
+    VicinityPvpTargetCard,
   ],
   providers: [
     EstateVicinityPageState,
@@ -32,44 +35,35 @@ import { VicinityRelocationRunner } from './vicinity-relocation-runner';
   templateUrl: './estate-vicinity-page.html',
 })
 export class EstateVicinityPage implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly pvpUiMetadata = inject(PvpUiMetadata);
+
   readonly page = inject(EstateVicinityPageState);
   readonly pvpTargets = inject(VicinityTargetCandidatesState);
+  readonly pvpTargetingMetadata = signal<UiMetadataEntryReadModel[]>([]);
+  readonly pvpTargetingMetadataError = signal<string | null>(null);
 
   ngOnInit(): void {
     this.page.loadData();
     this.pvpTargets.loadCandidates();
+    this.loadPvpTargetingMetadata();
   }
 
-  durationLabel(seconds: number): string {
-    if (seconds < 60) {
-      return `${seconds}s`;
-    }
+  private loadPvpTargetingMetadata(): void {
+    this.pvpTargetingMetadataError.set(null);
 
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-
-    return remainingSeconds > 0
-      ? `${minutes}m ${remainingSeconds}s`
-      : `${minutes}m`;
-  }
-
-  protectionLabel(candidate: PvpTargetCandidate): string {
-    if (!candidate.underProtection) {
-      return 'No active protection';
-    }
-
-    return candidate.protectionExpiresAt
-      ? `Protected until ${new Date(candidate.protectionExpiresAt).toLocaleString()}`
-      : 'Protected';
-  }
-
-  eligibilityLabel(eligibility: PvpActionEligibility): string {
-    return eligibility.canStart ? 'Available' : 'Unavailable';
-  }
-
-  eligibilityBadgeClass(eligibility: PvpActionEligibility): string {
-    return eligibility.canStart
-      ? 'tag-badge tag-badge--info'
-      : 'tag-badge tag-badge--muted';
+    this.pvpUiMetadata.getNamespaceEntries(PVP_TARGETING_SECTION_METADATA_NAMESPACE)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (entries) => {
+          this.pvpTargetingMetadata.set(entries);
+        },
+        error: (error: unknown) => {
+          this.pvpTargetingMetadata.set([]);
+          this.pvpTargetingMetadataError.set(
+            getErrorMessage(error, 'Failed to load PvP targeting metadata.'),
+          );
+        },
+      });
   }
 }
