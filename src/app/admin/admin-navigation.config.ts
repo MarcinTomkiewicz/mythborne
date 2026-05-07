@@ -90,6 +90,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'PvP',
+    title: 'PvP travel timing',
+    description:
+      'Read-only seconds-based travel and manual fight window formula surface.',
+    routerLink: '/admin/pvp-travel-timing',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Anti-abuse',
     title: 'Anti-abuse config',
     description:
@@ -654,6 +662,25 @@ export const PVP_TARGETING_PAGE_LINKS: readonly AdminTagLink[] = [
   {
     label: 'PvP lifecycle',
     routerLink: '/admin/pvp-action-lifecycle',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Formula read model',
+    routerLink: '/admin/formulas',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const PVP_TRAVEL_TIMING_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'PvP foundation',
+    routerLink: '/admin/pvp-overview',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'PvP targeting',
+    routerLink: '/admin/pvp-targeting',
     accessPolicy: 'selectedServerManagement',
   },
   {

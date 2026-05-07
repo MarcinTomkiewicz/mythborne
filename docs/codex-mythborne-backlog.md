@@ -6741,6 +6741,8 @@ PvP Foundation is not:
 - Balancer can inspect travel/manual window configuration.
 - Time unit is clear.
 
+**Implementation note:** R22 accepted on 2026-05-07. Added `/admin/pvp-travel-timing` and admin navigation/dashboard links for a read-only PvP travel/manual-window timing surface. The page reuses the formula admin read model to show `pvp_attack_travel_time_seconds`, `pvp_spy_travel_time_seconds` and `pvp_manual_fight_window_seconds` with DB-backed labels/descriptions/variables/expressions/default context, and clearly labels the current output unit as seconds. No DB/RPC/generated type changes, direct PvP runtime reads or writes were added. Follow-up: extract shared formula-target row rendering if another similar PvP admin formula surface is added, and replace the hardcoded seconds label if DB later exposes unit metadata.
+
 ---
 
 ## Task R23 — PvP resource consequence balancer surface

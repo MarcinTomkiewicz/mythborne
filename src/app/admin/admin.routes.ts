@@ -189,4 +189,11 @@ export const adminRoutes: Routes = [
         (m) => m.PvpTargetingPage,
       ),
   },
+  {
+    path: 'pvp-travel-timing',
+    loadComponent: () =>
+      import('./pages/pvp-travel-timing/pvp-travel-timing-page').then(
+        (m) => m.PvpTravelTimingPage,
+      ),
+  },
 ];

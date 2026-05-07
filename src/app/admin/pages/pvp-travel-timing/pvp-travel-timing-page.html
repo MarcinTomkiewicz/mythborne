@@ -1,0 +1,151 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading PvP travel timing..."
+  description="Loading DB-backed travel and manual window formulas."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">PvP</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            PvP travel and manual window timing
+          </h2>
+          <p class="muted-text mb-0">
+            Read-only seconds-based formula surface for travel and manual combat timing.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Timing targets</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ formulaRows().length }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Enabled formulas</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ enabledFormulaCount() }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Missing targets</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ missingFormulaTargetKeys().length }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Formula targets"
+        title="Travel and manual combat timing"
+        text="Attack travel, spy travel and manual fight window rows are read from formula targets. The expected output unit for this surface is seconds."
+        [secondaryText]="missingFormulaTargetKeys().length ? 'Some expected PvP timing formula targets are missing from the read model.' : null"
+      />
+
+      @if (missingFormulaTargetKeys().length) {
+        <div class="mg-card p-md flex-col gap-xs mt-lg">
+          <strong class="heading-color">Missing formula target keys</strong>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @for (key of missingFormulaTargetKeys(); track key) {
+              <span class="tag-badge tag-badge--warn">{{ key }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="flex-col gap-md mt-lg">
+        @for (row of formulaRows(); track row.target.key) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">{{ row.target.key }}</p>
+                <h3 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ row.target.label }}
+                </h3>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="tag-badge tag-badge--muted">seconds</span>
+                <span class="tag-badge tag-badge--muted">{{ row.target.scopeKey }}</span>
+                <span [class]="formulaStatusClass(row)">{{ row.statusLabel }}</span>
+              </div>
+            </div>
+
+            @if (row.target.description) {
+              <p class="muted-text mb-0">{{ row.target.description }}</p>
+            }
+
+            <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Expected unit</span>
+                <strong class="heading-color">seconds</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Assigned formula</span>
+                <strong class="heading-color">{{ row.formula?.label ?? '-' }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Formula key</span>
+                <strong class="heading-color">{{ row.formula?.key ?? '-' }}</strong>
+              </div>
+            </div>
+
+            @if (row.formula) {
+              <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+                <div class="flex-col gap-xs min-w-0">
+                  <span class="muted-text">Formula description</span>
+                  <span class="heading-color">{{ row.formula.description ?? '-' }}</span>
+                </div>
+
+                <div class="flex-col gap-xs min-w-0">
+                  <span class="muted-text">Expression</span>
+                  <pre class="mb-0 text-break"><code>{{ row.formula.expression }}</code></pre>
+                </div>
+              </div>
+            }
+
+            <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Allowed variables</span>
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  @for (variable of row.target.allowedVariables; track variable) {
+                    <span class="tag-badge tag-badge--muted">{{ variable }}</span>
+                  } @empty {
+                    <span class="muted-text">No variables</span>
+                  }
+                </div>
+              </div>
+
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Default test context</span>
+                <pre class="mb-0 text-break"><code>{{ contextPreview(row) }}</code></pre>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">No PvP travel timing formula targets are visible.</p>
+        }
+      </div>
+    </section>
+  </div>
+}
