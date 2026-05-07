@@ -122,6 +122,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'PvP',
+    title: 'PvP anti-abuse',
+    description:
+      'Read-only signal and relationship-context explainability for PvP anti-abuse review.',
+    routerLink: '/admin/pvp-anti-abuse-explainability',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Anti-abuse',
     title: 'Anti-abuse config',
     description:
@@ -782,6 +790,30 @@ export const PVP_PRESTIGE_CONTEXT_PAGE_LINKS: readonly AdminTagLink[] = [
   {
     label: 'Formula read model',
     routerLink: '/admin/formulas',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const PVP_ANTI_ABUSE_EXPLAINABILITY_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'PvP foundation',
+    routerLink: '/admin/pvp-overview',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'PvP targeting',
+    routerLink: '/admin/pvp-targeting',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Anti-abuse cases',
+    routerLink: '/admin/anti-abuse-cases',
+    accessPolicy: 'selectedServerAntiAbuseTriage',
+  },
+  {
+    label: 'Anti-abuse config',
+    routerLink: '/admin/anti-abuse-config',
     accessPolicy: 'selectedServerManagement',
   },
 ];

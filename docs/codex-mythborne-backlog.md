@@ -6833,6 +6833,8 @@ PvP Foundation is not:
 - Staff/admin can understand PvP anti-abuse signal meaning.
 - UI does not imply automatic punishment or declaration-based suppression.
 
+**Implementation note:** R26 accepted on 2026-05-07. Added `/admin/pvp-anti-abuse-explainability` and admin navigation/dashboard links for a read-only PvP anti-abuse explainability surface. The page reads active anti-abuse dictionary rows and PvP anti-abuse metadata, shows `same_ip_pvp_attack` and `pvp_feeding_pattern`, and presents `mercenary_contract` as review context rather than an allowlist. It keeps signals as review aids only, does not imply automatic punishment or declaration-based suppression, does not render raw signal payloads/private identifiers, and uses explicit metadata key/UI-group matching only. No DB/RPC/generated type changes, direct PvP runtime reads/writes or raw anti-abuse signal/case reads were added. Follow-up: if DB adds more active PvP signal or declaration-context rows, render DB-driven rows and keep the current key lists only as expected-gap checklists; revisit inactive-row badge branches if active dictionary loaders make them unreachable.
+
 ---
 
 ## Task R27 — PvP report producer admin surface

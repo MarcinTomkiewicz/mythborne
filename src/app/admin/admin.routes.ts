@@ -217,4 +217,11 @@ export const adminRoutes: Routes = [
         (m) => m.PvpPrestigeContextPage,
       ),
   },
+  {
+    path: 'pvp-anti-abuse-explainability',
+    loadComponent: () =>
+      import(
+        './pages/pvp-anti-abuse-explainability/pvp-anti-abuse-explainability-page'
+      ).then((m) => m.PvpAntiAbuseExplainabilityPage),
+  },
 ];

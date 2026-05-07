@@ -1,0 +1,265 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading PvP anti-abuse explainability..."
+  description="Loading DB-backed anti-abuse dictionaries and PvP metadata."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">PvP</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            PvP anti-abuse explainability
+          </h2>
+          <p class="muted-text mb-0">
+            Read-only staff surface for PvP anti-abuse signal meaning and relationship declaration context.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">PvP signal checks</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ signalViews().length }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Declaration contexts</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ declarationContextViews().length }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Configuration gaps</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ configurationGapCount() }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Review boundary"
+        title="Signals are review aids"
+        text="PvP anti-abuse signals help staff review suspicious patterns. They do not decide sanctions by themselves and relationship declarations do not suppress signals."
+        secondaryText="This surface explains dictionaries and metadata only. Private identifiers and raw signal payloads are not displayed."
+      />
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Signal dictionary"
+        title="PvP signal types"
+        text="Signal labels, descriptions, severity, score and confidence come from active anti-abuse dictionary rows."
+        [secondaryText]="missingSignalKeys().length ? 'Some expected PvP signal dictionary rows are missing.' : null"
+      />
+
+      @if (missingSignalKeys().length) {
+        <div class="mg-card p-md flex-col gap-xs mt-lg">
+          <strong class="heading-color">Missing signal dictionary keys</strong>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @for (key of missingSignalKeys(); track key) {
+              <span class="tag-badge tag-badge--warn">{{ key }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md mt-lg">
+        @for (view of signalViews(); track view.key) {
+          @if (view.entry; as signal) {
+            <article class="mg-card p-md flex-col gap-sm">
+              <div class="flex-row-between-center flex-col-sm gap-xs">
+                <div class="flex-col gap-xs">
+                  <p class="card-legend mb-0">{{ signal.key }}</p>
+                  <h3 class="mg-section__title mg-section__title--xs mb-0">
+                    {{ signal.label }}
+                  </h3>
+                </div>
+
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  <span [class]="signalStatusClass(signal)">
+                    {{ signal.isActive ? 'active dictionary row' : 'inactive dictionary row' }}
+                  </span>
+                  <span class="tag-badge tag-badge--muted">{{ signal.category }}</span>
+                </div>
+              </div>
+
+              <p class="muted-text mb-0">{{ signal.description }}</p>
+              @if (signal.helperText || signal.adminDescription) {
+                <p class="muted-text mb-0">
+                  {{ signal.helperText ?? signal.adminDescription }}
+                </p>
+              }
+
+              <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-sm">
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Severity</span>
+                  <strong class="heading-color">{{ signal.defaultSeverity }}</strong>
+                </div>
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Score</span>
+                  <strong class="heading-color">{{ signal.defaultScore }}</strong>
+                </div>
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Confidence</span>
+                  <strong class="heading-color">{{ signal.defaultConfidence }}</strong>
+                </div>
+              </div>
+            </article>
+          } @else {
+            <article class="mg-card p-md flex-col gap-xs">
+              <strong class="heading-color">{{ view.key }}</strong>
+              <span class="tag-badge tag-badge--warn">dictionary gap</span>
+            </article>
+          }
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Declaration context"
+        title="Relationship declarations are context"
+        text="Declarations can explain why a PvP pattern deserves review context, but they are not an allowlist and do not disable anti-abuse review."
+        [secondaryText]="missingDeclarationContextKeys().length ? 'Some expected declaration context rows are missing.' : null"
+      />
+
+      @if (missingDeclarationContextKeys().length) {
+        <div class="mg-card p-md flex-col gap-xs mt-lg">
+          <strong class="heading-color">Missing declaration context keys</strong>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @for (key of missingDeclarationContextKeys(); track key) {
+              <span class="tag-badge tag-badge--warn">{{ key }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md mt-lg">
+        @for (view of declarationContextViews(); track view.key) {
+          @if (view.entry; as declaration) {
+            <article class="mg-card p-md flex-col gap-sm">
+              <div class="flex-row-between-center flex-col-sm gap-xs">
+                <div class="flex-col gap-xs">
+                  <p class="card-legend mb-0">{{ declaration.key }}</p>
+                  <h3 class="mg-section__title mg-section__title--xs mb-0">
+                    {{ declaration.label }}
+                  </h3>
+                </div>
+
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  <span [class]="declarationStatusClass(declaration)">
+                    {{ declaration.isActive ? 'active dictionary row' : 'inactive dictionary row' }}
+                  </span>
+                  <span class="tag-badge tag-badge--warn">context only</span>
+                </div>
+              </div>
+
+              <p class="muted-text mb-0">{{ declaration.description }}</p>
+              @if (declaration.helperText || declaration.adminDescription) {
+                <p class="muted-text mb-0">
+                  {{ declaration.helperText ?? declaration.adminDescription }}
+                </p>
+              }
+
+              <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-sm">
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Participants</span>
+                  <strong class="heading-color">
+                    {{ declaration.minParticipants }}-{{ declaration.maxParticipants ?? 'N/D' }}
+                  </strong>
+                </div>
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Required declaration data</span>
+                  <div class="flex-row-start-center flex-wrap gap-xs">
+                    @if (declaration.requiresAmount) {
+                      <span class="tag-badge tag-badge--muted">amount</span>
+                    }
+                    @if (declaration.requiresExpiration) {
+                      <span class="tag-badge tag-badge--muted">expiration</span>
+                    }
+                    @if (!declaration.requiresAmount && !declaration.requiresExpiration) {
+                      <span class="muted-text">No amount or expiration requirement</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </article>
+          } @else {
+            <article class="mg-card p-md flex-col gap-xs">
+              <strong class="heading-color">{{ view.key }}</strong>
+              <span class="tag-badge tag-badge--warn">dictionary gap</span>
+            </article>
+          }
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="DB metadata"
+        title="PvP anti-abuse metadata"
+        text="Metadata rows are matched by explicit key or UI group only."
+        [secondaryText]="!reviewAidMetadataRows().length || !declarationContextMetadataRows().length ? 'One or more PvP anti-abuse metadata rows are missing.' : null"
+      />
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md mt-lg">
+        <article class="mg-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center flex-col-sm gap-xs">
+            <strong class="heading-color">Review aid copy</strong>
+            @if (reviewAidMetadataRows().length) {
+              <span class="tag-badge tag-badge--info">DB metadata</span>
+            } @else {
+              <span class="tag-badge tag-badge--warn">metadata gap</span>
+            }
+          </div>
+
+          @for (entry of reviewAidMetadataRows(); track entry.id) {
+            <div class="flex-col gap-xs">
+              <span class="card-legend">{{ entry.key }}</span>
+              <p class="muted-text mb-0">{{ metadataCopy(entry) }}</p>
+            </div>
+          } @empty {
+            <p class="muted-text mb-0">No active review-aid metadata row.</p>
+          }
+        </article>
+
+        <article class="mg-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center flex-col-sm gap-xs">
+            <strong class="heading-color">Declaration context copy</strong>
+            @if (declarationContextMetadataRows().length) {
+              <span class="tag-badge tag-badge--info">DB metadata</span>
+            } @else {
+              <span class="tag-badge tag-badge--warn">metadata gap</span>
+            }
+          </div>
+
+          @for (entry of declarationContextMetadataRows(); track entry.id) {
+            <div class="flex-col gap-xs">
+              <span class="card-legend">{{ entry.key }}</span>
+              <p class="muted-text mb-0">{{ metadataCopy(entry) }}</p>
+            </div>
+          } @empty {
+            <p class="muted-text mb-0">No active declaration-context metadata row.</p>
+          }
+        </article>
+      </div>
+    </section>
+  </div>
+}
