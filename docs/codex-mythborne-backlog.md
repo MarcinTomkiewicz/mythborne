@@ -6555,6 +6555,8 @@ PvP Foundation is not:
 - Spy result is readable and player-safe.
 - Target hero does not get implied access or notification.
 
+**Implementation note:** R14 accepted on 2026-05-07. Added `/game/vicinity/spy-results/:spyResultId` as a guarded player-facing spy result detail page, with the private dynamic route configured as SSR `RenderMode.Server` instead of prerender. The page consumes `PvpSpyResultState` / `PlayerPvp.getMySpyResult(...)` only, uses route-param stale guards, shows player-facing unavailable/access-denied copy, and displays target summary plus safe base stats, resources, equipment, estate and buildings through `pvpSpyResultDisplay(...)`. It does not render raw snapshot JSON, active exploration/PvP runtime state, staff/admin internals, anti-abuse internals, target notification/write flow, direct PvP table access/write or Angular gameplay authority. Follow-up before broader snapshot display: prefer DB-backed display rows or explicit per-section allowlist contracts over the current conservative denylist for generic primitive rows; remove unused `ButtonModule` at next touch; consider invalid-date fallback and shared label helper reuse if needed.
+
 ---
 
 ## Task R15 — Attack result read state

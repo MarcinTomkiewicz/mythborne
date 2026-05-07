@@ -1,0 +1,84 @@
+<app-loading-overlay
+  [visible]="page.isLoading()"
+  label="Loading spy result..."
+  description="Loading the selected PvP spy result."
+/>
+
+@if (errorMessage() && !page.result()) {
+  <section class="mg-card p-lg w-100">
+    <div class="flex-col gap-sm">
+      <p class="card-legend mb-0">Spy result unavailable</p>
+      <p class="mb-0 muted-text">{{ errorMessage() }}</p>
+      <a routerLink="/game/vicinity" class="tag-badge tag-badge--muted">Back to vicinity</a>
+    </div>
+  </section>
+} @else if (page.result(); as result) {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">PvP spy result</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            {{ result.targetDisplayName }}
+          </h2>
+          @if (result.resultSummary) {
+            <p class="muted-text mb-0">{{ result.resultSummary }}</p>
+          }
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <span class="tag-badge tag-badge--info">Private result</span>
+          <a routerLink="/game/vicinity" class="tag-badge tag-badge--muted">Back</a>
+        </div>
+      </div>
+    </section>
+
+    @if (display(); as view) {
+      <section class="mg-card p-lg w-100">
+        <div class="flex-col gap-md">
+          <div class="flex-col gap-xs">
+            <p class="card-legend mb-0">Target summary</p>
+            <p class="muted-text mb-0">
+              Durable snapshot from the owner-safe spy result read model.
+            </p>
+          </div>
+
+          <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md">
+            @for (fact of view.targetFacts; track fact.label) {
+              <div class="flex-col gap-xs">
+                <span class="muted-text">{{ fact.label }}</span>
+                <strong class="heading-color">{{ fact.value }}</strong>
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
+        @for (section of view.sections; track section.title) {
+          <section class="mg-card p-lg w-100">
+            <div class="flex-col gap-md">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">{{ section.title }}</p>
+                <p class="muted-text mb-0">{{ section.description }}</p>
+              </div>
+
+              @if (section.rows.length > 0) {
+                <div class="flex-col gap-sm">
+                  @for (row of section.rows; track row.label) {
+                    <div class="flex-row-between-center flex-col-sm gap-sm">
+                      <span class="muted-text">{{ row.label }}</span>
+                      <strong class="heading-color">{{ row.value }}</strong>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <p class="mb-0 muted-text">{{ section.emptyText }}</p>
+              }
+            </div>
+          </section>
+        }
+      </div>
+    }
+  </div>
+}

@@ -36,6 +36,11 @@ export const gameRoutes: Routes = [
       import('./pages/mansion/mansion-page').then((m) => m.MansionPage),
   },
   {
+    path: 'vicinity/spy-results/:spyResultId',
+    loadComponent: () =>
+      import('./pages/vicinity/pvp-spy-result-page').then((m) => m.PvpSpyResultPage),
+  },
+  {
     path: 'vicinity',
     loadComponent: () =>
       import('./pages/vicinity/estate-vicinity-page').then((m) => m.EstateVicinityPage),

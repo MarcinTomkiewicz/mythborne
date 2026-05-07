@@ -17,4 +17,13 @@ describe('game routes', () => {
   it('does not introduce a neighborhood route alias', () => {
     expect(gameRoutes.some((route) => route.path === 'neighborhood')).toBeFalse();
   });
+
+  it('exposes the PvP spy result detail route under vicinity', () => {
+    const route = gameRoutes.find((item) =>
+      item.path === 'vicinity/spy-results/:spyResultId',
+    );
+
+    expect(route).toBeDefined();
+    expect(route?.loadComponent).toEqual(jasmine.any(Function));
+  });
 });
