@@ -6528,6 +6528,8 @@ PvP Foundation is not:
 - Spy result reads use the owner-safe RPC.
 - State does not guess result ownership or target data.
 
+**Implementation note:** R13 accepted on 2026-05-07. Added `PvpSpyResultState` as a state/facade-only slice for reading one durable spy result through `PlayerPvp.getMySpyResult(...)` / canonical `get_my_pvp_spy_result(...)`. The state covers loading, missing-or-not-accessible, access-denied and generic RPC error states, treats empty/no-row as unavailable without guessing ownership, and uses active hero/server stale guards so context changes cannot leave the state stuck in loading or overwrite current data. No UI, route, raw snapshot rendering, direct PvP table access/write or Angular gameplay authority was added. R14 must provide player-facing no-access copy, avoid raw snapshot JSON without explicit display mappers/contracts, and preserve route-param stale guards.
+
 ---
 
 ## Task R14 — Spy result UI
