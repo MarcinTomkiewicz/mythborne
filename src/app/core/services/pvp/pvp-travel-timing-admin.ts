@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { FormulaAdminData } from '../../domain/formula/formula.model';
 import { FormulaService } from '../formula/formula';
 
@@ -14,6 +14,6 @@ export class PvpTravelTimingAdmin {
   private readonly formulas = inject(FormulaService);
 
   getData(): Observable<FormulaAdminData> {
-    return this.formulas.getAdminData().pipe(map((data) => data));
+    return this.formulas.getAdminData();
   }
 }

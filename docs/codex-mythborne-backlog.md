@@ -6764,6 +6764,8 @@ PvP Foundation is not:
 - Balancer can inspect resource consequence settings.
 - UI does not imply CP/item/building/estate transfer.
 
+**Implementation note:** R23 accepted on 2026-05-07. Added `/admin/pvp-resource-consequences` and admin navigation/dashboard links for a read-only PvP resource consequence balancer surface. The page reads eligible resource labels/descriptions from `resource_types`, shows `drachma`, `materials` and `workforce`, uses the formula admin read model for `pvp_resource_steal_percent` and `pvp_attacker_defeat_resource_loss_percent`, and renders forbidden-boundary metadata only through explicit DB metadata key/group matching. No DB/RPC/generated type changes, direct PvP runtime reads or writes were added. Follow-up: extract shared formula-target row rendering before adding a fourth similar admin formula surface; rename the eligible-resource count and excluded consequence category label at next touch.
+
 ---
 
 ## Task R24 — PvP XP/reward balancer surface

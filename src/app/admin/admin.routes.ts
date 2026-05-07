@@ -196,4 +196,11 @@ export const adminRoutes: Routes = [
         (m) => m.PvpTravelTimingPage,
       ),
   },
+  {
+    path: 'pvp-resource-consequences',
+    loadComponent: () =>
+      import(
+        './pages/pvp-resource-consequences/pvp-resource-consequences-page'
+      ).then((m) => m.PvpResourceConsequencesPage),
+  },
 ];

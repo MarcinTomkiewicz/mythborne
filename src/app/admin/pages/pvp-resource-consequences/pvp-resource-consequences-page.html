@@ -1,0 +1,244 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading PvP resource consequences..."
+  description="Loading DB-backed resource consequence formulas and metadata."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">PvP</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            PvP resource consequences
+          </h2>
+          <p class="muted-text mb-0">
+            Read-only balancer surface for PvP-owned resource consequence settings.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Eligible resources</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ eligibleResources().length }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Formula targets</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ formulaRows().length }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Configuration gaps</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ configurationGapCount() }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Resource dictionary"
+        title="Eligible PvP resource keys"
+        text="The surface only lists the resource keys currently eligible for PvP resource consequences and reads labels from the resource dictionary."
+        [secondaryText]="missingEligibleResourceKeys().length ? 'Some expected eligible resource dictionary rows are missing.' : null"
+      />
+
+      @if (missingEligibleResourceKeys().length) {
+        <div class="mg-card p-md flex-col gap-xs mt-lg">
+          <strong class="heading-color">Missing eligible resource keys</strong>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @for (key of missingEligibleResourceKeys(); track key) {
+              <span class="tag-badge tag-badge--warn">{{ key }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md mt-lg">
+        @for (resource of eligibleResources(); track resource.key) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">{{ resource.key }}</p>
+                <h3 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ resource.label }}
+                </h3>
+              </div>
+
+              @if (resource.resourceType) {
+                <span
+                  [class]="resource.resourceType.isActive ? 'tag-badge tag-badge--info' : 'tag-badge tag-badge--warn'"
+                >
+                  {{ resource.resourceType.isActive ? 'active dictionary row' : 'inactive dictionary row' }}
+                </span>
+              } @else {
+                <span class="tag-badge tag-badge--warn">missing dictionary row</span>
+              }
+            </div>
+
+            @if (resource.description) {
+              <p class="muted-text mb-0">{{ resource.description }}</p>
+            }
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Formula targets"
+        title="Victory transfer and defeat loss"
+        text="Rows are filtered from the formula read model. Allowed variables, test context and expressions are displayed from DB rows only."
+        [secondaryText]="missingFormulaTargetKeys().length ? 'Some expected PvP resource consequence formula targets are missing from the read model.' : null"
+      />
+
+      @if (missingFormulaTargetKeys().length) {
+        <div class="mg-card p-md flex-col gap-xs mt-lg">
+          <strong class="heading-color">Missing formula target keys</strong>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @for (key of missingFormulaTargetKeys(); track key) {
+              <span class="tag-badge tag-badge--warn">{{ key }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="flex-col gap-md mt-lg">
+        @for (row of formulaRows(); track row.target.key) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">{{ row.target.key }}</p>
+                <h3 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ row.target.label }}
+                </h3>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="tag-badge tag-badge--muted">{{ row.target.scopeKey }}</span>
+                <span [class]="formulaStatusClass(row)">{{ row.statusLabel }}</span>
+              </div>
+            </div>
+
+            @if (row.target.description) {
+              <p class="muted-text mb-0">{{ row.target.description }}</p>
+            }
+
+            <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Assigned formula</span>
+                <strong class="heading-color">{{ row.formula?.label ?? '-' }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Formula key</span>
+                <strong class="heading-color">{{ row.formula?.key ?? '-' }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Assignment updated</span>
+                <strong class="heading-color">{{ row.assignment?.updatedAt ?? '-' }}</strong>
+              </div>
+            </div>
+
+            @if (row.formula) {
+              <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+                <div class="flex-col gap-xs min-w-0">
+                  <span class="muted-text">Formula description</span>
+                  <span class="heading-color">{{ row.formula.description ?? '-' }}</span>
+                </div>
+
+                <div class="flex-col gap-xs min-w-0">
+                  <span class="muted-text">Expression</span>
+                  <pre class="mb-0 text-break"><code>{{ row.formula.expression }}</code></pre>
+                </div>
+              </div>
+            }
+
+            <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Allowed variables</span>
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  @for (variable of row.target.allowedVariables; track variable) {
+                    <span class="tag-badge tag-badge--muted">{{ variable }}</span>
+                  } @empty {
+                    <span class="muted-text">No variables</span>
+                  }
+                </div>
+              </div>
+
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Default test context</span>
+                <pre class="mb-0 text-break"><code>{{ contextPreview(row) }}</code></pre>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">No PvP resource consequence formula targets are visible.</p>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="DB metadata"
+        title="Forbidden consequence boundaries"
+        text="Boundary explanations are read from PvP metadata rows when the expected key or group exists. Missing rows are reported as metadata gaps."
+      />
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md mt-lg">
+        <article class="mg-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center flex-col-sm gap-sm">
+            <h3 class="mg-section__title mg-section__title--xs mb-0">
+              Boundary metadata
+            </h3>
+            <span class="tag-badge tag-badge--muted">
+              {{ boundaryMetadataRows().length }} rows
+            </span>
+          </div>
+
+          @for (entry of boundaryMetadataRows(); track entry.id) {
+            <div class="mg-card p-sm flex-col gap-xs">
+              <strong class="heading-color">{{ entry.label }}</strong>
+              <span class="card-legend">{{ entry.key }}</span>
+              <p class="muted-text mb-0">{{ metadataCopy(entry) }}</p>
+              @if (entry.warningText) {
+                <p class="status-text-warning mb-0">{{ entry.warningText }}</p>
+              }
+            </div>
+          } @empty {
+            <span class="tag-badge tag-badge--warn">metadata gap: forbidden consequences</span>
+          }
+        </article>
+
+        <article class="mg-card p-md flex-col gap-sm">
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            Not eligible resource keys
+          </h3>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @for (label of forbiddenBoundaryLabels; track label) {
+              <span class="tag-badge tag-badge--muted">{{ label }}</span>
+            }
+          </div>
+        </article>
+      </div>
+    </section>
+  </div>
+}
