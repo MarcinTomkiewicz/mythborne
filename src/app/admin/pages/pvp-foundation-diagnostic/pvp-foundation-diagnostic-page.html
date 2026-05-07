@@ -1,0 +1,165 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading PvP foundation diagnostic..."
+  description="Loading DB-owned PvP integration diagnostic."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Diagnostic dependency</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+    <p class="mb-0 muted-text">
+      Browser access to the DB diagnostic must be provided through an approved admin RPC boundary.
+    </p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">PvP</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            PvP foundation diagnostic
+          </h2>
+          <p class="muted-text mb-0">
+            Read-only DB-owned diagnostic for current PvP foundation readiness.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">DB/RPC blockers</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ blockerCount() }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Incoming notifications</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ incomingNotificationCount() ?? 'N/D' }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Smoke prerequisites</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ smokePrerequisiteCount() }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Boundary"
+        title="Read-only diagnostic"
+        text="This page calls inspect_pvp_foundation_integration_state through the normal browser admin RPC boundary."
+        secondaryText="It does not expose service-role secrets, create test data, run positive smoke, mutate PvP state or read runtime PvP tables directly."
+      />
+    </section>
+
+    @if (diagnostic(); as diagnosticData) {
+      <section class="mg-card p-lg w-100">
+        <app-admin-section-intro
+          legend="Status"
+          title="Foundation readiness"
+          text="Structural and formula statuses are displayed exactly as returned by the DB diagnostic."
+          [secondaryText]="!diagnosticData.structuralStatus || !diagnosticData.formulaStatus ? 'Some status fields were not returned by the diagnostic read model.' : null"
+        />
+
+        <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md mt-lg">
+          <article class="mg-card p-md flex-col gap-xs">
+            <span class="muted-text">Structural status</span>
+            <span [class]="statusBadgeClass(diagnosticData.structuralStatus)">
+              {{ statusLabel(diagnosticData.structuralStatus) }}
+            </span>
+          </article>
+
+          <article class="mg-card p-md flex-col gap-xs">
+            <span class="muted-text">Formula status</span>
+            <span [class]="statusBadgeClass(diagnosticData.formulaStatus)">
+              {{ statusLabel(diagnosticData.formulaStatus) }}
+            </span>
+          </article>
+        </div>
+      </section>
+
+      <section class="mg-card p-lg w-100">
+        <app-admin-section-intro
+          legend="Missing objects"
+          title="Functions and triggers"
+          text="Missing functions and triggers are reported by the DB diagnostic. Angular does not infer missing backend objects."
+          [secondaryText]="blockerCount() ? 'One or more DB/RPC blockers were returned.' : null"
+        />
+
+        <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md mt-lg">
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-xs">
+              <strong class="heading-color">Missing functions</strong>
+              <span class="tag-badge tag-badge--muted">
+                {{ diagnosticData.missingFunctions.length }}
+              </span>
+            </div>
+
+            <div class="flex-row-start-center flex-wrap gap-xs">
+              @for (name of diagnosticData.missingFunctions; track name) {
+                <span class="tag-badge tag-badge--warn">{{ name }}</span>
+              } @empty {
+                <span class="tag-badge tag-badge--info">none returned</span>
+              }
+            </div>
+          </article>
+
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-xs">
+              <strong class="heading-color">Missing triggers</strong>
+              <span class="tag-badge tag-badge--muted">
+                {{ diagnosticData.missingTriggers.length }}
+              </span>
+            </div>
+
+            <div class="flex-row-start-center flex-wrap gap-xs">
+              @for (name of diagnosticData.missingTriggers; track name) {
+                <span class="tag-badge tag-badge--warn">{{ name }}</span>
+              } @empty {
+                <span class="tag-badge tag-badge--info">none returned</span>
+              }
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="mg-card p-lg w-100">
+        <app-admin-section-intro
+          legend="Positive smoke"
+          title="Prerequisites only"
+          text="The diagnostic may list prerequisites for a later positive smoke. This page does not create heroes, estates, actions, reports, notifications or combat results."
+          [secondaryText]="diagnosticData.positiveSmokePrerequisites.length ? null : 'No positive-smoke prerequisites were returned.'"
+        />
+
+        <div class="flex-row-start-center flex-wrap gap-xs mt-lg">
+          @for (prerequisite of diagnosticData.positiveSmokePrerequisites; track prerequisite) {
+            <span class="tag-badge tag-badge--muted">{{ prerequisite }}</span>
+          } @empty {
+            <span class="tag-badge tag-badge--info">none returned</span>
+          }
+        </div>
+      </section>
+    } @else {
+      <section class="mg-card p-lg w-100">
+        <app-admin-section-intro
+          legend="Diagnostic"
+          title="No diagnostic payload"
+          text="The approved RPC returned no readable diagnostic payload."
+          secondaryText="Treat this as a backend/admin read-model dependency rather than filling the gaps in Angular."
+        />
+      </section>
+    }
+  </div>
+}

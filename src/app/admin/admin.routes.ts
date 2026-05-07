@@ -231,4 +231,11 @@ export const adminRoutes: Routes = [
         (m) => m.PvpReportProducerPage,
       ),
   },
+  {
+    path: 'pvp-foundation-diagnostic',
+    loadComponent: () =>
+      import(
+        './pages/pvp-foundation-diagnostic/pvp-foundation-diagnostic-page'
+      ).then((m) => m.PvpFoundationDiagnosticPage),
+  },
 ];

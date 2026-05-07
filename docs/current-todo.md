@@ -219,8 +219,9 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: R25 - PvP Prestige context admin surface.
 - Completed and confirmed: R26 - PvP anti-abuse explainability surface.
 - Completed and confirmed: R27 - PvP report producer admin surface.
+- Completed and confirmed: R28 - PvP foundation diagnostic admin surface.
 - Accepted hotfix: HOTFIX-REWARD-AUTO-RESOLVE - reward/drop communication and manual combat auto-resolve wording.
-- Next backlog task: R28 - PvP foundation diagnostic admin surface.
+- Next backlog task: Epic S - Item Equipment, Armory and Loadout Presets.
 - Q4 pending manual smoke: check a real DB row for `estate.building_job.completed`; source `action_url` must be `/game/mansion`. If it still returns `ViewState`, fix DB/content producer source and do not add a frontend remap.
 - Q5 pending manual smoke: open bell, mark read, dismiss and action link; real DB/RLS denied-action smoke only if suitable test data/access exists.
 - Q6 pending manual smoke: basic bell UI can be smoke-tested, but full fresh-toast validation needs a real DB producer notification. Eligible unread fresh rows should toast once; read rows and `default_toast_enabled = false` rows should remain inbox-only.

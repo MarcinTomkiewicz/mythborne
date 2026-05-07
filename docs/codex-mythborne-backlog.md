@@ -6878,6 +6878,8 @@ PvP Foundation is not:
 - No service-role secret is exposed to the browser.
 - No test data is created.
 
+**Implementation note:** R28 accepted on 2026-05-07. Added `/admin/pvp-foundation-diagnostic` and admin navigation/dashboard links for a read-only PvP foundation diagnostic surface. The page calls `inspect_pvp_foundation_integration_state(...)` through the normal `Backend.rpc` admin/service boundary, maps optional diagnostic JSON fields without inventing missing values, and shows structural status, formula status, missing functions, missing triggers, incoming notification count and positive-smoke prerequisites. The UI does not expose service-role secrets, create test data, execute positive smoke or read/write PvP runtime tables directly. No DB/RPC/generated type changes were made. Follow-up: confirm the exact RPC return shape if it ever changes from a single JSON object, reload diagnostics if selected server can change in-place, and consider widening blocker counting for non-ok structural/formula statuses.
+
 ---
 
 # Epic S — Item Equipment, Armory and Loadout Presets

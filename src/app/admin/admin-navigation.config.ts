@@ -138,6 +138,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'PvP',
+    title: 'PvP diagnostics',
+    description:
+      'Read-only DB-owned foundation diagnostic and smoke prerequisite surface.',
+    routerLink: '/admin/pvp-foundation-diagnostic',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Anti-abuse',
     title: 'Anti-abuse config',
     description:
@@ -845,6 +853,30 @@ export const PVP_REPORT_PRODUCER_PAGE_LINKS: readonly AdminTagLink[] = [
   },
   {
     label: 'Anti-abuse',
+    routerLink: '/admin/pvp-anti-abuse-explainability',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const PVP_FOUNDATION_DIAGNOSTIC_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'PvP foundation',
+    routerLink: '/admin/pvp-overview',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'PvP lifecycle',
+    routerLink: '/admin/pvp-action-lifecycle',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'PvP report producer',
+    routerLink: '/admin/pvp-report-producer',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'PvP anti-abuse',
     routerLink: '/admin/pvp-anti-abuse-explainability',
     accessPolicy: 'selectedServerManagement',
   },
