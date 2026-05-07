@@ -7058,6 +7058,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Player-facing mapping does not expose staff/admin-only fields.
 - Operation journals remain readable to UI.
 
+**Implementation note:** S2 accepted on 2026-05-07. Added typed item/equipment RPC row aliases and pure mappers for item summaries, lifecycle state, current equipment loadouts, equipped item display data, armory shelves/items, item requirement previews, loadout presets, preset slot items and equipment operation journals. Mapper specs verify exact DB key preservation for item ids, owner/loadout hero context and literal slot keys. Operation journal mapping supports grouped, array and nested DB-like journal shapes, normalizes `action`/`actionKey`, `slotKey`/`targetSlotKey`, `reason`/`reasonKey` and details fields, buckets entries by normalized action, and defaults failed entries without explicit success to `success: false`. No DB/RPC/generated type changes were made.
+
 ---
 
 ## Task S3 — Equipment RPC service
@@ -10087,24 +10089,28 @@ Domknąć end-to-end start flow i usunąć niespójności między server picker,
 
 Podłączyć frontend Mythsworn do DB/RPC foundation systemu Prestige po migracji migratora.
 
-Epic Y ma pokazać Prestige jako player-facing rangę oraz admin/tester-facing raw/debug data, ale nie może liczyć punktów, delt ani rang w Angularze.
+Epic Y pokazuje Prestige jako player-facing rangę oraz admin/tester-facing raw/debug data, ale nie liczy punktów, delt, progów ani rang w Angularze.
 
 Prestige jest DB-authoritative.
 
-## Dependency
+## Hard dependency
 
 Do not start this Epic until the migrator confirms:
 
 - Prestige DB/RPC foundation exists;
-- generated Supabase types are regenerated and committed/imported;
+- generated Supabase types are regenerated and available;
 - `ranks` / prestige rank registry is migrated or adapted;
-- hero current prestige state exists;
-- prestige ledger exists;
-- PvP prestige delta workflow exists;
-- player-safe and admin/debug read paths exist;
+- current hero Prestige state exists;
+- Prestige ledger exists;
+- PvP Prestige delta workflow exists;
+- player-safe Prestige read path exists;
+- public hero rank read path exists;
+- admin/debug Prestige read path exists;
+- PvP report context includes player-safe qualitative Prestige change summary;
+- rank-change notification producer exists, or is explicitly marked as follow-up;
 - RLS/grants are defined.
 
-If any of these are missing in generated types, stop and report DB/RPC blocker.
+If any required contract is missing from generated types, stop and report DB/RPC blocker.
 
 ## Canonical decisions
 
@@ -10113,7 +10119,7 @@ If any of these are missing in generated types, stop and report DB/RPC blocker.
 - Prestige has hidden points and visible rank.
 - Players see their own and other heroes’ Prestige rank.
 - Players do not see raw Prestige points.
-- Players do not see numeric Prestige deltas.
+- Players do not see numeric Prestige delta.
 - Admin/tester/sandbox UI may see raw points, raw deltas, thresholds and source context.
 - Prestige cannot drop below zero.
 - Prestige has no decay.
@@ -10121,6 +10127,8 @@ If any of these are missing in generated types, stop and report DB/RPC blocker.
 - Future sources such as Argonautics may be added later, but are not part of Epic Y.
 - Prestige gates districts, building starts/upgrades, relocation and future political privileges.
 - Losing Prestige below a district threshold does not delete estate, buildings or existing progress.
+- PvP reports show qualitative Prestige change after each Prestige-affecting PvP result.
+- Separate notifications are created only when Prestige rank changes.
 
 ## Prestige ranks
 
@@ -10134,7 +10142,7 @@ Expected canonical rank names:
 | 2 | B | Ephor |
 | 3 | C | Strategos |
 | 4 | D | Archon |
-| 5 | Basileus |
+| 5 | E | Basileus |
 
 Frontend may use these names only as fallback diagnostics if DB data is missing, not as permanent runtime source.
 
@@ -10143,23 +10151,24 @@ Frontend may use these names only as fallback diagnostics if DB data is missing,
 ## Task Y1 — Prestige read models and mapper layer
 
 **Goal:**  
-Add typed frontend read models/mappers for Prestige rank, current hero Prestige state and admin/debug Prestige state.
+Add typed frontend read models/mappers for Prestige rank, current hero Prestige state, public hero Prestige rank, PvP Prestige summary and admin/debug Prestige state.
 
 **Scope:**
 
 - Read current generated database types and migrator-provided RPCs/views.
-- Add domain/read models for:
+- Add explicit domain/read models for:
   - `PrestigeRank`;
+  - `HeroPrestigePlayerState`;
   - `HeroPrestigePublicState`;
-  - `HeroPrestigePrivateState` if separate;
   - `HeroPrestigeAdminDebugState`;
   - `PrestigeChangeSummary`;
+  - `PrestigeRankChangeNotification`;
   - `PrestigeLedgerEntry` if exposed to admin/debug.
 - Map DB/RPC rows to explicit domain models.
-- Keep player-safe and admin/debug models separate.
-- Preserve raw keys as secondary/debug metadata only.
+- Keep player-safe, public-safe and admin/debug models separate.
+- Preserve raw keys only as secondary/debug metadata.
 - Do not expose raw generated DB rows to components.
-- Do not compute rank from points in Angular if DB exposes rank.
+- Do not compute rank from points in Angular if DB exposes current rank.
 - Do not compute PvP delta in Angular.
 
 **Out of scope:**
@@ -10173,9 +10182,10 @@ Add typed frontend read models/mappers for Prestige rank, current hero Prestige 
 **Acceptance criteria:**
 
 - Prestige frontend domain/read models exist.
-- Player-safe model does not include raw points or raw delta.
+- Player-safe/public models do not include raw points or numeric deltas.
 - Admin/debug model may include raw points/delta/source context.
-- Mappers are covered by focused tests where existing mapper test patterns allow.
+- PvP report summary model supports qualitative change message.
+- Rank-change notification model supports before/after rank names.
 - Missing DB contract is reported as blocker, not faked.
 
 **Verification:**
@@ -10188,66 +10198,108 @@ Add typed frontend read models/mappers for Prestige rank, current hero Prestige 
 
 - reused / checked but not reused / new;
 - DB/RPC contract used;
-- player-safe fields vs admin/debug fields;
+- player-safe fields vs public-safe fields vs admin/debug fields;
 - generated types changed: no.
 
 ---
 
-## Task Y2 — Show Prestige rank in player-facing hero surfaces
+## Task Y2 — Own hero Prestige rank display
 
 **Goal:**  
-Show Prestige rank in player-facing places where hero identity or public PvP context is already displayed.
+Show current hero Prestige rank in player-facing own-hero surfaces.
 
 **Scope:**
 
-- Use the read model from Y1.
+- Use read models from Y1.
 - Show own hero Prestige rank where current dashboard/profile/hero summary already displays hero identity.
-- Show other hero Prestige rank where target/public hero cards already display opponent identity, especially PvP target/vicinity surfaces if available.
-- Show only rank name/number/tier and player-facing description/helper text.
+- Show rank name, rank number/tier and player-facing helper/description if DB provides it.
 - Do not show raw points.
 - Do not show raw delta.
 - Use DB-backed rank label/description/helper text.
-- If rank metadata is missing, show a dependency/diagnostic in admin/test context; player UI should degrade gracefully.
+- Missing rank metadata should not crash the page.
 
 **Out of scope:**
 
-- No new full Prestige page.
+- No full Prestige page.
+- No public target card work.
 - No admin raw points view.
-- No PvP scoring logic.
-- No local copywriting as permanent source.
+- No local permanent copy.
 
 **Acceptance criteria:**
 
 - Player can see own Prestige rank.
-- Player can see another hero’s Prestige rank where public hero/PvP target identity is shown.
-- Raw points are not present in player-facing templates/models.
+- Player cannot see raw Prestige points.
 - Rank label/description comes from DB/read model.
-- Missing Prestige data does not crash the page.
+- Missing data degrades safely.
 
 **Verification:**
 
 - `npx tsc --noEmit`
 - focused component/state specs if touched
 - `npm run build`
-- static grep/check for raw prestige fields in player-facing templates.
+- static check for raw prestige fields in own-player templates.
 
 **Manual smoke:**
 
-- Open own dashboard/profile and confirm Prestige rank is visible.
-- Open a PvP/vicinity target card and confirm target Prestige rank is visible.
-- Confirm no raw Prestige points appear in player UI.
+- Open own dashboard/profile.
+- Confirm Prestige rank is visible.
+- Confirm no raw points/delta are visible.
 
 ---
 
-## Task Y3 — Prestige change summary display after PvP result
+## Task Y3 — Public/target Prestige rank display
 
 **Goal:**  
-Display qualitative Prestige change after PvP result without exposing numeric deltas to players.
+Show other heroes’ Prestige rank in public/player-facing identity surfaces.
 
 **Scope:**
 
-- Use DB-provided Prestige change summary/message kind from PvP result/report/notification/read model.
-- Player-facing UI should show qualitative result only:
+- Use public-safe read model from Y1.
+- Show other hero Prestige rank where public hero/PvP target identity is already displayed.
+- Priority surface: PvP/vicinity target cards if available.
+- Show rank name/tier only.
+- Do not show raw points.
+- Do not show raw delta.
+- Do not show admin/debug source context.
+
+**Out of scope:**
+
+- No new public profile page unless it already exists.
+- No PvP target redesign.
+- No admin debug data.
+- No local rank calculations.
+
+**Acceptance criteria:**
+
+- Player can see target/other hero Prestige rank where appropriate.
+- Raw points/deltas are not present in public/player-facing model or template.
+- Missing public Prestige data does not crash target cards.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused specs if touched
+- `npm run build`
+- static check for raw prestige fields in public/player-facing target templates.
+
+**Manual smoke:**
+
+- Open PvP/vicinity target list.
+- Confirm target Prestige rank is visible.
+- Confirm target raw points are not visible.
+
+---
+
+## Task Y4 — PvP report Prestige summary
+
+**Goal:**  
+Display qualitative Prestige change inside the PvP report/result, not as a separate notification.
+
+**Scope:**
+
+- Use DB-provided PvP report/read model context.
+- Display qualitative Prestige change in the PvP report alongside normal PvP result information such as outcome, XP/CP, resources and combat summary.
+- Player-facing examples:
   - no change;
   - minor increase;
   - significant increase;
@@ -10255,12 +10307,15 @@ Display qualitative Prestige change after PvP result without exposing numeric de
   - minor decrease;
   - significant decrease;
   - dramatic decrease.
-- Do not show `+12`, `-6`, raw points, threshold math or formula context to players.
-- If PvP result has no Prestige change because the workflow did not apply or is not available, show neutral/absent state rather than pretending.
-- Preserve report/notification boundaries if the result comes from a durable report or notification.
+- Do not show numeric delta such as `+12` or `-6`.
+- Do not show before/after raw points.
+- Do not calculate qualitative category in Angular if DB provides message kind/category.
+- If Prestige delta exists but report context lacks a player-safe summary, report DB/read-model blocker.
+- If no Prestige delta applies, show neutral/absent state according to DB response.
 
 **Out of scope:**
 
+- No separate notification for ordinary point delta.
 - No DB scoring.
 - No formula preview.
 - No admin debug panel.
@@ -10268,26 +10323,27 @@ Display qualitative Prestige change after PvP result without exposing numeric de
 
 **Acceptance criteria:**
 
-- Player-facing PvP result can show qualitative Prestige change.
-- Raw deltas are hidden from player-facing UI.
-- No Angular-side delta category calculation if DB provides category/message kind.
-- Missing Prestige result is handled clearly.
+- PvP report can show qualitative Prestige change.
+- Raw points and numeric delta are hidden from player-facing report.
+- Prestige summary is sourced from DB/report context.
+- Missing Prestige summary is reported as dependency, not locally invented.
 
 **Verification:**
 
 - `npx tsc --noEmit`
-- focused tests for mapper/display logic
+- focused report mapper/display specs if touched
 - `npm run build`
 
 **Manual smoke:**
 
-- Complete or open a PvP result with Prestige delta.
-- Confirm player UI shows qualitative Prestige change only.
-- Confirm no raw delta appears.
+- Open a PvP report with Prestige delta.
+- Confirm qualitative Prestige change appears in the report.
+- Confirm no numeric delta/raw points appear.
+- Confirm no separate notification is expected unless rank changed.
 
 ---
 
-## Task Y4 — Admin/test Prestige debug surface
+## Task Y5 — Admin/test Prestige debug surface
 
 **Goal:**  
 Expose raw Prestige points, deltas, thresholds and source context to authorized admin/test/sandbox UI.
@@ -10308,13 +10364,13 @@ Expose raw Prestige points, deltas, thresholds and source context to authorized 
   - PvP band classification if available;
   - source ledger id if available.
 - Respect server/staff/test access.
-- Do not show this data in player UI.
+- Keep this model out of player-facing services/components.
 
 **Out of scope:**
 
-- No editing thresholds yet.
-- No manual admin adjustment unless migrator explicitly provides a governed RPC and user asks.
-- No Prestige config UI.
+- No threshold editing yet.
+- No manual admin adjustment unless migrator provides governed RPC and user asks.
+- No config UI.
 - No DB changes.
 
 **Acceptance criteria:**
@@ -10339,83 +10395,189 @@ Expose raw Prestige points, deltas, thresholds and source context to authorized 
 
 ---
 
-## Task Y5 — Prestige rank requirements in building/relocation UI
+## Task Y6 — Prestige admin config surface
 
 **Goal:**  
-Reflect DB-authoritative Prestige requirements in building and relocation player UI.
+Expose Prestige balancing/configuration surfaces after DB config/read models exist.
 
 **Scope:**
 
-- Use existing requirement/read-model paths where available.
+- Use migrator-provided config/read paths.
+- Support viewing and, if governed write path exists, editing:
+  - rank thresholds;
+  - rank metadata/helper text;
+  - rank descriptions;
+  - target banding defaults such as 20/60/20;
+  - PvP attacker delta matrix;
+  - PvP defender delta matrix;
+  - qualitative message categories/thresholds/copy.
+- Use existing config governance patterns where applicable.
+- Do not direct-write config tables if governed config workflow exists.
+- Show admin/debug explanation of player-safe vs admin-only fields.
+
+**Out of scope:**
+
+- No DB config schema changes.
+- No new config governance workflow.
+- No arbitrary manual Prestige adjustment.
+- No player UI.
+- No Server Council or server events.
+
+**Acceptance criteria:**
+
+- Admin can inspect Prestige configuration.
+- Editing is available only if canonical/governed DB/RPC path exists.
+- If editing path is missing, UI reports dependency instead of faking.
+- Config values are not hardcoded in Angular.
+- Rank labels/descriptions/helper text come from DB/config.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused admin/config specs if touched
+- `npm run build`
+
+**Manual smoke:**
+
+- Open Prestige config/admin surface.
+- Confirm thresholds, banding and delta matrix are visible.
+- If edit path exists, make a governed test edit and confirm stale guards/save handling.
+- If edit path does not exist, confirm dependency message is clear.
+
+---
+
+## Task Y7 — Building Prestige requirement display
+
+**Goal:**  
+Reflect DB-authoritative Prestige requirements in building/build-upgrade UI.
+
+**Scope:**
+
+- Use existing requirement/read-model path exposed by migrator.
 - Do not decide whether `buildings.rank_required` or central `entity_requirements` is canonical; consume the DB/RPC contract migrator exposes.
 - In mansion/building UI:
   - existing buildings continue to display and work;
   - already-started jobs are not blocked client-side;
-  - new build/upgrade action should be unavailable when current Prestige rank does not meet requirement;
-  - show visible reason sourced from DB/read model.
-- In relocation/vicinity UI:
-  - block relocation within a district if current rank no longer meets that district requirement;
-  - block moving to higher district if current rank is insufficient;
-  - show clear reason.
+  - new build/upgrade action is unavailable when DB says current Prestige rank does not meet requirement;
+  - visible reason comes from DB/read model.
 - Do not hide existing estate/buildings.
+- Do not recalculate requirement in Angular.
 
 **Out of scope:**
 
 - No DB validation changes.
-- No direct requirement calculation in Angular.
+- No direct requirement calculation.
 - No building redesign.
+- No relocation logic.
 - No council/siege rules.
 
 **Acceptance criteria:**
 
-- Player UI does not allow starting a new building/upgrade above current Prestige rank where DB says blocked.
+- New building/upgrade above current Prestige rank is blocked where DB says blocked.
 - Existing buildings remain visible and usable.
 - Started jobs remain visible and continue.
-- Relocation UI reflects Prestige district gate.
+- Lower-rank building actions remain available where DB allows.
 - Reasons come from DB/RPC/read model, not hardcoded Angular logic.
 
 **Verification:**
 
 - `npx tsc --noEmit`
-- focused mansion/vicinity specs if touched
+- focused mansion/building specs if touched
 - `npm run build`
 
 **Manual smoke:**
 
-- Use a hero whose Prestige rank is lower than current district requirement.
+- Use a hero whose Prestige rank is lower than a building requirement.
 - Confirm existing buildings still appear.
-- Confirm new high-rank build/upgrade is blocked with reason.
-- Confirm relocation within/higher than gated district is blocked.
-- Confirm lower-rank building actions remain available where DB allows.
+- Confirm high-rank build/upgrade is blocked with reason.
+- Confirm lower-rank build/upgrade remains available.
 
 ---
 
-## Task Y6 — Prestige notifications/read-model integration
+## Task Y8 — Relocation and district Prestige gate display
 
 **Goal:**  
-Show Prestige-related notifications if migrator provides DB notification hooks.
+Reflect DB-authoritative Prestige district gates in relocation/vicinity UI.
+
+**Scope:**
+
+- Use migrator-provided district/prestige requirement read model.
+- In relocation/vicinity UI:
+  - block relocation within current higher district if hero no longer meets that district’s Prestige requirement;
+  - block moving to higher district if current rank is insufficient;
+  - show DB-sourced reason.
+- Do not evict hero.
+- Do not hide current estate.
+- Do not mutate estate/buildings.
+- Do not infer district eligibility from rank names in Angular.
+
+**Out of scope:**
+
+- No DB validation changes.
+- No estate relocation RPC changes.
+- No building requirement logic.
+- No Server Council.
+- No siege.
+
+**Acceptance criteria:**
+
+- Relocation UI reflects Prestige district gate.
+- Hero below district requirement cannot relocate within that higher district via UI.
+- Hero below higher district requirement cannot move higher.
+- Current estate/address remains visible.
+- Reasons come from DB/read model.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused vicinity/relocation specs if touched
+- `npm run build`
+
+**Manual smoke:**
+
+- Use hero in district C with Prestige rank below C requirement.
+- Confirm current estate remains visible.
+- Confirm relocation within C is blocked with reason.
+- Confirm lower-eligible actions remain unaffected where applicable.
+- Confirm moving higher is blocked.
+
+---
+
+## Task Y9 — Prestige rank-change notifications
+
+**Goal:**  
+Render persistent notifications when Prestige rank changes.
 
 **Scope:**
 
 - Use existing notification services/read models.
 - Do not create notification rows in Angular.
-- If DB creates Prestige notifications, ensure they render with:
-  - qualitative change;
-  - rank name;
-  - no raw points/deltas for players.
-- Admin/staff notification/debug context may include raw values only if the read model intentionally exposes them.
-- If migrator did not implement notifications yet, report as follow-up and do not fake notifications.
+- Render DB-created Prestige rank-change notifications for:
+  - rank up;
+  - rank down.
+- Notification should include:
+  - old rank name;
+  - new rank name;
+  - player-safe message.
+- Notification must not include:
+  - raw points;
+  - numeric delta;
+  - formula context.
+- Ordinary point delta without rank change should not create or require a separate notification.
+- If migrator did not implement rank-change notification producer yet, report as follow-up and do not fake notifications.
 
 **Out of scope:**
 
 - No notification DB producer.
-- No new notification center redesign.
+- No notification center redesign.
 - No local notification generation.
+- No report summary work; that is Y4.
 
 **Acceptance criteria:**
 
-- Prestige notifications render when DB provides them.
-- Player notification text does not expose raw points.
+- Prestige rank-change notifications render when DB provides them.
+- Player notification text shows rank change, not raw points.
+- No notification appears/gets fabricated for ordinary non-rank-changing point delta.
 - Missing notification hook is reported as follow-up, not faked.
 
 **Verification:**
@@ -10426,50 +10588,58 @@ Show Prestige-related notifications if migrator provides DB notification hooks.
 
 **Manual smoke:**
 
-- Trigger or inspect a Prestige-changing PvP result with notification.
-- Confirm notification appears if DB created it.
-- Confirm no raw delta appears for player.
+- Trigger or inspect Prestige rank-up/rank-down event with DB notification.
+- Confirm notification appears.
+- Confirm old/new rank names are visible.
+- Confirm no raw delta/points appear.
+- Confirm ordinary Prestige point change is visible in PvP report, not as separate notification.
 
 ---
 
-## Task Y7 — Prestige integration smoke and cleanup candidates
+## Task Y10 — Prestige frontend integration smoke and cleanup candidates
 
 **Goal:**  
-Do a final frontend integration pass after Y1–Y6 to confirm Prestige works coherently across player/admin surfaces.
+Do a final frontend integration pass after Y1–Y9 to confirm Prestige works coherently across player/admin surfaces.
 
 **Scope:**
 
 - Walk through:
   - own hero rank display;
-  - other hero rank display;
-  - PvP result qualitative change;
+  - public/target hero rank display;
+  - PvP report qualitative Prestige change;
   - admin/debug raw view;
-  - building/relocation requirement display;
-  - notification rendering if present.
+  - admin config view;
+  - building requirement display;
+  - relocation/district gate display;
+  - rank-change notification rendering if DB producer exists.
 - Fix small integration issues found in touched scope.
 - Report cleanup candidates:
   - old level-based rank display;
   - stale dashboard rank fallback;
   - raw Prestige point leak risk;
-  - old fields such as `required_level`/`max_players` if still referenced in frontend.
+  - old `ranks.required_level` / `ranks.max_players` frontend usage;
+  - old fields assuming rank from level rather than Prestige points.
 - Do not perform unrelated feature cleanup.
 
 **Out of scope:**
 
 - No DB changes.
 - No new scoring logic.
-- No council/server events.
+- No Server Council.
+- No server events.
 - No Argonautics.
 - No UI redesign.
+- No status docs updates.
 
 **Acceptance criteria:**
 
-- Prestige player/admin data boundaries are respected.
-- Player sees rank and qualitative changes only.
+- Player sees rank and qualitative PvP report changes only.
+- Player sees rank-change notifications only when rank changes.
 - Admin/tester sees raw/debug data where authorized.
-- Building/relocation gates consume DB read model.
+- Building/relocation gates consume DB read models.
 - No Angular-side Prestige scoring exists.
 - No raw points leak in player-facing templates.
+- Old level-based rank display is removed or reported as cleanup candidate.
 
 **Verification:**
 
@@ -10479,15 +10649,20 @@ Do a final frontend integration pass after Y1–Y6 to confirm Prestige works coh
 - static grep:
   - player-facing raw `prestigePoints` / raw delta fields;
   - old level-based rank display;
-  - stale hardcoded rank names.
+  - hardcoded rank thresholds;
+  - hardcoded PvP delta matrix;
+  - stale references to `ranks.required_level` / `ranks.max_players`.
 
 **Manual smoke:**
 
 - Player dashboard/profile: rank visible, no points.
 - PvP target card: target rank visible, no points.
-- PvP result: qualitative Prestige change visible.
+- PvP report: qualitative Prestige change visible.
+- Rank change: notification appears with old/new rank.
 - Admin debug: points/delta/context visible.
-- Building/relocation: rank gates shown correctly.
+- Admin config: thresholds/matrix visible.
+- Building UI: rank gates shown correctly.
+- Relocation UI: district gates shown correctly.
 
 ---
 

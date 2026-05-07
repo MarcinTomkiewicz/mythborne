@@ -44,10 +44,21 @@ export interface EquipmentSlot {
   equipmentSlotGroup: string;
 }
 
-export interface EquippedItemSummary extends ItemSummary {
+export interface EquippedItemSummary {
+  itemId: string;
+  heroId: string;
+  ownerHeroId: string | null;
+  itemName: string;
+  lifecycleStatus: ItemLifecycleStatus;
+  generationBaseId: string | null;
+  generationQualityKey: string | null;
+  prefixAffixId: string | null;
+  suffixAffixId: string | null;
   slotKey: EquipmentSlotKey;
   slotLabel: string;
   slotSortOrder: number;
+  equipmentArea: string;
+  equipmentSlotGroup: string;
   equippedAt: string;
   baseKey: string | null;
   baseName: string | null;
