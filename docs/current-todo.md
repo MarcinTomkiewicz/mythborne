@@ -210,6 +210,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: R16 - Attack result UI.
 - Completed and confirmed: R17 - PvP report integration.
 - Completed and confirmed: R18 - PvP notification routing.
+- Accepted hotfix: HOTFIX-REWARD-AUTO-RESOLVE - reward/drop communication and manual combat auto-resolve wording.
 - Next backlog task: R19 - PvP admin overview.
 - Q4 pending manual smoke: check a real DB row for `estate.building_job.completed`; source `action_url` must be `/game/mansion`. If it still returns `ViewState`, fix DB/content producer source and do not add a frontend remap.
 - Q5 pending manual smoke: open bell, mark read, dismiss and action link; real DB/RLS denied-action smoke only if suitable test data/access exists.

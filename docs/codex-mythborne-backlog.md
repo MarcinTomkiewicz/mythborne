@@ -10211,8 +10211,133 @@ Domknąć end-to-end start flow i usunąć niespójności między server picker,
 
 ---
 
+## TASK HOTFIX-REWARD-AUTO-RESOLVE - Reward/drop communication and manual combat auto-resolve wording 
+
+## Goal Fix frontend/test UI communication after manual combat 
+- Trial completion so the UI does not misreport valid DB rewards or manual combat state. DB/RPC reward workflow is considered working for this fix. Do not change DB, migrations, RPC contracts or generated types. 
+
+## Context Migrator confirmed that after a won Agility Trial the DB created: - reward_grant - reward_grant_entries - experience: 70 - character_points: 70 The UI/test panel currently shows or can show misleading copy such as:
+
+text
+No reward entries were recorded
+
+This is wrong when XP/CP reward entries exist.
+
+Item drops are optional. A reward profile may contain item generation with chance 100, but if min_item_count = 0 and max_item_count = 1, the final item count may legally be 0. That is not a reward failure.
+
+Manual combat uses completion_mode = manual, so auto-resolve roll/chance is not used. Showing “not rolled” as if something failed is misleading.
+
+Scope
+
+Update frontend/test/debug reward/result mapping and copy for exploration challenge completion/manual combat Trial results.
+
+Find the UI/path that renders:
+
+reward grant/result entries after Trial/Encounter completion;
+“No reward entries were recorded” or equivalent fallback;
+auto-resolve roll/chance rows for challenge attempts;
+manual combat completion summary/debug panel, if separate.
+
+Use existing mappers/state/display helpers where available.
+
+Required behavior
+Player-facing UI
+
+When XP/CP reward entries exist:
+
+show XP/CP reward entries normally;
+do not show “No reward entries were recorded”.
+
+When item generation produces no item:
+
+do not treat this as an error;
+player-facing UI does not need to say “item did not drop”;
+show item only if an item actually exists.
+
+For manual combat:
+
+do not show auto-resolve as failed/not rolled;
+hide auto-resolve row, or display a clear neutral label such as:
+Manual combat
+Admin/test/debug UI
+
+Admin/test/debug UI should distinguish these cases where data is available:
+
+reward_grant does not exist.
+reward_grant exists, but reward_grant_entries are empty.
+XP/CP entries exist.
+Item generation entry exists and item_id/generated item exists.
+Item generation was possible, but item count/result is 0.
+Item generator/reward workflow actually failed.
+Manual combat did not use auto-resolve because completion_mode = manual.
+
+Suggested admin/debug wording:
+
+Auto-resolve not used because completion_mode=manual.
+
+Do not invent DB fields. If the existing read model does not expose enough detail to distinguish item_generation=0 from missing item data, show only the distinctions supported by the current response and report the missing diagnostic as follow-up.
+
+Non-goals
+No DB/RPC/migration changes.
+No generated types regeneration.
+No reward profile balancing changes.
+No item generation logic changes.
+No manual combat runtime changes.
+No broad UI redesign.
+No status docs/backlog status updates.
+Acceptance criteria
+UI no longer shows “No reward entries were recorded” when XP/CP entries exist.
+XP and Character Points reward entries are displayed after successful manual combat Trial completion.
+Legal “no item dropped” outcome is not shown as an error in player-facing UI.
+Manual combat completion does not show auto-resolve “not rolled” as if it were a failure.
+Admin/test/debug copy clearly explains manual combat auto-resolve not used where relevant.
+Missing diagnostic detail is reported as a read-model/debug follow-up, not faked in Angular.
+Verification
+
+Run:
+
+npx tsc --noEmit
+npm run build
+
+Run focused specs if the touched mapper/state/component already has tests.
+
+Static checks:
+
+Search for No reward entries were recorded and confirm it is not used when entries exist.
+Search for auto-resolve “not rolled” copy and confirm manual completion mode is handled separately.
+Confirm no DB/RPC/migration/generated type files were changed.
+Manual smoke for user/reviewer
+
+Use a manual combat Trial completion where DB creates reward entries:
+
+XP entry exists.
+Character Points entry exists.
+item drop may or may not exist.
+
+Expected:
+
+Win manual combat Trial.
+Result UI shows XP/CP.
+If no item dropped, UI does not call it a reward failure.
+If item dropped, UI shows item.
+Manual combat result does not show misleading auto-resolve failure/not-rolled wording.
+Admin/test/debug view explains auto-resolve not used for manual completion mode, if that row is shown.
+Required Codex report
+Scope / non-goals.
+Files changed.
+Acceptance mapping.
+Verification.
+Reuse report:
+reused:
+checked but not reused:
+new:
+DB/RPC changes: none.
+Generated types changed: no.
+Manual smoke checklist for user.
+
 ## Accepted hotfix implementation notes
 
+- HOTFIX-REWARD-AUTO-RESOLVE accepted on 2026-05-07. Exploration reward UI now renders persisted XP and Character Points reward entries from the existing durable reward read path, exposes displayable reward entries through `visibleRewardEntries`, and hides generated-item rows without `itemId` from player-facing reward output so legal no-item outcomes are not shown as reward failures. The old `No reward entries were recorded` fallback was replaced with explicit empty-entries/debug wording. Manual combat challenge facts now show neutral `Manual combat` copy instead of auto-resolve `not rolled` wording. No DB/RPC/migration/generated type files were changed. Follow-up: richer admin/debug diagnostics should distinguish generated item count zero vs missing generated item row when the read model exposes enough detail.
 - HOTFIX-COMBAT-1 accepted on 2026-05-05. Exploration challenges with `minigameKey === 'combat'` now use the DB-owned `submit_exploration_challenge_combat_resolution(...)` RPC instead of the generic manual completion RPC. The frontend sends only `p_challenge_attempt_id`, `p_timing_hits_json` and `p_request_id`; it does not send stats, equipment, luck, damage, opponent data or final outcome. The service maps DB-returned combat fields and refreshes canonical exploration state through `getHeroExplorationState(...)`; PvE `draw` is presented as failure. This path is scoped to exploration and does not touch PvP. Manual smoke remains pending for a real combat Trial/Encounter.
 - HOTFIX-COMBAT-2 accepted on 2026-05-05. After exploration combat resolution, the challenge result card displays the durable DB resolver summary: `combat_result_id`, outcome, success/failure, completion mode, turns completed, participants, attacks, exploration status and `reward_grant_id`. Reward display continues to use the existing durable exploration reward read path and shows Polish diagnostics when `reward_grant_id` is null or the reward has not yet been read. The UI does not reconstruct an attack log from timing input; it explicitly reports the dependency on a future DB combat result read model for detailed timeline/log display. Refreshing the page does not resubmit the resolver or duplicate rewards.
 - HOTFIX-COMBAT-3 accepted on 2026-05-05. Exploration Combat Trial/Encounter reuses the shared Walking Dead / green-zone timing UI, while `/game/combat` remains a sandbox/test caller and does not become production combat authority. The shared `advanceWalkingDeadTimingFrame(...)` helper now owns indicator movement for both callers. Exploration still submits timing input through `submit_exploration_challenge_combat_resolution(...)` and does not send stats, equipment, luck, damage, opponent data or final outcome; final combat result, reward and exploration status remain DB-owned. Manual smoke remains pending for `/game/combat` and real exploration combat Trial/Encounter.

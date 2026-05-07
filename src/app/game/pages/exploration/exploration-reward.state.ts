@@ -22,6 +22,9 @@ export class ExplorationRewardState {
   readonly isLoadingReward = signal(false);
   readonly hasRewardGrant = computed(() => Boolean(this.reward()?.rewardGrant));
   readonly hasRewardEntries = computed(() => Boolean(this.reward()?.entries.length));
+  readonly visibleRewardEntries = computed(() =>
+    this.reward()?.entries.filter(isVisibleRewardEntry) ?? [],
+  );
   readonly rewardSummary = computed(() => this.summary(this.reward()));
 
   constructor() {
@@ -50,7 +53,7 @@ export class ExplorationRewardState {
         return `${entry.amount ?? 0} ${entry.resourceType ?? 'resource'}`;
       case 'item':
       case 'generated_item':
-        return entry.itemId ? `Generated item ${entry.itemId}` : 'No item generated';
+        return entry.itemId ? `Generated item ${entry.itemId}` : 'Item generation recorded';
       case 'effect':
         return entry.effectDefinitionId
           ? `Effect ${entry.effectDefinitionId}`
@@ -161,4 +164,12 @@ export class ExplorationRewardState {
       .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
       .join(' ') || 'Reward';
   }
+}
+
+function isVisibleRewardEntry(entry: RewardGrantEntryReadModel): boolean {
+  return !isItemRewardEntry(entry) || Boolean(entry.itemId);
+}
+
+function isItemRewardEntry(entry: RewardGrantEntryReadModel): boolean {
+  return entry.entryKind === 'item' || entry.entryKind === 'generated_item';
 }

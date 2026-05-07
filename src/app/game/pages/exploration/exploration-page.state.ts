@@ -68,6 +68,7 @@ export class ExplorationPageState {
   readonly autoResolveExplanation = this.challenge.autoResolveExplanation;
   readonly isLoadingReward = this.rewardState.isLoadingReward;
   readonly reward = this.rewardState.reward;
+  readonly visibleRewardEntries = this.rewardState.visibleRewardEntries;
   readonly rewardSummary = this.rewardState.rewardSummary;
   readonly movementBlockReason = this.movement.movementBlockReason;
   readonly remainingTrialsLabel = this.overview.remainingTrialsLabel;

@@ -251,7 +251,7 @@ export class ExplorationChallengeState {
       { label: 'Tested stat', value: challenge.testedStatKey ?? 'N/D' },
       { label: 'Manual deadline', value: challenge.manualDeadlineAt ?? 'N/D' },
       { label: 'Manifestation', value: this.chanceRollLabel(challenge.manifestationChance, challenge.manifestationRoll) },
-      { label: 'Auto-resolve', value: this.chanceRollLabel(challenge.autoResolveChance, challenge.autoResolveRoll) },
+      { label: 'Auto-resolve', value: this.autoResolveFactLabel(challenge) },
     ];
   }
 
@@ -271,6 +271,19 @@ export class ExplorationChallengeState {
     const rollLabel = roll === null ? 'not rolled' : `roll ${roll}`;
 
     return `${chanceLabel} (${rollLabel})`;
+  }
+
+  private autoResolveFactLabel(
+    challenge: HeroExplorationChallengeAttemptReadModel,
+  ): string {
+    if (challenge.minigameKey === 'combat') {
+      return 'Manual combat';
+    }
+
+    return this.chanceRollLabel(
+      challenge.autoResolveChance,
+      challenge.autoResolveRoll,
+    );
   }
 
   private humanizeKey(value: string): string {

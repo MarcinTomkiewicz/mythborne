@@ -24,9 +24,9 @@
         </span>
       </div>
 
-      @if (reward.entries.length) {
+      @if (page.visibleRewardEntries().length) {
         <div class="flex-col gap-xs">
-          @for (entry of reward.entries; track entry.id) {
+          @for (entry of page.visibleRewardEntries(); track entry.id) {
             <div class="flex-row-between-start flex-col-sm gap-sm">
               <span>{{ page.rewardEntryLabel(entry) }}</span>
               <span class="muted-text">
@@ -39,8 +39,14 @@
             </div>
           }
         </div>
+      } @else if (reward.entries.length) {
+        <p class="muted-text mb-0">
+          Reward entries were recorded, but none created a displayed stat, resource or item reward.
+        </p>
       } @else {
-        <p class="muted-text mb-0">No reward entries were recorded.</p>
+        <p class="muted-text mb-0">
+          Reward grant exists, but reward_grant_entries is empty.
+        </p>
       }
     </div>
   </div>

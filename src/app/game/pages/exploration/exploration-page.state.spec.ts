@@ -392,6 +392,19 @@ describe('ExplorationPageState', () => {
     expect(feedback.successMessage()).toBe('Challenge auto-resolved.');
   });
 
+  it('labels auto-resolve as manual combat for active combat challenges', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', 'combat'),
+    );
+
+    const autoResolveFact = page.challengeFacts()
+      .find((fact) => fact.label === 'Auto-resolve');
+
+    expect(autoResolveFact?.value).toBe('Manual combat');
+  });
+
   it('loads persisted challenge rewards for the current exploration', async () => {
     rewards.getLatestChallengeReward.and.returnValue(of(challengeReward()));
 
@@ -407,6 +420,38 @@ describe('ExplorationPageState', () => {
     expect(page.rewardEntryLabel(page.reward()!.entries[0])).toBe('20 EXP');
     expect(page.rewardItemLabel('item-1')).toBe('Reward blade');
     expect(page.rewardItemDetails('item-1')).toContain('Quality fine');
+  });
+
+  it('shows XP and Character Points while hiding generated-item entries without items', async () => {
+    rewards.getLatestChallengeReward.and.returnValue(
+      of(challengeReward({
+        entries: [
+          rewardEntry({ id: 'entry-xp', entryKind: 'experience', amount: 70 }),
+          rewardEntry({
+            id: 'entry-cp',
+            entryKind: 'character_points',
+            amount: 70,
+          }),
+          rewardEntry({
+            id: 'entry-item',
+            entryKind: 'generated_item',
+            amount: 0,
+            itemId: null,
+          }),
+        ],
+        items: [],
+      })),
+    );
+
+    page.loadData();
+    page.startSelectedDifficulty();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(page.rewardSummary()).toContain('3 reward entries');
+    expect(page.visibleRewardEntries().map((entry) => entry.id))
+      .toEqual(['entry-xp', 'entry-cp']);
+    expect(page.visibleRewardEntries().map((entry) => page.rewardEntryLabel(entry)))
+      .toEqual(['70 EXP', '70 Character Points']);
   });
 
   it('shows clear no-reward state for failed persisted challenges', async () => {
@@ -846,6 +891,28 @@ function challengeReward(
         updatedAt: '2026-05-01T10:20:00.000Z',
       },
     ],
+    ...patch,
+  };
+}
+
+function rewardEntry(
+  patch: Partial<ExplorationChallengeRewardReadModel['entries'][number]> = {},
+): ExplorationChallengeRewardReadModel['entries'][number] {
+  return {
+    id: 'entry-1',
+    rewardGrantId: 'reward-1',
+    rewardProfileEntryId: 'profile-entry-1',
+    entryKind: 'experience',
+    amount: 20,
+    resourceType: null,
+    itemId: null,
+    effectDefinitionId: null,
+    sourceHeroId: null,
+    targetHeroId: 'hero-1',
+    oldValueJson: null,
+    newValueJson: null,
+    metadataJson: {},
+    createdAt: '2026-05-01T10:20:00.000Z',
     ...patch,
   };
 }
