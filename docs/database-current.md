@@ -1,6 +1,6 @@
 # Mythsworn — Database Current Notes
 
-Updated: 2026-05-06
+Updated: 2026-05-07
 
 This file is the curated semantic index of the current database state. It is not a full `pg_dump`.
 
@@ -14,6 +14,288 @@ If this file conflicts with the actual database, generated Supabase types, or a 
 
 After every schema/RPC migration that Codex will consume, regenerate/update generated Supabase types before frontend work.
 
+
+
+## Update 2026-05-07 — latest dump reconciliation: combat H2, SCALE-DB1, PvP R20/R21 and PvP result chain
+
+This section is based on the latest available schema dump and supersedes older notes in this file where they still imply:
+
+- manual combat manifest does not apply streak difficulty;
+- exploration combat finalization can use `manual_combat`;
+- combat opponent scaling is a simple multiplier-only snapshot;
+- PvP Foundation stops at R-DB5 / R-DB6 is not applied;
+- PvP action dictionaries require a dedicated RPC to be read.
+
+Frontend/Codex must regenerate Supabase database types after consuming this section. The current dump is the source of truth where it differs from older status documents.
+
+### Manual live combat H2 — DB-owned streak manifest and valid manual completion
+
+Manual live combat remains DB-authoritative per player action. The current player-facing RPCs are still:
+
+- `ensure_exploration_combat_session(p_challenge_attempt_id uuid, p_request_id text)`;
+- `get_combat_live_state(p_session_id uuid, p_since_event_index integer)`;
+- `submit_combat_player_action(p_session_id uuid, p_timing_input_json jsonb, p_request_id text)`.
+
+The old public full-resolution exploration combat RPC remains removed and must not be used.
+
+`build_combat_live_action_manifest(p_session_id, p_action_json)` now applies DB/config-owned streak difficulty. It reads the current actor streak from `combat_live_participants.streak_current`, computes base hit chance from the `combat_hit_green_zone` formula target, then adjusts the current manifest:
+
+- higher `streakBefore` shrinks `greenZonePercent`;
+- higher `streakBefore` increases `speedMultiplier`;
+- the adjusted `greenZonePercent` is also returned as `hitChancePercent`;
+- `baseHitChancePercent` exposes the pre-streak hit/green-zone value for diagnostics;
+- `streakTuning` exposes the config values used for the current manifest.
+
+Current streak tuning config keys:
+
+- `combat_manual_streak_green_zone_shrink_points_per_stack`;
+- `combat_manual_streak_green_zone_min_percent`;
+- `combat_manual_streak_speed_multiplier_per_stack`;
+- `combat_manual_streak_speed_multiplier_max`.
+
+Current canonical manifest fields include:
+
+- `manifestId`;
+- `sessionId`;
+- `roundNumber`;
+- `actionIndex`;
+- `attackIndex`;
+- `actorParticipantId`;
+- `targetParticipantId`;
+- `actorSide`;
+- `targetSide`;
+- `greenZonePercent`;
+- `hitChancePercent`;
+- `baseHitChancePercent`;
+- `speedMultiplier`;
+- `streakBefore`;
+- `requiresManualInput`;
+- `isPlayerControlled`;
+- `generatedAt`;
+- `source`;
+- `streakTuning`;
+- `notes`.
+
+Frontend rule:
+
+- read `greenZonePercent`, `speedMultiplier` and `streakBefore` directly from the DB manifest;
+- do not locally compute streak shrink or speed as authority;
+- do not require non-canonical aliases such as `greenZoneWidth`, `greenZoneWidthPercent`, `speed` or `currentStreak`;
+- attack outcome, damage, HP, evade and crit still come only from `submit_combat_player_action(...)` response/events.
+
+Participant HP contract:
+
+- current HP key is `healthCurrent`;
+- max HP key is `healthMax`;
+- frontend should not expect `maxHp`, `maxHP` or `maxHealth` in the live participant read model unless a frontend mapper intentionally aliases it.
+
+Exploration combat finalization:
+
+- `finalize_exploration_combat_session(...)` persists the final combat result and completes the exploration challenge attempt through `complete_hero_exploration_challenge_attempt(...)`;
+- completion mode is now canonical `manual`, not invalid `manual_combat`;
+- metadata may still mention `manual_combat_to_manual` as a diagnostic/historical fix marker;
+- draw counts as failure for exploration Trial/Encounter.
+
+Reward/drop observation after live combat smoke:
+
+- successful combat Trial completion correctly creates a `reward_grant`;
+- `reward_grant_entries` for XP and Character Points are durable DB rows;
+- `item_generation` may legally produce zero item drops when `min_item_count = 0`;
+- direct generator and forced item-count smoke confirmed item generation and `reward_grant_entries.item_id` linkage work when item count is `1`;
+- player UI does not need to announce “no item dropped”;
+- admin/test UI should distinguish “item_count = 0” from generator failure;
+- if `reward_grant_entries` contains XP/CP, frontend/test UI must not display “No reward entries were recorded.”
+
+### SCALE-DB1 — formula-backed combat opponent scaling and balancer preview
+
+Combat opponent runtime scaling now uses the DB formula system rather than a simple multiplier-only snapshot.
+
+Primary formula target:
+
+- `combat_opponent_scaled_stat`.
+
+Current default expression:
+
+```text
+round(baseValue + (currentLevel - 1) * difficultyMultiplier)
+```
+
+Allowed variables:
+
+- `baseValue`;
+- `currentLevel`;
+- `difficultyMultiplier`.
+
+Important rule: this expression is not hardcoded in the snapshot builder. Runtime resolves and evaluates the active DB formula. It can be changed through formula governance or overridden per opponent/candidate where configured.
+
+Current formula priority for opponent stat scaling:
+
+1. candidate `scaling_formula_id` on `trial_combat_candidates` or `encounter_combat_candidates`;
+2. opponent `default_scaling_formula_id` on `combat_opponent_definitions`;
+3. global assignment for `combat_opponent_scaled_stat`.
+
+Current SCALE-DB1 helper/RPC surface:
+
+- `resolve_combat_opponent_scaling_formula(p_opponent_definition_id uuid, p_candidate_scaling_formula_id uuid default null)` — service-only helper resolving the formula priority above;
+- `evaluate_combat_opponent_scaled_stat(p_base_value numeric, p_current_level integer, p_difficulty_multiplier numeric, p_opponent_definition_id uuid, p_candidate_scaling_formula_id uuid default null)` — service-only helper evaluating one stat;
+- `build_opponent_combatant_snapshot_for_resolver(p_opponent_definition_id uuid, p_side combat_side, p_reference_level integer, p_difficulty_multiplier numeric, p_candidate_scaling_formula_id uuid)` — service-only formula-backed snapshot builder;
+- `build_opponent_combatant_snapshot_for_resolver(p_opponent_definition_id uuid, p_side combat_side, p_reference_level integer, p_difficulty_multiplier numeric)` — compatibility wrapper without candidate override;
+- `preview_combat_opponent_scaling(p_opponent_definition_id uuid, p_difficulty_multiplier numeric default 1, p_scaling_formula_id uuid default null, p_levels integer[] default array[1,5,10,20,50])` — authenticated read-only balancer/admin preview RPC.
+
+`pick_exploration_combat_live_opponent(...)` now returns the candidate `difficulty_multiplier` from the matching Trial/Encounter combat candidate instead of a fixed `1`. `ensure_exploration_combat_session(...)` now looks up candidate `scaling_formula_id` and passes it to the formula-backed opponent snapshot builder.
+
+Formula-backed opponent snapshots include scaling diagnostics such as:
+
+- `baseStats`;
+- `stats`;
+- `snapshotVersion = SCALE-DB1`;
+- `difficultyMultiplier`;
+- `scalingFormulaId`;
+- `scalingFormulaKey`;
+- `scalingFormulaSource`;
+- `candidateScalingFormulaId`;
+- `opponentDefaultScalingFormulaId`.
+
+Balancer/admin UI rule:
+
+- use `preview_combat_opponent_scaling(...)` to show final stat values for several hero levels before changing `difficulty_multiplier` or formula assignments;
+- do not leave the admin with only a raw numeric multiplier input;
+- show formula source: `candidate_override`, `opponent_default`, `global_assignment` or fallback context where applicable.
+
+Design caveat:
+
+- the current default formula scales every base stat row, including a stat with `baseValue = 0`;
+- if design wants zero to remain zero, create/change a DB formula such as `if(baseValue <= 0, 0, ...)` through formula governance or candidate/opponent override.
+
+### Epic W / Exploration diagnostics and selection guard current status
+
+The current dump includes the Epic W exploration completion work:
+
+- readiness reason dictionary/metadata;
+- `get_trial_definition_readiness(...)`;
+- `get_encounter_definition_readiness(...)`;
+- readiness-aware Trial/Encounter pickers used by `resolve_hero_exploration_step(...)`;
+- no-ready eligible Encounter fallback to `nothing`;
+- `get_exploration_step_selection_diagnostic(p_step_id uuid)`;
+- `get_exploration_reward_execution_diagnostic(p_challenge_attempt_id uuid)`;
+- config-backed `exploration_step_base_duration_seconds`;
+- `get_exploration_step_duration_seconds(p_server_id uuid, p_difficulty_key text)` consumed by `start_hero_exploration_step(...)`.
+
+Runtime rules:
+
+- normal Trial/Encounter selection should only use readiness-ready content;
+- if an Encounter roll happens but no ready eligible Encounter matches, the step is safely recorded as `nothing`;
+- frontend/admin diagnostics should read DB diagnostic RPCs, not reconstruct selection/reward logic in Angular;
+- timer display should use DB `started_at` / `resolves_at`.
+
+### PvP R20/R21 — action dictionaries, targeting/protection metadata and formula targets
+
+R20 dictionary/read facts:
+
+- `pvp_action_kinds` exists as a DB-backed dictionary;
+- `pvp_action_statuses` exists as a DB-backed dictionary;
+- rows include active `attack` and `spy`, inactive/future `siege`;
+- action statuses include travelling/arrived/manual window/resolving/resolved/cancelled/failed/expired;
+- there is no dedicated dictionary RPC for these two tables;
+- `authenticated` has `SELECT`, `anon` does not;
+- RLS is enabled and policies exist.
+
+Frontend/admin rule:
+
+- a narrow read-only service using direct dictionary reads is acceptable for `pvp_action_kinds` and `pvp_action_statuses`;
+- labels/descriptions/helper text should come from dictionary rows;
+- no write paths should be added;
+- inactive `siege` must be treated as future/inactive, not as ready gameplay.
+
+R21 formula/metadata facts:
+
+Current PvP formula targets include:
+
+- `pvp_attack_min_target_level`;
+- `pvp_attack_max_target_level`;
+- `pvp_attack_travel_time_seconds`;
+- `pvp_spy_travel_time_seconds`;
+- `pvp_manual_fight_window_seconds`;
+- `pvp_target_protection_seconds`;
+- `pvp_resource_steal_percent`;
+- `pvp_attacker_defeat_resource_loss_percent`;
+- `pvp_xp_reward`;
+- `pvp_prestige_delta_context`.
+
+Current PvP targeting/protection metadata namespaces include:
+
+- `pvp_configurator_section`;
+- `pvp_targeting_section`;
+- `pvp_runtime_section`.
+
+Important metadata rows include:
+
+- `pvp_targeting_section:estate_vicinity_targeting`;
+- `pvp_targeting_section:attack_level_range`;
+- `pvp_targeting_section:travel_time`;
+- `pvp_targeting_section:target_protection`;
+- `pvp_targeting_section:one_incoming_attack`;
+- `pvp_configurator_section:level_range`;
+- `pvp_configurator_section:travel_time`;
+- `pvp_configurator_section:target_protection`;
+- `pvp_configurator_section:manual_window`.
+
+Runtime/read surfaces:
+
+- `pvp_actions`;
+- `pvp_target_protections`;
+- `calculate_pvp_estate_distance_score(...)`;
+- `get_pvp_target_candidates(p_attacker_hero_id uuid, p_district_code text default null, p_search text default null, p_limit integer default 50, p_offset integer default 0)`;
+- `expire_pvp_target_protections(p_server_id uuid)`;
+- `set_pvp_target_protection_updated_at()` trigger helper.
+
+Frontend/admin rule:
+
+- formula UI should filter by real DB target keys, not invented UI constants;
+- targeting/protection explanations should consume `pvp_targeting_section` / `pvp_configurator_section` metadata;
+- metadata gaps are valid only for missing detailed field-level copy, not for the whole targeting/protection area.
+
+### PvP attack result/result-consequence/report chain now present in the latest dump
+
+Older notes saying that R-DB6 was not applied are obsolete for the current dump. The dump includes the PvP attack result and post-result chain through resource consequences, XP rewards, future Prestige context, anti-abuse signals and reports.
+
+Current attack result table/workflow:
+
+- `pvp_attack_results` is the durable PvP attack outcome table produced from persisted PvP `combat_results`;
+- `create_pvp_attack_result_from_combat_result(p_combat_result_id, p_request_id default null)` creates/gets a PvP attack result from `combat_results.source_type = 'pvp'`;
+- `after_pvp_combat_result_insert_create_attack_result()` automatically creates a PvP attack result after a PvP combat result insert;
+- outcome keys are `attacker_victory`, `defender_victory`, and `draw`;
+- `level_difference` means `attacker_level_snapshot - defender_level_snapshot`.
+
+Current post-result chain:
+
+- `apply_pvp_resource_consequences(p_pvp_attack_result_id, p_request_id default null)` applies PvP resource consequences for `drachma`, `materials` and `workforce` only;
+- resource consequences settle attacker/defender runtime state before computing resource loss/transfer;
+- `apply_pvp_xp_rewards(p_pvp_attack_result_id, p_request_id default null)` routes PvP XP through canonical progression (`grant_hero_experience(...)`), so Character Points are generated by XP/progression, not as separate PvP CP entries;
+- `build_pvp_prestige_context(...)` and `refresh_pvp_attack_result_prestige_context(...)` store future Prestige context only;
+- `generate_pvp_attack_anti_abuse_signals(...)` creates review-only PvP signals such as shared identity context and feeding-pattern candidates; relationship declarations, including mercenary context, are context only and do not suppress signals;
+- `create_pvp_attack_game_report(...)` creates/gets contextual `pvp_combat` reports with `source_entity_type = 'pvp_result'` and `source_entity_id = pvp_attack_results.id`;
+- report combat sections resolve through `pvp_attack_results.combat_result_id` and do not duplicate combat attacks into report tables.
+
+Current trigger wrappers include:
+
+- `after_pvp_attack_result_insert_apply_resource_consequences`;
+- `after_pvp_attack_result_insert_apply_xp_rewards`;
+- `after_pvp_attack_result_insert_refresh_prestige_context`;
+- `after_pvp_attack_result_update_prestige_context`;
+- `after_pvp_attack_result_insert_generate_anti_abuse_signals`;
+- `after_pvp_attack_result_insert_create_report`.
+
+Frontend rules:
+
+- frontend must not direct-write `pvp_attack_results`, resource consequence, reward context, report context, notification context or anti-abuse signal rows;
+- PvP result/report/notification surfaces should consume DB-owned read models and context JSON;
+- ordinary PvP does not transfer items, buildings, Character Points, or estate ownership;
+- PvP notifications are after-the-fact result notifications, not incoming-attack notifications.
+
+### Generated types / frontend contract note
+
+The latest dump includes RPC/table/function changes that must be reflected in generated Supabase types before frontend work continues. In particular, frontend work touching manual combat, exploration diagnostics, opponent scaling preview, PvP targeting, PvP action dictionaries or PvP result reports must use regenerated types.
 
 
 ## Update 2026-05-06 — Epic U/V Luck, live manual combat and Epic W Exploration Core
