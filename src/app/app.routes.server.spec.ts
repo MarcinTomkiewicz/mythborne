@@ -9,4 +9,12 @@ describe('server routes', () => {
 
     expect(route?.renderMode).toBe(RenderMode.Server);
   });
+
+  it('renders private dynamic attack result routes on the server instead of prerendering', () => {
+    const route = serverRoutes.find((item) =>
+      item.path === 'game/vicinity/attack-results/:attackResultId',
+    );
+
+    expect(route?.renderMode).toBe(RenderMode.Server);
+  });
 });

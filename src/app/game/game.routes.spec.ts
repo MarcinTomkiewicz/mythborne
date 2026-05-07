@@ -26,4 +26,13 @@ describe('game routes', () => {
     expect(route).toBeDefined();
     expect(route?.loadComponent).toEqual(jasmine.any(Function));
   });
+
+  it('exposes the PvP attack result detail route under vicinity', () => {
+    const route = gameRoutes.find((item) =>
+      item.path === 'vicinity/attack-results/:attackResultId',
+    );
+
+    expect(route).toBeDefined();
+    expect(route?.loadComponent).toEqual(jasmine.any(Function));
+  });
 });

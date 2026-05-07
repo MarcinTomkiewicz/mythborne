@@ -6583,6 +6583,8 @@ PvP Foundation is not:
 - Attack result reads use the owner-safe RPC.
 - Player state does not expose anti-abuse metadata.
 
+**Implementation note:** R15 accepted on 2026-05-07. Added `PvpAttackResultState` for owner-safe reads through `PlayerPvp.getMyAttackResult(...)` / `get_my_pvp_attack_result(...)`, with loading, unavailable/access-denied/error handling, active hero/server stale guards and no anti-abuse/admin metadata exposure or Angular gameplay calculation.
+
 ---
 
 ## Task R16 — Attack result UI
@@ -6596,7 +6598,7 @@ PvP Foundation is not:
   - attacker/defender role labels;
   - resource consequence summary;
   - XP/reward summary;
-  - report link if available.
+  - report link deferred to R17.
 - Prestige context may be shown only as future/non-final context.
 - Do not show item/building/estate/CP transfer as ordinary PvP consequences.
 
@@ -6604,6 +6606,8 @@ PvP Foundation is not:
 
 - PvP attack result is understandable after the fact.
 - Display matches DB result context.
+
+**Implementation note:** R16 accepted on 2026-05-07. Added `/game/vicinity/attack-results/:attackResultId` under the guarded game shell and SSR `RenderMode.Server`. The page reads through `PvpAttackResultState`, displays only mapped outcome, role, resource, XP and future-prestige rows, avoids raw JSON and notification context display, keeps access-denied copy player-facing, and leaves report linking/integration for R17.
 
 ---
 

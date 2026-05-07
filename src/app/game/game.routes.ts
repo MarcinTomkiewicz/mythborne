@@ -41,6 +41,11 @@ export const gameRoutes: Routes = [
       import('./pages/vicinity/pvp-spy-result-page').then((m) => m.PvpSpyResultPage),
   },
   {
+    path: 'vicinity/attack-results/:attackResultId',
+    loadComponent: () =>
+      import('./pages/vicinity/pvp-attack-result-page').then((m) => m.PvpAttackResultPage),
+  },
+  {
     path: 'vicinity',
     loadComponent: () =>
       import('./pages/vicinity/estate-vicinity-page').then((m) => m.EstateVicinityPage),

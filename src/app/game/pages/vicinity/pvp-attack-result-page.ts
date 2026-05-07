@@ -2,33 +2,31 @@ import { Component, DestroyRef, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
-import {
-  pvpSpyResultDisplay,
-} from './pvp-spy-result-display';
-import { PvpSpyResultState } from './pvp-spy-result.state';
+import { pvpAttackResultDisplay } from './pvp-attack-result-display';
+import { PvpAttackResultState } from './pvp-attack-result.state';
 
 @Component({
-  selector: 'app-pvp-spy-result-page',
+  selector: 'app-pvp-attack-result-page',
   standalone: true,
   imports: [LoadingOverlay, RouterLink],
-  providers: [PvpSpyResultState],
-  templateUrl: './pvp-spy-result-page.html',
+  providers: [PvpAttackResultState],
+  templateUrl: './pvp-attack-result-page.html',
 })
-export class PvpSpyResultPage {
+export class PvpAttackResultPage {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly page = inject(PvpSpyResultState);
+  readonly page = inject(PvpAttackResultState);
   readonly display = computed(() => {
     const result = this.page.result();
-    return result ? pvpSpyResultDisplay(result) : null;
+    return result ? pvpAttackResultDisplay(result) : null;
   });
 
   constructor() {
     this.route.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((params) => {
-        this.page.load(params.get('spyResultId'));
+        this.page.load(params.get('attackResultId'));
       });
   }
 
@@ -36,11 +34,11 @@ export class PvpSpyResultPage {
     const status = this.page.status();
 
     if (status === 'access-denied') {
-      return 'You do not have access to this spy result.';
+      return 'You do not have access to this attack result.';
     }
 
     if (status === 'missing-or-not-accessible') {
-      return 'This spy result was not found or is not accessible.';
+      return 'This attack result was not found or is not accessible.';
     }
 
     return this.page.error();
