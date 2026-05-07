@@ -224,4 +224,11 @@ export const adminRoutes: Routes = [
         './pages/pvp-anti-abuse-explainability/pvp-anti-abuse-explainability-page'
       ).then((m) => m.PvpAntiAbuseExplainabilityPage),
   },
+  {
+    path: 'pvp-report-producer',
+    loadComponent: () =>
+      import('./pages/pvp-report-producer/pvp-report-producer-page').then(
+        (m) => m.PvpReportProducerPage,
+      ),
+  },
 ];

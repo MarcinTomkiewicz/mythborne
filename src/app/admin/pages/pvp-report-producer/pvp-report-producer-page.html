@@ -1,0 +1,170 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading PvP report producer..."
+  description="Loading DB-backed report type and PvP report metadata."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">PvP</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            PvP report producer
+          </h2>
+          <p class="muted-text mb-0">
+            Read-only admin surface for how PvP attack results are wrapped into game reports.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Report type</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ reportType() ? 1 : 0 }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Source entity type</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ sourceEntityType }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Configuration gaps</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ configurationGapCount() }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Report wrapper"
+        title="PvP result wraps a combat section"
+        text="PvP combat reports use the game report wrapper with report type pvp_combat and source entity type pvp_result."
+        secondaryText="The combat section is resolved from the linked combat result snapshot. Combat attacks stay in the combat snapshot model and are not duplicated into report tables."
+      />
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Dictionary"
+        title="pvp_combat report type"
+        text="The report label and description come from the DB game_report_types dictionary."
+        [secondaryText]="reportType() ? null : 'Expected pvp_combat report type row is missing.'"
+      />
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md mt-lg">
+        @if (reportType(); as reportTypeEntry) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-xs">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">{{ reportTypeEntry.key }}</p>
+                <h3 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ reportTypeEntry.label }}
+                </h3>
+              </div>
+
+              <span [class]="reportTypeStatusClass(reportTypeEntry)">
+                {{ reportTypeEntry.isActive ? 'active report type' : 'inactive report type' }}
+              </span>
+            </div>
+
+            <p class="muted-text mb-0">{{ reportTypeEntry.description }}</p>
+            @if (reportTypeEntry.helperText) {
+              <p class="muted-text mb-0">{{ reportTypeEntry.helperText }}</p>
+            }
+          </article>
+        } @else {
+          <article class="mg-card p-md flex-col gap-xs">
+            <strong class="heading-color">{{ reportTypeKey }}</strong>
+            <span class="tag-badge tag-badge--warn">dictionary gap</span>
+          </article>
+        }
+
+        <article class="mg-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center flex-col-sm gap-xs">
+            <strong class="heading-color">Producer contract</strong>
+            <span class="tag-badge tag-badge--info">read-only</span>
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            <span class="tag-badge tag-badge--muted">report type: {{ reportTypeKey }}</span>
+            <span class="tag-badge tag-badge--muted">source: {{ sourceEntityType }}</span>
+            <span class="tag-badge tag-badge--muted">combat source: {{ combatSectionSourceType }}</span>
+          </div>
+
+          <p class="muted-text mb-0">
+            The report wrapper points at the PvP result. The rendered combat timeline comes from the combat section linked to the combat result snapshot.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Metadata"
+        title="PvP report metadata"
+        text="Metadata rows are matched by explicit key or UI group only."
+        [secondaryText]="!producerMetadataRows().length || !combatSectionMetadataRows().length ? 'One or more PvP report metadata rows are missing.' : null"
+      />
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md mt-lg">
+        <article class="mg-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center flex-col-sm gap-xs">
+            <strong class="heading-color">Producer copy</strong>
+            @if (producerMetadataRows().length) {
+              <span class="tag-badge tag-badge--info">DB metadata</span>
+            } @else {
+              <span class="tag-badge tag-badge--warn">metadata gap</span>
+            }
+          </div>
+
+          @for (entry of producerMetadataRows(); track entry.id) {
+            <div class="flex-col gap-xs">
+              <span class="card-legend">{{ entry.key }}</span>
+              <p class="muted-text mb-0">{{ metadataCopy(entry) }}</p>
+            </div>
+          } @empty {
+            <p class="muted-text mb-0">No active PvP report producer metadata row.</p>
+          }
+        </article>
+
+        <article class="mg-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center flex-col-sm gap-xs">
+            <strong class="heading-color">Combat section copy</strong>
+            @if (combatSectionMetadataRows().length) {
+              <span class="tag-badge tag-badge--info">DB metadata</span>
+            } @else {
+              <span class="tag-badge tag-badge--warn">metadata gap</span>
+            }
+          </div>
+
+          @for (entry of combatSectionMetadataRows(); track entry.id) {
+            <div class="flex-col gap-xs">
+              <span class="card-legend">{{ entry.key }}</span>
+              <p class="muted-text mb-0">{{ metadataCopy(entry) }}</p>
+            </div>
+          } @empty {
+            <p class="muted-text mb-0">No active combat-section metadata row.</p>
+          }
+        </article>
+      </div>
+    </section>
+  </div>
+}

@@ -6853,6 +6853,8 @@ PvP Foundation is not:
 - Admin can understand PvP report wrapping.
 - UI does not imply low-level combat report duplication.
 
+**Implementation note:** R27 accepted on 2026-05-07. Added `/admin/pvp-report-producer` and admin navigation/dashboard links for a read-only PvP report producer surface. The page reads `pvp_combat` from DB `game_report_types`, shows the typed producer contract `source_entity_type = pvp_result`, and explains that the report wrapper points at the PvP result while the combat timeline comes from the linked combat result snapshot. It explicitly avoids implying that combat attacks are duplicated into report tables and uses explicit PvP report metadata key/UI-group matching. No DB/RPC/generated type changes, direct PvP/report runtime reads/writes or producer mutations were added. Follow-up: treat inactive `pvp_combat` as a stronger configuration gap; prefer narrow metadata keys such as `pvp_report_producer` / `pvp_report_combat_section` as DB metadata expands; move explanatory prose into metadata rows when DB owns the full copy; read report source entity labels from DB if a dictionary/metadata source appears.
+
 ---
 
 ## Task R28 — PvP foundation diagnostic admin surface

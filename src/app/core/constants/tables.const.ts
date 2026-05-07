@@ -119,6 +119,7 @@ export const TABLES = {
   reward_source_kinds: 'reward_source_kinds',
   reward_grant_entries: 'reward_grant_entries',
   reward_grants: 'reward_grants',
+  game_report_types: 'game_report_types',
   trial_combat_candidates: 'trial_combat_candidates',
   trial_definitions: 'trial_definitions',
 } as const;
