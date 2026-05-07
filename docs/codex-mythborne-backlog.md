@@ -7112,20 +7112,14 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 
 ## Task S5 — Equipment paperdoll UI
 
+**Status:** Done / accepted on 2026-05-07.
+
 **Goal:** Render current equipment by slot.
 
 **Scope:**
 
-- Display:
-  - `main_hand`;
-  - `off_hand`;
-  - `helmet`;
-  - `armor`;
-  - `pants`;
-  - `boots`;
-  - `amulet`;
-  - `ring_1`;
-  - `ring_2`.
+- Display slots from DB-backed `equipment_slot_definitions`.
+- Use active slot dictionary rows sorted by DB `sort_order`/`key`.
 - Show item name/layers/status where useful.
 - Show empty slots.
 - Show locked status without implying the item is unusable.
@@ -7136,6 +7130,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Player can see current equipment.
 - Locked equipped item is shown as equipped, not hidden.
 - Empty slot and item lifecycle states are clear.
+
+**Implementation note:** S5 accepted on 2026-05-07. The armory paperdoll now renders from the read-only `equipment_slot_definitions` dictionary through `PlayerEquipment.getEquipmentSlots()`, using the real DB filter column `is_active` and DB sort order instead of a local Angular slot list. `ArmoryPage` joins equipped items by literal `slotKey` via `CurrentEquipmentState.slot(...)`, so custom DB-backed slots render even when they were not in the old hardcoded list. Empty slots and locked equipped items remain visible. No equip/unequip UI, direct `hero_equipment`/`items` writes, DB/RPC changes or generated type edits were added. Follow-ups: surface equipment slot dictionary load errors instead of silently showing no slot definitions, and avoid mapping `equipmentArea` as `equipmentSlotGroup` unless that fallback is intentional.
 
 ---
 

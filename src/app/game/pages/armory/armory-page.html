@@ -21,6 +21,59 @@
     </div>
   </section>
 
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Equipment</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Current loadout</h3>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        @if (equipment.isLoading()) {
+          <span class="tag-badge tag-badge--muted">Loading</span>
+        } @else if (equipment.isEmpty()) {
+          <span class="tag-badge tag-badge--muted">Empty loadout</span>
+        } @else if (equipment.status() === 'loaded') {
+          <span class="tag-badge tag-badge--info">
+            {{ equipment.slots().length }} equipped
+          </span>
+        } @else if (equipment.status() === 'error') {
+          <span class="tag-badge tag-badge--warn">Unavailable</span>
+        }
+      </div>
+    </div>
+
+    @if (equipment.error()) {
+      <p class="status-text-warning mb-md">{{ equipment.error() }}</p>
+    }
+
+    <div class="mg-grid grid-cols-3 grid-cols-2-md grid-cols-1-sm gap-md">
+      @for (slot of paperdollSlots(); track slot.slotKey) {
+        <article class="mg-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center gap-sm">
+            <strong class="heading-color">{{ slot.label }}</strong>
+            <span class="tag-badge tag-badge--muted">{{ slot.slotKey }}</span>
+          </div>
+
+          @if (slot.item; as item) {
+            <div class="flex-col gap-xs">
+              <strong>{{ item.itemName }}</strong>
+              <span class="muted-text">{{ itemLayerLabel(item) }}</span>
+              <span [class]="itemStatusClass(item)">
+                {{ itemStatusLabel(item) }}
+              </span>
+            </div>
+          } @else {
+            <div class="flex-col gap-xs">
+              <strong>Empty slot</strong>
+              <span class="muted-text">No item equipped</span>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  </section>
+
   <app-item-generator-panel [luck]="page.heroLuck()" />
 </div>
 

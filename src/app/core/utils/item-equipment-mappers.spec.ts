@@ -10,6 +10,7 @@ import {
 } from '../types/item-equipment-rpc.types';
 import {
   mapCurrentEquipmentLoadout,
+  mapEquipmentSlot,
   mapEquipmentOperationJournal,
   mapEquippedItemSummary,
   mapItemRequirementPreview,
@@ -19,6 +20,27 @@ import {
 } from './item-equipment-mappers';
 
 describe('item-equipment-mappers', () => {
+  it('maps DB equipment slot definitions into domain slots', () => {
+    expect(mapEquipmentSlot({
+      admin_description: null,
+      created_at: '2026-05-07T10:00:00.000Z',
+      description: 'Custom slot.',
+      equipment_area: 'custom_area',
+      helper_text: null,
+      is_active: true,
+      key: 'custom_trophy',
+      label: 'Trophy hook',
+      sort_order: 5,
+      updated_at: '2026-05-07T10:00:00.000Z',
+    })).toEqual({
+      slotKey: 'custom_trophy',
+      label: 'Trophy hook',
+      sortOrder: 5,
+      equipmentArea: 'custom_area',
+      equipmentSlotGroup: 'custom_area',
+    });
+  });
+
   it('maps item hero_id to ownerHeroId, not loadout hero context', () => {
     const item = mapItemSummary(itemRow({
       hero_id: 'owner-hero-1',

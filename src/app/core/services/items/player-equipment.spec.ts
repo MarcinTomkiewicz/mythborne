@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
+import { TABLES } from '../../constants/tables.const';
+import { FilterOperator } from '../../enums/filter-operators';
 import {
   BulkEquipHeroItemsRpcRow,
   EquipHeroItemRpcRow,
@@ -67,6 +69,41 @@ describe('PlayerEquipment', () => {
     ]);
     expect(JSON.stringify(backend.rpc.calls.mostRecent().args[1]))
       .not.toContain('user-1');
+  });
+
+  it('loads active equipment slot definitions from DB dictionary rows', async () => {
+    backend.getAll.and.returnValue(of([
+      slotDefinitionRow({
+        key: 'custom_trophy',
+        label: 'Trophy hook',
+        sort_order: 5,
+      }),
+      slotDefinitionRow({
+        key: 'main_hand',
+        label: 'Weapon hand',
+        sort_order: 10,
+      }),
+    ]));
+
+    const slots = await firstValueFrom(service.getEquipmentSlots());
+
+    expect(backend.getAll).toHaveBeenCalledOnceWith({
+      table: TABLES.equipment_slot_definitions,
+      filters: {
+        is_active: { operator: FilterOperator.EQ, value: true },
+      },
+      orderBy: [
+        { column: 'sort_order' },
+        { column: 'key' },
+      ],
+      camelCase: false,
+    });
+    expect(slots.map((slot) => `${slot.sortOrder}:${slot.slotKey}:${slot.label}`))
+      .toEqual([
+        '5:custom_trophy:Trophy hook',
+        '10:main_hand:Weapon hand',
+      ]);
+    expect(slots[0].equipmentArea).toBe('ornament');
   });
 
   it('equips an item through canonical RPC without frontend reason or eligibility checks', async () => {
@@ -254,6 +291,28 @@ function equipmentSlotRow(
     suffix_key: '',
     suffix_name: '',
     ...overrides,
+  };
+}
+
+function slotDefinitionRow(overrides: Partial<ReturnType<typeof slotDefinitionBase>> = {}) {
+  return {
+    ...slotDefinitionBase(),
+    ...overrides,
+  };
+}
+
+function slotDefinitionBase() {
+  return {
+    admin_description: null,
+    created_at: '2026-05-07T10:00:00.000Z',
+    description: 'Equipment slot.',
+    equipment_area: 'ornament',
+    helper_text: null,
+    is_active: true,
+    key: 'main_hand',
+    label: 'Main hand',
+    sort_order: 10,
+    updated_at: '2026-05-07T10:00:00.000Z',
   };
 }
 

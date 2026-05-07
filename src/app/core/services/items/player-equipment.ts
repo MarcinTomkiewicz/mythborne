@@ -1,11 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
+import { TABLES } from '../../constants/tables.const';
 import {
   CurrentEquipmentLoadout,
   EquipmentOperationJournal,
+  EquipmentSlot,
   EquipmentSlotKey,
 } from '../../domain/item/item-equipment.model';
+import { FilterOperator } from '../../enums/filter-operators';
 import { Json } from '../../types/database.types';
 import {
   BulkEquipHeroItemsRpcArgs,
@@ -17,7 +20,9 @@ import {
   UnequipHeroItemRpcArgs,
   UnequipHeroItemRpcRow,
 } from '../../types/item-equipment-rpc.types';
+import { Row } from '../../types/supabase.types';
 import {
+  mapEquipmentSlot,
   mapCurrentEquipmentLoadout,
   mapEquipmentOperationJournal,
 } from '../../utils/item-equipment-mappers';
@@ -50,6 +55,22 @@ export interface BulkEquipHeroItemsInput {
 export class PlayerEquipment {
   private readonly activeHero = inject(ActiveHero);
   private readonly backend = inject(Backend);
+
+  getEquipmentSlots(): Observable<EquipmentSlot[]> {
+    return this.backend
+      .getAll<Row<'equipment_slot_definitions'>>({
+        table: TABLES.equipment_slot_definitions,
+        filters: {
+          is_active: { operator: FilterOperator.EQ, value: true },
+        },
+        orderBy: [
+          { column: 'sort_order' },
+          { column: 'key' },
+        ],
+        camelCase: false,
+      })
+      .pipe(map((rows) => rows.map(mapEquipmentSlot)));
+  }
 
   getCurrentEquipment(): Observable<CurrentEquipmentLoadout> {
     return this.activeHero.requireActiveHero().pipe(

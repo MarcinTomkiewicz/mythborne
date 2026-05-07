@@ -5,6 +5,7 @@ import {
   EquipmentOperationAction,
   EquipmentOperationJournal,
   EquipmentOperationJournalEntry,
+  EquipmentSlot,
   EquippedItemSummary,
   ItemEffectiveRequirement,
   ItemLifecycleState,
@@ -39,6 +40,17 @@ import {
   read,
   text,
 } from './json-read';
+import { Row } from '../types/supabase.types';
+
+export function mapEquipmentSlot(row: Row<'equipment_slot_definitions'>): EquipmentSlot {
+  return {
+    slotKey: row.key,
+    label: row.label,
+    sortOrder: row.sort_order,
+    equipmentArea: row.equipment_area,
+    equipmentSlotGroup: row.equipment_area,
+  };
+}
 
 export function mapItemSummary(row: ItemRow): ItemSummary {
   return {
