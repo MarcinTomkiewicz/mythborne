@@ -6699,6 +6699,8 @@ PvP Foundation is not:
 - Admin can understand PvP action lifecycle.
 - Siege is clearly future/inactive.
 
+**Implementation note:** R20 accepted on 2026-05-07. Added `/admin/pvp-action-lifecycle` and admin navigation/dashboard links for a read-only PvP action lifecycle surface. The page reads `pvp_action_kinds` and `pvp_action_statuses` through a narrow admin service using generated row types and existing PvP mappers, shows DB labels/descriptions/helper/admin text, and marks active/future action kinds plus blocking/terminal statuses from DB booleans. Siege is shown as future/inactive; no runtime PvP workflow reads, write/action mutation paths, DB/RPC changes or generated type changes were added.
+
 ---
 
 ## Task R21 — PvP targeting/protection balancer surface

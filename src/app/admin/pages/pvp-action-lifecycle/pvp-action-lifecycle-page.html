@@ -1,0 +1,156 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading PvP action lifecycle..."
+  description="Loading DB-backed PvP action dictionaries."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">PvP</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            PvP action lifecycle
+          </h2>
+          <p class="muted-text mb-0">
+            Read-only dictionary view for action kinds and lifecycle statuses.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-4 grid-cols-1-sm gap-md w-100">
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Action kinds</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ actionKinds().length }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Active kinds</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ activeActionKindCount() }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Blocking statuses</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ blockingStatusCount() }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Terminal statuses</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ terminalStatusCount() }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Action kinds"
+        title="Configured PvP actions"
+        text="Rows come from the DB action-kind dictionary. Active rows can be used by PvP flows exposed by the backend; inactive rows are future-only."
+        [secondaryText]="futureActionKindCount() > 0 ? 'Inactive action kinds are shown as future/inactive and do not imply available gameplay.' : null"
+      />
+
+      <div class="flex-col gap-md mt-lg">
+        @for (kind of actionKinds(); track kind.key) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <h3 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ kind.label }}
+                </h3>
+                <p class="card-legend mb-0">{{ kind.key }}</p>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span [class]="actionKindBadgeClass(kind)">
+                  {{ actionKindStateLabel(kind) }}
+                </span>
+                @for (badge of actionKindTypeBadges(kind); track badge) {
+                  <span class="tag-badge tag-badge--muted">{{ badge }}</span>
+                }
+              </div>
+            </div>
+
+            <p class="muted-text mb-0">{{ kind.description }}</p>
+            @if (kind.helperText) {
+              <p class="muted-text mb-0">{{ kind.helperText }}</p>
+            }
+            @if (kind.adminDescription) {
+              <div class="mg-card p-sm flex-col gap-xs">
+                <span class="muted-text">Admin note</span>
+                <span class="heading-color">{{ kind.adminDescription }}</span>
+              </div>
+            }
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">No PvP action kinds are available.</p>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Action statuses"
+        title="Lifecycle status dictionary"
+        text="Blocking statuses prevent overlapping PvP activity where the DB marks them blocking. Terminal statuses close the lifecycle."
+        secondaryText="This surface reports DB dictionary meaning only and does not resolve or mutate actions."
+      />
+
+      <div class="flex-col gap-md mt-lg">
+        @for (status of actionStatuses(); track status.key) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <h3 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ status.label }}
+                </h3>
+                <p class="card-legend mb-0">{{ status.key }}</p>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span [class]="statusBadgeClass(status)">
+                  {{ statusLifecycleLabel(status) }}
+                </span>
+                @if (status.isActive) {
+                  <span class="tag-badge tag-badge--info">active</span>
+                } @else {
+                  <span class="tag-badge tag-badge--warn">inactive</span>
+                }
+              </div>
+            </div>
+
+            <p class="muted-text mb-0">{{ status.description }}</p>
+            @if (status.helperText) {
+              <p class="muted-text mb-0">{{ status.helperText }}</p>
+            }
+            @if (status.adminDescription) {
+              <div class="mg-card p-sm flex-col gap-xs">
+                <span class="muted-text">Admin note</span>
+                <span class="heading-color">{{ status.adminDescription }}</span>
+              </div>
+            }
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">No PvP action statuses are available.</p>
+        }
+      </div>
+    </section>
+  </div>
+}

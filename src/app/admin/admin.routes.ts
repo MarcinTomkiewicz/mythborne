@@ -175,4 +175,11 @@ export const adminRoutes: Routes = [
         (m) => m.PvpOverviewPage,
       ),
   },
+  {
+    path: 'pvp-action-lifecycle',
+    loadComponent: () =>
+      import('./pages/pvp-action-lifecycle/pvp-action-lifecycle-page').then(
+        (m) => m.PvpActionLifecyclePage,
+      ),
+  },
 ];

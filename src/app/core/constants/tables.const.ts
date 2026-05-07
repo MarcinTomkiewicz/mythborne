@@ -85,6 +85,8 @@ export const TABLES = {
   player_trade_offers: 'player_trade_offers',
   player_trade_transaction_items: 'player_trade_transaction_items',
   player_trade_transactions: 'player_trade_transactions',
+  pvp_action_kinds: 'pvp_action_kinds',
+  pvp_action_statuses: 'pvp_action_statuses',
   encounter_definitions: 'encounter_definitions',
   encounter_combat_candidates: 'encounter_combat_candidates',
   encounter_resource_payloads: 'encounter_resource_payloads',
