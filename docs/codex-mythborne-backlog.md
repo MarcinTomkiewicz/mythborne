@@ -6787,6 +6787,8 @@ PvP Foundation is not:
 - Balancer can inspect PvP reward routing.
 - UI does not imply standalone PvP CP rewards.
 
+**Implementation note:** R24 accepted on 2026-05-07. Added `/admin/pvp-reward-routing` and admin navigation/dashboard links for a read-only PvP XP reward routing surface. The page reads PvP outcome rows from DB `reward_outcome_kinds` filtered by `source_kind = pvp`, shows matching `reward_profile_assignments`, renders active reward profile entry summaries, and uses the formula admin read model for `pvp_xp_reward`. Character Points are presented as XP/progression-derived rather than a standalone PvP reward route, and standalone CP entries are surfaced as admin configuration gaps. Shared formula-target row logic was extracted for the PvP admin formula surfaces. No DB/RPC/generated type changes, direct PvP runtime reads or reward grant calls were added. Follow-up: confirm the advisory `PVP_REWARD_OUTCOME_KEYS` checklist against real DB keys; avoid counting inactive/future PvP outcomes without assignments as gaps; consider showing outcome active/inactive status.
+
 ---
 
 ## Task R25 — PvP Prestige context admin surface

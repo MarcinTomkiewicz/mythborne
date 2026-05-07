@@ -106,6 +106,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'PvP',
+    title: 'PvP reward routing',
+    description:
+      'Read-only XP reward profile routing and formula surface for PvP outcomes.',
+    routerLink: '/admin/pvp-reward-routing',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Anti-abuse',
     title: 'Anti-abuse config',
     description:
@@ -713,6 +721,30 @@ export const PVP_RESOURCE_CONSEQUENCES_PAGE_LINKS: readonly AdminTagLink[] = [
   {
     label: 'PvP travel timing',
     routerLink: '/admin/pvp-travel-timing',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Formula read model',
+    routerLink: '/admin/formulas',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const PVP_REWARD_ROUTING_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'PvP foundation',
+    routerLink: '/admin/pvp-overview',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'PvP resources',
+    routerLink: '/admin/pvp-resource-consequences',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Reward profiles',
+    routerLink: '/admin/reward-profiles',
     accessPolicy: 'selectedServerManagement',
   },
   {

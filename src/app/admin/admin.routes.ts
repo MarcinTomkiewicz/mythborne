@@ -203,4 +203,11 @@ export const adminRoutes: Routes = [
         './pages/pvp-resource-consequences/pvp-resource-consequences-page'
       ).then((m) => m.PvpResourceConsequencesPage),
   },
+  {
+    path: 'pvp-reward-routing',
+    loadComponent: () =>
+      import('./pages/pvp-reward-routing/pvp-reward-routing-page').then(
+        (m) => m.PvpRewardRoutingPage,
+      ),
+  },
 ];

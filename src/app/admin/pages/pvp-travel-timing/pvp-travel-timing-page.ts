@@ -18,7 +18,11 @@ import {
   PVP_TRAVEL_TIMING_FORMULA_TARGET_KEYS,
 } from '../../../core/services/pvp/pvp-travel-timing-admin';
 import { getErrorMessage } from '../../../core/utils/error-message';
-import { toFormulaTargetAssignmentRow } from '../../../core/utils/formula-assignment-view';
+import {
+  formulaTargetContextPreview,
+  missingFormulaTargetKeys,
+  toFormulaTargetAssignmentRows,
+} from '../../../core/utils/formula-target-assignment-rows';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { PVP_TRAVEL_TIMING_PAGE_LINKS } from '../../admin-navigation.config';
 import { AdminSectionIntro } from '../../components/admin-section-intro/admin-section-intro';
@@ -38,14 +42,18 @@ export class PvpTravelTimingPage implements OnInit {
   readonly data = signal<FormulaAdminData>(EMPTY_FORMULA_ADMIN_DATA);
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly formulaRows = computed(() => this.toFormulaRows(this.data()));
-  readonly missingFormulaTargetKeys = computed(() => {
-    const existing = new Set(this.formulaRows().map((row) => row.target.key));
-
-    return PVP_TRAVEL_TIMING_FORMULA_TARGET_KEYS.filter((key) =>
-      !existing.has(key),
-    );
-  });
+  readonly formulaRows = computed(() =>
+    toFormulaTargetAssignmentRows(
+      this.data(),
+      PVP_TRAVEL_TIMING_FORMULA_TARGET_KEYS,
+    ),
+  );
+  readonly missingFormulaTargetKeys = computed(() =>
+    missingFormulaTargetKeys(
+      this.formulaRows(),
+      PVP_TRAVEL_TIMING_FORMULA_TARGET_KEYS,
+    ),
+  );
   readonly enabledFormulaCount = computed(() =>
     this.formulaRows().filter((row) => row.status === 'enabled').length,
   );
@@ -61,7 +69,7 @@ export class PvpTravelTimingPage implements OnInit {
   }
 
   contextPreview(row: FormulaTargetAssignmentRow): string {
-    return JSON.stringify(row.target.defaultTestContext, null, 2);
+    return formulaTargetContextPreview(row);
   }
 
   private loadData(): void {
@@ -79,34 +87,6 @@ export class PvpTravelTimingPage implements OnInit {
           this.error.set(
             getErrorMessage(error, 'Failed to load PvP travel timing data.'),
           ),
-      });
-  }
-
-  private toFormulaRows(data: FormulaAdminData): FormulaTargetAssignmentRow[] {
-    const formulaById = new Map(data.formulas.map((formula) => [formula.id, formula]));
-    const assignmentByTargetId = new Map(
-      data.assignments.map((assignment) => [assignment.targetId, assignment]),
-    );
-    const targetOrder = new Map<string, number>(
-      PVP_TRAVEL_TIMING_FORMULA_TARGET_KEYS.map((key, index) => [key, index]),
-    );
-
-    return data.targets
-      .filter((target) =>
-        PVP_TRAVEL_TIMING_FORMULA_TARGET_KEYS.includes(
-          target.key as typeof PVP_TRAVEL_TIMING_FORMULA_TARGET_KEYS[number],
-        ),
-      )
-      .sort((left, right) =>
-        (targetOrder.get(left.key) ?? 99) - (targetOrder.get(right.key) ?? 99),
-      )
-      .map((target) => {
-        const assignment = assignmentByTargetId.get(target.id) ?? null;
-        const formula = assignment
-          ? formulaById.get(assignment.formulaId) ?? null
-          : null;
-
-        return toFormulaTargetAssignmentRow(target, assignment, formula);
       });
   }
 }

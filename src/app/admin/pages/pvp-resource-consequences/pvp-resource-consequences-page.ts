@@ -22,7 +22,11 @@ import {
   PVP_RESOURCE_CONSEQUENCE_FORMULA_TARGET_KEYS,
 } from '../../../core/services/pvp/pvp-resource-consequences-admin';
 import { getErrorMessage } from '../../../core/utils/error-message';
-import { toFormulaTargetAssignmentRow } from '../../../core/utils/formula-assignment-view';
+import {
+  formulaTargetContextPreview,
+  missingFormulaTargetKeys,
+  toFormulaTargetAssignmentRows,
+} from '../../../core/utils/formula-target-assignment-rows';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { PVP_RESOURCE_CONSEQUENCES_PAGE_LINKS } from '../../admin-navigation.config';
 import { AdminSectionIntro } from '../../components/admin-section-intro/admin-section-intro';
@@ -59,14 +63,18 @@ export class PvpResourceConsequencesPage implements OnInit {
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly forbiddenBoundaryLabels = FORBIDDEN_BOUNDARY_LABELS;
-  readonly formulaRows = computed(() => this.toFormulaRows(this.data()));
-  readonly missingFormulaTargetKeys = computed(() => {
-    const existing = new Set(this.formulaRows().map((row) => row.target.key));
-
-    return PVP_RESOURCE_CONSEQUENCE_FORMULA_TARGET_KEYS.filter((key) =>
-      !existing.has(key),
-    );
-  });
+  readonly formulaRows = computed(() =>
+    toFormulaTargetAssignmentRows(
+      this.data(),
+      PVP_RESOURCE_CONSEQUENCE_FORMULA_TARGET_KEYS,
+    ),
+  );
+  readonly missingFormulaTargetKeys = computed(() =>
+    missingFormulaTargetKeys(
+      this.formulaRows(),
+      PVP_RESOURCE_CONSEQUENCE_FORMULA_TARGET_KEYS,
+    ),
+  );
   readonly eligibleResources = computed(() => this.toEligibleResourceViews());
   readonly missingEligibleResourceKeys = computed(() =>
     this.eligibleResources()
@@ -93,7 +101,7 @@ export class PvpResourceConsequencesPage implements OnInit {
   }
 
   contextPreview(row: FormulaTargetAssignmentRow): string {
-    return JSON.stringify(row.target.defaultTestContext, null, 2);
+    return formulaTargetContextPreview(row);
   }
 
   metadataCopy(entry: UiMetadataEntryReadModel): string {
@@ -150,37 +158,6 @@ export class PvpResourceConsequencesPage implements OnInit {
           ?? null,
       };
     });
-  }
-
-  private toFormulaRows(data: FormulaAdminData): FormulaTargetAssignmentRow[] {
-    const formulaById = new Map(data.formulas.map((formula) => [formula.id, formula]));
-    const assignmentByTargetId = new Map(
-      data.assignments.map((assignment) => [assignment.targetId, assignment]),
-    );
-    const targetOrder = new Map<string, number>(
-      PVP_RESOURCE_CONSEQUENCE_FORMULA_TARGET_KEYS.map((key, index) => [
-        key,
-        index,
-      ]),
-    );
-
-    return data.targets
-      .filter((target) =>
-        PVP_RESOURCE_CONSEQUENCE_FORMULA_TARGET_KEYS.includes(
-          target.key as typeof PVP_RESOURCE_CONSEQUENCE_FORMULA_TARGET_KEYS[number],
-        ),
-      )
-      .sort((left, right) =>
-        (targetOrder.get(left.key) ?? 99) - (targetOrder.get(right.key) ?? 99),
-      )
-      .map((target) => {
-        const assignment = assignmentByTargetId.get(target.id) ?? null;
-        const formula = assignment
-          ? formulaById.get(assignment.formulaId) ?? null
-          : null;
-
-        return toFormulaTargetAssignmentRow(target, assignment, formula);
-      });
   }
 }
 

@@ -1,0 +1,264 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading PvP reward routing..."
+  description="Loading DB-backed PvP XP reward formula and reward assignments."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">PvP</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            PvP XP reward routing
+          </h2>
+          <p class="muted-text mb-0">
+            Read-only balancer surface for PvP reward outcomes, XP formula routing and reward profile assignments.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">PvP outcomes</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ outcomeViews().length }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Active assignments</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ activeAssignmentCount() }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Configuration gaps</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ configurationGapCount() }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Formula target"
+        title="PvP XP reward formula"
+        text="Rows are filtered from the formula read model. Allowed variables, test context and expressions are displayed from DB rows only."
+        [secondaryText]="missingFormulaTargetKeys().length ? 'Expected PvP XP reward formula target is missing from the read model.' : null"
+      />
+
+      @if (missingFormulaTargetKeys().length) {
+        <div class="mg-card p-md flex-col gap-xs mt-lg">
+          <strong class="heading-color">Missing formula target keys</strong>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @for (key of missingFormulaTargetKeys(); track key) {
+              <span class="tag-badge tag-badge--warn">{{ key }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="flex-col gap-md mt-lg">
+        @for (row of formulaRows(); track row.target.key) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">{{ row.target.key }}</p>
+                <h3 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ row.target.label }}
+                </h3>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="tag-badge tag-badge--muted">{{ row.target.scopeKey }}</span>
+                <span [class]="formulaStatusClass(row)">{{ row.statusLabel }}</span>
+              </div>
+            </div>
+
+            @if (row.target.description) {
+              <p class="muted-text mb-0">{{ row.target.description }}</p>
+            }
+
+            <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Assigned formula</span>
+                <strong class="heading-color">{{ row.formula?.label ?? '-' }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Formula key</span>
+                <strong class="heading-color">{{ row.formula?.key ?? '-' }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Assignment updated</span>
+                <strong class="heading-color">{{ row.assignment?.updatedAt ?? '-' }}</strong>
+              </div>
+            </div>
+
+            @if (row.formula) {
+              <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+                <div class="flex-col gap-xs min-w-0">
+                  <span class="muted-text">Formula description</span>
+                  <span class="heading-color">{{ row.formula.description ?? '-' }}</span>
+                </div>
+
+                <div class="flex-col gap-xs min-w-0">
+                  <span class="muted-text">Expression</span>
+                  <pre class="mb-0 text-break"><code>{{ row.formula.expression }}</code></pre>
+                </div>
+              </div>
+            }
+
+            <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Allowed variables</span>
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  @for (variable of row.target.allowedVariables; track variable) {
+                    <span class="tag-badge tag-badge--muted">{{ variable }}</span>
+                  } @empty {
+                    <span class="muted-text">No variables</span>
+                  }
+                </div>
+              </div>
+
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Default test context</span>
+                <pre class="mb-0 text-break"><code>{{ contextPreview(row) }}</code></pre>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">No PvP XP reward formula targets are visible.</p>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Reward assignments"
+        title="PvP outcome routing"
+        text="Each outcome row shows reward profile assignments where source_kind is pvp. Reward profile entries are displayed as configured bundle contents."
+        [secondaryText]="unassignedOutcomeKeys().length ? 'Some PvP outcomes have no active reward profile assignment.' : null"
+      />
+
+      @if (missingExpectedOutcomeKeys().length) {
+        <div class="mg-card p-md flex-col gap-xs mt-lg">
+          <strong class="heading-color">Missing expected PvP outcome keys</strong>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @for (key of missingExpectedOutcomeKeys(); track key) {
+              <span class="tag-badge tag-badge--warn">{{ key }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="flex-col gap-md mt-lg">
+        @for (outcome of outcomeViews(); track outcome.key) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">{{ outcome.key }}</p>
+                <h3 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ outcome.label }}
+                </h3>
+              </div>
+              <span class="tag-badge tag-badge--muted">
+                {{ outcome.assignments.length }} assignment{{ outcome.assignments.length === 1 ? '' : 's' }}
+              </span>
+            </div>
+
+            @if (outcome.description) {
+              <p class="muted-text mb-0">{{ outcome.description }}</p>
+            }
+
+            @for (assignment of outcome.assignments; track assignment.id) {
+              <div class="mg-card p-sm flex-col gap-sm">
+                <div class="flex-row-between-center flex-col-sm gap-xs">
+                  <strong class="heading-color">
+                    {{ rewardProfile(assignment)?.label ?? assignment.rewardProfileId }}
+                  </strong>
+                  <span [class]="assignmentStatusClass(assignment)">
+                    {{ assignment.isActive ? 'active assignment' : 'inactive assignment' }}
+                  </span>
+                </div>
+
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  <span class="tag-badge tag-badge--muted">source: {{ assignment.sourceKind }}</span>
+                  <span class="tag-badge tag-badge--muted">outcome: {{ assignment.outcomeKind }}</span>
+                  <span class="tag-badge tag-badge--muted">level: {{ assignment.levelMatchLabel }}</span>
+                </div>
+
+                @if (rewardProfile(assignment)?.description || rewardProfile(assignment)?.adminDescription) {
+                  <p class="muted-text mb-0">
+                    {{ rewardProfile(assignment)?.adminDescription ?? rewardProfile(assignment)?.description }}
+                  </p>
+                }
+
+                @if (hasStandaloneCpEntry(assignment)) {
+                  <p class="status-text-warning mb-0">
+                    configuration gap: CP entry should not be standalone for PvP
+                  </p>
+                }
+
+                <div class="flex-col gap-xs">
+                  <span class="muted-text">Active reward profile entries</span>
+                  @for (entry of entrySummaries(assignment); track entry.entryId) {
+                    <div class="mg-card p-sm flex-col gap-xs">
+                      <strong class="heading-color">{{ entry.label }}</strong>
+                      <span class="muted-text">{{ entry.detail }}</span>
+                      @if (entry.dictionaryHelp) {
+                        <span class="muted-text">{{ entry.dictionaryHelp }}</span>
+                      }
+                    </div>
+                  } @empty {
+                    <span class="tag-badge tag-badge--warn">no active entries</span>
+                  }
+                </div>
+              </div>
+            } @empty {
+              <span class="tag-badge tag-badge--warn">no reward assignment</span>
+            }
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Progression boundary"
+        title="Character Points derive from XP"
+        text="PvP reward routing should award XP through the reward/progression workflow. Character Points are not presented as a separate PvP reward route on this surface."
+        [secondaryText]="cpMetadataRows().length ? null : 'DB metadata row for CP-from-XP explanation is missing.'"
+      />
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md mt-lg">
+        @for (entry of cpMetadataRows(); track entry.id) {
+          <article class="mg-card p-md flex-col gap-xs">
+            <strong class="heading-color">{{ entry.label }}</strong>
+            <span class="card-legend">{{ entry.key }}</span>
+            <p class="muted-text mb-0">{{ metadataCopy(entry) }}</p>
+            @if (entry.warningText) {
+              <p class="status-text-warning mb-0">{{ entry.warningText }}</p>
+            }
+          </article>
+        } @empty {
+          <span class="tag-badge tag-badge--warn">metadata gap: CP from XP</span>
+        }
+      </div>
+    </section>
+  </div>
+}
