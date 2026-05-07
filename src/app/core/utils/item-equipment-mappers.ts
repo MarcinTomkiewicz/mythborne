@@ -155,9 +155,13 @@ export function mapHeroArmoryReadModel(
 
   const shelves = [
     armoryShelfFromJson(heroId, visibility.unsorted_json, 0, true),
-    ...mapJsonArray(visibility.shelves_json, (entry) =>
-      armoryShelfFromJson(heroId, entry, numberValue(read(entry, 'position')), false),
-    ),
+    ...mapJsonArray(visibility.shelves_json, (entry) => entry)
+      .sort((left, right) =>
+        armoryShelfPosition(left, 0) - armoryShelfPosition(right, 0),
+      )
+      .map((entry) =>
+        armoryShelfFromJson(heroId, entry, armoryShelfPosition(entry, 0), false),
+      ),
   ].map((shelf) => ({
     ...shelf,
     visibleItems: sortArmoryItems(itemsByShelf.get(shelf.position) ?? []),
@@ -224,7 +228,8 @@ function armoryShelfFromJson(
   isUnsortedDropArea: boolean,
 ): ArmoryShelfReadModel {
   const record = jsonRecord(value);
-  const position = optionalNumber(read(record, 'position')) ?? fallbackPosition;
+  const rawPosition = armoryShelfPosition(record, fallbackPosition);
+  const position = isUnsortedDropArea ? 0 : rawPosition;
   const name = optionalText(read(record, 'name', 'label', 'shelfName', 'shelf_name'))
     ?? (isUnsortedDropArea ? 'Unsorted' : `Shelf ${position}`);
 
@@ -239,6 +244,18 @@ function armoryShelfFromJson(
     isUnsortedDropArea,
     visibleItems: [],
   };
+}
+
+function armoryShelfPosition(
+  record: JsonRecord | null,
+  fallbackPosition: number,
+): number {
+  return optionalNumber(read(
+    record,
+    'shelfPosition',
+    'shelf_position',
+    'position',
+  )) ?? fallbackPosition;
 }
 
 function sortArmoryItems(

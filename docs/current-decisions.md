@@ -177,6 +177,87 @@ Epic Y covers the Prestige foundation. Prestige is a long-term reputation/sława
 - Codex must not implement Prestige by hardcoding thresholds, rank names as source of truth, PvP delta matrix, point calculation, notification generation or report generation in Angular.
 - `current-todo.md`, `current-state-summary.md` and backlog task statuses are updated only by Codex/status workflow after confirmed implementation, not by this decision entry.
 
+
+## Server Events Foundation Decisions — 2026-05-07
+
+Server Events are global, temporary, server-scoped events that affect every hero on a server. They are not per-district, per-guild, per-rank, per-origin or per-player events. They are intended to be rare, powerful and lore-forward rather than a constant rotation of small buffs.
+
+### Core model
+
+- A Server Event affects the whole server and every hero on that server.
+- Server Events do not have sub-scopes in v1. No district, guild, origin, rank or player-group targeting.
+- Only one Server Event may be active on a server at a time.
+- Server Events are temporary and have `starts_at` / `ends_at` semantics.
+- Server Events are intended to be rare, powerful and irregular.
+- Server Events can be positive, negative or mixed.
+- Negative events are valid events, not a separate rarer category.
+- Event definitions should be internally coherent and lore-driven. The preferred design is one strong effect or a simple coherent bundle, not a random pile of tiny modifiers.
+- Mixed effects are allowed when the lore/design justifies them.
+- Every event must have a lore-facing name and lore description.
+- Event names, descriptions, helper text and player-facing copy must be DB/admin-configurable and must not become permanent Angular hardcode.
+
+### Effect semantics
+
+- Server Events may affect base stats, all stats, Luck, derived stats and combat-derived values such as HP, evasion chance, critical chance and critical damage.
+- Server Events may affect combat through stats, derived stats and runtime bonus inputs.
+- Server Events must not directly alter manual minigame mechanics such as Walking Dead speed or input timing behavior. If an event gives Agility, it may indirectly affect combat and Trial/minigame difficulty through the normal stat/runtime path.
+- Server Events may apply requirement modifiers such as `-15%` to all normal requirement checks.
+- Requirement modifiers apply to normal requirements such as item and building requirements.
+- Requirement modifiers do not reduce Prestige/district entry gates or other political/district access thresholds.
+- Requirement modifiers are runtime modifiers. They do not permanently rewrite requirement definitions.
+- If an action is valid while the event is active, its normal persistence rules apply. Already equipped items do not fall off because requirements stop being met later, and already-started building jobs/upgrades continue normally.
+- Server Events are not primarily an economy system in v1. They may indirectly affect drops through Luck, but do not start from production/cost economy events such as wood production or construction cost unless a later design explicitly expands them.
+
+### Runtime and authority
+
+- Server Events should not permanently mutate hero stats, Luck, HP or other hero fields. They should be treated as an active runtime bonus/debuff source.
+- The final effective stat/derived/runtime value is based on the hero baseline plus all active bonus sources, including active Server Events.
+- Angular must not calculate Server Event effects as gameplay authority.
+- Frontend may display the active event and DB/read-model/resolver outputs, but durable gameplay impact belongs to DB/RPC/runtime resolvers.
+- Migrator owns the DB/RPC decision of whether event effects directly reuse the existing bonus system or use a separate event-effect layer mapped into runtime resolvers.
+
+### Activation and scheduling
+
+- Server Events can be started manually by admin/operator tooling.
+- Manual admin start ignores cooldown by design.
+- Cooldown after a manually started event counts from that event's actual end time.
+- Manual end/reschedule is not the normal production flow, but may exist as admin/sandbox/emergency correction tooling if the DB/admin design supports it.
+- Server Events can also be started automatically by system roll.
+- Default automatic cooldown is: after the previous event ends, wait at least 14 days before a system roll can try to start another event.
+- Default system roll chance is 10%, but cooldown and chance are admin-configurable.
+- System roll without Server Council does not create proposals or a scheduled voting flow. If the roll succeeds, the system picks one event and starts it immediately.
+- Automatic event selection is uniform among active eligible event definitions. Event definitions do not have weights in the current design.
+- A system event can start even if no players are currently online. Server Events are server state, not online-presence state.
+- Default event duration is one week, but duration is admin-configurable.
+
+### Future Server Council voting compatibility
+
+- Server Council and council voting are not part of the first Server Events foundation, but Server Events should be compatible with a future `council_vote` activation source.
+- Future Council voting default: generate 5 event proposals from the event pool.
+- The proposal count should be admin-configurable, default 5.
+- Future voting duration default: 3 days.
+- Voting duration should be admin-configurable.
+- Event start after voting should be configurable: either a specific weekday after voting or X days after voting ends. Monday start is a reasonable default/proof-of-concept, not a hard rule.
+- If voting has a tie and a qualifying Basileus/E1 exists, that hero's vote breaks the tie.
+- If no Basileus/E1 exists and there is still a tie, run a 24h runoff between the tied events.
+- If the runoff is still tied, the system randomly selects the winner from the still-tied events only.
+- Random selection is the final fallback. Do not use “first proposed wins” because event proposals are generated at the same time.
+
+### UI boundary
+
+- Player UI needs one compact active Server Event indicator.
+- If no event is active, the indicator can show that no Server Event is active.
+- If an event is active, the indicator should show lore name, description and major effects.
+- A full event page, large banner, report or notification spam is not required for v1.
+- Exact UI placement belongs to UI/Codex later.
+
+### Implementation boundary
+
+- Migrator owns DB/RPC/schema/finalizer/read-model design for Server Events.
+- The conversation decisions define what Server Events must do, not whether the DB implementation uses an existing bonus system directly or a separate event-effect layer mapped into runtime resolvers.
+- Server Events must integrate with existing runtime stat/Luck/derived/requirement checks rather than creating a parallel Angular-side calculation path.
+- Codex/frontend work can consume Server Events only after the DB/RPC/read-model contract and generated types exist.
+
 ## PvP Foundation Decisions — 2026-05-03 late
 
 The active new Epic R is **PvP Foundation**. This is a target architecture foundation, not a throwaway MVP. Future systems may remain unimplemented where their own foundations do not exist yet, but the PvP model itself should not be knowingly temporary.
@@ -242,6 +323,68 @@ The active new Epic R is **PvP Foundation**. This is a target architecture found
 - Siege is future guild/multiplayer PvP and remains inactive until guild/siege systems exist.
 - Own-guild attack/siege restriction must be enforced when guild membership exists; do not create a fake guild system inside PvP Foundation.
 - Equipment equip/unequip workflow belongs to the future item/equipment epic. The `hero_equipment` boundary is hardened, but full mutation workflow is not part of current PvP DB work.
+
+
+## Luck Foundation Decisions — 2026-05-05
+
+Luck Foundation is a closed decision topic. It must not be reopened unless a migrator, Codex or Reviewer returns a real blocker.
+
+Luck is a global RNG/opportunity stat. It is not only an item-drop stat and it is not a guarantee of success or perfect rewards.
+
+### Core semantics
+
+- Luck affects helpful gameplay RNG surfaces unless a specific RNG surface is explicitly Luck-excluded through configuration/design.
+- Luck improves opportunities and odds; it must not make success deterministic.
+- `luckInfluence` is the canonical derived influence value used by formulas. It is not raw Luck and must not be treated as 1:1 with `luckValue`.
+- `trial_power` is the canonical effective trial strength concept.
+- Conceptually, `trial_power = testedStatValue + luckInfluence`.
+- Difficulty, district and pressure/caps consume `trial_power` through their own formulas/config; they are not part of `trial_power` itself.
+- `nothing` is not a separate RNG surface. It is the deterministic fallback when trial opportunity and encounter rolls do not produce an outcome.
+- Anti-abuse is not gameplay RNG and must not be affected by Luck.
+
+### Gameplay surfaces affected by Luck
+
+Luck Foundation covers, at minimum:
+
+- item/drop opportunity, value bucket, quality and affix chances;
+- reward amount and reward item-count ranges where DB reward contracts expose Luck-aware behavior;
+- trial opportunity;
+- trial manifestation;
+- trial power;
+- challenge auto-resolve success chance;
+- manual trial/minigame difficulty through `trial_power`, not by giving the frontend formula authority;
+- exploration encounter fallback / non-trial encounter chance;
+- combat RNG surfaces such as hit, evasion, critical chance and critical-damage context where the DB formula/config contract exposes them.
+
+### Item generation and rewards
+
+- The existing item generation model remains: value bucket, quality, base item, optional prefix, optional suffix and existing budget behavior.
+- Do not create a second item rarity system for Luck.
+- Do not add separate rarity flags for prefix/suffix/component combinations.
+- Item rarity/frequency continues to come from drachma value, bucket budget and item-generation rules.
+- Luck may increase the chance of a better opportunity, but a single roll can still produce an ordinary or awkward item.
+- Reward profiles remain the reward authority. Luck-aware reward amount/item-count behavior must come from DB/RPC/formula contracts, not Angular-side calculations.
+
+### Combat and manual gameplay boundary
+
+- Luck may influence combat RNG where configured, especially hit/evasion/critical surfaces.
+- Luck should not be turned into direct frontend-owned damage, HP or victory math.
+- Manual minigames and manual combat surfaces may show Luck contribution, but durable gameplay results must remain DB/RPC-owned.
+
+### DB/RPC and frontend authority
+
+- Luck formulas, caps, chances, reward ranges and item-generation effects are DB/RPC/formula-owned.
+- Angular may display DB/RPC preview/explainability outputs, but must not hardcode Luck curves, chance formulas, reward ranges or item-generation Luck effects.
+- If a needed Luck contract is missing, Codex must report a DB/RPC dependency rather than creating a frontend fallback formula.
+- Generated Supabase types must be regenerated after Luck-related DB/RPC migrations before frontend consumption.
+
+### Luck Lab boundary
+
+Luck Lab is a separate admin/balancer epic, not part of Luck Foundation.
+
+Luck Lab should provide visual preview/simulation tools such as sliders and comparisons for Luck influence, Trial Power, exploration RNG, reward/drop behavior and combat Luck previews.
+
+Luck Lab may chart and compare DB-returned values, but it must not become a second implementation of Luck formulas in Angular.
 
 ## Pending Future Decision — Player bug reporting system
 
@@ -865,84 +1008,6 @@ Epic W should ensure or repair minimal working content rather than creating dupl
 Frontend copy touched by Epic W should prioritize Polish for player, tester and admin feedback. Error handling is part of the contract: missing resolver, missing reward, failed reward grant, failed item generation, skipped configuration or unavailable action must be communicated clearly instead of failing silently.
 
 ---
-
-
-## Luck Foundation Decisions — 2026-05-05
-
-Luck Foundation is a closed decision topic. It must not be reopened unless a migrator, Codex or Reviewer returns a real blocker.
-
-Luck is a global RNG/opportunity stat. It is not only an item-drop stat and it is not a guarantee of success or perfect rewards.
-
-### Core semantics
-
-- Luck affects helpful gameplay RNG surfaces unless a specific RNG surface is explicitly Luck-excluded through configuration/design.
-- Luck improves opportunities and odds; it must not make success deterministic.
-- `luckInfluence` is the canonical derived influence value used by formulas. It is not raw Luck and must not be treated as 1:1 with `luckValue`.
-- `trial_power` is the canonical effective trial strength concept.
-- Conceptually, `trial_power = testedStatValue + luckInfluence`.
-- Difficulty, district and pressure/caps consume `trial_power` through their own formulas/config; they are not part of `trial_power` itself.
-- `nothing` is not a separate RNG surface. It is the deterministic fallback when trial opportunity and encounter rolls do not produce an outcome.
-- Anti-abuse is not gameplay RNG and must not be affected by Luck.
-
-### Gameplay surfaces affected by Luck
-
-Luck Foundation covers, at minimum:
-
-- item/drop opportunity, value bucket, quality and affix chances;
-- reward amount and reward item-count ranges where DB reward contracts expose Luck-aware behavior;
-- trial opportunity;
-- trial manifestation;
-- trial power;
-- challenge auto-resolve success chance;
-- manual trial/minigame difficulty through `trial_power`, not by giving the frontend formula authority;
-- exploration encounter fallback / non-trial encounter chance;
-- combat RNG surfaces such as hit, evasion, critical chance and critical-damage context where the DB formula/config contract exposes them.
-
-### Item generation and rewards
-
-- The existing item generation model remains: value bucket, quality, base item, optional prefix, optional suffix and existing budget behavior.
-- Do not create a second item rarity system for Luck.
-- Do not add separate rarity flags for prefix/suffix/component combinations.
-- Item rarity/frequency continues to come from drachma value, bucket budget and item-generation rules.
-- Luck may increase the chance of a better opportunity, but a single roll can still produce an ordinary or awkward item.
-- Reward profiles remain the reward authority. Luck-aware reward amount/item-count behavior must come from DB/RPC/formula contracts, not Angular-side calculations.
-
-### Combat and manual gameplay boundary
-
-- Luck may influence combat RNG where configured, especially hit/evasion/critical surfaces.
-- Luck should not be turned into direct frontend-owned damage, HP or victory math.
-- Manual minigames and manual combat surfaces may show Luck contribution, but durable gameplay results must remain DB/RPC-owned.
-
-### DB/RPC and frontend authority
-
-- Luck formulas, caps, chances, reward ranges and item-generation effects are DB/RPC/formula-owned.
-- Angular may display DB/RPC preview/explainability outputs, but must not hardcode Luck curves, chance formulas, reward ranges or item-generation Luck effects.
-- If a needed Luck contract is missing, Codex must report a DB/RPC dependency rather than creating a frontend fallback formula.
-- Generated Supabase types must be regenerated after Luck-related DB/RPC migrations before frontend consumption.
-
-### Luck Lab boundary
-
-Luck Lab is a separate admin/balancer epic, not part of Luck Foundation.
-
-Luck Lab should provide visual preview/simulation tools such as sliders and comparisons for:
-
-- `luckValue`;
-- `testedStatValue`;
-- difficulty;
-- district;
-- `luckInfluence`;
-- `trial_power`;
-- trial opportunity;
-- trial manifestation;
-- auto-resolve success chance;
-- encounter fallback chance;
-- combat hit/evasion/critical/critical-damage context where DB exposes it;
-- drop single-roll preview;
-- drop distribution simulation;
-- Luck 0 vs Luck X comparisons;
-- human-readable explanations of what changed.
-
-Luck Lab may compare and visualize DB-returned values, but it must not become the authority for persistent gameplay results.
 
 ## Formula Runtime Decisions — 2026-05-01
 

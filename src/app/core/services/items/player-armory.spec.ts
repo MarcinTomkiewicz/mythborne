@@ -117,6 +117,25 @@ describe('PlayerArmory', () => {
     expect(backend.delete).not.toHaveBeenCalled();
     expect(backend.upsert).not.toHaveBeenCalled();
   });
+
+  it('preserves the visibility_limit returned by the DB/RPC read model', async () => {
+    backend.rpc.and.callFake(<T>(rpcName: string): Observable<T> => {
+      if (rpcName === RPC.get_hero_armory_visibility_state) {
+        return of([visibilityRow({ visibility_limit: 123 })] as T);
+      }
+
+      if (rpcName === RPC.get_hero_armory_items) {
+        return of([] as T);
+      }
+
+      return of([] as T);
+    });
+
+    const result = await firstValueFrom(service.getArmory());
+
+    expect(result.visibility.visibilityLimit).toBe(123);
+    expect(result.visibility.visibilityLimitSource).toBe('visible_item_capacity');
+  });
 });
 
 function visibilityRow(

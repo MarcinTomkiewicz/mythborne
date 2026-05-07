@@ -21,10 +21,54 @@ This document is intentionally compact. For exact DB/RPC/helper inventory, consu
 ---
 
 
+## Server Events Foundation Planning Context — 2026-05-07
+
+Server Events are a closed-enough design topic for DB/RPC foundation planning. They are not yet an implemented gameplay system in the current app context, and they should not be confused with the future Server Council voting system.
+
+Key implementation direction:
+
+- Server Events are server-scoped and affect every hero on the server.
+- Server Events have no per-district, per-guild, per-rank, per-origin or per-player scope in v1.
+- Only one Server Event may be active per server at a time.
+- Server Events are intended to be rare, powerful and irregular.
+- Server Events may be positive, negative or mixed.
+- Events require lore-facing name, description and helper/copy metadata that can be edited by admin/content tools.
+- Default event duration is one week, but duration is admin/config-owned.
+- Server Events may modify base stats, all stats, Luck, derived stats, combat-derived values and normal requirement checks.
+- Server Events must not directly change manual minigame mechanics such as Walking Dead speed. Effects should flow through existing stat/derived/Luck/runtime paths.
+- Requirement modifiers such as `-15%` apply to normal requirements such as item and building requirements, but not to Prestige/district entry gates.
+- Server Events should not permanently rewrite hero stats or requirement definitions. They are runtime effect sources consumed by DB/read-model/resolver logic.
+- Angular must not calculate event effects as authority.
+
+Activation direction:
+
+- Admin/operator tooling may manually start an event and manual start ignores cooldown.
+- Cooldown counts from the actual end of the last event, including manually started events.
+- Automatic system roll can run after a configurable cooldown, default 14 days, with configurable roll chance, default 10%.
+- If automatic roll succeeds, the system picks one active eligible event uniformly from the pool and starts it immediately.
+- Events do not have weights in the current design.
+- Automatic events can start even if no players are currently online.
+- Manual end/reschedule is not normal production flow, but may exist as admin/sandbox/emergency correction tooling if the DB/admin design supports it.
+
+Future council compatibility:
+
+- Server Council voting is a future activation source, not part of the first Server Events implementation.
+- Future default: Council receives 5 event proposals, votes for 3 days, and the winning event starts according to configurable start rules.
+- Start after voting should support either a chosen weekday or X days after voting ends. Monday is only a default/proof-of-concept.
+- Basileus/E1 vote breaks ties when available.
+- If there is no Basileus/E1 and a tie remains, run a 24h runoff among tied events.
+- If runoff is still tied, randomly select among the still-tied events only.
+
+Implementation ordering:
+
+1. Migrator prepares Server Events DB/RPC/read-model foundation and clarifies how event effects integrate with existing bonus/runtime/requirement systems.
+2. Codex consumes active-event read models and admin/config paths only after generated types are current.
+3. Do not build Server Council, proposal voting UI, or Angular-side event effect calculation as part of the first Server Events foundation.
+
 
 ## Prestige Foundation Planning Context — 2026-05-07
 
-Prestige is now a closed-enough design topic for DB/RPC foundation planning and later Codex Epic Y frontend integration. It is not implemented yet in the current app state; current PvP work only stores context for a future Prestige system.
+Prestige is a closed-enough design topic for Codex Epic Y frontend integration. The current dump already contains Prestige DB foundation objects such as `hero_prestige`, `hero_prestige_ledger` and `apply_hero_prestige_delta(...)`; frontend/Codex must still wait for current generated types and consume the DB/RPC contract rather than inventing Prestige logic in Angular.
 
 Key implementation direction:
 
@@ -65,11 +109,12 @@ Prestige affects future privileges:
 - Relocation within a district whose requirement is no longer met and moving to higher districts are blocked.
 - Future council voting rights depend on meeting high Prestige/district requirements, but Server Council and server events are separate future systems.
 
-Migration and frontend ordering:
+Frontend ordering:
 
-1. Migrator prepares Prestige DB/RPC foundation and regenerates/generated types become available.
+1. Confirm current generated Supabase types include the Prestige DB/RPC contract.
 2. Codex Epic Y consumes the DB/RPC contract for frontend read models, rank display, PvP report summary, admin/debug/config surfaces, building/relocation gate display and rank-change notifications.
 3. Status files such as `current-todo.md`, `current-state-summary.md` and backlog completion markers are not updated until actual implementation is confirmed through the normal Codex/status workflow.
+
 
 ## Current High-Priority Implementation Context — 2026-05-03 late
 
@@ -130,7 +175,7 @@ The following R/PvP DB work has been applied and verified enough to continue:
 
 ### PvP result chain current note
 
-The old R-DB6 warning is obsolete. Current `database-current.md` records the PvP attack result chain as present in the current dump, including PvP attack results, resource consequences, XP rewards, future Prestige context, anti-abuse signal generation and report trigger layers.
+The old R-DB6 warning is obsolete. Current `database-current.md` and the current dump record the PvP attack result chain as present, including PvP attack results, resource consequences, XP rewards, Prestige context/foundation hooks, anti-abuse signal generation and report trigger layers.
 
 For any new PvP/combat work, re-read the current dump and `database-current.md`; do not use older in-chat R-DB6 drafts as source of truth.
 

@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Myth Sworn — Hero Creation Origin Carousel Prototype</title>
+  <!--
+    VISUAL REFERENCE ONLY.
+    Do not copy this CSS into Angular feature components.
+    Translate approved visual patterns into global SCSS tokens, vendor wrappers,
+    shared components, PrimeNG wrappers, or documented layout utilities.
+
+    Myth Sworn Hero Creation — Origin Carousel V2.
+
+    Scope of this screen:
+    - opened after the account shell "Create new hero" flow selects an eligible server;
+    - selected server context is already known and shown as readonly context;
+    - player chooses hero name and one origin;
+    - canonical origins for this prototype: Spartanin, Ateńczyk, Kreteńczyk, Koryntianin;
+    - origin artwork is intentionally central and animated so the screen does not feel static;
+    - origin descriptions, lore and bonuses are DB/admin-configurable content in production;
+    - concrete origin bonuses must be read from DB/config/read model, not hardcoded in Angular;
+    - hero creation must be one canonical DB/RPC/domain workflow;
+    - Angular must not direct-write hero, origin, Character Points, estate, resources, audit or onboarding tables;
+    - successful creation grants 1000 Character Points and a random free district A starting estate through backend workflow;
+    - after creation, route defaults to stat allocation as an in-game location, not as an account onboarding wizard step.
+  -->
+  <style>
+    :root {
+      --mb-bg-0: #06080c;
+      --mb-navy-0: #07111d;
+      --mb-gold-1: #9c6723;
+      --mb-gold-2: #c8923a;
+      --mb-gold-3: #f0c96f;
+      --mb-red: #b24b3b;
+      --mb-green: #6fa45d;
+      --mb-blue: #5ba3d5;
+      --mb-text-0: #f6edda;
+      --mb-text-1: #d7c8ab;
+      --mb-text-2: #9d8f75;
+      --mb-text-3: #6f675a;
+      --mb-line-soft: rgba(240, 201, 111, 0.12);
+      --mb-line: rgba(240, 201, 111, 0.24);
+      --mb-line-strong: rgba(240, 201, 111, 0.44);
+      --mb-sidebar-w: 17rem;
+      --mb-radius-xl: 1.35rem;
+      --mb-font-display: Georgia, "Times New Roman", serif;
+      --mb-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--mb-font-ui);
+      color: var(--mb-text-0);
+      background:
+        radial-gradient(circle at 16% 8%, rgba(200,146,58,.16), transparent 28rem),
+        radial-gradient(circle at 82% 6%, rgba(91,163,213,.18), transparent 35rem),
+        radial-gradient(circle at 48% 82%, rgba(150,114,204,.11), transparent 34rem),
+        linear-gradient(135deg, var(--mb-bg-0), #080b11 38%, #050608 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .13;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+    button, input { font: inherit; color: inherit; }
+
+    .mb-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--mb-sidebar-w) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .mb-topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(14rem, 1fr) auto minmax(14rem, 1fr);
+      align-items: center;
+      gap: 1rem;
+      padding: .65rem 1rem;
+      border-bottom: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,201,111,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem rgba(0,0,0,.42);
+    }
+    .mb-topbar-left,
+    .mb-topbar-right { display: flex; align-items: center; gap: .55rem; min-width: 0; }
+    .mb-topbar-right { justify-content: flex-end; }
+    .mb-brand { display: flex; align-items: center; justify-content: center; gap: .7rem; min-width: 16rem; }
+    .mb-brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-strong);
+      background:
+        radial-gradient(circle at 34% 24%, #fff0b9 0, var(--mb-gold-3) 22%, var(--mb-gold-1) 48%, #251509 70%, var(--mb-navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,201,111,.22);
+      position: relative;
+    }
+    .mb-brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .mb-brand-title { font-family: var(--mb-font-display); font-size: 1.65rem; letter-spacing: .11em; text-transform: uppercase; color: var(--mb-gold-3); line-height: 1; }
+    .mb-brand-subtitle { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; margin-top: .18rem; text-align: center; }
+
+    .mb-chip, .mb-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-soft);
+      color: var(--mb-text-1);
+      background: rgba(7,10,14,.45);
+      white-space: nowrap;
+    }
+    .mb-chip { min-height: 2.15rem; padding: .38rem .72rem; background: linear-gradient(180deg, rgba(15,23,33,.75), rgba(6,9,13,.78)); box-shadow: inset 0 1px rgba(255,255,255,.04); }
+    .mb-chip strong { color: var(--mb-text-0); }
+    .mb-badge { padding: .25rem .55rem; font-size: .77rem; }
+    .mb-badge--gold { color: var(--mb-gold-3); border-color: rgba(240,201,111,.32); }
+    .mb-badge--green { color: #bde6b0; border-color: rgba(111,164,93,.46); }
+    .mb-badge--blue { color: #b9def3; border-color: rgba(91,163,213,.46); }
+    .mb-badge--red { color: #f2b4aa; border-color: rgba(178,75,59,.46); }
+    .mb-badge--warning { color: #f1d08a; border-color: rgba(240,201,111,.34); }
+
+    .mb-sidebar {
+      grid-area: sidebar;
+      padding: 1rem .8rem;
+      border-right: 1px solid var(--mb-line-soft);
+      background: linear-gradient(180deg, rgba(7,11,17,.84), rgba(5,7,10,.88));
+      backdrop-filter: blur(12px);
+    }
+    .mb-account-card {
+      padding: .9rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: var(--mb-radius-xl);
+      background: linear-gradient(180deg, rgba(20,32,47,.72), rgba(8,12,18,.74)), radial-gradient(circle at 80% 0%, rgba(240,201,111,.16), transparent 10rem);
+      box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.2);
+    }
+    .mb-account-label { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+    .mb-account-name { font-weight: 800; color: var(--mb-text-0); line-height: 1.25; }
+    .mb-account-sub { color: var(--mb-text-3); font-size: .82rem; margin-top: .2rem; }
+
+    .mb-nav-section-title { margin: 1.05rem 0 .45rem .55rem; color: var(--mb-text-3); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; }
+    .mb-nav-list { display: grid; gap: .28rem; margin: 0; padding: 0; list-style: none; }
+    .mb-nav-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      padding: .67rem .68rem;
+      color: var(--mb-text-1);
+      text-decoration: none;
+      border-radius: .85rem;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      transition: 120ms ease;
+    }
+    .mb-nav-button:hover,
+    .mb-nav-button.is-active { color: var(--mb-text-0); border-color: rgba(240,201,111,.16); background: linear-gradient(90deg, rgba(240,201,111,.13), rgba(45,110,159,.12)); }
+    .mb-nav-button.is-active { box-shadow: inset 3px 0 0 var(--mb-gold-2); }
+    .mb-nav-icon { width: 1.65rem; height: 1.65rem; border-radius: .55rem; display: grid; place-items: center; background: rgba(240,201,111,.08); color: var(--mb-gold-2); border: 1px solid rgba(240,201,111,.08); flex: 0 0 auto; font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+
+    .mb-main { grid-area: main; padding: 1.1rem; display: grid; align-content: start; }
+    .mb-page { width: min(1240px, 100%); margin: 0 auto; }
+
+    .mb-stage {
+      position: relative;
+      overflow: hidden;
+      min-height: calc(100vh - 6.5rem);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: 1.65rem;
+      border: 1px solid rgba(240,201,111,.20);
+      background:
+        radial-gradient(circle at 50% 16%, rgba(240,201,111,.14), transparent 22rem),
+        radial-gradient(circle at 76% 54%, rgba(91,163,213,.16), transparent 26rem),
+        linear-gradient(145deg, rgba(6,9,14,.9), rgba(9,20,32,.72), rgba(5,7,10,.95));
+      box-shadow: 0 1rem 2.6rem rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.05);
+    }
+    .mb-stage::after {
+      content: "ΓΕΝΕΣΙΣ";
+      position: absolute;
+      left: 50%;
+      top: 54%;
+      transform: translate(-50%, -50%) rotate(-7deg);
+      font-family: var(--mb-font-display);
+      font-size: clamp(4rem, 11vw, 10rem);
+      letter-spacing: .20em;
+      color: rgba(240,201,111,.032);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .mb-stage-header,
+    .mb-layout,
+    .mb-stage-footer { position: relative; z-index: 1; }
+    .mb-kicker { color: var(--mb-gold-2); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; margin: 0 0 .45rem; }
+    .mb-title { margin: 0; font-family: var(--mb-font-display); font-size: clamp(2.25rem, 4vw, 4rem); line-height: .98; color: var(--mb-gold-3); text-shadow: 0 0 1.4rem rgba(240,201,111,.12); }
+    .mb-copy { margin: .7rem 0 0; max-width: 78rem; color: var(--mb-text-1); line-height: 1.55; }
+    .mb-meta-row { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .75rem; }
+
+    .mb-layout { display: grid; grid-template-columns: minmax(42rem, 1fr) minmax(20rem, .43fr); gap: 1rem; align-items: stretch; }
+    .mb-panel, .mb-side-card, .mb-detail-card {
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.14);
+      background: linear-gradient(180deg, rgba(9,15,23,.74), rgba(6,9,13,.82));
+      box-shadow: inset 0 1px rgba(255,255,255,.035), 0 1rem 2.2rem rgba(0,0,0,.25);
+    }
+    .mb-panel { padding: 1rem; display: grid; gap: 1rem; align-content: start; min-height: 36rem; }
+    .mb-side-panel { display: grid; gap: 1rem; }
+    .mb-side-card { padding: .95rem; }
+    .mb-panel-title, .mb-side-card h3 { margin: 0; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.25rem; }
+    .mb-side-card h3 { font-size: 1.15rem; margin-bottom: .55rem; }
+    .mb-panel-subtitle, .mb-side-card p { margin: .2rem 0 0; color: var(--mb-text-2); line-height: 1.45; font-size: .88rem; }
+
+    .mb-context-card {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: .75rem;
+      align-items: center;
+      padding: .75rem;
+      border-radius: 1.05rem;
+      border: 1px solid rgba(240,201,111,.12);
+      background: rgba(7,10,14,.34);
+    }
+    .mb-symbol {
+      width: 3.2rem;
+      height: 3.2rem;
+      border-radius: .95rem;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(240,201,111,.18);
+      background: rgba(240,201,111,.08);
+      color: var(--mb-gold-3);
+      font-family: var(--mb-font-display);
+      font-size: 1.45rem;
+      font-weight: 900;
+      box-shadow: 0 0 1rem rgba(240,201,111,.12);
+    }
+    .mb-context-card strong { display: block; color: var(--mb-text-0); }
+    .mb-context-card span { color: var(--mb-text-2); font-size: .86rem; }
+
+    .mb-form-grid { display: grid; gap: 1rem; }
+    .mb-field { display: grid; gap: .4rem; max-width: 34rem; }
+    .mb-field label { color: var(--mb-text-3); font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; }
+    .mb-input {
+      min-height: 2.85rem;
+      width: 100%;
+      border-radius: .95rem;
+      border: 1px solid rgba(240,201,111,.18);
+      background: rgba(7,10,14,.72);
+      color: var(--mb-text-0);
+      padding: .55rem .75rem;
+      outline: none;
+    }
+    .mb-input:focus { border-color: rgba(240,201,111,.48); box-shadow: 0 0 0 3px rgba(240,201,111,.08); }
+    .mb-field-hint { color: var(--mb-text-3); font-size: .82rem; line-height: 1.35; }
+
+    .mb-origin-stage {
+      position: relative;
+      display: grid;
+      grid-template-columns: 3rem minmax(0, 1fr) 3rem;
+      gap: .75rem;
+      align-items: center;
+      min-height: 28rem;
+      padding: .8rem;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(240,201,111,.12);
+      background:
+        radial-gradient(circle at center 20%, rgba(240,201,111,.12), transparent 17rem),
+        radial-gradient(circle at 15% 70%, rgba(91,163,213,.08), transparent 14rem),
+        rgba(7,10,14,.34);
+      overflow: hidden;
+    }
+    .mb-carousel-button {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 999px;
+      border: 1px solid rgba(240,201,111,.22);
+      background: rgba(8,12,18,.66);
+      cursor: pointer;
+      color: var(--mb-gold-3);
+      font-size: 1.45rem;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 .7rem 1.4rem rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.04);
+      z-index: 2;
+    }
+    .mb-carousel-button:hover,
+    .mb-carousel-button:focus-visible { outline: none; border-color: rgba(240,201,111,.55); background: rgba(240,201,111,.12); }
+
+    .mb-carousel-window {
+      position: relative;
+      min-height: 26rem;
+      perspective: 1200px;
+      overflow: hidden;
+    }
+    .mb-origin-slide {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: minmax(17rem, .58fr) minmax(17rem, .42fr);
+      gap: 1rem;
+      align-items: stretch;
+      opacity: 0;
+      transform: translateX(0) scale(.88) rotateY(0deg);
+      pointer-events: none;
+      transition: opacity 260ms ease, transform 360ms ease, filter 260ms ease;
+      filter: saturate(.7) brightness(.7);
+    }
+    .mb-origin-slide.is-active {
+      opacity: 1;
+      transform: translateX(0) scale(1) rotateY(0deg);
+      pointer-events: auto;
+      filter: none;
+      z-index: 3;
+    }
+    .mb-origin-slide.is-left {
+      opacity: .38;
+      transform: translateX(-54%) scale(.82) rotateY(24deg);
+      z-index: 1;
+    }
+    .mb-origin-slide.is-right {
+      opacity: .38;
+      transform: translateX(54%) scale(.82) rotateY(-24deg);
+      z-index: 1;
+    }
+    .mb-origin-slide.is-hidden { opacity: 0; transform: scale(.72); }
+
+    .mb-origin-art {
+      min-height: 25rem;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(240,201,111,.25);
+      background:
+        var(--origin-art),
+        radial-gradient(circle at 50% 25%, rgba(240,201,111,.25), transparent 11rem),
+        linear-gradient(145deg, rgba(39,28,17,.9), rgba(7,10,14,.92));
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 1rem 2.2rem rgba(0,0,0,.36), inset 0 0 0 1px rgba(255,255,255,.05);
+    }
+    .mb-origin-art::before {
+      content: "";
+      position: absolute;
+      inset: .85rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(240,201,111,.34);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.5), inset 0 0 2rem rgba(0,0,0,.42);
+      pointer-events: none;
+    }
+    .mb-origin-art::after {
+      content: attr(data-sigil);
+      position: absolute;
+      right: 1.15rem;
+      bottom: .55rem;
+      font-family: var(--mb-font-display);
+      font-size: 6rem;
+      color: rgba(240,201,111,.16);
+      text-shadow: 0 0 1.3rem rgba(0,0,0,.9);
+      pointer-events: none;
+    }
+    .mb-origin-art-label {
+      position: absolute;
+      left: 1.1rem;
+      top: 1.1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      z-index: 2;
+    }
+
+    .mb-origin-info {
+      min-height: 25rem;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(240,201,111,.14);
+      background: linear-gradient(180deg, rgba(12,18,27,.82), rgba(6,9,13,.82));
+      padding: 1rem;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      gap: .75rem;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-origin-info h3 {
+      margin: 0;
+      font-family: var(--mb-font-display);
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      color: var(--mb-gold-3);
+      line-height: .95;
+    }
+    .mb-origin-info p { margin: 0; color: var(--mb-text-1); line-height: 1.48; }
+    .mb-origin-lore {
+      color: var(--mb-text-2);
+      font-size: .9rem;
+      border-left: 2px solid rgba(240,201,111,.28);
+      padding-left: .75rem;
+    }
+    .mb-bonus-grid { display: grid; gap: .45rem; align-content: start; }
+    .mb-bonus-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: .65rem;
+      align-items: center;
+      padding: .52rem .62rem;
+      border-radius: .8rem;
+      border: 1px solid rgba(240,201,111,.1);
+      background: rgba(7,10,14,.34);
+    }
+    .mb-bonus-row span { color: var(--mb-text-2); font-size: .85rem; }
+    .mb-bonus-row strong { color: var(--mb-gold-3); }
+    .mb-bonus-row.is-negative strong { color: #f2b4aa; }
+    .mb-bonus-row.is-unknown strong { color: var(--mb-text-3); }
+
+    .mb-origin-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: .55rem;
+    }
+    .mb-origin-tab {
+      min-height: 4.3rem;
+      display: grid;
+      grid-template-columns: auto minmax(0,1fr);
+      gap: .5rem;
+      align-items: center;
+      padding: .55rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(240,201,111,.11);
+      background: rgba(7,10,14,.35);
+      cursor: pointer;
+      text-align: left;
+      color: var(--mb-text-1);
+    }
+    .mb-origin-tab:hover,
+    .mb-origin-tab:focus-visible { outline: none; border-color: rgba(240,201,111,.42); }
+    .mb-origin-tab.is-selected { border-color: rgba(240,201,111,.52); background: rgba(240,201,111,.10); box-shadow: inset 0 0 0 1px rgba(240,201,111,.1); }
+    .mb-origin-tab .mb-symbol { width: 2.4rem; height: 2.4rem; border-radius: .75rem; font-size: 1.08rem; }
+    .mb-origin-tab strong { display: block; color: var(--mb-text-0); line-height: 1.1; }
+    .mb-origin-tab span { display: block; margin-top: .1rem; color: var(--mb-text-3); font-size: .75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .mb-dots { display: flex; justify-content: center; gap: .35rem; }
+    .mb-dot {
+      width: .58rem;
+      height: .58rem;
+      border-radius: 999px;
+      border: 1px solid rgba(240,201,111,.32);
+      background: rgba(240,201,111,.08);
+      cursor: pointer;
+    }
+    .mb-dot.is-active { width: 1.4rem; background: var(--mb-gold-2); }
+
+    .mb-detail-card { padding: 1rem; display: grid; gap: .85rem; }
+    .mb-summary-list, .mb-rule-list { display: grid; gap: .5rem; }
+    .mb-summary-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; padding: .5rem .55rem; border-radius: .75rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.34); }
+    .mb-summary-row span { color: var(--mb-text-3); font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; }
+    .mb-summary-row strong { color: var(--mb-gold-3); text-align: right; }
+    .mb-rule-list li { list-style: none; padding: .52rem .6rem; border-radius: .75rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.3); color: var(--mb-text-2); line-height: 1.35; font-size: .86rem; }
+
+    .mb-note { padding: .75rem .85rem; border-radius: 1rem; border: 1px solid rgba(91,163,213,.22); background: rgba(91,163,213,.08); color: var(--mb-text-1); line-height: 1.45; font-size: .9rem; }
+    .mb-note--warning { border-color: rgba(240,201,111,.24); background: rgba(240,201,111,.07); }
+    .mb-note strong { color: var(--mb-gold-3); }
+
+    .mb-button-row, .mb-stage-footer { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+    .mb-stage-footer { justify-content: space-between; padding: .85rem; border-radius: var(--mb-radius-xl); border: 1px solid rgba(240,201,111,.12); background: linear-gradient(180deg, rgba(9,15,23,.72), rgba(6,9,13,.78)); }
+    .mb-footer-copy { color: var(--mb-text-2); margin: .15rem 0 0; line-height: 1.4; font-size: .9rem; }
+    .mb-button { min-height: 2.55rem; padding: .58rem .9rem; border-radius: 999px; border: 1px solid var(--mb-line); color: var(--mb-text-0); background: linear-gradient(180deg, rgba(240,201,111,.2), rgba(91,58,19,.32)); cursor: pointer; box-shadow: inset 0 1px rgba(255,255,255,.07); }
+    .mb-button--primary { background: linear-gradient(180deg, rgba(240,201,111,.34), rgba(91,58,19,.46)); }
+    .mb-button--ghost { background: rgba(8,12,18,.54); color: var(--mb-text-1); }
+    .mb-button--danger { border-color: rgba(178,75,59,.42); background: rgba(178,75,59,.12); color: #f2b4aa; }
+    .mb-button[disabled] { opacity: .45; cursor: not-allowed; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+
+    @media (max-width: 1120px) {
+      .mb-app-shell { display: block; }
+      .mb-topbar { grid-template-columns: 1fr; }
+      .mb-brand { justify-content: flex-start; }
+      .mb-sidebar { border-right: 0; border-bottom: 1px solid var(--mb-line-soft); }
+      .mb-layout { grid-template-columns: 1fr; }
+      .mb-origin-slide { grid-template-columns: 1fr; overflow-y: auto; }
+      .mb-origin-art { min-height: 22rem; }
+      .mb-origin-info { min-height: auto; }
+    }
+    @media (max-width: 720px) {
+      .mb-main { padding: .75rem; }
+      .mb-stage { min-height: auto; padding: .75rem; }
+      .mb-topbar-left, .mb-topbar-right { overflow-x: auto; justify-content: flex-start; }
+      .mb-stage-footer { align-items: stretch; }
+      .mb-context-card { grid-template-columns: 1fr; }
+      .mb-origin-stage { grid-template-columns: 1fr; }
+      .mb-carousel-button { width: 100%; height: 2.6rem; }
+      .mb-carousel-window { min-height: 48rem; }
+      .mb-origin-slide.is-left, .mb-origin-slide.is-right { opacity: 0; transform: scale(.72); }
+      .mb-origin-strip { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left">
+        <span class="mb-chip">Account <strong>riad@example.test</strong></span>
+        <span class="mb-badge mb-badge--blue">authenticated</span>
+      </div>
+      <div class="mb-brand" aria-label="Myth Sworn">
+        <div class="mb-brand-mark"></div>
+        <div>
+          <div class="mb-brand-title">Myth Sworn</div>
+          <div class="mb-brand-subtitle">hero creation prototype</div>
+        </div>
+      </div>
+      <div class="mb-topbar-right">
+        <span class="mb-badge">public/account shell</span>
+        <span class="mb-badge mb-badge--gold">origin carousel</span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-account-card">
+        <div class="mb-account-label">Creating on</div>
+        <div class="mb-account-name">Athens Standard</div>
+        <div class="mb-account-sub">4217 / 5000 district A starts free</div>
+      </section>
+
+      <div class="mb-nav-section-title">Play</div>
+      <ul class="mb-nav-list">
+        <li><button class="mb-nav-button" type="button"><span class="mb-nav-icon">EN</span><span>Enter the game</span></button></li>
+        <li><button class="mb-nav-button is-active" type="button"><span class="mb-nav-icon">NW</span><span>Create new hero</span></button></li>
+      </ul>
+
+      <div class="mb-nav-section-title">Account</div>
+      <ul class="mb-nav-list">
+        <li><button class="mb-nav-button" type="button"><span class="mb-nav-icon">AC</span><span>Account settings</span></button></li>
+        <li><button class="mb-nav-button" type="button"><span class="mb-nav-icon">SO</span><span>Sign out</span></button></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main">
+      <div class="mb-page">
+        <section class="mb-stage">
+          <header class="mb-stage-header">
+            <p class="mb-kicker">Hero creation</p>
+            <h1 class="mb-title">Name your hero. Choose an origin.</h1>
+            <p class="mb-copy">This is the creation screen after an eligible server has already been selected. The origin selection is now a visual carousel: one large active artwork, side movement, quick tabs, DB-backed bonus placement and a stable creation summary.</p>
+            <div class="mb-meta-row">
+              <span class="mb-badge">server already selected</span>
+              <span class="mb-badge mb-badge--gold">name + origin only</span>
+              <span class="mb-badge">1000 Character Points</span>
+              <span class="mb-badge">random district A estate</span>
+            </div>
+          </header>
+
+          <section class="mb-layout">
+            <article class="mb-panel">
+              <section class="mb-context-card" aria-label="Selected server context">
+                <div class="mb-symbol">S</div>
+                <div>
+                  <strong>Athens Standard</strong>
+                  <span>Creation open. District A starting estate slots are available.</span>
+                </div>
+                <span class="mb-badge mb-badge--green">creation open</span>
+              </section>
+
+              <div class="mb-form-grid">
+                <div class="mb-field">
+                  <label for="heroName">Hero name</label>
+                  <input class="mb-input" id="heroName" value="Theron" autocomplete="off" />
+                  <div class="mb-field-hint">Names are unique per server. The same name may exist on another server.</div>
+                </div>
+
+                <div>
+                  <h2 class="mb-panel-title">Origin</h2>
+                  <p class="mb-panel-subtitle">Origin is selected once and should not be changed later except through a future explicit admin/correction workflow.</p>
+                </div>
+
+                <section class="mb-origin-stage" aria-label="Origin carousel">
+                  <button class="mb-carousel-button" id="prevOrigin" type="button" aria-label="Previous origin">‹</button>
+
+                  <div class="mb-carousel-window" id="carouselWindow">
+                    <article class="mb-origin-slide is-active" data-origin="spartan">
+                      <div class="mb-origin-art" data-sigil="Σ" style="--origin-art: linear-gradient(145deg, rgba(62,19,14,.72), rgba(7,10,14,.08)), url('assets/origins/spartan.png');">
+                        <div class="mb-origin-art-label">
+                          <span class="mb-badge mb-badge--gold">martial</span>
+                          <span class="mb-badge">shield-born</span>
+                        </div>
+                      </div>
+                      <div class="mb-origin-info">
+                        <h3>Spartanin</h3>
+                        <p>Wychowany w dyscyplinie, sile i prostym rachunku pola bitwy. Ten origin powinien komunikować bezpośredniość, ciężar decyzji i przewagę ciała nad słowem.</p>
+                        <div class="mb-origin-lore">Artwork slot: Spartan warrior with red cloak / lambda shield. In production this should come from an origin artwork field or asset registry.</div>
+                        <div class="mb-bonus-grid">
+                          <div class="mb-bonus-row is-unknown"><span>DB bonus 1</span><strong>from origin_bonuses/entity_bonuses</strong></div>
+                          <div class="mb-bonus-row is-unknown"><span>DB bonus 2</span><strong>not hardcoded</strong></div>
+                          <div class="mb-bonus-row is-unknown"><span>Possible penalty</span><strong>if configured</strong></div>
+                        </div>
+                        <div class="mb-meta-row"><span class="mb-badge mb-badge--warning">bonus values intentionally unresolved</span></div>
+                      </div>
+                    </article>
+
+                    <article class="mb-origin-slide is-right" data-origin="athenian">
+                      <div class="mb-origin-art" data-sigil="Α" style="--origin-art: linear-gradient(145deg, rgba(13,32,58,.72), rgba(7,10,14,.08)), url('assets/origins/athenian.png');">
+                        <div class="mb-origin-art-label">
+                          <span class="mb-badge mb-badge--blue">polis</span>
+                          <span class="mb-badge">owl shield</span>
+                        </div>
+                      </div>
+                      <div class="mb-origin-info">
+                        <h3>Ateńczyk</h3>
+                        <p>Obywatel agory, sądu i strategii. Ten origin powinien sprzyjać myśleniu, ocenie sytuacji i czytaniu intencji świata.</p>
+                        <div class="mb-origin-lore">Artwork slot: Athenian warrior with blue cloak / owl shield / Acropolis background.</div>
+                        <div class="mb-bonus-grid">
+                          <div class="mb-bonus-row is-unknown"><span>DB bonus 1</span><strong>from origin_bonuses/entity_bonuses</strong></div>
+                          <div class="mb-bonus-row is-unknown"><span>DB bonus 2</span><strong>not hardcoded</strong></div>
+                          <div class="mb-bonus-row is-unknown"><span>Possible penalty</span><strong>if configured</strong></div>
+                        </div>
+                        <div class="mb-meta-row"><span class="mb-badge mb-badge--warning">bonus values intentionally unresolved</span></div>
+                      </div>
+                    </article>
+
+                    <article class="mb-origin-slide is-hidden" data-origin="cretan">
+                      <div class="mb-origin-art" data-sigil="Κ" style="--origin-art: linear-gradient(145deg, rgba(12,68,72,.72), rgba(7,10,14,.08)), url('assets/origins/cretan.png');">
+                        <div class="mb-origin-art-label">
+                          <span class="mb-badge mb-badge--green">labyrinth</span>
+                          <span class="mb-badge">sea-born</span>
+                        </div>
+                      </div>
+                      <div class="mb-origin-info">
+                        <h3>Kreteńczyk</h3>
+                        <p>Człowiek wybrzeża, labiryntu i instynktu. Ten origin powinien czuć się bardziej ruchliwy, przebiegły i trudny do złapania.</p>
+                        <div class="mb-origin-lore">Artwork slot: Cretan archer with teal cloak / sea cliffs / goat shield.</div>
+                        <div class="mb-bonus-grid">
+                          <div class="mb-bonus-row is-unknown"><span>DB bonus 1</span><strong>from origin_bonuses/entity_bonuses</strong></div>
+                          <div class="mb-bonus-row is-unknown"><span>DB bonus 2</span><strong>not hardcoded</strong></div>
+                          <div class="mb-bonus-row is-unknown"><span>Possible penalty</span><strong>if configured</strong></div>
+                        </div>
+                        <div class="mb-meta-row"><span class="mb-badge mb-badge--warning">bonus values intentionally unresolved</span></div>
+                      </div>
+                    </article>
+
+                    <article class="mb-origin-slide is-left" data-origin="corinthian">
+                      <div class="mb-origin-art" data-sigil="Ϙ" style="--origin-art: linear-gradient(145deg, rgba(78,48,17,.72), rgba(7,10,14,.08)), url('assets/origins/corinthian.png');">
+                        <div class="mb-origin-art-label">
+                          <span class="mb-badge mb-badge--gold">trade</span>
+                          <span class="mb-badge">bull shield</span>
+                        </div>
+                      </div>
+                      <div class="mb-origin-info">
+                        <h3>Koryntianin</h3>
+                        <p>Syn portów, umów i zyskownych ryzyk. Ten origin powinien od razu komunikować bogactwo, szczęście i społeczny wpływ.</p>
+                        <div class="mb-origin-lore">Artwork slot: Corinthian warrior with decorated axe / bull shield / Minoan-Corinthian palette.</div>
+                        <div class="mb-bonus-grid">
+                          <div class="mb-bonus-row"><span>Luck</span><strong>+10</strong></div>
+                          <div class="mb-bonus-row is-unknown"><span>Other DB bonus</span><strong>from config</strong></div>
+                          <div class="mb-bonus-row is-unknown"><span>Possible penalty</span><strong>if configured</strong></div>
+                        </div>
+                        <div class="mb-meta-row"><span class="mb-badge mb-badge--gold">known remembered bonus</span></div>
+                      </div>
+                    </article>
+                  </div>
+
+                  <button class="mb-carousel-button" id="nextOrigin" type="button" aria-label="Next origin">›</button>
+                </section>
+
+                <div class="mb-dots" id="originDots" aria-label="Origin carousel position"></div>
+
+                <nav class="mb-origin-strip" aria-label="Quick origin selection">
+                  <button class="mb-origin-tab is-selected" type="button" data-tab-origin="spartan"><span class="mb-symbol">Σ</span><span><strong>Spartanin</strong><span>martial discipline</span></span></button>
+                  <button class="mb-origin-tab" type="button" data-tab-origin="athenian"><span class="mb-symbol">Α</span><span><strong>Ateńczyk</strong><span>polis and judgment</span></span></button>
+                  <button class="mb-origin-tab" type="button" data-tab-origin="cretan"><span class="mb-symbol">Κ</span><span><strong>Kreteńczyk</strong><span>labyrinth instinct</span></span></button>
+                  <button class="mb-origin-tab" type="button" data-tab-origin="corinthian"><span class="mb-symbol">Ϙ</span><span><strong>Koryntianin</strong><span>luck and trade</span></span></button>
+                </nav>
+
+                <div class="mb-note mb-note--warning">
+                  <strong>Bonus boundary:</strong> only Corinthian +10 Luck is shown because it was explicitly remembered. All other exact origin bonuses should come from the canonical DB/admin-configurable read model before production implementation.
+                </div>
+
+                <div class="mb-note mb-note--warning">
+                  <strong>Creation boundary:</strong> Create Hero must call the canonical backend workflow. Angular must not direct-write hero, origin, Character Points, estate, resources or audit tables.
+                </div>
+              </div>
+            </article>
+
+            <aside class="mb-side-panel">
+              <section class="mb-side-card">
+                <h3>Creation summary</h3>
+                <div class="mb-summary-list">
+                  <div class="mb-summary-row"><span>Server</span><strong>Athens Standard</strong></div>
+                  <div class="mb-summary-row"><span>Hero name</span><strong id="summaryName">Theron</strong></div>
+                  <div class="mb-summary-row"><span>Origin</span><strong id="summaryOrigin">Spartanin</strong></div>
+                  <div class="mb-summary-row"><span>Starting CP</span><strong>1000</strong></div>
+                  <div class="mb-summary-row"><span>Estate</span><strong>Random district A</strong></div>
+                </div>
+              </section>
+
+              <section class="mb-side-card">
+                <h3>Selected origin</h3>
+                <div class="mb-summary-list">
+                  <div class="mb-summary-row"><span>Style</span><strong id="summaryStyle">Martial</strong></div>
+                  <div class="mb-summary-row"><span>Known bonus</span><strong id="summaryKnownBonus">DB-backed</strong></div>
+                  <div class="mb-summary-row"><span>Artwork</span><strong id="summaryArtwork">Spartan</strong></div>
+                </div>
+                <p style="margin-top:.7rem;">This summary should update while the carousel moves, so the player always understands what will be submitted.</p>
+              </section>
+
+              <section class="mb-side-card">
+                <h3>After creation</h3>
+                <ul class="mb-rule-list">
+                  <li>The player is already inside the game after creation.</li>
+                  <li>Default first route is stat allocation.</li>
+                  <li>Stat allocation is not a forced tutorial lock.</li>
+                  <li>Later entries route existing heroes to dashboard.</li>
+                </ul>
+              </section>
+
+              <section class="mb-side-card">
+                <h3>Source of truth</h3>
+                <p>Origin labels, lore, bonuses and helper text must be displayed from DB/admin-configurable read model content. The carousel mechanics are the prototype direction; the exact balancing values are not Angular constants.</p>
+              </section>
+            </aside>
+          </section>
+
+          <footer class="mb-stage-footer">
+            <div>
+              <strong>Create hero</strong>
+              <p class="mb-footer-copy">Create the hero through backend workflow, then route to stat allocation as the default in-game location.</p>
+            </div>
+            <div class="mb-button-row">
+              <button class="mb-button mb-button--primary" id="createButton" type="button">Create hero</button>
+              <button class="mb-button mb-button--ghost" type="button">Back to server selection</button>
+              <button class="mb-button mb-button--danger" type="button">Cancel</button>
+            </div>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const originOrder = ['spartan', 'athenian', 'cretan', 'corinthian'];
+    const originMeta = {
+      spartan: {
+        title: 'Spartanin',
+        style: 'Martial',
+        knownBonus: 'DB-backed',
+        artwork: 'Spartan',
+      },
+      athenian: {
+        title: 'Ateńczyk',
+        style: 'Judgment',
+        knownBonus: 'DB-backed',
+        artwork: 'Athenian',
+      },
+      cretan: {
+        title: 'Kreteńczyk',
+        style: 'Labyrinth',
+        knownBonus: 'DB-backed',
+        artwork: 'Cretan',
+      },
+      corinthian: {
+        title: 'Koryntianin',
+        style: 'Trade / luck',
+        knownBonus: '+10 Luck',
+        artwork: 'Corinthian',
+      }
+    };
+
+    let activeIndex = 0;
+
+    const slides = [...document.querySelectorAll('.mb-origin-slide')];
+    const tabs = [...document.querySelectorAll('[data-tab-origin]')];
+    const dotsContainer = document.getElementById('originDots');
+    const summaryOrigin = document.getElementById('summaryOrigin');
+    const summaryStyle = document.getElementById('summaryStyle');
+    const summaryKnownBonus = document.getElementById('summaryKnownBonus');
+    const summaryArtwork = document.getElementById('summaryArtwork');
+    const summaryName = document.getElementById('summaryName');
+    const heroName = document.getElementById('heroName');
+    const createButton = document.getElementById('createButton');
+
+    originOrder.forEach((key, index) => {
+      const dot = document.createElement('button');
+      dot.className = 'mb-dot';
+      dot.type = 'button';
+      dot.setAttribute('aria-label', `Select ${originMeta[key].title}`);
+      dot.addEventListener('click', () => setOrigin(index));
+      dotsContainer.appendChild(dot);
+    });
+
+    function mod(n, m) {
+      return ((n % m) + m) % m;
+    }
+
+    function setOrigin(nextIndex) {
+      activeIndex = mod(nextIndex, originOrder.length);
+      const activeKey = originOrder[activeIndex];
+      const leftKey = originOrder[mod(activeIndex - 1, originOrder.length)];
+      const rightKey = originOrder[mod(activeIndex + 1, originOrder.length)];
+
+      slides.forEach(slide => {
+        const key = slide.dataset.origin;
+        slide.classList.toggle('is-active', key === activeKey);
+        slide.classList.toggle('is-left', key === leftKey);
+        slide.classList.toggle('is-right', key === rightKey);
+        slide.classList.toggle('is-hidden', key !== activeKey && key !== leftKey && key !== rightKey);
+      });
+
+      tabs.forEach(tab => tab.classList.toggle('is-selected', tab.dataset.tabOrigin === activeKey));
+      [...dotsContainer.children].forEach((dot, index) => dot.classList.toggle('is-active', index === activeIndex));
+
+      const meta = originMeta[activeKey];
+      summaryOrigin.textContent = meta.title;
+      summaryStyle.textContent = meta.style;
+      summaryKnownBonus.textContent = meta.knownBonus;
+      summaryArtwork.textContent = meta.artwork;
+    }
+
+    document.getElementById('prevOrigin').addEventListener('click', () => setOrigin(activeIndex - 1));
+    document.getElementById('nextOrigin').addEventListener('click', () => setOrigin(activeIndex + 1));
+    tabs.forEach(tab => tab.addEventListener('click', () => setOrigin(originOrder.indexOf(tab.dataset.tabOrigin))));
+
+    heroName.addEventListener('input', () => {
+      summaryName.textContent = heroName.value.trim() || '—';
+      createButton.disabled = !heroName.value.trim();
+    });
+    createButton.addEventListener('click', () => {
+      if (createButton.disabled) return;
+      createButton.textContent = 'Route to stat allocation';
+    });
+
+    setOrigin(0);
+  </script>
+</body>
+</html>

@@ -7190,6 +7190,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Locked items are not incorrectly treated as unusable equipment.
 - Shelf UI does not imply hidden items were deleted.
 
+**Implementation note:** S7 accepted on 2026-05-07 after the DB formula resolver fix and manual smoke. `/game/armory` now renders visible armory shelves and item cards from the DB/RPC-backed `ArmoryShelfState`; position `0` is the unsorted/drop area, player shelves preserve DB positions `1..10`, and items are joined only by matching `armory_shelf_position`. The UI renders `visibilityLimit` exactly from `get_hero_armory_visibility_state(...)` without hardcoded `30/35/40` or local recalculation; manual smoke confirmed armory level 1 shows `Limit 30`. Raw item layer IDs and raw visibility JSON/source strings are not shown in player-facing UI. No equip/unequip UI, DB/RPC changes or generated-type edits were made by Codex.
+
 ---
 
 ## Task S8 — Armory shelf management
@@ -10670,9 +10672,508 @@ Do a final frontend integration pass after Y1–Y9 to confirm Prestige works coh
 
 ---
 
-# Epic Z — Appeals and future moderation extensions
+# Epic Z — Server Events Frontend Integration
 
-## Task Z1 — Appeals parked design note
+## Epic goal
+
+Podłączyć frontend Mythsworn do DB/RPC foundation systemu Server Events po migracji migratora.
+
+Server Event jest globalnym, server-scoped, czasowym buffem/debuffem działającym na wszystkich bohaterów na serwerze. Frontend pokazuje aktywny event, admin pozwala zarządzać definicjami/aktywacją/configiem, ale Angular nie liczy efektów eventu jako authority.
+
+## Hard dependency
+
+Do not start this Epic until the migrator confirms:
+
+- Server Events DB/RPC foundation exists.
+- Generated Supabase types are regenerated and available.
+- Server event definitions/read model exists.
+- Server event effects/read model exists.
+- Active server event read path exists.
+- Admin event catalog/config read path exists.
+- Manual admin start RPC exists, or is explicitly missing and should be reported as blocker.
+- System roll/cooldown config read path exists if Z6 is attempted.
+- RLS/grants are defined.
+- Runtime/stat/Luck/requirement resolver integration is DB-owned.
+
+If any required DB/RPC contract is missing from generated types, stop and report DB/RPC blocker.
+
+## Canonical decisions
+
+- Server Event affects the whole server.
+- Server Event affects all heroes on that server.
+- No district/guild/rank/origin/player sub-scopes in v1.
+- Only one active Server Event per server.
+- Events are rare, powerful and irregular.
+- Events can be positive, negative or mixed.
+- Events require lore-facing name, description and helper/copy metadata.
+- Event copy must be DB/admin-configurable, not hardcoded in Angular.
+- Default duration is one week, but duration is DB/admin-configurable.
+- Admin can manually start an event.
+- Manual start ignores cooldown.
+- Cooldown counts from the actual end of the last event, including manually started events.
+- Automatic system roll can run after configurable cooldown, default 14 days.
+- Automatic roll chance default is 10%.
+- If automatic roll succeeds, system selects one active eligible event uniformly from the pool and starts it immediately.
+- Events do not have weights.
+- Automatic events can start even when no players are online.
+- Manual end/reschedule is not normal production flow, but may exist as admin/sandbox/emergency correction if DB supports it.
+- Server Events may modify base stats, all stats, Luck, derived stats, combat-derived values and normal requirement checks.
+- Requirement modifiers apply to normal requirements such as item/building requirements, but not Prestige/district entry gates.
+- Server Events must not directly alter manual minigame mechanics such as Walking Dead speed.
+- Event effects flow through DB/runtime resolver/read-model paths.
+- Angular must not calculate event effects as authority.
+
+## Future council compatibility, not part of Epic Z implementation
+
+Server Council voting is future work. Do not implement council voting in this Epic.
+
+Future direction only:
+
+- Council receives default 5 event proposals.
+- Voting lasts default 3 days.
+- Event starts by configurable rule: chosen weekday or X days after voting ends.
+- Basileus/E1 vote breaks ties when available.
+- If no Basileus/E1 and tie remains, run 24h runoff among tied events.
+- If still tied, randomly select among still-tied events only.
+
+---
+
+## Task Z1 — Server Event read models and mapper layer
+
+**Goal:**  
+Add typed frontend read models/mappers/services for Server Event definitions, effects, active event state and admin/debug state.
+
+**Scope:**
+
+- Read current generated database types and migrator-provided RPCs/views.
+- Add explicit domain/read models for:
+  - `ServerEventDefinition`;
+  - `ServerEventEffect`;
+  - `ActiveServerEvent`;
+  - `ServerEventRun`;
+  - `ServerEventActivationConfig`;
+  - `ServerEventAdminSummary`;
+  - `ServerEventEffectDisplayRow`.
+- Keep player-safe and admin/debug models separate if DB exposes separate read paths.
+- Map DB/RPC rows into explicit domain models.
+- Do not expose raw generated DB rows to components.
+- Do not compute stat/Luck/requirement effects in Angular.
+- Preserve raw technical keys only as secondary/admin metadata.
+- Use selected/current server context; no global fallback.
+
+**Out of scope:**
+
+- No DB/RPC changes.
+- No generated types regeneration.
+- No UI screen implementation beyond mapper/service tests if needed.
+- No event editor yet.
+- No manual start UI yet.
+- No status docs updates.
+
+**Acceptance criteria:**
+
+- Typed read models exist for definitions, effects, active event state and admin summary.
+- Player-safe model includes lore name/description/effect display, not raw SQL/debug internals.
+- Admin model may include technical keys/config/status where DB exposes them.
+- Missing DB contracts are reported as blockers, not faked.
+- No Angular-side effect calculation is introduced.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused mapper/service specs if added
+- `npm run build`
+
+**Required Codex report:**
+
+- task scope;
+- non-goals;
+- acceptance mapping;
+- verification;
+- reused / checked but not reused / new;
+- DB/RPC contract used;
+- generated types changed: no.
+
+---
+
+## Task Z2 — Active Server Event player indicator
+
+**Goal:**  
+Show a simple player-facing indicator for the currently active Server Event.
+
+**Scope:**
+
+- Use read models/services from Z1.
+- Add or extend one compact indicator in the game shell/topbar/sidebar area.
+- If no active event exists, show a clear neutral state such as “no active server event”.
+- If an event is active, show:
+  - lore name;
+  - lore description/helper text;
+  - remaining time/end time if DB exposes it;
+  - concise effect summary from DB/read model.
+- Do not create a large banner, report, archive or notification system.
+- Do not compute effective stat/Luck/requirement changes in Angular.
+- Use DB-provided/effect-display rows.
+- Use stale guards for selected server changes.
+- The indicator is not a notification producer and must not insert notification rows.
+
+**Out of scope:**
+
+- No admin editing.
+- No manual event start.
+- No event history page.
+- No Server Council.
+- No UI redesign.
+- No local hardcoded event copy.
+
+**Acceptance criteria:**
+
+- Player can see whether a Server Event is active.
+- Active event name/description/effects are DB-backed.
+- Indicator updates when selected server changes.
+- No Angular-side event authority is introduced.
+- Missing active event read path is reported as DB/RPC blocker.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused component/state specs if touched
+- `npm run build`
+
+**Manual smoke:**
+
+- Open game shell with no active event → neutral indicator appears.
+- Open game shell with active event → event name/description/effects appear.
+- Switch server context → stale old response does not overwrite current indicator.
+
+---
+
+## Task Z3 — Admin Server Event catalog read surface
+
+**Goal:**  
+Add an admin/read-only surface for inspecting configured Server Events and their effects.
+
+**Scope:**
+
+- Use admin read model from Z1.
+- Add route/section under appropriate admin balance/server operations area.
+- List Server Event definitions with:
+  - key;
+  - lore name;
+  - lore description;
+  - active/inactive status;
+  - default duration;
+  - effect summary;
+  - technical metadata as secondary/admin-only display.
+- Detail view should show effect rows:
+  - effect kind/target;
+  - operation;
+  - value;
+  - player-facing explanation if DB provides it.
+- Include clear diagnostics for unsupported/missing effect data.
+- Do not expose this as player UI.
+
+**Out of scope:**
+
+- No editing.
+- No manual start.
+- No config change-set integration.
+- No DB changes.
+- No Server Council proposal UI.
+
+**Acceptance criteria:**
+
+- Admin can inspect all Server Event definitions.
+- Admin can inspect event effects.
+- Technical keys are secondary, not the only visible label.
+- No local list of events/effects is hardcoded.
+- Missing DB metadata is shown as dependency/diagnostic.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused admin specs if added
+- `npm run build`
+
+**Manual smoke:**
+
+- Open Server Events admin catalog.
+- Confirm event definitions appear.
+- Open a definition/detail and confirm lore copy + effects are visible.
+
+---
+
+## Task Z4 — Server Event definition and effect editor
+
+**Goal:**  
+Allow admin to edit Server Event definitions and effects if canonical/governed DB write paths exist.
+
+**Scope:**
+
+- Use migrator-provided governed RPC/config workflow.
+- If governed write RPC/config-change-set path is missing, keep the screen read-only and report blocker. Do not add direct table write, local save, or optimistic fake mutation.
+- Editing should support where DB permits:
+  - lore name;
+  - lore description;
+  - helper/player-facing copy;
+  - active/inactive flag;
+  - default duration;
+  - effect rows.
+- Effect editor should support DB-provided effect kinds/targets/operators only.
+- Do not invent effect types in Angular.
+- If write path is missing, show/read-only dependency and report blocker.
+- Use Reactive Forms; no new `ngModel`.
+
+**Out of scope:**
+
+- No direct table writes.
+- No DB schema changes.
+- No manual start.
+- No system roll config.
+- No council voting/proposals.
+- No broad admin UI redesign.
+
+**Acceptance criteria:**
+
+- Admin can edit Server Event definitions only through canonical/governed path.
+- Admin can edit effects only if DB exposes safe write contract.
+- Missing write path is reported, not bypassed.
+- Event copy is editable through DB/admin path, not hardcoded.
+- No event weights are added or exposed.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused form/service specs if touched
+- `npm run build`
+
+**Manual smoke:**
+
+- Open event editor.
+- Change lore name/description in governed flow if available.
+- Save through canonical path.
+- Reload and confirm persisted values.
+- If write path absent, confirm clear dependency message.
+
+---
+
+## Task Z5 — Manual admin Server Event start
+
+**Goal:**  
+Add admin action to manually start a Server Event through canonical DB/RPC.
+
+**Scope:**
+
+- Use migrator-provided manual start RPC/domain operation.
+- Manual start ignores cooldown.
+- Starting an event must respect one-active-event-per-server rule enforced by DB.
+- UI should show:
+  - currently active event if any;
+  - candidate events available to start;
+  - duration/default duration;
+  - confirmation before start;
+  - result after start.
+- Use selected server context.
+- Include stale guards for selected server and active event reload.
+- If DB exposes emergency end/reschedule, surface only if explicitly present and label as correction/emergency/sandbox tool, not normal gameplay flow.
+
+**Out of scope:**
+
+- No Angular-side cooldown override logic.
+- No direct insert into event run tables.
+- No system roll trigger unless DB exposes an explicit admin/test RPC.
+- No council voting.
+- No player UI.
+
+**Acceptance criteria:**
+
+- Admin can manually start an event if DB/RPC allows it.
+- Manual start uses canonical RPC.
+- UI does not allow starting a second active event if DB says one is already active.
+- Manual start result reloads active event state.
+- Emergency end/reschedule is absent unless DB exposes explicit correction RPC.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused admin action specs if added
+- `npm run build`
+
+**Manual smoke:**
+
+- Select server.
+- Start an event manually.
+- Confirm active event appears in admin and player indicator.
+- Try starting another while one active → blocked by DB/read model/RPC.
+- Confirm cooldown is not enforced client-side for manual start.
+
+---
+
+## Task Z6 — Server Event system roll/cooldown config surface
+
+**Goal:**  
+Expose system activation settings for Server Events in admin UI.
+
+**Scope:**
+
+- Use DB config/read model exposed by migrator.
+- Show:
+  - cooldown duration, default 14 days;
+  - roll chance, default 10%;
+  - default event duration, default one week;
+  - next eligible roll info if DB exposes it;
+  - last event end timestamp;
+  - whether system roll is enabled.
+- Editing is allowed only through governed DB/config path.
+- If edit path is missing, show dependency and keep read-only.
+- Do not implement scheduler logic in Angular.
+- Do not fake next roll calculation if DB does not expose it.
+
+**Out of scope:**
+
+- No DB config schema changes.
+- No council voting config.
+- No manual start action; that is Z5.
+- No event definition editing; that is Z4.
+
+**Acceptance criteria:**
+
+- Admin can inspect system roll/cooldown config.
+- Admin can edit only through canonical/governed path if available.
+- No event weights are shown.
+- Missing next-roll data is shown as dependency, not calculated as authority by Angular.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused admin/config specs if touched
+- `npm run build`
+
+**Manual smoke:**
+
+- Open Server Event activation config.
+- Confirm cooldown/chance/default duration are visible.
+- If edit path exists, perform governed edit and reload.
+- If not, confirm read-only dependency message.
+
+---
+
+## Task Z7 — Active Server Event effect source display in runtime explainability
+
+**Goal:**  
+Show Server Event as a source in existing runtime/explainability surfaces where DB read models expose it.
+
+**Scope:**
+
+- Use DB/runtime/read-model output only.
+- Candidate surfaces:
+  - Luck breakdown;
+  - stat/derived stat explainability;
+  - requirement check explainability;
+  - combat/admin debug preview if DB exposes event source.
+- Display Server Event contribution as a source row, e.g. event name + effect summary.
+- Do not compute the contribution in Angular.
+- Do not add new formula calculations.
+- Do not alter manual minigame mechanics.
+- If DB does not expose event source rows yet, report DB/read-model follow-up.
+- Touch only surfaces that already expose compatible read-model source rows or are already in scope for this Epic.
+
+**Out of scope:**
+
+- No runtime DB changes.
+- No manual start/admin catalog.
+- No new player-facing event history.
+- No broad refactor of all stats screens.
+
+**Acceptance criteria:**
+
+- Where DB exposes event source rows, UI can show Server Event contribution.
+- No local event-effect math is introduced.
+- Missing read model is reported as dependency.
+- Existing explainability surfaces remain usable without active event.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused mapper/display specs if touched
+- `npm run build`
+
+**Manual smoke:**
+
+- With active `+Luck` event, open Luck breakdown and confirm event source appears if DB exposes it.
+- With requirement modifier event, open relevant requirement explanation and confirm event source appears if DB exposes it.
+- Confirm no effect is calculated/displayed from hardcoded Angular rules.
+
+---
+
+## Task Z8 — Server Event player/admin integration smoke
+
+**Goal:**  
+Perform a final frontend integration pass for Server Events after Z1–Z7.
+
+**Scope:**
+
+- Walk through:
+  - no active event indicator;
+  - active event indicator;
+  - admin event catalog;
+  - admin event detail/effect rows;
+  - manual start flow;
+  - activation config surface;
+  - event contribution in runtime explainability if DB exposes it.
+- Fix small integration issues within touched Server Event scope.
+- Report cleanup candidates:
+  - hardcoded event labels;
+  - old local event placeholders;
+  - stale active event cache;
+  - direct table write risks;
+  - missing generated types/read models.
+- Do not implement council voting.
+- Do not implement event history/archive unless already present and tiny to expose.
+
+**Out of scope:**
+
+- No DB/RPC changes.
+- No server council.
+- No player event archive.
+- No UI redesign.
+- No status docs updates.
+
+**Acceptance criteria:**
+
+- Player sees one active-event indicator.
+- Admin can inspect event definitions/effects.
+- Admin can manually start event if DB provides RPC.
+- Admin can inspect activation config.
+- Event effects are never calculated in Angular.
+- No raw/generated rows leak as long-term UI models.
+- No backlog/status docs are updated.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused specs for touched areas
+- `npm run build`
+- static grep:
+  - no direct writes to server event tables;
+  - no event weights in frontend;
+  - no Angular-side effect calculators;
+  - no hardcoded event definitions as runtime source.
+
+**Manual smoke:**
+
+- No active event → player indicator shows neutral state.
+- Manual admin start → event becomes active.
+- Player indicator shows active event.
+- Admin catalog/detail shows lore and effects.
+- Active event remains one-per-server.
+- If runtime read model exposes effect sources, explainability surfaces show event source.
+
+---
+
+# Epic AA — Appeals and future moderation extensions
+
+## Task AA1 — Appeals parked design note
 
 **Goal:** Keep appeal concept available without implementing yet.
 
@@ -10687,7 +11188,7 @@ Do a final frontend integration pass after Y1–Y9 to confirm Prestige works coh
 
 ---
 
-## Task Z2 — Future relationship/report types as configurable dictionaries
+## Task AA2 — Future relationship/report types as configurable dictionaries
 
 **Goal:** Ensure future types like mercenary/equipment rental remain configurable.
 

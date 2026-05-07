@@ -74,6 +74,93 @@
     </div>
   </section>
 
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Armory shelves</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Visible items</h3>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        @if (armory.isLoading()) {
+          <span class="tag-badge tag-badge--muted">Loading</span>
+        } @else if (armory.status() === 'error') {
+          <span class="tag-badge tag-badge--warn">Unavailable</span>
+        } @else if (armory.visibility(); as visibility) {
+          <span class="tag-badge tag-badge--info">
+            {{ visibility.visibleItemCount }} / {{ visibility.totalOwnedItemCount }} visible
+          </span>
+          <span class="tag-badge tag-badge--muted">
+            Limit {{ visibility.visibilityLimit }}
+          </span>
+          @if (visibility.hiddenItemCount > 0) {
+            <span class="tag-badge tag-badge--muted">
+              {{ visibility.hiddenItemCount }} stored beyond visible range
+            </span>
+          }
+        }
+      </div>
+    </div>
+
+    @if (armory.error()) {
+      <p class="status-text-warning mb-md">{{ armory.error() }}</p>
+    }
+
+    @if (armory.visibility()) {
+      <p class="muted-text mb-md">
+        Armory visibility is capped by the current estate capacity. Items outside
+        the visible range still exist in the database and are not shown here.
+      </p>
+    }
+
+    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+      @for (shelf of armory.shelves(); track shelf.position) {
+        <article class="mg-card p-md flex-col gap-sm">
+          <div class="flex-row-between-center gap-sm">
+            <div class="flex-col gap-xs">
+              <strong class="heading-color">{{ shelfLabel(shelf) }}</strong>
+              <span class="muted-text">
+                @if (shelf.isUnsortedDropArea) {
+                  Position 0
+                } @else {
+                  Shelf {{ shelf.position }}
+                }
+              </span>
+            </div>
+            <span class="tag-badge tag-badge--muted">
+              {{ shelf.visibleItems.length }} visible
+            </span>
+          </div>
+
+          @if (shelf.visibleItems.length) {
+            <div class="flex-col gap-sm">
+              @for (item of shelf.visibleItems; track item.itemId) {
+                <div class="mg-card p-sm flex-col gap-xs">
+                  <div class="flex-row-between-center flex-col-sm gap-xs">
+                    <strong>{{ item.name }}</strong>
+                    <span [class]="armoryItemStatusClass(item)">
+                      {{ armoryItemStatusLabel(item) }}
+                    </span>
+                  </div>
+                  @if (item.drachmaValue !== null) {
+                    <span class="muted-text">{{ item.drachmaValue }} drachma</span>
+                  }
+                  @if (item.lifecycleStatus !== 'active') {
+                    <span class="muted-text">
+                      Owned item reserved by market state.
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="muted-text mb-0">No visible items on this shelf.</p>
+          }
+        </article>
+      }
+    </div>
+  </section>
+
   <app-item-generator-panel [luck]="page.heroLuck()" />
 </div>
 

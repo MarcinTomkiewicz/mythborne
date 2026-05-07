@@ -96,6 +96,54 @@ describe('item-equipment-mappers', () => {
       .toEqual(['active', 'locked_trade', 'locked_auction']);
   });
 
+  it('maps DB-like shelfPosition JSON without duplicating visible items across shelves', () => {
+    const readModel = mapHeroArmoryReadModel(
+      'hero-1',
+      visibilityRow({
+        unsorted_json: {
+          shelfPosition: 0,
+          name: 'Unsorted',
+          isPersisted: false,
+        },
+        shelves_json: Array.from({ length: 10 }, (_, index) => ({
+          id: `shelf-${index + 1}`,
+          shelfPosition: index + 1,
+          name: `Shelf ${index + 1}`,
+          isPersisted: true,
+        })),
+      }),
+      [
+        armoryItemRow({
+          item_id: 'item-unsorted',
+          item_name: 'Fresh Drop Blade',
+          armory_shelf_position: 0,
+          is_unsorted: true,
+          shelf_name: 'Unsorted',
+        }),
+        armoryItemRow({
+          item_id: 'item-shelf-2',
+          item_name: 'Shelf Two Spear',
+          armory_shelf_position: 2,
+          shelf_name: 'Shelf 2',
+        }),
+      ],
+    );
+
+    expect(readModel.shelves.map((shelf) => shelf.position))
+      .toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(readModel.shelves[0].isUnsortedDropArea).toBeTrue();
+    expect(readModel.shelves[0].visibleItems.map((item) => item.itemId))
+      .toEqual(['item-unsorted']);
+    expect(readModel.shelves[2].visibleItems.map((item) => item.itemId))
+      .toEqual(['item-shelf-2']);
+    expect(readModel.shelves.flatMap((shelf) =>
+      shelf.visibleItems.filter((item) => item.itemId === 'item-unsorted'),
+    ).length).toBe(1);
+    expect(readModel.shelves.flatMap((shelf) =>
+      shelf.visibleItems.filter((item) => item.itemId === 'item-shelf-2'),
+    ).length).toBe(1);
+  });
+
   it('maps item hero_id to ownerHeroId, not loadout hero context', () => {
     const item = mapItemSummary(itemRow({
       hero_id: 'owner-hero-1',

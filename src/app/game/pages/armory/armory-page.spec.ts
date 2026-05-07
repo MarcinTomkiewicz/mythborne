@@ -1,10 +1,17 @@
 import { Component, input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
+  ArmoryItemSummary,
+  ArmoryShelfReadModel,
+  ArmoryVisibilitySummary,
   EquipmentSlot,
   EquippedItemSummary,
 } from '../../../core/domain/item/item-equipment.model';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
+import {
+  ArmoryShelfReadStatus,
+  ArmoryShelfState,
+} from '../../../core/services/items/armory-shelf.state';
 import {
   CurrentEquipmentReadStatus,
   CurrentEquipmentState,
@@ -15,10 +22,12 @@ describe('ArmoryPage', () => {
   let fixture: ComponentFixture<ArmoryPage>;
   let page: FakeArmoryPageFacade;
   let equipment: FakeCurrentEquipmentState;
+  let armory: FakeArmoryShelfState;
 
   beforeEach(async () => {
     page = new FakeArmoryPageFacade();
     equipment = new FakeCurrentEquipmentState();
+    armory = new FakeArmoryShelfState();
 
     await TestBed.configureTestingModule({
       imports: [ArmoryPage],
@@ -29,6 +38,7 @@ describe('ArmoryPage', () => {
           providers: [
             { provide: ArmoryPageFacade, useValue: page },
             { provide: CurrentEquipmentState, useValue: equipment },
+            { provide: ArmoryShelfState, useValue: armory },
           ],
         },
       })
@@ -41,6 +51,7 @@ describe('ArmoryPage', () => {
   it('loads armory support data and current equipment on init', () => {
     expect(page.loadData).toHaveBeenCalled();
     expect(equipment.load).toHaveBeenCalled();
+    expect(armory.load).toHaveBeenCalled();
   });
 
   it('renders all paperdoll slots with empty slot copy', () => {
@@ -161,6 +172,125 @@ describe('ArmoryPage', () => {
     expect(text).toContain('Main hand');
     expect(text).toContain('Ring 2');
   });
+
+  it('renders DB-owned armory shelves including unsorted position zero', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 0,
+        name: 'Unsorted',
+        isUnsortedDropArea: true,
+        visibleItems: [armoryItem({
+          itemId: 'item-drop',
+          name: 'Fresh Drop Blade',
+          shelfPosition: 0,
+          shelfName: 'Unsorted',
+        })],
+      }),
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [armoryItem({
+          itemId: 'item-weapon',
+          name: 'Shelf Sword',
+          shelfPosition: 1,
+          shelfName: 'Weapons',
+        })],
+      }),
+    ], visibility({ visibleItemCount: 2, totalOwnedItemCount: 5, hiddenItemCount: 3 }));
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Unsorted');
+    expect(text).toContain('Position 0');
+    expect(text).toContain('Weapons');
+    expect(text).toContain('Shelf 1');
+    expect(text).toContain('Fresh Drop Blade');
+    expect(text).toContain('Shelf Sword');
+    expect(text).toContain('2 / 5 visible');
+    expect(text).toContain('3 stored beyond visible range');
+  });
+
+  it('renders locked armory items as owned items without unusable copy', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 2,
+        name: 'Market reserves',
+        visibleItems: [armoryItem({
+          itemId: 'item-locked',
+          name: 'Auction Locked Shield',
+          lifecycleStatus: 'locked_auction',
+          shelfPosition: 2,
+          shelfName: 'Market reserves',
+        })],
+      }),
+    ]);
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Auction Locked Shield');
+    expect(text).toContain('Locked Auction');
+    expect(text).toContain('Owned item reserved by market state.');
+    expect(text).not.toContain('unusable');
+  });
+
+  it('renders armory item value without exposing raw layer ids', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [armoryItem({
+          itemId: 'item-layered',
+          name: 'Named Blade',
+          generationBaseId: 'uuid-base-raw',
+          prefixAffixId: 'uuid-prefix-raw',
+          suffixAffixId: 'uuid-suffix-raw',
+          drachmaValue: 42,
+        })],
+      }),
+    ]);
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Named Blade');
+    expect(text).toContain('42 drachma');
+    expect(text).not.toContain('uuid-base-raw');
+    expect(text).not.toContain('uuid-prefix-raw');
+    expect(text).not.toContain('uuid-suffix-raw');
+  });
+
+  it('does not render raw visibility source data in player-facing shelf UI', () => {
+    armory.setShelves([
+      armoryShelf({ position: 1, name: 'Shelf From DB' }),
+    ], visibility({
+      sourceConfigJson: { target: 'visible_item_capacity', secretDebug: true },
+      unsortedJson: { rawInternal: 'unsorted-json' },
+      shelvesJson: [{ rawInternal: 'shelf-json' }],
+    }));
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Shelf From DB');
+    expect(text).toContain('current estate capacity');
+    expect(text).not.toContain('visible_item_capacity');
+    expect(text).not.toContain('secretDebug');
+    expect(text).not.toContain('unsorted-json');
+    expect(text).not.toContain('shelf-json');
+  });
+
+  it('renders the exact DB/RPC visibility limit without local recalculation', () => {
+    armory.setShelves([
+      armoryShelf({ position: 1, name: 'Shelf From DB' }),
+    ], visibility({
+      visibilityLimit: 123,
+      visibilityLimitSource: 'visible_item_capacity',
+    }));
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Limit 123');
+    expect(text).not.toContain('Limit 30');
+    expect(text).not.toContain('Limit 35');
+  });
 });
 
 class FakeArmoryPageFacade {
@@ -185,6 +315,33 @@ class FakeCurrentEquipmentState {
     this.slots.set(slots);
     this.status.set(slots.length ? 'loaded' : 'empty');
     this.isEmpty.set(slots.length === 0);
+  }
+}
+
+class FakeArmoryShelfState {
+  readonly status = signal<ArmoryShelfReadStatus>('empty');
+  readonly error = signal<string | null>(null);
+  readonly isLoading = signal(false);
+  readonly isEmpty = signal(true);
+  readonly shelves = signal<ArmoryShelfReadModel[]>([]);
+  readonly visibleItems = signal<ArmoryItemSummary[]>([]);
+  readonly visibility = signal<ArmoryVisibilitySummary | null>(null);
+  readonly load = jasmine.createSpy('load');
+
+  setShelves(
+    shelves: ArmoryShelfReadModel[],
+    summary: ArmoryVisibilitySummary = visibility({
+      visibleItemCount: shelves.reduce(
+        (count, shelf) => count + shelf.visibleItems.length,
+        0,
+      ),
+    }),
+  ): void {
+    this.shelves.set(shelves);
+    this.visibleItems.set(shelves.flatMap((shelf) => shelf.visibleItems));
+    this.visibility.set(summary);
+    this.status.set(summary.visibleItemCount ? 'loaded' : 'empty');
+    this.isEmpty.set(summary.visibleItemCount === 0);
   }
 }
 
@@ -231,6 +388,62 @@ function equippedItem(
     suffixKey: null,
     suffixName: null,
     isRuntimeUsable: true,
+    ...overrides,
+  };
+}
+
+function armoryShelf(
+  overrides: Partial<ArmoryShelfReadModel> = {},
+): ArmoryShelfReadModel {
+  return {
+    shelfId: 'shelf-1',
+    heroId: 'hero-1',
+    position: 1,
+    name: 'Shelf 1',
+    updatedAt: '2026-05-07T10:00:00Z',
+    isPersisted: true,
+    isUnsortedDropArea: false,
+    visibleItems: [],
+    ...overrides,
+  };
+}
+
+function armoryItem(
+  overrides: Partial<ArmoryItemSummary> = {},
+): ArmoryItemSummary {
+  return {
+    itemId: 'item-1',
+    ownerHeroId: 'hero-1',
+    serverId: 'server-1',
+    name: 'Bronze Blade',
+    description: null,
+    lifecycleStatus: 'active',
+    generationBaseId: 'base-1',
+    generationQualityKey: 'normal',
+    prefixAffixId: null,
+    suffixAffixId: null,
+    armoryShelfPosition: 1,
+    drachmaValue: 20,
+    shelfPosition: 1,
+    shelfName: 'Shelf 1',
+    requirementPreview: null,
+    ...overrides,
+  };
+}
+
+function visibility(
+  overrides: Partial<ArmoryVisibilitySummary> = {},
+): ArmoryVisibilitySummary {
+  return {
+    visibleItemCount: 0,
+    totalOwnedItemCount: 0,
+    hiddenItemCount: 0,
+    visibilityLimit: 0,
+    visibilityLimitSource: 'visible_item_capacity',
+    sourceConfigJson: { target: 'visible_item_capacity' },
+    visibleStatuses: ['active', 'locked_trade', 'locked_auction'],
+    unsortedJson: {},
+    shelvesJson: [],
     ...overrides,
   };
 }

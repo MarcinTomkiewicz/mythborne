@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Myth Sworn — Account Entry Shell Prototype</title>
+  <!--
+    VISUAL REFERENCE ONLY.
+    Do not copy this CSS into Angular feature components.
+    Translate approved visual patterns into global SCSS tokens, vendor wrappers,
+    shared components, PrimeNG wrappers, or documented layout utilities.
+
+    Myth Sworn Account Entry Shell V1.
+
+    Scope of this screen:
+    - this is NOT a 4-step wizard;
+    - this is the logged-in account/public shell before entering a specific server+hero game shell;
+    - account shell navigation is different from in-game navigation;
+    - "Enter the game" shows servers/heroes where the account already has a playable hero;
+    - "Create new hero / Join new world" shows standard servers where the account is eligible to create a hero, plus optionally blocked/full servers;
+    - stat allocation is not a step in account onboarding; after hero creation the player is already in-game and may be routed to stat allocation as the default first location;
+    - server list, hero existence, sandbox privileges and district A capacity/free slots are DB/RPC/read-model owned;
+    - Angular must not infer hero context, estate capacity, creation eligibility or sandbox multi-hero rules from client-only logic.
+  -->
+  <style>
+    :root {
+      --mb-bg-0: #06080c;
+      --mb-navy-0: #07111d;
+      --mb-gold-1: #9c6723;
+      --mb-gold-2: #c8923a;
+      --mb-gold-3: #f0c96f;
+      --mb-red: #b24b3b;
+      --mb-green: #6fa45d;
+      --mb-blue: #5ba3d5;
+      --mb-text-0: #f6edda;
+      --mb-text-1: #d7c8ab;
+      --mb-text-2: #9d8f75;
+      --mb-text-3: #6f675a;
+      --mb-line-soft: rgba(240, 201, 111, 0.12);
+      --mb-line: rgba(240, 201, 111, 0.24);
+      --mb-line-strong: rgba(240, 201, 111, 0.44);
+      --mb-sidebar-w: 17rem;
+      --mb-radius-xl: 1.35rem;
+      --mb-font-display: Georgia, "Times New Roman", serif;
+      --mb-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--mb-font-ui);
+      color: var(--mb-text-0);
+      background:
+        radial-gradient(circle at 16% 8%, rgba(200,146,58,.16), transparent 28rem),
+        radial-gradient(circle at 82% 6%, rgba(91,163,213,.18), transparent 35rem),
+        radial-gradient(circle at 48% 82%, rgba(150,114,204,.11), transparent 34rem),
+        linear-gradient(135deg, var(--mb-bg-0), #080b11 38%, #050608 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .13;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+    button, select { font: inherit; color: inherit; }
+
+    .mb-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--mb-sidebar-w) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .mb-topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(14rem, 1fr) auto minmax(14rem, 1fr);
+      align-items: center;
+      gap: 1rem;
+      padding: .65rem 1rem;
+      border-bottom: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,201,111,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem rgba(0,0,0,.42);
+    }
+    .mb-topbar-left,
+    .mb-topbar-right { display: flex; align-items: center; gap: .55rem; min-width: 0; }
+    .mb-topbar-right { justify-content: flex-end; }
+    .mb-brand { display: flex; align-items: center; justify-content: center; gap: .7rem; min-width: 16rem; }
+    .mb-brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-strong);
+      background:
+        radial-gradient(circle at 34% 24%, #fff0b9 0, var(--mb-gold-3) 22%, var(--mb-gold-1) 48%, #251509 70%, var(--mb-navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,201,111,.22);
+      position: relative;
+    }
+    .mb-brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .mb-brand-title { font-family: var(--mb-font-display); font-size: 1.65rem; letter-spacing: .11em; text-transform: uppercase; color: var(--mb-gold-3); line-height: 1; }
+    .mb-brand-subtitle { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; margin-top: .18rem; text-align: center; }
+
+    .mb-chip, .mb-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-soft);
+      color: var(--mb-text-1);
+      background: rgba(7,10,14,.45);
+      white-space: nowrap;
+    }
+    .mb-chip { min-height: 2.15rem; padding: .38rem .72rem; background: linear-gradient(180deg, rgba(15,23,33,.75), rgba(6,9,13,.78)); box-shadow: inset 0 1px rgba(255,255,255,.04); }
+    .mb-chip strong { color: var(--mb-text-0); }
+    .mb-badge { padding: .25rem .55rem; font-size: .77rem; }
+    .mb-badge--gold { color: var(--mb-gold-3); border-color: rgba(240,201,111,.32); }
+    .mb-badge--green { color: #bde6b0; border-color: rgba(111,164,93,.46); }
+    .mb-badge--blue { color: #b9def3; border-color: rgba(91,163,213,.46); }
+    .mb-badge--red { color: #f2b4aa; border-color: rgba(178,75,59,.46); }
+    .mb-badge--warning { color: #f1d08a; border-color: rgba(240,201,111,.34); }
+
+    .mb-sidebar {
+      grid-area: sidebar;
+      padding: 1rem .8rem;
+      border-right: 1px solid var(--mb-line-soft);
+      background: linear-gradient(180deg, rgba(7,11,17,.84), rgba(5,7,10,.88));
+      backdrop-filter: blur(12px);
+    }
+    .mb-account-card {
+      padding: .9rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: var(--mb-radius-xl);
+      background: linear-gradient(180deg, rgba(20,32,47,.72), rgba(8,12,18,.74)), radial-gradient(circle at 80% 0%, rgba(240,201,111,.16), transparent 10rem);
+      box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.2);
+    }
+    .mb-account-label { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+    .mb-account-name { font-weight: 800; color: var(--mb-text-0); line-height: 1.25; }
+    .mb-account-sub { color: var(--mb-text-3); font-size: .82rem; margin-top: .2rem; }
+
+    .mb-nav-section-title { margin: 1.05rem 0 .45rem .55rem; color: var(--mb-text-3); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; }
+    .mb-nav-list { display: grid; gap: .28rem; margin: 0; padding: 0; list-style: none; }
+    .mb-nav-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      padding: .67rem .68rem;
+      color: var(--mb-text-1);
+      text-decoration: none;
+      border-radius: .85rem;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      transition: 120ms ease;
+    }
+    .mb-nav-button:hover,
+    .mb-nav-button.is-active { color: var(--mb-text-0); border-color: rgba(240,201,111,.16); background: linear-gradient(90deg, rgba(240,201,111,.13), rgba(45,110,159,.12)); }
+    .mb-nav-button.is-active { box-shadow: inset 3px 0 0 var(--mb-gold-2); }
+    .mb-nav-icon { width: 1.65rem; height: 1.65rem; border-radius: .55rem; display: grid; place-items: center; background: rgba(240,201,111,.08); color: var(--mb-gold-2); border: 1px solid rgba(240,201,111,.08); flex: 0 0 auto; font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+
+    .mb-main { grid-area: main; padding: 1.1rem; display: grid; align-content: start; }
+    .mb-page { width: min(1180px, 100%); margin: 0 auto; }
+
+    .mb-stage {
+      position: relative;
+      overflow: hidden;
+      min-height: calc(100vh - 6.5rem);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: 1.65rem;
+      border: 1px solid rgba(240,201,111,.20);
+      background:
+        radial-gradient(circle at 50% 16%, rgba(240,201,111,.14), transparent 22rem),
+        radial-gradient(circle at 76% 54%, rgba(91,163,213,.16), transparent 26rem),
+        linear-gradient(145deg, rgba(6,9,14,.9), rgba(9,20,32,.72), rgba(5,7,10,.95));
+      box-shadow: 0 1rem 2.6rem rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.05);
+    }
+    .mb-stage::after {
+      content: "ΑΡΧΗ";
+      position: absolute;
+      left: 50%;
+      top: 54%;
+      transform: translate(-50%, -50%) rotate(-7deg);
+      font-family: var(--mb-font-display);
+      font-size: clamp(5rem, 13vw, 12rem);
+      letter-spacing: .22em;
+      color: rgba(240,201,111,.032);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .mb-stage-header,
+    .mb-layout,
+    .mb-stage-footer { position: relative; z-index: 1; }
+    .mb-kicker { color: var(--mb-gold-2); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; margin: 0 0 .45rem; }
+    .mb-title { margin: 0; font-family: var(--mb-font-display); font-size: clamp(2.25rem, 4vw, 4rem); line-height: .98; color: var(--mb-gold-3); text-shadow: 0 0 1.4rem rgba(240,201,111,.12); }
+    .mb-copy { margin: .7rem 0 0; max-width: 72rem; color: var(--mb-text-1); line-height: 1.55; }
+    .mb-meta-row { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .75rem; }
+
+    .mb-layout { display: grid; grid-template-columns: minmax(34rem, 1fr) minmax(19rem, .45fr); gap: 1rem; align-items: stretch; }
+    .mb-panel, .mb-side-card, .mb-detail-card {
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.14);
+      background: linear-gradient(180deg, rgba(9,15,23,.74), rgba(6,9,13,.82));
+      box-shadow: inset 0 1px rgba(255,255,255,.035), 0 1rem 2.2rem rgba(0,0,0,.25);
+    }
+    .mb-panel { padding: 1rem; display: grid; gap: 1rem; align-content: start; min-height: 31rem; }
+    .mb-side-panel { display: grid; gap: 1rem; }
+    .mb-side-card { padding: .95rem; }
+    .mb-panel-title, .mb-side-card h3 { margin: 0; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.25rem; }
+    .mb-side-card h3 { font-size: 1.15rem; margin-bottom: .55rem; }
+    .mb-panel-subtitle, .mb-side-card p { margin: .2rem 0 0; color: var(--mb-text-2); line-height: 1.45; font-size: .88rem; }
+
+    .mb-view { display: none; gap: 1rem; }
+    .mb-view.is-active { display: grid; }
+
+    .mb-select-block { display: grid; gap: .45rem; max-width: 34rem; }
+    .mb-select-block label { color: var(--mb-text-3); font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; }
+    .mb-select { min-height: 2.85rem; width: 100%; border-radius: .95rem; border: 1px solid rgba(240,201,111,.18); background: rgba(7,10,14,.72); color: var(--mb-text-0); padding: .55rem .75rem; outline: none; }
+    .mb-select:focus { border-color: rgba(240,201,111,.48); box-shadow: 0 0 0 3px rgba(240,201,111,.08); }
+
+    .mb-detail-card { padding: 1rem; display: grid; gap: .85rem; }
+    .mb-detail-header { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .8rem; align-items: start; }
+    .mb-symbol { width: 3.6rem; height: 3.6rem; border-radius: 1rem; display: grid; place-items: center; border: 1px solid rgba(240,201,111,.18); background: rgba(240,201,111,.08); color: var(--mb-gold-3); font-family: var(--mb-font-display); font-size: 1.55rem; font-weight: 900; box-shadow: 0 0 1rem rgba(240,201,111,.12); }
+    .mb-detail-card h3 { margin: 0; font-family: var(--mb-font-display); font-size: 1.4rem; color: var(--mb-text-0); }
+    .mb-detail-card p { margin: .2rem 0 0; color: var(--mb-text-2); line-height: 1.45; }
+
+    .mb-summary-list, .mb-rule-list, .mb-hero-list { display: grid; gap: .5rem; }
+    .mb-summary-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; padding: .5rem .55rem; border-radius: .75rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.34); }
+    .mb-summary-row span { color: var(--mb-text-3); font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; }
+    .mb-summary-row strong { color: var(--mb-gold-3); text-align: right; }
+    .mb-rule-list li { list-style: none; padding: .52rem .6rem; border-radius: .75rem; border: 1px solid rgba(240,201,111,.08); background: rgba(7,10,14,.3); color: var(--mb-text-2); line-height: 1.35; font-size: .86rem; }
+
+    .mb-hero-row { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: .65rem; align-items: center; padding: .7rem; border-radius: 1rem; border: 1px solid rgba(240,201,111,.1); background: rgba(7,10,14,.34); }
+    .mb-hero-row.is-selected { border-color: rgba(240,201,111,.42); background: rgba(240,201,111,.08); }
+    .mb-hero-row strong { color: var(--mb-text-0); }
+    .mb-hero-row span { color: var(--mb-text-2); font-size: .86rem; }
+
+    .mb-note { padding: .75rem .85rem; border-radius: 1rem; border: 1px solid rgba(91,163,213,.22); background: rgba(91,163,213,.08); color: var(--mb-text-1); line-height: 1.45; font-size: .9rem; }
+    .mb-note--warning { border-color: rgba(240,201,111,.24); background: rgba(240,201,111,.07); }
+    .mb-note--danger { border-color: rgba(178,75,59,.28); background: rgba(178,75,59,.09); }
+    .mb-note strong { color: var(--mb-gold-3); }
+
+    .mb-button-row, .mb-stage-footer { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+    .mb-stage-footer { justify-content: space-between; padding: .85rem; border-radius: var(--mb-radius-xl); border: 1px solid rgba(240,201,111,.12); background: linear-gradient(180deg, rgba(9,15,23,.72), rgba(6,9,13,.78)); }
+    .mb-footer-copy { color: var(--mb-text-2); margin: .15rem 0 0; line-height: 1.4; font-size: .9rem; }
+    .mb-button { min-height: 2.55rem; padding: .58rem .9rem; border-radius: 999px; border: 1px solid var(--mb-line); color: var(--mb-text-0); background: linear-gradient(180deg, rgba(240,201,111,.2), rgba(91,58,19,.32)); cursor: pointer; box-shadow: inset 0 1px rgba(255,255,255,.07); }
+    .mb-button--primary { background: linear-gradient(180deg, rgba(240,201,111,.34), rgba(91,58,19,.46)); }
+    .mb-button--ghost { background: rgba(8,12,18,.54); color: var(--mb-text-1); }
+    .mb-button--danger { border-color: rgba(178,75,59,.42); background: rgba(178,75,59,.12); color: #f2b4aa; }
+    .mb-button[disabled] { opacity: .45; cursor: not-allowed; }
+
+    @media (max-width: 1050px) {
+      .mb-app-shell { display: block; }
+      .mb-topbar { grid-template-columns: 1fr; }
+      .mb-brand { justify-content: flex-start; }
+      .mb-sidebar { border-right: 0; border-bottom: 1px solid var(--mb-line-soft); }
+      .mb-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      .mb-main { padding: .75rem; }
+      .mb-stage { min-height: auto; padding: .75rem; }
+      .mb-topbar-left, .mb-topbar-right { overflow-x: auto; justify-content: flex-start; }
+      .mb-stage-footer { align-items: stretch; }
+      .mb-detail-header, .mb-hero-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left">
+        <span class="mb-chip">Account <strong>riad@example.test</strong></span>
+        <span class="mb-badge mb-badge--blue">authenticated</span>
+      </div>
+      <div class="mb-brand" aria-label="Myth Sworn">
+        <div class="mb-brand-mark"></div>
+        <div>
+          <div class="mb-brand-title">Myth Sworn</div>
+          <div class="mb-brand-subtitle">account entry shell prototype</div>
+        </div>
+      </div>
+      <div class="mb-topbar-right">
+        <span class="mb-badge">public/account shell</span>
+        <span class="mb-badge mb-badge--gold">not in-game shell</span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-account-card">
+        <div class="mb-account-label">Signed in as</div>
+        <div class="mb-account-name">riad@example.test</div>
+        <div class="mb-account-sub">No active server selected in this shell.</div>
+      </section>
+
+      <div class="mb-nav-section-title">Play</div>
+      <ul class="mb-nav-list">
+        <li><button class="mb-nav-button is-active" type="button" data-view-button="enter"><span class="mb-nav-icon">EN</span><span>Enter the game</span></button></li>
+        <li><button class="mb-nav-button" type="button" data-view-button="join"><span class="mb-nav-icon">NW</span><span>Create new hero</span></button></li>
+      </ul>
+
+      <div class="mb-nav-section-title">Account</div>
+      <ul class="mb-nav-list">
+        <li><button class="mb-nav-button" type="button"><span class="mb-nav-icon">AC</span><span>Account settings</span></button></li>
+        <li><button class="mb-nav-button" type="button"><span class="mb-nav-icon">NT</span><span>Notifications</span></button></li>
+        <li><button class="mb-nav-button" type="button"><span class="mb-nav-icon">SO</span><span>Sign out</span></button></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main">
+      <div class="mb-page">
+        <section class="mb-stage">
+          <header class="mb-stage-header">
+            <p class="mb-kicker" id="pageKicker">Account entry</p>
+            <h1 class="mb-title" id="pageTitle">Enter the game</h1>
+            <p class="mb-copy" id="pageCopy">Choose one of the servers where this account already has a hero. After choosing, the player enters the in-game shell for that server and hero.</p>
+            <div class="mb-meta-row" id="pageBadges">
+              <span class="mb-badge">existing heroes only</span>
+              <span class="mb-badge mb-badge--gold">server + active hero context</span>
+              <span class="mb-badge">dashboard default</span>
+            </div>
+          </header>
+
+          <section class="mb-layout">
+            <article class="mb-panel">
+              <section class="mb-view is-active" id="view-enter">
+                <div>
+                  <h2 class="mb-panel-title">Choose hero context</h2>
+                  <p class="mb-panel-subtitle">This list contains servers where the logged-in account already has a playable hero. It is not a hero creation flow.</p>
+                </div>
+
+                <div class="mb-select-block">
+                  <label for="existingHeroSelect">Server / hero</label>
+                  <select class="mb-select" id="existingHeroSelect" aria-label="Choose existing hero context">
+                    <option value="athensTheron">Athens Standard — Theron</option>
+                    <option value="thebesMelite">Thebes Standard — Melite</option>
+                    <option value="sandboxTheron">Sandbox — Theron</option>
+                  </select>
+                </div>
+
+                <section class="mb-detail-card" aria-label="Selected hero detail">
+                  <div class="mb-detail-header">
+                    <div class="mb-symbol" id="enterSymbol">Θ</div>
+                    <div>
+                      <h3 id="enterTitle">Theron on Athens Standard</h3>
+                      <p id="enterCopy">Existing hero found. The default route is the dashboard/game shell, not stat allocation.</p>
+                      <div class="mb-meta-row" id="enterBadges">
+                        <span class="mb-badge mb-badge--green">active hero</span>
+                        <span class="mb-badge mb-badge--gold">dashboard</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mb-summary-list">
+                    <div class="mb-summary-row"><span>Server kind</span><strong id="enterServerKind">standard</strong></div>
+                    <div class="mb-summary-row"><span>Hero</span><strong id="enterHeroName">Theron</strong></div>
+                    <div class="mb-summary-row"><span>Level</span><strong id="enterLevel">12</strong></div>
+                    <div class="mb-summary-row"><span>Next route</span><strong>dashboard</strong></div>
+                  </div>
+                </section>
+              </section>
+
+              <section class="mb-view" id="view-join">
+                <div>
+                  <h2 class="mb-panel-title">Create new hero</h2>
+                  <p class="mb-panel-subtitle">Choose a server where this account is eligible to create a new hero. The next screen will collect hero name and origin.</p>
+                </div>
+
+                <div class="mb-select-block">
+                  <label for="newWorldSelect">Server</label>
+                  <select class="mb-select" id="newWorldSelect" aria-label="Choose server for new hero">
+                    <option value="athensOpen">Athens Standard — creation open</option>
+                    <option value="corinthFull">Corinth Standard — full</option>
+                    <option value="sandboxPrivileged">Sandbox — privileged creation</option>
+                  </select>
+                </div>
+
+                <section class="mb-detail-card" aria-label="Selected server detail">
+                  <div class="mb-detail-header">
+                    <div class="mb-symbol" id="joinSymbol">S</div>
+                    <div>
+                      <h3 id="joinTitle">Athens Standard</h3>
+                      <p id="joinCopy">This account has no hero on this standard server and creation is available.</p>
+                      <div class="mb-meta-row" id="joinBadges">
+                        <span class="mb-badge mb-badge--green">creation open</span>
+                        <span class="mb-badge mb-badge--gold">district A available</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mb-summary-list">
+                    <div class="mb-summary-row"><span>Server kind</span><strong id="joinServerKind">standard</strong></div>
+                    <div class="mb-summary-row"><span>Creation availability</span><strong id="joinCreation">open</strong></div>
+                    <div class="mb-summary-row"><span>District A starts</span><strong id="joinDistrict">4217 / 5000 free</strong></div>
+                    <div class="mb-summary-row"><span>Next route</span><strong id="joinRoute">hero creation</strong></div>
+                  </div>
+                </section>
+
+                <div class="mb-note mb-note--warning">
+                  <strong>Boundary:</strong> hero name and origin belong to the next screen. Origin options are Spartan, Athenian, Cretan and Corinthian, and their content must come from DB/admin-configurable data.
+                </div>
+              </section>
+            </article>
+
+            <aside class="mb-side-panel">
+              <section class="mb-side-card">
+                <h3>Shell rule</h3>
+                <p>This is the account/public shell. After entering a server+hero, navigation switches to the in-game shell for that hero context.</p>
+              </section>
+
+              <section class="mb-side-card">
+                <h3>Decision rules</h3>
+                <ul class="mb-rule-list">
+                  <li>Enter the game lists only existing playable hero contexts.</li>
+                  <li>Create new hero lists only eligible creation servers, with optional full/blocked servers shown as disabled or explanatory.</li>
+                  <li>Stat allocation is not an account-shell step; it is the first default in-game location after creation.</li>
+                  <li>Existing heroes return to dashboard, not to stat allocation.</li>
+                </ul>
+              </section>
+
+              <section class="mb-side-card">
+                <h3>Current action</h3>
+                <div class="mb-summary-list">
+                  <div class="mb-summary-row"><span>Mode</span><strong id="sideMode">Enter game</strong></div>
+                  <div class="mb-summary-row"><span>Result</span><strong id="sideResult">Dashboard</strong></div>
+                  <div class="mb-summary-row"><span>CTA</span><strong id="sideCta">Enter dashboard</strong></div>
+                </div>
+              </section>
+            </aside>
+          </section>
+
+          <footer class="mb-stage-footer">
+            <div>
+              <strong id="footerTitle">Enter dashboard</strong>
+              <p class="mb-footer-copy" id="footerCopy">Use the selected server and hero as active context, then open the in-game dashboard.</p>
+            </div>
+            <div class="mb-button-row">
+              <button class="mb-button mb-button--primary" id="primaryButton" type="button">Enter dashboard</button>
+              <button class="mb-button mb-button--ghost" type="button">Refresh account data</button>
+              <button class="mb-button mb-button--danger" type="button">Sign out</button>
+            </div>
+          </footer>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const enterStates = {
+      athensTheron: { symbol: 'Θ', title: 'Theron on Athens Standard', copy: 'Existing hero found. The default route is the dashboard/game shell, not stat allocation.', kind: 'standard', hero: 'Theron', level: '12', badges: ['active hero', 'dashboard'], badgeKinds: ['green', 'gold'] },
+      thebesMelite: { symbol: 'Μ', title: 'Melite on Thebes Standard', copy: 'Existing hero found on another standard server. Entering switches active server and active hero context.', kind: 'standard', hero: 'Melite', level: '4', badges: ['existing hero', 'switch context'], badgeKinds: ['green', 'default'] },
+      sandboxTheron: { symbol: 'Σ', title: 'Theron on Sandbox', copy: 'Sandbox/test hero context. Privileged users may have multiple sandbox heroes.', kind: 'sandbox/test', hero: 'Theron', level: '18', badges: ['testing', 'multi-hero'], badgeKinds: ['blue', 'gold'] }
+    };
+
+    const joinStates = {
+      athensOpen: { symbol: 'S', title: 'Athens Standard', copy: 'This account has no hero on this standard server and creation is available.', kind: 'standard', creation: 'open', district: '4217 / 5000 free', route: 'hero creation', badges: ['creation open', 'district A available'], badgeKinds: ['green', 'gold'], button: 'Create hero', disabled: false, result: 'Hero creation' },
+      corinthFull: { symbol: '!', title: 'Corinth Standard', copy: 'Creation is unavailable because no district A starting slots are free.', kind: 'standard', creation: 'blocked', district: '0 / 5000 free', route: 'choose another server', badges: ['creation blocked', 'district A full'], badgeKinds: ['red', 'warning'], button: 'Blocked', disabled: true, result: 'Blocked' },
+      sandboxPrivileged: { symbol: 'Σ', title: 'Sandbox', copy: 'Privileged sandbox context allows test hero creation and multi-hero switching.', kind: 'sandbox/test', creation: 'privileged', district: 'test server', route: 'hero creation / selector', badges: ['testing', 'privileged'], badgeKinds: ['blue', 'gold'], button: 'Create sandbox hero', disabled: false, result: 'Sandbox creation' }
+    };
+
+    const pageKicker = document.getElementById('pageKicker');
+    const pageTitle = document.getElementById('pageTitle');
+    const pageCopy = document.getElementById('pageCopy');
+    const pageBadges = document.getElementById('pageBadges');
+    const footerTitle = document.getElementById('footerTitle');
+    const footerCopy = document.getElementById('footerCopy');
+    const primaryButton = document.getElementById('primaryButton');
+    const sideMode = document.getElementById('sideMode');
+    const sideResult = document.getElementById('sideResult');
+    const sideCta = document.getElementById('sideCta');
+
+    function badgeClass(kind) {
+      if (kind === 'green') return 'mb-badge--green';
+      if (kind === 'blue') return 'mb-badge--blue';
+      if (kind === 'gold') return 'mb-badge--gold';
+      if (kind === 'red') return 'mb-badge--red';
+      if (kind === 'warning') return 'mb-badge--warning';
+      return '';
+    }
+
+    function badges(labels, kinds) {
+      return labels.map((label, index) => `<span class="mb-badge ${badgeClass(kinds[index])}">${label}</span>`).join('');
+    }
+
+    function setView(view) {
+      document.querySelectorAll('[data-view-button]').forEach(button => button.classList.toggle('is-active', button.dataset.viewButton === view));
+      document.getElementById('view-enter').classList.toggle('is-active', view === 'enter');
+      document.getElementById('view-join').classList.toggle('is-active', view === 'join');
+      if (view === 'enter') {
+        pageKicker.textContent = 'Account entry';
+        pageTitle.textContent = 'Enter the game';
+        pageCopy.textContent = 'Choose one of the servers where this account already has a hero. After choosing, the player enters the in-game shell for that server and hero.';
+        pageBadges.innerHTML = '<span class="mb-badge">existing heroes only</span><span class="mb-badge mb-badge--gold">server + active hero context</span><span class="mb-badge">dashboard default</span>';
+        sideMode.textContent = 'Enter game';
+        renderEnter(document.getElementById('existingHeroSelect').value);
+      } else {
+        pageKicker.textContent = 'Join new world';
+        pageTitle.textContent = 'Create new hero';
+        pageCopy.textContent = 'Choose a server where this account can create a new hero. Hero name and origin are collected on the next screen.';
+        pageBadges.innerHTML = '<span class="mb-badge">eligible creation servers</span><span class="mb-badge mb-badge--gold">district A capacity visible</span><span class="mb-badge">origin next screen</span>';
+        sideMode.textContent = 'Create hero';
+        renderJoin(document.getElementById('newWorldSelect').value);
+      }
+    }
+
+    function renderEnter(key) {
+      const state = enterStates[key];
+      document.getElementById('enterSymbol').textContent = state.symbol;
+      document.getElementById('enterTitle').textContent = state.title;
+      document.getElementById('enterCopy').textContent = state.copy;
+      document.getElementById('enterBadges').innerHTML = badges(state.badges, state.badgeKinds);
+      document.getElementById('enterServerKind').textContent = state.kind;
+      document.getElementById('enterHeroName').textContent = state.hero;
+      document.getElementById('enterLevel').textContent = state.level;
+      footerTitle.textContent = 'Enter dashboard';
+      footerCopy.textContent = 'Use the selected server and hero as active context, then open the in-game dashboard.';
+      primaryButton.textContent = 'Enter dashboard';
+      primaryButton.disabled = false;
+      sideResult.textContent = 'Dashboard';
+      sideCta.textContent = 'Enter dashboard';
+    }
+
+    function renderJoin(key) {
+      const state = joinStates[key];
+      document.getElementById('joinSymbol').textContent = state.symbol;
+      document.getElementById('joinTitle').textContent = state.title;
+      document.getElementById('joinCopy').textContent = state.copy;
+      document.getElementById('joinBadges').innerHTML = badges(state.badges, state.badgeKinds);
+      document.getElementById('joinServerKind').textContent = state.kind;
+      document.getElementById('joinCreation').textContent = state.creation;
+      document.getElementById('joinDistrict').textContent = state.district;
+      document.getElementById('joinRoute').textContent = state.route;
+      footerTitle.textContent = state.disabled ? 'Creation blocked' : state.button;
+      footerCopy.textContent = state.disabled ? 'Choose another server with available starting estate slots.' : 'Continue to the hero creation screen: hero name, origin and final creation confirmation.';
+      primaryButton.textContent = state.button;
+      primaryButton.disabled = state.disabled;
+      sideResult.textContent = state.result;
+      sideCta.textContent = state.button;
+    }
+
+    document.querySelectorAll('[data-view-button]').forEach(button => button.addEventListener('click', () => setView(button.dataset.viewButton)));
+    document.getElementById('existingHeroSelect').addEventListener('change', event => renderEnter(event.target.value));
+    document.getElementById('newWorldSelect').addEventListener('change', event => renderJoin(event.target.value));
+    setView('enter');
+  </script>
+</body>
+</html>
