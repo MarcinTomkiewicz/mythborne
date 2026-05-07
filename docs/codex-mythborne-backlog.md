@@ -6628,6 +6628,8 @@ PvP Foundation is not:
 - PvP combat reports are readable through the Reports UI.
 - Player-facing report wrapper is `pvp_result`.
 
+**Implementation note:** R17 accepted on 2026-05-07. `pvp_combat` / `pvp_result` reports are handled through the existing Reports UI path, shared `combat_section_json` parser and `GameReportContent` combat renderer. Empty PvP report payloads keep a safe readiness fallback; no duplicated PvP/combat state, direct reads/writes or raw PvP runtime/log table display was added.
+
 ---
 
 ## Task R18 — PvP notification routing

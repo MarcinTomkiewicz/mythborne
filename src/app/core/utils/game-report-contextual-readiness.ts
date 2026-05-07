@@ -27,8 +27,8 @@ const ENCOUNTER_REPORT_READINESS: GameReportContextualReadiness = {
 
 const PVP_COMBAT_REPORT_READINESS: GameReportContextualReadiness = {
   reportTypeKey: 'pvp_combat',
-  title: 'PvP report producer pending',
-  producerStatus: 'Waiting for future PvP consequence producer.',
+  title: 'PvP combat report content pending',
+  producerStatus: 'Waiting for PvP combat report content.',
   expectedSections: [
     'Combat section',
     'Resource outcome',

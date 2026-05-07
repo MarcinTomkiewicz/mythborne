@@ -100,4 +100,93 @@ describe('GameReportContent', () => {
     expect(text).toContain('Hero One');
     expect(text).not.toContain('Encounter report producer pending');
   });
+
+  it('renders PvP combat reports through the existing combat section renderer', () => {
+    fixture.componentRef.setInput('report', {
+      participants: [],
+      itemReferences: [],
+      combatSection: {
+        sourceType: 'pvp',
+        outcome: 'initiator_victory',
+        winnerSide: 'attacker',
+        loserSide: 'defender',
+        turnsCompleted: 1,
+        startedAt: null,
+        completedAt: null,
+        participants: [
+          {
+            side: 'attacker',
+            participantKind: 'hero',
+            displayName: 'Attacker',
+            level: 10,
+            healthStart: 30,
+            healthEnd: 12,
+            maxHealth: 30,
+            defense: null,
+            minDamage: null,
+            maxDamage: null,
+            luck: null,
+            criticalChance: null,
+            criticalDamage: null,
+            evasionChance: null,
+            stats: [],
+          },
+          {
+            side: 'defender',
+            participantKind: 'hero',
+            displayName: 'Defender',
+            level: 9,
+            healthStart: 28,
+            healthEnd: 0,
+            maxHealth: 28,
+            defense: null,
+            minDamage: null,
+            maxDamage: null,
+            luck: null,
+            criticalChance: null,
+            criticalDamage: null,
+            evasionChance: null,
+            stats: [],
+          },
+        ],
+        attacks: [
+          {
+            turnNumber: 1,
+            attackOrder: 10,
+            actorSide: 'attacker',
+            targetSide: 'defender',
+            sourceKind: 'item',
+            sourceLabel: 'Bronze blade',
+            timingHit: true,
+            evaded: false,
+            critical: false,
+            criticalDamage: null,
+            rolledDamage: 8,
+            finalDamage: 8,
+            targetHealthBefore: 28,
+            targetHealthAfter: 20,
+            displayText: 'Attacker strikes Defender.',
+          },
+        ],
+      },
+      contextualReadiness: {
+        reportTypeKey: 'pvp_combat',
+        title: 'PvP combat report content pending',
+        producerStatus: 'Waiting for PvP combat report content.',
+        expectedSections: ['Combat section'],
+      },
+    });
+
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('pvp');
+    expect(text).toContain('initiator_victory');
+    expect(text).toContain('Attacker');
+    expect(text).toContain('Defender');
+    expect(text).toContain('Attacker strikes Defender.');
+    expect(text).not.toContain('PvP combat report content pending');
+    expect(text).not.toContain('pvp_attack_results');
+  });
 });

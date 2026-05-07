@@ -275,7 +275,68 @@ describe('game report mappers', () => {
     expect(JSON.stringify(report)).not.toContain('hero_exploration');
   });
 
-  it('maps future private PvP combat reports to safe producer readiness', () => {
+  it('maps private PvP combat reports through the shared combat section path', () => {
+    const combat = combatSectionJson() as Record<string, unknown>;
+    const detail = mapPrivateGameReportDetail(privateDetailRow({
+      combat_section_json: {
+        ...combat,
+        sourceType: 'pvp',
+        participants: [
+          {
+            side: 'attacker',
+            participantKind: 'hero',
+            heroId: 'attacker-hero-1',
+            displayName: 'Attacker',
+            level: 10,
+            healthStart: 30,
+            healthEnd: 12,
+            stats: [],
+          },
+          {
+            side: 'defender',
+            participantKind: 'hero',
+            heroId: 'defender-hero-1',
+            displayName: 'Defender',
+            level: 9,
+            healthStart: 28,
+            healthEnd: 0,
+            stats: [],
+          },
+        ],
+      },
+      item_references_json: [],
+      participants_json: [],
+      report_type_key: 'pvp_combat',
+      report_type_label: 'PvP Combat',
+      source_entity_id: 'pvp-result-1',
+      source_entity_type: 'pvp_result',
+    }));
+
+    expect(detail.reportTypeKey).toBe('pvp_combat');
+    expect(detail.sourceEntityType).toBe('pvp_result');
+    expect(detail.combatSection).toEqual(jasmine.objectContaining({
+      sourceType: 'pvp',
+      outcome: 'initiator_victory',
+      participants: [
+        jasmine.objectContaining({
+          side: 'attacker',
+          displayName: 'Attacker',
+        }),
+        jasmine.objectContaining({
+          side: 'defender',
+          displayName: 'Defender',
+        }),
+      ],
+      attacks: [
+        jasmine.objectContaining({
+          displayText: 'Hero One strikes Training Shade.',
+        }),
+      ],
+    }));
+    expect(JSON.stringify(detail)).not.toContain('pvp_attack_log');
+  });
+
+  it('maps private PvP combat reports without combat content to safe readiness', () => {
     const detail = mapPrivateGameReportDetail(privateDetailRow({
       combat_section_json: null,
       item_references_json: [],
@@ -288,8 +349,8 @@ describe('game report mappers', () => {
 
     expect(detail.contextualReadiness).toEqual({
       reportTypeKey: 'pvp_combat',
-      title: 'PvP report producer pending',
-      producerStatus: 'Waiting for future PvP consequence producer.',
+      title: 'PvP combat report content pending',
+      producerStatus: 'Waiting for PvP combat report content.',
       expectedSections: [
         'Combat section',
         'Resource outcome',
