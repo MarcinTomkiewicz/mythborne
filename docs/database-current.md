@@ -16,6 +16,118 @@ After every schema/RPC migration that Codex will consume, regenerate/update gene
 
 
 
+## Update 2026-05-07 — S9-FIX2 item native display policy and item-generation requirements admin readiness
+
+This section is based on the current dump plus rollback/read-only smoke checks run after the S9-FIX2 item detail hardening and item-generation requirements preflight. It extends the Epic S item/equipment notes below.
+
+### S9-FIX2 — DB-owned native item stat display policy
+
+`item_generation_base_type_targets` is no longer only a validation/config registry for native base-item targets. It now also owns player-facing display classification for native item stats. Current display policy columns are:
+
+- `display_role` — one of `primary_stat`, `bonus_stat`, `technical_default`, `hidden`;
+- `display_group` — optional grouping key such as `damage`, `defense`, `critical`, `attacks`, `base_stat`, `evasion`, or `jewelry_identity`;
+- `display_group_role` — one of `range_min`, `range_max`, `value`;
+- `is_player_visible`;
+- `hide_when_zero`;
+- `hide_when_default`;
+- `display_label` — optional player-facing label override.
+
+Rules for frontend/admin consumption:
+
+- `primary_stat` rows are the DB-owned source for the main Item stats section;
+- `bonus_stat` native rows may be rendered in the Bonus section when visible/nonzero according to the returned payload;
+- `technical_default` and `hidden` rows must not be rendered as player-facing Item stats;
+- Angular must not classify native stats by `base_type_key`;
+- `display_group = damage` with `range_min`/`range_max` means DB/RPC combines `min_damage` and `max_damage` into a single range row such as `Damage 2-9`;
+- debug/admin surfaces may inspect hidden native rows, but player-facing item details should consume the read-model rows returned by RPC.
+
+Current seeded display intent:
+
+- one-handed weapons: primary `Damage`; `attack_count = 1` is a hidden technical default; native zero crit rows are not primary stats;
+- two-handed weapons: primary `Damage`, `Critical chance`, and `Critical damage`; `attack_count = 1` is a hidden technical default;
+- ranged weapons: primary `Damage` and `Attack count`; native crit rows are bonus-style and hidden when zero;
+- shield/helmet/armor/pants/boots: primary `Defense`; shield/pants/boots extra native traits such as evasion/agility/dexterity are bonus-style and hidden when zero;
+- amulet: primary Charisma as jewelry identity;
+- ring: primary Charisma or Cunning as jewelry identity, with missing/zero alternative hidden.
+
+Current item detail RPC:
+
+- `get_hero_armory_item_detail(p_hero_id uuid, p_item_id uuid)` is the owner-safe visible armory item detail read model;
+- it builds on `get_hero_armory_items(p_hero_id)` and returns one row for a visible/readable item;
+- it returns `bonuses_json` with the DB-owned display contract:
+  - `bonuses_json.itemStats.rows` — primary player-facing Item stats;
+  - `bonuses_json.itemStats.bonusRows` — native base-item rows classified as bonus-style rows when visible;
+  - `bonuses_json.itemStats.hiddenNativeRows` — debug/admin diagnostics for hidden native rows and hide reasons;
+  - `bonuses_json.nativeRows` — native/base rows for diagnostics;
+  - `bonuses_json.modifierRows` — prefix/suffix/item modifier rows;
+  - `bonuses_json.finalStats.damage` — convenience final damage range when available.
+
+Verified smoke:
+
+- Demonic Dagger / one-handed weapon returned only `Damage 2-9` in `itemStats.rows`;
+- `attack_count = 1` appeared in `hiddenNativeRows` as `technical_default`;
+- native zero crit rows stayed out of player-facing Item stats;
+- Demonic prefix modifier rows remained in `modifierRows`;
+- full multi-type runtime smoke was limited by missing sample items for most base types, but the display-policy seed matrix passed for all expected base types/targets.
+
+Out of scope / follow-up:
+
+- S9-FIX2 does not implement multiplicative `attack_count` affix semantics. Future `attack_count` modifier aggregation should remain DB-owned and must not be implemented as Angular-side arithmetic.
+
+### Item-generation requirements admin editor DB/RPC readiness
+
+The central requirements system already supports item generation base and affix requirements. The database side is ready for the frontend admin editor that views and edits central `entity_requirements` for item generation bases and affixes.
+
+Supported target entity types:
+
+- `requirement_entity_type = item_generation_base`;
+- `requirement_entity_type = item_generation_affix`;
+- `requirement_entity_type = item` also exists for item-specific requirement targets, but generated item effective requirements intentionally aggregate base/prefix/suffix layer requirements for equip/use checks.
+
+Canonical read/search/preview surfaces:
+
+- `search_item_generation_entity_targets(p_entity_type, p_query, p_limit)` — autocomplete/read model for item generation base, affix and quality targets;
+- `search_item_generation_entity_targets_page(p_entity_type, p_query, p_limit, p_offset)` — paginated target browser with `total_count`;
+- `get_requirement_impact_preview(p_entity_type, p_entity_id)` — central requirement preview using `requirement_definitions` and `entity_requirements`; it does not read legacy building requirement JSON/columns;
+- `get_item_requirement_component_rows(p_item_id)` — owner/staff-safe component resolver for active item layer requirements from base, prefix and suffix;
+- `get_item_effective_requirements(p_item_id)` — owner/staff-safe final item requirement aggregation;
+- `check_hero_meets_item_requirements(p_hero_id, p_item_id)` — canonical item equip/use requirement check.
+
+Canonical write surfaces for admin/editor UI:
+
+- `create_entity_requirement(...)`;
+- `update_entity_requirement(...)`;
+- `deactivate_entity_requirement(...)`;
+- `reorder_entity_requirements(...)`;
+- `assert_can_manage_entity_requirements(...)` validates that the authenticated actor can manage central requirements and that item-generation base/affix/item targets exist.
+
+Frontend/admin rules:
+
+- requirements must be shown separately from bonuses;
+- frontend must not use local JSON fields or legacy requirement columns for item generation requirements;
+- frontend must not direct-write `entity_requirements`;
+- all create/update/deactivate/reorder mutations must go through the canonical audited RPCs above;
+- `get_requirement_impact_preview(...)` can return inactive rows after deactivation, so UI must show status clearly or deliberately filter/section active vs inactive requirements;
+- current production data may have zero configured requirements for item-generation bases and affixes; this is a valid editable empty state, not a DB blocker.
+
+Verified smoke:
+
+- preflight confirmed required enum values, active `hero_level` and `hero_stat` definitions, target search for item-generation bases and affixes, and all required RPCs;
+- rollback smoke confirmed create/update/reorder/deactivate for `item_generation_base` and `item_generation_affix`;
+- rollback smoke confirmed `get_requirement_impact_preview(...)` reflects created, updated, reordered and deactivated rows;
+- no permanent data changes were required by the smoke.
+
+Frontend readiness verdict:
+
+- DB/RPC foundation: ready;
+- governed write path: ready;
+- target search: ready;
+- preview/read model: ready;
+- initial item-generation requirements data: empty but editable;
+- DB/RPC blocker for the admin editor: none;
+- regenerate Supabase generated types before frontend work consumes these contracts.
+
+
 ## Update 2026-05-07 — latest dump reconciliation: combat H2, SCALE-DB1, PvP R20/R21 and PvP result chain
 
 This section is based on the latest available schema dump and supersedes older notes in this file where they still imply:

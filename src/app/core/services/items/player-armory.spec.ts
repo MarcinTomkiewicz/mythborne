@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, Observable, of } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
+  GetHeroArmoryItemDetailRpcRow,
   GetHeroArmoryItemsRpcRow,
   GetHeroArmoryVisibilityStateRpcRow,
   MoveHeroArmoryItemToShelfRpcRow,
@@ -59,6 +60,10 @@ describe('PlayerArmory', () => {
             shelf_name: 'Unsorted',
           }),
         ] as T);
+      }
+
+      if (rpcName === RPC.get_hero_armory_item_detail) {
+        return of([armoryItemDetailRow()] as T);
       }
 
       if (rpcName === RPC.rename_hero_armory_shelf) {
@@ -126,6 +131,30 @@ describe('PlayerArmory', () => {
     expect(backend.update).not.toHaveBeenCalled();
     expect(backend.delete).not.toHaveBeenCalled();
     expect(backend.upsert).not.toHaveBeenCalled();
+  });
+
+  it('loads item detail through canonical RPC using active hero id', async () => {
+    const result = await firstValueFrom(service.getArmoryItemDetail('item-1'));
+
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_hero_armory_item_detail,
+      {
+        p_hero_id: 'hero-1',
+        p_item_id: 'item-1',
+      },
+    );
+    expect(result.itemStats).toEqual([{
+      label: 'Damage',
+      displayValue: '2-9',
+    }]);
+    expect(result.baseTypeKey).toBe('one_handed_weapon');
+    expect(result.drachmaValue).toBe(300);
+    expect(result.bonuses.map((bonus) => bonus.label)).toEqual([
+      'Maximum damage',
+      'Critical chance',
+    ]);
+    expect(JSON.stringify(backend.rpc.calls.allArgs())).not.toContain('user-1');
+    expect(backend.getAll).not.toHaveBeenCalled();
   });
 
   it('preserves the visibility_limit returned by the DB/RPC read model', async () => {
@@ -373,6 +402,87 @@ function armoryItemRow(
     visibility_limit: 2,
     ...overrides,
   } as GetHeroArmoryItemsRpcRow;
+}
+
+function armoryItemDetailRow(
+  overrides: Partial<GetHeroArmoryItemDetailRpcRow> = {},
+): GetHeroArmoryItemDetailRpcRow {
+  return {
+    armory_shelf_position: 1,
+    bonuses_json: {
+      itemStats: {
+        rows: [{ key: 'damage', label: 'Damage', displayValue: '2-9' }],
+        bonusRows: [
+          {
+            label: 'Max Damage Flat',
+            targetKey: 'max_damage',
+            targetLabel: 'Max Damage Flat',
+            rowKind: 'modifier_bonus',
+            displaySection: 'bonuses',
+            numericValue: 4,
+            displayValue: '+4',
+            sortOrder: 10,
+          },
+          {
+            label: 'Critical Chance Flat',
+            targetKey: 'critical_chance',
+            targetLabel: 'Critical Chance Flat',
+            rowKind: 'modifier_bonus',
+            displaySection: 'bonuses',
+            numericValue: 2,
+            displayValue: '+2%',
+            sortOrder: 20,
+          },
+        ],
+      },
+      modifierRows: [
+        {
+          label: 'Max Damage Flat',
+          targetKey: 'max_damage',
+          targetLabel: 'Max Damage Flat',
+          rowKind: 'modifier_bonus',
+          displaySection: 'bonuses',
+          numericValue: 4,
+          displayValue: '+4',
+          sortOrder: 10,
+        },
+        {
+          label: 'Critical Chance Flat',
+          targetKey: 'critical_chance',
+          targetLabel: 'Critical Chance Flat',
+          rowKind: 'modifier_bonus',
+          displaySection: 'bonuses',
+          numericValue: 2,
+          displayValue: '+2%',
+          sortOrder: 20,
+        },
+      ],
+    },
+    created_at: '2026-05-07T10:00:00Z',
+    drachma_value: 300,
+    generated_at: '2026-05-07T10:00:00Z',
+    generation_base_id: 'base-1',
+    generation_quality_key: 'normal',
+    hero_id: 'hero-1',
+    base_key: 'dagger',
+    base_name: 'Dagger',
+    base_type_key: 'one_handed_weapon',
+    item_id: 'item-1',
+    item_name: 'Demonic Dagger',
+    item_status: 'active',
+    prefix_affix_id: 'prefix-1',
+    prefix_key: 'demonic',
+    prefix_name: 'Demonic',
+    quality_multiplier: 1,
+    server_id: 'server-1',
+    shelf_name: 'Shelf 1',
+    suffix_affix_id: '',
+    suffix_key: '',
+    suffix_name: '',
+    visibility_index: 1,
+    visibility_limit: 30,
+    ...overrides,
+  };
 }
 
 function renameShelfRow(

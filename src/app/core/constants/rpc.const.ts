@@ -92,6 +92,7 @@ export const RPC = {
     'get_vendor_scrap_drachma_payout_percent',
   get_hero_armory_visibility_state: 'get_hero_armory_visibility_state',
   get_hero_armory_items: 'get_hero_armory_items',
+  get_hero_armory_item_detail: 'get_hero_armory_item_detail',
   rename_hero_armory_shelf: 'rename_hero_armory_shelf',
   move_hero_armory_item_to_shelf: 'move_hero_armory_item_to_shelf',
   get_hero_equipment_runtime_slots: 'get_hero_equipment_runtime_slots',

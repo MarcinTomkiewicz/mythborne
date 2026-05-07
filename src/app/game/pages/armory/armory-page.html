@@ -62,6 +62,7 @@
               <span [class]="itemStatusClass(item)">
                 {{ itemStatusLabel(item) }}
               </span>
+              <app-armory-item-detail-popover [item]="item" />
             </div>
           } @else {
             <div class="flex-col gap-xs">
@@ -168,6 +169,7 @@
                   @if (item.drachmaValue !== null) {
                     <span class="muted-text">{{ item.drachmaValue }} drachma</span>
                   }
+                  <app-armory-item-detail-popover [item]="item" />
                   @if (item.lifecycleStatus !== 'active') {
                     <span class="muted-text">
                       Owned item reserved by market state.

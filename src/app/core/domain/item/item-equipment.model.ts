@@ -225,3 +225,40 @@ export interface LoadoutPresetPreview {
   preset: LoadoutPreset;
   slotItems: LoadoutPresetSlotItem[];
 }
+
+export type ArmoryItemDetailRowKind = 'native_stat' | 'modifier_bonus';
+export type ArmoryItemDetailDisplaySection = 'item_stats' | 'bonuses';
+
+export interface ArmoryItemDetailStat {
+  label: string;
+  displayValue: string;
+}
+
+export interface ArmoryItemDetailBonus {
+  label: string;
+  displayValue: string;
+  numericValue: number | null;
+  rowKind: ArmoryItemDetailRowKind;
+  displaySection: ArmoryItemDetailDisplaySection;
+  sourceKey: string | null;
+  sourceLabel: string | null;
+  sortOrder: number;
+}
+
+export interface ArmoryItemDetailReadModel {
+  itemId: string;
+  heroId: string;
+  serverId: string;
+  name: string;
+  lifecycleStatus: ItemLifecycleStatus | null;
+  qualityLabel: string | null;
+  baseLabel: string | null;
+  baseTypeKey: string | null;
+  prefixLabel: string | null;
+  suffixLabel: string | null;
+  shelfName: string | null;
+  shelfPosition: ArmoryShelfPosition;
+  drachmaValue: number | null;
+  itemStats: ArmoryItemDetailStat[];
+  bonuses: ArmoryItemDetailBonus[];
+}

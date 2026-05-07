@@ -1,8 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
-import { HeroArmoryReadModel } from '../../domain/item/item-equipment.model';
 import {
+  ArmoryItemDetailReadModel,
+  HeroArmoryReadModel,
+} from '../../domain/item/item-equipment.model';
+import {
+  GetHeroArmoryItemDetailRpcArgs,
+  GetHeroArmoryItemDetailRpcRow,
   GetHeroArmoryItemsRpcArgs,
   GetHeroArmoryItemsRpcRow,
   GetHeroArmoryVisibilityStateRpcArgs,
@@ -13,6 +18,7 @@ import {
   RenameHeroArmoryShelfRpcRow,
 } from '../../types/item-equipment-rpc.types';
 import { mapHeroArmoryReadModel } from '../../utils/item-equipment-mappers';
+import { mapArmoryItemDetail } from '../../utils/item-detail-mappers';
 import { trimText } from '../../utils/normalize-text';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
@@ -39,6 +45,32 @@ export class PlayerArmory {
   getArmory(): Observable<HeroArmoryReadModel> {
     return this.activeHero.requireActiveHero().pipe(
       switchMap((context) => this.getArmoryForHero(context.heroId)),
+    );
+  }
+
+  getArmoryItemDetail(itemId: string): Observable<ArmoryItemDetailReadModel> {
+    const normalizedItemId = requiredText(itemId, 'itemId');
+
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: GetHeroArmoryItemDetailRpcArgs = {
+          p_hero_id: context.heroId,
+          p_item_id: normalizedItemId,
+        };
+
+        return this.backend
+          .rpc<GetHeroArmoryItemDetailRpcRow[]>(
+            RPC.get_hero_armory_item_detail,
+            args,
+          )
+          .pipe(
+            map((rows) =>
+              mapArmoryItemDetail(
+                firstRow(rows, RPC.get_hero_armory_item_detail),
+              ),
+            ),
+          );
+      }),
     );
   }
 

@@ -14,6 +14,7 @@ import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facad
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { ItemGeneratorPanel } from '../../components/item-generator-panel/item-generator-panel';
+import { ArmoryItemDetailPopover } from '../../components/armory-item-detail-popover/armory-item-detail-popover';
 
 interface EquipmentPaperdollSlot {
   slotKey: string;
@@ -30,6 +31,7 @@ interface EquipmentPaperdollSlot {
     ButtonModule,
     InputTextModule,
     SelectModule,
+    ArmoryItemDetailPopover,
     ItemGeneratorPanel,
   ],
   providers: [ArmoryPageFacade, CurrentEquipmentState, ArmoryShelfState],

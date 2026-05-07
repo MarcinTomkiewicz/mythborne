@@ -7219,6 +7219,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 
 ## Task S9 — Item detail / popover equipment data
 
+**Status:** Done / conditionally accepted on 2026-05-07.
+
 **Goal:** Show item details needed for equipment decisions.
 
 **Scope:**
@@ -7246,6 +7248,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Item detail makes requirements and bonuses readable.
 - Locked status is explained as market/lifecycle reservation, not equipment ban.
 - Scrapped items are not shown as normal usable items.
+
+**Implementation note:** S9 conditionally accepted on 2026-05-07 after S9-FIX2 DB/RPC hardening and real Demonic Dagger smoke. `/game/armory` item Details use canonical `get_hero_armory_item_detail(p_hero_id, p_item_id)` through the active hero id, with stale response guarding. Player-facing Item stats consume `bonuses_json.itemStats.rows`; player-facing Bonuses consume `bonuses_json.itemStats.bonusRows` when present, otherwise `bonuses_json.modifierRows`. `hiddenNativeRows`, `nativeRows` and diagnostic `rows` are not rendered as player-facing bonuses, and Angular does not classify native rows by `base_type_key`. Manual smoke confirmed Value `300 drachma`, Item stats `Damage 2-9`, Bonuses `Critical chance +2` and `Maximum damage +4`, with no `No bonuses returned.`, `CriticalChance`, `Max Damage Flat`, `Critical Chance Flat`, `Flat`, native/base/zero/debug rows, or console/runtime errors. Follow-up: detail RPC currently returns `base_type_key` but not `base_type_label`, `equipment_slot_group`, `hand_usage`, valid/equippable slot keys or player-facing placement metadata; future detail/equipment UI must get these from DB/RPC/read model rather than infer slot compatibility in Angular.
 
 ---
 
@@ -11452,6 +11456,28 @@ new:
 DB/RPC changes: none.
 Generated types changed: no.
 Manual smoke checklist for user.
+
+---
+
+## SPECIAL TASK - Item generation requirements admin editor
+
+Goal:
+Allow admin to view and edit central `entity_requirements` for item generation bases and affixes.
+
+Scope:
+- Reuse existing central requirement editor/write path if available.
+- Support `entity_type = item_generation_base`.
+- Support `entity_type = item_generation_affix`.
+- Show requirements separately from bonuses.
+- Do not use local JSON fields or legacy requirement columns.
+- Use `requirement_definitions`, `entity_requirements`, and `get_requirement_impact_preview(...)`.
+- If governed write path is missing for these entity types, keep read-only and report DB/RPC/governance blocker.
+
+Acceptance:
+- Admin can add/edit requirements for base items.
+- Admin can add/edit requirements for prefixes/suffixes.
+- Generated item effective requirements reflect base + prefix + suffix.
+- No direct table writes unless already accepted as the central admin pattern.
 
 ## Accepted hotfix implementation notes
 

@@ -4,11 +4,6 @@ import {
   GetHeroArmoryItemsRpcRow,
   GetHeroArmoryVisibilityStateRpcRow,
   GetHeroEquipmentRuntimeSlotsRpcRow,
-  GetHeroLoadoutPresetsRpcRow,
-  GetItemEffectiveRequirementsRpcRow,
-  GetItemRequirementComponentRowsRpcRow,
-  ItemRow,
-  PreviewHeroLoadoutPresetRpcRow,
 } from '../types/item-equipment-rpc.types';
 import {
   mapCurrentEquipmentLoadout,
@@ -16,10 +11,6 @@ import {
   mapEquipmentOperationJournal,
   mapEquippedItemSummary,
   mapHeroArmoryReadModel,
-  mapItemRequirementPreview,
-  mapItemSummary,
-  mapLoadoutPreset,
-  mapLoadoutPresetSlotItem,
 } from './item-equipment-mappers';
 
 describe('item-equipment-mappers', () => {
@@ -144,16 +135,6 @@ describe('item-equipment-mappers', () => {
     ).length).toBe(1);
   });
 
-  it('maps item hero_id to ownerHeroId, not loadout hero context', () => {
-    const item = mapItemSummary(itemRow({
-      hero_id: 'owner-hero-1',
-      id: 'item-1',
-    }));
-
-    expect(item.itemId).toBe('item-1');
-    expect(item.ownerHeroId).toBe('owner-hero-1');
-  });
-
   it('maps equipment runtime hero_id as loadout hero and preserves literal slot/item ids', () => {
     const equipped = mapEquippedItemSummary(equipmentRow({
       hero_id: 'loadout-hero-1',
@@ -201,53 +182,6 @@ describe('item-equipment-mappers', () => {
     expect(equipped.prefixKey).toBeNull();
     expect(equipped.suffixAffixId).toBeNull();
     expect(equipped.suffixKey).toBeNull();
-  });
-
-  it('maps preset rows with hero context and literal preset number', () => {
-    const preset = mapLoadoutPreset(presetRow({
-      hero_id: 'preset-hero-1',
-      preset_number: 3,
-    }));
-
-    expect(preset.heroId).toBe('preset-hero-1');
-    expect(preset.presetNumber).toBe(3);
-  });
-
-  it('preserves exact saved item ids and nullable missing item preview fields', () => {
-    const preview = mapLoadoutPresetSlotItem(presetPreviewRow({
-      saved_item_id: 'saved-item-1',
-      slot_key: 'off_hand',
-      current_item_name: null,
-      current_owner_hero_id: null,
-      item_status: null,
-      is_runtime_usable: false,
-    }));
-
-    expect(preview.savedItemId).toBe('saved-item-1');
-    expect(preview.slotKey).toBe('off_hand');
-    expect(preview.currentItemName).toBeNull();
-    expect(preview.currentOwnerHeroId).toBeNull();
-    expect(preview.lifecycleStatus).toBeNull();
-    expect(preview.isRuntimeUsable).toBeFalse();
-  });
-
-  it('keeps requirement preview numeric when the current DB contract is numeric-only', () => {
-    const preview = mapItemRequirementPreview(
-      'item-1',
-      'hero-1',
-      [requirementComponentRow()],
-      [effectiveRequirementRow()],
-      { meets_requirements: false, failures_json: { reason: 'too_low' } },
-    );
-
-    expect(preview.heroId).toBe('hero-1');
-    expect(preview.meetsRequirements).toBeFalse();
-    expect(preview.components[0].requiredKey).toBe('strength');
-    expect(preview.components[0].requiredStatKey).toBe('strength');
-    expect(preview.components[0].requiredValue).toBe(12);
-    expect(preview.components[0].valueType).toBeNull();
-    expect(preview.effectiveRequirements[0].requiredValue).toBe(15);
-    expect(preview.effectiveRequirements[0].valueType).toBeNull();
   });
 
   it('preserves operation journal reason/details and final equipment', () => {
@@ -405,30 +339,6 @@ describe('item-equipment-mappers', () => {
   });
 });
 
-function itemRow(overrides: Partial<ItemRow> = {}): ItemRow {
-  return {
-    id: 'item-1',
-    server_id: 'server-1',
-    hero_id: 'hero-1',
-    name: 'Bronze Blade',
-    description: null,
-    status: 'active',
-    generation_base_id: 'base-1',
-    generation_quality_key: 'normal',
-    prefix_affix_id: null,
-    suffix_affix_id: null,
-    armory_shelf_position: 0,
-    drachma_value: 20,
-    metadata_json: {},
-    generated_at: '2026-05-07T10:00:00Z',
-    scrapped_at: null,
-    recoverable_until: null,
-    created_at: '2026-05-07T10:00:00Z',
-    updated_at: '2026-05-07T10:00:00Z',
-    ...overrides,
-  };
-}
-
 function visibilityRow(
   overrides: Partial<GetHeroArmoryVisibilityStateRpcRow> = {},
 ): GetHeroArmoryVisibilityStateRpcRow {
@@ -511,6 +421,7 @@ function equipmentRow(
     base_name: 'Bronze blade',
     base_type_key: 'one_handed_weapon',
     hand_usage: 'one_handed',
+    has_item: true,
     quality_label: 'Normal',
     quality_multiplier: 1,
     prefix_affix_id: null,
@@ -520,95 +431,10 @@ function equipmentRow(
     suffix_key: null,
     suffix_name: null,
     is_runtime_usable: true,
+    item_status_key: 'active',
+    slot_item_state: 'equipped',
     ...overrides,
   } as unknown as GetHeroEquipmentRuntimeSlotsRpcRow;
-}
-
-function presetRow(
-  overrides: Record<string, unknown> = {},
-): GetHeroLoadoutPresetsRpcRow {
-  return {
-    preset_id: 'preset-1',
-    hero_id: 'hero-1',
-    preset_number: 1,
-    name: 'Default',
-    slot_count: 2,
-    saved_at: '2026-05-07T10:00:00Z',
-    cleared_at: null,
-    created_at: '2026-05-07T09:00:00Z',
-    updated_at: '2026-05-07T10:00:00Z',
-    ...overrides,
-  } as unknown as GetHeroLoadoutPresetsRpcRow;
-}
-
-function presetPreviewRow(
-  overrides: Record<string, unknown> = {},
-): PreviewHeroLoadoutPresetRpcRow {
-  return {
-    hero_id: 'hero-1',
-    preset_id: 'preset-1',
-    preset_number: 1,
-    slot_key: 'main_hand',
-    slot_label: 'Main hand',
-    slot_sort_order: 10,
-    saved_item_id: 'item-1',
-    saved_item_name_snapshot: 'Bronze Blade',
-    current_item_name: 'Bronze Blade',
-    current_owner_hero_id: 'hero-1',
-    item_status: 'active',
-    is_owned_by_hero: true,
-    is_runtime_usable: true,
-    preview_status: 'available',
-    status_message: 'Available.',
-    ...overrides,
-  } as unknown as PreviewHeroLoadoutPresetRpcRow;
-}
-
-function requirementComponentRow(
-  overrides: Partial<GetItemRequirementComponentRowsRpcRow> = {},
-): GetItemRequirementComponentRowsRpcRow {
-  return {
-    item_id: 'item-1',
-    item_owner_hero_id: 'hero-1',
-    item_status: 'active',
-    requirement_id: 'requirement-1',
-    requirement_definition_key: 'hero_stat',
-    required_stat_key: 'strength',
-    raw_required_value: 12,
-    applies_from_level: 1,
-    source_entity_type: 'item_generation_base',
-    source_entity_id: 'base-1',
-    source_layer: 'base',
-    source_key: 'bronze_blade',
-    source_label: 'Bronze blade',
-    source_sort_order: 10,
-    requirement_sort_order: 10,
-    generation_quality_key: 'normal',
-    quality_requirement_multiplier: 1,
-    ...overrides,
-  };
-}
-
-function effectiveRequirementRow(
-  overrides: Partial<GetItemEffectiveRequirementsRpcRow> = {},
-): GetItemEffectiveRequirementsRpcRow {
-  return {
-    item_id: 'item-1',
-    item_owner_hero_id: 'hero-1',
-    requirement_definition_key: 'hero_stat',
-    required_stat_key: 'strength',
-    required_value_integer: 15,
-    final_decimal_value: 15,
-    highest_component_value: 12,
-    additional_component_value: 3,
-    additional_requirement_fraction: 0.5,
-    pre_quality_value: 15,
-    quality_requirement_multiplier: 1,
-    rounding_mode: 'ceil',
-    component_count: 2,
-    generation_quality_key: 'normal',
-    ...overrides,
-  };
 }
 
 function operationRow(

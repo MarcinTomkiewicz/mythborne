@@ -1,6 +1,5 @@
 import {
   ArmoryItemSummary,
-  ArmoryShelf,
   ArmoryShelfReadModel,
   CurrentEquipmentLoadout,
   EquipmentOperationAction,
@@ -8,29 +7,14 @@ import {
   EquipmentOperationJournalEntry,
   EquipmentSlot,
   EquippedItemSummary,
-  ItemEffectiveRequirement,
-  ItemLifecycleState,
-  ItemRequirementComponent,
-  ItemRequirementPreview,
-  ItemSummary,
   HeroArmoryReadModel,
-  LoadoutPreset,
-  LoadoutPresetSlotItem,
-  RUNTIME_USABLE_EQUIPPED_ITEM_STATUSES,
 } from '../domain/item/item-equipment.model';
 import { Json } from '../types/database.types';
 import {
-  ArmoryShelfRow,
-  CheckHeroMeetsItemRequirementsRpcRow,
   EquipmentOperationRpcRow,
   GetHeroArmoryItemsRpcRow,
   GetHeroArmoryVisibilityStateRpcRow,
   GetHeroEquipmentRuntimeSlotsRpcRow,
-  GetHeroLoadoutPresetsRpcRow,
-  GetItemEffectiveRequirementsRpcRow,
-  GetItemRequirementComponentRowsRpcRow,
-  ItemRow,
-  PreviewHeroLoadoutPresetRpcRow,
 } from '../types/item-equipment-rpc.types';
 import {
   booleanValue,
@@ -56,34 +40,6 @@ export function mapEquipmentSlot(row: Row<'equipment_slot_definitions'>): Equipm
   };
 }
 
-export function mapItemSummary(row: ItemRow): ItemSummary {
-  return {
-    itemId: row.id,
-    ownerHeroId: row.hero_id,
-    serverId: row.server_id,
-    name: row.name,
-    description: row.description,
-    lifecycleStatus: row.status,
-    generationBaseId: row.generation_base_id,
-    generationQualityKey: row.generation_quality_key,
-    prefixAffixId: row.prefix_affix_id,
-    suffixAffixId: row.suffix_affix_id,
-    armoryShelfPosition: row.armory_shelf_position,
-    drachmaValue: row.drachma_value,
-  };
-}
-
-export function mapItemLifecycleState(row: ItemRow): ItemLifecycleState {
-  return {
-    itemId: row.id,
-    status: row.status,
-    isRuntimeUsableWhenEquipped:
-      RUNTIME_USABLE_EQUIPPED_ITEM_STATUSES.includes(row.status),
-    scrappedAt: row.scrapped_at,
-    recoverableUntil: row.recoverable_until,
-  };
-}
-
 export function mapEquippedItemSummary(
   row: GetHeroEquipmentRuntimeSlotsRpcRow,
 ): EquippedItemSummary {
@@ -92,7 +48,7 @@ export function mapEquippedItemSummary(
     heroId: row.hero_id,
     ownerHeroId: null,
     itemName: row.item_name,
-    lifecycleStatus: row.item_status,
+    lifecycleStatus: row.item_status_key as EquippedItemSummary['lifecycleStatus'],
     generationBaseId: row.generation_base_id,
     generationQualityKey: row.generation_quality_key,
     prefixAffixId: row.prefix_affix_id,
@@ -124,18 +80,9 @@ export function mapCurrentEquipmentLoadout(
   return {
     heroId,
     slots: [...rows]
+      .filter((row) => row.has_item)
       .sort((left, right) => left.slot_sort_order - right.slot_sort_order)
       .map(mapEquippedItemSummary),
-  };
-}
-
-export function mapArmoryShelf(row: ArmoryShelfRow): ArmoryShelf {
-  return {
-    shelfId: row.id,
-    heroId: row.hero_id,
-    position: row.position,
-    name: row.name,
-    updatedAt: row.updated_at,
   };
 }
 
@@ -147,7 +94,7 @@ export function mapHeroArmoryReadModel(
   const itemsByShelf = new Map<number, ArmoryItemSummary[]>();
 
   for (const item of itemRows) {
-    const summary = mapArmoryRpcItemSummary(item);
+    const summary = armoryRpcItemSummary(item);
     const currentItems = itemsByShelf.get(summary.shelfPosition) ?? [];
 
     itemsByShelf.set(summary.shelfPosition, [...currentItems, summary]);
@@ -166,7 +113,7 @@ export function mapHeroArmoryReadModel(
     ...shelf,
     visibleItems: sortArmoryItems(itemsByShelf.get(shelf.position) ?? []),
   }));
-  const visibleItems = sortArmoryItems(itemRows.map(mapArmoryRpcItemSummary));
+  const visibleItems = sortArmoryItems(itemRows.map(armoryRpcItemSummary));
 
   return {
     heroId,
@@ -186,7 +133,7 @@ export function mapHeroArmoryReadModel(
   };
 }
 
-export function mapArmoryRpcItemSummary(
+function armoryRpcItemSummary(
   row: GetHeroArmoryItemsRpcRow,
 ): ArmoryItemSummary {
   return {
@@ -205,19 +152,6 @@ export function mapArmoryRpcItemSummary(
     shelfPosition: row.armory_shelf_position,
     shelfName: row.shelf_name,
     requirementPreview: null,
-  };
-}
-
-export function mapArmoryItemSummary(
-  item: ItemRow,
-  shelf: ArmoryShelf | null,
-  requirementPreview: ItemRequirementPreview | null = null,
-): ArmoryItemSummary {
-  return {
-    ...mapItemSummary(item),
-    shelfPosition: item.armory_shelf_position,
-    shelfName: shelf?.name ?? null,
-    requirementPreview,
   };
 }
 
@@ -250,122 +184,21 @@ function armoryShelfPosition(
   record: JsonRecord | null,
   fallbackPosition: number,
 ): number {
-  return optionalNumber(read(
-    record,
-    'shelfPosition',
-    'shelf_position',
-    'position',
-  )) ?? fallbackPosition;
+  return optionalNumber(read(record, 'shelfPosition', 'shelf_position', 'position'))
+    ?? fallbackPosition;
 }
 
-function sortArmoryItems(
-  items: readonly ArmoryItemSummary[],
-): ArmoryItemSummary[] {
-  return [...items].sort((left, right) =>
-    left.shelfPosition - right.shelfPosition
-      || left.name.localeCompare(right.name)
-      || left.itemId.localeCompare(right.itemId),
-  );
-}
-
-export function mapRequirementComponent(
-  row: GetItemRequirementComponentRowsRpcRow,
-): ItemRequirementComponent {
-  return {
-    requirementId: row.requirement_id,
-    requirementDefinitionKey: row.requirement_definition_key,
-    valueType: null,
-    requiredKey: row.required_stat_key,
-    requiredValue: row.raw_required_value,
-    requiredStatKey: row.required_stat_key,
-    rawRequiredValue: row.raw_required_value,
-    appliesFromLevel: row.applies_from_level,
-    sourceEntityType: row.source_entity_type,
-    sourceEntityId: row.source_entity_id,
-    sourceLayer: row.source_layer,
-    sourceKey: row.source_key,
-    sourceLabel: row.source_label,
-    sourceSortOrder: row.source_sort_order,
-    requirementSortOrder: row.requirement_sort_order,
-  };
-}
-
-export function mapEffectiveRequirement(
-  row: GetItemEffectiveRequirementsRpcRow,
-): ItemEffectiveRequirement {
-  return {
-    requirementDefinitionKey: row.requirement_definition_key,
-    valueType: null,
-    requiredKey: row.required_stat_key,
-    requiredStatKey: row.required_stat_key,
-    requiredValue: row.required_value_integer,
-    finalDecimalValue: row.final_decimal_value,
-    highestComponentValue: row.highest_component_value,
-    additionalComponentValue: row.additional_component_value,
-    additionalRequirementFraction: row.additional_requirement_fraction,
-    preQualityValue: row.pre_quality_value,
-    qualityRequirementMultiplier: row.quality_requirement_multiplier,
-    roundingMode: row.rounding_mode,
-    componentCount: row.component_count,
-  };
-}
-
-export function mapItemRequirementPreview(
-  itemId: string,
-  heroId: string | null,
-  components: readonly GetItemRequirementComponentRowsRpcRow[],
-  effectiveRequirements: readonly GetItemEffectiveRequirementsRpcRow[],
-  check: CheckHeroMeetsItemRequirementsRpcRow | null = null,
-): ItemRequirementPreview {
-  return {
-    itemId,
-    heroId,
-    meetsRequirements: check?.meets_requirements ?? null,
-    components: components.map(mapRequirementComponent),
-    effectiveRequirements: effectiveRequirements.map(mapEffectiveRequirement),
-  };
-}
-
-export function mapLoadoutPreset(
-  row: GetHeroLoadoutPresetsRpcRow,
-): LoadoutPreset {
-  return {
-    presetId: row.preset_id,
-    heroId: row.hero_id,
-    presetNumber: row.preset_number,
-    name: row.name,
-    slotCount: row.slot_count,
-    savedAt: row.saved_at,
-    clearedAt: row.cleared_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-export function mapLoadoutPresetSlotItem(
-  row: PreviewHeroLoadoutPresetRpcRow,
-): LoadoutPresetSlotItem {
-  return {
-    presetId: row.preset_id,
-    presetNumber: row.preset_number,
-    slotKey: row.slot_key,
-    slotLabel: row.slot_label,
-    slotSortOrder: row.slot_sort_order,
-    savedItemId: row.saved_item_id,
-    savedItemNameSnapshot: row.saved_item_name_snapshot,
-    currentItemName: row.current_item_name,
-    currentOwnerHeroId: row.current_owner_hero_id,
-    lifecycleStatus: row.item_status,
-    isOwnedByHero: row.is_owned_by_hero,
-    isRuntimeUsable: row.is_runtime_usable,
-    previewStatus: row.preview_status,
-    statusMessage: row.status_message,
-  };
+function sortArmoryItems(items: readonly ArmoryItemSummary[]): ArmoryItemSummary[] {
+  return [...items].sort((left, right) => left.shelfPosition - right.shelfPosition
+    || left.name.localeCompare(right.name)
+    || left.itemId.localeCompare(right.itemId));
 }
 
 export function mapEquipmentOperationJournal(
   row: EquipmentOperationRpcRow,
 ): EquipmentOperationJournal {
   const entries = operationJournalEntries(row);
+  const diagnostics = read(jsonRecord(operationJournalValue(row)), 'diagnostics', 'diagnosticsJson');
 
   return {
     requestId: row.request_id,
@@ -375,8 +208,8 @@ export function mapEquipmentOperationJournal(
     unequipped: entriesFor(entries, 'unequipped'),
     failed: entriesFor(entries, 'failed'),
     skipped: entriesFor(entries, 'skipped'),
-    finalEquipment: finalEquipmentFromJson(finalEquipmentJson(row)),
-    diagnostics: operationDiagnostics(row),
+    finalEquipment: finalEquipmentFromJson(row.final_equipment_json),
+    diagnostics: diagnostics === undefined ? null : diagnostics,
   };
 }
 
@@ -402,23 +235,13 @@ function operationJournalEntries(
     return [];
   }
 
-  return [
-    ...entriesForGroupedRecord(record, 'equipped'),
-    ...entriesForGroupedRecord(record, 'shifted'),
-    ...entriesForGroupedRecord(record, 'unequipped'),
-    ...entriesForGroupedRecord(record, 'failed'),
-    ...entriesForGroupedRecord(record, 'skipped'),
-  ];
-}
-
-function operationDiagnostics(row: EquipmentOperationRpcRow): Json | null {
-  const record = jsonRecord(operationJournalValue(row));
-
-  return optionalJson(read(record, 'diagnostics', 'diagnosticsJson'));
-}
-
-function finalEquipmentJson(row: EquipmentOperationRpcRow): Json {
-  return row.final_equipment_json;
+  return ([
+    'equipped',
+    'shifted',
+    'unequipped',
+    'failed',
+    'skipped',
+  ] as const).flatMap((action) => entriesForGroupedRecord(record, action));
 }
 
 function entriesFor(
@@ -474,13 +297,7 @@ function mapOperationEntry(
   return {
     action,
     itemId: optionalText(read(entry, 'itemId', 'item_id')),
-    slotKey: optionalText(read(
-      entry,
-      'slotKey',
-      'slot_key',
-      'targetSlotKey',
-      'target_slot_key',
-    )),
+    slotKey: optionalText(read(entry, 'slotKey', 'slot_key', 'targetSlotKey', 'target_slot_key')),
     reason: optionalText(read(entry, 'reason', 'reasonKey', 'reason_key')),
     message: optionalText(read(entry, 'message', 'statusMessage', 'status_message')),
     success: optionalBoolean(read(entry, 'success')) ?? action !== 'failed',
@@ -492,33 +309,20 @@ function operationAction(
   value: Json | undefined,
   fallback: EquipmentOperationAction,
 ): EquipmentOperationAction {
-  return value === 'equipped'
-    || value === 'shifted'
-    || value === 'unequipped'
-    || value === 'failed'
-    || value === 'skipped'
+  return value === 'equipped' || value === 'shifted' || value === 'unequipped'
+    || value === 'failed' || value === 'skipped'
     ? value
     : fallback;
 }
 
 function finalEquipmentFromJson(value: Json): CurrentEquipmentLoadout | null {
   const record = jsonRecord(value);
-  const rows = record
-    ? mapJsonArray(read(record, 'slots', 'equipment', 'finalEquipment'), mapEquipmentSlotJson)
-    : mapJsonArray(value, mapEquipmentSlotJson);
+  const rows = mapJsonArray(
+    record ? read(record, 'slots', 'equipment', 'finalEquipment') : value,
+    mapEquipmentSlotJson,
+  );
 
-  if (!rows.length) {
-    return null;
-  }
-
-  return {
-    heroId: rows[0]?.heroId ?? '',
-    slots: rows,
-  };
-}
-
-function optionalJson(value: Json | undefined): Json | null {
-  return value === undefined ? null : value;
+  return rows.length ? { heroId: rows[0]?.heroId ?? '', slots: rows } : null;
 }
 
 function mapEquipmentSlotJson(entry: JsonRecord): EquippedItemSummary {
@@ -527,12 +331,9 @@ function mapEquipmentSlotJson(entry: JsonRecord): EquippedItemSummary {
     heroId: text(read(entry, 'heroId', 'hero_id')),
     ownerHeroId: optionalText(read(entry, 'ownerHeroId', 'owner_hero_id')),
     itemName: text(read(entry, 'itemName', 'item_name', 'name')),
-    lifecycleStatus: text(read(entry, 'itemStatus', 'item_status', 'status')) as
-      EquippedItemSummary['lifecycleStatus'],
+    lifecycleStatus: text(read(entry, 'itemStatus', 'item_status', 'status')) as EquippedItemSummary['lifecycleStatus'],
     generationBaseId: optionalText(read(entry, 'generationBaseId', 'generation_base_id')),
-    generationQualityKey: optionalText(
-      read(entry, 'generationQualityKey', 'generation_quality_key'),
-    ),
+    generationQualityKey: optionalText(read(entry, 'generationQualityKey', 'generation_quality_key')),
     prefixAffixId: optionalText(read(entry, 'prefixAffixId', 'prefix_affix_id')),
     suffixAffixId: optionalText(read(entry, 'suffixAffixId', 'suffix_affix_id')),
     slotKey: text(read(entry, 'slotKey', 'slot_key')),

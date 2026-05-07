@@ -54,6 +54,15 @@ describe('PlayerEquipment', () => {
     backend.rpc.and.returnValue(of([
       equipmentSlotRow({ slot_key: 'ring_2', slot_sort_order: 90 }),
       equipmentSlotRow({ item_id: 'item-main', slot_key: 'main_hand', slot_sort_order: 10 }),
+      equipmentSlotRow({
+        has_item: false,
+        item_id: '',
+        item_name: '',
+        item_status_key: 'none',
+        slot_item_state: 'empty',
+        slot_key: 'helmet',
+        slot_sort_order: 30,
+      }),
     ]));
 
     const result = await firstValueFrom(service.getCurrentEquipment());
@@ -66,6 +75,10 @@ describe('PlayerEquipment', () => {
     expect(result.slots.map((slot) => slot.slotKey)).toEqual([
       'main_hand',
       'ring_2',
+    ]);
+    expect(result.slots.map((slot) => slot.lifecycleStatus)).toEqual([
+      'active',
+      'active',
     ]);
     expect(JSON.stringify(backend.rpc.calls.mostRecent().args[1]))
       .not.toContain('user-1');
@@ -274,16 +287,18 @@ function equipmentSlotRow(
     generation_base_id: 'base-1',
     generation_quality_key: 'normal',
     hand_usage: 'one_handed',
+    has_item: true,
     hero_id: 'active-hero-1',
     is_runtime_usable: true,
     item_id: 'item-1',
     item_name: 'Bronze Blade',
-    item_status: 'active',
+    item_status_key: 'active',
     prefix_affix_id: '',
     prefix_key: '',
     prefix_name: '',
     quality_label: 'Normal',
     quality_multiplier: 1,
+    slot_item_state: 'equipped',
     slot_key: 'main_hand',
     slot_label: 'Main hand',
     slot_sort_order: 10,

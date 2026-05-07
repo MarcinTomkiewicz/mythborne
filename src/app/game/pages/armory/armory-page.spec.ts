@@ -43,6 +43,7 @@ describe('ArmoryPage', () => {
             ButtonModule,
             InputTextModule,
             SelectModule,
+            MockArmoryItemDetailPopover,
             MockItemGeneratorPanel,
           ],
           providers: [
@@ -469,6 +470,15 @@ class FakeArmoryShelfState {
 })
 class MockItemGeneratorPanel {
   readonly luck = input(0);
+}
+
+@Component({
+  selector: 'app-armory-item-detail-popover',
+  standalone: true,
+  template: '<button type="button">Details</button>',
+})
+class MockArmoryItemDetailPopover {
+  readonly item = input.required<ArmoryItemSummary | EquippedItemSummary>();
 }
 
 function textContent(fixture: ComponentFixture<ArmoryPage>): string {
