@@ -9,6 +9,16 @@ export type GetHeroEquipmentRuntimeSlotsRpcArgs =
 export type GetHeroEquipmentRuntimeSlotsRpcRow =
   Database['public']['Functions']['get_hero_equipment_runtime_slots']['Returns'][number];
 
+export type GetHeroArmoryVisibilityStateRpcArgs =
+  Database['public']['Functions']['get_hero_armory_visibility_state']['Args'];
+export type GetHeroArmoryVisibilityStateRpcRow =
+  Database['public']['Functions']['get_hero_armory_visibility_state']['Returns'][number];
+
+export type GetHeroArmoryItemsRpcArgs =
+  Database['public']['Functions']['get_hero_armory_items']['Args'];
+export type GetHeroArmoryItemsRpcRow =
+  Database['public']['Functions']['get_hero_armory_items']['Returns'][number];
+
 export type EquipHeroItemRpcArgs =
   Database['public']['Functions']['equip_hero_item']['Args'];
 export type EquipHeroItemRpcRow =

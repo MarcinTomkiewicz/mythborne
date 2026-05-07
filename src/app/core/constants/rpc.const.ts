@@ -90,6 +90,8 @@ export const RPC = {
   mark_game_report_read: 'mark_game_report_read',
   get_vendor_scrap_drachma_payout_percent:
     'get_vendor_scrap_drachma_payout_percent',
+  get_hero_armory_visibility_state: 'get_hero_armory_visibility_state',
+  get_hero_armory_items: 'get_hero_armory_items',
   get_hero_equipment_runtime_slots: 'get_hero_equipment_runtime_slots',
   equip_hero_item: 'equip_hero_item',
   unequip_hero_item: 'unequip_hero_item',

@@ -157,6 +157,36 @@ export interface ArmoryShelf {
   updatedAt: string;
 }
 
+export interface ArmoryShelfReadModel {
+  shelfId: string | null;
+  heroId: string;
+  position: ArmoryShelfPosition;
+  name: string;
+  updatedAt: string | null;
+  isPersisted: boolean;
+  isUnsortedDropArea: boolean;
+  visibleItems: ArmoryItemSummary[];
+}
+
+export interface ArmoryVisibilitySummary {
+  visibleItemCount: number;
+  totalOwnedItemCount: number;
+  hiddenItemCount: number;
+  visibilityLimit: number;
+  visibilityLimitSource: string;
+  sourceConfigJson: Json;
+  visibleStatuses: string[];
+  unsortedJson: Json;
+  shelvesJson: Json;
+}
+
+export interface HeroArmoryReadModel {
+  heroId: string;
+  shelves: ArmoryShelfReadModel[];
+  visibleItems: ArmoryItemSummary[];
+  visibility: ArmoryVisibilitySummary;
+}
+
 export interface ArmoryItemSummary extends ItemSummary {
   shelfPosition: ArmoryShelfPosition;
   shelfName: string | null;

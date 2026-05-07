@@ -1,6 +1,7 @@
 import {
   ArmoryItemSummary,
   ArmoryShelf,
+  ArmoryShelfReadModel,
   CurrentEquipmentLoadout,
   EquipmentOperationAction,
   EquipmentOperationJournal,
@@ -12,6 +13,7 @@ import {
   ItemRequirementComponent,
   ItemRequirementPreview,
   ItemSummary,
+  HeroArmoryReadModel,
   LoadoutPreset,
   LoadoutPresetSlotItem,
   RUNTIME_USABLE_EQUIPPED_ITEM_STATUSES,
@@ -21,6 +23,8 @@ import {
   ArmoryShelfRow,
   CheckHeroMeetsItemRequirementsRpcRow,
   EquipmentOperationRpcRow,
+  GetHeroArmoryItemsRpcRow,
+  GetHeroArmoryVisibilityStateRpcRow,
   GetHeroEquipmentRuntimeSlotsRpcRow,
   GetHeroLoadoutPresetsRpcRow,
   GetItemEffectiveRequirementsRpcRow,
@@ -135,6 +139,71 @@ export function mapArmoryShelf(row: ArmoryShelfRow): ArmoryShelf {
   };
 }
 
+export function mapHeroArmoryReadModel(
+  heroId: string,
+  visibility: GetHeroArmoryVisibilityStateRpcRow,
+  itemRows: readonly GetHeroArmoryItemsRpcRow[],
+): HeroArmoryReadModel {
+  const itemsByShelf = new Map<number, ArmoryItemSummary[]>();
+
+  for (const item of itemRows) {
+    const summary = mapArmoryRpcItemSummary(item);
+    const currentItems = itemsByShelf.get(summary.shelfPosition) ?? [];
+
+    itemsByShelf.set(summary.shelfPosition, [...currentItems, summary]);
+  }
+
+  const shelves = [
+    armoryShelfFromJson(heroId, visibility.unsorted_json, 0, true),
+    ...mapJsonArray(visibility.shelves_json, (entry) =>
+      armoryShelfFromJson(heroId, entry, numberValue(read(entry, 'position')), false),
+    ),
+  ].map((shelf) => ({
+    ...shelf,
+    visibleItems: sortArmoryItems(itemsByShelf.get(shelf.position) ?? []),
+  }));
+  const visibleItems = sortArmoryItems(itemRows.map(mapArmoryRpcItemSummary));
+
+  return {
+    heroId,
+    shelves,
+    visibleItems,
+    visibility: {
+      visibleItemCount: visibility.visible_item_count,
+      totalOwnedItemCount: visibility.total_owned_item_count,
+      hiddenItemCount: visibility.hidden_item_count,
+      visibilityLimit: visibility.visibility_limit,
+      visibilityLimitSource: visibility.visibility_limit_source,
+      sourceConfigJson: visibility.source_config_json,
+      visibleStatuses: visibility.visible_statuses,
+      unsortedJson: visibility.unsorted_json,
+      shelvesJson: visibility.shelves_json,
+    },
+  };
+}
+
+export function mapArmoryRpcItemSummary(
+  row: GetHeroArmoryItemsRpcRow,
+): ArmoryItemSummary {
+  return {
+    itemId: row.item_id,
+    ownerHeroId: row.hero_id,
+    serverId: row.server_id,
+    name: row.item_name,
+    description: null,
+    lifecycleStatus: row.item_status,
+    generationBaseId: row.generation_base_id,
+    generationQualityKey: row.generation_quality_key,
+    prefixAffixId: row.prefix_affix_id,
+    suffixAffixId: row.suffix_affix_id,
+    armoryShelfPosition: row.armory_shelf_position,
+    drachmaValue: row.drachma_value,
+    shelfPosition: row.armory_shelf_position,
+    shelfName: row.shelf_name,
+    requirementPreview: null,
+  };
+}
+
 export function mapArmoryItemSummary(
   item: ItemRow,
   shelf: ArmoryShelf | null,
@@ -146,6 +215,40 @@ export function mapArmoryItemSummary(
     shelfName: shelf?.name ?? null,
     requirementPreview,
   };
+}
+
+function armoryShelfFromJson(
+  heroId: string,
+  value: Json,
+  fallbackPosition: number,
+  isUnsortedDropArea: boolean,
+): ArmoryShelfReadModel {
+  const record = jsonRecord(value);
+  const position = optionalNumber(read(record, 'position')) ?? fallbackPosition;
+  const name = optionalText(read(record, 'name', 'label', 'shelfName', 'shelf_name'))
+    ?? (isUnsortedDropArea ? 'Unsorted' : `Shelf ${position}`);
+
+  return {
+    shelfId: optionalText(read(record, 'shelfId', 'shelf_id', 'id')),
+    heroId,
+    position,
+    name,
+    updatedAt: optionalText(read(record, 'updatedAt', 'updated_at')),
+    isPersisted: optionalBoolean(read(record, 'isPersisted', 'is_persisted', 'exists'))
+      ?? !isUnsortedDropArea,
+    isUnsortedDropArea,
+    visibleItems: [],
+  };
+}
+
+function sortArmoryItems(
+  items: readonly ArmoryItemSummary[],
+): ArmoryItemSummary[] {
+  return [...items].sort((left, right) =>
+    left.shelfPosition - right.shelfPosition
+      || left.name.localeCompare(right.name)
+      || left.itemId.localeCompare(right.itemId),
+  );
 }
 
 export function mapRequirementComponent(

@@ -1,6 +1,8 @@
 import { Json } from '../types/database.types';
 import {
   BulkEquipHeroItemsRpcRow,
+  GetHeroArmoryItemsRpcRow,
+  GetHeroArmoryVisibilityStateRpcRow,
   GetHeroEquipmentRuntimeSlotsRpcRow,
   GetHeroLoadoutPresetsRpcRow,
   GetItemEffectiveRequirementsRpcRow,
@@ -13,6 +15,7 @@ import {
   mapEquipmentSlot,
   mapEquipmentOperationJournal,
   mapEquippedItemSummary,
+  mapHeroArmoryReadModel,
   mapItemRequirementPreview,
   mapItemSummary,
   mapLoadoutPreset,
@@ -39,6 +42,58 @@ describe('item-equipment-mappers', () => {
       equipmentArea: 'custom_area',
       equipmentSlotGroup: 'custom_area',
     });
+  });
+
+  it('maps DB-owned armory visibility and item RPC rows into shelves with unsorted area', () => {
+    const readModel = mapHeroArmoryReadModel(
+      'hero-1',
+      visibilityRow(),
+      [
+        armoryItemRow({
+          item_id: 'item-locked',
+          item_name: 'Locked ring',
+          item_status: 'locked_trade',
+          armory_shelf_position: 2,
+          shelf_name: 'Materials',
+        }),
+        armoryItemRow({
+          item_id: 'item-unsorted',
+          item_name: 'Fresh drop blade',
+          armory_shelf_position: 0,
+          is_unsorted: true,
+          shelf_name: 'Unsorted',
+        }),
+      ],
+    );
+
+    expect(readModel.heroId).toBe('hero-1');
+    expect(readModel.shelves.length).toBe(11);
+    expect(readModel.shelves[0]).toEqual(jasmine.objectContaining({
+      shelfId: null,
+      position: 0,
+      name: 'Unsorted',
+      isUnsortedDropArea: true,
+      isPersisted: false,
+    }));
+    expect(readModel.shelves[1]).toEqual(jasmine.objectContaining({
+      shelfId: 'shelf-1',
+      position: 1,
+      name: 'Shelf 1',
+      isUnsortedDropArea: false,
+      isPersisted: true,
+    }));
+    expect(readModel.shelves[2].visibleItems.map((item) => item.itemId))
+      .toEqual(['item-locked']);
+    expect(readModel.shelves[0].visibleItems[0].itemId).toBe('item-unsorted');
+    expect(readModel.visibility.visibleItemCount).toBe(2);
+    expect(readModel.visibility.totalOwnedItemCount).toBe(5);
+    expect(readModel.visibility.hiddenItemCount).toBe(3);
+    expect(readModel.visibility.visibilityLimit).toBe(2);
+    expect(readModel.visibility.visibilityLimitSource).toBe('visible_item_capacity');
+    expect(readModel.visibility.sourceConfigJson as unknown)
+      .toEqual({ target: 'visible_item_capacity' });
+    expect(readModel.visibility.visibleStatuses)
+      .toEqual(['active', 'locked_trade', 'locked_auction']);
   });
 
   it('maps item hero_id to ownerHeroId, not loadout hero context', () => {
@@ -324,6 +379,68 @@ function itemRow(overrides: Partial<ItemRow> = {}): ItemRow {
     updated_at: '2026-05-07T10:00:00Z',
     ...overrides,
   };
+}
+
+function visibilityRow(
+  overrides: Partial<GetHeroArmoryVisibilityStateRpcRow> = {},
+): GetHeroArmoryVisibilityStateRpcRow {
+  return {
+    armory_building_id: 'building-1',
+    armory_building_key: 'armory',
+    armory_building_level: 2,
+    estate_id: 'estate-1',
+    generated_at: '2026-05-07T10:00:00Z',
+    hero_id: 'hero-1',
+    hidden_item_count: 3,
+    server_id: 'server-1',
+    shelves_json: Array.from({ length: 10 }, (_, index) => ({
+      id: `shelf-${index + 1}`,
+      position: index + 1,
+      name: `Shelf ${index + 1}`,
+      updatedAt: '2026-05-07T10:00:00Z',
+      isPersisted: true,
+    })),
+    source_config_json: { target: 'visible_item_capacity' },
+    total_owned_item_count: 5,
+    unsorted_json: {
+      id: null,
+      position: 0,
+      name: 'Unsorted',
+      isPersisted: false,
+    },
+    visibility_limit: 2,
+    visibility_limit_source: 'visible_item_capacity',
+    visibility_order: 'armory_shelf_position',
+    visible_item_count: 2,
+    visible_statuses: ['active', 'locked_trade', 'locked_auction'],
+    ...overrides,
+  };
+}
+
+function armoryItemRow(
+  overrides: Partial<GetHeroArmoryItemsRpcRow> = {},
+): GetHeroArmoryItemsRpcRow {
+  return {
+    armory_shelf_position: 1,
+    created_at: '2026-05-07T10:00:00Z',
+    drachma_value: 20,
+    generated_at: '2026-05-07T10:00:00Z',
+    generation_base_id: 'base-1',
+    generation_quality_key: 'normal',
+    hero_id: 'hero-1',
+    is_unsorted: false,
+    is_visible: true,
+    item_id: 'item-1',
+    item_name: 'Bronze Blade',
+    item_status: 'active',
+    prefix_affix_id: null,
+    server_id: 'server-1',
+    shelf_name: 'Shelf 1',
+    suffix_affix_id: null,
+    visibility_index: 1,
+    visibility_limit: 2,
+    ...overrides,
+  } as GetHeroArmoryItemsRpcRow;
 }
 
 function equipmentRow(

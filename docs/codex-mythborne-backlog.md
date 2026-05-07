@@ -7137,14 +7137,16 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 
 ## Task S6 — Armory shelf read state
 
+**Status:** Done / accepted on 2026-05-07.
+
 **Goal:** Add state/facade for armory inventory organized by shelves.
 
 **Scope:**
 
-- Load armory items for active hero.
-- Load shelf names/metadata.
+- Load armory items for active hero through `get_hero_armory_items(...)`.
+- Load shelf names/metadata through `get_hero_armory_visibility_state(...)`.
 - Preserve 10 shelf structure.
-- Treat shelf 1 as default drop shelf.
+- Treat position `0` as the unsorted/default drop area.
 - Respect current DB visibility rules for armory/building limits.
 - Do not delete or hide item rows because they are outside visible range.
 - Respect armory building level visibility limit.
@@ -7157,6 +7159,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Armory state distinguishes visible items from existing-but-not-visible items where DB supports it.
 - Shelf number is preserved.
 - Shelf organization is not confused with equipment state.
+
+**Implementation note:** S6 accepted on 2026-05-07 after the blocker fix. `PlayerArmory` now reads armory visibility/capacity through DB-owned `get_hero_armory_visibility_state(...)` and visible items through `get_hero_armory_items(...)`, using active hero context only. The read model maps DB fields for total/visible/hidden counts, `visible_item_capacity` source, source config, visible statuses, unsorted position `0`, and DB-owned shelves `1..10`. It no longer calculates visibility from direct `items` plus `hero_armory_shelves`, does not mark shelf 1 as the default drop shelf, and keeps locked trade/auction items visible when the RPC returns them. No equip/unequip UI, DB/migration changes or generated-type edits were made by Codex; current regenerated DB types were used read-only. Follow-up: when this area is next touched, sort `shelves_json` by position and ensure raw visibility JSON is not exposed directly in player-facing UI.
 
 ---
 
