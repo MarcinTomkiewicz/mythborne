@@ -210,4 +210,11 @@ export const adminRoutes: Routes = [
         (m) => m.PvpRewardRoutingPage,
       ),
   },
+  {
+    path: 'pvp-prestige-context',
+    loadComponent: () =>
+      import('./pages/pvp-prestige-context/pvp-prestige-context-page').then(
+        (m) => m.PvpPrestigeContextPage,
+      ),
+  },
 ];

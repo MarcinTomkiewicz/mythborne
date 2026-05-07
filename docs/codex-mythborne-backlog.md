@@ -6810,6 +6810,8 @@ PvP Foundation is not:
 - Prestige context is understandable.
 - UI does not claim hidden Prestige points/ranks are implemented.
 
+**Implementation note:** R25 accepted on 2026-05-07. Added `/admin/pvp-prestige-context` and admin navigation/dashboard links for a read-only future Prestige context surface. The page reads `pvp_prestige_delta_context` from the formula admin read model, shows `recipientLevel`, `opponentLevel`, `opponentLevelDelta` and `outcomeMultiplier` as a checklist against formula target allowed variables/default context, and reads future-context copy through explicit PvP metadata key/group matching. The UI clearly states this is future context only and does not claim current Prestige points, ranks or scoring are implemented. No DB/RPC/generated type changes or direct PvP runtime reads/writes were added. Follow-up: confirm field keys when the real Prestige epic starts; move to a dedicated Prestige metadata namespace if one is added; consider a shared read-only formula-target component before the next similar surface.
+
 ---
 
 ## Task R26 — PvP anti-abuse explainability surface

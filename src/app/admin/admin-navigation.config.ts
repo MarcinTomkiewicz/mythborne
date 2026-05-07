@@ -114,6 +114,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'PvP',
+    title: 'PvP Prestige context',
+    description:
+      'Read-only future Prestige context formula surface for PvP results.',
+    routerLink: '/admin/pvp-prestige-context',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Anti-abuse',
     title: 'Anti-abuse config',
     description:
@@ -745,6 +753,30 @@ export const PVP_REWARD_ROUTING_PAGE_LINKS: readonly AdminTagLink[] = [
   {
     label: 'Reward profiles',
     routerLink: '/admin/reward-profiles',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Formula read model',
+    routerLink: '/admin/formulas',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const PVP_PRESTIGE_CONTEXT_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'PvP foundation',
+    routerLink: '/admin/pvp-overview',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'PvP rewards',
+    routerLink: '/admin/pvp-reward-routing',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'PvP resources',
+    routerLink: '/admin/pvp-resource-consequences',
     accessPolicy: 'selectedServerManagement',
   },
   {

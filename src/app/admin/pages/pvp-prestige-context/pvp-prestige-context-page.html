@@ -1,0 +1,210 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading PvP Prestige context..."
+  description="Loading DB-backed future Prestige context formula and metadata."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">PvP</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            PvP future Prestige context
+          </h2>
+          <p class="muted-text mb-0">
+            Read-only admin surface for the future Prestige context recorded around PvP results.
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Formula targets</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ formulaRows().length }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Context fields</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ contextFields().length }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Configuration gaps</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ configurationGapCount() }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Future-only boundary"
+        title="Prestige context, not Prestige points"
+        text="This surface explains context recorded for a future Prestige system. It does not expose current Prestige points, ranks, scoring or player-facing Prestige changes."
+        [secondaryText]="futureContextMetadataRows().length ? null : 'DB metadata row for future Prestige context is missing.'"
+      />
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md mt-lg">
+        @for (entry of futureContextMetadataRows(); track entry.id) {
+          <article class="mg-card p-md flex-col gap-xs">
+            <strong class="heading-color">{{ entry.label }}</strong>
+            <span class="card-legend">{{ entry.key }}</span>
+            <p class="muted-text mb-0">{{ metadataCopy(entry) }}</p>
+            @if (entry.warningText) {
+              <p class="status-text-warning mb-0">{{ entry.warningText }}</p>
+            }
+          </article>
+        } @empty {
+          <span class="tag-badge tag-badge--warn">metadata gap: future Prestige context</span>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Formula target"
+        title="pvp_prestige_delta_context"
+        text="The target, allowed variables, default context and expression are displayed from the formula read model only."
+        [secondaryText]="missingFormulaTargetKeys().length ? 'Expected PvP Prestige context formula target is missing from the read model.' : null"
+      />
+
+      @if (missingFormulaTargetKeys().length) {
+        <div class="mg-card p-md flex-col gap-xs mt-lg">
+          <strong class="heading-color">Missing formula target keys</strong>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @for (key of missingFormulaTargetKeys(); track key) {
+              <span class="tag-badge tag-badge--warn">{{ key }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="flex-col gap-md mt-lg">
+        @for (row of formulaRows(); track row.target.key) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <p class="card-legend mb-0">{{ row.target.key }}</p>
+                <h3 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ row.target.label }}
+                </h3>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="tag-badge tag-badge--muted">{{ row.target.scopeKey }}</span>
+                <span [class]="formulaStatusClass(row)">{{ row.statusLabel }}</span>
+              </div>
+            </div>
+
+            @if (row.target.description) {
+              <p class="muted-text mb-0">{{ row.target.description }}</p>
+            }
+
+            <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Assigned formula</span>
+                <strong class="heading-color">{{ row.formula?.label ?? '-' }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Formula key</span>
+                <strong class="heading-color">{{ row.formula?.key ?? '-' }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Assignment updated</span>
+                <strong class="heading-color">{{ row.assignment?.updatedAt ?? '-' }}</strong>
+              </div>
+            </div>
+
+            @if (row.formula) {
+              <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+                <div class="flex-col gap-xs min-w-0">
+                  <span class="muted-text">Formula description</span>
+                  <span class="heading-color">{{ row.formula.description ?? '-' }}</span>
+                </div>
+
+                <div class="flex-col gap-xs min-w-0">
+                  <span class="muted-text">Expression</span>
+                  <pre class="mb-0 text-break"><code>{{ row.formula.expression }}</code></pre>
+                </div>
+              </div>
+            }
+
+            <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Allowed variables</span>
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  @for (variable of row.target.allowedVariables; track variable) {
+                    <span class="tag-badge tag-badge--muted">{{ variable }}</span>
+                  } @empty {
+                    <span class="muted-text">No variables</span>
+                  }
+                </div>
+              </div>
+
+              <div class="flex-col gap-xs min-w-0">
+                <span class="muted-text">Default test context</span>
+                <pre class="mb-0 text-break"><code>{{ contextPreview(row) }}</code></pre>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted-text mb-0">No PvP Prestige context formula targets are visible.</p>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Context fields"
+        title="Future Prestige input context"
+        text="These fields are inspected against the formula target allowed variables and default context."
+        [secondaryText]="missingContextFieldKeys().length ? 'Some expected Prestige context fields are missing from the formula target variables.' : null"
+      />
+
+      @if (missingContextFieldKeys().length) {
+        <div class="mg-card p-md flex-col gap-xs mt-lg">
+          <strong class="heading-color">Missing context field keys</strong>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @for (key of missingContextFieldKeys(); track key) {
+              <span class="tag-badge tag-badge--warn">{{ key }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md mt-lg">
+        @for (field of contextFields(); track field.key) {
+          <article class="mg-card p-md flex-col gap-xs">
+            <div class="flex-row-between-center flex-col-sm gap-xs">
+              <strong class="heading-color">{{ field.key }}</strong>
+              @if (field.isAllowedVariable) {
+                <span class="tag-badge tag-badge--info">allowed variable</span>
+              } @else {
+                <span class="tag-badge tag-badge--warn">missing variable</span>
+              }
+            </div>
+            <span class="muted-text">Default value: {{ defaultValueLabel(field.defaultValue) }}</span>
+          </article>
+        }
+      </div>
+    </section>
+  </div>
+}
