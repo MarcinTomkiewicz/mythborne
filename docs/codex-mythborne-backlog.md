@@ -7084,6 +7084,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Service does not require user-provided reason.
 - Service preserves DB operation journal payload.
 
+**Implementation note:** S3 accepted on 2026-05-07. Added `PlayerEquipment` service over canonical equipment RPCs for current equipment read, single item equip, slot unequip and bulk equip. The service uses `ActiveHero.requireActiveHero()` for hero context, does not assume auth user id as hero id, does not send frontend reason, does not direct-read/write `hero_equipment`, and maps operation results through the S2 journal mapper. Added RPC constants for the equipment service boundary. No DB/RPC/generated type changes were made. Follow-ups: omit optional `p_request_id` keys instead of sending `undefined`, decide/spec empty bulk input behavior, and preserve explicit empty `final_equipment_json` as an empty loadout later.
+
 ---
 
 ## Task S4 — Current equipment read state

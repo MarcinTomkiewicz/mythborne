@@ -1,6 +1,6 @@
 # Mythsworn — Project Context for Codex
 
-Updated: 2026-05-06
+Updated: 2026-05-07
 
 ## Purpose
 
@@ -20,6 +20,56 @@ This document is intentionally compact. For exact DB/RPC/helper inventory, consu
 
 ---
 
+
+
+## Prestige Foundation Planning Context — 2026-05-07
+
+Prestige is now a closed-enough design topic for DB/RPC foundation planning and later Codex Epic Y frontend integration. It is not implemented yet in the current app state; current PvP work only stores context for a future Prestige system.
+
+Key implementation direction:
+
+- Prestige is hero-scoped and server-scoped.
+- Prestige has hidden points and visible ranks.
+- Players see their own and other heroes' Prestige rank, but never raw points or numeric deltas.
+- Admin/tester/sandbox UI may see raw points, raw deltas, thresholds and source/debug context.
+- Prestige has no decay and cannot go below `0`.
+- Prestige v1 is PvP-driven; future private feats such as Argonautics may become source kinds later.
+- Guild/Siege/collective actions do not affect private hero Prestige in the first foundation.
+- DB/RPC is authoritative for point balance, rank calculation, PvP deltas, ledger writes, player-safe summaries, reports and notifications.
+
+Prestige ranks:
+
+- Rank 1 / District A: `Perioecus`.
+- Rank 2 / District B: `Ephor`.
+- Rank 3 / District C: `Strategos`.
+- Rank 4 / District D: `Archon`.
+- Rank 5 / District E: `Basileus`.
+
+Existing DB `ranks` rows are the seed/candidate registry. The current `required_level` and `max_players` semantics are legacy for the new Prestige model. The target model should use explicit rank numbers, admin-configurable point thresholds and DB/config-backed player-facing labels/descriptions/helper text.
+
+PvP Prestige scoring should be challenge/shame based. The target band is based on the opponent's position inside the legal PvP target range, with default `20 / 60 / 20` lower/similar/upper bands. Attacking stronger targets can increase Prestige; losing to stronger targets does not penalize Prestige. Farming weaker targets may slightly reduce Prestige even on victory, and failing against weaker targets is more shameful. Defender penalties are milder because the defender does not choose the fight.
+
+PvP reports and notifications have separate roles:
+
+- Every PvP Prestige point delta should appear inside the PvP report/result as a qualitative player-safe summary.
+- Ordinary point changes without rank change should not create separate notifications.
+- A persistent notification should be created only when the hero's Prestige rank changes.
+- Player-facing reports/notifications must not expose raw points or numeric deltas.
+
+Prestige affects future privileges:
+
+- District A/B/C/D/E map to Prestige ranks 1/2/3/4/5.
+- Falling below a district threshold never deletes estate, buildings or existing progress and never forces relocation.
+- Existing buildings keep working and already-started jobs/upgrades can finish.
+- New building starts/upgrades above current Prestige rank are blocked by canonical DB requirements/read models.
+- Relocation within a district whose requirement is no longer met and moving to higher districts are blocked.
+- Future council voting rights depend on meeting high Prestige/district requirements, but Server Council and server events are separate future systems.
+
+Migration and frontend ordering:
+
+1. Migrator prepares Prestige DB/RPC foundation and regenerates/generated types become available.
+2. Codex Epic Y consumes the DB/RPC contract for frontend read models, rank display, PvP report summary, admin/debug/config surfaces, building/relocation gate display and rank-change notifications.
+3. Status files such as `current-todo.md`, `current-state-summary.md` and backlog completion markers are not updated until actual implementation is confirmed through the normal Codex/status workflow.
 
 ## Current High-Priority Implementation Context — 2026-05-03 late
 
@@ -78,11 +128,13 @@ The following R/PvP DB work has been applied and verified enough to continue:
   - `get_my_pvp_spy_result(...)` is owner-safe for `authenticated`.
   - derived combat stats must still come from the runtime derived/combat resolver; do not use `hero_derived`.
 
-### Do not continue from the interrupted R-DB6 text blindly
+### PvP result chain current note
 
-The conversation stopped before applying R-DB6. The next conversation should start from **R-DB6 — PvP attack result foundation / attack resolution boundary**, but it should first re-read the current DB dump and the generated types, then prepare a fresh migration. Do not assume the last in-chat R-DB6 draft is safe to run without review.
+The old R-DB6 warning is obsolete. Current `database-current.md` records the PvP attack result chain as present in the current dump, including PvP attack results, resource consequences, XP rewards, future Prestige context, anti-abuse signal generation and report trigger layers.
 
-Important: after R-DB6 and later schema/RPC migrations, regenerate generated Supabase types before Codex frontend work.
+For any new PvP/combat work, re-read the current dump and `database-current.md`; do not use older in-chat R-DB6 drafts as source of truth.
+
+After schema/RPC migrations that Codex will consume, regenerate/update generated Supabase types before frontend work.
 
 Current Epic N decision state:
 

@@ -90,6 +90,10 @@ export const RPC = {
   mark_game_report_read: 'mark_game_report_read',
   get_vendor_scrap_drachma_payout_percent:
     'get_vendor_scrap_drachma_payout_percent',
+  get_hero_equipment_runtime_slots: 'get_hero_equipment_runtime_slots',
+  equip_hero_item: 'equip_hero_item',
+  unequip_hero_item: 'unequip_hero_item',
+  bulk_equip_hero_items: 'bulk_equip_hero_items',
   recover_scrapped_item: 'recover_scrapped_item',
   add_hero_remaining_actions: 'add_hero_remaining_actions',
   auto_resolve_hero_exploration_challenge_attempt:

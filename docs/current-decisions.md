@@ -1,6 +1,6 @@
 # Mythsworn — Current Decisions Log
 
-Updated: 2026-05-06
+Updated: 2026-05-07
 
 Use this file for recent design, domain, database and implementation decisions that should override older assumptions.
 
@@ -58,6 +58,124 @@ Epic X covers the canonical player entry flow from server selection to active he
 - The DB/RPC contract for hero creation must exist before frontend implementation consumes the flow.
 - Codex must not implement Epic X by direct-writing hero, origin, Character Points, estate, resource, audit or related onboarding tables from Angular.
 - Preparing a DB/RPC handoff for the migrator and later frontend tasks for Codex are implementation consequences of these decisions, not open design questions.
+
+
+## Epic Y — Prestige Foundation Decisions — 2026-05-07
+
+Epic Y covers the Prestige foundation. Prestige is a long-term reputation/sława system for a hero. It is not level, XP, Character Points, guild reputation, anti-abuse sanctioning or a server-wide score.
+
+### Core model
+
+- Prestige is hero-scoped and server-scoped.
+- Prestige is personal. It belongs to the hero, not to the account, guild or whole server.
+- Prestige is separate from level, XP and Character Points.
+- Prestige has hidden points and visible rank.
+- Prestige points cannot fall below `0`.
+- Prestige has no decay. Fame does not expire with time.
+- Prestige is DB/RPC-authoritative. Angular must not calculate durable Prestige points, rank, PvP delta or final outcome as authority.
+- Prestige is not anti-abuse. It can discourage dishonourable PvP farming, but it does not replace moderation, sanctions or anti-abuse review.
+
+### Visibility and player/admin boundary
+
+- Players can see their own Prestige rank.
+- Players can see other heroes' Prestige rank where public/player-facing hero identity is shown.
+- Players must not see raw Prestige points.
+- Players must not see numeric Prestige deltas.
+- Admin/tester/sandbox UI may show raw Prestige points, raw delta, thresholds, source kind, source entity, formula/config context and before/after rank/points.
+- Player-facing rank names and descriptions/helper text should come from DB/config/metadata, not hardcoded Angular copy.
+- Rank names are canonical in-world proper names and should remain Greek-styled across language versions. Localize explanatory text, not the rank proper names.
+
+### Prestige ranks
+
+- There are 5 Prestige ranks.
+- Existing DB `ranks` rows are the seed/candidate rank registry.
+- Current canonical rank mapping is:
+  - Rank 1 / District A: `Perioecus`;
+  - Rank 2 / District B: `Ephor`;
+  - Rank 3 / District C: `Strategos`;
+  - Rank 4 / District D: `Archon`;
+  - Rank 5 / District E: `Basileus`.
+- `Basileus` is the canonical form for rank 5.
+- The rank registry should use a normal technical ID, preferably UUID, and a separate `rank_number` for gameplay ordering/filtering/mapping.
+- Existing `ranks.required_level` and `ranks.max_players` are legacy relative to the new Prestige model.
+- Rank thresholds should be admin-configurable, preferably as explicit per-rank thresholds rather than a pure formula, because there are only five political/social ranks.
+- Suggested default threshold seed is `0 / 100 / 350 / 900 / 2000` for ranks 1-5. These values are balancing defaults and may differ on test servers.
+
+### Sources and extensibility
+
+- Prestige v1 is PvP-driven.
+- Trial/PvE, Guild and Siege actions do not grant Prestige in the first foundation.
+- Guild actions do not affect a member's private Prestige/reputation in the first foundation.
+- The system should be source-extensible so future private feats such as Argonautics can be configured to affect Prestige later.
+- Future Prestige source kinds should be DB/config-driven where practical; Angular must not own source eligibility or delta calculation.
+
+### PvP Prestige scoring semantics
+
+- PvP Prestige is based on honour, challenge and shame, not victory alone.
+- Target strength is classified by the target's position inside the legal PvP target range, not by raw absolute level difference only.
+- Default banding is `20 / 60 / 20`: lower 20% = weaker, middle 60% = similar, upper 20% = stronger.
+- Banding should be admin-configurable.
+- Attacker rules:
+  - attacking stronger and winning gives a big gain;
+  - attacking stronger and drawing gives a small gain;
+  - attacking stronger and losing gives `0` Prestige delta;
+  - attacking similar and winning gives a normal gain;
+  - attacking similar and drawing gives `0`;
+  - attacking similar and losing gives a small-to-moderate loss;
+  - attacking weaker and winning gives a minor loss;
+  - attacking weaker and drawing gives a minor-to-medium loss;
+  - attacking weaker and losing gives a big loss.
+- Defender rules:
+  - defending against stronger and winning gives a big gain;
+  - defending against stronger and drawing gives a small gain;
+  - defending against stronger and losing gives `0`;
+  - defending against similar and winning gives a normal gain;
+  - defending against similar and drawing gives `0`;
+  - defending against similar and losing gives `0`;
+  - defending against weaker and winning gives `0`;
+  - defending against weaker and drawing gives a minor loss;
+  - defending against weaker and losing gives a loss, but milder than the active attacker losing to a weaker target.
+- Attacker penalties are harsher because the attacker chooses the target; defender penalties are softer because the defender does not choose the fight.
+- Suggested numeric seed can exist in DB config, but all values are balancing defaults and must not be hardcoded in Angular.
+
+### Reports and notifications
+
+- Every PvP Prestige point delta should appear in the PvP report/result as a player-safe qualitative Prestige change summary.
+- Player-facing PvP reports must not expose raw Prestige points or numeric delta.
+- Ordinary point changes that do not change rank should not create a separate notification.
+- A persistent notification should be created when a hero's Prestige rank changes.
+- Rank-change notifications should tell the player that the hero advanced or dropped from one rank to another, using rank names.
+- Rank-change notifications must not expose raw Prestige points, numeric delta or formula/debug context to players.
+- Admin/debug report/read models may expose raw before/after points, raw delta, source and formula/config context.
+
+### Districts, relocation and buildings
+
+- Prestige rank gates district privileges:
+  - District A requires rank 1;
+  - District B requires rank 2;
+  - District C requires rank 3;
+  - District D requires rank 4;
+  - District E requires rank 5.
+- Falling below the Prestige rank required for the current district does not delete estate, delete buildings, downgrade buildings or force relocation.
+- Existing buildings keep working after Prestige loss.
+- Already-started building jobs/upgrades may finish even if Prestige drops during the job.
+- A hero may only start new building construction/upgrades whose Prestige requirement is less than or equal to the hero's current Prestige rank.
+- A hero below the current district requirement cannot relocate within that higher district and cannot move to a higher district until the requirement is met again.
+- `buildings.rank_required` exists in the current schema, but the project also has central requirement foundations. Migrator should decide whether `buildings.rank_required` remains canonical, becomes compatibility/convenience data, or is migrated into central `prestige_rank` requirements. Do not leave two conflicting canonical sources.
+
+### Future council and server events boundary
+
+- Server Council and server-wide events are not part of Epic Y implementation.
+- Roboczo, future council eligibility requires high Prestige / district D or E.
+- If a hero loses the required Prestige/district standing, they lose active voting rights; no detailed term/cadence/replacement system is designed in Epic Y.
+- Server Council and global server event voting require separate future design.
+
+### Implementation boundary
+
+- Migrator owns DB/RPC/schema/finalizer work for Prestige foundation.
+- Codex/frontend work belongs to Epic Y only after the DB/RPC contract and regenerated types exist.
+- Codex must not implement Prestige by hardcoding thresholds, rank names as source of truth, PvP delta matrix, point calculation, notification generation or report generation in Angular.
+- `current-todo.md`, `current-state-summary.md` and backlog task statuses are updated only by Codex/status workflow after confirmed implementation, not by this decision entry.
 
 ## PvP Foundation Decisions — 2026-05-03 late
 
@@ -808,19 +926,23 @@ Luck Lab is a separate admin/balancer epic, not part of Luck Foundation.
 
 Luck Lab should provide visual preview/simulation tools such as sliders and comparisons for:
 
-- raw `luckValue`;
-- `luckInfluence`;
+- `luckValue`;
 - `testedStatValue`;
+- difficulty;
+- district;
+- `luckInfluence`;
 - `trial_power`;
 - trial opportunity;
 - trial manifestation;
-- auto-resolve chance;
-- encounter fallback;
-- combat hit/evasion/critical/critical-damage context;
-- drop and reward/item-generation outcomes;
-- distribution over many rolls, not only one manual result.
+- auto-resolve success chance;
+- encounter fallback chance;
+- combat hit/evasion/critical/critical-damage context where DB exposes it;
+- drop single-roll preview;
+- drop distribution simulation;
+- Luck 0 vs Luck X comparisons;
+- human-readable explanations of what changed.
 
-Luck cannot be meaningfully balanced through a few manual gameplay clicks; Luck Lab is required for real balancing/explainability.
+Luck Lab may compare and visualize DB-returned values, but it must not become the authority for persistent gameplay results.
 
 ## Formula Runtime Decisions — 2026-05-01
 

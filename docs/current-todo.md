@@ -223,8 +223,9 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: S0 - Generated DB types alignment after item/equipment foundation.
 - Completed and confirmed: S1 - Item and equipment domain models.
 - Completed and confirmed: S2 - Item and equipment mappers.
+- Completed and confirmed: S3 - Equipment RPC service.
 - Accepted hotfix: HOTFIX-REWARD-AUTO-RESOLVE - reward/drop communication and manual combat auto-resolve wording.
-- Next backlog task: S3 - Equipment RPC service.
+- Next backlog task: S4 - Current equipment read state.
 - Q4 pending manual smoke: check a real DB row for `estate.building_job.completed`; source `action_url` must be `/game/mansion`. If it still returns `ViewState`, fix DB/content producer source and do not add a frontend remap.
 - Q5 pending manual smoke: open bell, mark read, dismiss and action link; real DB/RLS denied-action smoke only if suitable test data/access exists.
 - Q6 pending manual smoke: basic bell UI can be smoke-tested, but full fresh-toast validation needs a real DB producer notification. Eligible unread fresh rows should toast once; read rows and `default_toast_enabled = false` rows should remain inbox-only.
