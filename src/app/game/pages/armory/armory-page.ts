@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import {
   ArmoryItemSummary,
   ArmoryShelfReadModel,
@@ -6,6 +7,9 @@ import {
   ItemLifecycleStatus,
 } from '../../../core/domain/item/item-equipment.model';
 import { RouterLink } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
@@ -20,7 +24,14 @@ interface EquipmentPaperdollSlot {
 @Component({
   selector: 'app-armory-page',
   standalone: true,
-  imports: [RouterLink, ItemGeneratorPanel],
+  imports: [
+    FormsModule,
+    RouterLink,
+    ButtonModule,
+    InputTextModule,
+    SelectModule,
+    ItemGeneratorPanel,
+  ],
   providers: [ArmoryPageFacade, CurrentEquipmentState, ArmoryShelfState],
   templateUrl: './armory-page.html',
 })
@@ -33,6 +44,14 @@ export class ArmoryPage implements OnInit {
       slotKey: slot.slotKey,
       label: slot.label,
       item: this.equipment.slot(slot.slotKey),
+    })),
+  );
+  readonly moveTargetShelves = computed(() =>
+    this.armory.shelves().map((shelf) => ({
+      position: shelf.position,
+      label: shelf.isUnsortedDropArea
+        ? this.shelfLabel(shelf)
+        : `${this.shelfLabel(shelf)} (${shelf.position})`,
     })),
   );
 
@@ -73,6 +92,29 @@ export class ArmoryPage implements OnInit {
       : shelf.name;
   }
 
+  renameShelf(shelf: ArmoryShelfReadModel, newName: string): void {
+    if (shelf.isUnsortedDropArea) {
+      return;
+    }
+
+    this.armory.renameShelf({
+      shelfPosition: shelf.position,
+      newName,
+    });
+  }
+
+  moveItemToShelf(
+    item: ArmoryItemSummary,
+    targetShelfPosition: string | number | null | undefined,
+  ): void {
+    const parsedTargetShelfPosition = shelfPositionValue(targetShelfPosition);
+
+    this.armory.moveItemToShelf({
+      itemId: item.itemId,
+      targetShelfPosition: parsedTargetShelfPosition,
+    });
+  }
+
   private lifecycleStatusLabel(status: ItemLifecycleStatus): string {
     return humanizeKey(status);
   }
@@ -90,4 +132,22 @@ function humanizeKey(value: string): string {
     .filter(Boolean)
     .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
     .join(' ') || 'Status';
+}
+
+function shelfPositionValue(value: string | number | null | undefined): number {
+  if (value === null || value === undefined) {
+    throw new Error('targetShelfPosition is required for armory action.');
+  }
+
+  if (typeof value === 'string' && !value.trim()) {
+    throw new Error('targetShelfPosition is required for armory action.');
+  }
+
+  const parsed = typeof value === 'number' ? value : Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    throw new Error('targetShelfPosition must be a number.');
+  }
+
+  return parsed;
 }

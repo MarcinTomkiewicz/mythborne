@@ -19,6 +19,16 @@ export type GetHeroArmoryItemsRpcArgs =
 export type GetHeroArmoryItemsRpcRow =
   Database['public']['Functions']['get_hero_armory_items']['Returns'][number];
 
+export type RenameHeroArmoryShelfRpcArgs =
+  Database['public']['Functions']['rename_hero_armory_shelf']['Args'];
+export type RenameHeroArmoryShelfRpcRow =
+  Database['public']['Functions']['rename_hero_armory_shelf']['Returns'][number];
+
+export type MoveHeroArmoryItemToShelfRpcArgs =
+  Database['public']['Functions']['move_hero_armory_item_to_shelf']['Args'];
+export type MoveHeroArmoryItemToShelfRpcRow =
+  Database['public']['Functions']['move_hero_armory_item_to_shelf']['Returns'][number];
+
 export type EquipHeroItemRpcArgs =
   Database['public']['Functions']['equip_hero_item']['Args'];
 export type EquipHeroItemRpcRow =

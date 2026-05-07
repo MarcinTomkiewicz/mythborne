@@ -7196,6 +7196,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 
 ## Task S8 — Armory shelf management
 
+**Status:** Done / accepted on 2026-05-07.
+
 **Goal:** Add player-facing shelf organization actions through canonical RPCs.
 
 **Scope:**
@@ -7210,6 +7212,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Shelf rename/move uses canonical RPCs.
 - Item movement does not change equipment state.
 - Missing DB write path is reported as dependency.
+
+**Implementation note:** S8 accepted on 2026-05-07. Armory shelf rename and item move actions use canonical owner-safe RPCs through `PlayerArmory`, with active hero context and no direct writes to `items` or `hero_armory_shelves`. Shelf `0` remains the unsorted/drop area and is not renameable, while move targets support positions `0..10`. Mutation return rows are checked before refreshing the DB-owned armory read model, including runtime `success: false` payloads if returned; stale mutation responses after active hero/server context changes clear previous armory state. The player UI uses PrimeNG controls rather than raw browser controls and still does not add equip/unequip actions. No DB/RPC/generated changes were made by Codex.
 
 ---
 

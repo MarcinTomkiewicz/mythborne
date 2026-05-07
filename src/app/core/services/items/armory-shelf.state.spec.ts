@@ -16,6 +16,8 @@ describe('ArmoryShelfState', () => {
     activeHero = new FakeActiveHero();
     armory = jasmine.createSpyObj<PlayerArmory>('PlayerArmory', [
       'getArmory',
+      'renameShelf',
+      'moveItemToShelf',
     ]);
 
     TestBed.configureTestingModule({
@@ -115,6 +117,99 @@ describe('ArmoryShelfState', () => {
     expect(state.status()).toBe('idle');
     expect(state.error()).toBeNull();
     expect(state.readModel()).toBeNull();
+  });
+
+  it('refreshes armory state after a successful shelf rename', () => {
+    armory.renameShelf.and.returnValue(readModelSubject(1));
+
+    state.renameShelf({
+      shelfPosition: 2,
+      newName: 'Materials',
+    });
+
+    expect(armory.renameShelf).toHaveBeenCalledWith({
+      shelfPosition: 2,
+      newName: 'Materials',
+    });
+    expect(state.actionError()).toBeNull();
+    expect(state.isMutating()).toBeFalse();
+    expect(state.status()).toBe('loaded');
+    expect(state.readModel()?.visibleItems.length).toBe(1);
+  });
+
+  it('refreshes armory state after moving an item to unsorted shelf zero', () => {
+    armory.moveItemToShelf.and.returnValue(readModelSubject(1));
+
+    state.moveItemToShelf({
+      itemId: 'item-1',
+      targetShelfPosition: 0,
+    });
+
+    expect(armory.moveItemToShelf).toHaveBeenCalledWith({
+      itemId: 'item-1',
+      targetShelfPosition: 0,
+    });
+    expect(state.actionError()).toBeNull();
+    expect(state.isMutating()).toBeFalse();
+    expect(state.readModel()?.visibleItems.length).toBe(1);
+  });
+
+  it('surfaces mutation errors without optimistic state changes', () => {
+    const initial = readModel(1);
+    const request = new Subject<HeroArmoryReadModel>();
+    armory.renameShelf.and.returnValue(request.asObservable());
+    state.readModel.set(initial);
+    state.status.set('loaded');
+
+    state.renameShelf({
+      shelfPosition: 2,
+      newName: 'Materials',
+    });
+    request.error(new Error('rename denied'));
+
+    expect(state.actionError()).toBe('rename denied');
+    expect(state.readModel()).toBe(initial);
+    expect(state.status()).toBe('loaded');
+    expect(state.isMutating()).toBeFalse();
+  });
+
+  it('clears previous armory when mutation success arrives after context changes', () => {
+    const initial = readModel(1);
+    const request = new Subject<HeroArmoryReadModel>();
+    armory.moveItemToShelf.and.returnValue(request.asObservable());
+    state.readModel.set(initial);
+    state.status.set('loaded');
+
+    state.moveItemToShelf({
+      itemId: 'item-1',
+      targetShelfPosition: 0,
+    });
+    activeHero.state.set(activeHeroState({
+      heroId: 'hero-2',
+      serverId: 'server-1',
+    }));
+    request.next(readModel(2));
+
+    expect(state.readModel()).toBeNull();
+    expect(state.status()).toBe('error');
+    expect(state.actionError()).toBe('Armory shelf context changed.');
+    expect(state.isMutating()).toBeFalse();
+  });
+
+  it('surfaces client-side validation errors from armory actions', () => {
+    armory.renameShelf.and.callFake(() => {
+      throw new Error('shelfPosition must be an integer from 1 to 10.');
+    });
+
+    state.renameShelf({
+      shelfPosition: 0,
+      newName: 'Unsorted',
+    });
+
+    expect(state.actionError()).toBe(
+      'shelfPosition must be an integer from 1 to 10.',
+    );
+    expect(state.isMutating()).toBeFalse();
   });
 });
 

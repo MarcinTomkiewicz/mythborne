@@ -1,5 +1,9 @@
 import { Component, input, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 import {
   ArmoryItemSummary,
   ArmoryShelfReadModel,
@@ -34,7 +38,13 @@ describe('ArmoryPage', () => {
     })
       .overrideComponent(ArmoryPage, {
         set: {
-          imports: [MockItemGeneratorPanel],
+          imports: [
+            FormsModule,
+            ButtonModule,
+            InputTextModule,
+            SelectModule,
+            MockItemGeneratorPanel,
+          ],
           providers: [
             { provide: ArmoryPageFacade, useValue: page },
             { provide: CurrentEquipmentState, useValue: equipment },
@@ -210,6 +220,44 @@ describe('ArmoryPage', () => {
     expect(text).toContain('3 stored beyond visible range');
   });
 
+  it('does not expose rename action for unsorted position zero', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 0,
+        name: 'Unsorted',
+        isUnsortedDropArea: true,
+      }),
+    ]);
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Unsorted');
+    expect(text).toContain('Position 0');
+    expect(text).not.toContain('Rename');
+  });
+
+  it('calls shelf rename action for player shelves', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 2,
+        name: 'Materials',
+      }),
+    ]);
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector(
+      'input[aria-label="Shelf name"]',
+    ) as HTMLInputElement;
+    const button = buttonWithText(fixture, 'Rename');
+    input.value = 'Materials II';
+    button.click();
+
+    expect(armory.renameShelf).toHaveBeenCalledWith({
+      shelfPosition: 2,
+      newName: 'Materials II',
+    });
+  });
+
   it('renders locked armory items as owned items without unusable copy', () => {
     armory.setShelves([
       armoryShelf({
@@ -231,6 +279,71 @@ describe('ArmoryPage', () => {
     expect(text).toContain('Locked Auction');
     expect(text).toContain('Owned item reserved by market state.');
     expect(text).not.toContain('unusable');
+  });
+
+  it('calls item move action and supports target position zero', () => {
+    const item = armoryItem({
+      itemId: 'item-locked',
+      name: 'Auction Locked Shield',
+      lifecycleStatus: 'locked_auction',
+      shelfPosition: 2,
+    });
+    armory.setShelves([
+      armoryShelf({
+        position: 0,
+        name: 'Unsorted',
+        isUnsortedDropArea: true,
+      }),
+      armoryShelf({
+        position: 2,
+        name: 'Market reserves',
+        visibleItems: [item],
+      }),
+    ]);
+    fixture.detectChanges();
+
+    fixture.componentInstance.moveItemToShelf(item, '0');
+
+    expect(armory.moveItemToShelf).toHaveBeenCalledWith({
+      itemId: 'item-locked',
+      targetShelfPosition: 0,
+    });
+  });
+
+  it('rejects blank, null, and non-numeric move targets before state action', () => {
+    const item = armoryItem({ itemId: 'item-1' });
+
+    expect(() => fixture.componentInstance.moveItemToShelf(
+      item,
+      '',
+    )).toThrowError('targetShelfPosition is required for armory action.');
+    expect(() => fixture.componentInstance.moveItemToShelf(
+      item,
+      null,
+    )).toThrowError('targetShelfPosition is required for armory action.');
+    expect(() => fixture.componentInstance.moveItemToShelf(
+      item,
+      'not-a-number',
+    )).toThrowError('targetShelfPosition must be a number.');
+    expect(armory.moveItemToShelf).not.toHaveBeenCalled();
+  });
+
+  it('uses styled PrimeNG controls instead of raw browser controls', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [armoryItem()],
+      }),
+    ]);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('input[aria-label="Shelf name"]')).not.toBeNull();
+    expect(element.querySelector('p-select[aria-label="Move item to shelf"]')).not.toBeNull();
+    expect(element.querySelector('select[aria-label="Move item to shelf"]')).toBeNull();
+    expect(element.querySelector('.form-control')).toBeNull();
+    expect(element.querySelector('.btn.btn-secondary')).toBeNull();
   });
 
   it('renders armory item value without exposing raw layer ids', () => {
@@ -323,10 +436,14 @@ class FakeArmoryShelfState {
   readonly error = signal<string | null>(null);
   readonly isLoading = signal(false);
   readonly isEmpty = signal(true);
+  readonly isMutating = signal(false);
+  readonly actionError = signal<string | null>(null);
   readonly shelves = signal<ArmoryShelfReadModel[]>([]);
   readonly visibleItems = signal<ArmoryItemSummary[]>([]);
   readonly visibility = signal<ArmoryVisibilitySummary | null>(null);
   readonly load = jasmine.createSpy('load');
+  readonly renameShelf = jasmine.createSpy('renameShelf');
+  readonly moveItemToShelf = jasmine.createSpy('moveItemToShelf');
 
   setShelves(
     shelves: ArmoryShelfReadModel[],
@@ -356,6 +473,24 @@ class MockItemGeneratorPanel {
 
 function textContent(fixture: ComponentFixture<ArmoryPage>): string {
   return (fixture.nativeElement as HTMLElement).textContent ?? '';
+}
+
+function buttonWithText(
+  fixture: ComponentFixture<ArmoryPage>,
+  label: string,
+): HTMLButtonElement {
+  const buttons = Array.from(
+    (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
+  ) as HTMLButtonElement[];
+  const button = buttons.find((entry) =>
+    (entry.textContent ?? '').trim() === label,
+  );
+
+  if (!button) {
+    throw new Error(`Button "${label}" was not rendered.`);
+  }
+
+  return button;
 }
 
 function equippedItem(

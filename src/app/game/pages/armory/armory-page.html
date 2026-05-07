@@ -105,6 +105,9 @@
     @if (armory.error()) {
       <p class="status-text-warning mb-md">{{ armory.error() }}</p>
     }
+    @if (armory.actionError()) {
+      <p class="status-text-warning mb-md">{{ armory.actionError() }}</p>
+    }
 
     @if (armory.visibility()) {
       <p class="muted-text mb-md">
@@ -131,6 +134,26 @@
               {{ shelf.visibleItems.length }} visible
             </span>
           </div>
+          @if (!shelf.isUnsortedDropArea) {
+            <div class="flex-row-start-center flex-col-sm gap-xs">
+              <input
+                #shelfName
+                pInputText
+                class="w-100"
+                type="text"
+                [value]="shelf.name"
+                aria-label="Shelf name"
+              />
+              <button
+                pButton
+                type="button"
+                severity="secondary"
+                label="Rename"
+                [disabled]="armory.isMutating()"
+                (click)="renameShelf(shelf, shelfName.value)"
+              ></button>
+            </div>
+          }
 
           @if (shelf.visibleItems.length) {
             <div class="flex-col gap-sm">
@@ -150,6 +173,25 @@
                       Owned item reserved by market state.
                     </span>
                   }
+                  <div class="flex-row-start-center flex-col-sm gap-xs">
+                    <p-select
+                      #targetShelf
+                      styleClass="w-100"
+                      [ngModel]="item.shelfPosition"
+                      [options]="moveTargetShelves()"
+                      optionLabel="label"
+                      optionValue="position"
+                      aria-label="Move item to shelf"
+                    ></p-select>
+                    <button
+                      pButton
+                      type="button"
+                      severity="secondary"
+                      label="Move"
+                      [disabled]="armory.isMutating()"
+                      (click)="moveItemToShelf(item, targetShelf.value)"
+                    ></button>
+                  </div>
                 </div>
               }
             </div>
