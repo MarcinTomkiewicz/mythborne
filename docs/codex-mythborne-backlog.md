@@ -7106,6 +7106,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Stale responses do not overwrite current active hero/server state.
 - Missing active hero is surfaced as an invariant/error state.
 
+**Implementation note:** S4 accepted on 2026-05-07. Added `CurrentEquipmentState` read facade over `PlayerEquipment` with loading/error/empty states, current loadout, slot list, literal slot-key lookup and `load`/`refresh`/`clear` methods. The state guards responses by request id plus active `serverId:heroId`, ignores older responses after newer refreshes, clears loading on context-changed stale responses, and surfaces missing active hero as an invariant error. No direct table reads/writes, DB/RPC changes or generated type edits were made. Follow-ups: add `DestroyRef`/`takeUntilDestroyed` if the state becomes long-lived/root-provided, and decide in UI whether refresh should keep stale loadout visible to avoid flicker.
+
 ---
 
 ## Task S5 — Equipment paperdoll UI
