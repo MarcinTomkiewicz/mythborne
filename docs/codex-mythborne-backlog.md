@@ -6679,6 +6679,8 @@ PvP Foundation is not:
 - Admin overview is DB metadata backed.
 - Overview does not imply unimplemented siege/guild/Prestige functionality exists.
 
+**Implementation note:** R19 accepted on 2026-05-07. Added `/admin/pvp-overview` and admin dashboard/navigation links for a read-only PvP Foundation overview backed by existing PvP UI metadata RPC/service boundaries. The page summarizes action kinds, targeting, runtime, spy, resources, rewards, reports and anti-abuse metadata, uses existing admin/global UI patterns, and explicitly keeps siege/guild/Prestige future-only unless later DB metadata/routes expose them. No DB/RPC/generated type changes or direct PvP table reads/writes were added.
+
 ---
 
 ## Task R20 — PvP action lifecycle admin surface

@@ -66,6 +66,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'PvP',
+    title: 'PvP foundation',
+    description:
+      'Read-only overview of DB-backed PvP metadata, boundaries and foundation status.',
+    routerLink: '/admin/pvp-overview',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Anti-abuse',
     title: 'Anti-abuse config',
     description:
@@ -559,6 +567,30 @@ export const COMBAT_OPPONENTS_PAGE_LINKS: readonly AdminTagLink[] = [
     label: 'Trial definitions',
     routerLink: '/admin/exploration-trials',
     accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const PVP_OVERVIEW_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Formula read model',
+    routerLink: '/admin/formulas',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Combat balance',
+    routerLink: '/admin/combat-balance',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Anti-abuse cases',
+    routerLink: '/admin/anti-abuse-cases',
+    accessPolicy: 'selectedServerAntiAbuseTriage',
+  },
+  {
+    label: 'Reports',
+    routerLink: '/game/reports',
+    accessPolicy: 'playerGameplay',
   },
 ];
 

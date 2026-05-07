@@ -168,4 +168,11 @@ export const adminRoutes: Routes = [
         (m) => m.NotificationHooksPage,
       ),
   },
+  {
+    path: 'pvp-overview',
+    loadComponent: () =>
+      import('./pages/pvp-overview/pvp-overview-page').then(
+        (m) => m.PvpOverviewPage,
+      ),
+  },
 ];

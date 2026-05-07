@@ -1,0 +1,113 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading PvP overview..."
+  description="Loading DB-backed PvP metadata sections."
+/>
+
+@if (error()) {
+  <section class="mg-card flex-col gap-sm p-lg w-100">
+    <p class="card-legend mb-0">Error</p>
+    <p class="mb-0 muted-text">{{ error() }}</p>
+  </section>
+} @else {
+  <div class="flex-col gap-xl w-100">
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">PvP</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            {{ pageHeader()?.label ?? 'Missing UI metadata: pvp_configurator_section/overview' }}
+          </h2>
+          <p class="muted-text mb-0">
+            {{ pageHeader()?.description ?? pageHeader()?.helperText ?? 'DB metadata for the PvP overview is missing.' }}
+          </p>
+        </div>
+
+        <app-admin-tag-links [links]="links" />
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Metadata namespaces</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ sections().length }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Detail rows</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ detailCount() }}
+          </strong>
+        </div>
+
+        <div class="mg-card p-md flex-col gap-xs">
+          <span class="muted-text">Missing overview rows</span>
+          <strong class="mg-section__title mg-section__title--xs mb-0">
+            {{ missingOverviewCount() }}
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <app-admin-section-intro
+        legend="Foundation boundary"
+        title="Read-only PvP metadata"
+        text="This page reports DB metadata and current foundation boundaries. It does not enable actions or create gameplay state."
+        secondaryText="Future siege, guild and Prestige systems must stay future-only unless DB metadata and dedicated routes expose them in later slices."
+      />
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-md">
+        @for (section of sections(); track section.namespace) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <app-admin-section-intro
+                [legend]="section.legend"
+                [title]="section.overview?.label ?? section.missingOverviewLabel"
+                [text]="section.overview?.description ?? section.overview?.helperText ?? section.expected"
+                [secondaryText]="section.overview?.impactSummary ?? section.overview?.warningText ?? null"
+              />
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="tag-badge tag-badge--muted">{{ section.namespace }}</span>
+                @if (section.overview) {
+                  <span class="tag-badge tag-badge--info">DB metadata</span>
+                } @else {
+                  <span class="tag-badge tag-badge--warn">metadata gap</span>
+                }
+              </div>
+            </div>
+
+            @if (section.details.length) {
+              <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-sm">
+                @for (detail of section.details; track detail.id) {
+                  <div class="mg-card p-sm flex-col gap-xs">
+                    <div class="flex-row-between-center flex-col-sm gap-xs">
+                      <strong class="heading-color">{{ detail.label }}</strong>
+                      <span class="tag-badge tag-badge--muted">{{ detail.key }}</span>
+                    </div>
+                    <p class="muted-text mb-0">
+                      {{ detail.description || detail.helperText || detail.impactSummary || 'No DB metadata copy.' }}
+                    </p>
+                    @if (detail.warningText) {
+                      <p class="status-text-warning mb-0">{{ detail.warningText }}</p>
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="muted-text mb-0">
+                No additional active metadata rows for this section.
+              </p>
+            }
+          </article>
+        }
+      </div>
+    </section>
+  </div>
+}
