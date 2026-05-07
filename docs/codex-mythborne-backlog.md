@@ -6720,6 +6720,8 @@ PvP Foundation is not:
 - Balancer can inspect targeting/protection configuration.
 - UI does not hardcode formula variables or expressions.
 
+**Implementation note:** R21 accepted on 2026-05-07. Added `/admin/pvp-targeting` and admin navigation/dashboard links for a read-only targeting/protection balancer surface. The page reuses the formula admin read model and PvP UI metadata service, displays real PvP targeting formula targets (`pvp_attack_min_target_level`, `pvp_attack_max_target_level`, `pvp_attack_travel_time_seconds`, `pvp_spy_travel_time_seconds`, `pvp_manual_fight_window_seconds`, `pvp_target_protection_seconds`) with labels/descriptions/variables/expressions/default context from DB read rows, and loads metadata from both `pvp_targeting_section` and `pvp_configurator_section`. Metadata matching stays explicit by `key`/`uiGroupKey`; missing rows show configuration gaps rather than fuzzy Angular copy. No DB/RPC/generated type changes, direct PvP runtime reads or writes were added. Follow-up: verify real DB metadata key/uiGroupKey values from dump/seeds on the next touch.
+
 ---
 
 ## Task R22 — PvP travel/manual-window balancer surface

@@ -82,6 +82,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'PvP',
+    title: 'PvP targeting',
+    description:
+      'Read-only targeting and protection formula surface for PvP balancing.',
+    routerLink: '/admin/pvp-targeting',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Anti-abuse',
     title: 'Anti-abuse config',
     description:
@@ -586,6 +594,11 @@ export const PVP_OVERVIEW_PAGE_LINKS: readonly AdminTagLink[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    label: 'PvP targeting',
+    routerLink: '/admin/pvp-targeting',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     label: 'Formula read model',
     routerLink: '/admin/formulas',
     accessPolicy: 'selectedServerManagement',
@@ -615,6 +628,11 @@ export const PVP_ACTION_LIFECYCLE_PAGE_LINKS: readonly AdminTagLink[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    label: 'PvP targeting',
+    routerLink: '/admin/pvp-targeting',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     label: 'Formula read model',
     routerLink: '/admin/formulas',
     accessPolicy: 'selectedServerManagement',
@@ -622,6 +640,25 @@ export const PVP_ACTION_LIFECYCLE_PAGE_LINKS: readonly AdminTagLink[] = [
   {
     label: 'Combat balance',
     routerLink: '/admin/combat-balance',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const PVP_TARGETING_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'PvP foundation',
+    routerLink: '/admin/pvp-overview',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'PvP lifecycle',
+    routerLink: '/admin/pvp-action-lifecycle',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Formula read model',
+    routerLink: '/admin/formulas',
     accessPolicy: 'selectedServerManagement',
   },
 ];
