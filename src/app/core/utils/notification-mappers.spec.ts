@@ -98,6 +98,36 @@ describe('notification mappers', () => {
     });
   });
 
+  it('maps PvP result notification action links without exposing target internals', () => {
+    const attack = mapPlayerNotificationListItem(playerNotificationRow({
+      action_label: 'Open attack result',
+      action_url: '/game/vicinity/attack-results/attack-result-1',
+      notification_type_key: 'pvp.attack_result.attacker',
+      notification_type_label: 'PvP attack result',
+      source_entity_id: 'attack-result-1',
+      source_entity_type: 'pvp_attack_result',
+    }));
+    const spy = mapPlayerNotificationListItem(playerNotificationRow({
+      action_label: 'Open spy result',
+      action_url: '/game/vicinity/spy-results/spy-result-1',
+      notification_type_key: 'pvp.spy_result.ready',
+      notification_type_label: 'PvP spy result ready',
+      source_entity_id: 'spy-result-1',
+      source_entity_type: 'pvp_spy_result',
+    }));
+
+    expect(attack.actionLink).toEqual({
+      label: 'Open attack result',
+      url: '/game/vicinity/attack-results/attack-result-1',
+    });
+    expect(spy.actionLink).toEqual({
+      label: 'Open spy result',
+      url: '/game/vicinity/spy-results/spy-result-1',
+    });
+    expect(JSON.stringify([attack, spy])).not.toContain('target_hero');
+    expect(JSON.stringify([attack, spy])).not.toContain('incoming');
+  });
+
   it('rejects staff notifications from the player mapper', () => {
     expect(() =>
       mapPlayerNotificationListItem(playerNotificationRow({

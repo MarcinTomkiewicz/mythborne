@@ -6652,6 +6652,8 @@ PvP Foundation is not:
 - No incoming attack notification behavior is introduced.
 - No target spy notification behavior is introduced.
 
+**Implementation note:** R18 accepted on 2026-05-07. Player notification action route policy now allows `/game/vicinity/attack-results/:id` only for `pvp.attack_result.attacker` / `pvp.attack_result.defender` with matching `sourceEntity: pvp_attack_result/:id`, and `/game/vicinity/spy-results/:id` only for `pvp.spy_result.ready` with matching `sourceEntity: pvp_spy_result/:id`. Static menu routes remain unchanged; no incoming attack/target spy behavior, direct notification writes or direct PvP reads were added.
+
 ---
 
 ## Task R19 — PvP admin overview
