@@ -220,6 +220,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: R26 - PvP anti-abuse explainability surface.
 - Completed and confirmed: R27 - PvP report producer admin surface.
 - Completed and confirmed: R28 - PvP foundation diagnostic admin surface.
+- Completed and confirmed with follow-up: S24 - PvP and spy equipment display alignment.
 - Completed and confirmed: S0 - Generated DB types alignment after item/equipment foundation.
 - Completed and confirmed: S1 - Item and equipment domain models.
 - Completed and confirmed: S2 - Item and equipment mappers.
@@ -282,6 +283,7 @@ Order reflects implementation priority, not final business priority.
 - S21 follow-up: `isPlayerUsableItemStatus(...)` now means runtime/equipment usable (`active`, `locked_trade`, `locked_auction`) rather than vendor/listing/scrap eligible. Do not broaden it into lifecycle action eligibility. If touched again, consider renaming it to `isRuntimeUsableItemStatus(...)` or adding a clearer domain-specific helper.
 - S22 follow-up: later exploration/PvE UI copy pass can unify the mixed Polish/English live combat/loadout boundary text. No behavior change is needed.
 - S23 follow-up: live combat logs/results can show safe weapon/attack-source labels only if DB live events or result detail expose them. Do not reconstruct or guess weapon labels in Angular.
+- S24 follow-up: PvP attack/result/report Prestige display must remain non-numeric until a dedicated player-safe Prestige summary read-model contract exists. Do not expose raw Prestige points, numeric deltas or projected deltas in player-facing PvP UI, and do not calculate Prestige in Angular.
 - Epic N DB sanity follow-up: verify actual `balance_formula_targets`, `balance_formulas` and assignment rows for `hero_experience_to_next_level`, `hero_stat_upgrade_cost` and `hero_stat_level_cap`; generated TypeScript confirms schema/RPC signatures, not seeded content.
 - M12 follow-up: apply `AdminReasonPresetField` to the remaining M12 reason fields for consistency.
 - M12 follow-up: broader UI polish for white/native-looking inputs where global PrimeNG/theme styles are inconsistent.
