@@ -48,6 +48,7 @@ describe('ArmoryPage', () => {
             SelectModule,
             MockArmoryItemDetailPopover,
             MockItemGeneratorPanel,
+            MockLoadoutPresetManagement,
           ],
           providers: [
             { provide: ArmoryPageFacade, useValue: page },
@@ -660,6 +661,13 @@ class FakeArmoryShelfState {
 class MockItemGeneratorPanel {
   readonly luck = input(0);
 }
+
+@Component({
+  selector: 'app-loadout-preset-management',
+  standalone: true,
+  template: '<section>Loadout presets</section>',
+})
+class MockLoadoutPresetManagement {}
 
 @Component({
   selector: 'app-armory-item-detail-popover',

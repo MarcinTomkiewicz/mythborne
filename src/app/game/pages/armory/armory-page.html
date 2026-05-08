@@ -21,6 +21,8 @@
     </div>
   </section>
 
+  <app-loadout-preset-management />
+
   <section class="mg-card p-lg w-100">
     <div class="flex-row-between-center flex-col-sm gap-md mb-md">
       <div class="flex-col gap-xs">
@@ -218,7 +220,6 @@
                   <div class="flex-row-start-center gap-sm" [formGroup]="bulkSelectionForm">
                     <p-checkbox
                       [binary]="true"
-                      [disabled]="equipment.isMutating()"
                       [formControlName]="item.itemId"
                       [inputId]="'bulk-equip-' + item.itemId"
                       (onChange)="setBulkItemSelected(item, $event.checked === true)"

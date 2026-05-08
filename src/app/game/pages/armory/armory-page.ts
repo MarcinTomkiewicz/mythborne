@@ -18,12 +18,7 @@ import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.stat
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { ItemGeneratorPanel } from '../../components/item-generator-panel/item-generator-panel';
 import { ArmoryItemDetailPopover } from '../../components/armory-item-detail-popover/armory-item-detail-popover';
-
-interface EquipmentPaperdollSlot {
-  slotKey: string;
-  label: string;
-  item: EquippedItemSummary | null;
-}
+import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
 
 @Component({
   selector: 'app-armory-page',
@@ -37,15 +32,20 @@ interface EquipmentPaperdollSlot {
     SelectModule,
     ArmoryItemDetailPopover,
     ItemGeneratorPanel,
+    LoadoutPresetManagement,
   ],
-  providers: [ArmoryPageFacade, CurrentEquipmentState, ArmoryShelfState],
+  providers: [
+    ArmoryPageFacade,
+    CurrentEquipmentState,
+    ArmoryShelfState,
+  ],
   templateUrl: './armory-page.html',
 })
 export class ArmoryPage implements OnInit {
   readonly page = inject(ArmoryPageFacade);
   readonly equipment = inject(CurrentEquipmentState);
   readonly armory = inject(ArmoryShelfState);
-  readonly paperdollSlots = computed<EquipmentPaperdollSlot[]>(() =>
+  readonly paperdollSlots = computed(() =>
     this.page.equipmentSlots().map((slot) => ({
       slotKey: slot.slotKey,
       label: slot.label,
@@ -294,6 +294,7 @@ export class ArmoryPage implements OnInit {
       { emitEvent: false },
     );
   }
+
 }
 
 function humanizeKey(value: string): string {

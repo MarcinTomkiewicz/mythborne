@@ -7407,6 +7407,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Preset slots remain stable.
 - UI copy avoids confusing presets with future item sets.
 
+**Implementation note:** S15 accepted on 2026-05-08. `/game/armory` now includes player-facing loadout preset management through a dedicated `LoadoutPresetManagement` component and `HeroLoadoutPresetsState`, keeping preset UI/workflow state out of the already broad `HeroEquipment` service and reducing the Armory page surface. The UI shows DB-owned preset slots, allows rename, clear and save current loadout through canonical `HeroEquipment` methods backed by `rename_hero_loadout_preset(...)`, `clear_hero_loadout_preset(...)` and `save_current_hero_loadout_preset(...)`, and does not apply/preview/equip during rename. Blank rename maps to controlled `Preset name is required.` feedback. No direct writes to `hero_loadout_presets`, `hero_loadout_preset_slots`, `hero_equipment`, `items` or `hero_armory_shelves` were added, `database.types.ts` was not touched, and UI copy avoids the standalone word `set` for presets. Verification passed with `npx tsc --noEmit`, focused Armory/loadout preset specs, static greps for no `ngModel`, `FormsModule`, `button pButton`, `[disabled]` on `formControlName` controls or direct gameplay table writes, and `npm run build` with known budget/CommonJS warnings. S16/S17 remain separate tasks for preview and apply.
+
 ---
 
 ## Task S16 — Preset preview UI
