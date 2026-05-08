@@ -7787,6 +7787,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Guild services can type canonical RPC calls.
 - No manual generated-type edits exist.
 
+**Implementation note:** T0 accepted on 2026-05-08 as verification-only. Current generated `database.types.ts` already exposes the expected guild tables/RPCs for identity, config, membership, invites, join requests, roles, officer management, emergency election, guild armory, loans and access locks. Codex did not edit/regenerate generated types and did not add frontend substitutes for missing contracts. Verification passed with `npx tsc --noEmit` and `npm run build` with known warnings.
+
 ---
 
 ## Task T1 — Guild domain models and mappers
@@ -7816,6 +7818,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Guild role and membership state are explicit.
 - Mapper handles missing/null optional fields safely.
 - Build and focused mapper tests pass.
+
+**Implementation note:** T1 accepted with follow-up on 2026-05-08. Added `guild.model.ts`, `guild-rpc.types.ts`, `guild-mappers.ts` and focused mapper specs for guild summary/detail, current hero guild state, membership, member list rows, invites, join requests and config summary. The mapper layer uses generated RPC row types, keeps raw rows out of future components, preserves reasons/status reasons, handles empty optional fields as null, and does not expose `member_user_id` in the player-facing member model. No services, UI, routes, RPC calls, direct guild table writes, DB/RPC changes, migrations or generated type edits were added. Verification passed with `npx tsc --noEmit`, focused `guild-mappers.spec.ts` and `npm run build` with known warnings. Follow-up for T2/UI: if role dictionary labels/descriptions are needed, add a DB-backed guild role model/read path instead of hardcoding role lists.
 
 ---
 
