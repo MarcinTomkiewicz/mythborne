@@ -7549,6 +7549,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Locked equipped items are not treated as bonusless merely because they are locked.
 - Runtime display matches DB/resolver behavior.
 
+**Implementation note:** S21 accepted with follow-up on 2026-05-08. Frontend runtime mapping now treats `active`, `locked_trade`, and `locked_auction` as runtime/equipment-usable item statuses, while `scrapped` remains excluded. The only local runtime filter found was `isPlayerUsableItemStatus(...)` used by combat hero attack-source mapping; it now uses the current runtime-usable status set instead of active-only logic. Combat regressions cover locked trade/auction equipped items being included as attack sources and scrapped equipped rows being excluded. No DB/RPC path, direct write, Armory CTA, `database.types.ts`, migration or status-doc change was made before acceptance. Verification passed with `npx tsc --noEmit`, focused item/combat mapper specs, focused runtime equipment specs and `npm run build` with known budget/CommonJS warnings. Follow-up: do not broaden `isPlayerUsableItemStatus(...)` for vendor sell/scrap/listing eligibility; if touched again, consider renaming or replacing it with a clearer runtime/equipment-specific helper name.
+
 ---
 
 ## Task S22 — PvE equipment integration read alignment

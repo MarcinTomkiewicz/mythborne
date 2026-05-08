@@ -116,6 +116,41 @@ describe('combat attack plan', () => {
       attackCount: 2,
     }));
   });
+
+  it('keeps locked equipped items as runtime attack sources', () => {
+    const sources = toEquippedCombatItemAttackSources(
+      [
+        equippedRow({
+          item_id: 'locked-trade-item',
+          items: equippedItem('locked-trade-item', 'locked_trade'),
+        }),
+        equippedRow({
+          item_id: 'locked-auction-item',
+          items: equippedItem('locked-auction-item', 'locked_auction'),
+        }),
+      ],
+      itemCatalog(),
+    );
+
+    expect(sources.map((source) => source.itemId)).toEqual([
+      'locked-trade-item',
+      'locked-auction-item',
+    ]);
+  });
+
+  it('excludes scrapped equipped rows from runtime attack sources', () => {
+    const sources = toEquippedCombatItemAttackSources(
+      [
+        equippedRow({
+          item_id: 'scrapped-item',
+          items: equippedItem('scrapped-item', 'scrapped'),
+        }),
+      ],
+      itemCatalog(),
+    );
+
+    expect(sources).toEqual([]);
+  });
 });
 
 function combatItem(
@@ -141,25 +176,33 @@ function combatItem(
   };
 }
 
-function equippedRow(): EquippedItemRow {
+function equippedRow(overrides: Partial<EquippedItemRow> = {}): EquippedItemRow {
   return {
     id: 'equipment-1',
     hero_id: 'hero-1',
     item_id: 'item-1',
     slot_key: 'main_hand',
     equipped_at: '2026-05-01T10:00:00.000Z',
-    items: {
-      id: 'item-1',
-      generation_base_id: 'base-1',
-      generation_quality_key: 'quality',
-      prefix_affix_id: 'prefix-1',
-      suffix_affix_id: 'suffix-1',
-      status: 'active',
-      scrapped_at: null,
-      recoverable_until: null,
-      updated_at: '2026-05-01T10:00:00.000Z',
-    },
+    items: equippedItem('item-1', 'active'),
+    ...overrides,
   } as EquippedItemRow;
+}
+
+function equippedItem(
+  itemId: string,
+  status: NonNullable<EquippedItemRow['items']>['status'],
+): NonNullable<EquippedItemRow['items']> {
+  return {
+    id: itemId,
+    generation_base_id: 'base-1',
+    generation_quality_key: 'quality',
+    prefix_affix_id: 'prefix-1',
+    suffix_affix_id: 'suffix-1',
+    status,
+    scrapped_at: null,
+    recoverable_until: null,
+    updated_at: '2026-05-01T10:00:00.000Z',
+  };
 }
 
 function itemCatalog(): ItemGenerationCatalog {

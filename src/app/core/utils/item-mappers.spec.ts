@@ -20,11 +20,11 @@ describe('item mappers', () => {
     expect(item.metadataJson as unknown).toBe(row.metadata_json as unknown);
   });
 
-  it('treats only active item status as player usable', () => {
+  it('treats runtime-equipped statuses as player usable', () => {
     expect(isPlayerUsableItemStatus('active')).toBeTrue();
+    expect(isPlayerUsableItemStatus('locked_trade')).toBeTrue();
+    expect(isPlayerUsableItemStatus('locked_auction')).toBeTrue();
     expect(isPlayerUsableItemStatus('scrapped')).toBeFalse();
-    expect(isPlayerUsableItemStatus('locked_trade')).toBeFalse();
-    expect(isPlayerUsableItemStatus('locked_auction')).toBeFalse();
   });
 });
 

@@ -2,7 +2,11 @@ import { Json } from '../../types/database.types';
 import { Row } from '../../types/supabase.types';
 
 export type ItemStatus = Row<'items'>['status'];
-export const PLAYER_USABLE_ITEM_STATUS: ItemStatus = 'active';
+export const PLAYER_RUNTIME_USABLE_ITEM_STATUSES: readonly ItemStatus[] = [
+  'active',
+  'locked_trade',
+  'locked_auction',
+];
 
 export interface ItemReadModel {
   id: string;
@@ -26,5 +30,5 @@ export interface ItemReadModel {
 }
 
 export function isPlayerUsableItemStatus(status: ItemStatus): boolean {
-  return status === PLAYER_USABLE_ITEM_STATUS;
+  return PLAYER_RUNTIME_USABLE_ITEM_STATUSES.includes(status);
 }
