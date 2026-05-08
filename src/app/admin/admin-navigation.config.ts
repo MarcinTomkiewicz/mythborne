@@ -18,6 +18,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerManagement',
   },
   {
+    legend: 'Catalog',
+    title: 'Scrapped item recovery',
+    description:
+      'Staff recovery surface for DB-returned recoverable scrapped affix items.',
+    routerLink: '/admin/scrapped-item-recovery',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
     legend: 'Buildings',
     title: 'Estate buildings',
     description:
@@ -308,7 +316,26 @@ export const LEVEL_UP_STAT_BONUSES_PAGE_LINKS: readonly AdminTagLink[] = [
 
 export const ITEM_CATALOG_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Balance', routerLink: '/admin/balance', accessPolicy: 'selectedServerManagement' },
+  {
+    label: 'Scrapped item recovery',
+    routerLink: '/admin/scrapped-item-recovery',
+    accessPolicy: 'selectedServerManagement',
+  },
   { label: 'Go to armory', routerLink: '/game/armory', accessPolicy: 'playerGameplay' },
+];
+
+export const SCRAPPED_ITEM_RECOVERY_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Item catalog',
+    routerLink: '/admin/item-catalog',
+    accessPolicy: 'selectedServerManagement',
+  },
+  {
+    label: 'Audit logs',
+    routerLink: '/admin/audit-logs',
+    accessPolicy: 'selectedServerManagement',
+  },
 ];
 
 export const BUILDINGS_PAGE_LINKS: readonly AdminTagLink[] = [

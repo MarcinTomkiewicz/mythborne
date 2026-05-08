@@ -7525,6 +7525,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Recovery UI does not imply ordinary no-affix item recovery.
 - Recovery uses canonical RPC.
 
+**Implementation note:** S20 accepted with follow-up on 2026-05-08 after user smoke. `/admin/scrapped-item-recovery` now provides a staff recovery surface for DB-returned recoverable scrapped affix items. The page uses `ItemLifecycleService.searchRecoverableScrappedItems(...)` / `search_recoverable_scrapped_items_page(...)` for inspection and `ItemLifecycleService.recoverScrappedItem(...)` / `recover_scrapped_item(...)` for recovery, without direct `items` writes and without touching `database.types.ts` or migrations. The UI states that ordinary no-affix items are hard-deleted by lifecycle policy and are not presented as recoverable. Verification passed with `npx tsc --noEmit`, focused page/state specs, static greps and `npm run build` with known budget/CommonJS warnings. User smoke confirmed route rendering, selected server context, clear empty recoverable state, no fake rows and no implied no-affix recovery. Recovery execution on a real recoverable affix item remains untested because no convenient fixture/data item exists. Follow-up: on the next small anti-abuse/admin touch, check whether DB ACL should be mirrored more precisely by splitting UI policy into `canSearch` for anti-abuse triage/sanction inspection and `canRecover` for sanction-management recovery authority. Do not keep growing `ScrappedItemRecoveryState`; split it on the next meaningful expansion.
+
 ---
 
 ## Task S21 — Equipment runtime usability alignment

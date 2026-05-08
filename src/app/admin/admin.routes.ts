@@ -28,6 +28,13 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'scrapped-item-recovery',
+    loadComponent: () =>
+      import('./pages/scrapped-item-recovery/scrapped-item-recovery-page').then(
+        (m) => m.ScrappedItemRecoveryPage,
+      ),
+  },
+  {
     path: 'buildings',
     loadComponent: () =>
       import('./pages/buildings/buildings-page').then((m) => m.BuildingsPage),

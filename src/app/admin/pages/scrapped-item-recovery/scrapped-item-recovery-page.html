@@ -1,0 +1,158 @@
+<div class="flex-col gap-xl">
+  <app-loading-overlay
+    [visible]="recovery.isSearching()"
+    title="Loading recoverable items"
+    message="Refreshing recoverable scrapped affix items."
+  />
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-col gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Items</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">
+          Scrapped item recovery
+        </h2>
+        <p class="muted-text mb-0">
+          Staff recovery only lists DB-returned recoverable affix items. Ordinary no-affix items are hard-deleted by lifecycle policy and are not presented as recoverable.
+        </p>
+      </div>
+
+      <app-admin-server-switcher />
+    </div>
+  </section>
+
+  @if (!selectedServer()) {
+    <p-message severity="warn">
+      Select a server before searching recoverable items.
+    </p-message>
+  } @else if (!canRecover()) {
+    <p-message severity="warn">
+      This account cannot recover scrapped items on the selected server.
+    </p-message>
+  } @else {
+    @if (recovery.error(); as error) {
+      <p-message severity="error">{{ error }}</p-message>
+    }
+
+    @if (recovery.message(); as message) {
+      <p-message severity="info">{{ message }}</p-message>
+    }
+
+    <section class="mg-card flex-col gap-lg p-lg w-100">
+      <div class="flex-row-between-center flex-wrap gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Search</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            Recoverable affix items
+          </h3>
+          <p class="muted-text mb-0">
+            Search by item, hero, account or technical id within the selected server.
+          </p>
+        </div>
+
+        <span class="tag-badge tag-badge--info">
+          {{ recovery.totalCount() }} recoverable
+        </span>
+      </div>
+
+      <form
+        [formGroup]="recovery.searchForm"
+        class="flex-row-start-end flex-wrap gap-md"
+        (ngSubmit)="search()"
+      >
+        <label class="flex-col gap-sm min-w-0">
+          <span class="muted-text">Search</span>
+          <input
+            pInputText
+            class="w-100"
+            formControlName="query"
+            placeholder="Item, hero, account or id"
+          />
+        </label>
+
+        <p-button
+          type="submit"
+          label="Search"
+          [loading]="recovery.isSearching()"
+          [disabled]="recovery.isSearching()"
+        />
+      </form>
+    </section>
+
+    <section class="mg-card flex-col gap-lg p-lg w-100">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Recovery</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">
+          Recovery candidates
+        </h3>
+      </div>
+
+      <form [formGroup]="recovery.recoveryForm" class="flex-col gap-lg">
+        <app-admin-reason-preset-field
+          [control]="recovery.recoveryForm.controls.reason"
+          label="Recovery reason"
+          [error]="
+            recovery.recoveryForm.controls.reason.touched &&
+            recovery.recoveryForm.controls.reason.invalid
+              ? 'Recovery reason is required.'
+              : null
+          "
+        />
+
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
+          @for (item of recovery.items(); track item.itemId) {
+            <article class="mg-card flex-col gap-md p-md">
+              <div class="flex-row-between-center flex-wrap gap-sm">
+                <div class="flex-col gap-xs min-w-0">
+                  <strong class="heading-color">{{ item.itemDisplayName }}</strong>
+                  <span class="muted-text">Item id: {{ item.itemId }}</span>
+                </div>
+                <span class="tag-badge tag-badge--warn">scrapped</span>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                @if (item.prefixAffixId) {
+                  <span class="mg-tag">prefix affix</span>
+                }
+                @if (item.suffixAffixId) {
+                  <span class="mg-tag">suffix affix</span>
+                }
+                <span class="mg-tag">{{ item.itemValue }} drachma value</span>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="heading-color">{{ item.ownerHeroName }}</span>
+                <span class="muted-text">{{ item.ownerDisplayName }}</span>
+                <span class="muted-text">Hero id: {{ item.ownerHeroId }}</span>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span>Scrapped at: {{ item.scrappedAt }}</span>
+                <span>Recoverable until: {{ item.recoverableUntil }}</span>
+                <span class="muted-text">Match: {{ item.matchKind }}</span>
+              </div>
+
+              <div class="flex-row-start-center">
+                <p-button
+                  label="Recover to owner"
+                  severity="danger"
+                  [loading]="recovery.isRecovering(item)"
+                  [disabled]="recovery.recoveringItemId() !== null"
+                  (onClick)="recover(item)"
+                />
+              </div>
+            </article>
+          } @empty {
+            <p-message severity="info">
+              No recoverable scrapped affix items were returned for this server.
+            </p-message>
+          }
+        </div>
+      </form>
+    </section>
+  }
+
+  <section class="mg-card p-lg w-100">
+    <app-admin-tag-links [links]="links" />
+  </section>
+</div>
