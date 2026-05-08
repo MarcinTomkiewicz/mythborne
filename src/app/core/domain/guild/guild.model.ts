@@ -34,6 +34,13 @@ export interface CurrentHeroGuildState {
   permissions: GuildPermissions;
 }
 
+export interface CurrentGuildReadModel {
+  heroId: string;
+  serverId: string;
+  state: CurrentHeroGuildState;
+  detail: GuildDetail | null;
+}
+
 export interface GuildDetail extends GuildSummary {
   currentHeroId: string;
   currentMembershipId: string;

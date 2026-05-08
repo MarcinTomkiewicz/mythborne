@@ -7847,6 +7847,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Role-specific capabilities are derived from DB/RPC state.
 - Stale responses do not overwrite current selected server/hero state.
 
+**Implementation note:** T2 accepted on 2026-05-08. Added `PlayerGuild` and `CurrentGuildState` over canonical guild RPC read models, with explicit no-guild/member/officer/leader/loading/error states, DB/RPC-derived permissions, active hero + selected server stale guards, and focused service/state specs including the `hasGuild()` null-state regression. No UI, routes, DB/RPC changes, migrations, generated type edits, status writes during implementation or direct guild table access were added. Verification passed with `npx tsc --noEmit`, focused guild specs and `npm run build` with known warnings.
+
 ---
 
 ## Task T3 — Guild discovery and search
