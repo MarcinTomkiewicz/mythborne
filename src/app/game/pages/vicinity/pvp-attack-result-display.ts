@@ -3,7 +3,6 @@ import { Json } from '../../../core/types/database.types';
 import {
   jsonRecord,
   JsonRecord,
-  optionalBoolean,
   optionalNumber,
   read,
 } from '../../../core/utils/json-read';
@@ -11,6 +10,7 @@ import {
 export interface PvpAttackResultDisplay {
   summaryFacts: PvpAttackResultDisplayRow[];
   combatantFacts: PvpAttackResultDisplayRow[];
+  boundaryNotes: string[];
   sections: PvpAttackResultDisplaySection[];
 }
 
@@ -44,6 +44,10 @@ export function pvpAttackResultDisplay(
         label: 'Defender',
         value: combatantLabel('Defender', result.defender.levelSnapshot, result),
       },
+    ],
+    boundaryNotes: [
+      'Equipment is part of DB/runtime combat resolution and is not shown as a PvP reward.',
+      'Ordinary PvP attacks do not transfer, steal or destroy items.',
     ],
     sections: [
       {
@@ -91,18 +95,27 @@ function rewardRows(value: Json): PvpAttackResultDisplayRow[] {
 
 function prestigeRows(value: Json): PvpAttackResultDisplayRow[] {
   const record = jsonRecord(value);
-  const rows = [
-    numericRow(record, 'Prestige delta (future)', 'prestigeDelta', 'prestige_delta'),
-    numericRow(
-      record,
-      'Projected prestige delta (future)',
-      'projectedPrestigeDelta',
-      'projected_prestige_delta',
-    ),
-    booleanRow(record, 'Future context', 'future', 'isFuture', 'is_future'),
-  ].filter((row): row is PvpAttackResultDisplayRow => row !== null);
+  if (!record) {
+    return [];
+  }
 
-  return rows;
+  const hasPrestigeContext = read(
+    record,
+    'prestigeDelta',
+    'prestige_delta',
+    'projectedPrestigeDelta',
+    'projected_prestige_delta',
+    'future',
+    'isFuture',
+    'is_future',
+  ) !== undefined;
+
+  return hasPrestigeContext
+    ? [{
+        label: 'Future Prestige context',
+        value: 'Recorded for future processing',
+      }]
+    : [];
 }
 
 function numericRow(
@@ -112,15 +125,6 @@ function numericRow(
 ): PvpAttackResultDisplayRow | null {
   const value = optionalNumber(read(record, ...keys));
   return value === null ? null : { label, value: signedNumber(value) };
-}
-
-function booleanRow(
-  record: JsonRecord | null,
-  label: string,
-  ...keys: string[]
-): PvpAttackResultDisplayRow | null {
-  const value = optionalBoolean(read(record, ...keys));
-  return value === null ? null : { label, value: value ? 'Yes' : 'No' };
 }
 
 function combatantLabel(

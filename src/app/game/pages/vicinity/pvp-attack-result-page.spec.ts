@@ -71,6 +71,8 @@ describe('PvpAttackResultPage', () => {
     expect(text).toContain('+120');
     expect(text).toContain('XP');
     expect(text).toContain('+25');
+    expect(text).toContain('Equipment is part of DB/runtime combat resolution');
+    expect(text).toContain('Ordinary PvP attacks do not transfer, steal or destroy items.');
     expect(text).not.toContain('active-hero-1');
     expect(text).not.toContain('target-hero-1');
     expect(text).not.toContain('pvp.attack.completed');

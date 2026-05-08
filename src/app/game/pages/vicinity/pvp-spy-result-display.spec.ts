@@ -21,6 +21,8 @@ describe('pvpSpyResultDisplay', () => {
     expect(section(display.sections, 'Equipment').rows).toEqual([
       { label: 'Weapon', value: 'Bronze Spear · Rare · Spear' },
     ]);
+    expect(section(display.sections, 'Equipment').description)
+      .toBe('Current equipment snapshot recorded by the DB spy result.');
     expect(section(display.sections, 'Buildings').rows).toEqual([
       { label: 'Entry 1', value: 'Forge · Level 3 · Active' },
     ]);

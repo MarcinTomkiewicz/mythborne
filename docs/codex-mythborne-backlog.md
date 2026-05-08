@@ -7608,6 +7608,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - PvP UI does not imply item theft/destruction.
 - PvP equipment assumptions match DB/runtime.
 
+**Implementation note:** S24 accepted with follow-up on 2026-05-08 after blocker fix. PvP spy result Equipment now labels the section as a DB-recorded current equipment snapshot. PvP attack result display now shows explicit player-facing boundary notes that equipment belongs to DB/runtime combat resolution and that ordinary PvP attacks do not transfer, steal or destroy items. The previous player-facing numeric Prestige delta/projected-delta rows were removed; until a dedicated player-safe Prestige summary contract exists, attack result Prestige display is limited to a non-numeric future-context row. No DB/RPC path, direct write, raw JSON preview, Angular Prestige calculation/fallback, generated type, migration or status-doc schema change was added. Verification passed with `npx tsc --noEmit`, focused PvP display/page specs and `npm run build` with known budget/CommonJS warnings. Manual smoke remains user-owned for representative PvP result pages.
+
 ---
 
 ## Task S25 — Item requirement admin/balancer surface

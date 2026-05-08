@@ -16,6 +16,7 @@ After every schema/RPC migration that Codex will consume, regenerate/update gene
 
 
 
+
 ## Update 2026-05-08 — Server Events DB/RPC foundation
 
 The current dump includes the first Server Events DB/RPC foundation. Server Events are no longer only a planning topic at the DB layer. This section supersedes older notes that describe Server Events as not yet implemented in the database.
@@ -171,9 +172,308 @@ Frontend rules:
 - no Server Council, proposal voting UI, or Angular-side event effect calculation belongs to the first frontend integration.
 
 
+
+## Update 2026-05-08 — S9-FIX3 / S11 / S14 DB/RPC hardening pack and current frontend contracts
+
+This update records the item/equipment/combat/dashboard/loadout/vendor hardening completed after S9-FIX2. It is the current semantic contract for frontend/Codex work where it conflicts with older notes below. In particular, S11 supersedes the earlier S9-FIX2 display intent that treated two-handed critical stats, ranged attack count, and jewelry identity as `primary_stat` rows.
+
+### S9-FIX3 — DB-owned item type and equip target metadata
+
+`get_hero_armory_item_detail(p_hero_id uuid, p_item_id uuid)` keeps the same frontend call signature after S9-FIX3, but now augments `bonuses_json` with DB-owned item type and equipment target metadata:
+
+- `bonuses_json.itemType`;
+- `bonuses_json.equipTarget`.
+
+Supporting objects:
+
+- `item_generation_base_type_equip_targets` — DB-owned mapping from `item_generation_base_types.key` to player-facing equip target metadata and technical physical slot instances;
+- `get_item_generation_base_type_equip_metadata(p_base_type_key text)` — helper returning `itemType` and `equipTarget` JSON for a base type.
+
+`itemType` includes:
+
+- `baseTypeKey`;
+- `baseTypeLabel`;
+- `baseTypeDescription`;
+- `equipmentSlotGroup`;
+- `handUsage`;
+- `isActive`.
+
+`equipTarget` includes:
+
+- `targetKey`;
+- `label`;
+- `playerFacingSlotSummary`;
+- `equipmentArea`;
+- `slotSelectionMode`;
+- `physicalSlotKeys`;
+- `physicalSlots`;
+- helper/admin metadata.
+
+Player-facing equip-target rules:
+
+- one-handed weapon: `Main hand / Off hand`, physical slots `main_hand`, `off_hand`, `slotSelectionMode = ordered_or_selected`;
+- two-handed weapon: `Main hand`, physical slot `main_hand`;
+- ranged weapon: `Main hand`, physical slot `main_hand`;
+- shield: `Off hand`, physical slot `off_hand`;
+- helmet: `Head`, physical slot `helmet`;
+- armor: `Chest`, physical slot `armor`;
+- pants: `Legs`, physical slot `pants`;
+- boots: `Feet`, physical slot `boots`;
+- amulet: `Amulet`, physical slot `amulet`;
+- ring: player-facing `Ring`, physical slot instances `ring_1`, `ring_2`, `slotSelectionMode = interchangeable_instances`.
+
+Important ring rule:
+
+- generic item popup must show `Ring`;
+- `ring_1` and `ring_2` are technical physical slot instances for equip workflow/diagnostics, not the generic item category.
+
+Frontend rules:
+
+- item popup/detail should read item type from `bonuses_json.itemType.baseTypeLabel`;
+- item popup/detail should read player-facing equip target from `bonuses_json.equipTarget.playerFacingSlotSummary` or `bonuses_json.equipTarget.label`;
+- equip workflow may use `bonuses_json.equipTarget.physicalSlotKeys` and `slotSelectionMode`;
+- Angular must not hardcode base-type-to-slot mapping;
+- Angular must not show `ring_1` / `ring_2` as the generic item type.
+
+### S11 — player-facing Item stats are Damage/Defense only
+
+S11 narrows player-facing `Item stats` to the stable core item characteristics:
+
+- weapons: `Damage` range only;
+- armor pieces and shields: `Defense` only.
+
+Everything else is a Bonus or technical row:
+
+- `attack_count`, when non-default / player-facing;
+- `critical_chance`;
+- `critical_damage`;
+- `evasion_chance`;
+- base-stat bonuses such as `agility`, `dexterity`, `charisma`, `cunning`, `strength`, etc.;
+- Luck, health, requirement modifiers and other non-primary effects.
+
+Validation and display are separate:
+
+- `is_required`, `required_group_key` and `min_required_in_group` are still validation/configuration rules;
+- they do not mean “render this as Item stats”.
+
+Examples:
+
+- amulet `charisma` can still be required, but it renders as a Bonus;
+- ring `charisma` / `cunning` can still satisfy `required_group_key = ring_identity`, but they render as Bonuses;
+- optional armor traits such as boots agility/evasion can remain `is_required = false` and render as Bonuses when present/nonzero.
+
+Current helper:
+
+- `get_item_primary_stat_target_keys(p_base_type_key text)` returns target keys consumed into final primary item stats.
+
+### S11 — consumedModifierRows and double-count guard
+
+`get_hero_armory_item_detail(...)` now filters player-facing modifier rows so modifiers already consumed into final primary Item stats do not also render as ordinary Bonuses.
+
+Supporting helper:
+
+- `filter_item_detail_player_modifier_rows(p_bonuses_json jsonb, p_base_type_key text)`.
+
+Payload contract:
+
+- `bonuses_json.itemStats.rows` — player-facing primary Item stats;
+- `bonuses_json.modifierRows` — player-facing Bonus rows;
+- `bonuses_json.itemStats.consumedModifierRows` — debug/admin diagnostics for modifiers folded into final primary Item stats;
+- `bonuses_json.itemStats.consumedModifierRows` must not render as ordinary player-facing Bonuses.
+
+Examples verified by smoke:
+
+- Demonic Dagger:
+  - `itemStats.rows`: `Damage 2-9`;
+  - `modifierRows`: `Critical chance +2`;
+  - `Maximum damage +4` is in `consumedModifierRows`, because it is already folded into `Damage 2-9`.
+- Quality Leather Vest of Marble:
+  - `itemStats.rows`: `Defense 81`;
+  - `modifierRows`: empty;
+  - `Defense +66` is in `consumedModifierRows`, because it is already folded into `Defense 81`.
+
+### S11-FIX2 — canonical hero runtime bonus pipeline
+
+Current canonical runtime bonus aggregation uses:
+
+- `get_hero_runtime_bonus_rows(p_hero_id uuid)`;
+- `get_hero_runtime_bonus_totals(p_hero_id uuid)`.
+
+These helpers aggregate active canonical runtime bonus sources for one hero:
+
+- origin `entity_bonuses`;
+- direct hero `entity_bonuses`;
+- equipped item runtime bonuses through the equipment runtime helper;
+- active estate building `entity_bonuses`, level-scaled through `building_bonus_growth`;
+- Server Events remain separate runtime modifiers and are applied by the stat/derived/combat resolvers.
+
+`get_hero_base_stat_value(p_hero_id uuid, p_stat_key text)` now returns effective base stats:
+
+- raw `hero_stats`;
+- plus canonical runtime bonus totals for that base stat and `all_base_stats`;
+- then active Server Event `base_stat` / `all_base_stats` modifiers.
+
+It does not mutate `hero_stats` and does not use `hero_derived`.
+
+This means future building bonuses such as a “gym” with `entity_bonuses(entity_type = building)` become part of runtime stats once the active estate building exists at level > 0. Angular must not implement separate local building-stat math.
+
+### S11 — DB-owned attack plan and dashboard runtime stats
+
+Damage is represented as per-attack rows rather than one collapsed `DMG` range.
+
+Current helpers/RPCs:
+
+- `get_hero_runtime_attack_plan(p_hero_id uuid)` — DB-owned per-attack source/damage plan;
+- `get_hero_runtime_derived_stats(p_hero_id uuid)` — player-safe runtime derived/combat stats read model;
+- `get_hero_dashboard_runtime_stats(p_hero_id uuid)` — dashboard alias/read model for `get_hero_runtime_derived_stats(...)`.
+
+`get_hero_dashboard_runtime_stats(...)` returns:
+
+- `max_health`;
+- `defense`;
+- `luck`;
+- `critical_chance_bonus`;
+- `critical_damage`;
+- `evasion_chance_bonus`;
+- `attack_count`;
+- `attack_plan_json`;
+- `damage_rows_json`;
+- `stats_json` with DB-provided effective base stats;
+- `source_json`.
+
+Damage display rule:
+
+- render `damage_rows_json` / `attack_plan_json`, e.g. `Demonic Dagger 21-28` and `Unarmed 20-21`;
+- do not render one summed “all hits if everything lands” damage range as the primary dashboard stat;
+- do not calculate damage locally in Angular.
+
+Attack plan rules:
+
+- one-handed weapon + empty other hand = weapon attack + unarmed attack;
+- two one-handed weapons = two weapon attacks;
+- empty hand = unarmed attack with base `1-2 + Strength + global modifiers`;
+- shield in off hand blocks off-hand unarmed attack;
+- two-handed/ranged weapon = one weapon attack and no empty-hand off-hand attack;
+- weapon-local damage folded into final item Damage must not also be applied as a global modifier;
+- non-weapon/global damage modifiers from origin/hero/equipment/buildings can apply to every attack.
+
+Dashboard rule for non-damage stats:
+
+- `Health`, `Defense`, `Luck`, critical/evasion values and similar derived stats are final/sum values from DB/RPC;
+- dashboard should not decompose Defense by helmet/armor/pants/boots/shield;
+- item-level details and consumed modifiers belong in item popup/debug/admin surfaces.
+
+### S11 — combat snapshot and live combat attackPlanEntry integration
+
+`build_hero_combatant_snapshot_for_resolver(p_hero_id uuid, p_side combat_side default 'initiator')` now returns an attack-plan-aware hero snapshot:
+
+- `snapshotVersion = S11-ATTACK-PLAN`;
+- `attackPlan`;
+- `damageRows`;
+- `damageSummary`;
+- `attackCount`;
+- legacy `minDamage`, `maxDamage`, `attackSourceKind`, `attackSourceLabel`, `sourceItemId` fields mirror the first attack row for compatibility.
+
+Live combat uses per-action attack plan entries:
+
+- `start_combat_live_round(...)` builds round order from attack-plan rows when present and still sorts by `combat_initiative_score` with `attackIndex`/`attackCount`;
+- `round_order_json` entries include `attackPlanEntry`, `attackSourceKind` and `attackSourceLabel`;
+- `build_combat_live_action_manifest(...)` carries `attackPlanEntry`, source label and damage preview metadata;
+- `resolve_combat_live_attack(...)` uses per-action `attackPlanEntry` damage/source where present and falls back to legacy snapshot fields only for compatibility.
+
+Frontend rule:
+
+- live combat remains DB-authoritative per action;
+- frontend may display source/damage preview from DB manifest/state but must wait for DB action resolution for hit/evade/crit/final damage/HP outcome.
+
+### S14 — loadout preset rename RPC
+
+Standalone loadout preset rename is now a dedicated canonical RPC:
+
+- `rename_hero_loadout_preset(p_hero_id uuid, p_preset_number integer, p_name text, p_request_id text default null)`.
+
+Return contract:
+
+- `hero_id`;
+- `preset_id`;
+- `preset_number`;
+- `name`;
+- `updated_at`;
+- `request_id`.
+
+Semantics:
+
+- owner-safe by `p_hero_id`;
+- validates preset number against configured preset limit;
+- validates blank name as domain error;
+- ensures preset headers through `ensure_hero_loadout_presets(...)`;
+- updates only `hero_loadout_presets.name` and `updated_at`;
+- does not save current equipment;
+- does not clear/apply/preview/equip;
+- does not modify `hero_loadout_preset_slots`.
+
+Frontend rule:
+
+- use `rename_hero_loadout_preset(...)` for rename;
+- do not use `save_current_hero_loadout_preset(...)` as rename fallback;
+- do not direct-update `hero_loadout_presets`.
+
+### S14 — item vendor/scrap player boundary
+
+There is exactly one normal player-facing sell/scrap action:
+
+- `vendor_scrap_hero_item(p_item_id uuid, p_actor_hero_id uuid, p_reason text default 'Item sold to vendor.', p_request_id text default null)`.
+
+`vendor_scrap_hero_item(...)`:
+
+- computes configured vendor payout;
+- calls internal item lifecycle helper;
+- applies drachma/resource delta;
+- writes vendor/item audit;
+- returns item lifecycle, payout and balance information.
+
+`scrap_hero_item(...)` is now internal-only:
+
+- direct EXECUTE is revoked from `public`, `anon` and `authenticated`;
+- comments mark it as an internal DB helper;
+- frontend must not expose it as a service method or CTA.
+
+Player-facing behavior:
+
+- no separate `Scrap` and `Sell to vendor` CTA;
+- one action such as `Sell item`, `Sell to vendor` or `Złomuj u vendora`;
+- item without affixes may be permanently removed / hard-cleaned by DB lifecycle;
+- item with prefix/suffix receives `status = scrapped`, `scrapped_at`, `recoverable_until`;
+- both cases disappear from the normal player-facing armory list.
+
+Frontend rule:
+
+- call only `vendor_scrap_hero_item(...)`;
+- do not call `scrap_hero_item(...)`;
+- do not direct-write item status/resource tables;
+- after success, refresh armory, current equipment where relevant, and drachma/resources.
+
+### Regeneration and frontend authority rules for this hardening pack
+
+After consuming these contracts, regenerate Supabase database types.
+
+Angular/frontend rules:
+
+- DB/RPC owns equip compatibility, item detail primary stat aggregation, runtime bonus aggregation, attack plan, derived stats and combat resolution;
+- Angular must not calculate authoritative damage, defense, health or combat outcomes;
+- Angular must not reconstruct item base/prefix/suffix math for dashboard/combat;
+- Angular must not implement a separate local building/origin/equipment bonus resolver;
+- Angular should use `get_hero_dashboard_runtime_stats(...)` for dashboard runtime stats;
+- Angular should use `get_hero_armory_item_detail(...)` for item popup/detail;
+- Angular should use `vendor_scrap_hero_item(...)` for sell/scrap and `rename_hero_loadout_preset(...)` for preset rename.
+
+
 ## Update 2026-05-07 — S9-FIX2 item native display policy and item-generation requirements admin readiness
 
 This section is based on the current dump plus rollback/read-only smoke checks run after the S9-FIX2 item detail hardening and item-generation requirements preflight. It extends the Epic S item/equipment notes below.
+
+> **S11 supersession note:** the original S9-FIX2 seed below is historical where it says two-handed critical stats, ranged attack count, amulet charisma or ring charisma/cunning are `primary_stat`. The current S11 rule supersedes that display intent: player-facing Item stats are only weapon `Damage` and armor/shield `Defense`; those other rows are `bonus_stat` or technical rows while validation requirements remain unchanged.
+
 
 ### S9-FIX2 — DB-owned native item stat display policy
 
@@ -281,101 +581,6 @@ Frontend readiness verdict:
 - initial item-generation requirements data: empty but editable;
 - DB/RPC blocker for the admin editor: none;
 - regenerate Supabase generated types before frontend work consumes these contracts.
-
-
-### S9-FIX3 — DB-owned item type and equip target metadata
-
-`get_hero_armory_item_detail(p_hero_id uuid, p_item_id uuid)` keeps the same frontend call signature after S9-FIX3, but now augments `bonuses_json` with DB-owned item type and equipment target metadata:
-
-- `bonuses_json.itemType`;
-- `bonuses_json.equipTarget`.
-
-This is an additive payload change. Existing item detail callers can keep using the same RPC call and may ignore the new fields until their mapper/UI is updated. Frontend should regenerate Supabase generated types after the migration, but the RPC call shape remains the same from the caller perspective.
-
-New DB-owned mapping table:
-
-- `item_generation_base_type_equip_targets`.
-
-This table maps `item_generation_base_types.key` to player-facing equip target metadata and technical physical slot instances. Angular must not infer item placement semantics from `base_type_key`.
-
-Current helper:
-
-- `get_item_generation_base_type_equip_metadata(p_base_type_key text)`.
-
-The helper returns a JSON object with:
-
-- `itemType`:
-  - `baseTypeKey`;
-  - `baseTypeLabel`;
-  - `baseTypeDescription`;
-  - `equipmentSlotGroup`;
-  - `handUsage`;
-  - `isActive`;
-- `equipTarget`:
-  - `targetKey`;
-  - `label`;
-  - `playerFacingSlotSummary`;
-  - `equipmentArea`;
-  - `slotSelectionMode`;
-  - `physicalSlotKeys`;
-  - `physicalSlots`;
-  - `helperText`;
-  - `adminDescription`;
-  - `metadata`;
-  - `sourceTable`.
-
-`item_generation_base_type_equip_targets` is intentionally a semantic mapping, not just a copy of physical equipment slots. It separates:
-
-- player-facing item/equip target labels used by item popup/detail;
-- technical physical slot keys used by equip workflow/diagnostics;
-- slot-selection semantics such as one interchangeable target with multiple physical instances.
-
-Current player-facing slot rules:
-
-- one-handed weapon: `Main hand / Off hand`, physical slots `main_hand`, `off_hand`, `slotSelectionMode = ordered_or_selected`;
-- two-handed weapon: `Main hand`, physical slot `main_hand`;
-- ranged weapon: `Main hand`, physical slot `main_hand`;
-- shield: `Off hand`, physical slot `off_hand`;
-- helmet: `Head`, physical slot `helmet`;
-- armor: `Chest`, physical slot `armor`;
-- pants: `Legs`, physical slot `pants`;
-- boots: `Feet`, physical slot `boots`;
-- amulet: `Amulet`, physical slot `amulet`;
-- ring: player-facing `Ring`, physical slot instances `ring_1`, `ring_2`, `slotSelectionMode = interchangeable_instances`.
-
-Important ring rule:
-
-- generic item popup/detail must show `Ring`;
-- `ring_1` and `ring_2` are technical physical slot instances for equip workflow/diagnostics, not the generic item category;
-- if a later equip modal needs to let the player choose which equipped ring to replace, it may surface physical slot instances there, but the item type/equip target remains `Ring`.
-
-Frontend rules:
-
-- item popup/detail should read item type from `bonuses_json.itemType.baseTypeLabel`;
-- item popup/detail should read player-facing equip target from `bonuses_json.equipTarget.playerFacingSlotSummary` or `bonuses_json.equipTarget.label`;
-- equip workflow may use `bonuses_json.equipTarget.physicalSlotKeys` and `bonuses_json.equipTarget.slotSelectionMode`;
-- Angular must not hardcode base type to slot mapping;
-- Angular must not show `ring_1` / `ring_2` as the generic item type.
-
-Verified smoke:
-
-- Demonic Dagger still uses the same `get_hero_armory_item_detail(...)` call;
-- payload includes `drachma_value = 300`;
-- `bonuses_json.itemType.baseTypeKey = one_handed_weapon`;
-- `bonuses_json.itemType.baseTypeLabel = One-handed weapon`;
-- `bonuses_json.equipTarget.label = Main hand / Off hand`;
-- `bonuses_json.equipTarget.physicalSlotKeys = ["main_hand", "off_hand"]`;
-- `bonuses_json.itemStats.rows` still returns only `Damage 2-9`;
-- `bonuses_json.modifierRows` still returns Demonic prefix rows: `Critical chance +2` and `Maximum damage +4`;
-- mapping matrix confirmed ring is player-facing `Ring` while `ring_1` / `ring_2` remain physical slot instances.
-
-Frontend readiness:
-
-- same `get_hero_armory_item_detail(...)` RPC call;
-- additive JSON payload under `bonuses_json`;
-- existing callers can ignore the new fields;
-- regenerate Supabase generated types after this migration;
-- update frontend item detail mapper to safely read optional `itemType` and `equipTarget`.
 
 
 ## Update 2026-05-07 — latest dump reconciliation: combat H2, SCALE-DB1, PvP R20/R21 and PvP result chain

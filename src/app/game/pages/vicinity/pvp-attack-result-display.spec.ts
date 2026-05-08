@@ -14,6 +14,10 @@ describe('pvpAttackResultDisplay', () => {
       { label: 'Attacker', value: 'Attacker level 10 - winner' },
       { label: 'Defender', value: 'Defender level 9 - loser' },
     ]);
+    expect(display.boundaryNotes).toEqual([
+      'Equipment is part of DB/runtime combat resolution and is not shown as a PvP reward.',
+      'Ordinary PvP attacks do not transfer, steal or destroy items.',
+    ]);
     expect(section(display.sections, 'Resources').rows).toEqual([
       { label: 'Drachma', value: '+120' },
       { label: 'Materials', value: '-20' },
@@ -23,8 +27,10 @@ describe('pvpAttackResultDisplay', () => {
       { label: 'XP', value: '+25' },
     ]);
     expect(section(display.sections, 'Prestige').rows).toEqual([
-      { label: 'Prestige delta (future)', value: '+1' },
-      { label: 'Future context', value: 'Yes' },
+      {
+        label: 'Future Prestige context',
+        value: 'Recorded for future processing',
+      },
     ]);
   });
 
@@ -63,11 +69,16 @@ describe('pvpAttackResultDisplay', () => {
 
     expect(serialized).toContain('Drachma');
     expect(serialized).toContain('XP');
-    expect(serialized).toContain('Prestige delta');
+    expect(serialized).toContain('Future Prestige context');
     expect(serialized).not.toContain('item-1');
     expect(serialized).not.toContain('forge');
     expect(serialized).not.toContain('estate-1');
     expect(serialized).not.toContain('characterPoints');
+    expect(serialized).not.toContain('Prestige delta');
+    expect(serialized).not.toContain('projected');
+    expect(section(display.sections, 'Prestige').rows).not.toContain(jasmine.objectContaining({
+      value: '+1',
+    }));
     expect(serialized).not.toContain('request-1');
     expect(serialized).not.toContain('pvp.attack.completed');
     expect(serialized).not.toContain('attack-result-1');

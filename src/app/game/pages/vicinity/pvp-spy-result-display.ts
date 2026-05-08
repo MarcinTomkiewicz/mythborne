@@ -71,7 +71,7 @@ export function pvpSpyResultDisplay(result: PvpSpyResult): PvpSpyResultDisplay {
       },
       {
         title: 'Equipment',
-        description: 'Equipment entries visible in this spy result.',
+        description: 'Current equipment snapshot recorded by the DB spy result.',
         rows: equipmentRows(result.snapshots.equipment),
         emptyText: 'No equipment entries were recorded.',
       },
