@@ -1,20 +1,24 @@
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom, Observable, of } from 'rxjs';
+import { firstValueFrom, Observable, of, throwError } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
   GetHeroArmoryItemDetailRpcRow,
   GetHeroArmoryItemsRpcRow,
   GetHeroArmoryVisibilityStateRpcRow,
+  GetItemEffectiveRequirementsRpcRow,
+  GetItemRequirementComponentRowsRpcRow,
   MoveHeroArmoryItemToShelfRpcRow,
   RenameHeroArmoryShelfRpcRow,
 } from '../../types/item-equipment-rpc.types';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
+import { StatsService } from '../stats/stats';
 import { PlayerArmory } from './player-armory';
 
 describe('PlayerArmory', () => {
   let activeHero: jasmine.SpyObj<ActiveHero>;
   let backend: jasmine.SpyObj<Backend>;
+  let stats: jasmine.SpyObj<StatsService>;
   let service: PlayerArmory;
 
   beforeEach(() => {
@@ -29,6 +33,7 @@ describe('PlayerArmory', () => {
       'delete',
       'upsert',
     ]);
+    stats = jasmine.createSpyObj<StatsService>('StatsService', ['getStats']);
 
     activeHero.requireActiveHero.and.returnValue(of({
       heroRow: { id: 'hero-1' } as never,
@@ -66,6 +71,25 @@ describe('PlayerArmory', () => {
         return of([armoryItemDetailRow()] as T);
       }
 
+      if (rpcName === RPC.get_item_effective_requirements) {
+        return of([
+          effectiveRequirementRow('hero_level', '', 5),
+          effectiveRequirementRow('hero_stat', 'strength', 12),
+        ] as T);
+      }
+
+      if (rpcName === RPC.get_item_requirement_component_rows) {
+        return of([
+          requirementComponentRow('hero_level', '', 4, 'base'),
+          requirementComponentRow('hero_stat', 'strength', 10, 'base'),
+          requirementComponentRow('hero_stat', 'strength', 2, 'prefix'),
+        ] as T);
+      }
+
+      if (rpcName === RPC.check_hero_meets_item_requirements) {
+        return of([{ meets_requirements: false, failures_json: [] }] as T);
+      }
+
       if (rpcName === RPC.rename_hero_armory_shelf) {
         return of([renameShelfRow()] as T);
       }
@@ -76,12 +100,20 @@ describe('PlayerArmory', () => {
 
       return of([] as T);
     });
+    stats.getStats.and.returnValue(of([{
+      id: 'stat-1',
+      key: 'strength',
+      label: 'Strength',
+      order: 10,
+      description: 'Strength stat.',
+    }]));
 
     TestBed.configureTestingModule({
       providers: [
         PlayerArmory,
         { provide: ActiveHero, useValue: activeHero },
         { provide: Backend, useValue: backend },
+        { provide: StatsService, useValue: stats },
       ],
     });
     service = TestBed.inject(PlayerArmory);
@@ -153,8 +185,144 @@ describe('PlayerArmory', () => {
       'Maximum damage',
       'Critical chance',
     ]);
+    expect(result.requirementPreview).toEqual(jasmine.objectContaining({
+      heroId: 'hero-1',
+      itemId: 'item-1',
+      meetsRequirements: false,
+    }));
+    expect(result.requirementPreview?.effectiveRequirements.map((requirement) => ({
+      label: requirement.displayLabel,
+      value: requirement.displayValue,
+    }))).toEqual([
+      { label: 'Hero level', value: 'Level 5' },
+      { label: 'Strength', value: '12' },
+    ]);
+    expect(result.requirementPreview?.components.map((component) => ({
+      layer: component.sourceLayerLabel,
+      label: component.displayLabel,
+      value: component.displayValue,
+    }))).toEqual([
+      { layer: 'Base', label: 'Hero level', value: 'Level 4' },
+      { layer: 'Base', label: 'Strength', value: '10' },
+      { layer: 'Prefix', label: 'Strength', value: '2' },
+    ]);
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_item_effective_requirements,
+      { p_item_id: 'item-1' },
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_item_requirement_component_rows,
+      { p_item_id: 'item-1' },
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.check_hero_meets_item_requirements,
+      {
+        p_hero_id: 'hero-1',
+        p_item_id: 'item-1',
+      },
+    );
     expect(JSON.stringify(backend.rpc.calls.allArgs())).not.toContain('user-1');
-    expect(backend.getAll).not.toHaveBeenCalled();
+    expect(stats.getStats).toHaveBeenCalled();
+  });
+
+  it('loads requirements only after owner-safe detail confirms the item id', async () => {
+    backend.rpc.and.callFake(<T>(rpcName: string): Observable<T> => {
+      if (rpcName === RPC.get_hero_armory_item_detail) {
+        return of([armoryItemDetailRow({ item_id: 'item-from-db' })] as T);
+      }
+
+      if (rpcName === RPC.get_item_effective_requirements) {
+        return of([
+          effectiveRequirementRow('hero_level', '', 5, 'item-from-db'),
+        ] as T);
+      }
+
+      if (rpcName === RPC.get_item_requirement_component_rows) {
+        return of([
+          requirementComponentRow('hero_level', '', 4, 'base', 'item-from-db'),
+        ] as T);
+      }
+
+      if (rpcName === RPC.check_hero_meets_item_requirements) {
+        return of([{ meets_requirements: true, failures_json: [] }] as T);
+      }
+
+      return of([] as T);
+    });
+
+    const result = await firstValueFrom(service.getArmoryItemDetail(' item-1 '));
+
+    expect(result.itemId).toBe('item-from-db');
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_hero_armory_item_detail,
+      {
+        p_hero_id: 'hero-1',
+        p_item_id: 'item-1',
+      },
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_item_effective_requirements,
+      { p_item_id: 'item-from-db' },
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_item_requirement_component_rows,
+      { p_item_id: 'item-from-db' },
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.check_hero_meets_item_requirements,
+      {
+        p_hero_id: 'hero-1',
+        p_item_id: 'item-from-db',
+      },
+    );
+    const rpcCallNames = backend.rpc.calls.allArgs().map((args) => args[0]);
+
+    expect(rpcCallNames.indexOf(RPC.get_hero_armory_item_detail)).toBeLessThan(
+      rpcCallNames.indexOf(RPC.get_item_effective_requirements),
+    );
+    expect(JSON.stringify(backend.rpc.calls.allArgs())).not.toContain('user-1');
+  });
+
+  it('does not load requirement RPCs when owner-safe item detail returns no row', async () => {
+    backend.rpc.and.callFake(<T>(rpcName: string): Observable<T> => {
+      if (rpcName === RPC.get_hero_armory_item_detail) {
+        return of([] as T);
+      }
+
+      return of([] as T);
+    });
+
+    await expectAsync(
+      firstValueFrom(service.getArmoryItemDetail('item-1')),
+    ).toBeRejectedWithError(`${RPC.get_hero_armory_item_detail} returned no row.`);
+
+    const names = backend.rpc.calls.allArgs().map((args) => args[0]);
+
+    expect(names).not.toContain(RPC.get_item_effective_requirements);
+    expect(names).not.toContain(RPC.get_item_requirement_component_rows);
+    expect(names).not.toContain(RPC.check_hero_meets_item_requirements);
+    expect(stats.getStats).not.toHaveBeenCalled();
+  });
+
+  it('does not load requirement RPCs when owner-safe item detail fails', async () => {
+    backend.rpc.and.callFake(<T>(rpcName: string): Observable<T> => {
+      if (rpcName === RPC.get_hero_armory_item_detail) {
+        return throwError(() => new Error('detail denied')) as Observable<T>;
+      }
+
+      return of([] as T);
+    });
+
+    await expectAsync(
+      firstValueFrom(service.getArmoryItemDetail('item-1')),
+    ).toBeRejectedWithError('detail denied');
+
+    const names = backend.rpc.calls.allArgs().map((args) => args[0]);
+
+    expect(names).not.toContain(RPC.get_item_effective_requirements);
+    expect(names).not.toContain(RPC.get_item_requirement_component_rows);
+    expect(names).not.toContain(RPC.check_hero_meets_item_requirements);
+    expect(stats.getStats).not.toHaveBeenCalled();
   });
 
   it('preserves the visibility_limit returned by the DB/RPC read model', async () => {
@@ -482,6 +650,60 @@ function armoryItemDetailRow(
     visibility_index: 1,
     visibility_limit: 30,
     ...overrides,
+  };
+}
+
+function effectiveRequirementRow(
+  requirementDefinitionKey: string,
+  requiredStatKey: string,
+  requiredValue: number,
+  itemId = 'item-1',
+): GetItemEffectiveRequirementsRpcRow {
+  return {
+    additional_component_value: 2,
+    additional_requirement_fraction: 0.25,
+    component_count: 2,
+    final_decimal_value: requiredValue,
+    generation_quality_key: 'normal',
+    highest_component_value: requiredValue,
+    item_id: itemId,
+    item_owner_hero_id: 'hero-1',
+    pre_quality_value: requiredValue,
+    quality_requirement_multiplier: 1,
+    required_stat_key: requiredStatKey,
+    required_value_integer: requiredValue,
+    requirement_definition_key: requirementDefinitionKey,
+    rounding_mode: 'ceil',
+  };
+}
+
+function requirementComponentRow(
+  requirementDefinitionKey: string,
+  requiredStatKey: string,
+  rawRequiredValue: number,
+  sourceLayer: string,
+  itemId = 'item-1',
+): GetItemRequirementComponentRowsRpcRow {
+  return {
+    applies_from_level: 1,
+    generation_quality_key: 'normal',
+    item_id: itemId,
+    item_owner_hero_id: 'hero-1',
+    item_status: 'active',
+    quality_requirement_multiplier: 1,
+    raw_required_value: rawRequiredValue,
+    required_stat_key: requiredStatKey,
+    requirement_definition_key: requirementDefinitionKey,
+    requirement_id: `${sourceLayer}-${requirementDefinitionKey}-${requiredStatKey || 'level'}`,
+    requirement_sort_order: requirementDefinitionKey === 'hero_level' ? 10 : 20,
+    source_entity_id: `${sourceLayer}-1`,
+    source_entity_type: sourceLayer === 'base'
+      ? 'item_generation_base'
+      : 'item_generation_affix',
+    source_key: sourceLayer,
+    source_label: sourceLayer === 'base' ? 'Dagger' : 'Demonic',
+    source_layer: sourceLayer,
+    source_sort_order: sourceLayer === 'base' ? 10 : 20,
   };
 }
 

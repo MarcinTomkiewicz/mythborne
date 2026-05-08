@@ -7276,6 +7276,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - UI distinguishes requirements from costs and bonuses.
 - Item instance requirements are not introduced.
 
+**Implementation note:** S10 accepted on 2026-05-08. `/game/armory` item Details now show DB/RPC-resolved equip requirements in a separate Requirements section. `PlayerArmory.getArmoryItemDetail(itemId)` preserves owner-safe sequencing by first calling `get_hero_armory_item_detail(p_hero_id, p_item_id)` with the active hero id, then calling `get_item_effective_requirements(p_item_id)`, `get_item_requirement_component_rows(p_item_id)` and `check_hero_meets_item_requirements(p_hero_id, p_item_id)` only after the detail row is confirmed, using `detailRow.item_id` rather than the raw input. Empty or denied detail responses do not trigger requirement RPCs or stat-label reads. Angular no longer masks canonical requirement rows with a hardcoded requirement whitelist; if DB/RPC returns a row in this read model, the UI renders it. Manual smoke for a real item looked OK, while fuller variants remain pending for item without requirements, item with met requirements and item with unmet requirements. Follow-up: `PlayerArmory` should be split or reduced on the next larger armory touch because shelf reads, shelf mutations, detail reads and requirement orchestration now share one service.
+
 ---
 
 ## Task S11 — Equip single item action

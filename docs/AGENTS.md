@@ -9,20 +9,20 @@ Prefer this file for fast implementation context. For broader detail, also consu
 - `database-current.md`
 - `current-decisions.md`
 - `project-context.md`
-- `codex-mythborne-backlog.md`
+- `codex-Mythsworn-backlog.md`
 - `current-state-summary.md`
 - `current-todo.md`
 
 If there is a conflict, prefer:
 
 1. explicit user instruction;
-2. current live database / migrations / generated `database.types.ts`;
+2. current live database / migrations / dump and user-provided `database.types.ts` input;
 3. `database-current.md` as the semantic DB/RPC/helper registry;
 4. `current-decisions.md`;
 5. `project-context.md`;
 6. this file.
 
-Older Monster Hunt wording may remain in legacy source files, but new implementation, UI-facing text and documentation should use **Mythsworn** unless the user explicitly asks otherwise.
+Older Monster Hunt / Mythborne wording may remain in legacy source files, but new implementation, UI-facing text and documentation should use **Mythsworn** unless the user explicitly asks otherwise.
 
 ---
 
@@ -33,6 +33,7 @@ Older Monster Hunt wording may remain in legacy source files, but new implementa
 - Before starting a new backlog task, run `git status --short`; if the working tree is not clean, report it and wait for the user decision.
 - Do not modify `current-todo.md`, `current-state-summary.md` or backlog task statuses unless the user asks or confirms task completion.
 - Always check current generated types/schema when implementing schema-sensitive logic.
+- Treat `src/app/core/types/database.types.ts` as **read-only user-owned generated input**. Codex must never edit, regenerate, partially patch, reformat or “fix” this file. If generated types are missing, stale or incompatible, report a DB/types blocker and wait for the user/migrator to update them.
 - Do not invent tables, RPC names, helper names, enums or migration behavior that are not in current DB/migrations/docs.
 - Use DB dictionaries/configs instead of hardcoded gameplay/config lists.
 - Keep critical gameplay/economy/admin mutations behind canonical domain/RPC/governance paths.
@@ -76,11 +77,37 @@ Avoid by default:
 - `database-current.md` is the semantic DB/RPC/helper registry.
 - `current-decisions.md` is the active decision log and overrides older concept docs.
 - `project-context.md` is the short operational implementation context.
-- `codex-mythborne-backlog.md` is the practical Codex task queue.
+- `codex-Mythsworn-backlog.md` is the practical Codex task queue.
 - `current-state-summary.md` and `current-todo.md` are progress/status files, not schema sources.
 - Old uploaded concept files can explain history, but they must not override current DB/migrations/decisions.
+- `database.types.ts` is generated input owned by the user/migrator. It can be read by Codex but never changed by Codex.
 
 When a current file and a legacy concept file disagree, prefer the current schema and current docs.
+
+---
+
+## Generated database types are read-only
+
+`src/app/core/types/database.types.ts` is generated and user-owned. Codex must not modify it under any circumstances.
+
+Forbidden actions:
+
+- editing `database.types.ts` manually;
+- regenerating `database.types.ts`;
+- patching one or two generated fields to make TypeScript pass;
+- formatting or reordering generated content;
+- including `database.types.ts` changes in a feature diff;
+- claiming generated type changes as Codex work.
+
+Required behavior when generated types are stale or incomplete:
+
+1. stop the feature implementation;
+2. report the exact missing/incompatible function/table/field/type;
+3. explain which code path is blocked;
+4. ask the user/migrator to regenerate or fix the DB/generated contract;
+5. do not create Angular fallbacks or manual interfaces to hide the missing contract.
+
+Manual TypeScript interfaces for generated RPC rows are forbidden unless the user explicitly approves a temporary contract gap workaround. Even then, report it as temporary debt.
 
 ---
 
@@ -124,7 +151,69 @@ Do not add a new domain-specific utility, mapper, factory, validator, or helper 
 - Domain mappers should not duplicate generic mapper/helpers already available in `core/utils`.
 - Constants should go in `core/constants` only when they represent a shared runtime/DB contract. Feature-only constants should remain feature-local.
 
-### Required implementation report
+---
+
+## Touched-file cleanup and code reduction policy
+
+When modifying production TypeScript or HTML files, especially services, facades, mappers, utilities and standalone components, Codex must check whether the touched file contains code that is now unused, duplicated, obsolete or kept only because of previous workaround iterations.
+
+This is not permission for broad unrelated refactors. Apply this policy to:
+
+- files touched by the current task;
+- directly imported helper/mapper files when the current change makes an old path obsolete;
+- tests that preserve old behavior only because a previous workaround existed.
+
+Do not expand cleanup into unrelated feature areas. If cleanup would affect unrelated flows, report a cleanup candidate instead of doing a broad refactor silently.
+
+### Required cleanup check
+
+For every touched production TS file above roughly 250 lines, and for every touched mapper/service/facade regardless of size, Codex must report:
+
+- `imported by` — which files import this file;
+- `exports used` — which exported symbols are still used and where;
+- `private dead code check` — whether private functions/methods are still called;
+- `obsolete workaround check` — whether older fallback paths became unnecessary after the current DB/RPC/read-model contract;
+- `removed` — what was deleted instead of leaving legacy paths in place;
+- `not removed because` — suspicious code intentionally left and why;
+- `net code effect` — added/deleted line count for the touched area.
+
+### Required behavior
+
+- Prefer deleting obsolete workaround code over adding another wrapper/fallback.
+- Do not keep tests that only preserve dead legacy behavior.
+- Do not split a large file merely to hide line count; split only when responsibilities become clearer.
+- Do not add a new helper or mapper if the simpler fix is to remove an obsolete branch from the existing one.
+- If the new contract makes old frontend fallback logic unnecessary, remove the old fallback instead of layering the new path on top.
+- If the current task cannot safely remove suspicious code, report it as a cleanup candidate with the reason.
+
+### File size thresholds
+
+- Production TS/HTML above roughly 250–300 lines is a warning.
+- Production TS/HTML at 400+ lines in a touched file is a strong maintainability problem.
+- Production TS/HTML at 600+ lines in a touched file should normally be reduced, split by responsibility, or explicitly blocked/deferred with a cleanup candidate.
+- Long test fixtures are less risky than production code, but if they make review difficult or preserve obsolete behavior, extract or delete them.
+
+### Required report section
+
+Add this section to the task report when any touched production TS/HTML file crosses the warning threshold, or when a mapper/service/facade is touched:
+
+```text
+Touched-file cleanup:
+- file:
+- current line count:
+- imported by:
+- exports used:
+- private dead code checked:
+- obsolete workaround paths removed:
+- suspicious code left:
+- not removed because:
+- net code effect:
+- cleanup candidate needed: yes/no
+```
+
+---
+
+## Required implementation report
 
 Every implementation summary must start with:
 
@@ -132,7 +221,7 @@ Every implementation summary must start with:
 2. non-goals / what the task intentionally did not cover;
 3. acceptance mapping;
 4. verification;
-5. clean-code check covering DRY, KISS, separation of concerns and reuse of existing helpers/services/constants/factories;
+5. clean-code check covering DRY, KISS, separation of concerns, touched-file cleanup and reuse of existing helpers/services/constants/factories;
 6. explicit statement that manual smoke and route smoke were not run by Codex, unless the user explicitly asked Codex to run them;
 7. a user-only manual smoke checklist when the task has a meaningful manual flow.
 
@@ -213,6 +302,67 @@ Core in-world names should remain Greek across language versions. Localize descr
 
 ---
 
+## DB/RPC/domain boundary
+
+- Critical gameplay, economy, admin and workflow mutations must go through canonical DB/RPC/domain operations.
+- Frontend must not direct-write runtime/workflow tables such as item ownership, equipment, armory moves, auctions, trades, estate jobs, resources, audit, sanctions or progression ledgers.
+- Frontend must not call internal low-level helper RPCs unless the current docs explicitly declare them player/admin-facing.
+- Use generated Supabase types for RPC args/returns whenever the function exists in `database.types.ts`.
+- Codex may read `database.types.ts` but must never edit or regenerate it. If generated RPC types are missing or stale, report a blocker.
+- Do not maintain manual TypeScript interfaces for generated RPC rows unless the generated contract is unavailable and the user explicitly approves a temporary workaround.
+- If the DB/RPC/read-model contract does not expose data required by UI, report a blocker. Do not invent Angular-side authority.
+
+---
+
+## DB-backed dictionaries and metadata
+
+- Labels, descriptions, helper text and player-facing classifications should come from DB dictionaries/read models/metadata when the DB owns the concept.
+- Raw keys may be shown only as secondary technical metadata, not as the primary player/operator label.
+- Do not hardcode permanent gameplay explanations in components when DB metadata exists or should exist.
+- Missing DB-backed metadata should be reported as a gap, not permanently masked with Angular copy.
+- For formula/help copy, prefer `get_ui_metadata_entries(...)` and the documented metadata namespace.
+
+---
+
+## Angular / PrimeNG / UI rules
+
+- Prefer signals, computed signals and clear state boundaries.
+- Prefer Reactive Forms for form workflows.
+- Avoid deprecated PrimeNG APIs.
+- Do not nest PrimeNG `p-select` inside a native `<label>`.
+- Do not introduce local SCSS unless global utilities/vendor wrappers/shared patterns are insufficient.
+- Do not copy prototype CSS into Angular components.
+- Prototype HTML is visual reference only. Translate accepted patterns into global SCSS tokens, shared components, PrimeNG wrappers or documented layout utilities.
+- `muted-text` is for labels, helper text and metadata. Do not use it for important decisions, reasons, warnings or operator/player outcomes.
+- UI smoke must explain what the action means in gameplay/admin terms, not only which buttons were clicked.
+- Route smoke `200` is not full smoke.
+
+---
+
+## Stale guards
+
+Every async UI workflow that depends on selected entity, route id, active hero, selected server, target item, target hero, current case, current sanction, current penalty, selected item or access context must guard success and error paths.
+
+Required behavior:
+
+- stale success must not overwrite current state;
+- stale error must not show after context changes;
+- loading should end only for the active request/context;
+- changing context should clear stale form state and feedback;
+- if selected entity changes during a request, the response must be ignored.
+
+---
+
+## Manual smoke discipline
+
+- Do not claim a player/admin workflow is complete only because `tsc`, focused specs or route smoke passed.
+- If the user provides smoke feedback or a screenshot, treat it as authoritative evidence for that iteration.
+- Pending manual smoke is acceptable only when the agent cannot access the required session, auth state, real data or gameplay producer.
+- When manual smoke is pending, provide a short checklist with expected visible outcomes.
+- If smoke fails, stop guessing and inspect the real DB/RPC/read-model contract or ask for the missing runtime payload.
+
+---
+
 ## Stats, Character Points and progression
 
 - Base stats come from the DB `stats` table. Do not hardcode old stat lists from legacy concept docs.
@@ -265,7 +415,117 @@ Important current semantics:
 
 ---
 
-## Core PvE / exploration / trial loop
+## Items, armory and equipment
+
+Codex must treat the current item generation/equipment database model as authoritative:
+
+- generated item model is `quality + optional prefix + base item + optional suffix`;
+- base item types are in `item_generation_base_types`;
+- required/optional native target rules are in `item_generation_base_type_targets`;
+- concrete base item native values are in `entity_bonuses` with `entity_type = item_generation_base`;
+- `item_generation_bases.base_type_key` is the source of truth;
+- `item_generation_bases.slot` is legacy/deprecated;
+- equipment state is in `hero_equipment`, not `items.status = equipped`;
+- Armory shelf names are in `hero_armory_shelves`;
+- item shelf position is `items.armory_shelf_position` and transfers with item ownership;
+- visible Armory capacity uses existing bonus target `visible_item_capacity`;
+- do not invent `armory_visible_capacity`;
+- `attack_count` and `critical_damage` are bonus targets;
+- item drachma value is economic/vendor context, not Character Points trade price;
+- item value and item usefulness are intentionally separate.
+
+Before coding against these structures:
+
+1. read `database-current.md`;
+2. inspect current migrations/dump and current user-provided generated types;
+3. do not edit or regenerate `database.types.ts`;
+4. do not create alternative table/RPC names;
+5. report missing DB contracts as blockers instead of inventing them.
+
+Armory rules:
+
+- items do not disappear because they are not visible;
+- Armory controls practical visibility/access/organization, not ownership existence;
+- Armory visibility, shelves and item detail must come from DB/RPC read models;
+- `get_hero_armory_items(p_hero_id)` is a list/read surface;
+- `get_hero_armory_item_detail(p_hero_id, p_item_id)` is the canonical item detail surface;
+- frontend must not reconstruct item stats from base/prefix/suffix tables when the detail RPC provides a display contract;
+- native/base item stats feed Item stats; modifier rows feed Bonuses;
+- do not show native/base rows as player-facing bonuses unless the DB read model explicitly classifies them as visible bonus-style rows;
+- do not implement item requirement, stat aggregation, attack count aggregation or equipment compatibility as Angular authority;
+- equip/unequip/move/rename/scrap/recover/vendor/trade/auction workflows must use canonical RPC/domain operations;
+- do not direct-write `items`, `hero_equipment`, `hero_armory_shelves`, trade tables or auction tables from Angular.
+
+---
+
+## Requirements
+
+- Requirements are not costs and not bonuses.
+- Central requirements use `requirement_definitions` and `entity_requirements`.
+- Building, item-generation and item effective requirements must be read through canonical DB/RPC/read-model surfaces.
+- Frontend must not hardcode permanent requirement categories if DB/RPC should own display eligibility.
+- If a read model returns extra requirement categories that should not be player-facing, request a DB/RPC display contract instead of silently filtering them in Angular.
+- Requirement mutations must use canonical governed RPCs. Do not direct-write `entity_requirements`.
+- Requirement display should use DB-backed labels where available.
+
+---
+
+## Bonus system
+
+Use **scope**, not legacy **context**, for bonus semantics.
+
+Current canonical bonus foundation:
+
+- `bonus_types`;
+- `bonus_scopes`;
+- `bonus_target_categories`;
+- `bonus_targets`;
+- semantic `bonus_templates`;
+- `entity_bonuses`.
+
+Legacy bonus join tables and old semantic columns may physically remain as transitional debt, but new/changed app paths should use the canonical dictionaries/templates/entity bonuses.
+
+Important:
+
+- target is separate from type;
+- scope is separate from type;
+- category is organizational/filter metadata;
+- `quality_scales_value` can scale value;
+- quality must never scale `level_interval`;
+- if canonical `entity_bonuses` data is missing, report a SQL/backfill blocker instead of adding permanent legacy fallback.
+
+---
+
+## Buildings, estates and districts
+
+Buildings belong to the estate/world layer, not just a personal upgrade tree.
+
+Key A-tier concepts:
+
+- Agora;
+- Farm;
+- Lumber Mill;
+- Barracks;
+- Fortress;
+- Trade Routes;
+- Armory.
+
+Important rules:
+
+- do not pre-create rows for all empty estates;
+- district capacity defines possible addresses;
+- only occupied estates should exist as rows;
+- when a player relocates away, the old estate row and related building state may be deleted;
+- if the same address is later claimed again, create a new estate row with a new id;
+- `buildings.district_code` is the minimum district where a building can be built;
+- building is available in that district and higher districts;
+- `buildings.max_level = 0` means unlimited;
+- district cap overrides live in `building_district_level_caps` and missing rows fall back to global/default max level;
+- central requirements live in `requirement_definitions` and `entity_requirements`.
+
+---
+
+## Exploration / trials / encounters
 
 Exploration flow:
 
@@ -279,7 +539,7 @@ Exploration flow:
 Important:
 
 - trial chance increases after consecutive non-trial discovery steps;
-- normal encounters do **not** reset trial progression;
+- normal encounters do not reset trial progression;
 - any trial opportunity attempt consumes a daily trial and resets dry-step count, even if manifestation fails;
 - manifestation failure gives no reward and creates no minigame/challenge;
 - manifested trial and combat encounter create challenge attempts and block further exploration until completed/auto-resolved/admin-forced;
@@ -403,93 +663,6 @@ There is currently no general `hero_resource_ledger`. Do not invent frontend-sid
 
 ---
 
-## Item generation, equipment and Armory
-
-Codex must treat the current item generation/equipment database model as authoritative:
-
-- generated item model is `quality + optional prefix + base item + optional suffix`;
-- base item types are in `item_generation_base_types`;
-- required/optional native target rules are in `item_generation_base_type_targets`;
-- concrete base item native values are in `entity_bonuses` with `entity_type = item_generation_base`;
-- `item_generation_bases.base_type_key` is the source of truth;
-- `item_generation_bases.slot` is legacy/deprecated;
-- equipment state is in `hero_equipment`, not `items.status = equipped`;
-- Armory shelf names are in `hero_armory_shelves`;
-- item shelf position is `items.armory_shelf_position` and transfers with item ownership;
-- visible Armory capacity uses existing bonus target `visible_item_capacity`;
-- do not invent `armory_visible_capacity`;
-- `attack_count` and `critical_damage` are bonus targets;
-- no equip/unequip RPC is currently approved/documented yet.
-
-Before coding against these structures:
-
-1. read `database-current.md`;
-2. regenerate `database.types.ts` if local generated types do not include the current schema;
-3. do not create alternative table/RPC names;
-4. report missing DB contracts as blockers instead of inventing them.
-
----
-
-## Bonus system
-
-Use **scope**, not legacy **context**, for bonus semantics.
-
-Current canonical bonus foundation:
-
-- `bonus_types`;
-- `bonus_scopes`;
-- `bonus_target_categories`;
-- `bonus_targets`;
-- semantic `bonus_templates`;
-- `entity_bonuses`.
-
-Legacy bonus join tables and old semantic columns may physically remain as transitional debt, but new/changed app paths should use the canonical dictionaries/templates/entity bonuses.
-
-Important:
-
-- target is separate from type;
-- scope is separate from type;
-- category is organizational/filter metadata;
-- `quality_scales_value` can scale value;
-- quality must never scale `level_interval`;
-- if canonical `entity_bonuses` data is missing, report a SQL/backfill blocker instead of adding permanent legacy fallback.
-
----
-
-## Buildings, estates and districts
-
-Buildings belong to the estate/world layer, not just a personal upgrade tree.
-
-Key A-tier concepts:
-
-- Agora;
-- Farm;
-- Lumber Mill;
-- Barracks;
-- Fortress;
-- Trade Routes;
-- Armory.
-
-Important rules:
-
-- do not pre-create rows for all empty estates;
-- district capacity defines possible addresses;
-- only occupied estates should exist as rows;
-- when a player relocates away, the old estate row and related building state may be deleted;
-- if the same address is later claimed again, create a new estate row with a new id;
-- `buildings.district_code` is the minimum district where a building can be built;
-- building is available in that district and higher districts;
-- `buildings.max_level = 0` means unlimited;
-- district cap overrides live in `building_district_level_caps` and missing rows fall back to global/default max level;
-- central requirements live in `requirement_definitions` and `entity_requirements`.
-
-Armory rule:
-
-- items do not disappear because they are not visible;
-- Armory controls practical visibility/access/organization, not ownership existence.
-
----
-
 ## Prestige, reports and future social systems
 
 Prestige:
@@ -576,12 +749,15 @@ Examples:
 - `Admin panel -> Config changes -> Apply draft`
   - Domain meaning: a governed configuration change moves through the audited DB workflow instead of mutating live config directly.
 
-Task reports for larger UI/workflow changes should include a short shared/reuse check:
+Task reports for larger UI/workflow changes should include:
 
 ```text
 reused:
 checked but not reused:
 new component/state/helper added:
+import/use count:
+touched-file cleanup:
+manual smoke:
 ```
 
 Non-blocking findings found during smoke should go to `docs/ui-ux-notes.md` unless the user promotes them into current task acceptance criteria.
@@ -591,3 +767,58 @@ Group UX notes as:
 - **Quick wins**: copy, spacing, labels, obvious validation, small template/component cleanup;
 - **DB metadata needed**: labels/descriptions/helper text/read models/options should come from DB contracts;
 - **Redesign needed**: workflow, information architecture, permissions, or domain model mismatch that should not be patched locally.
+
+---
+
+## Red flags
+
+Treat these as blockers or strong warnings unless the task explicitly justifies them:
+
+- assuming `hero.id === auth.uid()`;
+- direct writes to gameplay/economy/workflow tables from Angular;
+- frontend fallback masking missing DB/RPC/read-model data;
+- editing, regenerating or patching `database.types.ts`;
+- manual TypeScript interfaces for generated RPC contracts;
+- hardcoded gameplay/config/dictionary labels where DB owns the data;
+- old formula variable names such as `level`, `nextLevel`, `heroLevel`, `statLevel`, `levelDifference` in active frontend formula contexts;
+- using `context` naming for formula variables where `variables` is the established term;
+- invented route names or concepts not present in current docs;
+- large touched production files without cleanup report;
+- splitting files only to hide line count;
+- route smoke or build treated as full manual smoke;
+- updating status docs before user acceptance;
+- keeping tests that only preserve obsolete behavior.
+
+---
+
+## Final task report template
+
+Use this structure at the end of every implementation task:
+
+```text
+Scope:
+Non-goals:
+Acceptance mapping:
+Changed files:
+Verification:
+Manual smoke:
+Clean-code / touched-file cleanup:
+Reused / checked but not reused / new:
+Import/use count:
+DB/RPC contract notes:
+Known gaps:
+Status docs:
+```
+
+Minimum verification expected unless the task is docs-only:
+
+- `npx tsc --noEmit`;
+- focused specs for touched area, when available;
+- `npm run build`, unless explicitly out of scope or blocked by known unrelated issue;
+- static grep for banned direct writes / deprecated patterns when touching runtime/workflow code.
+
+Status docs:
+
+- state whether `current-todo.md`, `current-state-summary.md`, backlog/status docs and `database.types.ts` were touched;
+- Codex must not touch `database.types.ts` at all;
+- do not update status docs without explicit user instruction or accepted task completion.

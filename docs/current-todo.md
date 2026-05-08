@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-05-07
+Updated: 2026-05-08
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -231,7 +231,8 @@ Order reflects implementation priority, not final business priority.
 - Accepted hotfix: HOTFIX-REWARD-AUTO-RESOLVE - reward/drop communication and manual combat auto-resolve wording.
 - Completed and confirmed: S8 - Armory shelf management.
 - Completed and conditionally accepted: S9 - Item detail / popover equipment data.
-- Next backlog task: S10 - Item requirement display.
+- Completed and confirmed: S10 - Item requirement display.
+- Next backlog task after commit confirmation: SPECIAL TASK - Item generation requirements admin editor.
 - Q4 pending manual smoke: check a real DB row for `estate.building_job.completed`; source `action_url` must be `/game/mansion`. If it still returns `ViewState`, fix DB/content producer source and do not add a frontend remap.
 - Q5 pending manual smoke: open bell, mark read, dismiss and action link; real DB/RLS denied-action smoke only if suitable test data/access exists.
 - Q6 pending manual smoke: basic bell UI can be smoke-tested, but full fresh-toast validation needs a real DB producer notification. Eligible unread fresh rows should toast once; read rows and `default_toast_enabled = false` rows should remain inbox-only.
@@ -266,6 +267,7 @@ Order reflects implementation priority, not final business priority.
 - N4 refactor follow-up: split `attribute-allocation-page.facade.ts` into smaller progression/allocation state pieces; it is 362 lines after N4 but not a blocker for the accepted task.
 - N3 UI polish follow-up: surface the first exact row-level stat upgrade cost error in the summary instead of only the generic `characterPointSummaryError()`.
 - N1 visual smoke follow-up: manually check attributes, dashboard, auction/trade and anti-abuse penalty sections for layout regressions from longer `Character Points` labels.
+- S10 accepted follow-up: real item detail requirement smoke looked OK for the checked item, but fuller manual variants remain pending for an item without requirements, an item with met requirements and an item with unmet requirements. S9 regression smoke should continue to check Value, Item stats such as `Damage 2-9`, Bonuses and no console/Angular runtime errors. `PlayerArmory` is a cleanup candidate for the next larger armory touch; split item detail/read orchestration if the service grows further.
 - Epic N DB sanity follow-up: verify actual `balance_formula_targets`, `balance_formulas` and assignment rows for `hero_experience_to_next_level`, `hero_stat_upgrade_cost` and `hero_stat_level_cap`; generated TypeScript confirms schema/RPC signatures, not seeded content.
 - M12 follow-up: apply `AdminReasonPresetField` to the remaining M12 reason fields for consistency.
 - M12 follow-up: broader UI polish for white/native-looking inputs where global PrimeNG/theme styles are inconsistent.

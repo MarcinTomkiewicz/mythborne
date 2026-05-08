@@ -111,6 +111,8 @@ export interface ItemRequirementComponent {
   requirementId: string;
   requirementDefinitionKey: string;
   valueType: ItemRequirementValueType | null;
+  displayLabel: string;
+  displayValue: string;
   requiredKey: string | null;
   requiredValue: number | string | boolean | null;
   requiredStatKey: string | null;
@@ -119,6 +121,7 @@ export interface ItemRequirementComponent {
   sourceEntityType: string;
   sourceEntityId: string;
   sourceLayer: string;
+  sourceLayerLabel: string;
   sourceKey: string;
   sourceLabel: string;
   sourceSortOrder: number;
@@ -128,6 +131,8 @@ export interface ItemRequirementComponent {
 export interface ItemEffectiveRequirement {
   requirementDefinitionKey: string;
   valueType: ItemRequirementValueType | null;
+  displayLabel: string;
+  displayValue: string;
   requiredKey: string | null;
   requiredStatKey: string | null;
   requiredValue: number;
@@ -261,4 +266,5 @@ export interface ArmoryItemDetailReadModel {
   drachmaValue: number | null;
   itemStats: ArmoryItemDetailStat[];
   bonuses: ArmoryItemDetailBonus[];
+  requirementPreview: ItemRequirementPreview | null;
 }

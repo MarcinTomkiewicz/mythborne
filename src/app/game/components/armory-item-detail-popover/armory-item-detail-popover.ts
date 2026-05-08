@@ -82,6 +82,46 @@ type DetailStatus = 'idle' | 'loading' | 'loaded' | 'error';
             <span class="muted-text">No bonuses returned.</span>
           }
         </section>
+
+        <section class="flex-col gap-xs">
+          <div class="flex-row-between-center gap-sm">
+            <strong class="heading-color">Requirements</strong>
+            @if (requirementPreview(); as preview) {
+              @if (preview.meetsRequirements === true) {
+                <span class="tag-badge tag-badge--success">Met</span>
+              } @else if (preview.meetsRequirements === false) {
+                <span class="tag-badge tag-badge--warn">Not met</span>
+              } @else {
+                <span class="tag-badge tag-badge--muted">Unchecked</span>
+              }
+            }
+          </div>
+
+          @if (effectiveRequirements().length) {
+            @for (requirement of effectiveRequirements(); track requirement.requirementDefinitionKey + ':' + requirement.requiredStatKey) {
+              <div class="flex-row-between-center gap-sm">
+                <span class="muted-text">{{ requirement.displayLabel }}</span>
+                <strong>{{ requirement.displayValue }}</strong>
+              </div>
+            }
+          } @else {
+            <span class="muted-text">No equip requirements returned.</span>
+          }
+
+          @if (requirementComponents().length) {
+            <div class="flex-col gap-xs mt-xs">
+              <span class="muted-text">Source layers</span>
+              @for (component of requirementComponents(); track component.requirementId) {
+                <div class="flex-row-between-center gap-sm">
+                  <span class="muted-text">
+                    {{ component.sourceLayerLabel }} - {{ component.sourceLabel }}
+                  </span>
+                  <strong>{{ component.displayLabel }} {{ component.displayValue }}</strong>
+                </div>
+              }
+            </div>
+          }
+        </section>
       </article>
     </p-popover>
   `,
@@ -103,6 +143,15 @@ export class ArmoryItemDetailPopover {
   });
   readonly itemStats = computed(() => this.currentDetail()?.itemStats ?? []);
   readonly bonuses = computed(() => this.currentDetail()?.bonuses ?? []);
+  readonly requirementPreview = computed(() =>
+    this.currentDetail()?.requirementPreview ?? null,
+  );
+  readonly effectiveRequirements = computed(() =>
+    this.requirementPreview()?.effectiveRequirements ?? [],
+  );
+  readonly requirementComponents = computed(() =>
+    this.requirementPreview()?.components ?? [],
+  );
   readonly drachmaValue = computed(() =>
     this.currentDetail()?.drachmaValue ?? itemDrachmaValue(this.item()),
   );

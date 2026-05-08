@@ -34,6 +34,7 @@ export function mapArmoryItemDetail(
     drachmaValue: row.drachma_value,
     itemStats: itemStats(bonuses),
     bonuses: bonusRows(bonuses),
+    requirementPreview: null,
   };
 }
 

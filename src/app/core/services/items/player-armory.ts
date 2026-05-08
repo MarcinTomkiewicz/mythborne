@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { forkJoin, map, Observable, switchMap } from 'rxjs';
+import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
   ArmoryItemDetailReadModel,
@@ -12,6 +12,12 @@ import {
   GetHeroArmoryItemsRpcRow,
   GetHeroArmoryVisibilityStateRpcArgs,
   GetHeroArmoryVisibilityStateRpcRow,
+  CheckHeroMeetsItemRequirementsRpcArgs,
+  CheckHeroMeetsItemRequirementsRpcRow,
+  GetItemEffectiveRequirementsRpcArgs,
+  GetItemEffectiveRequirementsRpcRow,
+  GetItemRequirementComponentRowsRpcArgs,
+  GetItemRequirementComponentRowsRpcRow,
   MoveHeroArmoryItemToShelfRpcArgs,
   MoveHeroArmoryItemToShelfRpcRow,
   RenameHeroArmoryShelfRpcArgs,
@@ -19,9 +25,11 @@ import {
 } from '../../types/item-equipment-rpc.types';
 import { mapHeroArmoryReadModel } from '../../utils/item-equipment-mappers';
 import { mapArmoryItemDetail } from '../../utils/item-detail-mappers';
+import { mapItemRequirementPreview } from '../../utils/item-requirement-mappers';
 import { trimText } from '../../utils/normalize-text';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
+import { StatsService } from '../stats/stats';
 
 export interface RenameArmoryShelfInput {
   shelfPosition: number;
@@ -41,6 +49,7 @@ export interface MoveArmoryItemToShelfInput {
 export class PlayerArmory {
   private readonly activeHero = inject(ActiveHero);
   private readonly backend = inject(Backend);
+  private readonly stats = inject(StatsService);
 
   getArmory(): Observable<HeroArmoryReadModel> {
     return this.activeHero.requireActiveHero().pipe(
@@ -58,18 +67,26 @@ export class PlayerArmory {
           p_item_id: normalizedItemId,
         };
 
-        return this.backend
-          .rpc<GetHeroArmoryItemDetailRpcRow[]>(
-            RPC.get_hero_armory_item_detail,
-            args,
-          )
-          .pipe(
-            map((rows) =>
-              mapArmoryItemDetail(
-                firstRow(rows, RPC.get_hero_armory_item_detail),
+        return this.backend.rpc<GetHeroArmoryItemDetailRpcRow[]>(
+          RPC.get_hero_armory_item_detail,
+          args,
+        ).pipe(
+          switchMap((rows) => {
+            const detail = firstRow(rows, RPC.get_hero_armory_item_detail);
+
+            return forkJoin({
+              detail: of(detail),
+              requirements: this.getItemRequirementPreview(
+                context.heroId,
+                detail.item_id,
               ),
-            ),
-          );
+            });
+          }),
+          map((data) => ({
+            ...mapArmoryItemDetail(data.detail),
+            requirementPreview: data.requirements,
+          })),
+        );
       }),
     );
   }
@@ -168,6 +185,46 @@ export class PlayerArmory {
     return this.backend.rpc<GetHeroArmoryItemsRpcRow[]>(
       RPC.get_hero_armory_items,
       args,
+    );
+  }
+
+  private getItemRequirementPreview(
+    heroId: string,
+    itemId: string,
+  ): Observable<ArmoryItemDetailReadModel['requirementPreview']> {
+    const effectiveArgs: GetItemEffectiveRequirementsRpcArgs = {
+      p_item_id: itemId,
+    };
+    const componentArgs: GetItemRequirementComponentRowsRpcArgs = {
+      p_item_id: itemId,
+    };
+    const checkArgs: CheckHeroMeetsItemRequirementsRpcArgs = {
+      p_hero_id: heroId,
+      p_item_id: itemId,
+    };
+
+    return forkJoin({
+      effectiveRows: this.backend.rpc<GetItemEffectiveRequirementsRpcRow[]>(
+        RPC.get_item_effective_requirements,
+        effectiveArgs,
+      ),
+      componentRows: this.backend.rpc<GetItemRequirementComponentRowsRpcRow[]>(
+        RPC.get_item_requirement_component_rows,
+        componentArgs,
+      ),
+      checkRows: this.backend.rpc<CheckHeroMeetsItemRequirementsRpcRow[]>(
+        RPC.check_hero_meets_item_requirements,
+        checkArgs,
+      ),
+      stats: this.stats.getStats(),
+    }).pipe(
+      map((data) =>
+        mapItemRequirementPreview({
+          heroId,
+          itemId,
+          ...data,
+        }),
+      ),
     );
   }
 }
