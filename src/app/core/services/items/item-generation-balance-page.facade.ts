@@ -6,6 +6,7 @@ import { BonusAdminData, BonusTemplate } from '../../domain/bonus/bonus.model';
 import {
   EditableItemGenerationBucketProfile,
   EditableItemGenerationQuality,
+  ItemRequirementAggregationSettings,
   ItemQualityImpactPreview,
 } from '../../domain/item/item-generation-admin.model';
 import { ItemGenerationBalanceFormFactory } from '../../factories/forms/item-generation-balance-form.factory';
@@ -13,8 +14,9 @@ import { ItemGenerationBucketsFactory } from '../../factories/item-generation/it
 import {
   BonusTemplateEditorForm,
   BucketProfileEditorForm,
-  QualityEditorForm
+  QualityEditorForm,
 } from '../../types/forms/item-generation-balance-form.types';
+import { ItemGenerationQualityFormFactory } from '../../factories/forms/item-generation-quality-form.factory';
 import { BalanceSelection } from '../../types/item-generation-balance-page.types';
 import { createEntityEditorState } from '../../utils/entity-editor-state';
 import { getErrorMessage } from '../../utils/error-message';
@@ -31,6 +33,7 @@ export class ItemGenerationBalancePageFacade {
   private readonly adminService = inject(ItemGenerationAdminService);
   private readonly bucketFactory = inject(ItemGenerationBucketsFactory);
   private readonly formFactory = inject(ItemGenerationBalanceFormFactory);
+  private readonly qualityFormFactory = inject(ItemGenerationQualityFormFactory);
   private readonly formBuilder = inject(FormBuilder);
   private readonly formulaService = inject(FormulaService);
   private readonly toast = inject(ToastService);
@@ -43,6 +46,8 @@ export class ItemGenerationBalancePageFacade {
   readonly loadError = signal<string | null>(null);
   readonly qualityImpactPreviewError = signal<string | null>(null);
   readonly qualityImpactPreview = signal<ItemQualityImpactPreview[]>([]);
+  readonly requirementAggregationSettings =
+    signal<ItemRequirementAggregationSettings | null>(null);
   readonly isBusy = computed(() => this.isSaving() || this.formulas.isSaving());
   readonly qualityImpactPreviewForm = this.formBuilder.group({
     baseValue: this.formBuilder.control<number | null>(100, [
@@ -65,11 +70,11 @@ export class ItemGenerationBalancePageFacade {
     QualityEditorForm
   >({
     destroyRef: this.destroyRef,
-    selectorForm: this.formFactory.createQualitySelectorForm(),
-    editorForm: this.formFactory.createQualityEditorForm(),
-    createDraft: () => this.formFactory.createQualityDraft(),
-    patch: (form, draft) => this.formFactory.patchQuality(form, draft),
-    toDraft: (form) => this.formFactory.toQuality(form),
+    selectorForm: this.qualityFormFactory.createSelectorForm(),
+    editorForm: this.qualityFormFactory.createEditorForm(),
+    createDraft: () => this.qualityFormFactory.createDraft(),
+    patch: (form, draft) => this.qualityFormFactory.patch(form, draft),
+    toDraft: (form) => this.qualityFormFactory.toDraft(form),
     idOf: (item) => item.id,
     keyOf: (item) => item.key,
   });
@@ -167,6 +172,9 @@ export class ItemGenerationBalancePageFacade {
         next: ({ balanceData, formulaData, bonusData }) => {
           this.quality.setItems(balanceData.qualities, preferred?.qualityKey);
           this.profile.setItems(balanceData.bucketProfiles, preferred?.profileKey);
+          this.requirementAggregationSettings.set(
+            balanceData.requirementAggregationSettings,
+          );
           this.formulas.setData(formulaData, preferred);
           this.bonusAdminData.set(bonusData);
           this.bonusTemplate.setItems(bonusData.templates);

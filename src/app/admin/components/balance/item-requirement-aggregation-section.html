@@ -1,0 +1,100 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-col gap-xs mb-lg">
+    <p class="card-legend mb-0">Requirements</p>
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Item requirement aggregation</h3>
+    <p class="muted-text mb-0">
+      Final equip/use requirements are DB-owned. They derive from saved base, prefix and suffix
+      requirements, then apply the selected quality requirement multiplier.
+    </p>
+  </div>
+
+  @if (aggregationSettings(); as settings) {
+    <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md mb-lg">
+      <div class="mg-surface-card flex-col gap-xs p-md">
+        <span class="muted-text">Aggregation rule</span>
+        <strong class="heading-color">Highest component + additional fraction</strong>
+      </div>
+
+      <div class="mg-surface-card flex-col gap-xs p-md">
+        <span class="muted-text">Additional component fraction</span>
+        <strong class="heading-color">{{ settings.additionalRequirementFraction }}</strong>
+      </div>
+
+      <div class="mg-surface-card flex-col gap-xs p-md">
+        <span class="muted-text">Minimum required value</span>
+        <strong class="heading-color">{{ settings.minRequiredValue }}</strong>
+      </div>
+
+      <div class="mg-surface-card flex-col gap-xs p-md">
+        <span class="muted-text">Rounding mode</span>
+        <strong class="heading-color">{{ settings.roundingMode }}</strong>
+      </div>
+    </div>
+  } @else {
+    <p class="form-error mb-lg">
+      No active item requirement aggregation settings were returned by the database.
+    </p>
+  }
+
+  <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md mb-lg">
+    <article class="mg-surface-card flex-col gap-sm p-md">
+      <span class="muted-text">Base contribution</span>
+      <strong class="heading-color">Item generation base requirements</strong>
+      <p class="mb-0 muted-text">
+        Saved in the Item Catalog base editor through central entity requirements.
+      </p>
+    </article>
+
+    <article class="mg-surface-card flex-col gap-sm p-md">
+      <span class="muted-text">Prefix contribution</span>
+      <strong class="heading-color">Item generation affix requirements</strong>
+      <p class="mb-0 muted-text">
+        Optional prefix requirements contribute before the quality multiplier.
+      </p>
+    </article>
+
+    <article class="mg-surface-card flex-col gap-sm p-md">
+      <span class="muted-text">Suffix contribution</span>
+      <strong class="heading-color">Item generation affix requirements</strong>
+      <p class="mb-0 muted-text">
+        Optional suffix requirements contribute before the quality multiplier.
+      </p>
+    </article>
+  </div>
+
+  <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md">
+    @for (quality of qualities(); track quality.key) {
+      <article class="mg-surface-card flex-col gap-sm p-md">
+        <div class="flex-row-between-center flex-col-sm gap-sm">
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Quality</span>
+            <strong class="heading-color">{{ quality.label }}</strong>
+            <span class="mg-tag">{{ quality.key }}</span>
+          </div>
+
+          <span class="tag-badge" [class.tag-badge--success]="quality.isEnabled">
+            {{ quality.isEnabled ? 'enabled' : 'disabled' }}
+          </span>
+        </div>
+
+        <div class="mg-grid grid-cols-2 gap-sm w-100">
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Value/bonus multiplier</span>
+            <strong class="heading-color">x{{ quality.multiplier }}</strong>
+          </div>
+
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Requirement multiplier</span>
+            <strong class="heading-color">x{{ quality.requirementMultiplier }}</strong>
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <p class="muted-text mb-0">No quality rows returned by the database.</p>
+    }
+  </div>
+
+  <p class="muted-text mb-0 mt-md">
+    This section does not create per-item instance requirements or local stat rules in Angular.
+  </p>
+</section>

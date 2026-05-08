@@ -64,6 +64,7 @@ export interface ItemGenerationAdminCatalogData {
 export interface ItemGenerationAdminBalanceData {
   qualities: EditableItemGenerationQuality[];
   bucketProfiles: EditableItemGenerationBucketProfile[];
+  requirementAggregationSettings: ItemRequirementAggregationSettings | null;
 }
 
 export interface ItemQualityImpactPreviewInput {
@@ -84,4 +85,13 @@ export interface ItemQualityImpactPreview {
   sampleQualityScaledBonusValue: number;
   valueMultiplierExplanation: string;
   bonusScalingExplanation: string;
+}
+
+export interface ItemRequirementAggregationSettings {
+  additionalRequirementFraction: number;
+  minRequiredValue: number;
+  roundingMode: string;
+  isActive: boolean;
+  updatedAt: string;
+  updatedBy: string | null;
 }

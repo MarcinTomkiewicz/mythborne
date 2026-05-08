@@ -8,6 +8,7 @@ import { BucketProfileBalanceSection } from '../../components/balance/bucket-pro
 import { BonusTemplateBalanceSection } from '../../components/balance/bonus-template-balance-section';
 import { FormulaAssignmentBalanceSection } from '../../components/balance/formula-assignment-balance-section';
 import { FormulaLibraryBalanceSection } from '../../components/balance/formula-library-balance-section';
+import { ItemRequirementAggregationSection } from '../../components/balance/item-requirement-aggregation-section';
 import { QualityBalanceSection } from '../../components/balance/quality-balance-section';
 import { BALANCE_PAGE_LINKS } from '../../admin-navigation.config';
 
@@ -18,6 +19,7 @@ import { BALANCE_PAGE_LINKS } from '../../admin-navigation.config';
     LoadingOverlay,
     AdminTagLinks,
     AdminServerSwitcher,
+    ItemRequirementAggregationSection,
     QualityBalanceSection,
     BucketProfileBalanceSection,
     BonusTemplateBalanceSection,

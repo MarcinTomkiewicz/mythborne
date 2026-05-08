@@ -130,6 +130,7 @@ export function mapItemGenerationQuality(
     key: row.key as ItemQualityDefinition['key'],
     label: row.label,
     multiplier: row.multiplier,
+    requirementMultiplier: row.requirement_multiplier,
     weight: row.weight,
   };
 }

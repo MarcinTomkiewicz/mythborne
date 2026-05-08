@@ -12,6 +12,7 @@ export type QualityEditorForm = FormGroup<{
   key: FormControl<ItemQualityKey>;
   label: FormControl<string>;
   multiplier: FormControl<number>;
+  requirementMultiplier: FormControl<number>;
   weight: FormControl<number>;
   sortOrder: FormControl<number>;
   isEnabled: FormControl<boolean>;

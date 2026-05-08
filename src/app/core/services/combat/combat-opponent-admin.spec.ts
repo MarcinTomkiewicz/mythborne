@@ -77,6 +77,7 @@ describe('CombatOpponentAdmin', () => {
     itemGeneration.getBalanceData.and.returnValue(of({
       qualities: [],
       bucketProfiles: [],
+      requirementAggregationSettings: null,
     }));
 
     TestBed.configureTestingModule({

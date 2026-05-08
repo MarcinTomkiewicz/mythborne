@@ -16,6 +16,7 @@ export const TABLES = {
   item_generation_base_type_targets: 'item_generation_base_type_targets',
   item_generation_bucket_profiles: 'item_generation_bucket_profiles',
   item_generation_qualities: 'item_generation_qualities',
+  item_requirement_aggregation_settings: 'item_requirement_aggregation_settings',
   character_point_ledger: 'character_point_ledger',
   level_up_stat_bonus_rules: 'level_up_stat_bonus_rules',
   level_up_stat_bonus_rule_stats: 'level_up_stat_bonus_rule_stats',

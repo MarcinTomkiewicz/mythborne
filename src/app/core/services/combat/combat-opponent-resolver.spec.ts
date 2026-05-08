@@ -398,9 +398,9 @@ function itemCatalogData(): ItemGenerationCatalog {
   return {
     budgetBuckets: [10],
     qualities: [
-      { key: 'normal', label: 'Normal', multiplier: 1, weight: 1 },
-      { key: 'quality', label: 'Quality', multiplier: 1.5, weight: 1 },
-      { key: 'outstanding', label: 'Outstanding', multiplier: 2, weight: 1 },
+      { key: 'normal', label: 'Normal', multiplier: 1, requirementMultiplier: 1, weight: 1 },
+      { key: 'quality', label: 'Quality', multiplier: 1.5, requirementMultiplier: 1.25, weight: 1 },
+      { key: 'outstanding', label: 'Outstanding', multiplier: 2, requirementMultiplier: 1.5, weight: 1 },
     ],
     baseTypes: [],
     baseTypeTargets: [],
@@ -426,7 +426,13 @@ function generatedItem(): GeneratedItemResult {
     displayName: 'Generated blade',
     bucketValue: 10,
     luck: 5,
-    quality: { key: 'quality', label: 'Quality', multiplier: 1.5, weight: 1 },
+    quality: {
+      key: 'quality',
+      label: 'Quality',
+      multiplier: 1.5,
+      requirementMultiplier: 1.25,
+      weight: 1,
+    },
     base: {
       id: 'base-1',
       key: 'blade',

@@ -1,10 +1,33 @@
 import {
+  mapEditableQuality,
+  mapItemRequirementAggregationSettings,
   mapItemQualityImpactPreview,
   toGetItemQualityImpactPreviewRpcArgs,
 } from './item-generation-admin-mappers';
 import { ItemQualityImpactPreviewRpcRow } from '../types/item-generation-preview-rpc.types';
+import { Row } from '../types/supabase.types';
 
 describe('item generation admin mappers', () => {
+  it('maps quality requirement multiplier separately from value multiplier', () => {
+    expect(mapEditableQuality(createQualityRow())).toEqual(jasmine.objectContaining({
+      key: 'quality',
+      label: 'Quality',
+      multiplier: 1.5,
+      requirementMultiplier: 1.25,
+    }));
+  });
+
+  it('maps item requirement aggregation settings from DB rows', () => {
+    expect(mapItemRequirementAggregationSettings(createAggregationSettingsRow())).toEqual({
+      additionalRequirementFraction: 0.5,
+      minRequiredValue: 1,
+      roundingMode: 'ceil',
+      isActive: true,
+      updatedAt: '2026-05-08T10:00:00.000Z',
+      updatedBy: 'user-1',
+    });
+  });
+
   it('maps item quality impact preview rows from DB metadata', () => {
     expect(mapItemQualityImpactPreview(createQualityImpactRow())).toEqual({
       qualityKey: 'quality',
@@ -88,5 +111,32 @@ function createQualityImpactRow(): ItemQualityImpactPreviewRpcRow {
     sample_quality_scaled_bonus_value: 6,
     value_multiplier_explanation: '100 x 1.5 = 150',
     bonus_scaling_explanation: '4 x 1.5 = 6',
+  };
+}
+
+function createQualityRow(): Row<'item_generation_qualities'> {
+  return {
+    id: 'quality-1',
+    key: 'quality',
+    label: 'Quality',
+    multiplier: 1.5,
+    requirement_multiplier: 1.25,
+    weight: 25,
+    sort_order: 20,
+    is_enabled: true,
+    created_at: '2026-05-08T10:00:00.000Z',
+  };
+}
+
+function createAggregationSettingsRow(): Row<'item_requirement_aggregation_settings'> {
+  return {
+    id: true,
+    additional_requirement_fraction: 0.5,
+    min_required_value: 1,
+    rounding_mode: 'ceil',
+    is_active: true,
+    created_at: '2026-05-08T10:00:00.000Z',
+    updated_at: '2026-05-08T10:00:00.000Z',
+    updated_by: 'user-1',
   };
 }

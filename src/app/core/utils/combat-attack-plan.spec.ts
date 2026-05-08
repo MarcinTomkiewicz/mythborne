@@ -209,7 +209,13 @@ function itemCatalog(): ItemGenerationCatalog {
   return {
     budgetBuckets: [10],
     qualities: [
-      { key: 'quality', label: 'Quality', multiplier: 2, weight: 1 },
+      {
+        key: 'quality',
+        label: 'Quality',
+        multiplier: 2,
+        requirementMultiplier: 2,
+        weight: 1,
+      },
     ],
     baseTypes: [],
     baseTypeTargets: [],

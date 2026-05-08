@@ -7,6 +7,7 @@ export interface ItemQualityDefinition {
   key: ItemQualityKey;
   label: string;
   multiplier: number;
+  requirementMultiplier: number;
   weight: number;
 }
 

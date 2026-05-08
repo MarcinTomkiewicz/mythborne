@@ -11,6 +11,7 @@ import {
   mapItemQualityImpactPreview,
   mapEditableBucketProfile,
   mapEditableQuality,
+  mapItemRequirementAggregationSettings,
   toGetItemQualityImpactPreviewRpcArgs,
 } from '../../utils/item-generation-admin-mappers';
 import { ItemCatalogService } from './item-catalog';
@@ -19,6 +20,8 @@ import { FilterOperator } from '../../enums/filter-operators';
 import { BucketProfilePayload } from '../../types/item-generation-admin-service.types';
 import { ItemQualityImpactPreviewRpcRow } from '../../types/item-generation-preview-rpc.types';
 import { trimText, trimToNull } from '../../utils/normalize-text';
+import { Row } from '../../types/supabase.types';
+import { TABLES } from '../../constants/tables.const';
 
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationBalanceAdminService {
@@ -27,20 +30,32 @@ export class ItemGenerationBalanceAdminService {
 
   getData(): Observable<ItemGenerationAdminBalanceData> {
     return forkJoin({
-      qualities: this.backend.getAll<any>({
-        table: 'item_generation_qualities',
+      qualities: this.backend.getAll<Row<'item_generation_qualities'>>({
+        table: TABLES.item_generation_qualities,
         orderBy: { column: 'sort_order' },
         camelCase: false,
       }),
-      profiles: this.backend.getAll<any>({
-        table: 'item_generation_bucket_profiles',
+      profiles: this.backend.getAll<Row<'item_generation_bucket_profiles'>>({
+        table: TABLES.item_generation_bucket_profiles,
         orderBy: { column: 'created_at', ascending: false },
         camelCase: false,
       }),
+      requirementAggregationSettings: this.backend.getAll<
+        Row<'item_requirement_aggregation_settings'>
+      >({
+        table: TABLES.item_requirement_aggregation_settings,
+        filters: {
+          isActive: { operator: FilterOperator.EQ, value: true },
+        },
+        camelCase: false,
+      }),
     }).pipe(
-      map(({ qualities, profiles }) => ({
+      map(({ qualities, profiles, requirementAggregationSettings }) => ({
         qualities: qualities.map(mapEditableQuality),
         bucketProfiles: profiles.map(mapEditableBucketProfile),
+        requirementAggregationSettings: requirementAggregationSettings[0]
+          ? mapItemRequirementAggregationSettings(requirementAggregationSettings[0])
+          : null,
       }))
     );
   }
@@ -61,13 +76,14 @@ export class ItemGenerationBalanceAdminService {
       key: trimText(draft.key),
       label: trimText(draft.label),
       multiplier: draft.multiplier,
+      requirementMultiplier: draft.requirementMultiplier,
       weight: draft.weight,
       sortOrder: draft.sortOrder,
       isEnabled: draft.isEnabled,
     };
     const request$ = draft.id
-      ? this.backend.update('item_generation_qualities', draft.id, payload)
-      : this.backend.create('item_generation_qualities', payload);
+      ? this.backend.update(TABLES.item_generation_qualities, draft.id, payload)
+      : this.backend.create(TABLES.item_generation_qualities, payload);
 
     return request$.pipe(
       map(() => void 0),
@@ -76,7 +92,7 @@ export class ItemGenerationBalanceAdminService {
   }
 
   deleteQuality(id: string): Observable<void> {
-    return this.backend.delete('item_generation_qualities', id).pipe(
+    return this.backend.delete(TABLES.item_generation_qualities, id).pipe(
       tap(() => this.itemCatalogService.clearCache())
     );
   }
@@ -102,7 +118,7 @@ export class ItemGenerationBalanceAdminService {
       switchMap((savedId) =>
         draft.isActive
           ? this.backend.updateWhere(
-              'item_generation_bucket_profiles',
+              TABLES.item_generation_bucket_profiles,
               { id: { operator: FilterOperator.NE, value: savedId } },
               { isActive: false }
             )
@@ -114,14 +130,17 @@ export class ItemGenerationBalanceAdminService {
   }
 
   deleteBucketProfile(id: string): Observable<void> {
-    return this.backend.delete('item_generation_bucket_profiles', id).pipe(
+    return this.backend.delete(TABLES.item_generation_bucket_profiles, id).pipe(
       tap(() => this.itemCatalogService.clearCache())
     );
   }
 
   private insertBucketProfile(payload: BucketProfilePayload): Observable<string> {
     return this.backend
-      .create<{ id: string } & BucketProfilePayload>('item_generation_bucket_profiles', payload)
+      .create<{ id: string } & BucketProfilePayload>(
+        TABLES.item_generation_bucket_profiles,
+        payload,
+      )
       .pipe(map((row) => row.id));
   }
 
@@ -132,7 +151,7 @@ export class ItemGenerationBalanceAdminService {
   ): Observable<string> {
     return this.backend
       .updateWhere<{ id: string } & BucketProfilePayload>(
-        'item_generation_bucket_profiles',
+        TABLES.item_generation_bucket_profiles,
         { id: { operator: FilterOperator.EQ, value: id } },
         payload
       )
@@ -142,7 +161,7 @@ export class ItemGenerationBalanceAdminService {
             ? of(rowsById[0].id)
             : this.backend
                 .updateWhere<{ id: string } & BucketProfilePayload>(
-                  'item_generation_bucket_profiles',
+                  TABLES.item_generation_bucket_profiles,
                   { key: { operator: FilterOperator.EQ, value: key } },
                   payload
                 )

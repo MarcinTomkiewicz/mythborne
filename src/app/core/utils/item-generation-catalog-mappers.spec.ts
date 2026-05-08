@@ -8,6 +8,7 @@ import {
   mapItemGenerationBase,
   mapItemGenerationBaseType,
   mapItemGenerationBaseTypeTarget,
+  mapItemGenerationQuality,
   mapResolvedItemGenerationBonus,
   toBaseTypeByKey,
 } from './item-generation-catalog-mappers';
@@ -38,6 +39,13 @@ describe('item generation catalog mappers', () => {
     expect(base.equipmentSlotGroup).toBe('weapon');
     expect(base.handUsage).toBe('one_handed');
     expect(Object.hasOwn(base, 'slot')).toBeFalse();
+  });
+
+  it('maps quality requirement multiplier separately from value multiplier', () => {
+    const quality = mapItemGenerationQuality(createQualityRow());
+
+    expect(quality.multiplier).toBe(1.5);
+    expect(quality.requirementMultiplier).toBe(1.25);
   });
 
   it('fails when item base references a missing base_type_key', () => {
@@ -107,6 +115,23 @@ function createBaseTypeRow(
     is_active: true,
     created_at: '2026-04-27T00:00:00.000Z',
     updated_at: '2026-04-27T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function createQualityRow(
+  overrides: Partial<Row<'item_generation_qualities'>> = {},
+): Row<'item_generation_qualities'> {
+  return {
+    id: 'quality-1',
+    key: 'quality',
+    label: 'Quality',
+    multiplier: 1.5,
+    requirement_multiplier: 1.25,
+    weight: 25,
+    sort_order: 20,
+    is_enabled: true,
+    created_at: '2026-04-27T00:00:00.000Z',
     ...overrides,
   };
 }

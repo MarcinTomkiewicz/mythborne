@@ -7632,6 +7632,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - UI does not imply item instance requirements exist.
 - Quality requirement multiplier is distinct from bonus/value multiplier.
 
+**Implementation note:** S25 accepted on 2026-05-08 after cleanup pass. `/admin/balance` now renders a DB-backed item requirement aggregation section from `item_requirement_aggregation_settings`, explains the DB-owned highest-component-plus-additional-fraction rule, shows base/prefix/suffix contribution roles, and displays quality `multiplier` separately from `requirementMultiplier`. The UI does not create per-item instance requirement editing or Angular-owned requirement formulas. Cleanup split `ItemRequirementAggregationSection` into a presentational component, extracted quality form construction into `ItemGenerationQualityFormFactory`, reduced the broad balance form factory, and made touched item-generation table reads use `TABLES.*` consistently. No DB/RPC contract change, direct write, migration, generated type edit or status-schema change was added. Verification passed with `npx tsc --noEmit`, focused item-generation/balance specs, static template checks and `npm run build` with known budget/CommonJS warnings. Optional RPC-constant check found no existing `RPC.get_item_quality_impact_preview`, so the existing raw RPC string was left unchanged rather than adding churn.
+
 ---
 
 ## Task S26 — Item quality admin/balancer alignment

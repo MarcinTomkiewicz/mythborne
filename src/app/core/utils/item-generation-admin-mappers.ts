@@ -4,6 +4,7 @@ import {
   EditableItemGenerationBonus,
   EditableItemGenerationBucketProfile,
   EditableItemGenerationQuality,
+  ItemRequirementAggregationSettings,
   ItemQualityImpactPreview,
   ItemQualityImpactPreviewInput,
 } from '../domain/item/item-generation-admin.model';
@@ -33,9 +34,23 @@ export function mapEditableQuality(
     key: row.key as EditableItemGenerationQuality['key'],
     label: row.label,
     multiplier: row.multiplier,
+    requirementMultiplier: row.requirement_multiplier,
     weight: row.weight,
     sortOrder: row.sort_order,
     isEnabled: row.is_enabled,
+  };
+}
+
+export function mapItemRequirementAggregationSettings(
+  row: Row<'item_requirement_aggregation_settings'>,
+): ItemRequirementAggregationSettings {
+  return {
+    additionalRequirementFraction: row.additional_requirement_fraction,
+    minRequiredValue: row.min_required_value,
+    roundingMode: row.rounding_mode,
+    isActive: row.is_active,
+    updatedAt: row.updated_at,
+    updatedBy: row.updated_by,
   };
 }
 

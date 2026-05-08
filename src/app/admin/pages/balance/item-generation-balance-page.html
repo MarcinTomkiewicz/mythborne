@@ -29,6 +29,10 @@
     </section>
 
     <div class="flex-col w-100 gap-xl">
+      <app-item-requirement-aggregation-section
+        [aggregationSettings]="page.requirementAggregationSettings()"
+        [qualities]="page.quality.items()"
+      />
       <app-quality-balance-section />
       <app-bucket-profile-balance-section />
       <app-bonus-template-balance-section />

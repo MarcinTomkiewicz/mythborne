@@ -35,7 +35,13 @@ export function createQualitySelectorFields(
 export const QUALITY_EDITOR_FIELDS: readonly FormFieldConfig[] = [
   { type: FormFieldType.Select, controlName: 'key', label: 'Key', options: QUALITY_KEY_OPTIONS },
   { type: FormFieldType.Text, controlName: 'label', label: 'Label' },
-  { type: FormFieldType.Number, controlName: 'multiplier', label: 'Multiplier', step: '0.01' },
+  { type: FormFieldType.Number, controlName: 'multiplier', label: 'Value/bonus multiplier', step: '0.01' },
+  {
+    type: FormFieldType.Number,
+    controlName: 'requirementMultiplier',
+    label: 'Requirement multiplier',
+    step: '0.01',
+  },
   { type: FormFieldType.Number, controlName: 'weight', label: 'Weight', step: 1 },
   { type: FormFieldType.Number, controlName: 'sortOrder', label: 'Sort order', step: 1 },
   { type: FormFieldType.Checkbox, controlName: 'isEnabled', label: 'Enabled' },

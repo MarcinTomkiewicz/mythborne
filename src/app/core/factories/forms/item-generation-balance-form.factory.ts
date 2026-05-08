@@ -1,11 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { NonNullableFormBuilder } from '@angular/forms';
-import {
-  EditableItemGenerationBucketProfile,
-  EditableItemGenerationQuality,
-} from '../../domain/item/item-generation-admin.model';
+import { EditableItemGenerationBucketProfile } from '../../domain/item/item-generation-admin.model';
 import { BonusTemplate } from '../../domain/bonus/bonus.model';
-import { ItemQualityKey } from '../../domain/item/item-generation.model';
 import {
   BalanceFormula,
   EditableBalanceFormula,
@@ -18,8 +14,6 @@ import {
   FormulaAssignmentForm,
   FormulaEditorForm,
   FormulaSelectorForm,
-  QualityEditorForm,
-  QualitySelectorForm,
 } from '../../types/forms/item-generation-balance-form.types';
 import { integerAtLeast, nonNegativeInteger, roundedNumber } from '../../utils/number';
 import { trimText } from '../../utils/normalize-text';
@@ -29,26 +23,6 @@ import { BonusScope, BonusType } from '../../types/bonus.types';
 @Injectable({ providedIn: 'root' })
 export class ItemGenerationBalanceFormFactory {
   private readonly fb = inject(NonNullableFormBuilder);
-
-  createQualitySelectorForm(): QualitySelectorForm {
-    return this.fb.group({
-      selectedId: this.fb.control(''),
-    });
-  }
-
-  createQualityEditorForm(
-    draft?: EditableItemGenerationQuality
-  ): QualityEditorForm {
-    return this.fb.group({
-      id: this.fb.control(draft?.id ?? ''),
-      key: this.fb.control<ItemQualityKey>(draft?.key ?? 'normal'),
-      label: this.fb.control(draft?.label ?? 'Normal'),
-      multiplier: this.fb.control(draft?.multiplier ?? 1),
-      weight: this.fb.control(draft?.weight ?? 10),
-      sortOrder: this.fb.control(draft?.sortOrder ?? 10),
-      isEnabled: this.fb.control(draft?.isEnabled ?? true),
-    });
-  }
 
   createBucketProfileSelectorForm(): BucketProfileSelectorForm {
     return this.fb.group({
@@ -124,18 +98,6 @@ export class ItemGenerationBalanceFormFactory {
     });
   }
 
-  createQualityDraft(): EditableItemGenerationQuality {
-    return {
-      id: null,
-      key: 'normal',
-      label: 'Normal',
-      multiplier: 1,
-      weight: 10,
-      sortOrder: 10,
-      isEnabled: true,
-    };
-  }
-
   createBucketProfileDraft(): EditableItemGenerationBucketProfile {
     return {
       id: null,
@@ -180,20 +142,6 @@ export class ItemGenerationBalanceFormFactory {
       scalingFactor: null,
       sortOrder: 0,
       isActive: true,
-    };
-  }
-
-  toQuality(form: QualityEditorForm): EditableItemGenerationQuality {
-    const value = form.getRawValue();
-
-    return {
-      id: value.id || null,
-      key: value.key,
-      label: trimText(value.label),
-      multiplier: Number(value.multiplier),
-      weight: nonNegativeInteger(value.weight),
-      sortOrder: roundedNumber(value.sortOrder),
-      isEnabled: value.isEnabled,
     };
   }
 
@@ -251,18 +199,6 @@ export class ItemGenerationBalanceFormFactory {
       sortOrder: roundedNumber(value.sortOrder),
       isActive: value.isActive,
     };
-  }
-
-  patchQuality(form: QualityEditorForm, draft: EditableItemGenerationQuality) {
-    form.reset({
-      id: draft.id ?? '',
-      key: draft.key,
-      label: draft.label,
-      multiplier: draft.multiplier,
-      weight: draft.weight,
-      sortOrder: draft.sortOrder,
-      isEnabled: draft.isEnabled,
-    });
   }
 
   patchBucketProfile(
