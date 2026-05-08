@@ -55,7 +55,6 @@ describe('ArmoryItemDetailPopover', () => {
       drachmaValue: 300,
       itemStats: [{ label: 'Damage', displayValue: '2-9' }],
       bonuses: [
-        jasmine.objectContaining({ label: 'Maximum damage', displayValue: '+4' }),
         jasmine.objectContaining({ label: 'Critical chance', displayValue: '+2%' }),
       ],
     }));
@@ -185,15 +184,6 @@ function demonicDaggerDetail(
       }],
     },
     bonuses: [{
-      label: 'Maximum damage',
-      displayValue: '+4',
-      numericValue: 4,
-      rowKind: 'modifier_bonus',
-      displaySection: 'bonuses',
-      sourceKey: 'demonic',
-      sourceLabel: 'Demonic',
-      sortOrder: 10,
-    }, {
       label: 'Critical chance',
       displayValue: '+2%',
       numericValue: 2,

@@ -586,3 +586,19 @@ Nie oceniać UI tylko po tym, czy „wygląda podobnie do prototypu”. Dobre UI
 1. **UX/visual direction** — ekran jest czytelny, spójny z Mythsworn i realizuje intencję prototypu.
 2. **Production structure** — kod używa globalnych/shared/vendor klocków i nie tworzy utility soup.
 3. **Data/workflow authority** — UI respektuje DB/RPC/read models, dictionaries, stale guards, privacy i canonical workflow boundaries.
+
+## Utility shadowing blocker
+
+Codex must not create local or global SCSS classes that merely duplicate existing utility classes.
+
+A class is suspicious if it mostly contains:
+- display/flex/grid alignment,
+- gap,
+- padding/margin,
+- width/min-width/flex,
+- simple text color/font utilities,
+- border radius already covered by a shared surface/button/card pattern.
+
+Allowed exception: a stable semantic shared/global pattern may own these properties if it replaces repeated utility stacks across multiple screens and is documented as a reusable pattern.
+
+For shell tasks, shell SCSS may define structural grid/areas and shell-specific states only. It must not become a hidden utility bundle.

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal, WritableSignal } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { GameSidebar } from './game-sidebar';
 import {
   GlobalRoleKey,
@@ -11,16 +12,42 @@ import {
   ServerAccessState,
 } from '../../../core/interfaces/server/active-server.interface';
 import { AuthState } from '../../../core/services/auth/auth-state';
+import { Backend } from '../../../core/services/backend/backend';
+import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveServer } from '../../../core/services/server/active-server';
 
 describe('GameSidebar', () => {
   let component: GameSidebar;
   let fixture: ComponentFixture<GameSidebar>;
   let authState: AuthState;
+  let backend: jasmine.SpyObj<Backend>;
+  let activeHeroState: WritableSignal<unknown>;
   let accessState: WritableSignal<ServerAccessState>;
   let selectedServer: WritableSignal<SelectedGameServer | null>;
 
   beforeEach(() => {
+    backend = jasmine.createSpyObj<Backend>('Backend', ['rpc']);
+    backend.rpc.and.returnValue(of([
+      {
+        district_code: 'A',
+        helper_text: 'Current prestige rank.',
+        hero_id: 'hero-1',
+        player_label: 'Zeugitai',
+        rank_name: 'Zeugitai',
+        rank_number: 2,
+        rank_uuid: 'rank-2',
+        server_id: 'server-1',
+        updated_at: '2026-05-08T00:00:00.000Z',
+      },
+    ]));
+    activeHeroState = signal({
+      userId: 'user-1',
+      serverId: 'server-1',
+      heroId: 'hero-1',
+      server: createServer(),
+      hero: { id: 'hero-1', name: 'Hero', level: 1 },
+      heroRow: { id: 'hero-1', name: 'Hero', level: 1 },
+    });
     accessState = signal(createAccess());
     selectedServer = signal(createServer());
 
@@ -35,12 +62,19 @@ describe('GameSidebar', () => {
             selectedServer: selectedServer.asReadonly(),
           },
         },
+        {
+          provide: ActiveHero,
+          useValue: {
+            state: activeHeroState.asReadonly(),
+          },
+        },
+        { provide: Backend, useValue: backend },
       ],
     });
 
     authState = TestBed.inject(AuthState);
     authState.setUser({ id: 'user-1', email: 'player@example.com' } as never);
-    authState.setHero({ name: 'Hero', level: 1 } as never);
+    authState.setHero({ id: 'hero-1', name: 'Hero', level: 1 } as never);
 
     fixture = TestBed.createComponent(GameSidebar);
     component = fixture.componentInstance;
@@ -57,6 +91,18 @@ describe('GameSidebar', () => {
     expect(urls).toContain('/hero/dashboard');
     expect(urls).toContain('/game/combat');
     expect(urls).toContain('/game/auction');
+  });
+
+  it('renders selected server status and DB prestige summary', () => {
+    const text = textContent(fixture);
+
+    expect(text).toContain('Athens');
+    expect(text).toContain('Live');
+    expect(text).toContain('Zeugitai');
+    expect(backend.rpc).toHaveBeenCalledWith(
+      'get_hero_prestige_public_summary',
+      { p_hero_id: 'hero-1' },
+    );
   });
 
   it('shows the vicinity navigation entry without introducing neighborhood labels', () => {
@@ -115,6 +161,10 @@ describe('GameSidebar', () => {
     expect(urls).toContain('/admin');
   });
 });
+
+function textContent(fixture: ComponentFixture<GameSidebar>): string {
+  return (fixture.nativeElement as HTMLElement).textContent ?? '';
+}
 
 function createAccess(
   overrides: Partial<ServerAccessState> = {},

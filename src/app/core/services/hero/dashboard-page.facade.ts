@@ -1,30 +1,33 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize } from 'rxjs';
-import { BonusSource } from '../../domain/bonus/bonus.model';
 import {
   CharacterPointHistoryReadModel,
   IHeroDerived,
 } from '../../types/hero.types';
-import { OriginBonus, Origin } from '../../domain/origin/origin.model';
-import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
+import { Origin } from '../../domain/origin/origin.model';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import { Hero } from './hero';
 import { Origins } from '../origins/origins';
 import { StatsService } from '../stats/stats';
-import { HeroDerivedStats } from './hero-derived-stats';
 import { getErrorMessage } from '../../utils/error-message';
 import { CharacterPointHistory } from './character-point-history';
+import {
+  HeroDashboardRuntimeStats,
+  HeroDashboardRuntimeStatsReadModel,
+  HeroRuntimeDamageRow,
+} from './hero-dashboard-runtime-stats';
 
 interface DerivedStatRow {
   key: string;
   label: string;
   value: number | string;
+  damageRows: HeroRuntimeDamageRow[];
 }
 
 @Injectable()
 export class DashboardPageFacade {
   private readonly heroService = inject(Hero);
-  private readonly heroDerivedStats = inject(HeroDerivedStats);
+  private readonly runtimeStatsService = inject(HeroDashboardRuntimeStats);
   private readonly characterPointHistory = inject(CharacterPointHistory);
   private readonly statsService = inject(StatsService);
   private readonly originsService = inject(Origins);
@@ -43,35 +46,49 @@ export class DashboardPageFacade {
   experienceError = signal<string | null>(null);
 
   origin = signal<Origin | null>(null);
-  originBonuses = signal<OriginBonus[]>([]);
 
   statsList = signal<IStat[]>([]);
-  statsValues = signal<IHeroStats>({} as IHeroStats);
-  derivedStatsList = signal<IStat[]>([]);
-  derivedValues = signal<IHeroDerived>({} as IHeroDerived);
+  runtimeStats = signal<HeroDashboardRuntimeStatsReadModel | null>(null);
+  runtimeStatsError = signal<string | null>(null);
   characterPointHistoryEntries = signal<CharacterPointHistoryReadModel[]>([]);
   characterPointHistoryError = signal<string | null>(null);
 
   statsDisplay = computed(() =>
-    this.statsService.getFinalStats(this.statsValues(), [this.originBonusSource()], {
-      heroLevel: this.heroLevel(),
-    })
+    this.runtimeStats()?.stats ?? {}
   );
 
   derivedDisplay = computed(() =>
-    this.derivedValues()
+    toDerivedDisplay(this.runtimeStats())
   );
 
   derivedStatRows = computed<DerivedStatRow[]>(() => {
-    const derived = this.derivedDisplay();
+    const runtime = this.runtimeStats();
 
     return [
-      { key: 'defense', label: 'DEF', value: derived.def },
-      { key: 'damage', label: 'DMG', value: `${derived.minDmg} - ${derived.maxDmg}` },
-      { key: 'luck', label: 'Luck', value: derived.luck },
-      { key: 'critical_chance', label: 'Critical chance', value: derived.critical },
-      { key: 'critical_damage', label: 'Critical damage', value: derived.criticalDamage },
-      { key: 'evasion', label: 'Evasion', value: derived.evasion },
+      {
+        key: 'damage',
+        label: 'Damage',
+        value: runtime?.damageRows.length ? '' : 'No attack sources returned',
+        damageRows: runtime?.damageRows ?? [],
+      },
+      row('defense', 'Defense', runtime?.defense ?? 0),
+      row('luck', 'Luck', runtime?.luck ?? 0),
+      row(
+        'critical_chance',
+        'Critical chance',
+        percentValue(runtime?.criticalChanceBonus ?? 0),
+      ),
+      row(
+        'critical_damage',
+        'Critical damage',
+        percentValue(runtime?.criticalDamage ?? 0),
+      ),
+      row(
+        'evasion',
+        'Evasion',
+        percentValue(runtime?.evasionChanceBonus ?? 0),
+      ),
+      row('attack_count', 'Attack count', runtime?.attackCount ?? 0),
     ];
   });
 
@@ -84,7 +101,6 @@ export class DashboardPageFacade {
 
   loadData() {
     this.statsService.getStats().subscribe(this.statsList.set);
-    this.statsService.getDerivedStats().subscribe(this.derivedStatsList.set);
 
     this.heroService.getHeroData().subscribe((hero) => {
       this.heroName.set(hero.name);
@@ -98,34 +114,15 @@ export class DashboardPageFacade {
       if (hero.origin_id) {
         this.originsService
           .getOriginWithBonuses(hero.origin_id)
-          .subscribe(({ origin, bonuses }) => {
+          .subscribe(({ origin }) => {
             this.origin.set(origin);
-            this.originBonuses.set(bonuses);
           });
       }
     });
 
-    this.heroService.getHeroStats().subscribe(this.statsValues.set);
-    this.heroDerivedStats
-      .resolveActiveHeroDerivedStats()
-      .subscribe(this.derivedValues.set);
+    this.loadRuntimeStats();
     this.loadCharacterPointHistory();
     this.loadExperienceProgress();
-  }
-
-  private originBonusSource(): BonusSource {
-    return {
-      name: 'origin',
-      bonuses: this.originBonuses().map((bonus) => ({
-        target: bonus.target ?? '',
-        value: bonus.baseValue,
-        type: bonus.type,
-        scope: bonus.scope,
-        levelsStep: bonus.levelsStep,
-        sourceStat: bonus.sourceStat,
-        scalingFactor: bonus.scalingFactor,
-      })),
-    };
   }
 
   private loadExperienceProgress(): void {
@@ -171,5 +168,50 @@ export class DashboardPageFacade {
         },
       });
   }
+
+  private loadRuntimeStats(): void {
+    this.runtimeStatsError.set(null);
+
+    this.runtimeStatsService.getActiveHeroRuntimeStats().subscribe({
+      next: (stats) => this.runtimeStats.set(stats),
+      error: (error: unknown) => {
+        this.runtimeStats.set(null);
+        this.runtimeStatsError.set(
+          getErrorMessage(error, 'Dashboard runtime stats could not be loaded.'),
+        );
+      },
+    });
+  }
 }
 
+function row(
+  key: string,
+  label: string,
+  value: number | string,
+): DerivedStatRow {
+  return {
+    key,
+    label,
+    value,
+    damageRows: [],
+  };
+}
+
+function percentValue(value: number): string {
+  return `${value}%`;
+}
+
+function toDerivedDisplay(
+  runtime: HeroDashboardRuntimeStatsReadModel | null,
+): IHeroDerived {
+  return {
+    health: runtime?.maxHealth ?? 0,
+    def: runtime?.defense ?? 0,
+    minDmg: 0,
+    maxDmg: 0,
+    luck: runtime?.luck ?? 0,
+    critical: runtime?.criticalChanceBonus ?? 0,
+    criticalDamage: runtime?.criticalDamage ?? 0,
+    evasion: runtime?.evasionChanceBonus ?? 0,
+  };
+}

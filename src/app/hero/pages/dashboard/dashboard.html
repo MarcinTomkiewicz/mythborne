@@ -122,11 +122,29 @@
         <h3 class="mg-section__title mg-section__title--xs mb-0">Derived Stats</h3>
       </div>
 
+      @if (page.runtimeStatsError(); as runtimeStatsError) {
+        <p class="status-text-warning mb-0">{{ runtimeStatsError }}</p>
+      }
+
       <div class="flex-col gap-sm mt-md">
         @for (row of page.derivedStatRows(); track row.key) {
-          <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
-            <strong class="heading-color">{{ row.label }}:</strong>
-            <span>{{ row.value }}</span>
+          <div class="mg-card flex-col gap-xs p-sm muted-text">
+            <div class="flex-row-between-center gap-md">
+              <strong class="heading-color">{{ row.label }}:</strong>
+              @if (!row.damageRows.length) {
+                <span>{{ row.value }}</span>
+              }
+            </div>
+            @if (row.damageRows.length) {
+              <div class="flex-col gap-xs">
+                @for (damage of row.damageRows; track damage.key) {
+                  <div class="flex-row-between-center gap-sm">
+                    <span>{{ damage.label }}</span>
+                    <strong class="heading-color">{{ damage.displayValue }}</strong>
+                  </div>
+                }
+              </div>
+            }
           </div>
         }
       </div>

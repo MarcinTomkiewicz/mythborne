@@ -1,63 +1,50 @@
-<aside
-  [ngClass]="collapsed() ? 'w-px-50 p-sm' : 'w-100 p-md'"
-  class="mg-card flex-col gap-md min-h-full"
->
-  <div class="flex-row-start-center gap-md">
-    <div class="mg-card flex-row-center-center w-px-50 h-px-50">
-      <i class="pi pi-bolt heading-color"></i>
-    </div>
-
-    @if (!collapsed()) {
-      @if (isLoggedIn()) {
-        <div class="flex-col gap-xs">
-          <p class="heading-color mb-0">
-            <strong>{{ hero()?.name || user()?.email || 'Account' }}</strong>
-          </p>
-          <p class="muted-text mb-0">
-            {{ hero() ? 'Level ' + (hero()?.level || 1) : 'Character creation required' }}
-          </p>
-        </div>
-      } @else {
-        <div class="flex-col gap-xs">
-          <p class="heading-color mb-0"><strong>Guest</strong></p>
-          <p class="muted-text mb-0">Login is available only on the dedicated auth page.</p>
-        </div>
-      }
-    }
-  </div>
-
-  <nav class="flex-col gap-xs">
-    <p class="card-legend mb-sm">
-      {{ isLoggedIn() ? 'Game Menu' : 'Explore' }}
-    </p>
+<aside class="flex-col gap-md min-h-full w-100 p-md">
+  <div class="mg-card flex-row-start-center gap-md">
+    <span class="tag-badge tag-badge--golden" aria-hidden="true">M</span>
 
     <div class="flex-col gap-xs">
+      <p class="heading-color mb-0">
+        <strong>{{ hero()?.name || user()?.email || 'Account' }}</strong>
+      </p>
+      <p class="muted-text mb-0">
+        {{ hero() ? 'Level ' + (hero()?.level || 1) : 'Active hero required' }}
+      </p>
+    </div>
+  </div>
+
+  <section class="mg-card mg-card--legend flex-col gap-sm" aria-label="Selected world context">
+    <p class="card-legend mb-sm">World</p>
+    <div class="flex-row-between-center gap-sm">
+      <span class="muted-text">Server</span>
+      <strong class="heading-color">{{ selectedServer()?.name ?? 'No server selected' }}</strong>
+    </div>
+    <div class="flex-row-between-center gap-sm">
+      <span class="muted-text">Status</span>
+      <span [class]="serverStatusClass()">{{ serverStatusLabel() }}</span>
+    </div>
+    <div class="flex-row-between-center gap-sm">
+      <span class="muted-text">Prestige</span>
+      <strong class="heading-color">
+        {{ prestigeSummary()?.player_label ?? 'Prestige unavailable' }}
+      </strong>
+    </div>
+  </section>
+
+  <nav class="flex-col gap-xs">
+    <p class="card-legend mb-sm">Game Menu</p>
+
+    <div class="mg-game-sidebar__nav-list flex-col gap-xs">
       @for (item of menuItems(); track item.title) {
         <a
-          class="mg-card flex-row-start-center gap-sm p-sm"
+          class="mg-card position-relative flex-row-start-center gap-sm p-sm"
           [routerLink]="item.url"
-          routerLinkActive="heading-color"
+          routerLinkActive="is-active heading-color"
           [routerLinkActiveOptions]="{ exact: true }"
         >
           <img [src]="item.icon" [alt]="item.title" class="w-px-20 h-px-20" />
-          @if (!collapsed()) {
-            <span>{{ item.title }}</span>
-          }
+          <span>{{ item.title }}</span>
         </a>
       }
     </div>
   </nav>
-
-  @if (!isLoggedIn()) {
-    <div class="mt-lg">
-      <div class="flex-col gap-sm">
-        <button type="button" class="mg-card flex-row-center-center p-sm heading-color" (click)="goToLogin()">
-          Login
-        </button>
-        <a routerLink="/auth/create-character" class="mg-card flex-row-center-center p-sm">
-          Create character
-        </a>
-      </div>
-    </div>
-  }
 </aside>

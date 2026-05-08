@@ -353,6 +353,7 @@ describe('ArmoryPage', () => {
       itemId: 'item-dagger',
     }, jasmine.any(Function));
     expect(armory.refresh).toHaveBeenCalled();
+    expect(page.loadData).toHaveBeenCalledTimes(2);
   });
 
   it('calls unequip for the selected paperdoll slot and refreshes armory after response', () => {
@@ -375,6 +376,7 @@ describe('ArmoryPage', () => {
       slotKey: 'armor',
     }, jasmine.any(Function));
     expect(armory.refresh).toHaveBeenCalled();
+    expect(page.loadData).toHaveBeenCalledTimes(2);
   });
 
   it('renders domain failure journal as player-facing feedback', () => {

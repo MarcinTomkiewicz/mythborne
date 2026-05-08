@@ -15,15 +15,15 @@ describe('mapArmoryItemDetail', () => {
       label: bonus.label,
       value: bonus.displayValue,
     }))).toEqual([
-      { label: 'Maximum damage', value: '+4' },
       { label: 'Critical chance', value: '+2%' },
     ]);
     expect(JSON.stringify(detail.bonuses)).not.toContain('Minimum damage');
+    expect(JSON.stringify(detail.bonuses)).not.toContain('Maximum damage');
     expect(JSON.stringify(detail.bonuses)).not.toContain('Attack count');
     expect(JSON.stringify(detail.bonuses)).not.toContain('Flat');
   });
 
-  it('uses player-facing itemStats bonusRows even when row kind metadata is absent', () => {
+  it('does not render consumed itemStats modifiers as player-facing bonuses', () => {
     const detail = mapArmoryItemDetail(demonicDaggerRow({
       bonuses_json: {
         itemStats: {
@@ -37,13 +37,21 @@ describe('mapArmoryItemDetail', () => {
             targetKey: 'max_damage',
             displayValue: '+4',
             numericValue: 4,
-          }, {
-            label: 'Critical Chance Flat',
-            targetKey: 'critical_chance',
-            displayValue: '+2%',
-            numericValue: 2,
+          }],
+          consumedModifierRows: [{
+            label: 'Max Damage Flat',
+            targetKey: 'max_damage',
+            displayValue: '+4',
+            numericValue: 4,
           }],
         },
+        modifierRows: [{
+          statKey: 'critical_chance',
+          label: 'Critical Chance Flat',
+          value: 2,
+          displayValue: '+2%',
+          sortOrder: 20,
+        }],
       },
     }));
 
@@ -55,12 +63,11 @@ describe('mapArmoryItemDetail', () => {
       label: bonus.label,
       value: bonus.displayValue,
     }))).toEqual([
-      { label: 'Maximum damage', value: '+4' },
       { label: 'Critical chance', value: '+2%' },
     ]);
   });
 
-  it('falls back to modifierRows when player-facing itemStats bonusRows is empty', () => {
+  it('uses modifierRows for the player-facing Bonuses section', () => {
     const detail = mapArmoryItemDetail(demonicDaggerRow({
       bonuses_json: {
         itemStats: {
@@ -126,6 +133,9 @@ function demonicDaggerRow(
           row('Critical Chance Flat', '+2%', 'modifier_bonus', 'bonuses', 2, 20),
           row('Critical Damage Flat', '0', 'modifier_bonus', 'bonuses', 0, 30),
         ],
+        consumedModifierRows: [
+          row('Max Damage Flat', '+4', 'modifier_bonus', 'bonuses', 4, 10),
+        ],
         hiddenNativeRows: [
           row('Attack count', '1', 'native_stat', 'item_stats', 1, 30),
         ],
@@ -136,7 +146,8 @@ function demonicDaggerRow(
         row('Attack count', '1', 'native_stat', 'item_stats', 1, 30),
       ],
       modifierRows: [
-        row('Should Not Be Used', '+99', 'modifier_bonus', 'bonuses', 99, 99),
+        row('Critical Chance Flat', '+2%', 'modifier_bonus', 'bonuses', 2, 20),
+        row('Critical Damage Flat', '0', 'modifier_bonus', 'bonuses', 0, 30),
       ],
       rows: [
         row('Minimum damage', '2', 'native_stat', 'item_stats', 2, 10),

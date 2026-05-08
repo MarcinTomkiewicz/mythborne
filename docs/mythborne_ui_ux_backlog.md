@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v2
 
 Status: working draft / canvas edition after reviewer hardening pass
-Updated: 2026-05-03 — po hardening pass z uwag reviewera
+Updated: 2026-05-08 — merged trial/report/onboarding addenda
 
 Purpose: uporządkować UI/UX backlog jako pełnoprawny dokument roboczy dla prototypowania, implementacji Angular + PrimeNG, globalnego SCSS, vendor wrappers i kolejnych UI tasków Codexa.
 
@@ -1529,6 +1529,8 @@ Cel: ustabilizować globalny game shell, dashboard foundation, topbar/sidebar i 
 - UI-SHELL-5 — Persistent state widget boundary
 
 ## UI-SHELL-1 / formerly UI-1 — Game shell style foundation
+
+**Status:** conditionally accepted on 2026-05-08. The accepted foundation keeps `_game-shell.scss` limited to the game shell grid skeleton, grid areas, topbar/sidebar/main boundary styling, mobile shell breakpoint and a temporary active-nav inset. Existing layout/position/spacing utilities stay in templates. `mg-card` as a sidebar nav surface and the active inset are follow-up debt for UI-SHELL-4.
 
 **Goal:**  
 Ustabilizować globalny player-facing game shell z topbarem, sidebarem i main content, zgodny z zaakceptowanym kierunkiem Mythsworn visual language.
@@ -5098,6 +5100,1360 @@ Utrwalić zasady prywatności i snapshotów dla combat UI, szczególnie PvP.
 - Full concrete admin modules after overview IA.
 
 ---
+
+## Common UI/UX implementation rules for the merged addenda
+
+These merged sections inherit the global UI/UX backlog rules:
+
+- HTML prototypes are **visual reference only**.
+- Codex must not copy `mb-*`, canvas CSS, gradient values, palette values, layout class names or JS prototype logic 1:1 into Angular.
+- Production must translate approved visual directions into global SCSS, `mg-*`, vendor wrappers, shared components, PrimeNG wrappers and documented utilities.
+- Missing DB/RPC/read-model/runtime contracts are dependencies/blockers, not permission to fake durable gameplay state in Angular.
+- Critical gameplay/account creation mutations must go through canonical DB/RPC/domain workflows, never direct Angular table writes.
+- Implementation tasks inherit the global required UI/UX report: reused / checked but not reused / new component-state-helper / local SCSS / copied from prototype / PrimeNG override / stale guards where applicable.
+
+
+# UI-TRIALS — Trial minigame prototypes and renderer boundary
+
+Cel: uporządkować zaakceptowane kierunki manual Trial minigames, wspólny host/rendering boundary oraz integrację z reports/result flow.
+
+## UI-TRIALS-1A — Shared Trial Minigame Host / Renderer Shell Spec And Production Mapping
+
+**Goal:**  
+Zdefiniować production mapping dla jednego wspólnego player-facing hosta manual Trial minigames, zanim Codex spróbuje implementować host w Angularze.
+
+**Scope:**
+- Opisać docelową granicę hosta triala:
+  - trial header,
+  - god label,
+  - tested stat,
+  - manual/auto state,
+  - minigame content slot,
+  - safe auto-resolve action,
+  - warning modal before auto-resolve,
+  - result/report handoff,
+  - failed/not manifested/completed handling,
+  - accessibility and mobile constraints.
+- Zmapować, które elementy powinny być shared/global patterns, vendor wrappers albo local host layout.
+- Zidentyfikować minimalny DB/RPC/read-model contract wymagany dla hosta.
+- Spisać, które zaakceptowane prototypes są tylko visual reference, a które mają być archived as accepted references.
+
+**Out of scope:**
+- Implementacja Angular hosta.
+- Implementacja konkretnych minigier.
+- Kopiowanie canvasowego CSS/JS.
+- Projektowanie nowych tabel DB.
+- Direct writes z Angulara.
+- Finalny balans trudności.
+
+**Data/source rules:**
+- Trial definition, tested stat, god identity, difficulty/runtime config and result state must come from DB/RPC/read model.
+- Auto-resolve success chance and result must be backend/RPC-owned.
+- Completed result handoff must use durable trial/report result source, not local UI-only state.
+- If runtime config contract is missing, report dependency.
+
+**UI/SCSS rules:**
+- Use global page/header/card/status patterns.
+- Use existing buttons/vendor wrappers.
+- Use `tag-badge--*` / future status pill/chip patterns for state.
+- No copied `mb-*` prototype classes.
+
+**Dependencies/blockers:**
+- Missing trial runtime read model/config contract.
+- Missing action/submit RPC for manual minigame result.
+- Missing report/result handoff route or read model.
+
+**Acceptance criteria:**
+- Spec describes a single renderer host pattern that can contain all manual trial minigames.
+- Auto-resolve warning and report/result handoff are explicitly mapped.
+- Host implementation dependencies are identified before coding.
+- No production code changes are required in this spec task.
+
+**Verification/smoke:**
+- Docs-only review.
+- Confirm source prototype references with the user before archiving or implementing.
+
+**Required Codex report:**
+- reused:
+- checked but not reused:
+- new component/state/helper added:
+- host boundary proposed:
+- runtime/read models required:
+- missing runtime dependencies:
+- local SCSS added:
+- copied from prototype: yes/no:
+
+## UI-TRIALS-1B — Shared Trial Minigame Host Implementation
+
+**Goal:**  
+Implementować wspólny Trial Minigame Host dopiero po zaakceptowaniu UI-TRIALS-1A i po potwierdzeniu, że potrzebny DB/RPC/read-model contract istnieje albo zakres jest jawnie mock/read-only.
+
+**Scope:**
+- Build one reusable player-facing host/shell for manual trial minigames.
+- Host must support:
+  - trial header;
+  - god label;
+  - tested stat;
+  - manual/auto state;
+  - minigame content slot;
+  - auto-resolve action with warning modal;
+  - completed/failed/not-manifested handoff to report/result.
+- Use production patterns and shared wrappers instead of copied prototype classes.
+- Plug in one placeholder/minigame only if the runtime contract supports it, otherwise implement host as read-only/spec surface and report blocker.
+
+**Out of scope:**
+- Implementing all nine minigames in this task.
+- Copying any canvas CSS/JS.
+- Hardcoding final difficulty config.
+- Direct table writes or frontend-authoritative trial completion.
+
+**Data/source rules:**
+- Runtime state and result handoff must come from DB/RPC/read model.
+- Auto-resolve must be backend/RPC-owned.
+- Missing runtime contract is a blocker unless the task is explicitly constrained to static/read-only shell.
+
+**UI/SCSS rules:**
+- Use UI-CORE patterns, PrimeNG/vendor wrappers and shared/global SCSS.
+- Local SCSS only for host geometry if no shared pattern exists; report it.
+- No `mb-*` classes from prototypes.
+
+**Acceptance criteria:**
+- One host component/page boundary can host different trial minigame components.
+- Host does not duplicate game shell/nav.
+- Host fails closed when trial runtime data is missing.
+- Auto-resolve warning path is visible and testable.
+- Build/tsc passes if code is changed.
+
+**Verification/smoke:**
+- Route smoke for host if route exists.
+- Visual smoke with one plugged placeholder/minigame or read-only fixture.
+- Auto-resolve modal smoke.
+- Stale guard smoke for load/action responses where applicable.
+
+**Required Codex report:**
+- reused:
+- checked but not reused:
+- new component/state/helper added:
+- host boundary implemented:
+- runtime/read models used:
+- missing runtime dependencies:
+- local SCSS added:
+- copied from prototype: yes/no:
+
+## UI-TRIALS-2 — Accepted Manual Trial Prototype Map
+
+**Goal:**  
+Dodać do UI/UX backlogu aktualną mapę zaakceptowanych lub wstępnie zaakceptowanych manual Trial minigame directions.
+
+**Scope:**
+- Maintain the table below as the prototype direction map.
+- Mark these as prototype directions, not production source.
+- Keep concept-only entries separate from HTML-backed accepted references.
+- Do not claim DB/RPC runtime readiness from prototype acceptance alone.
+
+| Trial / God | Stat | Direction | Prototype status | HTML file/reference |
+| --- | --- | --- | --- | --- |
+| Ares | Strength | Combat Trial using DB-owned live combat session / Walking Dead manifest. Combat remains DB-authoritative; frontend must not implement combat resolution authority. | Accepted direction / existing combat prototype family | Existing combat screen/report prototypes; DB-owned live combat contract |
+| Artemis | Dexterity | Harpy Hunt aiming/shooting minigame; no strobe, no rapid flashing. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
+| Apollo | Agility | Path of Light / fading path tiles; move before light disappears. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
+| Hephaestus | Endurance | Divine Forge / heat, strain and sustained process-control. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
+| Hermes | Cunning | Shifting Seals: four procedural seals, reveal then shuffle, no riddle database. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
+| Aphrodite | Charisma | The Graces’ Court: timing/turn-taking, moving receptive arc, no dialogue database. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
+| Athena | Wisdom | Scales of Judgment: procedural omen selection under incomplete information, qualitative reveals. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
+| Hera | Intelligence | Labyrinth with Minotaur; escape without combat. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
+| Zeus | Spirituality | Storm Charge: hold-to-charge Sky/Earth/Oath, release grace, call thunder when all signs exceed threshold. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
+
+**Out of scope:**
+- Angular implementation.
+- Creating final DB config schema.
+- Marking UI tasks as complete.
+- Hardcoding final balance/difficulty curves.
+
+**Data/source rules:**
+- Each minigame difficulty must later be driven by trial definition/config and tested stat + runtime helpers where applicable.
+- Frontend must not hardcode final difficulty curves as authority.
+- Combat/Ares uses DB-owned live combat session / Walking Dead manifest, not frontend-authoritative combat.
+
+**UI/SCSS rules:**
+- Archive accepted HTML prototypes under `docs/ui-ux/prototypes/` only after user accepts the exact file.
+- Each prototype must include `VISUAL REFERENCE ONLY` header.
+- No placeholder packs.
+
+**Acceptance criteria:**
+- All nine trial directions are listed in a table.
+- Prototype status is explicit.
+- Future Codex task can identify which prototype direction to consult and which entries still need production mapping/spec.
+
+**Verification/smoke:**
+- Docs-only review.
+- Confirm filenames/paths with user before status docs update.
+
+**Required Codex report:**
+- reused:
+- checked but not reused:
+- new component/state/helper added:
+- prototype map updated:
+- source references added:
+- copied from prototype: yes/no:
+
+## UI-TRIALS-3 — Manual Trial Runtime And Difficulty Configuration Contract
+
+**Goal:**  
+Dopisać UI/UX task określający, jakie parametry manual triali muszą pochodzić z runtime config/read modelu zamiast z komponentów Angular.
+
+**Scope:**
+- Opisać common config categories:
+  - tested stat key,
+  - god key/label,
+  - target difficulty,
+  - allowed mistakes/fail threshold,
+  - timer / duration / action window,
+  - minigame-specific parameters,
+  - auto-resolve chance,
+  - accessibility/reduced-motion flags where relevant.
+- Opisać minigame-specific examples:
+  - Apollo: grid size, path length, tile lifetime, mistakes allowed.
+  - Hephaestus: heat safe range, charge/strain rates, progress target.
+  - Hermes: seal count, preview time, shuffle swaps, shuffle speed, mistakes allowed.
+  - Athena: omen count, insight tokens, target range, reveal quality.
+  - Aphrodite: window width, dial speed, arc speed, faux pas limit.
+  - Zeus: charge rate, leak rate, release grace, threshold, ritual window, thunder calls.
+
+**Out of scope:**
+- Final DB schema.
+- Formula implementation.
+- Angular implementation.
+
+**Data/source rules:**
+- Angular may render values returned by read model/RPC.
+- Angular must not be authority for durable success/failure.
+- Missing config/read model must be dependency/blocker.
+
+**UI/SCSS rules:**
+- UI may show player-facing simplified labels, but technical config keys are secondary/admin/debug only.
+
+**Acceptance criteria:**
+- The backlog has a shared parameter taxonomy for trial minigames.
+- Codex cannot reasonably hardcode minigame thresholds in Angular without violating the task.
+- Open DB/RPC dependencies are explicit.
+
+**Verification/smoke:**
+- Documentation-only: no build.
+
+**Required Codex report:**
+- config parameters documented:
+- DB/RPC dependencies identified:
+- hardcoded values avoided:
+
+---
+
+## UI-TRIALS-4 — Trial Report / Result Integration Boundary
+
+**Goal:**  
+Utrwalić, że manual trial minigames kończą się durable result/report flow, a nie lokalnym ekranem sukcesu bez źródła danych.
+
+**Scope:**
+- Document expected flow:
+  1. active exploration step yields trial/challenge attempt;
+  2. player enters manual trial host;
+  3. minigame submits result through canonical RPC/domain workflow;
+  4. backend resolves success/failure and rewards;
+  5. player sees completed report/result screen;
+  6. report uses durable snapshot/read model.
+- Include states:
+  - ongoing manual trial,
+  - auto-resolve selected,
+  - success,
+  - failure,
+  - trial did not manifest,
+  - missing/expired attempt.
+
+**Out of scope:**
+- Report renderer implementation.
+- Reward formula/backend implementation.
+- Public sharing policy.
+
+**Data/source rules:**
+- Rewards must come from reward profile/result read model.
+- Item references must use shared item popover contract when details exist, safe label otherwise.
+- Reports use snapshot/read model; do not recompute from live hero state.
+
+**UI/SCSS rules:**
+- Use report/result surface patterns and badges.
+- No fake rewards.
+- No local reward card style if global report reward/list pattern exists.
+
+**Acceptance criteria:**
+- Minigames have a defined handoff into reports/results.
+- Missing report/reward read models are dependencies, not fake UI.
+- Trial did-not-manifest and failed states are not presented as ordinary success.
+
+**Verification/smoke:**
+- Documentation-only unless implemented.
+- Future visual smoke: success/failure/not-manifested.
+
+**Required Codex report:**
+- result source:
+- reward source:
+- report handoff:
+- missing dependencies:
+
+---
+
+## UI-TRIALS-5 — Combat Trial / Ares Strength Direction
+
+**Goal:**  
+Dopisać trial direction dla Strength jako combat-based Trial of Ares, oparty o istniejący combat module/prototypy, bez tworzenia osobnej mechaniki klikowej.
+
+**Scope:**
+- Document that Strength trial can use combat screen/module direction.
+- The combat minigame remains governed by combat runtime/Walking Dead action manifests where applicable.
+- Trial provider interprets combat result as trial success/failure and reward eligibility.
+
+**Out of scope:**
+- New combat system.
+- PvP-specific report logic.
+- Reward implementation.
+
+**Data/source rules:**
+- Combatants and combat state from DB/RPC live combat/session or result snapshot.
+- Trial success/failure from backend trial/combat integration.
+- Combat itself does not grant trial rewards directly.
+
+**UI/SCSS rules:**
+- Use shared combat UI direction.
+- Combat log must be readable and full where report requires it.
+- No defender/private equipment leak in PvP contexts.
+
+**Acceptance criteria:**
+- Ares/Strength has a clear trial mapping.
+- It reuses combat direction and does not invent another timing minigame.
+- Trial/report handoff is explicit.
+
+**Verification/smoke:**
+- Documentation-only unless implemented.
+
+**Required Codex report:**
+- combat source:
+- trial source:
+- report/result source:
+
+---
+
+## UI-TRIALS-6 — Artemis Dexterity Prototype Direction: Harpy Hunt
+
+**Goal:**  
+Dopisać zaakceptowany kierunek Dexterity Trial jako safe-motion aiming/hunting minigame.
+
+**Scope:**
+- Document visual/mechanical direction:
+  - target creatures crossing field,
+  - cursor/reticle control,
+  - required hits in limited time or limited attempts,
+  - difficulty via target speed/count/size, reticle jitter, time window.
+- Note accessibility and photosensitive safety constraints.
+
+**Out of scope:**
+- Production physics/animation implementation.
+- Asset creation.
+- Final mobile design.
+
+**Data/source rules:**
+- Runtime parameters from trial config/read model.
+- Success/failure through backend attempt submit workflow.
+
+**UI/SCSS rules:**
+- No rapid flash/strobe.
+- Prefer smooth motion and reduced-motion mode.
+- If using canvas/SVG later, renderer host must still preserve global shell/pattern rules.
+
+**Acceptance criteria:**
+- Artemis/Dexterity has a documented prototype direction.
+- Difficulty knobs are explicit.
+- Safety constraints are explicit.
+
+**Verification/smoke:**
+- Documentation-only unless implemented.
+
+**Required Codex report:**
+- runtime knobs:
+- safety constraints:
+- mobile concerns:
+
+---
+
+## UI-TRIALS-7 — Apollo Agility Prototype Direction: Path of Light
+
+**Goal:**  
+Dopisać zaakceptowany kierunek Agility Trial jako step-through fading path minigame.
+
+**Scope:**
+- Document visual/mechanical direction:
+  - grid of light tiles,
+  - active tile and optional next-tile preview,
+  - hero marker,
+  - tile lifetime / mistakes / path length,
+  - success after completing path,
+  - failure after mistakes or timeout.
+
+**Out of scope:**
+- Production implementation.
+- Final mobile layout.
+
+**Data/source rules:**
+- Grid size, path length, tile lifetime, preview availability, mistakes from runtime config.
+- Submission/result through canonical trial workflow.
+
+**UI/SCSS rules:**
+- No unsafe flashing; fading/opacity changes must be calm.
+- Reduced-motion mode should remain possible.
+
+**Acceptance criteria:**
+- Apollo/Agility direction is documented and distinguishable from combat/Aphrodite timing.
+- Difficulty knobs are explicit.
+
+**Verification/smoke:**
+- Documentation-only unless implemented.
+
+**Required Codex report:**
+- runtime knobs:
+- accessibility constraints:
+
+---
+
+## UI-TRIALS-8 — Hephaestus Endurance Prototype Direction: Divine Forge
+
+**Goal:**  
+Dopisać zaakceptowany kierunek Endurance Trial jako process-control forge minigame.
+
+**Scope:**
+- Document mechanics:
+  - Heat,
+  - Strain,
+  - Progress,
+  - Strike,
+  - Bellows,
+  - Quench.
+- Endurance affects tolerance and stability:
+  - wider safe heat range,
+  - lower strain gain,
+  - slower heat decay,
+  - higher strain limit / grace.
+
+**Out of scope:**
+- Final balance.
+- Production implementation.
+
+**Data/source rules:**
+- Parameters from trial config/read model.
+- Final success/failure through backend workflow.
+
+**UI/SCSS rules:**
+- Visual fire/forge effects must be safe and non-strobing.
+- No rapid clicking requirement.
+
+**Acceptance criteria:**
+- Hephaestus/Endurance has a clear non-combat, non-timing process-control identity.
+- Difficulty knobs are explicit.
+
+**Verification/smoke:**
+- Documentation-only unless implemented.
+
+**Required Codex report:**
+- runtime knobs:
+- success/failure source:
+- safety constraints:
+
+---
+
+## UI-TRIALS-9 — Hermes Cunning Prototype Direction: Shifting Seals
+
+**Goal:**  
+Dopisać zaakceptowany kierunek Cunning Trial jako procedural shell-game/seal-tracking minigame bez bazy zagadek.
+
+**Scope:**
+- Document mechanics:
+  - 4 seals by default,
+  - reveal true seal,
+  - shuffle/seal swaps,
+  - visible labels are position labels, not hidden identity,
+  - choose after shuffle,
+  - mistakes reduce trust.
+- Difficulty knobs:
+  - seal count,
+  - preview time,
+  - shuffle speed,
+  - swap count,
+  - false motion/fake swaps,
+  - mistakes allowed.
+
+**Out of scope:**
+- Text riddle/clue database.
+- Production implementation.
+
+**Data/source rules:**
+- Parameters from runtime config.
+- Result through canonical trial workflow.
+
+**UI/SCSS rules:**
+- No persistent highlight after preview.
+- Smooth non-flashing motion.
+- Reduced-motion alternative must be considered.
+
+**Acceptance criteria:**
+- Hermes/Cunning does not require authored clue/riddle content.
+- Prototype direction is procedural and balanceable.
+
+**Verification/smoke:**
+- Documentation-only unless implemented.
+
+**Required Codex report:**
+- runtime knobs:
+- no-riddle-content confirmed:
+- accessibility constraints:
+
+---
+
+## UI-TRIALS-10 — Hera Intelligence Prototype Direction: Labyrinth With Minotaur
+
+**Goal:**  
+Dopisać kierunek Intelligence Trial jako labirynt z Minotaurem, bez walki.
+
+**Scope:**
+- Document mechanics:
+  - generated or configured maze,
+  - player must reach exit,
+  - Minotaur moves through maze,
+  - fail if Minotaur catches player or player cannot exit in time/steps,
+  - no combat resolution inside this trial.
+- Intelligence/difficulty affects:
+  - maze size,
+  - visibility/fog/revealed tiles,
+  - Minotaur speed/pathing intelligence,
+  - allowed time/steps,
+  - hint/reveal strength.
+
+**Out of scope:**
+- Production maze algorithm.
+- Combat with Minotaur.
+- Final visual art.
+
+**Data/source rules:**
+- Maze seed/config and difficulty from runtime config/read model where possible.
+- Result through canonical trial workflow.
+
+**UI/SCSS rules:**
+- Use trial host; maze renderer is contained inside minigame slot.
+- No image dependency required for MVP prototype.
+- Mobile layout is a known risk and follow-up.
+
+**Acceptance criteria:**
+- Hera/Intelligence has a documented non-riddle puzzle direction.
+- No authored riddle database required.
+- No combat fallback.
+
+**Verification/smoke:**
+- Documentation-only unless implemented.
+
+**Required Codex report:**
+- maze runtime dependencies:
+- no-combat confirmed:
+- mobile concerns:
+
+---
+
+## UI-TRIALS-11 — Athena Wisdom Prototype Direction: Scales of Judgment
+
+**Goal:**  
+Dopisać zaakceptowany kierunek Wisdom Trial jako procedural omen-judgment under incomplete information.
+
+**Scope:**
+- Document mechanics:
+  - 8 omens by default,
+  - hidden weights,
+  - limited Insight tokens,
+  - select exact number of omens,
+  - target judgment range,
+  - qualitative reveals: strongly favorable, slightly favorable, uncertain, harmful,
+  - no exact current sum during active choice.
+- Difficulty knobs:
+  - omen count,
+  - selected count,
+  - insight tokens,
+  - target range width,
+  - reveal precision,
+  - attempts allowed.
+
+**Out of scope:**
+- Riddle database.
+- Production implementation.
+- Exact balancing generator.
+
+**Data/source rules:**
+- Omen set/weights may be generated by backend/runtime config, not Angular authority.
+- Result through canonical trial workflow.
+
+**UI/SCSS rules:**
+- Qualitative feedback only during active trial.
+- Do not show exact `Current judgment` sum before final judgment.
+
+**Acceptance criteria:**
+- Athena/Wisdom is not a fixed mapping puzzle.
+- Generator/balancing needs are explicit.
+- Player feedback remains useful but not solved by arithmetic display.
+
+**Verification/smoke:**
+- Documentation-only unless implemented.
+
+**Required Codex report:**
+- qualitative labels:
+- exact values hidden:
+- generator dependencies:
+
+---
+
+## UI-TRIALS-12 — Aphrodite Charisma Prototype Direction: The Graces’ Court
+
+**Goal:**  
+Dopisać zaakceptowany kierunek Charisma Trial jako timing/turn-taking minigame with moving receptive arcs.
+
+**Scope:**
+- Document mechanics:
+  - three Graces as presentation model,
+  - active Grace rotates,
+  - player responds when pointer overlaps moving receptive arc,
+  - correct timing builds Influence,
+  - mistakes create Faux Pas,
+  - moving arc rotates against pointer.
+- Difficulty knobs:
+  - receptive arc width,
+  - pointer speed,
+  - arc speed,
+  - number of required responses,
+  - faux pas limit,
+  - number of active circles/Graces.
+
+**Out of scope:**
+- Dialogue/persuasion text database.
+- Flashing lure effects.
+- Production implementation.
+
+**Data/source rules:**
+- Runtime parameters from config/read model.
+- Result through canonical trial workflow.
+
+**UI/SCSS rules:**
+- No flashing/strobe/rapid contrast flicker.
+- Smooth motion and reduced-motion support required.
+- Use trial host.
+
+**Acceptance criteria:**
+- Aphrodite/Charisma is not another scale-balancing mechanic.
+- It has clear difficulty knobs.
+- It avoids dialogue authoring burden.
+
+**Verification/smoke:**
+- Documentation-only unless implemented.
+
+**Required Codex report:**
+- runtime knobs:
+- safety constraints:
+- reduced-motion behavior:
+
+---
+
+## UI-TRIALS-13 — Zeus Spirituality Prototype Direction: Storm Charge
+
+**Goal:**  
+Dopisać zaakceptowany kierunek Spirituality Trial jako hold-to-charge ritual control minigame.
+
+**Scope:**
+- Document mechanics:
+  - three pillars/signs: Sky, Earth, Oath,
+  - player holds each sign button to charge,
+  - released signs keep charge for release grace/debounce period,
+  - after grace they leak charge,
+  - Call Thunder works when all three exceed threshold,
+  - 3 thunder calls as accepted prototype threshold,
+  - wrong call creates Wrath,
+  - ritual window/timer can fail the attempt.
+- Difficulty knobs:
+  - charge rate,
+  - leak rate,
+  - release grace duration,
+  - threshold height,
+  - ritual window length,
+  - wrath/fail limit.
+
+**Out of scope:**
+- Original three-auto-alignment version.
+- Rapid clicking.
+- Flash/strobe lightning effects.
+- Final mobile solution.
+
+**Data/source rules:**
+- Runtime parameters from config/read model.
+- Result through canonical trial workflow.
+- Frontend may animate charge but durable success/failure is backend-owned.
+
+**UI/SCSS rules:**
+- No rapid clicking requirement.
+- Smooth charge/leak animation.
+- No lightning flash/strobe; use soft glow only.
+- Mobile layout is a required future follow-up because vertical stacking may be hard during active play.
+
+**Acceptance criteria:**
+- Zeus/Spirituality has a distinct sustained-control identity.
+- 3 thunder calls are documented as accepted prototype threshold.
+- Release grace is documented as required for playability.
+- Difficulty knobs are explicit.
+
+**Verification/smoke:**
+- Documentation-only unless implemented.
+- Future visual smoke: blessed and low-spirituality modes.
+
+**Required Codex report:**
+- runtime knobs:
+- release grace behavior:
+- mobile concerns:
+- safety constraints:
+
+---
+
+# UI-REPORTS-ADD — Report/result prototype integration follow-ups
+
+## UI-REPORTS-ADD-1 — Trial Result Report Variants
+
+**Goal:**  
+Dopisać brakujące backlog entries dla trial report variants wypracowanych podczas prototypowania.
+
+**Scope:**
+- Document player-facing report variants:
+  - completed/passed trial,
+  - failed trial,
+  - trial did not manifest,
+  - ongoing manual trial placeholder/host link,
+  - trial with embedded combat/minigame result summary.
+- Report should be linear/readable, not dashboard-like.
+- Rewards should show EXP, drachmas/resources and item references from durable reward snapshot.
+
+**Out of scope:**
+- Recomputing rewards client-side.
+- Full report sharing policy.
+- Combat renderer implementation.
+
+**Data/source rules:**
+- Reports use durable report/result snapshot/read model.
+- Item references use shared item popover contract when available.
+- Missing data is omitted or shown as diagnostic, not faked.
+
+**UI/SCSS rules:**
+- Use shared report/card/badge/list patterns.
+- No fake participants unless source data exists.
+- Technical sequence/debug visible only in debug/admin context.
+
+**Acceptance criteria:**
+- Trial report variants are described in backlog.
+- Reward display rules are explicit.
+- Not-manifested state is distinct from failure/success.
+
+**Verification/smoke:**
+- Documentation-only unless implemented.
+
+**Required Codex report:**
+- report source:
+- reward source:
+- item reference source:
+- debug fields omitted:
+
+---
+
+## UI-REPORTS-ADD-2 — PvP / Combat Report Perspective Variants
+
+**Goal:**  
+Dopisać backlog entry dla combat/PvP report perspective handling.
+
+**Scope:**
+- Document variants:
+  - I attacked and won,
+  - I attacked and lost,
+  - I defended and won,
+  - I defended and lost.
+- Outcome color/status should be viewer-relative when product permits it.
+- Combat log should be chronological from fight start downward.
+- Combat log should be full in report, no hidden scroll for required report content.
+- Critical hits, misses and evades should use readable semantic emphasis.
+
+**Out of scope:**
+- PvP backend consequence implementation.
+- Private equipment leakage.
+- Public share policy.
+
+**Data/source rules:**
+- Completed reports use snapshot, not live state.
+- Defender/private equipment must not leak unless snapshot policy allows.
+- PvP rewards/resources from PvP consequence snapshot, not ordinary reward profile.
+
+**UI/SCSS rules:**
+- Use report/list/status patterns.
+- No combat log in one compressed line when turns/actions need separation.
+- No local combat badge system.
+
+**Acceptance criteria:**
+- Perspective variants are explicit.
+- Viewer-relative success/failure color rule is documented as desired if feasible.
+- Full chronological combat log requirement is documented.
+
+**Verification/smoke:**
+- Documentation-only unless implemented.
+
+**Required Codex report:**
+- viewer perspective source:
+- snapshot source:
+- omitted private fields:
+
+---
+
+# UI-ONBOARDING — Account Entry Shell And Hero Creation
+
+Cel: zabezpieczyć zaakceptowane decyzje projektowe dla account/public shell, wejścia do gry i tworzenia postaci, tak aby Codex nie zrobił ponownie wizardu `Step 1 of 4`, nie wymieszał server selection z originami i nie potraktował stat allocation jako account onboarding.
+
+Flow summary:
+
+- Account-side creation flow has two screens only:
+  1. **Account Entry Shell** — `Enter the game` albo `Create new hero` / join eligible world.
+  2. **Hero Creation** — hero name + origin carousel + `Create hero`.
+- After `Create hero`, the player is already inside the in-game shell.
+- Stat Allocation is the default first in-game location after creation, not a third onboarding step and not a forced tutorial lock.
+
+## UI-ONBOARDING-ADD-1 — Account Entry Shell information architecture
+
+**Goal:**  
+Zdefiniować i wdrożyć account/public shell dla zalogowanego użytkownika przed wejściem w konkretny server+hero game shell.
+
+**Scope:**
+
+- Account/public shell ma inne boczne menu niż in-game shell.
+- Minimalne menu account shell:
+  - `Enter the game`;
+  - `Create new hero` / `Join new world`;
+  - account-related options such as account settings, notifications, sign out.
+- Shell pokazuje account identity, ale nie udaje aktywnego hero contextu, dopóki hero/server nie zostaną wybrane.
+- Shell musi jasno odróżniać:
+  - account context;
+  - selected server context;
+  - active hero context;
+  - no active hero yet.
+- Dla większych ekranów użyć istniejącego layout/shell patternu, o ile istnieje, zamiast tworzyć osobny lokalny shell.
+
+**Out of scope:**
+
+- In-game sidebar/dashboard redesign.
+- Hero creation mutation.
+- Stat allocation redesign.
+- Direct DB writes.
+- Status docs update.
+
+**Data/source rules:**
+
+- Account/user identity comes from auth/account context.
+- Server/hero state comes from existing selected/current server + active hero read layers or dedicated start-flow read model.
+- Sandbox/test privileges must come from access/membership/staff read layer.
+- Do not infer sandbox privileges client-side.
+
+**UI/SCSS rules:**
+
+- Use account/public shell as its own route/layout area, not the in-game shell.
+- Use global page/card/sidebar/nav patterns where available.
+- Do not copy canvas sidebar/topbar CSS.
+- If a missing account-shell pattern is discovered, report it as shared/layout follow-up.
+
+**Dependencies/blockers:**
+
+- Missing account/server/hero read model.
+- Missing access layer for sandbox/test privileges.
+- Missing route boundary between account shell and in-game shell.
+
+**Acceptance criteria:**
+
+- Account shell does not show in-game navigation as if a hero were active.
+- `Enter the game` and `Create new hero` are distinct flows.
+- User can switch between these account-shell sections without logging out.
+- Existing hero flow leads toward in-game dashboard context.
+- New hero flow leads toward server eligibility / hero creation context.
+- No `Step 1 of 4` or wizard language appears in account shell.
+
+**Verification/smoke:**
+
+- `npx tsc --noEmit`
+- `npm run build`
+- Route smoke for account entry route if implemented.
+- Manual smoke:
+  - authenticated account with existing hero;
+  - authenticated account with no hero on an eligible server;
+  - sandbox/test account with multiple heroes where representative data exists.
+
+---
+
+## UI-ONBOARDING-ADD-2 — Enter The Game existing-hero selector
+
+**Goal:**  
+Utworzyć account-shell section `Enter the game`, która pokazuje tylko istniejące grywalne hero contexty i prowadzi do dashboard/game shell.
+
+**Scope:**
+
+- Show server/hero selector for contexts where the logged-in account already has a playable hero.
+- A combined server+hero select is acceptable.
+- For standard servers, one normal hero per account/server is expected.
+- Sandbox/test servers may show multiple heroes for privileged users.
+- Selected context detail should show:
+  - server name/kind/status;
+  - hero name;
+  - safe hero summary, e.g. level/rank if available;
+  - next route: dashboard/game shell.
+- CTA: `Enter dashboard` / `Enter the game`.
+- On enter, set/refresh selected server and active hero context, then route into the in-game shell.
+
+**Out of scope:**
+
+- Hero creation.
+- Origin editing.
+- Stat allocation route for existing heroes.
+- Player profile redesign.
+
+**Data/source rules:**
+
+- Existing hero contexts must come from DB/RPC/read model.
+- Do not assume one global hero per account.
+- Do not assume `hero.id === auth.uid()`.
+- Player-facing payload must not expose account ids, staff-only data or raw internal row ids unless already part of safe route state.
+
+**UI/SCSS rules:**
+
+- Prefer compact select/dropdown plus detail card over a large grid.
+- Use global form/select wrappers and card/summary-row patterns.
+- Do not create permanent local badge/card systems.
+
+**Dependencies/blockers:**
+
+- Missing read model for account-accessible hero contexts.
+- Missing active hero context setter/reloader.
+- Missing dashboard route or route guard behavior.
+
+**Acceptance criteria:**
+
+- Existing hero on selected server routes to dashboard/game shell by default.
+- Existing hero does not route back to stat allocation unless the user explicitly chooses that in-game route later.
+- Sandbox/test multi-hero user can select another hero where permissions allow.
+- Selected server and active hero remain explicit.
+- Stale responses from context switch do not overwrite current selection.
+
+**Verification/smoke:**
+
+- `npx tsc --noEmit`
+- focused active-context specs if added
+- `npm run build`
+- Manual smoke:
+  - one existing standard hero;
+  - multiple server contexts;
+  - sandbox/test multi-hero context if data exists.
+
+---
+
+## UI-ONBOARDING-ADD-3 — Create New Hero / Join New World server eligibility selector
+
+**Goal:**  
+Utworzyć account-shell section `Create new hero` / `Join new world`, która pozwala wybrać serwer kwalifikujący się do stworzenia postaci i pokazuje creation availability oraz district A capacity.
+
+**Scope:**
+
+- Use a compact server select/dropdown, not a large server card grid by default.
+- Detail card under select must show:
+  - server name;
+  - server kind, e.g. `standard`, `sandbox/test`;
+  - server status;
+  - hero state for current user;
+  - creation availability;
+  - visible district A starting-estate capacity/free slots for standard servers;
+  - next route.
+- Eligible standard server with no hero and free district A slots routes to Hero Creation.
+- Full standard server can be shown as blocked/unavailable or included as explanatory disabled option.
+- Sandbox/test server can show privileged creation / hero selector behavior where access permits.
+- CTA should be visually prominent near the selected server details, not hidden only in a distant footer if the final layout allows it.
+
+**Out of scope:**
+
+- Hero name form.
+- Origin selection.
+- Estate address preview.
+- Direct creation mutation.
+- Final server marketing/lore page.
+
+**Data/source rules:**
+
+- Server availability must account for whether the selected standard server can provide a free district A starting address.
+- Capacity/free-slot display comes from DB/RPC/read model.
+- Angular must not guess capacity or assign addresses.
+- Player does not choose or preview exact starting estate address before creation.
+
+**UI/SCSS rules:**
+
+- Use PrimeNG/select wrapper or approved form pattern for server selection.
+- Use shared summary rows for server facts.
+- Use status badges/pills for availability.
+- No copied `mb-*` class names from prototype.
+
+**Dependencies/blockers:**
+
+- Missing server eligibility read model with district A capacity/free slots.
+- Missing route to Hero Creation.
+- Missing sandbox/test privilege read model.
+
+**Acceptance criteria:**
+
+- Server selector is compact and readable.
+- District A free starting slots are visible for standard server creation state.
+- Full standard server cannot proceed to hero creation.
+- Eligible server proceeds to Hero Creation screen.
+- Existing hero state is not mixed with origin/name form on this screen.
+
+**Verification/smoke:**
+
+- `npx tsc --noEmit`
+- `npm run build`
+- Manual smoke:
+  - eligible standard server;
+  - standard server full/no free district A starts;
+  - server with existing hero;
+  - sandbox/test if data exists.
+
+---
+
+## UI-ONBOARDING-ADD-4 — Hero Creation screen: name + origin carousel
+
+**Goal:**  
+Wdrożyć Hero Creation screen jako drugi i ostatni account-side creation screen: readonly server context, hero name, origin carousel, creation summary and `Create hero`.
+
+**Scope:**
+
+- Screen opens only after an eligible server has already been selected.
+- Show readonly selected server context, including creation open and district A availability summary.
+- Show hero name field.
+- Show origin selection as a visual carousel, not four static cards only.
+- Canonical prototype origins:
+  - `Spartanin` / Spartan;
+  - `Ateńczyk` / Athenian;
+  - `Kreteńczyk` / Cretan;
+  - `Koryntianin` / Corinthian.
+- Carousel should include:
+  - large central active artwork;
+  - previous/next navigation;
+  - quick origin tabs or dots;
+  - selected origin summary;
+  - bonus/lore display area.
+- Use origin artwork assets through a production asset registry/read model, not hardcoded asset paths in feature code.
+- Origin bonus display must render concrete DB-backed bonus rows when available.
+- Known design note: Koryntianin / Corinthian has `+10 Luck`, but production must still read it from canonical origin bonus data rather than hardcoding Angular constants.
+
+**Out of scope:**
+
+- Designing final origin balance values.
+- Direct hero table writes.
+- Editing origin after creation.
+- Stat allocation UI redesign.
+- Implementing image generation or changing assets.
+
+**Data/source rules:**
+
+- Origin labels, descriptions, lore, helper text, artwork keys and bonuses are DB/admin-configurable content in production.
+- Do not hardcode final origin content as the long-term source of truth.
+- Origin bonuses should flow through canonical bonus model/read model, e.g. `entity_bonuses(entity_type = origin)` / resolved bonus read model where available.
+- If origin content/read model does not include exact bonuses/artwork keys, report a DB/content blocker or implement only a read-only placeholder surface if explicitly scoped.
+- Hero name uniqueness is per server and must be validated by backend/RPC on create; optional frontend precheck is not authoritative.
+
+**UI/SCSS rules:**
+
+- Prototype carousel motion is visual direction only; do not copy canvas JS/CSS.
+- Production should use Angular component/state with accessible controls.
+- Carousel must support keyboard path and reduced motion.
+- Origin artwork must have alt text or accessible label.
+- Use global cards/summary rows/badges/buttons/select/input wrappers.
+- Local SCSS only for constrained carousel layout if no shared pattern exists; report why.
+
+**Dependencies/blockers:**
+
+- Missing DB/RPC origin read model with lore/bonus/artwork content.
+- Missing canonical hero creation RPC/workflow.
+- Missing asset registry convention for origin artwork.
+- Missing Reactive Forms/form factory pattern for creation form.
+
+**Acceptance criteria:**
+
+- Hero Creation contains only selected server context, hero name, origin carousel and create actions.
+- It does not show server list as a new choice.
+- It does not present stat allocation as account-onboarding step.
+- Selecting origins updates main artwork, details, bonuses and summary.
+- `Create hero` remains disabled/invalid when hero name is empty.
+- Exact origin bonus values are not hardcoded in Angular.
+- Koryntianin `+10 Luck`, if displayed, comes from the DB/read model or is clearly marked as prototype-only placeholder in non-production scope.
+- Create action uses canonical backend workflow when implemented.
+
+**Verification/smoke:**
+
+- `npx tsc --noEmit`
+- focused form/state/component specs if added
+- `npm run build`
+- Manual smoke:
+  - type hero name;
+  - cycle carousel left/right;
+  - select each origin through quick tab/dot;
+  - view DB-backed bonuses;
+  - submit with valid name/origin;
+  - submit with duplicate name shows backend error;
+  - full server cannot reach this screen except as blocked route guard case.
+
+---
+
+## UI-ONBOARDING-ADD-5 — Hero Creation canonical workflow and post-create handoff
+
+**Goal:**  
+Ensure the UI handoff from Hero Creation to gameplay matches Epic X: one backend workflow creates the hero and routes into in-game stat allocation as the default first location.
+
+**Scope:**
+
+- Use canonical DB/RPC/domain workflow for hero creation.
+- Payload should include only approved input:
+  - selected server id;
+  - hero name;
+  - selected origin id/key as required by RPC.
+- Backend workflow owns:
+  - hero row creation;
+  - origin assignment;
+  - 1000 Character Points;
+  - random free district A estate assignment;
+  - any resource/audit/onboarding side effects;
+  - duplicate-name and server-full validation.
+- After success:
+  - refresh selected/current server if needed;
+  - refresh active hero context;
+  - enter in-game shell;
+  - default route to stat allocation.
+- Later entries with existing hero route to dashboard, not stat allocation.
+
+**Out of scope:**
+
+- DB migration or RPC creation in a pure UI task.
+- Angular fallback creation through direct `.insert()` / `.update()` / `.upsert()`.
+- Changing stat allocation save behavior.
+- Forcing player to spend all 1000 CP immediately.
+
+**Data/source rules:**
+
+- If canonical creation RPC is missing from generated types/schema, stop and report DB/RPC blocker.
+- Do not patch generated `database.types.ts`.
+- Do not create temporary manual interfaces hiding missing generated RPC contract unless explicitly approved as a spike.
+- All durable effects are backend-owned.
+
+**UI/SCSS rules:**
+
+- Submit/loading/success/error states must be explicit.
+- Backend validation errors must be readable, especially duplicate name and full server.
+- Stale guard required if selected server/origin/name changes during async submit.
+
+**Dependencies/blockers:**
+
+- Missing canonical creation RPC/domain service.
+- Missing active hero reload path after creation.
+- Missing stat allocation route.
+- Missing error mapping for duplicate name/full server.
+
+**Acceptance criteria:**
+
+- No direct table writes to `hero`, origin assignment, `hero_stats`, Character Points, estate/resources/audit/onboarding tables.
+- Successful creation refreshes active hero and routes to in-game stat allocation.
+- Existing hero refresh/re-entry routes to dashboard.
+- Duplicate name and full server errors are surfaced without corrupting UI state.
+- Player can leave stat allocation later.
+
+**Verification/smoke:**
+
+- `npx tsc --noEmit`
+- focused submit/routing/state specs if added
+- `npm run build`
+- static grep:
+  - no `.insert(` / `.update(` / `.upsert(` in hero creation feature path for durable workflow tables;
+  - no `ngModel` in new/touched form;
+  - no hardcoded origin bonus constants as production source.
+- Manual smoke:
+  - successful new hero;
+  - duplicate name;
+  - server full between selection and submit;
+  - refresh after creation routes to dashboard on later entry;
+  - stat allocation can be left.
+
+---
+
+## UI-ONBOARDING-ADD-6 — Origin content and artwork registry/read-model follow-up
+
+**Goal:**  
+Define the content/read-model requirements for production origin carousel implementation so Codex does not hardcode origin lore, artwork paths or bonuses.
+
+**Scope:**
+
+- Audit current DB/read models for origin content:
+  - origin label/name;
+  - description/lore/helper text;
+  - artwork key/path/registry reference;
+  - resolved bonuses from canonical bonus system;
+  - active/sort order.
+- Decide whether artwork keys live in DB content metadata, asset registry, or a small app-side mapping keyed by DB-owned origin key.
+- Ensure canonical origins are represented:
+  - Spartan / Spartanin;
+  - Athenian / Ateńczyk;
+  - Cretan / Kreteńczyk;
+  - Corinthian / Koryntianin.
+- Confirm exact origin bonuses are visible from a read model before production carousel uses them.
+- Produce a blocker list for missing content/data, not a frontend-hardcoded substitute.
+
+**Out of scope:**
+
+- Creating/changing DB schema unless the user explicitly asks for DB/migrator work.
+- Final balance design.
+- Asset generation.
+- Updating generated database types.
+
+**Data/source rules:**
+
+- Prefer current schema/dump and `database-current.md` over legacy concept docs.
+- Origin bonuses should use canonical bonus model, not legacy hardcoded presentation.
+- If DB contains legacy `origin_bonuses` but app target is `entity_bonuses`, report transitional status clearly.
+
+**UI/SCSS rules:**
+
+- This task may be documentation/audit-only if content contracts are missing.
+- No prototype CSS changes required.
+
+**Dependencies/blockers:**
+
+- Missing origin artwork content source.
+- Missing resolved bonus read model.
+- Missing admin/content route to edit origin lore/bonus presentation.
+
+**Acceptance criteria:**
+
+- Report identifies the current source of origin names, descriptions, artwork and bonuses.
+- Report states whether Hero Creation carousel can be implemented without hardcoding permanent content.
+- Missing content is listed as DB/content/admin blocker.
+- If implementation proceeds, it consumes DB/read-model content and safe asset keys.
+
+**Verification/smoke:**
+
+- No build required if audit-only.
+- If code changes are made: `npx tsc --noEmit`, `npm run build`.
+
+---
+
+## UI-ONBOARDING-ADD-7 — Archive accepted onboarding prototypes and production mapping
+
+**Goal:**  
+Add the accepted account entry and hero creation carousel prototypes to the UI/UX prototype archive/mapping so future Codex work uses them as visual reference only.
+
+**Scope:**
+
+- Archive accepted prototypes, using final names agreed by user:
+  - Account Entry Shell / server+hero context selector prototype;
+  - Hero Creation Origin Carousel prototype.
+- Add mapping entries to prototype-to-production mapping:
+  - account/public shell;
+  - enter game existing-hero selector;
+  - create new hero server eligibility selector;
+  - hero creation origin carousel;
+  - origin artwork/content read model;
+  - post-create route into stat allocation.
+- Each mapping entry must state:
+  - production pattern target;
+  - missing shared/global pattern if any;
+  - local layout-only exception if any;
+  - DB/RPC/read-model blocker if any.
+
+**Out of scope:**
+
+- Angular implementation.
+- Copying prototype CSS/JS.
+- Marking task complete in status docs.
+
+**Data/source rules:**
+
+- Archive entries must not claim DB/RPC exists if it does not.
+- Prototype is visual reference only.
+- Use current decisions for flow semantics.
+
+**UI/SCSS rules:**
+
+- Include standard `VISUAL REFERENCE ONLY` header in archived prototype HTML.
+- Do not archive placeholder screens invented without user acceptance.
+
+**Acceptance criteria:**
+
+- UI/UX backlog points to the accepted prototypes.
+- Prototype-production mapping prevents copying canvas classes/CSS.
+- Future Codex task can identify which prototype to consult and which production patterns to use.
+
+**Verification/smoke:**
+
+- Docs-only review.
+- Confirm filenames/paths with user before status docs update.
+
+---
+
+## UI-ONBOARDING-ADD-8 — Mobile/responsive check for account entry and hero creation carousel
+
+**Goal:**  
+Zapisać i później sprawdzić minimalne mobile/tablet constraints dla account entry i Hero Creation carousel, bez pełnego mobile redesignu.
+
+**Scope:**
+
+- Account Entry Shell:
+  - sidebar may stack above content on narrow screens;
+  - select/dropdown remains reachable;
+  - CTA remains visible without horizontal scroll.
+- Hero Creation carousel:
+  - origin artwork and details stack on mobile;
+  - carousel arrows/tabs are large enough for touch;
+  - no hover-only critical information;
+  - reduced motion supported;
+  - page can scroll vertically, but the create action remains reachable.
+- Stat allocation handoff:
+  - after creation, mobile user should not be trapped in a confusing route state.
+
+**Out of scope:**
+
+- Full mobile redesign.
+- Rewriting in-game shell navigation.
+- Native app gestures.
+
+**Data/source rules:**
+
+- No DB changes.
+
+**UI/SCSS rules:**
+
+- Use responsive global utilities/patterns where available.
+- Feature-local responsive CSS only for carousel geometry if no shared pattern exists.
+- Report any unavoidable local SCSS.
+
+**Acceptance criteria:**
+
+- No horizontal scroll for primary controls at mobile width.
+- Keyboard and touch paths exist for origin selection.
+- Reduced motion does not break selection.
+- CTA remains reachable.
+
+**Verification/smoke:**
+
+- Browser responsive smoke at desktop/tablet/mobile widths.
+- Keyboard smoke for carousel controls.
+- Reduced-motion smoke where practical.
 
 # Appendix A — New task template
 

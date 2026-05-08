@@ -55,39 +55,10 @@ function statRow(row: JsonRecord): ArmoryItemDetailStat {
 }
 
 function bonusRows(bonuses: JsonRecord | null): ArmoryItemDetailBonus[] {
-  const itemStatsRecord = jsonRecord(read(bonuses, 'itemStats', 'item_stats'));
-  const primaryRows = read(itemStatsRecord, 'bonusRows', 'bonus_rows');
-  const hasPrimaryRows = Array.isArray(primaryRows) && primaryRows.length > 0;
-  const rows = hasPrimaryRows
-    ? primaryRows
-    : read(bonuses, 'modifierRows', 'modifier_rows');
-  const mapper = hasPrimaryRows ? playerFacingBonus : modifierBonus;
-
-  return mapJsonArray(rows, mapper)
+  return mapJsonArray(read(bonuses, 'modifierRows', 'modifier_rows'), modifierBonus)
     .filter((bonus): bonus is ArmoryItemDetailBonus => bonus !== null)
     .filter(visibleBonus)
     .sort((left, right) => left.sortOrder - right.sortOrder);
-}
-
-function playerFacingBonus(row: JsonRecord): ArmoryItemDetailBonus | null {
-  const displayValue = optionalText(read(row, 'displayValue', 'display_value'));
-  if (!displayValue?.trim()) {
-    return null;
-  }
-
-  return {
-    label: playerLabel(
-      optionalText(read(row, 'displayLabel', 'display_label', 'targetLabel', 'target_label', 'label')) ?? 'Bonus',
-      optionalText(read(row, 'targetKey', 'target_key', 'statKey', 'stat_key', 'key')),
-    ),
-    displayValue,
-    numericValue: optionalNumber(read(row, 'numericValue', 'numeric_value')),
-    rowKind: 'modifier_bonus',
-    displaySection: 'bonuses',
-    sourceKey: optionalText(read(row, 'sourceKey', 'source_key')),
-    sourceLabel: optionalText(read(row, 'sourceLabel', 'source_label')),
-    sortOrder: optionalNumber(read(row, 'sortOrder', 'sort_order')) ?? 0,
-  };
 }
 
 function modifierBonus(row: JsonRecord): ArmoryItemDetailBonus | null {

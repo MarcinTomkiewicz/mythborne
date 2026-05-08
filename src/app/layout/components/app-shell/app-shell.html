@@ -1,39 +1,38 @@
-<div class="flex-col min-h-full">
-  <header class="mg-card flex-row-between-center gap-md py-md px-lg">
-    <span class="w-px-160"></span>
-    <h1 class="mg-section__title mg-section__title--sm mg-section__title--no-margin">
-      Mythsworn
-    </h1>
+<div class="mg-game-shell">
+  <header class="mg-game-shell__topbar position-sticky top-0 z-10 backdrop-blur-xl flex-row-between-center flex-col-lg gap-md py-md px-lg">
+    <div class="flex-row-start-center gap-sm min-w-200" aria-label="Mythsworn">
+      <span class="tag-badge tag-badge--golden" aria-hidden="true">M</span>
+      <div class="flex-col gap-xs">
+        <h1 class="mg-section__title mg-section__title--sm mg-section__title--no-margin">
+          Mythsworn
+        </h1>
+        <p class="muted-text mb-0">Selected hero command</p>
+      </div>
+    </div>
+    <div class="flex-1 w-100-lg">
+      @if (shouldShowTopbar()) {
+        <app-game-topbar></app-game-topbar>
+      }
+    </div>
     <app-staff-notification-bell />
   </header>
 
-  <div class="flex-row-start-stretch flex-col-md flex-1 overflow-hidden w-100">
-    <div class="w-px-200 w-100-md min-w-200 min-w-auto-md">
-      <app-game-sidebar></app-game-sidebar>
-    </div>
-
-    <main class="flex-1 overflow-y-auto w-100">
-      @if (shouldShowTopbar()) {
-        <div class="p-lg w-100">
-          <app-game-topbar></app-game-topbar>
-        </div>
-      }
-
-      <div class="mg-container py-lg w-100" [class.max-w-none]="isWideContent()">
-        <div class="w-100">
-          @if (isGameplayBlocked()) {
-            <app-membership-blocked-notice />
-          } @else if (isStaffGameplayBlocked()) {
-            <app-staff-gameplay-blocked-notice />
-          } @else {
-            <router-outlet></router-outlet>
-          }
-        </div>
-      </div>
-    </main>
+  <div class="mg-game-shell__sidebar">
+    <app-game-sidebar></app-game-sidebar>
   </div>
 
-  <footer class="mg-card text-center py-sm px-md">
-    <p class="mb-0">&copy; 2025 Mythsworn</p>
-  </footer>
+  <main class="mg-game-shell__main overflow-y-auto">
+    <div
+      class="mg-container py-lg w-100"
+      [class.max-w-none]="isWideContent()"
+    >
+      @if (isGameplayBlocked()) {
+        <app-membership-blocked-notice />
+      } @else if (isStaffGameplayBlocked()) {
+        <app-staff-gameplay-blocked-notice />
+      } @else {
+        <router-outlet></router-outlet>
+      }
+    </div>
+  </main>
 </div>

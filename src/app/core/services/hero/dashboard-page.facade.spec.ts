@@ -1,17 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
-import { IHeroDerived } from '../../types/hero.types';
 import { Hero } from './hero';
-import { HeroDerivedStats } from './hero-derived-stats';
 import { Origins } from '../origins/origins';
 import { StatsService } from '../stats/stats';
 import { DashboardPageFacade } from './dashboard-page.facade';
 import { CharacterPointHistory } from './character-point-history';
+import { HeroDashboardRuntimeStats } from './hero-dashboard-runtime-stats';
 
 describe('DashboardPageFacade', () => {
   let facade: DashboardPageFacade;
   let hero: jasmine.SpyObj<Hero>;
+  let runtimeStats: jasmine.SpyObj<HeroDashboardRuntimeStats>;
 
   beforeEach(() => {
     hero = jasmine.createSpyObj<Hero>('Hero', [
@@ -31,7 +30,7 @@ describe('DashboardPageFacade', () => {
         origin_id: null,
       }) as ReturnType<Hero['getHeroData']>,
     );
-    hero.getHeroStats.and.returnValue(of({ strength: 1 } as IHeroStats));
+    hero.getHeroStats.and.throwError('Dashboard must use runtime stats_json.');
     hero.getHeroExperienceProgress.and.returnValue(
       of({
         level: 4,
@@ -43,25 +42,35 @@ describe('DashboardPageFacade', () => {
       }),
     );
 
+    runtimeStats = jasmine.createSpyObj<HeroDashboardRuntimeStats>('HeroDashboardRuntimeStats', {
+      getActiveHeroRuntimeStats: of({
+        heroId: 'hero-1',
+        damageRows: [
+          { key: 'main_hand', label: 'Demonic Dagger', displayValue: '21-28' },
+          { key: 'off_hand', label: 'Unarmed', displayValue: '20-21' },
+        ],
+        stats: {
+          strength: 19,
+          dexterity: 6,
+        },
+        defense: 104,
+        maxHealth: 120,
+        luck: 3,
+        criticalChanceBonus: 2,
+        criticalDamage: 50,
+        evasionChanceBonus: 8,
+        attackCount: 2,
+        attackPlanJson: {},
+        sourceJson: {},
+        statsJson: {},
+      }),
+    });
+
     TestBed.configureTestingModule({
       providers: [
         DashboardPageFacade,
         { provide: Hero, useValue: hero },
-        {
-          provide: HeroDerivedStats,
-          useValue: jasmine.createSpyObj<HeroDerivedStats>('HeroDerivedStats', {
-            resolveActiveHeroDerivedStats: of({
-              health: 10,
-              def: 4,
-              minDmg: 2,
-              maxDmg: 7,
-              luck: 3,
-              critical: 12,
-              criticalDamage: 50,
-              evasion: 8,
-            } as IHeroDerived),
-          }),
-        },
+        { provide: HeroDashboardRuntimeStats, useValue: runtimeStats },
         {
           provide: Origins,
           useValue: jasmine.createSpyObj<Origins>('Origins', ['getOriginWithBonuses']),
@@ -70,8 +79,6 @@ describe('DashboardPageFacade', () => {
           provide: StatsService,
           useValue: jasmine.createSpyObj<StatsService>('StatsService', {
             getStats: of([]),
-            getDerivedStats: of([]),
-            getFinalStats: { strength: 1 },
           }),
         },
         {
@@ -126,17 +133,38 @@ describe('DashboardPageFacade', () => {
     ]);
   });
 
-  it('exposes ordered derived stat rows for dashboard rendering', () => {
+  it('exposes DB-owned runtime combat stat rows for dashboard rendering', () => {
     facade.loadData();
 
+    expect(runtimeStats.getActiveHeroRuntimeStats).toHaveBeenCalled();
     expect(facade.derivedStatRows()).toEqual([
-      { key: 'defense', label: 'DEF', value: 4 },
-      { key: 'damage', label: 'DMG', value: '2 - 7' },
-      { key: 'luck', label: 'Luck', value: 3 },
-      { key: 'critical_chance', label: 'Critical chance', value: 12 },
-      { key: 'critical_damage', label: 'Critical damage', value: 50 },
-      { key: 'evasion', label: 'Evasion', value: 8 },
+      {
+        key: 'damage',
+        label: 'Damage',
+        value: '',
+        damageRows: [
+          { key: 'main_hand', label: 'Demonic Dagger', displayValue: '21-28' },
+          { key: 'off_hand', label: 'Unarmed', displayValue: '20-21' },
+        ],
+      },
+      { key: 'defense', label: 'Defense', value: 104, damageRows: [] },
+      { key: 'luck', label: 'Luck', value: 3, damageRows: [] },
+      { key: 'critical_chance', label: 'Critical chance', value: '2%', damageRows: [] },
+      { key: 'critical_damage', label: 'Critical damage', value: '50%', damageRows: [] },
+      { key: 'evasion', label: 'Evasion', value: '8%', damageRows: [] },
+      { key: 'attack_count', label: 'Attack count', value: 2, damageRows: [] },
     ]);
+    expect(facade.derivedDisplay().health).toBe(120);
+  });
+
+  it('uses DB-provided runtime stats_json for Hero Stats display', () => {
+    facade.loadData();
+
+    expect(facade.statsDisplay()).toEqual({
+      strength: 19,
+      dexterity: 6,
+    });
+    expect(hero.getHeroStats).not.toHaveBeenCalled();
   });
 
   it('surfaces XP threshold errors instead of using a hardcoded display threshold', () => {

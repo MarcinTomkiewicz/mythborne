@@ -99,6 +99,10 @@ export const RPC = {
   rename_hero_armory_shelf: 'rename_hero_armory_shelf',
   move_hero_armory_item_to_shelf: 'move_hero_armory_item_to_shelf',
   get_hero_equipment_runtime_slots: 'get_hero_equipment_runtime_slots',
+  get_hero_equipment_runtime_bonus_rows: 'get_hero_equipment_runtime_bonus_rows',
+  get_hero_equipment_runtime_bonus_totals:
+    'get_hero_equipment_runtime_bonus_totals',
+  get_hero_dashboard_runtime_stats: 'get_hero_dashboard_runtime_stats',
   equip_hero_item: 'equip_hero_item',
   unequip_hero_item: 'unequip_hero_item',
   bulk_equip_hero_items: 'bulk_equip_hero_items',
@@ -162,6 +166,7 @@ export const RPC = {
   upsert_reward_profile_assignment: 'upsert_reward_profile_assignment',
   deactivate_reward_profile_assignment: 'deactivate_reward_profile_assignment',
   get_hero_experience_to_next_level: 'get_hero_experience_to_next_level',
+  get_hero_prestige_public_summary: 'get_hero_prestige_public_summary',
   grant_hero_experience: 'grant_hero_experience',
   save_stat_allocation: 'save_stat_allocation',
   update_entity_requirement: 'update_entity_requirement',

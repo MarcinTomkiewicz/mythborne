@@ -131,3 +131,4 @@ Dodaj testy na:
 
 W raporcie potwierdź też shared/reuse check: co reuse’owałeś, co sprawdziłeś i świadomie odrzuciłeś, oraz czy nie ruszałeś MD/statusów przed akceptacją.
 ```
+

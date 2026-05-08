@@ -1,6 +1,5 @@
 import {
   DERIVED_STAT_CHANCE_TARGETS,
-  DERIVED_STAT_DAMAGE_TARGETS,
   DERIVED_STAT_SCOPE_CHAIN,
   BASE_CRITICAL_DAMAGE_PERCENT,
   TRANSITIONAL_BASE_WEAPON_DAMAGE,
@@ -208,7 +207,7 @@ function resolveDamageValue(
       : TRANSITIONAL_BASE_WEAPON_DAMAGE.max;
   const baseValue = resolveBaseValue(definition, baseStats, key) + fallbackWeaponDamage;
   const bonusValue = sumBonuses(
-    derivedBonusTargets(definition, key, DERIVED_STAT_DAMAGE_TARGETS),
+    derivedBonusTargets(definition, key, damageBonusTargets(key)),
     bonuses,
     heroLevel,
     baseStats,
@@ -269,6 +268,14 @@ function derivedBonusTargets(
     definition?.secondary_bonus_target_key,
     ...extraTargets,
   ].filter((target) => normalizeBonusTarget(target) !== baseStatKey);
+}
+
+function damageBonusTargets(
+  key: DerivedStatKey.MinDamage | DerivedStatKey.MaxDamage,
+): readonly DerivedStatKey[] {
+  return key === DerivedStatKey.MinDamage
+    ? [DerivedStatKey.Damage, DerivedStatKey.MinDamage]
+    : [DerivedStatKey.Damage, DerivedStatKey.MaxDamage];
 }
 
 function sumBonuses(

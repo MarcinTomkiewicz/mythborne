@@ -122,13 +122,13 @@ export class ArmoryPage implements OnInit {
   equipItem(item: ArmoryItemSummary): void {
     this.equipment.equipItem({
       itemId: item.itemId,
-    }, () => this.armory.refresh());
+    }, () => this.refreshArmoryAndDerivedStats());
   }
 
   unequipSlot(slotKey: string): void {
     this.equipment.unequipSlot({
       slotKey,
-    }, () => this.armory.refresh());
+    }, () => this.refreshArmoryAndDerivedStats());
   }
 
   equipmentJournalEntries(
@@ -153,6 +153,11 @@ export class ArmoryPage implements OnInit {
     return status === 'active'
       ? 'tag-badge tag-badge--info'
       : 'tag-badge tag-badge--muted';
+  }
+
+  private refreshArmoryAndDerivedStats(): void {
+    this.armory.refresh();
+    this.page.loadData();
   }
 }
 

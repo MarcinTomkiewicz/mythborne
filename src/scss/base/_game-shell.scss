@@ -1,0 +1,60 @@
+@use "../abstracts/variables" as v;
+
+.mg-game-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  grid-template-areas:
+    "topbar topbar"
+    "sidebar main";
+}
+
+.mg-game-shell__topbar {
+  grid-area: topbar;
+  border-bottom: 1px solid v.$color-border;
+  background: v.$color-bg-surface;
+}
+
+.mg-game-shell__sidebar {
+  grid-area: sidebar;
+  border-right: 1px solid v.$color-border;
+  background: v.$color-bg-surface;
+}
+
+.mg-game-shell__main {
+  grid-area: main;
+}
+
+.mg-game-sidebar__nav-list > a.is-active::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0.25rem;
+  background: v.$color-secondary;
+}
+
+@media (max-width: 72rem) {
+  .mg-game-shell {
+    grid-template-columns: 13rem minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 54rem) {
+  .mg-game-shell {
+    display: block;
+  }
+
+  .mg-game-shell__topbar {
+    position: static;
+  }
+
+  .mg-game-shell__sidebar {
+    border-right: 0;
+    border-bottom: 1px solid v.$color-border;
+  }
+
+  .mg-game-sidebar__nav-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

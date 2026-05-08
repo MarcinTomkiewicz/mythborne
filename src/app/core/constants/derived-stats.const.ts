@@ -24,12 +24,6 @@ export const DERIVED_STAT_CHANCE_TARGETS: readonly DerivedStatKey[] = [
 
 export const BASE_CRITICAL_DAMAGE_PERCENT = 50;
 
-export const DERIVED_STAT_DAMAGE_TARGETS = [
-  DerivedStatKey.Damage,
-  DerivedStatKey.MinDamage,
-  DerivedStatKey.MaxDamage,
-] as const;
-
 export const TRANSITIONAL_BASE_WEAPON_DAMAGE = {
   min: 1,
   max: 3,

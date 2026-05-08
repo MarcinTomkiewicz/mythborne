@@ -13,7 +13,7 @@ Order reflects implementation priority, not final business priority.
 ## Current Codex Backlog Position
 
 - UI/UX foundation accepted: UI-CORE-1 - Mythsworn UI style contract extraction, UI-CORE-2 - Global SCSS and shared pattern inventory, UI-CORE-3 - Local SCSS budget and style report checklist, UI-CORE-4 - Shared surface/card/badge/chip/page-header patterns, UI-CORE-5 - Icon placeholder and Game Icons mapping contract, UI-CORE-6 - Item popover shared component contract, UI-CORE-7 - Legacy Monster Hunt / `mg-*` SCSS modernization plan, UI-CORE-8 - Text utility semantics and `muted-text` cleanup, UI-CORE-9 - Surface/card/badge/chip production pattern expansion, UI-CORE-10 - Custom icons and brand asset registry, UI-CORE-11 - Prototype-to-production SCSS mapping, UI-CORE-12 - PrimeNG/vendor wrapper modernization and lookup order, UI-CORE-13 - Utility class audit, semantics and usage pass, UI-CORE-14 - PrimeNG table/paginator/list pattern decision, and UI-CORE-15 - Layout utilities and section pattern cleanup.
-- UI/UX foundation docs UI-CORE-1 through UI-CORE-15 are accepted. HOTFIX-COMBAT-LIVE is accepted; next task will be selected by user.
+- UI/UX foundation docs UI-CORE-1 through UI-CORE-15 are accepted. UI-SHELL-1 - Game shell style foundation is conditionally accepted; UI-SHELL-4 should resolve the shared sidebar nav item / active nav pattern debt. HOTFIX-COMBAT-LIVE is accepted; next task will be selected by user.
 - Completed and confirmed: A1 - regenerate/update Supabase database types.
 - Current documentation sync applied: A2 - this TODO and `current-state-summary.md` were updated after A1 confirmation.
 - Completed and confirmed: B1 - audit old identity assumptions.
@@ -234,6 +234,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: S10 - Item requirement display.
 - Completed and confirmed: SPECIAL TASK - Item generation requirements admin editor.
 - Completed and confirmed: S11 - Equip single item action.
+- Completed and confirmed: S11 follow-up - Dashboard runtime combat stats and Hero Stats use `get_hero_dashboard_runtime_stats(...)`.
 - Completed and confirmed: S12 - Unequip slot action.
 - Q4 pending manual smoke: check a real DB row for `estate.building_job.completed`; source `action_url` must be `/game/mansion`. If it still returns `ViewState`, fix DB/content producer source and do not add a frontend remap.
 - Q5 pending manual smoke: open bell, mark read, dismiss and action link; real DB/RLS denied-action smoke only if suitable test data/access exists.
@@ -271,6 +272,7 @@ Order reflects implementation priority, not final business priority.
 - N1 visual smoke follow-up: manually check attributes, dashboard, auction/trade and anti-abuse penalty sections for layout regressions from longer `Character Points` labels.
 - S10 accepted follow-up: real item detail requirement smoke looked OK for the checked item, but fuller manual variants remain pending for an item without requirements, an item with met requirements and an item with unmet requirements. S9 regression smoke should continue to check Value, Item stats such as `Damage 2-9`, Bonuses and no console/Angular runtime errors. `PlayerArmory` is a cleanup candidate for the next larger armory touch; split item detail/read orchestration if the service grows further.
 - SPECIAL TASK accepted follow-up: item generation requirements are now edited inside `/admin/item-catalog` for the selected base item, prefix or suffix. Manual smoke confirmed adding a Dexterity 6 requirement to the Demonic prefix and runtime item detail then showed Hero level 1 plus Dexterity 6 while Value, Damage and Bonuses still rendered. UI for the catalog Requirements section is provisional and needs a later UX pass; `BuildingRequirementsState` should be renamed/split into a neutral entity-requirements state on the next larger requirements touch.
+- S11 accepted follow-up: dashboard runtime damage/defense/health/luck/crit/evasion/attack count and Hero Stats now come from `get_hero_dashboard_runtime_stats(...)`, including `stats_json`. `HeroDerivedStats` / local derived resolver remains a cleanup candidate because it still has active topbar and combat-demo usages outside the dashboard path.
 - S12 follow-up: equipment journal label for shifted entries should be neutralized from `Already equipped` to `Shifted` or rely directly on the DB message before slot-rotation UX is finalized.
 - Epic N DB sanity follow-up: verify actual `balance_formula_targets`, `balance_formulas` and assignment rows for `hero_experience_to_next_level`, `hero_stat_upgrade_cost` and `hero_stat_level_cap`; generated TypeScript confirms schema/RPC signatures, not seeded content.
 - M12 follow-up: apply `AdminReasonPresetField` to the remaining M12 reason fields for consistency.
