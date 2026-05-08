@@ -7569,6 +7569,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - PvE surfaces do not show stale assumptions about active-only equipment.
 - Frontend does not fake resolver behavior.
 
+**Implementation note:** S22 accepted on 2026-05-08. `/game/exploration` live combat challenge messaging now states that live loadout resolution is DB-owned per combat action and that Angular does not filter equipment by item lifecycle status. The existing canonical path still sends only player timing input through the exploration live-combat RPC/service flow and does not send or calculate stats, equipment, damage, HP, final outcome or rewards. Touched challenge-panel buttons were converted from `button pButton` to `<p-button>`. No DB/RPC path, direct write, generated type, migration or `isPlayerUsableItemStatus(...)` change was made. Verification passed with `npx tsc --noEmit`, focused exploration page spec and `npm run build` with known budget/CommonJS warnings. Manual smoke is deferred until a real exploration combat challenge appears; later UI copy can unify the mixed Polish/English boundary text.
+
 ---
 
 ## Task S23 — Combat/manual equipment display alignment

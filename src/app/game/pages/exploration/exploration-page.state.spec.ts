@@ -134,6 +134,26 @@ describe('ExplorationPageState', () => {
     expect(activeHero.requireActiveHero).toHaveBeenCalled();
   });
 
+  it('renders the live combat loadout boundary from the PvE surface', () => {
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
+      'easy',
+      false,
+      true,
+      { startedAt: '2026-05-01T10:00:00.000Z', resolvesAt: '2026-05-01T10:05:00.000Z' },
+      'exploration-1',
+      'combat',
+    )));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Live loadout is resolved by DB for each combat action');
+    expect(text).toContain('Angular does not filter equipment by item lifecycle status.');
+  });
+
   it('does not assume hero id matches auth user id when starting exploration', () => {
     page.loadData();
     page.startSelectedDifficulty();
