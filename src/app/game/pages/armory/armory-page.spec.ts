@@ -285,6 +285,55 @@ describe('ArmoryPage', () => {
     expect(text).toContain('Locked Auction');
     expect(text).toContain('Owned item reserved by market state.');
     expect(text).not.toContain('unusable');
+    expect(text).not.toContain('Scrap');
+    expect(text).not.toContain('Sell to vendor');
+  });
+
+  it('offers one vendor sell action only for active armory items', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [
+          armoryItem({ itemId: 'item-active', lifecycleStatus: 'active' }),
+          armoryItem({
+            itemId: 'item-locked',
+            name: 'Locked Blade',
+            lifecycleStatus: 'locked_trade',
+          }),
+        ],
+      }),
+    ]);
+    fixture.detectChanges();
+    const text = textContent(fixture);
+    const sellButtons = buttonsWithText(fixture, 'Sell to vendor');
+
+    expect(text).toContain('Sell to vendor');
+    expect(text).not.toContain('Scrap');
+    expect(text).toContain('Locked Blade');
+    expect(text).toContain('Owned item reserved by market state.');
+    expect(sellButtons.length).toBe(1);
+  });
+
+  it('vendor scraps active item and refreshes current equipment/runtime after response', () => {
+    const item = armoryItem({ itemId: 'item-active' });
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [item],
+      }),
+    ]);
+    fixture.detectChanges();
+
+    fixture.componentInstance.vendorScrapItem(item);
+
+    expect(armory.vendorScrapItem).toHaveBeenCalledWith(
+      'item-active',
+      jasmine.any(Function),
+    );
+    expect(equipment.refresh).toHaveBeenCalled();
+    expect(page.loadData).toHaveBeenCalledTimes(2);
   });
 
   it('calls item move action and supports target position zero', () => {
@@ -643,6 +692,7 @@ class FakeCurrentEquipmentState {
   readonly isMutating = signal(false);
   readonly slots = signal<EquippedItemSummary[]>([]);
   readonly load = jasmine.createSpy('load');
+  readonly refresh = jasmine.createSpy('refresh');
   readonly equipItem = jasmine
     .createSpy('equipItem')
     .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
@@ -674,6 +724,7 @@ class FakeArmoryShelfState {
   readonly isEmpty = signal(true);
   readonly isMutating = signal(false);
   readonly actionError = signal<string | null>(null);
+  readonly actionMessage = signal<string | null>(null);
   readonly shelves = signal<ArmoryShelfReadModel[]>([]);
   readonly visibleItems = signal<ArmoryItemSummary[]>([]);
   readonly visibility = signal<ArmoryVisibilitySummary | null>(null);
@@ -681,6 +732,9 @@ class FakeArmoryShelfState {
   readonly refresh = jasmine.createSpy('refresh');
   readonly renameShelf = jasmine.createSpy('renameShelf');
   readonly moveItemToShelf = jasmine.createSpy('moveItemToShelf');
+  readonly vendorScrapItem = jasmine
+    .createSpy('vendorScrapItem')
+    .and.callFake((_itemId, afterResponse?: () => void) => afterResponse?.());
 
   setShelves(
     shelves: ArmoryShelfReadModel[],
@@ -732,18 +786,24 @@ function buttonWithText(
   fixture: ComponentFixture<ArmoryPage>,
   label: string,
 ): HTMLButtonElement {
-  const buttons = Array.from(
-    (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
-  ) as HTMLButtonElement[];
-  const button = buttons.find((entry) =>
-    (entry.textContent ?? '').trim() === label,
-  );
+  const button = buttonsWithText(fixture, label)[0];
 
   if (!button) {
     throw new Error(`Button "${label}" was not rendered.`);
   }
 
   return button;
+}
+
+function buttonsWithText(
+  fixture: ComponentFixture<ArmoryPage>,
+  label: string,
+): HTMLButtonElement[] {
+  const buttons = Array.from(
+    (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
+  ) as HTMLButtonElement[];
+
+  return buttons.filter((entry) => (entry.textContent ?? '').trim() === label);
 }
 
 function equippedItem(

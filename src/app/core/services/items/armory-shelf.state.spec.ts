@@ -1,15 +1,17 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Observable, of, Subject } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 import { HeroArmoryReadModel } from '../../domain/item/item-equipment.model';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
 import { ActiveHero } from '../hero/active-hero';
 import { ArmoryShelfState } from './armory-shelf.state';
+import { ItemLifecycleService } from './item-lifecycle';
 import { PlayerArmory } from './player-armory';
 
 describe('ArmoryShelfState', () => {
   let activeHero: FakeActiveHero;
   let armory: jasmine.SpyObj<PlayerArmory>;
+  let lifecycle: jasmine.SpyObj<ItemLifecycleService>;
   let state: ArmoryShelfState;
 
   beforeEach(() => {
@@ -19,12 +21,16 @@ describe('ArmoryShelfState', () => {
       'renameShelf',
       'moveItemToShelf',
     ]);
+    lifecycle = jasmine.createSpyObj<ItemLifecycleService>('ItemLifecycleService', [
+      'vendorScrapHeroItem',
+    ]);
 
     TestBed.configureTestingModule({
       providers: [
         ArmoryShelfState,
         { provide: ActiveHero, useValue: activeHero },
         { provide: PlayerArmory, useValue: armory },
+        { provide: ItemLifecycleService, useValue: lifecycle },
       ],
     });
     state = TestBed.inject(ArmoryShelfState);
@@ -152,6 +158,101 @@ describe('ArmoryShelfState', () => {
     expect(state.actionError()).toBeNull();
     expect(state.isMutating()).toBeFalse();
     expect(state.readModel()?.visibleItems.length).toBe(1);
+  });
+
+  it('vendor scraps items through the canonical lifecycle service and refreshes armory', () => {
+    lifecycle.vendorScrapHeroItem.and.returnValue(of({
+      itemId: 'item-1',
+      itemStatus: 'scrapped',
+      scrappedAt: '2026-05-08T10:00:00Z',
+      recoverableUntil: null,
+      resourceType: 'drachma',
+      drachmaAmount: 20,
+      balanceAfter: 120,
+      itemAuditLogId: 'audit-item-1',
+      vendorAuditLogId: 'audit-vendor-1',
+    }));
+    armory.getArmory.and.returnValue(readModelSubject(0));
+
+    state.vendorScrapItem('item-1');
+
+    expect(lifecycle.vendorScrapHeroItem).toHaveBeenCalledWith({
+      actorHeroId: 'hero-1',
+      itemId: 'item-1',
+      reason: 'Player vendor scrap',
+    });
+    expect(state.actionMessage()).toBe('Item sold to vendor.');
+    expect(state.status()).toBe('empty');
+  });
+
+  it('keeps lifecycle success callback when post-mutation armory refresh fails', () => {
+    const initial = readModel(1);
+    lifecycle.vendorScrapHeroItem.and.returnValue(of({
+      itemId: 'item-1',
+      itemStatus: 'scrapped',
+      scrappedAt: '2026-05-08T10:00:00Z',
+      recoverableUntil: null,
+      resourceType: 'drachma',
+      drachmaAmount: 20,
+      balanceAfter: 120,
+      itemAuditLogId: 'audit-item-1',
+      vendorAuditLogId: 'audit-vendor-1',
+    }));
+    armory.getArmory.and.returnValue(
+      throwError(() => new Error('armory refresh denied')),
+    );
+    const afterResponse = jasmine.createSpy('afterResponse');
+    state.readModel.set(initial);
+    state.status.set('loaded');
+
+    state.vendorScrapItem('item-1', afterResponse);
+
+    expect(lifecycle.vendorScrapHeroItem).toHaveBeenCalled();
+    expect(afterResponse).toHaveBeenCalled();
+    expect(state.actionMessage()).toBe('Item sold to vendor.');
+    expect(state.actionError()).toBe('armory refresh denied');
+    expect(state.status()).toBe('error');
+    expect(state.readModel()).toBeNull();
+    expect(state.isMutating()).toBeFalse();
+  });
+
+  it('does not refresh armory after stale lifecycle response', () => {
+    const request = new Subject<{
+      itemId: string;
+      itemStatus: 'scrapped';
+      scrappedAt: string;
+      recoverableUntil: string | null;
+      resourceType: string;
+      drachmaAmount: number;
+      balanceAfter: number;
+      itemAuditLogId: string;
+      vendorAuditLogId: string;
+    }>();
+    lifecycle.vendorScrapHeroItem.and.returnValue(request.asObservable());
+    armory.getArmory.and.returnValue(readModelSubject(0));
+    const afterResponse = jasmine.createSpy('afterResponse');
+
+    state.vendorScrapItem('item-1', afterResponse);
+    activeHero.state.set(activeHeroState({
+      heroId: 'hero-2',
+      serverId: 'server-1',
+    }));
+    request.next({
+      itemId: 'item-1',
+      itemStatus: 'scrapped',
+      scrappedAt: '2026-05-08T10:00:00Z',
+      recoverableUntil: null,
+      resourceType: 'drachma',
+      drachmaAmount: 20,
+      balanceAfter: 120,
+      itemAuditLogId: 'audit-item-1',
+      vendorAuditLogId: 'audit-vendor-1',
+    });
+
+    expect(afterResponse).not.toHaveBeenCalled();
+    expect(armory.getArmory).not.toHaveBeenCalled();
+    expect(state.actionError()).toBe('Armory shelf context changed.');
+    expect(state.status()).toBe('error');
   });
 
   it('surfaces mutation errors without optimistic state changes', () => {

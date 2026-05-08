@@ -7503,6 +7503,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Equipped item disappears from equipment after successful scrap/vendor.
 - Locked items are not offered as scrap/vendor candidates.
 
+**Implementation note:** S19 accepted on 2026-05-08 after user smoke and the Migrator DB/RPC boundary fix. `/game/armory` now exposes one player-facing lifecycle action for active items: `Sell to vendor`, backed only by `ItemLifecycleService.vendorScrapHeroItem(...)` / canonical `vendor_scrap_hero_item(...)`. The previous player-facing `Scrap` CTA and `scrapItem(...)` / `scrapHeroItem(...)` frontend path were removed, along with `toScrapHeroItemRpcArgs`, `ScrapHeroItem*` frontend types, `RPC.scrap_hero_item`, and the obsolete safe-scrap classification helper. Locked trade/auction items do not get vendor sell actions. Vendor lifecycle success triggers current equipment/runtime refresh even if the later Armory read-model refresh fails; stale/context-changed lifecycle responses do not run the post-mutation Armory refresh. Verification passed with `npx tsc --noEmit`, focused item lifecycle mapper/service specs, Armory shelf state spec, Armory page spec, static greps for no direct writes/no forbidden Angular patterns/no player-facing scrap path, and `npm run build` with known budget/CommonJS warnings. User smoke confirmed active item has exactly one sell CTA, locked item has none, equipped sold item disappears from current equipment, and sold item disappears from the normal Armory list. Cleanup: removed obsolete player-facing scrap path / added vendor-only UI-state tests and shared mutation runner / unused code checked.
+
 ---
 
 ## Task S20 — Scrapped item staff recovery surface

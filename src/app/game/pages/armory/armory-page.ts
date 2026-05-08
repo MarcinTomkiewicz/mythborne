@@ -173,6 +173,17 @@ export class ArmoryPage implements OnInit {
     }, () => this.refreshArmoryAndDerivedStats());
   }
 
+  vendorScrapItem(item: ArmoryItemSummary): void {
+    this.armory.vendorScrapItem(
+      item.itemId,
+      () => this.refreshEquipmentAndDerivedStats(),
+    );
+  }
+
+  canUseLifecycleActions(item: ArmoryItemSummary): boolean {
+    return item.lifecycleStatus === 'active';
+  }
+
   equipmentJournalEntries(
     action: EquipmentOperationAction,
   ): EquipmentOperationJournalEntry[] {
@@ -226,6 +237,11 @@ export class ArmoryPage implements OnInit {
 
   private refreshArmoryAndDerivedStats(): void {
     this.armory.refresh();
+    this.page.loadData();
+  }
+
+  private refreshEquipmentAndDerivedStats(): void {
+    this.equipment.refresh();
     this.page.loadData();
   }
 

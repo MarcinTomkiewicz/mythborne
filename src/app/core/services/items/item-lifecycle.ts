@@ -6,7 +6,6 @@ import {
   RecoverableScrappedItemSearchResult,
   RecoverScrappedItemInput,
   SearchRecoverableScrappedItemsInput,
-  ScrapHeroItemInput,
   VendorScrapHeroItemInput,
   VendorScrapHeroItemResult,
 } from '../../domain/item/item-lifecycle.model';
@@ -21,7 +20,6 @@ import {
   mapVendorScrapHeroItemResult,
   toRecoverScrappedItemRpcArgs,
   toSearchRecoverableScrappedItemsPageRpcArgs,
-  toScrapHeroItemRpcArgs,
   toVendorScrapHeroItemRpcArgs,
 } from '../../utils/item-lifecycle-rpc';
 import { Backend } from '../backend/backend';
@@ -29,15 +27,6 @@ import { Backend } from '../backend/backend';
 @Injectable({ providedIn: 'root' })
 export class ItemLifecycleService {
   private readonly backend = inject(Backend);
-
-  scrapHeroItem(input: ScrapHeroItemInput): Observable<ItemLifecycleOperationResult> {
-    return this.backend
-      .rpc<ItemLifecycleOperationRpcRow[]>(
-        RPC.scrap_hero_item,
-        toScrapHeroItemRpcArgs(input),
-      )
-      .pipe(map((rows) => mapItemLifecycleOperationResult(firstRow(rows))));
-  }
 
   getVendorScrapDrachmaPayoutPercent(): Observable<number> {
     return this.backend.rpc<number>(RPC.get_vendor_scrap_drachma_payout_percent);

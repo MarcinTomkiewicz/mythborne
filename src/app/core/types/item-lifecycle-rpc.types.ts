@@ -1,10 +1,5 @@
 import { Database } from './database.types';
 
-export type ScrapHeroItemRpcArgs =
-  Database['public']['Functions']['scrap_hero_item']['Args'];
-export type ScrapHeroItemRpcRow =
-  Database['public']['Functions']['scrap_hero_item']['Returns'][number];
-
 export type VendorScrapHeroItemRpcArgs =
   Database['public']['Functions']['vendor_scrap_hero_item']['Args'];
 

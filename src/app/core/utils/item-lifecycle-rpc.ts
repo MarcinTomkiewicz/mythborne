@@ -4,7 +4,6 @@ import {
   RecoverableScrappedItemSearchResult,
   RecoverScrappedItemInput,
   SearchRecoverableScrappedItemsInput,
-  ScrapHeroItemInput,
   VendorScrapHeroItemInput,
   VendorScrapHeroItemResult,
 } from '../domain/item/item-lifecycle.model';
@@ -13,25 +12,10 @@ import {
   RecoverScrappedItemRpcArgs,
   SearchRecoverableScrappedItemsPageRpcArgs,
   SearchRecoverableScrappedItemsPageRpcRow,
-  ScrapHeroItemRpcArgs,
   VendorScrapHeroItemRpcArgs,
   VendorScrapHeroItemRpcRow,
 } from '../types/item-lifecycle-rpc.types';
 import { trimText, trimToNull } from './normalize-text';
-
-export function toScrapHeroItemRpcArgs(
-  input: ScrapHeroItemInput,
-): ScrapHeroItemRpcArgs {
-  const args: ScrapHeroItemRpcArgs = {
-    p_actor_hero_id: requiredText(input.actorHeroId, 'actorHeroId'),
-    p_item_id: requiredText(input.itemId, 'itemId'),
-  };
-
-  addOptionalText(args, 'p_reason', input.reason);
-  addOptionalText(args, 'p_request_id', input.requestId);
-
-  return args;
-}
 
 export function toVendorScrapHeroItemRpcArgs(
   input: VendorScrapHeroItemInput,

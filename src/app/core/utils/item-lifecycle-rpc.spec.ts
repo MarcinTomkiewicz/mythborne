@@ -1,31 +1,13 @@
-import { resolveSafeItemScrapBehavior } from '../domain/item/item-lifecycle.model';
 import {
   mapItemLifecycleOperationResult,
   mapRecoverableScrappedItemSearchResult,
   mapVendorScrapHeroItemResult,
   toRecoverScrappedItemRpcArgs,
   toSearchRecoverableScrappedItemsPageRpcArgs,
-  toScrapHeroItemRpcArgs,
   toVendorScrapHeroItemRpcArgs,
 } from './item-lifecycle-rpc';
 
 describe('item lifecycle rpc mappers', () => {
-  it('maps scrap workflow args without direct delete semantics', () => {
-    expect(
-      toScrapHeroItemRpcArgs({
-        actorHeroId: ' hero-1 ',
-        itemId: ' item-1 ',
-        reason: ' obsolete ',
-        requestId: ' request-1 ',
-      }),
-    ).toEqual({
-      p_actor_hero_id: 'hero-1',
-      p_item_id: 'item-1',
-      p_reason: 'obsolete',
-      p_request_id: 'request-1',
-    });
-  });
-
   it('maps vendor scrap workflow args without low-level resource composition', () => {
     expect(
       toVendorScrapHeroItemRpcArgs({
@@ -182,31 +164,7 @@ describe('item lifecycle rpc mappers', () => {
     });
   });
 
-  it('keeps affix-bearing or unknown-affix items on recoverable scrap path', () => {
-    expect(
-      resolveSafeItemScrapBehavior({
-        prefixAffixId: 'prefix-1',
-        suffixAffixId: null,
-      }),
-    ).toBe('recoverable_scrap');
-    expect(resolveSafeItemScrapBehavior({ prefixAffixId: null })).toBe(
-      'recoverable_scrap_unknown_affixes',
-    );
-  });
-
-  it('only marks fully known no-affix items as permanent delete candidates', () => {
-    expect(
-      resolveSafeItemScrapBehavior({
-        prefixAffixId: null,
-        suffixAffixId: null,
-      }),
-    ).toBe('permanent_delete_candidate');
-  });
-
   it('requires identifiers', () => {
-    expect(() =>
-      toScrapHeroItemRpcArgs({ actorHeroId: ' ', itemId: 'item-1' }),
-    ).toThrowError('actorHeroId is required for item lifecycle workflow.');
     expect(() =>
       toVendorScrapHeroItemRpcArgs({ actorHeroId: 'hero-1', itemId: ' ' }),
     ).toThrowError('itemId is required for item lifecycle workflow.');

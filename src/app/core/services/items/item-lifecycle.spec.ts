@@ -23,27 +23,6 @@ describe('ItemLifecycleService', () => {
     service = TestBed.inject(ItemLifecycleService);
   });
 
-  it('scraps hero items through the canonical lifecycle RPC', async () => {
-    backend.rpc.and.returnValue(of([resultRow('item-1')]));
-
-    const result = await firstValueFrom(
-      service.scrapHeroItem({
-        actorHeroId: 'hero-1',
-        itemId: 'item-1',
-        reason: 'Safe scrap',
-      }),
-    );
-
-    expect(backend.rpc).toHaveBeenCalledWith(RPC.scrap_hero_item, {
-      p_actor_hero_id: 'hero-1',
-      p_item_id: 'item-1',
-      p_reason: 'Safe scrap',
-    });
-    expect(backend.delete).not.toHaveBeenCalled();
-    expect(result.itemId).toBe('item-1');
-    expect(result.status).toBe('scrapped');
-  });
-
   it('loads vendor scrap payout percent through the canonical helper RPC', async () => {
     backend.rpc.and.returnValue(of(50));
 
@@ -86,12 +65,12 @@ describe('ItemLifecycleService', () => {
     expect(result.balanceAfter).toBe(160);
   });
 
-  it('fails when the lifecycle RPC returns no row', async () => {
+  it('fails when the vendor lifecycle RPC returns no row', async () => {
     backend.rpc.and.returnValue(of([]));
 
     await expectAsync(
       firstValueFrom(
-        service.scrapHeroItem({
+        service.vendorScrapHeroItem({
           actorHeroId: 'hero-1',
           itemId: 'item-1',
         }),
@@ -145,16 +124,6 @@ describe('ItemLifecycleService', () => {
     expect(result.recoverableUntil).toBeNull();
   });
 });
-
-function resultRow(itemId: string) {
-  return {
-    item_id: itemId,
-    status: 'scrapped' as const,
-    scrapped_at: '2026-04-30T10:00:00.000Z',
-    recoverable_until: '2026-05-07T10:00:00.000Z',
-    audit_log_id: 'audit-1',
-  };
-}
 
 function vendorScrapResultRow(itemId: string) {
   return {

@@ -126,7 +126,6 @@ export const RPC = {
   set_next_hero_exploration_outcome_override:
     'set_next_hero_exploration_outcome_override',
   skip_hero_exploration_step_timer: 'skip_hero_exploration_step_timer',
-  scrap_hero_item: 'scrap_hero_item',
   search_recoverable_scrapped_items_page: 'search_recoverable_scrapped_items_page',
   test_grant_reward_profile_to_hero: 'test_grant_reward_profile_to_hero',
   vendor_scrap_hero_item: 'vendor_scrap_hero_item',

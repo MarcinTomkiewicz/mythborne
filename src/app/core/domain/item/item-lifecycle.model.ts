@@ -1,22 +1,5 @@
 import { ItemStatus } from './item.model';
 
-export type SafeItemScrapBehavior =
-  | 'recoverable_scrap'
-  | 'recoverable_scrap_unknown_affixes'
-  | 'permanent_delete_candidate';
-
-export interface ItemSafeScrapMetadata {
-  prefixAffixId?: string | null;
-  suffixAffixId?: string | null;
-}
-
-export interface ScrapHeroItemInput {
-  actorHeroId: string;
-  itemId: string;
-  reason?: string | null;
-  requestId?: string | null;
-}
-
 export interface VendorScrapHeroItemInput {
   actorHeroId: string;
   itemId: string;
@@ -79,24 +62,4 @@ export interface RecoverableScrappedItem {
 export interface RecoverableScrappedItemSearchResult {
   items: RecoverableScrappedItem[];
   totalCount: number;
-}
-
-export function resolveSafeItemScrapBehavior(
-  metadata: ItemSafeScrapMetadata,
-): SafeItemScrapBehavior {
-  const hasUnknownAffixState =
-    metadata.prefixAffixId === undefined || metadata.suffixAffixId === undefined;
-
-  if (hasUnknownAffixState) {
-    return 'recoverable_scrap_unknown_affixes';
-  }
-
-  if (metadata.prefixAffixId || metadata.suffixAffixId) {
-    return 'recoverable_scrap';
-  }
-
-  // Classification hint only: scrap_hero_item owns the final DB decision and may
-  // permanently remove no-affix items. Frontend services must not direct-delete
-  // or assume the item row still exists after a successful scrap result.
-  return 'permanent_delete_candidate';
 }
