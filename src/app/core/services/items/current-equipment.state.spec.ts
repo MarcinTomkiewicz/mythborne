@@ -21,6 +21,7 @@ describe('CurrentEquipmentState', () => {
     equipment = jasmine.createSpyObj<PlayerEquipment>('PlayerEquipment', [
       'getCurrentEquipment',
       'equipItem',
+      'unequipSlot',
     ]);
 
     TestBed.configureTestingModule({
@@ -184,6 +185,32 @@ describe('CurrentEquipmentState', () => {
     expect(state.actionJournal()?.failed[0].message).toBe('Requirements not met.');
     expect(equipment.getCurrentEquipment).toHaveBeenCalledTimes(1);
     expect(state.slot('main_hand')?.itemId).toBe('still-equipped');
+  });
+
+  it('unequips a slot through the service and refreshes when no final equipment is returned', () => {
+    equipment.getCurrentEquipment.and.returnValue(loadoutSubject([]));
+    equipment.unequipSlot.and.returnValue(of(operationJournal({
+      unequipped: [{
+        action: 'unequipped',
+        itemId: 'locked-item',
+        slotKey: 'armor',
+        reason: 'slot_cleared',
+        message: 'Unequipped.',
+        success: true,
+        detailsJson: { itemStatus: 'locked_trade' },
+      }],
+    })));
+
+    state.unequipSlot({ slotKey: 'armor' });
+
+    expect(equipment.unequipSlot).toHaveBeenCalledOnceWith({ slotKey: 'armor' });
+    expect(state.actionJournal()?.unequipped[0]).toEqual(jasmine.objectContaining({
+      itemId: 'locked-item',
+      slotKey: 'armor',
+      message: 'Unequipped.',
+    }));
+    expect(equipment.getCurrentEquipment).toHaveBeenCalledTimes(1);
+    expect(state.status()).toBe('empty');
   });
 });
 

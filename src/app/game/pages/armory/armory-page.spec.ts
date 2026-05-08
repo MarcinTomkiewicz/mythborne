@@ -135,6 +135,7 @@ describe('ArmoryPage', () => {
     expect(text).toContain('Trade Locked Shield');
     expect(text).toContain('Locked Trade');
     expect(text).not.toContain('unusable');
+    expect(text).toContain('Unequip');
   });
 
   it('renders custom DB slot labels and slots not present in the old local list', () => {
@@ -327,7 +328,7 @@ describe('ArmoryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Equip');
-    expect(text).not.toContain('Equip slot');
+    expect(text).not.toContain(['Equip', 'slot'].join(' '));
     expect((fixture.nativeElement as HTMLElement)
       .querySelector('p-select[aria-label="Equip item slot"]')).toBeNull();
   });
@@ -354,6 +355,28 @@ describe('ArmoryPage', () => {
     expect(armory.refresh).toHaveBeenCalled();
   });
 
+  it('calls unequip for the selected paperdoll slot and refreshes armory after response', () => {
+    page.equipmentSlots.set([
+      equipmentSlot({ slotKey: 'armor', label: 'Pancerz' }),
+    ]);
+    equipment.setSlots([
+      equippedItem({
+        itemId: 'locked-vest',
+        itemName: 'Trade Locked Vest',
+        lifecycleStatus: 'locked_trade',
+        slotKey: 'armor',
+      }),
+    ]);
+    fixture.detectChanges();
+
+    fixture.componentInstance.unequipSlot('armor');
+
+    expect(equipment.unequipSlot).toHaveBeenCalledWith({
+      slotKey: 'armor',
+    }, jasmine.any(Function));
+    expect(armory.refresh).toHaveBeenCalled();
+  });
+
   it('renders domain failure journal as player-facing feedback', () => {
     equipment.actionJournal.set(operationJournal({
       success: false,
@@ -370,8 +393,27 @@ describe('ArmoryPage', () => {
     fixture.detectChanges();
     const text = textContent(fixture);
 
-    expect(text).toContain('Equip result');
+    expect(text).toContain('Equipment result');
     expect(text).toContain('Failed: Requirements not met.');
+  });
+
+  it('renders unequip journal feedback', () => {
+    equipment.actionJournal.set(operationJournal({
+      unequipped: [{
+        action: 'unequipped',
+        itemId: 'locked-vest',
+        slotKey: 'armor',
+        reason: 'slot_cleared',
+        message: 'Unequipped.',
+        success: true,
+        detailsJson: null,
+      }],
+    }));
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Equipment result');
+    expect(text).toContain('Unequipped: Unequipped.');
   });
 
   it('rejects blank, null, and non-numeric move targets before state action', () => {
@@ -488,6 +530,9 @@ class FakeCurrentEquipmentState {
   readonly load = jasmine.createSpy('load');
   readonly equipItem = jasmine
     .createSpy('equipItem')
+    .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
+  readonly unequipSlot = jasmine
+    .createSpy('unequipSlot')
     .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
 
   slot(slotKey: string): EquippedItemSummary | null {

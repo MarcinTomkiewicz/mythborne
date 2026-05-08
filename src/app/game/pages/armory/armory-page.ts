@@ -125,6 +125,12 @@ export class ArmoryPage implements OnInit {
     }, () => this.armory.refresh());
   }
 
+  unequipSlot(slotKey: string): void {
+    this.equipment.unequipSlot({
+      slotKey,
+    }, () => this.armory.refresh());
+  }
+
   equipmentJournalEntries(
     action: EquipmentOperationAction,
   ): EquipmentOperationJournalEntry[] {

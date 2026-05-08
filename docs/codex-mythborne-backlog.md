@@ -7311,6 +7311,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 
 ## Task S12 — Unequip slot action
 
+**Status:** Done / accepted 2026-05-08.
+
 **Goal:** Wire unequip through canonical RPC.
 
 **Scope:**
@@ -7326,6 +7328,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Unequip uses canonical RPC.
 - Locked item can be unequipped without cancelling its lock.
 - UI state refreshes from DB after action.
+
+**Implementation note:** S12 accepted on 2026-05-08. `/game/armory` paperdoll slots now show `Unequip` for equipped items and call `unequip_hero_item(...)` through the existing `PlayerEquipment` / `CurrentEquipmentState` path. The action preserves DB operation journals, refreshes current equipment and visible Armory items, does not direct-write `hero_equipment`, and does not mutate item status in Angular. User smoke confirmed an equipped item can be unequipped, the slot becomes empty, the item can be equipped again through default `Equip`, and no Angular-side item status mutation was observed. Follow-up: neutralize shifted journal wording from `Already equipped` to `Shifted` or rely directly on DB messages before slot-rotation UX is finalized.
 
 ---
 

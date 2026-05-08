@@ -52,7 +52,7 @@
     @if (equipment.actionJournal(); as journal) {
       <div class="mg-card p-md flex-col gap-sm mb-md">
         <div class="flex-row-between-center gap-sm">
-          <strong class="heading-color">Equip result</strong>
+          <strong class="heading-color">Equipment result</strong>
           @if (journal.success) {
             <span class="tag-badge tag-badge--success">Accepted</span>
           } @else {
@@ -92,6 +92,15 @@
                 {{ itemStatusLabel(item) }}
               </span>
               <app-armory-item-detail-popover [item]="item" />
+              <button
+                pButton
+                type="button"
+                severity="secondary"
+                size="small"
+                label="Unequip"
+                [disabled]="equipment.isMutating()"
+                (click)="unequipSlot(slot.slotKey)"
+              ></button>
             </div>
           } @else {
             <div class="flex-col gap-xs">

@@ -1,4 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { Observable } from 'rxjs';
 import {
   CurrentEquipmentLoadout,
   EquipmentOperationJournal,
@@ -8,7 +9,11 @@ import {
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
 import { getErrorMessage } from '../../utils/error-message';
 import { ActiveHero } from '../hero/active-hero';
-import { EquipHeroItemInput, PlayerEquipment } from './player-equipment';
+import {
+  EquipHeroItemInput,
+  PlayerEquipment,
+  UnequipHeroSlotInput,
+} from './player-equipment';
 
 export type CurrentEquipmentReadStatus =
   | 'idle'
@@ -95,6 +100,23 @@ export class CurrentEquipmentState {
   }
 
   equipItem(input: EquipHeroItemInput, afterResponse?: () => void): void {
+    this.runEquipmentAction(
+      () => this.equipment.equipItem(input),
+      afterResponse,
+    );
+  }
+
+  unequipSlot(input: UnequipHeroSlotInput, afterResponse?: () => void): void {
+    this.runEquipmentAction(
+      () => this.equipment.unequipSlot(input),
+      afterResponse,
+    );
+  }
+
+  private runEquipmentAction(
+    operation: () => Observable<EquipmentOperationJournal>,
+    afterResponse?: () => void,
+  ): void {
     const requestId = ++this.actionRequestId;
     const requestContextKey = this.currentContextKey();
 
@@ -110,7 +132,7 @@ export class CurrentEquipmentState {
 
     let request;
     try {
-      request = this.equipment.equipItem(input);
+      request = operation();
     } catch (error: unknown) {
       if (requestId === this.actionRequestId) {
         this.isMutating.set(false);
