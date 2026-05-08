@@ -101,6 +101,25 @@ Przykładowe wymagania:
 - `muted-text` tylko dla labeli, opisów pomocniczych i metadata, nie dla decyzji/reason/notes.
 - JSON preview tylko collapsed i shared, jeśli naprawdę diagnostycznie potrzebne.
 
+## PrimeNG component usage — hard rules
+
+- Dla PrimeNG preferujemy standalone component selectors, np. `<p-button />`, `<p-select />`, `<p-checkbox />`.
+- Nie używać dyrektywowego stylu na natywnych elementach w nowych/touched flow, np. `<button pButton>`, chyba że istniejący shared wrapper/pattern w projekcie jawnie tego wymaga.
+- Każdy PrimeNG input/form control musi działać przez Reactive Forms albo jawny component event/state pattern zatwierdzony w istniejącym projekcie.
+- Zakaz `ngModel` i `FormsModule` w nowych/touched UI flow.
+- Nie wolno wołać metod tworzących `FormControl`, `FormGroup`, `FormArray` z template’u. Form model ma być zbudowany w TS/state i tylko bindowany w template.
+- Jeśli browser smoke pokazuje `NG0201`, `No provider for NgControl`, hydration/runtime template error albo PrimeNG form-control error, review decision = `BLOCKER`.
+
+## Reviewer hard gate
+
+Reviewer ma blokować paczkę, jeśli w touched Angular template znajdzie:
+- `ngModel`,
+- `FormsModule`,
+- `button pButton`,
+- metody tworzące/pobierające form controls wołane bezpośrednio z template’u,
+- runtime console error z browser smoke,
+- nowy UI flow bez sprawdzenia istniejących PrimeNG/shared patterns.
+
 ## Checklist: statusy i dokumentacja
 
 - Jeśli użytkownik mówi, żeby nie aktualizować MD/statusów przed akceptacją, Codex nie ma tego robić.

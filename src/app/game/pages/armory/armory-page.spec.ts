@@ -1,7 +1,8 @@
 import { Component, input, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import {
@@ -40,8 +41,9 @@ describe('ArmoryPage', () => {
       .overrideComponent(ArmoryPage, {
         set: {
           imports: [
-            FormsModule,
+            ReactiveFormsModule,
             ButtonModule,
+            CheckboxModule,
             InputTextModule,
             SelectModule,
             MockArmoryItemDetailPopover,
@@ -356,6 +358,53 @@ describe('ArmoryPage', () => {
     expect(page.loadData).toHaveBeenCalledTimes(2);
   });
 
+  it('bulk equips selected visible items in selection order without explicit slots', () => {
+    const first = armoryItem({ itemId: 'item-first', name: 'First Blade' });
+    const second = armoryItem({ itemId: 'item-second', name: 'Second Blade' });
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [first, second],
+      }),
+    ]);
+    fixture.detectChanges();
+
+    fixture.componentInstance.setBulkItemSelected(second, true);
+    fixture.componentInstance.setBulkItemSelected(first, true);
+    fixture.componentInstance.bulkEquipSelectedItems();
+
+    expect(equipment.bulkEquipItems).toHaveBeenCalledWith({
+      items: [
+        { itemId: 'item-second' },
+        { itemId: 'item-first' },
+      ],
+    }, jasmine.any(Function));
+    expect(armory.refresh).toHaveBeenCalled();
+    expect(page.loadData).toHaveBeenCalledTimes(2);
+    expect(fixture.componentInstance.selectedBulkItems()).toEqual([]);
+  });
+
+  it('renders bulk equip selection controls without exposing slot selection', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [
+          armoryItem({ itemId: 'item-first', name: 'First Blade' }),
+          armoryItem({ itemId: 'item-second', name: 'Second Blade' }),
+        ],
+      }),
+    ]);
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Equip selected');
+    expect(text).toContain('Select for bulk equip');
+    expect((fixture.nativeElement as HTMLElement)
+      .querySelector('p-select[aria-label="Equip item slot"]')).toBeNull();
+  });
+
   it('calls unequip for the selected paperdoll slot and refreshes armory after response', () => {
     page.equipmentSlots.set([
       equipmentSlot({ slotKey: 'armor', label: 'Pancerz' }),
@@ -416,6 +465,26 @@ describe('ArmoryPage', () => {
 
     expect(text).toContain('Equipment result');
     expect(text).toContain('Unequipped: Unequipped.');
+  });
+
+  it('renders shifted journal feedback with neutral equipment wording', () => {
+    equipment.actionJournal.set(operationJournal({
+      shifted: [{
+        action: 'shifted',
+        itemId: 'old-dagger',
+        slotKey: 'off_hand',
+        reason: 'hand_rotation',
+        message: 'Moved to off hand.',
+        success: true,
+        detailsJson: null,
+      }],
+    }));
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Equipment result');
+    expect(text).toContain('Shifted: Moved to off hand.');
+    expect(text).not.toContain('Already equipped:');
   });
 
   it('rejects blank, null, and non-numeric move targets before state action', () => {
@@ -532,6 +601,9 @@ class FakeCurrentEquipmentState {
   readonly load = jasmine.createSpy('load');
   readonly equipItem = jasmine
     .createSpy('equipItem')
+    .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
+  readonly bulkEquipItems = jasmine
+    .createSpy('bulkEquipItems')
     .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
   readonly unequipSlot = jasmine
     .createSpy('unequipSlot')

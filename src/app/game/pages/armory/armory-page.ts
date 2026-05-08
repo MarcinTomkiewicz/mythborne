@@ -1,5 +1,5 @@
-import { Component, OnInit, computed, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import {
   ArmoryItemSummary,
   ArmoryShelfReadModel,
@@ -10,6 +10,7 @@ import {
 } from '../../../core/domain/item/item-equipment.model';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
@@ -28,9 +29,10 @@ interface EquipmentPaperdollSlot {
   selector: 'app-armory-page',
   standalone: true,
   imports: [
-    FormsModule,
+    ReactiveFormsModule,
     RouterLink,
     ButtonModule,
+    CheckboxModule,
     InputTextModule,
     SelectModule,
     ArmoryItemDetailPopover,
@@ -57,6 +59,23 @@ export class ArmoryPage implements OnInit {
         ? this.shelfLabel(shelf)
         : `${this.shelfLabel(shelf)} (${shelf.position})`,
     })),
+  );
+  readonly selectedBulkItemIds = signal<string[]>([]);
+  readonly bulkSelectionForm = new FormRecord<FormControl<boolean>>({});
+  readonly moveTargetShelfForm = new FormRecord<FormControl<number>>({});
+  readonly selectedBulkItems = computed(() => {
+    const selectedIds = this.selectedBulkItemIds();
+    const itemsById = new Map(
+      this.armory.visibleItems().map((item) => [item.itemId, item]),
+    );
+
+    return selectedIds.flatMap((itemId) => {
+      const item = itemsById.get(itemId);
+      return item ? [item] : [];
+    });
+  });
+  private readonly syncArmoryForms = effect(() =>
+    this.syncArmoryItemForms(this.armory.visibleItems()),
   );
 
   ngOnInit(): void {
@@ -125,6 +144,29 @@ export class ArmoryPage implements OnInit {
     }, () => this.refreshArmoryAndDerivedStats());
   }
 
+  bulkEquipSelectedItems(): void {
+    const items = this.selectedBulkItems().map((item) => ({
+      itemId: item.itemId,
+    }));
+
+    if (!items.length) {
+      return;
+    }
+
+    this.equipment.bulkEquipItems({
+      items,
+    }, () => {
+      this.clearBulkSelection();
+      this.refreshArmoryAndDerivedStats();
+    });
+  }
+
+  moveItemToSelectedShelf(item: ArmoryItemSummary): void {
+    const targetShelfPosition = this.moveTargetShelfForm.controls[item.itemId]?.value;
+
+    this.moveItemToShelf(item, targetShelfPosition);
+  }
+
   unequipSlot(slotKey: string): void {
     this.equipment.unequipSlot({
       slotKey,
@@ -145,6 +187,33 @@ export class ArmoryPage implements OnInit {
       ?? (entry.success ? 'Operation accepted.' : 'Operation failed.');
   }
 
+  isBulkItemSelected(item: ArmoryItemSummary): boolean {
+    return this.selectedBulkItemIds().includes(item.itemId);
+  }
+
+  setBulkItemSelected(item: ArmoryItemSummary, selected: boolean): void {
+    const currentIds = this.selectedBulkItemIds();
+    this.ensureBulkSelectionControl(item);
+    const control = this.bulkSelectionForm.controls[item.itemId];
+
+    if (control.value !== selected) {
+      control.setValue(selected, { emitEvent: false });
+    }
+
+    if (selected) {
+      this.selectedBulkItemIds.set(
+        currentIds.includes(item.itemId)
+          ? currentIds
+          : [...currentIds, item.itemId],
+      );
+      return;
+    }
+
+    this.selectedBulkItemIds.set(
+      currentIds.filter((itemId) => itemId !== item.itemId),
+    );
+  }
+
   private lifecycleStatusLabel(status: ItemLifecycleStatus): string {
     return humanizeKey(status);
   }
@@ -158,6 +227,72 @@ export class ArmoryPage implements OnInit {
   private refreshArmoryAndDerivedStats(): void {
     this.armory.refresh();
     this.page.loadData();
+  }
+
+  private clearBulkSelection(): void {
+    this.selectedBulkItemIds.set([]);
+    for (const control of Object.values(this.bulkSelectionForm.controls)) {
+      control.setValue(false, { emitEvent: false });
+    }
+  }
+
+  private syncArmoryItemForms(items: readonly ArmoryItemSummary[]): void {
+    const visibleItemIds = new Set(items.map((item) => item.itemId));
+    const selectedIds = this.selectedBulkItemIds();
+    const visibleSelectedIds = selectedIds.filter((itemId) =>
+      visibleItemIds.has(itemId),
+    );
+
+    if (visibleSelectedIds.length !== selectedIds.length) {
+      this.selectedBulkItemIds.set(visibleSelectedIds);
+    }
+
+    for (const item of items) {
+      this.ensureBulkSelectionControl(item);
+      this.ensureMoveTargetShelfControl(item);
+    }
+
+    for (const itemId of Object.keys(this.bulkSelectionForm.controls)) {
+      if (!visibleItemIds.has(itemId)) {
+        this.bulkSelectionForm.removeControl(itemId, { emitEvent: false });
+      }
+    }
+
+    for (const itemId of Object.keys(this.moveTargetShelfForm.controls)) {
+      if (!visibleItemIds.has(itemId)) {
+        this.moveTargetShelfForm.removeControl(itemId, { emitEvent: false });
+      }
+    }
+  }
+
+  private ensureBulkSelectionControl(item: ArmoryItemSummary): void {
+    if (this.bulkSelectionForm.contains(item.itemId)) {
+      return;
+    }
+
+    this.bulkSelectionForm.addControl(
+      item.itemId,
+      new FormControl<boolean>(
+        this.isBulkItemSelected(item),
+        { nonNullable: true },
+      ),
+      { emitEvent: false },
+    );
+  }
+
+  private ensureMoveTargetShelfControl(item: ArmoryItemSummary): void {
+    if (this.moveTargetShelfForm.contains(item.itemId)) {
+      return;
+    }
+
+    this.moveTargetShelfForm.addControl(
+      item.itemId,
+      new FormControl<number>(
+        item.shelfPosition,
+        { nonNullable: true },
+      ),
+      { emitEvent: false },
+    );
   }
 }
 

@@ -67,6 +67,8 @@ Avoid by default:
 - outdated Angular patterns;
 - zone-dependent assumptions;
 - legacy Angular habits;
+- ngModel, FormsModule in forms
+- native form elements
 - hardcoded gameplay constants that are likely to be balanced later;
 - exposing raw generated DB rows as long-term domain models.
 

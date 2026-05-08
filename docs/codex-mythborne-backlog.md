@@ -7358,6 +7358,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Partial success is visible.
 - Failed items do not hide successful earlier steps.
 
+**Implementation note:** S13 accepted on 2026-05-08 after static review and user smoke. `/game/armory` now supports bulk selection of visible armory items and submits the selected items in UI selection order to canonical `bulk_equip_hero_items(...)` through the existing `PlayerEquipment` / `CurrentEquipmentState` path. The bulk payload is ordered `{ itemId }[]` without explicit target slots, without an equip slot dropdown and without an Angular-side compatibility engine. The UI renders the full DB operation journal, including equipped, shifted, unequipped and failed entries, so partial success remains visible. The Armory flow uses PrimeNG `p-checkbox`, `p-select` and component `<p-button />` with Reactive Forms; it does not use `ngModel`, `FormsModule`, `button pButton`, dynamic `[formControl]` helpers in the template or direct `hero_equipment` writes. User smoke confirmed `/game/armory` loads without console errors, bulk select works, `Equip selected` shows the full journal, current equipment / shelves / runtime stats refresh, and the move shelf select does not regress to the previous form-control runtime error. Follow-ups: `armory-page.html` and `armory-page.ts` are now heavy; the next larger Armory touch should extract bulk selection, journal and shelf item card concerns into smaller components or dedicated state. `PlayerEquipment` remains naming debt and should be considered for `HeroEquipment` / `HeroEquipmentService` during a later equipment cleanup.
+
 ---
 
 ## Task S14 — Preset domain service

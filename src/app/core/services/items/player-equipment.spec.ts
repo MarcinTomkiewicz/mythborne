@@ -217,7 +217,7 @@ describe('PlayerEquipment', () => {
     expect(backend.upsert).not.toHaveBeenCalled();
   });
 
-  it('bulk equips ordered item/slot pairs through canonical RPC', async () => {
+  it('bulk equips ordered item list through canonical RPC without explicit slots by default', async () => {
     backend.rpc.and.returnValue(of([
       bulkEquipRow({
         result_journal_json: [
@@ -229,7 +229,6 @@ describe('PlayerEquipment', () => {
           {
             action: 'failed',
             itemId: 'item-2',
-            targetSlotKey: 'off_hand',
             reasonKey: 'requirements_not_met',
           },
         ],
@@ -239,8 +238,8 @@ describe('PlayerEquipment', () => {
     const result = await firstValueFrom(service.bulkEquipItems({
       requestId: ' bulk-request-1 ',
       items: [
-        { itemId: ' item-1 ', targetSlotKey: ' main_hand ' },
-        { itemId: ' item-2 ', targetSlotKey: ' off_hand ' },
+        { itemId: ' item-1 ' },
+        { itemId: ' item-2 ' },
       ],
     }));
 
@@ -249,8 +248,8 @@ describe('PlayerEquipment', () => {
       {
         p_hero_id: 'active-hero-1',
         p_items_json: [
-          { itemId: 'item-1', targetSlotKey: 'main_hand' },
-          { itemId: 'item-2', targetSlotKey: 'off_hand' },
+          { itemId: 'item-1' },
+          { itemId: 'item-2' },
         ],
         p_request_id: 'bulk-request-1',
       },
@@ -263,6 +262,27 @@ describe('PlayerEquipment', () => {
     }));
   });
 
+  it('keeps explicit bulk target slots only when a caller provides them', async () => {
+    backend.rpc.and.returnValue(of([bulkEquipRow()]));
+
+    await firstValueFrom(service.bulkEquipItems({
+      items: [
+        { itemId: ' item-1 ', targetSlotKey: ' main_hand ' },
+        { itemId: ' item-2 ', targetSlotKey: null },
+      ],
+    }));
+
+    expect(backend.rpc).toHaveBeenCalledOnceWith(
+      RPC.bulk_equip_hero_items,
+      jasmine.objectContaining({
+        p_items_json: [
+          { itemId: 'item-1', targetSlotKey: 'main_hand' },
+          { itemId: 'item-2' },
+        ],
+      }),
+    );
+  });
+
   it('rejects blank required input before calling RPC', () => {
     expect(() => service.equipItem({
       itemId: ' ',
@@ -270,8 +290,8 @@ describe('PlayerEquipment', () => {
     expect(() => service.unequipSlot({ slotKey: ' ' }))
       .toThrowError('slotKey is required for equipment RPC.');
     expect(() => service.bulkEquipItems({
-      items: [{ itemId: 'item-1', targetSlotKey: ' ' }],
-    })).toThrowError('items[0].targetSlotKey is required for equipment RPC.');
+      items: [{ itemId: ' ' }],
+    })).toThrowError('items[0].itemId is required for equipment RPC.');
     expect(backend.rpc).not.toHaveBeenCalled();
   });
 

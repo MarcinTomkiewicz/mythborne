@@ -63,7 +63,7 @@
           <p class="mb-0">Equipped: {{ operationMessage(entry) }}</p>
         }
         @for (entry of equipmentJournalEntries('shifted'); track $index) {
-          <p class="mb-0">Already equipped: {{ operationMessage(entry) }}</p>
+          <p class="mb-0">Shifted: {{ operationMessage(entry) }}</p>
         }
         @for (entry of equipmentJournalEntries('unequipped'); track $index) {
           <p class="mb-0">Unequipped: {{ operationMessage(entry) }}</p>
@@ -92,15 +92,14 @@
                 {{ itemStatusLabel(item) }}
               </span>
               <app-armory-item-detail-popover [item]="item" />
-              <button
-                pButton
+              <p-button
                 type="button"
                 severity="secondary"
                 size="small"
                 label="Unequip"
                 [disabled]="equipment.isMutating()"
-                (click)="unequipSlot(slot.slotKey)"
-              ></button>
+                (onClick)="unequipSlot(slot.slotKey)"
+              />
             </div>
           } @else {
             <div class="flex-col gap-xs">
@@ -138,6 +137,19 @@
             </span>
           }
         }
+        @if (selectedBulkItems().length > 0) {
+          <span class="tag-badge tag-badge--info">
+            {{ selectedBulkItems().length }} selected
+          </span>
+        }
+        <p-button
+          type="button"
+          severity="secondary"
+          size="small"
+          label="Equip selected"
+          [disabled]="equipment.isMutating() || selectedBulkItems().length === 0"
+          (onClick)="bulkEquipSelectedItems()"
+        />
       </div>
     </div>
 
@@ -183,14 +195,13 @@
                 [value]="shelf.name"
                 aria-label="Shelf name"
               />
-              <button
-                pButton
+              <p-button
                 type="button"
                 severity="secondary"
                 label="Rename"
                 [disabled]="armory.isMutating()"
-                (click)="renameShelf(shelf, shelfName.value)"
-              ></button>
+                (onClick)="renameShelf(shelf, shelfName.value)"
+              />
             </div>
           }
 
@@ -204,6 +215,16 @@
                       {{ armoryItemStatusLabel(item) }}
                     </span>
                   </div>
+                  <div class="flex-row-start-center gap-sm" [formGroup]="bulkSelectionForm">
+                    <p-checkbox
+                      [binary]="true"
+                      [disabled]="equipment.isMutating()"
+                      [formControlName]="item.itemId"
+                      [inputId]="'bulk-equip-' + item.itemId"
+                      (onChange)="setBulkItemSelected(item, $event.checked === true)"
+                    />
+                    <label [for]="'bulk-equip-' + item.itemId">Select for bulk equip</label>
+                  </div>
                   @if (item.drachmaValue !== null) {
                     <span class="muted-text">{{ item.drachmaValue }} drachma</span>
                   }
@@ -214,31 +235,30 @@
                     </span>
                   }
                   <div class="flex-row-start-center flex-col-sm gap-xs">
-                    <button
-                      pButton
+                    <p-button
                       type="button"
                       severity="secondary"
                       label="Equip"
                       [disabled]="equipment.isMutating()"
-                      (click)="equipItem(item)"
-                    ></button>
-                    <p-select
-                      #targetShelf
-                      styleClass="w-100"
-                      [ngModel]="item.shelfPosition"
-                      [options]="moveTargetShelves()"
-                      optionLabel="label"
-                      optionValue="position"
-                      aria-label="Move item to shelf"
-                    ></p-select>
-                    <button
-                      pButton
+                      (onClick)="equipItem(item)"
+                    />
+                    <div class="w-100" [formGroup]="moveTargetShelfForm">
+                      <p-select
+                        styleClass="w-100"
+                        [formControlName]="item.itemId"
+                        [options]="moveTargetShelves()"
+                        optionLabel="label"
+                        optionValue="position"
+                        aria-label="Move item to shelf"
+                      />
+                    </div>
+                    <p-button
                       type="button"
                       severity="secondary"
                       label="Move"
                       [disabled]="armory.isMutating()"
-                      (click)="moveItemToShelf(item, targetShelf.value)"
-                    ></button>
+                      (onClick)="moveItemToSelectedShelf(item)"
+                    />
                   </div>
                 </div>
               }

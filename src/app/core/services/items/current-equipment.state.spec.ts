@@ -21,6 +21,7 @@ describe('CurrentEquipmentState', () => {
     equipment = jasmine.createSpyObj<PlayerEquipment>('PlayerEquipment', [
       'getCurrentEquipment',
       'equipItem',
+      'bulkEquipItems',
       'unequipSlot',
     ]);
 
@@ -185,6 +186,51 @@ describe('CurrentEquipmentState', () => {
     expect(state.actionJournal()?.failed[0].message).toBe('Requirements not met.');
     expect(equipment.getCurrentEquipment).toHaveBeenCalledTimes(1);
     expect(state.slot('main_hand')?.itemId).toBe('still-equipped');
+  });
+
+  it('bulk equips items and preserves the operation journal without client-side stopping', () => {
+    equipment.bulkEquipItems.and.returnValue(of(operationJournal({
+      success: false,
+      equipped: [{
+        action: 'equipped',
+        itemId: 'item-equipped',
+        slotKey: 'main_hand',
+        reason: 'equipped',
+        message: 'Equipped.',
+        success: true,
+        detailsJson: null,
+      }],
+      failed: [{
+        action: 'failed',
+        itemId: 'item-failed',
+        slotKey: null,
+        reason: 'requirements_not_met',
+        message: 'Requirements not met.',
+        success: false,
+        detailsJson: null,
+      }],
+      finalEquipment: loadout([
+        equippedSlot({ itemId: 'item-equipped', slotKey: 'main_hand' }),
+      ]),
+    })));
+
+    state.bulkEquipItems({
+      items: [
+        { itemId: 'item-equipped' },
+        { itemId: 'item-failed' },
+      ],
+    });
+
+    expect(equipment.bulkEquipItems).toHaveBeenCalledOnceWith({
+      items: [
+        { itemId: 'item-equipped' },
+        { itemId: 'item-failed' },
+      ],
+    });
+    expect(state.actionError()).toBeNull();
+    expect(state.actionJournal()?.equipped[0].itemId).toBe('item-equipped');
+    expect(state.actionJournal()?.failed[0].itemId).toBe('item-failed');
+    expect(state.slot('main_hand')?.itemId).toBe('item-equipped');
   });
 
   it('unequips a slot through the service and refreshes when no final equipment is returned', () => {

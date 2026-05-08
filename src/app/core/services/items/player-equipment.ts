@@ -43,7 +43,7 @@ export interface UnequipHeroSlotInput {
 
 export interface BulkEquipHeroItemInput {
   itemId: string;
-  targetSlotKey: EquipmentSlotKey;
+  targetSlotKey?: EquipmentSlotKey | null;
 }
 
 export interface BulkEquipHeroItemsInput {
@@ -142,13 +142,18 @@ export class PlayerEquipment {
   bulkEquipItems(
     input: BulkEquipHeroItemsInput,
   ): Observable<EquipmentOperationJournal> {
-    const items = input.items.map((item, index) => ({
-      itemId: requiredText(item.itemId, `items[${index}].itemId`),
-      targetSlotKey: requiredText(
-        item.targetSlotKey,
-        `items[${index}].targetSlotKey`,
-      ),
-    }));
+    const items = input.items.map((item, index) => {
+      const payload: Record<string, string> = {
+        itemId: requiredText(item.itemId, `items[${index}].itemId`),
+      };
+      const targetSlotKey = nullableText(item.targetSlotKey);
+
+      if (targetSlotKey) {
+        payload['targetSlotKey'] = targetSlotKey;
+      }
+
+      return payload;
+    });
     const requestId = nullableText(input.requestId);
 
     return this.activeHero.requireActiveHero().pipe(

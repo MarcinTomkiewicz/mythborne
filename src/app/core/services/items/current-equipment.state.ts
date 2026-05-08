@@ -11,6 +11,7 @@ import { getErrorMessage } from '../../utils/error-message';
 import { ActiveHero } from '../hero/active-hero';
 import {
   EquipHeroItemInput,
+  BulkEquipHeroItemsInput,
   PlayerEquipment,
   UnequipHeroSlotInput,
 } from './player-equipment';
@@ -102,6 +103,13 @@ export class CurrentEquipmentState {
   equipItem(input: EquipHeroItemInput, afterResponse?: () => void): void {
     this.runEquipmentAction(
       () => this.equipment.equipItem(input),
+      afterResponse,
+    );
+  }
+
+  bulkEquipItems(input: BulkEquipHeroItemsInput, afterResponse?: () => void): void {
+    this.runEquipmentAction(
+      () => this.equipment.bulkEquipItems(input),
       afterResponse,
     );
   }
