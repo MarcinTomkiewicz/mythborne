@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Observable, of, Subject } from 'rxjs';
 import {
   CurrentEquipmentLoadout,
+  EquipmentOperationJournal,
   EquippedItemSummary,
 } from '../../domain/item/item-equipment.model';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
@@ -19,6 +20,7 @@ describe('CurrentEquipmentState', () => {
     activeHero = new FakeActiveHero();
     equipment = jasmine.createSpyObj<PlayerEquipment>('PlayerEquipment', [
       'getCurrentEquipment',
+      'equipItem',
     ]);
 
     TestBed.configureTestingModule({
@@ -132,6 +134,57 @@ describe('CurrentEquipmentState', () => {
     expect(state.error()).toBeNull();
     expect(state.loadout()).toBeNull();
   });
+
+  it('equips an item and applies final equipment from the operation journal', () => {
+    equipment.equipItem.and.returnValue(of(operationJournal({
+      finalEquipment: loadout([
+        equippedSlot({ itemId: 'item-equipped', slotKey: 'main_hand' }),
+      ]),
+      equipped: [{
+        action: 'equipped',
+        itemId: 'item-equipped',
+        slotKey: 'main_hand',
+        reason: 'equipped',
+        message: 'Equipped.',
+        success: true,
+        detailsJson: null,
+      }],
+    })));
+
+    state.equipItem({ itemId: 'item-equipped' });
+
+    expect(equipment.equipItem).toHaveBeenCalledOnceWith({
+      itemId: 'item-equipped',
+    });
+    expect(state.actionJournal()?.equipped[0].message).toBe('Equipped.');
+    expect(state.slot('main_hand')?.itemId).toBe('item-equipped');
+    expect(state.isMutating()).toBeFalse();
+  });
+
+  it('shows domain failure journal without turning it into an action error', () => {
+    equipment.getCurrentEquipment.and.returnValue(loadoutSubject([
+      equippedSlot({ itemId: 'still-equipped', slotKey: 'main_hand' }),
+    ]));
+    equipment.equipItem.and.returnValue(of(operationJournal({
+      success: false,
+      failed: [{
+        action: 'failed',
+        itemId: 'item-rejected',
+        slotKey: null,
+        reason: 'requirements_not_met',
+        message: 'Requirements not met.',
+        success: false,
+        detailsJson: null,
+      }],
+    })));
+
+    state.equipItem({ itemId: 'item-rejected' });
+
+    expect(state.actionError()).toBeNull();
+    expect(state.actionJournal()?.failed[0].message).toBe('Requirements not met.');
+    expect(equipment.getCurrentEquipment).toHaveBeenCalledTimes(1);
+    expect(state.slot('main_hand')?.itemId).toBe('still-equipped');
+  });
 });
 
 class FakeActiveHero {
@@ -195,6 +248,23 @@ function equippedSlot(
     suffixKey: null,
     suffixName: null,
     isRuntimeUsable: true,
+    ...overrides,
+  };
+}
+
+function operationJournal(
+  overrides: Partial<EquipmentOperationJournal> = {},
+): EquipmentOperationJournal {
+  return {
+    requestId: 'request-1',
+    success: true,
+    equipped: [],
+    shifted: [],
+    unequipped: [],
+    failed: [],
+    skipped: [],
+    finalEquipment: null,
+    diagnostics: null,
     ...overrides,
   };
 }

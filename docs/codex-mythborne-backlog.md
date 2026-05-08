@@ -7282,6 +7282,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 
 ## Task S11 — Equip single item action
 
+**Status:** Done / accepted 2026-05-08.
+
 **Goal:** Wire single item equip through canonical RPC.
 
 **Scope:**
@@ -7302,6 +7304,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - No direct `hero_equipment` write exists.
 - Failure message shows why the item did not equip.
 - Existing item is not shown as removed when DB did not remove it.
+
+**Implementation note:** S11 accepted on 2026-05-08. `/game/armory` visible item cards now use a simple `Equip` button without exposing a slot dropdown. The default player flow calls `equip_hero_item(...)` through `PlayerEquipment.equipItem(...)` without `p_target_slot_key`, so DB/RPC owns default slot selection and hand/ring/armor placement. Operation journals are surfaced as player feedback, `success=false` is treated as a domain result instead of an app crash, and current equipment plus visible armory items refresh after the RPC. User smoke confirmed `Quality Leather Vest of Marble` equipped into `Pancerz`, with the Details popover still rendering correctly and showing no requirements for that item.
 
 ---
 

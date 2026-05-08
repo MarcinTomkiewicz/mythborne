@@ -8,6 +8,7 @@ import {
   ArmoryItemSummary,
   ArmoryShelfReadModel,
   ArmoryVisibilitySummary,
+  EquipmentOperationJournal,
   EquipmentSlot,
   EquippedItemSummary,
 } from '../../../core/domain/item/item-equipment.model';
@@ -311,6 +312,68 @@ describe('ArmoryPage', () => {
     });
   });
 
+  it('renders simple equip action without exposing slot selection', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [armoryItem({
+          itemId: 'item-dagger',
+          name: 'Demonic Dagger',
+        })],
+      }),
+    ]);
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Equip');
+    expect(text).not.toContain('Equip slot');
+    expect((fixture.nativeElement as HTMLElement)
+      .querySelector('p-select[aria-label="Equip item slot"]')).toBeNull();
+  });
+
+  it('calls default equip without target slot and refreshes armory after response', () => {
+    const item = armoryItem({
+      itemId: 'item-dagger',
+      name: 'Demonic Dagger',
+    });
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [item],
+      }),
+    ]);
+    fixture.detectChanges();
+
+    fixture.componentInstance.equipItem(item);
+
+    expect(equipment.equipItem).toHaveBeenCalledWith({
+      itemId: 'item-dagger',
+    }, jasmine.any(Function));
+    expect(armory.refresh).toHaveBeenCalled();
+  });
+
+  it('renders domain failure journal as player-facing feedback', () => {
+    equipment.actionJournal.set(operationJournal({
+      success: false,
+      failed: [{
+        action: 'failed',
+        itemId: 'item-dagger',
+        slotKey: null,
+        reason: 'requirements_not_met',
+        message: 'Requirements not met.',
+        success: false,
+        detailsJson: null,
+      }],
+    }));
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Equip result');
+    expect(text).toContain('Failed: Requirements not met.');
+  });
+
   it('rejects blank, null, and non-numeric move targets before state action', () => {
     const item = armoryItem({ itemId: 'item-1' });
 
@@ -416,10 +479,16 @@ class FakeArmoryPageFacade {
 class FakeCurrentEquipmentState {
   readonly status = signal<CurrentEquipmentReadStatus>('empty');
   readonly error = signal<string | null>(null);
+  readonly actionError = signal<string | null>(null);
+  readonly actionJournal = signal<EquipmentOperationJournal | null>(null);
   readonly isLoading = signal(false);
   readonly isEmpty = signal(true);
+  readonly isMutating = signal(false);
   readonly slots = signal<EquippedItemSummary[]>([]);
   readonly load = jasmine.createSpy('load');
+  readonly equipItem = jasmine
+    .createSpy('equipItem')
+    .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
 
   slot(slotKey: string): EquippedItemSummary | null {
     return this.slots().find((slot) => slot.slotKey === slotKey) ?? null;
@@ -443,6 +512,7 @@ class FakeArmoryShelfState {
   readonly visibleItems = signal<ArmoryItemSummary[]>([]);
   readonly visibility = signal<ArmoryVisibilitySummary | null>(null);
   readonly load = jasmine.createSpy('load');
+  readonly refresh = jasmine.createSpy('refresh');
   readonly renameShelf = jasmine.createSpy('renameShelf');
   readonly moveItemToShelf = jasmine.createSpy('moveItemToShelf');
 
@@ -600,6 +670,23 @@ function equipmentSlot(overrides: Partial<EquipmentSlot> = {}): EquipmentSlot {
     sortOrder: 10,
     equipmentArea: 'weapon',
     equipmentSlotGroup: 'weapon',
+    ...overrides,
+  };
+}
+
+function operationJournal(
+  overrides: Partial<EquipmentOperationJournal> = {},
+): EquipmentOperationJournal {
+  return {
+    requestId: 'request-1',
+    success: true,
+    equipped: [],
+    shifted: [],
+    unequipped: [],
+    failed: [],
+    skipped: [],
+    finalEquipment: null,
+    diagnostics: null,
     ...overrides,
   };
 }

@@ -1,13 +1,14 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import {
   CurrentEquipmentLoadout,
+  EquipmentOperationJournal,
   EquipmentSlotKey,
   EquippedItemSummary,
 } from '../../domain/item/item-equipment.model';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
 import { getErrorMessage } from '../../utils/error-message';
 import { ActiveHero } from '../hero/active-hero';
-import { PlayerEquipment } from './player-equipment';
+import { EquipHeroItemInput, PlayerEquipment } from './player-equipment';
 
 export type CurrentEquipmentReadStatus =
   | 'idle'
@@ -21,10 +22,14 @@ export class CurrentEquipmentState {
   private readonly activeHero = inject(ActiveHero);
   private readonly equipment = inject(PlayerEquipment);
   private loadRequestId = 0;
+  private actionRequestId = 0;
 
   readonly loadout = signal<CurrentEquipmentLoadout | null>(null);
   readonly status = signal<CurrentEquipmentReadStatus>('idle');
   readonly error = signal<string | null>(null);
+  readonly actionJournal = signal<EquipmentOperationJournal | null>(null);
+  readonly actionError = signal<string | null>(null);
+  readonly isMutating = signal(false);
   readonly isLoading = computed(() => this.status() === 'loading');
   readonly isEmpty = computed(() => this.status() === 'empty');
   readonly slots = computed(() => this.loadout()?.slots ?? []);
@@ -76,13 +81,68 @@ export class CurrentEquipmentState {
 
   clear(): void {
     this.loadRequestId++;
+    this.actionRequestId++;
     this.loadout.set(null);
     this.status.set('idle');
     this.error.set(null);
+    this.actionJournal.set(null);
+    this.actionError.set(null);
+    this.isMutating.set(false);
   }
 
   slot(slotKey: EquipmentSlotKey): EquippedItemSummary | null {
     return this.slotMap().get(slotKey) ?? null;
+  }
+
+  equipItem(input: EquipHeroItemInput, afterResponse?: () => void): void {
+    const requestId = ++this.actionRequestId;
+    const requestContextKey = this.currentContextKey();
+
+    this.actionJournal.set(null);
+    this.actionError.set(null);
+
+    if (!requestContextKey) {
+      this.actionError.set('No active hero for equipment action.');
+      return;
+    }
+
+    this.isMutating.set(true);
+
+    let request;
+    try {
+      request = this.equipment.equipItem(input);
+    } catch (error: unknown) {
+      if (requestId === this.actionRequestId) {
+        this.isMutating.set(false);
+        this.actionError.set(
+          getErrorMessage(error, 'Equipment action failed.'),
+        );
+      }
+      return;
+    }
+
+    request.subscribe({
+      next: (journal) => {
+        if (!this.acceptsActionResponse(requestId, requestContextKey)) {
+          return;
+        }
+
+        this.actionJournal.set(journal);
+        this.applyFinalEquipment(journal.finalEquipment);
+        this.isMutating.set(false);
+        afterResponse?.();
+      },
+      error: (error: unknown) => {
+        if (!this.acceptsActionResponse(requestId, requestContextKey)) {
+          return;
+        }
+
+        this.isMutating.set(false);
+        this.actionError.set(
+          getErrorMessage(error, 'Equipment action failed.'),
+        );
+      },
+    });
   }
 
   private currentContextKey(): string | null {
@@ -102,6 +162,32 @@ export class CurrentEquipmentState {
     }
 
     return true;
+  }
+
+  private acceptsActionResponse(requestId: number, contextKey: string): boolean {
+    if (requestId !== this.actionRequestId) {
+      return false;
+    }
+
+    if (contextKey !== this.currentContextKey()) {
+      this.loadout.set(null);
+      this.status.set('error');
+      this.isMutating.set(false);
+      this.actionError.set('Current equipment context changed.');
+      return false;
+    }
+
+    return true;
+  }
+
+  private applyFinalEquipment(loadout: CurrentEquipmentLoadout | null): void {
+    if (!loadout) {
+      this.refresh();
+      return;
+    }
+
+    this.loadout.set(loadout);
+    this.status.set(loadout.slots.length ? 'loaded' : 'empty');
   }
 }
 

@@ -119,7 +119,7 @@ describe('PlayerEquipment', () => {
     expect(slots[0].equipmentArea).toBe('ornament');
   });
 
-  it('equips an item through canonical RPC without frontend reason or eligibility checks', async () => {
+  it('equips an item through canonical RPC without explicit slot by default', async () => {
     backend.rpc.and.returnValue(of([
       equipRow({
         journal_json: [
@@ -137,7 +137,6 @@ describe('PlayerEquipment', () => {
 
     const result = await firstValueFrom(service.equipItem({
       itemId: ' item-1 ',
-      targetSlotKey: ' main_hand ',
       requestId: ' request-1 ',
     }));
 
@@ -147,9 +146,10 @@ describe('PlayerEquipment', () => {
         p_hero_id: 'active-hero-1',
         p_item_id: 'item-1',
         p_request_id: 'request-1',
-        p_target_slot_key: 'main_hand',
       },
     );
+    expect(backend.rpc.calls.mostRecent().args[1])
+      .not.toEqual(jasmine.objectContaining({ p_target_slot_key: jasmine.anything() }));
     expect(JSON.stringify(backend.rpc.calls.mostRecent().args[1]))
       .not.toContain('reason');
     expect(result.equipped[0]).toEqual(jasmine.objectContaining({
@@ -158,6 +158,24 @@ describe('PlayerEquipment', () => {
       reason: 'equipped',
       detailsJson: { ownershipTransferred: false },
     }));
+  });
+
+  it('passes explicit target slot only when a caller provides one', async () => {
+    backend.rpc.and.returnValue(of([equipRow()]));
+
+    await firstValueFrom(service.equipItem({
+      itemId: 'item-1',
+      targetSlotKey: ' off_hand ',
+    }));
+
+    expect(backend.rpc).toHaveBeenCalledOnceWith(
+      RPC.equip_hero_item,
+      jasmine.objectContaining({
+        p_hero_id: 'active-hero-1',
+        p_item_id: 'item-1',
+        p_target_slot_key: 'off_hand',
+      }),
+    );
   });
 
   it('unequips a slot through canonical RPC without item-table writes', async () => {
@@ -248,12 +266,7 @@ describe('PlayerEquipment', () => {
   it('rejects blank required input before calling RPC', () => {
     expect(() => service.equipItem({
       itemId: ' ',
-      targetSlotKey: 'main_hand',
     })).toThrowError('itemId is required for equipment RPC.');
-    expect(() => service.equipItem({
-      itemId: 'item-1',
-      targetSlotKey: '',
-    })).toThrowError('targetSlotKey is required for equipment RPC.');
     expect(() => service.unequipSlot({ slotKey: ' ' }))
       .toThrowError('slotKey is required for equipment RPC.');
     expect(() => service.bulkEquipItems({

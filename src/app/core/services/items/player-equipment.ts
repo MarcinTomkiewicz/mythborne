@@ -32,7 +32,7 @@ import { ActiveHero } from '../hero/active-hero';
 
 export interface EquipHeroItemInput {
   itemId: string;
-  targetSlotKey: EquipmentSlotKey;
+  targetSlotKey?: EquipmentSlotKey | null;
   requestId?: string | null;
 }
 
@@ -93,7 +93,7 @@ export class PlayerEquipment {
 
   equipItem(input: EquipHeroItemInput): Observable<EquipmentOperationJournal> {
     const itemId = requiredText(input.itemId, 'itemId');
-    const targetSlotKey = requiredText(input.targetSlotKey, 'targetSlotKey');
+    const targetSlotKey = nullableText(input.targetSlotKey);
     const requestId = nullableText(input.requestId);
 
     return this.activeHero.requireActiveHero().pipe(
@@ -102,8 +102,10 @@ export class PlayerEquipment {
           p_hero_id: context.heroId,
           p_item_id: itemId,
           p_request_id: requestId,
-          p_target_slot_key: targetSlotKey,
         };
+        if (targetSlotKey) {
+          args.p_target_slot_key = targetSlotKey;
+        }
 
         return this.backend
           .rpc<EquipHeroItemRpcRow[]>(RPC.equip_hero_item, args)

@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import {
   ArmoryItemSummary,
   ArmoryShelfReadModel,
+  EquipmentOperationAction,
+  EquipmentOperationJournalEntry,
   EquippedItemSummary,
   ItemLifecycleStatus,
 } from '../../../core/domain/item/item-equipment.model';
@@ -115,6 +117,26 @@ export class ArmoryPage implements OnInit {
       itemId: item.itemId,
       targetShelfPosition: parsedTargetShelfPosition,
     });
+  }
+
+  equipItem(item: ArmoryItemSummary): void {
+    this.equipment.equipItem({
+      itemId: item.itemId,
+    }, () => this.armory.refresh());
+  }
+
+  equipmentJournalEntries(
+    action: EquipmentOperationAction,
+  ): EquipmentOperationJournalEntry[] {
+    const journal = this.equipment.actionJournal();
+
+    return journal ? journal[action] : [];
+  }
+
+  operationMessage(entry: EquipmentOperationJournalEntry): string {
+    return entry.message
+      ?? entry.reason
+      ?? (entry.success ? 'Operation accepted.' : 'Operation failed.');
   }
 
   private lifecycleStatusLabel(status: ItemLifecycleStatus): string {
