@@ -82,6 +82,14 @@
             />
             <p-button
               type="button"
+              severity="primary"
+              size="small"
+              label="Apply preset"
+              [disabled]="presets.isMutating() || equipment.isMutating()"
+              (onClick)="applyPreset(preset)"
+            />
+            <p-button
+              type="button"
               severity="danger"
               size="small"
               label="Clear"

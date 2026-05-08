@@ -7460,6 +7460,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Requirement recheck is not done on the frontend.
 - Partial result is visible.
 
+**Implementation note:** S17 accepted on 2026-05-08 after user smoke. `/game/armory` loadout presets now expose `Apply preset` through `LoadoutPresetManagement`, using `CurrentEquipmentState.applyLoadoutPreset(...)` and canonical `HeroEquipment.applyLoadoutPreset(...)` / `apply_hero_loadout_preset(...)`. The frontend sends only the preset number, does not run requirement rechecks, does not implement slot/hand/ring rotation, and does not direct-write equipment, preset, item or armory tables. The existing equipment result panel now displays DB journal equipped/shifted/unequipped/failed/skipped entries plus DB-returned final equipment, so partial apply results stay visible. Successful apply uses the existing equipment final-equipment/refresh path and refreshes Armory/runtime stats. Verification passed with `npx tsc --noEmit`, focused current-equipment/loadout-preset/Armory specs, static greps for PrimeNG/form/direct-write gates, and `npm run build` with known budget/CommonJS warnings. User smoke confirmed preview -> apply shows equipped/skipped/failed/final equipment, refreshes current loadout and armory, and preserves partial results. Cleanup: removed 2 / added 168 / net +166; unused code checked.
+
 ---
 
 ## Task S18 — Preset update suggestion

@@ -8,15 +8,24 @@ import {
   LoadoutPreset,
   LoadoutPresetPreview,
 } from '../../../core/domain/item/item-equipment.model';
+import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
+import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
+import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
 import { LoadoutPresetManagement } from './loadout-preset-management';
 
 describe('LoadoutPresetManagement', () => {
   let fixture: ComponentFixture<LoadoutPresetManagement>;
   let presets: FakeHeroLoadoutPresetsState;
+  let equipment: FakeCurrentEquipmentState;
+  let armory: FakeArmoryShelfState;
+  let page: FakeArmoryPageFacade;
 
   beforeEach(async () => {
     presets = new FakeHeroLoadoutPresetsState();
+    equipment = new FakeCurrentEquipmentState();
+    armory = new FakeArmoryShelfState();
+    page = new FakeArmoryPageFacade();
 
     await TestBed.configureTestingModule({
       imports: [LoadoutPresetManagement],
@@ -30,6 +39,9 @@ describe('LoadoutPresetManagement', () => {
           ],
           providers: [
             { provide: HeroLoadoutPresetsState, useValue: presets },
+            { provide: CurrentEquipmentState, useValue: equipment },
+            { provide: ArmoryShelfState, useValue: armory },
+            { provide: ArmoryPageFacade, useValue: page },
           ],
         },
       })
@@ -43,7 +55,7 @@ describe('LoadoutPresetManagement', () => {
     expect(presets.load).toHaveBeenCalled();
   });
 
-  it('renders preset management without apply actions', () => {
+  it('renders preset management actions', () => {
     presets.setPresets([
       loadoutPreset({ presetNumber: 1, name: 'Travel', slotCount: 2 }),
       loadoutPreset({ presetNumber: 2, name: 'Trials', slotCount: 5 }),
@@ -60,8 +72,8 @@ describe('LoadoutPresetManagement', () => {
     expect(text).toContain('Rename');
     expect(text).toContain('Save current loadout');
     expect(text).toContain('Preview');
+    expect(text).toContain('Apply preset');
     expect(text).toContain('Clear');
-    expect(text).not.toContain('Apply preset');
   });
 
   it('renames, saves and clears presets through preset state', () => {
@@ -79,6 +91,7 @@ describe('LoadoutPresetManagement', () => {
     component.renamePreset(preset);
     component.saveCurrentLoadout(preset);
     component.previewPreset(preset);
+    component.applyPreset(preset);
     component.clearPreset(preset);
 
     expect(presets.renamePreset).toHaveBeenCalledWith({
@@ -92,6 +105,11 @@ describe('LoadoutPresetManagement', () => {
     expect(presets.previewPreset).toHaveBeenCalledWith({
       presetNumber: 2,
     });
+    expect(equipment.applyLoadoutPreset).toHaveBeenCalledWith({
+      presetNumber: 2,
+    }, jasmine.any(Function));
+    expect(armory.refresh).toHaveBeenCalled();
+    expect(page.loadData).toHaveBeenCalled();
     expect(presets.clearPreset).toHaveBeenCalledWith({
       presetNumber: 2,
     });
@@ -183,6 +201,21 @@ class FakeHeroLoadoutPresetsState {
     this.status.set(presets.length ? 'loaded' : 'empty');
     this.isEmpty.set(presets.length === 0);
   }
+}
+
+class FakeCurrentEquipmentState {
+  readonly isMutating = signal(false);
+  readonly applyLoadoutPreset = jasmine
+    .createSpy('applyLoadoutPreset')
+    .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
+}
+
+class FakeArmoryShelfState {
+  readonly refresh = jasmine.createSpy('refresh');
+}
+
+class FakeArmoryPageFacade {
+  readonly loadData = jasmine.createSpy('loadData');
 }
 
 function textContent(fixture: ComponentFixture<LoadoutPresetManagement>): string {

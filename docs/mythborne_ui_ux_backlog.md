@@ -1,777 +1,839 @@
-# Mythsworn — UI/UX Backlog v2
+# Mythsworn — UI/UX Backlog v3
 
-Status: working draft / canvas edition after reviewer hardening pass
-Updated: 2026-05-08 — merged trial/report/onboarding addenda
+Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
+Updated: 2026-05-08 — single-file rewrite merging v3 hardening with detailed v2 task inventory
 
-Purpose: uporządkować UI/UX backlog jako pełnoprawny dokument roboczy dla prototypowania, implementacji Angular + PrimeNG, globalnego SCSS, vendor wrappers i kolejnych UI tasków Codexa.
+Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
-Ten dokument nie jest finalnym design systemem i nie zastępuje statusów w `codex-mythborne-backlog.md`, `current-todo.md` ani `current-state-summary.md`. Taski UI/UX stają się wykonane dopiero po osobnej akceptacji użytkownika.
-
-Reviewer hardening pass został wpleciony w dokument. Ten wariant zawiera dodatkowo:
-
-- pełną konwencję archiwum prototypów z uwzględnieniem shellu gry,
-- mapowanie 11 odzyskanych prototypów,
-- wymóg standardowego nagłówka `VISUAL REFERENCE ONLY`,
-- minimum viable UI-CORE przed pierwszym ekranem,
-- reguły architektury komponentów,
-- globalną regułę stale guards,
-- accessibility/responsive baseline,
-- kontrakt nazw klików i CTA jako task `UI-NAME-1`.
+This document is the canonical UI/UX execution contract for new UI implementation tasks. It is not the database source of truth, not a task-status document, and not a final design system. UI/UX tasks become complete only after explicit user acceptance.
 
 ---
 
-## 0. Jak używać tego dokumentu
+## 0. Why this rewrite exists
 
-Ten backlog służy do:
+The first `UI-SHELL-1` production attempt exposed a process failure:
 
-- definiowania kierunku wizualnego Mythsworn,
-- porządkowania zaakceptowanych prototypów HTML,
-- tworzenia promptowalnych UI/UX tasków dla Codexa,
-- ograniczania lokalnego SCSS,
-- wskazywania istniejących utilities/vendorów/shared patterns,
-- utrzymywania spójności między player UI, admin UI, reports, trade, PvP i przyszłym combat UI.
+- Codex implemented a functional shell instead of the visual anchors from `game-shell-v1.html`.
+- Codex reported reuse, but did not reliably start from `docs/ui-ux/README.md` and the UI-CORE inventories.
+- Codex rewrote existing utilities into SCSS, then moved them back into templates, instead of using a clear utilities-first rule.
+- Codex treated accepted prototypes as general inspiration and did not preserve key anchors such as centered desktop brand, premium selected-server/prestige card, stacked resource chips, and label/value hierarchy.
+- Codex overused `muted-text` because the task did not force a label/value/status audit.
+- Codex flattened missing prototype-backed patterns into generic `mg-card` surfaces instead of reporting production-pattern gaps.
 
-Ten backlog nie jest:
+Primary rule:
 
-- statusem wykonania tasków,
-- źródłem prawdy dla DB/RPC,
-- zastępstwem `current-decisions.md`, `database-current.md`, `project-context.md`,
-- miejscem projektowania nowych tabel DB.
-
-Jeśli UI task opisuje ekran, ale backend/RPC/read model jeszcze nie istnieje, Codex ma zgłosić dependency/bloker albo ograniczyć zakres do mock/read-only surface. Nie wolno udawać działającej funkcjonalności.
-
-### 0.1. Source order dla UI tasków
-
-Przy implementacji UI Codex powinien respektować kolejność:
-
-1. explicit user instruction,
-2. aktualny kod i aktualny stan repozytorium,
-3. aktualny schemat DB / generated types / dump,
-4. `current-decisions.md`,
-5. `database-current.md`,
-6. `project-context.md`,
-7. `ui-ux-notes.md`,
-8. `project-structure.md`,
-9. `AGENTS.md`,
-10. `codex-mythborne-backlog.md`,
-11. `codex-mythborne-refactor-backlog.md`,
-12. `current-todo.md` i `current-state-summary.md` jako status,
-13. ten UI/UX backlog.
-
-### 0.2. Related guidance files
-
-- `AGENTS.md` — ogólne zasady wykonawcze dla Codexa, source order, reuse, raportowanie, DB/RPC discipline.
-- `project-context.md` — aktualny kontekst operacyjny projektu.
-- `current-decisions.md` — aktywne decyzje domenowe i UI-adjacent.
-- `ui-ux-notes.md` — quick wins, DB metadata needed, redesign notes.
-- `project-structure.md` — gdzie lokować pages/components/layout/shared/core.
-- `codex-mythborne-backlog.md` — klasyczny backlog implementacyjny.
-- `codex-mythborne-refactor-backlog.md` — refactor/IA/layout hygiene backlog.
-- `current-todo.md` / `current-state-summary.md` — status i kontekst wykonania.
-- `database-current.md`, current dump, generated types — źródło prawdy dla DB/RPC/read model, jeśli UI dotyka danych.
-
-### 0.3. Status rule
-
-Wykonanie taska UI/UX nie aktualizuje automatycznie status docs. Codex raportuje zmiany i czeka na akceptację użytkownika. Dopiero po akceptacji można aktualizować statusy, jeśli użytkownik tego chce.
-
-### 0.4. Review checklist
-
-Reviewer powinien sprawdzić:
-
-- czy backlog nie zastępuje klasycznego backlogu/status docs,
-- czy source order jest jasny,
-- czy UI-CORE jest phase zero,
-- czy canvas/prototype HTML jest visual reference only,
-- czy archive nie dopuszcza placeholderów wygenerowanych z pamięci,
-- czy Codex ma używać global SCSS/utilities/vendor wrappers zamiast lokalnego CSS,
-- czy legacy `mg-*` jest opisane jako compatibility/migration debt,
-- czy utilities mają usage matrix,
-- czy `muted-text` ma twarde ograniczenia,
-- czy vendor wrappers mają lookup order,
-- czy class budget ogranicza defensywne klasy,
-- czy admin global/operator/server/launch/sandbox nie są pomieszane,
-- czy Reports i Notifications są rozdzielone,
-- czy PvP target selection nie jest combat screenem,
-- czy Trade rozdziela Direct Trade i Auction House,
-- czy taski mają Goal / Scope / Out of scope / Data-source rules / Acceptance criteria / Required report,
-- czy dokument jawnie wskazuje open questions.
-
-### 0.5. Phase zero rule
-
-Pierwsze UI/UX taski powinny dotyczyć fundamentu, nie nowych ekranów:
-
-1. style contract extraction,
-2. legacy `mg-*` modernization plan,
-3. utility usage matrix,
-4. vendor wrapper lookup order,
-5. global surface/card/badge/chip/page-header patterns,
-6. custom icons and brand asset registry,
-7. prototype-to-production mapping.
-
-Dopiero po tym Codex powinien przenosić większe zaakceptowane prototypy do Angulara.
-
-
-### 0.5.1. Minimum viable UI-CORE before first screen
-
-UI-CORE jest phase zero dla większych ekranów, ale nie może stać się długim audytem bez widocznego efektu.
-
-Zanim Codex zacznie implementować pierwszy większy player-facing ekran z prototypu, minimalny wymagany zestaw UI-CORE to:
-
-1. **UI-CORE-1 — Mythsworn UI style contract extraction**.
-2. **UI-CORE-2 — Global SCSS and shared pattern inventory**.
-3. **UI-CORE-3 — Local SCSS budget and style report checklist**.
-4. **UI-CORE-11 — Prototype-to-production SCSS mapping**.
-5. **UI-CORE-12 — PrimeNG/vendor wrapper lookup order**.
-
-Po tym minimalnym zestawie Codex może wdrażać pierwszy realny ekran, najlepiej `game-shell-v1.html` jako shell + dashboard foundation albo `exploration-flow-v2.html` jako pierwszy izolowany player-facing flow.
-
-Pozostałe taski UI-CORE są nadal ważne, ale mogą być wykonywane iteracyjnie przy okazji ekranów, które ich realnie potrzebują.
-
-Zasada review:
-
-- jeśli Codex próbuje implementować ekran bez minimalnego UI-CORE, powinien zgłosić dependency;
-- jeśli Codex próbuje robić wszystkie 15 UI-CORE tasków przed jakimkolwiek widocznym ekranem, należy ograniczyć zakres do minimum viable UI-CORE.
-
-### 0.6. Task quality standard
-
-Każdy task, który ma trafić do Codexa jako implementowalny slice, powinien mieć poniższy format. Krótsze notatki mogą zostać w sekcjach `Notes` albo `Open questions`, ale nie powinny być traktowane jako gotowe taski.
-
-Required task structure:
-
-- **Goal** — jednoznaczny efekt końcowy.
-- **Scope** — co Codex ma realnie zmienić/sprawdzić.
-- **Out of scope** — czego nie wolno robić w tym tasku.
-- **Data/source rules** — DB/RPC/read model, dictionaries, metadata, access rules, source order.
-- **UI/SCSS rules** — global SCSS, utilities, vendor wrappers, shared components, no canvas-copy.
-- **Dependencies/blockers** — co zgłosić jako dependency zamiast fake’ować.
-- **Acceptance criteria** — konkretne warunki akceptacji.
-- **Verification/smoke** — build, route smoke, visual smoke, manual smoke, jeśli potrzebny.
-- **Required Codex report** — reuse, local SCSS, styling report, not added intentionally.
-
-Minimum standard dla tasków ekranowych:
-
-- route/page/component target albo informacja, że route może jeszcze nie istnieć,
-- existing services/read models/RPCs do sprawdzenia,
-- fallback/dependency rule, jeśli backend nie istnieje,
-- explicit no direct table writes for gameplay/admin mutations,
-- explicit UI pattern reuse rule,
-- explicit no local copied prototype CSS rule,
-- at least one smoke path.
-
-Minimum standard dla tasków UI-CORE:
-
-- konkretne pliki/katalogi do sprawdzenia,
-- konkretne output artifacts: matrix, registry, mapping, global pattern, wrapper update,
-- no big-bang refactor unless explicitly approved,
-- style compile/build expectation if code changes are made.
+> Codex may not treat an accepted prototype as generic inspiration. For prototype-backed tasks, Codex must preserve the listed visual anchors unless the task explicitly says otherwise or reports an approved production-pattern gap.
 
 ---
 
-# 1. UI implementation contract
+## 0.1. Single-file rule and relationship to v2
 
-## 1.1. Canvas HTML is visual reference, not production source
+This document is the **single canonical UI/UX backlog** for Codex UI work. It must contain both:
 
-HTML/SCSS z canvasów służy do prototypowania kierunku wizualnego. Codex nie może kopiować canvasowego CSS 1:1 do Angulara.
+1. the strict v3 execution contract and hardening rules;
+2. the detailed task inventory/scope material that previously lived in UI/UX Backlog v2.
 
-Do `docs/ui-ux/prototypes/` wolno dodać tylko realny zaakceptowany canvas HTML albo ręcznie odtworzony i ponownie zaakceptowany ekran.
+There must not be a runtime dependency on a separate v2 backlog file during normal Codex work. A reviewer may keep old files historically, but Codex should be able to work from this one file plus the current project/source documents listed below.
 
-Nie wolno tworzyć paczek placeholderów, w których każdy ekran ma ten sam shell i tylko inną nazwę.
+Practical rule:
 
-Każdy prototype HTML musi zaczynać się standardowym ostrzeżeniem `VISUAL REFERENCE ONLY`.
+- v3 hardening rules in sections 0–13 are mandatory for every UI task.
+- The detailed task inventory in **Part II** is part of this same canonical backlog, not an external reference.
+- If a detailed task seems too broad, split it into smaller implementation slices inside the current prompt while preserving v3 preflight, visual anchors, utilities-first discipline, muted-text audit, missing-pattern escalation and required reporting.
+- If an old detailed task conflicts with newer hardening rules, the newer hardening rules win.
+- Do not re-run completed UI-CORE documentation tasks unless a real implementation task proves that a specific rule/inventory entry is missing.
 
-Treść standardowego ostrzeżenia:
+This rewrite intentionally removes the “v2 is a separate reference inventory” model. The backlog is one file.
 
-> VISUAL REFERENCE ONLY.  
-> Do not copy this CSS into Angular feature components.  
-> Translate approved visual patterns into global SCSS tokens, vendor wrappers, shared components, PrimeNG wrappers, or documented layout utilities.
+---
 
-Jeśli prototyp ma już komentarz domenowy albo scope contract, nie usuwać go. Standardowy header należy dodać nad istniejącym komentarzem.
+## 0.2. Read early vs conflict precedence
 
-Nie wolno traktować braku headera jako zgody na kopiowanie CSS z prototypu do Angulara.
+### Read early
 
-## 1.2. Global SCSS first
+At the start of every UI task, Codex should read early:
 
-Globalne utilities, layout styles i vendor wrappers istnieją po to, żeby ich używać zamiast tworzyć lokalny CSS w każdym komponencie.
+1. `AGENTS.md` — execution rules, dirty tree discipline, generated types, reporting.
+2. `docs/ui-ux/README.md` — map of UI-CORE guidance files and prototype archive rules.
+3. This UI/UX backlog section for the task being attempted.
 
-Codex ma preferować:
+### Conflict precedence
 
-- globalne tokeny,
-- shared SCSS utilities,
-- layout styles,
-- vendor wrappers,
-- istniejące shared components,
-- PrimeNG theme/customization.
+When sources conflict, prefer:
 
-Zasada nie brzmi „nie używać utilities/vendorów”. Zasada brzmi: używać ich świadomie, zgodnie z usage matrix, zamiast defensywnie tworzyć lokalne klasy albo losowo składać 15 utility classes.
+1. explicit user instruction for the current task;
+2. current live database / migrations / dump / generated types when UI touches DB/RPC/read models;
+3. `current-decisions.md`;
+4. `database-current.md`;
+5. `project-context.md`;
+6. `AGENTS.md`;
+7. `docs/ui-ux/README.md` and task-specific UI guidance files;
+8. this UI/UX backlog;
+9. accepted prototypes as visual anchors constrained by current production sources;
+10. legacy concept files only for history/flavor.
 
-Allowed local SCSS:
+`database.types.ts` is read-only user-owned generated input. Codex may read it but must not edit, regenerate, patch, reformat or “fix” it unless the user explicitly asks for generated type work.
 
-- page-specific grid/layout, jeśli nie istnieje globalny pattern,
-- responsive placement of page-local sections,
-- minimal spacing composition,
-- feature-local wrapper class, jeśli spina istniejące global patterns.
+If a guidance file from this list is missing, Codex must report a warning and continue with available sources unless the user explicitly made the missing file a blocker.
 
-Not allowed local SCSS:
+---
 
-- nowe tokeny kolorów,
-- nowe gold/blue gradients,
-- nowe card shadows,
-- nowy active nav style,
-- nowy badge/chip style,
-- nowy button style,
-- skopiowany item popover styling,
-- skopiowany summary-card styling,
-- lokalne PrimeNG overrides, jeśli vendor wrapper może zostać rozszerzony globalnie.
+# 1. Mandatory UI preflight
 
-## 1.3. Class budget rule
+Codex must not code a UI task before filling this preflight.
 
-- Normalny element zwykle ma 1–2 klasy.
-- Więcej niż 3 klasy wymaga uzasadnienia.
-- Nie dodawać klas defensywnie „na przyszłość”.
-- Nie dodawać klas stanu, jeśli stan nie jest realnie renderowany.
-- Nie tworzyć `div soup`.
+| Field | Required answer |
+|---|---|
+| Task id / title | Exact backlog task being attempted. |
+| User instruction | One-sentence summary of the current user ask. |
+| Dirty tree | `git status --short`; list files and whether user pre-approved them. |
+| README read | Confirm `docs/ui-ux/README.md` was read first for UI guidance map. |
+| Guidance docs read | Exact docs read, e.g. style contract, inventory, utility audit, text semantics, prototype mapping, wrapper lookup. |
+| Actual source files checked | Exact `src/scss/*`, component, template and shared files checked. |
+| Prototype source | Archive name or `none`. |
+| Required visual anchors | Bullet list copied from this backlog/task. |
+| Existing utilities/patterns found | Exact classes/components/wrappers found. |
+| Checked but not reused | Exact file/class/component and reason. |
+| Missing production pattern | Name, prototype source, fallback/defer decision. |
+| Data/read model source | RPC/service/read model or `not data-backed`. |
+| Muted-text audit | Labels/helper only? Important values not muted? |
+| Local SCSS plan | `none`, or exact reason why unavoidable. |
+| Verification plan | tsc/build/spec/visual/manual smoke or blocker. |
 
-Preferowane podejście:
+A report that says only “docs checked” or “utilities checked” is insufficient. The report must name exact files/classes/patterns.
 
-1. shared/vendor component,
-2. global pattern class,
-3. feature-local class tylko dla układu.
+---
 
-## 1.4. Required Codex UI report
+# 2. Utilities-first execution
 
-Każdy większy UI task musi kończyć się raportem:
+## 2.1. Rule
 
+If a utility exists, use the utility. Do not rewrite it in SCSS.
+
+Examples:
+
+- use `position-sticky`, `top-0`, `position-relative`, `overflow-y-auto`, `backdrop-blur-*`, `z-*` if they exist;
+- use `flex-row-*`, `flex-col`, `gap-*`, `p-*`, `px-*`, `py-*`, `w-*`, `h-*`, `min-w-*` if they exist;
+- use PrimeNG wrappers before local `.p-*` styling;
+- use `tag-badge--*`, `mg-card`, `mg-section__title`, `mg-container`, `mg-grid`, grid/flex utilities and existing wrappers before inventing new classes.
+
+## 2.2. Class budget interpretation
+
+Class budget does **not** mean “hide utilities in SCSS.”
+
+Class budget blocks:
+
+- defensive utility piles added without reason;
+- feature-local BEM systems that duplicate global utilities;
+- repeated semantic stacks that should become a shared/global pattern;
+- local visual systems for cards, badges, chips, buttons, nav, popovers or page headers;
+- arbitrary spacing/sizing when a tokenized utility already exists.
+
+Class budget does not block:
+
+- deliberate use of documented utilities for layout composition;
+- short utility stacks that are simpler than inventing a new pattern;
+- temporary utility composition while a missing pattern is explicitly logged.
+
+## 2.3. Utility shadowing blocker
+
+Blocked:
+
+```scss
+.some-shell-class {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: map.get(v.$spacings, "md");
+  padding: map.get(v.$spacings, "md") map.get(v.$spacings, "lg");
+}
+```
+
+when equivalent utilities already exist.
+
+Allowed:
+
+```scss
+.mg-game-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  grid-template-areas:
+    "topbar topbar"
+    "sidebar main";
+}
+```
+
+when no existing utility/pattern expresses the named shell grid.
+
+## 2.4. Required utility report
+
+Every UI implementation report must include:
+
+```md
+Utilities checked:
+- position:
+- flex:
+- grid:
+- spacing/gap:
+- width/height:
+- overflow:
+- z-index/backdrop/shadow:
+- surface/badge/text:
+
+Utilities used intentionally in HTML:
+- ...
+
+SCSS kept because no utility/pattern exists:
+- ...
+
+SCSS removed/avoided because utility exists:
+- ...
+
+Pseudo-element or selector exceptions:
+- ...
+```
+
+---
+
+# 3. Prototype visual anchors
+
+## 3.1. Prototype-backed task rule
+
+For any task with an accepted prototype, Codex must produce this report section:
+
+```md
+Prototype visual anchors:
+- matched:
+- intentionally not matched:
+- not matched because missing production pattern:
+- user decision needed:
+```
+
+A required visual anchor that is not matched and not explicitly waived is a blocker.
+
+## 3.2. Prototype CSS is not production source
+
+Do not copy:
+
+- `mb-*` class names;
+- prototype CSS values;
+- gradients, rgba palette values, shadows or raw dimensions;
+- mock gameplay labels or hardcoded config values.
+
+Do translate:
+
+- layout hierarchy;
+- composition;
+- label/value/status hierarchy;
+- semantic density;
+- interaction model;
+- visual emphasis level;
+- required surfaces/chips/badges/nav affordances.
+
+## 3.3. Missing pattern escalation
+
+If a prototype needs a repeated visual pattern and production has no implementation yet, Codex must not silently replace it with a generic `mg-card` or random utilities.
+
+Codex must report:
+
+- missing pattern name;
+- prototype source;
+- existing fallback used for now;
+- whether current task may add a global/shared pattern;
+- whether it must be deferred to another UI task.
+
+---
+
+# 4. Text hierarchy and `muted-text`
+
+## 4.1. Label/value/status hierarchy
+
+- Labels may be `muted-text` or secondary.
+- Helper text, metadata and timestamps may be muted.
+- Values must be normal, strong, heading-color or semantic badge/pill.
+- Important gameplay/admin values must not be muted.
+- Statuses must use a semantic badge/status pattern, not muted text.
+- Hero names, server names, item names, Prestige ranks, origin names and result titles must not be muted.
+- Errors, blockers, verdicts, outcomes, action-critical requirements and destructive confirmations must not be muted.
+
+Example:
+
+```html
+<span class="muted-text">Server</span>
+<strong class="heading-color">Sandbox</strong>
+```
+
+Allowed: label muted, value strong.  
+Blocked: both label and value muted.
+
+## 4.2. Required muted-text audit
+
+Every UI task touching templates must report:
+
+```md
+Muted-text audit:
+- labels using muted:
+- helper/metadata using muted:
+- important values not muted:
+- status not muted:
+- names/ranks/outcomes not muted:
+- exceptions:
+```
+
+---
+
+# 5. Pattern escalation and scope control
+
+## 5.1. Do not flatten prototype patterns into generic cards
+
+If a prototype has a clear visual pattern such as selected-server context card, resource chip, origin carousel, item popover, report result banner, or combat log row, Codex must not flatten it into a generic `mg-card` and claim success.
+
+Allowed fallback only if reported:
+
+```md
+Missing production pattern:
+- name: selected-server-context-card
+- prototype source: game-shell-v1.html
+- current fallback: mg-card + utilities
+- accepted for this task: yes/no
+- follow-up task: UI-SHELL-3 or UI-SHELL-4
+```
+
+## 5.2. Cut aggressively
+
+Codex must remove anything not needed for the current task.
+
+Blocked additions unless explicitly in scope:
+
+- guest/account flow inside game shell;
+- public shell inside game shell;
+- dashboard redesign inside shell foundation;
+- resource chip pattern inside shell skeleton task;
+- final nav pattern inside shell skeleton task;
+- fake DB-driven values;
+- direct table writes for gameplay workflows;
+- local CSS systems created “just for this screen.”
+
+If a feature is not needed for the acceptance criteria, cut it or report it as deferred.
+
+---
+
+# 6. Required UI report format
+
+Every larger UI task must end with this report:
+
+```md
+Decision-ready report
+
+Preflight:
+- dirty tree:
+- README read:
+- guidance docs read:
+- source files checked:
+
+Reuse:
 - reused:
 - checked but not reused:
-- new component/state/helper added:
-- scope kept minimal:
-- not added intentionally:
+- new component/state/helper/pattern added:
+- missing production patterns:
 
-Dla stylowania dodatkowo:
+Prototype fidelity:
+- prototype source:
+- visual anchors matched:
+- visual anchors not matched and why:
+- copied from prototype CSS/classes: yes/no:
 
-- global tokens used:
-- shared/vendor components used:
-- global/shared SCSS classes used:
-- local SCSS added:
-- why local SCSS was necessary:
-- copied from prototype: yes/no:
-- if yes, why it was not converted to shared/global pattern:
+Utilities / SCSS:
+- utilities checked:
+- utilities used intentionally:
+- SCSS kept because no utility/pattern exists:
+- SCSS avoided because utility exists:
+- local/component SCSS added:
+- pseudo-element exceptions:
 
-## 1.5. Component architecture rule
+Text hierarchy:
+- muted-text audit:
+- important values not muted:
+- statuses/badges:
 
-UI/UX backlog dotyczy warstwy wizualnej, ale implementacja musi zachować aktualną architekturę projektu.
+Architecture/data:
+- route page kept thin:
+- state/workflow location:
+- DB/RPC/read model source:
+- stale guards:
+- generated types untouched:
 
-Reguły globalne:
+Verification:
+- tsc:
+- specs:
+- build:
+- grep/static checks:
+- manual smoke / N/A reason:
+```
 
-- route page ma być cienką kompozycją widoku, nie miejscem na cały workflow;
-- większy state/workflow nie powinien siedzieć w komponencie;
-- typy, interfaces, form types, view models i mappers nie mogą lądować w component files;
-- shared UI trafia do `src/app/shared` albo `src/app/layout`, zależnie od roli;
-- domenowe modele, mappers, services, factories, validators i cross-feature helpers trafiają do `src/app/core`;
-- feature-local komponenty są dopuszczalne, jeśli są realnie lokalne dla danego route/page;
-- duży komponent produkcyjny, szczególnie około 250–400+ linii TS/HTML, jest warning sign i wymaga rozbicia albo uzasadnienia w raporcie;
-- nie tworzyć jednego wielkiego komponentu tylko dlatego, że prototyp HTML był jednym plikiem.
-
-Przed dodaniem nowego komponentu Codex musi sprawdzić:
-
-1. `shared/components`.
-2. `layout/components`.
-3. Istniejące page-local components w danym feature area.
-4. Global SCSS patterns.
-5. PrimeNG/vendor wrappers.
-6. Istniejące domain/read-model services.
-
-Required Codex report dla większego UI taska musi zawierać także:
-
-- component architecture;
-- route page kept thin: yes/no + note;
-- state/workflow location;
-- shared/core types location;
-- large component risk: none / justified / needs split.
-
-## 1.6. Stale guard rule for UI workflows
-
-Każdy async UI workflow musi chronić success i error path przed stale response, jeśli zależy od któregokolwiek z poniższych kontekstów:
-
-- selected server,
-- active hero,
-- route id,
-- selected item,
-- selected trade offer,
-- selected auction listing,
-- selected PvP target,
-- selected report,
-- selected notification,
-- selected admin/config entity,
-- selected case/sanction/penalty,
-- access/gate state.
-
-Minimalne wymagania:
-
-- stary success nie może nadpisać aktualnego stanu po zmianie kontekstu;
-- stary error nie może pokazać błędu dla poprzednio wybranego obiektu;
-- loading powinien kończyć się tylko dla aktualnego requestu;
-- zmiana contextu powinna czyścić stale form state i feedback;
-- jeśli selected entity zmieni się w trakcie requestu, response ma być ignorowany albo bezpiecznie odrzucony;
-- przy mutacjach persistent UI powinno odświeżyć dane z canonical read path po sukcesie, nie zakładać lokalnego stanu jako prawdy.
-
-Szczególnie pilnować w ekranach:
-
-- Armory / item actions,
-- Auctions,
-- Direct Trade,
-- PvP target selection,
-- Reports,
-- Notifications,
-- Exploration state/resolve,
-- Estate building job actions,
-- admin configurators.
-
-Required Codex report dla workflow UI musi zawierać także:
-
-- stale guards;
-- context keys guarded;
-- success path guarded: yes/no;
-- error path guarded: yes/no;
-- context reset behavior.
-
-## 1.7. Accessibility and responsive baseline
-
-Mythsworn jest desktop-first browser RPG, ale ekran nie może całkowicie rozpadać się na mniejszych viewportach i nie może być obsługiwany wyłącznie myszą/hoverem.
-
-Minimum accessibility baseline:
-
-- focus states muszą być widoczne dla przycisków, linków, tabów, filtrów, slotów itemów i akcji wierszy;
-- status nie może być komunikowany wyłącznie kolorem;
-- dialog/popover/tooltip nie może być jedyną ścieżką do ważnych informacji, jeśli jest dostępny tylko na hover;
-- klikalne sloty/itemy muszą mieć keyboard path albo opisany follow-up, jeśli aktualny wrapper tego nie zapewnia;
-- ikona bez tekstu musi mieć dostępny label albo aria-label;
-- destructive/irreversible action wymaga jasnego labela i confirmation pattern, jeśli workflow tego wymaga;
-- empty, loading, disabled i blocked states muszą być zrozumiałe bez technicznych UUID-only komunikatów.
-
-Minimum responsive baseline:
-
-- desktop: topbar + sidebar + main layout;
-- tablet: content może przejść do węższych kolumn, topbar może zawijać resource chips;
-- mobile: pełna optymalizacja nie jest MVP, ale ekran nie może wymagać poziomego scrolla dla podstawowych akcji;
-- dense tables/lists muszą mieć overflow/pagination pattern zamiast rozbijania layoutu;
-- paperdoll/equipment layout może przejść w stacked/compact mode;
-- modals/dialogs muszą mieć sensowną maksymalną wysokość i scroll wewnętrzny.
-
-Required Codex report dla większego UI taska musi zawierać także:
-
-- accessibility/responsive;
-- focus states considered: yes/no;
-- status not color-only: yes/no;
-- hover-only critical info avoided: yes/no;
-- tablet/mobile degradation checked: yes/no;
-- overflow/pagination pattern.
-
+Manual smoke must not be proposed if it is known to be impossible because of missing data, session, backend, or environment. Mark it `N/A`, `data-blocked`, `environment-blocked`, or `backend-blocked`.
 
 ---
 
-# 2. SCSS modernization and usage matrix
+# 7. Accepted prototype map and visual anchors
 
-## 2.1. Existing SCSS modernization decision
+The prototype archive is visual reference only. `docs/ui-ux/README.md` maps the UI-CORE guidance files and prototype archive. Prototype implementation must translate visual anchors into production patterns/utilities/wrappers, not copy CSS.
 
-Obecny katalog `src/scss` pochodzi częściowo ze starszego projektu i nadal używa prefiksów `mg-*` / Monster Hunt. To nie jest docelowy branding Mythsworn, ale jest realną production foundation.
+## 7.1. Current accepted prototype families
 
-Decyzje:
-
-- nie tworzymy równoległego lokalnego systemu `mb-*` w komponentach,
-- istniejący globalny SCSS należy stopniowo zmodernizować,
-- stare `mg-*` można zachować jako compatibility layer,
-- nowe taski muszą traktować `mg-*` jako legacy naming/migration candidate,
-- jeśli istniejący plik ma dobrą funkcję, ale starą nazwę, Codex ma użyć go lub rozszerzyć globalnie, a nie robić lokalny zamiennik.
-
-## 2.2. Production token rule
-
-Aktualnie produkcyjne tokeny są oparte o CSS variables `--mg-*` i SCSS variables z `src/scss/abstracts/_variables.scss`.
-
-Tymczasowy mapping:
-
-| Prototype intent | Current production source | Uwagi |
-| --- | --- | --- |
-| dark navy background | `--mg-color-bg` / `$color-bg` | używać przez theme/app-shell |
-| surface/card | `--mg-color-bg-surface` / `$color-bg-surface` | wymaga surface patternów |
-| soft border | `--mg-color-border` / `$color-border` | bez lokalnych rgba borderów |
-| gold/bronze accent | `--mg-color-secondary` / `$color-secondary` | nie używać do wszystkiego |
-| primary text | `--mg-color-text` / `$color-text` | treść i ważne wartości |
-| muted/helper text | `--mg-color-text-muted` / `$color-text-muted` | tylko helper/metadane |
-| semantic status | semantic colors | danger/success/warn/info tylko semantycznie |
-
-## 2.3. Text semantics and `muted-text`
-
-Allowed for `muted-text`:
-
-- helper copy,
-- metadata,
-- timestamps,
-- secondary labels,
-- explanatory subtext,
-- empty-state supporting copy.
-
-Not allowed for `muted-text`:
-
-- decyzje admina,
-- reasons,
-- notes/operator notes,
-- outcomes,
-- warning/critical messages,
-- ważne wartości liczbowe,
-- nazwy itemów/hero/serverów,
-- statusy workflow,
-- pełne treści raportów i notyfikacji.
-
-Jeżeli tekst niesie znaczenie gameplayowe/adminowe, użyć normalnego tekstu plus badge/status/semantic text, a nie `muted-text`.
-
-## 2.4. Utility SCSS usage matrix
-
-Utilities są globalnym toolboxem i mają być używane zamiast lokalnego CSS, ale zgodnie z semantyką.
-
-| Utility group | Intended use | Do not use for | Notes |
-| --- | --- | --- | --- |
-| Spacing/gap | drobne korekty spacingu | główne powtarzalne layouty | powtarzalne kombinacje → pattern |
-| Display | rzadkie korekty renderowania | struktura komponentów | `d-contents` ostrożnie |
-| Position | overlay, badge count, dropdown anchor | zwykłe layouty stron | preferować overlay/vendor |
-| Overflow | scrollable tables/lists | ukrywanie layout bugów | nie maskować problemów |
-| Height/width | bounded lists, column constraints | pixel-perfect patches | fixed px uzasadnić |
-| Text alignment/wrap | tabele, techniczne keys, labels | semantyka tekstu | normalna proza ma być czytelna |
-| Truncation | compact rows/previews | ukrywanie ważnych treści | ważny tekst ma detail/popover/full view |
-| Visibility | responsive swaps | permission/access control | nigdy jako security |
-| Z-index | align with PrimeNG layers | arbitrary stacking fixes | preferować PrimeNG contracts |
-| Shadows/opacity/backdrop | exceptional elevation/overlay | fake local card systems | powtarzalne → global pattern |
-| Interactions | cursor/select/pointer states | udawanie interakcji | cursor pointer tylko clickable |
-| Animations | loading/rare decorative motion | random thematic motion | `floating-dragon` legacy |
-| Aspect/object-fit | banners, avatars, item art | non-image layout hacks | dobre dla assetów |
-
-## 2.5. Status text utilities
-
-- `error-text`: błędy, validation, blocked actions.
-- `success-text`: realny sukces/completion.
-- `info-text`: neutralna informacja.
-- `warn-text`: ostrzeżenia wymagające uwagi.
-- `arcane-text`: special/magic flavor only.
-- `muted-text`: helper/metadata only.
-
-Status workflow powinien preferować badge/status pill zamiast gołego colored text.
-
-## 2.6. Badge aliases
-
-`_tag-badge-aliases.scss` zawiera legacy color aliases:
-
-- `green` → `success`,
-- `blue` → `info`,
-- `gray` → `muted`,
-- `violet` → `arcane`,
-- `golden` → `golden`.
-
-Nowe UI powinno preferować semantic variants, nie color-name aliases.
-
-## 2.7. PrimeNG/vendor wrapper usage
-
-Istnieją wrappers dla core PrimeNG surfaces. Codex ma je sprawdzać i używać/rozszerzać przed lokalnym stylem.
-
-| Vendor area | Existing source | Intended use | Notes |
-| --- | --- | --- | --- |
-| Inputs | `_p-inputtext.scss`, `_p-textarea.scss`, `_p-password.scss` | search, forms, reasons | no local input restyling |
-| Select | `_p-select.scss` | filters, server focus, edit level | sprawdzić zbyt szeroki scope |
-| Paginator | `_p-paginator.scss` | auction, reports, notifications, vicinity | prefer over custom paginator |
-| Table | `_p-table.scss` | admin/dense data | use when table UX fits |
-| Popover/Tooltip | `_p-popover.scss`, `_tooltip.scss` | item popover, explainability | extend globally if needed |
-| Tabs/Stepper/Accordion | `_p-tabs.scss`, `_p-stepper.scss`, `_p-accordion.scss` | admin configurators, reports tabs | avoid one long form |
-| Dialog/Drawer/Confirm | `_p-dialogs.scss`, `_p-drawer.scss`, confirm files | confirmations, side panels | no ad hoc modal CSS |
-| Toasts | `_p-toasts.scss` | notification/toast contract | map `mg-toast` to Mythsworn severities |
-| Custom icons | `_p-custom-icons.scss`, `_primeicons-local.scss`, `_custom-icons.scss` | PrimeIcons-like classes | no emoji final icons |
-
-Concrete cleanup candidates:
-
-- review `_p-select.scss` broad selector scope,
-- map `mg-toast` variants to Mythsworn notification severities,
-- verify popover/tooltip as base for item popover and admin explainability,
-- make paginator/table default basis for dense lists where appropriate,
-- document custom icons registry.
-
-## 2.8. Layout SCSS usage
-
-- `layouts/_components.scss` has section/header/title/subtitle and image preview patterns.
-- `layouts/_grid.scss` and `_flex.scss` are layout utilities, not visual design system.
-- `layouts/_img.scss` provides media defaults.
-- `layouts/_lists.scss` globally customizes `ul/li`; audit for reports/admin prose.
-- `layouts/_scrollbars.scss` is global; avoid feature-local scrollbars.
-
-Concrete cleanup candidates:
-
-- document or alias `mg-section`, `mg-section__title`, `mg-section__subtitle`,
-- audit global list styling,
-- keep scrollbars global,
-- avoid local grid systems.
+| Prototype family | Current status | Production target |
+|---|---|---|
+| Game shell / dashboard shell | accepted direction | layout shell, topbar, sidebar, active nav, resource chips, selected server/prestige card |
+| Hero statistics / stat allocation | accepted direction | focused stat allocation page |
+| Armory / item popover | accepted direction | armory screen and shared item popover |
+| Estate / buildings | accepted direction | estate screen and building cards/jobs |
+| Exploration flow | accepted direction | exploration state/result/direction surfaces |
+| Auction House | accepted direction | marketplace listings, bidding/buy-now |
+| Direct Trade | accepted direction | private offer/response workflow |
+| PvP vicinity | accepted direction | target selection only |
+| Reports / combat reports | accepted direction | durable report detail/list/read models |
+| Notifications | accepted direction | short notification archive/bell |
+| Admin overview | accepted direction | admin IA hub |
+| Account Entry Shell | accepted direction | public/account shell before server+hero game context |
+| Hero Creation Origin Carousel | accepted direction | name + origin carousel + DB-backed bonuses/artwork |
+| Trial minigames | accepted direction per minigame | manual trial renderer and minigame hosts |
 
 ---
 
-# 3. Mythsworn visual language
+# 8. UI-SHELL — game shell hardening and implementation sequence
 
-Accepted direction: modern premium browser RPG UI stylized with ancient-Greek flavor.
-
-UI ma być:
-
-- modern-first,
-- czytelny,
-- premium,
-- ciemny,
-- browser-game friendly,
-- długosesyjny,
-- stylizowany przez kolory, materiały i detale, nie przez ciężką dekorację.
-
-Unikać:
-
-- ciężkiego kamienia wszędzie,
-- generycznego SaaS dashboardu,
-- przesadnego złota,
-- emoji jako final icons,
-- hardcoded gameplay lists,
-- jednego wielkiego komponentu.
-
-Key motifs:
-
-- dark navy layered background,
-- gold/bronze accents,
-- soft gold borders,
-- subtle blue/gold gradients,
-- selected sidebar link with left gold inset,
-- premium cards with low-opacity surfaces,
-- compact chips/badges,
-- readable tables/lists,
-- restrained ancient-Greek flavor.
-
-Logo mark: litera `M` w złoto-granatowym znaku z prototypes jest zaakceptowanym fallbackiem i nie może zniknąć z shellu.
-
----
-
-# 4. Prototype archive convention
-
-Rekomendowany katalog:
-
-`docs/ui-ux/prototypes/`
-
-Zasady:
-
-- archiwizować tylko realne zaakceptowane albo odzyskane HTML prototypes;
-- nie tworzyć placeholder packs;
-- nie rekonstruować prototypów z pamięci bez ponownego review;
-- jeden ekran odzyskiwać albo odtwarzać na raz;
-- każdy prototype HTML musi mieć standardowy header `VISUAL REFERENCE ONLY`;
-- prototype HTML jest visual reference only, nie production source;
-- source filename może różnić się od archive filename, jeśli odzyskany plik miał starszą lub roboczą nazwę;
-- archive filename ma odzwierciedlać zatwierdzoną rolę prototypu i jego wersję wizualną.
-
-## 4.1. Current accepted prototype map
-
-| Source file | Archive name | Status | Primary UI area | Notes |
-| --- | --- | --- | --- | --- |
-| `mythborne_ui_shell_prototype.html` | `game-shell-v1.html` | accepted direction | Game shell / dashboard shell | Fundament shellu: topbar, sidebar, brand mark, resource chips, dashboard layout direction. Nie traktować jako mniej ważny niż ekrany feature. |
-| `mythborne_statistics_allocation_v_1.html` | `hero-statistics-v1.html` | accepted direction | Hero / stat allocation | Focused stat spending screen, not a second dashboard. Save przez `save_stat_allocation(...)`, no direct stat/CP writes. |
-| `mythborne_armory_v_1.html` | `armory-v2.html` | accepted direction | Armory / equipment | Source title mówi Armory V2. Full Armory screen, equipment layout + inventory by Display Stands, item popover boundary. |
-| `mythborne_estate_v_1.html` | `estate-v3.html` | accepted direction | Estate / buildings | Source title mówi Estate V3. One hero has one estate, district/address display, buildings, one active building job, no player-facing cancel action. |
-| `mythborne_exploration_flow_v_2.html` | `exploration-flow-v2.html` | accepted direction | Exploration | No invented route-map fiction. Difficulty choice, current exploration status, Trial chance previews, pending step modal/inline strip. |
-| `mythborne_trade_v_1.html` | `auction-house-v2.html` | accepted direction | Auction House | Source title mówi Auctions V2. Separate from Direct Trade, one item per listing, Character Points payment, item value only in popover. |
-| `direct-trade-v2.html` | `direct-trade-v2.html` | accepted direction | Direct Trade | Private offer screen. Up to 5 items + Character Points per side. No CP-only for CP-only. Canonical RPC/domain operations. |
-| `pvp-vicinity-v4.html` | `pvp-vicinity-v4.html` | accepted direction | PvP target selection | Target selection only. No Walking Dead, no combat preview, no combat log. |
-| `reports-center-v2.html` | `reports-center-v2.html` | accepted direction | Reports | Full gameplay records/archive. Notifications are separate short rows, not full reports. |
-| `notifications-center-v1.html` | `notifications-center-v1.html` | accepted direction | Notifications | Short persistent notification archive. Belongs near Reports Center but does not replace full reports. |
-| `admin-overview-v7.html` | `admin-overview-v7.html` | accepted direction | Admin overview | Clean global admin orientation hub, not fake live dashboard. |
-
-## 4.2. Prototype status vocabulary
-
-Use one of:
-
-- `accepted direction` — approved visual/product direction, ready for UI-CORE mapping;
-- `needs polish` — direction accepted, but layout/wording/interaction details need another prototype pass;
-- `needs review` — recovered/created but not accepted yet;
-- `superseded` — kept for history, not current target;
-- `missing` — expected prototype does not exist yet.
-
-Do not label a prototype as implemented unless production Angular code exists and the user has accepted the Codex result.
-
-## 4.3. Prototype-to-production rule
-
-Every implementation task based on a prototype must answer:
-
-- prototype source;
-- archive name;
-- patterns reused;
-- patterns intentionally not implemented;
-- global SCSS/vendor/shared mapping;
-- local SCSS needed;
-- copied from prototype: yes/no.
-
-`copied from prototype: yes` should normally be a blocker unless the copied part is non-style static placeholder content explicitly approved for a temporary mock.
-
----
-
-# 5. Global UI patterns to extract
-
-## 5.1. Shell patterns
-
-- Game Shell,
-- Admin Shell,
-- Topbar,
-- Sidebar,
-- active nav link,
-- selected server/context block,
-- resource chip,
-- notification bell.
-
-## 5.2. Surface patterns
-
-- page header,
-- standard card,
-- premium/elevated card,
-- summary card,
-- stat card,
-- note/info panel,
-- badge,
-- chip,
-- status pill,
-- detail side panel,
-- selected/active surface,
-- empty state.
-
-## 5.3. Data display patterns
-
-- list row,
-- table row,
-- compact action icons,
-- pagination,
-- filter panel,
-- tab row,
-- detail side panel.
-
-## 5.4. Gameplay patterns
-
-- item row,
-- item popover,
-- equipment/paperdoll preview,
-- progress/timer strip,
-- Walking Dead timing bar,
-- report/notification row.
-
-## 5.5. Admin patterns
-
-- admin scope strip,
-- admin area map,
-- coverage checklist,
-- context/explainability panel,
-- config/change-set workflow header,
-- reason-required action block.
-
-
-## 5.6. Action and click naming patterns
-
-Player-facing UI musi używać spójnych nazw klików, CTA i akcji.
-
-Zasada główna:
-
-> CTA label ma opisywać rzeczywistą domenową akcję, nie techniczny klik.
-
-Jeśli backend/RPC/read model nie istnieje albo ekran jest tylko preview/read-only, label musi to jasno oddać:
-
-- używać `View`, `Preview`, `Open details`, `Inspect` tam, gdzie nic nie mutuje;
-- używać `Start`, `Save`, `Confirm`, `Create`, `Send`, `Place`, `Cancel` tylko tam, gdzie istnieje rzeczywisty workflow albo task jednoznacznie implementuje jego UI boundary;
-- nie używać mocnych czasowników dla fake/mock akcji.
-
-Preferowane nazwy akcji:
-
-| Context | Preferred primary action | Avoid unless justified |
-| --- | --- | --- |
-| Exploration idle | `Start exploration` | `Go hunting`, `Begin route`, `Launch` |
-| Exploration pending | `Check result` / `Resolve step` | `Open reward`, `Finish path` |
-| Trial blocker | `Resolve Trial` | `Complete event` |
-| Encounter blocker | `Resolve Encounter` | `Complete event` |
-| Statistics draft | `Save allocation` | `Upgrade`, `Apply points` |
-| Statistics reset | `Reset draft` | `Clear all`, `Undo everything` |
-| Equipment slot | `Equip` / `Unequip` | random mix of `Use`, `Wear`, `Put on` |
-| Item detail | `View item` or `Inspect item` | mixed `Open` / `Check` / `Show` without rule |
-| Vendor/system item conversion | `Scrap for drachmas` | `Sell`, if it can be confused with player trade |
-| Direct Trade create | `Create offer` / `Send offer` | `Sell`, `Auction`, `List` |
-| Direct Trade response | `Respond` / `Confirm trade` / `Cancel offer` | `Buy`, `Bid` |
-| Auction listing | `Create listing` | `Create trade`, `Sell item` |
-| Auction bid | `Place bid` | `Offer`, `Pay` |
-| Auction buy now | `Buy now` | `Instant trade` |
-| PvP target selection | `Select target` | `Fight now`, if combat does not start immediately |
-| Reports | `Open report` | `View notification` |
-| Notifications | `Open notification` / `Mark as read` | `Open report`, unless linking to a full report |
-| Admin/config save draft | `Create draft` / `Add entry` | `Apply`, if change is not applied yet |
-| Admin/config apply | `Apply change set` | `Save`, if governance workflow is applying |
-
-Naming decisions should be reflected in prototypes and implementation tasks. If a prototype uses an older label, the backlog naming contract wins unless user explicitly accepts the older label.
-
-## UI-NAME-1 — Player action and CTA naming contract
+## UI-SHELL-0 — Game shell preflight and visual-anchor mapping
 
 **Goal:**  
-Ujednolicić nazwy klików, CTA i akcji na player-facing ekranach Mythsworn, zanim Codex zacznie masowo przenosić prototypy do Angulara.
+Before touching code, map the accepted shell prototype to current production utilities, SCSS and missing patterns.
+
+**Required visual anchors from `game-shell-v1`:**
+
+- desktop topbar uses three-zone composition: left hero status, centered brand, right resources;
+- brand is centered in desktop topbar unless explicit task says otherwise;
+- fallback `M` brand mark is preserved;
+- left topbar area shows Health and XP/Level summary;
+- right topbar area shows Drachmas, Materials and Workforce;
+- resource chips are stacked/compact: label + strong value + per-hour secondary line;
+- sidebar selected server/prestige block is a compact premium context card, not a flat generic row panel;
+- selected server block uses label/value hierarchy: small label, strong value, status badge;
+- Prestige is separated inside the same surface, with label, strong rank value and rank/tier badge;
+- active sidebar nav uses gold left inset or equivalent active affordance;
+- important values are not muted.
 
 **Scope:**
-- przejrzeć zaakceptowane prototypy player-facing:
-  - `game-shell-v1.html`,
-  - `hero-statistics-v1.html`,
-  - `armory-v2.html`,
-  - `estate-v3.html`,
-  - `exploration-flow-v2.html`,
-  - `auction-house-v2.html`,
-  - `direct-trade-v2.html`,
-  - `pvp-vicinity-v4.html`,
-  - `reports-center-v2.html`,
-  - `notifications-center-v1.html`;
-- wypisać wszystkie primary/secondary/destructive CTA;
-- zmapować je na wspólny naming contract z sekcji `5.6`;
-- wskazać prototype labels do korekty;
-- dopisać naming notes do backlog tasków, jeśli dany ekran ma szczególnie ryzykowne akcje.
 
-**Out of scope:**
-- implementacja Angulara;
-- finalne i18n;
-- zmiana DB/RPC nazw;
-- projektowanie nowych gameplay workflows;
-- renaming istniejących backend functions.
-
-**Data/source rules:**
-- UI label nie może sugerować funkcjonalności, której backend/RPC/read model nie obsługuje;
-- jeśli action jest read-only, używać `View`, `Preview`, `Open details` albo `Inspect`;
-- jeśli action jest persistent mutation, musi odpowiadać canonical RPC/domain workflow;
-- jeśli brakuje workflow, label/task ma mówić o blockerze albo boundary, nie udawać gotową akcję.
-
-**UI/SCSS rules:**
-- naming contract nie wymaga zmian CSS;
-- jeśli zmieniane są prototypy, zachować styl i standardowy `VISUAL REFERENCE ONLY` header;
-- nie robić redesignu layoutu przy samej korekcie nazw.
-
-**Dependencies/blockers:**
-- jeśli nie wiadomo, czy akcja realnie mutuje stan, sprawdzić aktualny backlog/DB/RPC docs albo oznaczyć jako open question;
-- jeśli action label zależy od przyszłego workflow, dodać explicit note zamiast zgadywać.
+- Read `docs/ui-ux/README.md` first.
+- Read style contract, global inventory, local SCSS checklist, prototype mapping, utility audit, layout cleanup, text semantics, surface/badge docs and icon registry.
+- Inspect actual `src/scss` utilities and current layout components.
+- Produce mapping only; no code.
 
 **Acceptance criteria:**
-- istnieje jedna tabela naming contract dla typowych akcji gracza;
-- prototypy mają listę labeli do korekty albo potwierdzenie, że są zgodne;
-- Direct Trade i Auction House nie mieszają słów `trade`, `offer`, `listing`, `bid`, `buy now`;
-- Reports i Notifications nie mieszają `report` z `notification`;
-- Exploration nie wraca do legacy `hunt` / `monster hunt` wording;
-- Statistics używa `Save allocation`, `Reset draft`, `Character Points`;
-- item vendor/system conversion używa `Scrap for drachmas`, nie mylącego `Sell`, jeśli kontekst może sugerować player trade.
 
-**Verification/smoke:**
-- documentation/prototype-label pass only: no build;
-- jeśli prototyp HTML jest modyfikowany, otworzyć go lokalnie i sprawdzić, czy layout nie został przypadkowo uszkodzony.
+- For each visual anchor, mapping says: existing pattern / utility composition / missing production pattern / defer.
+- Missing patterns are named explicitly.
+- Reviewer can decide which implementation task should own which pattern.
 
-**Required Codex report:**
-- reused:
-- checked but not reused:
-- new naming contract added:
-- prototype labels changed:
-- labels intentionally left unchanged:
-- open naming questions:
+**Required report:** standard UI report plus visual-anchor mapping.
 
 ---
+
+## UI-SHELL-1 — Game shell skeleton only
+
+**Goal:**  
+Create or stabilize the game shell skeleton without solving every visual pattern at once.
+
+**Scope:**
+
+- Shell grid/areas: topbar, sidebar, main.
+- Main content containment.
+- Active hero/server game context only; no public/account/guest/login/create-character flow.
+- Use utilities-first.
+
+**Out of scope:**
+
+- final brand/logo pattern;
+- final resource chips;
+- final selected server/prestige card;
+- final sidebar nav item pattern;
+- dashboard redesign;
+- account/public shell.
+
+**SCSS rules:**
+
+- SCSS may contain named shell grid/areas and boundary styling only where no utility/pattern exists.
+- Do not write flex/gap/padding/position/z-index/overflow/backdrop manually if utilities exist.
+- Pseudo-element active inset is allowed only as a temporary exception if it cannot be expressed by utilities.
+
+**Acceptance criteria:**
+
+- Game shell renders topbar/sidebar/main.
+- No local component SCSS.
+- No direct copied prototype CSS.
+- No utility shadowing.
+- No guest/public/account flow.
+- Missing visual patterns are reported, not silently flattened.
+
+---
+
+## UI-SHELL-2 — Topbar visual anchor pass
+
+**Goal:**  
+Implement topbar composition according to `game-shell-v1` visual anchors.
+
+**Required visual anchors:**
+
+- three-zone desktop composition;
+- centered brand;
+- left hero Health + XP/Level;
+- right stacked resource chips;
+- important resource values strong, per-hour line secondary but readable;
+- no `muted-text` for resource values;
+- responsive wrapping does not destroy hierarchy.
+
+**Scope:**
+
+- Use existing topbar/game bar components where possible.
+- If resource chip pattern is missing, either add a minimal global/shared pattern if approved by this task or report/defer.
+
+**Out of scope:**
+
+- sidebar nav pattern;
+- dashboard cards;
+- account/public shell.
+
+**Acceptance criteria:**
+
+- Topbar looks recognizably like the prototype anchors, even if production palette differs.
+- Resource chips are not flattened to one-line generic muted badges unless user approves that change.
+- `prototype visual anchors` report is complete.
+
+---
+
+## UI-SHELL-3 — Sidebar selected server / Prestige context card
+
+**Goal:**  
+Implement the compact premium selected-server/prestige context surface from the shell prototype.
+
+**Required visual anchors:**
+
+- one compact premium sidebar surface;
+- selected server label/value/status row;
+- Prestige separated inside same surface;
+- label muted/secondary, value strong;
+- server name and Prestige rank not muted;
+- status is a semantic badge;
+- rank/tier badge aligned and readable.
+
+**Scope:**
+
+- Use DB-backed selected server and public Prestige summary.
+- Use existing `mg-card`, badge and utility foundations first.
+- If a true context-card pattern is missing, report it and use a minimal fallback only with visual-anchor comparison.
+
+**Acceptance criteria:**
+
+- Production surface resembles the prototype composition, not only the information content.
+- Muted-text audit passes.
+- Stale guard exists if Prestige is loaded async.
+
+---
+
+## UI-SHELL-4 — Sidebar nav item and active state pattern
+
+**Goal:**  
+Create or choose the shared sidebar nav item pattern.
+
+**Scope:**
+
+- Existing nav/link patterns reuse check.
+- Active state with gold left inset.
+- Keyboard/focus states.
+- Decide whether `mg-card` is acceptable as temporary nav surface or whether a dedicated pattern is needed.
+
+**Out of scope:**
+
+- topbar resource chips;
+- dashboard redesign.
+
+**Acceptance criteria:**
+
+- No new local nav visual system hidden inside one feature.
+- If a new pattern is added, it is global/shared and documented.
+- Active state is not color-only.
+
+---
+
+# 9. Account Entry and Hero Creation
+
+## UI-ACCOUNT-1 — Account Entry Shell
+
+**Goal:**  
+Implement account/public shell before the player enters a specific server+hero game context.
+
+**Required visual anchors:**
+
+- different navigation than in-game shell;
+- main options: `Enter the game`, `Create new hero` / `Join new world`;
+- existing hero contexts show server + hero and route to dashboard;
+- new hero flow shows eligible creation servers;
+- district A capacity/free slots visible for standard server creation eligibility;
+- sandbox/test multi-hero selector is explicit;
+- Stat Allocation is not shown as an onboarding wizard step.
+
+**Data/source rules:**
+
+- Use selected server → active hero semantics.
+- Creation eligibility and district A capacity must come from DB/RPC/read model.
+- Angular must not guess starting address capacity.
+
+**Acceptance criteria:**
+
+- Existing hero routes to dashboard/game shell.
+- Eligible server routes to Hero Creation.
+- Full/blocked server is clear and not fake-resolved.
+- No direct hero creation table writes.
+
+---
+
+## UI-HERO-CREATION-1 — Hero Creation Origin Carousel
+
+**Goal:**  
+Implement the second and final account-side creation screen: name + origin + create hero.
+
+**Required visual anchors:**
+
+- selected server context is readonly;
+- hero name input is editable;
+- origin selection is a visual carousel or equally dynamic origin selector;
+- origin artwork is central, not a tiny static icon;
+- origins: Spartanin, Ateńczyk, Kreteńczyk, Koryntianin;
+- origin detail area shows lore/description and concrete bonuses from DB/admin content;
+- exact origin bonuses must not be hardcoded in Angular;
+- creation summary remains visible;
+- after creation, player enters in-game shell and routes to Stat Allocation as first in-game location.
+
+**Data/source rules:**
+
+- Hero creation must use canonical DB/RPC/domain workflow.
+- No direct Angular writes to hero, origin, Character Points, estate, resource, audit or onboarding tables.
+- New heroes start with 1000 Character Points and random free district A estate through backend workflow.
+- Origin content/artwork/bonuses must come from DB/admin-configurable read model or report blocker.
+
+**Acceptance criteria:**
+
+- Name + origin are the only player inputs.
+- Origin visual hierarchy is preserved.
+- Bonus display is DB-backed or explicitly data-blocked.
+- Post-create route is in-game Stat Allocation, not onboarding step 3.
+
+---
+
+# 10. Item Popover and Armory
+
+## UI-ITEM-POPOVER-1 — Shared item popover production pass
+
+**Goal:**  
+Implement shared item popover/detail pattern for Armory, Auction House, Direct Trade, Reports and loot/result screens.
+
+**Required visual anchors:**
+
+- popover has item header with name, type/slot, value context and status badges;
+- item stats and bonuses are separate sections;
+- requirements are explicit and semantic, not hidden/muted;
+- drachma value is evaluation/vendor value, not player-trade price;
+- same component can render safe partial/historical item snapshots when full live item data is unavailable.
+
+**Data/source rules:**
+
+- Use DB/read models and item popover contract.
+- Do not calculate item bonuses or requirements in Angular.
+- Historical reports/trades use snapshots, not mutable current item truth.
+
+**Acceptance criteria:**
+
+- Works for equipped/current item where read model exists.
+- Shows missing-data diagnostic instead of fake stats.
+- Uses PrimeNG popover/tooltip wrapper where appropriate.
+
+---
+
+# 11. Exploration, Reports, Combat and Trials
+
+## UI-EXPLORATION-1 — Exploration production pass
+
+**Required visual anchors:**
+
+- no invented map/route names;
+- difficulty/status/step result hierarchy is clear;
+- choose direction surfaces are visually important;
+- pending step timer/progress is readable;
+- result screen/report handoff is durable and DB-backed;
+- if no Trial manifests, report is a valid no-manifest outcome, not an error.
+
+## UI-REPORTS-1 — Report detail/result pattern
+
+**Required visual anchors:**
+
+- durable report detail, not transient toast;
+- clear header → result → narrative → details/rewards → actions;
+- result/outcome is never muted;
+- rewards are read from report/result snapshot, not recomputed;
+- combat log order is start-to-finish if displayed as report detail.
+
+## UI-COMBAT-1 — Manual combat minigame host
+
+**Required visual anchors:**
+
+- combatants left/right, action/timing center;
+- HP and stats visible enough to understand the fight;
+- Walking Dead timing bar is manual action, not report result;
+- auto-resolve warning is explicit;
+- no rewards on minigame screen; rewards appear after durable result/report.
+
+## UI-TRIALS-1A — Trial minigame host spec and production mapping
+
+**Purpose:** define the shared Trial Minigame Host / Renderer Shell before any Angular implementation. This is a spec/mapping task, not a coding task.
+
+**Rules:**
+
+- shared Trial Minigame Host before nine independent shells;
+- host must define header, god/stat identity, manual/auto state, minigame slot, auto-resolve warning and durable result/report handoff;
+- minigame config/difficulty from DB/RPC/read model;
+- no flashing/strobe unsafe visuals;
+- minigame ends in durable result/report handoff;
+- implementation is blocked until the host mapping and runtime/read-model contract are confirmed.
+
+## UI-TRIALS-1B — Trial minigame host implementation
+
+**Purpose:** implement the shared Trial Minigame Host only after UI-TRIALS-1A is accepted and the required DB/RPC/read-model contract exists.
+
+**Rules:**
+
+- do not start implementation from conceptual prototype notes alone;
+- do not create nine separate shell/layout implementations;
+- do not hardcode trial difficulty or success/failure authority in Angular;
+- missing runtime contract is a blocker, not an excuse for local mock authority.
+
+## UI-TRIALS-2 — Accepted manual trial prototype map
+
+| Trial / God | Stat | Direction | Prototype status | HTML file/reference |
+|---|---|---|---|---|
+| Ares | Strength | Combat / DB-owned live combat session / Walking Dead manifest | accepted direction; combat prototype exists | current canvas: Combat Minigame Prototype / archive filename TBD |
+| Artemis | Dexterity | Harpy Hunt | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Apollo | Agility | Path of Light | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Hephaestus | Endurance | Divine Forge | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Hermes | Cunning | Shifting Seals | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Aphrodite | Charisma | Graces’ Court | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Athena | Wisdom | Scales of Judgment | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Hera | Intelligence | Labyrinth with Minotaur, no combat | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Zeus | Spirituality | Storm Charge | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+
+---
+
+# 12. Trade, PvP, Estate and Admin production passes
+
+These tasks should be split using the v2 detailed inventory when implementation begins. v3 rules still govern execution.
+
+## UI-TRADE-1 — Auction House production pass
+
+Required anchors:
+
+- Auction House separate from Direct Trade;
+- one item per listing;
+- Character Points payment;
+- drachma item value only in item popover, not as listing price;
+- listing cards/list rows with pagination;
+- bid/buy-now actions reflect auction mode.
+
+## UI-TRADE-2 — Direct Trade production pass
+
+Required anchors:
+
+- private offer to one hero;
+- up to 5 items + Character Points per side;
+- creator cannot request target side during offer creation;
+- target response adds their side;
+- CP-only for CP-only blocked;
+- canonical RPC/domain operations only.
+
+## UI-PVP-1 — PvP vicinity target selection pass
+
+Required anchors:
+
+- target selection only;
+- no combat preview, no Walking Dead, no combat log;
+- target cards/list rows show eligibility and context;
+- `Select target`, not misleading `Fight now` unless combat starts immediately.
+
+## UI-ESTATE-1 — Estate production pass
+
+Required anchors:
+
+- one hero, one estate;
+- district/address shown clearly;
+- building cards show level, current bonus, next cost/time/action;
+- one active building job;
+- no player-facing cancel unless backend supports it;
+- completed job finalization is DB/read-workflow owned.
+
+## UI-ADMIN-1 — Admin overview and IA production pass
+
+Required anchors:
+
+- admin organized by work intent, not raw table names;
+- global/server/sandbox contexts not mixed;
+- selected server context visible for server-scoped pages;
+- raw keys/UUIDs secondary;
+- reasons/status reasons preserved;
+- PrimeNG table/list/paginator decision follows UI-CORE-14.
+
+---
+
+# 13. Naming contract
+
+CTA label must describe the real domain action, not the technical click.
+
+Preferred labels:
+
+| Context | Preferred primary action |
+|---|---|
+| Exploration idle | `Start exploration` |
+| Exploration pending | `Check result` / `Resolve step` |
+| Trial blocker | `Resolve Trial` |
+| Encounter blocker | `Resolve Encounter` |
+| Statistics draft | `Save allocation` |
+| Statistics reset | `Reset draft` |
+| Equipment slot | `Equip` / `Unequip` |
+| Item detail | `Inspect item` / `View item` |
+| Vendor/system item conversion | `Scrap for drachmas` |
+| Direct Trade create | `Create offer` / `Send offer` |
+| Direct Trade response | `Respond` / `Confirm trade` / `Cancel offer` |
+| Auction listing | `Create listing` |
+| Auction bid | `Place bid` |
+| Auction buy now | `Buy now` |
+| PvP target selection | `Select target` |
+| Reports | `Open report` |
+| Notifications | `Open notification` / `Mark as read` |
+| Admin config draft | `Create draft` / `Add entry` |
+| Admin config apply | `Apply change set` |
+
+Avoid `Sell` when player trade could be confused with vendor/system conversion. Use `Scrap for drachmas` for vendor/system item conversion.
+
+---
+
+# Part II — Detailed canonical task inventory migrated from v2
+
+The following inventory is included inside this same file so Codex does not need a separate v2 document.
+
+Rules for this inventory:
+
+- Treat these tasks as detailed scope material for planning and splitting implementation slices.
+- Every task below is governed by the v3 hardening rules above: README-first preflight, visual anchors, utilities-first, no utility shadowing, muted-text audit, missing-pattern escalation and required reporting.
+- If a task below lacks a v3-style `Required visual anchors` section, Codex must derive and report visual anchors from the accepted prototype map before coding.
+- If a task below is too broad, split it before coding.
+- If a task below has outdated wording such as Mythborne/Monster Hunt, prefer current user instruction and Mythsworn-facing UI naming unless the user explicitly asks otherwise.
 
 # 6. UI-CORE — Foundations and style contract
 
@@ -1518,6 +1580,9 @@ Uporządkować layout utilities i section/header patterns.
 
 # 7. UI-SHELL — Global game shell and dashboard foundation
 
+> **Superseded execution note:** For new implementation, use v3 `UI-SHELL-0` through `UI-SHELL-4` as the canonical shell sequence. The detailed v2 tasks below preserve scope/context only and must be interpreted through the v3 hardening rules. Do not use old soft acceptance criteria to bypass visual-anchor/preflight requirements.
+
+
 Cel: ustabilizować globalny game shell, dashboard foundation, topbar/sidebar i resource presentation jako reusable player-facing shell. UI-SHELL powinien powstać po UI-CORE foundation albo przynajmniej zgodnie z jego zasadami.
 
 ## UI-SHELL task index
@@ -1529,8 +1594,6 @@ Cel: ustabilizować globalny game shell, dashboard foundation, topbar/sidebar i 
 - UI-SHELL-5 — Persistent state widget boundary
 
 ## UI-SHELL-1 / formerly UI-1 — Game shell style foundation
-
-**Status:** conditionally accepted on 2026-05-08. The accepted foundation keeps `_game-shell.scss` limited to the game shell grid skeleton, grid areas, topbar/sidebar/main boundary styling, mobile shell breakpoint and a temporary active-nav inset. Existing layout/position/spacing utilities stay in templates. `mg-card` as a sidebar nav surface and the active inset are follow-up debt for UI-SHELL-4.
 
 **Goal:**  
 Ustabilizować globalny player-facing game shell z topbarem, sidebarem i main content, zgodny z zaakceptowanym kierunkiem Mythsworn visual language.
@@ -5101,17 +5164,11 @@ Utrwalić zasady prywatności i snapshotów dla combat UI, szczególnie PvP.
 
 ---
 
-## Common UI/UX implementation rules for the merged addenda
+# UI-TRIALS / UI-REPORTS / UI-ONBOARDING — Additional canonical production tasks
 
-These merged sections inherit the global UI/UX backlog rules:
+This section was migrated from accepted addenda and is now part of the single canonical UI/UX backlog. It is a merged canonical section governed by Part I strict execution rules, mandatory preflight, prototype visual anchors, utilities-first execution, missing-pattern escalation and required reporting.
 
-- HTML prototypes are **visual reference only**.
-- Codex must not copy `mb-*`, canvas CSS, gradient values, palette values, layout class names or JS prototype logic 1:1 into Angular.
-- Production must translate approved visual directions into global SCSS, `mg-*`, vendor wrappers, shared components, PrimeNG wrappers and documented utilities.
-- Missing DB/RPC/read-model/runtime contracts are dependencies/blockers, not permission to fake durable gameplay state in Angular.
-- Critical gameplay/account creation mutations must go through canonical DB/RPC/domain workflows, never direct Angular table writes.
-- Implementation tasks inherit the global required UI/UX report: reused / checked but not reused / new component-state-helper / local SCSS / copied from prototype / PrimeNG override / stale guards where applicable.
-
+---
 
 # UI-TRIALS — Trial minigame prototypes and renderer boundary
 
@@ -5120,10 +5177,10 @@ Cel: uporządkować zaakceptowane kierunki manual Trial minigames, wspólny host
 ## UI-TRIALS-1A — Shared Trial Minigame Host / Renderer Shell Spec And Production Mapping
 
 **Goal:**  
-Zdefiniować production mapping dla jednego wspólnego player-facing hosta manual Trial minigames, zanim Codex spróbuje implementować host w Angularze.
+Define the shared player-facing host/mapping for manual Trial minigames before implementation. This is a spec and production-mapping task only.
 
 **Scope:**
-- Opisać docelową granicę hosta triala:
+- Map the shared host visual and structural boundary for all manual Trial minigames:
   - trial header,
   - god label,
   - tested stat,
@@ -5131,148 +5188,164 @@ Zdefiniować production mapping dla jednego wspólnego player-facing hosta manua
   - minigame content slot,
   - safe auto-resolve action,
   - warning modal before auto-resolve,
+  - failed / not manifested / completed handling,
   - result/report handoff,
-  - failed/not manifested/completed handling,
   - accessibility and mobile constraints.
-- Zmapować, które elementy powinny być shared/global patterns, vendor wrappers albo local host layout.
-- Zidentyfikować minimalny DB/RPC/read-model contract wymagany dla hosta.
-- Spisać, które zaakceptowane prototypes są tylko visual reference, a które mają być archived as accepted references.
+- Define which parts belong to the shared host and which parts belong to each minigame renderer.
+- Map the host to production sources:
+  - current Angular routes/components/state,
+  - existing global SCSS/utilities/shared patterns,
+  - missing shared/global patterns,
+  - required DB/RPC/read-model contract.
+- Confirm that host implementation is not allowed until runtime/read-model contracts are sufficient.
 
 **Out of scope:**
-- Implementacja Angular hosta.
-- Implementacja konkretnych minigier.
-- Kopiowanie canvasowego CSS/JS.
-- Projektowanie nowych tabel DB.
-- Direct writes z Angulara.
-- Finalny balans trudności.
+- Angular implementation.
+- Implementing concrete minigames.
+- Creating final DB schema.
+- Copying canvas CSS/JS.
+- Marking the host as done.
 
 **Data/source rules:**
 - Trial definition, tested stat, god identity, difficulty/runtime config and result state must come from DB/RPC/read model.
-- Auto-resolve success chance and result must be backend/RPC-owned.
+- Auto-resolve success chance and final result must be backend/RPC-owned.
 - Completed result handoff must use durable trial/report result source, not local UI-only state.
-- If runtime config contract is missing, report dependency.
+- Missing runtime/read-model contract is a blocker for UI-TRIALS-1B.
 
 **UI/SCSS rules:**
-- Use global page/header/card/status patterns.
-- Use existing buttons/vendor wrappers.
-- Use `tag-badge--*` / future status pill/chip patterns for state.
-- No copied `mb-*` prototype classes.
-
-**Dependencies/blockers:**
-- Missing trial runtime read model/config contract.
-- Missing action/submit RPC for manual minigame result.
-- Missing report/result handoff route or read model.
+- Use Part I v3 rules: README-first preflight, prototype visual anchors, utilities-first, no utility shadowing, muted-text audit and missing-pattern escalation.
+- Do not copy `mb-*` prototype CSS/classes.
+- Report visual anchors from existing trial prototypes and the accepted prototype map.
+- If a host/surface/nav/status pattern is missing, report it as missing production pattern instead of flattening everything into a generic `mg-card`.
 
 **Acceptance criteria:**
-- Spec describes a single renderer host pattern that can contain all manual trial minigames.
-- Auto-resolve warning and report/result handoff are explicitly mapped.
-- Host implementation dependencies are identified before coding.
-- No production code changes are required in this spec task.
+- Host boundary is documented clearly enough for implementation.
+- Shared host vs per-minigame renderer responsibilities are separated.
+- Required DB/RPC/read-model contract is listed.
+- Missing production patterns are listed.
+- No code is changed.
+- UI-TRIALS-1B has explicit go/no-go prerequisites.
 
 **Verification/smoke:**
-- Docs-only review.
-- Confirm source prototype references with the user before archiving or implementing.
+- Documentation-only: no build.
 
 **Required Codex report:**
-- reused:
-- checked but not reused:
-- new component/state/helper added:
-- host boundary proposed:
-- runtime/read models required:
-- missing runtime dependencies:
-- local SCSS added:
-- copied from prototype: yes/no:
+- README/docs read:
+- prototype visual anchors:
+- matched / not matched / missing pattern:
+- host boundary:
+- per-minigame slot boundary:
+- runtime/read-model contract needed:
+- missing production patterns:
+- implementation blockers for UI-TRIALS-1B:
+
+---
 
 ## UI-TRIALS-1B — Shared Trial Minigame Host Implementation
 
 **Goal:**  
-Implementować wspólny Trial Minigame Host dopiero po zaakceptowaniu UI-TRIALS-1A i po potwierdzeniu, że potrzebny DB/RPC/read-model contract istnieje albo zakres jest jawnie mock/read-only.
+Implement one shared player-facing Trial Minigame Host / Renderer Shell after UI-TRIALS-1A is accepted and the DB/RPC/read-model contract exists.
 
 **Scope:**
-- Build one reusable player-facing host/shell for manual trial minigames.
-- Host must support:
-  - trial header;
-  - god label;
-  - tested stat;
-  - manual/auto state;
-  - minigame content slot;
-  - auto-resolve action with warning modal;
-  - completed/failed/not-manifested handoff to report/result.
-- Use production patterns and shared wrappers instead of copied prototype classes.
-- Plug in one placeholder/minigame only if the runtime contract supports it, otherwise implement host as read-only/spec surface and report blocker.
+- Implement the shared host/container for manual Trial minigames:
+  - header with trial/god/tested stat identity,
+  - manual vs auto state,
+  - minigame renderer slot,
+  - safe auto-resolve action with warning modal,
+  - result/report handoff state,
+  - failed / not manifested / completed handling if supported by the read model.
+- Plug in one representative minigame only if runtime data exists and the task explicitly allows it.
+- Keep route/page thin and move state/read-model logic to the appropriate service/state layer.
 
 **Out of scope:**
-- Implementing all nine minigames in this task.
-- Copying any canvas CSS/JS.
-- Hardcoding final difficulty config.
-- Direct table writes or frontend-authoritative trial completion.
+- Implementing all nine minigames.
+- Final balancing.
+- Creating DB/RPC contracts.
+- Direct Angular table writes.
+- Local fallback authority for success/failure/rewards.
+- Copying canvas CSS/JS.
 
 **Data/source rules:**
-- Runtime state and result handoff must come from DB/RPC/read model.
-- Auto-resolve must be backend/RPC-owned.
-- Missing runtime contract is a blocker unless the task is explicitly constrained to static/read-only shell.
+- Must consume the confirmed DB/RPC/read-model contract from UI-TRIALS-1A.
+- If the contract is missing or generated types are stale, stop and report a blocker.
+- Auto-resolve and final success/failure/rewards must be backend/RPC-owned.
+- Completed reports must come from durable report/result read models.
 
 **UI/SCSS rules:**
-- Use UI-CORE patterns, PrimeNG/vendor wrappers and shared/global SCSS.
-- Local SCSS only for host geometry if no shared pattern exists; report it.
-- No `mb-*` classes from prototypes.
+- Use existing shared/layout components, global SCSS, utilities and vendor wrappers first.
+- Local SCSS only for narrow host layout gaps and only after Part I preflight.
+- No `mb-*` classes, copied prototype gradients/palette/shadows, or feature-local badge/card/button systems.
+- Follow reduced-motion and no-strobe requirements for all minigame slots.
+
+**Dependencies/blockers:**
+- UI-TRIALS-1A not accepted.
+- Missing trial runtime read model/config contract.
+- Missing manual minigame submit/auto-resolve RPC.
+- Missing report/result handoff route or read model.
+- Stale generated types.
 
 **Acceptance criteria:**
-- One host component/page boundary can host different trial minigame components.
+- One renderer host can contain all manual trial minigames.
 - Host does not duplicate game shell/nav.
-- Host fails closed when trial runtime data is missing.
-- Auto-resolve warning path is visible and testable.
-- Build/tsc passes if code is changed.
+- Auto-resolve warning is visible and safe.
+- Host fails closed when runtime data is missing.
+- Result/report handoff is explicit and durable-source-backed.
+- No local success/reward fiction is added.
 
 **Verification/smoke:**
-- Route smoke for host if route exists.
-- Visual smoke with one plugged placeholder/minigame or read-only fixture.
-- Auto-resolve modal smoke.
-- Stale guard smoke for load/action responses where applicable.
+- `npx tsc --noEmit`.
+- Focused tests if state/service/component logic is added.
+- Build if implementation touches production code.
+- Visual/route smoke with one supported state if data exists.
+- Mark manual smoke `data-blocked` / `backend-blocked` instead of inventing fake data.
 
 **Required Codex report:**
+- UI-TRIALS-1A accepted: yes/no:
+- runtime/read models used:
+- DB/RPC blockers:
 - reused:
 - checked but not reused:
 - new component/state/helper added:
-- host boundary implemented:
-- runtime/read models used:
-- missing runtime dependencies:
 - local SCSS added:
+- visual anchors matched/not matched:
+- muted-text audit:
+- missing production patterns:
 - copied from prototype: yes/no:
+
+---
 
 ## UI-TRIALS-2 — Accepted Manual Trial Prototype Map
 
 **Goal:**  
-Dodać do UI/UX backlogu aktualną mapę zaakceptowanych lub wstępnie zaakceptowanych manual Trial minigame directions.
+Record the current accepted/manual Trial minigame directions in a table that separates god/stat/direction from prototype status and HTML reference.
 
 **Scope:**
-- Maintain the table below as the prototype direction map.
-- Mark these as prototype directions, not production source.
-- Keep concept-only entries separate from HTML-backed accepted references.
-- Do not claim DB/RPC runtime readiness from prototype acceptance alone.
+- Maintain the map below.
+- Mark entries as prototype directions, not production source.
+- Distinguish accepted HTML references from conceptual or archive-pending references.
+- Use this map as input for UI-TRIALS-1A mapping and for future archive cleanup.
 
 | Trial / God | Stat | Direction | Prototype status | HTML file/reference |
-| --- | --- | --- | --- | --- |
-| Ares | Strength | Combat Trial using DB-owned live combat session / Walking Dead manifest. Combat remains DB-authoritative; frontend must not implement combat resolution authority. | Accepted direction / existing combat prototype family | Existing combat screen/report prototypes; DB-owned live combat contract |
-| Artemis | Dexterity | Harpy Hunt aiming/shooting minigame; no strobe, no rapid flashing. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
-| Apollo | Agility | Path of Light / fading path tiles; move before light disappears. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
-| Hephaestus | Endurance | Divine Forge / heat, strain and sustained process-control. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
-| Hermes | Cunning | Shifting Seals: four procedural seals, reveal then shuffle, no riddle database. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
-| Aphrodite | Charisma | The Graces’ Court: timing/turn-taking, moving receptive arc, no dialogue database. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
-| Athena | Wisdom | Scales of Judgment: procedural omen selection under incomplete information, qualitative reveals. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
-| Hera | Intelligence | Labyrinth with Minotaur; escape without combat. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
-| Zeus | Spirituality | Storm Charge: hold-to-charge Sky/Earth/Oath, release grace, call thunder when all signs exceed threshold. | HTML direction accepted in conversation | Manual canvas prototype to archive after user-provided final file |
+|---|---|---|---|---|
+| Ares | Strength | Combat Trial using DB-owned live combat session / Walking Dead manifest | accepted direction; combat prototype exists | current canvas: Combat Minigame Prototype / archive filename TBD |
+| Artemis | Dexterity | Harpy Hunt: aiming/shooting minigame; no strobe, no rapid flashing | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Apollo | Agility | Path of Light: fading path tiles, step before light disappears | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Hephaestus | Endurance | Divine Forge: heat/strain/progress process-control forge | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Hermes | Cunning | Shifting Seals: procedural seal tracking, reveal then shuffle, no riddle database | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Aphrodite | Charisma | The Graces’ Court: timing/turn-taking, moving receptive arc, no dialogue database | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Athena | Wisdom | Scales of Judgment: procedural omen selection under incomplete information, qualitative reveals | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Hera | Intelligence | Labyrinth with Minotaur: escape without combat | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
+| Zeus | Spirituality | Storm Charge: hold-to-charge Sky/Earth/Oath, release grace, call thunder when all signs exceed threshold | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
 
 **Out of scope:**
-- Angular implementation.
+- Implementing Angular minigames.
 - Creating final DB config schema.
 - Marking UI tasks as complete.
-- Hardcoding final balance/difficulty curves.
+- Inventing final archive filenames where none have been accepted.
 
 **Data/source rules:**
-- Each minigame difficulty must later be driven by trial definition/config and tested stat + runtime helpers where applicable.
+- Each minigame difficulty must later be driven by trial definition/config and tested stat + Luck/runtime helpers where applicable.
 - Frontend must not hardcode final difficulty curves as authority.
-- Combat/Ares uses DB-owned live combat session / Walking Dead manifest, not frontend-authoritative combat.
 
 **UI/SCSS rules:**
 - Archive accepted HTML prototypes under `docs/ui-ux/prototypes/` only after user accepts the exact file.
@@ -5280,21 +5353,21 @@ Dodać do UI/UX backlogu aktualną mapę zaakceptowanych lub wstępnie zaakcepto
 - No placeholder packs.
 
 **Acceptance criteria:**
-- All nine trial directions are listed in a table.
-- Prototype status is explicit.
-- Future Codex task can identify which prototype direction to consult and which entries still need production mapping/spec.
+- Backlog contains a clear table for all nine trial stats/gods.
+- Each row has `Prototype status` and `HTML file/reference`.
+- It is clear which items require HTML prototype archival.
+- It is clear that production implementation requires renderer host and DB/RPC config.
 
 **Verification/smoke:**
-- Docs-only review.
-- Confirm filenames/paths with user before status docs update.
+- Documentation-only: no build required.
 
 **Required Codex report:**
-- reused:
-- checked but not reused:
-- new component/state/helper added:
-- prototype map updated:
-- source references added:
-- copied from prototype: yes/no:
+- prototype files referenced:
+- prototype directions added:
+- unclear/missing prototypes:
+- scope kept minimal:
+
+---
 
 ## UI-TRIALS-3 — Manual Trial Runtime And Difficulty Configuration Contract
 
@@ -5914,17 +5987,68 @@ Dopisać backlog entry dla combat/PvP report perspective handling.
 
 ---
 
+# UI-ONBOARDING-PREP — Next prototype/task handoff
+
+## UI-ONBOARDING-PREP-1 — Prototype Hero Creation / Onboarding Flow
+
+**Goal:**  
+Przygotować następny ręczny canvas prototype dla canonical player entry flow before Codex implementation.
+
+**Scope:**
+- Prototype should cover:
+  - server selection,
+  - server full/no free district A address state,
+  - existing hero -> dashboard/game shell path,
+  - no hero -> hero creation path,
+  - sandbox/test multi-hero switcher placeholder,
+  - hero name,
+  - origin selection with DB-backed content placeholder,
+  - origin bonuses/lore presentation,
+  - create hero action,
+  - post-creation route to stat allocation,
+  - stat allocation is not a tutorial lock.
+
+**Out of scope:**
+- Angular implementation.
+- DB/RPC implementation.
+- Direct table write assumptions.
+- Final origin content hardcoding.
+
+**Data/source rules:**
+- Prototype must reflect decisions:
+  - player entry starts from server selection,
+  - existing hero enters dashboard/game shell by default,
+  - hero creation is a coherent DB/RPC workflow,
+  - origin content is admin-configurable,
+  - new hero starts with 1000 Character Points,
+  - estate is assigned during creation,
+  - player does not choose/preview exact starting address.
+
+**UI/SCSS rules:**
+- Canvas HTML only for visual exploration.
+- No production CSS copy.
+- Keep Mythsworn player-facing premium RPG direction.
+
+**Acceptance criteria:**
+- Prototype clarifies the onboarding UX before implementation tasks.
+- No fake backend authority is implied.
+- Flow states are visually understandable.
+
+**Verification/smoke:**
+- Canvas visual review only.
+
+**Required Codex report:**
+- not applicable until implementation.
+
+---
+
 # UI-ONBOARDING — Account Entry Shell And Hero Creation
 
-Cel: zabezpieczyć zaakceptowane decyzje projektowe dla account/public shell, wejścia do gry i tworzenia postaci, tak aby Codex nie zrobił ponownie wizardu `Step 1 of 4`, nie wymieszał server selection z originami i nie potraktował stat allocation jako account onboarding.
+This section is part of the canonical UI/UX backlog. It records the accepted account/public shell, server/hero entry and Hero Creation origin carousel direction. Stat allocation is the default first in-game location after creation, not a third account-onboarding step.
 
-Flow summary:
+All tasks below inherit Part I strict execution rules: prototype visual anchors are a contract, production must use DB/RPC/read models, `database.types.ts` is read-only, critical mutations use canonical backend workflows, new/touched forms use Reactive Forms, and Codex must not copy prototype CSS/JS/`mb-*` classes into Angular.
 
-- Account-side creation flow has two screens only:
-  1. **Account Entry Shell** — `Enter the game` albo `Create new hero` / join eligible world.
-  2. **Hero Creation** — hero name + origin carousel + `Create hero`.
-- After `Create hero`, the player is already inside the in-game shell.
-- Stat Allocation is the default first in-game location after creation, not a third onboarding step and not a forced tutorial lock.
+---
 
 ## UI-ONBOARDING-ADD-1 — Account Entry Shell information architecture
 
@@ -6455,8 +6579,11 @@ Zapisać i później sprawdzić minimalne mobile/tablet constraints dla account 
 - Keyboard smoke for carousel controls.
 - Reduced-motion smoke where practical.
 
-# Appendix A — New task template
+---
 
+# Appendix A — Codex UI task template
+
+```md
 ## UI-AREA-N — Task title
 
 Goal:
@@ -6467,18 +6594,28 @@ Out of scope:
 
 Data/source rules:
 
+Required visual anchors:
+
+UI/SCSS rules:
+
+Dependencies/blockers:
+
 Acceptance criteria:
 
-Required Codex report:
+Verification/smoke:
 
+Required Codex report:
+- preflight:
 - reused:
 - checked but not reused:
-- new component/state/helper added:
-- scope kept minimal:
-- not added intentionally:
-- global tokens used:
-- shared/vendor components used:
-- global/shared SCSS classes used:
-- local SCSS added:
-- why local SCSS was necessary:
-- copied from prototype: yes/no
+- missing patterns:
+- prototype visual anchors:
+- utilities checked/used:
+- local SCSS:
+- muted-text audit:
+- data/read model source:
+- stale guards:
+- verification:
+```
+
+---

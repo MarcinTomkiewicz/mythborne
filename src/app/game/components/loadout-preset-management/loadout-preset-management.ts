@@ -6,6 +6,9 @@ import {
   LoadoutPreset,
   LoadoutPresetSlotItem,
 } from '../../../core/domain/item/item-equipment.model';
+import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
+import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
+import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
 
 @Component({
@@ -21,6 +24,9 @@ import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loado
 })
 export class LoadoutPresetManagement implements OnInit {
   readonly presets = inject(HeroLoadoutPresetsState);
+  readonly equipment = inject(CurrentEquipmentState);
+  private readonly armory = inject(ArmoryShelfState);
+  private readonly page = inject(ArmoryPageFacade);
   readonly presetNameForm = new FormRecord<FormControl<string>>({});
   readonly presetRows = computed(() =>
     this.presets.presets().map((preset) => ({
@@ -93,6 +99,12 @@ export class LoadoutPresetManagement implements OnInit {
     });
   }
 
+  applyPreset(preset: LoadoutPreset): void {
+    this.equipment.applyLoadoutPreset({
+      presetNumber: preset.presetNumber,
+    }, () => this.refreshArmoryAndDerivedStats());
+  }
+
   previewStatusLabel(item: LoadoutPresetSlotItem | null): string {
     if (!item) {
       return 'Empty slot';
@@ -160,6 +172,11 @@ export class LoadoutPresetManagement implements OnInit {
       new FormControl<string>(preset.name, { nonNullable: true }),
       { emitEvent: false },
     );
+  }
+
+  private refreshArmoryAndDerivedStats(): void {
+    this.armory.refresh();
+    this.page.loadData();
   }
 }
 

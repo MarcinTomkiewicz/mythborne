@@ -75,6 +75,21 @@
             Failed: {{ operationMessage(entry) }}
           </p>
         }
+        @for (entry of equipmentJournalEntries('skipped'); track $index) {
+          <p class="mb-0">Skipped: {{ operationMessage(entry) }}</p>
+        }
+        @if (journal.finalEquipment; as finalEquipment) {
+          <div class="flex-col gap-xs">
+            <strong class="heading-color">Final equipment</strong>
+            @if (finalEquipment.slots.length) {
+              @for (slot of finalEquipment.slots; track slot.slotKey) {
+                <p class="mb-0">{{ slot.slotLabel }}: {{ slot.itemName }}</p>
+              }
+            } @else {
+              <p class="muted-text mb-0">No equipped items returned.</p>
+            }
+          </div>
+        }
       </div>
     }
 

@@ -22,6 +22,7 @@ describe('CurrentEquipmentState', () => {
       'getCurrentEquipment',
       'equipItem',
       'bulkEquipItems',
+      'applyLoadoutPreset',
       'unequipSlot',
     ]);
 
@@ -231,6 +232,44 @@ describe('CurrentEquipmentState', () => {
     expect(state.actionJournal()?.equipped[0].itemId).toBe('item-equipped');
     expect(state.actionJournal()?.failed[0].itemId).toBe('item-failed');
     expect(state.slot('main_hand')?.itemId).toBe('item-equipped');
+  });
+
+  it('applies a loadout preset through the service and preserves partial journal', () => {
+    equipment.applyLoadoutPreset.and.returnValue(of(operationJournal({
+      success: false,
+      equipped: [{
+        action: 'equipped',
+        itemId: 'exact-item',
+        slotKey: 'main_hand',
+        reason: 'preset_apply_exact_item',
+        message: 'Applied exact item.',
+        success: true,
+        detailsJson: null,
+      }],
+      skipped: [{
+        action: 'skipped',
+        itemId: 'missing-item',
+        slotKey: 'ring_2',
+        reason: 'preset_item_missing',
+        message: 'Saved item is missing.',
+        success: true,
+        detailsJson: null,
+      }],
+      finalEquipment: loadout([
+        equippedSlot({ itemId: 'exact-item', slotKey: 'main_hand' }),
+      ]),
+    })));
+
+    state.applyLoadoutPreset({ presetNumber: 2 });
+
+    expect(equipment.applyLoadoutPreset).toHaveBeenCalledOnceWith({
+      presetNumber: 2,
+    });
+    expect(state.actionError()).toBeNull();
+    expect(state.actionJournal()?.equipped[0].reason)
+      .toBe('preset_apply_exact_item');
+    expect(state.actionJournal()?.skipped[0].reason).toBe('preset_item_missing');
+    expect(state.slot('main_hand')?.itemId).toBe('exact-item');
   });
 
   it('unequips a slot through the service and refreshes when no final equipment is returned', () => {

@@ -13,6 +13,7 @@ import {
   EquipHeroItemInput,
   BulkEquipHeroItemsInput,
   HeroEquipment,
+  LoadoutPresetInput,
   UnequipHeroSlotInput,
 } from './hero-equipment';
 
@@ -110,6 +111,13 @@ export class CurrentEquipmentState {
   bulkEquipItems(input: BulkEquipHeroItemsInput, afterResponse?: () => void): void {
     this.runEquipmentAction(
       () => this.equipment.bulkEquipItems(input),
+      afterResponse,
+    );
+  }
+
+  applyLoadoutPreset(input: LoadoutPresetInput, afterResponse?: () => void): void {
+    this.runEquipmentAction(
+      () => this.equipment.applyLoadoutPreset(input),
       afterResponse,
     );
   }

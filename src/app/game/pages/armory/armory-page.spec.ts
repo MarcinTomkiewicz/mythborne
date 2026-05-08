@@ -488,6 +488,49 @@ describe('ArmoryPage', () => {
     expect(text).not.toContain('Already equipped:');
   });
 
+  it('renders preset apply skipped entries and final equipment from DB journal', () => {
+    equipment.actionJournal.set(operationJournal({
+      success: false,
+      equipped: [{
+        action: 'equipped',
+        itemId: 'exact-dagger',
+        slotKey: 'main_hand',
+        reason: 'preset_apply_exact_item',
+        message: 'Applied exact item.',
+        success: true,
+        detailsJson: null,
+      }],
+      skipped: [{
+        action: 'skipped',
+        itemId: 'missing-ring',
+        slotKey: 'ring_2',
+        reason: 'preset_item_missing',
+        message: 'Saved ring is missing.',
+        success: true,
+        detailsJson: null,
+      }],
+      finalEquipment: {
+        heroId: 'hero-1',
+        slots: [
+          equippedItem({
+            itemId: 'exact-dagger',
+            itemName: 'Demonic Dagger',
+            slotKey: 'main_hand',
+            slotLabel: 'Main hand',
+          }),
+        ],
+      },
+    }));
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Equipment result');
+    expect(text).toContain('Equipped: Applied exact item.');
+    expect(text).toContain('Skipped: Saved ring is missing.');
+    expect(text).toContain('Final equipment');
+    expect(text).toContain('Main hand: Demonic Dagger');
+  });
+
   it('rejects blank, null, and non-numeric move targets before state action', () => {
     const item = armoryItem({ itemId: 'item-1' });
 
@@ -605,6 +648,9 @@ class FakeCurrentEquipmentState {
     .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
   readonly bulkEquipItems = jasmine
     .createSpy('bulkEquipItems')
+    .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
+  readonly applyLoadoutPreset = jasmine
+    .createSpy('applyLoadoutPreset')
     .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
   readonly unequipSlot = jasmine
     .createSpy('unequipSlot')
