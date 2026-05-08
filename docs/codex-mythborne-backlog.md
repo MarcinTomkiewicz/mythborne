@@ -7588,6 +7588,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Combat UI messaging matches current loadout/stat decision.
 - Manual combat display does not contradict per-turn loadout behavior.
 
+**Implementation note:** S23 accepted on 2026-05-08. `/game/combat` remains a documented sandbox/test surface using the currently loaded hero runtime snapshot, while its Training Duel copy now explicitly states that production live combat resolves loadout and timing manifests through DB/RPC per action. The change does not reuse exploration live-combat state/service because this route is not the production live combat surface. A focused component regression covers the boundary text. No DB/RPC path, direct write, generated type, migration, service/helper/component or `isPlayerUsableItemStatus(...)` change was made. Verification passed with `npx tsc --noEmit`, focused combat page spec and `npm run build` with known budget/CommonJS warnings. User smoke for real exploration live combat confirmed DB log, HP updates, finalization, outcome/turns/result rendering; attack-source labels remain a future safe read-model/UI improvement only if DB exposes them.
+
 ---
 
 ## Task S24 — PvP and spy equipment display alignment
