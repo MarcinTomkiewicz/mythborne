@@ -7481,6 +7481,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Suggestion is non-intrusive.
 - Preset update still uses canonical RPC.
 
+**Implementation note:** S18 accepted on 2026-05-08 after user smoke. `/game/armory` loadout preset preview now compares the previewed preset with current equipment by literal slot and exact item id where current equipment data is loaded or empty. When they differ, the preview panel shows a non-intrusive `Current loadout differs` suggestion with local `Dismiss` and intentional `Save current loadout`; dismiss is UI-local and does not persist or nag after dismissal for the same preset update key. The overwrite action reuses the existing `saveCurrentLoadout(...)` path, backed by canonical `save_current_hero_loadout_preset(...)`, and no auto-update, apply side effect, requirement check, slot rotation or direct table write was added. Pure preview/suggestion display logic was extracted to feature-local `loadout-preset-preview-display.ts`, reducing `LoadoutPresetManagement` from 235 to 158 lines. Verification passed with `npx tsc --noEmit`, focused loadout preset spec, static greps for PrimeNG/form/direct-write gates, and `npm run build` with known budget/CommonJS warnings. User smoke confirmed matching preset has no suggestion, differing preset shows suggestion, dismiss works locally, and save current loadout overwrites the intended preset and refreshes UI. Cleanup: component -77 lines / helper +122 lines / net +45 production TS; unused code checked.
+
 ---
 
 ## Task S19 — Item lifecycle actions alignment

@@ -143,6 +143,37 @@
             </div>
           }
         </div>
+
+        @if (updateSuggestion(); as suggestion) {
+          <div class="mg-card p-sm flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs">
+                <strong class="heading-color">Current loadout differs</strong>
+                <span>
+                  This preset can be overwritten with the current equipment.
+                </span>
+              </div>
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <p-button
+                  type="button"
+                  severity="secondary"
+                  size="small"
+                  label="Dismiss"
+                  [disabled]="presets.isMutating()"
+                  (onClick)="dismissUpdateSuggestion(suggestion.key)"
+                />
+                <p-button
+                  type="button"
+                  severity="primary"
+                  size="small"
+                  label="Save current loadout"
+                  [disabled]="presets.isMutating()"
+                  (onClick)="saveCurrentLoadout(suggestion.preset)"
+                />
+              </div>
+            </div>
+          </div>
+        }
       </div>
     } @else if (presets.isPreviewLoading()) {
       <p class="muted-text mt-md mb-0">Loading preset preview.</p>

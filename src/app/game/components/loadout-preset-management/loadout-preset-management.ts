@@ -1,15 +1,19 @@
-import { Component, OnInit, computed, effect, inject } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import {
-  LoadoutPreset,
-  LoadoutPresetSlotItem,
-} from '../../../core/domain/item/item-equipment.model';
+import { LoadoutPreset } from '../../../core/domain/item/item-equipment.model';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
+import {
+  buildLoadoutPresetPreviewRows,
+  loadoutPresetUpdateSuggestion,
+  previewItemName,
+  previewStatusClass,
+  previewStatusLabel,
+} from './loadout-preset-preview-display';
 
 @Component({
   selector: 'app-loadout-preset-management',
@@ -27,6 +31,7 @@ export class LoadoutPresetManagement implements OnInit {
   readonly equipment = inject(CurrentEquipmentState);
   private readonly armory = inject(ArmoryShelfState);
   private readonly page = inject(ArmoryPageFacade);
+  private readonly dismissedUpdateSuggestionKey = signal<string | null>(null);
   readonly presetNameForm = new FormRecord<FormControl<string>>({});
   readonly presetRows = computed(() =>
     this.presets.presets().map((preset) => ({
@@ -34,31 +39,24 @@ export class LoadoutPresetManagement implements OnInit {
       controlName: presetControlName(preset.presetNumber),
     })),
   );
-  readonly previewRows = computed(() => {
-    const preview = this.presets.preview();
-    if (!preview) {
-      return [];
-    }
-
-    const itemsBySlot = new Map(
-      preview.slotItems.map((item) => [item.slotKey, item]),
-    );
-    const slots = this.presets.previewSlots();
-
-    return slots.length
-      ? slots.map((slot) => ({
-          slotKey: slot.slotKey,
-          slotLabel: slot.label,
-          slotSortOrder: slot.sortOrder,
-          item: itemsBySlot.get(slot.slotKey) ?? null,
-        }))
-      : preview.slotItems.map((item) => ({
-          slotKey: item.slotKey,
-          slotLabel: item.slotLabel,
-          slotSortOrder: item.slotSortOrder,
-          item,
-        }));
-  });
+  readonly previewRows = computed(() =>
+    buildLoadoutPresetPreviewRows(
+      this.presets.preview(),
+      this.presets.previewSlots(),
+    ),
+  );
+  readonly updateSuggestion = computed(() =>
+    loadoutPresetUpdateSuggestion(
+      this.presets.preview(),
+      this.previewRows(),
+      (slotKey) => this.equipment.slot(slotKey)?.itemId ?? null,
+      this.canComparePreviewWithCurrentLoadout(),
+      this.dismissedUpdateSuggestionKey(),
+    ),
+  );
+  readonly previewStatusLabel = previewStatusLabel;
+  readonly previewStatusClass = previewStatusClass;
+  readonly previewItemName = previewItemName;
   private readonly syncPresetForms = effect(() =>
     this.syncLoadoutPresetForms(this.presets.presets()),
   );
@@ -105,39 +103,8 @@ export class LoadoutPresetManagement implements OnInit {
     }, () => this.refreshArmoryAndDerivedStats());
   }
 
-  previewStatusLabel(item: LoadoutPresetSlotItem | null): string {
-    if (!item) {
-      return 'Empty slot';
-    }
-
-    switch (item.previewStatus) {
-      case 'available':
-        return 'Owned and available';
-      case 'missing':
-        return 'Item missing';
-      case 'no_longer_owned':
-        return 'No longer owned';
-      case 'scrapped':
-        return 'Scrapped';
-      default:
-        return humanizeKey(item.previewStatus);
-    }
-  }
-
-  previewStatusClass(item: LoadoutPresetSlotItem | null): string {
-    if (!item) {
-      return 'tag-badge tag-badge--muted';
-    }
-
-    return item.previewStatus === 'available'
-      ? 'tag-badge tag-badge--success'
-      : 'tag-badge tag-badge--warn';
-  }
-
-  previewItemName(item: LoadoutPresetSlotItem): string {
-    return item.currentItemName
-      ?? item.savedItemNameSnapshot
-      ?? item.savedItemId;
+  dismissUpdateSuggestion(key: string): void {
+    this.dismissedUpdateSuggestionKey.set(key);
   }
 
   private syncLoadoutPresetForms(presets: readonly LoadoutPreset[]): void {
@@ -178,16 +145,14 @@ export class LoadoutPresetManagement implements OnInit {
     this.armory.refresh();
     this.page.loadData();
   }
+
+  private canComparePreviewWithCurrentLoadout(): boolean {
+    const status = this.equipment.status();
+
+    return status === 'loaded' || status === 'empty';
+  }
 }
 
 function presetControlName(presetNumber: number): string {
   return `preset_${presetNumber}`;
-}
-
-function humanizeKey(value: string): string {
-  return value
-    .split(/[_\s-]+/)
-    .filter(Boolean)
-    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-    .join(' ') || 'Status';
 }

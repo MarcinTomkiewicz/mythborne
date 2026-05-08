@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import {
   EquipmentSlot,
+  EquippedItemSummary,
   LoadoutPreset,
   LoadoutPresetPreview,
 } from '../../../core/domain/item/item-equipment.model';
@@ -165,6 +166,86 @@ describe('LoadoutPresetManagement', () => {
     expect(text).not.toContain('similar');
   });
 
+  it('suggests overwriting previewed preset when current loadout differs', () => {
+    presets.setPresets([loadoutPreset({ presetNumber: 1, name: 'Trials' })]);
+    presets.preview.set(loadoutPreview({
+      preset: loadoutPreset({ presetNumber: 1, name: 'Trials' }),
+      slotItems: [
+        previewItem({
+          slotKey: 'main_hand',
+          savedItemId: 'saved-dagger',
+          currentItemName: 'Saved Dagger',
+        }),
+      ],
+    }));
+    presets.previewSlots.set([
+      equipmentSlot({ slotKey: 'main_hand', label: 'Main hand' }),
+    ]);
+    equipment.setSlots([
+      equippedItem({ itemId: 'current-dagger', slotKey: 'main_hand' }),
+    ]);
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Current loadout differs');
+    expect(text).toContain('This preset can be overwritten with the current equipment.');
+
+    fixture.componentInstance.saveCurrentLoadout(
+      fixture.componentInstance.updateSuggestion()!.preset,
+    );
+
+    expect(presets.saveCurrentLoadout).toHaveBeenCalledWith({
+      presetNumber: 1,
+      name: 'Trials',
+    });
+  });
+
+  it('does not suggest update when previewed preset matches current loadout or is dismissed', () => {
+    const preset = loadoutPreset({ presetId: 'preset-2', presetNumber: 2 });
+    presets.setPresets([preset]);
+    presets.preview.set(loadoutPreview({
+      preset,
+      slotItems: [
+        previewItem({
+          slotKey: 'main_hand',
+          savedItemId: 'same-dagger',
+        }),
+      ],
+    }));
+    presets.previewSlots.set([
+      equipmentSlot({ slotKey: 'main_hand', label: 'Main hand' }),
+    ]);
+    equipment.setSlots([
+      equippedItem({ itemId: 'same-dagger', slotKey: 'main_hand' }),
+    ]);
+    fixture.detectChanges();
+
+    expect(textContent(fixture)).not.toContain('Current loadout differs');
+
+    equipment.setSlots([
+      equippedItem({ itemId: 'different-dagger', slotKey: 'main_hand' }),
+    ]);
+    fixture.detectChanges();
+    const suggestion = fixture.componentInstance.updateSuggestion();
+
+    expect(suggestion).not.toBeNull();
+    fixture.componentInstance.dismissUpdateSuggestion(suggestion!.key);
+    fixture.detectChanges();
+
+    expect(textContent(fixture)).not.toContain('Current loadout differs');
+  });
+
+  it('does not suggest update while current equipment data is unavailable', () => {
+    presets.setPresets([loadoutPreset()]);
+    presets.preview.set(loadoutPreview({
+      slotItems: [previewItem({ savedItemId: 'saved-dagger' })],
+    }));
+    equipment.status.set('loading');
+    fixture.detectChanges();
+
+    expect(textContent(fixture)).not.toContain('Current loadout differs');
+  });
+
   it('shows controlled preset feedback', () => {
     presets.actionError.set('Preset name is required.');
     presets.actionMessage.set('Preset 1 renamed.');
@@ -205,9 +286,20 @@ class FakeHeroLoadoutPresetsState {
 
 class FakeCurrentEquipmentState {
   readonly isMutating = signal(false);
+  readonly status = signal<'loaded' | 'empty' | 'loading'>('empty');
+  readonly slots = signal<EquippedItemSummary[]>([]);
   readonly applyLoadoutPreset = jasmine
     .createSpy('applyLoadoutPreset')
     .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
+
+  slot(slotKey: string): EquippedItemSummary | null {
+    return this.slots().find((slot) => slot.slotKey === slotKey) ?? null;
+  }
+
+  setSlots(slots: EquippedItemSummary[]): void {
+    this.slots.set(slots);
+    this.status.set(slots.length ? 'loaded' : 'empty');
+  }
 }
 
 class FakeArmoryShelfState {
@@ -275,6 +367,40 @@ function equipmentSlot(overrides: Partial<EquipmentSlot> = {}): EquipmentSlot {
     sortOrder: 10,
     equipmentArea: 'weapon',
     equipmentSlotGroup: 'hand',
+    ...overrides,
+  };
+}
+
+function equippedItem(
+  overrides: Partial<EquippedItemSummary> = {},
+): EquippedItemSummary {
+  return {
+    itemId: 'item-1',
+    heroId: 'hero-1',
+    ownerHeroId: 'hero-1',
+    itemName: 'Bronze Blade',
+    lifecycleStatus: 'active',
+    generationBaseId: 'base-1',
+    generationQualityKey: 'normal',
+    prefixAffixId: null,
+    suffixAffixId: null,
+    slotKey: 'main_hand',
+    slotLabel: 'Main hand',
+    slotSortOrder: 10,
+    equipmentArea: 'weapon',
+    equipmentSlotGroup: 'hand',
+    equippedAt: '2026-05-08T10:00:00.000Z',
+    baseKey: 'bronze_blade',
+    baseName: 'Bronze Blade',
+    baseTypeKey: 'weapon',
+    handUsage: 'one_handed',
+    qualityLabel: 'Normal',
+    qualityMultiplier: 1,
+    prefixKey: null,
+    prefixName: null,
+    suffixKey: null,
+    suffixName: null,
+    isRuntimeUsable: true,
     ...overrides,
   };
 }
