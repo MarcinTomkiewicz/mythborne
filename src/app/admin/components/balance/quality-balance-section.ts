@@ -20,4 +20,16 @@ export class QualityBalanceSection {
   readonly page = inject(ItemGenerationBalancePageFacade);
   readonly selectorFields = computed(() => createQualitySelectorFields(this.page.quality.items()));
   readonly editorFields = QUALITY_EDITOR_FIELDS;
+  readonly requirementMultiplierByQualityKey = computed(
+    () =>
+      new Map(
+        this.page
+          .quality
+          .items()
+          .map((quality): readonly [string, number] => [
+            quality.key,
+            quality.requirementMultiplier,
+          ]),
+      ),
+  );
 }

@@ -64,9 +64,9 @@
       <div class="flex-col gap-xs">
         <p class="card-legend mb-0">Impact preview</p>
         <h4 class="mg-section__title mg-section__title--xs mb-0">
-          Quality value scaling
+          Quality multiplier preview
         </h4>
-      <p class="muted-text mb-0">
+        <p class="muted-text mb-0">
           Preview uses active quality dictionary rows from the database. Item value and quality-scaled bonus value use the
           value/bonus multiplier; item requirements use the separate requirement multiplier shown above.
           Bonus level interval is never scaled. Sample bonus value may be negative to preview a malus.
@@ -128,8 +128,19 @@
 
             <div class="mg-grid grid-cols-2 gap-sm w-100">
               <div class="flex-col gap-xs">
-                <span class="muted-text">Multiplier</span>
+                <span class="muted-text">Value/bonus multiplier</span>
                 <strong class="heading-color">x{{ quality.multiplier }}</strong>
+              </div>
+
+              <div class="flex-col gap-xs">
+                <span class="muted-text">Requirement multiplier</span>
+                <strong class="heading-color">
+                  @if (requirementMultiplierByQualityKey().has(quality.qualityKey)) {
+                    x{{ requirementMultiplierByQualityKey().get(quality.qualityKey) }}
+                  } @else {
+                    Not returned by quality rows
+                  }
+                </strong>
               </div>
 
               <div class="flex-col gap-xs">

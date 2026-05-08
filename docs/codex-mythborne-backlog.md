@@ -7653,6 +7653,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Admin can distinguish power/value scaling from requirement scaling.
 - Quality settings come from DB/config/read model.
 
+**Implementation note:** S26 accepted on 2026-05-08 after user smoke. `/admin/balance` quality impact preview now labels `Value/bonus multiplier` separately from `Requirement multiplier`; value/bonus data comes from the DB/RPC preview rows and requirement multiplier data comes from the already loaded DB-backed quality rows. No hardcoded multiplier values, Angular-side requirement calculation, DB/RPC change, migration, generated type edit or quality generation semantic change was added. Verification passed with `npx tsc --noEmit`, focused item-generation mapper/form specs and `npm run build` with known warnings.
+
 ---
 
 # Epic T — Guild Foundation
