@@ -3,7 +3,11 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { LoadoutPreset } from '../../../core/domain/item/item-equipment.model';
+import {
+  EquipmentSlot,
+  LoadoutPreset,
+  LoadoutPresetPreview,
+} from '../../../core/domain/item/item-equipment.model';
 import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
 import { LoadoutPresetManagement } from './loadout-preset-management';
 
@@ -39,7 +43,7 @@ describe('LoadoutPresetManagement', () => {
     expect(presets.load).toHaveBeenCalled();
   });
 
-  it('renders preset management without apply or preview actions', () => {
+  it('renders preset management without apply actions', () => {
     presets.setPresets([
       loadoutPreset({ presetNumber: 1, name: 'Travel', slotCount: 2 }),
       loadoutPreset({ presetNumber: 2, name: 'Trials', slotCount: 5 }),
@@ -55,9 +59,9 @@ describe('LoadoutPresetManagement', () => {
     expect(text).toContain('2 slots');
     expect(text).toContain('Rename');
     expect(text).toContain('Save current loadout');
+    expect(text).toContain('Preview');
     expect(text).toContain('Clear');
     expect(text).not.toContain('Apply preset');
-    expect(text).not.toContain('Preview preset');
   });
 
   it('renames, saves and clears presets through preset state', () => {
@@ -74,6 +78,7 @@ describe('LoadoutPresetManagement', () => {
     const preset = component.presetRows()[0];
     component.renamePreset(preset);
     component.saveCurrentLoadout(preset);
+    component.previewPreset(preset);
     component.clearPreset(preset);
 
     expect(presets.renamePreset).toHaveBeenCalledWith({
@@ -84,9 +89,62 @@ describe('LoadoutPresetManagement', () => {
       presetNumber: 2,
       name: 'Boss loadout',
     });
+    expect(presets.previewPreset).toHaveBeenCalledWith({
+      presetNumber: 2,
+    });
     expect(presets.clearPreset).toHaveBeenCalledWith({
       presetNumber: 2,
     });
+  });
+
+  it('renders preview exact items, unavailable statuses and empty literal slots', () => {
+    presets.setPresets([loadoutPreset({ presetNumber: 1, name: 'Trials' })]);
+    presets.preview.set(loadoutPreview({
+      slotItems: [
+        previewItem({
+          slotKey: 'main_hand',
+          slotLabel: 'Main hand',
+          savedItemId: 'item-owned',
+          currentItemName: 'Demonic Dagger',
+          previewStatus: 'available',
+        }),
+        previewItem({
+          slotKey: 'ring_1',
+          slotLabel: 'Ring 1',
+          savedItemId: 'item-gone',
+          savedItemNameSnapshot: 'Old Ring',
+          currentItemName: null,
+          previewStatus: 'no_longer_owned',
+          statusMessage: 'Item is no longer owned by this hero.',
+        }),
+        previewItem({
+          slotKey: 'ring_2',
+          slotLabel: 'Ring 2',
+          savedItemId: 'item-scrapped',
+          savedItemNameSnapshot: 'Broken Ring',
+          currentItemName: null,
+          previewStatus: 'scrapped',
+        }),
+      ],
+    }));
+    presets.previewSlots.set([
+      equipmentSlot({ slotKey: 'main_hand', label: 'Main hand', sortOrder: 10 }),
+      equipmentSlot({ slotKey: 'off_hand', label: 'Off hand', sortOrder: 20 }),
+      equipmentSlot({ slotKey: 'ring_1', label: 'Ring 1', sortOrder: 80 }),
+      equipmentSlot({ slotKey: 'ring_2', label: 'Ring 2', sortOrder: 90 }),
+    ]);
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Preset 1 preview');
+    expect(text).toContain('Demonic Dagger');
+    expect(text).toContain('Exact item ID: item-owned');
+    expect(text).toContain('No longer owned');
+    expect(text).toContain('Scrapped');
+    expect(text).toContain('Empty slot');
+    expect(text).toContain('No saved item for this literal slot.');
+    expect(text).not.toContain('requirements');
+    expect(text).not.toContain('similar');
   });
 
   it('shows controlled preset feedback', () => {
@@ -102,16 +160,22 @@ describe('LoadoutPresetManagement', () => {
 
 class FakeHeroLoadoutPresetsState {
   readonly presets = signal<LoadoutPreset[]>([]);
+  readonly preview = signal<LoadoutPresetPreview | null>(null);
+  readonly previewSlots = signal<EquipmentSlot[]>([]);
   readonly status = signal<'empty' | 'loaded'>('empty');
+  readonly previewStatus = signal<'idle' | 'loading' | 'loaded' | 'empty' | 'error'>('idle');
   readonly error = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
   readonly actionMessage = signal<string | null>(null);
+  readonly previewError = signal<string | null>(null);
   readonly isLoading = signal(false);
   readonly isEmpty = signal(true);
+  readonly isPreviewLoading = signal(false);
   readonly isMutating = signal(false);
   readonly load = jasmine.createSpy('load');
   readonly renamePreset = jasmine.createSpy('renamePreset');
   readonly saveCurrentLoadout = jasmine.createSpy('saveCurrentLoadout');
+  readonly previewPreset = jasmine.createSpy('previewPreset');
   readonly clearPreset = jasmine.createSpy('clearPreset');
 
   setPresets(presets: LoadoutPreset[]): void {
@@ -135,6 +199,49 @@ function loadoutPreset(overrides: Partial<LoadoutPreset> = {}): LoadoutPreset {
     savedAt: null,
     clearedAt: null,
     updatedAt: '2026-05-08T10:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function loadoutPreview(
+  overrides: Partial<LoadoutPresetPreview> = {},
+): LoadoutPresetPreview {
+  return {
+    preset: loadoutPreset(),
+    slotItems: [],
+    ...overrides,
+  };
+}
+
+function previewItem(
+  overrides: Partial<LoadoutPresetPreview['slotItems'][number]> = {},
+): LoadoutPresetPreview['slotItems'][number] {
+  return {
+    presetId: 'preset-1',
+    presetNumber: 1,
+    slotKey: 'main_hand',
+    slotLabel: 'Main hand',
+    slotSortOrder: 10,
+    savedItemId: 'item-1',
+    savedItemNameSnapshot: 'Saved item',
+    currentItemName: 'Current item',
+    currentOwnerHeroId: 'hero-1',
+    lifecycleStatus: 'active',
+    isOwnedByHero: true,
+    isRuntimeUsable: true,
+    previewStatus: 'available',
+    statusMessage: null,
+    ...overrides,
+  };
+}
+
+function equipmentSlot(overrides: Partial<EquipmentSlot> = {}): EquipmentSlot {
+  return {
+    slotKey: 'main_hand',
+    label: 'Main hand',
+    sortOrder: 10,
+    equipmentArea: 'weapon',
+    equipmentSlotGroup: 'hand',
     ...overrides,
   };
 }

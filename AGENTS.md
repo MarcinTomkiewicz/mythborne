@@ -6,20 +6,20 @@ This file is the short execution-oriented guide for coding agents working on **M
 
 Prefer this file for fast implementation context. For broader detail, also consult:
 
-- `database-current.md`
-- `current-decisions.md`
-- `project-context.md`
-- `codex-Mythsworn-backlog.md`
-- `current-state-summary.md`
-- `current-todo.md`
+- `docs/database-current.md`
+- `docs/current-decisions.md`
+- `docs/project-context.md`
+- `docs/codex-Mythsworn-backlog.md`
+- `docs/current-state-summary.md`
+- `docs/current-todo.md`
 
 If there is a conflict, prefer:
 
 1. explicit user instruction;
 2. current live database / migrations / dump and user-provided `database.types.ts` input;
-3. `database-current.md` as the semantic DB/RPC/helper registry;
-4. `current-decisions.md`;
-5. `project-context.md`;
+3. `docs/database-current.md` as the semantic DB/RPC/helper registry;
+4. `docs/current-decisions.md`;
+5. `docs/project-context.md`;
 6. this file.
 
 Older Monster Hunt / Mythborne wording may remain in legacy source files, but new implementation, UI-facing text and documentation should use **Mythsworn** unless the user explicitly asks otherwise.
@@ -76,11 +76,11 @@ Avoid by default:
 
 ## Project and source-of-truth discipline
 
-- `database-current.md` is the semantic DB/RPC/helper registry.
-- `current-decisions.md` is the active decision log and overrides older concept docs.
-- `project-context.md` is the short operational implementation context.
-- `codex-Mythsworn-backlog.md` is the practical Codex task queue.
-- `current-state-summary.md` and `current-todo.md` are progress/status files, not schema sources.
+- `docs/database-current.md` is the semantic DB/RPC/helper registry.
+- `docs/current-decisions.md` is the active decision log and overrides older concept docs.
+- `docs/project-context.md` is the short operational implementation context.
+- `docs/codex-Mythsworn-backlog.md` is the practical Codex task queue.
+- `docs/current-state-summary.md` and `current-todo.md` are progress/status files, not schema sources.
 - Old uploaded concept files can explain history, but they must not override current DB/migrations/decisions.
 - `database.types.ts` is generated input owned by the user/migrator. It can be read by Codex but never changed by Codex.
 

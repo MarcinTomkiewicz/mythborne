@@ -3,7 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
 import {
   ClearLoadoutPresetResult,
+  EquipmentSlot,
   LoadoutPreset,
+  LoadoutPresetPreview,
   RenameLoadoutPresetResult,
   SaveLoadoutPresetResult,
 } from '../../domain/item/item-equipment.model';
@@ -21,6 +23,8 @@ describe('HeroLoadoutPresetsState', () => {
     activeHero = new FakeActiveHero();
     equipment = jasmine.createSpyObj<HeroEquipment>('HeroEquipment', [
       'getLoadoutPresets',
+      'getEquipmentSlots',
+      'previewLoadoutPreset',
       'renameLoadoutPreset',
       'saveCurrentLoadoutPreset',
       'clearLoadoutPreset',
@@ -118,6 +122,48 @@ describe('HeroLoadoutPresetsState', () => {
     expect(state.actionMessage()).toBe('Preset 2 cleared from 4 slots.');
   });
 
+  it('previews a preset with literal equipment slots and exact item rows', () => {
+    equipment.previewLoadoutPreset.and.returnValue(of(loadoutPreview({
+      slotItems: [previewItem({
+        slotKey: 'main_hand',
+        savedItemId: 'exact-item-id',
+      })],
+    })));
+    equipment.getEquipmentSlots.and.returnValue(of([
+      equipmentSlot({ slotKey: 'main_hand', label: 'Main hand' }),
+      equipmentSlot({ slotKey: 'off_hand', label: 'Off hand' }),
+    ]));
+
+    state.previewPreset({ presetNumber: 2 });
+
+    expect(equipment.previewLoadoutPreset).toHaveBeenCalledOnceWith({
+      presetNumber: 2,
+    });
+    expect(equipment.getEquipmentSlots).toHaveBeenCalledTimes(1);
+    expect(state.previewStatus()).toBe('loaded');
+    expect(state.preview()?.slotItems[0].savedItemId).toBe('exact-item-id');
+    expect(state.previewSlots().map((slot) => slot.slotKey))
+      .toEqual(['main_hand', 'off_hand']);
+  });
+
+  it('ignores stale preset preview success after active hero context changes', () => {
+    const previewRequest = new Subject<LoadoutPresetPreview>();
+    equipment.previewLoadoutPreset.and.returnValue(previewRequest.asObservable());
+    equipment.getEquipmentSlots.and.returnValue(of([equipmentSlot()]));
+
+    state.previewPreset({ presetNumber: 1 });
+    activeHero.state.set(activeHeroState({
+      heroId: 'hero-2',
+      serverId: 'server-1',
+    }));
+    previewRequest.next(loadoutPreview());
+    previewRequest.complete();
+
+    expect(state.previewStatus()).toBe('error');
+    expect(state.previewError()).toBe('Loadout preset context changed.');
+    expect(state.preview()).toBeNull();
+  });
+
   it('ignores stale loadout preset success after active hero context changes', () => {
     const request = new Subject<LoadoutPreset[]>();
     equipment.getLoadoutPresets.and.returnValue(request.asObservable());
@@ -206,6 +252,49 @@ function clearResult(
     name: 'Preset 1',
     clearedSlotCount: 0,
     requestId: 'request-1',
+    ...overrides,
+  };
+}
+
+function loadoutPreview(
+  overrides: Partial<LoadoutPresetPreview> = {},
+): LoadoutPresetPreview {
+  return {
+    preset: loadoutPreset(),
+    slotItems: [],
+    ...overrides,
+  };
+}
+
+function previewItem(
+  overrides: Partial<LoadoutPresetPreview['slotItems'][number]> = {},
+): LoadoutPresetPreview['slotItems'][number] {
+  return {
+    presetId: 'preset-1',
+    presetNumber: 1,
+    slotKey: 'main_hand',
+    slotLabel: 'Main hand',
+    slotSortOrder: 10,
+    savedItemId: 'item-1',
+    savedItemNameSnapshot: 'Saved item',
+    currentItemName: 'Current item',
+    currentOwnerHeroId: 'hero-1',
+    lifecycleStatus: 'active',
+    isOwnedByHero: true,
+    isRuntimeUsable: true,
+    previewStatus: 'available',
+    statusMessage: null,
+    ...overrides,
+  };
+}
+
+function equipmentSlot(overrides: Partial<EquipmentSlot> = {}): EquipmentSlot {
+  return {
+    slotKey: 'main_hand',
+    label: 'Main hand',
+    sortOrder: 10,
+    equipmentArea: 'weapon',
+    equipmentSlotGroup: 'hand',
     ...overrides,
   };
 }

@@ -2,7 +2,10 @@ import { Component, OnInit, computed, effect, inject } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { LoadoutPreset } from '../../../core/domain/item/item-equipment.model';
+import {
+  LoadoutPreset,
+  LoadoutPresetSlotItem,
+} from '../../../core/domain/item/item-equipment.model';
 import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
 
 @Component({
@@ -25,6 +28,31 @@ export class LoadoutPresetManagement implements OnInit {
       controlName: presetControlName(preset.presetNumber),
     })),
   );
+  readonly previewRows = computed(() => {
+    const preview = this.presets.preview();
+    if (!preview) {
+      return [];
+    }
+
+    const itemsBySlot = new Map(
+      preview.slotItems.map((item) => [item.slotKey, item]),
+    );
+    const slots = this.presets.previewSlots();
+
+    return slots.length
+      ? slots.map((slot) => ({
+          slotKey: slot.slotKey,
+          slotLabel: slot.label,
+          slotSortOrder: slot.sortOrder,
+          item: itemsBySlot.get(slot.slotKey) ?? null,
+        }))
+      : preview.slotItems.map((item) => ({
+          slotKey: item.slotKey,
+          slotLabel: item.slotLabel,
+          slotSortOrder: item.slotSortOrder,
+          item,
+        }));
+  });
   private readonly syncPresetForms = effect(() =>
     this.syncLoadoutPresetForms(this.presets.presets()),
   );
@@ -57,6 +85,47 @@ export class LoadoutPresetManagement implements OnInit {
     this.presets.clearPreset({
       presetNumber: preset.presetNumber,
     });
+  }
+
+  previewPreset(preset: LoadoutPreset): void {
+    this.presets.previewPreset({
+      presetNumber: preset.presetNumber,
+    });
+  }
+
+  previewStatusLabel(item: LoadoutPresetSlotItem | null): string {
+    if (!item) {
+      return 'Empty slot';
+    }
+
+    switch (item.previewStatus) {
+      case 'available':
+        return 'Owned and available';
+      case 'missing':
+        return 'Item missing';
+      case 'no_longer_owned':
+        return 'No longer owned';
+      case 'scrapped':
+        return 'Scrapped';
+      default:
+        return humanizeKey(item.previewStatus);
+    }
+  }
+
+  previewStatusClass(item: LoadoutPresetSlotItem | null): string {
+    if (!item) {
+      return 'tag-badge tag-badge--muted';
+    }
+
+    return item.previewStatus === 'available'
+      ? 'tag-badge tag-badge--success'
+      : 'tag-badge tag-badge--warn';
+  }
+
+  previewItemName(item: LoadoutPresetSlotItem): string {
+    return item.currentItemName
+      ?? item.savedItemNameSnapshot
+      ?? item.savedItemId;
   }
 
   private syncLoadoutPresetForms(presets: readonly LoadoutPreset[]): void {
@@ -96,4 +165,12 @@ export class LoadoutPresetManagement implements OnInit {
 
 function presetControlName(presetNumber: number): string {
   return `preset_${presetNumber}`;
+}
+
+function humanizeKey(value: string): string {
+  return value
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(' ') || 'Status';
 }

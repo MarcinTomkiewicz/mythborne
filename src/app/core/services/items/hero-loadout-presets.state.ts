@@ -1,6 +1,10 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { Observable } from 'rxjs';
-import { LoadoutPreset } from '../../domain/item/item-equipment.model';
+import { forkJoin, Observable } from 'rxjs';
+import {
+  EquipmentSlot,
+  LoadoutPreset,
+  LoadoutPresetPreview,
+} from '../../domain/item/item-equipment.model';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
 import { getErrorMessage } from '../../utils/error-message';
 import { ActiveHero } from '../hero/active-hero';
@@ -12,14 +16,20 @@ export class HeroLoadoutPresetsState {
   private readonly equipment = inject(HeroEquipment);
   private loadRequestId = 0;
   private actionRequestId = 0;
+  private previewRequestId = 0;
 
   readonly presets = signal<LoadoutPreset[]>([]);
+  readonly preview = signal<LoadoutPresetPreview | null>(null);
+  readonly previewSlots = signal<EquipmentSlot[]>([]);
   readonly status = signal<'idle' | 'loading' | 'loaded' | 'empty' | 'error'>('idle');
+  readonly previewStatus = signal<'idle' | 'loading' | 'loaded' | 'empty' | 'error'>('idle');
   readonly error = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
   readonly actionMessage = signal<string | null>(null);
+  readonly previewError = signal<string | null>(null);
   readonly isLoading = computed(() => this.status() === 'loading');
   readonly isEmpty = computed(() => this.status() === 'empty');
+  readonly isPreviewLoading = computed(() => this.previewStatus() === 'loading');
   readonly isMutating = signal(false);
 
   load(): void {
@@ -67,11 +77,16 @@ export class HeroLoadoutPresetsState {
   clear(): void {
     this.loadRequestId++;
     this.actionRequestId++;
+    this.previewRequestId++;
     this.presets.set([]);
+    this.preview.set(null);
+    this.previewSlots.set([]);
     this.status.set('idle');
+    this.previewStatus.set('idle');
     this.error.set(null);
     this.actionError.set(null);
     this.actionMessage.set(null);
+    this.previewError.set(null);
     this.isMutating.set(false);
   }
 
@@ -96,6 +111,49 @@ export class HeroLoadoutPresetsState {
       (result) =>
         `Preset ${result.presetNumber} cleared from ${result.clearedSlotCount} slots.`,
     );
+  }
+
+  previewPreset(input: { presetNumber: number }): void {
+    const requestId = ++this.previewRequestId;
+    const requestContextKey = this.currentContextKey();
+
+    this.preview.set(null);
+    this.previewError.set(null);
+
+    if (!requestContextKey) {
+      this.previewStatus.set('error');
+      this.previewError.set('No active hero for loadout preset preview.');
+      return;
+    }
+
+    this.previewStatus.set('loading');
+
+    forkJoin({
+      preview: this.equipment.previewLoadoutPreset(input),
+      slots: this.equipment.getEquipmentSlots(),
+    }).subscribe({
+      next: ({ preview, slots }) => {
+        if (!this.acceptsPreviewResponse(requestId, requestContextKey)) {
+          return;
+        }
+
+        this.preview.set(preview);
+        this.previewSlots.set(slots);
+        this.previewStatus.set(preview.slotItems.length ? 'loaded' : 'empty');
+      },
+      error: (error: unknown) => {
+        if (!this.acceptsPreviewResponse(requestId, requestContextKey)) {
+          return;
+        }
+
+        this.preview.set(null);
+        this.previewSlots.set([]);
+        this.previewStatus.set('error');
+        this.previewError.set(
+          getErrorMessage(error, 'Failed to preview loadout preset.'),
+        );
+      },
+    });
   }
 
   private runPresetAction<T>(
@@ -134,6 +192,9 @@ export class HeroLoadoutPresetsState {
 
         this.isMutating.set(false);
         this.actionMessage.set(successMessage(result));
+        this.preview.set(null);
+        this.previewStatus.set('idle');
+        this.previewError.set(null);
         this.refresh();
       },
       error: (error: unknown) => {
@@ -176,6 +237,22 @@ export class HeroLoadoutPresetsState {
       this.status.set('error');
       this.isMutating.set(false);
       this.actionError.set('Loadout preset context changed.');
+      return false;
+    }
+
+    return true;
+  }
+
+  private acceptsPreviewResponse(requestId: number, contextKey: string): boolean {
+    if (requestId !== this.previewRequestId) {
+      return false;
+    }
+
+    if (contextKey !== this.currentContextKey()) {
+      this.preview.set(null);
+      this.previewSlots.set([]);
+      this.previewStatus.set('error');
+      this.previewError.set('Loadout preset context changed.');
       return false;
     }
 

@@ -29,6 +29,9 @@
   @if (presets.actionMessage()) {
     <p class="status-text-success mb-md">{{ presets.actionMessage() }}</p>
   }
+  @if (presets.previewError()) {
+    <p class="status-text-warning mb-md">{{ presets.previewError() }}</p>
+  }
 
   @if (presetRows().length) {
     <div class="mg-grid grid-cols-3 grid-cols-2-md grid-cols-1-sm gap-md" [formGroup]="presetNameForm">
@@ -71,6 +74,14 @@
             />
             <p-button
               type="button"
+              severity="secondary"
+              size="small"
+              label="Preview"
+              [disabled]="presets.isPreviewLoading() || presets.isMutating()"
+              (onClick)="previewPreset(preset)"
+            />
+            <p-button
+              type="button"
               severity="danger"
               size="small"
               label="Clear"
@@ -81,6 +92,53 @@
         </article>
       }
     </div>
+
+    @if (presets.preview(); as preview) {
+      <div class="mg-card p-md flex-col gap-sm mt-md">
+        <div class="flex-row-between-center flex-col-sm gap-sm">
+          <div class="flex-col gap-xs">
+            <strong class="heading-color">
+              Preset {{ preview.preset.presetNumber }} preview
+            </strong>
+            <span class="muted-text">
+              Literal saved slots and exact item IDs from the preset read model.
+            </span>
+          </div>
+          @if (presets.isPreviewLoading()) {
+            <span class="tag-badge tag-badge--muted">Loading</span>
+          } @else {
+            <span class="tag-badge tag-badge--info">
+              {{ preview.slotItems.length }} saved items
+            </span>
+          }
+        </div>
+
+        <div class="mg-grid grid-cols-3 grid-cols-2-md grid-cols-1-sm gap-sm">
+          @for (row of previewRows(); track row.slotKey) {
+            <div class="mg-card p-sm flex-col gap-xs">
+              <div class="flex-row-between-center gap-xs">
+                <strong>{{ row.slotLabel }}</strong>
+                <span class="tag-badge tag-badge--muted">{{ row.slotKey }}</span>
+              </div>
+              <span [class]="previewStatusClass(row.item)">
+                {{ previewStatusLabel(row.item) }}
+              </span>
+              @if (row.item; as item) {
+                <strong>{{ previewItemName(item) }}</strong>
+                <span class="muted-text">Exact item ID: {{ item.savedItemId }}</span>
+                @if (item.statusMessage) {
+                  <span>{{ item.statusMessage }}</span>
+                }
+              } @else {
+                <span class="muted-text">No saved item for this literal slot.</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    } @else if (presets.isPreviewLoading()) {
+      <p class="muted-text mt-md mb-0">Loading preset preview.</p>
+    }
   } @else if (!presets.isLoading() && presets.status() !== 'error') {
     <p class="muted-text mb-0">No loadout presets returned by the current read model.</p>
   }

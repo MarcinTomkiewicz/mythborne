@@ -7433,6 +7433,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Missing/unavailable preset items are clear.
 - Preview does not imply similar items can substitute exact IDs.
 
+**Implementation note:** S16 accepted on 2026-05-08 after user smoke. `/game/armory` loadout presets now expose a `Preview` action through the existing `LoadoutPresetManagement` component and `HeroLoadoutPresetsState`, backed by canonical `HeroEquipment.previewLoadoutPreset(...)` / `preview_hero_loadout_preset(...)` plus DB-owned equipment slot definitions for literal empty-slot display. The preview renders exact saved item IDs, literal target slots, owned/available, missing, no-longer-owned, scrapped and empty-slot states, does not run frontend requirement checks, does not imply similar item substitution, and has no apply/equip side effect. Preview responses are guarded against active hero/server context changes. Verification passed with `npx tsc --noEmit`, focused loadout preset management/state specs, static greps for no `ngModel`, `button pButton`, `[disabled]` on `formControlName` controls or direct table writes, and `npm run build` with known budget/CommonJS warnings. User smoke confirmed `/game/armory -> Preview preset` shows exact IDs, literal slots, empty slots, unavailable states and no apply side effect. Cleanup: removed 0 / added preview UI-state coverage; unused code checked.
+
 ---
 
 ## Task S17 — Apply preset action
