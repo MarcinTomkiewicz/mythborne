@@ -213,6 +213,13 @@
             }
           </div>
         </div>
+
+        <app-item-generation-requirements-editor
+          [entityType]="requirementEntityTypes.ItemGenerationBase"
+          [entityId]="page.baseEditorForm.controls.id.value"
+          title="Base requirements"
+          emptyEntityMessage="Save this base item before editing requirements."
+        />
       </form>
     </section>
   } @else {
@@ -372,6 +379,13 @@
             }
           </div>
         </div>
+
+        <app-item-generation-requirements-editor
+          [entityType]="requirementEntityTypes.ItemGenerationAffix"
+          [entityId]="page.affixEditorForm.controls.id.value"
+          [title]="page.activeSection() === 'prefix' ? 'Prefix requirements' : 'Suffix requirements'"
+          emptyEntityMessage="Save this affix before editing requirements."
+        />
       </form>
     </section>
   }

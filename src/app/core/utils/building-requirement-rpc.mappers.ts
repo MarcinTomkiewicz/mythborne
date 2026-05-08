@@ -2,6 +2,7 @@ import { REQUIREMENT_ENTITY_TYPES } from '../constants/requirement.const';
 import {
   BuildingRequirementDefinition,
   BuildingRequirementDraft,
+  BuildingRequirementEntityType,
   BuildingRequirementImpactPreview,
   BuildingRequirementValueType,
 } from '../domain/building/building.model';
@@ -71,9 +72,19 @@ export function mapBuildingRequirementImpactPreview(
 export function toGetRequirementImpactPreviewRpcArgs(
   buildingId: string,
 ): GetRequirementImpactPreviewRpcArgs {
+  return toGetEntityRequirementImpactPreviewRpcArgs(
+    REQUIREMENT_ENTITY_TYPES.BuildingDefinition,
+    buildingId,
+  );
+}
+
+export function toGetEntityRequirementImpactPreviewRpcArgs(
+  entityType: BuildingRequirementEntityType,
+  entityId: string,
+): GetRequirementImpactPreviewRpcArgs {
   return {
-    p_entity_type: REQUIREMENT_ENTITY_TYPES.BuildingDefinition,
-    p_entity_id: requiredText(buildingId, 'buildingId'),
+    p_entity_type: entityType,
+    p_entity_id: requiredText(entityId, 'entityId'),
   };
 }
 
@@ -82,10 +93,24 @@ export function toCreateEntityRequirementRpcArgs(
   draft: BuildingRequirementDraft,
   valueType: BuildingRequirementValueType,
 ): CreateEntityRequirementRpcArgs {
+  return toCreateManagedEntityRequirementRpcArgs(
+    REQUIREMENT_ENTITY_TYPES.BuildingDefinition,
+    buildingId,
+    draft,
+    valueType,
+  );
+}
+
+export function toCreateManagedEntityRequirementRpcArgs(
+  entityType: BuildingRequirementEntityType,
+  entityId: string,
+  draft: BuildingRequirementDraft,
+  valueType: BuildingRequirementValueType,
+): CreateEntityRequirementRpcArgs {
   const args: CreateEntityRequirementRpcArgs = {
     ...toRequirementValueRpcArgs(draft, valueType),
-    p_entity_type: REQUIREMENT_ENTITY_TYPES.BuildingDefinition,
-    p_entity_id: requiredText(buildingId, 'buildingId'),
+    p_entity_type: entityType,
+    p_entity_id: requiredText(entityId, 'entityId'),
     p_requirement_definition_key: requiredText(
       draft.requirementDefinitionKey,
       'requirementDefinitionKey',
@@ -139,9 +164,23 @@ export function toReorderEntityRequirementsRpcArgs(
   requirementIds: string[],
   reason: string | null = null,
 ): ReorderEntityRequirementsRpcArgs {
+  return toReorderManagedEntityRequirementsRpcArgs(
+    REQUIREMENT_ENTITY_TYPES.BuildingDefinition,
+    buildingId,
+    requirementIds,
+    reason,
+  );
+}
+
+export function toReorderManagedEntityRequirementsRpcArgs(
+  entityType: BuildingRequirementEntityType,
+  entityId: string,
+  requirementIds: string[],
+  reason: string | null = null,
+): ReorderEntityRequirementsRpcArgs {
   return {
-    p_entity_type: REQUIREMENT_ENTITY_TYPES.BuildingDefinition,
-    p_entity_id: requiredText(buildingId, 'buildingId'),
+    p_entity_type: entityType,
+    p_entity_id: requiredText(entityId, 'entityId'),
     p_requirement_ids: requirementIds,
     p_reason: trimText(reason) || 'Admin requirement reorder.',
   };
@@ -172,7 +211,7 @@ function requiredText(value: string | null | undefined, field: string): string {
   const normalized = trimText(value);
 
   if (!normalized) {
-    throw new Error(`${field} is required for building requirement RPC.`);
+    throw new Error(`${field} is required for entity requirement RPC.`);
   }
 
   return normalized;

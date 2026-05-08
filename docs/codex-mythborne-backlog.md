@@ -11181,9 +11181,549 @@ Perform a final frontend integration pass for Server Events after Z1–Z7.
 
 ---
 
-# Epic AA — Appeals and future moderation extensions
+# Epic AA — Server Council / Server Event Voting
 
-## Task AA1 — Appeals parked design note
+**Status:** Blocked until Server Council DB/RPC foundation exists and generated Supabase types are current.
+
+## Epic goal
+
+Wdrożyć frontendową integrację Rady Serwera jako prostego systemu głosowania nad Server Eventem.
+
+Rada Serwera v1 nie jest parlamentem ani pełnym systemem polityki. Jej jedyną funkcją w tym epiku jest wybór Server Eventu z puli propozycji.
+
+## Hard dependency
+
+Do not start this Epic until migrator confirms the DB/RPC foundation exists and generated Supabase types are current.
+
+Required DB/RPC/read-model contracts:
+
+- current council eligibility for selected server;
+- active council vote/session read path;
+- council event proposal read path;
+- cast/change vote RPC;
+- vote result/read model;
+- tie-break/runoff/result status exposed by DB;
+- player-safe public council status read path;
+- server event activation integration after voting;
+- RLS/grants for council members, normal players and admin/debug views.
+
+If any required contract is missing from generated types, stop and report DB/RPC blocker.
+
+## Canonical decisions
+
+- Server Council v1 exists only to choose Server Events.
+- It is not a parliament, tax system, punishment system, guild governance system, veto system or public debate system.
+- Council exists to give additional meaning to high districts D/E and especially E1.
+- Council members are current estate holders in districts D and E.
+- District C is not part of Council v1.
+- There are no terms, campaigns, candidates or elections.
+- Membership is dynamic: if a hero leaves/loses D/E estate, they leave the Council.
+- If a hero takes a D/E estate and meets eligibility, they naturally enter the Council.
+- Falling below Prestige eligibility suspends voting rights but does not remove estate.
+- Suspended/banned membership cannot vote.
+- Being in Council does not grant or remove Prestige.
+- Council can only negatively affect players indirectly by choosing a negative Server Event.
+- Every eligible council member has one vote.
+- A vote may be changed until voting ends.
+- Not voting has no penalty.
+- Vote totals/results are hidden during voting.
+- Players outside Council may see that “Council is deliberating”.
+- Players outside Council do not need to see proposals or live vote counts.
+- After voting ends, at least the selected Server Event may be shown publicly.
+- The E1 estate holder is the tiebreaker, not every hero with Basileus rank.
+- A hero with Basileus rank outside E1 is not the tiebreaker.
+- E1 may be lore-associated with the royal palace, but the tiebreaker comes from holding E1.
+- Council voting may start only when at least 20 estate addresses in district D are occupied on the server.
+- The 20 occupied-D threshold is an activation threshold for Council voting, not a hard member cap.
+- Council size comes from actual D/E occupancy and eligibility.
+
+## Future compatibility
+
+Server Council voting connects to Server Events.
+
+Future/default voting direction:
+
+- proposal count default: 5 Server Event proposals;
+- voting duration default: 3 days;
+- start rule after voting is configurable by DB/admin:
+  - chosen weekday, or
+  - X days after voting ends;
+- if tied and E1 holder voted for one of the tied options, E1 vote breaks the tie;
+- if no E1 holder / no eligible E1 vote resolves the tie, run 24h runoff among tied options;
+- if runoff remains tied, randomly select among still-tied options only.
+
+Do not implement broader politics in Epic AA.
+
+---
+
+## Task AA0 — Server Council DB/types preflight
+
+**Goal:**  
+Confirm that the current generated Supabase types expose the Server Council DB/RPC contracts required by Epic AA.
+
+**Scope:**
+
+- Inspect generated database types.
+- List available Council tables/views/RPCs/read models.
+- Compare available contracts against Epic AA hard dependencies.
+- Report missing contracts as DB/RPC blockers.
+- Do not create frontend fallback interfaces for missing contracts.
+- Do not implement UI.
+- Do not edit or regenerate generated types.
+
+**Out of scope:**
+
+- No Angular implementation.
+- No DB/RPC changes.
+- No generated type regeneration.
+- No temporary mock models.
+- No status docs updates.
+
+**Acceptance criteria:**
+
+- Available Council contracts are listed.
+- Missing contracts are listed as blockers.
+- No frontend fallback models are created.
+- Codex clearly states whether AA1 can start.
+
+**Verification:**
+
+- `npx tsc --noEmit` only if code was touched; otherwise not applicable.
+- No build required if this is report-only.
+
+**Required report:**
+
+- available Council tables/views/RPCs:
+- missing contracts:
+- generated types status:
+- blocker / ready verdict:
+- no files changed unless explicitly needed.
+
+---
+
+## Task AA1 — Server Council read models and mapper layer
+
+**Goal:**  
+Add typed frontend models/mappers/services for Server Council eligibility, council state, voting sessions, proposals, votes and public council status.
+
+**Scope:**
+
+- Use AA0 results.
+- Read generated DB types and migrator-provided read models/RPCs.
+- Add explicit domain/read models for:
+  - `ServerCouncilEligibility`;
+  - `ServerCouncilMember`;
+  - `ServerCouncilVotingSession`;
+  - `ServerCouncilProposal`;
+  - `ServerCouncilVoteState`;
+  - `ServerCouncilPublicStatus`;
+  - `ServerCouncilResult`;
+  - `ServerCouncilTieBreakState` if exposed.
+- Keep council-member, public-player and admin/debug models separate where DB exposes them separately.
+- Do not expose raw generated rows to components.
+- Do not calculate Council eligibility in Angular.
+- Do not calculate winners/tiebreaks in Angular.
+- Do not infer D/E/E1 membership from client-side address strings if DB exposes canonical eligibility.
+- Use selected server context and active hero context where hero-specific Council state is loaded.
+- Do not query Council state from `auth.uid()` as if it were `hero.id`.
+
+**Out of scope:**
+
+- No DB/RPC changes.
+- No generated type regeneration.
+- No UI screen beyond mapper/service tests if needed.
+- No voting UI yet.
+- No status docs updates.
+
+**Acceptance criteria:**
+
+- Typed Council read models exist.
+- Player-safe/public status model does not expose vote counts or proposal details unless DB explicitly exposes them.
+- Council-member model exposes proposals and own vote state where allowed.
+- Admin/debug model may expose technical fields only if DB read path provides them.
+- Missing DB contracts are reported as blockers, not faked.
+- No `hero.id === auth.uid()` assumption is introduced.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused mapper/service specs if added
+- `npm run build`
+
+**Required report:**
+
+- reused / checked but not reused / new;
+- DB/RPC contracts consumed;
+- public-safe vs council-member vs admin/debug fields;
+- generated types changed: no.
+
+---
+
+## Task AA2 — Council eligibility and member status display
+
+**Goal:**  
+Show whether the current hero is eligible to participate in Council voting.
+
+**Scope:**
+
+- Use AA1 read model.
+- Use selected server -> active hero context.
+- In a suitable player/game surface, show:
+  - whether Council voting is currently available on the selected server;
+  - whether the current active hero is a Council member;
+  - if not eligible, a DB-sourced reason where available.
+- Eligibility should account for:
+  - current D/E estate ownership;
+  - active/suspended/banned membership;
+  - Prestige voting eligibility;
+  - occupied-D threshold for Council activation.
+- If Council is not active because fewer than 20 D estates are occupied, show a neutral explanation where DB exposes it.
+- Do not calculate D occupancy or membership client-side.
+- Do not query by auth user id as hero id.
+
+**Out of scope:**
+
+- No vote casting.
+- No proposal display.
+- No public result page.
+- No admin/debug.
+
+**Acceptance criteria:**
+
+- Eligible Council member can see their status.
+- Non-eligible player gets clear explanation or neutral unavailable state.
+- Suspended/banned player is not shown as eligible.
+- Less-than-20-D-occupied state does not look like an error.
+- No Angular-side eligibility calculation.
+- No `hero.id === auth.uid()` assumption.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused specs if touched
+- `npm run build`
+
+**Manual smoke:**
+
+- Hero in D/E and eligible → Council status visible.
+- Hero not in D/E → not eligible.
+- Suspended/banned membership → not eligible.
+- Server below 20 occupied D estates → Council not active/available.
+
+---
+
+## Task AA3 — Council voting proposal surface
+
+**Goal:**  
+Show active Council voting proposals to eligible Council members.
+
+**Scope:**
+
+- Use AA1 read model.
+- If an active voting session exists and current hero is eligible, show:
+  - voting session title/status;
+  - voting end time;
+  - proposed Server Events, default 5 if DB provides that many;
+  - lore name and description;
+  - concise effect summary from DB/read model;
+  - current own vote if already cast.
+- Do not show live vote totals.
+- Do not show proposals to non-Council public UI unless DB/product later explicitly exposes them.
+- Use selected server context and stale guards.
+
+**Out of scope:**
+
+- No vote casting; that is AA4.
+- No live results.
+- No admin proposal generation.
+- No Server Event editor.
+- No Council history.
+
+**Acceptance criteria:**
+
+- Eligible Council member can view proposals for active voting.
+- Non-eligible player cannot view proposal details through this surface.
+- Live vote totals are hidden during voting.
+- Proposal event copy/effects are DB-backed.
+- Stale selected-server responses are ignored.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused specs if touched
+- `npm run build`
+
+**Manual smoke:**
+
+- Eligible D/E hero opens active voting → proposals visible.
+- Non-Council hero opens same surface → no proposal details.
+- Live vote totals are not visible.
+
+---
+
+## Task AA4 — Cast and change Council vote
+
+**Goal:**  
+Allow eligible Council members to cast or change their vote before voting ends.
+
+**Scope:**
+
+- Use canonical DB/RPC vote cast/change operation.
+- Use `request_id`/idempotency if the vote RPC exposes it.
+- Each eligible hero has one active vote per voting session.
+- Voting on another option before close changes the vote.
+- UI should show pending state and refreshed own vote after save.
+- Voting is disabled after voting ends.
+- Voting is disabled if eligibility is lost.
+- Use stale guards for selected server, active hero, session id and hero context.
+- Do not direct-write vote tables.
+
+**Out of scope:**
+
+- No DB/RPC changes.
+- No winner calculation.
+- No tiebreak calculation.
+- No live vote totals.
+- No admin override.
+
+**Acceptance criteria:**
+
+- Eligible member can cast vote.
+- Eligible member can change vote before end.
+- Ineligible member cannot vote.
+- Vote mutation uses canonical RPC.
+- If RPC exposes request id/idempotency, UI uses it.
+- UI does not calculate or expose winner.
+- Stale responses do not overwrite current session state.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused action/state specs if touched
+- `npm run build`
+
+**Manual smoke:**
+
+- Cast vote on proposal A.
+- Change vote to proposal B.
+- Reload and confirm own vote state.
+- Attempt after voting end → blocked.
+- Attempt after eligibility loss → blocked.
+
+---
+
+## Task AA5 — Public Council deliberation and result display
+
+**Goal:**  
+Show simple public Council state to non-Council players without exposing hidden vote details.
+
+**Scope:**
+
+- Use public-safe Council read model from AA1.
+- If voting is active, show a public message such as “Council is deliberating”.
+- Do not show proposal list or live vote totals to normal public/player UI.
+- After voting completes, show at least the selected Server Event if DB exposes the result.
+- If no Council voting is active, show neutral absent state or omit according to existing UI pattern.
+- Do not create a full Council public archive.
+
+**Out of scope:**
+
+- No Council member proposal list.
+- No vote totals during voting.
+- No debate/public comments.
+- No history/archive unless DB already exposes a simple result list and task stays tiny.
+
+**Acceptance criteria:**
+
+- Non-Council players can see that Council is deliberating.
+- Non-Council players do not see live proposals/vote counts.
+- Completed result can show selected event.
+- Public model remains player-safe.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused specs if touched
+- `npm run build`
+
+**Manual smoke:**
+
+- Non-Council player during active vote → sees deliberation message.
+- Non-Council player after vote → sees selected event if DB exposes it.
+- No live vote totals visible.
+
+---
+
+## Task AA6 — Council result/tiebreak display for members/admin
+
+**Goal:**  
+Display completed Council voting result and tiebreak/runoff outcome where DB exposes it.
+
+**Scope:**
+
+- Use DB result read model.
+- For Council members/admin surfaces, show:
+  - winning event;
+  - whether vote was resolved normally, by E1 tiebreak, runoff or random fallback;
+  - final status;
+  - own vote;
+  - final counts only after voting is complete, if DB exposes them.
+- Do not calculate tiebreaks in Angular.
+- Do not infer E1 tiebreak resolution client-side from estate/vote data.
+- Display DB-sourced `resolutionMode`, `tieBreakSource`, `tieBreakHeroId`, `runoffStatus`, or equivalent fields only if DB exposes them.
+- Do not reveal hidden intermediate live totals.
+- If DB does not expose final counts/tiebreak detail, show only available result and report follow-up.
+
+**Out of scope:**
+
+- No tiebreak implementation.
+- No runoff implementation.
+- No random selection logic.
+- No admin override.
+- No public full archive.
+
+**Acceptance criteria:**
+
+- Completed result is readable to allowed users.
+- E1 tiebreak/runoff/random fallback status displays if DB exposes it.
+- Angular does not calculate winner or tiebreak.
+- Angular does not infer E1 vote behavior from raw vote data.
+- Final counts are shown only after completion.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused result mapper/display specs if touched
+- `npm run build`
+
+**Manual smoke:**
+
+- Open completed Council vote.
+- Confirm winning event is visible.
+- Confirm resolution mode is visible if exposed.
+- Confirm no live-count leakage before completion.
+
+---
+
+## Task AA7 — Admin/debug Council surface
+
+**Goal:**  
+Expose Council eligibility, sessions and vote/debug state to authorized admin/tester surfaces.
+
+**Scope:**
+
+- Use admin/debug DB read models only.
+- Show:
+  - current D/E Council member list;
+  - eligibility reasons;
+  - occupied D count and activation threshold;
+  - active/completed voting sessions;
+  - proposals;
+  - vote counts/status where allowed;
+  - tiebreak/runoff/random fallback diagnostics.
+- Keep normal player UI separate.
+- Respect server staff/admin access.
+- Admin/debug surface is inspection-only unless a separate governed correction RPC is explicitly provided and separately tasked.
+
+**Out of scope:**
+
+- No manual vote editing.
+- No DB session creation unless migrator provides governed admin/test RPC and user asks in a separate task.
+- No council rule editing unless DB/config surface exists and task scope includes it.
+- No Server Event definition editing.
+- No admin override hidden inside debug surface.
+
+**Acceptance criteria:**
+
+- Admin/tester can inspect Council state.
+- Admin view shows why a hero is or is not eligible.
+- Player-facing services/components do not import admin/debug models.
+- Missing DB diagnostics are reported as follow-up.
+- No vote/session correction UI is added without separate governed RPC and explicit task.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused admin specs if touched
+- `npm run build`
+- static check that admin debug service is not used by player-facing components.
+
+**Manual smoke:**
+
+- Open Council admin/debug surface.
+- Confirm D/E members and eligibility reasons.
+- Confirm occupied D count and threshold.
+- Confirm active/completed vote status.
+
+---
+
+## Task AA8 — Council integration smoke and cleanup candidates
+
+**Goal:**  
+Perform final frontend integration pass for Council voting.
+
+**Scope:**
+
+- Walk through:
+  - below-threshold server state;
+  - eligible Council member state;
+  - non-eligible player state;
+  - active vote proposal view;
+  - cast/change vote;
+  - public deliberation state;
+  - completed result display;
+  - admin/debug inspection.
+- Fix small integration issues within Council scope.
+- Report cleanup candidates:
+  - hardcoded D/E thresholds;
+  - direct estate/rank membership inference in Angular;
+  - live vote count leaks;
+  - duplicate event proposal display logic;
+  - old placeholder Council/politics UI if any.
+- Do not implement broader politics.
+
+**Out of scope:**
+
+- No DB/RPC changes.
+- No Server Event runtime changes.
+- No taxes, budgets, vetoes, debates, guild governance or elections.
+- No status docs updates.
+
+**Acceptance criteria:**
+
+- Council member can vote.
+- Non-member cannot vote.
+- Public players see deliberation/result safely.
+- Results are hidden during voting.
+- E1 tiebreak/fallbacks are display-only from DB result.
+- No Angular-side winner/tiebreak calculation.
+- No live vote totals leak before completion.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused specs for touched areas
+- `npm run build`
+- static grep:
+  - no direct writes to Council vote/session tables;
+  - no Angular-side winner calculation;
+  - no hardcoded Council member list;
+  - no public live vote count.
+
+**Manual smoke:**
+
+- Server below 20 occupied D estates → Council voting unavailable.
+- Eligible D/E hero → sees voting surface.
+- Eligible hero casts and changes vote.
+- Non-Council hero → sees only safe public state.
+- Completed vote → selected event visible.
+- Admin debug → eligibility/session/result visible.
+
+---
+
+# Epic AZ — Appeals and future moderation extensions
+
+## Task AZ1 — Appeals parked design note
 
 **Goal:** Keep appeal concept available without implementing yet.
 
@@ -11198,7 +11738,7 @@ Perform a final frontend integration pass for Server Events after Z1–Z7.
 
 ---
 
-## Task AA2 — Future relationship/report types as configurable dictionaries
+## Task AZ2 — Future relationship/report types as configurable dictionaries
 
 **Goal:** Ensure future types like mercenary/equipment rental remain configurable.
 
@@ -11463,6 +12003,8 @@ Manual smoke checklist for user.
 
 ## SPECIAL TASK - Item generation requirements admin editor
 
+**Status:** Done / accepted 2026-05-08.
+
 Goal:
 Allow admin to view and edit central `entity_requirements` for item generation bases and affixes.
 
@@ -11480,6 +12022,9 @@ Acceptance:
 - Admin can add/edit requirements for prefixes/suffixes.
 - Generated item effective requirements reflect base + prefix + suffix.
 - No direct table writes unless already accepted as the central admin pattern.
+
+Implementation note:
+Accepted on 2026-05-08 after blocker follow-up. The accepted implementation embeds Requirements directly in `/admin/item-catalog` for the currently selected base item, prefix or suffix instead of adding a separate admin page. Base item requirements use `entity_type = item_generation_base` and the selected base id; prefix/suffix requirements use `entity_type = item_generation_affix` and the selected affix id. The rejected separate `/admin/item-generation-requirements` route, target browser/card search UI and large dedicated item-generation requirements state were removed. The final write/read path reuses the existing central requirement admin service/state and governed requirement RPC helpers for `requirement_definitions`, `entity_requirements`, `get_requirement_impact_preview(...)`, create/update/deactivate and reorder behavior, with no direct `entity_requirements` table writes and no local JSON or legacy requirement columns. Manual smoke confirmed adding a Dexterity 6 requirement to the Demonic prefix, after which Armory item detail showed runtime requirements `Hero level 1` and `Dexterity 6`; existing S9/S10 detail display still showed `300 drachma`, `Damage 2-9`, `Critical chance +2` and `Maximum damage +4`. Non-blocking follow-ups: item catalog Requirements UI needs a later UX pass; player popover source-layer diagnostics are acceptable pre-alpha/debug aid but should later move to admin/debug or be removed; `BuildingRequirementsState` should be renamed/split into a neutral entity-requirements state on a future larger requirements touch.
 
 ## Accepted hotfix implementation notes
 

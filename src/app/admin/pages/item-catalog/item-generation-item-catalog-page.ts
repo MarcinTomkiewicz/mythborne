@@ -7,8 +7,10 @@ import { SelectModule } from 'primeng/select';
 import { FormFields } from '../../../shared/form-fields/form-fields';
 import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links';
 import { AdminServerSwitcher } from '../../components/admin-server-switcher/admin-server-switcher';
+import { ItemGenerationRequirementsEditor } from '../../components/item-catalog/item-generation-requirements-editor';
 import { ITEM_CATALOG_PAGE_LINKS } from '../../admin-navigation.config';
 import { ItemGenerationItemCatalogPageFacade } from '../../../core/services/items/item-generation-item-catalog-page.facade';
+import { REQUIREMENT_ENTITY_TYPES } from '../../../core/constants/requirement.const';
 import {
   createItemCatalogBaseEditorFields,
   createItemCatalogSelectorFields,
@@ -28,6 +30,7 @@ import {
     FormFields,
     AdminTagLinks,
     AdminServerSwitcher,
+    ItemGenerationRequirementsEditor,
   ],
   providers: [ItemGenerationItemCatalogPageFacade],
   templateUrl: './item-generation-item-catalog-page.html',
@@ -35,6 +38,7 @@ import {
 export class ItemGenerationItemCatalogPage implements OnInit {
   readonly page = inject(ItemGenerationItemCatalogPageFacade);
   readonly links = ITEM_CATALOG_PAGE_LINKS;
+  readonly requirementEntityTypes = REQUIREMENT_ENTITY_TYPES;
   readonly sectionButtons = ITEM_CATALOG_SECTION_BUTTONS;
   readonly selectorFields = computed(() =>
     createItemCatalogSelectorFields(

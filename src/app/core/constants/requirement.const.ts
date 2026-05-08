@@ -5,6 +5,8 @@ import {
 
 export const REQUIREMENT_ENTITY_TYPES = {
   BuildingDefinition: 'building_definition',
+  ItemGenerationBase: 'item_generation_base',
+  ItemGenerationAffix: 'item_generation_affix',
 } as const satisfies Record<string, BuildingRequirementEntityType>;
 
 export const REQUIREMENT_VALUE_TYPES = {

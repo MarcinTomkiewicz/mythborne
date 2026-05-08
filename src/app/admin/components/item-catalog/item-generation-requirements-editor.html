@@ -1,0 +1,146 @@
+<div class="mg-surface-card flex-col gap-md p-lg">
+  <div class="flex-row-between-center flex-col-sm gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Requirements</p>
+      <h4 class="mg-section__title mg-section__title--xs mb-0">{{ title() }}</h4>
+    </div>
+
+    <p-button
+      label="Add requirement"
+      [text]="true"
+      [disabled]="!entityId() || requirements.isLoading()"
+      (onClick)="add()"
+    />
+  </div>
+
+  @if (!entityId()) {
+    <p class="mb-0 muted-text">{{ emptyEntityMessage() }}</p>
+  }
+
+  @if (requirements.error()) {
+    <p class="form-error mb-0">{{ requirements.error() }}</p>
+  }
+
+  <div class="flex-col gap-md">
+    @for (requirementGroup of requirements.form.controls; track $index) {
+      @let definition = requirements.definitionFor($index);
+
+      <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="requirementGroup">
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
+          <div class="flex-col gap-sm">
+            <span class="muted-text">Requirement definition</span>
+            <p-select
+              formControlName="requirementDefinitionKey"
+              [options]="requirements.definitionOptions()"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-100"
+              (onChange)="requirements.onDefinitionChange($index)"
+            />
+          </div>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">From generated item level</span>
+            <input pInputText type="number" class="w-100" formControlName="appliesFromLevel" />
+          </label>
+
+          <app-building-requirement-value-fields
+            [requirementGroup]="requirementGroup"
+            [definition]="definition"
+            [booleanOptions]="booleanOptions"
+            [statOptions]="statOptions()"
+            [districtOptions]="emptyOptions"
+            [buildingOptions]="emptyOptions"
+            [resourceOptions]="resourceOptions"
+          />
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Admin description</span>
+            <input pInputText class="w-100" formControlName="description" />
+          </label>
+
+          <label class="flex-col gap-sm">
+            <span class="muted-text">Audit reason</span>
+            <input pInputText class="w-100" formControlName="reason" />
+          </label>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <p-button
+            label="Save requirement"
+            [loading]="requirements.isSaving()"
+            [disabled]="requirements.isSaving()"
+            (onClick)="save($index)"
+          />
+          <p-button
+            label="Deactivate"
+            severity="danger"
+            [text]="true"
+            [disabled]="requirements.isSaving()"
+            (onClick)="deactivate($index)"
+          />
+        </div>
+      </div>
+    } @empty {
+      @if (entityId()) {
+        <p class="mb-0 muted-text">No central requirements configured for this entry.</p>
+      }
+    }
+  </div>
+
+  @if (requirements.previewRows().length > 0) {
+    <div class="flex-col gap-sm">
+      <p class="card-legend mb-0">Saved requirement impact</p>
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
+        @for (row of requirements.previewRows(); track row.entityRequirementId) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <strong class="heading-color">{{ row.requirementLabel }}</strong>
+              <span class="mg-tag">saved canonical</span>
+            </div>
+            <span>{{ row.resolvedValueLabel }}</span>
+            <span>{{ row.explanation }}</span>
+            <span class="muted-text">Applies from item level {{ row.appliesFromLevel }}</span>
+            <span class="mg-tag">key: {{ row.requirementDefinitionKey }}</span>
+          </article>
+        }
+      </div>
+    </div>
+  }
+
+  @if (requirements.inactivePreviewRows().length > 0) {
+    <div class="flex-col gap-sm">
+      <div class="flex-row-between-center flex-col-sm gap-sm">
+        <p class="card-legend mb-0">Inactive requirements</p>
+        <p-button
+          [label]="requirements.showInactive() ? 'Hide inactive requirements' : 'Show inactive requirements'"
+          [text]="true"
+          (onClick)="requirements.toggleInactive()"
+        />
+      </div>
+
+      @if (requirements.showInactive()) {
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
+          @for (row of requirements.inactivePreviewRows(); track row.entityRequirementId) {
+            <article class="mg-card p-md flex-col gap-sm">
+              <div class="flex-row-between-center flex-col-sm gap-sm">
+                <strong class="heading-color">{{ row.requirementLabel }}</strong>
+                <span class="tag-badge tag-badge--warn">inactive</span>
+              </div>
+              <span>{{ row.resolvedValueLabel }}</span>
+              <span class="muted-text">{{ row.explanation }}</span>
+              <span class="mg-tag">key: {{ row.requirementDefinitionKey }}</span>
+              <p-button
+                label="Reactivate"
+                [text]="true"
+                [loading]="requirements.isSaving()"
+                [disabled]="requirements.isSaving()"
+                (onClick)="reactivate(row)"
+              />
+            </article>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

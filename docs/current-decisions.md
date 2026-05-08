@@ -1,6 +1,6 @@
 # Mythsworn — Current Decisions Log
 
-Updated: 2026-05-07
+Updated: 2026-05-06
 
 Use this file for recent design, domain, database and implementation decisions that should override older assumptions.
 
@@ -115,26 +115,8 @@ Epic Y covers the Prestige foundation. Prestige is a long-term reputation/sława
 - Target strength is classified by the target's position inside the legal PvP target range, not by raw absolute level difference only.
 - Default banding is `20 / 60 / 20`: lower 20% = weaker, middle 60% = similar, upper 20% = stronger.
 - Banding should be admin-configurable.
-- Attacker rules:
-  - attacking stronger and winning gives a big gain;
-  - attacking stronger and drawing gives a small gain;
-  - attacking stronger and losing gives `0` Prestige delta;
-  - attacking similar and winning gives a normal gain;
-  - attacking similar and drawing gives `0`;
-  - attacking similar and losing gives a small-to-moderate loss;
-  - attacking weaker and winning gives a minor loss;
-  - attacking weaker and drawing gives a minor-to-medium loss;
-  - attacking weaker and losing gives a big loss.
-- Defender rules:
-  - defending against stronger and winning gives a big gain;
-  - defending against stronger and drawing gives a small gain;
-  - defending against stronger and losing gives `0`;
-  - defending against similar and winning gives a normal gain;
-  - defending against similar and drawing gives `0`;
-  - defending against similar and losing gives `0`;
-  - defending against weaker and winning gives `0`;
-  - defending against weaker and drawing gives a minor loss;
-  - defending against weaker and losing gives a loss, but milder than the active attacker losing to a weaker target.
+- Attacker rules: attacking stronger and winning gives a big gain; drawing gives a small gain; losing gives `0`; attacking similar and winning gives a normal gain; drawing gives `0`; losing gives a small-to-moderate loss; attacking weaker and winning gives a minor loss; drawing gives a minor-to-medium loss; losing gives a big loss.
+- Defender rules: defending against stronger and winning gives a big gain; drawing gives a small gain; losing gives `0`; defending against similar and winning gives a normal gain; drawing gives `0`; losing gives `0`; defending against weaker and winning gives `0`; drawing gives a minor loss; losing gives a loss, but milder than the active attacker losing to a weaker target.
 - Attacker penalties are harsher because the attacker chooses the target; defender penalties are softer because the defender does not choose the fight.
 - Suggested numeric seed can exist in DB config, but all values are balancing defaults and must not be hardcoded in Angular.
 
@@ -150,12 +132,7 @@ Epic Y covers the Prestige foundation. Prestige is a long-term reputation/sława
 
 ### Districts, relocation and buildings
 
-- Prestige rank gates district privileges:
-  - District A requires rank 1;
-  - District B requires rank 2;
-  - District C requires rank 3;
-  - District D requires rank 4;
-  - District E requires rank 5.
+- Prestige rank gates district privileges: A/B/C/D/E require ranks 1/2/3/4/5.
 - Falling below the Prestige rank required for the current district does not delete estate, delete buildings, downgrade buildings or force relocation.
 - Existing buildings keep working after Prestige loss.
 - Already-started building jobs/upgrades may finish even if Prestige drops during the job.
@@ -166,7 +143,7 @@ Epic Y covers the Prestige foundation. Prestige is a long-term reputation/sława
 ### Future council and server events boundary
 
 - Server Council and server-wide events are not part of Epic Y implementation.
-- Roboczo, future council eligibility requires high Prestige / district D or E.
+- Future council eligibility requires high Prestige / district D or E.
 - If a hero loses the required Prestige/district standing, they lose active voting rights; no detailed term/cadence/replacement system is designed in Epic Y.
 - Server Council and global server event voting require separate future design.
 
@@ -380,11 +357,10 @@ Luck Foundation covers, at minimum:
 
 ### Luck Lab boundary
 
-Luck Lab is a separate admin/balancer epic, not part of Luck Foundation.
-
-Luck Lab should provide visual preview/simulation tools such as sliders and comparisons for Luck influence, Trial Power, exploration RNG, reward/drop behavior and combat Luck previews.
-
-Luck Lab may chart and compare DB-returned values, but it must not become a second implementation of Luck formulas in Angular.
+- Luck Lab is separate from Luck Foundation.
+- Luck Lab is an admin/balancer tool for sliders, previews, comparisons and distribution simulations.
+- Luck Lab must display DB/RPC/formula outputs and must not become gameplay authority.
+- Luck Lab belongs to its own admin/balancer epic after Luck Foundation.
 
 ## Pending Future Decision — Player bug reporting system
 
@@ -1623,3 +1599,81 @@ Corrected facts:
 - equipment-entry-level `entry_mode` supports `manual`, `generated` only.
 
 Do not assume a write-capable M12 UI is safe until the dump/generated types confirm the current RPC/governance path for the exact tables being edited.
+
+
+## Epic AA — Server Council Decisions — 2026-05-08
+
+Epic AA covers the future Server Council foundation. The Council is a lightweight political/prestige feature that gives high-district estate ownership additional meaning. It is not part of the first Server Events foundation and should not be implemented inside Epic Z.
+
+### Core scope
+
+- Server Council v1 exists only to choose Server Events.
+- The Council is not a parliament, budget system, tax system, punishment system, veto system, guild governance system or full political simulator.
+- The Council exists to give additional meaning to high districts D/E and especially to the E1 estate.
+- Server Council v1 is a future system and should be planned as Epic AA after Prestige and Server Events foundations are available.
+
+### Membership and eligibility
+
+- Council membership is based on current estate ownership in districts D and E.
+- District C is not part of the Council in v1.
+- The number of Council members is not a separate hardcoded limit. It follows the current D/E estate capacity.
+- If district D has 50 estates and district E has 1 estate, then the Council has up to 51 voting members.
+- If future balancing changes district D capacity, Council size changes naturally with that capacity.
+- There are no Council terms, election campaigns, candidate lists or separate Council elections.
+- A hero that loses their D/E estate loses Council membership.
+- A hero that gains a D/E estate enters the Council if the rest of eligibility is satisfied.
+- Falling below the required Prestige threshold suspends voting rights but does not evict the hero or remove the estate.
+- Suspended or banned server membership cannot vote.
+- Being in the Council does not grant or remove Prestige by itself.
+- The Council does not directly punish players. The only negative effect a Council decision may create is choosing a negative Server Event.
+
+### Activation threshold
+
+- Council-driven Server Event voting should not require all D/E estates to be occupied.
+- Server Council voting may begin once at least 20 estates in district D are occupied on the server.
+- This threshold exists for player experience: the Council can start being visible before the high districts are completely filled.
+- The threshold should be DB/config-owned rather than hardcoded in Angular.
+- If the threshold is not met, Server Events may still be started through admin/system activation according to Server Events rules; only Council voting is unavailable.
+
+### Voting model
+
+- The Council votes over a pool of Server Event proposals.
+- Default proposal count is 5.
+- Proposal count should be configurable.
+- Each eligible Council member has one vote.
+- A vote can be changed until voting closes.
+- Not voting is simply non-participation and has no penalty.
+- Voting results are not visible while voting is open.
+- Players outside the Council may see a public state such as “the Council is deliberating”.
+- Players outside the Council do not need to see the proposal list or live vote counts.
+- After voting ends, at least the selected Server Event may be shown publicly.
+- Showing the full proposal list after voting is a future UI/UX decision, not required for the v1 model.
+
+### E1 / Basileus tiebreaker
+
+- The tiebreaker is the hero currently holding estate E1.
+- The tiebreaker is not every hero with Prestige rank `Basileus`.
+- A hero with rank `Basileus` who does not hold E1 is not the tiebreaker.
+- The tiebreaker comes from owning the most important estate, not from a separate Council rank.
+- E1 may be lore-linked to a royal palace / royal seat.
+- If voting is tied and the E1 holder voted for one of the tied options, the E1 holder's vote breaks the tie.
+- If there is no eligible E1 holder or the E1 vote does not resolve the tie, run a runoff.
+- The runoff lasts 24 hours by default and includes only the tied options.
+- If the runoff remains tied, the system randomly selects one winner from the still-tied options only.
+- Do not use “first proposed wins” because proposals are generated together.
+
+### Out of scope for v1
+
+- No Council terms.
+- No campaigns.
+- No candidate registration.
+- No elections to the Council.
+- No Council ranks beyond the E1 tiebreaker role.
+- No Council budget.
+- No taxes.
+- No veto powers.
+- No guild voting blocs as a formal mechanic.
+- No public debates.
+- No rewards for voting.
+- No punishment for not voting.
+- No player sanctions or direct disciplinary decisions.

@@ -5,6 +5,7 @@ import { TABLES } from '../../constants/tables.const';
 import {
   BuildingRequirementDefinition,
   BuildingRequirementDraft,
+  BuildingRequirementEntityType,
   BuildingRequirementImpactPreview,
   BuildingRequirementValueType,
 } from '../../domain/building/building.model';
@@ -17,10 +18,10 @@ import {
 import {
   mapBuildingRequirementDefinition,
   mapBuildingRequirementImpactPreview,
-  toGetRequirementImpactPreviewRpcArgs,
-  toReorderEntityRequirementsRpcArgs,
-  toCreateEntityRequirementRpcArgs,
   toDeactivateEntityRequirementRpcArgs,
+  toGetEntityRequirementImpactPreviewRpcArgs,
+  toCreateManagedEntityRequirementRpcArgs,
+  toReorderManagedEntityRequirementsRpcArgs,
   toUpdateEntityRequirementRpcArgs,
 } from '../../utils/building-requirement-rpc.mappers';
 import { Backend } from '../backend/backend';
@@ -45,10 +46,17 @@ export class BuildingRequirementsAdminService {
   getBuildingRequirementImpactPreview(
     buildingId: string,
   ): Observable<BuildingRequirementImpactPreview[]> {
+    return this.getRequirementImpactPreview('building_definition', buildingId);
+  }
+
+  getRequirementImpactPreview(
+    entityType: BuildingRequirementEntityType,
+    entityId: string,
+  ): Observable<BuildingRequirementImpactPreview[]> {
     return this.backend
       .rpc<RequirementImpactPreviewRpcRow[]>(
         RPC.get_requirement_impact_preview,
-        toGetRequirementImpactPreviewRpcArgs(buildingId),
+        toGetEntityRequirementImpactPreviewRpcArgs(entityType, entityId),
       )
       .pipe(map((rows) => rows.map(mapBuildingRequirementImpactPreview)));
   }
@@ -58,10 +66,29 @@ export class BuildingRequirementsAdminService {
     draft: BuildingRequirementDraft,
     valueType: BuildingRequirementValueType,
   ): Observable<void> {
+    return this.createEntityRequirement(
+      'building_definition',
+      buildingId,
+      draft,
+      valueType,
+    );
+  }
+
+  createEntityRequirement(
+    entityType: BuildingRequirementEntityType,
+    entityId: string,
+    draft: BuildingRequirementDraft,
+    valueType: BuildingRequirementValueType,
+  ): Observable<void> {
     return this.backend
       .rpc<EntityRequirementRpcRow>(
         RPC.create_entity_requirement,
-        toCreateEntityRequirementRpcArgs(buildingId, draft, valueType),
+        toCreateManagedEntityRequirementRpcArgs(
+          entityType,
+          entityId,
+          draft,
+          valueType,
+        ),
       )
       .pipe(map(() => void 0));
   }
@@ -92,10 +119,29 @@ export class BuildingRequirementsAdminService {
     requirementIds: string[],
     reason: string | null,
   ): Observable<void> {
+    return this.reorderEntityRequirements(
+      'building_definition',
+      buildingId,
+      requirementIds,
+      reason,
+    );
+  }
+
+  reorderEntityRequirements(
+    entityType: BuildingRequirementEntityType,
+    entityId: string,
+    requirementIds: string[],
+    reason: string | null,
+  ): Observable<void> {
     return this.backend
       .rpc<boolean>(
         RPC.reorder_entity_requirements,
-        toReorderEntityRequirementsRpcArgs(buildingId, requirementIds, reason),
+        toReorderManagedEntityRequirementsRpcArgs(
+          entityType,
+          entityId,
+          requirementIds,
+          reason,
+        ),
       )
       .pipe(map(() => void 0));
   }

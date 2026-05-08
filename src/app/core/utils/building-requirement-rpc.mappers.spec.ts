@@ -1,7 +1,9 @@
 import { REQUIREMENT_VALUE_TYPES } from '../constants/requirement.const';
 import { BuildingRequirementDraft } from '../domain/building/building.model';
 import {
+  toCreateManagedEntityRequirementRpcArgs,
   toCreateEntityRequirementRpcArgs,
+  toGetEntityRequirementImpactPreviewRpcArgs,
   toUpdateEntityRequirementRpcArgs,
 } from './building-requirement-rpc.mappers';
 
@@ -24,6 +26,36 @@ describe('building requirement rpc mappers', () => {
         p_required_value_integer: 12,
       }),
     );
+  });
+
+  it('maps item generation base central requirement create args through governed RPC contract', () => {
+    expect(
+      toCreateManagedEntityRequirementRpcArgs(
+        'item_generation_base',
+        'base-1',
+        {
+          ...createRequirementDraft('hero_level'),
+          requiredValueInteger: 10,
+        },
+        REQUIREMENT_VALUE_TYPES.Integer,
+      ),
+    ).toEqual(
+      jasmine.objectContaining({
+        p_entity_type: 'item_generation_base',
+        p_entity_id: 'base-1',
+        p_requirement_definition_key: 'hero_level',
+        p_required_value_integer: 10,
+      }),
+    );
+  });
+
+  it('maps item generation affix preview args without using item or bonus tables', () => {
+    expect(
+      toGetEntityRequirementImpactPreviewRpcArgs('item_generation_affix', 'affix-1'),
+    ).toEqual({
+      p_entity_type: 'item_generation_affix',
+      p_entity_id: 'affix-1',
+    });
   });
 
   it('maps prestige rank central requirement create args', () => {

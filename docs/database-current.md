@@ -1,6 +1,6 @@
 # Mythsworn — Database Current Notes
 
-Updated: 2026-05-07
+Updated: 2026-05-08
 
 This file is the curated semantic index of the current database state. It is not a full `pg_dump`.
 
@@ -14,6 +14,161 @@ If this file conflicts with the actual database, generated Supabase types, or a 
 
 After every schema/RPC migration that Codex will consume, regenerate/update generated Supabase types before frontend work.
 
+
+
+## Update 2026-05-08 — Server Events DB/RPC foundation
+
+The current dump includes the first Server Events DB/RPC foundation. Server Events are no longer only a planning topic at the DB layer. This section supersedes older notes that describe Server Events as not yet implemented in the database.
+
+### Core Server Events tables
+
+Current core tables:
+
+- `server_event_definitions` — global Server Event definition registry; rare, strong, temporary, lore-forward, server-scoped events; no v1 sub-scopes and no random selection weights;
+- `server_event_effects` — per-definition effects consumed by DB/RPC/runtime resolvers, not Angular authority;
+- `server_event_runs` — concrete per-server event runs with `starts_at`, `ends_at`, `actual_ended_at`, source/status metadata and one-active-event-per-server enforcement;
+- `server_event_config` — per-server event configuration with built-in defaults when no config row exists.
+
+RLS is enabled for the Server Event tables. Current Server Event tables have primary keys, foreign keys, check constraints, `*_set_updated_at` triggers and comments in the dump.
+
+### Definition and effect model
+
+`server_event_definitions` owns player/admin-configurable event copy:
+
+- `key`;
+- `lore_name`;
+- `lore_description`;
+- `player_summary`;
+- `effect_explanation`;
+- `event_polarity` — `positive`, `negative`, or `mixed`;
+- optional `default_duration_days`;
+- optional `admin_notes`;
+- optional `helper_text`;
+- `is_active`;
+- `sort_order`;
+- `metadata_json`.
+
+Definitions do not have weights. Current DB validation also blocks weight-like metadata in Server Event definition/config/effect write paths. Automatic selection is uniform among active eligible definitions.
+
+`server_event_effects` supports current v1 effect families:
+
+- `base_stat`;
+- `all_base_stats`;
+- `luck`;
+- `derived_stat`;
+- `combat_derived`;
+- `requirement_modifier`.
+
+Current operations:
+
+- `flat_add`;
+- `percent_add`;
+- `multiplier`.
+
+Effect rows include player-facing `player_label` and `player_description`. The current `requirement_modifier` target is constrained to normal requirements via `normal_requirements` / `all_normal_requirements`. Prestige/district gates are not normal requirements for event modifier purposes.
+
+### Config and activation model
+
+`server_event_config` is per server and has built-in fallback defaults:
+
+- `system_roll_enabled` default `true`;
+- `cooldown_days` default `14`;
+- `system_roll_chance_percent` default `10`;
+- `default_duration_days` default `7`;
+- future council compatibility fields:
+  - `future_council_proposal_count` default `5`;
+  - `future_council_vote_duration_days` default `3`;
+  - `future_council_activation_rule` default `days_after_vote`;
+  - `future_council_activation_days_after_vote` default `1`;
+  - `future_council_activation_weekday`;
+- `metadata_json`.
+
+Council fields are reserved for future compatibility. Server Council voting/proposals are not implemented by this foundation and must not be built as part of first Server Events frontend work.
+
+Current run source kinds:
+
+- `admin`;
+- `system_roll`;
+- `council_vote`;
+- `test`.
+
+Current run statuses:
+
+- `scheduled`;
+- `active`;
+- `completed`;
+- `cancelled`.
+
+Cooldown basis uses `actual_ended_at` where present, otherwise `ends_at`, for completed/cancelled runs.
+
+### Player/runtime read helpers
+
+Player-facing and runtime read helpers currently include:
+
+- `get_active_server_event(p_server_id uuid)` — authenticated player-safe read model for the currently active event on a server; returns lore/copy, polarity, run timing, remaining seconds and player-safe effects; no admin notes;
+- `get_active_server_event_effects(p_server_id uuid)` — service/runtime helper exposing active server-wide event effect rows;
+- `get_active_server_event_effect_modifier(p_server_id uuid, p_target_family text, p_target_key text default null)` — aggregates active event effects into `flat_delta`, `percent_delta`, `multiplier` and effect metadata for one target family/key; intended for DB resolvers, not Angular authority;
+- `get_hero_server_event_runtime_modifiers(p_hero_id uuid)` — hero-context runtime/explainability helper for Luck, base stats, derived stats and combat-derived targets;
+- `apply_server_event_requirement_modifier(p_server_id uuid, p_requirement_definition_key text, p_required_value numeric)` — runtime helper for normal requirement modifiers only; explicitly excludes Prestige rank and district access gates; does not rewrite requirement definitions.
+
+Frontend/player surfaces should use `get_active_server_event(...)` for active event display. Angular must not calculate or apply event effects as authority. Runtime/stat/Luck/derived/requirement integration belongs to DB/RPC/resolver paths.
+
+### Admin/read surfaces
+
+Current admin/read surfaces include:
+
+- `get_server_event_config(p_server_id uuid)` — config read helper with built-in defaults when no per-server config row exists;
+- `get_server_event_roll_status(p_server_id uuid, p_now timestamptz default now())` — system-roll eligibility/readiness model;
+- `get_server_event_admin_definitions(p_server_id uuid)` — admin read model for definitions and effects;
+- `get_server_event_admin_overview(p_server_id uuid)` — admin overview returning config, active event summary, run counts and definition counts;
+- `get_server_event_admin_runs(p_server_id uuid, p_limit integer default 50, p_offset integer default 0)` — admin run/history read model.
+
+Admin read models are gated through config-governance style permission checks such as `can_manage_config_governance(server_id)`. Player UI must not use admin read models.
+
+### Governed/admin write and service surfaces
+
+Current governed/admin write surfaces include:
+
+- `upsert_server_event_definition(...)` — creates or updates Server Event definitions; gated, audited, reason-required, weight metadata blocked;
+- `set_server_event_definition_active(...)` — soft-activates/deactivates definitions without deleting history or runs; gated and audited;
+- `upsert_server_event_effect(...)` — creates or updates effect rows; gated, audited, reason-required, validates current supported families/targets/operations, weight metadata blocked;
+- `set_server_event_effect_active(...)` — soft-activates/deactivates effects; gated and audited;
+- `update_server_event_config(...)` — updates per-server config through governance permission checks, requires reason, writes audit, preserves future Council compatibility fields and blocks weights metadata;
+- `manual_start_server_event(...)` — admin/manual start workflow; ignores cooldown by design, enforces one active event per server and writes audit;
+- `cancel_server_event_run(...)` — audited emergency/admin cancellation workflow; not normal production flow; sets `actual_ended_at` so cooldown uses actual end;
+- `roll_server_event_for_server(...)` — service/internal system roll; after cooldown, rolls configured chance and uniformly selects one active eligible event definition with no weights; successful roll starts an active run immediately;
+- `finish_expired_server_event_runs(...)` — internal/service helper that completes expired active runs and sets `actual_ended_at`.
+
+Frontend/admin tools must use these RPCs. Angular must not direct-write `server_event_*` tables.
+
+### Runtime/authority rules
+
+Server Event effects are DB/runtime resolver inputs, not Angular authority. Current supported effect domains match the design direction:
+
+- base stats;
+- all base stats;
+- Luck;
+- derived stats;
+- combat-derived values;
+- normal requirement modifiers.
+
+Requirement modifiers apply to normal requirements such as item/building requirements. They do not reduce Prestige/district gates and do not rewrite `entity_requirements` or other definition tables.
+
+Server Events must not directly alter manual minigame mechanics such as Walking Dead movement speed or renderer timing. Effects should flow through normal stat/derived/Luck/combat/runtime inputs.
+
+### Frontend/Codex readiness
+
+Epic Z / Server Events frontend work can now treat the DB/RPC foundation as present, provided generated Supabase types are regenerated and include the current contract.
+
+Frontend rules:
+
+- player UI should use `get_active_server_event(...)`;
+- admin catalog/config/run/history UI should use the admin read RPCs;
+- admin mutations must use the governed/admin write RPCs;
+- Angular must not direct-write Server Event tables;
+- Angular must not calculate event effects as gameplay authority;
+- event copy/effects should come from DB/read models, not hardcoded Angular lists;
+- no Server Council, proposal voting UI, or Angular-side event effect calculation belongs to the first frontend integration.
 
 
 ## Update 2026-05-07 — S9-FIX2 item native display policy and item-generation requirements admin readiness
@@ -126,6 +281,101 @@ Frontend readiness verdict:
 - initial item-generation requirements data: empty but editable;
 - DB/RPC blocker for the admin editor: none;
 - regenerate Supabase generated types before frontend work consumes these contracts.
+
+
+### S9-FIX3 — DB-owned item type and equip target metadata
+
+`get_hero_armory_item_detail(p_hero_id uuid, p_item_id uuid)` keeps the same frontend call signature after S9-FIX3, but now augments `bonuses_json` with DB-owned item type and equipment target metadata:
+
+- `bonuses_json.itemType`;
+- `bonuses_json.equipTarget`.
+
+This is an additive payload change. Existing item detail callers can keep using the same RPC call and may ignore the new fields until their mapper/UI is updated. Frontend should regenerate Supabase generated types after the migration, but the RPC call shape remains the same from the caller perspective.
+
+New DB-owned mapping table:
+
+- `item_generation_base_type_equip_targets`.
+
+This table maps `item_generation_base_types.key` to player-facing equip target metadata and technical physical slot instances. Angular must not infer item placement semantics from `base_type_key`.
+
+Current helper:
+
+- `get_item_generation_base_type_equip_metadata(p_base_type_key text)`.
+
+The helper returns a JSON object with:
+
+- `itemType`:
+  - `baseTypeKey`;
+  - `baseTypeLabel`;
+  - `baseTypeDescription`;
+  - `equipmentSlotGroup`;
+  - `handUsage`;
+  - `isActive`;
+- `equipTarget`:
+  - `targetKey`;
+  - `label`;
+  - `playerFacingSlotSummary`;
+  - `equipmentArea`;
+  - `slotSelectionMode`;
+  - `physicalSlotKeys`;
+  - `physicalSlots`;
+  - `helperText`;
+  - `adminDescription`;
+  - `metadata`;
+  - `sourceTable`.
+
+`item_generation_base_type_equip_targets` is intentionally a semantic mapping, not just a copy of physical equipment slots. It separates:
+
+- player-facing item/equip target labels used by item popup/detail;
+- technical physical slot keys used by equip workflow/diagnostics;
+- slot-selection semantics such as one interchangeable target with multiple physical instances.
+
+Current player-facing slot rules:
+
+- one-handed weapon: `Main hand / Off hand`, physical slots `main_hand`, `off_hand`, `slotSelectionMode = ordered_or_selected`;
+- two-handed weapon: `Main hand`, physical slot `main_hand`;
+- ranged weapon: `Main hand`, physical slot `main_hand`;
+- shield: `Off hand`, physical slot `off_hand`;
+- helmet: `Head`, physical slot `helmet`;
+- armor: `Chest`, physical slot `armor`;
+- pants: `Legs`, physical slot `pants`;
+- boots: `Feet`, physical slot `boots`;
+- amulet: `Amulet`, physical slot `amulet`;
+- ring: player-facing `Ring`, physical slot instances `ring_1`, `ring_2`, `slotSelectionMode = interchangeable_instances`.
+
+Important ring rule:
+
+- generic item popup/detail must show `Ring`;
+- `ring_1` and `ring_2` are technical physical slot instances for equip workflow/diagnostics, not the generic item category;
+- if a later equip modal needs to let the player choose which equipped ring to replace, it may surface physical slot instances there, but the item type/equip target remains `Ring`.
+
+Frontend rules:
+
+- item popup/detail should read item type from `bonuses_json.itemType.baseTypeLabel`;
+- item popup/detail should read player-facing equip target from `bonuses_json.equipTarget.playerFacingSlotSummary` or `bonuses_json.equipTarget.label`;
+- equip workflow may use `bonuses_json.equipTarget.physicalSlotKeys` and `bonuses_json.equipTarget.slotSelectionMode`;
+- Angular must not hardcode base type to slot mapping;
+- Angular must not show `ring_1` / `ring_2` as the generic item type.
+
+Verified smoke:
+
+- Demonic Dagger still uses the same `get_hero_armory_item_detail(...)` call;
+- payload includes `drachma_value = 300`;
+- `bonuses_json.itemType.baseTypeKey = one_handed_weapon`;
+- `bonuses_json.itemType.baseTypeLabel = One-handed weapon`;
+- `bonuses_json.equipTarget.label = Main hand / Off hand`;
+- `bonuses_json.equipTarget.physicalSlotKeys = ["main_hand", "off_hand"]`;
+- `bonuses_json.itemStats.rows` still returns only `Damage 2-9`;
+- `bonuses_json.modifierRows` still returns Demonic prefix rows: `Critical chance +2` and `Maximum damage +4`;
+- mapping matrix confirmed ring is player-facing `Ring` while `ring_1` / `ring_2` remain physical slot instances.
+
+Frontend readiness:
+
+- same `get_hero_armory_item_detail(...)` RPC call;
+- additive JSON payload under `bonuses_json`;
+- existing callers can ignore the new fields;
+- regenerate Supabase generated types after this migration;
+- update frontend item detail mapper to safely read optional `itemType` and `equipTarget`.
 
 
 ## Update 2026-05-07 — latest dump reconciliation: combat H2, SCALE-DB1, PvP R20/R21 and PvP result chain

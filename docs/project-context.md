@@ -1,6 +1,6 @@
 # Mythsworn — Project Context for Codex
 
-Updated: 2026-05-07
+Updated: 2026-05-08
 
 ## Purpose
 
@@ -19,6 +19,8 @@ If something here conflicts with a newer migration, seed, generated type, or exp
 This document is intentionally compact. For exact DB/RPC/helper inventory, consult `database-current.md` and the current dump. For decision rationale and warnings, consult `current-decisions.md`.
 
 ---
+
+
 
 
 ## Server Events Foundation Planning Context — 2026-05-07
@@ -65,6 +67,63 @@ Implementation ordering:
 2. Codex consumes active-event read models and admin/config paths only after generated types are current.
 3. Do not build Server Council, proposal voting UI, or Angular-side event effect calculation as part of the first Server Events foundation.
 
+
+
+
+
+## Server Council Planning Context — 2026-05-08
+
+Server Council is a future lightweight governance feature for choosing Server Events. It should be treated as future Epic AA, not as part of the first Server Events frontend/backend foundation.
+
+Operational direction:
+
+- Server Council v1 exists only to choose Server Events.
+- It is not a full parliament, tax/budget system, punishment system, veto system, guild governance system or full political simulator.
+- Council membership is based on current estate ownership in districts D and E.
+- District C is outside the Council in v1.
+- There are no terms, campaigns, candidate lists or elections.
+- If a hero loses D/E estate ownership, they lose Council membership.
+- If a hero gains a D/E estate and meets eligibility, they naturally enter the Council.
+- Falling below the required Prestige threshold suspends voting rights but does not evict the hero or remove the estate.
+- Suspended or banned server membership cannot vote.
+- Being in the Council does not grant or remove Prestige by itself.
+- The Council may indirectly choose a negative effect only by selecting a negative Server Event.
+
+Council activation threshold:
+
+- Council voting should not require all D/E estates to be occupied.
+- Council-driven Server Event voting may begin once at least 20 district D estates are occupied on the server.
+- The threshold is intended as player-experience pacing so the Council becomes visible before all high-district estates are full.
+- The threshold should be DB/config-owned.
+- Before the Council threshold is met, Server Events may still run through admin/system activation, but not through Council voting.
+
+Voting direction:
+
+- Council votes over a pool of Server Event proposals.
+- Default proposal count is 5 and should be configurable.
+- Each eligible Council member has one vote.
+- Votes may be changed until the voting window closes.
+- Not voting has no penalty.
+- Live voting results are hidden.
+- Non-Council players may see a public state such as “the Council is deliberating”.
+- Non-Council players do not need to see proposal details or live vote counts.
+- After voting closes, at least the selected Server Event may be shown publicly.
+
+E1 / Basileus tiebreaker:
+
+- The tiebreaker belongs to the hero holding estate E1.
+- The tiebreaker is not every hero with Prestige rank `Basileus`.
+- If a hero is `Basileus` but does not hold E1, they are not the tiebreaker.
+- E1 may be lore-linked to a royal palace / royal seat.
+- If voting is tied and the E1 holder voted for one of the tied options, that vote breaks the tie.
+- If no eligible E1 holder exists or the E1 vote does not resolve the tie, a 24h runoff occurs among tied options only.
+- If the runoff is still tied, the system randomly selects a winner among the still-tied options only.
+
+Implementation boundary:
+
+1. Do not implement Server Council inside Epic Z / Server Events v1.
+2. Server Events should remain compatible with a future `council_vote` activation source.
+3. Server Council DB/RPC/UI planning can happen later as Epic AA after Prestige, estate ownership and Server Events contracts are stable.
 
 ## Prestige Foundation Planning Context — 2026-05-07
 
@@ -114,7 +173,6 @@ Frontend ordering:
 1. Confirm current generated Supabase types include the Prestige DB/RPC contract.
 2. Codex Epic Y consumes the DB/RPC contract for frontend read models, rank display, PvP report summary, admin/debug/config surfaces, building/relocation gate display and rank-change notifications.
 3. Status files such as `current-todo.md`, `current-state-summary.md` and backlog completion markers are not updated until actual implementation is confirmed through the normal Codex/status workflow.
-
 
 ## Current High-Priority Implementation Context — 2026-05-03 late
 
@@ -543,6 +601,7 @@ Exploration rewards must run through the real reward profile/assignment flow. It
 Epic W should ensure a minimal smoke content set: one Combat Trial, one Combat Encounter with XP, one Resource Encounter, one Buff Encounter, one Debuff Encounter and one Trial reward assignment that can generate an item. Reuse/fix existing definitions where possible instead of creating duplicates.
 
 ---
+
 
 
 ## Luck Foundation Decision Scope — 2026-05-05
