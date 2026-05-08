@@ -9,16 +9,16 @@ import {
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
 import { ActiveHero } from '../hero/active-hero';
 import { CurrentEquipmentState } from './current-equipment.state';
-import { PlayerEquipment } from './player-equipment';
+import { HeroEquipment } from './hero-equipment';
 
 describe('CurrentEquipmentState', () => {
   let activeHero: FakeActiveHero;
-  let equipment: jasmine.SpyObj<PlayerEquipment>;
+  let equipment: jasmine.SpyObj<HeroEquipment>;
   let state: CurrentEquipmentState;
 
   beforeEach(() => {
     activeHero = new FakeActiveHero();
-    equipment = jasmine.createSpyObj<PlayerEquipment>('PlayerEquipment', [
+    equipment = jasmine.createSpyObj<HeroEquipment>('HeroEquipment', [
       'getCurrentEquipment',
       'equipItem',
       'bulkEquipItems',
@@ -29,7 +29,7 @@ describe('CurrentEquipmentState', () => {
       providers: [
         CurrentEquipmentState,
         { provide: ActiveHero, useValue: activeHero },
-        { provide: PlayerEquipment, useValue: equipment },
+        { provide: HeroEquipment, useValue: equipment },
       ],
     });
 

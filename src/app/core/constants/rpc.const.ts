@@ -106,6 +106,12 @@ export const RPC = {
   equip_hero_item: 'equip_hero_item',
   unequip_hero_item: 'unequip_hero_item',
   bulk_equip_hero_items: 'bulk_equip_hero_items',
+  get_hero_loadout_presets: 'get_hero_loadout_presets',
+  rename_hero_loadout_preset: 'rename_hero_loadout_preset',
+  save_current_hero_loadout_preset: 'save_current_hero_loadout_preset',
+  clear_hero_loadout_preset: 'clear_hero_loadout_preset',
+  preview_hero_loadout_preset: 'preview_hero_loadout_preset',
+  apply_hero_loadout_preset: 'apply_hero_loadout_preset',
   recover_scrapped_item: 'recover_scrapped_item',
   add_hero_remaining_actions: 'add_hero_remaining_actions',
   auto_resolve_hero_exploration_challenge_attempt:

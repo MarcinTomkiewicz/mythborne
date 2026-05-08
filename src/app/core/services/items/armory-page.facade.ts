@@ -1,12 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { EquipmentSlot } from '../../domain/item/item-equipment.model';
 import { HeroDashboardRuntimeStats } from '../hero/hero-dashboard-runtime-stats';
-import { PlayerEquipment } from './player-equipment';
+import { HeroEquipment } from './hero-equipment';
 
 @Injectable()
 export class ArmoryPageFacade {
   private readonly runtimeStats = inject(HeroDashboardRuntimeStats);
-  private readonly equipment = inject(PlayerEquipment);
+  private readonly equipment = inject(HeroEquipment);
 
   readonly heroLuck = signal(0);
   readonly equipmentSlots = signal<EquipmentSlot[]>([]);

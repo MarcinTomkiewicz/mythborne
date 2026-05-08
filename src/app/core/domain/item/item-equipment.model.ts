@@ -209,6 +209,34 @@ export interface LoadoutPreset {
   updatedAt: string;
 }
 
+export interface SaveLoadoutPresetResult {
+  heroId: string;
+  presetId: string;
+  presetNumber: LoadoutPresetNumber;
+  name: string;
+  savedSlotCount: number;
+  requestId: string | null;
+  slotsJson: Json;
+}
+
+export interface RenameLoadoutPresetResult {
+  heroId: string;
+  presetId: string;
+  presetNumber: LoadoutPresetNumber;
+  name: string;
+  requestId: string | null;
+  updatedAt: string;
+}
+
+export interface ClearLoadoutPresetResult {
+  heroId: string;
+  presetId: string;
+  presetNumber: LoadoutPresetNumber;
+  name: string;
+  clearedSlotCount: number;
+  requestId: string | null;
+}
+
 export interface LoadoutPresetSlotItem {
   presetId: string;
   presetNumber: LoadoutPresetNumber;

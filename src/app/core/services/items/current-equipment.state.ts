@@ -12,9 +12,9 @@ import { ActiveHero } from '../hero/active-hero';
 import {
   EquipHeroItemInput,
   BulkEquipHeroItemsInput,
-  PlayerEquipment,
+  HeroEquipment,
   UnequipHeroSlotInput,
-} from './player-equipment';
+} from './hero-equipment';
 
 export type CurrentEquipmentReadStatus =
   | 'idle'
@@ -26,7 +26,7 @@ export type CurrentEquipmentReadStatus =
 @Injectable()
 export class CurrentEquipmentState {
   private readonly activeHero = inject(ActiveHero);
-  private readonly equipment = inject(PlayerEquipment);
+  private readonly equipment = inject(HeroEquipment);
   private loadRequestId = 0;
   private actionRequestId = 0;
 

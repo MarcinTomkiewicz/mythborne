@@ -64,6 +64,11 @@ export type GetHeroLoadoutPresetsRpcArgs =
 export type GetHeroLoadoutPresetsRpcRow =
   Database['public']['Functions']['get_hero_loadout_presets']['Returns'][number];
 
+export type RenameHeroLoadoutPresetRpcArgs =
+  Database['public']['Functions']['rename_hero_loadout_preset']['Args'];
+export type RenameHeroLoadoutPresetRpcRow =
+  Database['public']['Functions']['rename_hero_loadout_preset']['Returns'][number];
+
 export type SaveCurrentHeroLoadoutPresetRpcArgs =
   Database['public']['Functions']['save_current_hero_loadout_preset']['Args'];
 export type SaveCurrentHeroLoadoutPresetRpcRow =
