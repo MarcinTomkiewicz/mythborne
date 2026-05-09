@@ -112,6 +112,19 @@
                 (onClick)="actions.returnItem(item)"
               />
             }
+            @if (item.canForceReturn && item.loanId) {
+              <span class="tag-badge tag-badge--warning">
+                Force return can remove borrower equipment
+              </span>
+              <p-button
+                label="Force return"
+                icon="pi pi-exclamation-triangle"
+                severity="danger"
+                [outlined]="true"
+                [disabled]="actions.isMutating()"
+                (onClick)="actions.forceReturnItem(item)"
+              />
+            }
             @if (item.canWithdraw) {
               <p-button
                 label="Withdraw"
@@ -161,6 +174,19 @@
                   severity="secondary"
                   [disabled]="actions.isMutating()"
                   (onClick)="actions.returnLoan(loan)"
+                />
+              }
+              @if (loan.canForceReturn) {
+                <span class="tag-badge tag-badge--warning">
+                  Force return can remove borrower equipment
+                </span>
+                <p-button
+                  label="Force return"
+                  icon="pi pi-exclamation-triangle"
+                  severity="danger"
+                  [outlined]="true"
+                  [disabled]="actions.isMutating()"
+                  (onClick)="actions.forceReturnLoan(loan)"
                 />
               }
             </div>

@@ -8200,6 +8200,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Borrower equipment state is refreshed from DB/RPC after action.
 - UI shows current state after force-return.
 
+**Implementation note:** T15 accepted on 2026-05-09. The existing `GuildArmoryReadSection` now exposes force-return UI actions through local `GuildArmoryItemActionsState` and canonical `PlayerGuildArmoryActions.forceReturnGuildArmoryLoanForActiveHero(...)` only. Force-return is available from borrowed item rows and current loan rows when the DB-backed `canForceReturn` flag is true, and the UI shows a clear warning that force-return can remove borrower equipment. Successful force-return refreshes guild armory read state, personal armory state and current active hero equipment from DB/RPC state. The UI does not add direct table access, local ownership-transfer logic, borrower equipment simulation, action history, route/menu changes, DB/RPC changes, generated type edits, migrations or T20 behavior. Verification passed with focused T15 specs, full guild + guild page specs, `npx tsc --noEmit`, `npm run build` with known warnings, `git diff --check`, and static greps for `button pButton`, `.from(` and direct write patterns. Manual/route smoke remains pending until the guild armory section is reachable via route/menu.
+
 ---
 
 ## Task T16 — Guild armory access lock

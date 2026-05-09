@@ -119,6 +119,29 @@ describe('GuildArmoryReadSection', () => {
     expect(text).not.toContain('Sell to vendor');
   });
 
+  it('renders force-return action with borrower equipment warning from DB-owned flags', () => {
+    state.items.set([
+      item({
+        armoryStatusKey: 'borrowed',
+        loanId: 'loan-1',
+        canBorrow: false,
+        canForceReturn: true,
+        canReturn: false,
+        canWithdraw: false,
+        canRemove: false,
+      }),
+    ]);
+    state.loans.set([loan({ canForceReturn: true, canReturn: false })]);
+    state.config.set(config());
+
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Force return');
+    expect(text).toContain('Force return can remove borrower equipment');
+    expect(text).not.toContain('Action history');
+  });
+
   it('refreshes guild armory read state and deposit context together', () => {
     fixture.detectChanges();
     state.load.calls.reset();
@@ -176,6 +199,8 @@ class FakeGuildArmoryItemActionsState {
   readonly borrow = jasmine.createSpy('borrow');
   readonly returnItem = jasmine.createSpy('returnItem');
   readonly returnLoan = jasmine.createSpy('returnLoan');
+  readonly forceReturnItem = jasmine.createSpy('forceReturnItem');
+  readonly forceReturnLoan = jasmine.createSpy('forceReturnLoan');
   readonly withdraw = jasmine.createSpy('withdraw');
   readonly remove = jasmine.createSpy('remove');
 

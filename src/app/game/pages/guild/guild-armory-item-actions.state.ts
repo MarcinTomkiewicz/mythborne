@@ -19,6 +19,7 @@ import { GuildArmoryReadState } from './guild-armory-read.state';
 type GuildArmoryItemActionKind =
   | 'borrow'
   | 'deposit'
+  | 'force-return'
   | 'remove'
   | 'return'
   | 'withdraw';
@@ -117,6 +118,32 @@ export class GuildArmoryItemActionsState {
     );
   }
 
+  forceReturnItem(item: GuildArmoryItem): void {
+    const loanId = item.loanId;
+
+    if (!loanId) {
+      this.error.set('No active guild armory loan for this item.');
+      this.message.set(null);
+      return;
+    }
+
+    this.runMutation(
+      'force-return',
+      () => this.guildArmoryActions.forceReturnGuildArmoryLoanForActiveHero({
+        loanId,
+      }),
+    );
+  }
+
+  forceReturnLoan(loan: GuildArmoryLoan): void {
+    this.runMutation(
+      'force-return',
+      () => this.guildArmoryActions.forceReturnGuildArmoryLoanForActiveHero({
+        loanId: loan.loanId,
+      }),
+    );
+  }
+
   withdraw(item: GuildArmoryItem): void {
     this.runMutation(
       'withdraw',
@@ -206,6 +233,8 @@ function successMessage(action: GuildArmoryItemActionKind): string {
       return 'Item borrowed from guild armory.';
     case 'deposit':
       return 'Item deposited into guild armory.';
+    case 'force-return':
+      return 'Guild armory loan force-returned.';
     case 'withdraw':
       return 'Item withdrawn from guild armory.';
     case 'remove':

@@ -40,6 +40,7 @@ describe('GuildArmoryItemActionsState', () => {
       [
         'borrowGuildArmoryItemForActiveHero',
         'depositGuildArmoryItemForActiveHero',
+        'forceReturnGuildArmoryLoanForActiveHero',
         'removeGuildArmoryItemForActiveHero',
         'returnGuildArmoryLoanForActiveHero',
         'withdrawGuildArmoryItemForActiveHero',
@@ -147,6 +148,34 @@ describe('GuildArmoryItemActionsState', () => {
       loanId: 'loan-1',
     });
     expect(state.message()).toBe('Guild armory loan returned.');
+  });
+
+  it('force-returns active loans from item and loan rows through canonical action', () => {
+    actions.forceReturnGuildArmoryLoanForActiveHero.and.returnValue(
+      of(loanOperation({ kind: 'force-return' })),
+    );
+
+    state.forceReturnItem(guildItem({
+      loanId: 'loan-1',
+      canForceReturn: true,
+    }));
+    state.forceReturnLoan(loan({ canForceReturn: true }));
+
+    expect(actions.forceReturnGuildArmoryLoanForActiveHero).toHaveBeenCalledWith({
+      loanId: 'loan-1',
+    });
+    expect(actions.forceReturnGuildArmoryLoanForActiveHero).toHaveBeenCalledTimes(2);
+    expect(guildArmory.load).toHaveBeenCalledTimes(2);
+    expect(armory.refresh).toHaveBeenCalledTimes(2);
+    expect(equipment.refresh).toHaveBeenCalledTimes(2);
+    expect(state.message()).toBe('Guild armory loan force-returned.');
+  });
+
+  it('blocks force-return without active loan before calling RPC', () => {
+    state.forceReturnItem(guildItem({ loanId: null, canForceReturn: true }));
+
+    expect(actions.forceReturnGuildArmoryLoanForActiveHero).not.toHaveBeenCalled();
+    expect(state.error()).toBe('No active guild armory loan for this item.');
   });
 
   it('blocks item return without active loan before calling RPC', () => {
