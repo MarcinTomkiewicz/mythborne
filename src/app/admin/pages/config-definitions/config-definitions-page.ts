@@ -26,6 +26,7 @@ import {
   uniqueConfigDefinitionManagedEntityTypes,
   uniqueConfigDefinitionScopes,
 } from '../../../core/utils/config-governance';
+import { GuildConfigSummarySection } from './guild-config-summary-section';
 
 @Component({
   selector: 'app-config-definitions-page',
@@ -39,6 +40,7 @@ import {
     AdminTagLinks,
     AdminServerSwitcher,
     MetadataDisplay,
+    GuildConfigSummarySection,
   ],
   templateUrl: './config-definitions-page.html',
 })

@@ -1,0 +1,67 @@
+<app-loading-overlay
+  [visible]="isLoading() && error() === null"
+  label="Loading guild configuration..."
+  description="Loading DB-backed guild config summary."
+/>
+
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Guilds</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        Guild configuration summary
+      </h3>
+      <p class="muted-text mb-0">
+        Read-only guild settings resolved from the DB/config governance model.
+      </p>
+    </div>
+    <span class="tag-badge tag-badge--info">Read only</span>
+  </div>
+
+  @if (error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  } @else if (config(); as config) {
+    <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Creation cost</span>
+        <strong class="heading-color">{{ config.creationDrachmaCost }} drachmas</strong>
+      </div>
+
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Member limit formula</span>
+        <strong class="heading-color">{{ memberLimitFormulaLabel(config) }}</strong>
+      </div>
+
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Leader inactivity threshold</span>
+        <strong class="heading-color">
+          {{ config.leaderInactivityThresholdDays }} days
+        </strong>
+      </div>
+
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Nomination duration</span>
+        <strong class="heading-color">
+          {{ durationLabel(config.nominationDurationMinutes) }}
+        </strong>
+      </div>
+
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Voting duration</span>
+        <strong class="heading-color">
+          {{ durationLabel(config.votingDurationMinutes) }}
+        </strong>
+      </div>
+
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Emergency max candidates</span>
+        <strong class="heading-color">{{ config.emergencyMaxCandidates }}</strong>
+      </div>
+
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Guild armory capacity</span>
+        <strong class="heading-color">{{ armoryCapacityLabel(config) }}</strong>
+      </div>
+    </div>
+  }
+</section>

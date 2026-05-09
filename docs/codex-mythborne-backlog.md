@@ -8306,6 +8306,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - `0 = unlimited` guild armory capacity is displayed clearly.
 - No direct config mutation is added unless existing config governance flow supports it.
 
+**Implementation note:** T19 accepted on 2026-05-09. Added a read-only `GuildConfigSummarySection` to the admin config definitions page, backed by canonical `PlayerGuild.getGuildConfigSummary()`. The section displays guild creation cost, member limit formula, leader inactivity threshold, nomination/voting durations, emergency max candidates and guild armory capacity, rendering `armoryCapacity = 0` / unlimited as `Unlimited`. No config mutation UI, direct DB access, route/menu changes, DB/RPC changes, migrations, generated type edits or unrelated guild moderation behavior were added. Verification passed with focused T19 spec, config/guild read specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for `button pButton`, `.from(` and direct write patterns. Manual smoke for `/admin/config-definitions` remains pending.
+
 ---
 
 ## Task T20 — Guild route/page integration
