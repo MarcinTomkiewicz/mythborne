@@ -17,6 +17,7 @@ import { GuildInvitesState } from '../../../core/services/guild/guild-invites.st
 import { GuildJoinRequestsState } from '../../../core/services/guild/guild-join-requests.state';
 import { ToastService } from '../../../core/services/ui/toast';
 import { GuildArmoryReadSection } from './guild-armory-read-section';
+import { GuildEmergencyElectionSection } from './guild-emergency-election-section';
 import { GuildMembershipManagementSection } from './guild-membership-management-section';
 
 @Component({
@@ -30,6 +31,7 @@ import { GuildMembershipManagementSection } from './guild-membership-management-
     TextareaModule,
     LoadingOverlay,
     GuildArmoryReadSection,
+    GuildEmergencyElectionSection,
     GuildMembershipManagementSection,
   ],
   templateUrl: './guild-page.html',

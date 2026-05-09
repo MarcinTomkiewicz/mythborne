@@ -317,23 +317,7 @@
 
     <app-guild-membership-management-section />
 
-    <section class="mg-card p-lg w-100">
-      <div class="flex-row-between-center flex-col-sm gap-md">
-        <div class="flex-col gap-xs">
-          <p class="card-legend mb-0">Emergency election</p>
-          <h3 class="mg-section__title mg-section__title--xs mb-0">
-            Leader continuity
-          </h3>
-          <p class="muted-text mb-0">
-            Election timing, quorum and result semantics remain DB-owned.
-          </p>
-        </div>
-
-        <span class="tag-badge tag-badge--muted">
-          {{ guild.activeElectionStatusKey || 'no active election' }}
-        </span>
-      </div>
-    </section>
+    <app-guild-emergency-election-section />
 
     <app-guild-armory-read-section />
   }

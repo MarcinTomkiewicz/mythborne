@@ -14,6 +14,7 @@ import { GuildInvitesState } from '../../../core/services/guild/guild-invites.st
 import { GuildJoinRequestsState } from '../../../core/services/guild/guild-join-requests.state';
 import { ToastService } from '../../../core/services/ui/toast';
 import { GuildArmoryReadSection } from './guild-armory-read-section';
+import { GuildEmergencyElectionSection } from './guild-emergency-election-section';
 import { GuildMembershipManagementSection } from './guild-membership-management-section';
 import { GuildPage } from './guild-page';
 
@@ -47,10 +48,18 @@ describe('GuildPage', () => {
     })
       .overrideComponent(GuildPage, {
         remove: {
-          imports: [GuildArmoryReadSection, GuildMembershipManagementSection],
+          imports: [
+            GuildArmoryReadSection,
+            GuildEmergencyElectionSection,
+            GuildMembershipManagementSection,
+          ],
         },
         add: {
-          imports: [GuildArmoryReadSectionStub, GuildMembershipManagementSectionStub],
+          imports: [
+            GuildArmoryReadSectionStub,
+            GuildEmergencyElectionSectionStub,
+            GuildMembershipManagementSectionStub,
+          ],
         },
       })
       .compileComponents();
@@ -199,8 +208,7 @@ describe('GuildPage', () => {
     expect(text).toContain('Guild overview');
     expect(text).toContain('Members: 12 / 30');
     expect(text).toContain('Guild membership placeholder');
-    expect(text).toContain('Emergency election');
-    expect(text).toContain('no active election');
+    expect(text).toContain('Guild emergency election placeholder');
     expect(text).toContain('Guild armory placeholder');
   });
 
@@ -220,6 +228,13 @@ describe('GuildPage', () => {
   template: '<section>Guild armory placeholder</section>',
 })
 class GuildArmoryReadSectionStub {}
+
+@Component({
+  selector: 'app-guild-emergency-election-section',
+  standalone: true,
+  template: '<section>Guild emergency election placeholder</section>',
+})
+class GuildEmergencyElectionSectionStub {}
 
 @Component({
   selector: 'app-guild-membership-management-section',

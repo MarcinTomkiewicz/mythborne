@@ -1,0 +1,196 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Emergency election</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        Leader continuity
+      </h3>
+      <p class="muted-text mb-0">
+        Election timing, eligibility and results are loaded from guild RPC read models.
+      </p>
+    </div>
+
+    <p-button
+      type="button"
+      label="Refresh"
+      icon="pi pi-refresh"
+      severity="secondary"
+      [outlined]="true"
+      [disabled]="election.isLoading() || election.isMutating()"
+      (onClick)="load()"
+    />
+  </div>
+
+  @if (readError(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  } @else {
+    @if (election.summary(); as summary) {
+      <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md w-100 mt-lg">
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Status</span>
+          <strong class="heading-color">{{ summary.statusKey }}</strong>
+        </div>
+
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Inactive leader</span>
+          <strong class="heading-color">{{ summary.inactiveLeaderHeroName }}</strong>
+        </div>
+
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Nominations</span>
+          <strong class="heading-color">
+            {{ summary.nominationCount }} / {{ summary.maxCandidates }}
+          </strong>
+        </div>
+
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Votes</span>
+          <strong class="heading-color">{{ summary.voteCount }}</strong>
+        </div>
+      </div>
+
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100 mt-lg">
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Nomination window</span>
+          <span>{{ summary.nominationStartsAt }} - {{ summary.nominationEndsAt }}</span>
+        </div>
+
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Voting window</span>
+          <span>
+            {{ summary.votingStartsAt || 'not started' }}
+            @if (summary.votingEndsAt) {
+              <span> - {{ summary.votingEndsAt }}</span>
+            }
+          </span>
+        </div>
+      </div>
+
+      <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100 mt-lg">
+        @if (summary.canNominate) {
+          <form class="mg-card p-md flex-col gap-sm" [formGroup]="nominateForm">
+            <strong>Nominate candidate</strong>
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Candidate hero id</span>
+              <input pInputText formControlName="candidateHeroId" />
+              @if (
+                nominateForm.controls.candidateHeroId.invalid
+                && nominateForm.controls.candidateHeroId.touched
+              ) {
+                <p-message severity="warn">Candidate hero id is required.</p-message>
+              }
+            </div>
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Reason</span>
+              <textarea pTextarea rows="2" formControlName="reason"></textarea>
+            </div>
+            <p-button
+              type="button"
+              label="Nominate"
+              icon="pi pi-user-plus"
+              [disabled]="nominateForm.invalid || election.isMutating()"
+              (onClick)="nominateCandidate()"
+            />
+          </form>
+        }
+
+        <form class="mg-card p-md flex-col gap-sm" [formGroup]="actionReasonForm">
+          <strong>Election actions</strong>
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Action reason</span>
+            <textarea pTextarea rows="2" formControlName="reason"></textarea>
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            @if (summary.canStartVoting) {
+              <p-button
+                type="button"
+                label="Start voting"
+                icon="pi pi-play"
+                [disabled]="election.isMutating()"
+                (onClick)="startVoting()"
+              />
+            }
+
+            @if (summary.canFinalize) {
+              <p-button
+                type="button"
+                label="Finalize"
+                icon="pi pi-check"
+                [disabled]="election.isMutating()"
+                (onClick)="finalizeElection()"
+              />
+            }
+          </div>
+        </form>
+      </div>
+
+      <div class="flex-col gap-md mt-lg">
+        <h4 class="mg-section__title mg-section__title--xs mb-0">Candidates</h4>
+
+        @if (election.candidates().length === 0) {
+          <p class="muted-text mb-0">No candidates loaded.</p>
+        } @else {
+          <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+            @for (candidate of election.candidates(); track candidate.nominationId) {
+              <article class="mg-card p-md flex-col gap-sm">
+                <div class="flex-row-between-start gap-sm">
+                  <div class="flex-col gap-xs">
+                    <strong>{{ candidate.candidateHeroName }}</strong>
+                    <span class="muted-text">
+                      Nominated by: {{ candidate.nominatedByHeroName }}
+                    </span>
+                  </div>
+                  <span class="tag-badge tag-badge--info">
+                    Votes: {{ candidate.voteCount }}
+                  </span>
+                </div>
+
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  @if (candidate.isMyCandidate) {
+                    <span class="tag-badge tag-badge--success">My candidate</span>
+                  }
+                  @if (candidate.isMyVote) {
+                    <span class="tag-badge tag-badge--success">My vote</span>
+                  }
+                </div>
+
+                @if (summary.canVote) {
+                  <p-button
+                    type="button"
+                    label="Vote"
+                    icon="pi pi-check-circle"
+                    [disabled]="election.isMutating()"
+                    (onClick)="vote(candidate)"
+                  />
+                }
+              </article>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="flex-col gap-md mt-lg">
+        <p class="muted-text mb-0">No active emergency election.</p>
+
+        @if (election.canStartElection()) {
+          <form class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100" [formGroup]="startForm">
+            <div class="flex-col gap-xs">
+              <span class="muted-text">Start reason</span>
+              <textarea pTextarea rows="2" formControlName="reason"></textarea>
+            </div>
+            <div class="flex-row-start-center">
+              <p-button
+                type="button"
+                label="Start emergency election"
+                icon="pi pi-bolt"
+                [disabled]="election.isMutating()"
+                (onClick)="startElection()"
+              />
+            </div>
+          </form>
+        }
+      </div>
+    }
+  }
+</section>

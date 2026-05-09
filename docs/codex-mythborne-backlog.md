@@ -8531,6 +8531,10 @@ UI guard:
 
 # GUILD-FOLLOWUP-4 / T24 — Emergency election full UI
 
+**Status:** accepted/done. Manual smoke pending/data-dependent for start election, nominate, start voting, vote, finalize, DB-backed action visibility, counts and timestamps.
+
+**Implementation note:** T24 accepted on 2026-05-09. The `/game/guild` page now mounts a real emergency election section using `GuildEmergencyElectionState` and the canonical election service/action layer. The UI renders active election summary, DB timestamps, candidates and DB-backed action visibility for start, nominate, start voting, vote and finalize. Mutation feedback uses `ToastService`; read/load and nomination validation feedback stay inline. Refresh is disabled during both reads and mutations so pending action feedback cannot be cleared mid-mutation. No DB/RPC/generated changes, direct table access, local quorum calculation, local result inference or fake emergency flow were added. Verification passed with focused T24 + guild page specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for `button pButton`, `.from(` and direct write patterns.
+
 ## Cel
 
 Zamienić emergency election read/action core w realne UI.

@@ -2352,8 +2352,6 @@ Verification:
 
 **Acceptance criteria:** reviewer/user can accept shell foundation or name remaining blockers without re-reading all implementation history.
 
----
-
 # 8. UI-HERO — Statistics and character growth
 
 Cel: stat allocation, base stats, derived preview i Character Points spending UI. UI-HERO musi respektować istniejący canonical stat allocation workflow i nie może direct-write hero stats/CP.
