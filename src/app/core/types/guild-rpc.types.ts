@@ -25,6 +25,24 @@ export type CreateGuildRpcArgs =
 export type CreateGuildRpcRow =
   Database['public']['Functions']['create_guild']['Returns'][number];
 
+export type CreateGuildInviteRpcArgs =
+  Database['public']['Functions']['create_guild_invite']['Args'];
+
+export type CreateGuildInviteRpcRow =
+  Database['public']['Functions']['create_guild_invite']['Returns'][number];
+
+export type RespondGuildInviteRpcArgs =
+  Database['public']['Functions']['respond_guild_invite']['Args'];
+
+export type RespondGuildInviteRpcRow =
+  Database['public']['Functions']['respond_guild_invite']['Returns'][number];
+
+export type CancelGuildInviteRpcArgs =
+  Database['public']['Functions']['cancel_guild_invite']['Args'];
+
+export type CancelGuildInviteRpcRow =
+  Database['public']['Functions']['cancel_guild_invite']['Returns'][number];
+
 export type GetHeroGuildStateRpcRow =
   Database['public']['Functions']['get_hero_guild_state']['Returns'][number];
 

@@ -7927,6 +7927,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Accepting invite refreshes current guild state.
 - Rejected/expired/invalid invite states are surfaced clearly.
 
+**Implementation note:** T5 accepted on 2026-05-09. Added generated RPC aliases and player-facing invite input/result models for `create_guild_invite(...)`, `respond_guild_invite(...)`, `cancel_guild_invite(...)` and `get_hero_guild_invitation_rows(...)`. Invite RPC calls live in dedicated `PlayerGuildInvites`; invite args/result mapping lives in `guild-invite-mappers`; `GuildInvitesState` loads relevant invites, creates/cancels/responds, refreshes `CurrentGuildState` after create/cancel/accept, preserves reject without current-guild refresh, uses canonical DB status key `cancelled`, and guards stale active hero/server responses. No UI/routes/menu, DB/RPC changes, generated type edits, migrations, direct guild table reads/writes or frontend membership insert/fallback were added. Verification passed with `npx tsc --noEmit`, focused guild specs and `npm run build` with known warnings. Manual smoke remains N/A until a future guild UI entry slice wires this state into a page.
+
 ---
 
 ## Task T6 — Request-to-join flow

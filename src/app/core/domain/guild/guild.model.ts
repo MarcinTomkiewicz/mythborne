@@ -97,6 +97,37 @@ export interface GuildInvite {
   canCancel: boolean;
 }
 
+export interface CreateGuildInviteInput {
+  targetHeroId: string;
+  reason?: string | null;
+  expiresAt?: string | null;
+  requestId?: string | null;
+}
+
+export interface RespondGuildInviteInput {
+  inviteId: string;
+  accept: boolean;
+  reason?: string | null;
+  requestId?: string | null;
+}
+
+export interface CancelGuildInviteInput {
+  inviteId: string;
+  reason?: string | null;
+  requestId?: string | null;
+}
+
+export interface GuildInviteOperationResult {
+  inviteId: string;
+  guildId: string;
+  targetHeroId: string;
+  statusKey: GuildInviteStatusKey;
+  expiresAt: string | null;
+  membershipId: string | null;
+  memberCount: number | null;
+  memberLimit: number | null;
+}
+
 export interface GuildJoinRequest {
   joinRequestId: string;
   guildId: string;
