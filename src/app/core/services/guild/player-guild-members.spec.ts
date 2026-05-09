@@ -153,6 +153,7 @@ function memberRow(
     role_key: 'member',
     role_label: 'Member',
     membership_status_key: 'active',
+    armory_access_status_key: 'allowed',
     joined_at: '2026-05-08T10:00:00.000Z',
     created_at: '2026-05-08T09:00:00.000Z',
     ...overrides,

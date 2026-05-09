@@ -1,6 +1,7 @@
 import {
   GuildInviteStatusKey,
   GuildJoinRequestStatusKey,
+  GuildArmoryAccessStatusKey,
   GuildMembershipStatusKey,
   GuildRoleKey,
   GuildStatusKey,
@@ -73,6 +74,7 @@ export interface GuildMemberListItem {
   roleKey: GuildRoleKey;
   roleLabel: string;
   membershipStatusKey: GuildMembershipStatusKey;
+  armoryAccessStatusKey: GuildArmoryAccessStatusKey;
   joinedAt: string;
   createdAt: string;
 }

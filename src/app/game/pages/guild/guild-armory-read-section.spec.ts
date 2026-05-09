@@ -4,19 +4,25 @@ import {
   GuildArmoryItem,
   GuildArmoryLoan,
 } from '../../../core/domain/guild/guild-armory.model';
-import { GuildConfigSummary } from '../../../core/domain/guild/guild.model';
+import {
+  GuildConfigSummary,
+  GuildMemberListItem,
+} from '../../../core/domain/guild/guild.model';
 import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.model';
 import { GuildArmoryItemActionsState } from './guild-armory-item-actions.state';
+import { GuildArmoryMemberAccessState } from './guild-armory-member-access.state';
 import { GuildArmoryReadSection } from './guild-armory-read-section';
 import { GuildArmoryReadState } from './guild-armory-read.state';
 
 describe('GuildArmoryReadSection', () => {
   let fixture: ComponentFixture<GuildArmoryReadSection>;
   let actions: FakeGuildArmoryItemActionsState;
+  let memberAccess: FakeGuildArmoryMemberAccessState;
   let state: FakeGuildArmoryReadState;
 
   beforeEach(async () => {
     actions = new FakeGuildArmoryItemActionsState();
+    memberAccess = new FakeGuildArmoryMemberAccessState();
     state = new FakeGuildArmoryReadState();
 
     await TestBed.configureTestingModule({
@@ -26,6 +32,7 @@ describe('GuildArmoryReadSection', () => {
         set: {
           providers: [
             { provide: GuildArmoryItemActionsState, useValue: actions },
+            { provide: GuildArmoryMemberAccessState, useValue: memberAccess },
             { provide: GuildArmoryReadState, useValue: state },
           ],
         },
@@ -60,6 +67,7 @@ describe('GuildArmoryReadSection', () => {
 
     expect(state.load).toHaveBeenCalled();
     expect(actions.load).toHaveBeenCalled();
+    expect(memberAccess.load).toHaveBeenCalled();
     expect(text).toContain('Guild armory');
     expect(text).toContain('Deposit item');
     expect(text).toContain('Bronze Spear');
@@ -142,15 +150,54 @@ describe('GuildArmoryReadSection', () => {
     expect(text).not.toContain('Action history');
   });
 
+  it('renders member armory access state and management actions from DB-owned status', () => {
+    memberAccess.members.set([
+      member({ memberName: 'Allowed Hero', armoryAccessStatusKey: 'allowed' }),
+      member({
+        memberHeroId: 'blocked-hero-1',
+        memberName: 'Blocked Hero',
+        armoryAccessStatusKey: 'blocked',
+      }),
+    ]);
+    memberAccess.canManageAccess.set(true);
+    state.config.set(config());
+
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Member armory access');
+    expect(text).toContain('Allowed Hero');
+    expect(text).toContain('allowed');
+    expect(text).toContain('Block armory');
+    expect(text).toContain('Blocked Hero');
+    expect(text).toContain('blocked');
+    expect(text).toContain('Allow armory');
+  });
+
+  it('hides member armory access management actions for regular members', () => {
+    memberAccess.members.set([member()]);
+    memberAccess.canManageAccess.set(false);
+    state.config.set(config());
+
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('allowed');
+    expect(text).not.toContain('Block armory');
+    expect(text).not.toContain('Allow armory');
+  });
+
   it('refreshes guild armory read state and deposit context together', () => {
     fixture.detectChanges();
     state.load.calls.reset();
     actions.load.calls.reset();
+    memberAccess.load.calls.reset();
 
     fixture.componentInstance.refresh();
 
     expect(state.load).toHaveBeenCalledTimes(1);
     expect(actions.load).toHaveBeenCalledTimes(1);
+    expect(memberAccess.load).toHaveBeenCalledTimes(1);
   });
 
   it('renders empty current guild armory state', () => {
@@ -193,7 +240,6 @@ class FakeGuildArmoryItemActionsState {
   readonly isLoadingDepositContext = signal(false);
   readonly isMutating = signal(false);
   readonly error = signal<string | null>(null);
-  readonly message = signal<string | null>(null);
   readonly load = jasmine.createSpy('load');
   readonly deposit = jasmine.createSpy('deposit');
   readonly borrow = jasmine.createSpy('borrow');
@@ -211,6 +257,17 @@ class FakeGuildArmoryItemActionsState {
   canDeposit(item: ArmoryItemSummary): boolean {
     return item.lifecycleStatus === 'active' && !this.isEquipped(item);
   }
+}
+
+class FakeGuildArmoryMemberAccessState {
+  readonly members = signal<GuildMemberListItem[]>([]);
+  readonly isLoading = signal(false);
+  readonly canManageAccess = signal(false);
+  readonly isMutating = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly load = jasmine.createSpy('load');
+  readonly block = jasmine.createSpy('block');
+  readonly allow = jasmine.createSpy('allow');
 }
 
 function textContent(fixture: ComponentFixture<GuildArmoryReadSection>): string {
@@ -241,6 +298,21 @@ function item(overrides: Partial<GuildArmoryItem> = {}): GuildArmoryItem {
     canForceReturn: false,
     canWithdraw: true,
     canRemove: true,
+    ...overrides,
+  };
+}
+
+function member(overrides: Partial<GuildMemberListItem> = {}): GuildMemberListItem {
+  return {
+    guildId: 'guild-1',
+    memberHeroId: 'member-hero-1',
+    memberName: 'Member Hero',
+    roleKey: 'member',
+    roleLabel: 'Member',
+    membershipStatusKey: 'active',
+    armoryAccessStatusKey: 'allowed',
+    joinedAt: '2026-05-08T10:00:00.000Z',
+    createdAt: '2026-05-08T09:00:00.000Z',
     ...overrides,
   };
 }

@@ -9,6 +9,7 @@ import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.mode
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { GuildArmoryItemActionsState } from './guild-armory-item-actions.state';
+import { GuildArmoryMemberAccessState } from './guild-armory-member-access.state';
 import { GuildArmoryReadState } from './guild-armory-read.state';
 
 @Component({
@@ -19,6 +20,7 @@ import { GuildArmoryReadState } from './guild-armory-read.state';
     ArmoryShelfState,
     CurrentEquipmentState,
     GuildArmoryItemActionsState,
+    GuildArmoryMemberAccessState,
     GuildArmoryReadState,
   ],
   host: { class: 'd-block w-100' },
@@ -27,6 +29,7 @@ import { GuildArmoryReadState } from './guild-armory-read.state';
 export class GuildArmoryReadSection implements OnInit {
   readonly state = inject(GuildArmoryReadState);
   readonly actions = inject(GuildArmoryItemActionsState);
+  readonly memberAccess = inject(GuildArmoryMemberAccessState);
 
   ngOnInit(): void {
     this.refresh();
@@ -35,6 +38,7 @@ export class GuildArmoryReadSection implements OnInit {
   refresh(): void {
     this.state.load();
     this.actions.load();
+    this.memberAccess.load();
   }
 
   statusLabel(status: GuildArmoryCurrentItemStatusKey): string {

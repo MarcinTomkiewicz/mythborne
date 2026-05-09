@@ -8226,6 +8226,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Officer can manage locks like leader.
 - Member cannot manage locks.
 
+**Implementation note:** T16 accepted on 2026-05-09. `get_hero_guild_members(...)` is now the canonical member access read surface for the UI through generated `armory_access_status_key`, mapped to `GuildMemberListItem.armoryAccessStatusKey` without Angular-side access guessing. The existing `GuildArmoryReadSection` shows per-member `allowed`/`blocked` armory access status and exposes leader/officer block/unblock actions through canonical `PlayerGuildArmoryActions.setGuildArmoryMemberAccessForActiveHero(...)` only. Successful access changes refresh guild members, current guild state and guild armory read state. Transient action success/error feedback uses the shared `ToastService`; inline `<p-message>` remains only for blocking read/load state. No route/menu, DB/RPC changes, migrations, generated type edits by Codex, direct `guild_armory_access_locks` reads, `.from(` usage, direct table writes, low-level helper UI contract, local access-state fallback or T17/T20 behavior was added. Verification passed with focused T16 specs, full guild + guild page specs, `npx tsc --noEmit`, `npm run build` with known warnings, `git diff --check`, and static greps for `button pButton`, `.from(` and direct write patterns. Manual/route smoke remains pending until the guild armory section is reachable via route/menu and suitable leader/officer/member test data exists.
+
 ---
 
 ## Task T17 — Guild armory item action integration with player item UI

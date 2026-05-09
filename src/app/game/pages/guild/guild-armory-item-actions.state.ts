@@ -10,6 +10,7 @@ import {
 import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.model';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { PlayerGuildArmoryActions } from '../../../core/services/guild/player-guild-armory-actions';
+import { ToastService } from '../../../core/services/ui/toast';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
@@ -36,11 +37,11 @@ export class GuildArmoryItemActionsState {
   private readonly equipment = inject(CurrentEquipmentState);
   private readonly guildArmory = inject(GuildArmoryReadState);
   private readonly guildArmoryActions = inject(PlayerGuildArmoryActions);
+  private readonly toast = inject(ToastService);
   private mutationRequestId = 0;
 
   readonly isMutating = signal(false);
   readonly error = signal<string | null>(null);
-  readonly message = signal<string | null>(null);
   readonly depositItems = computed(() => this.armory.visibleItems());
   readonly isLoadingDepositContext = computed(() =>
     this.armory.isLoading() || this.equipment.isLoading(),
@@ -64,14 +65,14 @@ export class GuildArmoryItemActionsState {
 
   deposit(item: ArmoryItemSummary): void {
     if (this.isEquipped(item)) {
-      this.error.set('Equipped items must be unequipped before guild armory deposit.');
-      this.message.set(null);
+      this.showActionError(
+        'Equipped items must be unequipped before guild armory deposit.',
+      );
       return;
     }
 
     if (!this.canDeposit(item)) {
-      this.error.set('This item is not eligible for guild armory deposit.');
-      this.message.set(null);
+      this.showActionError('This item is not eligible for guild armory deposit.');
       return;
     }
 
@@ -96,8 +97,7 @@ export class GuildArmoryItemActionsState {
     const loanId = item.loanId;
 
     if (!loanId) {
-      this.error.set('No active guild armory loan for this item.');
-      this.message.set(null);
+      this.showActionError('No active guild armory loan for this item.');
       return;
     }
 
@@ -122,8 +122,7 @@ export class GuildArmoryItemActionsState {
     const loanId = item.loanId;
 
     if (!loanId) {
-      this.error.set('No active guild armory loan for this item.');
-      this.message.set(null);
+      this.showActionError('No active guild armory loan for this item.');
       return;
     }
 
@@ -170,11 +169,10 @@ export class GuildArmoryItemActionsState {
     const contextKey = this.currentContextKey();
 
     this.error.set(null);
-    this.message.set(null);
 
     if (!contextKey) {
       this.isMutating.set(false);
-      this.error.set('No active hero for guild armory action.');
+      this.showActionError('No active hero for guild armory action.');
       return;
     }
 
@@ -187,7 +185,7 @@ export class GuildArmoryItemActionsState {
         }
 
         this.isMutating.set(false);
-        this.message.set(successMessage(action));
+        this.toast.show('success', 'Guild armory', successMessage(action));
         this.refreshAfterMutation();
       },
       error: (error: unknown) => {
@@ -196,9 +194,14 @@ export class GuildArmoryItemActionsState {
         }
 
         this.isMutating.set(false);
-        this.error.set(getErrorMessage(error, 'Guild armory action failed.'));
+        this.showActionError(getErrorMessage(error, 'Guild armory action failed.'));
       },
     });
+  }
+
+  private showActionError(message: string): void {
+    this.error.set(message);
+    this.toast.show('error', 'Guild armory action failed', message);
   }
 
   private refreshAfterMutation(): void {
@@ -219,7 +222,6 @@ export class GuildArmoryItemActionsState {
     if (contextKey !== this.currentContextKey()) {
       this.isMutating.set(false);
       this.error.set(null);
-      this.message.set(null);
       return false;
     }
 

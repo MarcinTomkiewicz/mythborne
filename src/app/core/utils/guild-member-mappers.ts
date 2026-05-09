@@ -25,6 +25,7 @@ export function mapGuildMemberListItem(
     roleKey: row.role_key,
     roleLabel: row.role_label,
     membershipStatusKey: row.membership_status_key,
+    armoryAccessStatusKey: row.armory_access_status_key,
     joinedAt: row.joined_at,
     createdAt: row.created_at,
   };

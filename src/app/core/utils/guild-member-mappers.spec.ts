@@ -23,6 +23,7 @@ describe('guild member mappers', () => {
       roleKey: 'member',
       roleLabel: 'Member',
       membershipStatusKey: 'active',
+      armoryAccessStatusKey: 'blocked',
       joinedAt: '2026-05-08T10:00:00.000Z',
       createdAt: '2026-05-08T09:00:00.000Z',
     });
@@ -105,6 +106,7 @@ function memberRow(
     role_key: 'member',
     role_label: 'Member',
     membership_status_key: 'active',
+    armory_access_status_key: 'blocked',
     joined_at: '2026-05-08T10:00:00.000Z',
     created_at: '2026-05-08T09:00:00.000Z',
     ...overrides,

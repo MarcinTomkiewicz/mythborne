@@ -14,6 +14,7 @@ import {
 } from '../../../core/domain/item/item-equipment.model';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { PlayerGuildArmoryActions } from '../../../core/services/guild/player-guild-armory-actions';
+import { ToastService } from '../../../core/services/ui/toast';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
@@ -27,6 +28,7 @@ describe('GuildArmoryItemActionsState', () => {
   let equipment: FakeCurrentEquipmentState;
   let guildArmory: jasmine.SpyObj<GuildArmoryReadState>;
   let actions: jasmine.SpyObj<PlayerGuildArmoryActions>;
+  let toast: jasmine.SpyObj<ToastService>;
 
   beforeEach(() => {
     activeHeroState = signal<ActiveHeroState | null>(activeContext());
@@ -46,6 +48,7 @@ describe('GuildArmoryItemActionsState', () => {
         'withdrawGuildArmoryItemForActiveHero',
       ],
     );
+    toast = jasmine.createSpyObj<ToastService>('ToastService', ['show']);
 
     TestBed.configureTestingModule({
       providers: [
@@ -55,6 +58,7 @@ describe('GuildArmoryItemActionsState', () => {
         { provide: CurrentEquipmentState, useValue: equipment },
         { provide: GuildArmoryReadState, useValue: guildArmory },
         { provide: PlayerGuildArmoryActions, useValue: actions },
+        { provide: ToastService, useValue: toast },
       ],
     });
 
@@ -81,7 +85,11 @@ describe('GuildArmoryItemActionsState', () => {
     expect(guildArmory.load).toHaveBeenCalled();
     expect(armory.refresh).toHaveBeenCalled();
     expect(equipment.refresh).toHaveBeenCalled();
-    expect(state.message()).toBe('Item deposited into guild armory.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Guild armory',
+      'Item deposited into guild armory.',
+    );
     expect(state.isMutating()).toBeFalse();
   });
 
@@ -93,6 +101,11 @@ describe('GuildArmoryItemActionsState', () => {
     expect(actions.depositGuildArmoryItemForActiveHero).not.toHaveBeenCalled();
     expect(guildArmory.load).not.toHaveBeenCalled();
     expect(state.error()).toBe(
+      'Equipped items must be unequipped before guild armory deposit.',
+    );
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Guild armory action failed',
       'Equipped items must be unequipped before guild armory deposit.',
     );
   });
@@ -117,7 +130,11 @@ describe('GuildArmoryItemActionsState', () => {
     expect(guildArmory.load).toHaveBeenCalledTimes(2);
     expect(armory.refresh).toHaveBeenCalledTimes(2);
     expect(equipment.refresh).toHaveBeenCalledTimes(2);
-    expect(state.message()).toBe('Item removed from guild armory.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Guild armory',
+      'Item removed from guild armory.',
+    );
   });
 
   it('borrows available item and returns own loan through canonical actions', () => {
@@ -136,7 +153,11 @@ describe('GuildArmoryItemActionsState', () => {
     expect(guildArmory.load).toHaveBeenCalledTimes(2);
     expect(armory.refresh).toHaveBeenCalledTimes(2);
     expect(equipment.refresh).toHaveBeenCalledTimes(2);
-    expect(state.message()).toBe('Guild armory loan returned.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Guild armory',
+      'Guild armory loan returned.',
+    );
   });
 
   it('returns active loan from guild armory item rows', () => {
@@ -147,7 +168,11 @@ describe('GuildArmoryItemActionsState', () => {
     expect(actions.returnGuildArmoryLoanForActiveHero).toHaveBeenCalledWith({
       loanId: 'loan-1',
     });
-    expect(state.message()).toBe('Guild armory loan returned.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Guild armory',
+      'Guild armory loan returned.',
+    );
   });
 
   it('force-returns active loans from item and loan rows through canonical action', () => {
@@ -168,7 +193,11 @@ describe('GuildArmoryItemActionsState', () => {
     expect(guildArmory.load).toHaveBeenCalledTimes(2);
     expect(armory.refresh).toHaveBeenCalledTimes(2);
     expect(equipment.refresh).toHaveBeenCalledTimes(2);
-    expect(state.message()).toBe('Guild armory loan force-returned.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Guild armory',
+      'Guild armory loan force-returned.',
+    );
   });
 
   it('blocks force-return without active loan before calling RPC', () => {
@@ -176,6 +205,11 @@ describe('GuildArmoryItemActionsState', () => {
 
     expect(actions.forceReturnGuildArmoryLoanForActiveHero).not.toHaveBeenCalled();
     expect(state.error()).toBe('No active guild armory loan for this item.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Guild armory action failed',
+      'No active guild armory loan for this item.',
+    );
   });
 
   it('blocks item return without active loan before calling RPC', () => {
@@ -183,6 +217,11 @@ describe('GuildArmoryItemActionsState', () => {
 
     expect(actions.returnGuildArmoryLoanForActiveHero).not.toHaveBeenCalled();
     expect(state.error()).toBe('No active guild armory loan for this item.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Guild armory action failed',
+      'No active guild armory loan for this item.',
+    );
   });
 
   it('surfaces guild armory action errors', () => {
@@ -195,6 +234,11 @@ describe('GuildArmoryItemActionsState', () => {
     expect(state.error()).toBe('Only owner can withdraw this guild armory item.');
     expect(state.isMutating()).toBeFalse();
     expect(guildArmory.load).not.toHaveBeenCalled();
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Guild armory action failed',
+      'Only owner can withdraw this guild armory item.',
+    );
   });
 
   it('ignores stale mutation success after active hero context changes', () => {
@@ -206,7 +250,6 @@ describe('GuildArmoryItemActionsState', () => {
     response.next(operation({ kind: 'remove' }));
     response.complete();
 
-    expect(state.message()).toBeNull();
     expect(state.error()).toBeNull();
     expect(state.isMutating()).toBeFalse();
     expect(guildArmory.load).not.toHaveBeenCalled();
@@ -222,6 +265,11 @@ describe('GuildArmoryItemActionsState', () => {
     expect(actions.removeGuildArmoryItemForActiveHero).not.toHaveBeenCalled();
     expect(state.error()).toBe('No active hero for guild armory action.');
     expect(state.isMutating()).toBeFalse();
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Guild armory action failed',
+      'No active hero for guild armory action.',
+    );
   });
 });
 

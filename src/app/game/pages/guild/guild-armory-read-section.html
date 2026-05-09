@@ -25,12 +25,6 @@
   @if (state.error(); as message) {
     <p-message severity="error">{{ message }}</p-message>
   }
-  @if (actions.error(); as message) {
-    <p-message severity="error">{{ message }}</p-message>
-  }
-  @if (actions.message(); as message) {
-    <p-message severity="success">{{ message }}</p-message>
-  }
 
   <div class="flex-col gap-sm mt-md">
     <div class="flex-row-between-center flex-col-sm gap-md">
@@ -195,4 +189,59 @@
       }
     </div>
   }
+
+  <div class="flex-col gap-sm mt-lg">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <h4 class="mg-section__title mg-section__title--xs mb-0">Member armory access</h4>
+        <p class="muted-text mb-0">DB-backed guild armory access status for active members.</p>
+      </div>
+      @if (memberAccess.isLoading()) {
+        <span class="tag-badge tag-badge--muted">Loading members</span>
+      }
+    </div>
+
+    @for (member of memberAccess.members(); track member.memberHeroId) {
+      <article class="mg-card p-md">
+        <div class="flex-row-between-start flex-col-sm gap-md">
+          <div class="flex-col gap-xs">
+            <strong>{{ member.memberName }}</strong>
+            <span class="muted-text">{{ member.roleLabel }}</span>
+          </div>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            <span
+              class="tag-badge"
+              [class.tag-badge--success]="member.armoryAccessStatusKey === 'allowed'"
+              [class.tag-badge--danger]="member.armoryAccessStatusKey === 'blocked'"
+            >
+              {{ member.armoryAccessStatusKey }}
+            </span>
+            @if (memberAccess.canManageAccess() && member.armoryAccessStatusKey === 'allowed') {
+              <p-button
+                label="Block armory"
+                icon="pi pi-ban"
+                severity="danger"
+                [outlined]="true"
+                [disabled]="memberAccess.isMutating()"
+                (onClick)="memberAccess.block(member)"
+              />
+            }
+            @if (memberAccess.canManageAccess() && member.armoryAccessStatusKey === 'blocked') {
+              <p-button
+                label="Allow armory"
+                icon="pi pi-check"
+                severity="secondary"
+                [disabled]="memberAccess.isMutating()"
+                (onClick)="memberAccess.allow(member)"
+              />
+            }
+          </div>
+        </div>
+      </article>
+    } @empty {
+      @if (!memberAccess.isLoading()) {
+        <p class="muted-text mb-0">No guild members loaded.</p>
+      }
+    }
+  </div>
 </section>
