@@ -60,7 +60,7 @@ describe('GuildJoinRequestsState', () => {
     expect(state.error()).toBeNull();
   });
 
-  it('creates join request and refreshes current guild plus discovery state', () => {
+  it('creates join request and refreshes discovery state without current guild reload', () => {
     playerGuildJoinRequests.createGuildJoinRequestForActiveHero.and.returnValue(
       of(operation()),
     );
@@ -70,7 +70,7 @@ describe('GuildJoinRequestsState', () => {
 
     expect(playerGuildJoinRequests.createGuildJoinRequestForActiveHero)
       .toHaveBeenCalledWith({ guildId: 'guild-1', reason: 'I can help.' });
-    expect(currentGuild.load).toHaveBeenCalled();
+    expect(currentGuild.load).not.toHaveBeenCalled();
     expect(discovery.search).toHaveBeenCalled();
     expect(state.lastResult()?.statusKey).toBe('pending');
     expect(state.message()).toBe('Guild join request created.');
@@ -114,8 +114,9 @@ describe('GuildJoinRequestsState', () => {
     state.cancel({ joinRequestId: 'join-request-1', reason: 'Changed mind.' });
 
     expect(state.lastResult()?.statusKey).toBe('cancelled');
-    expect(currentGuild.load).toHaveBeenCalledTimes(2);
+    expect(currentGuild.load).toHaveBeenCalledTimes(1);
     expect(discovery.search).toHaveBeenCalledTimes(2);
+    expect(state.message()).toBe('Guild join request cancelled.');
   });
 
   it('surfaces duplicate or ineligible RPC errors clearly', () => {

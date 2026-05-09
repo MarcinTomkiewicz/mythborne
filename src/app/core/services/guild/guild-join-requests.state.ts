@@ -69,6 +69,7 @@ export class GuildJoinRequestsState {
     this.runMutation(
       () => this.playerGuildJoinRequests.createGuildJoinRequestForActiveHero(input),
       'Guild join request created.',
+      false,
     );
   }
 
@@ -76,13 +77,15 @@ export class GuildJoinRequestsState {
     this.runMutation(
       () => this.playerGuildJoinRequests.reviewGuildJoinRequestForActiveHero(input),
       input.accept ? 'Guild join request accepted.' : 'Guild join request rejected.',
+      true,
     );
   }
 
   cancel(input: CancelGuildJoinRequestInput): void {
     this.runMutation(
       () => this.playerGuildJoinRequests.cancelGuildJoinRequestForActiveHero(input),
-      'Guild join request canceled.',
+      'Guild join request cancelled.',
+      false,
     );
   }
 
@@ -100,6 +103,7 @@ export class GuildJoinRequestsState {
   private runMutation(
     operation: () => Observable<GuildJoinRequestOperationResult>,
     successMessage: string,
+    refreshCurrentGuild: boolean,
   ): void {
     const requestId = ++this.mutationRequestId;
     const contextKey = this.currentContextKey();
@@ -125,7 +129,11 @@ export class GuildJoinRequestsState {
         this.lastResult.set(result);
         this.isMutating.set(false);
         this.load();
-        this.currentGuild.load();
+
+        if (refreshCurrentGuild) {
+          this.currentGuild.load();
+        }
+
         this.discovery.search();
         this.message.set(successMessage);
       },

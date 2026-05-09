@@ -29,37 +29,251 @@
     </section>
   } @else if (currentGuild.status() === 'no-guild') {
     <section class="mg-card p-lg w-100">
-      <div class="flex-col gap-sm">
-        <p class="card-legend mb-0">No guild</p>
-        <h3 class="mg-section__title mg-section__title--xs mb-0">
-          Join or create a guild
-        </h3>
-        <p class="muted-text mb-0">
-          Guild creation, guild search, join requests and invites are the entry points
-          for joining guild systems.
-        </p>
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-sm">
+          <p class="card-legend mb-0">No guild</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            Join or create a guild
+          </h3>
+          <p class="muted-text mb-0">
+            Create a guild, search existing guilds, manage join requests or respond to invites.
+          </p>
+        </div>
+
+        <p-button
+          label="Refresh"
+          icon="pi pi-refresh"
+          severity="secondary"
+          [outlined]="true"
+          [disabled]="guildCreate.isLoading() || discovery.isLoading() || joinRequests.isLoading() || invites.isLoading()"
+          (onClick)="refresh()"
+        />
       </div>
+    </section>
 
-      <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md w-100 mt-lg">
-        <article class="mg-card p-md flex-col gap-xs">
-          <strong>Create guild</strong>
-          <span class="muted-text">Start a guild when the current hero can create one.</span>
-        </article>
+    <section class="mg-card p-lg w-100">
+      <form class="flex-col gap-md" [formGroup]="guildCreate.form">
+        <div class="flex-row-between-start flex-col-sm gap-md">
+          <div class="flex-col gap-xs">
+            <p class="card-legend mb-0">Create guild</p>
+            <h3 class="mg-section__title mg-section__title--xs mb-0">
+              Found a new guild
+            </h3>
+            <p class="muted-text mb-0">
+              Cost: {{ guildCreate.creationDrachmaCost() ?? 'N/D' }} drachmas
+            </p>
+          </div>
 
-        <article class="mg-card p-md flex-col gap-xs">
-          <strong>Search guilds</strong>
-          <span class="muted-text">Find existing guilds and request membership.</span>
-        </article>
+          <p-button
+            label="Create guild"
+            icon="pi pi-plus"
+            [disabled]="guildCreate.isSubmitting() || !guildCreate.canCreateGuild() || guildCreate.form.invalid"
+            (onClick)="submitCreateGuild()"
+          />
+        </div>
 
-        <article class="mg-card p-md flex-col gap-xs">
-          <strong>Join requests</strong>
-          <span class="muted-text">Track membership requests sent by the active hero.</span>
-        </article>
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Name</span>
+            <input pInputText formControlName="name" placeholder="Guild name" />
+          </div>
 
-        <article class="mg-card p-md flex-col gap-xs">
-          <strong>Invites</strong>
-          <span class="muted-text">Review guild invitations for the active hero.</span>
-        </article>
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Tag</span>
+            <input pInputText formControlName="tag" placeholder="TAG" />
+          </div>
+        </div>
+
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Description</span>
+            <textarea pTextarea rows="3" formControlName="description"></textarea>
+          </div>
+
+          <div class="flex-col gap-xs">
+            <span class="muted-text">Reason</span>
+            <textarea pTextarea rows="3" formControlName="reason"></textarea>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-md">
+        <div class="flex-row-between-center flex-col-sm gap-md">
+          <div class="flex-col gap-xs">
+            <p class="card-legend mb-0">Search guilds</p>
+            <h3 class="mg-section__title mg-section__title--xs mb-0">
+              Existing guilds
+            </h3>
+          </div>
+
+          <div class="flex-row-start-center flex-col-sm gap-sm">
+            <input
+              pInputText
+              type="search"
+              placeholder="Search by name or tag"
+              [formControl]="searchQueryControl"
+            />
+            <p-button
+              label="Search"
+              icon="pi pi-search"
+              [disabled]="discovery.isLoading()"
+              (onClick)="searchGuilds()"
+            />
+          </div>
+        </div>
+
+        @if (discovery.error(); as message) {
+          <p-message severity="error">{{ message }}</p-message>
+        } @else if (discovery.guilds().length === 0) {
+          <p class="muted-text mb-0">No guilds found.</p>
+        } @else {
+          <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+            @for (guild of discovery.guilds(); track guild.guildId) {
+              <article class="mg-card p-md flex-col gap-sm">
+                <div class="flex-row-between-start gap-sm">
+                  <div class="flex-col gap-xs">
+                    <strong>{{ guild.name }}</strong>
+                    <span class="muted-text">{{ guild.tag }}</span>
+                  </div>
+                  <span class="tag-badge tag-badge--info">
+                    {{ guild.statusKey }}
+                  </span>
+                </div>
+
+                <p class="muted-text mb-0">
+                  Members: {{ guild.memberCount }} / {{ guild.memberLimit }}
+                </p>
+
+                <div class="flex-row-start-center flex-wrap gap-sm">
+                  @if (pendingRequestForGuild(guild.guildId); as request) {
+                    <span class="tag-badge tag-badge--warning">pending</span>
+                    <p-button
+                      label="Cancel request"
+                      severity="secondary"
+                      [outlined]="true"
+                      [disabled]="joinRequests.isMutating()"
+                      (onClick)="cancelJoinRequest(request)"
+                    />
+                  } @else if (guild.canRequestToJoin) {
+                    <p-button
+                      label="Request to join"
+                      icon="pi pi-send"
+                      [disabled]="joinRequests.isMutating()"
+                      (onClick)="requestToJoin(guild)"
+                    />
+                  } @else if (guild.currentJoinRequestStatusKey) {
+                    <span class="tag-badge tag-badge--muted">
+                      {{ guild.currentJoinRequestStatusKey }}
+                    </span>
+                  } @else if (guild.currentInviteStatusKey) {
+                    <span class="tag-badge tag-badge--muted">
+                      invite {{ guild.currentInviteStatusKey }}
+                    </span>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Join requests</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            Sent requests
+          </h3>
+        </div>
+
+        @if (joinRequests.requests().length === 0) {
+          <p class="muted-text mb-0">No sent guild join requests.</p>
+        } @else {
+          <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+            @for (request of joinRequests.requests(); track request.joinRequestId) {
+              <article class="mg-card p-md flex-col gap-sm">
+                <div class="flex-row-between-start gap-sm">
+                  <div class="flex-col gap-xs">
+                    <strong>{{ request.guildName }}</strong>
+                    <span class="muted-text">{{ request.guildTag }}</span>
+                  </div>
+                  <span class="tag-badge tag-badge--info">
+                    {{ request.statusKey }}
+                  </span>
+                </div>
+
+                @if (request.canCancel) {
+                  <p-button
+                    label="Cancel request"
+                    severity="secondary"
+                    [outlined]="true"
+                    [disabled]="joinRequests.isMutating()"
+                    (onClick)="cancelJoinRequest(request)"
+                  />
+                }
+              </article>
+            }
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Invites</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            Received guild invites
+          </h3>
+        </div>
+
+        @if (invites.invites().length === 0) {
+          <p class="muted-text mb-0">No received guild invites.</p>
+        } @else {
+          <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+            @for (invite of invites.invites(); track invite.inviteId) {
+              <article class="mg-card p-md flex-col gap-sm">
+                <div class="flex-row-between-start gap-sm">
+                  <div class="flex-col gap-xs">
+                    <strong>{{ invite.guildName }}</strong>
+                    <span class="muted-text">{{ invite.guildTag }}</span>
+                  </div>
+                  <span class="tag-badge tag-badge--info">
+                    {{ invite.statusKey }}
+                  </span>
+                </div>
+
+                <p class="muted-text mb-0">
+                  Invited by: {{ invite.inviterHeroName }}
+                </p>
+
+                <div class="flex-row-start-center flex-wrap gap-sm">
+                  @if (invite.canAccept) {
+                    <p-button
+                      label="Accept invite"
+                      icon="pi pi-check"
+                      [disabled]="invites.isMutating()"
+                      (onClick)="acceptInvite(invite)"
+                    />
+                  }
+
+                  @if (invite.canReject) {
+                    <p-button
+                      label="Reject invite"
+                      severity="secondary"
+                      [outlined]="true"
+                      [disabled]="invites.isMutating()"
+                      (onClick)="rejectInvite(invite)"
+                    />
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        }
       </div>
     </section>
   } @else if (currentGuild.readModel()?.detail; as guild) {

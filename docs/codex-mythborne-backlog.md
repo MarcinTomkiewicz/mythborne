@@ -8335,6 +8335,29 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 
 ---
 
+## Task T21 — Guild entry UI: create, search, join requests, invites
+
+**Goal:** Replace `/game/guild` no-guild placeholder entry cards with real guild entry workflows.
+
+**Scope:**
+
+- Create guild.
+- Search guilds.
+- Request to join and cancel request.
+- Accept or reject received invites.
+- Use existing `CurrentGuildState`, `GuildCreateState`, `GuildDiscoveryState`, `GuildJoinRequestsState` and `GuildInvitesState`.
+
+**Acceptance criteria:**
+
+- No-guild player can create a guild, search guilds, request to join, cancel a request and accept/reject invites.
+- Mutations use canonical guild service/state/RPC layers only.
+- `pending/accepted/rejected/cancelled` status spelling stays aligned with DB.
+- No fake siege/Argonautics actions.
+
+**Implementation note:** T21 accepted on 2026-05-09. The `/game/guild` no-guild state now has real create/search/request/cancel/invite response UI over the existing guild states and canonical service layer. Create and accepted invites refresh current guild state; request/cancel refresh discovery plus join requests; invite reject refreshes invites only; join-request review refreshes current guild for both accept and reject. Search/read errors are shown inline, while transient action success/error uses `ToastService`. No DB/RPC changes, migrations, generated type edits, direct table access, membership fallback, route/menu changes or fake siege/Argonautics actions were added. Verification passed with focused T21 specs, full guild + route/sidebar specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for `button pButton`, `.from(` and direct write patterns. Manual smoke for `/game/guild` create/search/request/cancel/invite flows remains pending.
+
+---
+
 # Epic U — Luck Foundation
 
 Epic U wires the DB-owned Luck Foundation into frontend/domain/admin surfaces after the Luck Foundation DB/RPC migrations are complete.

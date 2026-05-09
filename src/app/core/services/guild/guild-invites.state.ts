@@ -82,7 +82,7 @@ export class GuildInvitesState {
   cancel(input: CancelGuildInviteInput): void {
     this.runMutation(
       () => this.playerGuildInvites.cancelGuildInviteForActiveHero(input),
-      'Guild invite canceled.',
+      'Guild invite cancelled.',
       true,
     );
   }
