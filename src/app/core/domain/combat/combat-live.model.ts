@@ -39,6 +39,24 @@ export interface CombatTimingManifestReadModel {
   zoneWidthPercent: number;
   speed: number;
   label: string | null;
+  luckRng: CombatLuckRngReadModel | null;
+  rawJson: Json;
+}
+
+export interface CombatLuckRngReadModel {
+  attackerLuck: number | null;
+  attackerLuckInfluence: number | null;
+  defenderLuck: number | null;
+  defenderLuckInfluence: number | null;
+  hitGreenZone: number | null;
+  hitChance: number | null;
+  evasionChance: number | null;
+  criticalChance: number | null;
+  criticalMultiplier: number | null;
+  criticalDamage: number | null;
+  finalDamage: number | null;
+  formulaContextJson: Json;
+  explanation: string | null;
   rawJson: Json;
 }
 

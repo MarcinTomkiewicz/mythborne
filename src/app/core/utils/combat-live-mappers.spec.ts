@@ -76,6 +76,41 @@ describe('combat live mappers', () => {
     }));
   });
 
+  it('rejects broad legacy participant and event aliases', () => {
+    const state = mapCombatLiveState(liveStateRow({
+      participants_json: [
+        {
+          id: 'legacy-participant',
+          name: 'Legacy participant',
+          hp: 12,
+          maxHealth: 20,
+        },
+        {
+          participantId: 'participant-hero',
+          displayName: 'Hero',
+          healthCurrent: 37,
+          healthMax: 50,
+        },
+      ],
+      events_json: [
+        {
+          index: 1,
+          message: 'Legacy event',
+          summary: 'Legacy details',
+        },
+        eventRow(2),
+      ],
+    }));
+
+    expect(state.participants.length).toBe(1);
+    expect(state.participants[0]).toEqual(jasmine.objectContaining({
+      participantId: 'participant-hero',
+      currentHp: 37,
+      maxHp: 50,
+    }));
+    expect(state.events.map((event) => event.eventIndex)).toEqual([2]);
+  });
+
   it('maps the current DB timing manifest contract with centered render zone', () => {
     const state = mapCombatLiveState(liveStateRow({
       current_timing_manifest_json: dbTimingManifest(),
@@ -99,6 +134,71 @@ describe('combat live mappers', () => {
       zoneWidthPercent: 50,
       speed: 1,
     }));
+  });
+
+  it('preserves DB-owned combat Luck RNG context from the timing manifest', () => {
+    const state = mapCombatLiveState(liveStateRow({
+      current_timing_manifest_json: {
+        ...dbTimingManifestRecord(),
+        combatLuck: {
+          attackerLuck: 18,
+          attackerLuckInfluence: 6,
+          defenderLuck: 9,
+          defenderLuckInfluence: 3,
+          hitGreenZone: 42,
+          hitChancePercent: 42,
+          evasionChance: 14,
+          criticalChance: 11,
+          critMultiplier: 1.55,
+          criticalDamage: 31,
+          finalDamage: 24,
+          formulaContext: { formulaKey: 'combat_critical_chance' },
+          explanation: 'DB combat Luck context.',
+        },
+      } as Json,
+    }));
+
+    const rng = state.currentTimingManifest?.luckRng;
+
+    expect(rng?.attackerLuck).toBe(18);
+    expect(rng?.attackerLuckInfluence).toBe(6);
+    expect(rng?.defenderLuckInfluence).toBe(3);
+    expect(rng?.hitGreenZone).toBe(42);
+    expect(rng?.hitChance).toBe(42);
+    expect(rng?.evasionChance).toBe(14);
+    expect(rng?.criticalChance).toBe(11);
+    expect(rng?.criticalMultiplier).toBe(1.55);
+    expect(rng?.criticalDamage).toBe(31);
+    expect(rng?.finalDamage).toBe(24);
+    expect(rng?.explanation).toBe('DB combat Luck context.');
+    expect((rng?.formulaContextJson as Record<string, unknown>)['formulaKey'])
+      .toBe('combat_critical_chance');
+  });
+
+  it('maps combat Luck RNG only from explicit combat Luck containers', () => {
+    const broadRngState = mapCombatLiveState(liveStateRow({
+      current_timing_manifest_json: {
+        ...dbTimingManifestRecord(),
+        rng: {
+          attackerLuck: 99,
+          explanation: 'Broad RNG should not be consumed.',
+        },
+      } as Json,
+    }));
+    const snakeLuckState = mapCombatLiveState(liveStateRow({
+      current_timing_manifest_json: {
+        ...dbTimingManifestRecord(),
+        luck_rng: {
+          attacker_luck: 18,
+          explanation: 'DB snake combat Luck context.',
+        },
+      } as Json,
+    }));
+
+    expect(broadRngState.currentTimingManifest?.luckRng).toBeNull();
+    expect(snakeLuckState.currentTimingManifest?.luckRng?.attackerLuck).toBe(18);
+    expect(snakeLuckState.currentTimingManifest?.luckRng?.explanation)
+      .toBe('DB snake combat Luck context.');
   });
 
   it('rejects invalid DB timing manifests without falling back to legacy aliases', () => {
@@ -167,8 +267,8 @@ function liveStateRow(
         displayName: 'Hero',
         side: 'initiator',
         statusKey: 'active',
-        currentHp: 44,
-        maxHp: 50,
+        healthCurrent: 44,
+        healthMax: 50,
         heroId: 'hero-1',
       },
       {
@@ -176,8 +276,8 @@ function liveStateRow(
         displayName: 'Opponent',
         side: 'defender',
         statusKey: 'active',
-        currentHp: 20,
-        maxHp: 30,
+        healthCurrent: 20,
+        healthMax: 30,
       },
     ],
     round_order_json: [],

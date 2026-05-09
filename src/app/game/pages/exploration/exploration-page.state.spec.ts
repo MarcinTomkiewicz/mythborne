@@ -302,7 +302,13 @@ describe('ExplorationPageState', () => {
       greenZonePercent: 30,
       speedMultiplier: 1.25,
       streakBefore: 0,
+      luckRng: jasmine.objectContaining({
+        attackerLuckInfluence: 5,
+        criticalChance: 12,
+      }),
     }));
+    expect(page.timingManifestLabel(page.combatTimingManifest()))
+      .toContain('DB combat Luck context.');
     expect(page.combatHitWindow()).toEqual({ start: 35, end: 65, width: 30 });
     expect(page.timingManifestLabel(page.combatTimingManifest()))
       .not.toContain('DB nie zwróciła manifestu timingu');
@@ -822,6 +828,24 @@ function combatLiveState(
       zoneWidthPercent: 30,
       speed: 1.25,
       label: 'Strike window',
+      luckRng: {
+        attackerLuck: 15,
+        attackerLuckInfluence: 5,
+        defenderLuck: 9,
+        defenderLuckInfluence: 3,
+        hitGreenZone: 30,
+        hitChance: 30,
+        evasionChance: 8,
+        criticalChance: 12,
+        criticalMultiplier: 1.5,
+        criticalDamage: 24,
+        finalDamage: 18,
+        formulaContextJson: {
+          formulaKey: 'combat_critical_chance',
+        },
+        explanation: 'DB combat Luck context.',
+        rawJson: {},
+      },
       rawJson: {},
     },
     participants: [

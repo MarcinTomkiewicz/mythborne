@@ -273,13 +273,28 @@ export class ExplorationLiveCombatState {
     const streak = manifest.streakBefore === null
       ? null
       : `seria ${manifest.streakBefore}`;
+    const luckExplanation = manifest.luckRng?.explanation
+      ? `Luck: ${manifest.luckRng.explanation}`
+      : null;
+    const evasion = manifest.luckRng?.evasionChance === null ||
+      manifest.luckRng?.evasionChance === undefined
+      ? null
+      : `unik ${manifest.luckRng.evasionChance}%`;
+    const critical = manifest.luckRng?.criticalChance === null ||
+      manifest.luckRng?.criticalChance === undefined
+      ? null
+      : `kryt ${manifest.luckRng.criticalChance}%`;
 
-    return manifest.label
+    const baseLabel = manifest.label
       ?? [
         `Strefa ${manifest.zoneStartPercent}-${manifest.zoneEndPercent}%`,
         hitChance,
+        evasion,
+        critical,
         streak,
       ].filter(Boolean).join(', ');
+
+    return [baseLabel, luckExplanation].filter(Boolean).join(', ');
   }
 
   private ensureCombatSession(

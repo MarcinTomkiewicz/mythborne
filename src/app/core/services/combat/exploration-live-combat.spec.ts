@@ -143,8 +143,8 @@ function liveStateRow(
       {
         participantId: 'participant-hero',
         displayName: 'Hero',
-        currentHp: 20,
-        maxHp: 30,
+        healthCurrent: 20,
+        healthMax: 30,
       },
     ],
     round_order_json: [],

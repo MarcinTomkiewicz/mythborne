@@ -9005,6 +9005,8 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - Luck impact is displayed as DB/formula output, not Angular calculation.
 - Combat remains symmetric: damager dexterity vs target agility for hit/evasion-related logic.
 
+**Status note 2026-05-09:** Accepted after cleanup. Live combat timing manifests now expose nested DB-owned combat Luck RNG read-state for Luck values/influence, hit green zone/chance, evasion, critical, critical multiplier/damage/final damage, formula context and explanation where DB returns it. Combat action semantics did not change: `submit_combat_player_action(...)` remains timing-input-only and Angular still does not calculate damage, outcome, equipment, stats, Luck formulas or combat RNG formulas. The combat live mapper was split into focused RPC args, state, timing manifest, Luck RNG, participant, event and result-detail mappers; `combat-live-mappers.ts` remains a thin import-compatible facade. Broad fallback aliases were removed from combat participant/event/Luck parsing, leaving only explicit camel/snake DB contract keys.
+
 ---
 
 ## Task U8 — Drop generator Luck alignment
