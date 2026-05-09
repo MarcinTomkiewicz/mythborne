@@ -20,6 +20,7 @@ import {
 } from '../../../core/utils/formula-assignment-view';
 import { FormulaAssignmentViewer } from '../../components/formulas/formula-assignment-viewer';
 import { FormulaImpactCalculator } from '../../components/formulas/formula-impact-calculator';
+import { FormulaLuckTargetsSection } from './formula-luck-targets-section';
 import {
   missingProgressionFormulaTargetKeys,
   progressionFormulaRows,
@@ -37,6 +38,7 @@ import {
     AdminTagLinks,
     FormulaAssignmentViewer,
     FormulaImpactCalculator,
+    FormulaLuckTargetsSection,
     ProgressionFormulaExplainabilitySection,
   ],
   templateUrl: './formulas-page.html',

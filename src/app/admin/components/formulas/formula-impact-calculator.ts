@@ -24,6 +24,11 @@ import {
   syncBuildingUpgradeVariableValues,
   syncFormulaVariableControls,
 } from './formula-impact-variable-form';
+import {
+  formulaVariableDisplayText,
+  formulaVariableHelpText,
+} from '../../../core/utils/formula-variable-display';
+import { EditableVariableView } from './formula-impact-calculator.model';
 
 interface ImpactPreviewRow {
   input: number;
@@ -75,7 +80,7 @@ export class FormulaImpactCalculator {
   });
   readonly variableOptions = computed(() =>
     (this.selectedRow()?.target.allowedVariables ?? []).map((variable) => ({
-      label: variable,
+      label: formulaVariableDisplayText(variable),
       value: variable,
     })),
   );
@@ -90,6 +95,25 @@ export class FormulaImpactCalculator {
         ),
     ),
   );
+  readonly editableVariableViews = computed<EditableVariableView[]>(() => {
+    this.formValue();
+    const targetKey = this.selectedRow()?.target.key ?? null;
+
+    return this.editableVariables()
+      .map((variable) => {
+        const control = this.form.controls.variables.controls[variable] ?? null;
+
+        return control
+          ? {
+              key: variable,
+              control,
+              label: this.variableDisplayText(variable),
+              helpText: this.variableHelpText(variable, targetKey),
+            }
+          : null;
+      })
+      .filter((view): view is EditableVariableView => view !== null);
+  });
   readonly derivedTargetLevel = computed(() => {
     this.formValue();
 
@@ -263,29 +287,25 @@ export class FormulaImpactCalculator {
     });
   }
 
-  variableControl(variable: string): FormControl<number> {
-    const control = this.form.controls.variables.controls[variable];
-
-    if (!control) {
-      throw new Error(`Formula preview variable control "${variable}" is not registered.`);
-    }
-
-    return control;
+  variableDisplayText(variable: string): string {
+    return formulaVariableDisplayText(variable);
   }
 
   rerollPreview(): void {
     this.previewRerollTick.update((current) => current + 1);
   }
 
-  variableHelpText(variable: string): string {
-    const targetKey = this.selectedRow()?.target.key;
-
-    if (!targetKey) {
-      return `Technical formula variable: ${variable}.`;
-    }
-
-    return this.variableHelpByKey().get(toFormulaVariableHelpKey(targetKey, variable))
-      ?? `Technical formula variable: ${variable}. Available in ${targetKey}.`;
+  variableHelpText(
+    variable: string,
+    targetKey = this.selectedRow()?.target.key ?? null,
+  ): string {
+    return formulaVariableHelpText({
+      variableKey: variable,
+      metadataHelp: targetKey
+        ? this.variableHelpByKey().get(toFormulaVariableHelpKey(targetKey, variable))
+        : null,
+      targetKey,
+    });
   }
 
   private preferredTargetId(): string | null {

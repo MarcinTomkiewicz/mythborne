@@ -30,6 +30,7 @@ import {
   reconcileFormulaTesterVariables,
   updateFormulaTesterVariable,
 } from './formula-tester-variables';
+import { selectFormulaTesterTarget } from './formula-tester-target-selection';
 import {
   buildFormulaChartSamples,
   preferredFormulaChartVariable,
@@ -38,6 +39,7 @@ import {
   formulaValidationMessage,
   formulaVariableTooltip,
 } from './formula-validation-messages';
+import { formulaVariableDisplayText } from '../../utils/formula-variable-display';
 
 const EMPTY_FORMULA_DATA: FormulaAdminData = {
   targets: [],
@@ -385,6 +387,10 @@ export class ItemGenerationFormulaBalanceFacade {
     });
   }
 
+  variableDisplayText(key: string): string {
+    return formulaVariableDisplayText(key);
+  }
+
   private currentDraft(): EditableBalanceFormula {
     return this.formFactory.toFormula(this.editorForm);
   }
@@ -426,7 +432,7 @@ export class ItemGenerationFormulaBalanceFacade {
   ) {
     const draft = formula ?? this.formFactory.createFormulaDraft(this.selectedTarget()?.scopeKey);
     this.formFactory.patchFormula(this.editorForm, draft);
-    this.syncTesterTargetSelection(syncTesterByFormula ? draft.id ?? null : null);
+    this.syncTesterTargetSelection(syncTesterByFormula ? draft : null);
     this.reconcileTesterVariables();
   }
 
@@ -440,33 +446,20 @@ export class ItemGenerationFormulaBalanceFacade {
     );
   }
 
-  private syncTesterTargetSelection(preferredFormulaId: string | null = this.selectedEditorFormula()?.id ?? null) {
-    const targets = this.targetsForCurrentScope();
-    const assignedTarget =
-      preferredFormulaId
-        ? targets.find((target) =>
-            this.data().assignments.some(
-              (assignment) => assignment.targetId === target.id && assignment.formulaId === preferredFormulaId
-            )
-          ) ?? null
-        : null;
-    const current = targets.find((target) => target.id === this.testerTargetId());
-
-    if (assignedTarget && current?.id === assignedTarget.id) {
-      return;
-    }
-
-    if (!assignedTarget && current) {
-      return;
-    }
-
-    const preferredTarget =
-      assignedTarget ??
-      (this.selectedTarget()?.scopeKey === this.currentScope()
-        ? targets.find((target) => target.id === this.selectedTarget()?.id)
-        : null) ??
-      targets[0] ??
-      null;
+  private syncTesterTargetSelection(
+    formula?: (Pick<BalanceFormula, 'expression' | 'scopeKey'> & { id: string | null }) | null,
+  ) {
+    const formulaContext = formula === undefined ? this.selectedEditorFormula() : formula;
+    const preferredTarget = selectFormulaTesterTarget({
+      data: this.data(),
+      currentTargetId: this.testerTargetId(),
+      currentScope: formulaContext?.scopeKey ?? this.currentScope(),
+      expressionVariables: formulaContext
+        ? this.formulaRuntime.getVariables(formulaContext.expression)
+        : [],
+      formula: formulaContext,
+      selectedTarget: this.selectedTarget(),
+    });
 
     this.testerTargetId.set(preferredTarget?.id ?? '');
   }

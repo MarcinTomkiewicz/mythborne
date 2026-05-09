@@ -108,11 +108,11 @@ describe('FormulaImpactCalculator', () => {
     TestBed.flushEffects();
     fixture.detectChanges();
 
-    component.variableControl('currentLevel').setValue(0);
+    variableControl(component, 'currentLevel').setValue(0);
     fixture.detectChanges();
     TestBed.flushEffects();
 
-    expect(component.variableControl('targetLevel').value).toBe(1);
+    expect(variableControl(component, 'targetLevel').value).toBe(1);
     expect(component.outputSummary()).toBe('Previewing upgrade currentLevel 0 -> targetLevel 1');
   });
 
@@ -122,11 +122,11 @@ describe('FormulaImpactCalculator', () => {
     TestBed.flushEffects();
     fixture.detectChanges();
 
-    component.variableControl('currentLevel').setValue(2);
+    variableControl(component, 'currentLevel').setValue(2);
     fixture.detectChanges();
     TestBed.flushEffects();
 
-    expect(component.variableControl('targetLevel').value).toBe(3);
+    expect(variableControl(component, 'targetLevel').value).toBe(3);
     expect(component.outputSummary()).toBe('Previewing upgrade currentLevel 2 -> targetLevel 3');
   });
 
@@ -136,11 +136,11 @@ describe('FormulaImpactCalculator', () => {
     TestBed.flushEffects();
     fixture.detectChanges();
 
-    component.variableControl('currentLevel').setValue(5);
+    variableControl(component, 'currentLevel').setValue(5);
     fixture.detectChanges();
     TestBed.flushEffects();
 
-    expect(component.variableControl('targetLevel').value).toBe(6);
+    expect(variableControl(component, 'targetLevel').value).toBe(6);
     expect(component.outputSummary()).toBe('Previewing upgrade currentLevel 5 -> targetLevel 6');
   });
 
@@ -150,14 +150,14 @@ describe('FormulaImpactCalculator', () => {
     TestBed.flushEffects();
     fixture.detectChanges();
 
-    component.variableControl('currentLevel').setValue(5);
+    variableControl(component, 'currentLevel').setValue(5);
     fixture.detectChanges();
     TestBed.flushEffects();
-    component.variableControl('targetLevel').setValue(2);
+    variableControl(component, 'targetLevel').setValue(2);
     fixture.detectChanges();
     TestBed.flushEffects();
 
-    expect(component.variableControl('targetLevel').value).toBe(6);
+    expect(variableControl(component, 'targetLevel').value).toBe(6);
     expect(component.buildingTargetLevelWarning()).toBeNull();
   });
 
@@ -196,18 +196,67 @@ describe('FormulaImpactCalculator', () => {
 
     expect(component.variableHelpText('targetLevel')).toContain('level being priced/timed');
   });
+
+  it('labels Luck variables distinctly and falls back to canonical Luck helper text', () => {
+    fixture.componentRef.setInput('rows', [
+      formulaRow(
+        'testedStatValue + luckInfluence',
+        'trial_power',
+        ['testedStatValue', 'luck', 'luckInfluence', 'trialPower'],
+        {
+          testedStatValue: 30,
+          luck: 12,
+          luckInfluence: 4,
+          trialPower: 34,
+        },
+      ),
+    ]);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(component.variableOptions().map((option) => option.label)).toEqual([
+      'Tested stat value (testedStatValue)',
+      'Luck value (luck)',
+      'Luck influence (luckInfluence)',
+      'Trial Power (trialPower)',
+    ]);
+    expect(component.variableHelpText('luck')).toContain('Raw Luck input');
+    expect(component.variableHelpText('luckInfluence').toLowerCase()).toContain(
+      'formula-derived',
+    );
+    expect(component.variableHelpText('trialPower')).toContain('tested stat value plus');
+  });
 });
 
-function formulaRow(expression: string): FormulaTargetAssignmentRow {
+function variableControl(
+  component: FormulaImpactCalculator,
+  variable: string,
+) {
+  const control = component.form.controls.variables.controls[variable];
+
+  if (!control) {
+    throw new Error(`Formula preview variable control "${variable}" is not registered.`);
+  }
+
+  return control;
+}
+
+function formulaRow(
+  expression: string,
+  targetKey = 'combat_initiative_score',
+  allowedVariables: string[] = ['currentLevel'],
+  defaultTestContext: Record<string, number> = { currentLevel: 1 },
+): FormulaTargetAssignmentRow {
   return {
     target: {
       id: 'target-1',
-      key: 'combat_initiative_score',
+      key: targetKey,
       scopeKey: 'combat',
       label: 'Combat initiative score',
       description: 'Orders combat attack slots.',
-      allowedVariables: ['currentLevel'],
-      defaultTestContext: { currentLevel: 1 },
+      allowedVariables,
+      defaultTestContext,
       sortOrder: 10,
       createdAt: '2026-05-02T10:00:00.000Z',
     },

@@ -64,7 +64,11 @@
             <span class="muted-text">Allowed variables</span>
             <div class="flex-row-start-center flex-wrap gap-xs">
               @for (variable of row.target.allowedVariables; track variable) {
-                <span class="mg-tag">{{ variable }}</span>
+                <span
+                  class="mg-tag"
+                  [pTooltip]="variableHelpText(row.target, variable)"
+                  tooltipPosition="top"
+                >{{ variableDisplayText(variable) }}</span>
               } @empty {
                 <span class="muted-text">No variables</span>
               }

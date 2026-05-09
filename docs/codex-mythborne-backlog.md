@@ -9113,6 +9113,8 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - Formula target UI does not reintroduce ambiguous bare `level`-style variable naming.
 - Build and focused formula admin tests pass.
 
+**Implementation note 2026-05-09:** U11 accepted after DB/data blocker resolution and user manual smoke. Existing formula admin surfaces now expose Luck Foundation formula targets through the current formula governance/read/edit patterns rather than a separate formula editor. `/admin/formulas` includes a focused Luck Foundation target section, metadata-first variable help, and clear labels for raw Luck (`luck` / `luckValue`), `luckInfluence`, `testedStatValue` and `trialPower`. The formula impact/tester flow no longer calls form-control getter methods from templates, and the tester target selection prefers the assigned formula target or an exact variable-compatible target instead of retaining an unrelated target. Migrator fixed the live data blocker by aligning `balance_formula_targets.key = trial_manifestation_chance` to `scope_key = exploration`; the target already existed, kept the expected allowed variables/default context, and remained assigned to `Default trial manifestation chance`. User smoke passed for `/admin/formulas -> Default trial manifestation chance`: tester target resolves to `Trial manifestation chance` / `trial_manifestation_chance`, no false `Unknown variable: capPercent` appears, and raw `luck` displays as `Luck value (luck)` distinct from `luckInfluence`. No DB/RPC/generated type changes or frontend Luck/gameplay formulas were added by Codex.
+
 ---
 
 ## Task U12 — Player-facing Luck explanation pass

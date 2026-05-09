@@ -1,29 +1,28 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { TooltipModule } from 'primeng/tooltip';
 import { switchMap } from 'rxjs';
-import { FormulaTarget } from '../../../core/domain/formula/formula.model';
+import { FormulaVariableHelp, toFormulaVariableHelpKey } from '../../../core/services/formula/formula-variable-help';
 import { FormulaTargetAssignmentRow } from '../../../core/types/formula-admin-view.types';
-import { formatConfigJsonPreview } from '../../../core/utils/config-governance';
 import {
   formulaVariableDisplayText,
   formulaVariableHelpText,
+  isLuckFormulaTarget,
 } from '../../../core/utils/formula-variable-display';
-import {
-  FormulaVariableHelp,
-  toFormulaVariableHelpKey,
-} from '../../../core/services/formula/formula-variable-help';
 
 @Component({
-  selector: 'app-formula-assignment-viewer',
+  selector: 'app-formula-luck-targets-section',
   standalone: true,
   imports: [TooltipModule],
-  templateUrl: './formula-assignment-viewer.html',
+  templateUrl: './formula-luck-targets-section.html',
 })
-export class FormulaAssignmentViewer {
+export class FormulaLuckTargetsSection {
   private readonly formulaVariableHelp = inject(FormulaVariableHelp);
 
   readonly rows = input<readonly FormulaTargetAssignmentRow[]>([]);
+  readonly luckFormulaRows = computed(() =>
+    this.rows().filter((row) => isLuckFormulaTarget(row.target)),
+  );
   readonly variableHelpByKey = toSignal(
     toObservable(this.rows).pipe(
       switchMap((rows) => this.formulaVariableHelp.getHelpByTargetVariable(rows)),
@@ -31,21 +30,17 @@ export class FormulaAssignmentViewer {
     { initialValue: new Map<string, string>() },
   );
 
-  contextPreview(target: FormulaTarget): string {
-    return formatConfigJsonPreview(target.defaultTestContext);
-  }
-
   variableDisplayText(variable: string): string {
     return formulaVariableDisplayText(variable);
   }
 
-  variableHelpText(target: FormulaTarget, variable: string): string {
+  variableHelpText(row: FormulaTargetAssignmentRow, variable: string): string {
     return formulaVariableHelpText({
       variableKey: variable,
       metadataHelp: this.variableHelpByKey().get(
-        toFormulaVariableHelpKey(target.key, variable),
+        toFormulaVariableHelpKey(row.target.key, variable),
       ),
-      targetKey: target.key,
+      targetKey: row.target.key,
     });
   }
 }

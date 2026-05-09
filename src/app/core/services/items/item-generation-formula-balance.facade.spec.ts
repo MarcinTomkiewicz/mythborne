@@ -102,6 +102,41 @@ describe('ItemGenerationFormulaBalanceFacade', () => {
     expect(facade.getTesterValue('currentLevel')).toBe(1);
     expect(facade.getTesterValue('targetLevel')).toBe(2);
   });
+
+  it('uses shared Luck variable labels and helper text when scope blocks are absent', () => {
+    facade.setData(formulaData(), { targetKey: 'trial_power' });
+
+    expect(facade.scopeVariables().map((variable) => variable.label)).toEqual([
+      'Luck influence',
+      'Luck value',
+      'Tested stat value',
+      'Trial Power',
+    ]);
+    expect(facade.variableTooltip('luck')).toContain('Raw Luck input');
+    expect(facade.variableTooltip('luckInfluence').toLowerCase()).toContain(
+      'formula-derived',
+    );
+  });
+
+  it('selects the assigned tester target for a Luck formula instead of keeping trial power', () => {
+    facade.setData(formulaData(), { targetKey: 'trial_power' });
+    facade.selectTesterTarget('target-trial-power');
+
+    facade.setData(formulaData(), {
+      targetKey: 'trial_power',
+      formulaKey: 'trial-manifestation-formula',
+    });
+
+    expect(facade.testerReferenceTarget()?.key).toBe('trial_manifestation_chance');
+    expect(facade.formulaValidationError()).toBeNull();
+    expect(facade.testerVariables()).toEqual(jasmine.arrayContaining([
+      'capPercent',
+      'trialPower',
+      'spirituality',
+      'difficultyMultiplier',
+      'districtModifier',
+    ]));
+  });
 });
 
 function formulaData(): FormulaAdminData {
@@ -116,10 +151,32 @@ function formulaData(): FormulaAdminData {
       ]),
       target('target-bonus', 'building_bonus_growth', ['currentLevel', 'baseBonus']),
       target('target-stat-cost', 'hero_stat_upgrade_cost', ['statCurrentLevel'], 'hero_progression'),
+      target('target-trial-power', 'trial_power', [
+        'testedStatValue',
+        'luck',
+        'luckInfluence',
+        'trialPower',
+      ], 'exploration'),
+      target('target-trial-manifestation', 'trial_manifestation_chance', [
+        'capPercent',
+        'trialPower',
+        'spirituality',
+        'difficultyMultiplier',
+        'districtModifier',
+        'luck',
+        'luckInfluence',
+      ], 'exploration'),
     ],
     formulas: [
       formula('formula-building-time', 'building-time-formula', 'building_balance'),
       formula('formula-stat-cost', 'stat-cost-formula', 'hero_progression'),
+      formula('formula-trial-power', 'trial-power-formula', 'exploration'),
+      formula(
+        'formula-trial-manifestation',
+        'trial-manifestation-formula',
+        'exploration',
+        'min(capPercent, trialPower + spirituality + luckInfluence + difficultyMultiplier + districtModifier)',
+      ),
     ],
     assignments: [
       {
@@ -133,6 +190,13 @@ function formulaData(): FormulaAdminData {
         id: 'assignment-stat-cost',
         targetId: 'target-stat-cost',
         formulaId: 'formula-stat-cost',
+        createdAt: null,
+        updatedAt: null,
+      },
+      {
+        id: 'assignment-trial-manifestation',
+        targetId: 'target-trial-manifestation',
+        formulaId: 'formula-trial-manifestation',
         createdAt: null,
         updatedAt: null,
       },
@@ -171,13 +235,18 @@ function target(
   };
 }
 
-function formula(id: string, key: string, scopeKey: string) {
+function formula(
+  id: string,
+  key: string,
+  scopeKey: string,
+  expression = 'currentLevel + 1',
+) {
   return {
     id,
     key,
     scopeKey,
     label: key,
-    expression: 'currentLevel + 1',
+    expression,
     description: null,
     isEnabled: true,
     createdAt: null,

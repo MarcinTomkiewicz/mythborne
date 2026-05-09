@@ -3,6 +3,10 @@ import {
   FormulaTarget,
   FormulaVariableDefinition,
 } from '../../domain/formula/formula.model';
+import {
+  formulaVariableFallbackHelp,
+  formulaVariableLabel,
+} from '../../utils/formula-variable-display';
 
 export interface ScopeVariableCatalogItem {
   key: string;
@@ -28,8 +32,8 @@ export function buildScopeVariableCatalog(input: {
 
       return {
         key,
-        label: block?.label ?? key,
-        helperText: block?.helperText ?? '',
+        label: block?.label ?? formulaVariableLabel(key),
+        helperText: block?.helperText ?? formulaVariableFallbackHelp(key) ?? '',
         targetLabels: [input.target?.label ?? ''],
       };
     })

@@ -27,7 +27,11 @@
         <p class="mb-0 muted-text">{{ target.description }}</p>
         <div class="flex-row-start-center flex-wrap gap-sm">
           @for (variable of page.formulas.selectedTargetVariablesDraft(); track variable.key + ':' + $index) {
-            <span class="tag-badge tag-badge--muted">{{ variable.key }}</span>
+            <span
+              class="tag-badge tag-badge--muted"
+              [pTooltip]="variableHelpText(variable.key)"
+              tooltipPosition="top"
+            >{{ variableDisplayText(variable.key) }}</span>
           }
         </div>
 
@@ -36,7 +40,7 @@
             <div class="flex-col gap-xs">
               <span class="muted-text">Variables define which names the formula may use.</span>
               <span class="muted-text">
-                If you add <code>statLevel</code> here, the formula editor and runtime will treat it as a valid variable.
+                The formula editor and preview use the variables defined on the selected target.
               </span>
             </div>
 

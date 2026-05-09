@@ -1,4 +1,7 @@
 import { FormulaTarget, FormulaVariableDefinition } from '../../domain/formula/formula.model';
+import {
+  formulaVariableFallbackHelp,
+} from '../../utils/formula-variable-display';
 import { ScopeVariableCatalogItem } from './formula-target-variable-catalog';
 
 export function formulaValidationMessage(input: {
@@ -23,8 +26,13 @@ export function formulaValidationMessage(input: {
   const availabilityHint = scopeVariable?.targetLabels.length
     ? ` Available in: ${scopeVariable.targetLabels.join(', ')}.`
     : '';
+  const targetLabel = input.testerTarget?.label ?? 'none';
 
-  return `Unknown variable: ${variable}. Tester target "${input.testerTarget?.label ?? 'none'}" allows: ${availableVariables}.${availabilityHint} Choose the correct tester target or add the variable to that target first.`;
+  if (!input.testerTarget) {
+    return `Unknown variable: ${variable}. No tester target is selected for this formula context. Available tester variables: ${availableVariables}.${availabilityHint} Choose the formula assignment target. If no target exposes this variable, the DB formula target variables are incomplete.`;
+  }
+
+  return `Unknown variable: ${variable}. Tester target "${targetLabel}" allows: ${availableVariables}.${availabilityHint} Choose the correct tester target or add the variable to that target first.`;
 }
 
 export function formulaVariableTooltip(input: {
@@ -38,7 +46,8 @@ export function formulaVariableTooltip(input: {
     input.previewVariables.find((variable) => variable.key === input.key) ?? null;
   const scopeVariable =
     input.scopeVariables.find((variable) => variable.key === input.key) ?? null;
-  const scopeLine = scopeVariable?.helperText || input.fallback;
+  const scopeLine =
+    scopeVariable?.helperText || formulaVariableFallbackHelp(input.key) || input.fallback;
   const availabilityLine = scopeVariable?.targetLabels.length
     ? `Available in: ${scopeVariable.targetLabels.join(', ')}`
     : null;

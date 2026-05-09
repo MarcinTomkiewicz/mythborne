@@ -70,7 +70,7 @@
             </label>
           </div>
 
-          @if (editableVariables().length > 0) {
+          @if (editableVariableViews().length > 0) {
             <div class="mg-surface-card p-md flex-col gap-md">
               <p class="card-legend mb-0">Input variables</p>
               @if (derivedTargetLevel() !== null) {
@@ -80,18 +80,18 @@
                 </div>
               }
               <div class="mg-grid grid-cols-2 grid-cols-1-xs gap-md w-100">
-                @for (variable of editableVariables(); track variable) {
+                @for (variable of editableVariableViews(); track variable.key) {
                   <label class="flex-col gap-sm">
                     <span
                       class="muted-text"
-                      [pTooltip]="variableHelpText(variable)"
+                      [pTooltip]="variable.helpText"
                       tooltipPosition="top"
-                    >{{ variable }}</span>
+                    >{{ variable.label }}</span>
                     <input
                       pInputText
                       type="number"
                       class="w-100"
-                      [formControl]="variableControl(variable)"
+                      [formControl]="variable.control"
                     />
                   </label>
                 }

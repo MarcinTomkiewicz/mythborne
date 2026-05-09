@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
 import { FormFields } from '../../../shared/form-fields/form-fields';
 import { ItemGenerationBalancePageFacade } from '../../../core/services/items/item-generation-balance-page.facade';
 import {
@@ -42,6 +43,7 @@ interface FormulaActionSection {
     ReactiveFormsModule,
     ButtonModule,
     InputTextModule,
+    TooltipModule,
     FormFields,
     FormulaActionGroup,
     FormulaExpressionPreview,
@@ -193,7 +195,7 @@ export class FormulaLibraryBalanceSection {
   private createTesterVariableSection(): FormulaActionSection | null {
     const items = this.page.formulas.previewVariableDefinitions().map((variable) => ({
       id: variable.key,
-      label: variable.key,
+      label: this.page.formulas.variableDisplayText(variable.key),
       tooltip: this.page.formulas.variableTooltip(
         variable.key,
         `Default test value: ${variable.defaultValue}`
