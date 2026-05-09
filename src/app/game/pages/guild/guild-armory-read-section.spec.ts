@@ -5,14 +5,18 @@ import {
   GuildArmoryLoan,
 } from '../../../core/domain/guild/guild-armory.model';
 import { GuildConfigSummary } from '../../../core/domain/guild/guild.model';
+import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.model';
+import { GuildArmoryItemActionsState } from './guild-armory-item-actions.state';
 import { GuildArmoryReadSection } from './guild-armory-read-section';
 import { GuildArmoryReadState } from './guild-armory-read.state';
 
 describe('GuildArmoryReadSection', () => {
   let fixture: ComponentFixture<GuildArmoryReadSection>;
+  let actions: FakeGuildArmoryItemActionsState;
   let state: FakeGuildArmoryReadState;
 
   beforeEach(async () => {
+    actions = new FakeGuildArmoryItemActionsState();
     state = new FakeGuildArmoryReadState();
 
     await TestBed.configureTestingModule({
@@ -20,7 +24,10 @@ describe('GuildArmoryReadSection', () => {
     })
       .overrideComponent(GuildArmoryReadSection, {
         set: {
-          providers: [{ provide: GuildArmoryReadState, useValue: state }],
+          providers: [
+            { provide: GuildArmoryItemActionsState, useValue: actions },
+            { provide: GuildArmoryReadState, useValue: state },
+          ],
         },
       })
       .compileComponents();
@@ -42,12 +49,22 @@ describe('GuildArmoryReadSection', () => {
     ]);
     state.loans.set([loan()]);
     state.config.set(config({ armoryCapacity: 0, armoryCapacityIsUnlimited: true }));
+    actions.depositItems.set([
+      depositItem(),
+      depositItem({ itemId: 'item-equipped', name: 'Equipped Blade' }),
+    ]);
+    actions.equippedItemIds.set(new Set(['item-equipped']));
 
     fixture.detectChanges();
     const text = textContent(fixture);
 
     expect(state.load).toHaveBeenCalled();
+    expect(actions.load).toHaveBeenCalled();
     expect(text).toContain('Guild armory');
+    expect(text).toContain('Deposit item');
+    expect(text).toContain('Bronze Spear');
+    expect(text).toContain('Equipped Blade');
+    expect(text).toContain('Equipped');
     expect(text).toContain('Capacity: 2 / unlimited');
     expect(text).toContain('Available: 1');
     expect(text).toContain('Borrowed: 1');
@@ -57,6 +74,28 @@ describe('GuildArmoryReadSection', () => {
     expect(text).not.toContain('withdrawn');
     expect(text).not.toContain('removed');
     expect(text).not.toContain('Shelf');
+  });
+
+  it('renders distinct owner withdraw and manager remove actions', () => {
+    state.items.set([item({ canWithdraw: true, canRemove: true })]);
+    state.config.set(config());
+
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Withdraw');
+    expect(text).toContain('Remove');
+  });
+
+  it('refreshes guild armory read state and deposit context together', () => {
+    fixture.detectChanges();
+    state.load.calls.reset();
+    actions.load.calls.reset();
+
+    fixture.componentInstance.refresh();
+
+    expect(state.load).toHaveBeenCalledTimes(1);
+    expect(actions.load).toHaveBeenCalledTimes(1);
   });
 
   it('renders empty current guild armory state', () => {
@@ -91,6 +130,27 @@ class FakeGuildArmoryReadState {
     return `${this.currentCount()} / ${config?.armoryCapacity ?? 'N/D'}`;
   });
   readonly load = jasmine.createSpy('load');
+}
+
+class FakeGuildArmoryItemActionsState {
+  readonly depositItems = signal<ArmoryItemSummary[]>([]);
+  readonly equippedItemIds = signal<Set<string>>(new Set());
+  readonly isLoadingDepositContext = signal(false);
+  readonly isMutating = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly message = signal<string | null>(null);
+  readonly load = jasmine.createSpy('load');
+  readonly deposit = jasmine.createSpy('deposit');
+  readonly withdraw = jasmine.createSpy('withdraw');
+  readonly remove = jasmine.createSpy('remove');
+
+  isEquipped(item: Pick<ArmoryItemSummary, 'itemId'>): boolean {
+    return this.equippedItemIds().has(item.itemId);
+  }
+
+  canDeposit(item: ArmoryItemSummary): boolean {
+    return item.lifecycleStatus === 'active' && !this.isEquipped(item);
+  }
 }
 
 function textContent(fixture: ComponentFixture<GuildArmoryReadSection>): string {
@@ -159,6 +219,27 @@ function config(overrides: Partial<GuildConfigSummary> = {}): GuildConfigSummary
     emergencyMaxCandidates: 3,
     armoryCapacity: 10,
     armoryCapacityIsUnlimited: false,
+    ...overrides,
+  };
+}
+
+function depositItem(overrides: Partial<ArmoryItemSummary> = {}): ArmoryItemSummary {
+  return {
+    itemId: 'item-1',
+    ownerHeroId: 'hero-1',
+    serverId: 'server-1',
+    name: 'Bronze Spear',
+    description: null,
+    lifecycleStatus: 'active',
+    generationBaseId: 'base-1',
+    generationQualityKey: 'common',
+    prefixAffixId: null,
+    suffixAffixId: null,
+    armoryShelfPosition: 1,
+    drachmaValue: 10,
+    shelfPosition: 1,
+    shelfName: 'Main shelf',
+    requirementPreview: null,
     ...overrides,
   };
 }

@@ -8152,6 +8152,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Owner withdraw and leader/officer remove are distinct actions.
 - Removed item is not shown as a historical guild armory row.
 
+**Implementation note:** T13 accepted on 2026-05-09. The existing `GuildArmoryReadSection` now includes deposit, owner withdraw and leader/officer remove UI actions through a local `GuildArmoryItemActionsState` that delegates to canonical `PlayerGuildArmoryActions` only. Equipped item deposit is blocked before RPC using the current equipment read state, while DB/RPC-owned eligibility still controls persisted deposit/withdraw/remove behavior. Successful deposit/withdraw/remove refreshes the guild armory read state plus the player's armory and current equipment contexts; stale active hero/server mutation responses do not set feedback or refresh state. Header refresh now reloads both the guild armory read state and deposit context. No route/menu, DB/RPC/migration/generated type/status-contract change, direct table access, `.from(` usage, frontend ownership-transfer logic, shelf UI or T14/T20 behavior was added. Verification passed with focused T13 specs, full guild + guild page specs, `npx tsc --noEmit`, `npm run build` with known warnings, `git diff --check`, and static greps for `button pButton`, `.from(` and direct write patterns. Manual/route smoke remains pending until T20 wires the guild section into a route/menu entry.
+
 ---
 
 ## Task T14 — Guild armory borrow and return

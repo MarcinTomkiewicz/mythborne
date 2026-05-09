@@ -16,7 +16,7 @@
         icon="pi pi-refresh"
         severity="secondary"
         [disabled]="state.isLoading()"
-        (onClick)="state.load()"
+        (onClick)="refresh()"
         aria-label="Refresh guild armory"
       />
     </div>
@@ -25,8 +25,51 @@
   @if (state.error(); as message) {
     <p-message severity="error">{{ message }}</p-message>
   }
+  @if (actions.error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+  @if (actions.message(); as message) {
+    <p-message severity="success">{{ message }}</p-message>
+  }
 
   <div class="flex-col gap-sm mt-md">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <h4 class="mg-section__title mg-section__title--xs mb-0">Deposit item</h4>
+        <p class="muted-text mb-0">Visible personal armory items that can be moved into the guild armory.</p>
+      </div>
+      @if (actions.isLoadingDepositContext()) {
+        <span class="tag-badge tag-badge--muted">Loading items</span>
+      }
+    </div>
+
+    @for (item of actions.depositItems(); track item.itemId) {
+      <article class="mg-card p-md">
+        <div class="flex-row-between-start flex-col-sm gap-md">
+          <div class="flex-col gap-xs">
+            <strong>{{ item.name }}</strong>
+            <span class="muted-text">{{ depositItemSubtitle(item) }}</span>
+            @if (actions.isEquipped(item)) {
+              <span class="tag-badge tag-badge--warning">Equipped</span>
+            }
+          </div>
+          <p-button
+            label="Deposit"
+            icon="pi pi-upload"
+            severity="secondary"
+            [disabled]="actions.isMutating() || !actions.canDeposit(item)"
+            (onClick)="actions.deposit(item)"
+          />
+        </div>
+      </article>
+    } @empty {
+      @if (!actions.isLoadingDepositContext()) {
+        <p class="muted-text mb-0">No visible personal armory items to deposit.</p>
+      }
+    }
+  </div>
+
+  <div class="flex-col gap-sm mt-lg">
     @for (item of state.items(); track item.armoryItemId) {
       <article class="mg-card p-md">
         <div class="flex-row-between-start flex-col-sm gap-md">
@@ -50,6 +93,25 @@
             </span>
             @if (item.loanId) {
               <span class="tag-badge tag-badge--muted">Loan active</span>
+            }
+            @if (item.canWithdraw) {
+              <p-button
+                label="Withdraw"
+                icon="pi pi-download"
+                severity="secondary"
+                [disabled]="actions.isMutating()"
+                (onClick)="actions.withdraw(item)"
+              />
+            }
+            @if (item.canRemove) {
+              <p-button
+                label="Remove"
+                icon="pi pi-trash"
+                severity="danger"
+                [outlined]="true"
+                [disabled]="actions.isMutating()"
+                (onClick)="actions.remove(item)"
+              />
             }
           </div>
         </div>

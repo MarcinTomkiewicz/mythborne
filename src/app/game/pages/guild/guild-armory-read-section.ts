@@ -5,21 +5,36 @@ import {
   GuildArmoryCurrentItemStatusKey,
   GuildArmoryItem,
 } from '../../../core/domain/guild/guild-armory.model';
+import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.model';
+import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
+import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
+import { GuildArmoryItemActionsState } from './guild-armory-item-actions.state';
 import { GuildArmoryReadState } from './guild-armory-read.state';
 
 @Component({
   selector: 'app-guild-armory-read-section',
   standalone: true,
   imports: [ButtonModule, MessageModule],
-  providers: [GuildArmoryReadState],
+  providers: [
+    ArmoryShelfState,
+    CurrentEquipmentState,
+    GuildArmoryItemActionsState,
+    GuildArmoryReadState,
+  ],
   host: { class: 'd-block w-100' },
   templateUrl: './guild-armory-read-section.html',
 })
 export class GuildArmoryReadSection implements OnInit {
   readonly state = inject(GuildArmoryReadState);
+  readonly actions = inject(GuildArmoryItemActionsState);
 
   ngOnInit(): void {
+    this.refresh();
+  }
+
+  refresh(): void {
     this.state.load();
+    this.actions.load();
   }
 
   statusLabel(status: GuildArmoryCurrentItemStatusKey): string {
@@ -31,5 +46,12 @@ export class GuildArmoryReadSection implements OnInit {
     const baseType = item.baseTypeKey;
 
     return `${quality} - ${baseType}`;
+  }
+
+  depositItemSubtitle(item: ArmoryItemSummary): string {
+    const quality = item.generationQualityKey || 'Unknown quality';
+    const shelf = item.shelfName || `Shelf ${item.shelfPosition}`;
+
+    return `${quality} - ${shelf}`;
   }
 }
