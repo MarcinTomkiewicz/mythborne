@@ -8034,6 +8034,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - UI reflects DB/RPC timing and eligibility.
 - No quorum/50% requirement is shown.
 
+**Implementation note:** T9 accepted on 2026-05-09. Added generated RPC aliases and focused emergency-election domain models for `get_hero_guild_emergency_election_summary(...)` and `get_hero_guild_emergency_election_candidate_rows(...)`. Election read RPC calls live in dedicated `PlayerGuildElections`; mapping lives in `guild-emergency-election-mappers`; `GuildEmergencyElectionState` loads active election summary/candidates, exposes phase/status and DB-owned start eligibility via the current guild dashboard permission, and guards stale active hero/server responses. Candidate and summary models do not add quorum/50% semantics, do not calculate results, do not compute leader inactivity locally, and do not invent time-remaining rules beyond exposing DB timestamps. No UI/routes/menu, DB/RPC changes, generated type edits, migrations, direct guild table reads/writes or normal confidence-vote UI were added. Verification passed with `npx tsc --noEmit`, focused guild specs and `npm run build` with known warnings. Manual smoke remains N/A until a future guild UI entry slice wires this state into a page.
+
 ---
 
 ## Task T10 — Emergency leader election actions

@@ -16,6 +16,11 @@ export type GuildInviteStatusKey = GuildInviteStatusRow['key'];
 export type GuildJoinRequestStatusRow = Row<'guild_join_request_statuses'>;
 export type GuildJoinRequestStatusKey = GuildJoinRequestStatusRow['key'];
 
+export type GuildEmergencyElectionStatusRow =
+  Row<'guild_emergency_election_statuses'>;
+export type GuildEmergencyElectionStatusKey =
+  GuildEmergencyElectionStatusRow['key'];
+
 export type GetGuildConfigSummaryRpcRow =
   Database['public']['Functions']['get_guild_config_summary']['Returns'][number];
 
@@ -96,6 +101,12 @@ export type GetHeroGuildStateRpcRow =
 
 export type GetHeroGuildDashboardRpcRow =
   Database['public']['Functions']['get_hero_guild_dashboard']['Returns'][number];
+
+export type GetHeroGuildEmergencyElectionSummaryRpcRow =
+  Database['public']['Functions']['get_hero_guild_emergency_election_summary']['Returns'][number];
+
+export type GetHeroGuildEmergencyElectionCandidateRowsRpcRow =
+  Database['public']['Functions']['get_hero_guild_emergency_election_candidate_rows']['Returns'][number];
 
 export type GetHeroGuildMembersRpcRow =
   Database['public']['Functions']['get_hero_guild_members']['Returns'][number];

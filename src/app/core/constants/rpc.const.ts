@@ -111,6 +111,10 @@ export const RPC = {
   create_guild_invite: 'create_guild_invite',
   create_guild_join_request: 'create_guild_join_request',
   get_hero_guild_dashboard: 'get_hero_guild_dashboard',
+  get_hero_guild_emergency_election_candidate_rows:
+    'get_hero_guild_emergency_election_candidate_rows',
+  get_hero_guild_emergency_election_summary:
+    'get_hero_guild_emergency_election_summary',
   get_hero_guild_invitation_rows: 'get_hero_guild_invitation_rows',
   get_hero_guild_join_request_rows: 'get_hero_guild_join_request_rows',
   get_hero_guild_members: 'get_hero_guild_members',
