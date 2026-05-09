@@ -5,6 +5,7 @@ import {
   GetHeroGuildJoinRequestRowsRpcRow,
   GetHeroGuildMembersRpcRow,
   GetHeroGuildStateRpcRow,
+  SearchGuildsForHeroRpcRow,
 } from '../types/guild-rpc.types';
 import {
   mapCurrentHeroGuildState,
@@ -13,6 +14,7 @@ import {
   mapGuildInvite,
   mapGuildJoinRequest,
   mapGuildMemberListItem,
+  mapGuildSearchResult,
 } from './guild-mappers';
 
 describe('guild mappers', () => {
@@ -123,6 +125,48 @@ describe('guild mappers', () => {
       reviewedAt: null,
       reason: 'I can help.',
     }));
+  });
+
+  it('maps guild discovery rows without exposing raw/private fields', () => {
+    const result = mapGuildSearchResult([
+      searchGuildRow({
+        current_join_request_status_key: '',
+        current_invite_status_key: 'pending',
+      }),
+    ], 'argo', 10, 5);
+
+    expect(result).toEqual({
+      query: 'argo',
+      limit: 10,
+      offset: 5,
+      totalCount: 3,
+      guilds: [
+        {
+          guildId: 'guild-1',
+          serverId: 'server-1',
+          name: 'Argonauts',
+          tag: 'ARGO',
+          statusKey: 'active',
+          memberCount: 12,
+          memberLimit: 30,
+          canRequestToJoin: true,
+          currentJoinRequestStatusKey: null,
+          currentInviteStatusKey: 'pending',
+        },
+      ],
+    });
+    expect(JSON.stringify(result)).not.toContain('total_count');
+    expect(JSON.stringify(result)).not.toContain('member_user_id');
+  });
+
+  it('maps empty guild discovery result total from DB rows only', () => {
+    expect(mapGuildSearchResult([], null, 25, 0)).toEqual({
+      query: null,
+      limit: 25,
+      offset: 0,
+      totalCount: 0,
+      guilds: [],
+    });
   });
 });
 
@@ -252,6 +296,25 @@ function joinRequestRow(
     can_accept: true,
     can_reject: true,
     can_cancel: false,
+    ...overrides,
+  };
+}
+
+function searchGuildRow(
+  overrides: Partial<SearchGuildsForHeroRpcRow> = {},
+): SearchGuildsForHeroRpcRow {
+  return {
+    guild_id: 'guild-1',
+    server_id: 'server-1',
+    name: 'Argonauts',
+    tag: 'ARGO',
+    status_key: 'active',
+    member_count: 12,
+    member_limit: 30,
+    can_request_to_join: true,
+    current_join_request_status_key: 'pending',
+    current_invite_status_key: '',
+    total_count: 3,
     ...overrides,
   };
 }

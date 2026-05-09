@@ -6,6 +6,8 @@ import {
   CurrentHeroGuildState,
   GuildConfigSummary,
   GuildDetail,
+  GuildSearchFilters,
+  GuildSearchResult,
   GuildMemberListItem,
 } from '../../domain/guild/guild.model';
 import {
@@ -13,15 +15,19 @@ import {
   GetHeroGuildDashboardRpcRow,
   GetHeroGuildMembersRpcRow,
   GetHeroGuildStateRpcRow,
+  SearchGuildsForHeroRpcRow,
 } from '../../types/guild-rpc.types';
 import {
   mapCurrentHeroGuildState,
   mapGuildConfigSummary,
   mapGuildDetail,
   mapGuildMemberListItem,
+  mapGuildSearchResult,
 } from '../../utils/guild-mappers';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
+
+const DEFAULT_GUILD_SEARCH_LIMIT = 25;
 
 @Injectable({ providedIn: 'root' })
 export class PlayerGuild {
@@ -85,6 +91,44 @@ export class PlayerGuild {
       .pipe(map((rows) => rows.map(mapGuildMemberListItem)));
   }
 
+  searchGuildsForActiveHero(
+    filters: GuildSearchFilters = {},
+  ): Observable<GuildSearchResult> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) =>
+        this.searchGuildsForHero(context.heroId, filters).pipe(
+          map((result) => {
+            const active = this.activeHero.state();
+
+            if (active?.heroId !== context.heroId || active.serverId !== context.serverId) {
+              throw new Error('Guild search context changed.');
+            }
+
+            return result;
+          }),
+        ),
+      ),
+    );
+  }
+
+  searchGuildsForHero(
+    heroId: string,
+    filters: GuildSearchFilters = {},
+  ): Observable<GuildSearchResult> {
+    const query = normalizeQuery(filters.query);
+    const limit = filters.limit ?? DEFAULT_GUILD_SEARCH_LIMIT;
+    const offset = filters.offset ?? 0;
+
+    return this.backend
+      .rpc<SearchGuildsForHeroRpcRow[]>(RPC.search_guilds_for_hero, {
+        p_hero_id: heroId,
+        p_query: query,
+        p_limit: limit,
+        p_offset: offset,
+      })
+      .pipe(map((rows) => mapGuildSearchResult(rows, query, limit, offset)));
+  }
+
   getGuildConfigSummary(): Observable<GuildConfigSummary> {
     return this.backend
       .rpc<GetGuildConfigSummaryRpcRow[]>(RPC.get_guild_config_summary, {})
@@ -92,6 +136,12 @@ export class PlayerGuild {
         map((rows) => mapGuildConfigSummary(firstRow(rows, RPC.get_guild_config_summary))),
       );
   }
+}
+
+function normalizeQuery(query: string | null | undefined): string | null {
+  const trimmed = query?.trim();
+
+  return trimmed ? trimmed : null;
 }
 
 function firstRow<T>(rows: readonly T[], rpcName: string): T {

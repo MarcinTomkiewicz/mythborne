@@ -7876,6 +7876,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Join availability reflects DB/RPC state.
 - No direct guild table mutation is introduced.
 
+**Implementation note:** T3 accepted on 2026-05-09. Added generated RPC aliases and player-facing discovery/search models for `search_guilds_for_hero(...)`, mapped DB rows through `guild-mappers`, and extended `PlayerGuild` plus `GuildDiscoveryState` for active-hero guild search with request-id and active hero/server stale guards. Mapper/service/state specs cover query, pagination, DB-owned `can_request_to_join`, member count/limit, pending request/invite statuses, raw/private field exclusion, overlapping searches and active context changes. No UI/routes, DB/RPC changes, generated type edits, direct guild table reads/writes or frontend join-availability calculation were added. Verification passed with `npx tsc --noEmit`, focused guild specs and `npm run build` with known warnings. Manual smoke remains N/A until a future UI slice has enough real sandbox guild/hero data.
+
 ---
 
 ## Task T4 — Create guild flow

@@ -33,3 +33,6 @@ export type GetHeroGuildInvitationRowsRpcRow =
 
 export type GetHeroGuildJoinRequestRowsRpcRow =
   Database['public']['Functions']['get_hero_guild_join_request_rows']['Returns'][number];
+
+export type SearchGuildsForHeroRpcRow =
+  Database['public']['Functions']['search_guilds_for_hero']['Returns'][number];

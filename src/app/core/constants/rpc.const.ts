@@ -107,6 +107,7 @@ export const RPC = {
   get_hero_guild_dashboard: 'get_hero_guild_dashboard',
   get_hero_guild_members: 'get_hero_guild_members',
   get_hero_guild_state: 'get_hero_guild_state',
+  search_guilds_for_hero: 'search_guilds_for_hero',
   equip_hero_item: 'equip_hero_item',
   unequip_hero_item: 'unequip_hero_item',
   bulk_equip_hero_items: 'bulk_equip_hero_items',

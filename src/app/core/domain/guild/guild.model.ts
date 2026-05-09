@@ -117,6 +117,26 @@ export interface GuildJoinRequest {
   canCancel: boolean;
 }
 
+export interface GuildDiscoveryResult extends GuildSummary {
+  canRequestToJoin: boolean;
+  currentJoinRequestStatusKey: GuildJoinRequestStatusKey | null;
+  currentInviteStatusKey: GuildInviteStatusKey | null;
+}
+
+export interface GuildSearchResult {
+  query: string | null;
+  limit: number;
+  offset: number;
+  totalCount: number;
+  guilds: GuildDiscoveryResult[];
+}
+
+export interface GuildSearchFilters {
+  query?: string | null;
+  limit?: number;
+  offset?: number;
+}
+
 export interface GuildConfigSummary {
   creationDrachmaCost: number;
   memberBaseLimit: number;

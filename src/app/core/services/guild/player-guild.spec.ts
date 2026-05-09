@@ -6,6 +6,7 @@ import {
   GetGuildConfigSummaryRpcRow,
   GetHeroGuildDashboardRpcRow,
   GetHeroGuildStateRpcRow,
+  SearchGuildsForHeroRpcRow,
 } from '../../types/guild-rpc.types';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
@@ -81,6 +82,46 @@ describe('PlayerGuild', () => {
     expect(backend.rpc).toHaveBeenCalledWith('get_guild_config_summary', {});
     expect(result.creationDrachmaCost).toBe(1000);
     expect(result.armoryCapacityIsUnlimited).toBeTrue();
+  });
+
+  it('searches guilds for active hero with query and pagination through canonical RPC', async () => {
+    backend.rpc.and.returnValue(of([searchGuildRow()]));
+
+    const result = await firstValueFrom(service.searchGuildsForActiveHero({
+      query: ' argo ',
+      limit: 10,
+      offset: 20,
+    }));
+
+    expect(backend.rpc).toHaveBeenCalledWith('search_guilds_for_hero', {
+      p_hero_id: 'hero-1',
+      p_query: 'argo',
+      p_limit: 10,
+      p_offset: 20,
+    });
+    expect(result).toEqual(jasmine.objectContaining({
+      query: 'argo',
+      limit: 10,
+      offset: 20,
+      totalCount: 3,
+    }));
+    expect(result.guilds[0]).toEqual(jasmine.objectContaining({
+      guildId: 'guild-1',
+      canRequestToJoin: true,
+      currentJoinRequestStatusKey: 'pending',
+    }));
+  });
+
+  it('uses RPC-owned join availability and does not calculate it from counts', async () => {
+    backend.rpc.and.returnValue(of([searchGuildRow({
+      member_count: 1,
+      member_limit: 99,
+      can_request_to_join: false,
+    })]));
+
+    const result = await firstValueFrom(service.searchGuildsForHero('hero-1'));
+
+    expect(result.guilds[0].canRequestToJoin).toBeFalse();
   });
 });
 
@@ -158,5 +199,24 @@ function configRow(): GetGuildConfigSummaryRpcRow {
     emergency_max_candidates: 3,
     armory_capacity: 0,
     armory_capacity_is_unlimited: true,
+  };
+}
+
+function searchGuildRow(
+  overrides: Partial<SearchGuildsForHeroRpcRow> = {},
+): SearchGuildsForHeroRpcRow {
+  return {
+    guild_id: 'guild-1',
+    server_id: 'server-1',
+    name: 'Argonauts',
+    tag: 'ARGO',
+    status_key: 'active',
+    member_count: 12,
+    member_limit: 30,
+    can_request_to_join: true,
+    current_join_request_status_key: 'pending',
+    current_invite_status_key: '',
+    total_count: 3,
+    ...overrides,
   };
 }

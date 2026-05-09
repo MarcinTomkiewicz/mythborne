@@ -2,9 +2,11 @@ import {
   CurrentHeroGuildState,
   GuildConfigSummary,
   GuildDetail,
+  GuildDiscoveryResult,
   GuildInvite,
   GuildJoinRequest,
   GuildMemberListItem,
+  GuildSearchResult,
 } from '../domain/guild/guild.model';
 import {
   GetGuildConfigSummaryRpcRow,
@@ -13,6 +15,7 @@ import {
   GetHeroGuildJoinRequestRowsRpcRow,
   GetHeroGuildMembersRpcRow,
   GetHeroGuildStateRpcRow,
+  SearchGuildsForHeroRpcRow,
 } from '../types/guild-rpc.types';
 
 export function mapGuildConfigSummary(
@@ -161,6 +164,38 @@ export function mapGuildJoinRequest(
     canAccept: row.can_accept,
     canReject: row.can_reject,
     canCancel: row.can_cancel,
+  };
+}
+
+export function mapGuildDiscoveryResult(
+  row: SearchGuildsForHeroRpcRow,
+): GuildDiscoveryResult {
+  return {
+    guildId: row.guild_id,
+    serverId: row.server_id,
+    name: row.name,
+    tag: row.tag,
+    statusKey: row.status_key,
+    memberCount: row.member_count,
+    memberLimit: row.member_limit,
+    canRequestToJoin: row.can_request_to_join,
+    currentJoinRequestStatusKey: nullableText(row.current_join_request_status_key),
+    currentInviteStatusKey: nullableText(row.current_invite_status_key),
+  };
+}
+
+export function mapGuildSearchResult(
+  rows: readonly SearchGuildsForHeroRpcRow[],
+  query: string | null,
+  limit: number,
+  offset: number,
+): GuildSearchResult {
+  return {
+    query,
+    limit,
+    offset,
+    totalCount: rows[0]?.total_count ?? 0,
+    guilds: rows.map(mapGuildDiscoveryResult),
   };
 }
 
