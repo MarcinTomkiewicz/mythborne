@@ -1,0 +1,81 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Guild</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Guild armory</h3>
+      <p class="muted-text mb-0">Shared guild items currently available or borrowed.</p>
+    </div>
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      @if (state.isLoading()) {
+        <span class="tag-badge tag-badge--muted">Loading</span>
+      }
+      <span class="tag-badge tag-badge--info">Capacity: {{ state.capacityLabel() }}</span>
+      <span class="tag-badge tag-badge--success">Available: {{ state.availableCount() }}</span>
+      <span class="tag-badge tag-badge--warning">Borrowed: {{ state.borrowedCount() }}</span>
+      <p-button
+        icon="pi pi-refresh"
+        severity="secondary"
+        [disabled]="state.isLoading()"
+        (onClick)="state.load()"
+        aria-label="Refresh guild armory"
+      />
+    </div>
+  </div>
+
+  @if (state.error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  <div class="flex-col gap-sm mt-md">
+    @for (item of state.items(); track item.armoryItemId) {
+      <article class="mg-card p-md">
+        <div class="flex-row-between-start flex-col-sm gap-md">
+          <div class="flex-col gap-xs">
+            <strong>{{ item.itemName }}</strong>
+            <span class="muted-text">{{ itemSubtitle(item) }}</span>
+            <span class="muted-text">Owner: {{ item.ownerHeroName || item.ownerHeroId }}</span>
+            @if (item.armoryStatusKey === 'borrowed') {
+              <span>
+                Borrowed by: {{ item.borrowerHeroName || item.borrowerHeroId || 'Unknown hero' }}
+              </span>
+            }
+          </div>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            <span
+              class="tag-badge"
+              [class.tag-badge--warning]="item.armoryStatusKey === 'borrowed'"
+              [class.tag-badge--success]="item.armoryStatusKey === 'available'"
+            >
+              {{ statusLabel(item.armoryStatusKey) }}
+            </span>
+            @if (item.loanId) {
+              <span class="tag-badge tag-badge--muted">Loan active</span>
+            }
+          </div>
+        </div>
+      </article>
+    } @empty {
+      @if (!state.isLoading()) {
+        <p class="muted-text mb-0">No current guild armory items.</p>
+      }
+    }
+  </div>
+
+  @if (state.loans().length) {
+    <div class="flex-col gap-sm mt-lg">
+      <h4 class="mg-section__title mg-section__title--xs mb-0">Current loans</h4>
+      @for (loan of state.loans(); track loan.loanId) {
+        <article class="mg-card p-md">
+          <div class="flex-row-between-start flex-col-sm gap-md">
+            <div class="flex-col gap-xs">
+              <strong>{{ loan.itemName }}</strong>
+              <span class="muted-text">Owner: {{ loan.ownerHeroName || loan.ownerHeroId }}</span>
+              <span>Borrowed by: {{ loan.borrowerHeroName || loan.borrowerHeroId }}</span>
+            </div>
+            <span class="tag-badge tag-badge--warning">{{ loan.loanStatusKey }}</span>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

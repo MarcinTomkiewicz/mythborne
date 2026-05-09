@@ -8127,6 +8127,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Borrowed-by information is current-state display, not a full log.
 - Capacity display handles unlimited.
 
+**Implementation note:** T12 accepted on 2026-05-09. Added a read-only `GuildArmoryReadSection` and local `GuildArmoryReadState` under `src/app/game/pages/guild` for current guild armory display. The section shows DB/RPC-backed current armory items, available vs borrowed state, owner, borrower for borrowed items, current loans and capacity summary with `0 = unlimited` handling. Shelf grouping/UI was intentionally not added because the current guild armory read RPC rows do not expose shelf fields. The section uses PrimeNG `<p-button />`, host width class and explicit status class bindings. No route/menu entry, T13/T20 behavior, DB/RPC/migration/generated type/status-contract change, direct write, `.from(` usage, frontend ownership-transfer logic, removed/withdrawn historical list or full click log was added. Verification passed with focused T12 specs, full guild + guild page specs, `npx tsc --noEmit`, `npm run build` with known warnings, `git diff --check`, duplicate file checks and static greps for `button pButton`, `.from(` and direct write patterns. Manual/route smoke remains N/A until T20 wires the section into a route/menu entry.
+
 ---
 
 ## Task T13 — Guild armory deposit and withdraw
