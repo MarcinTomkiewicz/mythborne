@@ -9084,6 +9084,10 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - Luck surfaces are readable without raw-only keys.
 - This task does not become Luck Lab.
 
+**Status:** accepted/done with follow-up. Manual smoke pending for Exploration Lab Luck surface registry and chance preview readability.
+
+**Implementation note 2026-05-09:** U10 accepted with follow-up. Existing Exploration Lab now includes a read-only Luck surface registry backed by `LuckRngSurfaces` / `get_luck_lab_preview_contracts()`, showing DB-returned surface label, description, helper text, RPC signature, metadata and status flags such as Luck-aware, formula-owned, config-owned, fallback/ad hoc and missing config. Trial opportunity, trial manifestation and challenge auto-resolve preview models now preserve DB-returned `luckInfluence`, `trialPower`, `formulaKey` and formula expression, and the chance tables show Luck influence, Trial Power and formula keys without adding local Luck/chance/reward/item formulas or direct writes. The touched chance template was cleaned up to use Reactive Forms with PrimeNG components, no `ngModel` / `FormsModule`, no `<button pButton>` and no native `<label>` wrappers around PrimeNG controls. Follow-up: `ExplorationLabPageState` is a real split candidate at 358 lines; if another Luck/chance/reward/simulation feature lands there, extract responsibilities instead of growing one broad state class.
+
 ---
 
 ## Task U11 — Formula admin integration for Luck targets

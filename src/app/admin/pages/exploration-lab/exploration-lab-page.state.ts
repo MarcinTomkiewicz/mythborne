@@ -13,10 +13,15 @@ import {
 } from '../../../core/domain/exploration/exploration-preview.model';
 import {
   LuckGeneratedItemPreview,
+  LuckRngSurface,
   LuckRewardRangePreview,
 } from '../../../core/domain/luck/luck.model';
 import { RewardProfileReadModel } from '../../../core/domain/exploration/exploration-reward.model';
 import { ExplorationLabPreviews } from '../../../core/services/exploration/exploration-lab-previews';
+import {
+  LuckRngSurfaceCategory,
+  LuckRngSurfaces,
+} from '../../../core/services/luck/luck-rng-surfaces';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
@@ -39,13 +44,19 @@ interface SimulationStepDistribution {
 @Injectable()
 export class ExplorationLabPageState {
   private readonly previews = inject(ExplorationLabPreviews);
+  private readonly luckSurfaces = inject(LuckRngSurfaces);
   private readonly definitions = inject(ExplorationDefinitionsState);
   private readonly destroyRef = inject(DestroyRef);
   private readonly runToken = new RequestToken();
+  private readonly surfacesToken = new RequestToken();
 
   private readonly previewError = signal<string | null>(null);
+  private readonly surfaceError = signal<string | null>(null);
   readonly isRunning = signal(false);
-  readonly error = computed(() => this.previewError() ?? this.definitions.error());
+  readonly isLoadingSurfaces = signal(false);
+  readonly error = computed(
+    () => this.previewError() ?? this.surfaceError() ?? this.definitions.error(),
+  );
   readonly difficultyOptions = this.definitions.difficultyOptions;
   readonly districtOptions = this.definitions.districtOptions;
   readonly statOptions = this.definitions.statOptions;
@@ -65,6 +76,8 @@ export class ExplorationLabPageState {
     difficultyKey: new FormControl<string | null>(null),
     startingDryStepCount: new FormControl<number | null>(0),
     stepsToPreview: new FormControl<number | null>(8),
+    spiritualityValue: new FormControl<number | null>(0),
+    luckValue: new FormControl<number | null>(0),
   });
   readonly manifestationForm = new FormGroup({
     difficultyKey: new FormControl<string | null>(null),
@@ -109,6 +122,13 @@ export class ExplorationLabPageState {
   readonly generatedItemRows = signal<LuckGeneratedItemPreview[]>([]);
   readonly rewardProfileRows = signal<LuckRewardRangePreview[]>([]);
   readonly simulationRows = signal<TrialOpportunitySimulation[]>([]);
+  readonly luckSurfaceCategories = signal<LuckRngSurfaceCategory[]>([]);
+  readonly luckSurfaceCount = computed(() =>
+    this.luckSurfaceCategories().reduce(
+      (count, category) => count + category.surfaces.length,
+      0,
+    ),
+  );
   readonly simulationSummary = computed<SimulationSummary>(() => {
     const rows = this.simulationRows();
     const totalRuns = rows.length;
@@ -154,7 +174,23 @@ export class ExplorationLabPageState {
 
   loadInitialData(): void {
     this.definitions.loadDefinitions();
+    this.loadLuckSurfaces();
     this.applyDefinitionDefaults();
+  }
+
+  luckSurfaceBadges(surface: LuckRngSurface): string[] {
+    const status = surface.status;
+
+    return [
+      status.isLuckAware === true ? 'Luck-aware' : null,
+      status.isLuckExcluded === true ? 'Luck excluded' : null,
+      status.isFormulaOwned === true ? 'Formula-owned' : null,
+      status.isConfigOwned === true ? 'Config-owned' : null,
+      status.isFallback === true ? 'Fallback/ad hoc' : null,
+      status.missingConfigKeys.length
+        ? `Missing config: ${status.missingConfigKeys.join(', ')}`
+        : null,
+    ].filter((entry): entry is string => !!entry);
   }
 
   searchRewardProfiles(query: string): void {
@@ -265,6 +301,36 @@ export class ExplorationLabPageState {
           this.previewError.set(
             getErrorMessage(error, 'Exploration lab preview failed.'),
           );
+        },
+      });
+  }
+
+  private loadLuckSurfaces(): void {
+    const token = this.surfacesToken.next();
+
+    this.surfaceError.set(null);
+    this.isLoadingSurfaces.set(true);
+    this.luckSurfaces.getSurfaceCategories()
+      .pipe(
+        finalize(() => {
+          if (this.surfacesToken.isCurrent(token)) {
+            this.isLoadingSurfaces.set(false);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (categories) => {
+          if (this.surfacesToken.isCurrent(token)) {
+            this.luckSurfaceCategories.set(categories);
+          }
+        },
+        error: (error: unknown) => {
+          if (this.surfacesToken.isCurrent(token)) {
+            this.surfaceError.set(
+              getErrorMessage(error, 'Luck surface registry failed to load.'),
+            );
+          }
         },
       });
   }

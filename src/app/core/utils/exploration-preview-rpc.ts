@@ -18,6 +18,8 @@ export interface PreviewTrialOpportunityCurveInput {
   difficultyKey?: string | null;
   startingDryStepCount?: number | null;
   stepsToPreview?: number | null;
+  spiritualityValue?: number | null;
+  luckValue?: number | null;
 }
 
 export interface PreviewTrialManifestationChanceInput {
@@ -67,6 +69,8 @@ export function toPreviewTrialOpportunityCurveRpcArgs(
   addOptionalText(args, 'p_difficulty_key', input.difficultyKey);
   const startingDryStepCount = optionalNonNegativeInteger(input.startingDryStepCount);
   const stepsToPreview = optionalPositiveInteger(input.stepsToPreview);
+  const spiritualityValue = optionalNonNegativeInteger(input.spiritualityValue);
+  const luckValue = optionalNonNegativeInteger(input.luckValue);
 
   if (startingDryStepCount !== null) {
     args.p_starting_dry_step_count = startingDryStepCount;
@@ -74,6 +78,14 @@ export function toPreviewTrialOpportunityCurveRpcArgs(
 
   if (stepsToPreview !== null) {
     args.p_steps_to_preview = stepsToPreview;
+  }
+
+  if (spiritualityValue !== null) {
+    args.p_spirituality_value = spiritualityValue;
+  }
+
+  if (luckValue !== null) {
+    args.p_luck_value = luckValue;
   }
 
   return args;

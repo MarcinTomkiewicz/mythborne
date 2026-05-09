@@ -4,36 +4,46 @@
       <h3 class="mg-section__title mg-section__title--xs mb-0">Trial opportunity curve</h3>
       <p class="muted-text mb-0">
         Shows how dry movement steps raise the chance that the next movement discovers a trial.
-        The result explains the step cap and guarantee behavior.
+        The result explains the step cap, Luck influence and guarantee behavior.
       </p>
     </div>
     <form class="grid-form" [formGroup]="page.opportunityForm">
-      <label class="form-field">
+      <div class="form-field">
         <span>Difficulty tier</span>
         <p-select formControlName="difficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
         <small class="muted-text">Database difficulty whose curve should be previewed.</small>
-      </label>
-      <label class="form-field">
+      </div>
+      <div class="form-field">
         <span>Starting dry step count</span>
         <p-inputnumber formControlName="startingDryStepCount" [min]="0" />
         <small class="muted-text">Previous movement steps without a trial.</small>
-      </label>
-      <label class="form-field">
+      </div>
+      <div class="form-field">
         <span>Steps to preview</span>
         <p-inputnumber formControlName="stepsToPreview" [min]="1" />
-      </label>
-      <button pButton type="button" label="Preview curve" (click)="page.runOpportunityCurve()"></button>
+      </div>
+      <div class="form-field">
+        <span>Spirituality value</span>
+        <p-inputnumber formControlName="spiritualityValue" [min]="0" />
+      </div>
+      <div class="form-field">
+        <span>Luck value</span>
+        <p-inputnumber formControlName="luckValue" [min]="0" />
+      </div>
+      <p-button type="button" label="Preview curve" (onClick)="page.runOpportunityCurve()" />
     </form>
     <p-table [value]="page.opportunityRows()" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
-        <tr><th>Step</th><th>Dry steps</th><th>Chance</th><th>Cap</th><th>Explanation</th></tr>
+        <tr><th>Step</th><th>Dry steps</th><th>Luck</th><th>Chance</th><th>Cap</th><th>Formula</th><th>Explanation</th></tr>
       </ng-template>
       <ng-template pTemplate="body" let-row>
         <tr>
           <td>{{ row.projectedStepNumber }}</td>
           <td>{{ row.dryStepCount }}</td>
+          <td>{{ row.luckValue }} <span class="muted-text">influence</span> {{ row.luckInfluence }}</td>
           <td>{{ row.trialOpportunityChance }}</td>
           <td>{{ row.isGuaranteedByStepCap ? 'Guaranteed' : row.trialOpportunityStepCap }}</td>
+          <td>{{ row.formulaKey }}</td>
           <td>{{ row.explanation }}</td>
         </tr>
       </ng-template>
@@ -45,20 +55,20 @@
       <h3 class="mg-section__title mg-section__title--xs mb-0">Trial manifestation chance</h3>
       <p class="muted-text mb-0">
         Explains whether a discovered trial opportunity becomes a challenge. Trial, district and
-        hero values determine the final chance.
+        hero values determine the final chance. Trial Power is tested stat plus Luck influence.
       </p>
     </div>
     <form class="grid-form" [formGroup]="page.manifestationForm">
-      <label class="form-field">
+      <div class="form-field">
         <span>Difficulty tier</span>
         <p-select formControlName="difficultyKey" [options]="page.difficultyOptions()" optionLabel="label" optionValue="value" />
-      </label>
-      <label class="form-field">
+      </div>
+      <div class="form-field">
         <span>District</span>
         <p-select formControlName="districtCode" [options]="page.districtOptions()" optionLabel="label" optionValue="value" />
         <small class="muted-text">District cap profile used by the preview.</small>
-      </label>
-      <label class="form-field">
+      </div>
+      <div class="form-field">
         <span>Trial definition</span>
         <p-autocomplete
           formControlName="trialDefinition"
@@ -72,23 +82,26 @@
           (onSelect)="page.selectTrialDefinition($event.value)"
           (onClear)="page.clearTrialDefinition()"
         />
-      </label>
-      <label class="form-field"><span>Tested stat value</span><p-inputnumber formControlName="testedStatValue" [min]="0" /></label>
-      <label class="form-field"><span>Spirituality value</span><p-inputnumber formControlName="spiritualityValue" [min]="0" /></label>
-      <label class="form-field"><span>Luck value</span><p-inputnumber formControlName="luckValue" [min]="0" /></label>
-      <button pButton type="button" label="Preview manifestation" (click)="page.runManifestationChance()"></button>
+      </div>
+      <div class="form-field"><span>Tested stat value</span><p-inputnumber formControlName="testedStatValue" [min]="0" /></div>
+      <div class="form-field"><span>Spirituality value</span><p-inputnumber formControlName="spiritualityValue" [min]="0" /></div>
+      <div class="form-field"><span>Luck value</span><p-inputnumber formControlName="luckValue" [min]="0" /></div>
+      <p-button type="button" label="Preview manifestation" (onClick)="page.runManifestationChance()" />
     </form>
     <p-table [value]="page.manifestationRows()" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
-        <tr><th>Trial</th><th>Stat</th><th>Raw</th><th>Cap</th><th>Final</th><th>Explanation</th></tr>
+        <tr><th>Trial</th><th>Stat</th><th>Luck</th><th>Trial Power</th><th>Raw</th><th>Cap</th><th>Final</th><th>Formula</th><th>Explanation</th></tr>
       </ng-template>
       <ng-template pTemplate="body" let-row>
         <tr>
           <td>{{ row.trialLabel }} <span class="muted-text">({{ row.trialKey }})</span></td>
           <td>{{ row.testedStatKey }} {{ row.testedStatValue }}</td>
+          <td>{{ row.luckValue }} <span class="muted-text">influence</span> {{ row.luckInfluence }}</td>
+          <td>{{ row.trialPower }}</td>
           <td>{{ row.rawManifestationChance }}</td>
           <td>{{ row.maxManifestationChancePercent }}</td>
           <td>{{ row.finalManifestationChance }}</td>
+          <td>{{ row.formulaKey }}</td>
           <td>{{ row.explanation }}</td>
         </tr>
       </ng-template>
@@ -100,7 +113,7 @@
       <h3 class="mg-section__title mg-section__title--xs mb-0">Challenge auto-resolve</h3>
       <p class="muted-text mb-0">
         Previews the database chance that a challenge resolves successfully without a played
-        minigame.
+        minigame. Trial Power is tested stat plus Luck influence.
       </p>
     </div>
     <form class="grid-form" [formGroup]="page.autoResolveForm">
@@ -113,26 +126,29 @@
           optionValue="value"
         />
       </div>
-      <label class="form-field">
+      <div class="form-field">
         <span>Tested stat</span>
         <p-select formControlName="testedStatKey" [options]="page.statOptions()" optionLabel="label" optionValue="value" />
-      </label>
-      <label class="form-field"><span>Tested stat value</span><p-inputnumber formControlName="testedStatValue" [min]="0" /></label>
-      <label class="form-field"><span>Spirituality value</span><p-inputnumber formControlName="spiritualityValue" [min]="0" /></label>
-      <label class="form-field"><span>Luck value</span><p-inputnumber formControlName="luckValue" [min]="0" /></label>
-      <button pButton type="button" label="Preview auto-resolve" (click)="page.runAutoResolveChance()"></button>
+      </div>
+      <div class="form-field"><span>Tested stat value</span><p-inputnumber formControlName="testedStatValue" [min]="0" /></div>
+      <div class="form-field"><span>Spirituality value</span><p-inputnumber formControlName="spiritualityValue" [min]="0" /></div>
+      <div class="form-field"><span>Luck value</span><p-inputnumber formControlName="luckValue" [min]="0" /></div>
+      <p-button type="button" label="Preview auto-resolve" (onClick)="page.runAutoResolveChance()" />
     </form>
     <p-table [value]="page.autoResolveRows()" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
-        <tr><th>Stat</th><th>Difficulty</th><th>Raw</th><th>Cap</th><th>Final</th><th>Explanation</th></tr>
+        <tr><th>Stat</th><th>Difficulty</th><th>Luck</th><th>Trial Power</th><th>Raw</th><th>Cap</th><th>Final</th><th>Formula</th><th>Explanation</th></tr>
       </ng-template>
       <ng-template pTemplate="body" let-row>
         <tr>
           <td>{{ row.testedStatKey }} {{ row.testedStatValue }}</td>
           <td>{{ row.difficultyLabel }} <span class="muted-text">x{{ row.difficultyMultiplier }}</span></td>
+          <td>{{ row.luckValue }} <span class="muted-text">influence</span> {{ row.luckInfluence }}</td>
+          <td>{{ row.trialPower }}</td>
           <td>{{ row.rawAutoResolveSuccessChance }}</td>
           <td>{{ row.capPercent }}</td>
           <td>{{ row.finalAutoResolveSuccessChance }}</td>
+          <td>{{ row.formulaKey }}</td>
           <td>{{ row.explanation }}</td>
         </tr>
       </ng-template>

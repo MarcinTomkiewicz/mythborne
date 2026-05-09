@@ -17,8 +17,13 @@ export interface TrialOpportunityCurvePreview {
   difficultyLabel: string;
   projectedStepNumber: number;
   dryStepCount: number;
+  spiritualityValue: number;
+  luckValue: number;
+  luckInfluence: number;
   trialOpportunityChance: number;
   trialOpportunityStepCap: number;
+  formulaKey: string;
+  formulaExpression: string;
   isGuaranteedByStepCap: boolean;
   explanation: string;
 }
@@ -33,9 +38,13 @@ export interface TrialManifestationChancePreview {
   districtCode: string;
   spiritualityValue: number;
   luckValue: number;
+  luckInfluence: number;
+  trialPower: number;
   rawManifestationChance: number;
   maxManifestationChancePercent: number;
   finalManifestationChance: number;
+  formulaKey: string;
+  formulaExpression: string;
   explanation: string;
 }
 
@@ -47,9 +56,13 @@ export interface ChallengeAutoResolveSuccessChancePreview {
   difficultyMultiplier: number;
   spiritualityValue: number;
   luckValue: number;
+  luckInfluence: number;
+  trialPower: number;
   rawAutoResolveSuccessChance: number;
   capPercent: number;
   finalAutoResolveSuccessChance: number;
+  formulaKey: string;
+  formulaExpression: string;
   explanation: string;
 }
 

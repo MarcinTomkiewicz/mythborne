@@ -50,12 +50,22 @@ describe('ExplorationLabPreviews', () => {
       testedStatValue: 10,
       spiritualityValue: 2,
       luckValue: 1,
-    }).subscribe((rows) => expect(rows[0].trialDefinitionId).toBe('trial-1'));
+    }).subscribe((rows) => {
+      expect(rows[0].trialDefinitionId).toBe('trial-1');
+      expect(rows[0].luckInfluence).toBe(3);
+      expect(rows[0].trialPower).toBe(13);
+      expect(rows[0].formulaKey).toBe('trial_manifestation_chance');
+    });
     service.previewChallengeAutoResolveSuccessChance({
       difficultyKey: 'easy',
       testedStatKey: 'spirituality',
       testedStatValue: 10,
-    }).subscribe((rows) => expect(rows[0].testedStatKey).toBe('spirituality'));
+    }).subscribe((rows) => {
+      expect(rows[0].testedStatKey).toBe('spirituality');
+      expect(rows[0].luckInfluence).toBe(3);
+      expect(rows[0].trialPower).toBe(13);
+      expect(rows[0].formulaKey).toBe('challenge_auto_resolve_success_chance');
+    });
     service.previewRewardGeneratedItem({
       bucketProfileId: 'bucket-1',
       maxQualityKey: 'rare',
@@ -120,8 +130,13 @@ function trialOpportunityRow() {
     difficulty_label: 'Easy',
     projected_step_number: 1,
     dry_step_count: 0,
+    spirituality_value: 2,
+    luck_value: 1,
+    luck_influence: 3,
     trial_opportunity_chance: 10,
     trial_opportunity_step_cap: 5,
+    formula_key: 'trial_opportunity_chance',
+    formula_expression: 'base + luck_influence',
     is_guaranteed_by_step_cap: false,
     explanation: 'Preview only.',
   } as never;
@@ -138,9 +153,13 @@ function manifestationRow() {
     district_code: 'district-a',
     spirituality_value: 2,
     luck_value: 1,
+    luck_influence: 3,
+    trial_power: 13,
     raw_manifestation_chance: 20,
     max_manifestation_chance_percent: 80,
     final_manifestation_chance: 20,
+    formula_key: 'trial_manifestation_chance',
+    formula_expression: 'trial_power * 1.1',
     explanation: 'Preview only.',
   } as never;
 }
@@ -154,9 +173,13 @@ function autoResolveRow() {
     difficulty_multiplier: 1,
     spirituality_value: 2,
     luck_value: 1,
+    luck_influence: 3,
+    trial_power: 13,
     raw_auto_resolve_success_chance: 30,
     cap_percent: 80,
     final_auto_resolve_success_chance: 30,
+    formula_key: 'challenge_auto_resolve_success_chance',
+    formula_expression: 'trial_power - penalty',
     explanation: 'Preview only.',
   } as never;
 }

@@ -19,8 +19,13 @@ export function mapTrialOpportunityCurvePreview(
     difficultyLabel: row.difficulty_label,
     projectedStepNumber: row.projected_step_number,
     dryStepCount: row.dry_step_count,
+    spiritualityValue: row.spirituality_value,
+    luckValue: row.luck_value,
+    luckInfluence: row.luck_influence,
     trialOpportunityChance: row.trial_opportunity_chance,
     trialOpportunityStepCap: row.trial_opportunity_step_cap,
+    formulaKey: row.formula_key,
+    formulaExpression: row.formula_expression,
     isGuaranteedByStepCap: row.is_guaranteed_by_step_cap,
     explanation: row.explanation,
   };
@@ -39,9 +44,13 @@ export function mapTrialManifestationChancePreview(
     districtCode: row.district_code,
     spiritualityValue: row.spirituality_value,
     luckValue: row.luck_value,
+    luckInfluence: row.luck_influence,
+    trialPower: row.trial_power,
     rawManifestationChance: row.raw_manifestation_chance,
     maxManifestationChancePercent: row.max_manifestation_chance_percent,
     finalManifestationChance: row.final_manifestation_chance,
+    formulaKey: row.formula_key,
+    formulaExpression: row.formula_expression,
     explanation: row.explanation,
   };
 }
@@ -57,9 +66,13 @@ export function mapChallengeAutoResolveSuccessChancePreview(
     difficultyMultiplier: row.difficulty_multiplier,
     spiritualityValue: row.spirituality_value,
     luckValue: row.luck_value,
+    luckInfluence: row.luck_influence,
+    trialPower: row.trial_power,
     rawAutoResolveSuccessChance: row.raw_auto_resolve_success_chance,
     capPercent: row.cap_percent,
     finalAutoResolveSuccessChance: row.final_auto_resolve_success_chance,
+    formulaKey: row.formula_key,
+    formulaExpression: row.formula_expression,
     explanation: row.explanation,
   };
 }

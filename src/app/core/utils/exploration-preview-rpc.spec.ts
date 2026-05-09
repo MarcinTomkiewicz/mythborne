@@ -1,10 +1,27 @@
 import {
+  toPreviewTrialOpportunityCurveRpcArgs,
   toPreviewRewardProfileLuckRpcArgs,
   toPreviewRewardGeneratedItemLuckRpcArgs,
   toSimulateTrialOpportunityRunsRpcArgs,
 } from './exploration-preview-rpc';
 
 describe('exploration preview RPC args mappers', () => {
+  it('maps Luck-aware trial opportunity preview args with DB-owned Luck inputs', () => {
+    expect(toPreviewTrialOpportunityCurveRpcArgs({
+      difficultyKey: ' easy ',
+      startingDryStepCount: 2.8,
+      stepsToPreview: 4.2,
+      spiritualityValue: 7.8,
+      luckValue: 12.3,
+    })).toEqual({
+      p_difficulty_key: 'easy',
+      p_starting_dry_step_count: 2,
+      p_steps_to_preview: 4,
+      p_spirituality_value: 7,
+      p_luck_value: 12,
+    });
+  });
+
   it('maps Luck-aware generated item preview args with shared optional integer helpers', () => {
     expect(toPreviewRewardGeneratedItemLuckRpcArgs({
       bucketProfileId: ' bucket-1 ',

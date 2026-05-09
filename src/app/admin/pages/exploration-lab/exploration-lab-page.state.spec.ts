@@ -2,12 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { ExplorationDefinitions } from '../../../core/services/exploration/exploration-definitions';
 import { ExplorationLabPreviews } from '../../../core/services/exploration/exploration-lab-previews';
+import { LuckRngSurfaces } from '../../../core/services/luck/luck-rng-surfaces';
 import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
 import { ExplorationLabPageState } from './exploration-lab-page.state';
 
 describe('ExplorationLabPageState', () => {
   let previews: jasmine.SpyObj<ExplorationLabPreviews>;
   let definitions: jasmine.SpyObj<ExplorationDefinitions>;
+  let luckSurfaces: jasmine.SpyObj<LuckRngSurfaces>;
   let state: ExplorationLabPageState;
 
   beforeEach(() => {
@@ -25,6 +27,39 @@ describe('ExplorationLabPageState', () => {
     previews.previewRewardGeneratedItem.and.returnValue(of([]));
     previews.previewRewardProfile.and.returnValue(of([]));
     previews.simulateTrialOpportunityRuns.and.returnValue(of([]));
+    luckSurfaces = jasmine.createSpyObj<LuckRngSurfaces>('LuckRngSurfaces', [
+      'getSurfaceCategories',
+    ]);
+    luckSurfaces.getSurfaceCategories.and.returnValue(of([
+      {
+        categoryKey: 'exploration',
+        surfaces: [
+          {
+            contractKey: 'preview_trial_manifestation_chance',
+            categoryKey: 'exploration',
+            label: 'Trial manifestation',
+            description: 'DB-owned manifestation preview.',
+            helperText: 'Uses Trial Power.',
+            rpcName: 'preview_trial_manifestation_chance',
+            rpcSignature: 'preview_trial_manifestation_chance(...)',
+            resultType: 'rows',
+            sortOrder: 10,
+            status: {
+              isAvailable: true,
+              isLuckAware: true,
+              isLuckExcluded: null,
+              isFormulaOwned: true,
+              isConfigOwned: false,
+              isFallback: true,
+              missingConfigKeys: ['trial_manifestation_cap'],
+            },
+            metadataJson: {
+              isLuckAware: true,
+            },
+          },
+        ],
+      },
+    ]));
     definitions = jasmine.createSpyObj<ExplorationDefinitions>(
       'ExplorationDefinitions',
       [
@@ -52,6 +87,7 @@ describe('ExplorationLabPageState', () => {
         ExplorationDefinitionsState,
         ExplorationLabPageState,
         { provide: ExplorationLabPreviews, useValue: previews },
+        { provide: LuckRngSurfaces, useValue: luckSurfaces },
         { provide: ExplorationDefinitions, useValue: definitions },
       ],
     });
@@ -64,17 +100,37 @@ describe('ExplorationLabPageState', () => {
       difficultyKey: 'easy',
       startingDryStepCount: 2,
       stepsToPreview: 4,
+      spiritualityValue: 7,
+      luckValue: 12,
     });
 
     state.runOpportunityCurve();
 
     expect(state.difficultyOptions()).toEqual([{ label: 'Easy (easy)', value: 'easy' }]);
+    expect(luckSurfaces.getSurfaceCategories).toHaveBeenCalled();
     expect(previews.previewTrialOpportunityCurve).toHaveBeenCalledOnceWith({
       difficultyKey: 'easy',
       startingDryStepCount: 2,
       stepsToPreview: 4,
+      spiritualityValue: 7,
+      luckValue: 12,
     });
     expect(state.opportunityRows()[0].trialOpportunityChance).toBe(10);
+    expect(state.opportunityRows()[0].luckInfluence).toBe(3);
+  });
+
+  it('exposes DB-owned Luck surface registry status without local categories', () => {
+    state.loadInitialData();
+
+    expect(state.luckSurfaceCategories()[0].categoryKey).toBe('exploration');
+    expect(state.luckSurfaceCount()).toBe(1);
+    expect(state.luckSurfaceBadges(state.luckSurfaceCategories()[0].surfaces[0]))
+      .toEqual([
+        'Luck-aware',
+        'Formula-owned',
+        'Fallback/ad hoc',
+        'Missing config: trial_manifestation_cap',
+      ]);
   });
 
   it('sets safe DB-backed defaults after loading definitions', () => {
@@ -211,8 +267,13 @@ function opportunity() {
     difficultyLabel: 'Easy',
     projectedStepNumber: 1,
     dryStepCount: 0,
+    spiritualityValue: 7,
+    luckValue: 12,
+    luckInfluence: 3,
     trialOpportunityChance: 10,
     trialOpportunityStepCap: 5,
+    formulaKey: 'trial_opportunity_chance',
+    formulaExpression: 'base + luckInfluence',
     isGuaranteedByStepCap: false,
     explanation: 'Preview only.',
   };

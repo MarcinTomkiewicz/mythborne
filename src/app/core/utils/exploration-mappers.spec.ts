@@ -238,8 +238,13 @@ describe('exploration mappers', () => {
       difficultyLabel: 'Easy',
       projectedStepNumber: 3,
       dryStepCount: 2,
+      spiritualityValue: 6,
+      luckValue: 5,
+      luckInfluence: 0,
       trialOpportunityChance: 35,
       trialOpportunityStepCap: 8,
+      formulaKey: 'trial_opportunity_chance',
+      formulaExpression: 'baseChance + dryStepCount',
       isGuaranteedByStepCap: false,
       explanation: 'Chance rises with dry steps.',
     });

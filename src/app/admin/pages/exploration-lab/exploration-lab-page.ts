@@ -5,6 +5,7 @@ import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links'
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
 import { ExplorationLabChanceSection } from './exploration-lab-chance-section';
+import { ExplorationLabLuckSurfaceSection } from './exploration-lab-luck-surface-section';
 import { ExplorationLabPageState } from './exploration-lab-page.state';
 import { ExplorationLabRewardSection } from './exploration-lab-reward-section';
 import { ExplorationLabSimulationSection } from './exploration-lab-simulation-section';
@@ -16,6 +17,7 @@ import { ExplorationLabSimulationSection } from './exploration-lab-simulation-se
     MessageModule,
     AdminTagLinks,
     ExplorationLabChanceSection,
+    ExplorationLabLuckSurfaceSection,
     ExplorationLabRewardSection,
     ExplorationLabSimulationSection,
     LoadingOverlay,
