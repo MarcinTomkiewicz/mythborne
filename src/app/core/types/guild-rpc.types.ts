@@ -96,6 +96,36 @@ export type DisbandGuildRpcArgs =
 export type DisbandGuildRpcRow =
   Database['public']['Functions']['disband_guild']['Returns'][number];
 
+export type StartGuildEmergencyElectionRpcArgs =
+  Database['public']['Functions']['start_guild_emergency_election']['Args'];
+
+export type StartGuildEmergencyElectionRpcRow =
+  Database['public']['Functions']['start_guild_emergency_election']['Returns'][number];
+
+export type NominateGuildEmergencyLeaderCandidateRpcArgs =
+  Database['public']['Functions']['nominate_guild_emergency_leader_candidate']['Args'];
+
+export type NominateGuildEmergencyLeaderCandidateRpcRow =
+  Database['public']['Functions']['nominate_guild_emergency_leader_candidate']['Returns'][number];
+
+export type StartGuildEmergencyElectionVotingRpcArgs =
+  Database['public']['Functions']['start_guild_emergency_election_voting']['Args'];
+
+export type StartGuildEmergencyElectionVotingRpcRow =
+  Database['public']['Functions']['start_guild_emergency_election_voting']['Returns'][number];
+
+export type VoteGuildEmergencyElectionRpcArgs =
+  Database['public']['Functions']['vote_guild_emergency_election']['Args'];
+
+export type VoteGuildEmergencyElectionRpcRow =
+  Database['public']['Functions']['vote_guild_emergency_election']['Returns'][number];
+
+export type FinalizeGuildEmergencyElectionRpcArgs =
+  Database['public']['Functions']['finalize_guild_emergency_election']['Args'];
+
+export type FinalizeGuildEmergencyElectionRpcRow =
+  Database['public']['Functions']['finalize_guild_emergency_election']['Returns'][number];
+
 export type GetHeroGuildStateRpcRow =
   Database['public']['Functions']['get_hero_guild_state']['Returns'][number];
 

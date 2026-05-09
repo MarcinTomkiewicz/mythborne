@@ -1,9 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
-import {
-  GuildEmergencyElectionReadModel,
-} from '../../domain/guild/guild-emergency-election.model';
+import { GuildEmergencyElectionReadModel } from '../../domain/guild/guild-emergency-election.model';
 import {
   GetHeroGuildEmergencyElectionCandidateRowsRpcRow,
   GetHeroGuildEmergencyElectionSummaryRpcRow,

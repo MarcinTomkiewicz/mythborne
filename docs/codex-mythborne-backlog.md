@@ -8060,6 +8060,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Most votes wins; earlier nomination tie-breaker is presented in explanatory copy if useful.
 - No client-side election result calculation is authoritative.
 
+**Implementation note:** T10 accepted on 2026-05-09. Emergency leader election actions now use generated canonical RPC contracts through a dedicated `PlayerGuildElectionActions` service, while `PlayerGuildElections` remains the read-only election service. `GuildEmergencyElectionState` loads through the read service and mutates through the action service for start, nominate, start voting, vote and finalize, with active hero/server stale guards, current guild refresh and election reload after successful actions. Election timing, quorum/no-quorum rules, max candidates, winner/tie-break semantics and final result authority remain DB-owned; Angular only maps and surfaces RPC/read-model data. No UI/routes/menu, DB/RPC changes, generated type edits, migrations or direct guild table reads/writes were added. Verification passed with `npx tsc --noEmit`, focused T10 specs, full guild specs and `npm run build` with known warnings. Manual smoke remains N/A until a future guild UI entry slice wires this state into a page.
+
 ---
 
 ## Task T11 — Guild armory domain models and service

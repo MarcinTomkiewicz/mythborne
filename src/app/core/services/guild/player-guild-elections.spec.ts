@@ -84,6 +84,7 @@ describe('PlayerGuildElections', () => {
     await expectAsync(result)
       .toBeRejectedWithError('Guild emergency election context changed.');
   });
+
 });
 
 function activeContext(
