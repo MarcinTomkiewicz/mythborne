@@ -35,4 +35,15 @@ describe('game routes', () => {
     expect(route).toBeDefined();
     expect(route?.loadComponent).toEqual(jasmine.any(Function));
   });
+
+  it('exposes the guild page under the guarded game shell', () => {
+    const gameShellRoute = routes
+      .flatMap((route) => route.children ?? [])
+      .find((route) => route.path === 'game');
+    const guildRoute = gameRoutes.find((route) => route.path === 'guild');
+
+    expect(gameShellRoute?.canActivateChild).toContain(requireOnboardedHeroGuard);
+    expect(guildRoute).toBeDefined();
+    expect(guildRoute?.loadComponent).toEqual(jasmine.any(Function));
+  });
 });

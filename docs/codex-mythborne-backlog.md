@@ -8331,6 +8331,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Route does not imply siege/Argonautics are implemented.
 - Build and focused route/component tests pass.
 
+**Implementation note:** T20 accepted on 2026-05-09. Added lazy `/game/guild` route, sidebar `Guild` entry and thin `GuildPage` composition over `CurrentGuildState`. The page shows no-guild entry areas for create/search/join requests/invites, in-guild overview/member/election summaries and mounts the existing `GuildArmoryReadSection`. No new guild mutations, custom forms, DB/RPC changes, migrations, generated type edits, direct table access, siege/Argonautics implementation or fake siege/Argonautics action buttons were added. Verification passed with focused T20 specs, full guild + route/sidebar specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for `button pButton`, `.from(` and direct write patterns. Manual smoke for `/game/guild` remains pending.
+
 ---
 
 # Epic U — Luck Foundation

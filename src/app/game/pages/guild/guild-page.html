@@ -1,0 +1,153 @@
+<app-loading-overlay
+  [visible]="currentGuild.isLoading() && currentGuild.error() === null"
+  label="Loading guild..."
+  description="Loading current hero guild state."
+/>
+
+<div class="flex-col gap-xl w-100">
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Guild</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">
+          {{ currentGuild.readModel()?.detail?.name || 'Guild' }}
+        </h2>
+        <p class="muted-text mb-0">
+          Guilds coordinate shared armory access and future group support.
+        </p>
+      </div>
+
+      <span class="tag-badge tag-badge--info">
+        {{ currentGuild.status() }}
+      </span>
+    </div>
+  </section>
+
+  @if (currentGuild.error(); as message) {
+    <section class="mg-card p-lg w-100">
+      <p-message severity="error">{{ message }}</p-message>
+    </section>
+  } @else if (currentGuild.status() === 'no-guild') {
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-sm">
+        <p class="card-legend mb-0">No guild</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">
+          Join or create a guild
+        </h3>
+        <p class="muted-text mb-0">
+          Guild creation, guild search, join requests and invites are the entry points
+          for joining guild systems.
+        </p>
+      </div>
+
+      <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md w-100 mt-lg">
+        <article class="mg-card p-md flex-col gap-xs">
+          <strong>Create guild</strong>
+          <span class="muted-text">Start a guild when the current hero can create one.</span>
+        </article>
+
+        <article class="mg-card p-md flex-col gap-xs">
+          <strong>Search guilds</strong>
+          <span class="muted-text">Find existing guilds and request membership.</span>
+        </article>
+
+        <article class="mg-card p-md flex-col gap-xs">
+          <strong>Join requests</strong>
+          <span class="muted-text">Track membership requests sent by the active hero.</span>
+        </article>
+
+        <article class="mg-card p-md flex-col gap-xs">
+          <strong>Invites</strong>
+          <span class="muted-text">Review guild invitations for the active hero.</span>
+        </article>
+      </div>
+    </section>
+  } @else if (currentGuild.readModel()?.detail; as guild) {
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-start flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">{{ guild.tag }}</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            Guild overview
+          </h3>
+          <p class="muted-text mb-0">
+            Current role: {{ guild.currentRoleLabel }}
+          </p>
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-xs">
+          <span class="tag-badge tag-badge--success">{{ guild.statusKey }}</span>
+          <span class="tag-badge tag-badge--info">
+            Members: {{ guild.memberCount }} / {{ guild.memberLimit }}
+          </span>
+        </div>
+      </div>
+
+      <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100 mt-lg">
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Armory available</span>
+          <strong class="heading-color">{{ guild.armoryAvailableCount }}</strong>
+        </div>
+
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Armory borrowed</span>
+          <strong class="heading-color">{{ guild.armoryBorrowedCount }}</strong>
+        </div>
+
+        <div class="flex-col gap-xs">
+          <span class="muted-text">My active loans</span>
+          <strong class="heading-color">{{ guild.myActiveLoanCount }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Members</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">
+          Member management
+        </h3>
+        <p class="muted-text mb-0">
+          Current membership, invite and join-request counts come from the guild dashboard read model.
+        </p>
+      </div>
+
+      <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100 mt-lg">
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Pending invites</span>
+          <strong class="heading-color">{{ guild.pendingInviteCount }}</strong>
+        </div>
+
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Pending join requests</span>
+          <strong class="heading-color">{{ guild.pendingJoinRequestCount }}</strong>
+        </div>
+
+        <div class="flex-col gap-xs">
+          <span class="muted-text">My armory access</span>
+          <strong class="heading-color">{{ guild.myArmoryAccessStatusKey }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Emergency election</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            Leader continuity
+          </h3>
+          <p class="muted-text mb-0">
+            Election timing, quorum and result semantics remain DB-owned.
+          </p>
+        </div>
+
+        <span class="tag-badge tag-badge--muted">
+          {{ guild.activeElectionStatusKey || 'no active election' }}
+        </span>
+      </div>
+    </section>
+
+    <app-guild-armory-read-section />
+  }
+</div>

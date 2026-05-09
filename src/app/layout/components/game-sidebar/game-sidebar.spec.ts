@@ -90,6 +90,7 @@ describe('GameSidebar', () => {
 
     expect(urls).toContain('/hero/dashboard');
     expect(urls).toContain('/game/combat');
+    expect(urls).toContain('/game/guild');
     expect(urls).toContain('/game/auction');
   });
 
@@ -156,6 +157,7 @@ describe('GameSidebar', () => {
 
     expect(urls).not.toContain('/hero/dashboard');
     expect(urls).not.toContain('/game/combat');
+    expect(urls).not.toContain('/game/guild');
     expect(urls).not.toContain('/game/vicinity');
     expect(urls).not.toContain('/game/auction');
     expect(urls).toContain('/admin');
