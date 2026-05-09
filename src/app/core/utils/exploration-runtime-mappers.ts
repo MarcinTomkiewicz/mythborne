@@ -10,6 +10,7 @@ import {
 } from '../domain/exploration/exploration-runtime.model';
 import { Row } from '../types/supabase.types';
 import { mapHeroExplorationStepRng } from './exploration-rng-read-model';
+import { mapHeroExplorationTrialManifestation } from './exploration-trial-manifestation-read-model';
 
 export function mapHeroDailyActionCounter(
   row: Row<'hero_daily_action_counters'>,
@@ -146,7 +147,7 @@ export function mapHeroExplorationEffect(
 export function mapHeroExplorationChallengeAttempt(
   row: Row<'hero_exploration_challenge_attempts'>,
 ): HeroExplorationChallengeAttemptReadModel {
-  return {
+  const challenge = {
     id: row.id,
     serverId: row.server_id,
     heroId: row.hero_id,
@@ -177,6 +178,11 @@ export function mapHeroExplorationChallengeAttempt(
     completedAt: row.completed_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  } satisfies Omit<HeroExplorationChallengeAttemptReadModel, 'manifestation'>;
+
+  return {
+    ...challenge,
+    manifestation: mapHeroExplorationTrialManifestation(challenge),
   };
 }
 

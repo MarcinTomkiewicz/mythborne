@@ -121,6 +121,22 @@ export interface HeroExplorationStepRngReadModel {
   explanation: string | null;
 }
 
+export interface HeroExplorationTrialManifestationReadModel {
+  status: string;
+  chance: number | null;
+  roll: number | null;
+  trialDefinitionId: string | null;
+  testedStatKey: string | null;
+  luckValue: number | null;
+  luckInfluence: number | null;
+  trialPower: number | null;
+  configIssueKey: string | null;
+  configIssueMessage: string | null;
+  explanation: string | null;
+  metadataJson: Json;
+  formulaContextJson: Json;
+}
+
 export interface HeroExplorationEffectReadModel {
   id: string;
   serverId: string;
@@ -157,6 +173,7 @@ export interface HeroExplorationChallengeAttemptReadModel {
   manifestationStatus: string;
   manifestationChance: number | null;
   manifestationRoll: number | null;
+  manifestation: HeroExplorationTrialManifestationReadModel;
   manualDeadlineAt: string | null;
   completionMode: string | null;
   performanceRating: string | null;

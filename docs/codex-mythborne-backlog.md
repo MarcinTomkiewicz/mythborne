@@ -8951,6 +8951,8 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - Player-facing UI remains concise.
 - No frontend manifestation formula is added.
 
+**Status note 2026-05-09:** Accepted after cleanup. Challenge attempts now expose nested Trial Manifestation read-state populated by both runtime row and JSON mappers. It preserves DB-returned manifestation chance/roll/status, Luck value/influence, Trial Power, formula context, explanation and config issue metadata while keeping Trial Manifestation separate from Trial Opportunity RNG and without adding Angular manifestation formulas.
+
 ---
 
 ## Task U6 — Challenge auto-resolve Luck integration

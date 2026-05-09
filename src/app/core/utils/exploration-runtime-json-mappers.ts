@@ -13,6 +13,7 @@ import {
 } from '../domain/exploration/exploration-runtime.model';
 import { Json } from '../types/database.types';
 import { mapHeroExplorationStepRng } from './exploration-rng-read-model';
+import { mapHeroExplorationTrialManifestation } from './exploration-trial-manifestation-read-model';
 import {
   booleanValue,
   jsonRecord,
@@ -226,7 +227,7 @@ function mapHeroExplorationEffectJson(row: JsonRecord): HeroExplorationEffectRea
 function mapHeroExplorationChallengeAttemptJson(
   row: JsonRecord,
 ): HeroExplorationChallengeAttemptReadModel {
-  return {
+  const challenge = {
     id: text(read(row, 'id')),
     serverId: text(read(row, 'serverId', 'server_id')),
     heroId: text(read(row, 'heroId', 'hero_id')),
@@ -257,6 +258,11 @@ function mapHeroExplorationChallengeAttemptJson(
     completedAt: optionalText(read(row, 'completedAt', 'completed_at')),
     createdAt: text(read(row, 'createdAt', 'created_at')),
     updatedAt: text(read(row, 'updatedAt', 'updated_at')),
+  } satisfies Omit<HeroExplorationChallengeAttemptReadModel, 'manifestation'>;
+
+  return {
+    ...challenge,
+    manifestation: mapHeroExplorationTrialManifestation(challenge),
   };
 }
 
