@@ -8363,6 +8363,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 
 # GUILD-FOLLOWUP-1 / T21 — Guild Entry UI: create, search, join requests, invites
 
+**Status:** accepted/done. Manual smoke pending for `/game/guild` create/search/request/cancel/invite flows.
+
 ## Cel
 
 Zamienić no-guild placeholder cards na realne, klikalne sekcje wejścia do gildii.
@@ -8424,6 +8426,8 @@ Po sukcesie akcji odświeżać właściwe stany:
 
 # GUILD-FOLLOWUP-2 / T22 — In-guild membership/invite/request management UI
 
+**Status:** accepted/done. Manual smoke pending for `/game/guild` in-guild member/invite/join-request management flows.
+
 ## Cel
 
 Dla gracza będącego w gildii zrobić realną sekcję zarządzania członkostwem, invite’ami i requestami, zamiast samych liczników.
@@ -8472,6 +8476,8 @@ Akcje pokazywać tylko tam, gdzie DB-backed permissions/capability flags pozwala
 ---
 
 # GUILD-FOLLOWUP-3 / T23 — Guild member role/lifecycle UI
+
+**Status:** accepted/done. Manual smoke pending/data-blocked because the current server has only one character/guild member.
 
 ## Cel
 

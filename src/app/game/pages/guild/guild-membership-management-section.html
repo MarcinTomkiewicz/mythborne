@@ -48,6 +48,13 @@
     } @else if (members.members().length === 0) {
       <p class="muted-text mb-0">No guild members loaded.</p>
     } @else {
+      <form class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100" [formGroup]="memberActionForm">
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Member action reason</span>
+          <textarea pTextarea rows="2" formControlName="reason"></textarea>
+        </div>
+      </form>
+
       <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
         @for (member of members.members(); track member.memberHeroId) {
           <article class="mg-card p-md flex-col gap-sm">
@@ -68,10 +75,89 @@
             <p class="muted-text mb-0">
               Armory access: {{ member.armoryAccessStatusKey }}
             </p>
+
+            <div class="flex-row-start-center flex-wrap gap-sm">
+              @if (members.canPromote(member)) {
+                <p-button
+                  type="button"
+                  label="Promote"
+                  icon="pi pi-arrow-up"
+                  [disabled]="members.isMutating()"
+                  (onClick)="promoteMember(member)"
+                />
+              }
+
+              @if (members.canDemote(member)) {
+                <p-button
+                  type="button"
+                  label="Demote"
+                  severity="secondary"
+                  [outlined]="true"
+                  [disabled]="members.isMutating()"
+                  (onClick)="demoteMember(member)"
+                />
+              }
+
+              @if (members.canKick(member)) {
+                <p-button
+                  type="button"
+                  label="Kick"
+                  severity="danger"
+                  [outlined]="true"
+                  [disabled]="members.isMutating()"
+                  (onClick)="kickMember(member)"
+                />
+              }
+            </div>
           </article>
         }
       </div>
     }
+  </div>
+</section>
+
+<section class="mg-card p-lg w-100">
+  <div class="flex-col gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Lifecycle</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        Guild lifecycle
+      </h3>
+    </div>
+
+    <form class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100" [formGroup]="lifecycleForm">
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Lifecycle reason</span>
+        <textarea pTextarea rows="2" formControlName="reason"></textarea>
+        @if (canDisbandGuild() && lifecycleForm.controls.reason.invalid) {
+          <p-message severity="warn">Disband reason is required.</p-message>
+        }
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        @if (canLeaveGuild()) {
+          <p-button
+            type="button"
+            label="Leave guild"
+            severity="secondary"
+            [outlined]="true"
+            [disabled]="lifecycle.isMutating()"
+            (onClick)="leaveGuild()"
+          />
+        }
+
+        @if (canDisbandGuild()) {
+          <p-button
+            type="button"
+            label="Disband guild"
+            severity="danger"
+            [outlined]="true"
+            [disabled]="lifecycle.isMutating() || lifecycleForm.controls.reason.invalid"
+            (onClick)="disbandGuild()"
+          />
+        }
+      </div>
+    </form>
   </div>
 </section>
 

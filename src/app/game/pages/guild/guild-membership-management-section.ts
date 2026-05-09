@@ -7,10 +7,12 @@ import { TextareaModule } from 'primeng/textarea';
 import {
   GuildInvite,
   GuildJoinRequest,
+  GuildLifecycleOperationResult,
 } from '../../../core/domain/guild/guild.model';
 import { CurrentGuildState } from '../../../core/services/guild/current-guild.state';
 import { GuildInvitesState } from '../../../core/services/guild/guild-invites.state';
 import { GuildJoinRequestsState } from '../../../core/services/guild/guild-join-requests.state';
+import { GuildLifecycleState } from '../../../core/services/guild/guild-lifecycle.state';
 import { GuildMembersState } from '../../../core/services/guild/guild-members.state';
 import { ToastService } from '../../../core/services/ui/toast';
 import { trimRequiredValidator } from '../../../core/validators/form.validators';
@@ -33,17 +35,30 @@ export class GuildMembershipManagementSection implements OnInit {
   readonly members = inject(GuildMembersState);
   readonly invites = inject(GuildInvitesState);
   readonly joinRequests = inject(GuildJoinRequestsState);
+  readonly lifecycle = inject(GuildLifecycleState);
   private readonly toast = inject(ToastService);
+  private memberActionPending = false;
   private inviteActionPending = false;
   private joinRequestActionPending = false;
+  private lifecycleActionPending = false;
   private lastAcceptedJoinRequestId: string | null = null;
+  private lastLifecycleResult: GuildLifecycleOperationResult | null = null;
 
+  readonly memberActionForm = new FormGroup({
+    reason: new FormControl<string>('', { nonNullable: true }),
+  });
   readonly inviteForm = new FormGroup({
     targetHeroId: new FormControl<string>('', {
       nonNullable: true,
       validators: [Validators.required, trimRequiredValidator()],
     }),
     reason: new FormControl<string>('', { nonNullable: true }),
+  });
+  readonly lifecycleForm = new FormGroup({
+    reason: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [Validators.required, trimRequiredValidator()],
+    }),
   });
   readonly memberReadError = signal<string | null>(null);
   readonly inviteReadError = signal<string | null>(null);
@@ -54,6 +69,14 @@ export class GuildMembershipManagementSection implements OnInit {
   );
   readonly canInvite = computed(() =>
     this.guild()?.permissions.canInvite ?? false,
+  );
+  readonly canLeaveGuild = computed(() => {
+    const roleKey = this.lifecycle.currentRoleKey();
+
+    return roleKey !== null && roleKey !== 'leader';
+  });
+  readonly canDisbandGuild = computed(() =>
+    this.lifecycle.currentRoleKey() === 'leader',
   );
   readonly guildInvites = computed(() =>
     this.filterCurrentGuild(this.invites.invites()),
@@ -72,7 +95,7 @@ export class GuildMembershipManagementSection implements OnInit {
   constructor() {
     this.bindReadError(
       () => this.members.error(),
-      () => false,
+      () => this.memberActionPending,
       this.memberReadError,
     );
     this.bindReadError(
@@ -84,6 +107,13 @@ export class GuildMembershipManagementSection implements OnInit {
       () => this.joinRequests.error(),
       () => this.joinRequestActionPending,
       this.joinRequestReadError,
+    );
+    this.bindToastFeedback(
+      () => this.members.message(),
+      () => this.members.error(),
+      'Guild member',
+      'Guild member action failed',
+      () => this.consumeMemberAction(),
     );
     this.bindToastFeedback(
       () => this.invites.message(),
@@ -99,6 +129,13 @@ export class GuildMembershipManagementSection implements OnInit {
       'Guild join request failed',
       () => this.consumeJoinRequestAction(),
     );
+    this.bindToastFeedback(
+      () => this.lifecycle.message(),
+      () => this.lifecycle.error(),
+      'Guild lifecycle',
+      'Guild lifecycle action failed',
+      () => this.consumeLifecycleAction(),
+    );
     effect(() => {
       const result = this.joinRequests.lastResult();
 
@@ -110,6 +147,14 @@ export class GuildMembershipManagementSection implements OnInit {
         this.members.load();
       }
     });
+    effect(() => {
+      const result = this.lifecycle.lastResult();
+
+      if (result && result !== this.lastLifecycleResult) {
+        this.lastLifecycleResult = result;
+        this.members.load();
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -117,14 +162,40 @@ export class GuildMembershipManagementSection implements OnInit {
   }
 
   load(): void {
+    this.memberActionPending = false;
     this.inviteActionPending = false;
     this.joinRequestActionPending = false;
+    this.lifecycleActionPending = false;
     this.memberReadError.set(null);
     this.inviteReadError.set(null);
     this.joinRequestReadError.set(null);
     this.members.load();
     this.invites.load();
     this.joinRequests.load();
+  }
+
+  kickMember(member: { memberHeroId: string }): void {
+    this.memberActionPending = true;
+    this.members.kick({
+      targetHeroId: member.memberHeroId,
+      reason: this.memberActionReason(),
+    });
+  }
+
+  promoteMember(member: { memberHeroId: string }): void {
+    this.memberActionPending = true;
+    this.members.promote({
+      targetHeroId: member.memberHeroId,
+      reason: this.memberActionReason(),
+    });
+  }
+
+  demoteMember(member: { memberHeroId: string }): void {
+    this.memberActionPending = true;
+    this.members.demote({
+      targetHeroId: member.memberHeroId,
+      reason: this.memberActionReason(),
+    });
   }
 
   createInvite(): void {
@@ -164,12 +235,51 @@ export class GuildMembershipManagementSection implements OnInit {
     this.joinRequests.cancel({ joinRequestId: request.joinRequestId });
   }
 
+  leaveGuild(): void {
+    if (!this.canLeaveGuild()) {
+      return;
+    }
+
+    this.lifecycleActionPending = true;
+    this.lifecycle.leave({ reason: this.lifecycleActionReason() });
+  }
+
+  disbandGuild(): void {
+    if (!this.canDisbandGuild()) {
+      return;
+    }
+
+    const reason = this.lifecycleActionReason();
+
+    if (this.lifecycleForm.controls.reason.invalid || !reason) {
+      this.lifecycleForm.controls.reason.markAsTouched();
+      return;
+    }
+
+    this.lifecycleActionPending = true;
+    this.lifecycle.disband({ reason });
+  }
+
   private filterCurrentGuild<T extends { guildId: string }>(items: T[]): T[] {
     const guildId = this.guild()?.guildId;
 
     return guildId
       ? items.filter((item) => item.guildId === guildId)
       : [];
+  }
+
+  private memberActionReason(): string | null {
+    return this.optionalTrimmedValue(this.memberActionForm.controls.reason.value);
+  }
+
+  private lifecycleActionReason(): string | null {
+    return this.optionalTrimmedValue(this.lifecycleForm.controls.reason.value);
+  }
+
+  private optionalTrimmedValue(value: string): string | null {
+    const trimmed = value.trim();
+
+    return trimmed.length > 0 ? trimmed : null;
   }
 
   private bindReadError(
@@ -221,9 +331,21 @@ export class GuildMembershipManagementSection implements OnInit {
     return pending;
   }
 
+  private consumeMemberAction(): boolean {
+    const pending = this.memberActionPending;
+    this.memberActionPending = false;
+    return pending;
+  }
+
   private consumeJoinRequestAction(): boolean {
     const pending = this.joinRequestActionPending;
     this.joinRequestActionPending = false;
+    return pending;
+  }
+
+  private consumeLifecycleAction(): boolean {
+    const pending = this.lifecycleActionPending;
+    this.lifecycleActionPending = false;
     return pending;
   }
 

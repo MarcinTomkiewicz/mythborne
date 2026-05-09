@@ -5,11 +5,13 @@ import {
   GuildInvite,
   GuildJoinRequest,
   GuildJoinRequestOperationResult,
+  GuildLifecycleOperationResult,
   GuildMemberListItem,
 } from '../../../core/domain/guild/guild.model';
 import { CurrentGuildState } from '../../../core/services/guild/current-guild.state';
 import { GuildInvitesState } from '../../../core/services/guild/guild-invites.state';
 import { GuildJoinRequestsState } from '../../../core/services/guild/guild-join-requests.state';
+import { GuildLifecycleState } from '../../../core/services/guild/guild-lifecycle.state';
 import { GuildMembersState } from '../../../core/services/guild/guild-members.state';
 import { ToastService } from '../../../core/services/ui/toast';
 import { GuildMembershipManagementSection } from './guild-membership-management-section';
@@ -19,6 +21,7 @@ describe('GuildMembershipManagementSection', () => {
   let currentGuild: FakeCurrentGuildState;
   let invites: FakeGuildInvitesState;
   let joinRequests: FakeGuildJoinRequestsState;
+  let lifecycle: FakeGuildLifecycleState;
   let members: FakeGuildMembersState;
   let toast: jasmine.SpyObj<ToastService>;
 
@@ -26,6 +29,7 @@ describe('GuildMembershipManagementSection', () => {
     currentGuild = new FakeCurrentGuildState();
     invites = new FakeGuildInvitesState();
     joinRequests = new FakeGuildJoinRequestsState();
+    lifecycle = new FakeGuildLifecycleState();
     members = new FakeGuildMembersState();
     toast = jasmine.createSpyObj<ToastService>('ToastService', ['show']);
 
@@ -35,6 +39,7 @@ describe('GuildMembershipManagementSection', () => {
         { provide: CurrentGuildState, useValue: currentGuild },
         { provide: GuildInvitesState, useValue: invites },
         { provide: GuildJoinRequestsState, useValue: joinRequests },
+        { provide: GuildLifecycleState, useValue: lifecycle },
         { provide: GuildMembersState, useValue: members },
         { provide: ToastService, useValue: toast },
       ],
@@ -55,6 +60,12 @@ describe('GuildMembershipManagementSection', () => {
     members.members.set([
       member({ memberName: 'Leader Hero', roleKey: 'leader', roleLabel: 'Leader' }),
       member({ memberHeroId: 'member-hero-1', memberName: 'Member Hero' }),
+      member({
+        memberHeroId: 'officer-hero-1',
+        memberName: 'Officer Hero',
+        roleKey: 'officer',
+        roleLabel: 'Officer',
+      }),
     ]);
     invites.invites.set([
       invite({ targetHeroName: 'Target Hero', canCancel: true }),
@@ -83,6 +94,12 @@ describe('GuildMembershipManagementSection', () => {
     expect(text).toContain('Leader Hero');
     expect(text).toContain('Leader');
     expect(text).toContain('Member Hero');
+    expect(text).toContain('Promote');
+    expect(text).toContain('Kick');
+    expect(text).toContain('Officer Hero');
+    expect(text).toContain('Demote');
+    expect(text).toContain('Disband guild');
+    expect(text).not.toContain('Leave guild');
     expect(text).toContain('Target Hero');
     expect(text).toContain('Cancel invite');
     expect(text).toContain('Requester Hero');
@@ -123,6 +140,95 @@ describe('GuildMembershipManagementSection', () => {
     });
   });
 
+  it('wires member role and lifecycle actions through state classes', () => {
+    fixture.detectChanges();
+    fixture.componentInstance.memberActionForm.controls.reason.setValue(' Trusted. ');
+    fixture.componentInstance.lifecycleForm.controls.reason.setValue(' Closing guild. ');
+
+    fixture.componentInstance.promoteMember(member({ memberHeroId: 'member-hero-1' }));
+    fixture.componentInstance.demoteMember(member({ memberHeroId: 'officer-hero-1' }));
+    fixture.componentInstance.kickMember(member({ memberHeroId: 'member-hero-2' }));
+    fixture.componentInstance.disbandGuild();
+    members.currentRoleKey.set('member');
+    lifecycle.currentRoleKey.set('member');
+    currentGuild.readModel.set(guildReadModel({
+      state: {
+        ...guildReadModel().state,
+        membership: {
+          ...guildReadModel().state.membership!,
+          roleKey: 'member',
+          roleLabel: 'Member',
+        },
+      },
+      detail: {
+        ...guildReadModel().detail!,
+        currentRoleKey: 'member',
+        currentRoleLabel: 'Member',
+      },
+    }));
+    fixture.componentInstance.leaveGuild();
+
+    expect(members.promote).toHaveBeenCalledWith({
+      targetHeroId: 'member-hero-1',
+      reason: 'Trusted.',
+    });
+    expect(members.demote).toHaveBeenCalledWith({
+      targetHeroId: 'officer-hero-1',
+      reason: 'Trusted.',
+    });
+    expect(members.kick).toHaveBeenCalledWith({
+      targetHeroId: 'member-hero-2',
+      reason: 'Trusted.',
+    });
+    expect(lifecycle.disband).toHaveBeenCalledWith({
+      reason: 'Closing guild.',
+    });
+    expect(lifecycle.leave).toHaveBeenCalledWith({
+      reason: 'Closing guild.',
+    });
+  });
+
+  it('hides member management and disband actions for regular members', () => {
+    members.currentRoleKey.set('member');
+    lifecycle.currentRoleKey.set('member');
+    currentGuild.readModel.set(guildReadModel({
+      state: {
+        ...guildReadModel().state,
+        membership: {
+          ...guildReadModel().state.membership!,
+          roleKey: 'member',
+          roleLabel: 'Member',
+        },
+      },
+      detail: {
+        ...guildReadModel().detail!,
+        currentRoleKey: 'member',
+        currentRoleLabel: 'Member',
+      },
+    }));
+    members.members.set([member({ memberHeroId: 'other-member-1' })]);
+
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Leave guild');
+    expect(text).not.toContain('Promote');
+    expect(text).not.toContain('Demote');
+    expect(text).not.toContain('Kick');
+    expect(text).not.toContain('Disband guild');
+  });
+
+  it('requires a visible trimmed reason before disbanding from the UI layer', () => {
+    fixture.detectChanges();
+    fixture.componentInstance.lifecycleForm.controls.reason.setValue('   ');
+
+    fixture.componentInstance.disbandGuild();
+    fixture.detectChanges();
+
+    expect(lifecycle.disband).not.toHaveBeenCalled();
+    expect(textContent(fixture)).toContain('Disband reason is required.');
+  });
+
   it('blocks whitespace-only invite target before calling state action', () => {
     fixture.detectChanges();
     fixture.componentInstance.inviteForm.controls.targetHeroId.setValue('   ');
@@ -137,6 +243,16 @@ describe('GuildMembershipManagementSection', () => {
     members.load.calls.reset();
 
     joinRequests.lastResult.set(joinRequestResult({ statusKey: 'accepted' }));
+    fixture.detectChanges();
+
+    expect(members.load).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes member list after guild lifecycle success', () => {
+    fixture.detectChanges();
+    members.load.calls.reset();
+
+    lifecycle.lastResult.set(lifecycleResult());
     fixture.detectChanges();
 
     expect(members.load).toHaveBeenCalledTimes(1);
@@ -172,13 +288,32 @@ describe('GuildMembershipManagementSection', () => {
     fixture.componentInstance.cancelInvite(invite());
     invites.error.set('Only leader or officer can cancel guild invite.');
     fixture.detectChanges();
+    fixture.componentInstance.promoteMember(member({ memberHeroId: 'member-hero-1' }));
+    members.error.set('Guild already has an active officer.');
+    fixture.detectChanges();
+    fixture.componentInstance.lifecycleForm.controls.reason.setValue('Closing guild.');
+    fixture.componentInstance.disbandGuild();
+    lifecycle.error.set('Guild cannot be disbanded during active siege.');
+    fixture.detectChanges();
 
     expect(toast.show).toHaveBeenCalledWith(
       'error',
       'Guild invite failed',
       'Only leader or officer can cancel guild invite.',
     );
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Guild member action failed',
+      'Guild already has an active officer.',
+    );
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Guild lifecycle action failed',
+      'Guild cannot be disbanded during active siege.',
+    );
     expect(textContent(fixture)).not.toContain('Only leader or officer can cancel guild invite.');
+    expect(textContent(fixture)).not.toContain('Guild already has an active officer.');
+    expect(textContent(fixture)).not.toContain('Guild cannot be disbanded during active siege.');
   });
 });
 
@@ -190,11 +325,47 @@ class FakeCurrentGuildState {
 
 class FakeGuildMembersState {
   readonly members = signal<GuildMemberListItem[]>([]);
+  readonly currentRoleKey = signal<'leader' | 'officer' | 'member' | null>('leader');
   readonly isLoading = signal(false);
   readonly isMutating = signal(false);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
   readonly load = jasmine.createSpy('load');
+  readonly kick = jasmine.createSpy('kick');
+  readonly promote = jasmine.createSpy('promote');
+  readonly demote = jasmine.createSpy('demote');
+
+  canKick(member: GuildMemberListItem | null | undefined): boolean {
+    const roleKey = this.currentRoleKey();
+
+    if (!member || member.membershipStatusKey !== 'active' || member.roleKey === 'leader') {
+      return false;
+    }
+
+    return roleKey === 'leader' || (roleKey === 'officer' && member.roleKey === 'member');
+  }
+
+  canPromote(member: GuildMemberListItem | null | undefined): boolean {
+    return this.currentRoleKey() === 'leader'
+      && member?.membershipStatusKey === 'active'
+      && member.roleKey === 'member';
+  }
+
+  canDemote(member: GuildMemberListItem | null | undefined): boolean {
+    return this.currentRoleKey() === 'leader'
+      && member?.membershipStatusKey === 'active'
+      && member.roleKey === 'officer';
+  }
+}
+
+class FakeGuildLifecycleState {
+  readonly lastResult = signal<GuildLifecycleOperationResult | null>(null);
+  readonly isMutating = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly message = signal<string | null>(null);
+  readonly currentRoleKey = signal<'leader' | 'officer' | 'member' | null>('leader');
+  readonly leave = jasmine.createSpy('leave');
+  readonly disband = jasmine.createSpy('disband');
 }
 
 class FakeGuildInvitesState {
@@ -367,5 +538,17 @@ function joinRequestResult(
     memberCount: 13,
     memberLimit: 30,
     ...overrides,
+  };
+}
+
+function lifecycleResult(): GuildLifecycleOperationResult {
+  return {
+    kind: 'leave',
+    guildId: 'guild-1',
+    actorHeroId: 'hero-1',
+    membershipId: 'membership-1',
+    oldRoleKey: 'member',
+    statusKey: 'left',
+    endedAt: '2026-05-09T10:00:00.000Z',
   };
 }
