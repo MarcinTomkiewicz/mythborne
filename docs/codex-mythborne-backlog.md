@@ -7980,6 +7980,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Kick/promote/demote uses RPC only.
 - Current user cannot perform actions not allowed by their role.
 
+**Implementation note:** T7 accepted on 2026-05-09. Added generated RPC aliases and player-facing member action input/result models for `kick_guild_member(...)`, `promote_guild_member_to_officer(...)` and `demote_guild_officer(...)`; member list still reads through `get_hero_guild_members(...)`. Member RPC calls live in dedicated `PlayerGuildMembers`; member list/action mapping lives in `guild-member-mappers`; `GuildMembersState` loads members, runs kick/promote/demote actions, refreshes member list and current guild state after mutations, and guards stale active hero/server responses. `member_user_id` and `audit_log_id` are not exposed in player-facing domain models. The one-officer rule remains DB-owned and RPC errors surface. No UI/routes/menu, DB/RPC changes, generated type edits, migrations, direct guild table reads/writes, frontend membership insert/update or DB-rule fallback were added. Verification passed with `npx tsc --noEmit`, focused guild specs and `npm run build` with known warnings. Manual smoke remains N/A until a future guild UI entry slice wires this state into a page.
+
 ---
 
 ## Task T8 — Guild leave and disband actions

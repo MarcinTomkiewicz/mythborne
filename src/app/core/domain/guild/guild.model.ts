@@ -77,6 +77,35 @@ export interface GuildMemberListItem {
   createdAt: string;
 }
 
+export interface KickGuildMemberInput {
+  targetHeroId: string;
+  reason?: string | null;
+  requestId?: string | null;
+}
+
+export interface PromoteGuildMemberInput {
+  targetHeroId: string;
+  reason?: string | null;
+  requestId?: string | null;
+}
+
+export interface DemoteGuildOfficerInput {
+  targetHeroId: string;
+  reason?: string | null;
+  requestId?: string | null;
+}
+
+export interface GuildMemberOperationResult {
+  guildId: string;
+  actorHeroId: string;
+  targetHeroId: string;
+  targetMembershipId: string;
+  oldRoleKey: GuildRoleKey;
+  newRoleKey: GuildRoleKey | null;
+  statusKey: GuildMembershipStatusKey | null;
+  endedAt: string | null;
+}
+
 export interface GuildInvite {
   inviteId: string;
   guildId: string;

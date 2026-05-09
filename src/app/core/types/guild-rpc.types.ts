@@ -61,6 +61,24 @@ export type CancelGuildJoinRequestRpcArgs =
 export type CancelGuildJoinRequestRpcRow =
   Database['public']['Functions']['cancel_guild_join_request']['Returns'][number];
 
+export type KickGuildMemberRpcArgs =
+  Database['public']['Functions']['kick_guild_member']['Args'];
+
+export type KickGuildMemberRpcRow =
+  Database['public']['Functions']['kick_guild_member']['Returns'][number];
+
+export type PromoteGuildMemberToOfficerRpcArgs =
+  Database['public']['Functions']['promote_guild_member_to_officer']['Args'];
+
+export type PromoteGuildMemberToOfficerRpcRow =
+  Database['public']['Functions']['promote_guild_member_to_officer']['Returns'][number];
+
+export type DemoteGuildOfficerRpcArgs =
+  Database['public']['Functions']['demote_guild_officer']['Args'];
+
+export type DemoteGuildOfficerRpcRow =
+  Database['public']['Functions']['demote_guild_officer']['Returns'][number];
+
 export type GetHeroGuildStateRpcRow =
   Database['public']['Functions']['get_hero_guild_state']['Returns'][number];
 

@@ -7,7 +7,6 @@ import {
   GuildDiscoveryResult,
   GuildInvite,
   GuildJoinRequest,
-  GuildMemberListItem,
   GuildSearchResult,
 } from '../domain/guild/guild.model';
 import {
@@ -17,7 +16,6 @@ import {
   GetHeroGuildDashboardRpcRow,
   GetHeroGuildInvitationRowsRpcRow,
   GetHeroGuildJoinRequestRowsRpcRow,
-  GetHeroGuildMembersRpcRow,
   GetHeroGuildStateRpcRow,
   SearchGuildsForHeroRpcRow,
 } from '../types/guild-rpc.types';
@@ -135,21 +133,6 @@ export function mapGuildDetail(row: GetHeroGuildDashboardRpcRow): GuildDetail {
       canManageMembers: row.can_manage_members,
       canStartEmergencyElection: row.can_start_emergency_election,
     },
-  };
-}
-
-export function mapGuildMemberListItem(
-  row: GetHeroGuildMembersRpcRow,
-): GuildMemberListItem {
-  return {
-    guildId: row.guild_id,
-    memberHeroId: row.member_hero_id,
-    memberName: row.member_name,
-    roleKey: row.role_key,
-    roleLabel: row.role_label,
-    membershipStatusKey: row.membership_status_key,
-    joinedAt: row.joined_at,
-    createdAt: row.created_at,
   };
 }
 

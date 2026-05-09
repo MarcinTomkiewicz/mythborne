@@ -4,7 +4,6 @@ import {
   GetHeroGuildDashboardRpcRow,
   GetHeroGuildInvitationRowsRpcRow,
   GetHeroGuildJoinRequestRowsRpcRow,
-  GetHeroGuildMembersRpcRow,
   GetHeroGuildStateRpcRow,
   SearchGuildsForHeroRpcRow,
 } from '../types/guild-rpc.types';
@@ -15,7 +14,6 @@ import {
   mapGuildDetail,
   mapGuildInvite,
   mapGuildJoinRequest,
-  mapGuildMemberListItem,
   mapGuildSearchResult,
   toCreateGuildRpcArgs,
 } from './guild-mappers';
@@ -118,22 +116,6 @@ describe('guild mappers', () => {
         canStartEmergencyElection: false,
       },
     }));
-  });
-
-  it('maps member rows without leaking member account ids', () => {
-    const member = mapGuildMemberListItem(memberRow());
-
-    expect(member).toEqual({
-      guildId: 'guild-1',
-      memberHeroId: 'member-hero-1',
-      memberName: 'Member Hero',
-      roleKey: 'member',
-      roleLabel: 'Member',
-      membershipStatusKey: 'active',
-      joinedAt: '2026-05-08T10:00:00.000Z',
-      createdAt: '2026-05-08T09:00:00.000Z',
-    });
-    expect(JSON.stringify(member)).not.toContain('user-1');
   });
 
   it('maps invites and join requests preserving reasons', () => {
@@ -281,23 +263,6 @@ function guildDashboardRow(
     my_deposited_item_count: 3,
     pending_invite_count: 4,
     pending_join_request_count: 5,
-    ...overrides,
-  };
-}
-
-function memberRow(
-  overrides: Partial<GetHeroGuildMembersRpcRow> = {},
-): GetHeroGuildMembersRpcRow {
-  return {
-    guild_id: 'guild-1',
-    member_hero_id: 'member-hero-1',
-    member_name: 'Member Hero',
-    member_user_id: 'user-1',
-    role_key: 'member',
-    role_label: 'Member',
-    membership_status_key: 'active',
-    joined_at: '2026-05-08T10:00:00.000Z',
-    created_at: '2026-05-08T09:00:00.000Z',
     ...overrides,
   };
 }

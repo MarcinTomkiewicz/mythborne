@@ -10,13 +10,11 @@ import {
   GuildDetail,
   GuildSearchFilters,
   GuildSearchResult,
-  GuildMemberListItem,
 } from '../../domain/guild/guild.model';
 import {
   CreateGuildRpcRow,
   GetGuildConfigSummaryRpcRow,
   GetHeroGuildDashboardRpcRow,
-  GetHeroGuildMembersRpcRow,
   GetHeroGuildStateRpcRow,
   SearchGuildsForHeroRpcRow,
 } from '../../types/guild-rpc.types';
@@ -25,7 +23,6 @@ import {
   mapGuildCreateResult,
   mapGuildConfigSummary,
   mapGuildDetail,
-  mapGuildMemberListItem,
   mapGuildSearchResult,
   toCreateGuildRpcArgs,
 } from '../../utils/guild-mappers';
@@ -88,12 +85,6 @@ export class PlayerGuild {
       .pipe(
         map((rows) => mapGuildDetail(firstRow(rows, RPC.get_hero_guild_dashboard))),
       );
-  }
-
-  getHeroGuildMembers(heroId: string): Observable<GuildMemberListItem[]> {
-    return this.backend
-      .rpc<GetHeroGuildMembersRpcRow[]>(RPC.get_hero_guild_members, { p_hero_id: heroId })
-      .pipe(map((rows) => rows.map(mapGuildMemberListItem)));
   }
 
   createGuildForActiveHero(input: CreateGuildInput): Observable<GuildCreateResult> {
