@@ -315,34 +315,7 @@
       </div>
     </section>
 
-    <section class="mg-card p-lg w-100">
-      <div class="flex-col gap-xs">
-        <p class="card-legend mb-0">Members</p>
-        <h3 class="mg-section__title mg-section__title--xs mb-0">
-          Member management
-        </h3>
-        <p class="muted-text mb-0">
-          Current membership, invite and join-request counts come from the guild dashboard read model.
-        </p>
-      </div>
-
-      <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100 mt-lg">
-        <div class="flex-col gap-xs">
-          <span class="muted-text">Pending invites</span>
-          <strong class="heading-color">{{ guild.pendingInviteCount }}</strong>
-        </div>
-
-        <div class="flex-col gap-xs">
-          <span class="muted-text">Pending join requests</span>
-          <strong class="heading-color">{{ guild.pendingJoinRequestCount }}</strong>
-        </div>
-
-        <div class="flex-col gap-xs">
-          <span class="muted-text">My armory access</span>
-          <strong class="heading-color">{{ guild.myArmoryAccessStatusKey }}</strong>
-        </div>
-      </div>
-    </section>
+    <app-guild-membership-management-section />
 
     <section class="mg-card p-lg w-100">
       <div class="flex-row-between-center flex-col-sm gap-md">

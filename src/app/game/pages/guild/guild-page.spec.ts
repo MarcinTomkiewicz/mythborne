@@ -14,6 +14,7 @@ import { GuildInvitesState } from '../../../core/services/guild/guild-invites.st
 import { GuildJoinRequestsState } from '../../../core/services/guild/guild-join-requests.state';
 import { ToastService } from '../../../core/services/ui/toast';
 import { GuildArmoryReadSection } from './guild-armory-read-section';
+import { GuildMembershipManagementSection } from './guild-membership-management-section';
 import { GuildPage } from './guild-page';
 
 describe('GuildPage', () => {
@@ -45,8 +46,12 @@ describe('GuildPage', () => {
       ],
     })
       .overrideComponent(GuildPage, {
-        remove: { imports: [GuildArmoryReadSection] },
-        add: { imports: [GuildArmoryReadSectionStub] },
+        remove: {
+          imports: [GuildArmoryReadSection, GuildMembershipManagementSection],
+        },
+        add: {
+          imports: [GuildArmoryReadSectionStub, GuildMembershipManagementSectionStub],
+        },
       })
       .compileComponents();
 
@@ -130,8 +135,10 @@ describe('GuildPage', () => {
     currentGuild.readModel.set(noGuildReadModel());
     fixture.detectChanges();
 
+    fixture.componentInstance.submitCreateGuild();
     guildCreate.message.set('Guild Argonauts created.');
     fixture.detectChanges();
+    fixture.componentInstance.requestToJoin(discoveredGuild());
     joinRequests.error.set('Hero already has a pending join request.');
     fixture.detectChanges();
 
@@ -140,6 +147,28 @@ describe('GuildPage', () => {
       'Guild creation',
       'Guild Argonauts created.',
     );
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Guild join request failed',
+      'Hero already has a pending join request.',
+    );
+  });
+
+  it('does not suppress repeated explicit no-guild action feedback', () => {
+    currentGuild.status.set('no-guild');
+    currentGuild.readModel.set(noGuildReadModel());
+    fixture.detectChanges();
+
+    fixture.componentInstance.requestToJoin(discoveredGuild());
+    joinRequests.error.set('Hero already has a pending join request.');
+    fixture.detectChanges();
+    joinRequests.error.set(null);
+    fixture.detectChanges();
+    fixture.componentInstance.requestToJoin(discoveredGuild());
+    joinRequests.error.set('Hero already has a pending join request.');
+    fixture.detectChanges();
+
+    expect(toast.show).toHaveBeenCalledTimes(2);
     expect(toast.show).toHaveBeenCalledWith(
       'error',
       'Guild join request failed',
@@ -169,8 +198,7 @@ describe('GuildPage', () => {
     expect(text).toContain('Argonauts');
     expect(text).toContain('Guild overview');
     expect(text).toContain('Members: 12 / 30');
-    expect(text).toContain('Member management');
-    expect(text).toContain('Pending invites');
+    expect(text).toContain('Guild membership placeholder');
     expect(text).toContain('Emergency election');
     expect(text).toContain('no active election');
     expect(text).toContain('Guild armory placeholder');
@@ -192,6 +220,13 @@ describe('GuildPage', () => {
   template: '<section>Guild armory placeholder</section>',
 })
 class GuildArmoryReadSectionStub {}
+
+@Component({
+  selector: 'app-guild-membership-management-section',
+  standalone: true,
+  template: '<section>Guild membership placeholder</section>',
+})
+class GuildMembershipManagementSectionStub {}
 
 class FakeCurrentGuildState {
   readonly readModel = signal<CurrentGuildReadModel | null>(null);

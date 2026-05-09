@@ -17,6 +17,7 @@ import { GuildInvitesState } from '../../../core/services/guild/guild-invites.st
 import { GuildJoinRequestsState } from '../../../core/services/guild/guild-join-requests.state';
 import { ToastService } from '../../../core/services/ui/toast';
 import { GuildArmoryReadSection } from './guild-armory-read-section';
+import { GuildMembershipManagementSection } from './guild-membership-management-section';
 
 @Component({
   selector: 'app-guild-page',
@@ -29,6 +30,7 @@ import { GuildArmoryReadSection } from './guild-armory-read-section';
     TextareaModule,
     LoadingOverlay,
     GuildArmoryReadSection,
+    GuildMembershipManagementSection,
   ],
   templateUrl: './guild-page.html',
 })
@@ -41,7 +43,9 @@ export class GuildPage implements OnInit {
   readonly searchQueryControl = new FormControl<string>('', { nonNullable: true });
   private readonly toast = inject(ToastService);
   private loadedEntryState = false;
-  private lastToastKey: string | null = null;
+  private createActionPending = false;
+  private joinRequestActionPending = false;
+  private inviteActionPending = false;
 
   constructor() {
     effect(() => {
@@ -61,18 +65,21 @@ export class GuildPage implements OnInit {
       () => this.guildCreate.error(),
       'Guild creation',
       'Guild creation failed',
+      () => this.consumeActionPending('create'),
     );
     this.bindToastFeedback(
       () => this.joinRequests.message(),
       () => this.joinRequests.error(),
       'Guild join request',
       'Guild join request failed',
+      () => this.consumeActionPending('join-request'),
     );
     this.bindToastFeedback(
       () => this.invites.message(),
       () => this.invites.error(),
       'Guild invite',
       'Guild invite failed',
+      () => this.consumeActionPending('invite'),
     );
   }
 
@@ -89,6 +96,7 @@ export class GuildPage implements OnInit {
   }
 
   submitCreateGuild(): void {
+    this.createActionPending = true;
     this.guildCreate.submit();
   }
 
@@ -99,18 +107,22 @@ export class GuildPage implements OnInit {
   }
 
   requestToJoin(guild: Pick<GuildDiscoveryResult, 'guildId'>): void {
+    this.joinRequestActionPending = true;
     this.joinRequests.create({ guildId: guild.guildId });
   }
 
   cancelJoinRequest(request: Pick<GuildJoinRequest, 'joinRequestId'>): void {
+    this.joinRequestActionPending = true;
     this.joinRequests.cancel({ joinRequestId: request.joinRequestId });
   }
 
   acceptInvite(invite: Pick<GuildInvite, 'inviteId'>): void {
+    this.inviteActionPending = true;
     this.invites.respond({ inviteId: invite.inviteId, accept: true });
   }
 
   rejectInvite(invite: Pick<GuildInvite, 'inviteId'>): void {
+    this.inviteActionPending = true;
     this.invites.respond({ inviteId: invite.inviteId, accept: false });
   }
 
@@ -134,34 +146,50 @@ export class GuildPage implements OnInit {
     error: () => string | null,
     successSummary: string,
     errorSummary: string,
+    shouldToast: () => boolean,
   ): void {
     effect(() => {
       const errorMessage = error();
       const successMessage = message();
 
       if (errorMessage) {
-        this.showToastOnce('error', errorSummary, errorMessage);
+        if (shouldToast()) {
+          this.showToast('error', errorSummary, errorMessage);
+        }
         return;
       }
 
       if (successMessage) {
-        this.showToastOnce('success', successSummary, successMessage);
+        if (shouldToast()) {
+          this.showToast('success', successSummary, successMessage);
+        }
       }
     });
   }
 
-  private showToastOnce(
+  private consumeActionPending(kind: 'create' | 'join-request' | 'invite'): boolean {
+    if (kind === 'create') {
+      const pending = this.createActionPending;
+      this.createActionPending = false;
+      return pending;
+    }
+
+    if (kind === 'join-request') {
+      const pending = this.joinRequestActionPending;
+      this.joinRequestActionPending = false;
+      return pending;
+    }
+
+    const pending = this.inviteActionPending;
+    this.inviteActionPending = false;
+    return pending;
+  }
+
+  private showToast(
     severity: 'success' | 'error',
     summary: string,
     detail: string,
   ): void {
-    const key = `${severity}:${summary}:${detail}`;
-
-    if (key === this.lastToastKey) {
-      return;
-    }
-
-    this.lastToastKey = key;
     this.toast.show(severity, summary, detail);
   }
 }

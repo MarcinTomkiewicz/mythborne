@@ -4,6 +4,10 @@ Purpose: this backlog translates current project decisions into small, promptabl
 
 Use this as a practical task queue. Concept documents remain informational; this file is for execution.
 
+## Latest accepted guild follow-up
+
+**Implementation note:** T22 accepted on 2026-05-09. The `/game/guild` in-guild state now has real membership, invite and join-request management UI through a focused `GuildMembershipManagementSection`. The section reuses existing `GuildMembersState`, `GuildInvitesState`, `GuildJoinRequestsState` and `CurrentGuildState`; renders members and roles; exposes pending invite/request sections; supports invite create/cancel; supports incoming join-request accept/reject; and supports outgoing request cancel when DB-backed flags allow it. Accepted join requests refresh the member list, action feedback uses `ToastService`, blocking read/load errors remain inline, invite target hero input uses shared trim-required validation plus trimmed payloads, and repeated explicit action toasts are not suppressed by component-local dedupe. No DB/RPC changes, generated type edits, direct table access, guild armory changes, emergency election actions, role-management/kick/promote/demote UI or fake siege/Argonautics actions were added. Verification passed with focused T22 specs, full guild + route/sidebar specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for `button pButton`, `.from(` and direct write patterns. Manual smoke for `/game/guild` in-guild invite/request/member-management flows remains pending.
+
 Canonical source order:
 
 1. explicit user instruction,
@@ -8355,6 +8359,356 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - No fake siege/Argonautics actions.
 
 **Implementation note:** T21 accepted on 2026-05-09. The `/game/guild` no-guild state now has real create/search/request/cancel/invite response UI over the existing guild states and canonical service layer. Create and accepted invites refresh current guild state; request/cancel refresh discovery plus join requests; invite reject refreshes invites only; join-request review refreshes current guild for both accept and reject. Search/read errors are shown inline, while transient action success/error uses `ToastService`. No DB/RPC changes, migrations, generated type edits, direct table access, membership fallback, route/menu changes or fake siege/Argonautics actions were added. Verification passed with focused T21 specs, full guild + route/sidebar specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for `button pButton`, `.from(` and direct write patterns. Manual smoke for `/game/guild` create/search/request/cancel/invite flows remains pending.
+
+
+# GUILD-FOLLOWUP-1 / T21 — Guild Entry UI: create, search, join requests, invites
+
+## Cel
+
+Zamienić no-guild placeholder cards na realne, klikalne sekcje wejścia do gildii.
+
+## Zakres
+
+Na `/game/guild`, w stanie `no-guild`, dodać realne UI dla:
+
+- create guild;
+- search guilds;
+- request to join / cancel request;
+- received invites accept/reject.
+
+Użyć istniejących core state/services:
+
+- `CurrentGuildState`;
+- `GuildDiscoveryState`;
+- `GuildJoinRequestsState`;
+- `GuildInvitesState`;
+- `PlayerGuild`;
+- `PlayerGuildJoinRequests`;
+- `PlayerGuildInvites`.
+
+Po sukcesie akcji odświeżać właściwe stany:
+
+- create/accept join → `CurrentGuildState`;
+- request/cancel → discovery + join requests;
+- invite accept → current guild + invites;
+- invite reject → invites, bez niepotrzebnego current guild refresh.
+
+## Non-goals
+
+- Bez zmian DB/RPC/generated.
+- Bez direct table access.
+- Bez membership insert fallbacków.
+- Bez route/menu zmian poza istniejącym `/game/guild`.
+- Bez admin/member management UI.
+
+## Acceptance
+
+- Użytkownik bez gildii może faktycznie:
+  - utworzyć gildię;
+  - wyszukać gildie;
+  - wysłać request;
+  - anulować request;
+  - zaakceptować/odrzucić invite.
+- UI nie pokazuje fikcyjnych akcji siege/Argonautics.
+- Wszystkie mutacje idą przez canonical RPC/service layer.
+- Statusy `pending/accepted/rejected/cancelled` są zgodne z DB, bez `canceled`.
+
+## Manual smoke
+
+- No-guild hero: create guild.
+- No-guild hero: search guilds → request join → cancel request.
+- Target hero: accept invite → current guild refresh.
+- Target hero: reject invite → invite znika albo zmienia status, bez fałszywego guild state.
+
+---
+
+# GUILD-FOLLOWUP-2 / T22 — In-guild membership/invite/request management UI
+
+## Cel
+
+Dla gracza będącego w gildii zrobić realną sekcję zarządzania członkostwem, invite’ami i requestami, zamiast samych liczników.
+
+## Zakres
+
+Na `/game/guild`, gdy hero jest w gildii, dodać UI dla:
+
+- listy członków;
+- invite create/cancel;
+- incoming join requests review accept/reject;
+- own outgoing join requests, jeśli relevant dla aktualnego read modelu;
+- pending invite/request counts jako linkowane/realne sekcje, nie tylko liczby.
+
+Użyć istniejących:
+
+- `GuildMembersState`;
+- `GuildInvitesState`;
+- `GuildJoinRequestsState`;
+- `CurrentGuildState`.
+
+Akcje pokazywać tylko tam, gdzie DB-backed permissions/capability flags pozwalają.
+
+## Non-goals
+
+- Bez guild armory zmian.
+- Bez emergency election actions.
+- Bez DB changes.
+- Bez local role/permission inference poza oczywistym UI guardem; DB/RPC dalej final authority.
+
+## Acceptance
+
+- Leader/officer widzi requesty i może accept/reject, jeśli DB pozwala.
+- Uprawniony gracz może create/cancel invite.
+- Członkowie i role są widoczne.
+- Błędy RPC surface’ują się jako toast/action error.
+- Blocking read errors zostają inline.
+
+## Manual smoke
+
+- Leader/officer zaprasza hero.
+- Zaproszenie jest widoczne u target hero.
+- Join request od no-guild hero jest widoczny dla leader/officer.
+- Accept join request aktualizuje member count/current guild.
+
+---
+
+# GUILD-FOLLOWUP-3 / T23 — Guild member role/lifecycle UI
+
+## Cel
+
+Dodać realne przyciski member management: kick/promote/demote/leave/disband.
+
+## Zakres
+
+W in-guild member section dodać:
+
+- kick member;
+- promote member to officer;
+- demote officer;
+- leave guild;
+- disband guild.
+
+Użyć istniejących:
+
+- `GuildMembersState`;
+- `GuildLifecycleState`;
+- `PlayerGuildMembers`;
+- `PlayerGuildLifecycle`.
+
+UI guard:
+
+- regular member nie widzi/nie odpala management actions;
+- leader leave blokowany w UI zgodnie z istniejącą zasadą;
+- disband tylko leader;
+- one-officer rule i inne ograniczenia zostają DB-owned.
+
+## Non-goals
+
+- Bez transfer leadership, bo `transfer_guild_leadership` było poza T8 scope.
+- Bez nowych RPC.
+- Bez admin override.
+
+## Acceptance
+
+- Kick/promote/demote/leave/disband działają przez canonical RPC only.
+- Po sukcesie odświeża się current guild + member list.
+- RPC errors typu “last officer”, “cannot disband during active siege” surface’ują się bez lokalnego obchodzenia.
+
+## Manual smoke
+
+- Leader promote member.
+- Leader demote officer.
+- Officer może kick member, ale nie officer/leader.
+- Member leave.
+- Leader disband, jeśli DB pozwala.
+
+---
+
+# GUILD-FOLLOWUP-4 / T24 — Emergency election full UI
+
+## Cel
+
+Zamienić emergency election read/action core w realne UI.
+
+## Zakres
+
+Na `/game/guild` dodać sekcję emergency election:
+
+- active election summary;
+- candidates;
+- start emergency election;
+- nominate;
+- start voting;
+- vote;
+- finalize.
+
+Użyć:
+
+- `GuildEmergencyElectionState`;
+- `PlayerGuildElections`;
+- `PlayerGuildElectionActions`;
+- DB-backed `canNominate/canStartVoting/canVote/canFinalize`.
+
+Countdown/time display ma bazować na timestampach z DB, bez lokalnego odtwarzania reguł.
+
+## Non-goals
+
+- Bez client quorum calculation.
+- Bez local result inference.
+- Bez DB changes.
+- Bez fake emergency flow, jeśli brak aktywnej/ineligible sytuacji.
+
+## Acceptance
+
+- UI pokazuje aktualny phase/status.
+- Akcje widoczne tylko według DB-backed capability flags.
+- Po każdej akcji refresh election + current guild.
+- Brak lokalnej semantyki quorum/50%/winner poza tym, co zwraca DB.
+
+## Manual smoke
+
+- Ineligible start → RPC error.
+- Eligible start → nomination phase.
+- Nominate candidate.
+- Start voting.
+- Vote.
+- Finalize.
+
+---
+
+# ADMIN-FOLLOWUP-1 — Guild config edit via governance change-set
+
+## Cel
+
+Admin nie tylko widzi guild config summary, ale może przejść do kontrolowanej edycji przez config governance.
+
+## Zakres
+
+W `GuildConfigSummarySection` dodać ścieżkę edycji dla configów gildii.
+
+Nie robić prostego direct form save. Użyć istniejącego config governance/change-set flow:
+
+- draft change set;
+- add config value change entries;
+- mark ready;
+- apply/cancel;
+- reason/audit.
+
+Dodać linki/akcje przy wartościach:
+
+- creation drachma cost;
+- member base limit;
+- member limit per leader level;
+- leader inactivity threshold;
+- nomination duration;
+- voting duration;
+- emergency max candidates;
+- armory capacity / unlimited.
+
+## Non-goals
+
+- Bez direct table writes.
+- Bez omijania governance.
+- Bez edycji generated types.
+- Bez osobnego custom RPC, jeśli istniejący config governance wystarcza.
+
+## Acceptance
+
+- Admin może rozpocząć change-set z poziomu guild config summary.
+- Każda zmiana tworzy governance entry, nie zapisuje bezpośrednio wartości.
+- Summary po apply pokazuje nowe wartości.
+- UI jasno pokazuje, że `0 = unlimited` dla armory capacity.
+
+## Manual smoke
+
+- Create draft.
+- Change armory capacity z `0` na wartość.
+- Mark ready/apply.
+- Summary pokazuje nowy limit.
+- Cancel draft nie zmienia wartości.
+
+---
+
+# ADMIN-FOLLOWUP-2 — Item requirement aggregation editability
+
+## Cel
+
+`Item Requirement Aggregation` w balance/admin przestaje być tylko podglądem.
+
+## Najpierw preflight decyzyjny
+
+Ustalić, gdzie DB trzyma te zasady:
+
+- config governance value;
+- relacyjne balance tables;
+- dedicated admin RPC.
+
+Nie zgadywać na froncie.
+
+## Wariant A — jeśli to config governance
+
+Dodać edycję przez change-set flow, analogicznie do guild config.
+
+## Wariant B — jeśli to relacyjne balance records
+
+Dodać canonical admin RPC dla upsert/update/deactivate/reorder. Dopiero potem UI CRUD.
+
+## Zakres UI
+
+- Edycja aggregation settings.
+- Walidacja formularza bez lokalnego duplikowania DB rules.
+- Preview/impact, jeśli istnieje canonical RPC.
+- Toasty dla transient action feedback.
+- Inline tylko dla blocking read errors.
+
+## Non-goals
+
+- Bez direct table writes.
+- Bez hardcoded Angular constants jako źródła prawdy.
+- Bez tymczasowego local-only save.
+
+## Acceptance
+
+- Admin może realnie zmienić aggregation rule.
+- Zmiana przechodzi przez governance/RPC boundary.
+- Po refreshu UI pokazuje DB value.
+- Nie ma fallbacków, które udają brak kontraktu.
+
+## Manual smoke
+
+- Zmień jedną regułę aggregation.
+- Zweryfikuj refresh.
+- Zweryfikuj, że item detail/requirements używają nowych wartości, jeśli runtime jest podpięty.
+
+---
+
+# ADMIN-FOLLOWUP-3 — Admin config/edit navigation polish
+
+## Cel
+
+Read-only summary cards nie mogą wyglądać jak “koniec funkcji”, jeśli istnieje osobny flow edycji.
+
+## Zakres
+
+Dodać jasne CTA/linki:
+
+- `Edit via change set`;
+- `Open config definition`;
+- `View effective value source`.
+
+Dotyczy:
+
+- guild config summary;
+- item requirement aggregation;
+- innych read-only summary sekcji w adminie.
+
+Jeżeli edycja jeszcze nie istnieje, dodać wyraźny tekst:
+
+> Read-only until edit workflow is implemented.
+
+## Acceptance
+
+- Admin wie, czy dana sekcja jest tylko podglądem, czy ma dostępny workflow edycji.
+- Nie ma martwych “ładnych summary”, które sugerują pełną funkcjonalność.
 
 ---
 

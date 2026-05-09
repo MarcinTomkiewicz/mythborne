@@ -1,0 +1,229 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Members</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        Guild membership
+      </h3>
+      <p class="muted-text mb-0">
+        Members, invites and join requests are loaded from guild RPC read models.
+      </p>
+    </div>
+
+    <p-button
+      type="button"
+      label="Refresh"
+      icon="pi pi-refresh"
+      severity="secondary"
+      [outlined]="true"
+      [disabled]="members.isLoading() || invites.isLoading() || joinRequests.isLoading()"
+      (onClick)="load()"
+    />
+  </div>
+
+  @if (guild(); as guildDetail) {
+    <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100 mt-lg">
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Members</span>
+        <strong class="heading-color">
+          {{ guildDetail.memberCount }} / {{ guildDetail.memberLimit }}
+        </strong>
+      </div>
+
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Pending invites</span>
+        <strong class="heading-color">{{ guildDetail.pendingInviteCount }}</strong>
+      </div>
+
+      <div class="flex-col gap-xs">
+        <span class="muted-text">Pending join requests</span>
+        <strong class="heading-color">{{ guildDetail.pendingJoinRequestCount }}</strong>
+      </div>
+    </div>
+  }
+
+  <div class="flex-col gap-md mt-lg">
+    @if (memberReadError(); as message) {
+      <p-message severity="error">{{ message }}</p-message>
+    } @else if (members.members().length === 0) {
+      <p class="muted-text mb-0">No guild members loaded.</p>
+    } @else {
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+        @for (member of members.members(); track member.memberHeroId) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-start gap-sm">
+              <div class="flex-col gap-xs">
+                <strong>{{ member.memberName }}</strong>
+                <span class="muted-text">{{ member.roleLabel }}</span>
+              </div>
+
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="tag-badge tag-badge--info">{{ member.roleKey }}</span>
+                <span class="tag-badge tag-badge--muted">
+                  {{ member.membershipStatusKey }}
+                </span>
+              </div>
+            </div>
+
+            <p class="muted-text mb-0">
+              Armory access: {{ member.armoryAccessStatusKey }}
+            </p>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<section class="mg-card p-lg w-100">
+  <div class="flex-col gap-md">
+    <div class="flex-row-between-start flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Invites</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">
+          Guild invites
+        </h3>
+      </div>
+    </div>
+
+    @if (canInvite()) {
+      <form class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100" [formGroup]="inviteForm">
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Target hero id</span>
+          <input pInputText formControlName="targetHeroId" placeholder="Hero id" />
+        </div>
+
+        <div class="flex-col gap-xs">
+          <span class="muted-text">Reason</span>
+          <textarea pTextarea rows="2" formControlName="reason"></textarea>
+        </div>
+
+        <div class="flex-row-start-center">
+          <p-button
+            type="button"
+            label="Create invite"
+            icon="pi pi-send"
+            [disabled]="inviteForm.invalid || invites.isMutating()"
+            (onClick)="createInvite()"
+          />
+        </div>
+      </form>
+    }
+
+    @if (inviteReadError(); as message) {
+      <p-message severity="error">{{ message }}</p-message>
+    } @else if (guildInvites().length === 0) {
+      <p class="muted-text mb-0">No guild invites loaded.</p>
+    } @else {
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+        @for (invite of guildInvites(); track invite.inviteId) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-start gap-sm">
+              <div class="flex-col gap-xs">
+                <strong>{{ invite.targetHeroName }}</strong>
+                <span class="muted-text">Invited by: {{ invite.inviterHeroName }}</span>
+              </div>
+              <span class="tag-badge tag-badge--info">{{ invite.statusKey }}</span>
+            </div>
+
+            @if (invite.canCancel) {
+              <p-button
+                type="button"
+                label="Cancel invite"
+                severity="secondary"
+                [outlined]="true"
+                [disabled]="invites.isMutating()"
+                (onClick)="cancelInvite(invite)"
+              />
+            }
+          </article>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<section class="mg-card p-lg w-100">
+  <div class="flex-col gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Join requests</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        Guild join requests
+      </h3>
+    </div>
+
+    @if (joinRequestReadError(); as message) {
+      <p-message severity="error">{{ message }}</p-message>
+    } @else {
+      <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+        <article class="mg-card p-md flex-col gap-sm">
+          <strong>Incoming requests</strong>
+
+          @if (incomingJoinRequests().length === 0) {
+            <p class="muted-text mb-0">No incoming join requests.</p>
+          } @else {
+            @for (request of incomingJoinRequests(); track request.joinRequestId) {
+              <div class="flex-col gap-xs">
+                <div class="flex-row-between-start gap-sm">
+                  <span>{{ request.requesterHeroName }}</span>
+                  <span class="tag-badge tag-badge--info">{{ request.statusKey }}</span>
+                </div>
+
+                <div class="flex-row-start-center flex-wrap gap-sm">
+                  @if (request.canAccept) {
+                    <p-button
+                      type="button"
+                      label="Accept"
+                      icon="pi pi-check"
+                      [disabled]="joinRequests.isMutating()"
+                      (onClick)="acceptJoinRequest(request)"
+                    />
+                  }
+
+                  @if (request.canReject) {
+                    <p-button
+                      type="button"
+                      label="Reject"
+                      severity="secondary"
+                      [outlined]="true"
+                      [disabled]="joinRequests.isMutating()"
+                      (onClick)="rejectJoinRequest(request)"
+                    />
+                  }
+                </div>
+              </div>
+            }
+          }
+        </article>
+
+        <article class="mg-card p-md flex-col gap-sm">
+          <strong>My outgoing requests</strong>
+
+          @if (outgoingJoinRequests().length === 0) {
+            <p class="muted-text mb-0">No outgoing join requests.</p>
+          } @else {
+            @for (request of outgoingJoinRequests(); track request.joinRequestId) {
+              <div class="flex-col gap-xs">
+                <div class="flex-row-between-start gap-sm">
+                  <span>{{ request.guildName }}</span>
+                  <span class="tag-badge tag-badge--info">{{ request.statusKey }}</span>
+                </div>
+
+                @if (request.canCancel) {
+                  <p-button
+                    type="button"
+                    label="Cancel request"
+                    severity="secondary"
+                    [outlined]="true"
+                    [disabled]="joinRequests.isMutating()"
+                    (onClick)="cancelJoinRequest(request)"
+                  />
+                }
+              </div>
+            }
+          }
+        </article>
+      </div>
+    }
+  </div>
+</section>
