@@ -11,7 +11,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { forkJoin, Observable, of, Subscription } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { IHeroDerived } from '../../../core/types/hero.types';
+import { HeroExperienceProgress, IHeroDerived } from '../../../core/types/hero.types';
 import { FilterOperator } from '../../../core/enums/filter-operators';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { Row } from '../../../core/types/supabase.types';
@@ -23,11 +23,13 @@ import {
 import { AuthState } from '../../../core/services/auth/auth-state';
 import { Backend } from '../../../core/services/backend/backend';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
+import { Hero } from '../../../core/services/hero/hero';
 import { HeroDerivedStats } from '../../../core/services/hero/hero-derived-stats';
 import { EstateAddresses } from '../../../core/services/estate/estate-addresses';
 import { TABLES } from '../../../core/constants/tables.const';
 import { GameBar } from '../../../shared/game-bar/game-bar';
 import { NotificationBell } from '../notification-bell/notification-bell';
+import { StaffNotificationBell } from '../staff-notification-bell/staff-notification-bell';
 
 const RESOURCE_DEFINITIONS: GameTopbarResourceDefinition[] = [
   { type: 'drachma', label: 'Drachma' },
@@ -37,12 +39,14 @@ const RESOURCE_DEFINITIONS: GameTopbarResourceDefinition[] = [
 
 @Component({
   selector: 'app-game-topbar',
-  imports: [GameBar, NotificationBell],
+  imports: [GameBar, NotificationBell, StaffNotificationBell],
   templateUrl: './game-topbar.html',
+  host: { class: 'd-block flex-1 w-100' },
 })
 export class GameTopbar implements OnInit, OnDestroy {
   private readonly authState = inject(AuthState);
   private readonly activeHero = inject(ActiveHero);
+  private readonly heroService = inject(Hero);
   private readonly heroDerivedStats = inject(HeroDerivedStats);
   private readonly estateAddresses = inject(EstateAddresses);
   private readonly backend = inject(Backend);
@@ -55,14 +59,16 @@ export class GameTopbar implements OnInit, OnDestroy {
   readonly currentTime = signal(Date.now());
   readonly hero = signal<Row<'hero'> | null>(null);
   readonly derived = signal<IHeroDerived | null>(null);
+  readonly experienceProgress = signal<HeroExperienceProgress | null>(null);
   readonly currentAddress = signal<string | null>(null);
   readonly resources = signal<HeroResourceRow[]>([]);
 
   readonly isVisible = computed(() => !!this.authState.hero());
   readonly healthValue = computed(() => Math.max(this.derived()?.health ?? 0, 0));
-  readonly healthMax = computed(() => Math.max(this.healthValue(), 1));
   readonly experienceValue = computed(() => Math.max(this.hero()?.experience ?? 0, 0));
-  readonly experienceMax = computed(() => 1000);
+  readonly experienceToNextLevel = computed(
+    () => this.experienceProgress()?.experienceToNextLevel ?? 0,
+  );
   readonly resourceDisplay = computed<GameTopbarResourceDisplay[]>(() => {
     this.currentTime();
 
@@ -91,6 +97,7 @@ export class GameTopbar implements OnInit, OnDestroy {
 
         this.hero.set(payload.hero);
         this.derived.set(payload.derived);
+        this.experienceProgress.set(payload.experienceProgress);
         this.currentAddress.set(payload.currentAddress);
         this.resources.set(payload.resources);
       });
@@ -132,12 +139,14 @@ export class GameTopbar implements OnInit, OnDestroy {
   private loadTopbarState(state: ActiveHeroState | null): Observable<{
     hero: Row<'hero'>;
     derived: IHeroDerived | null;
+    experienceProgress: HeroExperienceProgress | null;
     currentAddress: string | null;
     resources: HeroResourceRow[];
   } | null> {
     if (!state?.heroRow || !state.heroId) {
       this.hero.set(null);
       this.derived.set(null);
+      this.experienceProgress.set(null);
       this.currentAddress.set(null);
       this.resources.set([]);
       return of(null);
@@ -147,6 +156,9 @@ export class GameTopbar implements OnInit, OnDestroy {
       hero: of(state.heroRow),
       derived: this.heroDerivedStats
         .resolveActiveHeroDerivedStats()
+        .pipe(catchError(() => of(null))),
+      experienceProgress: this.heroService
+        .getHeroExperienceProgress()
         .pipe(catchError(() => of(null))),
       currentAddress: this.loadHeroEstateAddress(state.heroRow).pipe(
         catchError(() => of(null)),

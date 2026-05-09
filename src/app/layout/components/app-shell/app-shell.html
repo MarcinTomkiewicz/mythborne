@@ -1,38 +1,32 @@
-<div class="mg-game-shell">
-  <header class="mg-game-shell__topbar position-sticky top-0 z-10 backdrop-blur-xl flex-row-between-center flex-col-lg gap-md py-md px-lg">
-    <div class="flex-row-start-center gap-sm min-w-200" aria-label="Mythsworn">
-      <span class="tag-badge tag-badge--golden" aria-hidden="true">M</span>
-      <div class="flex-col gap-xs">
-        <h1 class="mg-section__title mg-section__title--sm mg-section__title--no-margin">
-          Mythsworn
-        </h1>
-        <p class="muted-text mb-0">Selected hero command</p>
+<div class="flex-col min-h-full">
+  <header class="mg-card border-0 position-sticky top-0 z-10 backdrop-blur-xl flex-row-between-center gap-md py-sm px-lg w-100">
+    @if (shouldShowTopbar()) {
+      <app-game-topbar></app-game-topbar>
+    } @else {
+      <div class="flex-1 flex-row-end-center">
+        <app-staff-notification-bell />
       </div>
-    </div>
-    <div class="flex-1 w-100-lg">
-      @if (shouldShowTopbar()) {
-        <app-game-topbar></app-game-topbar>
-      }
-    </div>
-    <app-staff-notification-bell />
+    }
   </header>
 
-  <div class="mg-game-shell__sidebar">
-    <app-game-sidebar></app-game-sidebar>
-  </div>
+  <div class="flex-row-start-stretch flex-1 w-100">
+    <aside class="mg-card border-0 flex-none w-px-250 overflow-y-auto">
+      <app-game-sidebar></app-game-sidebar>
+    </aside>
 
-  <main class="mg-game-shell__main overflow-y-auto">
-    <div
-      class="mg-container py-lg w-100"
-      [class.max-w-none]="isWideContent()"
-    >
-      @if (isGameplayBlocked()) {
-        <app-membership-blocked-notice />
-      } @else if (isStaffGameplayBlocked()) {
-        <app-staff-gameplay-blocked-notice />
-      } @else {
-        <router-outlet></router-outlet>
-      }
-    </div>
-  </main>
+    <main class="flex-1 overflow-y-auto w-100">
+      <div
+        class="mg-container py-lg w-100"
+        [class.max-w-none]="isWideContent()"
+      >
+        @if (isGameplayBlocked()) {
+          <app-membership-blocked-notice />
+        } @else if (isStaffGameplayBlocked()) {
+          <app-staff-gameplay-blocked-notice />
+        } @else {
+          <router-outlet></router-outlet>
+        }
+      </div>
+    </main>
+  </div>
 </div>

@@ -4,26 +4,50 @@
 
 $c: common.$common;
 
-$bg: #121b27;
-$surface: #1d2a39;
-$border: rgba(213, 191, 150, 0.16);
-$text: #f1e7d4;
-$text-muted: rgba(241, 231, 212, 0.72);
-$secondary: #d8b878;
-$danger: map.get($c, "color-danger");
-$success: map.get($c, "color-success");
-$link: #89a8bb;
+$bg: #080d14;
+$surface: #101927;
+$surface-elevated: #162337;
+$border: rgba(240, 201, 111, 0.2);
+$text: #f6edda;
+$text-muted: rgba(246, 237, 218, 0.76);
+$secondary: #d6a84c;
+$info: #77b6dc;
+$danger: #d36a5b;
+$success: #8fcf74;
+$warn: #e0ae45;
+$help: #a58bd8;
+$link: #9bc8e5;
 
 $dark: (
   "color-primary": map.get($c, "color-crimson"),
   "color-secondary": $secondary,
+  "color-info": $info,
+  "color-danger": $danger,
+  "color-success": $success,
+  "color-warn": $warn,
+  "color-help": $help,
+  "color-arcane": $help,
   "color-bg": $bg,
   "color-bg-surface": $surface,
+  "color-bg-surface-elevated": $surface-elevated,
   "color-border": $border,
   "color-text": $text,
   "color-text-muted": $text-muted,
   "color-link": $link,
   "color-link-hover": color.scale($link, $lightness: 18%),
+  "bg-gradient": (
+    radial-gradient(
+      circle at 18% 8%,
+      rgba($secondary, 0.14),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 82% 4%,
+      rgba($info, 0.18),
+      transparent 34rem
+    ),
+    linear-gradient(135deg, $bg 0%, #0b111b 42%, #05070b 100%)
+  ),
   "color-paper-bg": linear-gradient(
       180deg,
       #efe1c0 0%,
@@ -39,8 +63,8 @@ $dark: (
   "heading-mode": solid,
 
   "form-bg": $surface,
-  "form-bg-hover": color.scale($surface, $lightness: 7%),
-  "form-bg-focus": color.scale($surface, $lightness: 13%),
+  "form-bg-hover": $surface-elevated,
+  "form-bg-focus": color.scale($surface-elevated, $lightness: 8%),
   "form-text": $text,
   "form-placeholder": $text-muted,
   "form-label": $text-muted,

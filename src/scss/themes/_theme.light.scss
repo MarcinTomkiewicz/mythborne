@@ -9,6 +9,7 @@ $paper-2: map.get($c, "color-paper-2");
 $paper-3: map.get($c, "color-paper-3");
 
 $surface: #fbf5ea;
+$surface-elevated: #fff9ef;
 $border: rgba(58, 45, 28, 0.18);
 $text: #31261d;
 $text-muted: rgba(49, 38, 29, 0.68);
@@ -28,6 +29,7 @@ $light: (
   "color-secondary": $secondary,
   "color-bg": $paper-2,
   "color-bg-surface": $surface,
+  "color-bg-surface-elevated": $surface-elevated,
   "color-border": $border,
   "color-text": $text,
   "color-text-muted": $text-muted,

@@ -9,14 +9,14 @@ Prefer this file for fast implementation context. For broader detail, also consu
 - `docs/database-current.md`
 - `docs/current-decisions.md`
 - `docs/project-context.md`
-- `docs/codex-Mythsworn-backlog.md`
+- `docs/codex-mythborne-backlog.md`
 - `docs/current-state-summary.md`
 - `docs/current-todo.md`
 
 If there is a conflict, prefer:
 
 1. explicit user instruction;
-2. current live database / migrations / dump and user-provided `database.types.ts` input;
+2. current live database / migrations / dump and user-provided `src/app/core/types/database.types.ts` input;
 3. `docs/database-current.md` as the semantic DB/RPC/helper registry;
 4. `docs/current-decisions.md`;
 5. `docs/project-context.md`;
@@ -80,9 +80,9 @@ Avoid by default:
 - `docs/current-decisions.md` is the active decision log and overrides older concept docs.
 - `docs/project-context.md` is the short operational implementation context.
 - `docs/codex-Mythsworn-backlog.md` is the practical Codex task queue.
-- `docs/current-state-summary.md` and `current-todo.md` are progress/status files, not schema sources.
+- `docs/current-state-summary.md` and `docs/current-todo.md` are progress/status files, not schema sources.
 - Old uploaded concept files can explain history, but they must not override current DB/migrations/decisions.
-- `database.types.ts` is generated input owned by the user/migrator. It can be read by Codex but never changed by Codex.
+- `src/app/core/types/database.types.ts` is generated input owned by the user/migrator. It can be read by Codex but never changed by Codex.
 
 When a current file and a legacy concept file disagree, prefer the current schema and current docs.
 
