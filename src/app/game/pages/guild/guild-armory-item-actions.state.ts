@@ -1,8 +1,11 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  GuildArmoryBorrowResult,
   GuildArmoryItem,
   GuildArmoryItemOperationResult,
+  GuildArmoryLoan,
+  GuildArmoryLoanOperationResult,
 } from '../../../core/domain/guild/guild-armory.model';
 import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.model';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
@@ -13,7 +16,17 @@ import { CurrentEquipmentState } from '../../../core/services/items/current-equi
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { GuildArmoryReadState } from './guild-armory-read.state';
 
-type GuildArmoryItemActionKind = 'deposit' | 'withdraw' | 'remove';
+type GuildArmoryItemActionKind =
+  | 'borrow'
+  | 'deposit'
+  | 'remove'
+  | 'return'
+  | 'withdraw';
+
+type GuildArmoryActionResult =
+  | GuildArmoryBorrowResult
+  | GuildArmoryItemOperationResult
+  | GuildArmoryLoanOperationResult;
 
 @Injectable()
 export class GuildArmoryItemActionsState {
@@ -69,6 +82,41 @@ export class GuildArmoryItemActionsState {
     );
   }
 
+  borrow(item: GuildArmoryItem): void {
+    this.runMutation(
+      'borrow',
+      () => this.guildArmoryActions.borrowGuildArmoryItemForActiveHero({
+        armoryItemId: item.armoryItemId,
+      }),
+    );
+  }
+
+  returnItem(item: GuildArmoryItem): void {
+    const loanId = item.loanId;
+
+    if (!loanId) {
+      this.error.set('No active guild armory loan for this item.');
+      this.message.set(null);
+      return;
+    }
+
+    this.runMutation(
+      'return',
+      () => this.guildArmoryActions.returnGuildArmoryLoanForActiveHero({
+        loanId,
+      }),
+    );
+  }
+
+  returnLoan(loan: GuildArmoryLoan): void {
+    this.runMutation(
+      'return',
+      () => this.guildArmoryActions.returnGuildArmoryLoanForActiveHero({
+        loanId: loan.loanId,
+      }),
+    );
+  }
+
   withdraw(item: GuildArmoryItem): void {
     this.runMutation(
       'withdraw',
@@ -89,7 +137,7 @@ export class GuildArmoryItemActionsState {
 
   private runMutation(
     action: GuildArmoryItemActionKind,
-    operation: () => Observable<GuildArmoryItemOperationResult>,
+    operation: () => Observable<GuildArmoryActionResult>,
   ): void {
     const requestId = ++this.mutationRequestId;
     const contextKey = this.currentContextKey();
@@ -154,12 +202,16 @@ export class GuildArmoryItemActionsState {
 
 function successMessage(action: GuildArmoryItemActionKind): string {
   switch (action) {
+    case 'borrow':
+      return 'Item borrowed from guild armory.';
     case 'deposit':
       return 'Item deposited into guild armory.';
     case 'withdraw':
       return 'Item withdrawn from guild armory.';
     case 'remove':
       return 'Item removed from guild armory.';
+    case 'return':
+      return 'Guild armory loan returned.';
   }
 }
 

@@ -8176,6 +8176,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Borrower cannot be offered trade/auction/scrap/vendor actions for borrowed item.
 - Return remains available even when armory access is locked.
 
+**Implementation note:** T14 accepted on 2026-05-09. The existing `GuildArmoryReadSection` now exposes borrow and return UI actions through local `GuildArmoryItemActionsState` and canonical `PlayerGuildArmoryActions` only. Borrow uses `borrowGuildArmoryItemForActiveHero(...)`; return uses `returnGuildArmoryLoanForActiveHero(...)` from both current item rows and current loan rows. Button visibility is driven by DB-backed `canBorrow` and `canReturn` flags from the read model, including the locked-access return case. The UI does not assume borrowing changes `items.hero_id`, does not add frontend ownership-transfer logic, and does not expose trade, auction, vendor, equipment or T15 force-return actions for borrowed guild armory items. No route/menu, DB/RPC/migration/generated type/status-contract change, direct table access, `.from(` usage or T20 behavior was added. Verification passed with focused T14 specs, full guild + guild page specs, `npx tsc --noEmit`, `npm run build` with known warnings, `git diff --check`, and static greps for `button pButton`, `.from(` and direct write patterns. Manual/route smoke remains pending until T20 wires the guild section into a route/menu entry.
+
 ---
 
 ## Task T15 — Guild armory force-return actions

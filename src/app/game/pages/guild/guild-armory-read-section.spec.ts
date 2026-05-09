@@ -87,6 +87,38 @@ describe('GuildArmoryReadSection', () => {
     expect(text).toContain('Remove');
   });
 
+  it('renders borrow and return actions from DB-owned capability flags', () => {
+    state.items.set([
+      item({
+        canBorrow: true,
+        canReturn: false,
+        canWithdraw: false,
+        canRemove: false,
+      }),
+      item({
+        armoryItemId: 'armory-item-2',
+        itemName: 'Borrowed Spear',
+        armoryStatusKey: 'borrowed',
+        loanId: 'loan-1',
+        canBorrow: false,
+        canReturn: true,
+        canWithdraw: false,
+        canRemove: false,
+      }),
+    ]);
+    state.loans.set([loan({ canReturn: true })]);
+    state.config.set(config());
+
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Borrow');
+    expect(text).toContain('Return');
+    expect(text).not.toContain('Trade');
+    expect(text).not.toContain('Auction');
+    expect(text).not.toContain('Sell to vendor');
+  });
+
   it('refreshes guild armory read state and deposit context together', () => {
     fixture.detectChanges();
     state.load.calls.reset();
@@ -141,6 +173,9 @@ class FakeGuildArmoryItemActionsState {
   readonly message = signal<string | null>(null);
   readonly load = jasmine.createSpy('load');
   readonly deposit = jasmine.createSpy('deposit');
+  readonly borrow = jasmine.createSpy('borrow');
+  readonly returnItem = jasmine.createSpy('returnItem');
+  readonly returnLoan = jasmine.createSpy('returnLoan');
   readonly withdraw = jasmine.createSpy('withdraw');
   readonly remove = jasmine.createSpy('remove');
 

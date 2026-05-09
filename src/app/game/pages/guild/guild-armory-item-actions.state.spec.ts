@@ -2,8 +2,11 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of, Subject, throwError } from 'rxjs';
 import {
+  GuildArmoryBorrowResult,
   GuildArmoryItem,
   GuildArmoryItemOperationResult,
+  GuildArmoryLoan,
+  GuildArmoryLoanOperationResult,
 } from '../../../core/domain/guild/guild-armory.model';
 import {
   ArmoryItemSummary,
@@ -35,8 +38,10 @@ describe('GuildArmoryItemActionsState', () => {
     actions = jasmine.createSpyObj<PlayerGuildArmoryActions>(
       'PlayerGuildArmoryActions',
       [
+        'borrowGuildArmoryItemForActiveHero',
         'depositGuildArmoryItemForActiveHero',
         'removeGuildArmoryItemForActiveHero',
+        'returnGuildArmoryLoanForActiveHero',
         'withdrawGuildArmoryItemForActiveHero',
       ],
     );
@@ -112,6 +117,43 @@ describe('GuildArmoryItemActionsState', () => {
     expect(armory.refresh).toHaveBeenCalledTimes(2);
     expect(equipment.refresh).toHaveBeenCalledTimes(2);
     expect(state.message()).toBe('Item removed from guild armory.');
+  });
+
+  it('borrows available item and returns own loan through canonical actions', () => {
+    actions.borrowGuildArmoryItemForActiveHero.and.returnValue(of(borrowOperation()));
+    actions.returnGuildArmoryLoanForActiveHero.and.returnValue(of(loanOperation()));
+
+    state.borrow(guildItem({ canBorrow: true }));
+    state.returnLoan(loan());
+
+    expect(actions.borrowGuildArmoryItemForActiveHero).toHaveBeenCalledWith({
+      armoryItemId: 'armory-item-1',
+    });
+    expect(actions.returnGuildArmoryLoanForActiveHero).toHaveBeenCalledWith({
+      loanId: 'loan-1',
+    });
+    expect(guildArmory.load).toHaveBeenCalledTimes(2);
+    expect(armory.refresh).toHaveBeenCalledTimes(2);
+    expect(equipment.refresh).toHaveBeenCalledTimes(2);
+    expect(state.message()).toBe('Guild armory loan returned.');
+  });
+
+  it('returns active loan from guild armory item rows', () => {
+    actions.returnGuildArmoryLoanForActiveHero.and.returnValue(of(loanOperation()));
+
+    state.returnItem(guildItem({ loanId: 'loan-1', canReturn: true }));
+
+    expect(actions.returnGuildArmoryLoanForActiveHero).toHaveBeenCalledWith({
+      loanId: 'loan-1',
+    });
+    expect(state.message()).toBe('Guild armory loan returned.');
+  });
+
+  it('blocks item return without active loan before calling RPC', () => {
+    state.returnItem(guildItem({ loanId: null, canReturn: true }));
+
+    expect(actions.returnGuildArmoryLoanForActiveHero).not.toHaveBeenCalled();
+    expect(state.error()).toBe('No active guild armory loan for this item.');
   });
 
   it('surfaces guild armory action errors', () => {
@@ -231,6 +273,29 @@ function guildItem(overrides: Partial<GuildArmoryItem> = {}): GuildArmoryItem {
   };
 }
 
+function loan(overrides: Partial<GuildArmoryLoan> = {}): GuildArmoryLoan {
+  return {
+    guildId: 'guild-1',
+    armoryItemId: 'armory-item-1',
+    itemId: 'item-1',
+    itemName: 'Bronze Spear',
+    loanId: 'loan-1',
+    loanStatusKey: 'active',
+    ownerHeroId: 'owner-hero-1',
+    ownerHeroName: 'Owner Hero',
+    borrowerHeroId: 'hero-1',
+    borrowerHeroName: 'Borrower Hero',
+    borrowedAt: '2026-05-09T11:00:00.000Z',
+    dueAt: null,
+    endedAt: null,
+    reason: null,
+    statusReason: null,
+    canReturn: true,
+    canForceReturn: false,
+    ...overrides,
+  };
+}
+
 function equippedItem(overrides: Partial<EquippedItemSummary> = {}): EquippedItemSummary {
   return {
     itemId: 'item-1',
@@ -273,6 +338,38 @@ function operation(
     itemId: 'item-1',
     ownerHeroId: 'owner-hero-1',
     statusKey: 'available',
+    ...overrides,
+  };
+}
+
+function borrowOperation(
+  overrides: Partial<GuildArmoryBorrowResult> = {},
+): GuildArmoryBorrowResult {
+  return {
+    kind: 'borrow',
+    guildId: 'guild-1',
+    armoryItemId: 'armory-item-1',
+    itemId: 'item-1',
+    ownerHeroId: 'owner-hero-1',
+    borrowerHeroId: 'hero-1',
+    loanId: 'loan-1',
+    armoryStatusKey: 'borrowed',
+    loanStatusKey: 'active',
+    ...overrides,
+  };
+}
+
+function loanOperation(
+  overrides: Partial<GuildArmoryLoanOperationResult> = {},
+): GuildArmoryLoanOperationResult {
+  return {
+    kind: 'return',
+    guildId: 'guild-1',
+    armoryItemId: 'armory-item-1',
+    itemId: 'item-1',
+    loanId: 'loan-1',
+    armoryStatusKey: 'available',
+    loanStatusKey: 'returned',
     ...overrides,
   };
 }

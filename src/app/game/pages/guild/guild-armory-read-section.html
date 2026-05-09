@@ -94,6 +94,24 @@
             @if (item.loanId) {
               <span class="tag-badge tag-badge--muted">Loan active</span>
             }
+            @if (item.canBorrow) {
+              <p-button
+                label="Borrow"
+                icon="pi pi-briefcase"
+                severity="secondary"
+                [disabled]="actions.isMutating()"
+                (onClick)="actions.borrow(item)"
+              />
+            }
+            @if (item.canReturn && item.loanId) {
+              <p-button
+                label="Return"
+                icon="pi pi-replay"
+                severity="secondary"
+                [disabled]="actions.isMutating()"
+                (onClick)="actions.returnItem(item)"
+              />
+            }
             @if (item.canWithdraw) {
               <p-button
                 label="Withdraw"
@@ -134,7 +152,18 @@
               <span class="muted-text">Owner: {{ loan.ownerHeroName || loan.ownerHeroId }}</span>
               <span>Borrowed by: {{ loan.borrowerHeroName || loan.borrowerHeroId }}</span>
             </div>
-            <span class="tag-badge tag-badge--warning">{{ loan.loanStatusKey }}</span>
+            <div class="flex-row-start-center flex-wrap gap-xs">
+              <span class="tag-badge tag-badge--warning">{{ loan.loanStatusKey }}</span>
+              @if (loan.canReturn) {
+                <p-button
+                  label="Return"
+                  icon="pi pi-replay"
+                  severity="secondary"
+                  [disabled]="actions.isMutating()"
+                  (onClick)="actions.returnLoan(loan)"
+                />
+              }
+            </div>
           </div>
         </article>
       }
