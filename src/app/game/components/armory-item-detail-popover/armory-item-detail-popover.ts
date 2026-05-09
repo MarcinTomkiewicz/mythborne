@@ -21,15 +21,14 @@ type DetailStatus = 'idle' | 'loading' | 'loaded' | 'error';
     @let detail = currentDetail();
     @let displayName = detail?.name ?? itemName();
 
-    <button
-      pButton
+    <p-button
       type="button"
       severity="secondary"
       size="small"
       label="Details"
       [attr.aria-label]="'Show item details for ' + displayName"
-      (click)="open($event, popover)"
-    ></button>
+      (onClick)="open($event, popover)"
+    />
 
     <p-popover #popover>
       <article class="flex-col gap-md min-w-0 max-w-350" [attr.aria-label]="displayName + ' details'">
@@ -54,6 +53,16 @@ type DetailStatus = 'idle' | 'loading' | 'loaded' | 'error';
             <span class="muted-text">No value returned.</span>
           }
         </section>
+
+        @if (guildContextLabel(); as label) {
+          <section class="flex-col gap-xs">
+            <strong class="heading-color">Guild armory</strong>
+            <span class="tag-badge tag-badge--muted">{{ label }}</span>
+            @if (guildContextDetail(); as detail) {
+              <span class="muted-text">{{ detail }}</span>
+            }
+          </section>
+        }
 
         <section class="flex-col gap-xs">
           <strong class="heading-color">Item stats</strong>
@@ -133,6 +142,8 @@ export class ArmoryItemDetailPopover {
   private requestId = 0;
 
   readonly item = input.required<ArmoryItemSummary | EquippedItemSummary>();
+  readonly guildContextLabel = input<string | null>(null);
+  readonly guildContextDetail = input<string | null>(null);
   readonly status = signal<DetailStatus>('idle');
   readonly error = signal<string | null>(null);
   readonly loadedDetail = signal<ArmoryItemDetailReadModel | null>(null);

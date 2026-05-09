@@ -19,6 +19,10 @@ import { CurrentEquipmentState } from '../../../core/services/items/current-equi
 import { ItemGeneratorPanel } from '../../components/item-generator-panel/item-generator-panel';
 import { ArmoryItemDetailPopover } from '../../components/armory-item-detail-popover/armory-item-detail-popover';
 import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
+import {
+  ArmoryGuildItemUsageState,
+  ArmoryGuildItemUsage,
+} from './armory-guild-item-usage.state';
 
 @Component({
   selector: 'app-armory-page',
@@ -38,6 +42,7 @@ import { LoadoutPresetManagement } from '../../components/loadout-preset-managem
     ArmoryPageFacade,
     CurrentEquipmentState,
     ArmoryShelfState,
+    ArmoryGuildItemUsageState,
   ],
   templateUrl: './armory-page.html',
 })
@@ -45,6 +50,7 @@ export class ArmoryPage implements OnInit {
   readonly page = inject(ArmoryPageFacade);
   readonly equipment = inject(CurrentEquipmentState);
   readonly armory = inject(ArmoryShelfState);
+  readonly guildItemUsageState = inject(ArmoryGuildItemUsageState);
   readonly paperdollSlots = computed(() =>
     this.page.equipmentSlots().map((slot) => ({
       slotKey: slot.slotKey,
@@ -72,7 +78,7 @@ export class ArmoryPage implements OnInit {
     return selectedIds.flatMap((itemId) => {
       const item = itemsById.get(itemId);
       return item ? [item] : [];
-    });
+    }).filter((item) => this.canUsePrivateItemActions(item));
   });
   private readonly syncArmoryForms = effect(() =>
     this.syncArmoryItemForms(this.armory.visibleItems()),
@@ -82,6 +88,7 @@ export class ArmoryPage implements OnInit {
     this.page.loadData();
     this.equipment.load();
     this.armory.load();
+    this.guildItemUsageState.load();
   }
 
   itemLayerLabel(item: EquippedItemSummary): string {
@@ -130,6 +137,10 @@ export class ArmoryPage implements OnInit {
     item: ArmoryItemSummary,
     targetShelfPosition: string | number | null | undefined,
   ): void {
+    if (!this.canUsePrivateItemActions(item)) {
+      return;
+    }
+
     const parsedTargetShelfPosition = shelfPositionValue(targetShelfPosition);
 
     this.armory.moveItemToShelf({
@@ -139,6 +150,10 @@ export class ArmoryPage implements OnInit {
   }
 
   equipItem(item: ArmoryItemSummary): void {
+    if (!this.canUsePrivateItemActions(item)) {
+      return;
+    }
+
     this.equipment.equipItem({
       itemId: item.itemId,
     }, () => this.refreshArmoryAndDerivedStats());
@@ -162,6 +177,10 @@ export class ArmoryPage implements OnInit {
   }
 
   moveItemToSelectedShelf(item: ArmoryItemSummary): void {
+    if (!this.canUsePrivateItemActions(item)) {
+      return;
+    }
+
     const targetShelfPosition = this.moveTargetShelfForm.controls[item.itemId]?.value;
 
     this.moveItemToShelf(item, targetShelfPosition);
@@ -174,6 +193,10 @@ export class ArmoryPage implements OnInit {
   }
 
   vendorScrapItem(item: ArmoryItemSummary): void {
+    if (!this.canUsePrivateItemActions(item)) {
+      return;
+    }
+
     this.armory.vendorScrapItem(
       item.itemId,
       () => this.refreshEquipmentAndDerivedStats(),
@@ -181,7 +204,16 @@ export class ArmoryPage implements OnInit {
   }
 
   canUseLifecycleActions(item: ArmoryItemSummary): boolean {
-    return item.lifecycleStatus === 'active';
+    return item.lifecycleStatus === 'active'
+      && this.canUsePrivateItemActions(item);
+  }
+
+  canUsePrivateItemActions(item: ArmoryItemSummary): boolean {
+    return this.guildItemUsageState.canUsePrivateItemActions(item);
+  }
+
+  guildItemUsage(item: ArmoryItemSummary): ArmoryGuildItemUsage {
+    return this.guildItemUsageState.usageForItem(item);
   }
 
   equipmentJournalEntries(
@@ -237,11 +269,13 @@ export class ArmoryPage implements OnInit {
 
   private refreshArmoryAndDerivedStats(): void {
     this.armory.refresh();
+    this.guildItemUsageState.load();
     this.page.loadData();
   }
 
   private refreshEquipmentAndDerivedStats(): void {
     this.equipment.refresh();
+    this.guildItemUsageState.load();
     this.page.loadData();
   }
 

@@ -8253,6 +8253,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Borrowed/deposited state is clear.
 - No client-side item ownership transfer is introduced.
 
+**Implementation note:** T17 accepted on 2026-05-09. Player Armory now uses feature-local `ArmoryGuildItemUsageState` over canonical `PlayerGuildArmory.getActiveHeroGuildArmory(false)` to show private/deposited/borrowed-from/borrowed-by guild armory usage on visible armory items and item detail popovers. Private item actions such as equip, bulk equip, shelf move and vendor sell are hidden and guarded for deposited, borrowed or unavailable guild item usage. No client-side ownership transfer, direct table access, trade/auction/vendor workflow expansion, route/menu changes, DB/RPC changes, migrations or generated type edits were added. Verification passed with focused T17 specs, full guild + armory specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for `button pButton`, `.from(` and direct write patterns. Manual smoke remains pending.
+
 ---
 
 ## Task T18 — Guild support placeholders for future siege and Argonautics

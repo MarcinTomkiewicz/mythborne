@@ -23,17 +23,23 @@ import {
   CurrentEquipmentState,
 } from '../../../core/services/items/current-equipment.state';
 import { ArmoryPage } from './armory-page';
+import {
+  ArmoryGuildItemUsageState,
+  ArmoryGuildItemUsage,
+} from './armory-guild-item-usage.state';
 
 describe('ArmoryPage', () => {
   let fixture: ComponentFixture<ArmoryPage>;
   let page: FakeArmoryPageFacade;
   let equipment: FakeCurrentEquipmentState;
   let armory: FakeArmoryShelfState;
+  let guildItemUsage: FakeArmoryGuildItemUsageState;
 
   beforeEach(async () => {
     page = new FakeArmoryPageFacade();
     equipment = new FakeCurrentEquipmentState();
     armory = new FakeArmoryShelfState();
+    guildItemUsage = new FakeArmoryGuildItemUsageState();
 
     await TestBed.configureTestingModule({
       imports: [ArmoryPage],
@@ -54,6 +60,7 @@ describe('ArmoryPage', () => {
             { provide: ArmoryPageFacade, useValue: page },
             { provide: CurrentEquipmentState, useValue: equipment },
             { provide: ArmoryShelfState, useValue: armory },
+            { provide: ArmoryGuildItemUsageState, useValue: guildItemUsage },
           ],
         },
       })
@@ -67,6 +74,7 @@ describe('ArmoryPage', () => {
     expect(page.loadData).toHaveBeenCalled();
     expect(equipment.load).toHaveBeenCalled();
     expect(armory.load).toHaveBeenCalled();
+    expect(guildItemUsage.load).toHaveBeenCalled();
   });
 
   it('renders all paperdoll slots with empty slot copy', () => {
@@ -315,6 +323,77 @@ describe('ArmoryPage', () => {
     expect(sellButtons.length).toBe(1);
   });
 
+  it('shows deposited guild armory state and hides private item actions', () => {
+    const item = armoryItem({ itemId: 'item-deposited', name: 'Guild Spear' });
+    guildItemUsage.setUsage('item-deposited', usage({
+      key: 'deposited_in_guild_armory',
+      label: 'Deposited in guild armory',
+      detail: 'Withdraw from guild armory before equipping, moving or selling privately.',
+      privateActionsAllowed: false,
+    }));
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [item],
+      }),
+    ]);
+
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Guild Spear');
+    expect(text).toContain('Deposited in guild armory');
+    expect(text).toContain('Withdraw from guild armory before equipping');
+    expect(text).not.toContain('Select for bulk equip');
+    expect(text).not.toContain('Sell to vendor');
+    expect(buttonsWithText(fixture, 'Equip').length).toBe(0);
+    expect(buttonsWithText(fixture, 'Move').length).toBe(0);
+  });
+
+  it('blocks direct private item action calls for guild armory items', () => {
+    const item = armoryItem({ itemId: 'item-borrowed' });
+    guildItemUsage.setUsage('item-borrowed', usage({
+      key: 'borrowed_by_guild_member',
+      label: 'Borrowed by Member Two',
+      detail: 'Return or force-return through guild armory before private item actions.',
+      privateActionsAllowed: false,
+    }));
+
+    fixture.componentInstance.equipItem(item);
+    fixture.componentInstance.moveItemToShelf(item, 1);
+    fixture.componentInstance.vendorScrapItem(item);
+
+    expect(equipment.equipItem).not.toHaveBeenCalled();
+    expect(armory.moveItemToShelf).not.toHaveBeenCalled();
+    expect(armory.vendorScrapItem).not.toHaveBeenCalled();
+  });
+
+  it('hides bulk equip selection when guild armory context is unavailable', () => {
+    guildItemUsage.error.set('Failed to load guild armory item state.');
+    guildItemUsage.setUsage('item-active', usage({
+      key: 'unknown',
+      label: 'Guild armory state unavailable',
+      detail: 'Private item actions are hidden until guild armory item state is loaded.',
+      privateActionsAllowed: false,
+    }));
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [armoryItem({ itemId: 'item-active' })],
+      }),
+    ]);
+
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Failed to load guild armory item state.');
+    expect(text).toContain('Private item actions are hidden');
+    expect(text).not.toContain('Select for bulk equip');
+    expect(buttonsWithText(fixture, 'Equip').length).toBe(0);
+  });
+
   it('vendor scraps active item and refreshes current equipment/runtime after response', () => {
     const item = armoryItem({ itemId: 'item-active' });
     armory.setShelves([
@@ -333,6 +412,7 @@ describe('ArmoryPage', () => {
       jasmine.any(Function),
     );
     expect(equipment.refresh).toHaveBeenCalled();
+    expect(guildItemUsage.load).toHaveBeenCalledTimes(2);
     expect(page.loadData).toHaveBeenCalledTimes(2);
   });
 
@@ -405,6 +485,7 @@ describe('ArmoryPage', () => {
       itemId: 'item-dagger',
     }, jasmine.any(Function));
     expect(armory.refresh).toHaveBeenCalled();
+    expect(guildItemUsage.load).toHaveBeenCalledTimes(2);
     expect(page.loadData).toHaveBeenCalledTimes(2);
   });
 
@@ -753,6 +834,28 @@ class FakeArmoryShelfState {
   }
 }
 
+class FakeArmoryGuildItemUsageState {
+  readonly isLoading = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly usages = signal<Record<string, ArmoryGuildItemUsage>>({});
+  readonly load = jasmine.createSpy('load');
+
+  usageForItem(item: Pick<ArmoryItemSummary, 'itemId'>): ArmoryGuildItemUsage {
+    return this.usages()[item.itemId] ?? usage();
+  }
+
+  canUsePrivateItemActions(item: Pick<ArmoryItemSummary, 'itemId'>): boolean {
+    return this.usageForItem(item).privateActionsAllowed;
+  }
+
+  setUsage(itemId: string, itemUsage: ArmoryGuildItemUsage): void {
+    this.usages.set({
+      ...this.usages(),
+      [itemId]: itemUsage,
+    });
+  }
+}
+
 @Component({
   selector: 'app-item-generator-panel',
   standalone: true,
@@ -776,6 +879,8 @@ class MockLoadoutPresetManagement {}
 })
 class MockArmoryItemDetailPopover {
   readonly item = input.required<ArmoryItemSummary | EquippedItemSummary>();
+  readonly guildContextLabel = input<string | null>(null);
+  readonly guildContextDetail = input<string | null>(null);
 }
 
 function textContent(fixture: ComponentFixture<ArmoryPage>): string {
@@ -875,6 +980,18 @@ function armoryItem(
     shelfPosition: 1,
     shelfName: 'Shelf 1',
     requirementPreview: null,
+    ...overrides,
+  };
+}
+
+function usage(
+  overrides: Partial<ArmoryGuildItemUsage> = {},
+): ArmoryGuildItemUsage {
+  return {
+    key: 'owned_private',
+    label: 'Owned private item',
+    detail: null,
+    privateActionsAllowed: true,
     ...overrides,
   };
 }

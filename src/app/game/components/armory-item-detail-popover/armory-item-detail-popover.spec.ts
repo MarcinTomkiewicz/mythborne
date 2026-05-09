@@ -84,6 +84,20 @@ describe('ArmoryItemDetailPopover', () => {
     expect(fixture.componentInstance.itemName()).toBe('Other item');
     expect(fixture.componentInstance.currentDetail()).toBeNull();
   });
+
+  it('accepts DB-owned guild armory context for item detail display', () => {
+    fixture.componentRef.setInput('guildContextLabel', 'Deposited in guild armory');
+    fixture.componentRef.setInput(
+      'guildContextDetail',
+      'Withdraw from guild armory before equipping privately.',
+    );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.guildContextLabel())
+      .toBe('Deposited in guild armory');
+    expect(fixture.componentInstance.guildContextDetail())
+      .toBe('Withdraw from guild armory before equipping privately.');
+  });
 });
 
 function armoryItem(overrides: Partial<ArmoryItemSummary> = {}): ArmoryItemSummary {
