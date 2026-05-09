@@ -3,6 +3,7 @@ import { signal } from '@angular/core';
 import { firstValueFrom, of } from 'rxjs';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
 import {
+  CreateGuildRpcRow,
   GetGuildConfigSummaryRpcRow,
   GetHeroGuildDashboardRpcRow,
   GetHeroGuildStateRpcRow,
@@ -82,6 +83,45 @@ describe('PlayerGuild', () => {
     expect(backend.rpc).toHaveBeenCalledWith('get_guild_config_summary', {});
     expect(result.creationDrachmaCost).toBe(1000);
     expect(result.armoryCapacityIsUnlimited).toBeTrue();
+  });
+
+  it('creates guild for active hero through canonical RPC', async () => {
+    backend.rpc.and.returnValue(of([createGuildRow()]));
+
+    const result = await firstValueFrom(service.createGuildForActiveHero({
+      name: ' Argonauts ',
+      tag: ' ARGO ',
+      description: ' Greek crew. ',
+      reason: ' Founding. ',
+      requestId: 'request-1',
+    }));
+
+    expect(backend.rpc).toHaveBeenCalledWith('create_guild', {
+      p_leader_hero_id: 'hero-1',
+      p_name: 'Argonauts',
+      p_tag: 'ARGO',
+      p_description: 'Greek crew.',
+      p_reason: 'Founding.',
+      p_request_id: 'request-1',
+    });
+    expect(result).toEqual(jasmine.objectContaining({
+      guildId: 'guild-1',
+      creationDrachmaCost: 1000,
+      drachmaBalanceAfter: 9000,
+    }));
+  });
+
+  it('generates create guild request id when caller does not provide one', async () => {
+    backend.rpc.and.returnValue(of([createGuildRow()]));
+
+    await firstValueFrom(service.createGuild('hero-1', {
+      name: 'Argonauts',
+      tag: 'ARGO',
+    }));
+
+    expect(backend.rpc).toHaveBeenCalledWith('create_guild', jasmine.objectContaining({
+      p_request_id: jasmine.stringMatching(/^guild-create:/),
+    }));
   });
 
   it('searches guilds for active hero with query and pagination through canonical RPC', async () => {
@@ -199,6 +239,21 @@ function configRow(): GetGuildConfigSummaryRpcRow {
     emergency_max_candidates: 3,
     armory_capacity: 0,
     armory_capacity_is_unlimited: true,
+  };
+}
+
+function createGuildRow(): CreateGuildRpcRow {
+  return {
+    audit_log_id: 'audit-log-1',
+    creation_drachma_cost: 1000,
+    drachma_balance_after: 9000,
+    guild_id: 'guild-1',
+    leader_hero_id: 'hero-1',
+    membership_id: 'membership-1',
+    name: 'Argonauts',
+    server_id: 'server-1',
+    status_key: 'active',
+    tag: 'ARGO',
   };
 }
 

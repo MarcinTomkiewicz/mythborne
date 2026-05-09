@@ -1,6 +1,8 @@
 import {
+  CreateGuildInput,
   CurrentHeroGuildState,
   GuildConfigSummary,
+  GuildCreateResult,
   GuildDetail,
   GuildDiscoveryResult,
   GuildInvite,
@@ -9,6 +11,8 @@ import {
   GuildSearchResult,
 } from '../domain/guild/guild.model';
 import {
+  CreateGuildRpcArgs,
+  CreateGuildRpcRow,
   GetGuildConfigSummaryRpcRow,
   GetHeroGuildDashboardRpcRow,
   GetHeroGuildInvitationRowsRpcRow,
@@ -17,6 +21,34 @@ import {
   GetHeroGuildStateRpcRow,
   SearchGuildsForHeroRpcRow,
 } from '../types/guild-rpc.types';
+
+export function toCreateGuildRpcArgs(
+  leaderHeroId: string,
+  input: CreateGuildInput,
+): CreateGuildRpcArgs {
+  return {
+    p_leader_hero_id: leaderHeroId,
+    p_name: requiredText(input.name, 'guild name'),
+    p_tag: requiredText(input.tag, 'guild tag'),
+    p_description: nullableText(input.description) ?? undefined,
+    p_reason: nullableText(input.reason) ?? undefined,
+    p_request_id: nullableText(input.requestId) ?? undefined,
+  };
+}
+
+export function mapGuildCreateResult(row: CreateGuildRpcRow): GuildCreateResult {
+  return {
+    guildId: row.guild_id,
+    serverId: row.server_id,
+    leaderHeroId: row.leader_hero_id,
+    membershipId: row.membership_id,
+    name: row.name,
+    tag: row.tag,
+    statusKey: row.status_key,
+    creationDrachmaCost: row.creation_drachma_cost,
+    drachmaBalanceAfter: row.drachma_balance_after,
+  };
+}
 
 export function mapGuildConfigSummary(
   row: GetGuildConfigSummaryRpcRow,
@@ -200,5 +232,17 @@ export function mapGuildSearchResult(
 }
 
 function nullableText(value: string | null | undefined): string | null {
-  return value ? value : null;
+  const trimmed = value?.trim();
+
+  return trimmed ? trimmed : null;
+}
+
+function requiredText(value: string, label: string): string {
+  const trimmed = nullableText(value);
+
+  if (!trimmed) {
+    throw new Error(`${label} is required.`);
+  }
+
+  return trimmed;
 }

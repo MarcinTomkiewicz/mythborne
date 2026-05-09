@@ -104,6 +104,7 @@ export const RPC = {
     'get_hero_equipment_runtime_bonus_totals',
   get_hero_dashboard_runtime_stats: 'get_hero_dashboard_runtime_stats',
   get_guild_config_summary: 'get_guild_config_summary',
+  create_guild: 'create_guild',
   get_hero_guild_dashboard: 'get_hero_guild_dashboard',
   get_hero_guild_members: 'get_hero_guild_members',
   get_hero_guild_state: 'get_hero_guild_state',

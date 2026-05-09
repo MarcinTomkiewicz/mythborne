@@ -1,4 +1,5 @@
 import {
+  CreateGuildRpcRow,
   GetGuildConfigSummaryRpcRow,
   GetHeroGuildDashboardRpcRow,
   GetHeroGuildInvitationRowsRpcRow,
@@ -9,15 +10,51 @@ import {
 } from '../types/guild-rpc.types';
 import {
   mapCurrentHeroGuildState,
+  mapGuildCreateResult,
   mapGuildConfigSummary,
   mapGuildDetail,
   mapGuildInvite,
   mapGuildJoinRequest,
   mapGuildMemberListItem,
   mapGuildSearchResult,
+  toCreateGuildRpcArgs,
 } from './guild-mappers';
 
 describe('guild mappers', () => {
+  it('maps create guild RPC args and trims optional text', () => {
+    expect(toCreateGuildRpcArgs('hero-1', {
+      name: ' Argonauts ',
+      tag: ' ARGO ',
+      description: ' Greek crew. ',
+      reason: ' Founding. ',
+      requestId: ' request-1 ',
+    })).toEqual({
+      p_leader_hero_id: 'hero-1',
+      p_name: 'Argonauts',
+      p_tag: 'ARGO',
+      p_description: 'Greek crew.',
+      p_reason: 'Founding.',
+      p_request_id: 'request-1',
+    });
+  });
+
+  it('maps create guild result without exposing audit log id', () => {
+    const result = mapGuildCreateResult(createGuildRow());
+
+    expect(result).toEqual({
+      guildId: 'guild-1',
+      serverId: 'server-1',
+      leaderHeroId: 'hero-1',
+      membershipId: 'membership-1',
+      name: 'Argonauts',
+      tag: 'ARGO',
+      statusKey: 'active',
+      creationDrachmaCost: 1000,
+      drachmaBalanceAfter: 9000,
+    });
+    expect(JSON.stringify(result)).not.toContain('audit-log-1');
+  });
+
   it('maps guild config without frontend constants', () => {
     expect(mapGuildConfigSummary(configRow())).toEqual({
       creationDrachmaCost: 1000,
@@ -181,6 +218,21 @@ function configRow(): GetGuildConfigSummaryRpcRow {
     emergency_max_candidates: 3,
     armory_capacity: 0,
     armory_capacity_is_unlimited: true,
+  };
+}
+
+function createGuildRow(): CreateGuildRpcRow {
+  return {
+    audit_log_id: 'audit-log-1',
+    creation_drachma_cost: 1000,
+    drachma_balance_after: 9000,
+    guild_id: 'guild-1',
+    leader_hero_id: 'hero-1',
+    membership_id: 'membership-1',
+    name: 'Argonauts',
+    server_id: 'server-1',
+    status_key: 'active',
+    tag: 'ARGO',
   };
 }
 

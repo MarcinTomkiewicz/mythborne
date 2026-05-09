@@ -7903,6 +7903,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Name/tag uniqueness errors are readable.
 - Hero already in a guild cannot create another guild.
 
+**Implementation note:** T4 accepted on 2026-05-09. Added generated RPC aliases and player-facing create input/result models for `create_guild(...)`, mapped create args/result through `guild-mappers` without exposing `audit_log_id`, and extended `PlayerGuild` plus `GuildCreateState` for DB-config-owned creation cost, current guild eligibility, canonical create submission, RPC error surfacing, current guild refresh after success and active hero/server stale guards. No UI/routes/menu, DB/RPC changes, generated type edits, migrations, direct guild table reads/writes or frontend creation fallback were added. Verification passed with `npx tsc --noEmit`, focused guild specs and `npm run build` with known warnings. Manual smoke remains N/A until a future guild UI entry slice wires this state into a page.
+
 ---
 
 ## Task T5 — Guild invites

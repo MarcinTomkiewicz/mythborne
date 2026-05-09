@@ -137,6 +137,26 @@ export interface GuildSearchFilters {
   offset?: number;
 }
 
+export interface CreateGuildInput {
+  name: string;
+  tag: string;
+  description?: string | null;
+  reason?: string | null;
+  requestId?: string | null;
+}
+
+export interface GuildCreateResult {
+  guildId: string;
+  serverId: string;
+  leaderHeroId: string;
+  membershipId: string;
+  name: string;
+  tag: string;
+  statusKey: GuildStatusKey;
+  creationDrachmaCost: number;
+  drachmaBalanceAfter: number;
+}
+
 export interface GuildConfigSummary {
   creationDrachmaCost: number;
   memberBaseLimit: number;

@@ -19,6 +19,12 @@ export type GuildJoinRequestStatusKey = GuildJoinRequestStatusRow['key'];
 export type GetGuildConfigSummaryRpcRow =
   Database['public']['Functions']['get_guild_config_summary']['Returns'][number];
 
+export type CreateGuildRpcArgs =
+  Database['public']['Functions']['create_guild']['Args'];
+
+export type CreateGuildRpcRow =
+  Database['public']['Functions']['create_guild']['Returns'][number];
+
 export type GetHeroGuildStateRpcRow =
   Database['public']['Functions']['get_hero_guild_state']['Returns'][number];
 

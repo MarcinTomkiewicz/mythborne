@@ -2,15 +2,18 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable, of, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
+  CreateGuildInput,
   CurrentGuildReadModel,
   CurrentHeroGuildState,
   GuildConfigSummary,
+  GuildCreateResult,
   GuildDetail,
   GuildSearchFilters,
   GuildSearchResult,
   GuildMemberListItem,
 } from '../../domain/guild/guild.model';
 import {
+  CreateGuildRpcRow,
   GetGuildConfigSummaryRpcRow,
   GetHeroGuildDashboardRpcRow,
   GetHeroGuildMembersRpcRow,
@@ -19,10 +22,12 @@ import {
 } from '../../types/guild-rpc.types';
 import {
   mapCurrentHeroGuildState,
+  mapGuildCreateResult,
   mapGuildConfigSummary,
   mapGuildDetail,
   mapGuildMemberListItem,
   mapGuildSearchResult,
+  toCreateGuildRpcArgs,
 } from '../../utils/guild-mappers';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
@@ -91,6 +96,33 @@ export class PlayerGuild {
       .pipe(map((rows) => rows.map(mapGuildMemberListItem)));
   }
 
+  createGuildForActiveHero(input: CreateGuildInput): Observable<GuildCreateResult> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) =>
+        this.createGuild(context.heroId, withRequestId(input, 'guild-create')).pipe(
+          map((result) => {
+            const active = this.activeHero.state();
+
+            if (active?.heroId !== context.heroId || active.serverId !== context.serverId) {
+              throw new Error('Guild creation context changed.');
+            }
+
+            return result;
+          }),
+        ),
+      ),
+    );
+  }
+
+  createGuild(heroId: string, input: CreateGuildInput): Observable<GuildCreateResult> {
+    return this.backend
+      .rpc<CreateGuildRpcRow[]>(
+        RPC.create_guild,
+        toCreateGuildRpcArgs(heroId, withRequestId(input, 'guild-create')),
+      )
+      .pipe(map((rows) => mapGuildCreateResult(firstRow(rows, RPC.create_guild))));
+  }
+
   searchGuildsForActiveHero(
     filters: GuildSearchFilters = {},
   ): Observable<GuildSearchResult> {
@@ -142,6 +174,17 @@ function normalizeQuery(query: string | null | undefined): string | null {
   const trimmed = query?.trim();
 
   return trimmed ? trimmed : null;
+}
+
+function withRequestId(input: CreateGuildInput, prefix: string): CreateGuildInput {
+  return input.requestId ? input : { ...input, requestId: createRequestId(prefix) };
+}
+
+function createRequestId(prefix: string): string {
+  const randomId = globalThis.crypto?.randomUUID?.()
+    ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  return `${prefix}:${randomId}`;
 }
 
 function firstRow<T>(rows: readonly T[], rpcName: string): T {
