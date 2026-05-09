@@ -8277,6 +8277,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - No fake siege/Argonautics functionality is shown.
 - No diplomacy/influence/reputation UI is introduced.
 
+**Implementation note:** T18 accepted on 2026-05-09. `GuildArmoryReadSection` now shows a minimal guild support placeholder for future siege and Argonautics support, both explicitly bound to guild membership. No siege/Argonautics implementation, fake action buttons, friend-based support, diplomacy, influence, reputation, route/menu changes, DB/RPC changes, migrations or generated type edits were added. Verification passed with focused T18 spec, full guild + guild page specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for `button pButton`, `.from(` and direct write patterns. Manual/route smoke remains pending until the guild section is reachable through route/menu.
+
 ---
 
 ## Task T19 — Admin/balancer guild config read surface

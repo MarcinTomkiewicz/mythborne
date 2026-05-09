@@ -174,6 +174,25 @@ describe('GuildArmoryReadSection', () => {
     expect(text).toContain('Allow armory');
   });
 
+  it('renders future guild support notes without fake support functionality', () => {
+    state.config.set(config());
+
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Guild support');
+    expect(text).toContain('Future siege support');
+    expect(text).toContain('Future Argonautics support');
+    expect(text).toContain('Requires guild membership.');
+    expect(text).toContain('Siege gameplay is not available in this UI yet.');
+    expect(text).toContain('Argonautics gameplay is not available in this UI yet.');
+    expect(text).not.toContain('Join siege');
+    expect(text).not.toContain('Start Argonautics');
+    expect(text).not.toContain('Diplomacy');
+    expect(text).not.toContain('Influence');
+    expect(text).not.toContain('Reputation');
+  });
+
   it('hides member armory access management actions for regular members', () => {
     memberAccess.members.set([member()]);
     memberAccess.canManageAccess.set(false);
