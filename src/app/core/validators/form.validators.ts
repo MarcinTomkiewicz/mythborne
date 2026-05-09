@@ -11,6 +11,14 @@ export function trimRequiredValidator(): ValidatorFn {
   };
 }
 
+export function integerValidator(): ValidatorFn {
+  return (control: AbstractControl<number | null>): ValidationErrors | null => {
+    const value = control.value;
+
+    return value === null || Number.isInteger(value) ? null : { integer: true };
+  };
+}
+
 export function publicChangelogValidator(
   visibilityControlName: string,
   titleControlName: string,

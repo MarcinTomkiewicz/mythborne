@@ -12,10 +12,18 @@
         Guild configuration summary
       </h3>
       <p class="muted-text mb-0">
-        Read-only guild settings resolved from the DB/config governance model.
+        Guild settings resolved from DB/config governance. Edits start as governed change-set drafts.
       </p>
     </div>
-    <span class="tag-badge tag-badge--info">Read only</span>
+    <p-button
+      type="button"
+      label="Advanced change sets"
+      icon="pi pi-sliders-h"
+      severity="secondary"
+      [outlined]="true"
+      routerLink="/admin/config-change-sets"
+      [queryParams]="governanceQueryParams()"
+    />
   </div>
 
   @if (error(); as message) {
@@ -61,7 +69,85 @@
       <div class="flex-col gap-xs">
         <span class="muted-text">Guild armory capacity</span>
         <strong class="heading-color">{{ armoryCapacityLabel(config) }}</strong>
+        <span class="muted-text">Use 0 to make guild armory capacity unlimited.</span>
       </div>
     </div>
+
+    <form
+      class="mg-surface-card p-md flex-col gap-md mt-lg"
+      [formGroup]="form"
+      (ngSubmit)="applyGuildConfigChanges()"
+    >
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Governed editor</p>
+        <h4 class="mg-section__title mg-section__title--xs mb-0">
+          Edit guild configuration
+        </h4>
+        <p class="muted-text mb-0">
+          Submit creates a governed change set, adds changed field entries, marks it ready and applies it.
+        </p>
+      </div>
+
+      <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md w-100">
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Creation cost</span>
+          <p-inputnumber formControlName="creationDrachmaCost" [min]="0" />
+        </label>
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Member base limit</span>
+          <p-inputnumber formControlName="memberBaseLimit" [min]="0" />
+        </label>
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Member limit per leader level</span>
+          <p-inputnumber formControlName="memberLimitPerLeaderLevel" [min]="0" />
+        </label>
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Leader inactivity threshold days</span>
+          <p-inputnumber formControlName="leaderInactivityThresholdDays" [min]="0" />
+        </label>
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Nomination duration minutes</span>
+          <p-inputnumber formControlName="nominationDurationMinutes" [min]="0" />
+        </label>
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Voting duration minutes</span>
+          <p-inputnumber formControlName="votingDurationMinutes" [min]="0" />
+        </label>
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Emergency max candidates</span>
+          <p-inputnumber formControlName="emergencyMaxCandidates" [min]="0" />
+        </label>
+
+        <label class="flex-col gap-sm">
+          <span class="muted-text">Armory capacity</span>
+          <p-inputnumber formControlName="armoryCapacity" [min]="0" />
+          <span class="muted-text">0 means unlimited.</span>
+        </label>
+      </div>
+
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Governance reason</span>
+        <textarea pTextarea rows="3" formControlName="reason"></textarea>
+      </label>
+
+      @if (form.controls.reason.invalid && form.controls.reason.touched) {
+        <p-message severity="warn">Governance reason is required.</p-message>
+      }
+
+      <div class="flex-row-start-center">
+        <p-button
+          type="submit"
+          label="Apply guild config changes"
+          icon="pi pi-check"
+          [disabled]="form.invalid || isApplying()"
+        />
+      </div>
+    </form>
   }
 </section>

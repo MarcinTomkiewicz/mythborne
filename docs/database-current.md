@@ -1,5 +1,328 @@
 # Mythsworn — Database Current Notes
 
+## Update 2026-05-09 — T3 Guild discovery/search read model
+
+T3 guild discovery/search was blocked because existing guild RPCs exposed current hero guild state/dashboard, current guild member rows, invitations, join requests and armory state, but did not expose a player-facing browse/search list of active guilds on the selected hero server.
+
+The DB/RPC blocker has been removed by adding a new owner/read-safe RPC:
+
+- `search_guilds_for_hero(p_hero_id uuid, p_query text default null, p_limit integer default 25, p_offset integer default 0)`.
+
+Return contract:
+
+- `guild_id uuid`;
+- `server_id uuid`;
+- `name text`;
+- `tag text`;
+- `status_key text`;
+- `member_count integer`;
+- `member_limit integer`;
+- `can_request_to_join boolean`;
+- `current_join_request_status_key text`;
+- `current_invite_status_key text`;
+- `total_count integer`.
+
+Semantics:
+
+- authenticated and owner/read-safe through hero context;
+- uses `p_hero_id` and `can_read_hero(p_hero_id)`, never assumes `hero.id = auth.uid()`;
+- scopes discovery to `hero.server_id`;
+- returns normal discovery rows for active guilds only;
+- filters by query against guild name/tag when `p_query` is supplied;
+- `member_count` is DB-owned and counted from active `guild_memberships`;
+- `member_limit` is DB-owned and resolved by `get_guild_member_limit(guild_id)`;
+- `can_request_to_join` is DB-owned and accounts for current hero ownership, normal gameplay block reason, existing active guild membership, guild activity/fullness, pending join request and pending invite;
+- does not expose staff/admin metadata, audit data, internal config, or member user ids.
+
+Verification status:
+
+- function signature present and includes all expected fields;
+- `SECURITY DEFINER` present;
+- `authenticated` can execute;
+- `anon` and `public` cannot execute;
+- return signature safety check passed;
+- semantic runtime smoke could not exercise positive join eligibility because the current sandbox lacked a suitable active guild + eligible requester hero pair. This was a data skip, not a detected contract bug.
+
+Frontend/Codex contract:
+
+- T3 should consume `search_guilds_for_hero(...)` for guild discovery/search;
+- Angular must not read `guilds`, `guild_memberships`, `guild_invites`, or `guild_join_requests` directly for discovery/search;
+- Angular must not calculate member counts, member limits or join eligibility locally;
+- regenerate Supabase generated types before T3 consumes this RPC.
+
+---
+
+## Update 2026-05-09 — T16 Guild armory member access read surface
+
+T16 guild armory member access UI was blocked because `set_guild_armory_member_access(...)` existed as the canonical mutation, but the canonical member list did not expose per-member armory access state.
+
+The preferred contract was implemented by extending the existing owner-safe member list RPC rather than adding a second frontend call.
+
+Updated RPC:
+
+- `get_hero_guild_members(p_hero_id uuid)`.
+
+Return contract now includes the previous fields plus:
+
+- `armory_access_status_key text`.
+
+Current return fields:
+
+- `guild_id uuid`;
+- `member_hero_id uuid`;
+- `member_user_id uuid` — already existed in the prior contract;
+- `member_name text`;
+- `role_key text`;
+- `role_label text`;
+- `membership_status_key text`;
+- `armory_access_status_key text`;
+- `joined_at timestamptz`;
+- `created_at timestamptz`.
+
+Semantics:
+
+- authenticated and owner/read-safe through the same active hero/current guild flow as the previous `get_hero_guild_members(...)`;
+- active member with `guild_armory_access_locks.status_key = 'blocked'` returns `blocked`;
+- no lock row or non-blocking/default state returns `allowed`;
+- status keys are backed by active `guild_armory_access_statuses` rows: `allowed`, `blocked`;
+- no new private/admin/audit/config/staff metadata is exposed.
+
+Verification status:
+
+- signature contains `armory_access_status_key`;
+- `SECURITY DEFINER` preserved;
+- `authenticated` can execute;
+- `anon` and `public` cannot execute;
+- signature safety check passed: no new audit/metadata/admin/staff/config fields and the only user-id exposure remains the pre-existing `member_user_id`;
+- data smoke returned zero member rows because the current sandbox had no active guild/member pair; canonical block/unblock smoke through `set_guild_armory_member_access(...)` was data-skipped, not failed.
+
+Frontend/Codex contract:
+
+- after regenerating generated types, T16 should map `armory_access_status_key` into `GuildMemberListItem.armoryAccessStatusKey`;
+- UI should show per-member `allowed`/`blocked` state from this read model;
+- status changes must still use `set_guild_armory_member_access(...)`;
+- Angular must not read `guild_armory_access_locks` directly and must not call `guild_member_has_armory_access(...)` as a UI contract;
+- regenerate Supabase generated types before T16 consumes the changed RPC signature.
+
+---
+
+## Update 2026-05-09 — Guild config registry key contract clarification
+
+ADMIN-FOLLOWUP-1 / guild config editor runtime smoke reported:
+
+- route: `/admin/config-definitions`;
+- action: change guild creation cost with governance reason and apply;
+- error: `Missing guild config definition: creation_drachma_cost.`
+
+Preflight showed the DB registry is complete and active. No DB seed repair is needed.
+
+Active guild `config_definitions` under `managed_entity_key = 'guild'` are:
+
+- `guild_creation_drachma_cost`;
+- `guild_member_base_limit`;
+- `guild_member_limit_per_leader_level`;
+- `guild_leader_inactivity_threshold_days`;
+- `guild_emergency_nomination_duration_minutes`;
+- `guild_emergency_voting_duration_minutes`;
+- `guild_emergency_max_candidates`;
+- `guild_armory_capacity`.
+
+All eight are active, use `managed_entity_type = scalar_config`, `governance_scope = product_global`, `value_type = integer`, and have active/default values matching `get_guild_config_summary()`.
+
+`get_guild_config_summary()` returns summary field names without the `guild_` prefix:
+
+- `creation_drachma_cost`;
+- `member_base_limit`;
+- `member_limit_per_leader_level`;
+- `leader_inactivity_threshold_days`;
+- `nomination_duration_minutes`;
+- `voting_duration_minutes`;
+- `emergency_max_candidates`;
+- `armory_capacity`;
+- `armory_capacity_is_unlimited`.
+
+Important contract distinction:
+
+- non-prefixed names above are summary RPC output field names;
+- prefixed names are canonical `config_definitions.key` values.
+
+Do not seed alias definitions such as `creation_drachma_cost`. That would create two key spaces where the editor could write a value the runtime summary does not read.
+
+Frontend/admin mapping contract:
+
+- `creation_drachma_cost` -> `guild_creation_drachma_cost`;
+- `member_base_limit` -> `guild_member_base_limit`;
+- `member_limit_per_leader_level` -> `guild_member_limit_per_leader_level`;
+- `leader_inactivity_threshold_days` -> `guild_leader_inactivity_threshold_days`;
+- `nomination_duration_minutes` -> `guild_emergency_nomination_duration_minutes`;
+- `voting_duration_minutes` -> `guild_emergency_voting_duration_minutes`;
+- `emergency_max_candidates` -> `guild_emergency_max_candidates`;
+- `armory_capacity` -> `guild_armory_capacity`.
+
+Frontend/Codex contract:
+
+- Angular must not add fallback guesses or alias lookups;
+- the guild config editor should use an explicit summary-field-to-config-definition-key map based on this confirmed DB contract;
+- docs should distinguish summary field names from canonical config registry keys.
+
+No generated type regeneration is required for this clarification because there was no schema/RPC change.
+
+---
+
+## Update 2026-05-09 — Item quality fractional display/runtime integer fix
+
+A player-facing item detail bug showed fractional values such as:
+
+- damage `10.5-21`;
+- bonus `Agility +4.5`.
+
+Preflight showed the source was DB/RPC output, not a frontend-only mapper bug. Quality multipliers such as `1.5` could produce fractional values. The fix was applied at DB/RPC display and runtime source level rather than hiding it only in Angular.
+
+Updated function:
+
+- `format_item_stat_numeric_display(p_value numeric)`.
+
+Current semantics:
+
+- formats player-facing item/combat stat numeric values as integer-like text;
+- rounds values before display;
+- examples verified:
+  - `10.5 -> 11`;
+  - `4.5 -> 5`;
+  - `10 -> 10`;
+  - `-4.5 -> -5`.
+
+Updated runtime helper:
+
+- `get_hero_equipment_runtime_bonus_rows(p_hero_id uuid)`.
+
+Current runtime semantics:
+
+- quality-scaled `effective_value` is rounded when `entity_bonuses.quality_scales_value = true`;
+- raw config can still have quality multipliers such as `1.5`, but DB-owned effective runtime output is integer-like;
+- this prevents item detail display and combat/stat runtime from diverging.
+
+Verification status:
+
+- display formatter test passed;
+- item detail fractional display scan returned no rows;
+- equipment runtime fractional `effective_value` scan returned no rows;
+- attack plan fractional scan returned no rows;
+- frontend smoke confirmed item detail now shows integer-like values.
+
+Frontend/Codex rules:
+
+- Angular must not apply scattered local `Math.round(...)` as a gameplay fix;
+- player-facing item stat/damage/bonus values should be consumed from DB/RPC display/runtime output;
+- if future fractional values reappear in item detail, runtime bonus rows, or attack plan output, treat it as DB/RPC source regression, not a frontend formatting task.
+
+No generated type regeneration is required for this fix because function signatures did not change.
+
+---
+
+## Update 2026-05-09 — Epic W seed/readiness repair for Trials and Encounters
+
+Epic W gameplay closure required seed completeness so active Trials and Encounters do not enter runtime in a reward/candidate-incomplete state and then resolve with `no reward granted` only because content definitions are missing.
+
+The seed repair was data-only and reused the existing Trial/Encounter/Reward/Opponent/Resource/Effect tables and readiness functions. It did not add new schema/RPC contracts.
+
+### Trial seed state after repair
+
+The database already had nine active stat Trial definitions and they were reused rather than duplicated:
+
+- `strength_trial`;
+- `dexterity_trial`;
+- `agility_trial`;
+- `endurance_trial`;
+- `cunning_trial`;
+- `charisma_trial`;
+- `wisdom_trial`;
+- `intelligence_trial`;
+- `spirituality_trial`.
+
+All nine are currently `minigame_key = combat` for runtime readiness. The future non-combat/manual Trial identities remain design/UI direction, not current runtime minigames.
+
+Seed repair ensured every active canonical combat Trial has:
+
+- an active concrete combat opponent candidate;
+- an active success reward assignment leading to an active reward profile with active entries.
+
+The reusable Trial reward profile is currently `trial_success_basic`, with XP and item generation entries including 2–3 generated items and max quality `outstanding` where configured.
+
+Verification after repair:
+
+- `has_9_active_canonical_trials = true`;
+- `all_ready = true`;
+- all nine active canonical Trial readiness rows returned `is_ready = true` and empty `reasons`.
+
+### Encounter seed state after repair
+
+The following Encounter definitions are ready:
+
+- `light_combat` — combat Encounter with active concrete candidate and success XP reward assignment;
+- `minor_resource_find` — existing drachma resource Encounter;
+- `w_resource_materials_find` — seeded materials resource Encounter;
+- `w_resource_workforce_find` — seeded workforce resource Encounter;
+- `minor_blessing` — existing buff Encounter with active effect payload and reward assignment;
+- `minor_curse` — repaired debuff Encounter with active debuff effect payload and reward assignment.
+
+Verification after repair:
+
+- all six checked Encounter definitions returned `is_ready = true` and empty `reasons`.
+
+### Resource coverage
+
+Active resource types now have resource Encounter and reward coverage:
+
+- `drachma`;
+- `materials`;
+- `workforce`.
+
+Verification after repair:
+
+- each active resource type had at least one active resource Encounter payload;
+- each active resource type had at least one active resource reward entry;
+- `resource_seed_ready = true` for all three.
+
+### Opponent/attack-source readiness
+
+The seed repair ensures that the combat opponent used by Trial/Encounter candidates has:
+
+- stat rows;
+- at least one active attack source.
+
+If an active opponent already existed, it was reused and repaired where needed. A fallback opponent path exists only if no active opponent is available.
+
+### Cleanup candidates
+
+- inactive legacy Trial `strength` remains a cleanup candidate only;
+- it was not deleted or altered as part of the readiness repair.
+
+Frontend/Codex rules:
+
+- Trial/Encounter runtime should rely on readiness-backed DB definitions and reward assignments;
+- Angular must not fake rewards or fill missing Trial/Encounter content locally;
+- if a future Trial/Encounter readiness check fails, report it as DB/content seed/config blocker;
+- full manual gameplay smoke remains separate and should verify end-to-end UI execution from Trial/Encounter start through reward result when representative data/session is available.
+
+No generated type regeneration is required for this seed repair because there was no schema/RPC signature change.
+
+---
+
+## Type regeneration summary for 2026-05-09 changes
+
+Regenerate Supabase generated database types before frontend/Codex work consumes:
+
+- `search_guilds_for_hero(...)` from T3;
+- the changed `get_hero_guild_members(...)` return signature from T16.
+
+No generated type regeneration is required for:
+
+- guild config key-contract clarification;
+- item fractional display/runtime fixes, because signatures did not change;
+- Epic W seed/readiness repair, because it was data-only.
+
+
 Updated: 2026-05-08
 
 This file is the curated semantic index of the current database state. It is not a full `pg_dump`.
@@ -13,11 +336,6 @@ If this file conflicts with the actual database, generated Supabase types, or a 
 5. this file.
 
 After every schema/RPC migration that Codex will consume, regenerate/update generated Supabase types before frontend work.
-
-
-
-
-## Update 2026-05-08 — Server Events DB/RPC foundation
 
 The current dump includes the first Server Events DB/RPC foundation. Server Events are no longer only a planning topic at the DB layer. This section supersedes older notes that describe Server Events as not yet implemented in the database.
 

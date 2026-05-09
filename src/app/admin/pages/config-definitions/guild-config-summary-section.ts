@@ -1,46 +1,44 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { MessageModule } from 'primeng/message';
-import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { TextareaModule } from 'primeng/textarea';
 import { GuildConfigSummary } from '../../../core/domain/guild/guild.model';
-import { PlayerGuild } from '../../../core/services/guild/player-guild';
+import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { GuildConfigEditorState } from './guild-config-editor.state';
 
 @Component({
   selector: 'app-guild-config-summary-section',
   standalone: true,
-  imports: [MessageModule, LoadingOverlay],
+  imports: [
+    ButtonModule,
+    InputNumberModule,
+    MessageModule,
+    ReactiveFormsModule,
+    RouterLink,
+    TextareaModule,
+    LoadingOverlay,
+  ],
+  providers: [GuildConfigEditorState],
   host: { class: 'd-block w-100' },
   templateUrl: './guild-config-summary-section.html',
 })
 export class GuildConfigSummarySection implements OnInit {
-  private readonly playerGuild = inject(PlayerGuild);
-
-  readonly config = signal<GuildConfigSummary | null>(null);
-  readonly isLoading = signal(false);
-  readonly error = signal<string | null>(null);
+  readonly state = inject(GuildConfigEditorState);
+  readonly form = this.state.form;
+  readonly config = this.state.config;
+  readonly error = this.state.error;
+  readonly isApplying = this.state.isApplying;
+  readonly isLoading = this.state.isLoading;
 
   ngOnInit(): void {
-    this.load();
+    this.state.load();
   }
 
-  load(): void {
-    this.isLoading.set(true);
-    this.error.set(null);
-
-    this.playerGuild.getGuildConfigSummary().subscribe({
-      next: (config) => {
-        this.config.set(config);
-        this.isLoading.set(false);
-      },
-      error: (error: unknown) => {
-        this.config.set(null);
-        this.error.set(
-          error instanceof Error
-            ? error.message
-            : 'Failed to load guild configuration.',
-        );
-        this.isLoading.set(false);
-      },
-    });
+  applyGuildConfigChanges(): void {
+    this.state.applyGuildConfigChanges();
   }
 
   armoryCapacityLabel(config: GuildConfigSummary): string {
@@ -55,5 +53,9 @@ export class GuildConfigSummarySection implements OnInit {
 
   durationLabel(minutes: number): string {
     return `${minutes} minutes`;
+  }
+
+  governanceQueryParams(): Record<string, string> {
+    return { managedEntityKey: 'guild' };
   }
 }

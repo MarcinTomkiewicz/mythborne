@@ -8634,6 +8634,8 @@ Dodać linki/akcje przy wartościach:
 - Change armory capacity z `0` na wartość.
 - Mark ready/apply.
 - Summary pokazuje nowy limit.
+
+**Implementation note:** ADMIN-FOLLOWUP-1 accepted on 2026-05-09. `GuildConfigSummarySection` now includes a real editable guild config form backed by focused `GuildConfigEditorState`. The editor creates a governed change set, adds changed config value entries in sequence, marks the draft ready, applies it, then reloads `PlayerGuild.getGuildConfigSummary()`. Numeric fields use Reactive Forms validation for required, non-negative integer values; `armoryCapacity = 0` is accepted and displayed as `Unlimited`; governance reason is required. The frontend uses an explicit contract map from non-prefixed `get_guild_config_summary()` fields to prefixed canonical `config_definitions.key` values: `creationDrachmaCost -> guild_creation_drachma_cost`, `memberBaseLimit -> guild_member_base_limit`, `memberLimitPerLeaderLevel -> guild_member_limit_per_leader_level`, `leaderInactivityThresholdDays -> guild_leader_inactivity_threshold_days`, `nominationDurationMinutes -> guild_emergency_nomination_duration_minutes`, `votingDurationMinutes -> guild_emergency_voting_duration_minutes`, `emergencyMaxCandidates -> guild_emergency_max_candidates`, and `armoryCapacity -> guild_armory_capacity`. No fallback/alias mapping, DB/RPC/generated edits, direct writes or `.from(...)` access were added. Verification passed with focused admin config specs, relevant config specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps. Manual smoke for creation cost and unlimited armory capacity apply/reload passed per acceptance.
 - Cancel draft nie zmienia wartości.
 
 ---
