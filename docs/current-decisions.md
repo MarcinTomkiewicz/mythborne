@@ -1,6 +1,6 @@
 # Mythsworn — Current Decisions Log
 
-Updated: 2026-05-08
+Updated: 2026-05-09
 
 Use this file for recent design, domain, database and implementation decisions that should override older assumptions.
 
@@ -14,6 +14,186 @@ If something conflicts, prefer:
 
 This file is not a Codex status tracker. Do not mark Codex tasks as completed here unless the user explicitly asks for documentation/status updates after accepting the work.
 
+
+
+## Manual Trial Minigame Shell/Core Decisions — 2026-05-09
+
+Manual Trial Minigame Shell/Core is the shared runtime foundation for player-facing manual Trial minigames. It is not a concrete minigame and must not implement Apollo, Hermes, Zeus, Hera, Artemis, Athena, Hephaestus or Aphrodite gameplay directly. The shell exists to prevent each minigame from inventing its own attempt lifecycle, manual/auto boundary, timeout handling, replay validation, report handoff and reward/result flow.
+
+### Scope and terminology
+
+- Use **Manual Trial Shell/Core** or **Manual Trial Minigame Shell/Core** for the shared host/foundation.
+- Use **Trial Offer** for the state where a Trial has appeared and the player chooses manual resolve or auto-resolve.
+- Use **Manual Runtime Session** for the session created only after the player chooses manual resolve.
+- Use **Manual Runtime Manifest** for the backend-owned manifest/config that lets the frontend render one concrete manual minigame session.
+- Use **Action Log** for the player action stream submitted by the frontend for backend replay/validation.
+- Use **Backend Verdict** for the backend-owned result after replay/validation or auto-resolve.
+- Concrete minigames are separate renderers/epics. Core may include a fail-closed unsupported renderer but must not include real gameplay for any concrete minigame.
+
+### Trial Offer and locked Trial identity
+
+- Trial identity is locked before the player chooses manual resolve or auto-resolve.
+- When the Trial Offer is shown, the backend already knows the trial definition, god, tested stat, difficulty and `minigame_key`.
+- Manual resolve and auto-resolve are two resolution paths for the same locked Trial attempt, not two separate rolls.
+- Trial Offer shows player-facing Trial identity, relevant labels/copy and the manual/auto choice, but it does not require loading or creating a Manual Runtime Manifest.
+- `trial_power` remains a gameplay/runtime concept and must not be shown raw to players.
+
+### Auto-resolve and inactivity behavior
+
+- Auto-resolve is a normal backend-owned workflow for resolving the locked Trial attempt without creating or running the concrete minigame runtime.
+- Auto-resolve can be chosen explicitly by the player.
+- Trial Offer has an inactivity timeout only, not a hard decision timer for an active player.
+- If the player shows no meaningful activity/session signal for the configured inactivity window while the Trial Offer is waiting, the system should auto-resolve the Trial.
+- Offer inactivity timeout exists to prevent permanent pending Trial Offers, not to punish slow-but-active players.
+- The offer inactivity window should be DB/config/admin-owned, not hardcoded in Angular.
+- A player-facing explanation may state that long inactivity can cause automatic resolution, but exact technical values do not need to be exposed.
+- Auto-resolve caused by inactivity is still ordinary auto-resolve. It may create a notification explaining that the Trial was auto-resolved due to inactivity, but it does not need a special lore/report mode.
+
+### Manual Runtime Session and explicit exit
+
+- Manual Runtime Session is created only after the player chooses manual resolve.
+- Backend returns the Manual Runtime Manifest for that concrete minigame session.
+- Frontend renders only from the backend manifest and must not generate durable difficulty parameters locally.
+- If the player explicitly navigates away or exits during a manual Trial, the UI should warn that leaving will resolve the Trial automatically.
+- If the player confirms exit, the backend should resolve through auto-resolve and the player should see the resulting report/outcome.
+- If the player cancels exit, the manual session continues.
+- There is no normal durable `abandoned` outcome. Every Trial should reach a final result or an explicit system failure.
+
+### Timer, crash and inactivity rules
+
+- Timer-based minigames may fail through normal manual timeout when their runtime timer expires.
+- If a client/browser crash prevents submit during a timer-based minigame and the minigame timer expires, the result can be a manual fail with `time_expired` or equivalent reason.
+- The game does not need to protect the player from every client-side crash or local environment failure.
+- Non-timer minigames must still have inactivity handling so a session cannot stay pending forever.
+- For non-timer minigames, inactivity timeout should be based on meaningful player/session activity rather than a blind hard wall-clock limit that ignores active play.
+- Non-timer inactivity timeout should lead to ordinary auto-resolve, not an abandoned state.
+
+### Backend authority and replay validation
+
+- Frontend is not authoritative for manual Trial success, failure, rewards or report generation.
+- Frontend renders the minigame, tracks local interaction state and submits an Action Log plus supporting client-observed metadata.
+- Frontend must not submit a final “I won” or “I failed” value as gameplay truth.
+- Backend must be able to replay/validate the Action Log against the Manual Runtime Manifest.
+- Backend owns the final outcome, failure reason, reward eligibility, reward result, report generation and durable state transition.
+- The Manual Runtime Manifest, manifest version/hash/seed/config and Action Log must be sufficient for backend replay/validation.
+- If backend cannot validate because of manifest/session mismatch, invalid action log or system mismatch, the result must be handled through validation/system reason semantics rather than silently trusting the frontend.
+
+### Deterministic timing and hidden safety margin
+
+- Timing-based and continuous minigames must use a deterministic runtime model shared by frontend rendering and backend replay.
+- Frontend should render bars, thresholds, readiness states and timers from backend manifest parameters.
+- Backend should replay player actions using the same manifest model and session time basis.
+- UI must not show final success before Backend Verdict.
+- If the UI clearly shows that the player reached a visible readiness threshold, backend validation should not normally fail because of a different hidden model of time or thresholds.
+- Timing/continuous minigames should include a hidden, player-friendly safety/tolerance margin in manifest or backend validation policy where needed.
+- The safety margin is not player-facing; players see one clear threshold/progress/timer model.
+- Technical margins exist to keep UI/backend validation fair and consistent, not to create hidden additional difficulty.
+- If frontend-observed state and backend replay diverge in a way that would reverse an apparently valid player action, treat it as a validation/system mismatch candidate, not as ordinary player failure.
+
+### Manifest, Action Log and Backend Verdict envelopes
+
+- Manual Runtime Manifest should include a common envelope: attempt/session identity, `minigame_key`, manifest version/hash, trial identity, god/stat/difficulty metadata, display metadata, timing policy, inactivity policy, accessibility policy, report policy, minigame-specific config and validation context.
+- Action Log submit should include a common envelope: attempt/session/manifest identity, manifest version/hash, action log entries, client timing summary, client-observed summary, client environment summary if useful, and request id.
+- Backend Verdict should include a common envelope: outcome, resolution mode, failure or success reason, backend replay summary, player report summary, reward result, report id and validation warnings/debug context where useful.
+- Concrete minigames define their own `minigame_config`, action entry kinds and replay-summary details inside these common envelopes.
+
+### Status, outcome, resolution mode and reason semantics
+
+- Do not collapse attempt lifecycle, session lifecycle, outcome, resolution mode and failure reason into one overloaded status.
+- Trial attempt lifecycle must support at least: offered, manual session active, auto-resolving, manual submit validating/replaying, resolved, and system failure/correction.
+- Manual session lifecycle must support at least: active, submitted, validated, expired/timeout, closed to auto-resolve, and invalidated/session mismatch.
+- Final result must separately store or expose outcome semantics: success or fail.
+- A resolved Trial must always have an outcome.
+- Every failed Trial result must have a failure reason at least for admin/debug/log/report-source purposes, even if player-facing copy later hides or simplifies it.
+- Resolution mode should distinguish manual, direct auto-resolve, auto after offer inactivity, auto after explicit exit, and auto after manual inactivity where applicable.
+- Reason codes should be DB-stable technical keys, not localized player text.
+- Player-facing labels/descriptions for reasons should come from read models/metadata/copy, not from raw reason keys.
+- Migrator may choose the exact enum/type/table names, but must preserve the semantic separation above.
+
+### Reason code families
+
+- Timeout/inactivity reasons should cover minigame time expiry, Trial Offer inactivity and manual session inactivity.
+- Auto/exit reasons should cover explicit auto-resolve selection and explicit manual-session exit to auto-resolve.
+- Gameplay-failure reasons should cover common cases such as mistakes exhausted, attempts exhausted and time expired, plus minigame-specific reasons defined by each minigame.
+- Validation reasons should cover invalid action log, manifest mismatch, session mismatch and backend validation failure.
+- System reasons should cover system validation mismatch and confirmed system error.
+- Concrete minigames define their own detailed reason keys later, but Shell/Core must provide room for both global and minigame-specific reason categories.
+
+### Reports and replay-friendly output
+
+- Every resolved Trial should produce or feed a game report/result surface.
+- The common player/public report structure is: intro/lore, Trial identity, replay/timeline summary or final-state summary, outcome, and reward.
+- Trial reports should be safe for private player display and future public/shareable report display.
+- Public reports should use a public report key/token and must not expose raw internal UUIDs, staff-only fields, debug payloads or raw technical replay internals.
+- Public/player reports should be attractive and replay-friendly rather than only dry text.
+- Shell/Core must provide a generic slot/contract for replay-lite, notable events, timeline summary or final state snapshot.
+- Each concrete minigame later defines its own player-facing replay detail level.
+- Full technical replay log is the source of truth for backend validation and admin/debug; player/public reports show a safe, curated, nontechnical summary derived from that source.
+
+### Combat / Ares boundary
+
+- Combat is a reusable combat engine, not a Manual Trial Minigame renderer.
+- Ares/Strength Trial may use combat through a combat wrapper/result handoff rather than through the manual minigame renderer registry.
+- PvP, Encounters and future systems may also use combat with their own caller context and consequences.
+- Manual Trial Shell/Core must not absorb live combat runtime or make combat behave like Apollo/Hermes/Zeus-style manual minigame renderers.
+
+### Core implementation boundary
+
+- Manual Trial Core may implement the host/page/shell, Trial Offer UI, manual/auto boundary, manual session loading, manifest envelope handling, renderer registry, unsupported renderer fail-closed state, shared HUD slots, Action Log submit envelope, Backend Verdict handling, result/report handoff, stale guards, exit warning, inactivity/timeout hooks and generic error states.
+- Manual Trial Core must not implement Apollo gameplay, Zeus charging, Hermes shuffle, Hera maze, Artemis aiming, Athena omen logic, Hephaestus forge, Aphrodite timing court, minigame-specific balancing, minigame-specific backend replay validation or minigame-specific report timelines.
+- Concrete minigames should be delivered as separate epics/mini-epics after Core and its DB/RPC contract exist.
+- Apollo / Path of Light is the preferred first real minigame after Core because it is the simplest proof of the manifest → action log → backend replay/verdict → report path.
+
+### Implementation ordering
+
+- First, preserve these decisions in `current-decisions.md` and the compact implementation context in `project-context.md`.
+- Then Migrator should design the DB/RPC/read-model foundation for the Manual Trial runtime, including attempt/session lifecycle, manifest generation, action-log storage/submit, backend replay/validation, auto-resolve fallback, result/reward/report handoff and generated-type readiness.
+- Codex/frontend work on the Manual Trial Core should begin only after the DB/RPC contract and generated types are available.
+- Concrete minigame implementation should follow after Core, preferably as separate epics/mini-epics rather than one large all-minigames epic.
+
+
+## Epic X — Onboarding / Start Flow Completion Decisions — 2026-05-06
+
+Epic X covers the canonical player entry flow from server selection to active hero gameplay entry. It is not a tutorial epic and it must not turn Angular into the authority for creating gameplay state.
+
+### Entry and routing
+
+- Player entry starts from server selection.
+- Server availability for new character creation must account for whether the selected standard server can still provide a free starting estate address in district A.
+- If the selected standard server has no hero for the current user, the user enters hero creation.
+- If the selected server has an existing hero for the current user, the user enters the game dashboard/game shell by default.
+- After hero creation, the player is already inside the game and is routed by default to stat allocation.
+- The initial stat allocation screen is not a mandatory tutorial/wizard lock. The player may leave it and return later.
+- On later entries, an existing hero is routed to the dashboard/game shell by default, not back to stat allocation.
+
+### Sandbox and multi-hero behavior
+
+- Sandbox/test servers may allow privileged users such as staff/testers to have multiple heroes.
+- For sandbox/test multi-hero contexts, the default active hero is the earliest created hero, treated as the likely main/default test hero.
+- The UI must allow switching to another sandbox/test hero.
+- A combined server-and-hero selector is acceptable, and a server-first then hero selector is also acceptable, as long as the selected server -> active hero semantics stay explicit.
+- Users with access to multiple servers or sandbox/test heroes must be able to switch active context without logging out.
+
+### Hero creation semantics
+
+- Hero creation must be one coherent domain/DB-RPC workflow, not a series of direct frontend table writes.
+- Hero names are unique per server. The same name may exist on different servers.
+- Origin is selected once during hero creation and immediately affects hero identity and bonuses.
+- Origin should not be changed after creation except through a future explicit admin/correction workflow if one is ever designed.
+- Origin screen/content must be admin-configurable, including descriptions, lore and bonus presentation. Angular must not hardcode final origin content as the long-term source of truth.
+- New heroes start with 1000 Character Points.
+- Starting Character Points do not have to be spent immediately.
+- Every new hero must receive an estate during creation. A hero without an estate after creation is an integrity error.
+- The starting estate address is randomly selected from free addresses in district A.
+- Starting estate addresses must not be assigned sequentially as A1, A2, A3, etc.
+- The player does not choose or preview the exact starting address before hero creation.
+
+### Source-of-truth boundary
+
+- All entry flow logic must use selected server -> active hero and must not assume `hero.id === auth.uid()`.
+- The DB/RPC contract for hero creation must exist before frontend implementation consumes the flow.
+- Codex must not implement Epic X by direct-writing hero, origin, Character Points, estate, resource, audit or related onboarding tables from Angular.
+- Preparing a DB/RPC handoff for the migrator and later frontend tasks for Codex are implementation consequences of these decisions, not open design questions.
 
 
 ## Epic Y — Prestige Foundation Decisions — 2026-05-07
@@ -71,26 +251,8 @@ Epic Y covers the Prestige foundation. Prestige is a long-term reputation/sława
 - Target strength is classified by the target's position inside the legal PvP target range, not by raw absolute level difference only.
 - Default banding is `20 / 60 / 20`: lower 20% = weaker, middle 60% = similar, upper 20% = stronger.
 - Banding should be admin-configurable.
-- Attacker rules:
-  - attacking stronger and winning gives a big gain;
-  - attacking stronger and drawing gives a small gain;
-  - attacking stronger and losing gives `0` Prestige delta;
-  - attacking similar and winning gives a normal gain;
-  - attacking similar and drawing gives `0`;
-  - attacking similar and losing gives a small-to-moderate loss;
-  - attacking weaker and winning gives a minor loss;
-  - attacking weaker and drawing gives a minor-to-medium loss;
-  - attacking weaker and losing gives a big loss.
-- Defender rules:
-  - defending against stronger and winning gives a big gain;
-  - defending against stronger and drawing gives a small gain;
-  - defending against stronger and losing gives `0`;
-  - defending against similar and winning gives a normal gain;
-  - defending against similar and drawing gives `0`;
-  - defending against similar and losing gives `0`;
-  - defending against weaker and winning gives `0`;
-  - defending against weaker and drawing gives a minor loss;
-  - defending against weaker and losing gives a loss, but milder than the active attacker losing to a weaker target.
+- Attacker rules: attacking stronger and winning gives a big gain; drawing gives a small gain; losing gives `0`; attacking similar and winning gives a normal gain; drawing gives `0`; losing gives a small-to-moderate loss; attacking weaker and winning gives a minor loss; drawing gives a minor-to-medium loss; losing gives a big loss.
+- Defender rules: defending against stronger and winning gives a big gain; drawing gives a small gain; losing gives `0`; defending against similar and winning gives a normal gain; drawing gives `0`; losing gives `0`; defending against weaker and winning gives `0`; drawing gives a minor loss; losing gives a loss, but milder than the active attacker losing to a weaker target.
 - Attacker penalties are harsher because the attacker chooses the target; defender penalties are softer because the defender does not choose the fight.
 - Suggested numeric seed can exist in DB config, but all values are balancing defaults and must not be hardcoded in Angular.
 
@@ -106,12 +268,7 @@ Epic Y covers the Prestige foundation. Prestige is a long-term reputation/sława
 
 ### Districts, relocation and buildings
 
-- Prestige rank gates district privileges:
-  - District A requires rank 1;
-  - District B requires rank 2;
-  - District C requires rank 3;
-  - District D requires rank 4;
-  - District E requires rank 5.
+- Prestige rank gates district privileges: A/B/C/D/E require ranks 1/2/3/4/5.
 - Falling below the Prestige rank required for the current district does not delete estate, delete buildings, downgrade buildings or force relocation.
 - Existing buildings keep working after Prestige loss.
 - Already-started building jobs/upgrades may finish even if Prestige drops during the job.
@@ -128,7 +285,7 @@ Epic Y covers the Prestige foundation. Prestige is a long-term reputation/sława
 
 ### Implementation boundary
 
-- DB/RPC/schema/finalizer work for Prestige belongs to the migrator/database track.
+- Migrator owns DB/RPC/schema/finalizer work for Prestige foundation.
 - Codex/frontend work belongs to Epic Y only after the DB/RPC contract and regenerated types exist.
 - Codex must not implement Prestige by hardcoding thresholds, rank names as source of truth, PvP delta matrix, point calculation, notification generation or report generation in Angular.
 - `current-todo.md`, `current-state-summary.md` and backlog task statuses are updated only by Codex/status workflow after confirmed implementation, not by this decision entry.
@@ -186,7 +343,7 @@ Server Events are global, temporary, server-scoped events that affect every hero
 - A system event can start even if no players are currently online. Server Events are server state, not online-presence state.
 - Default event duration is one week, but duration is admin-configurable.
 
-### Future Server Council activation
+### Future Server Council voting compatibility
 
 - Server Council and council voting are not part of the first Server Events foundation, but Server Events should be compatible with a future `council_vote` activation source.
 - Future Council voting default: generate 5 event proposals from the event pool.
@@ -194,23 +351,18 @@ Server Events are global, temporary, server-scoped events that affect every hero
 - Future voting duration default: 3 days.
 - Voting duration should be admin-configurable.
 - Event start after voting should be configurable: either a specific weekday after voting or X days after voting ends. Monday start is a reasonable default/proof-of-concept, not a hard rule.
-- If a council vote ties and an eligible E1 holder voted for one of the tied options, that vote resolves the tie.
-- If no eligible E1 holder resolves the tie, use a 24-hour runoff among tied events only. If the runoff still ties, randomly select from the still-tied events.
+- If voting has a tie and a qualifying Basileus/E1 exists, that hero's vote breaks the tie.
+- If no Basileus/E1 exists and there is still a tie, run a 24h runoff between the tied events.
+- If the runoff is still tied, the system randomly selects the winner from the still-tied events only.
+- Random selection is the final fallback. Do not use “first proposed wins” because event proposals are generated at the same time.
 
 ### UI boundary
 
-- Player UI should expose one compact active Server Event indicator.
-- If no Server Event is active, the indicator should show a neutral inactive/no-event state or remain unobtrusive according to the final UI pattern.
-- If a Server Event is active, the indicator should show the lore name, lore description/helper text and the major player-facing effect summary from DB/read models.
-- Server Events v1 does not require a full event page, large banner, report flow or notification spam.
-- Exact placement and visual treatment belong to later UI/Codex work; the decision here is that the active event must be visible and understandable without Angular owning event-effect authority.
-
-### Non-goals and boundaries
-
-- Server Events do not create a full political system by themselves.
-- Server Council, council UI, full event proposal/voting tables, and concrete seed copy for many event definitions are future work.
-- Server Events should not become an Angular-side effect calculator.
-- Server Events should not introduce per-player/district/guild scopes in v1.
+- Player UI needs one compact active Server Event indicator.
+- If no event is active, the indicator can show that no Server Event is active.
+- If an event is active, the indicator should show lore name, description and major effects.
+- A full event page, large banner, report or notification spam is not required for v1.
+- Exact UI placement belongs to UI/Codex later.
 
 ### Implementation boundary
 
@@ -218,243 +370,6 @@ Server Events are global, temporary, server-scoped events that affect every hero
 - The conversation decisions define what Server Events must do, not whether the DB implementation uses an existing bonus system directly or a separate event-effect layer mapped into runtime resolvers.
 - Server Events must integrate with existing runtime stat/Luck/derived/requirement checks rather than creating a parallel Angular-side calculation path.
 - Codex/frontend work can consume Server Events only after the DB/RPC/read-model contract and generated types exist.
-
-
-## Epic AA — Server Council Decisions — 2026-05-08
-
-Epic AA covers the future Server Council foundation. The Council is a lightweight political/prestige feature that gives high-district estate ownership additional meaning. It is not part of the first Server Events foundation and should not be implemented inside Epic Z.
-
-### Core scope
-
-- Server Council v1 exists only to choose Server Events.
-- The Council is not a parliament, budget system, tax system, punishment system, veto system, guild governance system or full political simulator.
-- The Council exists to give additional meaning to high districts D/E and especially to the E1 estate.
-- Server Council v1 is a future system and should be planned as Epic AA after Prestige and Server Events foundations are available.
-
-### Membership and eligibility
-
-- Council membership is based on current estate ownership in districts D and E.
-- District C is not part of the Council in v1.
-- The number of Council members is not a separate hardcoded limit. It follows the current D/E estate capacity.
-- If district D has 50 estates and district E has 1 estate, then the Council has up to 51 voting members.
-- If future balancing changes district D capacity, Council size changes naturally with that capacity.
-- There are no Council terms, election campaigns, candidate lists or separate Council elections.
-- A hero that loses their D/E estate loses Council membership.
-- A hero that gains a D/E estate enters the Council if the rest of eligibility is satisfied.
-- Falling below the required Prestige threshold suspends voting rights but does not evict the hero or remove the estate.
-- Suspended or banned server membership cannot vote.
-- Being in the Council does not grant or remove Prestige by itself.
-- The Council does not directly punish players. The only negative effect a Council decision may create is choosing a negative Server Event.
-
-### Activation threshold
-
-- Council-driven Server Event voting should not require all D/E estates to be occupied.
-- Server Council voting may begin once at least 20 estates in district D are occupied on the server.
-- This threshold exists for player experience: the Council can start being visible before the high districts are completely filled.
-- The threshold should be DB/config-owned rather than hardcoded in Angular.
-- If the threshold is not met, Server Events may still be started through admin/system activation according to Server Events rules; only Council voting is unavailable.
-
-### Voting model
-
-- The Council votes over a pool of Server Event proposals.
-- Default proposal count is 5.
-- Proposal count should be configurable.
-- Each eligible Council member has one vote.
-- A vote can be changed until voting closes.
-- Not voting is simply non-participation and has no penalty.
-- Voting results are not visible while voting is open.
-- Players outside the Council may see a public state such as “the Council is deliberating”.
-- Players outside the Council do not need to see the proposal list or live vote counts.
-- After voting ends, at least the selected Server Event may be shown publicly.
-- Showing the full proposal list after voting is a future UI/UX decision, not required for the v1 model.
-
-### E1 / Basileus tiebreaker
-
-- The tiebreaker is the hero currently holding estate E1.
-- The tiebreaker is not every hero with Prestige rank `Basileus`.
-- A hero with rank `Basileus` who does not hold E1 is not the tiebreaker.
-- The tiebreaker comes from owning the most important estate, not from a separate Council rank.
-- E1 may be lore-linked to a royal palace / royal seat.
-- If voting is tied and the E1 holder voted for one of the tied options, the E1 holder's vote breaks the tie.
-- If there is no eligible E1 holder or the E1 vote does not resolve the tie, run a runoff.
-- The runoff lasts 24 hours by default and includes only the tied options.
-- If the runoff remains tied, the system randomly selects one winner from the still-tied options only.
-- Do not use “first proposed wins” because proposals are generated together.
-
-### Out of scope for v1
-
-- No Council terms.
-- No campaigns.
-- No candidate registration.
-- No elections to the Council.
-- No Council ranks beyond the E1 tiebreaker role.
-- No Council budget.
-- No taxes.
-- No veto powers.
-- No guild voting blocs as a formal mechanic.
-- No public debates.
-- No rewards for voting.
-- No punishment for not voting.
-- No player sanctions or direct disciplinary decisions.
-
-
-## Manual Trial Shell / Core Decisions — 2026-05-08
-
-Manual Trial Shell/Core is the shared foundation for non-combat manual Trial minigames. Concrete Trial minigames should be implemented as specializations of this shell rather than as isolated feature islands that duplicate lifecycle, submit, error and result handling.
-
-### Core model
-
-- Manual Trial Shell/Core is a shared lifecycle layer, not a standalone minigame.
-- Manual Trial Shell/Core should be planned before individual non-combat Trial minigame epics.
-- Each concrete Trial owns its own manifest schema, renderer, input mechanics, local interaction state and submit payload shape.
-- The shared shell owns common challenge attempt flow, manifest loading, status/lifecycle, common errors, stale guards, submit orchestration and reward/report/result handoff.
-- The shared shell should not try to become one universal gameplay engine that understands every concrete Trial mechanic.
-- Combat may later reuse some shell/wrapper conventions such as layout, status, stale guards and result handoff, but combat remains a special live-combat runtime because it is DB-authoritative per player action with event log/opponent catch-up.
-
-### Shared shell responsibilities
-
-The shared shell should handle, at minimum:
-
-- entry from an exploration challenge attempt;
-- loading the DB/RPC/config-owned manual Trial manifest;
-- showing Trial name, deity, relevant stat name/key and difficulty profile;
-- not showing raw/final `trial_power` to the player;
-- optional HUD sections such as timer, remaining time, mistakes, attempts, required successes or step count only when the concrete manifest provides them;
-- common lifecycle states such as `not_started`, `running`, `submitting`, `success`, `failed`, `expired` or equivalent DB/read-model statuses;
-- stale guards for selected server, active hero, challenge attempt/session and route context;
-- canonical submit flow for the concrete Trial payload/result;
-- transition to DB/RPC-owned reward, report and result flow;
-- common failure states such as missing manifest, unsupported Trial kind, expired attempt, already-completed attempt or unsupported renderer.
-
-### Per-Trial specialization boundary
-
-- A concrete Trial defines the manifest parameters it understands.
-- A concrete Trial defines the renderer and interaction model.
-- A concrete Trial collects player input and produces a Trial-specific payload/result for submit.
-- A concrete Trial may have its own local UI state, but it should not duplicate shell-owned attempt lifecycle, submit, common errors or result handoff.
-- Concrete Trials must not hardcode long-term balancing values in Angular when DB/config/manifest should own them.
-- Concrete Trials should reuse the shell and shared patterns rather than duplicating timer/status/result components per minigame.
-
-### Difficulty and trial power semantics
-
-- Trial difficulty does not scale from hero level directly.
-- Hero level helps only indirectly through higher stats, gear, bonuses, Luck and therefore effective `trial_power`.
-- `easy`, `normal` and `hard` are stable difficulty profiles configured by DB/admin/balance data.
-- `trial_power` affects the concrete manifest within the selected difficulty profile, making the manual Trial more or less feasible.
-- District should not make the manual minigame itself harder or easier. District may affect system-level auto-resolve caps, access, rewards or balancing according to existing DB/admin configuration.
-- Auto-resolve caps are DB/admin-configured system rules and must not be treated as an open per-minigame decision or Angular-side calculation.
-- Hard Trials are allowed to be practically impossible for low-stat / poorly prepared heroes. This is intended, not a bug.
-- Practical impossibility must come from fair difficulty pressure such as short windows, long sequences or low tolerance, not from bugs, unreadable UI, bad hitboxes, unfair RNG, strobe/flashing or missing information.
-
-### Apollo / Path of Light / Agility decision slice
-
-Apollo / Path of Light is the Agility Trial specialization currently discussed.
-
-- The player clicks/taps the highlighted light tile before it fades.
-- Character movement onto the tile may be animated for fantasy/visual feedback, but movement/pathfinding is not the gameplay input in v1.
-- The player does not navigate by adjacent-grid movement in the first version.
-- The core fantasy is “follow the fading path of light”.
-- Agility/trial power can affect tile lifetime, grace window, sequence length, grid size, mistakes allowed, decoy count/aggressiveness and chain rhythm.
-- Decoy tiles may exist on any difficulty, but on easier difficulties they must be mild and non-frustrating.
-- Hard difficulty may use shorter tile windows, more steps, fewer mistakes, faster rhythm and stronger decoys.
-- Hard Apollo may be practically impossible at low Agility, but it must remain readable and fair.
-- No strobe, harsh flashing, rapid contrast flicker or epilepsy-risk visual behavior. Tiles should appear/fade softly even when reaction windows are short.
-- Apollo implementation should be a specialization of Manual Trial Shell/Core, not a standalone flow duplicating shell-owned lifecycle.
-
-
-## Luck Foundation Decisions — 2026-05-05
-
-Luck Foundation is a closed decision topic. It must not be reopened unless a migrator, Codex or Reviewer returns a real blocker.
-
-### Core semantics
-
-- Luck is a special stat, not a normal primary progression stat.
-- Luck should influence opportunities, ranges and outcome distributions, not guarantee perfect rewards or bypass gameplay.
-- Luck should not become direct combat power by itself.
-- Luck effects must remain DB/RPC/formula/config-owned where persistent or durable gameplay is affected.
-- Angular must not hardcode Luck formulas, drop chances, trial modifiers, combat RNG influence or reward ranges.
-- Luck should carry opportunity cost: investing in Luck means not investing in other stats, equipment or bonuses.
-- Luck affects helpful gameplay RNG surfaces unless a surface is explicitly Luck-excluded by DB/config/design.
-- Luck is consumed through canonical derived outputs such as `luckInfluence`, not by letting Angular or feature code apply raw Luck directly.
-- `luckInfluence` is the canonical derived influence value for Luck-aware reward, drop, Trial, Encounter and supported combat-preview contexts.
-
-### Foundation scope
-
-Luck Foundation covers, at minimum:
-
-- hero Luck breakdown and effective Luck value;
-- `luckInfluence` style formula output for reward/drop/trial/combat systems;
-- Trial power / `trial_power` calculations where Luck contributes as secondary influence;
-- `trial_power` is the canonical effective Trial strength used by Luck-aware Trial/Encounter/manual Trial contexts.
-- Conceptual rule: `trial_power = testedStatValue + luckInfluence`.
-- Difficulty, district, caps and challenge-specific parameters may consume `trial_power`, but they are not part of the `trial_power` value itself.
-- exploration RNG influence;
-- reward range and item generation opportunity influence;
-- combat RNG preview/context where supported by DB helpers;
-- Luck-aware admin/debug/explainability outputs.
-
-### Design boundaries
-
-- Luck may improve drop value opportunity, quality opportunity and affix opportunity, but it does not guarantee using the entire reward budget.
-- Luck may improve Trial/Encounter probability or manual Trial parameter generation through `trial_power`, but the primary stat remains the main axis.
-- Luck may influence RNG-sensitive combat contexts only through DB-owned helpers/config/formulas.
-- Luck is not a substitute for missing stats, gear or skill.
-- A `nothing` outcome is a deterministic fallback/result category, not a separate Luck RNG surface. Luck should influence the chance to reach reward/drop/opportunity surfaces, not treat `nothing` as its own positive roll target.
-- Anti-abuse, moderation, sanctions, audit grouping and review workflows are not gameplay RNG surfaces and must not be Luck-influenced.
-- Luck-excluded surfaces must remain explicit; if a gameplay RNG surface is excluded from Luck, DB/config/design should make that exclusion clear.
-- Luck Lab is a separate admin/balancer epic, not part of Luck Foundation.
-- Luck Lab may later provide sliders, simulations and distribution previews, but those tools must consume DB/RPC/formula outputs rather than inventing Angular formulas.
-
-### Implementation boundary
-
-- Existing DB/RPC contracts recorded in `database-current.md` are the source of truth for Luck Foundation availability.
-- Frontend/Codex must consume DB/RPC/formula outputs for Luck, `luckInfluence`, `trial_power`, reward/item-generation context and combat preview.
-- Missing Luck contract should be reported as a dependency/blocker, not replaced by Angular fallback math.
-- Luck Foundation decisions must remain visible as their own section in decision/context files and must not be collapsed into generic reward, trial or item generation notes.
-
-
-## Epic X — Onboarding / Start Flow Completion Decisions — 2026-05-06
-
-Epic X covers the canonical player entry flow from server selection to active hero gameplay entry. It is not a tutorial epic and it must not turn Angular into the authority for creating gameplay state.
-
-### Entry and routing
-
-- Player entry starts from server selection.
-- Server availability for new character creation must account for whether the selected standard server can still provide a free starting estate address in district A.
-- If the selected standard server has no hero for the current user, the user enters hero creation.
-- If the selected server has an existing hero for the current user, the user enters the game dashboard/game shell by default.
-- After hero creation, the player is already inside the game and is routed by default to stat allocation.
-- The initial stat allocation screen is not a mandatory tutorial/wizard lock. The player may leave it and return later.
-- On later entries, an existing hero is routed to the dashboard/game shell by default, not back to stat allocation.
-
-### Sandbox and multi-hero behavior
-
-- Sandbox/test servers may allow privileged users such as staff/testers to have multiple heroes.
-- For sandbox/test multi-hero contexts, the default active hero is the earliest created hero, treated as the likely main/default test hero.
-- The UI must allow switching to another sandbox/test hero.
-- A combined server-and-hero selector is acceptable, and a server-first then hero selector is also acceptable, as long as the selected server -> active hero semantics stay explicit.
-- Users with access to multiple servers or sandbox/test heroes must be able to switch active context without logging out.
-
-### Hero creation semantics
-
-- Hero creation must be one coherent domain/DB-RPC workflow, not a series of direct frontend table writes.
-- Hero names are unique per server. The same name may exist on different servers.
-- Origin is selected once during hero creation and immediately affects hero identity and bonuses.
-- Origin should not be changed after creation except through a future explicit admin/correction workflow if one is ever designed.
-- Origin screen/content must be admin-configurable, including descriptions, lore and bonus presentation. Angular must not hardcode final origin content as the long-term source of truth.
-- New heroes start with 1000 Character Points.
-- Starting Character Points do not have to be spent immediately.
-- Every new hero must receive an estate during creation. A hero without an estate after creation is an integrity error.
-- The starting estate address is randomly selected from free addresses in district A.
-- Starting estate addresses must not be assigned sequentially as A1, A2, A3, etc.
-- The player does not choose or preview the exact starting address before hero creation.
-
-### Source-of-truth boundary
-
-- All entry flow logic must use selected server -> active hero and must not assume `hero.id === auth.uid()`.
-- The DB/RPC contract for hero creation must exist before frontend implementation consumes the flow.
-- Codex must not implement Epic X by direct-writing hero, origin, Character Points, estate, resource, audit or related onboarding tables from Angular.
-- Preparing a DB/RPC handoff for the migrator and later frontend tasks for Codex are implementation consequences of these decisions, not open design questions.
 
 ## PvP Foundation Decisions — 2026-05-03 late
 
@@ -521,6 +436,67 @@ The active new Epic R is **PvP Foundation**. This is a target architecture found
 - Siege is future guild/multiplayer PvP and remains inactive until guild/siege systems exist.
 - Own-guild attack/siege restriction must be enforced when guild membership exists; do not create a fake guild system inside PvP Foundation.
 - Equipment equip/unequip workflow belongs to the future item/equipment epic. The `hero_equipment` boundary is hardened, but full mutation workflow is not part of current PvP DB work.
+
+
+## Luck Foundation Decisions — 2026-05-05
+
+Luck Foundation is a closed decision topic. It must not be reopened unless a migrator, Codex or Reviewer returns a real blocker.
+
+Luck is a global RNG/opportunity stat. It is not only an item-drop stat and it is not a guarantee of success or perfect rewards.
+
+### Core semantics
+
+- Luck affects helpful gameplay RNG surfaces unless a specific RNG surface is explicitly Luck-excluded through configuration/design.
+- Luck improves opportunities and odds; it must not make success deterministic.
+- `luckInfluence` is the canonical derived influence value used by formulas. It is not raw Luck and must not be treated as 1:1 with `luckValue`.
+- `trial_power` is the canonical effective trial strength concept.
+- Conceptually, `trial_power = testedStatValue + luckInfluence`.
+- Difficulty, district and pressure/caps consume `trial_power` through their own formulas/config; they are not part of `trial_power` itself.
+- `nothing` is not a separate RNG surface. It is the deterministic fallback when trial opportunity and encounter rolls do not produce an outcome.
+- Anti-abuse is not gameplay RNG and must not be affected by Luck.
+
+### Gameplay surfaces affected by Luck
+
+Luck Foundation covers, at minimum:
+
+- item/drop opportunity, value bucket, quality and affix chances;
+- reward amount and reward item-count ranges where DB reward contracts expose Luck-aware behavior;
+- trial opportunity;
+- trial manifestation;
+- trial power;
+- challenge auto-resolve success chance;
+- manual trial/minigame difficulty through `trial_power`, not by giving the frontend formula authority;
+- exploration encounter fallback / non-trial encounter chance;
+- combat RNG surfaces such as hit, evasion, critical chance and critical-damage context where the DB formula/config contract exposes them.
+
+### Item generation and rewards
+
+- The existing item generation model remains: value bucket, quality, base item, optional prefix, optional suffix and existing budget behavior.
+- Do not create a second item rarity system for Luck.
+- Do not add separate rarity flags for prefix/suffix/component combinations.
+- Item rarity/frequency continues to come from drachma value, bucket budget and item-generation rules.
+- Luck may increase the chance of a better opportunity, but a single roll can still produce an ordinary or awkward item.
+- Reward profiles remain the reward authority. Luck-aware reward amount/item-count behavior must come from DB/RPC/formula contracts, not Angular-side calculations.
+
+### Combat and manual gameplay boundary
+
+- Luck may influence combat RNG where configured, especially hit/evasion/critical surfaces.
+- Luck should not be turned into direct frontend-owned damage, HP or victory math.
+- Manual minigames and manual combat surfaces may show Luck contribution, but durable gameplay results must remain DB/RPC-owned.
+
+### DB/RPC and frontend authority
+
+- Luck formulas, caps, chances, reward ranges and item-generation effects are DB/RPC/formula-owned.
+- Angular may display DB/RPC preview/explainability outputs, but must not hardcode Luck curves, chance formulas, reward ranges or item-generation Luck effects.
+- If a needed Luck contract is missing, Codex must report a DB/RPC dependency rather than creating a frontend fallback formula.
+- Generated Supabase types must be regenerated after Luck-related DB/RPC migrations before frontend consumption.
+
+### Luck Lab boundary
+
+- Luck Lab is separate from Luck Foundation.
+- Luck Lab is an admin/balancer tool for sliders, previews, comparisons and distribution simulations.
+- Luck Lab must display DB/RPC/formula outputs and must not become gameplay authority.
+- Luck Lab belongs to its own admin/balancer epic after Luck Foundation.
 
 ## Pending Future Decision — Player bug reporting system
 
@@ -1759,3 +1735,81 @@ Corrected facts:
 - equipment-entry-level `entry_mode` supports `manual`, `generated` only.
 
 Do not assume a write-capable M12 UI is safe until the dump/generated types confirm the current RPC/governance path for the exact tables being edited.
+
+
+## Epic AA — Server Council Decisions — 2026-05-08
+
+Epic AA covers the future Server Council foundation. The Council is a lightweight political/prestige feature that gives high-district estate ownership additional meaning. It is not part of the first Server Events foundation and should not be implemented inside Epic Z.
+
+### Core scope
+
+- Server Council v1 exists only to choose Server Events.
+- The Council is not a parliament, budget system, tax system, punishment system, veto system, guild governance system or full political simulator.
+- The Council exists to give additional meaning to high districts D/E and especially to the E1 estate.
+- Server Council v1 is a future system and should be planned as Epic AA after Prestige and Server Events foundations are available.
+
+### Membership and eligibility
+
+- Council membership is based on current estate ownership in districts D and E.
+- District C is not part of the Council in v1.
+- The number of Council members is not a separate hardcoded limit. It follows the current D/E estate capacity.
+- If district D has 50 estates and district E has 1 estate, then the Council has up to 51 voting members.
+- If future balancing changes district D capacity, Council size changes naturally with that capacity.
+- There are no Council terms, election campaigns, candidate lists or separate Council elections.
+- A hero that loses their D/E estate loses Council membership.
+- A hero that gains a D/E estate enters the Council if the rest of eligibility is satisfied.
+- Falling below the required Prestige threshold suspends voting rights but does not evict the hero or remove the estate.
+- Suspended or banned server membership cannot vote.
+- Being in the Council does not grant or remove Prestige by itself.
+- The Council does not directly punish players. The only negative effect a Council decision may create is choosing a negative Server Event.
+
+### Activation threshold
+
+- Council-driven Server Event voting should not require all D/E estates to be occupied.
+- Server Council voting may begin once at least 20 estates in district D are occupied on the server.
+- This threshold exists for player experience: the Council can start being visible before the high districts are completely filled.
+- The threshold should be DB/config-owned rather than hardcoded in Angular.
+- If the threshold is not met, Server Events may still be started through admin/system activation according to Server Events rules; only Council voting is unavailable.
+
+### Voting model
+
+- The Council votes over a pool of Server Event proposals.
+- Default proposal count is 5.
+- Proposal count should be configurable.
+- Each eligible Council member has one vote.
+- A vote can be changed until voting closes.
+- Not voting is simply non-participation and has no penalty.
+- Voting results are not visible while voting is open.
+- Players outside the Council may see a public state such as “the Council is deliberating”.
+- Players outside the Council do not need to see the proposal list or live vote counts.
+- After voting ends, at least the selected Server Event may be shown publicly.
+- Showing the full proposal list after voting is a future UI/UX decision, not required for the v1 model.
+
+### E1 / Basileus tiebreaker
+
+- The tiebreaker is the hero currently holding estate E1.
+- The tiebreaker is not every hero with Prestige rank `Basileus`.
+- A hero with rank `Basileus` who does not hold E1 is not the tiebreaker.
+- The tiebreaker comes from owning the most important estate, not from a separate Council rank.
+- E1 may be lore-linked to a royal palace / royal seat.
+- If voting is tied and the E1 holder voted for one of the tied options, the E1 holder's vote breaks the tie.
+- If there is no eligible E1 holder or the E1 vote does not resolve the tie, run a runoff.
+- The runoff lasts 24 hours by default and includes only the tied options.
+- If the runoff remains tied, the system randomly selects one winner from the still-tied options only.
+- Do not use “first proposed wins” because proposals are generated together.
+
+### Out of scope for v1
+
+- No Council terms.
+- No campaigns.
+- No candidate registration.
+- No elections to the Council.
+- No Council ranks beyond the E1 tiebreaker role.
+- No Council budget.
+- No taxes.
+- No veto powers.
+- No guild voting blocs as a formal mechanic.
+- No public debates.
+- No rewards for voting.
+- No punishment for not voting.
+- No player sanctions or direct disciplinary decisions.

@@ -12,6 +12,7 @@ import {
   HeroExplorationTestOverrideReadModel,
 } from '../domain/exploration/exploration-runtime.model';
 import { Json } from '../types/database.types';
+import { mapHeroExplorationStepRng } from './exploration-rng-read-model';
 import {
   booleanValue,
   jsonRecord,
@@ -163,7 +164,7 @@ function mapHeroExplorationEdgeJson(row: JsonRecord): HeroExplorationEdgeReadMod
 }
 
 function mapHeroExplorationStepJson(row: JsonRecord): HeroExplorationStepReadModel {
-  return {
+  const step = {
     id: text(read(row, 'id')),
     serverId: text(read(row, 'serverId', 'server_id')),
     heroId: text(read(row, 'heroId', 'hero_id')),
@@ -193,6 +194,11 @@ function mapHeroExplorationStepJson(row: JsonRecord): HeroExplorationStepReadMod
     resolvedAt: optionalText(read(row, 'resolvedAt', 'resolved_at')),
     createdAt: text(read(row, 'createdAt', 'created_at')),
     updatedAt: text(read(row, 'updatedAt', 'updated_at')),
+  } satisfies Omit<HeroExplorationStepReadModel, 'rng'>;
+
+  return {
+    ...step,
+    rng: mapHeroExplorationStepRng(step),
   };
 }
 

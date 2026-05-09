@@ -211,7 +211,10 @@ export const RPC = {
   deactivate_reward_profile_assignment: 'deactivate_reward_profile_assignment',
   get_hero_experience_to_next_level: 'get_hero_experience_to_next_level',
   get_hero_prestige_public_summary: 'get_hero_prestige_public_summary',
+  get_hero_trial_power: 'get_hero_trial_power',
+  get_luck_lab_preview_contracts: 'get_luck_lab_preview_contracts',
   grant_hero_experience: 'grant_hero_experience',
+  preview_luck_influence_and_trial_power: 'preview_luck_influence_and_trial_power',
   save_stat_allocation: 'save_stat_allocation',
   update_entity_requirement: 'update_entity_requirement',
 } as const;

@@ -50,6 +50,86 @@ describe('exploration runtime JSON mappers', () => {
     expect(state.activeEffect?.id).toBe('effect-1');
   });
 
+  it('preserves Luck-aware exploration RNG sequence without treating nothing as a roll', () => {
+    const state = mapHeroExplorationStateJson({
+      hasExploration: true,
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+      explorationDate: '2026-05-01',
+      remainingTrials: 2,
+      activeStep: stepJson({
+        id: 'step-2',
+        status: 'resolved',
+        outcomeKind: 'nothing',
+        trialOpportunityChance: 35,
+        trialOpportunityRoll: 70,
+        encounterChance: 20,
+        encounterRoll: 90,
+        metadataJson: {
+          rng: {
+            trialOpportunity: {
+              luckValue: 12,
+              luckInfluence: 4,
+              explanation: 'DB trial opportunity context.',
+            },
+            encounter: {
+              luckValue: 12,
+              luckInfluence: 4,
+              explanation: 'DB encounter context.',
+            },
+          },
+          luckContext: { luckValue: 12, luckInfluence: 4 },
+          formulaContext: { trial: 'db_formula' },
+          explanation: 'Trial opportunity failed, then encounter failed.',
+          nothingFallbackReason: 'trial_and_encounter_failed',
+        },
+      }),
+    });
+
+    const rng = state.activeStep?.rng;
+
+    expect(rng?.trialOpportunity.chance).toBe(35);
+    expect(rng?.trialOpportunity.roll).toBe(70);
+    expect(rng?.trialOpportunity.luckInfluence).toBe(4);
+    expect(rng?.encounter.chance).toBe(20);
+    expect(rng?.encounter.roll).toBe(90);
+    expect(rng?.encounter.luckValue).toBe(12);
+    expect(rng?.nothingFallback.isFallback).toBeTrue();
+    expect(rng?.nothingFallback.reason).toBe('trial_and_encounter_failed');
+    expect(rng?.finalOutcomeKind).toBe('nothing');
+    expect(rng?.explanation).toBe('Trial opportunity failed, then encounter failed.');
+  });
+
+  it('does not treat legacy empty/none outcomes as canonical nothing fallback', () => {
+    const emptyState = mapHeroExplorationStateJson({
+      hasExploration: true,
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+      explorationDate: '2026-05-01',
+      remainingTrials: 2,
+      activeStep: stepJson({
+        id: 'step-empty',
+        status: 'resolved',
+        outcomeKind: 'empty',
+      }),
+    });
+    const noneState = mapHeroExplorationStateJson({
+      hasExploration: true,
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+      explorationDate: '2026-05-01',
+      remainingTrials: 2,
+      activeStep: stepJson({
+        id: 'step-none',
+        status: 'resolved',
+        outcomeKind: 'none',
+      }),
+    });
+
+    expect(emptyState.activeStep?.rng?.nothingFallback.isFallback).toBeFalse();
+    expect(noneState.activeStep?.rng?.nothingFallback.isFallback).toBeFalse();
+  });
+
   it('guards malformed player state arrays and objects', () => {
     const state = mapHeroExplorationStateJson({
       hasExploration: true,
@@ -160,7 +240,16 @@ function edgeJson(): Json {
   };
 }
 
-function stepJson(input: { id: string; status: string }): Json {
+function stepJson(input: {
+  id: string;
+  status: string;
+  outcomeKind?: string;
+  trialOpportunityChance?: number | null;
+  trialOpportunityRoll?: number | null;
+  encounterChance?: number | null;
+  encounterRoll?: number | null;
+  metadataJson?: Json;
+}): Json {
   return {
     id: input.id,
     serverId: 'server-1',
@@ -172,16 +261,16 @@ function stepJson(input: { id: string; status: string }): Json {
     directionKey: 'north',
     stepKind: 'discover',
     status: input.status,
-    outcomeKind: 'pending',
+    outcomeKind: input.outcomeKind ?? 'pending',
     difficultyKey: 'easy',
     districtCode: 'old_town',
     trialDefinitionId: null,
     encounterDefinitionId: null,
-    trialOpportunityChance: null,
-    trialOpportunityRoll: null,
-    encounterChance: null,
-    encounterRoll: null,
-    metadataJson: {},
+    trialOpportunityChance: input.trialOpportunityChance ?? null,
+    trialOpportunityRoll: input.trialOpportunityRoll ?? null,
+    encounterChance: input.encounterChance ?? null,
+    encounterRoll: input.encounterRoll ?? null,
+    metadataJson: input.metadataJson ?? {},
     startedAt: '2026-05-01T10:05:00.000Z',
     resolvesAt: '2026-05-01T10:06:00.000Z',
     resolvedAt: input.status === 'resolved' ? '2026-05-01T10:06:00.000Z' : null,

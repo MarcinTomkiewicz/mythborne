@@ -85,12 +85,40 @@ export interface HeroExplorationStepReadModel {
   trialOpportunityRoll: number | null;
   encounterChance: number | null;
   encounterRoll: number | null;
+  rng?: HeroExplorationStepRngReadModel;
   metadataJson: Json;
   startedAt: string;
   resolvesAt: string;
   resolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface HeroExplorationRngRollReadModel {
+  surfaceKey: 'trial_opportunity' | 'encounter';
+  chance: number | null;
+  roll: number | null;
+  selectedEntityId: string | null;
+  luckValue: number | null;
+  luckInfluence: number | null;
+  explanation: string | null;
+  metadataJson: Json;
+}
+
+export interface HeroExplorationNothingFallbackReadModel {
+  isFallback: boolean;
+  outcomeKind: string;
+  reason: string | null;
+}
+
+export interface HeroExplorationStepRngReadModel {
+  finalOutcomeKind: string;
+  trialOpportunity: HeroExplorationRngRollReadModel;
+  encounter: HeroExplorationRngRollReadModel;
+  nothingFallback: HeroExplorationNothingFallbackReadModel;
+  luckContextJson: Json;
+  formulaContextJson: Json;
+  explanation: string | null;
 }
 
 export interface HeroExplorationEffectReadModel {

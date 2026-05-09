@@ -1,6 +1,6 @@
 # Mythsworn — Project Context for Codex
 
-Updated: 2026-05-08
+Updated: 2026-05-09
 
 ## Purpose
 
@@ -21,56 +21,51 @@ This document is intentionally compact. For exact DB/RPC/helper inventory, consu
 ---
 
 
-## Manual Trial Shell Planning Context — 2026-05-08
 
-Manual Trial Shell/Core is the planned shared foundation for non-combat manual Trial minigames. It should be treated as a future foundation epic before implementing individual manual Trials such as Apollo, Hermes, Hephaestus, Zeus, Artemis, Hera/Maze, Athena or Aphrodite.
+## Manual Trial Minigame Shell/Core Planning Context — 2026-05-09
 
-Operational direction:
+Manual Trial Shell/Core is the shared host/runtime foundation for future player-facing manual Trial minigames. It is not a concrete minigame. It should prepare the common workflow before Apollo, Hermes, Zeus, Hera, Artemis, Athena, Hephaestus or Aphrodite are implemented.
 
-- Manual Trial Shell/Core owns the common challenge attempt lifecycle, manifest loading, status, common error states, stale guards, submit orchestration and reward/report/result handoff.
-- Concrete Trials own their own manifest schema, renderer, input mechanics and Trial-specific submit payload/result.
-- The shell should display Trial name, deity, relevant stat and difficulty profile, but must not show raw/final `trial_power` to players.
-- Timer, mistakes, attempts, required successes and similar HUD elements are optional manifest-driven sections, not mandatory fields for every Trial.
-- DB/RPC/config/read models are authoritative for manifest parameters, finalization, rewards and reports. Angular must not hardcode durable balancing or final gameplay outcome as authority.
-- Difficulty profiles such as `easy`, `normal` and `hard` are stable DB/admin-configured profiles. Hero level does not directly scale Trial difficulty; hero level helps only through stats, gear, bonuses, Luck and effective `trial_power`.
-- Hard manual Trials may be practically impossible for low-stat / poorly prepared heroes, but they must remain fair, readable and not impossible because of bugs, bad hitboxes, unfair RNG, missing information or unsafe visual flashing.
-- Combat may later share some shell/wrapper conventions, but it remains a special live-combat runtime because of per-action DB authority and event-log flow.
+Core direction:
 
-Apollo / Path of Light / Agility current direction:
+- Trial identity is locked before the player chooses manual resolve or auto-resolve: trial definition, god, tested stat, difficulty and `minigame_key` are already known when the Trial Offer is shown.
+- Trial Offer lets the player choose manual resolve or auto-resolve, but does not create the concrete minigame runtime manifest.
+- Trial Offer has an inactivity timeout only, intended to avoid permanently pending offers; long inactivity should trigger ordinary auto-resolve.
+- Auto-resolve resolves the same locked Trial attempt through a backend-owned workflow and does not load or run the concrete minigame runtime.
+- Manual Runtime Session starts only after manual resolve is selected, and the backend then returns a Manual Runtime Manifest.
+- Frontend renders the minigame from the backend manifest and submits an Action Log, not a final “success/fail” truth value.
+- Backend is authoritative for replay/validation, outcome, failure reason, reward, report generation and durable state transitions.
+- There is no normal `abandoned` outcome. Every Trial must resolve to success/fail or explicit system failure/correction.
+- Timer-based minigames can fail through normal timeout; non-timer minigames need inactivity handling that leads to auto-resolve after real inactivity.
+- Explicit exit from a manual Trial should warn the player that leaving will auto-resolve the Trial.
+- Timing/continuous minigames must use a deterministic manifest model shared by UI rendering and backend replay.
+- Hidden player-friendly safety/tolerance margins may exist in manifest/backend validation policy, but players see only clear bars, thresholds, readiness states and timers.
+- UI must not show final Trial success/reward before backend verdict.
+- Status/outcome design must keep lifecycle, outcome, resolution mode and failure reason separate; Migrator may choose final technical enum names but must preserve that semantic separation.
+- Every resolved Trial has an outcome, and every fail has a reason at least for admin/debug/report-source purposes.
+- Trial reports should follow a common structure: intro/lore, Trial identity, replay/timeline or final-state summary, outcome and reward.
+- Public/player reports should be replay-friendly and attractive, but each concrete minigame defines its own level of replay-lite detail later.
+- Full technical replay log is backend/admin/debug source-of-truth; player/public reports show curated safe summaries without raw UUIDs, staff-only fields or debug payloads.
+- Combat/Ares is a combat wrapper/result-handoff case, not a normal Manual Trial minigame renderer.
 
-- Apollo is the Agility Trial specialization based on clicking/tapping highlighted fading light tiles.
-- Animated character stepping may be visual feedback only; v1 input is clicking/tapping the target tile, not movement/pathfinding across adjacent cells.
-- Agility/trial power may affect tile lifetime, grace window, required steps, grid size, mistakes allowed, decoy count/aggressiveness and chain rhythm.
-- Decoys can exist on every difficulty but must be non-frustrating on easier profiles.
-- Hard Apollo can be extremely difficult at low Agility, but tiles should fade/appear softly; no strobe, harsh flashing or rapid contrast flicker.
-- Apollo should be implemented as a specialization of the future Manual Trial Shell/Core, not as a fully isolated duplicate lifecycle.
+Manual Trial Core may implement host/page/shell, Trial Offer UI, manual/auto boundary, manual session loading, manifest envelope handling, renderer registry, unsupported renderer fail-closed state, shared HUD slots, Action Log submit envelope, backend verdict handling, result/report handoff, stale guards, exit warning and inactivity/timeout hooks.
+
+Manual Trial Core must not implement Apollo gameplay, Zeus charging, Hermes shuffle, Hera maze, Artemis aiming, Athena omen logic, Hephaestus forge, Aphrodite timing court, minigame-specific balancing, minigame-specific replay validation or minigame-specific report timelines.
+
+Implementation ordering:
+
+1. Migrator designs the DB/RPC/read-model foundation for Manual Trial runtime after these decisions are accepted.
+2. Codex consumes the generated DB/RPC contract to implement the shared Manual Trial Core host.
+3. Concrete minigames are implemented later as separate epics/mini-epics, with Apollo / Path of Light as the preferred first real minigame.
 
 
 
 
-## Luck Foundation Decision Scope — 2026-05-05
 
-Luck Foundation is a closed decision topic and must stay visible as its own project context area.
 
-Operational direction:
+## Server Events Foundation Implementation Context — 2026-05-09
 
-- Luck is a special stat that affects opportunities, ranges and outcome distributions, not a guarantee of perfect outcomes.
-- Luck must be consumed through DB/RPC/formula outputs for durable gameplay.
-- Angular must not hardcode Luck formulas, drop chances, Trial modifiers, combat RNG influence or reward ranges.
-- Luck Foundation covers effective Luck value/breakdown, `luckInfluence`, `trial_power`, exploration RNG influence, reward/item generation opportunity influence, combat RNG preview/context where supported and admin/debug explainability.
-- Luck may improve drop value opportunity, quality opportunity and affix opportunity, but it does not guarantee using the entire reward budget.
-- Luck may contribute to Trial/Encounter probability or manual Trial manifest generation through `trial_power`, but the primary stat remains the main axis.
-- Luck Lab is separate from Luck Foundation and belongs to its own admin/balancer epic with sliders, previews and distribution simulations.
-
-Implementation boundary:
-
-- `database-current.md` records Epic U Luck Foundation as DB-ready.
-- Frontend/Codex should consume DB/RPC/formula outputs for Luck, `luckInfluence`, `trial_power`, reward/item-generation context and combat preview.
-- Missing Luck contract should be reported as a dependency/blocker, not replaced by Angular fallback math.
-
-## Server Events Foundation Planning Context — 2026-05-07
-
-Server Events are a closed-enough design topic for DB/RPC foundation planning. They are not yet an implemented gameplay system in the current app context, and they should not be confused with the future Server Council voting system.
+The DB/RPC Server Events foundation exists, but first frontend integration should remain limited to active-event display and admin/config consumption. Server Council voting remains future work.
 
 Key implementation direction:
 
@@ -99,11 +94,10 @@ Activation direction:
 
 Implementation ordering:
 
-1. Migrator prepares Server Events DB/RPC/read-model foundation and clarifies how event effects integrate with existing bonus/runtime/requirement systems.
-2. Codex consumes active-event read models and admin/config paths only after generated types are current.
-3. Do not build Server Council, proposal voting UI, or Angular-side event effect calculation as part of the first Server Events foundation.
-
-
+1. DB/RPC Server Events foundation exists. Codex may consume active-event read models and admin/config paths after generated Supabase types are current.
+2. Frontend/player surfaces should use DB/RPC read models such as `get_active_server_event(...)`; Angular must not calculate or apply event effects as authority.
+3. Do not build Server Council, proposal voting UI, or Angular-side event effect calculation as part of first Server Events frontend integration.
+4. If generated types are stale or missing current Server Events RPCs, Codex must report a DB/types blocker instead of inventing Angular fallbacks.
 ## Server Council Planning Context — 2026-05-08
 
 Server Council is a future lightweight governance feature for choosing Server Events. It should be treated as future Epic AA, not as part of the first Server Events frontend/backend foundation.
@@ -158,7 +152,6 @@ Implementation boundary:
 2. Server Events should remain compatible with a future `council_vote` activation source.
 3. Server Council DB/RPC/UI planning can happen later as Epic AA after Prestige, estate ownership and Server Events contracts are stable.
 
-
 ## Prestige Foundation Planning Context — 2026-05-07
 
 Prestige is a closed-enough design topic for Codex Epic Y frontend integration. The current dump already contains Prestige DB foundation objects such as `hero_prestige`, `hero_prestige_ledger` and `apply_hero_prestige_delta(...)`; frontend/Codex must still wait for current generated types and consume the DB/RPC contract rather than inventing Prestige logic in Angular.
@@ -207,7 +200,6 @@ Frontend ordering:
 1. Confirm current generated Supabase types include the Prestige DB/RPC contract.
 2. Codex Epic Y consumes the DB/RPC contract for frontend read models, rank display, PvP report summary, admin/debug/config surfaces, building/relocation gate display and rank-change notifications.
 3. Status files such as `current-todo.md`, `current-state-summary.md` and backlog completion markers are not updated until actual implementation is confirmed through the normal Codex/status workflow.
-
 
 ## Current High-Priority Implementation Context — 2026-05-03 late
 
@@ -268,9 +260,11 @@ The following R/PvP DB work has been applied and verified enough to continue:
 
 ### PvP result chain current note
 
-The old R-DB6 warning is obsolete. Current `database-current.md` and the current dump record the PvP attack result chain as present: PvP attack results, resource consequences, XP rewards, future/active Prestige context, anti-abuse signals and report triggers.
+The old R-DB6 warning is obsolete. Current `database-current.md` and the current dump record the PvP attack result chain as present, including PvP attack results, resource consequences, XP rewards, Prestige context/foundation hooks, anti-abuse signal generation and report trigger layers.
 
-For any new PvP/combat work, re-read the current dump, generated types and `database-current.md`; do not use older in-chat R-DB6 drafts as source of truth.
+For any new PvP/combat work, re-read the current dump and `database-current.md`; do not use older in-chat R-DB6 drafts as source of truth.
+
+After schema/RPC migrations that Codex will consume, regenerate/update generated Supabase types before frontend work.
 
 Current Epic N decision state:
 
@@ -634,6 +628,33 @@ Exploration rewards must run through the real reward profile/assignment flow. It
 Epic W should ensure a minimal smoke content set: one Combat Trial, one Combat Encounter with XP, one Resource Encounter, one Buff Encounter, one Debuff Encounter and one Trial reward assignment that can generate an item. Reuse/fix existing definitions where possible instead of creating duplicates.
 
 ---
+
+
+
+## Luck Foundation Decision Scope — 2026-05-05
+
+Luck Foundation is a closed decision topic and must stay visible as its own project context area.
+
+Current direction:
+
+- Luck is a global RNG/opportunity stat, not only an item-drop stat.
+- Luck affects helpful gameplay RNG surfaces unless a specific surface is explicitly excluded by configuration/design.
+- Luck never guarantees success or perfect rewards.
+- `luckInfluence` is the formula-derived influence value and must not be treated as raw Luck or 1:1 with `luckValue`.
+- `trial_power` is the canonical effective trial strength concept and is conceptually `testedStatValue + luckInfluence`.
+- Difficulty, district and caps consume `trial_power`; they are not part of `trial_power` itself.
+- Luck applies to trial opportunity, trial manifestation, trial power, auto-resolve, manual trial difficulty through trial power, exploration encounter fallback, item/drop opportunity, reward/item generation and combat RNG surfaces where DB contracts expose them.
+- `nothing` is a deterministic fallback after other exploration outcome rolls fail, not a separate Luck surface.
+- Anti-abuse is not gameplay RNG and must not be affected by Luck.
+- Angular must not hardcode Luck formulas, chances, caps, reward ranges, drop curves or combat Luck math.
+- Frontend and admin tooling should consume DB/RPC/formula outputs and report missing contracts as DB dependencies.
+- Luck Lab is separate from Luck Foundation and belongs to its own admin/balancer epic with sliders, previews and distribution simulations.
+
+Current DB/RPC state summary:
+
+- `database-current.md` records Epic U Luck Foundation as DB-ready.
+- Core helpers/RPCs include effective Luck, Luck breakdown, Luck influence, `trial_power`, Luck-aware exploration/trial helpers, reward/item-generation Luck contracts and combat Luck preview.
+- Frontend work must regenerate Supabase types after Luck DB/RPC migrations before consuming those contracts.
 
 ## Estate / Buildings Current Direction
 

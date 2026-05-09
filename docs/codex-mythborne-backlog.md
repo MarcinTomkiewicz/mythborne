@@ -8812,6 +8812,8 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - No manual edits to generated DB types exist.
 - Missing DB/RPC contracts are reported as blockers, not replaced with Angular logic.
 
+**Status note 2026-05-09:** Accepted verification-only. Current generated types already exposed the Luck Foundation RPC/contracts needed for U0, including Trial Power, Luck preview and combat/drop/reward preview surfaces. Codex did not edit `database.types.ts` or add Angular fallback formulas.
+
 ---
 
 ## Task U1 — Luck domain models and mappers
@@ -8839,6 +8841,8 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - Mapper distinguishes raw `luckValue`, `luckInfluence`, and `trialPower`.
 - Mapper handles nullable/missing preview values safely.
 - Build and focused mapper tests pass.
+
+**Status note 2026-05-09:** Accepted. Added Luck domain/read models, generated RPC row aliases and mapper coverage for surfaces, Trial Power, chance previews, reward/drop previews and combat preview output while preserving DB labels/descriptions/helper text and formula metadata.
 
 ---
 
@@ -8871,6 +8875,8 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - Unknown/missing state is explicit.
 - No direct table mutation is introduced.
 
+**Status note 2026-05-09:** Accepted. Added `LuckRngSurfaces` over canonical `get_luck_lab_preview_contracts()` via `Backend.rpc(...)`, reusing U1 read models/mappers and grouping by DB-returned category keys without local registry/classification fallback.
+
 ---
 
 ## Task U3 — Trial Power read/preview integration
@@ -8896,6 +8902,8 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - Difficulty/district are not shown as Trial Power ingredients.
 - No Angular hardcoded Trial Power formula exists.
 
+**Status note 2026-05-09:** Accepted. Added `LuckTrialPower` over `get_hero_trial_power(...)` and `preview_luck_influence_and_trial_power(...)`, preserving tested stat value, raw Luck, Luck influence, final Trial Power and DB formula explanation; stat labels are presentation-only enrichment.
+
 ---
 
 ## Task U4 — Exploration RNG read-state alignment
@@ -8920,6 +8928,8 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - Luck-aware values from DB are preserved.
 - Player-facing view does not imply `nothing` was separately rolled.
 - Build and focused exploration mapper/service tests pass.
+
+**Status note 2026-05-09:** Accepted after cleanup. Exploration RNG read state preserves DB-returned trial opportunity chance/roll, encounter chance/roll, Luck/context/formula/explanation metadata and final outcome. Roll-level `outcomeKind` was removed; only `finalOutcomeKind` remains, and canonical `nothing` is the only fallback outcome.
 
 ---
 
@@ -12187,6 +12197,661 @@ Perform final frontend integration pass for Council voting.
 - Non-Council hero → sees only safe public state.
 - Completed vote → selected event visible.
 - Admin debug → eligibility/session/result visible.
+
+---
+
+---
+
+# Epic AB — Manual Trial Minigame Shell/Core
+
+**Status:** Blocked until Manual Trial Runtime DB/RPC foundation exists and generated Supabase types are current.
+
+**Execution note:** AB0 is allowed while blocked; AB1+ are blocked until AB0 confirms the required DB/RPC/generated-type contracts are present.
+
+## Epic goal
+
+Wdrożyć frontendową integrację wspólnego **Manual Trial Minigame Shell/Core** dla manualnych Triali.
+
+Manual Trial Core nie jest konkretną minigierką. Jego zadaniem jest przygotowanie wspólnego hosta i workflow dla przyszłych minigier: Trial Offer, Manual Runtime Session, Manual Runtime Manifest, Action Log, Backend Verdict, result/report handoff, fail-closed unsupported renderer, exit/inactivity behavior i renderer registry.
+
+Konkretne minigry, takie jak Apollo / Path of Light, Hermes / Shifting Seals, Zeus / Storm Charge, Hephaestus / Divine Forge, Hera / Maze, Artemis / Harpy Hunt, Athena / Scales of Judgment i Aphrodite / Graces' Court, są poza zakresem Epic AB i powinny dostać osobne epiki/mini-epiki po Core.
+
+## Hard dependency
+
+Do not start AB1+ implementation tasks in this Epic until migrator confirms the Manual Trial Runtime DB/RPC foundation exists and generated Supabase types are current.
+
+AB0 may run before the foundation exists because its job is to audit current DB/RPC/generated-type readiness and report exact blockers.
+
+Required DB/RPC/read-model contracts:
+
+- player-safe Trial Offer read model for the active unresolved Trial;
+- manual/auto boundary for the same locked Trial attempt;
+- start Manual Runtime Session RPC;
+- Manual Runtime Manifest read model/RPC;
+- Action Log submit RPC;
+- Backend Verdict/result RPC or read model;
+- auto-resolve workflow for:
+  - direct player choice;
+  - offer inactivity timeout;
+  - explicit manual exit;
+  - manual inactivity timeout where applicable;
+- status/outcome/resolution-mode/failure-reason semantics;
+- report/reward/result handoff;
+- player-safe report summary or report reference;
+- stale/session/attempt guards;
+- DB-owned timeout/inactivity policy;
+- generated Supabase types exposing all required rows/args/returns.
+
+If any required contract is missing from generated types, stop and report DB/RPC blocker.
+
+Codex must not create Angular fallback models, mock RPCs, direct table reads/writes or manual generated-row interfaces to hide missing DB/RPC contracts.
+
+## Canonical decisions
+
+- Trial identity is locked before the player chooses manual resolve or auto-resolve.
+- Trial Offer shows the active Trial and allows manual resolve or auto-resolve.
+- Manual Runtime Session starts only after the player chooses manual resolve.
+- Auto-resolve does not create or require a Manual Runtime Manifest.
+- Manual Runtime Manifest is backend-owned and defines the runtime state/config for one manual minigame session.
+- Frontend renders the manual minigame from the manifest.
+- Frontend submits Action Log, not final success/fail authority.
+- Backend is the authority for outcome, failure reason, reward and report.
+- Backend must be able to replay/validate the Action Log against the manifest.
+- UI must not show final success/reward before Backend Verdict returns.
+- Timing/continuous minigames must use a deterministic manifest model shared by frontend and backend.
+- Hidden safety margin may exist in DB/backend/manifest policy, but it is not player-facing.
+- Player-facing UI should show bars, thresholds, timers and state, not raw replay math.
+- There is no normal durable `abandoned` outcome.
+- Every resolved Trial must have an outcome.
+- Every failed Trial must have a failure reason at least for debug/admin/reporting.
+- Explicit exit from manual resolve triggers a warning and then auto-resolve if confirmed.
+- Offer inactivity timeout triggers ordinary auto-resolve.
+- Timer expiration inside a timer-based manual minigame is a manual fail, usually `time_expired`.
+- Non-timer manual minigames may use inactivity timeout that triggers auto-resolve.
+- Reports use a shared shape: intro/lore → replay-lite/timeline/summary → outcome → reward.
+- Technical replay log is source-of-truth/debug data; player/public reports show safe replay-lite or summary.
+- Ares/combat is not a Manual Minigame renderer; it uses combat wrapper/result handoff around the generic combat engine.
+- Apollo / Path of Light may be considered an early proof-of-path candidate after Core, but concrete Apollo mechanics are not implemented in Epic AB.
+
+## Epic rules
+
+- Use canonical domain words: Trial, Manual Runtime Session, Manual Runtime Manifest, Action Log, Backend Verdict, Auto Resolve, Report.
+- Do not use player-facing “Challenge” wording for new UI unless current DB/internal naming forces it in technical metadata.
+- Do not implement Apollo, Hermes, Zeus, Hephaestus, Hera, Artemis, Athena or Aphrodite gameplay in Epic AB.
+- Do not create hardcoded minigame configs in Angular.
+- Do not calculate manual Trial outcome in Angular.
+- Do not calculate rewards in Angular.
+- Do not generate reports in Angular as authority.
+- Do not direct-read or direct-write manual Trial runtime tables if DB exposes canonical RPC/read models.
+- Do not edit or regenerate `database.types.ts`.
+- If generated types are missing or stale, report a DB/types blocker.
+- Keep player-safe models separate from admin/debug/replay technical data.
+- Preserve selected server → active hero → active Trial context.
+- Do not assume `hero.id === auth.uid()`.
+- Use existing exploration/report/reward services and patterns where possible.
+- Add `reused / checked but not reused / new` report section for any new helper, mapper, state or service.
+- Do not update `current-todo.md`, `current-state-summary.md` or backlog/status docs.
+
+---
+
+## Task AB0 — Manual Trial Core DB/types preflight
+
+**Goal:**  
+Confirm which Manual Trial Core DB/RPC/generated-type contracts are available and which are still blockers for Epic AB implementation.
+
+**Scope:**
+
+- Read:
+  - `AGENTS.md`;
+  - `docs/current-decisions.md`;
+  - `docs/project-context.md`;
+  - `docs/database-current.md`;
+  - this Epic AB section.
+- Inspect current generated Supabase types without editing them.
+- Inspect current exploration/trial/report services and existing RPC usage.
+- List available contracts for:
+  - active Trial Offer;
+  - manual/auto resolve boundary;
+  - start Manual Runtime Session;
+  - get Manual Runtime Manifest;
+  - submit Action Log;
+  - Backend Verdict/result;
+  - auto-resolve from offer/manual exit/inactivity;
+  - report/reward handoff;
+  - status/outcome/resolution-mode/failure-reason fields.
+- List missing or ambiguous contracts as DB/RPC blockers.
+- Do not implement UI.
+- Do not add frontend fallback models.
+- Do not create temporary manual RPC interfaces.
+
+**Out of scope:**
+
+- No Angular implementation.
+- No DB/RPC changes.
+- No generated type regeneration.
+- No mock manifest.
+- No Apollo or concrete minigame implementation.
+- No status docs updates.
+
+**Acceptance criteria:**
+
+- Available Manual Trial contracts are listed.
+- Missing Manual Trial contracts are listed as blockers.
+- Ambiguous contracts are called out with exact file/type/RPC references where possible.
+- Codex clearly states whether AB1 can start.
+- No frontend fallback models are created.
+- No generated types are edited.
+
+**Verification:**
+
+- `npx tsc --noEmit` only if files were changed; otherwise not applicable.
+- No build required if this is report-only.
+
+**Required report:**
+
+- available DB/RPC/generated contracts:
+- missing contracts:
+- ambiguous contracts:
+- existing exploration/report services checked:
+- generated types status:
+- blocker / ready verdict:
+- files changed: `none` unless explicitly justified.
+
+---
+
+## Task AB1 — Manual Trial Core domain models and mapper envelopes
+
+**Goal:**  
+Add typed frontend domain models and mapper envelopes for Manual Trial Core once DB/RPC contracts exist.
+
+**Gate:**  
+Do not start AB1 unless AB0 verdict is ready and names exact generated RPC/table/return contracts to consume.
+
+**Scope:**
+
+- Use AB0 results and migrator-provided generated types.
+- Add typed domain/read models for:
+  - `TrialOffer`;
+  - `ManualTrialSession`;
+  - `ManualRuntimeManifest`;
+  - `ManualTrialActionLogEnvelope`;
+  - `ManualTrialBackendVerdict`;
+  - `ManualTrialOutcome`;
+  - `ManualTrialResolutionMode`;
+  - `ManualTrialFailureReason`;
+  - `ManualTrialReportSummary`;
+  - `ManualTrialRewardSummary` where DB exposes it.
+- Add mapper helpers from generated RPC rows/returns to domain models.
+- Preserve `manifestVersion`, `manifestHash` or equivalent validation identity if DB exposes them.
+- Preserve `minigameKey` as renderer selection input.
+- Preserve player-safe fields separately from admin/debug/replay fields.
+- Represent minigame-specific config as opaque/typed-enough payload for future renderers; do not model Apollo/Hermes/etc. yet.
+- Add focused mapper tests.
+
+**Out of scope:**
+
+- No UI page.
+- No route changes.
+- No real minigame renderer.
+- No DB/RPC changes.
+- No generated type edits.
+- No Angular fallback contract if generated types are missing.
+- No status docs updates.
+
+**Acceptance criteria:**
+
+- Manual Trial Core domain models exist outside components.
+- Mappers do not expose raw generated rows to components.
+- Mapper tests cover:
+  - Trial Offer;
+  - Manual Runtime Manifest;
+  - Action Log envelope shape;
+  - Backend Verdict with success;
+  - Backend Verdict with failure reason;
+  - player-safe report summary.
+- Technical replay/debug fields do not leak into player-facing models unless explicitly exposed as safe summary by DB.
+- Missing generated contracts are reported as blockers.
+
+**Verification:**
+
+- focused mapper specs
+- `npx tsc --noEmit`
+- `npm run build`
+
+**Required report:**
+
+- reused:
+- checked but not reused:
+- new model/mapper files:
+- generated contracts consumed:
+- blockers:
+- verification results:
+
+---
+
+## Task AB2 — Manual Trial Core read/action services
+
+**Goal:**  
+Add core services for loading Trial Offer, starting manual sessions, submitting Action Logs, triggering auto-resolve and receiving Backend Verdicts.
+
+**Scope:**
+
+- Use AB1 models and generated RPC types.
+- Add or extend core services for:
+  - loading active Trial Offer for the active hero;
+  - starting Manual Runtime Session;
+  - loading/receiving Manual Runtime Manifest;
+  - submitting Action Log envelope;
+  - triggering auto-resolve;
+  - handling Backend Verdict;
+  - linking to report/result handoff.
+- Use selected server and active hero context.
+- Add stale guards for:
+  - active hero change;
+  - selected server change;
+  - Trial attempt/session change;
+  - outdated RPC responses.
+- Generate request ids only where DB/RPC contract supports idempotency/request id.
+- Do not calculate outcome locally.
+- Do not calculate reward locally.
+- Do not direct-read or direct-write trial runtime tables.
+- Add focused service tests.
+
+**Out of scope:**
+
+- No UI page.
+- No real minigame renderer.
+- No Apollo/Hermes/etc.
+- No DB/RPC changes.
+- No generated type edits.
+- No status docs updates.
+
+**Acceptance criteria:**
+
+- Services call only canonical DB/RPC contracts.
+- Missing RPC/generated type causes blocker, not fallback.
+- Stale responses cannot update current state after hero/server/session changes.
+- Action Log submit returns/loads Backend Verdict from backend.
+- Auto-resolve uses backend workflow.
+- No Angular-side durable outcome/reward/report calculation is introduced.
+- Tests cover success, failure verdict, stale context and missing/empty row behavior where applicable.
+
+**Verification:**
+
+- focused service specs
+- `npx tsc --noEmit`
+- `npm run build`
+- static grep:
+  - no direct writes to trial/runtime tables;
+  - no direct `.from(...)` reads for Manual Trial runtime if canonical RPC exists;
+  - no hardcoded minigame config as runtime source.
+
+**Required report:**
+
+- reused:
+- checked but not reused:
+- new services/helpers:
+- RPCs consumed:
+- stale guards:
+- blockers:
+- verification results:
+
+---
+
+## Task AB3 — Manual Trial Host route/page shell
+
+**Goal:**  
+Create the player-facing Manual Trial Host shell for Trial Offer, manual/auto boundary, manual session loading, unsupported minigame state, Backend Verdict and report handoff.
+
+**Scope:**
+
+- Add or extend the appropriate game route/page for active manual Trial resolution.
+- Show Trial Offer state:
+  - trial name/label where DB exposes it;
+  - deity/stat/difficulty where DB exposes it;
+  - player-safe helper text;
+  - Manual Resolve action;
+  - Auto Resolve action.
+- Start Manual Runtime Session only after Manual Resolve.
+- Load/display Manual Runtime Manifest state after session start.
+- Select renderer through registry by `minigameKey`.
+- If renderer is missing, show a clear fail-closed unsupported state.
+- Support generic shared HUD slots from manifest where exposed:
+  - timer/countdown;
+  - mistakes/attempts;
+  - required successes;
+  - status/progress.
+- Show submitting/resolving state while Backend Verdict is pending.
+- Show backend outcome/result summary after Backend Verdict.
+- Link or hand off to report/result view where DB/read model exposes it.
+- Add explicit exit warning:
+  - leaving manual resolve triggers warning;
+  - confirmed exit triggers backend auto-resolve if RPC exists.
+- Use the narrowest existing in-app navigation guard/pattern available.
+- Do not introduce a global unsaved-changes/navigation framework unless explicitly approved.
+- Use existing UI/shared patterns where possible.
+- Keep UI player-safe; no raw replay/debug payloads.
+
+**Out of scope:**
+
+- No concrete minigame gameplay.
+- No Apollo implementation.
+- No custom large visual redesign.
+- No DB/RPC changes.
+- No generated type edits.
+- No status docs updates.
+
+**Acceptance criteria:**
+
+- Player can see Trial Offer and choose manual or auto when DB exposes active Trial.
+- Manual path loads manifest and renderer boundary.
+- Missing renderer does not fake gameplay and does not crash the app.
+- Auto path calls backend auto-resolve workflow.
+- UI does not show final success/reward before Backend Verdict.
+- UI does not expose raw `trial_power`.
+- Exit warning is present for manual session navigation where feasible.
+- No concrete minigame appears in this task.
+
+**Verification:**
+
+- focused component/page specs where practical
+- `npx tsc --noEmit`
+- `npm run build`
+- route smoke if app can run locally
+
+**Manual smoke:**
+
+- Active Trial Offer appears.
+- Manual Resolve loads manual session/manifest or reports DB blocker clearly.
+- Auto Resolve completes through backend workflow or reports DB blocker clearly.
+- Unsupported `minigameKey` shows fail-closed state.
+- Leaving during manual resolve shows warning where supported.
+- Backend Verdict controls final result display.
+
+**Required report:**
+
+- reused:
+- checked but not reused:
+- new component/state/helper added:
+- DB/RPC contracts consumed:
+- unsupported renderer behavior:
+- manual smoke status:
+- pending manual smoke:
+- verification results:
+
+---
+
+## Task AB4 — Manual Trial renderer registry and Action Log boundary
+
+**Goal:**  
+Add the renderer registry and generic Action Log boundary that future concrete minigames will use.
+
+**Scope:**
+
+- Add a Manual Trial renderer registry keyed by `minigameKey`.
+- Define a renderer contract/interface for:
+  - consuming Manual Runtime Manifest;
+  - emitting Action Log events/envelope;
+  - reporting local observed summary if needed;
+  - surfacing local UI state to the host without claiming final outcome.
+- Add placeholder/fail-closed renderer behavior for unsupported minigames.
+- A test/dummy renderer may exist only for registry wiring tests and must not simulate gameplay success/failure.
+- Add host-side generic Action Log submit boundary.
+- Add hooks/placeholders for:
+  - timer policy;
+  - inactivity policy;
+  - heartbeat/activity signal where needed;
+  - hidden safety-margin compatibility where manifest exposes it.
+- Ensure the registry can later add Apollo/Hermes/etc. without changing host lifecycle.
+- Add focused tests for renderer selection and unsupported renderer behavior.
+
+**Out of scope:**
+
+- No Apollo renderer.
+- No Hermes/Zeus/Hephaestus/Hera/Artemis/Athena/Aphrodite renderer.
+- No minigame-specific action semantics beyond generic envelope.
+- No dummy renderer simulating success/failure gameplay.
+- No DB/RPC changes.
+- No generated type edits.
+- No status docs updates.
+
+**Acceptance criteria:**
+
+- Host can select renderer by `minigameKey`.
+- Unsupported keys are handled fail-closed and player-safe.
+- Renderer contract cannot provide final durable outcome as authority.
+- Action Log boundary routes submit through backend service.
+- A test/dummy renderer, if present, exists only for registry wiring tests and must not simulate gameplay success/failure.
+- Future concrete renderers can plug into the registry without duplicating Trial Offer/manual session/result lifecycle.
+- Tests cover registry lookup and unsupported renderer behavior without introducing pseudo-gameplay.
+
+**Verification:**
+
+- focused registry/host specs
+- `npx tsc --noEmit`
+- `npm run build`
+
+**Required report:**
+
+- reused:
+- checked but not reused:
+- new registry/interfaces/helpers:
+- unsupported behavior:
+- future renderer integration notes:
+- verification results:
+
+---
+
+## Task AB5 — Manual Trial timeout, inactivity and exit behavior
+
+**Goal:**  
+Implement frontend-side handling for offer inactivity, manual inactivity hooks and explicit exit warning according to DB-owned policies.
+
+**Scope:**
+
+- Consume DB/manifest-provided timeout/inactivity policies where available.
+- Do not hardcode permanent timeout values in Angular.
+- Track meaningful player/session activity where needed by the host.
+- In Trial Offer:
+  - if DB exposes inactivity timeout behavior, surface safe UI state and let backend resolve timeout;
+  - do not create a client-only timer as authority.
+- In Manual Runtime Session:
+  - timer-based minigame expiration must be backend/verdict-owned;
+  - non-timer inactivity should trigger backend auto-resolve only through DB/RPC workflow where exposed.
+- Implement explicit navigation/exit warning inside the app where feasible.
+- Use the narrowest existing in-app navigation guard/pattern available.
+- Do not introduce a global unsaved-changes/navigation framework unless explicitly approved.
+- Confirmed exit calls backend auto-resolve workflow if DB exposes it.
+- Add tests for warning/confirm/cancel behavior and stale context.
+- Do not attempt to protect every browser crash; backend timeout/finalization is authority.
+
+**Out of scope:**
+
+- No DB scheduler/cron implementation.
+- No backend timeout finalizer.
+- No local outcome calculation.
+- No concrete minigame timer logic.
+- No global navigation/unsaved-changes framework unless explicitly approved.
+- No status docs updates.
+
+**Acceptance criteria:**
+
+- Angular does not hardcode durable timeout/inactivity values.
+- Explicit exit warning is clear.
+- Confirmed exit uses backend auto-resolve workflow.
+- Cancelled exit returns to manual trial state.
+- Timer expiration is not treated as frontend-owned final outcome.
+- Inactivity behavior does not leave a normal `abandoned` outcome.
+- Missing DB/RPC timeout support is reported as blocker/follow-up, not faked.
+
+**Verification:**
+
+- focused state/component specs
+- `npx tsc --noEmit`
+- `npm run build`
+
+**Manual smoke:**
+
+- Start manual resolve and attempt in-app navigation.
+- Confirm exit warning appears.
+- Cancel keeps session visible.
+- Confirm triggers backend auto-resolve if available.
+- No final result appears before backend verdict.
+
+**Required report:**
+
+- timeout/inactivity contracts consumed:
+- exit warning behavior:
+- stale guards:
+- blockers:
+- manual smoke status:
+- verification results:
+
+---
+
+## Task AB6 — Manual Trial verdict, report and reward handoff
+
+**Goal:**  
+Display Backend Verdict and hand off to report/reward/result views without Angular becoming the authority.
+
+**Scope:**
+
+- Consume Backend Verdict from DB/RPC service.
+- Display player-safe outcome summary:
+  - success/fail;
+  - player-safe reason where DB exposes it;
+  - resolution mode where player-safe;
+  - reward summary where DB exposes it;
+  - report link/reference where DB exposes it.
+- Preserve technical replay/debug reference only for admin/debug paths if exposed separately.
+- Do not generate report content locally as authority.
+- Do not calculate reward locally.
+- Do not expose raw IDs, raw replay JSON, manifest hash, seed or staff/debug fields to player UI.
+- Add fallback player-safe display for missing optional summary fields, but not for missing required verdict/report contracts.
+- Optional display fallback may hide/label missing optional fields; it must not synthesize outcome, reward, report id, reason or resolution mode.
+- Add focused mapper/display tests.
+
+**Out of scope:**
+
+- No public report page redesign.
+- No concrete minigame replay-lite design.
+- No Apollo timeline/replay.
+- No DB/RPC changes.
+- No generated type edits.
+- No status docs updates.
+
+**Acceptance criteria:**
+
+- Backend Verdict controls final outcome display.
+- Reward/report data is consumed from DB/read model.
+- Technical replay/debug fields do not leak to player-facing UI.
+- Missing required report/verdict contracts are blockers.
+- Optional display fallback may hide/label missing optional fields but must not synthesize outcome, reward, report id, reason or resolution mode.
+- Player can navigate to existing report/detail route if DB/read model exposes one.
+- Report display follows shared shape: intro/lore → summary/replay-lite slot → outcome → reward where available.
+
+**Verification:**
+
+- focused mapper/display specs
+- `npx tsc --noEmit`
+- `npm run build`
+
+**Manual smoke:**
+
+- Complete/auto-resolve a Trial with backend verdict.
+- Confirm outcome appears only after backend verdict.
+- Confirm reward summary/report link appears if DB exposes it.
+- Confirm no raw debug/replay payload appears in player UI.
+
+**Required report:**
+
+- verdict contracts consumed:
+- report/reward contracts consumed:
+- player-safe fields:
+- debug/admin fields excluded:
+- manual smoke status:
+- verification results:
+
+---
+
+## Task AB7 — Manual Trial Core integration smoke and final report
+
+**Goal:**  
+Perform final integration pass for Manual Trial Core after AB1–AB6 and produce remaining DB/UI follow-up notes.
+
+**Scope:**
+
+- Walk through available Manual Trial Core paths:
+  - no active Trial;
+  - active Trial Offer;
+  - Manual Resolve;
+  - manifest loading;
+  - unsupported renderer;
+  - Auto Resolve;
+  - explicit exit to auto-resolve;
+  - Backend Verdict;
+  - report/reward handoff.
+- Fix small integration issues inside AB scope.
+- Report DB/RPC gaps that block full runtime smoke.
+- Report follow-up tasks needed for first concrete minigame epic.
+- Confirm no concrete minigame was accidentally implemented.
+- Confirm no Angular-side outcome/reward/report authority was added.
+- Confirm no direct table writes/reads were added for Manual Trial runtime where RPC exists.
+- Do not update status docs.
+
+**Out of scope:**
+
+- No Apollo/Hermes/etc. implementation.
+- No DB/RPC changes.
+- No generated type regeneration.
+- No status docs updates.
+- No broad exploration refactor.
+- No UI redesign.
+
+**Acceptance criteria:**
+
+- Manual Trial Core host works as far as current DB/RPC contracts allow.
+- Unsupported minigames fail closed and do not fake gameplay.
+- Manual/auto boundary is clear.
+- Backend Verdict controls final outcome.
+- Report/reward handoff is wired where DB exposes it.
+- All remaining blockers are concrete and actionable.
+- Next concrete minigame epic can start planning with clear dependencies.
+
+**Verification:**
+
+- `npx tsc --noEmit`
+- focused specs for touched areas
+- `npm run build`
+- static grep:
+  - no direct writes to trial/manual runtime tables;
+  - no Angular-side outcome calculators;
+  - no hardcoded durable minigame config;
+  - no concrete Apollo/Hermes/etc. renderer implemented in AB.
+
+**Manual smoke:**
+
+- No active Trial → neutral/no-active-trial state.
+- Active Trial → Trial Offer visible.
+- Manual Resolve → manifest/unsupported renderer state visible.
+- Auto Resolve → backend workflow called.
+- Explicit exit → warning then auto-resolve if confirmed.
+- Backend Verdict → final outcome/report handoff visible.
+- Confirm player UI does not expose raw `trial_power`, manifest seed/hash or debug replay JSON.
+
+**Required report:**
+
+- implemented AB scope:
+- reused:
+- checked but not reused:
+- DB/RPC contracts consumed:
+- missing/blocking contracts:
+- static grep results:
+- verification results:
+- manual smoke completed:
+- pending manual smoke:
+- next recommended concrete minigame epic:
+- confirmation that no status docs were updated:
 
 ---
 

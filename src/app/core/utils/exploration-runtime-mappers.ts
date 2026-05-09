@@ -9,6 +9,7 @@ import {
   HeroExplorationTestOverrideReadModel,
 } from '../domain/exploration/exploration-runtime.model';
 import { Row } from '../types/supabase.types';
+import { mapHeroExplorationStepRng } from './exploration-rng-read-model';
 
 export function mapHeroDailyActionCounter(
   row: Row<'hero_daily_action_counters'>,
@@ -85,7 +86,7 @@ export function mapHeroExplorationEdge(
 export function mapHeroExplorationStep(
   row: Row<'hero_exploration_steps'>,
 ): HeroExplorationStepReadModel {
-  return {
+  const step = {
     id: row.id,
     serverId: row.server_id,
     heroId: row.hero_id,
@@ -111,6 +112,11 @@ export function mapHeroExplorationStep(
     resolvedAt: row.resolved_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  } satisfies Omit<HeroExplorationStepReadModel, 'rng'>;
+
+  return {
+    ...step,
+    rng: mapHeroExplorationStepRng(step),
   };
 }
 
