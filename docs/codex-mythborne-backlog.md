@@ -8096,6 +8096,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Service preserves operation result details.
 - No direct writes to guild armory, loans, items or hero_equipment tables exist.
 
+**Implementation note:** T11 accepted on 2026-05-09. Guild armory core now has DB-backed domain models for current armory items, loans, operation results and member access lock state, with no unused shelf model because current read RPC rows do not expose shelf fields. `PlayerGuildArmory` is read-only over `get_hero_guild_armory_item_rows(...)` and `get_hero_guild_armory_loan_rows(...)`; `PlayerGuildArmoryActions` uses canonical deposit, borrow, return, force-return, withdraw, remove and member-access RPCs only. Read/action mapper files and read/action service specs are split. Player-facing item states remain limited to `available`/`borrowed`; owner/borrower fields are mapped only where DB exposes them; `audit_log_id` is not exposed in domain results. No UI/routes/menu, DB/RPC changes, generated type edits, migrations, direct guild armory/loan/item/equipment writes, `.from(` usage, frontend ownership-transfer logic or shelf mapping were added. Verification passed with focused T11 specs, full guild specs, `npx tsc --noEmit`, `npm run build` with known warnings, and static greps for direct writes / `.from(`.
+
 ---
 
 ## Task T12 — Guild armory read UI

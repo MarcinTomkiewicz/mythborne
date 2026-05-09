@@ -21,6 +21,15 @@ export type GuildEmergencyElectionStatusRow =
 export type GuildEmergencyElectionStatusKey =
   GuildEmergencyElectionStatusRow['key'];
 
+export type GuildArmoryItemStatusRow = Row<'guild_armory_item_statuses'>;
+export type GuildArmoryItemStatusKey = GuildArmoryItemStatusRow['key'];
+
+export type GuildArmoryLoanStatusRow = Row<'guild_armory_loan_statuses'>;
+export type GuildArmoryLoanStatusKey = GuildArmoryLoanStatusRow['key'];
+
+export type GuildArmoryAccessStatusRow = Row<'guild_armory_access_statuses'>;
+export type GuildArmoryAccessStatusKey = GuildArmoryAccessStatusRow['key'];
+
 export type GetGuildConfigSummaryRpcRow =
   Database['public']['Functions']['get_guild_config_summary']['Returns'][number];
 
@@ -149,3 +158,51 @@ export type GetHeroGuildJoinRequestRowsRpcRow =
 
 export type SearchGuildsForHeroRpcRow =
   Database['public']['Functions']['search_guilds_for_hero']['Returns'][number];
+
+export type GetHeroGuildArmoryItemRowsRpcRow =
+  Database['public']['Functions']['get_hero_guild_armory_item_rows']['Returns'][number];
+
+export type GetHeroGuildArmoryLoanRowsRpcRow =
+  Database['public']['Functions']['get_hero_guild_armory_loan_rows']['Returns'][number];
+
+export type DepositGuildArmoryItemRpcArgs =
+  Database['public']['Functions']['deposit_guild_armory_item']['Args'];
+
+export type DepositGuildArmoryItemRpcRow =
+  Database['public']['Functions']['deposit_guild_armory_item']['Returns'][number];
+
+export type BorrowGuildArmoryItemRpcArgs =
+  Database['public']['Functions']['borrow_guild_armory_item']['Args'];
+
+export type BorrowGuildArmoryItemRpcRow =
+  Database['public']['Functions']['borrow_guild_armory_item']['Returns'][number];
+
+export type ReturnGuildArmoryLoanRpcArgs =
+  Database['public']['Functions']['return_guild_armory_loan']['Args'];
+
+export type ReturnGuildArmoryLoanRpcRow =
+  Database['public']['Functions']['return_guild_armory_loan']['Returns'][number];
+
+export type ForceReturnGuildArmoryLoanRpcArgs =
+  Database['public']['Functions']['force_return_guild_armory_loan']['Args'];
+
+export type ForceReturnGuildArmoryLoanRpcRow =
+  Database['public']['Functions']['force_return_guild_armory_loan']['Returns'][number];
+
+export type WithdrawGuildArmoryItemRpcArgs =
+  Database['public']['Functions']['withdraw_guild_armory_item']['Args'];
+
+export type WithdrawGuildArmoryItemRpcRow =
+  Database['public']['Functions']['withdraw_guild_armory_item']['Returns'][number];
+
+export type RemoveGuildArmoryItemRpcArgs =
+  Database['public']['Functions']['remove_guild_armory_item']['Args'];
+
+export type RemoveGuildArmoryItemRpcRow =
+  Database['public']['Functions']['remove_guild_armory_item']['Returns'][number];
+
+export type SetGuildArmoryMemberAccessRpcArgs =
+  Database['public']['Functions']['set_guild_armory_member_access']['Args'];
+
+export type SetGuildArmoryMemberAccessRpcRow =
+  Database['public']['Functions']['set_guild_armory_member_access']['Returns'][number];
