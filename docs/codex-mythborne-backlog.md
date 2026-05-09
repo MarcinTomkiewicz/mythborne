@@ -7951,6 +7951,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Rejection/duplicate/ineligible states are readable.
 - No direct guild membership table mutation exists.
 
+**Implementation note:** T6 accepted on 2026-05-09. Added generated RPC aliases and player-facing join-request input/result models for `create_guild_join_request(...)`, `review_guild_join_request(...)`, `cancel_guild_join_request(...)` and `get_hero_guild_join_request_rows(...)`. Join request RPC calls live in dedicated `PlayerGuildJoinRequests`; join request args/result mapping lives in `guild-join-request-mappers`; `GuildJoinRequestsState` loads relevant requests, creates/reviews/cancels, refreshes current guild and discovery state after mutations, uses canonical terminal status `cancelled`, and guards stale active hero/server responses. No UI/routes/menu, DB/RPC changes, generated type edits, migrations, direct guild table reads/writes, frontend membership insert, permission fallback or Angular-side eligibility calculation were added. Verification passed with `npx tsc --noEmit`, focused guild specs and `npm run build` with known warnings. Manual smoke remains N/A until a future guild UI entry slice wires this state into a page.
+
 ---
 
 ## Task T7 — Guild member management

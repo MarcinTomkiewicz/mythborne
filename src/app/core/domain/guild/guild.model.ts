@@ -148,6 +148,37 @@ export interface GuildJoinRequest {
   canCancel: boolean;
 }
 
+export interface CreateGuildJoinRequestInput {
+  guildId: string;
+  reason?: string | null;
+  expiresAt?: string | null;
+  requestId?: string | null;
+}
+
+export interface ReviewGuildJoinRequestInput {
+  joinRequestId: string;
+  accept: boolean;
+  reason?: string | null;
+  requestId?: string | null;
+}
+
+export interface CancelGuildJoinRequestInput {
+  joinRequestId: string;
+  reason?: string | null;
+  requestId?: string | null;
+}
+
+export interface GuildJoinRequestOperationResult {
+  joinRequestId: string;
+  guildId: string;
+  requesterHeroId: string;
+  statusKey: GuildJoinRequestStatusKey;
+  expiresAt: string | null;
+  membershipId: string | null;
+  memberCount: number | null;
+  memberLimit: number | null;
+}
+
 export interface GuildDiscoveryResult extends GuildSummary {
   canRequestToJoin: boolean;
   currentJoinRequestStatusKey: GuildJoinRequestStatusKey | null;
