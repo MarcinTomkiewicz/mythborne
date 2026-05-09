@@ -106,6 +106,39 @@ export interface GuildMemberOperationResult {
   endedAt: string | null;
 }
 
+export interface LeaveGuildInput {
+  reason?: string | null;
+  requestId?: string | null;
+}
+
+export interface DisbandGuildInput {
+  reason: string;
+  requestId?: string | null;
+}
+
+export interface GuildLeaveResult {
+  kind: 'leave';
+  guildId: string;
+  actorHeroId: string;
+  membershipId: string;
+  oldRoleKey: GuildRoleKey;
+  statusKey: GuildMembershipStatusKey;
+  endedAt: string;
+}
+
+export interface GuildDisbandResult {
+  kind: 'disband';
+  guildId: string;
+  actorHeroId: string;
+  statusKey: GuildStatusKey;
+  dissolvedAt: string;
+  endedMembershipCount: number;
+  cancelledInviteCount: number;
+  cancelledJoinRequestCount: number;
+}
+
+export type GuildLifecycleOperationResult = GuildLeaveResult | GuildDisbandResult;
+
 export interface GuildInvite {
   inviteId: string;
   guildId: string;

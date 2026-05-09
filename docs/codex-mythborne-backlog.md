@@ -8005,6 +8005,8 @@ If any of these DB/RPC contracts are missing, Codex must report a DB dependency 
 - Active-siege blocker is surfaced if DB returns it.
 - No frontend deletion of guild rows exists.
 
+**Implementation note:** T8 accepted on 2026-05-09. Added generated RPC aliases and player-facing lifecycle input/result models for `leave_guild(...)` and `disband_guild(...)`. Lifecycle RPC calls live in dedicated `PlayerGuildLifecycle`; lifecycle args/result mapping lives in `guild-lifecycle-mappers`; `GuildLifecycleState` runs leave/disband actions, refreshes current guild state after success, and guards stale active hero/server responses. `audit_log_id` is not exposed in player-facing lifecycle result models. Leader leave and non-leader disband are blocked before RPC, while DB-owned blockers such as active siege remain RPC-owned and surface as errors. No UI/routes/menu, DB/RPC changes, generated type edits, migrations, direct guild table reads/writes, frontend membership deletion or DB-rule fallback were added. Verification passed with `npx tsc --noEmit`, focused guild specs and `npm run build` with known warnings. Manual smoke remains N/A until a future guild UI entry slice wires this state into a page.
+
 ---
 
 ## Task T9 — Emergency leader election read state

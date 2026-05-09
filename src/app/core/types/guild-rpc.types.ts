@@ -79,6 +79,18 @@ export type DemoteGuildOfficerRpcArgs =
 export type DemoteGuildOfficerRpcRow =
   Database['public']['Functions']['demote_guild_officer']['Returns'][number];
 
+export type LeaveGuildRpcArgs =
+  Database['public']['Functions']['leave_guild']['Args'];
+
+export type LeaveGuildRpcRow =
+  Database['public']['Functions']['leave_guild']['Returns'][number];
+
+export type DisbandGuildRpcArgs =
+  Database['public']['Functions']['disband_guild']['Args'];
+
+export type DisbandGuildRpcRow =
+  Database['public']['Functions']['disband_guild']['Returns'][number];
+
 export type GetHeroGuildStateRpcRow =
   Database['public']['Functions']['get_hero_guild_state']['Returns'][number];
 
