@@ -182,6 +182,7 @@ export const RPC = {
   preview_challenge_auto_resolve_success_chance:
     'preview_challenge_auto_resolve_success_chance',
   preview_reward_generated_item: 'preview_reward_generated_item',
+  preview_reward_generated_item_luck: 'preview_reward_generated_item_luck',
   preview_reward_profile: 'preview_reward_profile',
   preview_trial_manifestation_chance: 'preview_trial_manifestation_chance',
   preview_trial_opportunity_curve: 'preview_trial_opportunity_curve',

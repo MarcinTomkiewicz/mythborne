@@ -25,6 +25,16 @@ export function optionalNonNegativeInteger(value: unknown): number | null {
   return Number.isFinite(normalized) && normalized >= 0 ? normalized : null;
 }
 
+export function optionalPositiveInteger(value: unknown): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const normalized = Math.floor(Number(value));
+
+  return Number.isFinite(normalized) && normalized >= 1 ? normalized : null;
+}
+
 export function clampPercent(value: unknown): number {
   const normalized = Number(value);
 

@@ -9034,6 +9034,10 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - Luck is shown as influencing bucket/quality/prefix/suffix opportunity, not guaranteeing a specific item.
 - No item generation rewrite is introduced.
 
+**Status:** accepted/done. Manual smoke pending for Exploration Lab generated item preview.
+
+**Implementation note 2026-05-09:** U8 accepted after cleanup. Exploration Lab generated item preview now calls DB-owned `preview_reward_generated_item_luck(...)` with `p_luck_value`, maps DB-returned bucket/value/quality/base/prefix/suffix/budget/Luck breakdown into the Luck preview read model and formats the admin table for readable quality/affix roll display. The UI copy states that Luck can affect bucket, quality, prefix and suffix opportunity, but a single preview does not guarantee a better item. No rarity/rare-combination flags, local item/drop/Luck formulas, direct writes, DB/RPC/generated changes or item-generation rewrite were added. The old non-Luck generated-item args helper was removed from the frontend mapper while leaving the central `preview_reward_generated_item` RPC constant/type contract intact.
+
 ---
 
 ## Task U9 — Reward range Luck option alignment

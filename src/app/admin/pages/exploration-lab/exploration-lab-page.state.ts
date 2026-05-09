@@ -7,12 +7,12 @@ import {
 } from '../../../core/domain/exploration/exploration-definition.model';
 import {
   ChallengeAutoResolveSuccessChancePreview,
-  RewardGeneratedItemPreview,
   RewardProfilePreview,
   TrialManifestationChancePreview,
   TrialOpportunityCurvePreview,
   TrialOpportunitySimulation,
 } from '../../../core/domain/exploration/exploration-preview.model';
+import { LuckGeneratedItemPreview } from '../../../core/domain/luck/luck.model';
 import { RewardProfileReadModel } from '../../../core/domain/exploration/exploration-reward.model';
 import { ExplorationLabPreviews } from '../../../core/services/exploration/exploration-lab-previews';
 import { getErrorMessage } from '../../../core/utils/error-message';
@@ -84,6 +84,7 @@ export class ExplorationLabPageState {
     bucketProfileId: new FormControl<string | null>(null),
     maxQualityKey: new FormControl<string | null>(null),
     previewCount: new FormControl<number | null>(3),
+    luckValue: new FormControl<number | null>(0),
   });
   readonly rewardProfileForm = new FormGroup({
     rewardProfile: new FormControl<RewardProfileReadModel | null>(null),
@@ -101,7 +102,7 @@ export class ExplorationLabPageState {
   readonly opportunityRows = signal<TrialOpportunityCurvePreview[]>([]);
   readonly manifestationRows = signal<TrialManifestationChancePreview[]>([]);
   readonly autoResolveRows = signal<ChallengeAutoResolveSuccessChancePreview[]>([]);
-  readonly generatedItemRows = signal<RewardGeneratedItemPreview[]>([]);
+  readonly generatedItemRows = signal<LuckGeneratedItemPreview[]>([]);
   readonly rewardProfileRows = signal<RewardProfilePreview[]>([]);
   readonly simulationRows = signal<TrialOpportunitySimulation[]>([]);
   readonly simulationSummary = computed<SimulationSummary>(() => {

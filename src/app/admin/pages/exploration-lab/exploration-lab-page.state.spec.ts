@@ -95,6 +95,7 @@ describe('ExplorationLabPageState', () => {
       bucketProfileId: 'bucket-1',
       maxQualityKey: 'rare',
       previewCount: 5,
+      luckValue: 12,
     });
 
     state.runGeneratedItemPreview();
@@ -103,6 +104,7 @@ describe('ExplorationLabPageState', () => {
       bucketProfileId: 'bucket-1',
       maxQualityKey: 'rare',
       previewCount: 5,
+      luckValue: 12,
     });
   });
 

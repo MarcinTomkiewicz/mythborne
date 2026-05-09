@@ -18,8 +18,8 @@ describe('ExplorationLabPreviews', () => {
           return of([manifestationRow()]);
         case RPC.preview_challenge_auto_resolve_success_chance:
           return of([autoResolveRow()]);
-        case RPC.preview_reward_generated_item:
-          return of([generatedItemRow()]);
+        case RPC.preview_reward_generated_item_luck:
+          return of([generatedItemLuckRow()]);
         case RPC.preview_reward_profile:
           return of([rewardProfileRow()]);
         case RPC.simulate_trial_opportunity_runs:
@@ -60,6 +60,7 @@ describe('ExplorationLabPreviews', () => {
       bucketProfileId: 'bucket-1',
       maxQualityKey: 'rare',
       previewCount: 2,
+      luckValue: 12,
     }).subscribe((rows) => expect(rows[0].generatedName).toBe('Generated item'));
     service.previewRewardProfile({
       rewardProfileId: 'profile-1',
@@ -91,10 +92,11 @@ describe('ExplorationLabPreviews', () => {
         p_tested_stat_value: 10,
       },
     );
-    expect(backend.rpc).toHaveBeenCalledWith(RPC.preview_reward_generated_item, {
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.preview_reward_generated_item_luck, {
       p_bucket_profile_id: 'bucket-1',
       p_max_quality_key: 'rare',
       p_preview_count: 2,
+      p_luck_value: 12,
     });
     expect(backend.rpc).toHaveBeenCalledWith(RPC.preview_reward_profile, {
       p_reward_profile_id: 'profile-1',
@@ -155,37 +157,47 @@ function autoResolveRow() {
   } as never;
 }
 
-function generatedItemRow() {
+function generatedItemLuckRow() {
   return {
-    preview_index: 1,
-    bucket_profile_id: 'bucket-1',
-    bucket_profile_key: 'default',
-    bucket_profile_name: 'Default',
-    bucket_index: 1,
-    rolled_budget: 100,
     base_id: 'base-1',
     base_key: 'blade',
     base_name: 'Blade',
     base_type_key: 'weapon',
     base_value: 20,
+    bucket_index: 1,
+    bucket_profile_id: 'bucket-1',
+    bucket_profile_key: 'default',
+    bucket_profile_name: 'Default',
+    budget_before_quality_multiplier: 80,
+    drachma_value: 30,
+    explanation: 'Luck-aware preview only.',
+    formula_context_json: { qualityFormula: 'reward_item_quality_adjusted_weight' },
+    generated_name: 'Generated item',
+    luck_influence: 4,
+    luck_value: 12,
+    prefix_affix_id: 'prefix-1',
+    prefix_chance: 25,
+    prefix_gold_value: 5,
+    prefix_key: 'sharp',
+    prefix_name: 'Sharp',
+    prefix_roll: 10,
+    preview_index: 1,
+    quality_adjusted_weight: 18,
+    quality_base_weight: 10,
     quality_key: 'rare',
     quality_label: 'Rare',
     quality_multiplier: 1.2,
-    prefix_affix_id: 'prefix-1',
-    prefix_key: 'sharp',
-    prefix_name: 'Sharp',
-    prefix_gold_value: 5,
-    suffix_affix_id: 'suffix-1',
-    suffix_key: 'dawn',
-    suffix_name: 'Dawn',
-    suffix_gold_value: 5,
-    generated_name: 'Generated item',
-    drachma_value: 30,
-    budget_before_quality_multiplier: 80,
+    quality_roll_score: 12,
     remaining_budget_after_base: 60,
     remaining_budget_after_prefix: 55,
     remaining_budget_after_suffix: 50,
-    explanation: 'Preview only.',
+    rolled_budget: 100,
+    suffix_affix_id: 'suffix-1',
+    suffix_chance: 10,
+    suffix_gold_value: 5,
+    suffix_key: 'dawn',
+    suffix_name: 'Dawn',
+    suffix_roll: 80,
   } as never;
 }
 

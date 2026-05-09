@@ -3,37 +3,71 @@
     <div class="flex-col gap-xs">
       <h3 class="mg-section__title mg-section__title--xs mb-0">Generated item preview</h3>
       <p class="muted-text mb-0">
-        Simulates item generation for a DB bucket profile and optional maximum quality. This does
-        not create item rows.
+        Simulates DB-owned Luck-aware item generation for a bucket profile. Luck can affect bucket,
+        quality, prefix and suffix opportunity, but a single preview does not guarantee a better item.
       </p>
     </div>
     <form class="grid-form" [formGroup]="page.generatedItemForm">
-      <label class="form-field">
+      <div class="form-field">
         <span>Bucket profile</span>
         <p-select formControlName="bucketProfileId" [options]="page.itemBucketOptions()" optionLabel="label" optionValue="value" />
         <small class="muted-text">Active item generation bucket profile from the database.</small>
-      </label>
-      <label class="form-field">
+      </div>
+      <div class="form-field">
         <span>Maximum quality</span>
         <p-select formControlName="maxQualityKey" [options]="page.itemQualityOptions()" optionLabel="label" optionValue="value" />
         <small class="muted-text">Optional cap. Database default leaves quality uncapped.</small>
-      </label>
-      <label class="form-field">
+      </div>
+      <div class="form-field">
         <span>Preview count</span>
         <p-inputnumber formControlName="previewCount" [min]="1" />
-      </label>
-      <button pButton type="button" label="Preview items" (click)="page.runGeneratedItemPreview()"></button>
+      </div>
+      <div class="form-field">
+        <span>Luck value</span>
+        <p-inputnumber formControlName="luckValue" [min]="0" />
+        <small class="muted-text">Raw Luck sent to the DB preview contract.</small>
+      </div>
+      <p-button type="button" label="Preview items" (onClick)="page.runGeneratedItemPreview()" />
     </form>
     <p-table [value]="page.generatedItemRows()" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
-        <tr><th>#</th><th>Name</th><th>Bucket</th><th>Quality</th><th>Value</th><th>Explanation</th></tr>
+        <tr><th>#</th><th>Name</th><th>Bucket</th><th>Quality</th><th>Affixes</th><th>Luck</th><th>Value</th><th>Explanation</th></tr>
       </ng-template>
       <ng-template pTemplate="body" let-row>
         <tr>
           <td>{{ row.previewIndex }}</td>
           <td>{{ row.generatedName }}</td>
           <td>{{ row.bucketProfileName }} / {{ row.rolledBudget }}</td>
-          <td>{{ row.qualityLabel }} <span class="muted-text">x{{ row.qualityMultiplier }}</span></td>
+          <td>
+            {{ row.qualityLabel }}
+            <span class="muted-text">
+              base
+            </span>
+            {{ row.qualityBaseWeight | number: '1.0-2' }}
+            <span class="muted-text">-> adjusted</span>
+            {{ row.qualityAdjustedWeight | number: '1.0-2' }}
+            <span class="muted-text">roll</span>
+            {{ row.qualityRollScore | number: '1.0-2' }}
+          </td>
+          <td>
+            <div>
+              <span>{{ row.prefixName || 'No prefix' }}</span>
+              <span class="muted-text">
+                (chance {{ row.prefixChance | number: '1.0-2' }}%, roll {{ row.prefixRoll | number: '1.0-2' }})
+              </span>
+            </div>
+            <div>
+              <span>{{ row.suffixName || 'No suffix' }}</span>
+              <span class="muted-text">
+                (chance {{ row.suffixChance | number: '1.0-2' }}%, roll {{ row.suffixRoll | number: '1.0-2' }})
+              </span>
+            </div>
+          </td>
+          <td>
+            {{ row.luckValue }}
+            <span class="muted-text">influence</span>
+            {{ row.luckInfluence }}
+          </td>
           <td>{{ row.drachmaValue }}</td>
           <td>{{ row.explanation }}</td>
         </tr>
@@ -50,7 +84,7 @@
       </p>
     </div>
     <form class="grid-form" [formGroup]="page.rewardProfileForm">
-      <label class="form-field">
+      <div class="form-field">
         <span>Reward profile</span>
         <p-autocomplete
           formControlName="rewardProfile"
@@ -64,12 +98,12 @@
           (onSelect)="page.selectRewardProfile($event.value)"
           (onClear)="page.clearRewardProfile()"
         />
-      </label>
-      <label class="form-field">
+      </div>
+      <div class="form-field">
         <span>Preview count</span>
         <p-inputnumber formControlName="previewCount" [min]="1" />
-      </label>
-      <button pButton type="button" label="Preview profile" (click)="page.runRewardProfilePreview()"></button>
+      </div>
+      <p-button type="button" label="Preview profile" (onClick)="page.runRewardProfilePreview()" />
     </form>
     <p-table [value]="page.rewardProfileRows()" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">

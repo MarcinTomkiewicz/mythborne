@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { AutoCompleteModule } from 'primeng/autocomplete';
@@ -14,6 +15,7 @@ import { ExplorationLabPageState } from './exploration-lab-page.state';
     ReactiveFormsModule,
     AutoCompleteModule,
     ButtonModule,
+    DecimalPipe,
     InputNumberModule,
     SelectModule,
     TableModule,

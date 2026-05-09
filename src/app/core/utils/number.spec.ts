@@ -1,6 +1,7 @@
 import {
   clampPercent,
   optionalNonNegativeInteger,
+  optionalPositiveInteger,
 } from './number';
 
 describe('number helpers', () => {
@@ -11,6 +12,16 @@ describe('number helpers', () => {
     expect(optionalNonNegativeInteger('4')).toBe(4);
     expect(optionalNonNegativeInteger(-1)).toBeNull();
     expect(optionalNonNegativeInteger('bad')).toBeNull();
+  });
+
+  it('normalizes optional positive integers', () => {
+    expect(optionalPositiveInteger(null)).toBeNull();
+    expect(optionalPositiveInteger(undefined)).toBeNull();
+    expect(optionalPositiveInteger(3.9)).toBe(3);
+    expect(optionalPositiveInteger('4')).toBe(4);
+    expect(optionalPositiveInteger(0)).toBeNull();
+    expect(optionalPositiveInteger(-1)).toBeNull();
+    expect(optionalPositiveInteger('bad')).toBeNull();
   });
 
   it('clamps percent values to the 0-100 range', () => {

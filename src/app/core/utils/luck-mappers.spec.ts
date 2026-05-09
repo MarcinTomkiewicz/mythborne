@@ -193,12 +193,19 @@ describe('luck-mappers', () => {
     expect(preview.bucketProfileKey).toBe('standard');
     expect(preview.luckValue).toBe(12);
     expect(preview.luckInfluence).toBe(4);
+    expect(preview.baseKey).toBe('spear');
+    expect(preview.baseValue).toBe(100);
     expect(preview.qualityKey).toBe('rare');
+    expect(preview.qualityMultiplier).toBe(1.2);
     expect(preview.qualityBaseWeight).toBe(10);
     expect(preview.qualityAdjustedWeight).toBe(18);
+    expect(preview.prefixKey).toBe('fine');
     expect(preview.prefixChance).toBe(25);
+    expect(preview.suffixKey).toBe('');
     expect(preview.suffixChance).toBe(10);
+    expect(preview.remainingBudgetAfterSuffix).toBe(20);
     expect(preview.generatedName).toBe('Fine Spear');
+    expect('rarity' in preview).toBeFalse();
     const formulaContext = preview.formulaContextJson as Record<string, unknown>;
     expect(formulaContext['qualityFormula']).toBe(
       'reward_item_quality_adjusted_weight',
