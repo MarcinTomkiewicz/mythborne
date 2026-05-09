@@ -6,6 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
+import { CollapsedJsonPreview } from '../../../shared/json-preview/collapsed-json-preview';
 import { ExplorationLabPageState } from './exploration-lab-page.state';
 
 @Component({
@@ -19,6 +20,7 @@ import { ExplorationLabPageState } from './exploration-lab-page.state';
     InputNumberModule,
     SelectModule,
     TableModule,
+    CollapsedJsonPreview,
   ],
   templateUrl: './exploration-lab-reward-section.html',
 })

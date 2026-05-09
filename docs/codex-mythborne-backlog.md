@@ -9059,6 +9059,10 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - No local reward RNG formula is added.
 - Missing DB support is reported clearly if needed.
 
+**Status:** accepted/done. Manual smoke pending for Exploration Lab and Reward Profiles reward-profile preview surfaces.
+
+**Implementation note 2026-05-09:** U9 accepted after stale-state and fixture cleanup. Reward profile previews now use DB-owned `preview_reward_profile_luck(...)` with preview count, Spirituality and Luck inputs in both Exploration Lab and Reward Profiles admin surfaces. The read model and mapper preserve DB-returned reward range output, Luck value/influence, Luck policy JSON, formula context, generated item preview JSON and explanation without adding Angular-side reward RNG, amount-range or Luck formulas. Preview rows are cleared when the selected reward profile changes and at the start of a preview request, while stale async response guards remain in place. Test fixtures now match the generated non-null DB contract instead of bypassing it with `null as never`. No DB/RPC/generated changes, direct writes or local reward authority were added.
+
 ---
 
 ## Task U10 — Luck metadata and admin readability

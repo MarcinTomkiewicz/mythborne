@@ -10,7 +10,6 @@ export type TrialManifestationChancePreviewRow =
 export type ChallengeAutoResolveSuccessChancePreviewRow =
   RpcRow<'preview_challenge_auto_resolve_success_chance'>;
 export type RewardGeneratedItemPreviewRow = RpcRow<'preview_reward_generated_item'>;
-export type RewardProfilePreviewRow = RpcRow<'preview_reward_profile'>;
 export type TrialOpportunitySimulationRow = RpcRow<'simulate_trial_opportunity_runs'>;
 
 export interface TrialOpportunityCurvePreview {
@@ -83,32 +82,6 @@ export interface RewardGeneratedItemPreview {
   remainingBudgetAfterBase: number;
   remainingBudgetAfterPrefix: number;
   remainingBudgetAfterSuffix: number;
-  explanation: string;
-}
-
-export interface RewardProfilePreview {
-  previewRunIndex: number;
-  rewardProfileId: string;
-  rewardProfileKey: string;
-  rewardProfileLabel: string;
-  rewardProfileDescription: string;
-  entryId: string;
-  entryKind: string;
-  entryLabel: string;
-  entryDescription: string;
-  effectDefinitionId: string;
-  amountMode: string;
-  resourceType: string;
-  chancePercent: number;
-  chanceRoll: number;
-  isIncluded: boolean;
-  previewAmount: number;
-  minItemCount: number;
-  maxItemCount: number;
-  previewItemCount: number;
-  maxQualityKey: string;
-  bucketProfileId: string;
-  generatedItemsPreviewJson: Json;
   explanation: string;
 }
 

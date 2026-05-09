@@ -134,13 +134,20 @@ describe('ExplorationLabPageState', () => {
     state.loadInitialData();
 
     state.selectRewardProfile(profile);
+    state.rewardProfileForm.patchValue({
+      previewCount: 4,
+      spiritualityValue: 7,
+      luckValue: 12,
+    });
     state.runRewardProfilePreview();
 
     expect(state.rewardProfileForm.controls.rewardProfile.value).toBe(profile);
     expect(state.rewardProfileForm.controls.rewardProfileId.value).toBe('profile-1');
     expect(previews.previewRewardProfile).toHaveBeenCalledOnceWith({
       rewardProfileId: 'profile-1',
-      previewCount: 3,
+      previewCount: 4,
+      spiritualityValue: 7,
+      luckValue: 12,
     });
     expect(previews.previewRewardProfile).not.toHaveBeenCalledWith(
       jasmine.objectContaining({

@@ -2,6 +2,7 @@ import {
   GetLuckLabPreviewContractsRpcRow,
   PreviewLuckInfluenceAndTrialPowerRpcRow,
   PreviewRewardGeneratedItemLuckRpcRow,
+  PreviewRewardProfileLuckRpcRow,
   PreviewTrialManifestationChanceLuckRpcRow,
 } from '../types/luck-rpc.types';
 import {
@@ -11,6 +12,7 @@ import {
 } from './luck-mappers';
 import {
   mapRewardGeneratedItemLuckPreview,
+  mapRewardProfileLuckPreview,
   mapTrialManifestationChancePreview,
 } from './luck-preview-mappers';
 
@@ -210,5 +212,55 @@ describe('luck-mappers', () => {
     expect(formulaContext['qualityFormula']).toBe(
       'reward_item_quality_adjusted_weight',
     );
+  });
+
+  it('maps reward profile Luck preview as DB-owned range output', () => {
+    const row: PreviewRewardProfileLuckRpcRow = {
+      amount_mode: 'range',
+      bucket_profile_id: '',
+      chance_percent: 100,
+      chance_roll: 1,
+      effect_definition_id: '',
+      entry_description: 'Character Points range.',
+      entry_id: 'entry-1',
+      entry_kind: 'character_points',
+      entry_label: 'Character Points',
+      explanation: 'Reward amount range preview from DB.',
+      formula_context_json: { formulaKey: 'reward_amount_range' },
+      generated_items_preview_json: [],
+      is_included: true,
+      luck_influence: 4,
+      luck_policy_json: { amountRangeLuck: true },
+      luck_value: 12,
+      max_item_count: 0,
+      max_quality_key: '',
+      min_item_count: 0,
+      preview_amount: 17,
+      preview_item_count: 0,
+      preview_run_index: 1,
+      resource_type: '',
+      reward_profile_description: 'Profile.',
+      reward_profile_id: 'profile-1',
+      reward_profile_key: 'trial_reward',
+      reward_profile_label: 'Trial reward',
+      spirituality_value: 7,
+    };
+
+    const preview = mapRewardProfileLuckPreview(row);
+
+    expect(preview.rewardProfileId).toBe('profile-1');
+    expect(preview.entryLabel).toBe('Character Points');
+    expect(preview.entryKind).toBe('character_points');
+    expect(preview.amountMode).toBe('range');
+    expect(preview.spiritualityValue).toBe(7);
+    expect(preview.luckValue).toBe(12);
+    expect(preview.luckInfluence).toBe(4);
+    expect(preview.previewAmount).toBe(17);
+    expect(preview.formulaContextJson as Record<string, unknown>).toEqual({
+      formulaKey: 'reward_amount_range',
+    });
+    expect(preview.luckPolicyJson as Record<string, unknown>).toEqual({
+      amountRangeLuck: true,
+    });
   });
 });

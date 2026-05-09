@@ -103,11 +103,21 @@
         <span>Preview count</span>
         <p-inputnumber formControlName="previewCount" [min]="1" />
       </div>
+      <div class="form-field">
+        <span>Spirituality value</span>
+        <p-inputnumber formControlName="spiritualityValue" [min]="0" />
+        <small class="muted-text">Sent to the DB reward range Luck preview.</small>
+      </div>
+      <div class="form-field">
+        <span>Luck value</span>
+        <p-inputnumber formControlName="luckValue" [min]="0" />
+        <small class="muted-text">Luck can affect DB-owned reward amount/range preview rows.</small>
+      </div>
       <p-button type="button" label="Preview profile" (onClick)="page.runRewardProfilePreview()" />
     </form>
     <p-table [value]="page.rewardProfileRows()" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
-        <tr><th>Run</th><th>Entry</th><th>Included</th><th>Amount</th><th>Items</th><th>Explanation</th></tr>
+        <tr><th>Run</th><th>Entry</th><th>Included</th><th>Amount</th><th>Items</th><th>Luck</th><th>Luck policy</th><th>Explanation</th></tr>
       </ng-template>
       <ng-template pTemplate="body" let-row>
         <tr>
@@ -116,6 +126,15 @@
           <td>{{ row.isIncluded ? 'Yes' : 'No' }}</td>
           <td>{{ row.previewAmount ?? '-' }}</td>
           <td>{{ row.previewItemCount ?? '-' }}</td>
+          <td>
+            {{ row.luckValue }}
+            <span class="muted-text">influence</span>
+            {{ row.luckInfluence }}
+          </td>
+          <td>
+            <app-collapsed-json-preview label="Policy" [value]="row.luckPolicyJson" />
+            <app-collapsed-json-preview label="Formula context" [value]="row.formulaContextJson" />
+          </td>
           <td>{{ row.explanation }}</td>
         </tr>
       </ng-template>

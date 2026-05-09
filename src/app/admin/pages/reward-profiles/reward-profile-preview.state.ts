@@ -1,7 +1,8 @@
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup } from '@angular/forms';
 import { finalize } from 'rxjs';
-import { RewardProfilePreview } from '../../../core/domain/exploration/exploration-preview.model';
+import { LuckRewardRangePreview } from '../../../core/domain/luck/luck.model';
 import { ExplorationLabPreviews } from '../../../core/services/exploration/exploration-lab-previews';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { RequestToken } from '../../../core/utils/request-token';
@@ -13,9 +14,26 @@ export class RewardProfilePreviewState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly page = inject(RewardProfilesPageState);
   private readonly token = new RequestToken();
+  private selectedProfileId = this.page.selectedProfileId();
 
   readonly isLoading = signal(false);
-  readonly rows = signal<RewardProfilePreview[]>([]);
+  readonly form = new FormGroup({
+    previewCount: new FormControl<number | null>(5),
+    spiritualityValue: new FormControl<number | null>(0),
+    luckValue: new FormControl<number | null>(0),
+  });
+  readonly rows = signal<LuckRewardRangePreview[]>([]);
+
+  constructor() {
+    effect(() => {
+      const profileId = this.page.selectedProfileId();
+
+      if (profileId !== this.selectedProfileId) {
+        this.selectedProfileId = profileId;
+        this.clear();
+      }
+    });
+  }
 
   clear(): void {
     this.rows.set([]);
@@ -30,9 +48,13 @@ export class RewardProfilePreviewState {
 
     const token = this.token.next();
 
+    this.clear();
     this.isLoading.set(true);
     this.page.error.set(null);
-    this.previews.previewRewardProfile({ rewardProfileId: profileId, previewCount: 5 })
+    this.previews.previewRewardProfile({
+      rewardProfileId: profileId,
+      ...this.form.getRawValue(),
+    })
       .pipe(finalize(() => this.token.isCurrent(token) && this.isLoading.set(false)))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

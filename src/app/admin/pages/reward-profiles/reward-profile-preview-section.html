@@ -1,19 +1,56 @@
-@if (preview.rows().length > 0) {
-  <section class="mg-card p-lg flex-col gap-md">
+<section class="mg-card p-lg flex-col gap-md">
+  <div class="flex-col gap-xs">
     <h3 class="mg-section__title mg-section__title--xs mb-0">Reward profile preview</h3>
+    <p class="muted-text mb-0">
+      Runs the DB-owned Luck-aware reward range preview for the selected profile.
+    </p>
+  </div>
+
+  <form class="grid-form" [formGroup]="preview.form">
+    <div class="form-field">
+      <span>Preview count</span>
+      <p-inputnumber formControlName="previewCount" [min]="1" />
+    </div>
+    <div class="form-field">
+      <span>Spirituality value</span>
+      <p-inputnumber formControlName="spiritualityValue" [min]="0" />
+    </div>
+    <div class="form-field">
+      <span>Luck value</span>
+      <p-inputnumber formControlName="luckValue" [min]="0" />
+    </div>
+    <p-button
+      type="button"
+      label="Preview profile"
+      [disabled]="!page.selectedProfileId() || preview.isLoading()"
+      (onClick)="preview.loadPreview()"
+    />
+  </form>
+
+  @if (preview.rows().length > 0) {
     <p-table [value]="preview.rows()" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
-        <tr><th>Run</th><th>Entry</th><th>Included</th><th>Amount</th><th>Explanation</th></tr>
+        <tr><th>Run</th><th>Entry</th><th>Included</th><th>Amount</th><th>Items</th><th>Luck</th><th>Luck policy</th><th>Explanation</th></tr>
       </ng-template>
       <ng-template pTemplate="body" let-row>
         <tr>
           <td>{{ row.previewRunIndex }}</td>
-          <td>{{ row.entryLabel }}</td>
+          <td>{{ row.entryLabel }} <span class="muted-text">({{ row.entryKind }})</span></td>
           <td>{{ row.isIncluded ? 'Yes' : 'No' }}</td>
-          <td>{{ row.previewAmount || row.previewItemCount || '-' }}</td>
+          <td>{{ row.previewAmount ?? '-' }}</td>
+          <td>{{ row.previewItemCount ?? '-' }}</td>
+          <td>
+            {{ row.luckValue }}
+            <span class="muted-text">influence</span>
+            {{ row.luckInfluence }}
+          </td>
+          <td>
+            <app-collapsed-json-preview label="Policy" [value]="row.luckPolicyJson" />
+            <app-collapsed-json-preview label="Formula context" [value]="row.formulaContextJson" />
+          </td>
           <td>{{ row.explanation }}</td>
         </tr>
       </ng-template>
     </p-table>
-  </section>
-}
+  }
+</section>

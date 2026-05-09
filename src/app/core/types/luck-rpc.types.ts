@@ -41,6 +41,8 @@ export type PreviewExplorationLuckRngChainRpcRow =
 
 export type PreviewRewardProfileLuckRpcRow =
   Rpc<'preview_reward_profile_luck'>['Returns'][number];
+export type PreviewRewardProfileLuckRpcArgs =
+  Rpc<'preview_reward_profile_luck'>['Args'];
 
 export type PreviewRewardGeneratedItemLuckRpcRow =
   Rpc<'preview_reward_generated_item_luck'>['Returns'][number];

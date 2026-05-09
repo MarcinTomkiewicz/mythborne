@@ -1,11 +1,13 @@
 import {
   PreviewChallengeAutoResolveSuccessChanceRpcArgs,
-  PreviewRewardProfileRpcArgs,
   PreviewTrialManifestationChanceRpcArgs,
   PreviewTrialOpportunityCurveRpcArgs,
   SimulateTrialOpportunityRunsRpcArgs,
 } from '../types/exploration-preview-rpc.types';
-import { PreviewRewardGeneratedItemLuckRpcArgs } from '../types/luck-rpc.types';
+import {
+  PreviewRewardGeneratedItemLuckRpcArgs,
+  PreviewRewardProfileLuckRpcArgs,
+} from '../types/luck-rpc.types';
 import { trimToNull } from './normalize-text';
 import {
   optionalNonNegativeInteger,
@@ -45,6 +47,8 @@ export interface PreviewRewardGeneratedItemInput {
 export interface PreviewRewardProfileInput {
   rewardProfileId?: string | null;
   previewCount?: number | null;
+  spiritualityValue?: number | null;
+  luckValue?: number | null;
 }
 
 export interface SimulateTrialOpportunityRunsInput {
@@ -149,16 +153,26 @@ export function toPreviewRewardGeneratedItemLuckRpcArgs(
   return args;
 }
 
-export function toPreviewRewardProfileRpcArgs(
+export function toPreviewRewardProfileLuckRpcArgs(
   input: PreviewRewardProfileInput,
-): PreviewRewardProfileRpcArgs {
-  const args: PreviewRewardProfileRpcArgs = {};
+): PreviewRewardProfileLuckRpcArgs {
+  const args: PreviewRewardProfileLuckRpcArgs = {};
 
   addOptionalText(args, 'p_reward_profile_id', input.rewardProfileId);
   const previewCount = optionalPositiveInteger(input.previewCount);
+  const spiritualityValue = optionalNonNegativeInteger(input.spiritualityValue);
+  const luckValue = optionalNonNegativeInteger(input.luckValue);
 
   if (previewCount !== null) {
     args.p_preview_count = previewCount;
+  }
+
+  if (spiritualityValue !== null) {
+    args.p_spirituality_value = spiritualityValue;
+  }
+
+  if (luckValue !== null) {
+    args.p_luck_value = luckValue;
   }
 
   return args;

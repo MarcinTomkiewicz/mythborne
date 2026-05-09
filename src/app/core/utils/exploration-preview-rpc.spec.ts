@@ -1,4 +1,5 @@
 import {
+  toPreviewRewardProfileLuckRpcArgs,
   toPreviewRewardGeneratedItemLuckRpcArgs,
   toSimulateTrialOpportunityRunsRpcArgs,
 } from './exploration-preview-rpc';
@@ -14,6 +15,20 @@ describe('exploration preview RPC args mappers', () => {
       p_bucket_profile_id: 'bucket-1',
       p_max_quality_key: 'rare',
       p_preview_count: 2,
+      p_luck_value: 12,
+    });
+  });
+
+  it('maps Luck-aware reward profile preview args with DB-owned Luck inputs', () => {
+    expect(toPreviewRewardProfileLuckRpcArgs({
+      rewardProfileId: ' profile-1 ',
+      previewCount: 4.9,
+      spiritualityValue: 7.8,
+      luckValue: 12.3,
+    })).toEqual({
+      p_reward_profile_id: 'profile-1',
+      p_preview_count: 4,
+      p_spirituality_value: 7,
       p_luck_value: 12,
     });
   });

@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { RewardProfileAdminData } from '../../../core/domain/exploration/exploration-reward.model';
+import { LuckRewardRangePreview } from '../../../core/domain/luck/luck.model';
 import { ExplorationLabPreviews } from '../../../core/services/exploration/exploration-lab-previews';
 import { RewardProfileAdmin } from '../../../core/services/exploration/reward-profile-admin';
 import { ToastService } from '../../../core/services/ui/toast';
@@ -14,11 +15,13 @@ import { RewardProfilesPageState } from './reward-profiles-page.state';
 
 describe('RewardProfilesPageState', () => {
   let admin: jasmine.SpyObj<RewardProfileAdmin>;
+  let previews: jasmine.SpyObj<ExplorationLabPreviews>;
   let toast: jasmine.SpyObj<ToastService>;
   let page: RewardProfilesPageState;
   let profileActions: RewardProfileProfileActionsState;
   let entryActions: RewardProfileEntryActionsState;
   let outcomeActions: RewardProfileOutcomeActionsState;
+  let previewState: RewardProfilePreviewState;
 
   beforeEach(() => {
     admin = jasmine.createSpyObj<RewardProfileAdmin>('RewardProfileAdmin', [
@@ -34,6 +37,10 @@ describe('RewardProfilesPageState', () => {
     admin.upsertProfile.and.returnValue(of(adminData().profiles[0]));
     admin.upsertEntry.and.returnValue(of(adminData().entries[0]));
     admin.upsertOutcomeKind.and.returnValue(of(adminData().outcomeKinds[0]));
+    previews = jasmine.createSpyObj<ExplorationLabPreviews>('ExplorationLabPreviews', [
+      'previewRewardProfile',
+    ]);
+    previews.previewRewardProfile.and.returnValue(of([]));
     toast = jasmine.createSpyObj<ToastService>('ToastService', ['show']);
 
     TestBed.configureTestingModule({
@@ -45,12 +52,7 @@ describe('RewardProfilesPageState', () => {
         RewardProfileOutcomeActionsState,
         RewardProfilePreviewState,
         { provide: RewardProfileAdmin, useValue: admin },
-        {
-          provide: ExplorationLabPreviews,
-          useValue: jasmine.createSpyObj<ExplorationLabPreviews>('ExplorationLabPreviews', [
-            'previewRewardProfile',
-          ]),
-        },
+        { provide: ExplorationLabPreviews, useValue: previews },
         { provide: ToastService, useValue: toast },
       ],
     });
@@ -58,6 +60,7 @@ describe('RewardProfilesPageState', () => {
     profileActions = TestBed.inject(RewardProfileProfileActionsState);
     entryActions = TestBed.inject(RewardProfileEntryActionsState);
     outcomeActions = TestBed.inject(RewardProfileOutcomeActionsState);
+    previewState = TestBed.inject(RewardProfilePreviewState);
   });
 
   it('keeps dropdown form values editable and patches existing entry/outcome selections', () => {
@@ -162,6 +165,49 @@ describe('RewardProfilesPageState', () => {
     expect(page.sourceKindOptions()).toEqual([
       { label: 'Encounter (encounter)', value: 'encounter' },
     ]);
+  });
+
+  it('previews selected reward profile through Luck-aware DB preview args', () => {
+    page.loadInitialData();
+    page.selectProfile('profile-1');
+    previewState.form.patchValue({
+      previewCount: 4,
+      spiritualityValue: 7,
+      luckValue: 12,
+    });
+
+    previewState.loadPreview();
+
+    expect(previews.previewRewardProfile).toHaveBeenCalledOnceWith({
+      rewardProfileId: 'profile-1',
+      previewCount: 4,
+      spiritualityValue: 7,
+      luckValue: 12,
+    });
+  });
+
+  it('clears stale preview rows on profile change and failed preview', () => {
+    previews.previewRewardProfile.and.returnValue(of([rewardPreviewRow('profile-1')]));
+    page.loadInitialData();
+    page.selectProfile('profile-1');
+
+    previewState.loadPreview();
+
+    expect(previewState.rows().map((row) => row.rewardProfileId)).toEqual(['profile-1']);
+
+    page.selectProfile('profile-2');
+    TestBed.flushEffects();
+
+    expect(previewState.rows()).toEqual([]);
+
+    previews.previewRewardProfile.and.returnValue(
+      throwError(() => new Error('DB preview failed.')),
+    );
+
+    previewState.loadPreview();
+
+    expect(previewState.rows()).toEqual([]);
+    expect(page.error()).toBe('DB preview failed.');
   });
 
   it('blocks active experience entries on level-up reward profiles to preserve recursion guard', () => {
@@ -404,6 +450,43 @@ describe('RewardProfilesPageState', () => {
     expect(page.outcomeForm.controls.sourceKind.value).toBe('trial');
   });
 });
+
+function rewardPreviewRow(
+  rewardProfileId: string,
+  patch: Partial<LuckRewardRangePreview> = {},
+): LuckRewardRangePreview {
+  return {
+    previewRunIndex: 1,
+    rewardProfileId,
+    rewardProfileKey: 'trial_reward',
+    rewardProfileLabel: 'Trial reward',
+    rewardProfileDescription: 'Trial reward.',
+    entryId: 'entry-1',
+    entryKind: 'character_points',
+    entryLabel: 'Character Points',
+    entryDescription: 'Character Points range.',
+    effectDefinitionId: '',
+    amountMode: 'range',
+    resourceType: '',
+    spiritualityValue: 7,
+    luckValue: 12,
+    luckInfluence: 4,
+    previewAmount: 17,
+    previewItemCount: 0,
+    minItemCount: 0,
+    maxItemCount: 0,
+    maxQualityKey: '',
+    bucketProfileId: '',
+    chancePercent: 100,
+    chanceRoll: 1,
+    isIncluded: true,
+    formulaContextJson: { formulaKey: 'reward_amount_range' },
+    luckPolicyJson: { amountRangeLuck: true },
+    generatedItemsPreviewJson: [],
+    explanation: 'Reward amount range preview from DB.',
+    ...patch,
+  };
+}
 
 function adminData(): RewardProfileAdminData {
   return {

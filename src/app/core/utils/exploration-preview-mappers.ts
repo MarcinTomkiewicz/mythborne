@@ -3,8 +3,6 @@ import {
   ChallengeAutoResolveSuccessChancePreviewRow,
   RewardGeneratedItemPreview,
   RewardGeneratedItemPreviewRow,
-  RewardProfilePreview,
-  RewardProfilePreviewRow,
   TrialManifestationChancePreview,
   TrialManifestationChancePreviewRow,
   TrialOpportunityCurvePreview,
@@ -98,34 +96,6 @@ export function mapRewardGeneratedItemPreview(
     remainingBudgetAfterBase: row.remaining_budget_after_base,
     remainingBudgetAfterPrefix: row.remaining_budget_after_prefix,
     remainingBudgetAfterSuffix: row.remaining_budget_after_suffix,
-    explanation: row.explanation,
-  };
-}
-
-export function mapRewardProfilePreview(row: RewardProfilePreviewRow): RewardProfilePreview {
-  return {
-    previewRunIndex: row.preview_run_index,
-    rewardProfileId: row.reward_profile_id,
-    rewardProfileKey: row.reward_profile_key,
-    rewardProfileLabel: row.reward_profile_label,
-    rewardProfileDescription: row.reward_profile_description,
-    entryId: row.entry_id,
-    entryKind: row.entry_kind,
-    entryLabel: row.entry_label,
-    entryDescription: row.entry_description,
-    effectDefinitionId: row.effect_definition_id,
-    amountMode: row.amount_mode,
-    resourceType: row.resource_type,
-    chancePercent: row.chance_percent,
-    chanceRoll: row.chance_roll,
-    isIncluded: row.is_included,
-    previewAmount: row.preview_amount,
-    minItemCount: row.min_item_count,
-    maxItemCount: row.max_item_count,
-    previewItemCount: row.preview_item_count,
-    maxQualityKey: row.max_quality_key,
-    bucketProfileId: row.bucket_profile_id,
-    generatedItemsPreviewJson: row.generated_items_preview_json,
     explanation: row.explanation,
   };
 }

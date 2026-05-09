@@ -3,28 +3,34 @@ import { map, Observable } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
   ChallengeAutoResolveSuccessChancePreview,
-  RewardProfilePreview,
   TrialManifestationChancePreview,
   TrialOpportunityCurvePreview,
   TrialOpportunitySimulation,
 } from '../../domain/exploration/exploration-preview.model';
-import { LuckGeneratedItemPreview } from '../../domain/luck/luck.model';
+import {
+  LuckGeneratedItemPreview,
+  LuckRewardRangePreview,
+} from '../../domain/luck/luck.model';
 import {
   PreviewChallengeAutoResolveSuccessChanceRpcRow,
-  PreviewRewardProfileRpcRow,
   PreviewTrialManifestationChanceRpcRow,
   PreviewTrialOpportunityCurveRpcRow,
   SimulateTrialOpportunityRunsRpcRow,
 } from '../../types/exploration-preview-rpc.types';
-import { PreviewRewardGeneratedItemLuckRpcRow } from '../../types/luck-rpc.types';
+import {
+  PreviewRewardGeneratedItemLuckRpcRow,
+  PreviewRewardProfileLuckRpcRow,
+} from '../../types/luck-rpc.types';
 import {
   mapChallengeAutoResolveSuccessChancePreview,
-  mapRewardProfilePreview,
   mapTrialManifestationChancePreview,
   mapTrialOpportunityCurvePreview,
   mapTrialOpportunitySimulation,
 } from '../../utils/exploration-preview-mappers';
-import { mapRewardGeneratedItemLuckPreview } from '../../utils/luck-preview-mappers';
+import {
+  mapRewardGeneratedItemLuckPreview,
+  mapRewardProfileLuckPreview,
+} from '../../utils/luck-preview-mappers';
 import {
   PreviewChallengeAutoResolveSuccessChanceInput,
   PreviewRewardGeneratedItemInput,
@@ -34,7 +40,7 @@ import {
   SimulateTrialOpportunityRunsInput,
   toPreviewChallengeAutoResolveSuccessChanceRpcArgs,
   toPreviewRewardGeneratedItemLuckRpcArgs,
-  toPreviewRewardProfileRpcArgs,
+  toPreviewRewardProfileLuckRpcArgs,
   toPreviewTrialManifestationChanceRpcArgs,
   toPreviewTrialOpportunityCurveRpcArgs,
   toSimulateTrialOpportunityRunsRpcArgs,
@@ -89,13 +95,13 @@ export class ExplorationLabPreviews {
       .pipe(map((rows) => rows.map(mapRewardGeneratedItemLuckPreview)));
   }
 
-  previewRewardProfile(input: PreviewRewardProfileInput): Observable<RewardProfilePreview[]> {
+  previewRewardProfile(input: PreviewRewardProfileInput): Observable<LuckRewardRangePreview[]> {
     return this.backend
-      .rpc<PreviewRewardProfileRpcRow[]>(
-        RPC.preview_reward_profile,
-        toPreviewRewardProfileRpcArgs(input),
+      .rpc<PreviewRewardProfileLuckRpcRow[]>(
+        RPC.preview_reward_profile_luck,
+        toPreviewRewardProfileLuckRpcArgs(input),
       )
-      .pipe(map((rows) => rows.map(mapRewardProfilePreview)));
+      .pipe(map((rows) => rows.map(mapRewardProfileLuckPreview)));
   }
 
   simulateTrialOpportunityRuns(

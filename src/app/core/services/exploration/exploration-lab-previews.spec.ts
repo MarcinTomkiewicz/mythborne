@@ -20,7 +20,7 @@ describe('ExplorationLabPreviews', () => {
           return of([autoResolveRow()]);
         case RPC.preview_reward_generated_item_luck:
           return of([generatedItemLuckRow()]);
-        case RPC.preview_reward_profile:
+        case RPC.preview_reward_profile_luck:
           return of([rewardProfileRow()]);
         case RPC.simulate_trial_opportunity_runs:
           return of([simulationRow()]);
@@ -65,6 +65,8 @@ describe('ExplorationLabPreviews', () => {
     service.previewRewardProfile({
       rewardProfileId: 'profile-1',
       previewCount: 2,
+      spiritualityValue: 7,
+      luckValue: 12,
     }).subscribe((rows) => expect(rows[0].rewardProfileId).toBe('profile-1'));
     service.simulateTrialOpportunityRuns({
       difficultyKey: 'easy',
@@ -98,9 +100,11 @@ describe('ExplorationLabPreviews', () => {
       p_preview_count: 2,
       p_luck_value: 12,
     });
-    expect(backend.rpc).toHaveBeenCalledWith(RPC.preview_reward_profile, {
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.preview_reward_profile_luck, {
       p_reward_profile_id: 'profile-1',
       p_preview_count: 2,
+      p_spirituality_value: 7,
+      p_luck_value: 12,
     });
     expect(backend.rpc).toHaveBeenCalledWith(RPC.simulate_trial_opportunity_runs, {
       p_difficulty_key: 'easy',
@@ -218,14 +222,19 @@ function rewardProfileRow() {
     chance_percent: 100,
     chance_roll: 1,
     is_included: true,
+    luck_influence: 4,
+    luck_policy_json: { amountRangeLuck: true },
+    luck_value: 12,
     preview_amount: 10,
     min_item_count: null,
     max_item_count: null,
     preview_item_count: null,
     max_quality_key: null,
     bucket_profile_id: null,
+    formula_context_json: { formulaKey: 'reward_amount_range' },
     generated_items_preview_json: [],
     explanation: 'Preview only.',
+    spirituality_value: 7,
   } as never;
 }
 
