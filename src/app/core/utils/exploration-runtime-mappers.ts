@@ -9,6 +9,7 @@ import {
   HeroExplorationTestOverrideReadModel,
 } from '../domain/exploration/exploration-runtime.model';
 import { Row } from '../types/supabase.types';
+import { mapHeroExplorationChallengeAutoResolve } from './exploration-challenge-auto-resolve-read-model';
 import { mapHeroExplorationStepRng } from './exploration-rng-read-model';
 import { mapHeroExplorationTrialManifestation } from './exploration-trial-manifestation-read-model';
 
@@ -178,10 +179,14 @@ export function mapHeroExplorationChallengeAttempt(
     completedAt: row.completed_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-  } satisfies Omit<HeroExplorationChallengeAttemptReadModel, 'manifestation'>;
+  } satisfies Omit<
+    HeroExplorationChallengeAttemptReadModel,
+    'autoResolve' | 'manifestation'
+  >;
 
   return {
     ...challenge,
+    autoResolve: mapHeroExplorationChallengeAutoResolve(challenge),
     manifestation: mapHeroExplorationTrialManifestation(challenge),
   };
 }

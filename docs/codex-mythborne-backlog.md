@@ -8978,6 +8978,8 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - Auto-resolve remains binary success/failure.
 - Build and focused challenge/auto-resolve tests pass.
 
+**Status note 2026-05-09:** Accepted after cleanup. Challenge attempts now expose nested Challenge Auto-resolve read-state populated by runtime row/JSON mappers from DB-returned chance/roll and DB metadata for tested stat, Luck value/influence, Trial Power, cap/penalty/manual reference, formula context and explanation. Non-combat auto-resolve UI uses DB-owned explanation/facts; combat challenges stay on the live-combat/manual boundary, hide auto-resolve Luck facts and reject auto-resolve before the RPC.
+
 ---
 
 ## Task U7 — Combat RNG Luck alignment

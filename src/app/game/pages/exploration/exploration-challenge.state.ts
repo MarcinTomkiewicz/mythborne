@@ -105,6 +105,14 @@ export class ExplorationChallengeState {
       return;
     }
 
+    if (challenge.minigameKey === 'combat') {
+      this.feedback.setError(
+        null,
+        'Combat challenges use the live combat flow and cannot be auto-resolved from this action.',
+      );
+      return;
+    }
+
     const token = this.completionToken.next();
 
     this.isCompleting.set(true);
@@ -252,18 +260,27 @@ export class ExplorationChallengeState {
       { label: 'Manual deadline', value: challenge.manualDeadlineAt ?? 'N/D' },
       { label: 'Manifestation', value: this.chanceRollLabel(challenge.manifestationChance, challenge.manifestationRoll) },
       { label: 'Auto-resolve', value: this.autoResolveFactLabel(challenge) },
+      ...this.autoResolveLuckFacts(challenge),
     ];
   }
 
   private autoResolveText(
     challenge: HeroExplorationChallengeAttemptReadModel | null,
   ): string {
-    const chance = challenge?.autoResolveChance;
+    if (challenge?.minigameKey === 'combat') {
+      return 'Combat challenges use the live combat flow.';
+    }
+
+    if (challenge?.autoResolve?.explanation) {
+      return challenge.autoResolve.explanation;
+    }
+
+    const chance = challenge?.autoResolve?.chance ?? challenge?.autoResolveChance;
     const chanceLabel = chance === null || chance === undefined
-      ? 'the DB fallback chance'
+      ? 'the DB-returned chance'
       : `${chance}%`;
 
-    return `Auto-resolve is a database fallback when manual play is not completed. It rolls ${chanceLabel} and can be worse than manual completion.`;
+    return `Auto-resolve uses the DB-owned success chance for this challenge: ${chanceLabel}.`;
   }
 
   private chanceRollLabel(chance: number | null, roll: number | null): string {
@@ -281,9 +298,38 @@ export class ExplorationChallengeState {
     }
 
     return this.chanceRollLabel(
-      challenge.autoResolveChance,
-      challenge.autoResolveRoll,
+      challenge.autoResolve?.chance ?? challenge.autoResolveChance,
+      challenge.autoResolve?.roll ?? challenge.autoResolveRoll,
     );
+  }
+
+  private autoResolveLuckFacts(
+    challenge: HeroExplorationChallengeAttemptReadModel,
+  ): ChallengeFact[] {
+    if (challenge.minigameKey === 'combat') {
+      return [];
+    }
+
+    const autoResolve = challenge.autoResolve;
+
+    if (!autoResolve) {
+      return [];
+    }
+
+    return [
+      autoResolve.testedStatValue === null
+        ? null
+        : { label: 'Auto tested value', value: `${autoResolve.testedStatValue}` },
+      autoResolve.luckInfluence === null
+        ? null
+        : { label: 'Auto Luck influence', value: `${autoResolve.luckInfluence}` },
+      autoResolve.trialPower === null
+        ? null
+        : { label: 'Auto Trial Power', value: `${autoResolve.trialPower}` },
+      autoResolve.capPercent === null
+        ? null
+        : { label: 'Auto cap', value: `${autoResolve.capPercent}%` },
+    ].filter((fact): fact is ChallengeFact => fact !== null);
   }
 
   private humanizeKey(value: string): string {

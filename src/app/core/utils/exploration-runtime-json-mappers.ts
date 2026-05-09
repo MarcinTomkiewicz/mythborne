@@ -12,6 +12,7 @@ import {
   HeroExplorationTestOverrideReadModel,
 } from '../domain/exploration/exploration-runtime.model';
 import { Json } from '../types/database.types';
+import { mapHeroExplorationChallengeAutoResolve } from './exploration-challenge-auto-resolve-read-model';
 import { mapHeroExplorationStepRng } from './exploration-rng-read-model';
 import { mapHeroExplorationTrialManifestation } from './exploration-trial-manifestation-read-model';
 import {
@@ -258,10 +259,14 @@ function mapHeroExplorationChallengeAttemptJson(
     completedAt: optionalText(read(row, 'completedAt', 'completed_at')),
     createdAt: text(read(row, 'createdAt', 'created_at')),
     updatedAt: text(read(row, 'updatedAt', 'updated_at')),
-  } satisfies Omit<HeroExplorationChallengeAttemptReadModel, 'manifestation'>;
+  } satisfies Omit<
+    HeroExplorationChallengeAttemptReadModel,
+    'autoResolve' | 'manifestation'
+  >;
 
   return {
     ...challenge,
+    autoResolve: mapHeroExplorationChallengeAutoResolve(challenge),
     manifestation: mapHeroExplorationTrialManifestation(challenge),
   };
 }

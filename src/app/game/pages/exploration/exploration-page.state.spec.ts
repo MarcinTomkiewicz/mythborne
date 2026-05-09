@@ -393,13 +393,17 @@ describe('ExplorationPageState', () => {
     expect(liveCombat.ensureSession).toHaveBeenCalled();
     expect(liveCombat.submitPlayerAction).not.toHaveBeenCalled();
   });
-  it('auto-resolves active challenges as a database fallback', () => {
+  it('auto-resolves active challenges with DB-returned Luck context', () => {
     page.loadData();
     page.startSelectedDifficulty();
     page.overview.setStateFromWorkflow(activeExplorationState('easy', false, true));
 
-    expect(page.autoResolveExplanation()).toContain('database fallback');
-    expect(page.autoResolveExplanation()).toContain('worse than manual');
+    expect(page.autoResolveExplanation()).toBe('DB auto-resolve context.');
+    expect(page.challengeFacts()).toEqual(jasmine.arrayContaining([
+      { label: 'Auto Luck influence', value: '5' },
+      { label: 'Auto Trial Power', value: '37' },
+      { label: 'Auto cap', value: '90%' },
+    ]));
 
     page.autoResolveChallenge();
 
@@ -423,6 +427,25 @@ describe('ExplorationPageState', () => {
       .find((fact) => fact.label === 'Auto-resolve');
 
     expect(autoResolveFact?.value).toBe('Manual combat');
+    expect(page.autoResolveExplanation()).toBe(
+      'Combat challenges use the live combat flow.',
+    );
+    expect(page.challengeFacts().map((fact) => fact.label)).not.toContain(
+      'Auto Luck influence',
+    );
+    expect(page.challengeFacts().map((fact) => fact.label)).not.toContain(
+      'Auto Trial Power',
+    );
+    expect(page.challengeFacts().map((fact) => fact.label)).not.toContain(
+      'Auto cap',
+    );
+
+    page.autoResolveChallenge();
+
+    expect(explorations.autoResolveHeroExplorationChallengeAttempt).not.toHaveBeenCalled();
+    expect(feedback.error()).toBe(
+      'Combat challenges use the live combat flow and cannot be auto-resolved from this action.',
+    );
   });
 
   it('loads persisted challenge rewards for the current exploration', async () => {
@@ -648,6 +671,8 @@ function activeExplorationState(
     activeChallenge: withActiveChallenge
       ? {
           id: 'challenge-1',
+          serverId: 'server-1',
+          heroId: 'hero-1',
           explorationId,
           stepId: 'step-1',
           challengeKind: 'trial',
@@ -661,6 +686,21 @@ function activeExplorationState(
           manifestationStatus: 'manifested',
           manifestationChance: 40,
           manifestationRoll: 12,
+          manifestation: {
+            status: 'manifested',
+            chance: 40,
+            roll: 12,
+            trialDefinitionId: 'trial-1',
+            testedStatKey: 'dexterity',
+            luckValue: null,
+            luckInfluence: null,
+            trialPower: null,
+            configIssueKey: null,
+            configIssueMessage: null,
+            explanation: null,
+            metadataJson: {},
+            formulaContextJson: {},
+          },
           manualDeadlineAt: '2026-05-01T10:10:00.000Z',
           completionMode: null,
           performanceRating: null,
@@ -669,8 +709,34 @@ function activeExplorationState(
           rewardGrantId: null,
           autoResolveChance: 35,
           autoResolveRoll: null,
+          autoResolve: {
+            chance: 35,
+            roll: null,
+            testedStatKey: 'dexterity',
+            testedStatValue: 32,
+            luckValue: 15,
+            luckInfluence: 5,
+            trialPower: 37,
+            difficultyMultiplier: 1,
+            capPercent: 90,
+            autoResolvePenalty: 10,
+            manualChanceReference: 60,
+            rawSuccessChance: 58,
+            finalSuccessChance: 35,
+            formulaContextJson: {
+              formulaKey: 'challenge_auto_resolve_success_chance',
+            },
+            explanation: 'DB auto-resolve context.',
+            metadataJson: {
+              source: 'db',
+            },
+          },
+          detailsJson: {},
+          metadataJson: {},
           startedAt: '2026-05-01T10:05:00.000Z',
           completedAt: null,
+          createdAt: '2026-05-01T10:05:00.000Z',
+          updatedAt: '2026-05-01T10:05:00.000Z',
         } as HeroExplorationStateReadModel['activeChallenge']
       : null,
   };

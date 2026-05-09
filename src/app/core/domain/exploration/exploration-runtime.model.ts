@@ -137,6 +137,25 @@ export interface HeroExplorationTrialManifestationReadModel {
   formulaContextJson: Json;
 }
 
+export interface HeroExplorationChallengeAutoResolveReadModel {
+  chance: number | null;
+  roll: number | null;
+  testedStatKey: string | null;
+  testedStatValue: number | null;
+  luckValue: number | null;
+  luckInfluence: number | null;
+  trialPower: number | null;
+  difficultyMultiplier: number | null;
+  capPercent: number | null;
+  autoResolvePenalty: number | null;
+  manualChanceReference: number | null;
+  rawSuccessChance: number | null;
+  finalSuccessChance: number | null;
+  formulaContextJson: Json;
+  explanation: string | null;
+  metadataJson: Json;
+}
+
 export interface HeroExplorationEffectReadModel {
   id: string;
   serverId: string;
@@ -182,6 +201,7 @@ export interface HeroExplorationChallengeAttemptReadModel {
   rewardGrantId: string | null;
   autoResolveChance: number | null;
   autoResolveRoll: number | null;
+  autoResolve: HeroExplorationChallengeAutoResolveReadModel;
   detailsJson: Json;
   metadataJson: Json;
   startedAt: string | null;

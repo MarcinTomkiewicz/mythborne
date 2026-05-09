@@ -196,6 +196,53 @@ describe('exploration runtime JSON mappers', () => {
     );
   });
 
+  it('preserves Luck-aware auto-resolve metadata on JSON and row challenge mappers', () => {
+    const state = mapHeroExplorationStateJson({
+      hasExploration: true,
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+      explorationDate: '2026-05-01',
+      remainingTrials: 2,
+      activeChallenge: challengeJson({
+        autoResolveChance: 55,
+        autoResolveRoll: 44,
+        metadataJson: {
+          autoResolve: autoResolveMetadata(),
+        },
+      }),
+    });
+    const rowChallenge = mapHeroExplorationChallengeAttempt(challengeRow({
+      auto_resolve_chance: 57,
+      auto_resolve_roll: 53,
+      metadata_json: {
+        auto_resolve: {
+          tested_stat_key: 'dexterity',
+          tested_stat_value: 32,
+          luck_value: 21,
+          luck_influence: 8,
+          trial_power: 39,
+          cap_percent: 90,
+          final_auto_resolve_success_chance: 57,
+          explanation: 'DB row auto-resolve context.',
+        },
+      },
+    }));
+
+    expect(state.activeChallenge?.autoResolve.chance).toBe(55);
+    expect(state.activeChallenge?.autoResolve.roll).toBe(44);
+    expect(state.activeChallenge?.autoResolve.testedStatValue).toBe(32);
+    expect(state.activeChallenge?.autoResolve.luckInfluence).toBe(7);
+    expect(state.activeChallenge?.autoResolve.trialPower).toBe(39);
+    expect(state.activeChallenge?.autoResolve.capPercent).toBe(90);
+    expect(state.activeChallenge?.autoResolve.explanation).toBe(
+      'DB auto-resolve context.',
+    );
+    expect(rowChallenge.autoResolve.chance).toBe(57);
+    expect(rowChallenge.autoResolve.roll).toBe(53);
+    expect(rowChallenge.autoResolve.luckInfluence).toBe(8);
+    expect(rowChallenge.autoResolve.finalSuccessChance).toBe(57);
+  });
+
   it('does not treat legacy empty/none outcomes as canonical nothing fallback', () => {
     const emptyState = mapHeroExplorationStateJson({
       hasExploration: true,
@@ -378,6 +425,8 @@ function stepJson(input: {
 function challengeJson(input: {
   manifestationChance?: number | null;
   manifestationRoll?: number | null;
+  autoResolveChance?: number | null;
+  autoResolveRoll?: number | null;
   metadataJson?: Json;
 } = {}): Json {
   return {
@@ -403,14 +452,33 @@ function challengeJson(input: {
     score: null,
     success: null,
     rewardGrantId: null,
-    autoResolveChance: 40,
-    autoResolveRoll: null,
+    autoResolveChance: input.autoResolveChance ?? 40,
+    autoResolveRoll: input.autoResolveRoll ?? null,
     detailsJson: {},
     metadataJson: input.metadataJson ?? {},
     startedAt: '2026-05-01T10:06:00.000Z',
     completedAt: null,
     createdAt: '2026-05-01T10:06:00.000Z',
     updatedAt: '2026-05-01T10:06:00.000Z',
+  };
+}
+
+function autoResolveMetadata(patch: Record<string, Json | undefined> = {}): Json {
+  return {
+    testedStatKey: 'dexterity',
+    testedStatValue: 32,
+    luckValue: 21,
+    luckInfluence: 7,
+    trialPower: 39,
+    difficultyMultiplier: 1.1,
+    capPercent: 90,
+    autoResolvePenalty: 10,
+    manualChanceReference: 65,
+    rawAutoResolveSuccessChance: 62,
+    finalAutoResolveSuccessChance: 55,
+    formulaContext: { formulaKey: 'challenge_auto_resolve_success_chance' },
+    explanation: 'DB auto-resolve context.',
+    ...patch,
   };
 }
 
