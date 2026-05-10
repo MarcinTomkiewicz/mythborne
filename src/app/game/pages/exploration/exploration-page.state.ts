@@ -4,6 +4,7 @@ import { ExplorationStepSelectionDiagnosticReadModel } from '../../../core/domai
 import { HeroExplorationEdgeReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { TrialOpportunityCurvePreview } from '../../../core/domain/exploration/exploration-preview.model';
 import { ActiveServer } from '../../../core/services/server/active-server';
+import { humanizeKey } from '../../../core/utils/normalize-text';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationMovementState } from './exploration-movement.state';
@@ -64,6 +65,10 @@ export class ExplorationPageState {
   readonly stepResultFlavor = this.step.stepResultFlavor;
   readonly stepResultTitle = this.step.stepResultTitle;
   readonly canCompleteChallenge = this.challenge.canCompleteChallenge;
+  readonly canAutoResolveChallenge = this.challenge.canAutoResolveChallenge;
+  readonly canShowManualResolveActions = this.challenge.canShowManualResolveActions;
+  readonly canShowAutoResolveAction = this.challenge.canShowAutoResolveAction;
+  readonly challengeActionBlocker = this.challenge.challengeActionBlocker;
   readonly challengeFacts = this.challenge.challengeFacts;
   readonly challengeResultDescription = this.challenge.challengeResultDescription;
   readonly challengeResultTitle = this.challenge.challengeResultTitle;
@@ -143,7 +148,7 @@ export class ExplorationPageState {
   diagnosticOutcomeLabel(
     diagnostic: ExplorationStepSelectionDiagnosticReadModel,
   ): string {
-    return this.humanizeDiagnosticKey(diagnostic.finalOutcomeKind);
+    return humanizeKey(diagnostic.finalOutcomeKind, 'Unknown');
   }
 
   diagnosticSelectionReason(
@@ -170,8 +175,8 @@ export class ExplorationPageState {
     }
 
     const kind = selected.encounterKind
-      ? `${this.humanizeDiagnosticKey(selected.encounterKind)} Encounter`
-      : this.humanizeDiagnosticKey(selected.definitionKind);
+      ? `${humanizeKey(selected.encounterKind, 'Unknown')} Encounter`
+      : humanizeKey(selected.definitionKind, 'Unknown');
 
     return `${kind}: ${selected.definitionKey}`;
   }
@@ -188,7 +193,7 @@ export class ExplorationPageState {
     const definition = skipped.definitionKey ?? skipped.definitionId ?? 'unknown definition';
     const reason = skipped.reasonKey ?? 'unspecified';
 
-    return `${this.humanizeDiagnosticKey(skipped.definitionKind)} ${definition} skipped: ${reason}`;
+    return `${humanizeKey(skipped.definitionKind, 'Unknown')} ${definition} skipped: ${reason}`;
   }
 
   diagnosticReasonLabels(
@@ -219,11 +224,4 @@ export class ExplorationPageState {
   combatEventMetaLabel = this.challenge.eventMetaLabel.bind(this.challenge);
   timingManifestLabel = this.challenge.timingManifestLabel.bind(this.challenge);
 
-  private humanizeDiagnosticKey(value: string): string {
-    return value
-      .split(/[_\s-]+/)
-      .filter(Boolean)
-      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-      .join(' ') || 'Unknown';
-  }
 }

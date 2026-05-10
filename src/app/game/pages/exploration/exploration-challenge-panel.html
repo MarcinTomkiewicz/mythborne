@@ -113,30 +113,34 @@
             }
           </div>
         }
-      } @else {
+      } @else if (page.challengeActionBlocker(); as blocker) {
+        <p class="muted-text mb-0">{{ blocker }}</p>
+      } @else if (page.canShowManualResolveActions()) {
         <p class="muted-text mb-0">{{ page.autoResolveExplanation() }}</p>
 
         <div class="flex-row-start-center flex-wrap gap-sm">
           <p-button
             type="button"
-            label="Record prototype success"
+            label="Resolve Trial success"
             [disabled]="!page.canCompleteChallenge()"
             (onClick)="page.completeChallenge(true)"
           />
           <p-button
             type="button"
-            label="Record prototype fail"
+            label="Resolve Trial failure"
             severity="secondary"
             [disabled]="!page.canCompleteChallenge()"
             (onClick)="page.completeChallenge(false)"
           />
-          <p-button
-            type="button"
-            label="Auto-resolve"
-            severity="warn"
-            [disabled]="!page.canCompleteChallenge()"
-            (onClick)="page.autoResolveChallenge()"
-          />
+          @if (page.canShowAutoResolveAction()) {
+            <p-button
+              type="button"
+              label="Auto-resolve Trial"
+              severity="warn"
+              [disabled]="!page.canAutoResolveChallenge()"
+              (onClick)="page.autoResolveChallenge()"
+            />
+          }
         </div>
       }
     </div>

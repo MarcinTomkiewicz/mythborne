@@ -6,6 +6,7 @@ import {
   RewardGrantEntryReadModel,
 } from '../../../core/domain/exploration/exploration-reward.model';
 import { HeroExplorationRewards } from '../../../core/services/exploration/hero-exploration-rewards';
+import { humanizeKey } from '../../../core/utils/normalize-text';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -59,7 +60,7 @@ export class ExplorationRewardState {
           ? `Effect ${entry.effectDefinitionId}`
           : 'Effect reward';
       default:
-        return `${this.humanizeKey(entry.entryKind)}${entry.amount === null ? '' : `: ${entry.amount}`}`;
+        return `${humanizeKey(entry.entryKind, 'Reward')}${entry.amount === null ? '' : `: ${entry.amount}`}`;
     }
   }
 
@@ -157,13 +158,6 @@ export class ExplorationRewardState {
     return `${reward.entries.length} reward entr${reward.entries.length === 1 ? 'y' : 'ies'} recorded by the database.`;
   }
 
-  private humanizeKey(value: string): string {
-    return value
-      .split(/[_\s-]+/)
-      .filter(Boolean)
-      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-      .join(' ') || 'Reward';
-  }
 }
 
 function isVisibleRewardEntry(entry: RewardGrantEntryReadModel): boolean {

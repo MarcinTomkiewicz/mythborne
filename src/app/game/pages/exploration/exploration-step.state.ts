@@ -10,6 +10,10 @@ import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
+import {
+  explorationStepResultDescription,
+  explorationStepResultTitle,
+} from './exploration-step-result-ui';
 
 @Injectable()
 export class ExplorationStepState {
@@ -55,9 +59,14 @@ export class ExplorationStepState {
       ? 'Ready to check result.'
       : `Resolving at ${step.resolvesAt}.`;
   });
-  readonly stepResultTitle = computed(() => this.resultTitle(this.currentStepResult()));
+  readonly stepResultTitle = computed(() =>
+    explorationStepResultTitle(this.currentStepResult()),
+  );
   readonly stepResultDescription = computed(() =>
-    this.resultDescription(this.currentStepResult()),
+    explorationStepResultDescription(
+      this.currentStepResult(),
+      this.overview.state()?.activeEffect ?? null,
+    ),
   );
   readonly stepResultFlavor = computed(() => this.resultFlavor(this.currentStepResult()));
 
@@ -131,54 +140,6 @@ export class ExplorationStepState {
     return resolvesAt !== null && this.now() >= resolvesAt;
   }
 
-  private resultTitle(result: HeroExplorationStepResolutionReadModel | null): string {
-    if (!result) {
-      return '';
-    }
-
-    if (result.outcomeKind === 'trial' && result.challengeAttemptId) {
-      return 'Trial manifested';
-    }
-
-    if (result.outcomeKind === 'trial') {
-      return 'Trial resolved';
-    }
-
-    if (result.outcomeKind === 'encounter' && result.challengeAttemptId) {
-      return `${this.encounterKindPrefix(result)}Encounter started`;
-    }
-
-    if (result.outcomeKind === 'encounter') {
-      return `${this.encounterKindPrefix(result)}Encounter resolved`;
-    }
-
-    return 'Nothing found';
-  }
-
-  private resultDescription(result: HeroExplorationStepResolutionReadModel | null): string {
-    if (!result) {
-      return '';
-    }
-
-    if (result.outcomeKind === 'trial' && result.challengeAttemptId) {
-      return 'A Trial is ready. Resolve it to continue exploration.';
-    }
-
-    if (result.outcomeKind === 'trial') {
-      return 'A Trial outcome was returned by the database runtime.';
-    }
-
-    if (result.outcomeKind === 'encounter' && result.challengeAttemptId) {
-      return `A ${this.encounterKindPrefix(result)}Encounter requires resolution before exploration can continue.`;
-    }
-
-    if (result.outcomeKind === 'encounter') {
-      return this.encounterOutcomeDescription(result);
-    }
-
-    return 'Nothing was selected; this is the database fallback after Trial and Encounter selection.';
-  }
-
   private resultFlavor(result: HeroExplorationStepResolutionReadModel | null): string | null {
     const metadata = jsonRecord(result?.metadataJson);
 
@@ -192,36 +153,6 @@ export class ExplorationStepState {
         'description_text',
       ),
     );
-  }
-
-  private encounterKindPrefix(result: HeroExplorationStepResolutionReadModel): string {
-    const kind = result.selectedDefinition?.encounterKind;
-
-    switch (kind) {
-      case 'combat':
-        return 'Combat ';
-      case 'resource':
-        return 'Resource ';
-      case 'buff':
-        return 'Buff ';
-      case 'debuff':
-        return 'Debuff ';
-      default:
-        return '';
-    }
-  }
-
-  private encounterOutcomeDescription(result: HeroExplorationStepResolutionReadModel): string {
-    switch (result.selectedDefinition?.encounterKind) {
-      case 'resource':
-        return 'A Resource Encounter resolved through the database reward flow.';
-      case 'buff':
-        return 'A Buff Encounter applied its database-owned effect.';
-      case 'debuff':
-        return 'A Debuff Encounter applied its database-owned effect.';
-      default:
-        return 'An Encounter outcome was returned by the database runtime.';
-    }
   }
 
   private progressPercent(step: HeroExplorationStepReadModel | null): number {

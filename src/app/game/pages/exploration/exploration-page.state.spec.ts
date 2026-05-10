@@ -1,6 +1,7 @@
 ﻿import { TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
 import { signal } from '@angular/core';
+import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import {
   CombatLiveStateReadModel,
   CombatResultDetailReadModel,
@@ -155,7 +156,7 @@ describe('ExplorationPageState', () => {
       true,
       { startedAt: '2026-05-01T10:00:00.000Z', resolvesAt: '2026-05-01T10:05:00.000Z' },
       'exploration-1',
-      'combat',
+      ENCOUNTER_KIND.combat,
     )));
     const fixture = TestBed.createComponent(ExplorationPage);
 
@@ -223,7 +224,7 @@ describe('ExplorationPageState', () => {
           outcomeKind: 'encounter',
           encounterDefinitionId: 'encounter-1',
           challengeAttemptId: 'challenge-1',
-          selectedDefinition: selectedEncounter('encounter-1', 'light_combat', 'combat'),
+          selectedDefinition: selectedEncounter('encounter-1', 'light_combat', ENCOUNTER_KIND.combat),
         },
         'Combat Encounter started',
         'requires resolution',
@@ -232,7 +233,7 @@ describe('ExplorationPageState', () => {
         {
           outcomeKind: 'encounter',
           encounterDefinitionId: 'encounter-2',
-          selectedDefinition: selectedEncounter('encounter-2', 'minor_resource_find', 'resource'),
+          selectedDefinition: selectedEncounter('encounter-2', 'minor_resource_find', ENCOUNTER_KIND.resource),
         },
         'Resource Encounter resolved',
         'database reward flow',
@@ -241,12 +242,12 @@ describe('ExplorationPageState', () => {
         {
           outcomeKind: 'encounter',
           encounterDefinitionId: 'encounter-3',
-          selectedDefinition: selectedEncounter('encounter-3', 'blessing', 'buff'),
+          selectedDefinition: selectedEncounter('encounter-3', 'blessing', ENCOUNTER_KIND.buff),
         },
         'Buff Encounter resolved',
-        'database-owned effect',
+        'did not return an active effect',
       ],
-      [{ outcomeKind: 'trial', trialDefinitionId: 'trial-1', challengeAttemptId: 'challenge-1' }, 'Trial manifested', 'Resolve it to continue'],
+      [{ outcomeKind: 'trial', trialDefinitionId: 'trial-1', challengeAttemptId: 'challenge-1' }, 'Trial manifested', 'supported Trial action'],
     ];
 
     page.loadData();
@@ -278,7 +279,7 @@ describe('ExplorationPageState', () => {
       of(stepResolutionWorkflow('easy', {
         outcomeKind: 'encounter',
         encounterDefinitionId: 'encounter-1',
-        selectedDefinition: selectedEncounter('encounter-1', 'minor_resource_find', 'resource'),
+        selectedDefinition: selectedEncounter('encounter-1', 'minor_resource_find', ENCOUNTER_KIND.resource),
         selectionDiagnostic: selectionDiagnostic(),
       })),
     );
@@ -311,7 +312,7 @@ describe('ExplorationPageState', () => {
       of(stepResolutionWorkflow('easy', {
         outcomeKind: 'encounter',
         encounterDefinitionId: 'encounter-1',
-        selectedDefinition: selectedEncounter('encounter-1', 'minor_resource_find', 'resource'),
+        selectedDefinition: selectedEncounter('encounter-1', 'minor_resource_find', ENCOUNTER_KIND.resource),
         selectionDiagnostic: selectionDiagnostic(),
       })),
     );
@@ -378,11 +379,79 @@ describe('ExplorationPageState', () => {
     expect(feedback.successMessage()).toBe('Challenge completed.');
   });
 
+  it('hides Trial auto-resolve when DB does not return an auto chance', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState(
+      'easy',
+      false,
+      true,
+      undefined,
+      'exploration-1',
+      'timing',
+      {
+        autoResolveChance: null,
+        autoResolveRoll: null,
+        autoResolve: {
+          ...activeExplorationState('easy', false, true).activeChallenge!.autoResolve,
+          chance: null,
+          roll: null,
+        },
+      },
+    ));
+
+    expect(page.canCompleteChallenge()).toBeTrue();
+    expect(page.canShowManualResolveActions()).toBeTrue();
+    expect(page.canShowAutoResolveAction()).toBeFalse();
+    expect(page.autoResolveExplanation()).toBe(
+      'DB did not return an auto-resolve chance for this Trial.',
+    );
+
+    page.autoResolveChallenge();
+
+    expect(explorations.autoResolveHeroExplorationChallengeAttempt).not.toHaveBeenCalled();
+    expect(feedback.error()).toBe(
+      'DB did not return an auto-resolve chance for this Trial.',
+    );
+  });
+
+  it('does not expose resolve buttons for immediate Resource Encounter state', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState(
+      'easy',
+      false,
+      true,
+      undefined,
+      'exploration-1',
+      ENCOUNTER_KIND.resource,
+      {
+        challengeKind: 'encounter',
+        trialDefinitionId: null,
+        encounterDefinitionId: 'encounter-1',
+        testedStatKey: null,
+        autoResolveChance: null,
+        autoResolveRoll: null,
+      },
+    ));
+
+    expect(page.challengeTitle()).toBe('Encounter');
+    expect(page.canCompleteChallenge()).toBeFalse();
+    expect(page.canShowManualResolveActions()).toBeFalse();
+    expect(page.canShowAutoResolveAction()).toBeFalse();
+    expect(page.challengeActionBlocker()).toContain('Resource Encounter');
+
+    page.completeChallenge(true);
+
+    expect(explorations.completeHeroExplorationChallengeAttempt).not.toHaveBeenCalled();
+    expect(feedback.error()).toContain('should resolve through the step outcome/reward/effect flow');
+  });
+
   it('ensures live combat session and submits one DB player action per strike', () => {
     page.loadData();
     page.startSelectedDifficulty();
     page.overview.setStateFromWorkflow(
-      activeExplorationState('easy', false, true, undefined, 'exploration-1', 'combat'),
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', ENCOUNTER_KIND.combat),
     );
     TestBed.flushEffects();
 
@@ -452,7 +521,7 @@ describe('ExplorationPageState', () => {
     page.loadData();
     page.startSelectedDifficulty();
     page.overview.setStateFromWorkflow(
-      activeExplorationState('easy', false, true, undefined, 'exploration-1', 'combat'),
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', ENCOUNTER_KIND.combat),
     );
     TestBed.flushEffects();
 
@@ -486,7 +555,7 @@ describe('ExplorationPageState', () => {
     page.loadData();
     page.startSelectedDifficulty();
     page.overview.setStateFromWorkflow(
-      activeExplorationState('easy', false, true, undefined, 'exploration-1', 'combat'),
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', ENCOUNTER_KIND.combat),
     );
     TestBed.flushEffects();
 
@@ -524,11 +593,44 @@ describe('ExplorationPageState', () => {
     expect(feedback.successMessage()).toBe('Challenge auto-resolved.');
   });
 
+  it('describes DB-applied Buff and Debuff Encounter effects from refreshed state', () => {
+    const cases: Array<[typeof ENCOUNTER_KIND.buff | typeof ENCOUNTER_KIND.debuff, string]> = [
+      [ENCOUNTER_KIND.buff, 'Buff Encounter'],
+      [ENCOUNTER_KIND.debuff, 'Debuff Encounter'],
+    ];
+
+    page.loadData();
+    page.startSelectedDifficulty();
+
+    for (const [encounterKind, title] of cases) {
+      page.overview.setStateFromWorkflow(activeExplorationState('easy', true, false, pastStepTiming()));
+      explorations.resolveHeroExplorationStep.and.returnValue(
+        of(stepResolutionWorkflow('easy', {
+          outcomeKind: 'encounter',
+          encounterDefinitionId: `${encounterKind}-encounter`,
+          selectedDefinition: selectedEncounter(
+            `${encounterKind}-encounter`,
+            `${encounterKind}_encounter`,
+            encounterKind,
+          ),
+        }, {
+          activeEffect: activeEffect(encounterKind),
+        })),
+      );
+
+      page.checkStepResult();
+
+      expect(page.stepResultTitle()).toBe(`${title} resolved`);
+      expect(page.stepResultDescription()).toContain('applied DB effect effect-definition-1');
+      expect(page.activeEffectLabel()).toContain(`${encounterKind === ENCOUNTER_KIND.buff ? 'Buff' : 'Debuff'} effect active`);
+    }
+  });
+
   it('labels auto-resolve as manual combat for active combat challenges', () => {
     page.loadData();
     page.startSelectedDifficulty();
     page.overview.setStateFromWorkflow(
-      activeExplorationState('easy', false, true, undefined, 'exploration-1', 'combat'),
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', ENCOUNTER_KIND.combat),
     );
 
     const autoResolveFact = page.challengeFacts()
@@ -733,6 +835,7 @@ function activeExplorationState(
   activeStepTiming = { startedAt: '2026-05-01T10:00:00.000Z', resolvesAt: '2026-05-01T10:05:00.000Z' },
   explorationId = 'exploration-1',
   minigameKey = 'timing',
+  challengePatch: Partial<NonNullable<HeroExplorationStateReadModel['activeChallenge']>> = {},
 ): HeroExplorationStateReadModel {
   return {
     ...noExplorationState(difficultyKey),
@@ -839,6 +942,7 @@ function activeExplorationState(
           completedAt: null,
           createdAt: '2026-05-01T10:05:00.000Z',
           updatedAt: '2026-05-01T10:05:00.000Z',
+          ...challengePatch,
         } as HeroExplorationStateReadModel['activeChallenge']
       : null,
   };
@@ -847,6 +951,7 @@ function activeExplorationState(
 function stepResolutionWorkflow(
   difficultyKey: string,
   patch: Partial<HeroExplorationStepResolutionWorkflowResult['result']> | string = 'nothing',
+  statePatch: Partial<HeroExplorationStateReadModel> = {},
 ): HeroExplorationStepResolutionWorkflowResult {
   const resultPatch: Partial<HeroExplorationStepResolutionWorkflowResult['result']> =
     typeof patch === 'string'
@@ -872,7 +977,33 @@ function stepResolutionWorkflow(
       metadataJson: { flavorText: 'The passage is quiet.' },
       ...resultPatch,
     },
-    state: activeExplorationState(difficultyKey),
+    state: {
+      ...activeExplorationState(difficultyKey),
+      ...statePatch,
+    },
+  };
+}
+
+function activeEffect(
+  effectKind: typeof ENCOUNTER_KIND.buff | typeof ENCOUNTER_KIND.debuff,
+): NonNullable<HeroExplorationStateReadModel['activeEffect']> {
+  return {
+    id: 'effect-1',
+    serverId: 'server-1',
+    heroId: 'hero-1',
+    explorationId: 'exploration-1',
+    effectDefinitionId: 'effect-definition-1',
+    effectKind,
+    sourceKind: 'encounter',
+    sourceId: 'encounter-1',
+    isActive: true,
+    appliedAt: '2026-05-01T10:10:00.000Z',
+    consumedAt: null,
+    consumedByKind: null,
+    consumedById: null,
+    metadataJson: {},
+    createdAt: '2026-05-01T10:10:00.000Z',
+    updatedAt: '2026-05-01T10:10:00.000Z',
   };
 }
 
@@ -930,7 +1061,7 @@ function selectionDiagnostic(): NonNullable<HeroExplorationStepResolutionWorkflo
     trialOpportunityRoll: 80,
     encounterChance: 40,
     encounterRoll: 10,
-    selectedDefinition: selectedEncounter('encounter-1', 'minor_resource_find', 'resource'),
+    selectedDefinition: selectedEncounter('encounter-1', 'minor_resource_find', ENCOUNTER_KIND.resource),
     skippedDefinition: {
       definitionKind: 'encounter',
       definitionId: 'encounter-skipped',

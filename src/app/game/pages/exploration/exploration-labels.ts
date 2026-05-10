@@ -1,4 +1,5 @@
 import { HeroExplorationStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
+import { humanizeKey } from '../../../core/utils/normalize-text';
 
 export function explorationCurrentNodeLabel(
   state: HeroExplorationStateReadModel | null,
@@ -40,5 +41,7 @@ export function explorationActiveEffectLabel(
     return 'No active exploration effect.';
   }
 
-  return `${effect.effectKind} - ${effect.sourceKind}`;
+  const status = effect.isActive ? 'active' : 'inactive';
+
+  return `${humanizeKey(effect.effectKind, 'Effect')} effect ${status} from ${humanizeKey(effect.sourceKind, 'source')}.`;
 }

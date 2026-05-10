@@ -10107,6 +10107,8 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 - Buff/Debuff Encounter shows applied effect outcome where DB returns it.
 - Combat Trial/Encounter can be resolved through the supported action path.
 
+**Status:** Accepted on 2026-05-10. `/game/exploration` now gates visible challenge actions through feature-local UI classification over the DB-returned active challenge shape: Combat Trial/Encounter stays on the live-combat flow, Trial shows manual resolve and auto-resolve only when DB exposes an auto chance, and non-combat Encounter active challenge states show a clear blocker instead of Trial resolve buttons. Buff/Debuff step outcomes describe DB-applied effect context when refreshed state returns `activeEffect`, while Resource and Nothing outcomes keep concise DB-result copy. Step-result presentation is extracted to `exploration-step-result-ui`, challenge action classification to `exploration-challenge-action-ui`, existing `ENCOUNTER_KIND` and shared `humanizeKey` are reused, and no DB/schema/generated/direct-write/runtime-selection changes were introduced. Verification passed with focused `/game/exploration` specs, `npx tsc --noEmit`, `npm run build` with known warnings, and scoped greps. Manual smoke remains user-side pending for Trial manual/auto, Combat Trial/Encounter live combat, Resource immediate outcome, Buff/Debuff effect outcome and Nothing outcome.
+
 ---
 
 ## Task W10 — Exploration reward and item drop display hardening

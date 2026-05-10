@@ -5,8 +5,16 @@ import {
   HeroExplorationChallengeAttemptReadModel,
   HeroExplorationChallengeCompletionReadModel,
 } from '../../../core/domain/exploration/exploration-runtime.model';
+import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
+import { humanizeKey } from '../../../core/utils/normalize-text';
 import { RequestToken } from '../../../core/utils/request-token';
+import {
+  EXPLORATION_CHALLENGE_ACTION_MODE,
+  explorationChallengeActionBlocker,
+  explorationChallengeActionMode,
+  hasChallengeAutoResolveChance,
+} from './exploration-challenge-action-ui';
 import {
   ChallengeCompletionSnapshot,
   ChallengeFact,
@@ -57,11 +65,28 @@ export class ExplorationChallengeState {
   });
   readonly challengeTitle = computed(() => this.title(this.activeChallenge()));
   readonly challengeFacts = computed(() => this.facts(this.activeChallenge()));
+  readonly challengeActionMode = computed(() =>
+    explorationChallengeActionMode(this.activeChallenge()),
+  );
+  readonly challengeActionBlocker = computed(() =>
+    explorationChallengeActionBlocker(this.activeChallenge(), this.challengeActionMode()),
+  );
+  readonly canShowManualResolveActions = computed(() =>
+    this.challengeActionMode() === EXPLORATION_CHALLENGE_ACTION_MODE.manualTrial,
+  );
+  readonly canShowAutoResolveAction = computed(() =>
+    this.canShowManualResolveActions() && hasChallengeAutoResolveChance(this.activeChallenge()),
+  );
   readonly autoResolveExplanation = computed(() =>
     this.autoResolveText(this.activeChallenge()),
   );
   readonly canCompleteChallenge = computed(() =>
-    Boolean(this.activeChallenge()) && !this.isCompleting() && !this.isCombatChallenge(),
+    Boolean(this.activeChallenge()) &&
+    !this.isCompleting() &&
+    this.challengeActionMode() === EXPLORATION_CHALLENGE_ACTION_MODE.manualTrial,
+  );
+  readonly canAutoResolveChallenge = computed(() =>
+    this.canCompleteChallenge() && hasChallengeAutoResolveChance(this.activeChallenge()),
   );
   readonly challengeResultTitle = computed(() => {
     const result = this.currentChallengeResult();
@@ -79,7 +104,7 @@ export class ExplorationChallengeState {
       return '';
     }
 
-    const mode = this.humanizeKey(result.completionMode);
+    const mode = humanizeKey(result.completionMode, 'Challenge');
 
     return result.success
       ? `${mode} completion succeeded.`
@@ -109,11 +134,28 @@ export class ExplorationChallengeState {
       return;
     }
 
-    if (challenge.minigameKey === 'combat') {
+    if (challenge.minigameKey === ENCOUNTER_KIND.combat) {
       this.feedback.setError(
         null,
         'Combat challenges use the live combat flow and cannot be auto-resolved from this action.',
       );
+      return;
+    }
+
+    if (
+      explorationChallengeActionMode(challenge) !==
+      EXPLORATION_CHALLENGE_ACTION_MODE.manualTrial
+    ) {
+      this.feedback.setError(
+        null,
+        explorationChallengeActionBlocker(challenge)
+          ?? 'This challenge does not expose a player auto-resolve action.',
+      );
+      return;
+    }
+
+    if (!hasChallengeAutoResolveChance(challenge)) {
+      this.feedback.setError(null, 'DB did not return an auto-resolve chance for this Trial.');
       return;
     }
 
@@ -169,8 +211,14 @@ export class ExplorationChallengeState {
       return;
     }
 
-    if (challenge.minigameKey === 'combat' && completionMode === 'manual') {
-      this.feedback.setError(null, 'Walka wymaga live sesji DB i akcji gracza.');
+    const mode = explorationChallengeActionMode(challenge);
+
+    if (mode !== EXPLORATION_CHALLENGE_ACTION_MODE.manualTrial) {
+      this.feedback.setError(
+        null,
+        explorationChallengeActionBlocker(challenge, mode)
+          ?? 'This challenge does not expose a manual completion action.',
+      );
       return;
     }
 
@@ -238,15 +286,17 @@ export class ExplorationChallengeState {
       return 'No active challenge.';
     }
 
+    const prefix = challenge.minigameKey === ENCOUNTER_KIND.combat ? 'Combat ' : '';
+
     if (challenge.trialDefinitionId) {
-      return 'Trial challenge';
+      return `${prefix}Trial`;
     }
 
     if (challenge.encounterDefinitionId) {
-      return 'Encounter challenge';
+      return `${prefix}Encounter`;
     }
 
-    return this.humanizeKey(challenge.challengeKind);
+    return humanizeKey(challenge.challengeKind, 'Challenge');
   }
 
   private facts(challenge: HeroExplorationChallengeAttemptReadModel | null): ChallengeFact[] {
@@ -255,7 +305,7 @@ export class ExplorationChallengeState {
     }
 
     return [
-      { label: 'Kind', value: this.humanizeKey(challenge.challengeKind) },
+      { label: 'Kind', value: humanizeKey(challenge.challengeKind, 'Challenge') },
       { label: 'Status', value: challenge.status },
       { label: 'Difficulty', value: challenge.difficultyKey },
       { label: 'District', value: challenge.districtCode },
@@ -270,8 +320,20 @@ export class ExplorationChallengeState {
   private autoResolveText(
     challenge: HeroExplorationChallengeAttemptReadModel | null,
   ): string {
-    if (challenge?.minigameKey === 'combat') {
+    if (challenge?.minigameKey === ENCOUNTER_KIND.combat) {
       return 'Combat challenges use the live combat flow.';
+    }
+
+    if (
+      explorationChallengeActionMode(challenge) !==
+      EXPLORATION_CHALLENGE_ACTION_MODE.manualTrial
+    ) {
+      return explorationChallengeActionBlocker(challenge)
+        ?? 'This challenge does not expose an auto-resolve action.';
+    }
+
+    if (!hasChallengeAutoResolveChance(challenge)) {
+      return 'DB did not return an auto-resolve chance for this Trial.';
     }
 
     const chance = challenge?.autoResolve?.chance ?? challenge?.autoResolveChance;
@@ -292,7 +354,7 @@ export class ExplorationChallengeState {
   private autoResolveFactLabel(
     challenge: HeroExplorationChallengeAttemptReadModel,
   ): string {
-    if (challenge.minigameKey === 'combat') {
+    if (challenge.minigameKey === ENCOUNTER_KIND.combat) {
       return 'Manual combat';
     }
 
@@ -302,11 +364,4 @@ export class ExplorationChallengeState {
     );
   }
 
-  private humanizeKey(value: string): string {
-    return value
-      .split(/[_\s-]+/)
-      .filter(Boolean)
-      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-      .join(' ') || 'Challenge';
-  }
 }

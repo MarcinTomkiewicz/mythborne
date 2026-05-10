@@ -6,6 +6,7 @@ import {
   CombatResultDetailReadModel,
   CombatTimingInput,
 } from '../../../core/domain/combat/combat-live.model';
+import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import { HeroExplorationChallengeAttemptReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { ExplorationLiveCombat } from '../../../core/services/combat/exploration-live-combat';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
@@ -43,7 +44,7 @@ export class ExplorationLiveCombatState {
   readonly combatResultDetail = signal<CombatResultDetailReadModel | null>(null);
   readonly activeChallenge = computed(() => this.overview.state()?.activeChallenge ?? null);
   readonly isCombatChallenge = computed(() =>
-    this.activeChallenge()?.minigameKey === 'combat',
+    this.activeChallenge()?.minigameKey === ENCOUNTER_KIND.combat,
   );
   readonly combatTimingManifest = computed(() =>
     this.combatLiveState()?.currentTimingManifest ?? null,
@@ -113,7 +114,7 @@ export class ExplorationLiveCombatState {
         return;
       }
 
-      if (!challenge || challenge.minigameKey !== 'combat') {
+      if (!challenge || challenge.minigameKey !== ENCOUNTER_KIND.combat) {
         this.resetCombatSession();
         return;
       }
