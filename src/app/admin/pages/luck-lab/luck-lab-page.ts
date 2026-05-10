@@ -10,6 +10,7 @@ import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links'
 import { LuckLabState } from '../../../core/services/luck/luck-lab.state';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
+import { LuckLabAutoResolveSection } from './luck-lab-auto-resolve-section';
 import { LuckLabComparisonState } from './luck-lab-comparison.state';
 import { LuckLabPageState } from './luck-lab-page.state';
 import { LuckLabTrialChanceSection } from './luck-lab-trial-chance-section';
@@ -26,6 +27,7 @@ import { LuckLabTrialPowerSection } from './luck-lab-trial-power-section';
     SliderModule,
     AdminServerSwitcher,
     AdminTagLinks,
+    LuckLabAutoResolveSection,
     LuckLabTrialChanceSection,
     LuckLabTrialPowerSection,
     LoadingOverlay,

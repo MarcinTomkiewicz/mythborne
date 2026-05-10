@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup } from '@angular/forms';
+import { LuckChancePreview } from '../../../core/domain/luck/luck.model';
 import { LuckLabState } from '../../../core/services/luck/luck-lab.state';
 import { SelectOption } from '../../../core/types/select-option.types';
 import { DEFAULT_LUCK_LAB_INPUT } from '../../../core/utils/luck-lab-mappers';
@@ -90,6 +91,21 @@ export class LuckLabPageState {
       (preview) => preview.surfaceKey === 'trial_manifestation',
     ) ?? null,
   );
+  readonly autoResolvePreview = computed(() =>
+    this.lab.result().chancePreviews.find(
+      (preview) => preview.surfaceKey === 'challenge_auto_resolve',
+    ) ?? null,
+  );
+  readonly autoResolveContext = computed(() => {
+    const context = chanceContext(this.autoResolvePreview());
+
+    return {
+      capPercent: numberContextValue(context, 'capPercent'),
+      difficultyMultiplier: numberContextValue(context, 'difficultyMultiplier'),
+      manualChanceReference: numberContextValue(context, 'manualChanceReference'),
+      rawChance: numberContextValue(context, 'rawAutoResolveSuccessChance'),
+    };
+  });
   readonly isTrialChanceLoading = computed(
     () => this.lab.loadingBySection().chancePreviews,
   );
@@ -102,6 +118,15 @@ export class LuckLabPageState {
   );
   readonly trialChanceComparisonError = computed(
     () => this.comparisons.trialChanceError(),
+  );
+  readonly autoResolveComparisonRows = computed(() =>
+    this.comparisons.autoResolveRows(),
+  );
+  readonly isAutoResolveComparisonLoading = computed(
+    () => this.comparisons.isAutoResolveLoading(),
+  );
+  readonly autoResolveComparisonError = computed(
+    () => this.comparisons.autoResolveError(),
   );
   readonly selectedTrialContextLabel = computed(() => {
     const trialDefinitionId = this.lab.input().trialDefinitionId;
@@ -124,6 +149,7 @@ export class LuckLabPageState {
     this.lab.reloadNow();
     this.comparisons.reloadTrialPower(this.lab.input());
     this.comparisons.reloadTrialChance(this.lab.input());
+    this.comparisons.reloadAutoResolve(this.lab.input());
   }
 
   private bindForm(): void {
@@ -138,6 +164,7 @@ export class LuckLabPageState {
         this.lab.setLuckValue(value);
         this.comparisons.scheduleTrialPower(this.lab.input());
         this.comparisons.scheduleTrialChance(this.lab.input());
+        this.comparisons.scheduleAutoResolve(this.lab.input());
       });
     this.form.controls.testedStatValue.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -145,18 +172,21 @@ export class LuckLabPageState {
         this.lab.setTestedStatValue(value);
         this.comparisons.scheduleTrialPower(this.lab.input());
         this.comparisons.scheduleTrialChance(this.lab.input());
+        this.comparisons.scheduleAutoResolve(this.lab.input());
       });
     this.form.controls.spiritualityValue.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
         this.lab.setSpiritualityValue(value);
         this.comparisons.scheduleTrialChance(this.lab.input());
+        this.comparisons.scheduleAutoResolve(this.lab.input());
       });
     this.form.controls.difficultyKey.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
         this.lab.setDifficultyKey(value);
         this.comparisons.scheduleTrialChance(this.lab.input());
+        this.comparisons.scheduleAutoResolve(this.lab.input());
       });
     this.form.controls.districtCode.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -169,6 +199,7 @@ export class LuckLabPageState {
       .subscribe((value) => {
         this.lab.setTestedStatKey(value);
         this.comparisons.scheduleTrialChance(this.lab.input());
+        this.comparisons.scheduleAutoResolve(this.lab.input());
       });
     this.form.controls.trialDefinitionId.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -177,4 +208,21 @@ export class LuckLabPageState {
         this.comparisons.scheduleTrialChance(this.lab.input());
       });
   }
+}
+
+function chanceContext(preview: LuckChancePreview | null): Record<string, unknown> {
+  return preview?.contextJson &&
+    typeof preview.contextJson === 'object' &&
+    !Array.isArray(preview.contextJson)
+    ? preview.contextJson
+    : {};
+}
+
+function numberContextValue(
+  context: Record<string, unknown>,
+  key: string,
+): number | null {
+  const value = context[key];
+
+  return typeof value === 'number' ? value : null;
 }

@@ -54,19 +54,26 @@ describe('LuckLabPageState', () => {
         luckInfluence: {
           luckInfluence: 6,
         },
-        chancePreviews: [
-          chancePreview('trial_opportunity', 10, null, {
-            projectedStepNumber: 1,
-            trialOpportunityStepCap: 8,
-          }),
-          chancePreview('trial_manifestation', 24, 48),
-        ],
+          chancePreviews: [
+            chancePreview('trial_opportunity', 10, null, {
+              projectedStepNumber: 1,
+              trialOpportunityStepCap: 8,
+            }),
+            chancePreview('trial_manifestation', 24, 48),
+            chancePreview('challenge_auto_resolve', 18, 48, {
+              capPercent: 80,
+              difficultyMultiplier: 1,
+              manualChanceReference: 30,
+              rawAutoResolveSuccessChance: 28,
+            }),
+          ],
       }),
     });
     previews = jasmine.createSpyObj<LuckLabPreviews>('LuckLabPreviews', [
       'previewTrialPower',
       'previewTrialOpportunity',
       'previewTrialManifestation',
+      'previewChallengeAutoResolve',
     ]);
     previews.previewTrialPower.and.callFake((input) =>
       of([
@@ -101,6 +108,7 @@ describe('LuckLabPageState', () => {
             trialOpportunityStepCap: 8,
           },
           input.luckValue,
+          input.testedStatValue,
         ),
       ]),
     );
@@ -112,6 +120,24 @@ describe('LuckLabPageState', () => {
           input.testedStatValue + (input.luckValue === 0 ? 0 : 6),
           {},
           input.luckValue,
+        ),
+      ]),
+    );
+    previews.previewChallengeAutoResolve.and.callFake((input) =>
+      of([
+        chancePreview(
+          'challenge_auto_resolve',
+          input.luckValue === 0 ? 12 : input.luckValue >= 50 ? 44 : 24,
+          input.testedStatValue + (input.luckValue === 0 ? 0 : 6),
+          {
+            capPercent: 80,
+            difficultyMultiplier: 1,
+            manualChanceReference: 35,
+            rawAutoResolveSuccessChance:
+              input.luckValue === 0 ? 18 : input.luckValue >= 50 ? 52 : 34,
+          },
+          input.luckValue,
+          input.testedStatValue,
         ),
       ]),
     );
@@ -256,6 +282,53 @@ describe('LuckLabPageState', () => {
       },
     ]);
   });
+
+  it('exposes DB challenge auto-resolve values and comparison rows', () => {
+    state.load();
+
+    expect(state.autoResolvePreview()?.chancePercent).toBe(18);
+    expect(state.autoResolveContext()).toEqual({
+      capPercent: 80,
+      difficultyMultiplier: 1,
+      manualChanceReference: 30,
+      rawChance: 28,
+    });
+    expect(state.autoResolveComparisonRows()).toEqual([
+      {
+        label: 'Luck 0',
+        testedStatValue: 0,
+        luckValue: 0,
+        luckInfluence: 0,
+        trialPower: 0,
+        finalChance: 12,
+        capPercent: 80,
+        rawChance: 18,
+        manualChanceReference: 35,
+      },
+      {
+        label: 'Current Luck',
+        testedStatValue: 0,
+        luckValue: 0,
+        luckInfluence: 0,
+        trialPower: 0,
+        finalChance: 12,
+        capPercent: 80,
+        rawChance: 18,
+        manualChanceReference: 35,
+      },
+      {
+        label: 'High Luck 50',
+        testedStatValue: 0,
+        luckValue: 50,
+        luckInfluence: 6,
+        trialPower: 6,
+        finalChance: 44,
+        capPercent: 80,
+        rawChance: 52,
+        manualChanceReference: 35,
+      },
+    ]);
+  });
 });
 
 function chancePreview(
@@ -264,12 +337,13 @@ function chancePreview(
   trialPower: number | null,
   contextJson: Record<string, unknown> = {},
   luckValue = 18,
+  testedStatValue = 42,
 ): LuckChancePreview {
   return {
     surfaceKey,
     categoryKey: surfaceKey === 'trial_manifestation' ? 'trial' : 'exploration',
-    testedStatKey: surfaceKey === 'trial_manifestation' ? 'wisdom' : null,
-    testedStatValue: surfaceKey === 'trial_manifestation' ? 42 : null,
+    testedStatKey: surfaceKey === 'trial_opportunity' ? null : 'wisdom',
+    testedStatValue: surfaceKey === 'trial_opportunity' ? null : testedStatValue,
     luckValue,
     luckInfluence: luckValue === 0 ? 0 : 6,
     trialPower,

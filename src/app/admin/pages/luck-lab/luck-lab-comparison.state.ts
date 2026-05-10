@@ -6,8 +6,10 @@ import { LuckLabPreviews } from '../../../core/services/luck/luck-lab-previews';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { RequestToken } from '../../../core/utils/request-token';
 import {
+  AutoResolveComparisonRow,
   TrialChanceComparisonRow,
   TrialPowerComparisonRow,
+  toAutoResolveComparisonRow,
   toTrialChanceComparisonRow,
   toTrialPowerComparisonRow,
 } from './luck-lab-comparison-rows';
@@ -18,8 +20,10 @@ export class LuckLabComparisonState {
   private readonly previews = inject(LuckLabPreviews);
   private readonly trialPowerToken = new RequestToken();
   private readonly trialChanceToken = new RequestToken();
+  private readonly autoResolveToken = new RequestToken();
   private trialPowerDebounceHandle: ReturnType<typeof setTimeout> | null = null;
   private trialChanceDebounceHandle: ReturnType<typeof setTimeout> | null = null;
+  private autoResolveDebounceHandle: ReturnType<typeof setTimeout> | null = null;
 
   private readonly trialPowerRowsSource = signal<TrialPowerComparisonRow[]>([]);
   private readonly isTrialPowerLoadingSource = signal(false);
@@ -27,6 +31,9 @@ export class LuckLabComparisonState {
   private readonly trialChanceRowsSource = signal<TrialChanceComparisonRow[]>([]);
   private readonly isTrialChanceLoadingSource = signal(false);
   private readonly trialChanceErrorSource = signal<string | null>(null);
+  private readonly autoResolveRowsSource = signal<AutoResolveComparisonRow[]>([]);
+  private readonly isAutoResolveLoadingSource = signal(false);
+  private readonly autoResolveErrorSource = signal<string | null>(null);
 
   readonly trialPowerRows = computed(() => this.trialPowerRowsSource());
   readonly isTrialPowerLoading = computed(() => this.isTrialPowerLoadingSource());
@@ -34,6 +41,9 @@ export class LuckLabComparisonState {
   readonly trialChanceRows = computed(() => this.trialChanceRowsSource());
   readonly isTrialChanceLoading = computed(() => this.isTrialChanceLoadingSource());
   readonly trialChanceError = computed(() => this.trialChanceErrorSource());
+  readonly autoResolveRows = computed(() => this.autoResolveRowsSource());
+  readonly isAutoResolveLoading = computed(() => this.isAutoResolveLoadingSource());
+  readonly autoResolveError = computed(() => this.autoResolveErrorSource());
 
   scheduleTrialPower(input: LuckLabInputState): void {
     if (this.trialPowerDebounceHandle !== null) {
@@ -154,6 +164,59 @@ export class LuckLabComparisonState {
           if (this.trialChanceToken.isCurrent(token)) {
             this.trialChanceErrorSource.set(
               getErrorMessage(error, 'Trial chance comparison preview failed.'),
+            );
+          }
+        },
+      });
+  }
+
+  scheduleAutoResolve(input: LuckLabInputState): void {
+    if (this.autoResolveDebounceHandle !== null) {
+      clearTimeout(this.autoResolveDebounceHandle);
+    }
+
+    this.autoResolveDebounceHandle = setTimeout(() => {
+      this.autoResolveDebounceHandle = null;
+      this.reloadAutoResolve(input);
+    }, 250);
+  }
+
+  reloadAutoResolve(input: LuckLabInputState): void {
+    const token = this.autoResolveToken.next();
+    const highLuckValue = Math.max(input.luckValue + 50, 50);
+    const presets = [
+      { label: 'Luck 0', input: { ...input, luckValue: 0 } },
+      { label: 'Current Luck', input },
+      { label: `High Luck ${highLuckValue}`, input: { ...input, luckValue: highLuckValue } },
+    ];
+
+    this.isAutoResolveLoadingSource.set(true);
+    this.autoResolveErrorSource.set(null);
+    forkJoin(
+      presets.map((preset) =>
+        this.previews.previewChallengeAutoResolve(preset.input).pipe(
+          map((rows) => toAutoResolveComparisonRow(preset.label, rows[0] ?? null)),
+        ),
+      ),
+    )
+      .pipe(
+        finalize(() => {
+          if (this.autoResolveToken.isCurrent(token)) {
+            this.isAutoResolveLoadingSource.set(false);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (rows) => {
+          if (this.autoResolveToken.isCurrent(token)) {
+            this.autoResolveRowsSource.set(rows);
+          }
+        },
+        error: (error: unknown) => {
+          if (this.autoResolveToken.isCurrent(token)) {
+            this.autoResolveErrorSource.set(
+              getErrorMessage(error, 'Auto-resolve comparison preview failed.'),
             );
           }
         },

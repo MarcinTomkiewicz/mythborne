@@ -26,11 +26,16 @@ describe('LuckLabPage', () => {
     | 'trialPowerComparisonError'
     | 'trialOpportunityPreview'
     | 'trialManifestationPreview'
+    | 'autoResolvePreview'
+    | 'autoResolveContext'
     | 'isTrialChanceLoading'
     | 'trialChanceError'
     | 'trialChanceComparisonRows'
     | 'isTrialChanceComparisonLoading'
     | 'trialChanceComparisonError'
+    | 'autoResolveComparisonRows'
+    | 'isAutoResolveComparisonLoading'
+    | 'autoResolveComparisonError'
     | 'selectedTrialContextLabel'
     | 'selectedTrialContextId'
     | 'lab'
@@ -101,6 +106,21 @@ describe('LuckLabPage', () => {
         formula: { formulaKey: 'trial_manifestation_chance' },
         explanation: 'DB manifestation preview.',
       } as never),
+      autoResolvePreview: signal({
+        testedStatValue: 30,
+        luckValue: 12,
+        luckInfluence: 4,
+        trialPower: 34,
+        chancePercent: 24,
+        formula: { formulaKey: 'challenge_auto_resolve_success_chance' },
+        explanation: 'DB auto-resolve preview.',
+      } as never),
+      autoResolveContext: signal({
+        capPercent: 80,
+        difficultyMultiplier: 1,
+        manualChanceReference: 42,
+        rawChance: 34,
+      }),
       isTrialChanceLoading: signal(false),
       trialChanceError: signal(null),
       trialChanceComparisonRows: signal([
@@ -117,6 +137,21 @@ describe('LuckLabPage', () => {
       ]),
       isTrialChanceComparisonLoading: signal(false),
       trialChanceComparisonError: signal(null),
+      autoResolveComparisonRows: signal([
+        {
+          label: 'Current Luck',
+          testedStatValue: 30,
+          luckValue: 12,
+          luckInfluence: 4,
+          trialPower: 34,
+          finalChance: 24,
+          capPercent: 80,
+          rawChance: 34,
+          manualChanceReference: 42,
+        },
+      ]),
+      isAutoResolveComparisonLoading: signal(false),
+      autoResolveComparisonError: signal(null),
       selectedTrialContextLabel: signal('Maze (maze)'),
       selectedTrialContextId: signal('trial-1'),
       lab: {
@@ -175,6 +210,11 @@ describe('LuckLabPage', () => {
     expect(text).toContain('DB opportunity preview.');
     expect(text).toContain('DB manifestation preview.');
     expect(text).toContain('Current Luck');
+    expect(text).toContain('Challenge auto-resolve');
+    expect(text).toContain('Success or failure');
+    expect(text).toContain('DB auto-resolve preview.');
+    expect(text).toContain('Manual chance reference');
+    expect(text).toContain('24%');
     expect(fixture.debugElement.queryAll(By.css('p-slider')).length).toBe(2);
     expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(4);
   });

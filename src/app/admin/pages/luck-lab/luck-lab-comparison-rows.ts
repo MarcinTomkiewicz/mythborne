@@ -22,6 +22,18 @@ export interface TrialChanceComparisonRow {
   trialPower: number | null;
 }
 
+export interface AutoResolveComparisonRow {
+  label: string;
+  testedStatValue: number | null;
+  luckValue: number | null;
+  luckInfluence: number | null;
+  trialPower: number | null;
+  finalChance: number | null;
+  capPercent: number | null;
+  rawChance: number | null;
+  manualChanceReference: number | null;
+}
+
 export function toTrialPowerComparisonRow(
   label: string,
   trialPower: TrialPowerRead | null,
@@ -51,6 +63,25 @@ export function toTrialChanceComparisonRow(
     opportunityStepCap: numberContextValue(opportunityContext, 'trialOpportunityStepCap'),
     manifestationChance: manifestation?.chancePercent ?? null,
     trialPower: manifestation?.trialPower ?? null,
+  };
+}
+
+export function toAutoResolveComparisonRow(
+  label: string,
+  autoResolve: LuckChancePreview | null,
+): AutoResolveComparisonRow {
+  const context = recordContext(autoResolve);
+
+  return {
+    label,
+    testedStatValue: autoResolve?.testedStatValue ?? null,
+    luckValue: autoResolve?.luckValue ?? null,
+    luckInfluence: autoResolve?.luckInfluence ?? null,
+    trialPower: autoResolve?.trialPower ?? null,
+    finalChance: autoResolve?.chancePercent ?? null,
+    capPercent: numberContextValue(context, 'capPercent'),
+    rawChance: numberContextValue(context, 'rawAutoResolveSuccessChance'),
+    manualChanceReference: numberContextValue(context, 'manualChanceReference'),
   };
 }
 

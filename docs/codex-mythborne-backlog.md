@@ -9493,6 +9493,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Caps/multipliers are shown where available.
 - No partial-success UI is introduced.
 
+**Status:** Accepted on 2026-05-10. Added a dedicated Auto-resolve panel that displays DB-owned binary success/failure chance, tested stat, Luck influence, Trial Power, raw chance, cap, difficulty multiplier and manual chance reference. Added Luck 0/current/high comparison rows through `LuckLabPreviews.previewChallengeAutoResolve(...)`, keeping all values DB/RPC-owned and avoiding local auto-resolve formulas, RNG/drop simulation, direct writes, generated type edits or partial-success UI. The panel explicitly marks selected trial/minigame context as not consumed by the current auto-resolve RPC. Verification passed with focused Luck Lab route/page/page-state/service-state specs, `npx tsc --noEmit`, `npm run build` with known warnings, static greps and prerender route output for `/admin/luck-lab`. Follow-up: keep `LuckLabComparisonState` from becoming a monolith if later V panels add heavier preset orchestration.
+
 ---
 
 ## Task V7 — Exploration encounter fallback preview panel
