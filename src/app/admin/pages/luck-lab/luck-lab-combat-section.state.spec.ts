@@ -66,7 +66,7 @@ describe('LuckLabCombatSectionState', () => {
   it('loads DB combat comparison rows for Luck presets', () => {
     state.load();
 
-    expect(previews.previewCombat).toHaveBeenCalledTimes(3);
+    expect(previews.previewCombat).toHaveBeenCalledTimes(5);
     expect(state.comparisonRows()).toEqual([
       {
         label: 'Luck 0',
@@ -82,16 +82,29 @@ describe('LuckLabCombatSectionState', () => {
         initiativeScore: 20,
       },
       {
-        label: 'Current Luck',
-        attackerLuck: 0,
-        attackerLuckInfluence: 0,
+        label: 'Low Luck 10',
+        attackerLuck: 10,
+        attackerLuckInfluence: 6,
         defenderLuck: 6,
         defenderLuckInfluence: 2,
-        hitGreenZone: 52,
+        hitGreenZone: 62,
         evasionChance: 14,
-        criticalChance: 7,
+        criticalChance: 11,
         criticalMultiplier: 1.5,
-        finalDamage: 20,
+        finalDamage: 27,
+        initiativeScore: 20,
+      },
+      {
+        label: 'Medium Luck 25',
+        attackerLuck: 25,
+        attackerLuckInfluence: 6,
+        defenderLuck: 6,
+        defenderLuckInfluence: 2,
+        hitGreenZone: 62,
+        evasionChance: 14,
+        criticalChance: 11,
+        criticalMultiplier: 1.5,
+        finalDamage: 27,
         initiativeScore: 20,
       },
       {
@@ -105,6 +118,19 @@ describe('LuckLabCombatSectionState', () => {
         criticalChance: 18,
         criticalMultiplier: 1.5,
         finalDamage: 32,
+        initiativeScore: 20,
+      },
+      {
+        label: 'Current Luck',
+        attackerLuck: 0,
+        attackerLuckInfluence: 0,
+        defenderLuck: 6,
+        defenderLuckInfluence: 2,
+        hitGreenZone: 52,
+        evasionChance: 14,
+        criticalChance: 7,
+        criticalMultiplier: 1.5,
+        finalDamage: 20,
         initiativeScore: 20,
       },
     ]);

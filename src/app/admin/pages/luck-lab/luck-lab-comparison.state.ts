@@ -13,6 +13,7 @@ import {
   toTrialChanceComparisonRow,
   toTrialPowerComparisonRow,
 } from './luck-lab-comparison-rows';
+import { luckLabComparisonPresets } from './luck-lab-comparison-presets';
 
 @Injectable()
 export class LuckLabComparisonState {
@@ -58,22 +59,7 @@ export class LuckLabComparisonState {
 
   reloadTrialPower(input: LuckLabInputState): void {
     const token = this.trialPowerToken.next();
-    const statStep = 10;
-    const presets = [
-      { label: 'Current sliders', input },
-      { label: 'Luck 0, same stat', input: { ...input, luckValue: 0 } },
-      {
-        label: `Same Luck, stat +${statStep}`,
-        input: { ...input, testedStatValue: input.testedStatValue + statStep },
-      },
-      {
-        label: `Same Luck, stat -${statStep}`,
-        input: {
-          ...input,
-          testedStatValue: Math.max(0, input.testedStatValue - statStep),
-        },
-      },
-    ];
+    const presets = luckLabComparisonPresets(input);
 
     this.isTrialPowerLoadingSource.set(true);
     this.trialPowerErrorSource.set(null);
@@ -121,12 +107,7 @@ export class LuckLabComparisonState {
 
   reloadTrialChance(input: LuckLabInputState): void {
     const token = this.trialChanceToken.next();
-    const highLuckValue = Math.max(input.luckValue + 50, 50);
-    const presets = [
-      { label: 'Luck 0', input: { ...input, luckValue: 0 } },
-      { label: 'Current Luck', input },
-      { label: `High Luck ${highLuckValue}`, input: { ...input, luckValue: highLuckValue } },
-    ];
+    const presets = luckLabComparisonPresets(input);
 
     this.isTrialChanceLoadingSource.set(true);
     this.trialChanceErrorSource.set(null);
@@ -183,12 +164,7 @@ export class LuckLabComparisonState {
 
   reloadAutoResolve(input: LuckLabInputState): void {
     const token = this.autoResolveToken.next();
-    const highLuckValue = Math.max(input.luckValue + 50, 50);
-    const presets = [
-      { label: 'Luck 0', input: { ...input, luckValue: 0 } },
-      { label: 'Current Luck', input },
-      { label: `High Luck ${highLuckValue}`, input: { ...input, luckValue: highLuckValue } },
-    ];
+    const presets = luckLabComparisonPresets(input);
 
     this.isAutoResolveLoadingSource.set(true);
     this.autoResolveErrorSource.set(null);

@@ -8,6 +8,7 @@ import {
 import { LuckLabPreviews } from '../../../core/services/luck/luck-lab-previews';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { RequestToken } from '../../../core/utils/request-token';
+import { luckLabComparisonPresets } from './luck-lab-comparison-presets';
 
 export interface EncounterComparisonRow {
   label: string;
@@ -47,12 +48,7 @@ export class LuckLabEncounterComparisonState {
 
   reload(input: LuckLabInputState): void {
     const token = this.token.next();
-    const highLuckValue = Math.max(input.luckValue + 50, 50);
-    const presets = [
-      { label: 'Luck 0', input: { ...input, luckValue: 0 } },
-      { label: 'Current Luck', input },
-      { label: `High Luck ${highLuckValue}`, input: { ...input, luckValue: highLuckValue } },
-    ];
+    const presets = luckLabComparisonPresets(input);
 
     this.isLoadingSource.set(true);
     this.errorSource.set(null);

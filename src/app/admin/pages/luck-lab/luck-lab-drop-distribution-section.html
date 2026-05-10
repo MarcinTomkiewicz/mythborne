@@ -80,6 +80,43 @@
       </ng-template>
     </p-table>
 
+    @if (section.comparisonError(); as message) {
+      <p-message severity="error">{{ message }}</p-message>
+    }
+
+    <p-table [value]="section.comparisonRows()" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Preset</th>
+          <th>Luck</th>
+          <th>Influence</th>
+          <th>Average</th>
+          <th>Median</th>
+          <th>High-value</th>
+          <th>Prefix</th>
+          <th>Suffix</th>
+          <th>Avg vs Luck 0</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>{{ row.label }}</td>
+          <td>{{ row.luckValue ?? 'N/A' }}</td>
+          <td>{{ row.luckInfluence ?? 'N/A' }}</td>
+          <td>{{ section.valueText(row.averageItemValue, 'drachma') }}</td>
+          <td>{{ section.valueText(row.medianItemValue, 'drachma') }}</td>
+          <td>{{ section.valueText(row.highValueRate, 'percent') }}</td>
+          <td>{{ section.valueText(row.prefixHitRate, 'percent') }}</td>
+          <td>{{ section.valueText(row.suffixHitRate, 'percent') }}</td>
+          <td>{{ section.valueText(row.averageDeltaFromLuckZero, 'drachma') }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    @if (section.isComparisonLoading()) {
+      <p class="card-legend mb-0">Refreshing Luck preset distribution rows</p>
+    }
+
     <div class="grid-2 gap-md">
       <article class="mg-surface-card p-md flex-col gap-sm">
         <span class="card-legend">Bucket distribution</span>

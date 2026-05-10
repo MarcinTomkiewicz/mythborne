@@ -1,4 +1,4 @@
-import { Injectable, computed, inject } from '@angular/core';
+import { Injectable, computed, effect, inject } from '@angular/core';
 import {
   LuckLabDistributionRow,
   LuckLabDropDistributionMetrics,
@@ -9,6 +9,7 @@ import {
   luckLabBucketLabel,
   luckLabQualityLabel,
 } from './luck-lab-item-option-labels';
+import { LuckLabDropDistributionComparisonState } from './luck-lab-drop-distribution-comparison.state';
 
 export interface DropDistributionMetricRow {
   label: string;
@@ -22,6 +23,8 @@ export interface DropDistributionMetricRow {
 export class LuckLabDropDistributionSectionState {
   private readonly lab = inject(LuckLabState);
   private readonly definitions = inject(ExplorationDefinitionsState);
+  private readonly comparison = inject(LuckLabDropDistributionComparisonState);
+  private isLoaded = false;
 
   readonly summary = computed(() => this.lab.result().dropDistribution);
   readonly isLoading = computed(() => this.lab.loadingBySection().dropDistribution);
@@ -94,6 +97,28 @@ export class LuckLabDropDistributionSectionState {
       ),
     ];
   });
+  readonly comparisonRows = computed(() => this.comparison.rows());
+  readonly isComparisonLoading = computed(() => this.comparison.isLoading());
+  readonly comparisonError = computed(() => this.comparison.error());
+
+  constructor() {
+    effect(() => {
+      const input = this.lab.input();
+      input.luckValue;
+      input.bucketProfileId;
+      input.maxQualityKey;
+      input.previewCount;
+
+      if (this.isLoaded) {
+        this.comparison.schedule(input);
+      }
+    });
+  }
+
+  load(): void {
+    this.isLoaded = true;
+    this.comparison.reload(this.lab.input());
+  }
 
   valueText(value: number | null, unit: DropDistributionMetricRow['unit']): string {
     if (value === null) {

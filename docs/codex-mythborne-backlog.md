@@ -9644,6 +9644,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Comparisons use DB/RPC preview values.
 - UI remains readable and does not become a huge wall of numbers.
 
+**Status:** Accepted on 2026-05-10. Added shared feature-local Luck comparison presets for `Luck 0`, low, medium, high and current slider values, reused by Trial Power, trial chance, auto-resolve, encounter and combat comparison states. Drop distribution uses a section-local comparison state because its DB-owned distribution preview orchestration is heavier, but it still uses the same preset helper and `LuckLabPreviews.previewDropDistribution(...)`. All comparison values remain DB/RPC-owned; preset labels are UI baselines because no DB/config preset source is exposed. No browser-side RNG/drop simulation, generated type edits, direct writes or gameplay authority were added. Verification passed with focused Luck Lab specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps. Manual smoke remains pending for `/admin/luck-lab`; V14 refresh-frequency hardening remains a future follow-up, not a V11 blocker.
+
 ---
 
 ## Task V12 — Human-readable Luck explanations

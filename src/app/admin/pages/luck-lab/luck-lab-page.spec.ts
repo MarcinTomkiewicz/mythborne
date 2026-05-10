@@ -76,12 +76,16 @@ describe('LuckLabPage', () => {
   >;
   let dropDistributionSectionState: Pick<
     LuckLabDropDistributionSectionState,
+    | 'load'
     | 'summary'
     | 'isLoading'
     | 'error'
     | 'selectedBucketLabel'
     | 'selectedMaxQualityLabel'
     | 'metricRows'
+    | 'comparisonRows'
+    | 'isComparisonLoading'
+    | 'comparisonError'
     | 'valueText'
     | 'percentText'
     | 'distributionLabel'
@@ -361,6 +365,7 @@ describe('LuckLabPage', () => {
       ]),
     };
     dropDistributionSectionState = {
+      load: jasmine.createSpy('load'),
       summary: signal({
         status: 'available',
         sampleSize: 100,
@@ -424,6 +429,21 @@ describe('LuckLabPage', () => {
           unit: 'percent',
         },
       ]),
+      comparisonRows: signal([
+        {
+          label: 'Low Luck 10',
+          luckValue: 10,
+          luckInfluence: 3,
+          averageItemValue: 36,
+          medianItemValue: 34,
+          highValueRate: 24,
+          prefixHitRate: 30,
+          suffixHitRate: 15,
+          averageDeltaFromLuckZero: 6,
+        },
+      ]),
+      isComparisonLoading: signal(false),
+      comparisonError: signal(null),
       valueText: (value, unit) => {
         if (value === null) {
           return 'N/A';
@@ -545,6 +565,8 @@ describe('LuckLabPage', () => {
     expect(text).toContain('42 drachma');
     expect(text).toContain('30 drachma');
     expect(text).toContain('Prefix hit rate');
+    expect(text).toContain('Low Luck 10');
+    expect(text).toContain('36 drachma');
     expect(text).toContain('Weapon (weapon)');
     expect(text).toContain('Rare (rare)');
     expect(text).toContain('DB distribution preview.');
