@@ -1812,6 +1812,8 @@ Verification:
 
 **Acceptance criteria:** no code changed; reviewer can approve the exact next microtask.
 
+**Status:** Accepted on 2026-05-10. Completed as part of the no-code `UI-SHELL-00/01/02` artifact at `docs/ui-ux/ui-shell-00-02-inventory.md`. The inventory starts from `docs/ui-ux/README.md`, names the UI-CORE docs read, inspects the required SCSS utility/surface/icon files plus current app-shell/topbar/sidebar/notification components, and records concrete shell needs, existing utilities/classes/components, current use decisions and follow-up gaps. No Angular, SCSS, generated type or runtime shell files were changed.
+
 ---
 
 ## UI-SHELL-01 — Current shell diff and rollback boundary, no code
@@ -1831,6 +1833,8 @@ Verification:
   - unknown/user decision.
 
 **Acceptance criteria:** report lists exact remove/keep candidates before code changes.
+
+**Status:** Accepted on 2026-05-10. Completed as part of `docs/ui-ux/ui-shell-00-02-inventory.md`. The report classifies current shell host/topbar/sidebar/brand/nav patterns as accepted skeleton, current baseline, temporary fallback/debt, remove candidate or unknown/user decision. It keeps the current runtime shell untouched, marks the empty `game-sidebar.scss` as a cleanup candidate on the next sidebar touch, and records that `mg-card` nav links plus `is-active heading-color` are temporary fallback debt for later sidebar nav tasks.
 
 ---
 
@@ -1859,6 +1863,8 @@ Verification:
 **Output:** token/pattern gap table.
 
 **Acceptance criteria:** color/hover/active needs are not left implicit; future color changes have owners.
+
+**Status:** Accepted on 2026-05-10. Completed as part of `docs/ui-ux/ui-shell-00-02-inventory.md`. The token table maps dark navy shell background, elevated topbar surface, sidebar surface, soft gold border, active nav inset, hover gold/blue wash, brand mark medallion, resource chip fallback, selected server/prestige premium card and focus-visible ring to existing tokens/patterns or named gaps. Missing runtime patterns are explicitly assigned to later UI-SHELL owners such as `UI-SHELL-06/09`, `UI-SHELL-14/15`, `UI-SHELL-19/21/22` and `UI-SHELL-26/27`.
 
 ---
 
