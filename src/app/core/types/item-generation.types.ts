@@ -80,30 +80,3 @@ export interface ItemGenerationCatalog {
   prefixes: ItemAffixDefinition[];
   suffixes: ItemAffixDefinition[];
 }
-
-export interface ItemGenerationStep {
-  title: string;
-  detail: string;
-}
-
-export interface GeneratedItemPart {
-  label: string;
-  bonuses: Bonus[];
-}
-
-export interface GeneratedItemResult {
-  displayName: string;
-  bucketValue: number;
-  luck: number;
-  quality: ItemQualityDefinition;
-  base: ItemBaseDefinition;
-  prefix: ItemAffixDefinition | null;
-  suffix: ItemAffixDefinition | null;
-  baseBudget: number;
-  preQualityValue: number;
-  finalValue: number;
-  remainingBudget: number;
-  combinedBonuses: Bonus[];
-  parts: GeneratedItemPart[];
-  process: ItemGenerationStep[];
-}

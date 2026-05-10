@@ -16,7 +16,6 @@ import { SelectModule } from 'primeng/select';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
-import { ItemGeneratorPanel } from '../../components/item-generator-panel/item-generator-panel';
 import { ArmoryItemDetailPopover } from '../../components/armory-item-detail-popover/armory-item-detail-popover';
 import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
 import {
@@ -35,7 +34,6 @@ import {
     InputTextModule,
     SelectModule,
     ArmoryItemDetailPopover,
-    ItemGeneratorPanel,
     LoadoutPresetManagement,
   ],
   providers: [

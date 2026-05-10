@@ -53,7 +53,6 @@ describe('ArmoryPage', () => {
             InputTextModule,
             SelectModule,
             MockArmoryItemDetailPopover,
-            MockItemGeneratorPanel,
             MockLoadoutPresetManagement,
           ],
           providers: [
@@ -854,15 +853,6 @@ class FakeArmoryGuildItemUsageState {
       [itemId]: itemUsage,
     });
   }
-}
-
-@Component({
-  selector: 'app-item-generator-panel',
-  standalone: true,
-  template: '',
-})
-class MockItemGeneratorPanel {
-  readonly luck = input(0);
 }
 
 @Component({

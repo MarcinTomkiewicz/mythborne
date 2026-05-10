@@ -9154,6 +9154,12 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 - Luck Foundation surfaces consistently use DB/RPC/formula-owned values.
 - Build and focused integration tests pass.
 
+**Status:** accepted/done with follow-up. Manual smoke pending representative generated-opponent data.
+
+**Implementation note 2026-05-10:** U13 removed stale local item-generation/Luck RNG fallback paths from the frontend: the old item generator panel/service/factories/rule types were deleted, Armory no longer renders the local generated-item demo panel, and `item-generation-rules.ts` is limited to name composition. Generated PvE opponent equipment no longer uses Angular-side item/Luck/affix RNG and no preview RPC is used as runtime authority. After Migrator added the DB-owned runtime contract, `CombatOpponentResolver` now delegates generated opponent equipment to `build_opponent_combatant_snapshot_for_resolver(...)`, using generated RPC args/returns and focused snapshot mapper helpers. JSON readers and opponent combatant snapshot mapping live in `core/utils` with specs; the resolver stays orchestration-only. No status docs were changed before acceptance, and no Codex edit was made to generated database types.
+
+**Follow-up:** When representative generated opponent equipment data exists, smoke the generated PvE opponent path end-to-end and confirm combat attack source component refs render correctly in result/report paths.
+
 ---
 
 ## Task U14 — Luck Foundation status/reporting handoff

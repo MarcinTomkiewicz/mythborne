@@ -1,13 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
-import {
-  COMBAT_ATTACK_SOURCE_KIND,
-  COMBAT_SIDE,
-} from '../../domain/combat/combat.model';
+import { RPC } from '../../constants/rpc.const';
+import { COMBAT_SIDE } from '../../domain/combat/combat.model';
 import { CombatOpponentAdminData } from '../../domain/combat/combat-opponent.model';
 import { FormulaAdminData } from '../../domain/formula/formula.model';
-import { GeneratedItemResult, ItemGenerationCatalog } from '../../domain/item/item-generation.model';
-import { ItemGenerationFactory } from '../../factories/item-generation/item-generation.factory';
+import { ItemGenerationCatalog } from '../../domain/item/item-generation.model';
+import { Backend } from '../backend/backend';
 import { FormulaService } from '../formula/formula';
 import { ItemCatalogService } from '../items/item-catalog';
 import { FormulaRuntimeService } from '../progression/formula-runtime';
@@ -18,7 +16,7 @@ describe('CombatOpponentResolver', () => {
   let opponents: jasmine.SpyObj<CombatOpponentAdmin>;
   let formulas: jasmine.SpyObj<FormulaService>;
   let itemCatalog: jasmine.SpyObj<ItemCatalogService>;
-  let itemGeneration: jasmine.SpyObj<ItemGenerationFactory>;
+  let backend: jasmine.SpyObj<Backend>;
   let service: CombatOpponentResolver;
 
   beforeEach(() => {
@@ -28,7 +26,7 @@ describe('CombatOpponentResolver', () => {
       'getAssignedFormula',
     ]);
     itemCatalog = jasmine.createSpyObj<ItemCatalogService>('ItemCatalogService', ['getCatalog']);
-    itemGeneration = jasmine.createSpyObj<ItemGenerationFactory>('ItemGenerationFactory', ['generate']);
+    backend = jasmine.createSpyObj<Backend>('Backend', ['rpc']);
 
     opponents.getAdminData.and.returnValue(of(adminData()));
     formulas.getAdminData.and.returnValue(of(formulaAdminData()));
@@ -45,7 +43,7 @@ describe('CombatOpponentResolver', () => {
       source: 'global',
     }));
     itemCatalog.getCatalog.and.returnValue(of(itemCatalogData()));
-    itemGeneration.generate.and.returnValue(generatedItem());
+    backend.rpc.and.returnValue(of(opponentCombatantSnapshot()));
 
     TestBed.configureTestingModule({
       providers: [
@@ -54,7 +52,7 @@ describe('CombatOpponentResolver', () => {
         { provide: CombatOpponentAdmin, useValue: opponents },
         { provide: FormulaService, useValue: formulas },
         { provide: ItemCatalogService, useValue: itemCatalog },
-        { provide: ItemGenerationFactory, useValue: itemGeneration },
+        { provide: Backend, useValue: backend },
       ],
     });
     service = TestBed.inject(CombatOpponentResolver);
@@ -104,7 +102,7 @@ describe('CombatOpponentResolver', () => {
     expect(resolved.scalingFormula.formulaId).toBe('global-formula');
   });
 
-  it('materializes generated opponent equipment once without creating player-owned items', async () => {
+  it('uses DB-owned combatant snapshot for generated opponent equipment', async () => {
     opponents.getAdminData.and.returnValue(of(adminData({
       equipmentMode: 'generated',
       equipmentEntries: [{
@@ -137,23 +135,31 @@ describe('CombatOpponentResolver', () => {
       }),
     );
 
-    expect(itemCatalog.getCatalog).toHaveBeenCalledTimes(1);
-    expect(itemGeneration.generate).toHaveBeenCalledTimes(1);
-    expect(resolved.equipment[0].kind).toBe('generated');
-    expect(resolved.equipment[0].source).toEqual(
-      jasmine.objectContaining({
-        kind: COMBAT_ATTACK_SOURCE_KIND.opponentGenerated,
-        sourceItemId: null,
-        sourceBaseId: 'base-1',
-        sourceQualityKey: 'quality',
-      }),
+    expect(backend.rpc).toHaveBeenCalledOnceWith(
+      RPC.build_opponent_combatant_snapshot_for_resolver,
+      {
+        p_opponent_definition_id: 'opponent-1',
+        p_side: COMBAT_SIDE.defender,
+        p_reference_level: 5,
+        p_difficulty_multiplier: 1,
+        p_candidate_scaling_formula_id: 'candidate-formula',
+      },
     );
-    expect(resolved.participant.attackPlan.slots.some(
-      (slot) => slot.source.kind === COMBAT_ATTACK_SOURCE_KIND.opponentGenerated,
-    )).toBeTrue();
+    expect(resolved.participant.attackPlan.slots[0].source).toEqual(jasmine.objectContaining({
+      kind: 'opponent_generated',
+      label: 'Generated Raider Blade',
+      sourceBaseId: 'base-generated',
+      sourceQualityKey: 'quality',
+    }));
+    expect(resolved.equipment[0].generatedItem).toEqual(jasmine.objectContaining({
+      displayName: 'Generated Raider Blade',
+      baseId: 'base-generated',
+      qualityKey: 'quality',
+    }));
+    expect(itemCatalog.getCatalog).not.toHaveBeenCalled();
   });
 
-  it('reports generated bucket profile as unsupported integration gap', async () => {
+  it('passes generated bucket profile entries through the DB-owned snapshot path', async () => {
     opponents.getAdminData.and.returnValue(of(adminData({
       equipmentMode: 'generated',
       equipmentEntries: [equipmentEntry({
@@ -166,7 +172,7 @@ describe('CombatOpponentResolver', () => {
       })],
     })));
 
-    await expectAsync(firstValueFrom(
+    const resolved = await firstValueFrom(
       service.resolve({
         opponentDefinitionId: 'opponent-1',
         side: COMBAT_SIDE.defender,
@@ -174,9 +180,15 @@ describe('CombatOpponentResolver', () => {
         difficultyMultiplier: 1,
         scalingFormulaId: 'candidate-formula',
       }),
-    )).toBeRejectedWithError(
-      'Generated opponent equipment entry "equipment-2" uses bucket profile "bucket-1", but opponent-specific bucket profile selection is not supported by the current item generation catalog loader.',
     );
+
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.build_opponent_combatant_snapshot_for_resolver,
+      jasmine.objectContaining({
+        p_opponent_definition_id: 'opponent-1',
+      }),
+    );
+    expect(resolved.participant.attackPlan.slots[0].source.kind).toBe('opponent_generated');
   });
 
   it('uses item generation catalog labels for manual opponent equipment source label', async () => {
@@ -421,38 +433,52 @@ function itemCatalogData(): ItemGenerationCatalog {
   };
 }
 
-function generatedItem(): GeneratedItemResult {
+function opponentCombatantSnapshot() {
   return {
-    displayName: 'Generated blade',
-    bucketValue: 10,
-    luck: 5,
-    quality: {
-      key: 'quality',
-      label: 'Quality',
-      multiplier: 1.5,
-      requirementMultiplier: 1.25,
-      weight: 1,
+    side: 'defender',
+    displayName: 'Bandit',
+    level: 5,
+    reference: {
+      participantKind: 'opponent',
+      heroId: null,
+      opponentDefinitionId: 'opponent-1',
     },
-    base: {
-      id: 'base-1',
-      key: 'blade',
-      name: 'Blade',
-      baseTypeKey: 'weapon',
-      baseTypeLabel: 'Weapon',
-      equipmentSlotGroup: 'main_hand',
-      handUsage: 'one_handed',
-      baseValue: 5,
-      description: '',
-      bonuses: [],
+    stats: {
+      maxHealth: 15,
+      defense: 7,
+      minDamage: 2,
+      maxDamage: 4,
+      luck: 0,
+      criticalChance: 5,
+      criticalDamage: 150,
+      evasionChance: 0,
     },
-    prefix: null,
-    suffix: null,
-    baseBudget: 10,
-    preQualityValue: 5,
-    finalValue: 8,
-    remainingBudget: 5,
-    combinedBonuses: [],
-    parts: [],
-    process: [],
+    baseStats: [
+      { side: 'defender', statKey: 'health', statValue: 15 },
+    ],
+    formulaBonuses: {
+      hitBonusFromItems: 0,
+      critBonusFromItems: 0,
+      evasionBonusFromItems: 0,
+      damageBonusFromItems: 0,
+    },
+    attackPlan: {
+      side: 'defender',
+      slots: [{
+        side: 'defender',
+        slotIndex: 0,
+        initiativeScore: 0,
+        source: {
+          kind: 'opponent_generated',
+          label: 'Generated Raider Blade',
+          opponentAttackSourceId: null,
+          sourceItemId: null,
+          sourceBaseId: 'base-generated',
+          sourceQualityKey: 'quality',
+          sourcePrefixAffixId: 'prefix-generated',
+          sourceSuffixAffixId: null,
+        },
+      }],
+    },
   };
 }

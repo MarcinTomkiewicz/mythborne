@@ -48,6 +48,10 @@ export const RPC = {
   submit_combat_player_action: 'submit_combat_player_action',
   get_combat_result_detail: 'get_combat_result_detail',
   persist_combat_result_snapshot: 'persist_combat_result_snapshot',
+  build_combat_opponent_equipment_loadout_snapshot:
+    'build_combat_opponent_equipment_loadout_snapshot',
+  build_opponent_combatant_snapshot_for_resolver:
+    'build_opponent_combatant_snapshot_for_resolver',
   upsert_combat_opponent_family: 'upsert_combat_opponent_family',
   deactivate_combat_opponent_family: 'deactivate_combat_opponent_family',
   upsert_combat_opponent_definition: 'upsert_combat_opponent_definition',

@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable, of, switchMap } from 'rxjs';
+import { RPC } from '../../constants/rpc.const';
 import { COMBAT_PARTICIPANT_KIND } from '../../domain/combat/combat.model';
 import {
   CombatOpponentAdminData,
@@ -12,17 +13,19 @@ import {
 } from '../../domain/combat/combat-opponent.model';
 import { BalanceFormula, FormulaTarget } from '../../domain/formula/formula.model';
 import { ItemGenerationCatalog } from '../../domain/item/item-generation.model';
-import { ItemGenerationFactory } from '../../factories/item-generation/item-generation.factory';
+import { Database } from '../../types/database.types';
 import { defaultCombatFormulaBonusesForOpponent } from '../../utils/combat-formula-bonuses';
 import { attackPlanFor, naturalAttacksFor } from '../../utils/combat-opponent-attack-plan';
 import {
   OPPONENT_EQUIPMENT_MODE,
-  catalogForGeneratedEquipment,
   equipmentEntriesFor,
-  generatedItemSnapshot,
-  materializeGeneratedEquipment,
   materializeManualEquipment,
 } from '../../utils/combat-opponent-equipment-resolution';
+import {
+  combatParticipantInputFromDbSnapshot,
+  equipmentFromDbAttackPlan,
+  opponentCombatantSnapshotArgs,
+} from '../../utils/combat-opponent-snapshot-mappers';
 import {
   coreStatsFrom,
   participantStats,
@@ -32,9 +35,12 @@ import { opponentLevel } from '../../utils/combat-opponent-range';
 import { FormulaRuntimeService } from '../progression/formula-runtime';
 import { FormulaService } from '../formula/formula';
 import { ItemCatalogService } from '../items/item-catalog';
+import { Backend } from '../backend/backend';
 import { CombatOpponentAdmin } from './combat-opponent-admin';
 
 const COMBAT_OPPONENT_SCALED_STAT_TARGET = 'combat_opponent_scaled_stat';
+type BuildOpponentCombatantSnapshotRpcResult =
+  Database['public']['Functions']['build_opponent_combatant_snapshot_for_resolver']['Returns'];
 
 @Injectable({ providedIn: 'root' })
 export class CombatOpponentResolver {
@@ -42,7 +48,7 @@ export class CombatOpponentResolver {
   private readonly formulas = inject(FormulaService);
   private readonly formulaRuntime = inject(FormulaRuntimeService);
   private readonly itemCatalog = inject(ItemCatalogService);
-  private readonly itemGeneration = inject(ItemGenerationFactory);
+  private readonly backend = inject(Backend);
 
   resolve(input: ResolveCombatOpponentInput): Observable<ResolvedCombatOpponent> {
     return this.opponents.getAdminData().pipe(
@@ -51,9 +57,18 @@ export class CombatOpponentResolver {
           switchMap((scaling) => {
             const opponent = this.requiredActiveOpponent(data, input.opponentDefinitionId);
             const equipmentEntries = equipmentEntriesFor(data, opponent, input);
-            const catalog$: Observable<ItemGenerationCatalog | null> = equipmentEntries.length > 0
+            const needsCatalog = equipmentEntries.some(
+              (entry) => entry.entryMode === OPPONENT_EQUIPMENT_MODE.manual,
+            );
+            const catalog$: Observable<ItemGenerationCatalog | null> = needsCatalog
               ? this.itemCatalog.getCatalog()
               : of(null);
+
+            if (equipmentEntries.some(
+              (entry) => entry.entryMode === OPPONENT_EQUIPMENT_MODE.generated,
+            )) {
+              return this.toDbResolvedOpponent(data, input, opponent, scaling, equipmentEntries);
+            }
 
             return catalog$.pipe(
               map((catalog) =>
@@ -78,7 +93,7 @@ export class CombatOpponentResolver {
     const scaledStats = this.scaledStatsFor(data, opponent, input, scaling);
     const naturalAttackSources = naturalAttacksFor(data, opponent, level);
     const equipment = equipmentEntries.map((entry) =>
-      this.materializeEquipment(entry, level, catalog),
+      this.materializeEquipment(entry, catalog),
     );
     const attackPlan = attackPlanFor(opponent.key, input.side, naturalAttackSources, equipment);
 
@@ -108,6 +123,41 @@ export class CombatOpponentResolver {
       naturalAttackSources,
       equipment,
     };
+  }
+
+  private toDbResolvedOpponent(
+    data: CombatOpponentAdminData,
+    input: ResolveCombatOpponentInput,
+    opponent: CombatOpponentDefinitionReadModel,
+    scaling: { target: FormulaTarget; formula: BalanceFormula },
+    equipmentEntries: CombatOpponentEquipmentEntryReadModel[],
+  ): Observable<ResolvedCombatOpponent> {
+    const level = opponentLevel(input);
+    const scaledStats = this.scaledStatsFor(data, opponent, input, scaling);
+    const naturalAttackSources = naturalAttacksFor(data, opponent, level);
+
+    return this.backend.rpc<BuildOpponentCombatantSnapshotRpcResult>(
+      RPC.build_opponent_combatant_snapshot_for_resolver,
+      opponentCombatantSnapshotArgs(input, level),
+    ).pipe(
+      map((snapshot) => {
+        const participant = combatParticipantInputFromDbSnapshot(snapshot);
+
+        return {
+          participant,
+          opponent,
+          scalingFormula: {
+            targetKey: scaling.target.key,
+            formulaId: scaling.formula.id,
+            label: scaling.formula.label,
+            expression: scaling.formula.expression,
+          },
+          scaledStats,
+          naturalAttackSources,
+          equipment: equipmentFromDbAttackPlan(equipmentEntries, participant.attackPlan),
+        };
+      }),
+    );
   }
 
   private resolveScalingFormula(
@@ -179,19 +229,8 @@ export class CombatOpponentResolver {
 
   private materializeEquipment(
     entry: CombatOpponentEquipmentEntryReadModel,
-    level: number,
     catalog: ItemGenerationCatalog | null,
   ): ResolvedCombatOpponentEquipment {
-    if (entry.entryMode === OPPONENT_EQUIPMENT_MODE.generated) {
-      if (!catalog) {
-        throw new Error('Generated opponent equipment requires item generation catalog data.');
-      }
-
-      const scopedCatalog = catalogForGeneratedEquipment(entry, catalog);
-      const generated = this.itemGeneration.generate(level, scopedCatalog);
-      return materializeGeneratedEquipment(entry, generatedItemSnapshot(entry, generated));
-    }
-
     return materializeManualEquipment(entry, catalog);
   }
 
