@@ -1,0 +1,133 @@
+<section class="mg-card p-lg w-100 flex-col gap-md">
+  <div class="flex-row-between-center flex-col-sm gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Trial chances</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Opportunity and manifestation</h3>
+      <p class="muted-text mb-0">
+        Opportunity previews the chance to reach a trial opportunity. Manifestation previews
+        whether that opportunity becomes a trial. Luck can improve both DB-owned chances, but it
+        does not guarantee either step.
+      </p>
+    </div>
+
+    @if (page.isTrialChanceLoading()) {
+      <span class="card-legend">Refreshing</span>
+    }
+  </div>
+
+  @if (page.trialChanceError(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  <div class="grid-3 gap-md">
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="card-legend">Difficulty context</span>
+      <strong>{{ page.lab.input().difficultyKey ?? 'DB default' }}</strong>
+    </div>
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="card-legend">District context</span>
+      <strong>{{ page.lab.input().districtCode ?? 'DB default' }}</strong>
+    </div>
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="card-legend">Trial context</span>
+      <strong>{{ page.selectedTrialContextLabel() }}</strong>
+      @if (page.selectedTrialContextId(); as trialDefinitionId) {
+        <span class="muted-text">ID: {{ trialDefinitionId }}</span>
+      }
+    </div>
+  </div>
+
+  <div class="grid-2 gap-md">
+    <article class="mg-surface-card p-md flex-col gap-sm">
+      <span class="card-legend">Trial opportunity</span>
+      @if (page.trialOpportunityPreview(); as opportunity) {
+        <strong>
+          @if (opportunity.chancePercent === null) {
+            N/A
+          } @else {
+            {{ opportunity.chancePercent }}%
+          }
+        </strong>
+        <span>
+          Luck {{ opportunity.luckValue }} -> influence {{ opportunity.luckInfluence }}
+        </span>
+        <span>{{ opportunity.explanation }}</span>
+        <span class="muted-text">
+          Formula: {{ opportunity.formula?.formulaKey ?? 'Not returned' }}
+        </span>
+      } @else {
+        <span>Waiting for DB opportunity preview.</span>
+      }
+    </article>
+
+    <article class="mg-surface-card p-md flex-col gap-sm">
+      <span class="card-legend">Trial manifestation</span>
+      @if (page.trialManifestationPreview(); as manifestation) {
+        <strong>
+          @if (manifestation.chancePercent === null) {
+            N/A
+          } @else {
+            {{ manifestation.chancePercent }}%
+          }
+        </strong>
+        <span>
+          Trial Power {{ manifestation.trialPower ?? 'N/A' }} with Luck influence
+          {{ manifestation.luckInfluence }}
+        </span>
+        <span>{{ manifestation.explanation }}</span>
+        <span class="muted-text">
+          Formula: {{ manifestation.formula?.formulaKey ?? 'Not returned' }}
+        </span>
+      } @else {
+        <span>Waiting for DB manifestation preview.</span>
+      }
+    </article>
+  </div>
+
+  @if (page.trialChanceComparisonError(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  <p-table [value]="page.trialChanceComparisonRows()" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Preset</th>
+        <th>Luck</th>
+        <th>Influence</th>
+        <th>Opportunity</th>
+        <th>Preview step</th>
+        <th>Step cap</th>
+        <th>Manifestation</th>
+        <th>Trial Power</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td>{{ row.label }}</td>
+        <td>{{ row.luckValue ?? 'N/A' }}</td>
+        <td>{{ row.luckInfluence ?? 'N/A' }}</td>
+        <td>
+          @if (row.opportunityChance === null) {
+            N/A
+          } @else {
+            {{ row.opportunityChance }}%
+          }
+        </td>
+        <td>{{ row.opportunityStep ?? 'N/A' }}</td>
+        <td>{{ row.opportunityStepCap ?? 'N/A' }}</td>
+        <td>
+          @if (row.manifestationChance === null) {
+            N/A
+          } @else {
+            {{ row.manifestationChance }}%
+          }
+        </td>
+        <td>{{ row.trialPower ?? 'N/A' }}</td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  @if (page.isTrialChanceComparisonLoading()) {
+    <p class="card-legend mb-0">Refreshing chance comparison rows</p>
+  }
+</section>

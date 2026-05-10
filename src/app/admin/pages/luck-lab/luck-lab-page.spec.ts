@@ -24,6 +24,15 @@ describe('LuckLabPage', () => {
     | 'trialPowerComparisonRows'
     | 'isTrialPowerComparisonLoading'
     | 'trialPowerComparisonError'
+    | 'trialOpportunityPreview'
+    | 'trialManifestationPreview'
+    | 'isTrialChanceLoading'
+    | 'trialChanceError'
+    | 'trialChanceComparisonRows'
+    | 'isTrialChanceComparisonLoading'
+    | 'trialChanceComparisonError'
+    | 'selectedTrialContextLabel'
+    | 'selectedTrialContextId'
     | 'lab'
   >;
 
@@ -77,9 +86,45 @@ describe('LuckLabPage', () => {
       ]),
       isTrialPowerComparisonLoading: signal(false),
       trialPowerComparisonError: signal(null),
+      trialOpportunityPreview: signal({
+        chancePercent: 18,
+        luckValue: 12,
+        luckInfluence: 4,
+        formula: { formulaKey: 'trial_opportunity_chance' },
+        explanation: 'DB opportunity preview.',
+      } as never),
+      trialManifestationPreview: signal({
+        chancePercent: 42,
+        luckValue: 12,
+        luckInfluence: 4,
+        trialPower: 34,
+        formula: { formulaKey: 'trial_manifestation_chance' },
+        explanation: 'DB manifestation preview.',
+      } as never),
+      isTrialChanceLoading: signal(false),
+      trialChanceError: signal(null),
+      trialChanceComparisonRows: signal([
+        {
+          label: 'Current Luck',
+          luckValue: 12,
+          luckInfluence: 4,
+          opportunityChance: 18,
+          opportunityStep: 1,
+          opportunityStepCap: 8,
+          manifestationChance: 42,
+          trialPower: 34,
+        },
+      ]),
+      isTrialChanceComparisonLoading: signal(false),
+      trialChanceComparisonError: signal(null),
+      selectedTrialContextLabel: signal('Maze (maze)'),
+      selectedTrialContextId: signal('trial-1'),
       lab: {
         input: signal({
           luckValue: 12,
+          difficultyKey: 'easy',
+          districtCode: 'district-a',
+          trialDefinitionId: 'trial-1',
         }),
         result: signal({
           luckInfluence: { luckInfluence: 4 },
@@ -121,6 +166,15 @@ describe('LuckLabPage', () => {
     expect(text).toContain('30 + 4 = 34');
     expect(text).toContain('DB Trial Power preview.');
     expect(text).toContain('Current sliders');
+    expect(text).toContain('Opportunity and manifestation');
+    expect(text).toContain('Difficulty context');
+    expect(text).toContain('district-a');
+    expect(text).toContain('Maze (maze)');
+    expect(text).toContain('18%');
+    expect(text).toContain('42%');
+    expect(text).toContain('DB opportunity preview.');
+    expect(text).toContain('DB manifestation preview.');
+    expect(text).toContain('Current Luck');
     expect(fixture.debugElement.queryAll(By.css('p-slider')).length).toBe(2);
     expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(4);
   });

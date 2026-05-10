@@ -10,7 +10,9 @@ import { AdminTagLinks } from '../../components/admin-tag-links/admin-tag-links'
 import { LuckLabState } from '../../../core/services/luck/luck-lab.state';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
+import { LuckLabComparisonState } from './luck-lab-comparison.state';
 import { LuckLabPageState } from './luck-lab-page.state';
+import { LuckLabTrialChanceSection } from './luck-lab-trial-chance-section';
 import { LuckLabTrialPowerSection } from './luck-lab-trial-power-section';
 
 @Component({
@@ -24,10 +26,16 @@ import { LuckLabTrialPowerSection } from './luck-lab-trial-power-section';
     SliderModule,
     AdminServerSwitcher,
     AdminTagLinks,
+    LuckLabTrialChanceSection,
     LuckLabTrialPowerSection,
     LoadingOverlay,
   ],
-  providers: [ExplorationDefinitionsState, LuckLabState, LuckLabPageState],
+  providers: [
+    ExplorationDefinitionsState,
+    LuckLabState,
+    LuckLabComparisonState,
+    LuckLabPageState,
+  ],
   templateUrl: './luck-lab-page.html',
 })
 export class LuckLabPage implements OnInit {

@@ -9465,6 +9465,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Expected step changes are visible if DB exposes them.
 - No local chance formulas are introduced.
 
+**Status:** Accepted on 2026-05-10. Added a dedicated Trial chances panel that separates Trial opportunity from Trial manifestation, renders DB/RPC chance previews with percent units, DB formula keys/explanations, selected difficulty/district context and DB-backed trial label/key as the primary trial context value with raw id only as secondary metadata. Added Luck 0/current/high comparison rows for opportunity and manifestation through DB/RPC preview calls; expected step/step-cap values are shown when returned in DB context. Comparison orchestration now lives in feature-local `LuckLabComparisonState`, keeping `LuckLabPageState` focused on shared form/input composition and definition labels. No local chance formulas, RNG/drop simulation, direct writes, generated type edits or gameplay authority were added. Verification passed with focused Luck Lab route/page/page-state/service-state specs, `npx tsc --noEmit`, `npm run build` with known warnings, static greps and prerender route output for `/admin/luck-lab`. Manual smoke remains pending for `/admin/luck-lab` input changes and separate opportunity/manifestation comparison refresh.
+
 ---
 
 ## Task V6 — Auto-resolve preview panel
