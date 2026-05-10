@@ -9437,6 +9437,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Difficulty/district are visually separated from Trial Power.
 - Values come from DB/RPC preview.
 
+**Status:** Accepted on 2026-05-10. Added a dedicated Luck Lab Trial Power panel that displays tested stat, raw Luck, Luck influence, final Trial Power, equation-style summary, DB formula keys/expressions, explanation and DB-backed comparison rows through `LuckLabPreviews.previewTrialPower(...)`. Difficulty and district are shown as later chance-panel context rather than Trial Power ingredients. No local formula/RNG/drop simulation, direct writes, generated type edits or status-independent gameplay authority were added. Form defaults now reuse `DEFAULT_LUCK_LAB_INPUT`. Verification passed with focused Luck Lab route/page/page-state/service-state specs, `npx tsc --noEmit`, `npm run build` with known warnings, static greps and prerender route output for `/admin/luck-lab`. Follow-up: V11 should not duplicate or drift from the Trial Power comparison presets, and V14 should re-check performance/stale behavior for the extra Trial Power preview calls.
+
 ---
 
 ## Task V5 — Trial opportunity and manifestation preview panel

@@ -98,20 +98,5 @@
     </div>
   </section>
 
-  <section class="mg-card p-lg w-100">
-    <div class="grid-3 gap-md">
-      <div class="mg-surface-card p-md flex-col gap-xs">
-        <span class="card-legend">Raw Luck</span>
-        <strong>{{ page.lab.input().luckValue }}</strong>
-      </div>
-      <div class="mg-surface-card p-md flex-col gap-xs">
-        <span class="card-legend">Luck influence</span>
-        <strong>{{ page.lab.result().luckInfluence?.luckInfluence ?? 'Pending' }}</strong>
-      </div>
-      <div class="mg-surface-card p-md flex-col gap-xs">
-        <span class="card-legend">Trial Power</span>
-        <strong>{{ page.lab.result().trialPower?.trialPower ?? 'Pending' }}</strong>
-      </div>
-    </div>
-  </section>
+  <app-luck-lab-trial-power-section />
 </div>

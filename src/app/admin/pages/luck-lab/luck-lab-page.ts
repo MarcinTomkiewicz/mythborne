@@ -11,6 +11,7 @@ import { LuckLabState } from '../../../core/services/luck/luck-lab.state';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
 import { LuckLabPageState } from './luck-lab-page.state';
+import { LuckLabTrialPowerSection } from './luck-lab-trial-power-section';
 
 @Component({
   selector: 'app-luck-lab-page',
@@ -23,6 +24,7 @@ import { LuckLabPageState } from './luck-lab-page.state';
     SliderModule,
     AdminServerSwitcher,
     AdminTagLinks,
+    LuckLabTrialPowerSection,
     LoadingOverlay,
   ],
   providers: [ExplorationDefinitionsState, LuckLabState, LuckLabPageState],

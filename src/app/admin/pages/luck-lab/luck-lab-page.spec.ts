@@ -17,6 +17,13 @@ describe('LuckLabPage', () => {
     | 'districtOptions'
     | 'statOptions'
     | 'trialOptions'
+    | 'isTrialPowerLoading'
+    | 'trialPowerError'
+    | 'trialPower'
+    | 'trialPowerEquation'
+    | 'trialPowerComparisonRows'
+    | 'isTrialPowerComparisonLoading'
+    | 'trialPowerComparisonError'
     | 'lab'
   >;
 
@@ -38,6 +45,38 @@ describe('LuckLabPage', () => {
       districtOptions: signal([{ label: 'District A (district-a)', value: 'district-a' }]),
       statOptions: signal([{ label: 'Wisdom (wisdom)', value: 'wisdom' }]),
       trialOptions: signal([{ label: 'Maze (maze)', value: 'trial-1' }]),
+      isTrialPowerLoading: signal(false),
+      trialPowerError: signal(null),
+      trialPower: signal({
+        heroId: null,
+        testedStatKey: 'wisdom',
+        testedStatLabel: 'Wisdom',
+        testedStatValue: 30,
+        luckValue: 12,
+        luckInfluence: 4,
+        trialPower: 34,
+        luckInfluenceFormula: {
+          formulaKey: 'luck_influence',
+          formulaExpression: 'DB luck expression',
+        },
+        trialPowerFormula: {
+          formulaKey: 'trial_power',
+          formulaExpression: 'DB trial expression',
+        },
+        explanation: 'DB Trial Power preview.',
+      }),
+      trialPowerEquation: signal('30 + 4 = 34'),
+      trialPowerComparisonRows: signal([
+        {
+          label: 'Current sliders',
+          testedStatValue: 30,
+          luckValue: 12,
+          luckInfluence: 4,
+          trialPower: 34,
+        },
+      ]),
+      isTrialPowerComparisonLoading: signal(false),
+      trialPowerComparisonError: signal(null),
       lab: {
         input: signal({
           luckValue: 12,
@@ -78,6 +117,10 @@ describe('LuckLabPage', () => {
     expect(text).toContain('Difficulty');
     expect(text).toContain('District');
     expect(text).toContain('Trial definition');
+    expect(text).toContain('Raw Luck to Trial Power');
+    expect(text).toContain('30 + 4 = 34');
+    expect(text).toContain('DB Trial Power preview.');
+    expect(text).toContain('Current sliders');
     expect(fixture.debugElement.queryAll(By.css('p-slider')).length).toBe(2);
     expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(4);
   });
