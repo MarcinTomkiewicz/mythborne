@@ -2,6 +2,7 @@ import {
   CombatLuckPreview,
   LuckChancePreview,
   LuckFormulaReference,
+  LuckGeneratedItemAffixPreview,
   LuckGeneratedItemPreview,
   LuckRewardRangePreview,
 } from '../domain/luck/luck.model';
@@ -221,18 +222,22 @@ export function mapRewardGeneratedItemLuckPreview(
     qualityBaseWeight: row.quality_base_weight,
     qualityAdjustedWeight: row.quality_adjusted_weight,
     qualityRollScore: row.quality_roll_score,
-    prefixAffixId: row.prefix_affix_id,
-    prefixKey: row.prefix_key,
-    prefixName: row.prefix_name,
-    prefixGoldValue: row.prefix_gold_value,
-    prefixChance: row.prefix_chance,
-    prefixRoll: row.prefix_roll,
-    suffixAffixId: row.suffix_affix_id,
-    suffixKey: row.suffix_key,
-    suffixName: row.suffix_name,
-    suffixGoldValue: row.suffix_gold_value,
-    suffixChance: row.suffix_chance,
-    suffixRoll: row.suffix_roll,
+    prefixAffix: mapGeneratedItemAffixPreview({
+      affixId: row.prefix_affix_id,
+      key: row.prefix_key,
+      name: row.prefix_name,
+      goldValue: row.prefix_gold_value,
+      chance: row.prefix_chance,
+      roll: row.prefix_roll,
+    }),
+    suffixAffix: mapGeneratedItemAffixPreview({
+      affixId: row.suffix_affix_id,
+      key: row.suffix_key,
+      name: row.suffix_name,
+      goldValue: row.suffix_gold_value,
+      chance: row.suffix_chance,
+      roll: row.suffix_roll,
+    }),
     generatedName: row.generated_name,
     drachmaValue: row.drachma_value,
     budgetBeforeQualityMultiplier: row.budget_before_quality_multiplier,
@@ -242,6 +247,26 @@ export function mapRewardGeneratedItemLuckPreview(
     formulaContextJson: row.formula_context_json,
     explanation: row.explanation,
   };
+}
+
+function mapGeneratedItemAffixPreview(input: {
+  affixId: string;
+  key: string;
+  name: string;
+  goldValue: number;
+  chance: number;
+  roll: number;
+}): LuckGeneratedItemAffixPreview | null {
+  return input.affixId || input.key || input.name
+    ? {
+        affixId: input.affixId,
+        key: input.key,
+        name: input.name,
+        goldValue: input.goldValue,
+        chance: input.chance,
+        roll: input.roll,
+      }
+    : null;
 }
 
 export function mapCombatLuckPreview(

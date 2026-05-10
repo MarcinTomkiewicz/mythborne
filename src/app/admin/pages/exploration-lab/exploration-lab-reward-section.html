@@ -51,16 +51,24 @@
           </td>
           <td>
             <div>
-              <span>{{ row.prefixName || 'No prefix' }}</span>
-              <span class="muted-text">
-                (chance {{ row.prefixChance | number: '1.0-2' }}%, roll {{ row.prefixRoll | number: '1.0-2' }})
-              </span>
+              @if (row.prefixAffix; as prefix) {
+                <span>{{ prefix.name }}</span>
+                <span class="muted-text">
+                  (chance {{ prefix.chance | number: '1.0-2' }}%, roll {{ prefix.roll | number: '1.0-2' }})
+                </span>
+              } @else {
+                <span>No prefix</span>
+              }
             </div>
             <div>
-              <span>{{ row.suffixName || 'No suffix' }}</span>
-              <span class="muted-text">
-                (chance {{ row.suffixChance | number: '1.0-2' }}%, roll {{ row.suffixRoll | number: '1.0-2' }})
-              </span>
+              @if (row.suffixAffix; as suffix) {
+                <span>{{ suffix.name }}</span>
+                <span class="muted-text">
+                  (chance {{ suffix.chance | number: '1.0-2' }}%, roll {{ suffix.roll | number: '1.0-2' }})
+                </span>
+              } @else {
+                <span>No suffix</span>
+              }
             </div>
           </td>
           <td>

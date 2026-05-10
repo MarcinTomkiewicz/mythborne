@@ -52,6 +52,26 @@ export interface TrialPowerRead {
   explanation: string;
 }
 
+export interface LuckLabInputState {
+  luckValue: number;
+  testedStatValue: number;
+  spiritualityValue: number;
+  difficultyKey: string | null;
+  districtCode: string | null;
+  testedStatKey: string | null;
+  trialDefinitionId: string | null;
+  rewardProfileId: string | null;
+  bucketProfileId: string | null;
+  previewCount: number;
+}
+
+export interface LuckInfluencePreview {
+  luckValue: number;
+  luckInfluence: number;
+  formula: LuckFormulaReference | null;
+  explanation: string;
+}
+
 export interface LuckChancePreview {
   surfaceKey: string;
   categoryKey: string;
@@ -119,18 +139,8 @@ export interface LuckGeneratedItemPreview {
   qualityBaseWeight: number;
   qualityAdjustedWeight: number;
   qualityRollScore: number;
-  prefixAffixId: string;
-  prefixKey: string;
-  prefixName: string;
-  prefixGoldValue: number;
-  prefixChance: number;
-  prefixRoll: number;
-  suffixAffixId: string;
-  suffixKey: string;
-  suffixName: string;
-  suffixGoldValue: number;
-  suffixChance: number;
-  suffixRoll: number;
+  prefixAffix: LuckGeneratedItemAffixPreview | null;
+  suffixAffix: LuckGeneratedItemAffixPreview | null;
   generatedName: string;
   drachmaValue: number;
   budgetBeforeQualityMultiplier: number;
@@ -139,6 +149,15 @@ export interface LuckGeneratedItemPreview {
   remainingBudgetAfterSuffix: number;
   formulaContextJson: Json;
   explanation: string;
+}
+
+export interface LuckGeneratedItemAffixPreview {
+  affixId: string;
+  key: string;
+  name: string;
+  goldValue: number;
+  chance: number;
+  roll: number;
 }
 
 export interface CombatLuckPreview {
@@ -153,4 +172,55 @@ export interface CombatLuckPreview {
   finalDamage: number;
   formulasJson: Json;
   explanation: string;
+}
+
+export type LuckLabSectionStatus = 'available' | 'unsupported';
+
+export interface LuckLabDropDistributionSummary {
+  status: LuckLabSectionStatus;
+  sampleSize: number;
+  bucketRows: LuckLabDistributionRow[];
+  qualityRows: LuckLabDistributionRow[];
+  prefixRows: LuckLabDistributionRow[];
+  suffixRows: LuckLabDistributionRow[];
+  reason: string;
+}
+
+export interface LuckLabDistributionRow {
+  key: string;
+  label: string;
+  count: number;
+  percent: number;
+}
+
+export interface LuckLabComparisonRow {
+  key: string;
+  label: string;
+  baselineValue: number | null;
+  previewValue: number | null;
+  delta: number | null;
+  unit: string;
+}
+
+export interface LuckLabExplanationRow {
+  surfaceKey: string;
+  label: string;
+  description: string;
+  helperText: string;
+  status: LuckLabSectionStatus;
+  reason: string;
+}
+
+export interface LuckLabPreviewResult {
+  input: LuckLabInputState;
+  surfaces: LuckRngSurface[];
+  luckInfluence: LuckInfluencePreview | null;
+  trialPower: TrialPowerRead | null;
+  chancePreviews: LuckChancePreview[];
+  combatPreview: CombatLuckPreview | null;
+  rewardRangePreviews: LuckRewardRangePreview[];
+  generatedItemPreviews: LuckGeneratedItemPreview[];
+  dropDistribution: LuckLabDropDistributionSummary;
+  comparisonRows: LuckLabComparisonRow[];
+  explanationRows: LuckLabExplanationRow[];
 }

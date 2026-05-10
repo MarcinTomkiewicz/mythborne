@@ -201,10 +201,15 @@ describe('luck-mappers', () => {
     expect(preview.qualityMultiplier).toBe(1.2);
     expect(preview.qualityBaseWeight).toBe(10);
     expect(preview.qualityAdjustedWeight).toBe(18);
-    expect(preview.prefixKey).toBe('fine');
-    expect(preview.prefixChance).toBe(25);
-    expect(preview.suffixKey).toBe('');
-    expect(preview.suffixChance).toBe(10);
+    expect(preview.prefixAffix).toEqual({
+      affixId: 'prefix-1',
+      key: 'fine',
+      name: 'Fine',
+      goldValue: 30,
+      chance: 25,
+      roll: 20,
+    });
+    expect(preview.suffixAffix).toBeNull();
     expect(preview.remainingBudgetAfterSuffix).toBe(20);
     expect(preview.generatedName).toBe('Fine Spear');
     expect('rarity' in preview).toBeFalse();
@@ -212,6 +217,96 @@ describe('luck-mappers', () => {
     expect(formulaContext['qualityFormula']).toBe(
       'reward_item_quality_adjusted_weight',
     );
+  });
+
+  it('normalizes generated item preview with no prefix and no suffix to null affixes', () => {
+    const preview = mapRewardGeneratedItemLuckPreview(
+      generatedItemPreviewRow({
+        prefix_affix_id: '',
+        prefix_key: '',
+        prefix_name: '',
+        suffix_affix_id: '',
+        suffix_key: '',
+        suffix_name: '',
+      }),
+    );
+
+    expect(preview.prefixAffix).toBeNull();
+    expect(preview.suffixAffix).toBeNull();
+  });
+
+  it('maps generated item preview with only prefix affix', () => {
+    const preview = mapRewardGeneratedItemLuckPreview(
+      generatedItemPreviewRow({
+        prefix_affix_id: 'prefix-1',
+        prefix_chance: 25,
+        prefix_gold_value: 30,
+        prefix_key: 'fine',
+        prefix_name: 'Fine',
+        prefix_roll: 20,
+        suffix_affix_id: '',
+        suffix_key: '',
+        suffix_name: '',
+      }),
+    );
+
+    expect(preview.prefixAffix).toEqual({
+      affixId: 'prefix-1',
+      key: 'fine',
+      name: 'Fine',
+      goldValue: 30,
+      chance: 25,
+      roll: 20,
+    });
+    expect(preview.suffixAffix).toBeNull();
+  });
+
+  it('maps generated item preview with only suffix affix', () => {
+    const preview = mapRewardGeneratedItemLuckPreview(
+      generatedItemPreviewRow({
+        prefix_affix_id: '',
+        prefix_key: '',
+        prefix_name: '',
+        suffix_affix_id: 'suffix-1',
+        suffix_chance: 10,
+        suffix_gold_value: 12,
+        suffix_key: 'dawn',
+        suffix_name: 'Dawn',
+        suffix_roll: 8,
+      }),
+    );
+
+    expect(preview.prefixAffix).toBeNull();
+    expect(preview.suffixAffix).toEqual({
+      affixId: 'suffix-1',
+      key: 'dawn',
+      name: 'Dawn',
+      goldValue: 12,
+      chance: 10,
+      roll: 8,
+    });
+  });
+
+  it('maps generated item preview with both affixes', () => {
+    const preview = mapRewardGeneratedItemLuckPreview(
+      generatedItemPreviewRow({
+        prefix_affix_id: 'prefix-1',
+        prefix_chance: 25,
+        prefix_gold_value: 30,
+        prefix_key: 'fine',
+        prefix_name: 'Fine',
+        prefix_roll: 20,
+        suffix_affix_id: 'suffix-1',
+        suffix_chance: 10,
+        suffix_gold_value: 12,
+        suffix_key: 'dawn',
+        suffix_name: 'Dawn',
+        suffix_roll: 8,
+      }),
+    );
+
+    expect(preview.prefixAffix?.key).toBe('fine');
+    expect(preview.suffixAffix?.key).toBe('dawn');
   });
 
   it('maps reward profile Luck preview as DB-owned range output', () => {
@@ -264,3 +359,50 @@ describe('luck-mappers', () => {
     });
   });
 });
+
+function generatedItemPreviewRow(
+  overrides: Partial<PreviewRewardGeneratedItemLuckRpcRow> = {},
+): PreviewRewardGeneratedItemLuckRpcRow {
+  return {
+    base_id: 'base-1',
+    base_key: 'spear',
+    base_name: 'Spear',
+    base_type_key: 'weapon',
+    base_value: 100,
+    bucket_index: 3,
+    bucket_profile_id: 'bucket-1',
+    bucket_profile_key: 'standard',
+    bucket_profile_name: 'Standard',
+    budget_before_quality_multiplier: 150,
+    drachma_value: 220,
+    explanation: 'Luck affected opportunity rolls.',
+    formula_context_json: { qualityFormula: 'reward_item_quality_adjusted_weight' },
+    generated_name: 'Fine Spear',
+    luck_influence: 4,
+    luck_value: 12,
+    prefix_affix_id: '',
+    prefix_chance: 0,
+    prefix_gold_value: 0,
+    prefix_key: '',
+    prefix_name: '',
+    prefix_roll: 0,
+    preview_index: 1,
+    quality_adjusted_weight: 18,
+    quality_base_weight: 10,
+    quality_key: 'rare',
+    quality_label: 'Rare',
+    quality_multiplier: 1.2,
+    quality_roll_score: 16,
+    remaining_budget_after_base: 50,
+    remaining_budget_after_prefix: 20,
+    remaining_budget_after_suffix: 20,
+    rolled_budget: 150,
+    suffix_affix_id: '',
+    suffix_chance: 0,
+    suffix_gold_value: 0,
+    suffix_key: '',
+    suffix_name: '',
+    suffix_roll: 0,
+    ...overrides,
+  };
+}

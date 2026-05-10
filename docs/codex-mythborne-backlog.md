@@ -9306,6 +9306,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Frontend compiles against regenerated types.
 - Missing preview/simulation contracts are reported as DB dependencies.
 
+**Status:** Accepted on 2026-05-10. Current generated types compile against the available Luck Lab preview contracts; dedicated drop-distribution simulation remains a DB dependency for later V distribution work.
+
 ---
 
 ## Task V1 — Luck Lab domain models and mappers
@@ -9335,6 +9337,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Raw Luck, Luck influence and Trial Power are distinct in models.
 - Mapper handles missing/unsupported preview sections safely.
 - Build and focused mapper tests pass.
+
+**Status:** Accepted on 2026-05-10. Added typed Luck Lab input/result, Luck influence, Trial Power, chance/combat/reward/generated-item, comparison, explanation and unsupported drop-distribution models and mappers. Generated item preview uses nullable `prefixAffix` / `suffixAffix` objects for optional affixes and normalizes absent affix data to `null`. Later UI tasks must not display `luck_influence` comparison rows as ordinary gain/loss because raw Luck and formula-derived Luck influence are different units.
 
 ---
 
