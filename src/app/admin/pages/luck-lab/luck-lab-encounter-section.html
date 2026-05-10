@@ -1,0 +1,150 @@
+<section class="mg-card p-lg w-100 flex-col gap-md">
+  <div class="flex-row-between-center flex-col-sm gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Encounter fallback</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Non-trial encounter chance</h3>
+      <p class="mb-0">
+        This preview is only for the encounter fallback after trial opportunity did not occur.
+        If both trial and encounter rolls fail, nothing is the deterministic fallback outcome,
+        not a separate random roll.
+      </p>
+    </div>
+
+    @if (page.isTrialChanceLoading()) {
+      <span class="card-legend">Refreshing</span>
+    }
+  </div>
+
+  @if (page.trialChanceError(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  <div class="grid-3 gap-md">
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="card-legend">Difficulty context</span>
+      <strong>{{ page.lab.input().difficultyKey ?? 'DB default' }}</strong>
+    </div>
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="card-legend">District context</span>
+      <strong>{{ page.lab.input().districtCode ?? 'DB default' }}</strong>
+    </div>
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="card-legend">Resource events</span>
+      <strong>Encounter subtype</strong>
+      <span>No separate resource RNG model is exposed here.</span>
+    </div>
+  </div>
+
+  <div class="grid-2 gap-md">
+    <article class="mg-surface-card p-md flex-col gap-sm">
+      <span class="card-legend">Final encounter chance</span>
+      @if (page.encounterPreview(); as encounter) {
+        <strong>
+          @if (encounter.chancePercent === null) {
+            N/A
+          } @else {
+            {{ encounter.chancePercent }}%
+          }
+        </strong>
+        <span>
+          Luck {{ encounter.luckValue }} -> influence {{ encounter.luckInfluence }}
+        </span>
+        <span>{{ encounter.explanation }}</span>
+        <span class="muted-text">
+          Formula: {{ encounter.formula?.formulaKey ?? 'Not returned' }}
+        </span>
+      } @else {
+        <span>Waiting for DB encounter fallback preview.</span>
+      }
+    </article>
+
+    <article class="mg-surface-card p-md flex-col gap-sm">
+      <span class="card-legend">DB chance breakdown</span>
+      <span>
+        Base chance:
+        @if (page.encounterContext().baseChance === null) {
+          N/A
+        } @else {
+          {{ page.encounterContext().baseChance }}%
+        }
+      </span>
+      <span>
+        Luck-influenced raw chance:
+        @if (page.encounterContext().rawChance === null) {
+          N/A
+        } @else {
+          {{ page.encounterContext().rawChance }}%
+        }
+      </span>
+      <span>
+        Cap:
+        @if (page.encounterContext().capPercent === null) {
+          N/A
+        } @else {
+          {{ page.encounterContext().capPercent }}%
+        }
+      </span>
+      <span>
+        Spirituality:
+        {{ page.encounterContext().spiritualityValue ?? 'N/A' }}
+      </span>
+    </article>
+  </div>
+
+  @if (page.encounterComparisonError(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  <p-table [value]="page.encounterComparisonRows()" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Preset</th>
+        <th>Luck</th>
+        <th>Influence</th>
+        <th>Base</th>
+        <th>Raw</th>
+        <th>Cap</th>
+        <th>Final</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td>{{ row.label }}</td>
+        <td>{{ row.luckValue ?? 'N/A' }}</td>
+        <td>{{ row.luckInfluence ?? 'N/A' }}</td>
+        <td>
+          @if (row.baseChance === null) {
+            N/A
+          } @else {
+            {{ row.baseChance }}%
+          }
+        </td>
+        <td>
+          @if (row.rawChance === null) {
+            N/A
+          } @else {
+            {{ row.rawChance }}%
+          }
+        </td>
+        <td>
+          @if (row.capPercent === null) {
+            N/A
+          } @else {
+            {{ row.capPercent }}%
+          }
+        </td>
+        <td>
+          @if (row.finalChance === null) {
+            N/A
+          } @else {
+            {{ row.finalChance }}%
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  @if (page.isEncounterComparisonLoading()) {
+    <p class="card-legend mb-0">Refreshing encounter comparison rows</p>
+  }
+</section>

@@ -12,6 +12,8 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
 import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
 import { LuckLabAutoResolveSection } from './luck-lab-auto-resolve-section';
 import { LuckLabComparisonState } from './luck-lab-comparison.state';
+import { LuckLabEncounterComparisonState } from './luck-lab-encounter-comparison.state';
+import { LuckLabEncounterSection } from './luck-lab-encounter-section';
 import { LuckLabPageState } from './luck-lab-page.state';
 import { LuckLabTrialChanceSection } from './luck-lab-trial-chance-section';
 import { LuckLabTrialPowerSection } from './luck-lab-trial-power-section';
@@ -28,6 +30,7 @@ import { LuckLabTrialPowerSection } from './luck-lab-trial-power-section';
     AdminServerSwitcher,
     AdminTagLinks,
     LuckLabAutoResolveSection,
+    LuckLabEncounterSection,
     LuckLabTrialChanceSection,
     LuckLabTrialPowerSection,
     LoadingOverlay,
@@ -36,6 +39,7 @@ import { LuckLabTrialPowerSection } from './luck-lab-trial-power-section';
     ExplorationDefinitionsState,
     LuckLabState,
     LuckLabComparisonState,
+    LuckLabEncounterComparisonState,
     LuckLabPageState,
   ],
   templateUrl: './luck-lab-page.html',

@@ -7,11 +7,13 @@ import { SelectOption } from '../../../core/types/select-option.types';
 import { DEFAULT_LUCK_LAB_INPUT } from '../../../core/utils/luck-lab-mappers';
 import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
 import { LuckLabComparisonState } from './luck-lab-comparison.state';
+import { LuckLabEncounterComparisonState } from './luck-lab-encounter-comparison.state';
 
 @Injectable()
 export class LuckLabPageState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly comparisons = inject(LuckLabComparisonState);
+  private readonly encounterComparison = inject(LuckLabEncounterComparisonState);
   readonly lab = inject(LuckLabState);
   readonly definitions = inject(ExplorationDefinitionsState);
   private isFormBound = false;
@@ -106,6 +108,21 @@ export class LuckLabPageState {
       rawChance: numberContextValue(context, 'rawAutoResolveSuccessChance'),
     };
   });
+  readonly encounterPreview = computed(() =>
+    this.lab.result().chancePreviews.find(
+      (preview) => preview.surfaceKey === 'non_trial_encounter',
+    ) ?? null,
+  );
+  readonly encounterContext = computed(() => {
+    const context = chanceContext(this.encounterPreview());
+
+    return {
+      baseChance: numberContextValue(context, 'baseChance'),
+      capPercent: numberContextValue(context, 'capPercent'),
+      rawChance: numberContextValue(context, 'rawEncounterChance'),
+      spiritualityValue: numberContextValue(context, 'spiritualityValue'),
+    };
+  });
   readonly isTrialChanceLoading = computed(
     () => this.lab.loadingBySection().chancePreviews,
   );
@@ -128,6 +145,11 @@ export class LuckLabPageState {
   readonly autoResolveComparisonError = computed(
     () => this.comparisons.autoResolveError(),
   );
+  readonly encounterComparisonRows = computed(() => this.encounterComparison.rows());
+  readonly isEncounterComparisonLoading = computed(() =>
+    this.encounterComparison.isLoading(),
+  );
+  readonly encounterComparisonError = computed(() => this.encounterComparison.error());
   readonly selectedTrialContextLabel = computed(() => {
     const trialDefinitionId = this.lab.input().trialDefinitionId;
 
@@ -150,6 +172,7 @@ export class LuckLabPageState {
     this.comparisons.reloadTrialPower(this.lab.input());
     this.comparisons.reloadTrialChance(this.lab.input());
     this.comparisons.reloadAutoResolve(this.lab.input());
+    this.encounterComparison.reload(this.lab.input());
   }
 
   private bindForm(): void {
@@ -165,6 +188,7 @@ export class LuckLabPageState {
         this.comparisons.scheduleTrialPower(this.lab.input());
         this.comparisons.scheduleTrialChance(this.lab.input());
         this.comparisons.scheduleAutoResolve(this.lab.input());
+        this.encounterComparison.schedule(this.lab.input());
       });
     this.form.controls.testedStatValue.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -180,6 +204,7 @@ export class LuckLabPageState {
         this.lab.setSpiritualityValue(value);
         this.comparisons.scheduleTrialChance(this.lab.input());
         this.comparisons.scheduleAutoResolve(this.lab.input());
+        this.encounterComparison.schedule(this.lab.input());
       });
     this.form.controls.difficultyKey.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -187,12 +212,14 @@ export class LuckLabPageState {
         this.lab.setDifficultyKey(value);
         this.comparisons.scheduleTrialChance(this.lab.input());
         this.comparisons.scheduleAutoResolve(this.lab.input());
+        this.encounterComparison.schedule(this.lab.input());
       });
     this.form.controls.districtCode.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
         this.lab.setDistrictCode(value);
         this.comparisons.scheduleTrialChance(this.lab.input());
+        this.encounterComparison.schedule(this.lab.input());
       });
     this.form.controls.testedStatKey.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))

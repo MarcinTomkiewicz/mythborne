@@ -7,6 +7,7 @@ import { LuckLabPreviews } from '../../../core/services/luck/luck-lab-previews';
 import { DEFAULT_LUCK_LAB_INPUT } from '../../../core/utils/luck-lab-mappers';
 import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
 import { LuckLabComparisonState } from './luck-lab-comparison.state';
+import { LuckLabEncounterComparisonState } from './luck-lab-encounter-comparison.state';
 import { LuckLabPageState } from './luck-lab-page.state';
 
 describe('LuckLabPageState', () => {
@@ -66,6 +67,12 @@ describe('LuckLabPageState', () => {
               manualChanceReference: 30,
               rawAutoResolveSuccessChance: 28,
             }),
+            chancePreview('non_trial_encounter', 14, null, {
+              baseChance: 8,
+              capPercent: 80,
+              rawEncounterChance: 14,
+              spiritualityValue: 0,
+            }),
           ],
       }),
     });
@@ -74,6 +81,7 @@ describe('LuckLabPageState', () => {
       'previewTrialOpportunity',
       'previewTrialManifestation',
       'previewChallengeAutoResolve',
+      'previewNonTrialEncounter',
     ]);
     previews.previewTrialPower.and.callFake((input) =>
       of([
@@ -141,6 +149,23 @@ describe('LuckLabPageState', () => {
         ),
       ]),
     );
+    previews.previewNonTrialEncounter.and.callFake((input) =>
+      of([
+        chancePreview(
+          'non_trial_encounter',
+          input.luckValue === 0 ? 9 : input.luckValue >= 50 ? 31 : 17,
+          null,
+          {
+            baseChance: 8,
+            capPercent: 80,
+            rawEncounterChance:
+              input.luckValue === 0 ? 9 : input.luckValue >= 50 ? 31 : 17,
+            spiritualityValue: input.spiritualityValue,
+          },
+          input.luckValue,
+        ),
+      ]),
+    );
     definitions = {
       loadDefinitions: jasmine.createSpy('loadDefinitions'),
       isLoadingDefinitions: signal(false),
@@ -161,6 +186,7 @@ describe('LuckLabPageState', () => {
       providers: [
         LuckLabPageState,
         LuckLabComparisonState,
+        LuckLabEncounterComparisonState,
         { provide: LuckLabState, useValue: lab },
         { provide: LuckLabPreviews, useValue: previews },
         { provide: ExplorationDefinitionsState, useValue: definitions },
@@ -329,6 +355,47 @@ describe('LuckLabPageState', () => {
       },
     ]);
   });
+
+  it('exposes DB encounter fallback values and comparison rows', () => {
+    state.load();
+
+    expect(state.encounterPreview()?.chancePercent).toBe(14);
+    expect(state.encounterContext()).toEqual({
+      baseChance: 8,
+      capPercent: 80,
+      rawChance: 14,
+      spiritualityValue: 0,
+    });
+    expect(state.encounterComparisonRows()).toEqual([
+      {
+        label: 'Luck 0',
+        luckValue: 0,
+        luckInfluence: 0,
+        baseChance: 8,
+        rawChance: 9,
+        finalChance: 9,
+        capPercent: 80,
+      },
+      {
+        label: 'Current Luck',
+        luckValue: 0,
+        luckInfluence: 0,
+        baseChance: 8,
+        rawChance: 9,
+        finalChance: 9,
+        capPercent: 80,
+      },
+      {
+        label: 'High Luck 50',
+        luckValue: 50,
+        luckInfluence: 6,
+        baseChance: 8,
+        rawChance: 31,
+        finalChance: 31,
+        capPercent: 80,
+      },
+    ]);
+  });
 });
 
 function chancePreview(
@@ -342,8 +409,8 @@ function chancePreview(
   return {
     surfaceKey,
     categoryKey: surfaceKey === 'trial_manifestation' ? 'trial' : 'exploration',
-    testedStatKey: surfaceKey === 'trial_opportunity' ? null : 'wisdom',
-    testedStatValue: surfaceKey === 'trial_opportunity' ? null : testedStatValue,
+    testedStatKey: trialStatSurface(surfaceKey) ? 'wisdom' : null,
+    testedStatValue: trialStatSurface(surfaceKey) ? testedStatValue : null,
     luckValue,
     luckInfluence: luckValue === 0 ? 0 : 6,
     trialPower,
@@ -357,4 +424,8 @@ function chancePreview(
     explanation: `DB ${surfaceKey} preview.`,
     contextJson: contextJson as never,
   };
+}
+
+function trialStatSurface(surfaceKey: string): boolean {
+  return surfaceKey === 'trial_manifestation' || surfaceKey === 'challenge_auto_resolve';
 }

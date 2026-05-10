@@ -28,6 +28,8 @@ describe('LuckLabPage', () => {
     | 'trialManifestationPreview'
     | 'autoResolvePreview'
     | 'autoResolveContext'
+    | 'encounterPreview'
+    | 'encounterContext'
     | 'isTrialChanceLoading'
     | 'trialChanceError'
     | 'trialChanceComparisonRows'
@@ -36,6 +38,9 @@ describe('LuckLabPage', () => {
     | 'autoResolveComparisonRows'
     | 'isAutoResolveComparisonLoading'
     | 'autoResolveComparisonError'
+    | 'encounterComparisonRows'
+    | 'isEncounterComparisonLoading'
+    | 'encounterComparisonError'
     | 'selectedTrialContextLabel'
     | 'selectedTrialContextId'
     | 'lab'
@@ -121,6 +126,19 @@ describe('LuckLabPage', () => {
         manualChanceReference: 42,
         rawChance: 34,
       }),
+      encounterPreview: signal({
+        chancePercent: 16,
+        luckValue: 12,
+        luckInfluence: 4,
+        formula: { formulaKey: 'non_trial_encounter_chance' },
+        explanation: 'DB encounter fallback preview.',
+      } as never),
+      encounterContext: signal({
+        baseChance: 8,
+        capPercent: 80,
+        rawChance: 16,
+        spiritualityValue: 4,
+      }),
       isTrialChanceLoading: signal(false),
       trialChanceError: signal(null),
       trialChanceComparisonRows: signal([
@@ -152,6 +170,19 @@ describe('LuckLabPage', () => {
       ]),
       isAutoResolveComparisonLoading: signal(false),
       autoResolveComparisonError: signal(null),
+      encounterComparisonRows: signal([
+        {
+          label: 'Current Luck',
+          luckValue: 12,
+          luckInfluence: 4,
+          baseChance: 8,
+          rawChance: 16,
+          finalChance: 16,
+          capPercent: 80,
+        },
+      ]),
+      isEncounterComparisonLoading: signal(false),
+      encounterComparisonError: signal(null),
       selectedTrialContextLabel: signal('Maze (maze)'),
       selectedTrialContextId: signal('trial-1'),
       lab: {
@@ -215,6 +246,11 @@ describe('LuckLabPage', () => {
     expect(text).toContain('DB auto-resolve preview.');
     expect(text).toContain('Manual chance reference');
     expect(text).toContain('24%');
+    expect(text).toContain('Encounter fallback');
+    expect(text).toContain('Non-trial encounter chance');
+    expect(text).toContain('DB encounter fallback preview.');
+    expect(text).toContain('nothing is the deterministic fallback outcome');
+    expect(text).toContain('Encounter subtype');
     expect(fixture.debugElement.queryAll(By.css('p-slider')).length).toBe(2);
     expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(4);
   });

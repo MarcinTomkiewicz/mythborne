@@ -9516,6 +9516,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Luck impact on encounter chance is visible.
 - No client-side encounter chance formula exists.
 
+**Status:** Accepted on 2026-05-10. Added a dedicated Encounter fallback panel that displays DB-owned non-trial encounter chance, base/raw/final/cap breakdown, Luck value/influence and Luck 0/current/high comparison rows through `LuckLabPreviews.previewNonTrialEncounter(...)`. The panel explains that `nothing` is the deterministic fallback after failed trial opportunity and encounter rolls, not a separate RNG roll. Resource events remain an encounter subtype with no separate resource-event RNG model. No local encounter formula/RNG/drop simulation, direct writes, generated type edits or gameplay authority were added. Verification passed with focused Luck Lab page/page-state/service-state/route specs, `npx tsc --noEmit`, `npm run build` with known warnings, static greps and prerender route output for `/admin/luck-lab`.
+
 ---
 
 ## Task V8 — Combat RNG preview panel
