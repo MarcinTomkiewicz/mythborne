@@ -189,6 +189,8 @@ export const RPC = {
   preview_exploration_luck_rng_chain: 'preview_exploration_luck_rng_chain',
   preview_non_trial_encounter_chance: 'preview_non_trial_encounter_chance',
   preview_reward_generated_item: 'preview_reward_generated_item',
+  preview_reward_generated_item_distribution_luck:
+    'preview_reward_generated_item_distribution_luck',
   preview_reward_generated_item_luck: 'preview_reward_generated_item_luck',
   preview_reward_profile: 'preview_reward_profile',
   preview_reward_profile_luck: 'preview_reward_profile_luck',

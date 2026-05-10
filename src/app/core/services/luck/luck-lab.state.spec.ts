@@ -4,14 +4,12 @@ import {
   CombatLuckPreview,
   LuckChancePreview,
   LuckGeneratedItemPreview,
+  LuckLabDropDistributionSummary,
   LuckRngSurface,
   LuckRewardRangePreview,
   TrialPowerRead,
 } from '../../domain/luck/luck.model';
-import {
-  DEFAULT_LUCK_LAB_INPUT,
-  createUnsupportedDropDistributionSummary,
-} from '../../utils/luck-lab-mappers';
+import { DEFAULT_LUCK_LAB_INPUT } from '../../utils/luck-lab-mappers';
 import { LuckLabPreviews } from './luck-lab-previews';
 import { LuckLabState } from './luck-lab.state';
 
@@ -127,10 +125,26 @@ describe('LuckLabState', () => {
     expect(state.errorsBySection().dropDistribution).toBeNull();
     expect(state.result().surfaces[0].contractKey).toBe('preview_trial_opportunity_curve');
     expect(state.result().trialPower?.trialPower).toBe(34);
-    expect(state.result().dropDistribution.status).toBe('unsupported');
+    expect(state.result().dropDistribution.status).toBe('available');
     expect(state.result().combatPreview).toBeNull();
     expect(state.result().rewardRangePreviews).toEqual([]);
     expect(state.result().generatedItemPreviews[0].generatedName).toBe('Blade');
+  });
+
+  it('keeps drop distribution failures scoped to the distribution section', () => {
+    previews.previewDropDistribution.and.returnValue(
+      throwError(() => new Error('Distribution preview failed.')),
+    );
+
+    state.reloadNow();
+
+    expect(state.errorsBySection().dropDistribution).toBe(
+      'Distribution preview failed.',
+    );
+    expect(state.errorsBySection().generatedItem).toBeNull();
+    expect(state.errorsBySection().rewardProfile).toBeNull();
+    expect(state.result().generatedItemPreviews[0].generatedName).toBe('Blade');
+    expect(state.result().rewardRangePreviews[0].rewardProfileId).toBe('reward-1');
   });
 
   it('keeps generated item failures separate from reward profile preview', () => {
@@ -159,9 +173,7 @@ describe('LuckLabState', () => {
     previews.previewCombat.and.returnValue(of([combatRow()]));
     previews.previewRewardProfile.and.returnValue(of([rewardRow()]));
     previews.previewGeneratedItem.and.returnValue(of([generatedItemRow()]));
-    previews.previewDropDistribution.and.returnValue(
-      of(createUnsupportedDropDistributionSummary()),
-    );
+    previews.previewDropDistribution.and.returnValue(of(dropDistributionSummary()));
   }
 });
 
@@ -324,6 +336,48 @@ function generatedItemRow(): LuckGeneratedItemPreview {
     remainingBudgetAfterSuffix: 60,
     formulaContextJson: {},
     explanation: 'DB preview.',
+  };
+}
+
+function dropDistributionSummary(): LuckLabDropDistributionSummary {
+  return {
+    status: 'available',
+    sampleSize: 100,
+    highValueThreshold: 40,
+    current: {
+      luckValue: 12,
+      luckInfluence: 4,
+      averageItemValue: 42,
+      medianItemValue: 40,
+      minItemValue: 20,
+      maxItemValue: 60,
+      prefixHitRate: 45,
+      suffixHitRate: 25,
+      highValueRate: 35,
+      outstandingRate: 8,
+    },
+    comparison: {
+      luckValue: 0,
+      luckInfluence: 0,
+      averageItemValue: 30,
+      medianItemValue: 30,
+      minItemValue: 10,
+      maxItemValue: 44,
+      prefixHitRate: 20,
+      suffixHitRate: 10,
+      highValueRate: 15,
+      outstandingRate: 5,
+    },
+    averageDelta: 12,
+    averageDeltaPercent: 40,
+    bucketRows: [{ key: 'weapon', label: 'Weapon', count: 60, percent: 60 }],
+    qualityRows: [{ key: 'rare', label: 'Rare', count: 40, percent: 40 }],
+    compareBucketRows: [{ key: 'weapon', label: 'Weapon', count: 100, percent: 100 }],
+    compareQualityRows: [{ key: 'common', label: 'Common', count: 100, percent: 100 }],
+    reason: 'DB distribution preview.',
+    explanation: 'DB distribution preview.',
+    formulaContextJson: {},
+    summaryJson: {},
   };
 }
 

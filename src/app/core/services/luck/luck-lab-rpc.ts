@@ -3,6 +3,7 @@ import {
   PreviewCombatLuckFormulaContextRpcArgs,
   PreviewExplorationLuckRngChainRpcArgs,
   PreviewNonTrialEncounterChanceLuckRpcArgs,
+  PreviewRewardGeneratedItemDistributionLuckRpcArgs,
   PreviewRewardGeneratedItemLuckRpcArgs,
   PreviewRewardProfileLuckRpcArgs,
   PreviewTrialManifestationChanceLuckRpcArgs,
@@ -111,6 +112,20 @@ export function toGeneratedItemArgs(
   addOptionalText(args, 'p_max_quality_key', input.maxQualityKey);
   addOptionalPositiveInteger(args, 'p_preview_count', input.previewCount);
   addOptionalNonNegativeInteger(args, 'p_luck_value', input.luckValue);
+
+  return args;
+}
+
+export function toGeneratedItemDistributionArgs(
+  input: LuckLabInputState,
+): PreviewRewardGeneratedItemDistributionLuckRpcArgs {
+  const args: PreviewRewardGeneratedItemDistributionLuckRpcArgs = {};
+
+  addOptionalText(args, 'p_bucket_profile_id', input.bucketProfileId);
+  addOptionalText(args, 'p_max_quality_key', input.maxQualityKey);
+  addOptionalPositiveInteger(args, 'p_roll_count', input.previewCount);
+  addOptionalNonNegativeInteger(args, 'p_luck_value', input.luckValue);
+  addOptionalNonNegativeInteger(args, 'p_compare_luck_value', 0);
 
   return args;
 }

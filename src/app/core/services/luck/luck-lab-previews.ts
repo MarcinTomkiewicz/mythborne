@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { forkJoin, map, Observable, of } from 'rxjs';
+import { forkJoin, map, Observable } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
   CombatLuckPreview,
@@ -19,6 +19,7 @@ import {
   PreviewCombatLuckFormulaContextRpcRow,
   PreviewExplorationLuckRngChainRpcRow,
   PreviewNonTrialEncounterChanceLuckRpcRow,
+  PreviewRewardGeneratedItemDistributionLuckRpcRow,
   PreviewRewardGeneratedItemLuckRpcRow,
   PreviewRewardProfileLuckRpcRow,
   PreviewTrialManifestationChanceLuckRpcRow,
@@ -33,6 +34,7 @@ import {
   mapCombatLuckPreview,
   mapExplorationLuckRngChainPreview,
   mapNonTrialEncounterChancePreview,
+  mapRewardGeneratedItemDistributionLuckPreview,
   mapRewardGeneratedItemLuckPreview,
   mapRewardProfileLuckPreview,
   mapTrialManifestationChancePreview,
@@ -42,6 +44,7 @@ import { Backend } from '../backend/backend';
 import {
   toChallengeAutoResolveArgs,
   toCombatArgs,
+  toGeneratedItemDistributionArgs,
   toExplorationRngChainArgs,
   toGeneratedItemArgs,
   toNonTrialEncounterArgs,
@@ -149,8 +152,23 @@ export class LuckLabPreviews {
       .pipe(map((rows) => rows.map(mapRewardGeneratedItemLuckPreview)));
   }
 
-  previewDropDistribution(): Observable<LuckLabDropDistributionSummary> {
-    return of(undefined).pipe(map(() => createUnsupportedDropDistributionSummary()));
+  previewDropDistribution(
+    input: LuckLabInputState,
+  ): Observable<LuckLabDropDistributionSummary> {
+    return this.backend
+      .rpc<PreviewRewardGeneratedItemDistributionLuckRpcRow[]>(
+        RPC.preview_reward_generated_item_distribution_luck,
+        toGeneratedItemDistributionArgs(input),
+      )
+      .pipe(
+        map((rows) =>
+          rows[0]
+            ? mapRewardGeneratedItemDistributionLuckPreview(rows[0])
+            : createUnsupportedDropDistributionSummary(
+                'DB drop distribution preview returned no rows.',
+              ),
+        ),
+      );
   }
 
   previewAll(input: LuckLabInputState): Observable<LuckLabPreviewResult> {
@@ -165,7 +183,7 @@ export class LuckLabPreviews {
       combatRows: this.previewCombat(input),
       rewardRangePreviews: this.previewRewardProfile(input),
       generatedItemPreviews: this.previewGeneratedItem(input),
-      dropDistribution: this.previewDropDistribution(),
+      dropDistribution: this.previewDropDistribution(input),
     }).pipe(
       map((result) =>
         mapLuckLabPreviewResult({

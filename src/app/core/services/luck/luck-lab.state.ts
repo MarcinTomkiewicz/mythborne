@@ -225,7 +225,7 @@ export class LuckLabState {
     this.runSection(
       token,
       'dropDistribution',
-      this.previews.previewDropDistribution(),
+      this.previews.previewDropDistribution(input),
       (dropDistribution) => this.patchResult(input, { dropDistribution }),
     );
   }

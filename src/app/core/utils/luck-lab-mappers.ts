@@ -52,11 +52,19 @@ export function createUnsupportedDropDistributionSummary(
   return {
     status: 'unsupported',
     sampleSize: 0,
+    highValueThreshold: null,
+    current: null,
+    comparison: null,
+    averageDelta: null,
+    averageDeltaPercent: null,
     bucketRows: [],
     qualityRows: [],
-    prefixRows: [],
-    suffixRows: [],
+    compareBucketRows: [],
+    compareQualityRows: [],
     reason,
+    explanation: reason,
+    formulaContextJson: {},
+    summaryJson: {},
   };
 }
 

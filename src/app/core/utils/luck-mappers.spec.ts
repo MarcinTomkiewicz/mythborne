@@ -2,6 +2,7 @@ import {
   GetLuckLabPreviewContractsRpcRow,
   PreviewLuckInfluenceAndTrialPowerRpcRow,
   PreviewRewardGeneratedItemLuckRpcRow,
+  PreviewRewardGeneratedItemDistributionLuckRpcRow,
   PreviewRewardProfileLuckRpcRow,
   PreviewTrialManifestationChanceLuckRpcRow,
 } from '../types/luck-rpc.types';
@@ -12,6 +13,7 @@ import {
 } from './luck-mappers';
 import {
   mapRewardGeneratedItemLuckPreview,
+  mapRewardGeneratedItemDistributionLuckPreview,
   mapRewardProfileLuckPreview,
   mapTrialManifestationChancePreview,
 } from './luck-preview-mappers';
@@ -307,6 +309,73 @@ describe('luck-mappers', () => {
 
     expect(preview.prefixAffix?.key).toBe('fine');
     expect(preview.suffixAffix?.key).toBe('dawn');
+  });
+
+  it('maps generated item distribution preview from DB-owned aggregate rows', () => {
+    const row: PreviewRewardGeneratedItemDistributionLuckRpcRow = {
+      average_delta: 12,
+      average_delta_percent: 40,
+      average_item_value: 42,
+      bucket_distribution_json: [
+        { key: 'weapon', label: 'Weapon', count: 6, percent: 60 },
+        { key: 'armor', label: 'Armor', count: 4, percent: 40 },
+      ],
+      change_set_id: '',
+      compare_average_item_value: 30,
+      compare_bucket_distribution_json: [
+        { key: 'weapon', label: 'Weapon', count: 10, percent: 100 },
+      ],
+      compare_high_value_rate: 15,
+      compare_luck_influence: 0,
+      compare_luck_value: 0,
+      compare_max_item_value: 44,
+      compare_median_item_value: 30,
+      compare_min_item_value: 10,
+      compare_outstanding_rate: 5,
+      compare_prefix_hit_rate: 20,
+      compare_quality_distribution_json: [
+        { key: 'common', label: 'Common', count: 10, percent: 100 },
+      ],
+      compare_suffix_hit_rate: 10,
+      explanation: 'DB-owned distribution simulation.',
+      formula_context_json: { formulaKey: 'reward_distribution' },
+      high_value_rate: 35,
+      high_value_threshold: 40,
+      luck_influence: 4,
+      luck_value: 12,
+      max_item_value: 60,
+      median_item_value: 41,
+      min_item_value: 20,
+      outstanding_rate: 8,
+      prefix_hit_rate: 45,
+      quality_distribution_json: [
+        { key: 'rare', label: 'Rare', count: 4, percent: 40 },
+        { key: 'common', label: 'Common', count: 6, percent: 60 },
+      ],
+      roll_count: 10,
+      suffix_hit_rate: 25,
+      summary_json: { source: 'db' },
+    };
+
+    const preview = mapRewardGeneratedItemDistributionLuckPreview(row);
+
+    expect(preview.status).toBe('available');
+    expect(preview.sampleSize).toBe(10);
+    expect(preview.current?.luckValue).toBe(12);
+    expect(preview.current?.averageItemValue).toBe(42);
+    expect(preview.current?.prefixHitRate).toBe(45);
+    expect(preview.comparison?.luckValue).toBe(0);
+    expect(preview.averageDelta).toBe(12);
+    expect(preview.averageDeltaPercent).toBe(40);
+    expect(preview.bucketRows[0]).toEqual({
+      key: 'weapon',
+      label: 'Weapon',
+      count: 6,
+      percent: 60,
+    });
+    expect(preview.qualityRows[0].key).toBe('rare');
+    expect(preview.compareQualityRows[0].key).toBe('common');
+    expect(preview.reason).toBe('DB-owned distribution simulation.');
   });
 
   it('maps reward profile Luck preview as DB-owned range output', () => {

@@ -39,6 +39,8 @@ describe('LuckLabPreviews', () => {
           return of([rewardProfileRow()]);
         case RPC.preview_reward_generated_item_luck:
           return of([generatedItemRow()]);
+        case RPC.preview_reward_generated_item_distribution_luck:
+          return of([distributionRow()]);
         default:
           return of([]);
       }
@@ -100,6 +102,16 @@ describe('LuckLabPreviews', () => {
       p_preview_count: 1,
       p_luck_value: 12,
     });
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.preview_reward_generated_item_distribution_luck,
+      {
+        p_bucket_profile_id: 'bucket-1',
+        p_max_quality_key: 'rare',
+        p_roll_count: 2,
+        p_luck_value: 12,
+        p_compare_luck_value: 0,
+      },
+    );
     expect(result.surfaces.length).toBe(1);
     expect(result.luckInfluence?.luckInfluence).toBe(4);
     expect(result.trialPower?.trialPower).toBe(34);
@@ -112,7 +124,37 @@ describe('LuckLabPreviews', () => {
     expect(result.combatPreview?.initiativeScore).toBe(10);
     expect(result.combatPreview?.rolledDamage).toBe(20);
     expect(result.generatedItemPreviews[0].prefixAffix?.key).toBe('sharp');
-    expect(result.dropDistribution.status).toBe('unsupported');
+    expect(result.dropDistribution.status).toBe('available');
+    expect(result.dropDistribution.current?.averageItemValue).toBe(42);
+    expect(result.dropDistribution.comparison?.luckValue).toBe(0);
+    expect(result.dropDistribution.bucketRows[0].label).toBe('Weapon');
+  });
+
+  it('delegates drop distribution to the DB preview RPC without local rolls', async () => {
+    const random = spyOn(Math, 'random').and.returnValue(0.5);
+
+    const result = await firstValueFrom(
+      service.previewDropDistribution({
+        ...DEFAULT_LUCK_LAB_INPUT,
+        bucketProfileId: 'bucket-1',
+        maxQualityKey: 'rare',
+        luckValue: 12,
+        previewCount: 25,
+      }),
+    );
+
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.preview_reward_generated_item_distribution_luck,
+      {
+        p_bucket_profile_id: 'bucket-1',
+        p_max_quality_key: 'rare',
+        p_roll_count: 25,
+        p_luck_value: 12,
+        p_compare_luck_value: 0,
+      },
+    );
+    expect(random).not.toHaveBeenCalled();
+    expect(result.sampleSize).toBe(2);
   });
 });
 
@@ -374,5 +416,52 @@ function generatedItemRow() {
     suffix_key: '',
     suffix_name: '',
     suffix_roll: 0,
+  } as never;
+}
+
+function distributionRow() {
+  return {
+    average_delta: 12,
+    average_delta_percent: 40,
+    average_item_value: 42,
+    bucket_distribution_json: [
+      { key: 'weapon', label: 'Weapon', count: 1, percent: 50 },
+      { key: 'armor', label: 'Armor', count: 1, percent: 50 },
+    ],
+    change_set_id: '',
+    compare_average_item_value: 30,
+    compare_bucket_distribution_json: [
+      { key: 'weapon', label: 'Weapon', count: 2, percent: 100 },
+    ],
+    compare_high_value_rate: 10,
+    compare_luck_influence: 0,
+    compare_luck_value: 0,
+    compare_max_item_value: 44,
+    compare_median_item_value: 30,
+    compare_min_item_value: 12,
+    compare_outstanding_rate: 5,
+    compare_prefix_hit_rate: 20,
+    compare_quality_distribution_json: [
+      { key: 'common', label: 'Common', count: 2, percent: 100 },
+    ],
+    compare_suffix_hit_rate: 10,
+    explanation: 'DB distribution preview.',
+    formula_context_json: {},
+    high_value_rate: 25,
+    high_value_threshold: 40,
+    luck_influence: 4,
+    luck_value: 12,
+    max_item_value: 60,
+    median_item_value: 41,
+    min_item_value: 20,
+    outstanding_rate: 8,
+    prefix_hit_rate: 35,
+    quality_distribution_json: [
+      { key: 'rare', label: 'Rare', count: 1, percent: 50 },
+      { key: 'common', label: 'Common', count: 1, percent: 50 },
+    ],
+    roll_count: 2,
+    suffix_hit_rate: 15,
+    summary_json: {},
   } as never;
 }

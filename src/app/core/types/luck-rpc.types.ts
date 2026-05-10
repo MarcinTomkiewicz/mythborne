@@ -59,6 +59,11 @@ export type PreviewRewardGeneratedItemLuckRpcRow =
 export type PreviewRewardGeneratedItemLuckRpcArgs =
   Rpc<'preview_reward_generated_item_luck'>['Args'];
 
+export type PreviewRewardGeneratedItemDistributionLuckRpcRow =
+  Rpc<'preview_reward_generated_item_distribution_luck'>['Returns'][number];
+export type PreviewRewardGeneratedItemDistributionLuckRpcArgs =
+  Rpc<'preview_reward_generated_item_distribution_luck'>['Args'];
+
 export type PreviewCombatLuckFormulaContextRpcRow =
   Rpc<'preview_combat_luck_formula_context'>['Returns'][number];
 export type PreviewCombatLuckFormulaContextRpcArgs =

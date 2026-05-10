@@ -1,0 +1,171 @@
+<section class="mg-card p-lg w-100 flex-col gap-md">
+  <div class="flex-row-between-center flex-col-sm gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Drop distribution</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        Generated item distribution preview
+      </h3>
+      <p class="mb-0">
+        This panel uses the DB-owned distribution simulation RPC. Angular only renders returned
+        summary rows and does not run browser-side rolls or reconstruct item RNG. The comparison
+        is Luck 0 vs current Luck.
+      </p>
+    </div>
+
+    @if (section.isLoading()) {
+      <span class="card-legend">Refreshing</span>
+    }
+  </div>
+
+  @if (section.error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  <div class="grid-3 gap-md">
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="card-legend">Selected bucket</span>
+      <strong>{{ section.selectedBucketLabel() }}</strong>
+    </div>
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="card-legend">Maximum quality</span>
+      <strong>{{ section.selectedMaxQualityLabel() }}</strong>
+    </div>
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="card-legend">Roll count</span>
+      <strong>{{ section.summary().sampleSize }}</strong>
+      <span>Simulation workload is owned by the DB preview RPC.</span>
+    </div>
+  </div>
+
+  @if (section.summary().status === 'available') {
+    <div class="grid-3 gap-md">
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">Current Luck</span>
+        <strong>{{ section.summary().current?.luckValue ?? 'N/A' }}</strong>
+        <span>Influence {{ section.summary().current?.luckInfluence ?? 'N/A' }}</span>
+      </article>
+
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">Luck 0 comparison</span>
+        <strong>{{ section.summary().comparison?.luckValue ?? 'N/A' }}</strong>
+        <span>Influence {{ section.summary().comparison?.luckInfluence ?? 'N/A' }}</span>
+      </article>
+
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">Average delta</span>
+        <strong>
+          {{ section.valueText(section.summary().averageDelta, 'drachma') }}
+        </strong>
+        <span>{{ section.percentText(section.summary().averageDeltaPercent) }}</span>
+        <span>High-value threshold {{ section.summary().highValueThreshold ?? 'N/A' }}</span>
+      </article>
+    </div>
+
+    <p-table [value]="section.metricRows()" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Metric</th>
+          <th>Current Luck</th>
+          <th>Compare Luck</th>
+          <th>Delta</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>{{ row.label }}</td>
+          <td>{{ section.valueText(row.currentValue, row.unit) }}</td>
+          <td>{{ section.valueText(row.compareValue, row.unit) }}</td>
+          <td>{{ section.valueText(row.delta, row.unit) }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    <div class="grid-2 gap-md">
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">Bucket distribution</span>
+        <p-table [value]="section.summary().bucketRows" styleClass="p-datatable-sm">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Bucket</th>
+              <th>Count</th>
+              <th>Percent</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td>{{ section.distributionLabel(row) }}</td>
+              <td>{{ row.count }}</td>
+              <td>{{ row.percent }}%</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </article>
+
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">Quality distribution</span>
+        <p-table [value]="section.summary().qualityRows" styleClass="p-datatable-sm">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Quality</th>
+              <th>Count</th>
+              <th>Percent</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td>{{ section.distributionLabel(row) }}</td>
+              <td>{{ row.count }}</td>
+              <td>{{ row.percent }}%</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </article>
+    </div>
+
+    <div class="grid-2 gap-md">
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">Compare bucket distribution</span>
+        <p-table [value]="section.summary().compareBucketRows" styleClass="p-datatable-sm">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Bucket</th>
+              <th>Count</th>
+              <th>Percent</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td>{{ section.distributionLabel(row) }}</td>
+              <td>{{ row.count }}</td>
+              <td>{{ row.percent }}%</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </article>
+
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">Compare quality distribution</span>
+        <p-table [value]="section.summary().compareQualityRows" styleClass="p-datatable-sm">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Quality</th>
+              <th>Count</th>
+              <th>Percent</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td>{{ section.distributionLabel(row) }}</td>
+              <td>{{ row.count }}</td>
+              <td>{{ row.percent }}%</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </article>
+    </div>
+
+    <p class="mb-0">{{ section.summary().explanation }}</p>
+  } @else {
+    <p-message severity="warn">{{ section.summary().reason }}</p-message>
+  }
+</section>

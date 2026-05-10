@@ -4,6 +4,9 @@ import {
   LuckFormulaReference,
   LuckGeneratedItemAffixPreview,
   LuckGeneratedItemPreview,
+  LuckLabDistributionRow,
+  LuckLabDropDistributionMetrics,
+  LuckLabDropDistributionSummary,
   LuckRewardRangePreview,
 } from '../domain/luck/luck.model';
 import { Json } from '../types/database.types';
@@ -12,6 +15,7 @@ import {
   PreviewCombatLuckFormulaContextRpcRow,
   PreviewExplorationLuckRngChainRpcRow,
   PreviewNonTrialEncounterChanceLuckRpcRow,
+  PreviewRewardGeneratedItemDistributionLuckRpcRow,
   PreviewRewardGeneratedItemLuckRpcRow,
   PreviewRewardProfileLuckRpcRow,
   PreviewTrialManifestationChanceLuckRpcRow,
@@ -249,6 +253,50 @@ export function mapRewardGeneratedItemLuckPreview(
   };
 }
 
+export function mapRewardGeneratedItemDistributionLuckPreview(
+  row: PreviewRewardGeneratedItemDistributionLuckRpcRow,
+): LuckLabDropDistributionSummary {
+  return {
+    status: 'available',
+    sampleSize: row.roll_count,
+    highValueThreshold: row.high_value_threshold,
+    current: {
+      luckValue: row.luck_value,
+      luckInfluence: row.luck_influence,
+      averageItemValue: row.average_item_value,
+      medianItemValue: row.median_item_value,
+      minItemValue: row.min_item_value,
+      maxItemValue: row.max_item_value,
+      prefixHitRate: row.prefix_hit_rate,
+      suffixHitRate: row.suffix_hit_rate,
+      highValueRate: row.high_value_rate,
+      outstandingRate: row.outstanding_rate,
+    },
+    comparison: {
+      luckValue: row.compare_luck_value,
+      luckInfluence: row.compare_luck_influence,
+      averageItemValue: row.compare_average_item_value,
+      medianItemValue: row.compare_median_item_value,
+      minItemValue: row.compare_min_item_value,
+      maxItemValue: row.compare_max_item_value,
+      prefixHitRate: row.compare_prefix_hit_rate,
+      suffixHitRate: row.compare_suffix_hit_rate,
+      highValueRate: row.compare_high_value_rate,
+      outstandingRate: row.compare_outstanding_rate,
+    },
+    averageDelta: row.average_delta,
+    averageDeltaPercent: row.average_delta_percent,
+    bucketRows: mapDistributionRows(row.bucket_distribution_json),
+    qualityRows: mapDistributionRows(row.quality_distribution_json),
+    compareBucketRows: mapDistributionRows(row.compare_bucket_distribution_json),
+    compareQualityRows: mapDistributionRows(row.compare_quality_distribution_json),
+    reason: row.explanation,
+    explanation: row.explanation,
+    formulaContextJson: jsonValue(row.formula_context_json),
+    summaryJson: jsonValue(row.summary_json),
+  };
+}
+
 function mapGeneratedItemAffixPreview(input: {
   affixId: string;
   key: string;
@@ -267,6 +315,47 @@ function mapGeneratedItemAffixPreview(input: {
         roll: input.roll,
       }
     : null;
+}
+
+function mapDistributionRows(value: Json): LuckLabDistributionRow[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(mapDistributionRow)
+    .filter((row): row is LuckLabDistributionRow => row !== null);
+}
+
+function mapDistributionRow(value: unknown): LuckLabDistributionRow | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const key = textField(value, 'key');
+  const label = textField(value, 'label');
+  const count = numberField(value, 'count');
+  const percent = numberField(value, 'percent');
+
+  return key !== null && label !== null && count !== null && percent !== null
+    ? { key, label, count, percent }
+    : null;
+}
+
+function textField(record: Record<string, unknown>, key: string): string | null {
+  const value = record[key];
+
+  return typeof value === 'string' ? value : null;
+}
+
+function numberField(record: Record<string, unknown>, key: string): number | null {
+  const value = record[key];
+
+  return typeof value === 'number' ? value : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function mapCombatLuckPreview(

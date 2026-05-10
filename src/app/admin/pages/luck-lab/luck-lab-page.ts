@@ -13,6 +13,7 @@ import { ExplorationDefinitionsState } from '../exploration-shared/exploration-d
 import { LuckLabAutoResolveSection } from './luck-lab-auto-resolve-section';
 import { LuckLabCombatSection } from './luck-lab-combat-section';
 import { LuckLabComparisonState } from './luck-lab-comparison.state';
+import { LuckLabDropDistributionSection } from './luck-lab-drop-distribution-section';
 import { LuckLabEncounterComparisonState } from './luck-lab-encounter-comparison.state';
 import { LuckLabEncounterSection } from './luck-lab-encounter-section';
 import { LuckLabGeneratedItemSection } from './luck-lab-generated-item-section';
@@ -33,6 +34,7 @@ import { LuckLabTrialPowerSection } from './luck-lab-trial-power-section';
     AdminTagLinks,
     LuckLabAutoResolveSection,
     LuckLabCombatSection,
+    LuckLabDropDistributionSection,
     LuckLabEncounterSection,
     LuckLabGeneratedItemSection,
     LuckLabTrialChanceSection,

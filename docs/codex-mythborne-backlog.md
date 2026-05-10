@@ -9612,6 +9612,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Distribution view prevents misleading conclusions from one roll.
 - Simulation workload is not implemented as uncontrolled browser loops.
 
+**Status:** Accepted on 2026-05-10. Added a dedicated Drop distribution panel over DB-owned `preview_reward_generated_item_distribution_luck(...)`, with typed generated RPC args/row aliases, a domain summary model and mapper, and `LuckLabPreviews.previewDropDistribution(...)` replacing the former unsupported path when the RPC returns rows. The panel shows roll count, average/median/min/max value, bucket and quality distributions for current Luck and Luck 0 comparison, prefix/suffix hit rates, high-value/outstanding rates, average delta and DB explanation while stating that Angular only renders DB-returned summary rows and does not run browser-side rolls or reconstruct item RNG. Loading/error are scoped to `dropDistribution`. Cleanup reused `createUnsupportedDropDistributionSummary(...)` for no-row fallback, removed unused `prefixRows` / `suffixRows`, and extracted shared bucket/quality option labels for item preview panels. No generated type edits, direct writes, rarity flags, local formula/RNG/drop simulation or durable item/reward mutation were added. Verification passed with focused Luck Lab specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps. Manual smoke remains pending for `/admin/luck-lab` Luck/bucket/max-quality changes and distribution refresh.
+
 ---
 
 ## Task V11 — Luck comparison presets

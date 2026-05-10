@@ -196,11 +196,32 @@ export type LuckLabSectionStatus = 'available' | 'unsupported';
 export interface LuckLabDropDistributionSummary {
   status: LuckLabSectionStatus;
   sampleSize: number;
+  highValueThreshold: number | null;
+  current: LuckLabDropDistributionMetrics | null;
+  comparison: LuckLabDropDistributionMetrics | null;
+  averageDelta: number | null;
+  averageDeltaPercent: number | null;
   bucketRows: LuckLabDistributionRow[];
   qualityRows: LuckLabDistributionRow[];
-  prefixRows: LuckLabDistributionRow[];
-  suffixRows: LuckLabDistributionRow[];
+  compareBucketRows: LuckLabDistributionRow[];
+  compareQualityRows: LuckLabDistributionRow[];
   reason: string;
+  explanation: string;
+  formulaContextJson: Json;
+  summaryJson: Json;
+}
+
+export interface LuckLabDropDistributionMetrics {
+  luckValue: number;
+  luckInfluence: number;
+  averageItemValue: number;
+  medianItemValue: number;
+  minItemValue: number;
+  maxItemValue: number;
+  prefixHitRate: number;
+  suffixHitRate: number;
+  highValueRate: number;
+  outstandingRate: number;
 }
 
 export interface LuckLabDistributionRow {

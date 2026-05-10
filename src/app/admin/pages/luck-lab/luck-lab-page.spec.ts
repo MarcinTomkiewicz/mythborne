@@ -4,6 +4,8 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { LuckLabCombatSection } from './luck-lab-combat-section';
 import { LuckLabCombatSectionState } from './luck-lab-combat-section.state';
+import { LuckLabDropDistributionSection } from './luck-lab-drop-distribution-section';
+import { LuckLabDropDistributionSectionState } from './luck-lab-drop-distribution-section.state';
 import { LuckLabGeneratedItemSection } from './luck-lab-generated-item-section';
 import { LuckLabGeneratedItemSectionState } from './luck-lab-generated-item-section.state';
 import { LuckLabPage } from './luck-lab-page';
@@ -71,6 +73,18 @@ describe('LuckLabPage', () => {
     | 'selectedBucketLabel'
     | 'selectedMaxQualityLabel'
     | 'budgetRows'
+  >;
+  let dropDistributionSectionState: Pick<
+    LuckLabDropDistributionSectionState,
+    | 'summary'
+    | 'isLoading'
+    | 'error'
+    | 'selectedBucketLabel'
+    | 'selectedMaxQualityLabel'
+    | 'metricRows'
+    | 'valueText'
+    | 'percentText'
+    | 'distributionLabel'
   >;
 
   beforeEach(async () => {
@@ -346,6 +360,84 @@ describe('LuckLabPage', () => {
         { label: 'Remaining after suffix', value: 50 },
       ]),
     };
+    dropDistributionSectionState = {
+      summary: signal({
+        status: 'available',
+        sampleSize: 100,
+        highValueThreshold: 40,
+        current: {
+          luckValue: 12,
+          luckInfluence: 4,
+          averageItemValue: 42,
+          medianItemValue: 40,
+          minItemValue: 20,
+          maxItemValue: 60,
+          prefixHitRate: 45,
+          suffixHitRate: 25,
+          highValueRate: 35,
+          outstandingRate: 8,
+        },
+        comparison: {
+          luckValue: 0,
+          luckInfluence: 0,
+          averageItemValue: 30,
+          medianItemValue: 30,
+          minItemValue: 10,
+          maxItemValue: 44,
+          prefixHitRate: 20,
+          suffixHitRate: 10,
+          highValueRate: 15,
+          outstandingRate: 5,
+        },
+        averageDelta: 12,
+        averageDeltaPercent: 40,
+        bucketRows: [{ key: 'weapon', label: 'Weapon', count: 60, percent: 60 }],
+        qualityRows: [{ key: 'rare', label: 'Rare', count: 40, percent: 40 }],
+        compareBucketRows: [
+          { key: 'weapon', label: 'Weapon', count: 100, percent: 100 },
+        ],
+        compareQualityRows: [
+          { key: 'common', label: 'Common', count: 100, percent: 100 },
+        ],
+        reason: 'DB distribution preview.',
+        explanation: 'DB distribution preview.',
+        formulaContextJson: {},
+        summaryJson: {},
+      }),
+      isLoading: signal(false),
+      error: signal(null),
+      selectedBucketLabel: signal('Default drops (default-drops)'),
+      selectedMaxQualityLabel: signal('Rare (rare)'),
+      metricRows: signal([
+        {
+          label: 'Average value',
+          currentValue: 42,
+          compareValue: 30,
+          delta: 12,
+          unit: 'drachma',
+        },
+        {
+          label: 'Prefix hit rate',
+          currentValue: 45,
+          compareValue: 20,
+          delta: 25,
+          unit: 'percent',
+        },
+      ]),
+      valueText: (value, unit) => {
+        if (value === null) {
+          return 'N/A';
+        }
+
+        return unit === 'percent'
+          ? `${value}%`
+          : unit === 'drachma'
+            ? `${value} drachma`
+            : `${value}`;
+      },
+      percentText: (value) => value === null ? 'N/A' : `${value}%`,
+      distributionLabel: (row) => `${row.label} (${row.key})`,
+    };
 
     await TestBed.configureTestingModule({
       imports: [LuckLabPage],
@@ -368,6 +460,16 @@ describe('LuckLabPage', () => {
             {
               provide: LuckLabGeneratedItemSectionState,
               useValue: generatedItemSectionState,
+            },
+          ],
+        },
+      })
+      .overrideComponent(LuckLabDropDistributionSection, {
+        set: {
+          providers: [
+            {
+              provide: LuckLabDropDistributionSectionState,
+              useValue: dropDistributionSectionState,
             },
           ],
         },
@@ -435,6 +537,17 @@ describe('LuckLabPage', () => {
     expect(text).toContain('Final value 30 drachma');
     expect(text).toContain('No suffix');
     expect(text).toContain('Remaining after suffix');
+    expect(text).toContain('Drop distribution');
+    expect(text).toContain('Generated item distribution preview');
+    expect(text).toContain('DB-owned distribution simulation RPC');
+    expect(text).toContain('Simulation workload is owned by the DB preview RPC');
+    expect(text).toContain('Average value');
+    expect(text).toContain('42 drachma');
+    expect(text).toContain('30 drachma');
+    expect(text).toContain('Prefix hit rate');
+    expect(text).toContain('Weapon (weapon)');
+    expect(text).toContain('Rare (rare)');
+    expect(text).toContain('DB distribution preview.');
     expect(fixture.debugElement.queryAll(By.css('p-slider')).length).toBe(2);
     expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(6);
   });
