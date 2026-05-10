@@ -102,8 +102,9 @@ describe('ExplorationEncountersPageState', () => {
   it('loads encounter definitions and readable DB-backed labels', () => {
     state.loadInitialData();
 
-    expect(state.encounterOptions()[0].label).toBe('Bandit ambush (bandit-ambush)');
+    expect(state.encounterOptions()[0].label).toBe('Bandit ambush (bandit-ambush) - Runtime-ready');
     expect(state.selectedEncounter()?.minigameLabel).toBe('Combat (combat)');
+    expect(state.selectedEncounter()?.readiness?.statusKey).toBe('ready');
     expect(state.selectedEncounter()?.difficultyRangeLabel).toBe('Easy+');
     expect(state.combatCandidates()[0].targetLabel).toBe('Bandit (bandit)');
     expect(state.rewardAssignments()[0].rewardProfileLabel).toBe('Encounter reward (encounter-reward)');
@@ -131,6 +132,45 @@ describe('ExplorationEncountersPageState', () => {
     expect(state.missingUiMetadataGaps()).toContain(
       'encounter_configurator_field/reward_profile',
     );
+  });
+
+  it('exposes DB-owned encounter readiness summaries and blocking reason labels', () => {
+    const data = adminData();
+    admin.getAdminData.and.returnValue(of({
+      ...data,
+      encounterReadiness: [
+        {
+          ...data.encounterReadiness[0],
+          isReady: false,
+          statusKey: 'incomplete',
+          combatCandidateCount: 0,
+          rewardAssignmentCount: 0,
+          blockingReasonCount: 1,
+          reasons: [
+            {
+              key: 'missing_combat_candidate',
+              label: 'Missing combat candidate',
+              description: 'Add an active candidate.',
+              severity: 'error',
+              isBlocking: true,
+              metadataJson: {},
+            },
+          ],
+        },
+      ],
+    }));
+
+    state.loadInitialData();
+
+    const readiness = state.selectedEncounter()?.readiness ?? null;
+
+    expect(state.readinessStatusLabel(readiness)).toBe('Incomplete');
+    expect(state.readinessSeverity(readiness)).toBe('warn');
+    expect(state.readinessSummary(readiness)).toContain('not selected by normal runtime');
+    expect(state.readinessReasonLabels(readiness)).toEqual([
+      'Missing combat candidate - Add an active candidate. - blocking',
+    ]);
+    expect(state.encounterOptions()[0].label).toContain('Incomplete');
   });
 
   it('generates keys from labels for new encounters and keeps existing keys stable', () => {
@@ -1036,6 +1076,24 @@ function adminData(
         metadataJson: {},
         createdAt: '2026-05-01T10:00:00.000Z',
         updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
+    encounterReadiness: [
+      {
+        definitionKind: 'encounter',
+        definitionId: encounterId,
+        definitionKey: 'bandit-ambush',
+        isActive: true,
+        isReady: true,
+        statusKey: 'ready',
+        minigameKey,
+        encounterKind,
+        combatCandidateCount: encounterKind === 'combat' ? 1 : 0,
+        rewardAssignmentCount: 1,
+        effectPayloadCount: encounterKind === 'buff' || encounterKind === 'debuff' ? 1 : 0,
+        blockingReasonCount: 0,
+        reasons: [],
+        metadataJson: {},
       },
     ],
     rewardAssignmentMatchKinds: [

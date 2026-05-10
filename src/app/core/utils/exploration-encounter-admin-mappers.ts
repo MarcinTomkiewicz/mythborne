@@ -51,10 +51,12 @@ export function toEncounterDefinitionAdminView(
   const rewardProfile = encounter.rewardProfileId
     ? data.rewardProfiles.find((entry) => entry.id === encounter.rewardProfileId)
     : null;
+  const readiness = data.encounterReadiness.find((entry) => entry.definitionId === encounter.id) ?? null;
 
   return {
     encounter,
-    kindLabel: humanizeKey(encounter.encounterKind),
+    readiness,
+    kindLabel: labelFromKey(encounter.encounterKind),
     minigameLabel: minigame
       ? `${minigame.label} (${minigame.key})`
       : encounter.minigameKey ?? 'No minigame',
@@ -248,12 +250,4 @@ function levelRangeLabel(min: number | null, max: number | null): string {
   }
 
   return min !== null ? `${min}+` : `Up to ${max}`;
-}
-
-function humanizeKey(value: string): string {
-  return value
-    .split(/[_\s-]+/)
-    .filter(Boolean)
-    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-    .join(' ') || value;
 }

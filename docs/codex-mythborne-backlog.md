@@ -9998,6 +9998,8 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 - Readiness display uses DB/RPC readiness model.
 - Incomplete Encounters are explainable without SQL.
 
+**Status:** Accepted on 2026-05-10. `/admin/exploration-encounters` now displays DB/RPC-owned Encounter readiness in selector, list and detail surfaces through `get_encounter_definition_readiness` and the existing W1 mapper. Runtime-ready/incomplete/inactive status, DB-backed blocking reason labels/descriptions and readiness diagnostics are visible without Angular-side readiness recomputation. Trial and Encounter readiness presentation share `exploration-readiness-ui`, Encounter kind labels reuse `labelFromKey`, incomplete Encounter config remains editable/saveable, and no DB/schema/generated type, direct write path or runtime selection logic was changed. Manual smoke remains user-side pending for ready/incomplete/inactive display, readable Combat/Resource/Buff/Debuff blocking reasons and saving incomplete Encounters.
+
 ---
 
 ## Task W6 — Exploration timer config visibility

@@ -15,6 +15,12 @@ import { dictionaryOptions } from '../../../core/utils/dictionary-options';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { RequestToken } from '../../../core/utils/request-token';
 import {
+  explorationReadinessReasonLabels,
+  explorationReadinessSeverity,
+  explorationReadinessStatusLabel,
+  explorationReadinessSummary,
+} from '../../../core/utils/exploration-readiness-ui';
+import {
   REWARD_ASSIGNMENT_MATCH_KIND_FALLBACKS,
   REWARD_SOURCE_KIND,
 } from '../../../core/constants/reward-runtime-keys.const';
@@ -194,51 +200,19 @@ export class ExplorationTrialsPageState {
   }
 
   readinessStatusLabel(readiness: TrialReadinessReadModel | null): string {
-    if (!readiness) {
-      return 'Readiness not reported by DB';
-    }
-
-    if (readiness.statusKey === 'ready') {
-      return 'Runtime-ready';
-    }
-
-    return readiness.statusKey === 'inactive' ? 'Inactive' : 'Incomplete';
+    return explorationReadinessStatusLabel(readiness);
   }
 
   readinessSeverity(readiness: TrialReadinessReadModel | null): 'success' | 'secondary' | 'warn' {
-    if (!readiness || readiness.statusKey === 'inactive') {
-      return 'secondary';
-    }
-
-    return readiness.statusKey === 'ready' ? 'success' : 'warn';
+    return explorationReadinessSeverity(readiness);
   }
 
   readinessSummary(readiness: TrialReadinessReadModel | null): string {
-    if (!readiness) {
-      return 'The readiness RPC did not return a row for this Trial.';
-    }
-
-    if (readiness.statusKey === 'ready') {
-      return 'This Trial is complete and eligible for normal runtime selection.';
-    }
-
-    if (readiness.statusKey === 'inactive') {
-      return 'This Trial is inactive and is not selected by normal runtime.';
-    }
-
-    return 'This Trial is incomplete and is not selected by normal runtime until blocking reasons are resolved.';
+    return explorationReadinessSummary(readiness, 'Trial');
   }
 
   readinessReasonLabels(readiness: TrialReadinessReadModel | null): string[] {
-    return (readiness?.reasons ?? []).map((reason) =>
-      [
-        reason.label ?? reason.key,
-        reason.description,
-        reason.isBlocking === true ? 'blocking' : null,
-      ]
-        .filter(Boolean)
-        .join(' - '),
-    );
+    return explorationReadinessReasonLabels(readiness);
   }
 
   private syncSelectedTrial(data: ExplorationTrialAdminData): void {

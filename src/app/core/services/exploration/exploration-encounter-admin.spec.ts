@@ -31,6 +31,10 @@ describe('ExplorationEncounterAdmin', () => {
 
   it('loads encounter admin dictionaries through read-only table queries', (done) => {
     backend.rpc.and.callFake(<T>(name: string, args?: Record<string, unknown>) => {
+      if (name === RPC.get_encounter_definition_readiness) {
+        return of(encounterReadinessRows() as T);
+      }
+
       if (name === RPC.get_ui_metadata_entries) {
         return of(uiMetadataRows(String(args?.['p_namespace'] ?? '')) as T);
       }
@@ -46,6 +50,8 @@ describe('ExplorationEncounterAdmin', () => {
       expect(data.rewardEntryKinds[0].label).toBe('Experience');
       expect(data.rewardEntryAmountModes[0].label).toBe('Fixed');
       expect(data.rewardSourceKinds[0].key).toBe('encounter');
+      expect(data.encounterReadiness[0].isReady).toBeFalse();
+      expect(data.encounterReadiness[0].reasons[0].label).toBe('Missing resource payload');
       expect(data.resourceTypes[0].label).toBe('Drachma');
       expect(data.rewardAssignmentMatchKinds[0].key).toBe('exact');
       expect(data.combatCandidates[0].candidateKind).toBe('opponent');
@@ -94,6 +100,10 @@ describe('ExplorationEncounterAdmin', () => {
       expect(backend.update).not.toHaveBeenCalled();
       expect(backend.upsert).not.toHaveBeenCalled();
       expect(backend.delete).not.toHaveBeenCalled();
+      expect(backend.rpc).toHaveBeenCalledWith(
+        RPC.get_encounter_definition_readiness,
+        {},
+      );
       expect(backend.rpc).toHaveBeenCalledWith(
         RPC.get_ui_metadata_entries,
         jasmine.objectContaining({
@@ -600,6 +610,34 @@ function uiMetadataRows(namespace: string): any[] {
       metadata_json: {},
       created_at: '2026-05-01T10:00:00.000Z',
       updated_at: '2026-05-01T10:00:00.000Z',
+    },
+  ];
+}
+
+function encounterReadinessRows(): any[] {
+  return [
+    {
+      definition_id: 'encounter-1',
+      definition_key: 'bandit-ambush',
+      is_active: true,
+      is_ready: false,
+      minigame_key: 'combat',
+      encounter_kind: 'resource',
+      combat_candidate_count: 0,
+      reward_assignment_count: 1,
+      effect_payload_count: 0,
+      blocking_reason_count: 1,
+      reasons_json: [
+        {
+          key: 'missing_resource_payload',
+          label: 'Missing resource payload',
+          description: 'Configure resource payload.',
+          severity: 'error',
+          isBlocking: true,
+          metadataJson: {},
+        },
+      ],
+      metadata_json: {},
     },
   ];
 }

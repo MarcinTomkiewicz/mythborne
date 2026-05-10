@@ -1,0 +1,1219 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mythsworn Formula Library Workspace Prototype v3.1</title>
+  <style>
+    /*
+      VISUAL REFERENCE ONLY.
+      Prototype goal: Formula Library Workspace v3.1.
+      IA level: Governance & Drafts -> Formula Library.
+      Direction: reusable formula library + central editor + chart/curve preview + assignments summary/explorer + DB-backed where-used impact summary + preview/test.
+      This is not a Config Registry clone and not a Game Balance subpage.
+      Changes to formulas/assignments go through active draft/governed workflow, not direct live edit. No direct live edit means editing is allowed here, but save creates/updates a draft entry and live changes only after apply.
+    */
+    :root {
+      --bg-0: #05070b;
+      --navy-0: #07111d;
+      --gold-0: #8b5c20;
+      --gold-1: #c28b36;
+      --gold-2: #f0ca71;
+      --text-0: #f7eedb;
+      --text-1: #d7c8ab;
+      --text-2: #a39781;
+      --text-3: #706755;
+      --red: #c26452;
+      --green: #79ad66;
+      --blue: #65aee3;
+      --purple: #a486db;
+      --line-soft: rgba(240, 202, 113, .12);
+      --line: rgba(240, 202, 113, .24);
+      --line-strong: rgba(240, 202, 113, .42);
+      --shadow: rgba(0, 0, 0, .42);
+      --sidebar-w: 19rem;
+      --topbar-h: 4.35rem;
+      --radius-lg: 1rem;
+      --radius-xl: 1.35rem;
+      --font-display: Georgia, "Times New Roman", serif;
+      --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-ui);
+      color: var(--text-0);
+      background:
+        radial-gradient(circle at 14% 4%, rgba(240, 202, 113, .13), transparent 27rem),
+        radial-gradient(circle at 86% 8%, rgba(101, 174, 227, .17), transparent 34rem),
+        linear-gradient(135deg, var(--bg-0), #070a10 44%, #040508 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .12;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 80%);
+    }
+    button, input, select, textarea { font: inherit; }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+      grid-template-areas: "sidebar topbar" "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+      padding: 1rem .85rem;
+      border-right: 1px solid var(--line-soft);
+      background: linear-gradient(180deg, rgba(7, 10, 16, .94), rgba(4, 6, 10, .96));
+      box-shadow: .65rem 0 2rem rgba(0, 0, 0, .2);
+      overflow: auto;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .8rem;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(240, 202, 113, .17);
+      background:
+        linear-gradient(180deg, rgba(20, 32, 47, .72), rgba(8, 12, 18, .74)),
+        radial-gradient(circle at 82% 0%, rgba(240, 202, 113, .16), transparent 10rem);
+      margin-bottom: .9rem;
+    }
+    .brand-mark {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: .9rem;
+      border: 1px solid var(--line-strong);
+      background: radial-gradient(circle at 34% 24%, #fff0b9 0, var(--gold-2) 22%, var(--gold-0) 48%, #251509 70%, var(--navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,202,113,.22);
+      position: relative;
+      flex: 0 0 auto;
+    }
+    .brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--gold-2);
+      line-height: 1;
+    }
+    .brand-subtitle {
+      color: var(--text-3);
+      font-size: .68rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-top: .18rem;
+    }
+
+    .context-card {
+      padding: .85rem;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-lg);
+      background: rgba(7, 10, 14, .42);
+      margin-bottom: 1rem;
+      display: grid;
+      gap: .64rem;
+    }
+    .context-row { display: grid; gap: .24rem; }
+    .context-label,
+    .nav-section-title,
+    .eyebrow,
+    .tiny-label {
+      color: var(--text-3);
+      font-size: .68rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .context-value {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .6rem;
+      font-weight: 800;
+      color: var(--text-0);
+    }
+
+    .nav-section-title { margin: 1rem 0 .45rem .55rem; }
+    .nav-list {
+      display: grid;
+      gap: .28rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      padding: .62rem .68rem;
+      color: var(--text-1);
+      text-decoration: none;
+      border-radius: .85rem;
+      border: 1px solid transparent;
+      transition: 120ms ease;
+    }
+    .nav-link:hover,
+    .nav-link.is-active {
+      color: var(--text-0);
+      border-color: rgba(240,202,113,.16);
+      background: linear-gradient(90deg, rgba(240,202,113,.13), rgba(45,110,159,.12));
+    }
+    .nav-link.is-active { box-shadow: inset 3px 0 0 var(--gold-1); }
+    .nav-icon {
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: .55rem;
+      display: grid;
+      place-items: center;
+      background: rgba(240,202,113,.08);
+      color: var(--gold-1);
+      border: 1px solid rgba(240,202,113,.08);
+      flex: 0 0 auto;
+      font-size: .67rem;
+      font-weight: 900;
+      letter-spacing: .02em;
+    }
+    .nav-label { min-width: 0; }
+    .nav-sub {
+      display: block;
+      color: var(--text-3);
+      font-size: .68rem;
+      margin-top: .08rem;
+      line-height: 1.25;
+    }
+    .nav-link.is-active .nav-sub { color: var(--text-2); }
+
+    .topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(18rem, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      padding: .65rem 1rem;
+      border-bottom: 1px solid var(--line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,202,113,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem var(--shadow);
+    }
+    .topbar-title { display: grid; gap: .12rem; }
+    .topbar-title strong {
+      font-family: var(--font-display);
+      font-size: 1.18rem;
+      color: var(--text-0);
+    }
+    .topbar-title span { color: var(--text-2); font-size: .78rem; }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      justify-content: flex-end;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .search,
+    .context-pill {
+      min-height: 2.22rem;
+      border-radius: 999px;
+      border: 1px solid rgba(240,202,113,.12);
+      background: rgba(5,8,12,.42);
+      color: var(--text-1);
+      padding: .42rem .72rem;
+      outline: none;
+    }
+    .search { min-width: 17rem; }
+    .context-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      color: var(--text-1);
+      background: rgba(240,202,113,.055);
+    }
+    .context-pill strong { color: var(--text-0); }
+
+    .main {
+      grid-area: main;
+      min-width: 0;
+      padding: 1rem;
+      display: grid;
+      gap: .9rem;
+      align-content: start;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .24rem .55rem;
+      border-radius: 999px;
+      border: 1px solid var(--line-soft);
+      color: var(--text-1);
+      background: rgba(7,10,14,.45);
+      font-size: .76rem;
+      white-space: nowrap;
+    }
+    .badge.gold { color: var(--gold-2); border-color: rgba(240,202,113,.32); }
+    .badge.green { color: #bde6b0; border-color: rgba(121,173,102,.46); }
+    .badge.blue { color: #b9def3; border-color: rgba(101,174,227,.46); }
+    .badge.red { color: #f2b4aa; border-color: rgba(194,100,82,.46); }
+    .badge.purple { color: #d9c8ff; border-color: rgba(164,134,219,.46); }
+    .badge.muted { color: var(--text-2); }
+
+    .button-row { display: flex; gap: .45rem; flex-wrap: wrap; align-items: center; }
+    .button {
+      min-height: 2.18rem;
+      padding: .45rem .76rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--text-0);
+      background: linear-gradient(180deg, rgba(240,202,113,.2), rgba(91,58,19,.32));
+      cursor: pointer;
+      box-shadow: inset 0 1px rgba(255,255,255,.07);
+    }
+    .button.ghost { background: rgba(8,12,18,.54); color: var(--text-1); }
+    .button.disabled { opacity: .52; cursor: not-allowed; filter: grayscale(.25); }
+    .text-link {
+      color: var(--gold-2);
+      text-decoration: none;
+      font-size: .76rem;
+      border-bottom: 1px solid rgba(240,202,113,.22);
+    }
+
+    .card,
+    .panel-card,
+    .catalog-card,
+    .editor-card,
+    .table-card,
+    .status-strip,
+    .help-card,
+    .impact-card {
+      position: relative;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(180deg, rgba(18,27,39,.68), rgba(7,10,15,.78)),
+        radial-gradient(circle at top right, rgba(240,202,113,.085), transparent 13rem);
+      box-shadow: 0 .75rem 1.9rem rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.035);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+    }
+    .card::after,
+    .panel-card::after,
+    .catalog-card::after,
+    .editor-card::after,
+    .table-card::after,
+    .status-strip::after,
+    .help-card::after,
+    .impact-card::after {
+      content: "";
+      position: absolute;
+      inset: .45rem;
+      border-radius: calc(var(--radius-xl) - .35rem);
+      border: 1px solid rgba(240,202,113,.045);
+      pointer-events: none;
+    }
+    .card > *,
+    .panel-card > *,
+    .catalog-card > *,
+    .editor-card > *,
+    .table-card > *,
+    .status-strip > *,
+    .help-card > *,
+    .impact-card > * { position: relative; z-index: 1; }
+
+    .page-header {
+      padding: .9rem;
+      display: grid;
+      grid-template-columns: minmax(24rem, 1fr) auto;
+      gap: 1rem;
+      align-items: center;
+      border-color: rgba(240,202,113,.18);
+      background:
+        linear-gradient(100deg, rgba(7,11,17,.95), rgba(12,26,41,.72), rgba(7,10,15,.9)),
+        radial-gradient(circle at 78% 8%, rgba(240,202,113,.14), transparent 22rem);
+    }
+    .page-title-block { display: grid; gap: .35rem; }
+    .page-title-line { display: flex; gap: .65rem; align-items: center; flex-wrap: wrap; }
+    .page-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.85rem, 2.6vw, 2.9rem);
+      line-height: .98;
+      color: var(--gold-2);
+    }
+    .page-subtitle {
+      margin: 0;
+      max-width: 62rem;
+      color: var(--text-1);
+      line-height: 1.42;
+      font-size: .9rem;
+    }
+    .header-actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: minmax(18rem, 1fr) repeat(3, minmax(10rem, .55fr));
+      gap: .62rem;
+      padding: .68rem;
+      border-color: rgba(240,202,113,.2);
+      background:
+        linear-gradient(90deg, rgba(240,202,113,.1), rgba(45,110,159,.07)),
+        rgba(5,8,12,.36);
+    }
+    .status-cell {
+      padding: .62rem .68rem;
+      border-radius: .9rem;
+      border: 1px solid rgba(240,202,113,.1);
+      background: rgba(0,0,0,.15);
+      display: grid;
+      gap: .16rem;
+      min-width: 0;
+    }
+    .status-cell.is-main { border-color: rgba(240,202,113,.28); box-shadow: inset 3px 0 0 var(--gold-1); }
+    .status-cell span { color: var(--text-3); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; }
+    .status-cell strong { color: var(--text-0); font-size: .86rem; }
+    .status-cell p { margin: 0; color: var(--text-2); font-size: .73rem; line-height: 1.3; }
+
+    .mode-nav {
+      display: flex;
+      gap: .45rem;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: .55rem;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(240,202,113,.1);
+      background: rgba(0,0,0,.15);
+    }
+    .mode-tab {
+      min-height: 2rem;
+      border-radius: 999px;
+      border: 1px solid rgba(240,202,113,.1);
+      background: rgba(5,8,12,.35);
+      color: var(--text-2);
+      padding: .36rem .68rem;
+      cursor: pointer;
+      font-size: .78rem;
+    }
+    .mode-tab.is-active {
+      color: var(--text-0);
+      border-color: rgba(240,202,113,.3);
+      background: linear-gradient(90deg, rgba(240,202,113,.13), rgba(45,110,159,.08));
+      box-shadow: inset 2px 0 0 var(--gold-1);
+    }
+
+    .formula-workbench {
+      display: grid;
+      grid-template-columns: minmax(18rem, .7fr) minmax(0, 1.25fr) minmax(20rem, .85fr);
+      gap: .9rem;
+      align-items: start;
+    }
+    .catalog-card,
+    .editor-card,
+    .panel-card,
+    .table-card,
+    .impact-card,
+    .help-card { padding: .88rem; }
+    .side-stack {
+      display: grid;
+      gap: .85rem;
+      position: sticky;
+      top: calc(var(--topbar-h) + .9rem);
+    }
+    .card-head { display: grid; gap: .24rem; margin-bottom: .68rem; }
+    .card-title-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+    .card-title { margin: 0; font-family: var(--font-display); font-size: 1.18rem; color: var(--text-0); }
+    .card-subtitle { margin: .18rem 0 0; color: var(--text-2); font-size: .8rem; line-height: 1.36; }
+
+    .filter-stack { display: grid; gap: .5rem; }
+    .filter-row { display: grid; gap: .22rem; }
+    .filter-row label { color: var(--text-3); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; }
+    .filter-row input,
+    .filter-row select {
+      width: 100%;
+      min-height: 2.15rem;
+      border-radius: .8rem;
+      border: 1px solid rgba(240,202,113,.1);
+      background: rgba(0,0,0,.18);
+      color: var(--text-1);
+      padding: .42rem .55rem;
+      outline: none;
+    }
+    .filter-pills { display: flex; gap: .38rem; flex-wrap: wrap; margin-top: .55rem; }
+    .filter-pill {
+      border: 1px solid rgba(240,202,113,.1);
+      border-radius: 999px;
+      padding: .28rem .55rem;
+      color: var(--text-2);
+      background: rgba(0,0,0,.14);
+      font-size: .73rem;
+    }
+    .filter-pill.is-active { color: var(--text-0); border-color: rgba(240,202,113,.3); background: rgba(240,202,113,.08); }
+
+    .formula-list { display: grid; gap: .45rem; margin-top: .7rem; }
+    .formula-item {
+      padding: .62rem;
+      border-radius: .85rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.14);
+      display: grid;
+      gap: .3rem;
+      cursor: pointer;
+    }
+    .formula-item.is-selected {
+      border-color: rgba(240,202,113,.3);
+      background: linear-gradient(90deg, rgba(240,202,113,.1), rgba(45,110,159,.06));
+      box-shadow: inset 3px 0 0 var(--gold-1);
+    }
+    .formula-item strong { color: var(--text-0); font-size: .82rem; }
+    .formula-item span { color: var(--text-2); font-size: .72rem; line-height: 1.28; }
+    .formula-meta { display: flex; gap: .35rem; flex-wrap: wrap; align-items: center; }
+    .formula-snippet {
+      padding: .35rem .42rem;
+      border-radius: .65rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(5,8,12,.32);
+      color: var(--text-2);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: .7rem;
+      overflow-wrap: anywhere;
+    }
+
+    .editor-section { display: grid; gap: .65rem; }
+    .editor-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .65rem; }
+    .field-row {
+      padding: .58rem;
+      border-radius: .8rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.14);
+      display: grid;
+      gap: .18rem;
+    }
+    .field-row span { color: var(--text-3); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; }
+    .field-row strong { color: var(--text-0); font-size: .82rem; line-height: 1.28; }
+    .field-row p { margin: 0; color: var(--text-2); font-size: .74rem; line-height: 1.34; }
+    .field-row code,
+    .code-block {
+      color: var(--text-1);
+      font-size: .72rem;
+      word-break: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block {
+      padding: .58rem;
+      border-radius: .8rem;
+      border: 1px solid rgba(240,202,113,.1);
+      background: rgba(0,0,0,.2);
+      min-height: 4.1rem;
+      line-height: 1.45;
+    }
+    .code-block.proposed { color: var(--gold-2); border-color: rgba(240,202,113,.22); }
+    .textarea-like {
+      min-height: 6.2rem;
+      width: 100%;
+      resize: vertical;
+      border-radius: .8rem;
+      border: 1px solid rgba(240,202,113,.16);
+      background: rgba(0,0,0,.22);
+      color: var(--gold-2);
+      padding: .58rem;
+      outline: none;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: .76rem;
+      line-height: 1.45;
+    }
+
+    .curve-panel {
+      padding: .68rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(240,202,113,.16);
+      background:
+        linear-gradient(180deg, rgba(10,18,28,.72), rgba(0,0,0,.18)),
+        radial-gradient(circle at 80% 8%, rgba(240,202,113,.1), transparent 14rem);
+      display: grid;
+      gap: .65rem;
+    }
+    .curve-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: .75rem;
+      flex-wrap: wrap;
+    }
+    .curve-head h3 {
+      margin: 0;
+      color: var(--text-0);
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+    }
+    .curve-head p { margin: .2rem 0 0; color: var(--text-2); font-size: .76rem; line-height: 1.34; }
+    .curve-controls {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: .45rem;
+    }
+    .curve-control {
+      padding: .46rem;
+      border-radius: .78rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.16);
+      display: grid;
+      gap: .12rem;
+    }
+    .curve-control span { color: var(--text-3); font-size: .63rem; letter-spacing: .11em; text-transform: uppercase; }
+    .curve-control strong { color: var(--text-0); font-size: .78rem; }
+    .curve-chart {
+      min-height: 13.5rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(240,202,113,.1);
+      background:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(5,8,12,.86), rgba(0,0,0,.22));
+      background-size: 100% 25%, 12.5% 100%, auto;
+      position: relative;
+      overflow: hidden;
+    }
+    .curve-line {
+      position: absolute;
+      left: 7%;
+      right: 7%;
+      height: 3px;
+      border-radius: 999px;
+      transform-origin: left center;
+    }
+    .curve-line.live { top: 58%; background: rgba(101,174,227,.78); transform: rotate(-8deg); box-shadow: 0 0 1rem rgba(101,174,227,.28); }
+    .curve-line.proposed { top: 51%; background: rgba(240,202,113,.86); transform: rotate(-13deg); box-shadow: 0 0 1rem rgba(240,202,113,.28); }
+    .curve-band {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 12%;
+      height: 18%;
+      background: rgba(194,100,82,.08);
+      border-bottom: 1px dashed rgba(194,100,82,.35);
+    }
+    .chart-legend {
+      position: absolute;
+      right: .65rem;
+      bottom: .55rem;
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      color: var(--text-2);
+      font-size: .7rem;
+    }
+    .legend-dot { width: .62rem; height: .62rem; border-radius: 999px; display: inline-flex; margin-right: .25rem; vertical-align: -.05rem; }
+    .legend-dot.live { background: var(--blue); }
+    .legend-dot.proposed { background: var(--gold-2); }
+    .legend-dot.delta { background: var(--red); }
+    .sample-table { display: grid; gap: .35rem; }
+    .sample-row {
+      display: grid;
+      grid-template-columns: .7fr repeat(3, minmax(0, 1fr));
+      gap: .45rem;
+      padding: .42rem;
+      border-radius: .7rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.14);
+      align-items: center;
+    }
+    .sample-row span { color: var(--text-2); font-size: .72rem; }
+    .sample-row strong { color: var(--text-0); font-size: .76rem; }
+    .sample-row .proposed { color: var(--gold-2); }
+    .sample-row .delta { color: #f2b4aa; }
+
+    .validation-list { display: grid; gap: .42rem; }
+    .validation-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: .5rem;
+      align-items: center;
+      padding: .48rem;
+      border-radius: .72rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.14);
+    }
+    .dot { width: .7rem; height: .7rem; border-radius: 999px; background: var(--green); box-shadow: 0 0 .7rem rgba(121,173,102,.24); }
+    .dot.gold { background: var(--gold-1); box-shadow: 0 0 .7rem rgba(240,202,113,.24); }
+    .dot.red { background: var(--red); box-shadow: 0 0 .7rem rgba(194,100,82,.28); }
+    .validation-row strong { color: var(--text-0); font-size: .78rem; }
+    .validation-row span { color: var(--text-2); font-size: .7rem; }
+
+    .variable-grid,
+    .block-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .45rem;
+    }
+    .variable-chip,
+    .block-chip {
+      padding: .45rem;
+      border-radius: .75rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.14);
+      display: grid;
+      gap: .12rem;
+    }
+    .variable-chip strong,
+    .block-chip strong { color: var(--text-0); font-size: .78rem; }
+    .variable-chip span,
+    .block-chip span { color: var(--text-2); font-size: .7rem; line-height: 1.25; }
+
+    .impact-list { display: grid; gap: .45rem; }
+    .impact-row {
+      padding: .52rem;
+      border-radius: .78rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.14);
+      display: grid;
+      gap: .16rem;
+    }
+    .impact-row strong { color: var(--text-0); font-size: .8rem; }
+    .impact-row span { color: var(--text-2); font-size: .72rem; line-height: 1.28; }
+
+    .preview-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; }
+    .preview-cell {
+      padding: .5rem;
+      border-radius: .75rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.15);
+      display: grid;
+      gap: .15rem;
+    }
+    .preview-cell span { color: var(--text-3); font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; }
+    .preview-cell strong { color: var(--text-0); font-size: .85rem; }
+    .preview-cell.proposed strong { color: var(--gold-2); }
+
+    .assignments-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 24rem;
+      gap: .9rem;
+      align-items: start;
+    }
+    .assignment-table { display: grid; gap: .42rem; }
+    .assignment-head,
+    .assignment-row {
+      display: grid;
+      grid-template-columns: minmax(12rem, 1fr) minmax(9rem, .7fr) minmax(9rem, .7fr) minmax(8rem, .65fr) auto;
+      gap: .55rem;
+      align-items: center;
+    }
+    .assignment-head {
+      padding: 0 .58rem .22rem;
+      color: var(--text-3);
+      font-size: .66rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .assignment-row {
+      padding: .58rem;
+      border-radius: .85rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(5,8,12,.35);
+    }
+    .assignment-row.has-conflict { border-color: rgba(194,100,82,.34); }
+    .assignment-row.has-draft { border-color: rgba(240,202,113,.25); }
+    .assignment-row strong { display: block; color: var(--text-0); font-size: .82rem; }
+    .assignment-row span { color: var(--text-2); font-size: .72rem; line-height: 1.3; }
+    .formula-code {
+      display: block;
+      padding: .35rem .45rem;
+      border-radius: .65rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.18);
+      color: var(--text-1);
+      font-size: .72rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
+    .formula-code.proposed { color: var(--gold-2); }
+
+    .help-card { padding: .85rem; }
+    .help-card details {
+      border-radius: .9rem;
+      border: 1px solid rgba(240,202,113,.09);
+      background: rgba(0,0,0,.14);
+      padding: .72rem;
+    }
+    .help-card summary { cursor: pointer; color: var(--text-0); font-weight: 800; }
+    .note-list { margin: .35rem 0 0; padding-left: 1rem; color: var(--text-2); font-size: .78rem; line-height: 1.45; }
+
+    @media (max-width: 1740px) {
+      .formula-workbench { grid-template-columns: minmax(18rem, .75fr) minmax(0, 1.25fr); }
+      .side-stack { grid-column: 1 / -1; position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .status-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 1380px) {
+      .formula-workbench,
+      .assignments-layout { grid-template-columns: 1fr; }
+      .side-stack { grid-template-columns: 1fr; }
+      .editor-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 1180px) {
+      .app-shell { display: block; }
+      .topbar { position: static; grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--line-soft); }
+      .page-header { grid-template-columns: 1fr; }
+      .header-actions { justify-content: flex-start; }
+      .search { min-width: 12rem; }
+      .assignment-head { display: none; }
+      .assignment-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 860px) {
+      .main { padding: .75rem; }
+      .status-strip,
+      .variable-grid,
+      .block-grid,
+      .preview-grid,
+      .curve-controls,
+      .sample-row { grid-template-columns: 1fr; }
+      .card-title-row { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <section class="brand" aria-label="Mythsworn Admin">
+        <div class="brand-mark"></div>
+        <div>
+          <div class="brand-title">Mythsworn</div>
+          <div class="brand-subtitle">Admin console</div>
+        </div>
+      </section>
+
+      <section class="context-card">
+        <div class="context-row">
+          <div class="context-label">Admin context</div>
+          <div class="context-value"><span>Global Admin</span></div>
+        </div>
+        <div class="context-row">
+          <div class="context-label">Server focus</div>
+          <div class="context-value"><span>All servers</span></div>
+        </div>
+        <div class="context-row">
+          <div class="context-label">Active draft</div>
+          <div class="context-value"><span>Global Balance Draft</span><span class="badge gold">active</span></div>
+        </div>
+      </section>
+
+      <div class="nav-section-title">Overview</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#overview"><span class="nav-icon">OV</span><span class="nav-label">Admin Hub<span class="nav-sub">orientation and alerts</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Governance</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#governance"><span class="nav-icon">GV</span><span class="nav-label">Governance & Drafts<span class="nav-sub">workspace overview</span></span></a></li>
+        <li><a class="nav-link" href="#draft"><span class="nav-icon">BD</span><span class="nav-label">Active Balance Draft<span class="nav-sub">diff, readiness, apply</span></span></a></li>
+        <li><a class="nav-link" href="#config"><span class="nav-icon">CG</span><span class="nav-label">Config Registry<span class="nav-sub">definitions, values, scope</span></span></a></li>
+        <li><a class="nav-link is-active" href="#formulas"><span class="nav-icon">FM</span><span class="nav-label">Formula Library<span class="nav-sub">library, editor, assignments</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Game Balance</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#items"><span class="nav-icon">IT</span><span class="nav-label">Item Generation<span class="nav-sub">bases, affixes, quality</span></span></a></li>
+        <li><a class="nav-link" href="#estate"><span class="nav-icon">ES</span><span class="nav-label">Estate Balance<span class="nav-sub">buildings, costs, caps</span></span></a></li>
+        <li><a class="nav-link" href="#combat"><span class="nav-icon">CB</span><span class="nav-label">Combat Balance<span class="nav-sub">opponents and content</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Exploration & PvE</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#trials"><span class="nav-icon">TR</span><span class="nav-label">Trials<span class="nav-sub">definitions and readiness</span></span></a></li>
+        <li><a class="nav-link" href="#encounters"><span class="nav-icon">EN</span><span class="nav-label">Encounters<span class="nav-sub">candidates and effects</span></span></a></li>
+        <li><a class="nav-link" href="#rewards"><span class="nav-icon">RW</span><span class="nav-label">Reward Profiles<span class="nav-sub">PvE reward wiring</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Operations</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#moderation"><span class="nav-icon">AA</span><span class="nav-label">Moderation & Anti-abuse<span class="nav-sub">cases and sanctions</span></span></a></li>
+        <li><a class="nav-link" href="#servers"><span class="nav-icon">SO</span><span class="nav-label">Server Operations<span class="nav-sub">staff, events, lifecycle</span></span></a></li>
+        <li><a class="nav-link" href="#reports"><span class="nav-icon">RN</span><span class="nav-label">Reports & Notifications<span class="nav-sub">readability</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Sandbox / Diagnostics</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#labs"><span class="nav-icon">LB</span><span class="nav-label">Labs & Debug Tools<span class="nav-sub">Luck Lab, Exploration Lab</span></span></a></li>
+      </ul>
+    </aside>
+
+    <header class="topbar">
+      <div class="topbar-title">
+        <strong>Formula Library</strong>
+        <span>Biblioteka reusable formuł, edycja expression/metadata, assignmenty, where-used i preview/test</span>
+      </div>
+      <div class="topbar-right">
+        <span class="context-pill"><span>Context</span><strong>Global Admin</strong></span>
+        <span class="context-pill"><span>Preview</span><strong>Live + draft overlay</strong></span>
+        <input class="search" placeholder="Search formula, target, variable..." />
+      </div>
+    </header>
+
+    <main class="main" id="formulas">
+      <section class="card page-header">
+        <div class="page-title-block">
+          <p class="eyebrow">Formula Library Prototype v3.1</p>
+          <div class="page-title-line">
+            <h1 class="page-title">Formula Library</h1>
+            <span class="badge gold">reusable library</span>
+            <span class="badge">governed editor</span>
+          </div>
+          <p class="page-subtitle">Centralne miejsce pracy z formułami: katalog formuł, widoczny edytor expression/metadata, chart/curve preview, assignment summary i DB/RPC-backed where-used impact. Domain workspaces pokazują własne preview, ale linkują tutaj, gdy admin edytuje expression albo assignment.</p>
+        </div>
+        <div class="header-actions">
+          <button class="button">Save to active draft</button>
+          <button class="button ghost">Open draft entry</button>
+          <button class="button ghost">Compare live vs proposed</button>
+        </div>
+      </section>
+
+      <section class="status-strip" aria-label="Formula library status summary">
+        <article class="status-cell is-main">
+          <span>Persistent balance context</span>
+          <strong>Active Global Balance Draft</strong>
+          <p>Formula and assignment edits become draft entries. No direct live edit.</p>
+        </article>
+        <article class="status-cell">
+          <span>Selected formula</span>
+          <strong>quality_curve_v3</strong>
+          <p>Enabled · used by 3 targets · has draft expression change. Full assignment list is secondary/explorer.</p>
+        </article>
+        <article class="status-cell">
+          <span>Preview context</span>
+          <strong>Live + draft overlay</strong>
+          <p>Admin/sandbox only. Runtime uses applied formulas after apply.</p>
+        </article>
+        <article class="status-cell">
+          <span>Governance risk</span>
+          <strong>1 assignment conflict</strong>
+          <p>Assignment change is blocked in Active Draft until resolved.</p>
+        </article>
+      </section>
+
+      <nav class="mode-nav" aria-label="Formula Library modes">
+        <button class="mode-tab is-active">Formulas / Library</button>
+        <button class="mode-tab">Editor / Draft change</button>
+        <button class="mode-tab">Assignments Explorer</button>
+        <button class="mode-tab">Where-used / Impact Summary</button>
+        <button class="mode-tab">Chart / Curve Preview</button>
+        <button class="mode-tab">Preview / Test</button>
+        <button class="mode-tab">Targets</button>
+      </nav>
+
+      <section class="formula-workbench">
+        <aside class="catalog-card" aria-label="Formula Catalog">
+          <div class="card-head">
+            <h2 class="card-title">Formula Catalog</h2>
+            <p class="card-subtitle">Najpierw wybierasz formułę jako reusable library item, nie target.</p>
+          </div>
+          <div class="filter-stack">
+            <div class="filter-row">
+              <label for="searchFormula">Search formula</label>
+              <input id="searchFormula" value="quality curve" />
+            </div>
+            <div class="filter-row">
+              <label for="areaFilter">Used in area</label>
+              <select id="areaFilter"><option>Any area</option><option>Item Generation</option><option>Progression</option><option>Buildings / Estate</option><option>Combat</option></select>
+            </div>
+          </div>
+          <div class="filter-pills">
+            <span class="filter-pill is-active">All</span>
+            <span class="filter-pill">Has draft change</span>
+            <span class="filter-pill">Used by many</span>
+            <span class="filter-pill">Disabled</span>
+            <span class="filter-pill">Metadata gap</span>
+          </div>
+
+          <div class="formula-list">
+            <article class="formula-item is-selected">
+              <strong>Quality curve v3</strong>
+              <span>Key: quality_curve_v3 · enabled · used by 3 targets</span>
+              <div class="formula-snippet">clamp(1 + qualityRank * 0.35 + luckInfluence * 0.08, 1, 2.4)</div>
+              <div class="formula-meta"><span class="badge gold">draft expression</span><span class="badge">compatible targets</span></div>
+            </article>
+            <article class="formula-item">
+              <strong>Quality curve v2</strong>
+              <span>Key: quality_curve_v2 · enabled · used by 1 target</span>
+              <div class="formula-snippet">clamp(1 + qualityRank * 0.25, 1, 2.0)</div>
+              <div class="formula-meta"><span class="badge green">live assigned</span></div>
+            </article>
+            <article class="formula-item">
+              <strong>Stat cost v5</strong>
+              <span>Key: stat_cost_v5 · enabled · used by 1 target</span>
+              <div class="formula-snippet">ceil(baseCost * pow(statLevel, 1.35))</div>
+              <div class="formula-meta"><span class="badge gold">draft metadata</span></div>
+            </article>
+            <article class="formula-item">
+              <strong>Building time default</strong>
+              <span>Key: building_time_default · enabled · used by 5 targets</span>
+              <div class="formula-snippet">roundUp(baseSeconds * levelMultiplier)</div>
+              <div class="formula-meta"><span class="badge">shared</span></div>
+            </article>
+            <article class="formula-item">
+              <strong>raw_formula: pvp_xp_default</strong>
+              <span>Missing label/helper metadata · used by 1 target</span>
+              <div class="formula-snippet">baseXp * opponentDeltaMultiplier</div>
+              <div class="formula-meta"><span class="badge blue">metadata gap</span></div>
+            </article>
+          </div>
+        </aside>
+
+        <article class="editor-card" aria-label="Formula Editor and Draft Change">
+          <div class="card-head">
+            <div class="card-title-row">
+              <div>
+                <h2 class="card-title">Formula Editor / Draft Change</h2>
+                <p class="card-subtitle">Edytujesz formułę jako reusable library item. Zapis tworzy/aktualizuje entry w aktywnym draftcie.</p>
+              </div>
+              <div class="button-row"><button class="button ghost">Restore live</button><button class="button ghost">Validate</button></div>
+            </div>
+          </div>
+
+          <div class="editor-section">
+            <div class="editor-grid">
+              <div class="field-row">
+                <span>Formula label</span>
+                <strong>Quality curve v3</strong>
+                <p>Human label from formula metadata. Technical key remains secondary.</p>
+              </div>
+              <div class="field-row">
+                <span>Technical key</span>
+                <code>quality_curve_v3</code>
+              </div>
+            </div>
+
+            <div class="editor-grid">
+              <div>
+                <div class="field-row" style="margin-bottom:.45rem"><span>Live expression</span><strong>Currently applied expression</strong></div>
+                <div class="code-block">clamp(1 + qualityRank * 0.30 + luckInfluence * 0.05, 1, 2.2)</div>
+              </div>
+              <div>
+                <div class="field-row" style="margin-bottom:.45rem"><span>Proposed expression</span><strong>Draft change</strong></div>
+                <textarea class="textarea-like">clamp(1 + qualityRank * 0.35 + luckInfluence * 0.08, 1, 2.4)</textarea>
+              </div>
+            </div>
+
+            <div class="editor-grid">
+              <div class="field-row">
+                <span>Description</span>
+                <strong>Controls quality multiplier curve for generated item value and power.</strong>
+                <p>Opis pomaga balancerom zrozumieć intencję formuły, nie tylko syntax.</p>
+              </div>
+              <div class="field-row">
+                <span>Reason for draft change</span>
+                <strong>Increase high-quality variance while preserving lower-tier stability.</strong>
+                <p>Reason jest wymagany dla governed change.</p>
+              </div>
+            </div>
+
+            <div class="editor-grid">
+              <section>
+                <div class="field-row" style="margin-bottom:.45rem">
+                  <span>Compatibility target</span>
+                  <strong>Item quality multiplier</strong>
+                  <p>Legal variables are target/compatibility-bound. Formula can only be assigned to compatible targets.</p>
+                </div>
+                <div class="variable-grid">
+                  <div class="variable-chip"><strong>qualityRank</strong><span>Numeric quality tier rank.</span></div>
+                  <div class="variable-chip"><strong>baseValue</strong><span>Base item economic value.</span></div>
+                  <div class="variable-chip"><strong>luckInfluence</strong><span>DB-owned Luck influence input.</span></div>
+                  <div class="variable-chip"><strong>bucketValue</strong><span>Selected value bucket.</span></div>
+                </div>
+              </section>
+              <section>
+                <div class="field-row" style="margin-bottom:.45rem">
+                  <span>Allowed functions / blocks</span>
+                  <strong>Target-compatible formula helpers</strong>
+                  <p>Admin does not get an unrestricted expression surface.</p>
+                </div>
+                <div class="block-grid">
+                  <div class="block-chip"><strong>clamp(min,max)</strong><span>Bound output safely.</span></div>
+                  <div class="block-chip"><strong>roundUp()</strong><span>Integer-safe output when needed.</span></div>
+                  <div class="block-chip"><strong>pow()</strong><span>Growth curves.</span></div>
+                  <div class="block-chip"><strong>random()</strong><span>Only for targets that allow RNG.</span></div>
+                </div>
+              </section>
+            </div>
+
+            <section class="curve-panel" aria-label="Chart and curve preview">
+              <div class="curve-head">
+                <div>
+                  <h3>Chart / Curve Preview</h3>
+                  <p>Podstawowa ocena balance: wybieramy jedną zmienną jako oś X, a pozostałe trzymamy jako fixed inputs/presets.</p>
+                </div>
+                <div class="button-row"><button class="button ghost">Change X-axis</button><button class="button ghost">Preset: mid-game</button></div>
+              </div>
+              <div class="curve-controls">
+                <div class="curve-control"><span>X-axis variable</span><strong>qualityRank</strong></div>
+                <div class="curve-control"><span>Fixed luckInfluence</span><strong>0.40</strong></div>
+                <div class="curve-control"><span>Fixed baseValue</span><strong>700</strong></div>
+                <div class="curve-control"><span>Warning zone</span><strong>&gt; 2.20×</strong></div>
+              </div>
+              <div class="curve-chart" role="img" aria-label="Live and proposed curve comparison">
+                <div class="curve-band"></div>
+                <div class="curve-line live"></div>
+                <div class="curve-line proposed"></div>
+                <div class="chart-legend">
+                  <span><i class="legend-dot live"></i>Live curve</span>
+                  <span><i class="legend-dot proposed"></i>Proposed curve</span>
+                  <span><i class="legend-dot delta"></i>Warning / delta zone</span>
+                </div>
+              </div>
+              <div class="sample-table" aria-label="Curve sample table">
+                <div class="sample-row"><strong>qualityRank</strong><strong>Live</strong><strong>Proposed</strong><strong>Delta</strong></div>
+                <div class="sample-row"><span>0</span><span>1.02×</span><span class="proposed">1.03×</span><span class="delta">+0.01×</span></div>
+                <div class="sample-row"><span>1</span><span>1.32×</span><span class="proposed">1.38×</span><span class="delta">+0.06×</span></div>
+                <div class="sample-row"><span>2</span><span>1.62×</span><span class="proposed">1.73×</span><span class="delta">+0.11×</span></div>
+                <div class="sample-row"><span>3</span><span>1.92×</span><span class="proposed">2.08×</span><span class="delta">+0.16×</span></div>
+                <div class="sample-row"><span>4</span><span>2.20×</span><span class="proposed">2.40×</span><span class="delta">warning cap</span></div>
+              </div>
+            </section>
+
+            <div class="validation-list">
+              <div class="validation-row"><span class="dot"></span><div><strong>Expression syntax valid</strong><br><span>All referenced variables exist for selected compatibility target.</span></div><span class="badge green">ok</span></div>
+              <div class="validation-row"><span class="dot"></span><div><strong>Output range valid</strong><br><span>Curve preview stays inside expected multiplier range 1.0–2.4.</span></div><span class="badge green">ok</span></div>
+              <div class="validation-row"><span class="dot gold"></span><div><strong>Runtime impact broad</strong><br><span>This formula is used by 3 targets, so expression edit affects more than one surface after apply.</span></div><span class="badge gold">review</span></div>
+            </div>
+
+            <div class="button-row">
+              <button class="button">Save to active draft</button>
+              <button class="button ghost">Open draft entry</button>
+              <button class="button ghost">Compare live vs proposed</button>
+              <button class="button ghost disabled">Direct live edit disabled</button>
+            </div>
+          </div>
+        </article>
+
+        <aside class="side-stack">
+          <article class="impact-card" aria-label="Where-used and runtime impact">
+            <div class="card-head">
+              <h2 class="card-title">Where-used / Impact Summary</h2>
+              <p class="card-subtitle">Gdzie formuła realnie wpływa na grę. To impact summary z DB/RPC read modelu, nie druga lista assignmentów.</p>
+            </div>
+            <div class="impact-list">
+              <div class="impact-row"><strong>DB/RPC read model dependency</strong><span>Where-used should come from a backend read model: assigned targets, default/global assignment, entity overrides, active draft changes, touched workspaces and runtime/gameplay impact.</span></div>
+              <div class="impact-row"><strong>Item Generation Workspace</strong><span>Domain preview uses this formula through item quality multiplier. Links here for expression/assignment edit.</span></div>
+              <div class="impact-row"><strong>Reward Profile generated item preview</strong><span>Expression edit may affect perceived PvE reward value when generated items are part of profile.</span></div>
+              <div class="impact-row"><strong>Active Draft Diff</strong><span>Expression edit appears as formula entity_field_change. Assignment edit appears separately as assignment change.</span></div>
+            </div>
+          </article>
+
+          <article class="panel-card" aria-label="Preview and test">
+            <div class="card-head">
+              <h2 class="card-title">Preview / Test</h2>
+              <p class="card-subtitle">Szybki sample wspiera chart, ale go nie zastępuje. Test admin/sandbox only.</p>
+            </div>
+            <div class="preview-grid">
+              <div class="preview-cell"><span>qualityRank</span><strong>2</strong></div>
+              <div class="preview-cell"><span>luckInfluence</span><strong>0.40</strong></div>
+              <div class="preview-cell"><span>baseValue</span><strong>700</strong></div>
+              <div class="preview-cell"><span>Live result</span><strong>1.62×</strong></div>
+              <div class="preview-cell proposed"><span>Proposed</span><strong>1.73×</strong></div>
+              <div class="preview-cell"><span>Delta</span><strong>+0.11×</strong></div>
+            </div>
+            <div class="button-row" style="margin-top:.65rem">
+              <button class="button ghost">Run sample</button>
+              <button class="button ghost">Open Item Gen preview</button>
+            </div>
+          </article>
+        </aside>
+      </section>
+
+      <section class="assignments-layout" aria-label="Assignments workspace">
+        <article class="table-card">
+          <div class="card-head">
+            <div class="card-title-row">
+              <div>
+                <h2 class="card-title">Assignments Summary / Explorer</h2>
+                <p class="card-subtitle">Assignment odpowiada: który target używa której formuły. Główny widok pokazuje 3–5 najważniejszych assignmentów; pełna lista jest secondary/read-model-heavy.</p>
+              </div>
+              <div class="button-row"><button class="button ghost">View all assignments</button><button class="button ghost">Show entity overrides</button></div>
+            </div>
+          </div>
+          <div class="assignment-head" aria-hidden="true">
+            <span>Target</span><span>Current formula</span><span>Proposed formula</span><span>Status / override</span><span>Preview / edit</span>
+          </div>
+          <div class="assignment-table">
+            <div class="assignment-row has-conflict">
+              <div><strong>Item quality multiplier</strong><span>Target key: item_generation_quality_multiplier</span></div>
+              <div><span class="formula-code">quality_curve_v2</span></div>
+              <div><span class="formula-code proposed">quality_curve_v3</span></div>
+              <div><span class="badge red">conflict</span><br><span>No entity override</span></div>
+              <div><a class="text-link" href="#itemgen">Item Gen preview</a></div>
+            </div>
+            <div class="assignment-row has-draft">
+              <div><strong>Hero stat upgrade cost</strong><span>Target key: hero_stat_upgrade_cost</span></div>
+              <div><span class="formula-code">stat_cost_v4</span></div>
+              <div><span class="formula-code proposed">stat_cost_v5</span></div>
+              <div><span class="badge gold">draft edit</span><br><span>No entity override</span></div>
+              <div><a class="text-link" href="#progression">Progression preview</a></div>
+            </div>
+            <div class="assignment-row">
+              <div><strong>Estate building upgrade time</strong><span>Target key: estate_building_upgrade_seconds</span></div>
+              <div><span class="formula-code">building_time_default</span></div>
+              <div><span>none</span></div>
+              <div><span class="badge green">active</span><br><span>Building-specific overrides: 2</span></div>
+              <div><a class="text-link" href="#estate">Estate preview</a></div>
+            </div>
+            <div class="assignment-row">
+              <div><strong>Trial auto-resolve success chance</strong><span>Target key: trial_auto_resolve_success_chance</span></div>
+              <div><span class="formula-code">trial_luck_power_curve</span></div>
+              <div><span>none</span></div>
+              <div><span class="badge green">active</span><br><span>No entity override</span></div>
+              <div><a class="text-link" href="#trial-preview">Trial preview</a></div>
+            </div>
+          </div>
+        </article>
+
+        <aside class="help-card">
+          <details open>
+            <summary>IA note</summary>
+            <ul class="note-list">
+              <li><strong>Formula Catalog</strong> jest pierwszym bytem: formuły są reusable library items.</li>
+              <li><strong>Editor</strong> jest widoczny, bo Formula Library centralnie obsługuje expression/metadata changes. Save to active draft tworzy lub aktualizuje draft entry; live zmienia się dopiero po apply.</li>
+              <li><strong>Assignments</strong> są osobnym obszarem: target → formula, z current/proposed/override/conflict. Główny editor pokazuje summary; pełna lista należy do Assignments Explorer/drawera/tabeli z filtrami.</li>
+              <li><strong>Where-used</strong> musi być widoczne wcześnie jako impact summary, bo expression edit może wpłynąć na kilka targetów, workspace’ów i runtime/read-model surfaces.</li>
+              <li>Where-used powinno pochodzić z DB/RPC read modelu: assigned targets, global/default assignment, entity overrides, active draft changes, impacted workspaces, preview links and runtime/gameplay impact.</li>
+              <li><strong>Assignments</strong> mówią target → formula. <strong>Where-used</strong> mówi gdzie formuła realnie wpływa na grę/runtime/workspace’y. To powiązane, ale nie to samo.</li>
+              <li>Domain workspaces pokazują domain-specific preview i linkują do Formula Library dla expression/assignment edit, np. „Open full curve in Formula Library”.</li>
+              <li>All changes go through active draft/governed workflow. No direct live edit.</li>
+            </ul>
+          </details>
+        </aside>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

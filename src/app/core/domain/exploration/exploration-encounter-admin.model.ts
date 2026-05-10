@@ -12,6 +12,7 @@ import {
   ExplorationDifficultyTierReadModel,
   ExplorationMinigameDefinitionReadModel,
 } from './exploration-definition.model';
+import { EncounterReadinessReadModel } from './exploration-readiness.model';
 import {
   RewardDictionaryReadModel,
   ResourceTypeReadModel,
@@ -130,6 +131,7 @@ export interface ExplorationEncounterAdminData {
   rewardEntryKinds: RewardDictionaryReadModel[];
   rewardEntryAmountModes: RewardDictionaryReadModel[];
   rewardAssignments: RewardProfileAssignmentReadModel[];
+  encounterReadiness: EncounterReadinessReadModel[];
   combatCandidates: EncounterCombatCandidateReadModel[];
   resourcePayloads: EncounterResourcePayloadReadModel[];
   effectPayloads: EncounterEffectPayloadReadModel[];
@@ -247,6 +249,7 @@ export interface UpsertEncounterRewardAssignmentInput {
 
 export interface EncounterDefinitionAdminView {
   encounter: EncounterDefinitionReadModel;
+  readiness: EncounterReadinessReadModel | null;
   kindLabel: string;
   minigameLabel: string;
   rewardProfileLabel: string;

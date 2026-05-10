@@ -17,7 +17,40 @@
       [showClear]="true"
     />
   </label>
-  <button pButton type="button" label="New encounter" severity="secondary" (click)="definitionActions.startNewEncounter()"></button>
+  <p-button type="button" label="New encounter" severity="secondary" (onClick)="definitionActions.startNewEncounter()" />
+  <p-table [value]="page.data()?.encounters ?? []" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Encounter</th>
+        <th>Kind</th>
+        <th>Minigame</th>
+        <th>Status</th>
+        <th>Runtime readiness</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-encounter>
+      <tr>
+        <td>{{ encounter.label }} <span class="muted-text">({{ encounter.key }})</span></td>
+        <td>{{ encounter.encounterKind }}</td>
+        <td>{{ encounter.minigameKey ?? '-' }}</td>
+        <td>
+          <p-tag [severity]="encounter.isActive ? 'success' : 'secondary'" [value]="encounter.isActive ? 'Active' : 'Inactive'" />
+        </td>
+        <td>
+          @if (page.readinessForEncounter(encounter.id); as readiness) {
+            <div class="flex-col gap-xs">
+              <p-tag [severity]="page.readinessSeverity(readiness)" [value]="page.readinessStatusLabel(readiness)" />
+              @if (readiness.blockingReasonCount > 0) {
+                <small class="muted-text">{{ readiness.blockingReasonCount }} blocking reason(s)</small>
+              }
+            </div>
+          } @else {
+            <p-tag severity="secondary" value="Not reported by DB" />
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
 </section>
 
 

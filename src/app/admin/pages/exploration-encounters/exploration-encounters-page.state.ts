@@ -10,6 +10,7 @@ import {
   REWARD_SOURCE_KIND,
 } from '../../../core/constants/reward-runtime-keys.const';
 import { ExplorationEncounterAdminData } from '../../../core/domain/exploration/exploration-encounter-admin.model';
+import { EncounterReadinessReadModel } from '../../../core/domain/exploration/exploration-readiness.model';
 import { ExplorationEncounterAdmin } from '../../../core/services/exploration/exploration-encounter-admin';
 import {
   dictionaryHelp,
@@ -50,6 +51,12 @@ import {
   resourceTypeDescription,
   toResourceTypeOptions,
 } from '../../../core/utils/resource-type-options';
+import {
+  explorationReadinessReasonLabels,
+  explorationReadinessSeverity,
+  explorationReadinessStatusLabel,
+  explorationReadinessSummary,
+} from '../../../core/utils/exploration-readiness-ui';
 import { ExplorationEncounterUiMetadata } from './exploration-encounter-ui-metadata';
 
 @Injectable()
@@ -69,7 +76,12 @@ export class ExplorationEncountersPageState {
     () => this.selectedEncounter()?.encounter.label ?? null,
   );
 
-  readonly encounterOptions = computed(() => encounterSelectorOptions(this.data()));
+  readonly encounterOptions = computed(() =>
+    encounterSelectorOptions(this.data()).map((option) => ({
+      ...option,
+      label: `${option.label} - ${this.readinessOptionLabel(option.value)}`,
+    })),
+  );
   readonly selectedEncounter = computed(() => {
     const data = this.data();
     const encounterId = this.selectedEncounterId();
@@ -202,6 +214,26 @@ export class ExplorationEncountersPageState {
       : null;
   }
 
+  readinessForEncounter(encounterId: string): EncounterReadinessReadModel | null {
+    return this.data()?.encounterReadiness.find((entry) => entry.definitionId === encounterId) ?? null;
+  }
+
+  readinessStatusLabel(readiness: EncounterReadinessReadModel | null): string {
+    return explorationReadinessStatusLabel(readiness);
+  }
+
+  readinessSeverity(readiness: EncounterReadinessReadModel | null): 'success' | 'secondary' | 'warn' {
+    return explorationReadinessSeverity(readiness);
+  }
+
+  readinessSummary(readiness: EncounterReadinessReadModel | null): string {
+    return explorationReadinessSummary(readiness, 'Encounter');
+  }
+
+  readinessReasonLabels(readiness: EncounterReadinessReadModel | null): string[] {
+    return explorationReadinessReasonLabels(readiness);
+  }
+
   constructor() {
     this.encounterSelector.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -259,5 +291,9 @@ export class ExplorationEncountersPageState {
     }
 
     this.selectEncounter(data.encounters[0]?.id ?? null);
+  }
+
+  private readinessOptionLabel(encounterId: string): string {
+    return this.readinessStatusLabel(this.readinessForEncounter(encounterId));
   }
 }

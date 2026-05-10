@@ -8,6 +8,7 @@ import {
 import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import { ExplorationEncounterAdminData } from '../../domain/exploration/exploration-encounter-admin.model';
+import { GetEncounterDefinitionReadinessRpcRow } from '../../types/exploration-runtime-rpc.types';
 import { mapUiMetadataEntry } from '../../utils/admin-ui-metadata';
 import { Row } from '../../types/supabase.types';
 import { mapBuildingDistricts } from '../../utils/building-admin-mappers';
@@ -18,6 +19,7 @@ import {
   mapExplorationMinigameDefinition,
 } from '../../utils/exploration-definition-mappers';
 import { mapEncounterCombatCandidate } from '../../utils/exploration-encounter-admin-mappers';
+import { mapEncounterReadiness } from '../../utils/exploration-readiness-mappers';
 import {
   mapEncounterEffectPayload,
   mapEncounterResourcePayload,
@@ -96,6 +98,10 @@ export function getExplorationEncounterAdminData(
       { column: 'sort_order', ascending: true },
       { column: 'id', ascending: true },
     ]),
+    encounterReadiness: backend.rpc<GetEncounterDefinitionReadinessRpcRow[]>(
+      RPC.get_encounter_definition_readiness,
+      {},
+    ),
     combatCandidates: getRows<Row<'encounter_combat_candidates'>>(backend, TABLES.encounter_combat_candidates, [
       { column: 'sort_order', ascending: true },
       { column: 'id', ascending: true },
@@ -145,6 +151,7 @@ export function getExplorationEncounterAdminData(
       rewardEntryKinds: data.rewardEntryKinds.map(mapRewardDictionary),
       rewardEntryAmountModes: data.rewardEntryAmountModes.map(mapRewardDictionary),
       rewardAssignments: data.rewardAssignments.map(mapRewardProfileAssignment),
+      encounterReadiness: data.encounterReadiness.map(mapEncounterReadiness),
       combatCandidates: data.combatCandidates.map(mapEncounterCombatCandidate),
       resourcePayloads: data.resourcePayloads.map(mapEncounterResourcePayload),
       effectPayloads: data.effectPayloads.map(mapEncounterEffectPayload),
