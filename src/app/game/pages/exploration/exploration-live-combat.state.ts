@@ -2,12 +2,9 @@ import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angul
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import {
-  CombatLiveEventReadModel,
-  CombatLiveParticipantReadModel,
   CombatLiveStateReadModel,
   CombatResultDetailReadModel,
   CombatTimingInput,
-  CombatTimingManifestReadModel,
 } from '../../../core/domain/combat/combat-live.model';
 import { HeroExplorationChallengeAttemptReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { ExplorationLiveCombat } from '../../../core/services/combat/exploration-live-combat';
@@ -16,6 +13,12 @@ import { advanceWalkingDeadTimingFrame } from '../../../core/utils/combat-walkin
 import { mergeCombatLiveEvents } from '../../../core/utils/combat-live-mappers';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
+import {
+  combatEventMetaLabel,
+  combatTimingManifestLabel,
+  explorationCombatRequestId,
+  participantHpLabel,
+} from './exploration-live-combat-labels';
 import { ExplorationOverviewState } from './exploration-overview.state';
 
 @Injectable()
@@ -247,55 +250,9 @@ export class ExplorationLiveCombatState {
       });
   }
 
-  participantHpLabel(participant: CombatLiveParticipantReadModel): string {
-    const current = participant.currentHp ?? 'N/D';
-    const max = participant.maxHp ?? 'N/D';
-
-    return `${current} / ${max}`;
-  }
-
-  eventMetaLabel(event: CombatLiveEventReadModel): string {
-    return [
-      `#${event.eventIndex}`,
-      event.roundNumber === null ? null : `runda ${event.roundNumber}`,
-      event.actionIndex === null ? null : `akcja ${event.actionIndex}`,
-    ].filter(Boolean).join(' - ');
-  }
-
-  timingManifestLabel(manifest: CombatTimingManifestReadModel | null): string {
-    if (!manifest) {
-      return 'DB nie zwróciła manifestu timingu.';
-    }
-
-    const hitChance = manifest.hitChancePercent === null
-      ? null
-      : `szansa ${manifest.hitChancePercent}%`;
-    const streak = manifest.streakBefore === null
-      ? null
-      : `seria ${manifest.streakBefore}`;
-    const luckExplanation = manifest.luckRng?.explanation
-      ? `Luck: ${manifest.luckRng.explanation}`
-      : null;
-    const evasion = manifest.luckRng?.evasionChance === null ||
-      manifest.luckRng?.evasionChance === undefined
-      ? null
-      : `unik ${manifest.luckRng.evasionChance}%`;
-    const critical = manifest.luckRng?.criticalChance === null ||
-      manifest.luckRng?.criticalChance === undefined
-      ? null
-      : `kryt ${manifest.luckRng.criticalChance}%`;
-
-    const baseLabel = manifest.label
-      ?? [
-        `Strefa ${manifest.zoneStartPercent}-${manifest.zoneEndPercent}%`,
-        hitChance,
-        evasion,
-        critical,
-        streak,
-      ].filter(Boolean).join(', ');
-
-    return [baseLabel, luckExplanation].filter(Boolean).join(', ');
-  }
+  readonly participantHpLabel = participantHpLabel;
+  readonly eventMetaLabel = combatEventMetaLabel;
+  readonly timingManifestLabel = combatTimingManifestLabel;
 
   private ensureCombatSession(
     context: { heroId: string; difficultyKey: string },
@@ -459,11 +416,7 @@ export class ExplorationLiveCombatState {
   }
 
   private combatRequestId(challengeAttemptId: string, scope = 'action'): string {
-    const randomId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-    return `exploration-combat:${scope}:${challengeAttemptId}:${randomId}`;
+    return explorationCombatRequestId(challengeAttemptId, scope);
   }
 
   private startCombatTiming(): void {

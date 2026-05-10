@@ -308,7 +308,9 @@ describe('ExplorationPageState', () => {
       }),
     }));
     expect(page.timingManifestLabel(page.combatTimingManifest()))
-      .toContain('DB combat Luck context.');
+      .not.toContain(`Luck${':'}`);
+    expect(page.timingManifestLabel(page.combatTimingManifest()))
+      .not.toContain('DB timing context.');
     expect(page.combatHitWindow()).toEqual({ start: 35, end: 65, width: 30 });
     expect(page.timingManifestLabel(page.combatTimingManifest()))
       .not.toContain('DB nie zwróciła manifestu timingu');
@@ -399,17 +401,20 @@ describe('ExplorationPageState', () => {
     expect(liveCombat.ensureSession).toHaveBeenCalled();
     expect(liveCombat.submitPlayerAction).not.toHaveBeenCalled();
   });
-  it('auto-resolves active challenges with DB-returned Luck context', () => {
+  it('auto-resolves active challenges with DB-returned chance context', () => {
     page.loadData();
     page.startSelectedDifficulty();
     page.overview.setStateFromWorkflow(activeExplorationState('easy', false, true));
 
-    expect(page.autoResolveExplanation()).toBe('DB auto-resolve context.');
-    expect(page.challengeFacts()).toEqual(jasmine.arrayContaining([
-      { label: 'Auto Luck influence', value: '5' },
-      { label: 'Auto Trial Power', value: '37' },
-      { label: 'Auto cap', value: '90%' },
-    ]));
+    expect(page.autoResolveExplanation()).toBe(
+      'Auto-resolve uses the DB-owned success chance for this challenge: 35%.',
+    );
+    expect(page.challengeFacts().map((fact) => fact.label).filter((label) =>
+      label.startsWith('Auto ') || label === 'Auto-resolve Luck',
+    )).toEqual([]);
+    expect(page.challengeFacts().map((fact) => fact.label)).not.toContain(
+      'Luck',
+    );
 
     page.autoResolveChallenge();
 
@@ -436,15 +441,9 @@ describe('ExplorationPageState', () => {
     expect(page.autoResolveExplanation()).toBe(
       'Combat challenges use the live combat flow.',
     );
-    expect(page.challengeFacts().map((fact) => fact.label)).not.toContain(
-      'Auto Luck influence',
-    );
-    expect(page.challengeFacts().map((fact) => fact.label)).not.toContain(
-      'Auto Trial Power',
-    );
-    expect(page.challengeFacts().map((fact) => fact.label)).not.toContain(
-      'Auto cap',
-    );
+    expect(page.challengeFacts().map((fact) => fact.label).filter((label) =>
+      label.startsWith('Auto ') || label === 'Auto-resolve Luck',
+    )).toEqual([]);
 
     page.autoResolveChallenge();
 
@@ -829,9 +828,9 @@ function combatLiveState(
       speed: 1.25,
       label: 'Strike window',
       luckRng: {
-        attackerLuck: 15,
+        'attackerLuck' : 15,
         attackerLuckInfluence: 5,
-        defenderLuck: 9,
+        'defenderLuck' : 9,
         defenderLuckInfluence: 3,
         hitGreenZone: 30,
         hitChance: 30,
@@ -843,7 +842,7 @@ function combatLiveState(
         formulaContextJson: {
           formulaKey: 'combat_critical_chance',
         },
-        explanation: 'DB combat Luck context.',
+        explanation: 'DB timing context.',
         rawJson: {},
       },
       rawJson: {},

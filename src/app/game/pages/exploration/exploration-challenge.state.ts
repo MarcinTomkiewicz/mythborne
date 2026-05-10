@@ -7,6 +7,10 @@ import {
 } from '../../../core/domain/exploration/exploration-runtime.model';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { RequestToken } from '../../../core/utils/request-token';
+import {
+  ChallengeCompletionSnapshot,
+  ChallengeFact,
+} from './exploration-challenge.model';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationLiveCombatState } from './exploration-live-combat.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -260,7 +264,6 @@ export class ExplorationChallengeState {
       { label: 'Manual deadline', value: challenge.manualDeadlineAt ?? 'N/D' },
       { label: 'Manifestation', value: this.chanceRollLabel(challenge.manifestationChance, challenge.manifestationRoll) },
       { label: 'Auto-resolve', value: this.autoResolveFactLabel(challenge) },
-      ...this.autoResolveLuckFacts(challenge),
     ];
   }
 
@@ -269,10 +272,6 @@ export class ExplorationChallengeState {
   ): string {
     if (challenge?.minigameKey === 'combat') {
       return 'Combat challenges use the live combat flow.';
-    }
-
-    if (challenge?.autoResolve?.explanation) {
-      return challenge.autoResolve.explanation;
     }
 
     const chance = challenge?.autoResolve?.chance ?? challenge?.autoResolveChance;
@@ -303,35 +302,6 @@ export class ExplorationChallengeState {
     );
   }
 
-  private autoResolveLuckFacts(
-    challenge: HeroExplorationChallengeAttemptReadModel,
-  ): ChallengeFact[] {
-    if (challenge.minigameKey === 'combat') {
-      return [];
-    }
-
-    const autoResolve = challenge.autoResolve;
-
-    if (!autoResolve) {
-      return [];
-    }
-
-    return [
-      autoResolve.testedStatValue === null
-        ? null
-        : { label: 'Auto tested value', value: `${autoResolve.testedStatValue}` },
-      autoResolve.luckInfluence === null
-        ? null
-        : { label: 'Auto Luck influence', value: `${autoResolve.luckInfluence}` },
-      autoResolve.trialPower === null
-        ? null
-        : { label: 'Auto Trial Power', value: `${autoResolve.trialPower}` },
-      autoResolve.capPercent === null
-        ? null
-        : { label: 'Auto cap', value: `${autoResolve.capPercent}%` },
-    ].filter((fact): fact is ChallengeFact => fact !== null);
-  }
-
   private humanizeKey(value: string): string {
     return value
       .split(/[_\s-]+/)
@@ -339,14 +309,4 @@ export class ExplorationChallengeState {
       .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
       .join(' ') || 'Challenge';
   }
-}
-
-export interface ChallengeFact {
-  label: string;
-  value: string;
-}
-
-interface ChallengeCompletionSnapshot {
-  result: HeroExplorationChallengeCompletionReadModel;
-  explorationId: string | null;
 }

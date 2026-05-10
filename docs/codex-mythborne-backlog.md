@@ -9119,26 +9119,19 @@ If the DB/RPC contract is missing, Codex must report a DB dependency instead of 
 
 ## Task U12 — Player-facing Luck explanation pass
 
-**Goal:** Add concise player-facing explanations where Luck appears in gameplay results.
+**Status 2026-05-10:** Cancelled direction; cleanup accepted, manual smoke pending.
 
-**Scope:**
+**Product/design correction:** Player-facing Exploration must not show explicit counterfactual Luck-impact messages or DB Luck explanations for hidden/indirect Luck influence. U12 implementation was reverted rather than replaced with alternative player-facing Luck copy.
 
-- In player-facing exploration/trial/drop/combat result surfaces touched by Epic U, show only concise explanations.
-- Avoid exposing full formulas or admin math to players.
-- Use wording such as:
-  - Luck improved your odds;
-  - Luck helped this opportunity;
-  - Luck contributed to Trial Power;
-  - Luck influenced this roll.
-- Keep exact formula/math for admin/explainability views.
-- Do not redesign result screens.
+**Accepted cleanup:**
 
-**Acceptance criteria:**
+- Removed cancelled player-facing Luck copy.
+- Removed `Luck:` / DB Luck explanation from Exploration timing labels.
+- Removed auto-resolve technical Luck/Trial Power/cap facts from player-facing challenge facts.
+- Extracted touched challenge/live-combat helper code out of state files.
+- No DB/RPC/generated/status behavior was changed.
 
-- Player sees readable Luck explanations where DB returns Luck contribution.
-- Player UI does not become formula-heavy.
-- Admin-only details are not exposed in normal player surfaces.
-- Build passes.
+**Manual smoke:** pending for `/game/exploration` active challenge and live combat rendering/operation without player-facing Luck copy.
 
 ---
 
