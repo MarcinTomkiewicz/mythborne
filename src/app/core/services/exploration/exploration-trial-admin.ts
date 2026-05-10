@@ -17,6 +17,7 @@ import {
 } from '../../domain/exploration/exploration-trial-admin.model';
 import { TrialDefinitionReadModel } from '../../domain/exploration/exploration-definition.model';
 import { RewardProfileAssignmentReadModel } from '../../domain/exploration/exploration-reward.model';
+import { GetTrialDefinitionReadinessRpcRow } from '../../types/exploration-runtime-rpc.types';
 import { mapBuildingDistricts } from '../../utils/building-admin-mappers';
 import { mapUiMetadataEntry } from '../../utils/admin-ui-metadata';
 import {
@@ -31,6 +32,7 @@ import {
 import {
   mapTrialCombatCandidate,
 } from '../../utils/exploration-trial-admin-mappers';
+import { mapTrialReadiness } from '../../utils/exploration-readiness-mappers';
 import {
   mapResourceType,
   mapRewardDictionary,
@@ -127,6 +129,10 @@ export class ExplorationTrialAdmin {
         { column: 'sort_order', ascending: true },
         { column: 'id', ascending: true },
       ]),
+      trialReadiness: this.backend.rpc<GetTrialDefinitionReadinessRpcRow[]>(
+        RPC.get_trial_definition_readiness,
+        {},
+      ),
       combatCandidates: this.backend.getAll<Row<'trial_combat_candidates'>>({
         table: TABLES.trial_combat_candidates,
         orderBy: [
@@ -182,6 +188,7 @@ export class ExplorationTrialAdmin {
         rewardEntryKinds: data.rewardEntryKinds.map(mapRewardDictionary),
         rewardEntryAmountModes: data.rewardEntryAmountModes.map(mapRewardDictionary),
         rewardAssignments: data.rewardAssignments.map(mapRewardProfileAssignment),
+        trialReadiness: data.trialReadiness.map(mapTrialReadiness),
         combatCandidates: data.combatCandidates.map(mapTrialCombatCandidate),
         opponents: data.opponents.map(mapCombatOpponentDefinition),
         families: data.families.map(mapCombatOpponentFamily),

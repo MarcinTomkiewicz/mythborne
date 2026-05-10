@@ -24,6 +24,10 @@ describe('ExplorationTrialAdmin', () => {
         return of(uiMetadataRows(String(args?.['p_namespace'] ?? '')) as T);
       }
 
+      if (name === RPC.get_trial_definition_readiness) {
+        return of(trialReadinessRows() as T);
+      }
+
       return of(null as T);
     });
 
@@ -46,6 +50,8 @@ describe('ExplorationTrialAdmin', () => {
       expect(data.formulas[0].label).toBe('Enemy scaling');
       expect(data.rewardProfiles[0].label).toBe('Trial reward');
       expect(data.rewardAssignments[0].sourceKind).toBe('trial');
+      expect(data.trialReadiness[0].isReady).toBeFalse();
+      expect(data.trialReadiness[0].reasons[0].label).toBe('Missing combat candidate');
       expect(data.uiMetadataEntries[0].namespace).toBe('trial_configurator_section');
       expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
         table: TABLES.trial_definitions,
@@ -61,6 +67,7 @@ describe('ExplorationTrialAdmin', () => {
         RPC.get_ui_metadata_entries,
         jasmine.objectContaining({ p_namespace: 'trial_configurator_section' }),
       );
+      expect(backend.rpc).toHaveBeenCalledWith(RPC.get_trial_definition_readiness, {});
       done();
     });
   });
@@ -385,6 +392,32 @@ function rowsFor(table: string): any[] {
     default:
       return [];
   }
+}
+
+function trialReadinessRows(): any[] {
+  return [{
+    definition_kind: 'trial',
+    definition_id: 'trial-1',
+    definition_key: 'combat-trial',
+    is_active: true,
+    is_ready: false,
+    minigame_key: 'combat',
+    encounter_kind: null,
+    combat_candidate_count: 0,
+    reward_assignment_count: 1,
+    effect_payload_count: 0,
+    blocking_reason_count: 1,
+    reasons_json: [
+      {
+        key: 'missing_combat_candidate',
+        label: 'Missing combat candidate',
+        description: 'Add an eligible combat candidate.',
+        severity: 'error',
+        isBlocking: true,
+      },
+    ],
+    metadata_json: {},
+  }];
 }
 
 function uiMetadataRows(namespace: string): any[] {

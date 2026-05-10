@@ -46,6 +46,7 @@ export function toTrialDefinitionAdminView(
 
   const stat = data.stats.find((entry) => entry.key === trial.testedStatKey);
   const minigame = data.minigames.find((entry) => entry.key === trial.minigameKey);
+  const readiness = data.trialReadiness.find((entry) => entry.definitionId === trial.id) ?? null;
 
   return {
     trial,
@@ -55,6 +56,7 @@ export function toTrialDefinitionAdminView(
     minigameLabel: minigame ? `${minigame.label} (${minigame.key})` : trial.minigameKey,
     minigameDescription: minigame?.description ?? null,
     isCombatTrial: trial.minigameKey === 'combat',
+    readiness,
     metadataJson: trial.metadataJson,
   };
 }

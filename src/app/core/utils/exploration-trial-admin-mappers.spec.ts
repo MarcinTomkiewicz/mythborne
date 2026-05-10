@@ -77,6 +77,24 @@ function adminData(): ExplorationTrialAdminData {
     rewardEntryKinds: [],
     rewardEntryAmountModes: [],
     rewardAssignments: [],
+    trialReadiness: [
+      {
+        definitionKind: 'trial',
+        definitionId: 'trial-1',
+        definitionKey: 'trial-combat',
+        isActive: true,
+        isReady: true,
+        statusKey: 'ready',
+        minigameKey: 'combat',
+        encounterKind: null,
+        combatCandidateCount: 2,
+        rewardAssignmentCount: 1,
+        effectPayloadCount: 0,
+        blockingReasonCount: 0,
+        reasons: [],
+        metadataJson: {},
+      },
+    ],
     combatCandidates: [
       {
         id: 'candidate-1',

@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ExplorationTrialAdminData } from '../../../core/domain/exploration/exploration-trial-admin.model';
+import { TrialReadinessReadModel } from '../../../core/domain/exploration/exploration-readiness.model';
 import { ExplorationTrialAdmin } from '../../../core/services/exploration/exploration-trial-admin';
 import {
   toTrialCombatCandidateAdminViews,
@@ -37,7 +38,7 @@ export class ExplorationTrialsPageState {
 
   readonly trialOptions = computed(() =>
     (this.data()?.trials ?? []).map((trial) => ({
-      label: `${trial.label} (${trial.key})${trial.isActive ? '' : ' - inactive'}`,
+      label: `${trial.label} (${trial.key}) - ${this.readinessOptionLabel(trial.id)}`,
       value: trial.id,
     })),
   );
@@ -188,6 +189,58 @@ export class ExplorationTrialsPageState {
     }
   }
 
+  readinessForTrial(trialId: string): TrialReadinessReadModel | null {
+    return this.data()?.trialReadiness.find((entry) => entry.definitionId === trialId) ?? null;
+  }
+
+  readinessStatusLabel(readiness: TrialReadinessReadModel | null): string {
+    if (!readiness) {
+      return 'Readiness not reported by DB';
+    }
+
+    if (readiness.statusKey === 'ready') {
+      return 'Runtime-ready';
+    }
+
+    return readiness.statusKey === 'inactive' ? 'Inactive' : 'Incomplete';
+  }
+
+  readinessSeverity(readiness: TrialReadinessReadModel | null): 'success' | 'secondary' | 'warn' {
+    if (!readiness || readiness.statusKey === 'inactive') {
+      return 'secondary';
+    }
+
+    return readiness.statusKey === 'ready' ? 'success' : 'warn';
+  }
+
+  readinessSummary(readiness: TrialReadinessReadModel | null): string {
+    if (!readiness) {
+      return 'The readiness RPC did not return a row for this Trial.';
+    }
+
+    if (readiness.statusKey === 'ready') {
+      return 'This Trial is complete and eligible for normal runtime selection.';
+    }
+
+    if (readiness.statusKey === 'inactive') {
+      return 'This Trial is inactive and is not selected by normal runtime.';
+    }
+
+    return 'This Trial is incomplete and is not selected by normal runtime until blocking reasons are resolved.';
+  }
+
+  readinessReasonLabels(readiness: TrialReadinessReadModel | null): string[] {
+    return (readiness?.reasons ?? []).map((reason) =>
+      [
+        reason.label ?? reason.key,
+        reason.description,
+        reason.isBlocking === true ? 'blocking' : null,
+      ]
+        .filter(Boolean)
+        .join(' - '),
+    );
+  }
+
   private syncSelectedTrial(data: ExplorationTrialAdminData): void {
     const selected = this.selectedTrialId();
 
@@ -197,6 +250,10 @@ export class ExplorationTrialsPageState {
     }
 
     this.selectTrial(data.trials[0]?.id ?? null);
+  }
+
+  private readinessOptionLabel(trialId: string): string {
+    return this.readinessStatusLabel(this.readinessForTrial(trialId));
   }
 
 }

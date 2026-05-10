@@ -183,6 +183,7 @@ export const RPC = {
   close_player_auction_listing: 'close_player_auction_listing',
   cancel_player_auction_listing: 'cancel_player_auction_listing',
   get_hero_exploration_state: 'get_hero_exploration_state',
+  get_trial_definition_readiness: 'get_trial_definition_readiness',
   preview_challenge_auto_resolve_success_chance:
     'preview_challenge_auto_resolve_success_chance',
   preview_combat_luck_formula_context: 'preview_combat_luck_formula_context',

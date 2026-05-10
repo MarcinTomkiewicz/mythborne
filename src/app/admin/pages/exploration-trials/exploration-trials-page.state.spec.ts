@@ -7,8 +7,10 @@ import { ToastService } from '../../../core/services/ui/toast';
 import { ExplorationTrialsActionsState } from './exploration-trials-actions.state';
 import { ExplorationCombatCandidatesSection } from './exploration-combat-candidates-section';
 import { ExplorationTrialEditSection } from './exploration-trial-edit-section';
+import { ExplorationTrialMeaningSection } from './exploration-trial-meaning-section';
 import { ExplorationTrialRewardActionsState } from './exploration-trial-reward-actions.state';
 import { ExplorationTrialRewardSection } from './exploration-trial-reward-section';
+import { ExplorationTrialsListSection } from './exploration-trials-list-section';
 import { ExplorationTrialsPageState } from './exploration-trials-page.state';
 
 describe('ExplorationTrialsPageState', () => {
@@ -44,7 +46,9 @@ describe('ExplorationTrialsPageState', () => {
     TestBed.configureTestingModule({
       imports: [
         ExplorationTrialEditSection,
+        ExplorationTrialMeaningSection,
         ExplorationTrialRewardSection,
+        ExplorationTrialsListSection,
         ExplorationCombatCandidatesSection,
       ],
       providers: [
@@ -63,11 +67,46 @@ describe('ExplorationTrialsPageState', () => {
   it('loads trial definitions and selects the first trial for inspection', () => {
     state.loadInitialData();
 
-    expect(state.trialOptions()[0].label).toBe('Combat trial (combat-trial)');
+    expect(state.trialOptions()[0].label).toBe('Combat trial (combat-trial) - Incomplete');
     expect(state.selectedTrial()?.testedStatLabel).toBe('Spirituality (spirituality)');
     expect(state.selectedTrial()?.minigameLabel).toBe('Combat (combat)');
+    expect(state.selectedTrial()?.readiness?.statusKey).toBe('incomplete');
     expect(state.combatCandidates()[0].targetLabel).toBe('Bandit (bandit)');
     expect(state.rewardAssignments()[0].summaryLabel).toContain('use Trial reward');
+  });
+
+  it('renders DB-owned Trial readiness without blocking admin editing', () => {
+    state.loadInitialData();
+    const fixture = TestBed.createComponent(ExplorationTrialMeaningSection);
+
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Runtime readiness');
+    expect(text).toContain('Incomplete');
+    expect(text).toContain('not selected by normal runtime');
+    expect(text).toContain('Missing combat candidate');
+    expect(text).toContain('Add an eligible combat candidate.');
+
+    actions.trialForm.patchValue({
+      reason: 'Save incomplete draft.',
+      label: 'Combat trial draft',
+    });
+    actions.saveTrial();
+
+    expect(admin.upsertTrialDefinition).toHaveBeenCalled();
+  });
+
+  it('shows readiness status in the Trial list', () => {
+    state.loadInitialData();
+    const fixture = TestBed.createComponent(ExplorationTrialsListSection);
+
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Runtime readiness');
+    expect(text).toContain('Incomplete');
+    expect(text).toContain('1 blocking reason');
   });
 
   it('reports missing UI metadata as exact namespace/key gaps', () => {
@@ -697,6 +736,33 @@ function adminData(trialId = 'trial-1', minigameKey = 'combat'): ExplorationTria
         metadataJson: {},
         createdAt: '2026-05-01T10:00:00.000Z',
         updatedAt: '2026-05-01T10:00:00.000Z',
+      },
+    ],
+    trialReadiness: [
+      {
+        definitionKind: 'trial',
+        definitionId: trialId,
+        definitionKey: 'combat-trial',
+        isActive: true,
+        isReady: false,
+        statusKey: 'incomplete',
+        minigameKey,
+        encounterKind: null,
+        combatCandidateCount: minigameKey === 'combat' ? 0 : 1,
+        rewardAssignmentCount: 1,
+        effectPayloadCount: 0,
+        blockingReasonCount: 1,
+        reasons: [
+          {
+            key: 'missing_combat_candidate',
+            label: 'Missing combat candidate',
+            description: 'Add an eligible combat candidate.',
+            severity: 'error',
+            isBlocking: true,
+            metadataJson: {},
+          },
+        ],
+        metadataJson: {},
       },
     ],
     combatCandidates: [

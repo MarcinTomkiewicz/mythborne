@@ -9963,6 +9963,8 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 - Readiness display uses DB/RPC readiness model, not Angular-only recomputation.
 - Admin can still work on incomplete definitions incrementally.
 
+**Status:** Accepted on 2026-05-10. `/admin/exploration-trials` now displays DB/RPC-owned Trial readiness in the selector, list and detail surfaces. `ExplorationTrialAdmin.getAdminData()` reads `get_trial_definition_readiness`, maps it with the existing W1 readiness mapper, and carries readiness through the existing Trial admin view. Incomplete Trials show DB-backed reason labels/descriptions and explicitly state that normal runtime does not select them, while admin editing/saving remains allowed. No DB/schema/generated type change, direct write path, runtime selection logic or Angular-side readiness recomputation was added. Manual smoke remains user-side pending for ready/incomplete/inactive display, readable blocking reasons and saving incomplete Trials.
+
 ---
 
 ## Task W5 — Encounter readiness display in admin configurator

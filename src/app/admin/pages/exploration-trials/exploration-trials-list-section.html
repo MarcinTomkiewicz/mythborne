@@ -21,6 +21,7 @@
         <th>Stat</th>
         <th>Minigame</th>
         <th>Status</th>
+        <th>Runtime readiness</th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-trial>
@@ -30,6 +31,18 @@
         <td>{{ trial.minigameKey }}</td>
         <td>
           <p-tag [severity]="trial.isActive ? 'success' : 'secondary'" [value]="trial.isActive ? 'Active' : 'Inactive'" />
+        </td>
+        <td>
+          @if (page.readinessForTrial(trial.id); as readiness) {
+            <div class="flex-col gap-xs">
+              <p-tag [severity]="page.readinessSeverity(readiness)" [value]="page.readinessStatusLabel(readiness)" />
+              @if (readiness.blockingReasonCount > 0) {
+                <small class="muted-text">{{ readiness.blockingReasonCount }} blocking reason(s)</small>
+              }
+            </div>
+          } @else {
+            <p-tag severity="secondary" value="Not reported by DB" />
+          }
         </td>
       </tr>
     </ng-template>

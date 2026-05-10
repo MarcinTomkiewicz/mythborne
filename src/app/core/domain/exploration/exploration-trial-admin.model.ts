@@ -11,6 +11,7 @@ import {
   ExplorationMinigameDefinitionReadModel,
   TrialDefinitionReadModel,
 } from './exploration-definition.model';
+import { TrialReadinessReadModel } from './exploration-readiness.model';
 import {
   RewardDictionaryReadModel,
   RewardOutcomeKindReadModel,
@@ -61,6 +62,7 @@ export interface ExplorationTrialAdminData {
   rewardEntryKinds: RewardDictionaryReadModel[];
   rewardEntryAmountModes: RewardDictionaryReadModel[];
   rewardAssignments: RewardProfileAssignmentReadModel[];
+  trialReadiness: TrialReadinessReadModel[];
   combatCandidates: TrialCombatCandidateReadModel[];
   opponents: CombatOpponentDefinitionReadModel[];
   families: CombatOpponentFamilyReadModel[];
@@ -133,6 +135,7 @@ export interface TrialDefinitionAdminView {
   minigameLabel: string;
   minigameDescription: string | null;
   isCombatTrial: boolean;
+  readiness: TrialReadinessReadModel | null;
   metadataJson: Json;
 }
 

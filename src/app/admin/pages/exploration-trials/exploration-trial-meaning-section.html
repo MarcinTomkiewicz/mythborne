@@ -29,7 +29,34 @@
         <span>Status</span>
         <strong>{{ view.trial.isActive ? 'Active' : 'Inactive' }}</strong>
       </div>
+      <div class="flex-col gap-xs">
+        <span>Runtime readiness</span>
+        <strong>{{ page.readinessStatusLabel(view.readiness) }}</strong>
+        <small class="muted-text">{{ page.readinessSummary(view.readiness) }}</small>
+      </div>
     </div>
+    @if (view.readiness; as readiness) {
+      <div class="flex-col gap-sm">
+        <strong>Readiness diagnostics</strong>
+        <div class="flex-row-start-center flex-wrap gap-xs">
+          <span class="tag-badge tag-badge--muted">Rewards: {{ readiness.rewardAssignmentCount }}</span>
+          <span class="tag-badge tag-badge--muted">Combat candidates: {{ readiness.combatCandidateCount }}</span>
+          <span class="tag-badge tag-badge--muted">Blocking reasons: {{ readiness.blockingReasonCount }}</span>
+          @if (readiness.minigameKey) {
+            <span class="tag-badge tag-badge--muted">Minigame: {{ readiness.minigameKey }}</span>
+          }
+        </div>
+        @if (page.readinessReasonLabels(readiness).length) {
+          <div class="flex-col gap-xs">
+            @for (reason of page.readinessReasonLabels(readiness); track reason) {
+              <span>{{ reason }}</span>
+            }
+          </div>
+        } @else {
+          <p class="muted-text mb-0">DB readiness returned no blocking reasons.</p>
+        }
+      </div>
+    }
     <div class="flex-col gap-sm">
       <strong>Description</strong>
       <p class="mb-0">{{ view.trial.description }}</p>
