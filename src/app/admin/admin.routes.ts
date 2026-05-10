@@ -117,6 +117,11 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'luck-lab',
+    loadComponent: () =>
+      import('./pages/luck-lab/luck-lab-page').then((m) => m.LuckLabPage),
+  },
+  {
     path: 'exploration-trials',
     loadComponent: () =>
       import('./pages/exploration-trials/exploration-trials-page').then(

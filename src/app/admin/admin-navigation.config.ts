@@ -186,6 +186,14 @@ export const ADMIN_DASHBOARD_CARDS: readonly AdminDashboardCard[] = [
     accessPolicy: 'selectedServerModeration',
   },
   {
+    legend: 'Luck',
+    title: 'Luck Lab',
+    description:
+      'Read-only Luck balancing previews over DB-owned formula and RNG contracts.',
+    routerLink: '/admin/luck-lab',
+    accessPolicy: 'selectedServerTesting',
+  },
+  {
     legend: 'Exploration',
     title: 'Exploration debug',
     description:
@@ -547,6 +555,11 @@ export const EXPLORATION_ENCOUNTERS_PAGE_LINKS: readonly AdminTagLink[] = [
 export const EXPLORATION_LAB_PAGE_LINKS: readonly AdminTagLink[] = [
   { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
   {
+    label: 'Luck Lab',
+    routerLink: '/admin/luck-lab',
+    accessPolicy: 'selectedServerTesting',
+  },
+  {
     label: 'Encounter definitions',
     routerLink: '/admin/exploration-encounters',
     accessPolicy: 'selectedServerManagement',
@@ -565,6 +578,25 @@ export const EXPLORATION_LAB_PAGE_LINKS: readonly AdminTagLink[] = [
     label: 'Exploration',
     routerLink: '/game/exploration',
     accessPolicy: 'playerGameplay',
+  },
+  {
+    label: 'Config definitions',
+    routerLink: '/admin/config-definitions',
+    accessPolicy: 'selectedServerManagement',
+  },
+];
+
+export const LUCK_LAB_PAGE_LINKS: readonly AdminTagLink[] = [
+  { label: 'Admin dashboard', routerLink: '/admin', accessPolicy: 'adminShell' },
+  {
+    label: 'Exploration lab',
+    routerLink: '/admin/exploration-lab',
+    accessPolicy: 'selectedServerTesting',
+  },
+  {
+    label: 'Formula read model',
+    routerLink: '/admin/formulas',
+    accessPolicy: 'selectedServerManagement',
   },
   {
     label: 'Config definitions',

@@ -1,0 +1,117 @@
+<div class="flex-col gap-xl">
+  <app-loading-overlay
+    [visible]="page.isLoading()"
+    title="Running Luck Lab"
+    message="Preview RPCs read DB-owned formulas and do not mutate gameplay or config."
+  />
+
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Luck Lab</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">Luck balancing previews</h2>
+        <p class="muted-text mb-0">
+          Luck is the global RNG and opportunity stat. This page previews DB-owned formulas and
+          read contracts for balancing; it is not a player-facing promise and does not change
+          configuration directly.
+        </p>
+      </div>
+
+      <app-admin-tag-links [links]="links" />
+    </div>
+
+    <div class="mt-md">
+      <app-admin-server-switcher />
+    </div>
+  </section>
+
+  @if (page.error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  <section class="mg-card p-lg w-100" [formGroup]="page.form">
+    <div class="flex-col gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Shared inputs</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Preview context</h3>
+        <p class="muted-text mb-0">
+          These inputs drive preview requests only. Formula ownership remains in DB/RPC contracts.
+        </p>
+      </div>
+
+      <div class="grid-2-1 gap-lg">
+        <div class="form-field">
+          <span>Luck value: {{ page.form.controls.luckValue.value }}</span>
+          <p-slider formControlName="luckValue" [min]="0" [max]="100" />
+        </div>
+
+        <div class="form-field">
+          <span>Tested stat value: {{ page.form.controls.testedStatValue.value }}</span>
+          <p-slider formControlName="testedStatValue" [min]="0" [max]="100" />
+        </div>
+
+        <div class="form-field">
+          <span>Spirituality value</span>
+          <p-inputnumber formControlName="spiritualityValue" [min]="0" />
+        </div>
+
+        <div class="form-field">
+          <span>Tested stat key</span>
+          <p-select
+            formControlName="testedStatKey"
+            [options]="page.statOptions()"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
+
+        <div class="form-field">
+          <span>Difficulty</span>
+          <p-select
+            formControlName="difficultyKey"
+            [options]="page.difficultyOptions()"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
+
+        <div class="form-field">
+          <span>District</span>
+          <p-select
+            formControlName="districtCode"
+            [options]="page.districtOptions()"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
+
+        <div class="form-field">
+          <span>Trial definition</span>
+          <p-select
+            formControlName="trialDefinitionId"
+            [options]="page.trialOptions()"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mg-card p-lg w-100">
+    <div class="grid-3 gap-md">
+      <div class="mg-surface-card p-md flex-col gap-xs">
+        <span class="card-legend">Raw Luck</span>
+        <strong>{{ page.lab.input().luckValue }}</strong>
+      </div>
+      <div class="mg-surface-card p-md flex-col gap-xs">
+        <span class="card-legend">Luck influence</span>
+        <strong>{{ page.lab.result().luckInfluence?.luckInfluence ?? 'Pending' }}</strong>
+      </div>
+      <div class="mg-surface-card p-md flex-col gap-xs">
+        <span class="card-legend">Trial Power</span>
+        <strong>{{ page.lab.result().trialPower?.trialPower ?? 'Pending' }}</strong>
+      </div>
+    </div>
+  </section>
+</div>

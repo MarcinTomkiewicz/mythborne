@@ -9406,6 +9406,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Page does not imply it changes config directly.
 - Build and route smoke pass where Codex can run route smoke.
 
+**Status:** Accepted on 2026-05-10 with follow-up. Added `/admin/luck-lab`, dashboard/navigation entry, thin page and page state with shared Luck/tested-stat sliders plus DB-backed difficulty/district/stat/trial selectors reused from existing exploration definitions. The shell copy states that previews are DB-owned balancing outputs and not config mutation or player-facing promises. No generated types, direct writes, local RNG/formula/drop simulation or status-independent gameplay authority were added. Verification passed with focused route/page/page-state and Luck Lab service-state specs, `npx tsc --noEmit`, `npm run build` with known warnings, static greps and prerender route output for `/admin/luck-lab`. Follow-up for V4+: render real preview panels with section-specific loading/error and freshness clarity; align form defaults with `DEFAULT_LUCK_LAB_INPUT` on the next Luck Lab form touch.
+
 ---
 
 ## Task V4 — Trial Power preview panel
