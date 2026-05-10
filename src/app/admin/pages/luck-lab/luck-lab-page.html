@@ -94,6 +94,26 @@
             optionValue="value"
           />
         </div>
+
+        <div class="form-field">
+          <span>Bucket profile</span>
+          <p-select
+            formControlName="bucketProfileId"
+            [options]="page.itemBucketOptions()"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
+
+        <div class="form-field">
+          <span>Maximum quality</span>
+          <p-select
+            formControlName="maxQualityKey"
+            [options]="page.itemQualityOptions()"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
       </div>
     </div>
   </section>
@@ -103,4 +123,5 @@
   <app-luck-lab-auto-resolve-section />
   <app-luck-lab-encounter-section />
   <app-luck-lab-combat-section />
+  <app-luck-lab-generated-item-section />
 </div>

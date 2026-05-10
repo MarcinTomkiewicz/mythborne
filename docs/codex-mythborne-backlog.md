@@ -9581,6 +9581,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - UI does not imply higher Luck guarantees a better single item.
 - No item generation model rewrite is introduced.
 
+**Status:** Accepted on 2026-05-10. Added a dedicated single-roll generated item panel over DB-owned `preview_reward_generated_item_luck(...)`. The generated item preview path forces `p_preview_count = 1`, the UI has no `Preview count` control, and the panel shows selected bucket/max quality context, generated item, rolled bucket, quality, base item, nullable prefix/suffix, final value and budget breakdown while explaining that one roll does not prove Luck effect. `LuckLabState` now separates `rewardProfile` and `generatedItem` loading/error/result patching, and the page shell only shows definitions/shared-shell errors, so hidden reward profile preview failures do not poison the generated item panel or global page error. No rarity flags, item model rewrite, local formula/RNG/drop simulation, direct writes or generated type edits were added. Verification passed with focused Luck Lab page/page-state/generated-item-section/service-state specs, `npx tsc --noEmit`, `npm run build` with known warnings, static greps and prerender route output for `/admin/luck-lab`.
+
 ---
 
 ## Task V10 — Drop distribution simulation panel

@@ -120,7 +120,8 @@ describe('LuckLabState', () => {
     state.reloadNow();
 
     expect(state.errorsBySection().combat).toBe('Combat preview failed.');
-    expect(state.errorsBySection().rewards).toBe('Reward preview failed.');
+    expect(state.errorsBySection().rewardProfile).toBe('Reward preview failed.');
+    expect(state.errorsBySection().generatedItem).toBeNull();
     expect(state.errorsBySection().surfaces).toBeNull();
     expect(state.errorsBySection().trialPower).toBeNull();
     expect(state.errorsBySection().dropDistribution).toBeNull();
@@ -129,6 +130,22 @@ describe('LuckLabState', () => {
     expect(state.result().dropDistribution.status).toBe('unsupported');
     expect(state.result().combatPreview).toBeNull();
     expect(state.result().rewardRangePreviews).toEqual([]);
+    expect(state.result().generatedItemPreviews[0].generatedName).toBe('Blade');
+  });
+
+  it('keeps generated item failures separate from reward profile preview', () => {
+    previews.previewGeneratedItem.and.returnValue(
+      throwError(() => new Error('Generated item preview failed.')),
+    );
+
+    state.reloadNow();
+
+    expect(state.errorsBySection().generatedItem).toBe(
+      'Generated item preview failed.',
+    );
+    expect(state.errorsBySection().rewardProfile).toBeNull();
+    expect(state.result().rewardRangePreviews[0].rewardProfileId).toBe('reward-1');
+    expect(state.result().generatedItemPreviews).toEqual([]);
   });
 
   function setSuccessfulPreviewDefaults(): void {

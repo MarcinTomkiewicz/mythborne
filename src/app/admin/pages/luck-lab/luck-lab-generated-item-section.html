@@ -1,0 +1,105 @@
+<section class="mg-card p-lg w-100 flex-col gap-md">
+  <div class="flex-row-between-center flex-col-sm gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Drop single roll</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Generated item preview</h3>
+      <p class="mb-0">
+        This panel shows one DB-owned item generation preview. A single roll can explain the
+        selected result, but it does not prove that higher Luck is assured to improve one item.
+      </p>
+    </div>
+
+    @if (section.isLoading()) {
+      <span class="card-legend">Refreshing</span>
+    }
+  </div>
+
+  @if (section.error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  <div class="grid-3 gap-md">
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="card-legend">Selected bucket</span>
+      <strong>{{ section.selectedBucketLabel() }}</strong>
+    </div>
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="card-legend">Maximum quality</span>
+      <strong>{{ section.selectedMaxQualityLabel() }}</strong>
+    </div>
+    <div class="mg-surface-card p-md flex-col gap-xs">
+      <span class="card-legend">Single-roll limit</span>
+      <strong>Explanation only</strong>
+      <span>Use distribution preview later for statistical Luck impact.</span>
+    </div>
+  </div>
+
+  @if (section.preview(); as item) {
+    <div class="grid-2 gap-md">
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">Generated item</span>
+        <strong>{{ item.generatedName }}</strong>
+        <span>{{ item.baseName }} ({{ item.baseKey }})</span>
+        <span>Type {{ item.baseTypeKey }}</span>
+        <span>Base value {{ item.baseValue }}</span>
+        <span>Final value {{ item.drachmaValue }} drachma</span>
+      </article>
+
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">Roll context</span>
+        <strong>Luck {{ item.luckValue }} -> influence {{ item.luckInfluence }}</strong>
+        <span>Bucket {{ item.bucketProfileName }} / index {{ item.bucketIndex }}</span>
+        <span>Rolled budget {{ item.rolledBudget }}</span>
+        <span>{{ item.explanation }}</span>
+      </article>
+    </div>
+
+    <div class="grid-3 gap-md">
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">Quality</span>
+        <strong>{{ item.qualityLabel }} ({{ item.qualityKey }})</strong>
+        <span>Multiplier x{{ item.qualityMultiplier }}</span>
+        <span>Base weight {{ item.qualityBaseWeight }}</span>
+        <span>Adjusted weight {{ item.qualityAdjustedWeight }}</span>
+        <span>Roll score {{ item.qualityRollScore }}</span>
+      </article>
+
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">Prefix</span>
+        @if (item.prefixAffix; as prefix) {
+          <strong>{{ prefix.name }} ({{ prefix.key }})</strong>
+          <span>Chance {{ prefix.chance }}%</span>
+          <span>Roll {{ prefix.roll }}</span>
+          <span>Value {{ prefix.goldValue }}</span>
+        } @else {
+          <strong>No prefix</strong>
+          <span>DB returned no prefix affix for this roll.</span>
+        }
+      </article>
+
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">Suffix</span>
+        @if (item.suffixAffix; as suffix) {
+          <strong>{{ suffix.name }} ({{ suffix.key }})</strong>
+          <span>Chance {{ suffix.chance }}%</span>
+          <span>Roll {{ suffix.roll }}</span>
+          <span>Value {{ suffix.goldValue }}</span>
+        } @else {
+          <strong>No suffix</strong>
+          <span>DB returned no suffix affix for this roll.</span>
+        }
+      </article>
+    </div>
+
+    <div class="grid-3 gap-md">
+      @for (row of section.budgetRows(); track row.label) {
+        <div class="mg-surface-card p-md flex-col gap-xs">
+          <span class="card-legend">{{ row.label }}</span>
+          <strong>{{ row.value }}</strong>
+        </div>
+      }
+    </div>
+  } @else {
+    <p>Waiting for DB generated item preview.</p>
+  }
+</section>

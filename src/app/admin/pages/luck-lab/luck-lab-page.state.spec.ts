@@ -26,6 +26,8 @@ describe('LuckLabPageState', () => {
       'setDistrictCode',
       'setTestedStatKey',
       'setTrialDefinitionId',
+      'setBucketProfileId',
+      'setMaxQualityKey',
     ]);
     Object.assign(lab, {
       isLoading: signal(false),
@@ -55,25 +57,25 @@ describe('LuckLabPageState', () => {
         luckInfluence: {
           luckInfluence: 6,
         },
-          chancePreviews: [
-            chancePreview('trial_opportunity', 10, null, {
-              projectedStepNumber: 1,
-              trialOpportunityStepCap: 8,
-            }),
-            chancePreview('trial_manifestation', 24, 48),
-            chancePreview('challenge_auto_resolve', 18, 48, {
-              capPercent: 80,
-              difficultyMultiplier: 1,
-              manualChanceReference: 30,
-              rawAutoResolveSuccessChance: 28,
-            }),
-            chancePreview('non_trial_encounter', 14, null, {
-              baseChance: 8,
-              capPercent: 80,
-              rawEncounterChance: 14,
-              spiritualityValue: 0,
-            }),
-          ],
+        chancePreviews: [
+          chancePreview('trial_opportunity', 10, null, {
+            projectedStepNumber: 1,
+            trialOpportunityStepCap: 8,
+          }),
+          chancePreview('trial_manifestation', 24, 48),
+          chancePreview('challenge_auto_resolve', 18, 48, {
+            capPercent: 80,
+            difficultyMultiplier: 1,
+            manualChanceReference: 30,
+            rawAutoResolveSuccessChance: 28,
+          }),
+          chancePreview('non_trial_encounter', 14, null, {
+            baseChance: 8,
+            capPercent: 80,
+            rawEncounterChance: 14,
+            spiritualityValue: 0,
+          }),
+        ],
       }),
     });
     previews = jasmine.createSpyObj<LuckLabPreviews>('LuckLabPreviews', [
@@ -173,6 +175,10 @@ describe('LuckLabPageState', () => {
       difficultyOptions: signal([{ label: 'Easy (easy)', value: 'easy' }]),
       districtOptions: signal([{ label: 'District A (district-a)', value: 'district-a' }]),
       statOptions: signal([{ label: 'Wisdom (wisdom)', value: 'wisdom' }]),
+      itemBucketOptions: signal([
+        { label: 'Default drops (default-drops)', value: 'bucket-1' },
+      ]),
+      itemQualityOptions: signal([{ label: 'Rare (rare)', value: 'rare' }]),
       trialDefinitions: signal([
         {
           id: 'trial-1',
@@ -202,6 +208,35 @@ describe('LuckLabPageState', () => {
     expect(lab.reloadNow).toHaveBeenCalled();
   });
 
+  it('keeps preview section errors out of the global page error', () => {
+    Object.assign(lab, {
+      error: signal('Reward preview failed.'),
+      errorsBySection: signal({
+        rewardProfile: 'Reward preview failed.',
+        generatedItem: null,
+        trialPower: null,
+        chancePreviews: null,
+      }),
+    });
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        LuckLabPageState,
+        LuckLabComparisonState,
+        LuckLabEncounterComparisonState,
+        { provide: LuckLabState, useValue: lab },
+        { provide: LuckLabPreviews, useValue: previews },
+        { provide: ExplorationDefinitionsState, useValue: definitions },
+      ],
+    });
+
+    const pageState = TestBed.inject(LuckLabPageState);
+
+    expect(pageState.error()).toBeNull();
+    expect(lab.errorsBySection().generatedItem).toBeNull();
+  });
+
   it('initializes shared controls from the Luck Lab default input contract', () => {
     expect(state.form.controls.luckValue.value).toBe(
       DEFAULT_LUCK_LAB_INPUT.luckValue,
@@ -211,6 +246,12 @@ describe('LuckLabPageState', () => {
     );
     expect(state.form.controls.spiritualityValue.value).toBe(
       DEFAULT_LUCK_LAB_INPUT.spiritualityValue,
+    );
+    expect(state.form.controls.bucketProfileId.value).toBe(
+      DEFAULT_LUCK_LAB_INPUT.bucketProfileId,
+    );
+    expect(state.form.controls.maxQualityKey.value).toBe(
+      DEFAULT_LUCK_LAB_INPUT.maxQualityKey,
     );
   });
 
@@ -224,6 +265,8 @@ describe('LuckLabPageState', () => {
     state.form.controls.districtCode.setValue('district-a');
     state.form.controls.testedStatKey.setValue('wisdom');
     state.form.controls.trialDefinitionId.setValue('trial-1');
+    state.form.controls.bucketProfileId.setValue('bucket-1');
+    state.form.controls.maxQualityKey.setValue('rare');
 
     expect(lab.setLuckValue).toHaveBeenCalledWith(18);
     expect(lab.setTestedStatValue).toHaveBeenCalledWith(42);
@@ -232,6 +275,8 @@ describe('LuckLabPageState', () => {
     expect(lab.setDistrictCode).toHaveBeenCalledWith('district-a');
     expect(lab.setTestedStatKey).toHaveBeenCalledWith('wisdom');
     expect(lab.setTrialDefinitionId).toHaveBeenCalledWith('trial-1');
+    expect(lab.setBucketProfileId).toHaveBeenCalledWith('bucket-1');
+    expect(lab.setMaxQualityKey).toHaveBeenCalledWith('rare');
   });
 
   it('exposes DB Trial Power values for the panel without difficulty or district ingredients', () => {

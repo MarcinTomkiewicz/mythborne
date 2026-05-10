@@ -4,6 +4,8 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { LuckLabCombatSection } from './luck-lab-combat-section';
 import { LuckLabCombatSectionState } from './luck-lab-combat-section.state';
+import { LuckLabGeneratedItemSection } from './luck-lab-generated-item-section';
+import { LuckLabGeneratedItemSectionState } from './luck-lab-generated-item-section.state';
 import { LuckLabPage } from './luck-lab-page';
 import { LuckLabPageState } from './luck-lab-page.state';
 
@@ -19,6 +21,8 @@ describe('LuckLabPage', () => {
     | 'districtOptions'
     | 'statOptions'
     | 'trialOptions'
+    | 'itemBucketOptions'
+    | 'itemQualityOptions'
     | 'isTrialPowerLoading'
     | 'trialPowerError'
     | 'trialPower'
@@ -59,6 +63,15 @@ describe('LuckLabPage', () => {
     | 'isComparisonLoading'
     | 'comparisonError'
   >;
+  let generatedItemSectionState: Pick<
+    LuckLabGeneratedItemSectionState,
+    | 'preview'
+    | 'isLoading'
+    | 'error'
+    | 'selectedBucketLabel'
+    | 'selectedMaxQualityLabel'
+    | 'budgetRows'
+  >;
 
   beforeEach(async () => {
     pageState = {
@@ -70,6 +83,8 @@ describe('LuckLabPage', () => {
         districtCode: new FormControl<string | null>('district-a'),
         testedStatKey: new FormControl<string | null>('wisdom'),
         trialDefinitionId: new FormControl<string | null>('trial-1'),
+        bucketProfileId: new FormControl<string | null>('bucket-1'),
+        maxQualityKey: new FormControl<string | null>('rare'),
       }),
       load: jasmine.createSpy('load'),
       isLoading: signal(false),
@@ -78,6 +93,10 @@ describe('LuckLabPage', () => {
       districtOptions: signal([{ label: 'District A (district-a)', value: 'district-a' }]),
       statOptions: signal([{ label: 'Wisdom (wisdom)', value: 'wisdom' }]),
       trialOptions: signal([{ label: 'Maze (maze)', value: 'trial-1' }]),
+      itemBucketOptions: signal([
+        { label: 'Default drops (default-drops)', value: 'bucket-1' },
+      ]),
+      itemQualityOptions: signal([{ label: 'Rare (rare)', value: 'rare' }]),
       isTrialPowerLoading: signal(false),
       trialPowerError: signal(null),
       trialPower: signal({
@@ -279,6 +298,54 @@ describe('LuckLabPage', () => {
       isComparisonLoading: signal(false),
       comparisonError: signal(null),
     };
+    generatedItemSectionState = {
+      preview: signal({
+        previewIndex: 1,
+        bucketProfileId: 'bucket-1',
+        bucketProfileKey: 'default-drops',
+        bucketProfileName: 'Default drops',
+        bucketIndex: 1,
+        rolledBudget: 100,
+        luckValue: 12,
+        luckInfluence: 4,
+        baseId: 'base-1',
+        baseKey: 'blade',
+        baseName: 'Blade',
+        baseTypeKey: 'weapon',
+        baseValue: 20,
+        qualityKey: 'rare',
+        qualityLabel: 'Rare',
+        qualityMultiplier: 1.2,
+        qualityBaseWeight: 10,
+        qualityAdjustedWeight: 18,
+        qualityRollScore: 12,
+        prefixAffix: {
+          affixId: 'prefix-1',
+          key: 'sharp',
+          name: 'Sharp',
+          goldValue: 5,
+          chance: 25,
+          roll: 10,
+        },
+        suffixAffix: null,
+        generatedName: 'Sharp Blade',
+        drachmaValue: 30,
+        budgetBeforeQualityMultiplier: 80,
+        remainingBudgetAfterBase: 60,
+        remainingBudgetAfterPrefix: 55,
+        remainingBudgetAfterSuffix: 50,
+        formulaContextJson: {},
+        explanation: 'DB item generation preview.',
+      }),
+      isLoading: signal(false),
+      error: signal(null),
+      selectedBucketLabel: signal('Default drops (default-drops)'),
+      selectedMaxQualityLabel: signal('Rare (rare)'),
+      budgetRows: signal([
+        { label: 'Rolled bucket budget', value: 100 },
+        { label: 'Remaining after suffix', value: 50 },
+      ]),
+    };
 
     await TestBed.configureTestingModule({
       imports: [LuckLabPage],
@@ -292,6 +359,16 @@ describe('LuckLabPage', () => {
         set: {
           providers: [
             { provide: LuckLabCombatSectionState, useValue: combatSectionState },
+          ],
+        },
+      })
+      .overrideComponent(LuckLabGeneratedItemSection, {
+        set: {
+          providers: [
+            {
+              provide: LuckLabGeneratedItemSectionState,
+              useValue: generatedItemSectionState,
+            },
           ],
         },
       })
@@ -316,6 +393,8 @@ describe('LuckLabPage', () => {
     expect(text).toContain('Difficulty');
     expect(text).toContain('District');
     expect(text).toContain('Trial definition');
+    expect(text).toContain('Bucket profile');
+    expect(text).toContain('Maximum quality');
     expect(text).toContain('Raw Luck to Trial Power');
     expect(text).toContain('30 + 4 = 34');
     expect(text).toContain('DB Trial Power preview.');
@@ -347,7 +426,16 @@ describe('LuckLabPage', () => {
     expect(text).toContain('not exposed by current DB metadata');
     expect(text).toContain('62%');
     expect(text).toContain('x1.5');
+    expect(text).toContain('Drop single roll');
+    expect(text).toContain('Generated item preview');
+    expect(text).toContain('does not prove that higher Luck is assured to improve one item');
+    expect(text).toContain('Default drops (default-drops)');
+    expect(text).toContain('Rare (rare)');
+    expect(text).toContain('Sharp Blade');
+    expect(text).toContain('Final value 30 drachma');
+    expect(text).toContain('No suffix');
+    expect(text).toContain('Remaining after suffix');
     expect(fixture.debugElement.queryAll(By.css('p-slider')).length).toBe(2);
-    expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(4);
+    expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(6);
   });
 });

@@ -36,6 +36,10 @@ export class LuckLabPageState {
     trialDefinitionId: new FormControl<string | null>(
       DEFAULT_LUCK_LAB_INPUT.trialDefinitionId,
     ),
+    bucketProfileId: new FormControl<string | null>(
+      DEFAULT_LUCK_LAB_INPUT.bucketProfileId,
+    ),
+    maxQualityKey: new FormControl<string | null>(DEFAULT_LUCK_LAB_INPUT.maxQualityKey),
   });
 
   readonly difficultyOptions = computed<SelectOption<string | null>[]>(() => [
@@ -57,12 +61,19 @@ export class LuckLabPageState {
       value: trial.id,
     })),
   ]);
+  readonly itemBucketOptions = computed<SelectOption<string | null>[]>(() => [
+    { label: 'Database default', value: null },
+    ...this.definitions.itemBucketOptions(),
+  ]);
+  readonly itemQualityOptions = computed<SelectOption<string | null>[]>(() => [
+    { label: 'Database default', value: null },
+    ...this.definitions.itemQualityOptions(),
+  ]);
   readonly isLoading = computed(
     () => this.definitions.isLoadingDefinitions() || this.lab.isLoading(),
   );
-  readonly error = computed(() => this.definitions.error() ?? this.lab.error());
+  readonly error = computed(() => this.definitions.error());
   readonly trialPower = computed(() => this.lab.result().trialPower);
-  readonly luckInfluence = computed(() => this.lab.result().luckInfluence);
   readonly isTrialPowerLoading = computed(
     () => this.lab.loadingBySection().trialPower,
   );
@@ -234,6 +245,12 @@ export class LuckLabPageState {
         this.lab.setTrialDefinitionId(value);
         this.comparisons.scheduleTrialChance(this.lab.input());
       });
+    this.form.controls.bucketProfileId.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => this.lab.setBucketProfileId(value));
+    this.form.controls.maxQualityKey.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => this.lab.setMaxQualityKey(value));
   }
 }
 

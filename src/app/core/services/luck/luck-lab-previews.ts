@@ -144,7 +144,7 @@ export class LuckLabPreviews {
     return this.backend
       .rpc<PreviewRewardGeneratedItemLuckRpcRow[]>(
         RPC.preview_reward_generated_item_luck,
-        toGeneratedItemArgs(input),
+        toGeneratedItemArgs({ ...input, previewCount: 1 }),
       )
       .pipe(map((rows) => rows.map(mapRewardGeneratedItemLuckPreview)));
   }

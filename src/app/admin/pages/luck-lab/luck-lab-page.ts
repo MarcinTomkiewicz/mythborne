@@ -15,6 +15,7 @@ import { LuckLabCombatSection } from './luck-lab-combat-section';
 import { LuckLabComparisonState } from './luck-lab-comparison.state';
 import { LuckLabEncounterComparisonState } from './luck-lab-encounter-comparison.state';
 import { LuckLabEncounterSection } from './luck-lab-encounter-section';
+import { LuckLabGeneratedItemSection } from './luck-lab-generated-item-section';
 import { LuckLabPageState } from './luck-lab-page.state';
 import { LuckLabTrialChanceSection } from './luck-lab-trial-chance-section';
 import { LuckLabTrialPowerSection } from './luck-lab-trial-power-section';
@@ -33,6 +34,7 @@ import { LuckLabTrialPowerSection } from './luck-lab-trial-power-section';
     LuckLabAutoResolveSection,
     LuckLabCombatSection,
     LuckLabEncounterSection,
+    LuckLabGeneratedItemSection,
     LuckLabTrialChanceSection,
     LuckLabTrialPowerSection,
     LoadingOverlay,

@@ -97,7 +97,7 @@ describe('LuckLabPreviews', () => {
     expect(backend.rpc).toHaveBeenCalledWith(RPC.preview_reward_generated_item_luck, {
       p_bucket_profile_id: 'bucket-1',
       p_max_quality_key: 'rare',
-      p_preview_count: 2,
+      p_preview_count: 1,
       p_luck_value: 12,
     });
     expect(result.surfaces.length).toBe(1);

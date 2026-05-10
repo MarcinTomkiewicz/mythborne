@@ -17,7 +17,8 @@ export type LuckLabPreviewSection =
   | 'trialPower'
   | 'chancePreviews'
   | 'combat'
-  | 'rewards'
+  | 'rewardProfile'
+  | 'generatedItem'
   | 'dropDistribution';
 
 type SectionRecord<T> = Record<LuckLabPreviewSection, T>;
@@ -27,7 +28,8 @@ const PREVIEW_SECTIONS: readonly LuckLabPreviewSection[] = [
   'trialPower',
   'chancePreviews',
   'combat',
-  'rewards',
+  'rewardProfile',
+  'generatedItem',
   'dropDistribution',
 ];
 
@@ -210,12 +212,15 @@ export class LuckLabState {
     );
     this.runSection(
       token,
-      'rewards',
-      forkJoin({
-        rewardRangePreviews: this.previews.previewRewardProfile(input),
-        generatedItemPreviews: this.previews.previewGeneratedItem(input),
-      }),
-      (rewards) => this.patchResult(input, rewards),
+      'rewardProfile',
+      this.previews.previewRewardProfile(input),
+      (rewardRangePreviews) => this.patchResult(input, { rewardRangePreviews }),
+    );
+    this.runSection(
+      token,
+      'generatedItem',
+      this.previews.previewGeneratedItem(input),
+      (generatedItemPreviews) => this.patchResult(input, { generatedItemPreviews }),
     );
     this.runSection(
       token,
