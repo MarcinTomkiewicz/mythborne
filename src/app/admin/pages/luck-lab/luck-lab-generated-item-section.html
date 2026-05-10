@@ -18,14 +18,16 @@
     <p-message severity="error">{{ message }}</p-message>
   }
 
+  <app-luck-lab-explanation-list [rows]="explanationRows()" />
+
   <div class="grid-3 gap-md">
     <div class="mg-surface-card p-md flex-col gap-xs">
       <span class="card-legend">Selected bucket</span>
-      <strong>{{ section.selectedBucketLabel() }}</strong>
+      <strong>Bucket profile override: {{ section.selectedBucketLabel() }}</strong>
     </div>
     <div class="mg-surface-card p-md flex-col gap-xs">
       <span class="card-legend">Maximum quality</span>
-      <strong>{{ section.selectedMaxQualityLabel() }}</strong>
+      <strong>Maximum quality override: {{ section.selectedMaxQualityLabel() }}</strong>
     </div>
     <div class="mg-surface-card p-md flex-col gap-xs">
       <span class="card-legend">Single-roll limit</span>
@@ -38,18 +40,18 @@
     <div class="grid-2 gap-md">
       <article class="mg-surface-card p-md flex-col gap-sm">
         <span class="card-legend">Generated item</span>
-        <strong>{{ item.generatedName }}</strong>
+        <strong>Generated item: {{ item.generatedName }}</strong>
         <span>{{ item.baseName }} ({{ item.baseKey }})</span>
-        <span>Type {{ item.baseTypeKey }}</span>
-        <span>Base value {{ item.baseValue }}</span>
-        <span>Final value {{ item.drachmaValue }} drachma</span>
+        <span>Base type: {{ item.baseTypeKey }}</span>
+        <span>Base value: {{ item.baseValue }}</span>
+        <span>Final value: {{ item.drachmaValue }} drachma</span>
       </article>
 
       <article class="mg-surface-card p-md flex-col gap-sm">
         <span class="card-legend">Roll context</span>
-        <strong>Luck {{ item.luckValue }} -> influence {{ item.luckInfluence }}</strong>
-        <span>Bucket {{ item.bucketProfileName }} / index {{ item.bucketIndex }}</span>
-        <span>Rolled budget {{ item.rolledBudget }}</span>
+        <strong>Raw Luck: {{ item.luckValue }}; Luck influence: {{ item.luckInfluence }}</strong>
+        <span>Bucket profile: {{ item.bucketProfileName }}; bucket index: {{ item.bucketIndex }}</span>
+        <span>Rolled budget: {{ item.rolledBudget }}</span>
         <span>{{ item.explanation }}</span>
       </article>
     </div>
@@ -57,20 +59,20 @@
     <div class="grid-3 gap-md">
       <article class="mg-surface-card p-md flex-col gap-sm">
         <span class="card-legend">Quality</span>
-        <strong>{{ item.qualityLabel }} ({{ item.qualityKey }})</strong>
-        <span>Multiplier x{{ item.qualityMultiplier }}</span>
-        <span>Base weight {{ item.qualityBaseWeight }}</span>
-        <span>Adjusted weight {{ item.qualityAdjustedWeight }}</span>
-        <span>Roll score {{ item.qualityRollScore }}</span>
+        <strong>Quality: {{ item.qualityLabel }} ({{ item.qualityKey }})</strong>
+        <span>Multiplier: x{{ item.qualityMultiplier }}</span>
+        <span>Base weight: {{ item.qualityBaseWeight }}</span>
+        <span>Adjusted weight: {{ item.qualityAdjustedWeight }}</span>
+        <span>Roll score: {{ item.qualityRollScore }}</span>
       </article>
 
       <article class="mg-surface-card p-md flex-col gap-sm">
         <span class="card-legend">Prefix</span>
         @if (item.prefixAffix; as prefix) {
-          <strong>{{ prefix.name }} ({{ prefix.key }})</strong>
-          <span>Chance {{ prefix.chance }}%</span>
-          <span>Roll {{ prefix.roll }}</span>
-          <span>Value {{ prefix.goldValue }}</span>
+          <strong>Prefix: {{ prefix.name }} ({{ prefix.key }})</strong>
+          <span>Prefix chance: {{ prefix.chance }}%</span>
+          <span>Prefix roll: {{ prefix.roll }}</span>
+          <span>Prefix value: {{ prefix.goldValue }}</span>
         } @else {
           <strong>No prefix</strong>
           <span>DB returned no prefix affix for this roll.</span>
@@ -80,10 +82,10 @@
       <article class="mg-surface-card p-md flex-col gap-sm">
         <span class="card-legend">Suffix</span>
         @if (item.suffixAffix; as suffix) {
-          <strong>{{ suffix.name }} ({{ suffix.key }})</strong>
-          <span>Chance {{ suffix.chance }}%</span>
-          <span>Roll {{ suffix.roll }}</span>
-          <span>Value {{ suffix.goldValue }}</span>
+          <strong>Suffix: {{ suffix.name }} ({{ suffix.key }})</strong>
+          <span>Suffix chance: {{ suffix.chance }}%</span>
+          <span>Suffix roll: {{ suffix.roll }}</span>
+          <span>Suffix value: {{ suffix.goldValue }}</span>
         } @else {
           <strong>No suffix</strong>
           <span>DB returned no suffix affix for this roll.</span>
@@ -95,7 +97,7 @@
       @for (row of section.budgetRows(); track row.label) {
         <div class="mg-surface-card p-md flex-col gap-xs">
           <span class="card-legend">{{ row.label }}</span>
-          <strong>{{ row.value }}</strong>
+          <strong>{{ row.label }}: {{ row.value }}</strong>
         </div>
       }
     </div>

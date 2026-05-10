@@ -75,7 +75,7 @@ describe('luck-lab-mappers', () => {
       label: 'Trial manifestation',
       description: 'Chance preview from DB.',
       helperText: 'Uses DB formula metadata.',
-      rpcName: 'preview_trial_manifestation_chance',
+      rpcName: 'preview_trial_manifestation_chance_rpc',
       rpcSignature: 'preview_trial_manifestation_chance(...)',
       resultType: 'rows',
       sortOrder: 10,
@@ -88,7 +88,10 @@ describe('luck-lab-mappers', () => {
         isFallback: false,
         missingConfigKeys: [],
       },
-      metadataJson: {},
+      metadataJson: {
+        surfaceKey: 'trial_manifestation_surface',
+        aliases: ['preview_trial_manifestation_chance'],
+      },
     };
 
     const result = mapLuckLabPreviewResult({
@@ -97,6 +100,11 @@ describe('luck-lab-mappers', () => {
 
     expect(result.explanationRows[0]).toEqual({
       surfaceKey: 'preview_trial_manifestation_chance',
+      lookupKeys: [
+        'preview_trial_manifestation_chance',
+        'preview_trial_manifestation_chance_rpc',
+        'trial_manifestation_surface',
+      ],
       label: 'Trial manifestation',
       description: 'Chance preview from DB.',
       helperText: 'Uses DB formula metadata.',
@@ -132,14 +140,7 @@ describe('luck-lab-mappers', () => {
 
     expect(result.dropDistribution.status).toBe('unsupported');
     expect(result.dropDistribution.bucketRows).toEqual([]);
-    expect(result.explanationRows.at(-1)).toEqual({
-      surfaceKey: 'drop_distribution',
-      label: 'Drop distribution',
-      description: 'Distribution-level item generation preview.',
-      helperText: 'Missing RPC.',
-      status: 'unsupported',
-      reason: 'Missing RPC.',
-    });
+    expect(result.explanationRows).toEqual([]);
     expect(result.comparisonRows.find((entry) => entry.key === 'trial_manifestation')).toEqual({
       key: 'trial_manifestation',
       label: 'trial_manifestation',

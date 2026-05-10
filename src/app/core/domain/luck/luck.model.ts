@@ -242,6 +242,7 @@ export interface LuckLabComparisonRow {
 
 export interface LuckLabExplanationRow {
   surfaceKey: string;
+  lookupKeys: string[];
   label: string;
   description: string;
   helperText: string;

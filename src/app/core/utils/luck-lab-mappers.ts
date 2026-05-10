@@ -105,10 +105,7 @@ export function mapLuckLabPreviewResult(input: {
       generatedItemPreviews,
       rewardRangePreviews,
     }),
-    explanationRows: mapLuckLabExplanationRows(
-      input.surfaces ?? [],
-      dropDistribution,
-    ),
+    explanationRows: mapLuckLabExplanationRows(input.surfaces ?? []),
   };
 }
 
@@ -179,16 +176,15 @@ function mapLuckLabComparisonRows(input: {
 
 function mapLuckLabExplanationRows(
   surfaces: readonly LuckRngSurface[],
-  dropDistribution: LuckLabDropDistributionSummary,
 ): LuckLabExplanationRow[] {
-  return [
-    ...surfaces.map((surface) => {
+  return surfaces.map((surface) => {
       const status: LuckLabSectionStatus = surface.status.isAvailable
         ? 'available'
         : 'unsupported';
 
       return {
         surfaceKey: surface.contractKey,
+        lookupKeys: explanationLookupKeys(surface),
         label: surface.label,
         description: surface.description,
         helperText: surface.helperText,
@@ -197,16 +193,7 @@ function mapLuckLabExplanationRows(
           ? surface.helperText
           : unavailableReason(surface),
       };
-    }),
-    {
-      surfaceKey: 'drop_distribution',
-      label: 'Drop distribution',
-      description: 'Distribution-level item generation preview.',
-      helperText: dropDistribution.reason,
-      status: dropDistribution.status,
-      reason: dropDistribution.reason,
-    },
-  ];
+    });
 }
 
 function numberComparisonRow(
@@ -243,4 +230,48 @@ function unavailableReason(surface: LuckRngSurface): string {
   return surface.status.missingConfigKeys.length > 0
     ? `Missing config: ${surface.status.missingConfigKeys.join(', ')}`
     : 'Luck Lab preview contract is not available.';
+}
+
+function explanationLookupKeys(surface: LuckRngSurface): string[] {
+  const metadata = metadataRecord(surface.metadataJson);
+
+  return uniqueTextValues([
+    surface.contractKey,
+    surface.rpcName,
+    textMetadata(metadata, 'surfaceKey'),
+    textMetadata(metadata, 'surface_key'),
+    ...stringArrayMetadata(metadata, 'aliases'),
+    ...stringArrayMetadata(metadata, 'surfaceAliases'),
+    ...stringArrayMetadata(metadata, 'surface_aliases'),
+  ]);
+}
+
+function metadataRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function textMetadata(
+  metadata: Record<string, unknown>,
+  key: string,
+): string | null {
+  const value = metadata[key];
+
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function stringArrayMetadata(
+  metadata: Record<string, unknown>,
+  key: string,
+): string[] {
+  const value = metadata[key];
+
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === 'string' && Boolean(entry.trim()))
+    : [];
+}
+
+function uniqueTextValues(values: readonly (string | null | undefined)[]): string[] {
+  return [...new Set(values.filter((value): value is string => Boolean(value?.trim())))];
 }

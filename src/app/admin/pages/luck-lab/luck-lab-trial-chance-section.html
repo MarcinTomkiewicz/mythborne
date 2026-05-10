@@ -19,18 +19,20 @@
     <p-message severity="error">{{ message }}</p-message>
   }
 
+  <app-luck-lab-explanation-list [rows]="explanationRows()" />
+
   <div class="grid-3 gap-md">
     <div class="mg-surface-card p-md flex-col gap-xs">
       <span class="card-legend">Difficulty context</span>
-      <strong>{{ page.lab.input().difficultyKey ?? 'DB default' }}</strong>
+      <strong>Difficulty override: {{ page.lab.input().difficultyKey ?? 'DB default' }}</strong>
     </div>
     <div class="mg-surface-card p-md flex-col gap-xs">
       <span class="card-legend">District context</span>
-      <strong>{{ page.lab.input().districtCode ?? 'DB default' }}</strong>
+      <strong>District override: {{ page.lab.input().districtCode ?? 'DB default' }}</strong>
     </div>
     <div class="mg-surface-card p-md flex-col gap-xs">
       <span class="card-legend">Trial context</span>
-      <strong>{{ page.selectedTrialContextLabel() }}</strong>
+      <strong>Trial definition override: {{ page.selectedTrialContextLabel() }}</strong>
       @if (page.selectedTrialContextId(); as trialDefinitionId) {
         <span class="muted-text">ID: {{ trialDefinitionId }}</span>
       }
@@ -43,13 +45,13 @@
       @if (page.trialOpportunityPreview(); as opportunity) {
         <strong>
           @if (opportunity.chancePercent === null) {
-            N/A
+            Trial opportunity chance: N/A
           } @else {
-            {{ opportunity.chancePercent }}%
+            Trial opportunity chance: {{ opportunity.chancePercent }}%
           }
         </strong>
         <span>
-          Luck {{ opportunity.luckValue }} -> influence {{ opportunity.luckInfluence }}
+          Raw Luck: {{ opportunity.luckValue }}; Luck influence: {{ opportunity.luckInfluence }}
         </span>
         <span>{{ opportunity.explanation }}</span>
         <span class="muted-text">
@@ -65,13 +67,13 @@
       @if (page.trialManifestationPreview(); as manifestation) {
         <strong>
           @if (manifestation.chancePercent === null) {
-            N/A
+            Trial manifestation chance: N/A
           } @else {
-            {{ manifestation.chancePercent }}%
+            Trial manifestation chance: {{ manifestation.chancePercent }}%
           }
         </strong>
         <span>
-          Trial Power {{ manifestation.trialPower ?? 'N/A' }} with Luck influence
+          Trial Power: {{ manifestation.trialPower ?? 'N/A' }}; Luck influence:
           {{ manifestation.luckInfluence }}
         </span>
         <span>{{ manifestation.explanation }}</span>

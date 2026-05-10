@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -10,6 +10,7 @@ import { LuckLabGeneratedItemSection } from './luck-lab-generated-item-section';
 import { LuckLabGeneratedItemSectionState } from './luck-lab-generated-item-section.state';
 import { LuckLabPage } from './luck-lab-page';
 import { LuckLabPageState } from './luck-lab-page.state';
+import { LuckLabState } from '../../../core/services/luck/luck-lab.state';
 
 describe('LuckLabPage', () => {
   let fixture: ComponentFixture<LuckLabPage>;
@@ -246,6 +247,83 @@ describe('LuckLabPage', () => {
         result: signal({
           luckInfluence: { luckInfluence: 4 },
           trialPower: { trialPower: 34 },
+          explanationRows: [
+            {
+              surfaceKey: 'preview_luck_influence_and_trial_power',
+              lookupKeys: ['preview_luck_influence_and_trial_power'],
+              label: 'DB Trial Power surface',
+              description: 'DB Trial Power surface description.',
+              helperText: 'DB Trial Power helper.',
+              status: 'available',
+              reason: 'DB Trial Power helper.',
+            },
+            {
+              surfaceKey: 'preview_trial_opportunity_curve',
+              lookupKeys: ['preview_trial_opportunity_curve'],
+              label: 'DB Opportunity surface',
+              description: 'DB opportunity surface description.',
+              helperText: 'DB opportunity helper.',
+              status: 'available',
+              reason: 'DB opportunity helper.',
+            },
+            {
+              surfaceKey: 'preview_trial_manifestation_chance',
+              lookupKeys: ['preview_trial_manifestation_chance'],
+              label: 'DB Manifestation surface',
+              description: 'DB manifestation surface description.',
+              helperText: 'DB manifestation helper.',
+              status: 'available',
+              reason: 'DB manifestation helper.',
+            },
+            {
+              surfaceKey: 'preview_challenge_auto_resolve_success_chance',
+              lookupKeys: ['preview_challenge_auto_resolve_success_chance'],
+              label: 'DB Auto-resolve surface',
+              description: 'DB auto-resolve surface description.',
+              helperText: 'DB auto-resolve helper.',
+              status: 'available',
+              reason: 'DB auto-resolve helper.',
+            },
+            {
+              surfaceKey: 'preview_non_trial_encounter_chance',
+              lookupKeys: ['preview_non_trial_encounter_chance'],
+              label: 'DB Encounter surface',
+              description: 'DB encounter surface description.',
+              helperText: 'DB encounter helper.',
+              status: 'available',
+              reason: 'DB encounter helper.',
+            },
+            {
+              surfaceKey: 'preview_combat_luck_formula_context',
+              lookupKeys: ['preview_combat_luck_formula_context'],
+              label: 'DB Combat surface',
+              description: 'DB combat surface description.',
+              helperText: 'DB combat helper.',
+              status: 'available',
+              reason: 'DB combat helper.',
+            },
+            {
+              surfaceKey: 'preview_reward_generated_item_luck',
+              lookupKeys: ['preview_reward_generated_item_luck'],
+              label: 'DB Generated Item surface',
+              description: 'DB generated item surface description.',
+              helperText: 'DB generated item helper.',
+              status: 'available',
+              reason: 'DB generated item helper.',
+            },
+            {
+              surfaceKey: 'luck_lab_drop_distribution_contract',
+              lookupKeys: [
+                'luck_lab_drop_distribution_contract',
+                'preview_reward_generated_item_distribution_luck',
+              ],
+              label: 'DB Drop Distribution surface',
+              description: 'DB drop distribution surface description.',
+              helperText: 'DB drop distribution helper.',
+              status: 'available',
+              reason: 'DB drop distribution helper.',
+            },
+          ],
         }),
       } as never,
     };
@@ -471,6 +549,7 @@ describe('LuckLabPage', () => {
         set: {
           providers: [
             { provide: LuckLabCombatSectionState, useValue: combatSectionState },
+            { provide: LuckLabState, useValue: pageState.lab },
           ],
         },
       })
@@ -481,6 +560,7 @@ describe('LuckLabPage', () => {
               provide: LuckLabGeneratedItemSectionState,
               useValue: generatedItemSectionState,
             },
+            { provide: LuckLabState, useValue: pageState.lab },
           ],
         },
       })
@@ -491,6 +571,7 @@ describe('LuckLabPage', () => {
               provide: LuckLabDropDistributionSectionState,
               useValue: dropDistributionSectionState,
             },
+            { provide: LuckLabState, useValue: pageState.lab },
           ],
         },
       })
@@ -518,59 +599,169 @@ describe('LuckLabPage', () => {
     expect(text).toContain('Bucket profile');
     expect(text).toContain('Maximum quality');
     expect(text).toContain('Raw Luck to Trial Power');
+    expect(text).toContain('Tested stat: 30');
+    expect(text).toContain('Raw Luck: 12');
+    expect(text).toContain('Luck influence: 4');
+    expect(text).toContain('Trial Power: 34');
+    expect(text).toContain('DB Trial Power surface');
+    expect(text).toContain('DB Trial Power helper.');
+    expect(text).toContain('luck_influence');
+    expect(text).toContain('DB luck expression');
+    expect(text).toContain('trial_power');
+    expect(text).toContain('DB trial expression');
     expect(text).toContain('30 + 4 = 34');
     expect(text).toContain('DB Trial Power preview.');
     expect(text).toContain('Current sliders');
     expect(text).toContain('Opportunity and manifestation');
+    expect(text).toContain('DB Opportunity surface');
+    expect(text).toContain('DB opportunity helper.');
+    expect(text).toContain('Formula: trial_opportunity_chance');
+    expect(text).toContain('DB Manifestation surface');
+    expect(text).toContain('DB manifestation helper.');
     expect(text).toContain('Difficulty context');
-    expect(text).toContain('district-a');
-    expect(text).toContain('Maze (maze)');
-    expect(text).toContain('18%');
-    expect(text).toContain('42%');
+    expect(text).toContain('Difficulty override: easy');
+    expect(text).toContain('District override: district-a');
+    expect(text).toContain('Trial definition override: Maze (maze)');
+    expect(text).toContain('Trial opportunity chance: 18%');
+    expect(text).toContain('Trial manifestation chance: 42%');
     expect(text).toContain('DB opportunity preview.');
     expect(text).toContain('DB manifestation preview.');
     expect(text).toContain('Current Luck');
     expect(text).toContain('Challenge auto-resolve');
     expect(text).toContain('Success or failure');
+    expect(text).toContain('DB Auto-resolve surface');
+    expect(text).toContain('DB auto-resolve helper.');
+    expect(text).toContain('Formula: challenge_auto_resolve_success_chance');
     expect(text).toContain('DB auto-resolve preview.');
     expect(text).toContain('Manual chance reference');
-    expect(text).toContain('24%');
+    expect(text).toContain('Auto-resolve chance: 24%');
     expect(text).toContain('Encounter fallback');
     expect(text).toContain('Non-trial encounter chance');
+    expect(text).toContain('DB Encounter surface');
+    expect(text).toContain('DB encounter helper.');
+    expect(text).toContain('Formula: non_trial_encounter_chance');
     expect(text).toContain('DB encounter fallback preview.');
+    expect(text).toContain('Encounter chance: 16%');
     expect(text).toContain('nothing is the deterministic fallback outcome');
     expect(text).toContain('Encounter subtype');
     expect(text).toContain('Combat RNG');
     expect(text).toContain('Damager vs target preview');
+    expect(text).toContain('DB Combat surface');
+    expect(text).toContain('DB combat helper.');
     expect(text).toContain('DB combat Luck preview.');
-    expect(text).toContain('Dexterity 22');
+    expect(text).toContain('Dexterity: 22');
     expect(text).toContain('combat_hit_green_zone');
     expect(text).toContain('not exposed by current DB metadata');
-    expect(text).toContain('62%');
-    expect(text).toContain('x1.5');
+    expect(text).toContain('Hit chance: 62%');
+    expect(text).toContain('Critical damage multiplier: x1.5');
     expect(text).toContain('Drop single roll');
     expect(text).toContain('Generated item preview');
+    expect(text).toContain('DB Generated Item surface');
+    expect(text).toContain('DB generated item helper.');
     expect(text).toContain('does not prove that higher Luck is assured to improve one item');
-    expect(text).toContain('Default drops (default-drops)');
-    expect(text).toContain('Rare (rare)');
-    expect(text).toContain('Sharp Blade');
-    expect(text).toContain('Final value 30 drachma');
+    expect(text).toContain('Bucket profile override: Default drops (default-drops)');
+    expect(text).toContain('Maximum quality override: Rare (rare)');
+    expect(text).toContain('Generated item: Sharp Blade');
+    expect(text).toContain('Final value: 30 drachma');
     expect(text).toContain('No suffix');
-    expect(text).toContain('Remaining after suffix');
+    expect(text).toContain('Remaining after suffix: 50');
     expect(text).toContain('Drop distribution');
     expect(text).toContain('Generated item distribution preview');
+    expect(text).toContain('DB Drop Distribution surface');
+    expect(text).toContain('DB drop distribution helper.');
     expect(text).toContain('DB-owned distribution simulation RPC');
     expect(text).toContain('Simulation workload is owned by the DB preview RPC');
     expect(text).toContain('Average value');
     expect(text).toContain('42 drachma');
     expect(text).toContain('30 drachma');
+    expect(text).toContain('Roll count: 100');
+    expect(text).toContain('Current Luck: 12');
+    expect(text).toContain('Compare Luck: 0');
     expect(text).toContain('Prefix hit rate');
     expect(text).toContain('Low Luck 10');
     expect(text).toContain('36 drachma');
     expect(text).toContain('Weapon (weapon)');
     expect(text).toContain('Rare (rare)');
     expect(text).toContain('DB distribution preview.');
+    expect(text).not.toContain(['Local', 'fallback'].join(' '));
+    expect(text).not.toContain(['DB', 'metadata', 'gap'].join(' '));
+    expect(text).not.toContain(
+      ['Missing required', 'Luck Lab DB explanation metadata'].join(' '),
+    );
+    const bareSummaryValues = cardSummaryValues(fixture);
+
+    expect(bareSummaryValues).not.toContain('DB default');
+    expect(bareSummaryValues).not.toContain('N/A');
     expect(fixture.debugElement.queryAll(By.css('p-slider')).length).toBe(2);
     expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(6);
   });
+
+  it('renders default and null summary values with visible field labels', () => {
+    setWritableSignal(pageState.lab.input, {
+      ...asRecord(pageState.lab.input()),
+      difficultyKey: null,
+      districtCode: null,
+      trialDefinitionId: null,
+      bucketProfileId: null,
+      maxQualityKey: null,
+    });
+    setWritableSignal(pageState.selectedTrialContextLabel, 'DB default');
+    setWritableSignal(pageState.selectedTrialContextId, null);
+    setWritableSignal(generatedItemSectionState.selectedBucketLabel, 'DB default');
+    setWritableSignal(generatedItemSectionState.selectedMaxQualityLabel, 'DB default');
+    setWritableSignal(dropDistributionSectionState.selectedBucketLabel, 'DB default');
+    setWritableSignal(dropDistributionSectionState.selectedMaxQualityLabel, 'DB default');
+    setWritableSignal(pageState.trialOpportunityPreview, {
+      ...asRecord(pageState.trialOpportunityPreview()),
+      chancePercent: null,
+    });
+    setWritableSignal(pageState.trialManifestationPreview, {
+      ...asRecord(pageState.trialManifestationPreview()),
+      chancePercent: null,
+    });
+    setWritableSignal(pageState.autoResolvePreview, {
+      ...asRecord(pageState.autoResolvePreview()),
+      chancePercent: null,
+    });
+    setWritableSignal(pageState.encounterPreview, {
+      ...asRecord(pageState.encounterPreview()),
+      chancePercent: null,
+    });
+
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('Difficulty override: DB default');
+    expect(text).toContain('District override: DB default');
+    expect(text).toContain('Trial definition override: DB default');
+    expect(text).toContain('Bucket profile override: DB default');
+    expect(text).toContain('Maximum quality override: DB default');
+    expect(text).toContain('Trial opportunity chance: N/A');
+    expect(text).toContain('Trial manifestation chance: N/A');
+    expect(text).toContain('Auto-resolve chance: N/A');
+    expect(text).toContain('Encounter chance: N/A');
+    expect(cardSummaryValues(fixture)).not.toContain('DB default');
+    expect(cardSummaryValues(fixture)).not.toContain('N/A');
+  });
 });
+
+function cardSummaryValues(
+  fixture: ComponentFixture<LuckLabPage>,
+): (string | undefined)[] {
+  return Array.from<Element>(
+    fixture.nativeElement.querySelectorAll(
+      '.mg-surface-card strong, .mg-surface-card span',
+    ),
+  ).map((element) => element.textContent?.trim());
+}
+
+function setWritableSignal<T>(target: unknown, value: T): void {
+  (target as WritableSignal<T>).set(value);
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}

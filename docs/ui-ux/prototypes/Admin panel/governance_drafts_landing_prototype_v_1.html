@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mythsworn Governance & Drafts Landing Prototype v1</title>
+  <style>
+    /*
+      VISUAL REFERENCE ONLY.
+      Prototype goal: Governance & Drafts Landing / Workspace Overview v1.
+      This is the entry screen after clicking Governance & Drafts from Admin Hub.
+      Balance Draft Workspace v2 remains the detail screen for Active Balance Draft.
+      Do not copy CSS into Angular feature components.
+    */
+    :root {
+      --bg-0: #05070b;
+      --navy-0: #07111d;
+      --navy-1: #0d2033;
+      --gold-0: #8b5c20;
+      --gold-1: #c28b36;
+      --gold-2: #f0ca71;
+      --text-0: #f7eedb;
+      --text-1: #d7c8ab;
+      --text-2: #a39781;
+      --text-3: #706755;
+      --red: #c26452;
+      --green: #79ad66;
+      --blue: #65aee3;
+      --purple: #a486db;
+      --line-soft: rgba(240, 202, 113, .12);
+      --line: rgba(240, 202, 113, .24);
+      --line-strong: rgba(240, 202, 113, .42);
+      --shadow: rgba(0, 0, 0, .42);
+      --sidebar-w: 19rem;
+      --topbar-h: 4.35rem;
+      --radius-lg: 1rem;
+      --radius-xl: 1.35rem;
+      --font-display: Georgia, "Times New Roman", serif;
+      --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-ui);
+      color: var(--text-0);
+      background:
+        radial-gradient(circle at 14% 4%, rgba(240, 202, 113, .13), transparent 27rem),
+        radial-gradient(circle at 86% 8%, rgba(101, 174, 227, .17), transparent 34rem),
+        linear-gradient(135deg, var(--bg-0), #070a10 44%, #040508 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .12;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 80%);
+    }
+    button, input { font: inherit; }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+      grid-template-areas: "sidebar topbar" "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+      padding: 1rem .85rem;
+      border-right: 1px solid var(--line-soft);
+      background: linear-gradient(180deg, rgba(7, 10, 16, .94), rgba(4, 6, 10, .96));
+      box-shadow: .65rem 0 2rem rgba(0, 0, 0, .2);
+      overflow: auto;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .8rem;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(240, 202, 113, .17);
+      background:
+        linear-gradient(180deg, rgba(20, 32, 47, .72), rgba(8, 12, 18, .74)),
+        radial-gradient(circle at 82% 0%, rgba(240, 202, 113, .16), transparent 10rem);
+      margin-bottom: .9rem;
+    }
+    .brand-mark {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: .9rem;
+      border: 1px solid var(--line-strong);
+      background: radial-gradient(circle at 34% 24%, #fff0b9 0, var(--gold-2) 22%, var(--gold-0) 48%, #251509 70%, var(--navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,202,113,.22);
+      position: relative;
+      flex: 0 0 auto;
+    }
+    .brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--gold-2);
+      line-height: 1;
+    }
+    .brand-subtitle {
+      color: var(--text-3);
+      font-size: .68rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-top: .18rem;
+    }
+
+    .context-card {
+      padding: .85rem;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-lg);
+      background: rgba(7, 10, 14, .42);
+      margin-bottom: 1rem;
+      display: grid;
+      gap: .64rem;
+    }
+    .context-row { display: grid; gap: .24rem; }
+    .context-label,
+    .nav-section-title,
+    .eyebrow,
+    .tiny-label {
+      color: var(--text-3);
+      font-size: .68rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .context-value {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .6rem;
+      font-weight: 800;
+      color: var(--text-0);
+    }
+
+    .nav-section-title { margin: 1rem 0 .45rem .55rem; }
+    .nav-list {
+      display: grid;
+      gap: .28rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      padding: .62rem .68rem;
+      color: var(--text-1);
+      text-decoration: none;
+      border-radius: .85rem;
+      border: 1px solid transparent;
+      transition: 120ms ease;
+    }
+    .nav-link:hover,
+    .nav-link.is-active {
+      color: var(--text-0);
+      border-color: rgba(240,202,113,.16);
+      background: linear-gradient(90deg, rgba(240,202,113,.13), rgba(45,110,159,.12));
+    }
+    .nav-link.is-active { box-shadow: inset 3px 0 0 var(--gold-1); }
+    .nav-icon {
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: .55rem;
+      display: grid;
+      place-items: center;
+      background: rgba(240,202,113,.08);
+      color: var(--gold-1);
+      border: 1px solid rgba(240,202,113,.08);
+      flex: 0 0 auto;
+      font-size: .67rem;
+      font-weight: 900;
+      letter-spacing: .02em;
+    }
+    .nav-label { min-width: 0; }
+    .nav-sub {
+      display: block;
+      color: var(--text-3);
+      font-size: .68rem;
+      margin-top: .08rem;
+      line-height: 1.25;
+    }
+    .nav-link.is-active .nav-sub { color: var(--text-2); }
+
+    .topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(18rem, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      padding: .65rem 1rem;
+      border-bottom: 1px solid var(--line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,202,113,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem var(--shadow);
+    }
+    .topbar-title { display: grid; gap: .12rem; }
+    .topbar-title strong {
+      font-family: var(--font-display);
+      font-size: 1.18rem;
+      color: var(--text-0);
+    }
+    .topbar-title span { color: var(--text-2); font-size: .78rem; }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      justify-content: flex-end;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .search,
+    .context-pill {
+      min-height: 2.22rem;
+      border-radius: 999px;
+      border: 1px solid rgba(240,202,113,.12);
+      background: rgba(5,8,12,.42);
+      color: var(--text-1);
+      padding: .42rem .72rem;
+      outline: none;
+    }
+    .search { min-width: 17rem; }
+    .context-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      color: var(--text-1);
+      background: rgba(240,202,113,.055);
+    }
+    .context-pill strong { color: var(--text-0); }
+
+    .main {
+      grid-area: main;
+      min-width: 0;
+      padding: 1rem;
+      display: grid;
+      gap: .9rem;
+      align-content: start;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .24rem .55rem;
+      border-radius: 999px;
+      border: 1px solid var(--line-soft);
+      color: var(--text-1);
+      background: rgba(7,10,14,.45);
+      font-size: .76rem;
+      white-space: nowrap;
+    }
+    .badge.gold { color: var(--gold-2); border-color: rgba(240,202,113,.32); }
+    .badge.green { color: #bde6b0; border-color: rgba(121,173,102,.46); }
+    .badge.blue { color: #b9def3; border-color: rgba(101,174,227,.46); }
+    .badge.red { color: #f2b4aa; border-color: rgba(194,100,82,.46); }
+    .badge.purple { color: #d9c8ff; border-color: rgba(164,134,219,.46); }
+    .badge.muted { color: var(--text-2); }
+
+    .button-row { display: flex; gap: .45rem; flex-wrap: wrap; align-items: center; }
+    .button {
+      min-height: 2.18rem;
+      padding: .45rem .76rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--text-0);
+      background: linear-gradient(180deg, rgba(240,202,113,.2), rgba(91,58,19,.32));
+      cursor: pointer;
+      box-shadow: inset 0 1px rgba(255,255,255,.07);
+    }
+    .button.ghost { background: rgba(8,12,18,.54); color: var(--text-1); }
+    .text-link {
+      color: var(--gold-2);
+      text-decoration: none;
+      font-size: .76rem;
+      border-bottom: 1px solid rgba(240,202,113,.22);
+    }
+
+    .card,
+    .workspace-card,
+    .status-strip,
+    .help-card {
+      position: relative;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(180deg, rgba(18,27,39,.68), rgba(7,10,15,.78)),
+        radial-gradient(circle at top right, rgba(240,202,113,.085), transparent 13rem);
+      box-shadow: 0 .75rem 1.9rem rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.035);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+    }
+    .card::after,
+    .workspace-card::after,
+    .status-strip::after,
+    .help-card::after {
+      content: "";
+      position: absolute;
+      inset: .45rem;
+      border-radius: calc(var(--radius-xl) - .35rem);
+      border: 1px solid rgba(240,202,113,.045);
+      pointer-events: none;
+    }
+    .card > *,
+    .workspace-card > *,
+    .status-strip > *,
+    .help-card > * { position: relative; z-index: 1; }
+
+    .page-header {
+      padding: .95rem;
+      display: grid;
+      grid-template-columns: minmax(24rem, 1fr) auto;
+      gap: 1rem;
+      align-items: center;
+      border-color: rgba(240,202,113,.18);
+      background:
+        linear-gradient(100deg, rgba(7,11,17,.95), rgba(12,26,41,.72), rgba(7,10,15,.9)),
+        radial-gradient(circle at 78% 8%, rgba(240,202,113,.14), transparent 22rem);
+    }
+    .page-title-block { display: grid; gap: .35rem; }
+    .page-title-line { display: flex; gap: .65rem; align-items: center; flex-wrap: wrap; }
+    .page-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.95rem, 2.7vw, 3.05rem);
+      line-height: .98;
+      color: var(--gold-2);
+    }
+    .page-subtitle {
+      margin: 0;
+      max-width: 62rem;
+      color: var(--text-1);
+      line-height: 1.42;
+      font-size: .9rem;
+    }
+    .header-actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: minmax(18rem, 1fr) repeat(3, minmax(10rem, .55fr));
+      gap: .62rem;
+      padding: .68rem;
+      border-color: rgba(240,202,113,.2);
+      background:
+        linear-gradient(90deg, rgba(240,202,113,.1), rgba(45,110,159,.07)),
+        rgba(5,8,12,.36);
+    }
+    .status-cell {
+      padding: .62rem .68rem;
+      border-radius: .9rem;
+      border: 1px solid rgba(240,202,113,.1);
+      background: rgba(0,0,0,.15);
+      display: grid;
+      gap: .16rem;
+      min-width: 0;
+    }
+    .status-cell.is-main { border-color: rgba(240,202,113,.28); box-shadow: inset 3px 0 0 var(--gold-1); }
+    .status-cell span { color: var(--text-3); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; }
+    .status-cell strong { color: var(--text-0); font-size: .86rem; }
+    .status-cell p { margin: 0; color: var(--text-2); font-size: .73rem; line-height: 1.3; }
+
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(14.5rem, 1fr));
+      gap: .9rem;
+      align-items: stretch;
+    }
+    .workspace-card {
+      min-height: 19rem;
+      padding: .9rem;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: .62rem;
+    }
+    .workspace-card.is-primary {
+      border-color: rgba(240,202,113,.34);
+      background:
+        linear-gradient(180deg, rgba(38, 33, 22, .78), rgba(8, 13, 19, .84)),
+        radial-gradient(circle at top right, rgba(240,202,113,.16), transparent 13rem);
+      box-shadow: inset 3px 0 0 var(--gold-1), 0 .75rem 1.9rem rgba(0,0,0,.24);
+    }
+    .tile-top {
+      display: flex;
+      justify-content: space-between;
+      gap: .7rem;
+      align-items: flex-start;
+    }
+    .tile-icon {
+      width: 2rem;
+      height: 2rem;
+      border-radius: .68rem;
+      border: 1px solid rgba(240,202,113,.14);
+      display: grid;
+      place-items: center;
+      color: var(--gold-1);
+      background: radial-gradient(circle, rgba(240,202,113,.14), rgba(45,110,159,.08));
+      font-weight: 900;
+      font-size: .68rem;
+      flex: 0 0 auto;
+    }
+    .tile-title {
+      margin: 0;
+      color: var(--text-0);
+      font-family: var(--font-display);
+      font-size: 1.14rem;
+      line-height: 1.06;
+    }
+    .tile-mode {
+      color: var(--text-3);
+      font-size: .64rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-top: .14rem;
+    }
+    .tile-purpose {
+      margin: 0;
+      color: var(--text-1);
+      font-size: .8rem;
+      line-height: 1.34;
+    }
+    .tile-examples {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: .28rem;
+      align-content: start;
+    }
+    .tile-examples li {
+      display: flex;
+      gap: .34rem;
+      color: var(--text-2);
+      font-size: .74rem;
+      line-height: 1.28;
+    }
+    .tile-examples li::before {
+      content: "·";
+      color: var(--gold-1);
+      font-weight: 900;
+      flex: 0 0 auto;
+    }
+    .tile-actions {
+      display: grid;
+      gap: .5rem;
+      align-content: end;
+    }
+    .secondary-links { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+    .bottom-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 25rem;
+      gap: .9rem;
+      align-items: start;
+    }
+    .card { padding: .9rem; }
+    .card-head { display: grid; gap: .24rem; margin-bottom: .68rem; }
+    .card-title { margin: 0; font-family: var(--font-display); font-size: 1.18rem; color: var(--text-0); }
+    .card-subtitle { margin: .18rem 0 0; color: var(--text-2); font-size: .8rem; line-height: 1.36; }
+
+    .action-list { display: grid; gap: .45rem; }
+    .action-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: .55rem;
+      align-items: center;
+      padding: .58rem;
+      border-radius: .85rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.14);
+    }
+    .action-dot {
+      width: .7rem;
+      height: .7rem;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 .7rem rgba(121,173,102,.24);
+    }
+    .action-dot.red { background: var(--red); box-shadow: 0 0 .7rem rgba(194,100,82,.28); }
+    .action-dot.gold { background: var(--gold-1); box-shadow: 0 0 .7rem rgba(240,202,113,.24); }
+    .action-row strong { color: var(--text-0); font-size: .82rem; }
+    .action-row span { color: var(--text-2); font-size: .72rem; }
+
+    .help-card { padding: .85rem; }
+    .help-card details {
+      border-radius: .9rem;
+      border: 1px solid rgba(240,202,113,.09);
+      background: rgba(0,0,0,.14);
+      padding: .72rem;
+    }
+    .help-card summary { cursor: pointer; color: var(--text-0); font-weight: 800; }
+    .note-list { margin: .35rem 0 0; padding-left: 1rem; color: var(--text-2); font-size: .78rem; line-height: 1.45; }
+
+    @media (max-width: 1680px) {
+      .workspace-grid { grid-template-columns: repeat(2, minmax(17rem, 1fr)); }
+      .status-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 1280px) {
+      .bottom-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 1180px) {
+      .app-shell { display: block; }
+      .topbar { position: static; grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--line-soft); }
+      .page-header { grid-template-columns: 1fr; }
+      .header-actions { justify-content: flex-start; }
+      .search { min-width: 12rem; }
+    }
+    @media (max-width: 860px) {
+      .main { padding: .75rem; }
+      .workspace-grid,
+      .status-strip { grid-template-columns: 1fr; }
+      .workspace-card { min-height: auto; }
+      .action-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <section class="brand" aria-label="Mythsworn Admin">
+        <div class="brand-mark"></div>
+        <div>
+          <div class="brand-title">Mythsworn</div>
+          <div class="brand-subtitle">Admin console</div>
+        </div>
+      </section>
+
+      <section class="context-card">
+        <div class="context-row">
+          <div class="context-label">Admin context</div>
+          <div class="context-value"><span>Global Admin</span></div>
+        </div>
+        <div class="context-row">
+          <div class="context-label">Server focus</div>
+          <div class="context-value"><span>All servers</span></div>
+        </div>
+        <div class="context-row">
+          <div class="context-label">Governance</div>
+          <div class="context-value"><span>Drafts & formulas</span><span class="badge gold">active</span></div>
+        </div>
+      </section>
+
+      <div class="nav-section-title">Overview</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#overview"><span class="nav-icon">OV</span><span class="nav-label">Admin Hub<span class="nav-sub">orientation and alerts</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Governance</div>
+      <ul class="nav-list">
+        <li><a class="nav-link is-active" href="#governance"><span class="nav-icon">GV</span><span class="nav-label">Governance & Drafts<span class="nav-sub">workspace overview</span></span></a></li>
+        <li><a class="nav-link" href="#draft"><span class="nav-icon">BD</span><span class="nav-label">Active Balance Draft<span class="nav-sub">diff, readiness, apply</span></span></a></li>
+        <li><a class="nav-link" href="#config"><span class="nav-icon">CG</span><span class="nav-label">Config Registry<span class="nav-sub">definitions and values</span></span></a></li>
+        <li><a class="nav-link" href="#formulas"><span class="nav-icon">FM</span><span class="nav-label">Formula Library<span class="nav-sub">targets and assignments</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Game Balance</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#items"><span class="nav-icon">IT</span><span class="nav-label">Item Generation<span class="nav-sub">bases, affixes, quality</span></span></a></li>
+        <li><a class="nav-link" href="#estate"><span class="nav-icon">ES</span><span class="nav-label">Estate Balance<span class="nav-sub">buildings, costs, caps</span></span></a></li>
+        <li><a class="nav-link" href="#combat"><span class="nav-icon">CB</span><span class="nav-label">Combat Balance<span class="nav-sub">opponents and content</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Exploration & PvE</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#trials"><span class="nav-icon">TR</span><span class="nav-label">Trials<span class="nav-sub">definitions and readiness</span></span></a></li>
+        <li><a class="nav-link" href="#encounters"><span class="nav-icon">EN</span><span class="nav-label">Encounters<span class="nav-sub">candidates and effects</span></span></a></li>
+        <li><a class="nav-link" href="#rewards"><span class="nav-icon">RW</span><span class="nav-label">Reward Profiles<span class="nav-sub">PvE reward wiring</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Operations</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#moderation"><span class="nav-icon">AA</span><span class="nav-label">Moderation & Anti-abuse<span class="nav-sub">cases and sanctions</span></span></a></li>
+        <li><a class="nav-link" href="#servers"><span class="nav-icon">SO</span><span class="nav-label">Server Operations<span class="nav-sub">staff, events, lifecycle</span></span></a></li>
+        <li><a class="nav-link" href="#reports"><span class="nav-icon">RN</span><span class="nav-label">Reports & Notifications<span class="nav-sub">readability</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Sandbox / Diagnostics</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#labs"><span class="nav-icon">LB</span><span class="nav-label">Labs & Debug Tools<span class="nav-sub">Luck Lab, Exploration Lab</span></span></a></li>
+      </ul>
+    </aside>
+
+    <header class="topbar">
+      <div class="topbar-title">
+        <strong>Governance & Drafts</strong>
+        <span>Co wchodzi w governance i gdzie chcesz przejść dalej?</span>
+      </div>
+      <div class="topbar-right">
+        <span class="context-pill"><span>Context</span><strong>Global Admin</strong></span>
+        <span class="context-pill"><span>Active draft</span><strong>Global Balance Draft</strong></span>
+        <input class="search" placeholder="Search config, formula, draft, audit..." />
+      </div>
+    </header>
+
+    <main class="main" id="governance">
+      <section class="card page-header">
+        <div class="page-title-block">
+          <p class="eyebrow">Governance Landing Prototype v1</p>
+          <div class="page-title-line">
+            <h1 class="page-title">Governance & Drafts</h1>
+            <span class="badge gold">workspace overview</span>
+          </div>
+          <p class="page-subtitle">Ekran wejściowy do governance. Pokazuje główne subworkspace’y: aktywny draft, registry configów, bibliotekę formuł i audit support. Szczegółowy diff draftu jest drugim poziomem.</p>
+        </div>
+        <div class="header-actions">
+          <button class="button">Open active draft</button>
+          <button class="button ghost">Find config</button>
+          <button class="button ghost">Find formula</button>
+        </div>
+      </section>
+
+      <section class="status-strip" aria-label="Governance status summary">
+        <article class="status-cell is-main">
+          <span>Persistent balance context</span>
+          <strong>Active Global Balance Draft</strong>
+          <p>Draft jest częścią governance, ale nie jedyną powierzchnią workspace’u.</p>
+        </article>
+        <article class="status-cell">
+          <span>Draft readiness</span>
+          <strong>Apply blocked</strong>
+          <p>1 conflict, 2 missing reasons, 3 metadata gaps.</p>
+        </article>
+        <article class="status-cell">
+          <span>Preview context</span>
+          <strong>Live + draft overlay</strong>
+          <p>Admin/sandbox only. Live gameplay widzi draft dopiero po apply.</p>
+        </article>
+        <article class="status-cell">
+          <span>Governance scope</span>
+          <strong>Global balance</strong>
+          <p>MVP: jeden aktywny globalny balance draft.</p>
+        </article>
+      </section>
+
+      <section class="workspace-grid" aria-label="Governance subworkspaces">
+        <article class="workspace-card is-primary">
+          <div class="tile-top">
+            <div>
+              <h2 class="tile-title">Active Balance Draft</h2>
+              <div class="tile-mode">Draft detail · diff · readiness · apply</div>
+            </div>
+            <div class="tile-icon">BD</div>
+          </div>
+          <p class="tile-purpose">Wejdź tutaj, żeby sprawdzić finalny diff draftu, blokery apply i rozwiązać konflikt przed mark ready.</p>
+          <ul class="tile-examples">
+            <li>Status: Draft · editable, apply blocked.</li>
+            <li>17 proposed changes, 1 conflict, 2 missing reasons.</li>
+            <li>Selected change detail, gameplay impact and resolution actions.</li>
+          </ul>
+          <div class="tile-actions">
+            <button class="button">Open active draft</button>
+            <div class="secondary-links"><a class="text-link" href="#draft">Review conflict</a><a class="text-link" href="#readiness">Apply readiness</a></div>
+          </div>
+        </article>
+
+        <article class="workspace-card">
+          <div class="tile-top">
+            <div>
+              <h2 class="tile-title">Config Registry</h2>
+              <div class="tile-mode">Definitions · values · governance scope</div>
+            </div>
+            <div class="tile-icon">CG</div>
+          </div>
+          <p class="tile-purpose">Wejdź tutaj, gdy chcesz znaleźć lub zrozumieć config: czym jest, skąd bierze value i jaki ma zakres governance.</p>
+          <ul class="tile-examples">
+            <li>Config definitions, value type and schema.</li>
+            <li>Global/server effective value source.</li>
+            <li>DB-backed label, helper text and admin description.</li>
+          </ul>
+          <div class="tile-actions">
+            <button class="button">Open registry</button>
+            <div class="secondary-links"><a class="text-link" href="#config">Definitions</a><a class="text-link" href="#values">Values</a></div>
+          </div>
+        </article>
+
+        <article class="workspace-card">
+          <div class="tile-top">
+            <div>
+              <h2 class="tile-title">Formula Library</h2>
+              <div class="tile-mode">Formulas · targets · assignments · where-used</div>
+            </div>
+            <div class="tile-icon">FM</div>
+          </div>
+          <p class="tile-purpose">Wejdź tutaj, gdy pracujesz z formułami używanymi przez całą grę, ich targetami, zmiennymi i runtime impact.</p>
+          <ul class="tile-examples">
+            <li>Formula targets and legal variables.</li>
+            <li>Global/default assignments and entity overrides.</li>
+            <li>Where-used and gameplay/runtime impact.</li>
+          </ul>
+          <div class="tile-actions">
+            <button class="button">Open library</button>
+            <div class="secondary-links"><a class="text-link" href="#targets">Targets</a><a class="text-link" href="#assignments">Assignments</a></div>
+          </div>
+        </article>
+
+        <article class="workspace-card">
+          <div class="tile-top">
+            <div>
+              <h2 class="tile-title">Audit Support</h2>
+              <div class="tile-mode">Reasons · actor · before/after · trail</div>
+            </div>
+            <div class="tile-icon">AU</div>
+          </div>
+          <p class="tile-purpose">Wejdź tutaj, gdy trzeba wyjaśnić kto, dlaczego i co zmienił. Audit wspiera workflow, ale nie zastępuje draftu.</p>
+          <ul class="tile-examples">
+            <li>Reason and changelog context.</li>
+            <li>Actor, timestamp and before/after trail.</li>
+            <li>Cross-links from draft, formulas and config changes.</li>
+          </ul>
+          <div class="tile-actions">
+            <button class="button">Open audit support</button>
+            <div class="secondary-links"><a class="text-link" href="#audit-log">Audit log</a><a class="text-link" href="#reasons">Reasons</a></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="bottom-layout">
+        <article class="card">
+          <div class="card-head">
+            <h2 class="card-title">Co wymaga uwagi?</h2>
+            <p class="card-subtitle">Landing pokazuje wysokopoziomowe decyzje, ale nie próbuje być detail screenem dla diffu.</p>
+          </div>
+          <div class="action-list">
+            <div class="action-row"><span class="action-dot red"></span><div><strong>Active Balance Draft ma blocker</strong><br><span>1 conflict blocks mark ready/apply. Kliknij Open active draft.</span></div><span class="badge red">blocker</span></div>
+            <div class="action-row"><span class="action-dot gold"></span><div><strong>Metadata quality gaps</strong><br><span>3 raw-key/helper/preview metadata gaps affect readability.</span></div><span class="badge blue">quality</span></div>
+            <div class="action-row"><span class="action-dot"></span><div><strong>Config Registry and Formula Library are available</strong><br><span>Use them to inspect source-of-truth definitions and formula impact.</span></div><span class="badge green">ready</span></div>
+          </div>
+        </article>
+
+        <aside class="help-card">
+          <details open>
+            <summary>IA note</summary>
+            <ul class="note-list">
+              <li><strong>Governance & Drafts Landing</strong> odpowiada: co tu jest i gdzie kliknąć.</li>
+              <li><strong>Balance Draft Workspace</strong> odpowiada: czy draft jest gotowy do apply i co go blokuje.</li>
+              <li>Config Registry i Formula Library nie są drobnymi linkami na landing page’u; są głównymi subworkspace’ami.</li>
+              <li>Audit Support jest pomocniczy, ale ma własną czytelną kartę, bo reason/actor/before-after są krytyczne dla governance.</li>
+            </ul>
+          </details>
+        </aside>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,7 +1,7 @@
 # Mythsworn — Database Current
 
-Rewritten: 2026-05-09  
-Primary source: latest `mythborne_schema.sql` dump from 2026-05-09 plus the previous `database-current.md` and DB/RPC changes verified in the migrator conversation.
+Rewritten: 2026-05-10  
+Primary source: latest `mythborne_schema.sql` dump from 2026-05-10 plus the previous `database-current.md` and DB/RPC changes verified in the migrator conversation.
 
 ## Purpose
 
@@ -37,17 +37,46 @@ When this document conflicts with newer facts, prefer:
 
 ## Generated type regeneration matrix
 
-Regenerate Supabase generated types before Codex consumes:
+Regenerate Supabase generated types before Codex consumes any schema, enum, table or RPC signature change.
 
-- new `search_guilds_for_hero(...)` RPC;
-- changed `get_hero_guild_members(...)` return signature with `armory_access_status_key`;
-- any later schema, enum, table or RPC signature change.
+Known regeneration-required contracts after the 2026-05-10 DB/RPC updates:
+
+- guild updates:
+  - `search_guilds_for_hero(...)`;
+  - changed `get_hero_guild_members(...)` return signature with `armory_access_status_key`.
+- Manual Trial Runtime Foundation:
+  - `manual_trial_sessions`;
+  - `manual_trial_manifests`;
+  - `manual_trial_action_logs`;
+  - `manual_trial_verdicts`;
+  - `get_active_trial_offer(...)`;
+  - `start_manual_trial_runtime_session(...)`;
+  - `get_manual_trial_runtime_manifest(...)`;
+  - `submit_manual_trial_action_log(...)`;
+  - `get_manual_trial_backend_verdict(...)`;
+  - `get_manual_trial_backend_verdict_for_attempt(...)`;
+  - manual-trial auto-resolve / inactivity / explicit-exit wrapper RPCs;
+  - `create_manual_trial_game_report(...)`.
+- Admin balance draft / relational config governance:
+  - `config_change_sets.draft_kind`;
+  - `config_change_entries.replaced_at`;
+  - `config_change_entries.replaced_by_entry_id`;
+  - `config_draft_entity_field_allowlist`;
+  - new `config_managed_entity_type` enum values: `trial_definition`, `encounter_definition`, `reward_profile`, `reward_profile_assignment`, `reward_profile_entry`;
+  - active balance draft RPCs;
+  - relational draft entry upsert/read/overlay/apply RPCs.
+- Generated PvE opponent equipment runtime:
+  - `build_combat_opponent_equipment_loadout_snapshot(...)`;
+  - updated `build_opponent_combatant_snapshot_for_resolver(...)` semantics where consumed.
+- Luck Lab generated item distribution simulation:
+  - `preview_reward_generated_item_distribution_luck(...)`.
 
 No type regeneration is required for data-only seeds or same-signature function body fixes, including:
 
 - guild config key-contract clarification;
 - item fractional display/runtime rounding body fixes;
-- Epic W Trial/Encounter seed/readiness repair.
+- Epic W Trial/Encounter seed/readiness repair;
+- body-only static-grep cleanup in generated opponent equipment helpers.
 
 ---
 
@@ -108,6 +137,155 @@ Important enums:
 - Internal helpers such as `apply_global_config_value_change_entry(...)` and `apply_server_config_value_change_entry(...)` are not frontend contracts.
 - Config changes require reason/changelog governance where applicable.
 - Frontend must not mutate `global_config_values` or `server_config_values` directly.
+
+## Active global balance draft MVP
+
+MVP/pre-alpha balance governance now supports one active global balance draft workspace.
+
+Core rules:
+
+- MVP does not support per-user drafts, per-live-server balance overrides, multi-server apply or parallel live-server balance configurations.
+- Active balance draft means `config_change_sets.status = 'draft'` and `config_change_sets.draft_kind = 'balance_global'`.
+- The database enforces at most one active `balance_global` draft at a time.
+- Ambiguous state with more than one active balance draft is a governance blocker and must not be silently resolved by Angular.
+- UI should find or create the active draft through RPC, not direct-write `config_change_sets`.
+
+Schema/guard additions:
+
+- `config_change_sets.draft_kind text`;
+- `config_change_sets_one_active_balance_global_draft_idx`.
+
+Admin/frontend-facing RPCs:
+
+- `get_active_balance_draft_change_set()`;
+- `get_or_create_active_balance_draft_change_set(p_reason text, p_request_id text)`.
+
+Rules:
+
+- The active draft is the source of proposed admin/balance changes.
+- Do not introduce independent `sandbox_overrides` as a parallel source of truth.
+- Live gameplay ignores draft changes unless a draft-aware preview/helper is explicitly called.
+
+## Relational entity draft entries
+
+Relational balance draft changes use `config_change_entries.change_kind = 'entity_field_change'`.
+
+Compression semantics:
+
+- `config_change_entries.replaced_at`;
+- `config_change_entries.replaced_by_entry_id`;
+- one active final draft entry per `change_set_id`, `entity_type`, `entity_id`, `field_path`.
+
+Replaced entries may remain for audit/debug, but operator-facing diff/read models should show only active final entries by default.
+
+Allowlist:
+
+- `config_draft_entity_field_allowlist` controls which entity fields may be draft-edited.
+- There is no unsafe generic table patcher.
+- Draft field changes must validate entity type, field path, value type, numeric min/max where configured, ref targets where configured and domain/apply helper availability.
+
+First enabled MVP domains:
+
+- `item_generation_quality`;
+- `item_generation_bucket_profile`;
+- `balance_formula`;
+- `balance_formula_assignment`.
+
+Future enum coverage exists but is not yet allowlist/apply-enabled for:
+
+- `trial_definition`;
+- `encounter_definition`;
+- `reward_profile`;
+- `reward_profile_assignment`;
+- `reward_profile_entry`.
+
+Admin-facing RPC/read models:
+
+- `upsert_config_entity_field_change(...)`;
+- `get_config_change_set_draft_entries(...)`.
+
+Service helpers:
+
+- `get_config_entity_field_live_value_status(...)`;
+- `validate_config_draft_entity_field_value(...)`.
+
+Conflict statuses:
+
+- `clean`;
+- `conflict`;
+- `missing_entity`;
+- `invalid_field`.
+
+## Draft overlay read models
+
+Item generation overlay read models:
+
+- `get_item_generation_quality_draft_overlay(p_change_set_id uuid default null)`;
+- `get_item_generation_bucket_profile_draft_overlay(p_change_set_id uuid default null)`.
+
+Formula overlay and draft-aware formula resolution:
+
+- `get_balance_formula_draft_overlay(p_change_set_id uuid default null)`;
+- `get_balance_formula_assignment_draft_overlay(p_change_set_id uuid default null)`;
+- `resolve_balance_formula_target_with_draft(p_target_key text, p_change_set_id uuid default null)`;
+- `evaluate_balance_formula_target_with_draft(p_target_key text, p_variables_json jsonb, p_change_set_id uuid default null)`.
+
+Rules:
+
+- `p_change_set_id = null` means live-only read/preview.
+- Non-null `p_change_set_id` must be an explicit draft context.
+- Draft-aware functions are for admin/sandbox diagnostics and previews.
+- Live gameplay must continue to use live config/formula runtime paths unless explicitly designed otherwise.
+
+## Draft-aware generated item preview
+
+Luck Lab / admin preview has a draft-aware generated item preview wrapper:
+
+- `preview_reward_generated_item_luck_with_draft(p_change_set_id uuid, p_max_quality_key text, p_bucket_profile_id uuid, p_preview_count integer, p_luck_value integer, p_metadata_json jsonb)`.
+
+Semantics:
+
+- Uses explicit draft context for item quality, bucket profile and formula overlay.
+- Preview-only.
+- Does not create `items`.
+- Does not grant rewards.
+- Does not mutate live config.
+- Existing `preview_reward_generated_item_luck(...)` remains the live preview contract.
+
+## Applying relational entity changes
+
+`apply_config_change_set(p_change_set_id)` now supports:
+
+- existing scalar/json `global_value_change`;
+- existing scalar/json `server_value_change`;
+- first-slice `entity_field_change` entries.
+
+Apply semantics:
+
+- Apply is atomic.
+- Replaced entries are ignored.
+- Any conflict blocks the whole apply.
+- No partial apply for MVP.
+- Relational entity changes are dispatched through domain-specific service helpers, not a generic table patcher.
+
+DB-6 supported apply domains:
+
+- `item_generation_quality`;
+- `item_generation_bucket_profile`;
+- `balance_formula`;
+- `balance_formula_assignment`.
+
+Apply helpers:
+
+- `validate_config_change_set_entries_for_apply(p_change_set_id)`;
+- compatibility wrapper `validate_config_change_set_entries_for_d5(p_change_set_id)`;
+- `apply_config_entity_field_change_entry(p_entry config_change_entries, p_actor uuid)`;
+- `apply_item_generation_quality_draft_entry(...)`;
+- `apply_item_generation_bucket_profile_draft_entry(...)`;
+- `apply_balance_formula_draft_entry(...)`;
+- `apply_balance_formula_assignment_draft_entry(...)`.
+
+`mark_config_change_set_ready(p_change_set_id)` validates scalar/json entries and supported active entity-field draft entries before moving a change set to `ready`.
 
 ## Guild config registry contract
 
@@ -262,6 +440,8 @@ Luck Lab registry/preview:
 - `preview_exploration_luck_rng_chain(...)`;
 - `preview_reward_profile_luck(...)`;
 - `preview_reward_generated_item_luck(...)`;
+- `preview_reward_generated_item_luck_with_draft(...)`;
+- `preview_reward_generated_item_distribution_luck(...)`;
 - `preview_combat_luck_formula_context(...)`.
 
 Frontend must consume DB/RPC Luck outputs and must not hardcode Luck curves, reward ranges, Trial modifiers, drop chances or combat RNG influence.
@@ -541,6 +721,52 @@ Rules:
 - Luck-aware reward amount and item count helpers should be used for range/item-generation reward entries.
 - Angular must not compute durable reward amounts or generated item outcomes.
 
+## Generated item distribution simulation
+
+Luck Lab has a dedicated DB-owned generated item distribution simulation RPC for V10-style drop distribution panels:
+
+- `preview_reward_generated_item_distribution_luck(p_max_quality_key text, p_bucket_profile_id uuid, p_roll_count integer, p_luck_value integer, p_compare_luck_value integer, p_high_value_threshold integer, p_change_set_id uuid)`.
+
+Semantics:
+
+- Preview/read model only.
+- No durable mutation.
+- No `items` insert/update/delete.
+- No reward grants.
+- No game reports.
+- No rarity flags and no rare-combination model.
+- Preserves the item generation philosophy: value bucket, quality, base item, optional prefix, optional suffix.
+- Supports Luck comparison, typically Luck 0 vs current Luck.
+- Supports optional draft context via `p_change_set_id`.
+- Internally aggregates DB-owned per-roll generated item preview output in server-side batches.
+
+Important returned summary fields include:
+
+- `roll_count`;
+- `luck_value` / `compare_luck_value`;
+- `luck_influence` / `compare_luck_influence`;
+- `average_item_value`;
+- `median_item_value`;
+- `min_item_value` / `max_item_value`;
+- `compare_average_item_value` / `compare_median_item_value`;
+- `average_delta` / `average_delta_percent`;
+- `prefix_hit_rate` / `suffix_hit_rate`;
+- `compare_prefix_hit_rate` / `compare_suffix_hit_rate`;
+- `outstanding_rate` / `compare_outstanding_rate`;
+- `high_value_threshold`;
+- `high_value_rate` / `compare_high_value_rate`;
+- `bucket_distribution_json` / `compare_bucket_distribution_json`;
+- `quality_distribution_json` / `compare_quality_distribution_json`;
+- `summary_json`;
+- `formula_context_json`;
+- `explanation`.
+
+Frontend rules:
+
+- Angular must not simulate item/drop distribution locally.
+- Angular must not reconstruct bucket/quality/prefix/suffix RNG.
+- V10-style panels should consume `preview_reward_generated_item_distribution_luck(...)` after generated types are regenerated.
+
 ## Epic W seed/readiness repair
 
 Data seed repair made active Trial/Encounter content ready enough for current gameplay testing without adding schema/RPC.
@@ -646,11 +872,132 @@ Encounter admin/write path uses governed RPCs, not direct writes:
 
 Current Encounter kinds include combat, resource, buff and debuff content paths. Resource/effect payloads are part of readiness and runtime content; rewards still go through reward profiles/assignments.
 
-## Manual Trial Shell boundary
+## Manual Trial Runtime Foundation
 
-Non-combat manual Trials such as Apollo/Hermes/Hephaestus/Zeus/Artemis/Hera/Athena/Aphrodite are future Manual Trial Shell/Core work. Current ready 9 Trial seed uses `combat` as temporary/runtime-supported minigame.
+Manual Trial Runtime Foundation is DB/RPC-ready for future Manual Trial Shell/Core frontend work.
 
-Angular must not implement manual Trial outcome authority without DB/RPC manifest/finalization contracts.
+This foundation is not a concrete minigame implementation. It does not implement Apollo, Hermes, Zeus, Hephaestus, Hera, Artemis, Athena or Aphrodite gameplay. It provides the backend-authoritative runtime envelope:
+
+`Trial Offer -> Manual Runtime Session -> Manual Runtime Manifest -> Action Log submit -> Backend Verdict -> report/reward handoff`
+
+Core semantics:
+
+- Trial identity is locked before manual/auto choice.
+- Trial Offer shows an active unresolved Trial and allowed actions.
+- Trial Offer does not create a Manual Runtime Manifest.
+- Auto-resolve does not create a Manual Runtime Manifest.
+- Manual Runtime Session is created only after Manual Resolve.
+- Manual Runtime Manifest is backend-owned.
+- Frontend renders from manifest but does not generate difficulty/balance parameters.
+- Frontend submits Action Log, not final `success/fail`.
+- Backend owns outcome, failure reason, reward/report references and durable transition.
+- There is no normal durable `abandoned` outcome.
+- Offer inactivity timeout resolves through ordinary auto-resolve.
+- Explicit manual exit after warning resolves through auto-resolve.
+- Non-timer manual inactivity timeout may resolve through auto-resolve.
+- Timer-expired manual fail remains future/minigame-specific.
+
+Dictionary/config foundation:
+
+- `manual_trial_session_statuses`;
+- `manual_trial_manifest_statuses`;
+- `manual_trial_action_log_statuses`;
+- `manual_trial_outcome_kinds`;
+- `manual_trial_resolution_modes`;
+- `manual_trial_failure_reasons`;
+- `manual_trial_validation_reasons`.
+
+Manual Trial runtime config definitions:
+
+- `manual_trial_offer_inactivity_timeout_seconds`;
+- `manual_trial_session_inactivity_timeout_seconds`;
+- `manual_trial_manifest_ttl_seconds`;
+- `manual_trial_timer_safety_margin_ms`;
+- `manual_trial_action_log_max_entries`;
+- `manual_trial_action_log_max_payload_bytes`.
+
+Storage tables:
+
+- `manual_trial_sessions`;
+- `manual_trial_manifests`;
+- `manual_trial_action_logs`;
+- `manual_trial_verdicts`.
+
+Rules:
+
+- These tables are not direct frontend table contracts.
+- `manual_trial_verdicts.manual_session_id` is nullable because direct auto-resolve / offer inactivity auto-resolve must not create a manual session.
+- Frontend should use RPC/read models.
+
+Trial Offer / Session / Manifest RPCs:
+
+- `get_active_trial_offer(p_hero_id uuid)`;
+- `start_manual_trial_runtime_session(p_attempt_id uuid, p_request_id text)`;
+- `get_manual_trial_runtime_manifest(p_manual_session_id uuid)`.
+
+Contract notes:
+
+- `get_active_trial_offer(...)` exposes locked trial identity, labels and allowed actions; it does not expose raw `trial_power`.
+- `start_manual_trial_runtime_session(...)` creates or returns an idempotent manual session and backend-owned manifest.
+- `get_manual_trial_runtime_manifest(...)` returns player-safe manifest identity/policies/config and intentionally does not expose validation/admin context, seed hash or config hash.
+
+Action Log and Backend Verdict RPCs:
+
+- `submit_manual_trial_action_log(...)`;
+- `get_manual_trial_backend_verdict(p_manual_session_id uuid)`;
+- `get_manual_trial_backend_verdict_for_attempt(p_attempt_id uuid)`.
+
+Current foundation behavior:
+
+- Submit validates session/manifest/action-log envelope.
+- Concrete minigame validators are future work.
+- For unsupported minigames, submit fail-closes with `unsupported_minigame`.
+- Backend Verdict returns player-safe outcome/resolution/failure/reward/report summary fields.
+- It does not expose admin validation JSON or raw action-log debug payloads.
+
+Manual Trial reports use the existing game report foundation:
+
+- `game_report_types.key = manual_trial`;
+- `create_manual_trial_game_report(p_verdict_id uuid, p_request_id text)`;
+- trigger wrapper `after_manual_trial_verdict_insert_create_report()`;
+- trigger `manual_trial_verdicts_after_insert_create_report`.
+
+Report semantics:
+
+- One `game_reports` row is created/updated with `source_entity_type = trial_result` and `source_entity_id = manual_trial_verdicts.id`.
+- Private hero access is attached through `game_report_hero_access`.
+- A display-safe participant snapshot is added.
+- `manual_trial_verdicts.game_report_id` is updated.
+
+Auto-resolve / inactivity / exit wrappers:
+
+- `auto_resolve_manual_trial(p_attempt_id uuid, p_resolution_mode_key text, p_request_id text)`;
+- `resolve_trial_offer_inactivity_timeout(p_attempt_id uuid, p_request_id text)`;
+- `exit_manual_trial_to_auto_resolve(p_manual_session_id uuid, p_request_id text)`;
+- `resolve_manual_trial_inactivity_timeout(p_manual_session_id uuid, p_request_id text)`.
+
+Rules:
+
+- Direct auto-resolve and offer inactivity auto-resolve do not create manual sessions/manifests.
+- Explicit exit and manual inactivity require an existing manual session.
+- Existing active manifests are invalidated when a manual session closes to auto-resolve.
+- Verdict/report handoff remains backend-owned.
+
+Verification status:
+
+- Final rollback smoke passed for representative Manual Trial Core flow:
+  - forced Trial attempt through exploration helpers;
+  - start Manual Runtime Session;
+  - get Manual Runtime Manifest;
+  - submit Action Log;
+  - Backend Verdict;
+  - game report handoff;
+  - post-submit lifecycle: session `resolved`, manifest `consumed`, one action log, one verdict, `game_report_id` attached.
+
+Current limitations:
+
+- Concrete minigame validators are future work.
+- Generated types must be regenerated before Codex consumes these contracts.
 
 ---
 
@@ -676,6 +1023,31 @@ Rules:
 
 - Concrete opponents need stats and at least one active attack source for runtime combat readiness.
 - Scaling and previews should use formula-backed DB helpers where available.
+
+## Generated PvE opponent equipment runtime snapshot
+
+Combat opponent equipment can be configured as `equipment_mode = generated` / `entry_mode = generated`.
+
+Runtime contract:
+
+- `build_combat_opponent_equipment_loadout_snapshot(p_opponent_definition_id uuid, p_reference_level integer)`.
+
+Semantics:
+
+- Materializes manual/generated opponent equipment into a fight-local item-like snapshot.
+- Produces snapshot JSON and `attackPlan`.
+- Does not create player-owned `items`.
+- Does not use generated item preview RPCs as runtime authority.
+- Generated entries use DB RNG and item-generation component tables.
+- The snapshot may include item-generation component refs such as `source_quality_key`, `source_base_id`, `source_prefix_affix_id`, `source_suffix_affix_id` and `opponent_equipment_entry_id`.
+
+`build_opponent_combatant_snapshot_for_resolver(...)` now consumes this fight-local equipment snapshot where available and falls back to configured opponent attack sources / natural attack where no equipment attack source exists.
+
+Frontend rules:
+
+- Angular must not restore local item/Luck/affix RNG for PvE opponents.
+- Angular must not use `preview_reward_generated_item_luck(...)` as runtime equipment source.
+- Generated PvE opponent equipment is runtime DB-owned and fight-local, not player inventory.
 
 ## Combat result snapshots
 
@@ -1165,7 +1537,38 @@ Frontend rules:
 
 ---
 
-# 18. Current cleanup candidates / legacy caveats
+# 18. Recent DB/RPC blocker resolutions
+
+Resolved for Codex after generated type regeneration:
+
+- Manual Trial Runtime Foundation:
+  - DB/RPC contracts exist for Trial Offer, start session, manifest read, action-log submit, backend verdict, report handoff and auto-resolve/inactivity/exit wrappers.
+- U13 generated PvE opponent equipment:
+  - runtime DB helper exists for fight-local generated/manual opponent equipment snapshot and attack plan;
+  - no frontend item/Luck/affix RNG fallback is allowed.
+- V10 Drop distribution simulation:
+  - `preview_reward_generated_item_distribution_luck(...)` exists as DB-owned distribution summary RPC;
+  - Angular must not run item/drop distribution simulation locally.
+- Admin balance draft MVP first vertical slice:
+  - active global balance draft;
+  - relational entity draft entries;
+  - draft compression;
+  - first-slice allowlist;
+  - item/formula overlay;
+  - draft-aware generated item preview;
+  - atomic apply for first-slice domains.
+
+Known follow-ups not to overstate:
+
+- Manual Trial concrete minigame validators remain future work.
+- Reward profile / reward profile entries / trials / encounters are enum-covered for draft governance, but not allowlist/apply-enabled yet.
+- Draft-aware reward profile preview is not included in the first balance draft vertical slice.
+- Luck Lab registry may need a later UI-facing registry update if Codex relies exclusively on `get_luck_lab_preview_contracts()` for panel discovery.
+- Generated PvE opponent equipment contract exists, but representative generated-equipment content smoke depends on active configured generated opponent equipment data.
+
+---
+
+# 19. Current cleanup candidates / legacy caveats
 
 Do not drop these without explicit cleanup task and reference search:
 
@@ -1180,7 +1583,7 @@ Cleanup candidates should be reported, not silently removed.
 
 ---
 
-# 19. Manual smoke discipline
+# 20. Manual smoke discipline
 
 Structural verification of DB/RPC contracts is not the same as full manual smoke.
 

@@ -18,23 +18,25 @@
     <p-message severity="error">{{ message }}</p-message>
   }
 
+  <app-luck-lab-explanation-list [rows]="explanationRows()" />
+
   @if (page.trialPower(); as trialPower) {
     <div class="grid-4 gap-md">
       <div class="mg-surface-card p-md flex-col gap-xs">
         <span class="card-legend">Tested stat</span>
-        <strong>{{ trialPower.testedStatValue }}</strong>
+        <strong>Tested stat: {{ trialPower.testedStatValue }}</strong>
       </div>
       <div class="mg-surface-card p-md flex-col gap-xs">
         <span class="card-legend">Raw Luck</span>
-        <strong>{{ trialPower.luckValue }}</strong>
+        <strong>Raw Luck: {{ trialPower.luckValue }}</strong>
       </div>
       <div class="mg-surface-card p-md flex-col gap-xs">
         <span class="card-legend">Luck influence</span>
-        <strong>{{ trialPower.luckInfluence }}</strong>
+        <strong>Luck influence: {{ trialPower.luckInfluence }}</strong>
       </div>
       <div class="mg-surface-card p-md flex-col gap-xs">
         <span class="card-legend">Trial Power</span>
-        <strong>{{ trialPower.trialPower }}</strong>
+        <strong>Trial Power: {{ trialPower.trialPower }}</strong>
       </div>
     </div>
 

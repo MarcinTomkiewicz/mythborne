@@ -19,14 +19,16 @@
     <p-message severity="error">{{ message }}</p-message>
   }
 
+  <app-luck-lab-explanation-list [rows]="explanationRows()" />
+
   <div class="grid-3 gap-md">
     <div class="mg-surface-card p-md flex-col gap-xs">
       <span class="card-legend">Difficulty context</span>
-      <strong>{{ page.lab.input().difficultyKey ?? 'DB default' }}</strong>
+      <strong>Difficulty override: {{ page.lab.input().difficultyKey ?? 'DB default' }}</strong>
     </div>
     <div class="mg-surface-card p-md flex-col gap-xs">
       <span class="card-legend">District context</span>
-      <strong>{{ page.lab.input().districtCode ?? 'DB default' }}</strong>
+      <strong>District override: {{ page.lab.input().districtCode ?? 'DB default' }}</strong>
     </div>
     <div class="mg-surface-card p-md flex-col gap-xs">
       <span class="card-legend">Resource events</span>
@@ -41,13 +43,13 @@
       @if (page.encounterPreview(); as encounter) {
         <strong>
           @if (encounter.chancePercent === null) {
-            N/A
+            Encounter chance: N/A
           } @else {
-            {{ encounter.chancePercent }}%
+            Encounter chance: {{ encounter.chancePercent }}%
           }
         </strong>
         <span>
-          Luck {{ encounter.luckValue }} -> influence {{ encounter.luckInfluence }}
+          Raw Luck: {{ encounter.luckValue }}; Luck influence: {{ encounter.luckInfluence }}
         </span>
         <span>{{ encounter.explanation }}</span>
         <span class="muted-text">

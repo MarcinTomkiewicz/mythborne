@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mythsworn Admin Shell + Hub IA Prototype v5</title>
+  <style>
+    /*
+      VISUAL REFERENCE ONLY.
+      Prototype goal: Admin Shell / Navigation IA + Admin Hub / Overview v5.
+      Do not copy this CSS into Angular feature components.
+      Translate accepted anchors into shared patterns, global utilities, wrappers and production tokens later.
+    */
+    :root {
+      --bg-0: #05070b;
+      --bg-1: #080d14;
+      --navy-0: #07111d;
+      --navy-1: #0d2033;
+      --navy-2: #163754;
+      --gold-0: #8b5c20;
+      --gold-1: #c28b36;
+      --gold-2: #f0ca71;
+      --text-0: #f7eedb;
+      --text-1: #d7c8ab;
+      --text-2: #a39781;
+      --text-3: #706755;
+      --red: #c26452;
+      --green: #79ad66;
+      --blue: #65aee3;
+      --purple: #a486db;
+      --line-soft: rgba(240, 202, 113, .12);
+      --line: rgba(240, 202, 113, .24);
+      --line-strong: rgba(240, 202, 113, .42);
+      --shadow: rgba(0, 0, 0, .42);
+      --sidebar-w: 19rem;
+      --topbar-h: 4.35rem;
+      --radius-lg: 1rem;
+      --radius-xl: 1.35rem;
+      --font-display: Georgia, "Times New Roman", serif;
+      --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-ui);
+      color: var(--text-0);
+      background:
+        radial-gradient(circle at 14% 4%, rgba(240, 202, 113, .13), transparent 27rem),
+        radial-gradient(circle at 86% 8%, rgba(101, 174, 227, .17), transparent 34rem),
+        linear-gradient(135deg, var(--bg-0), #070a10 44%, #040508 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .12;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 80%);
+    }
+
+    button, input, select { font: inherit; }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+      grid-template-areas:
+        "sidebar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+      padding: 1rem .85rem;
+      border-right: 1px solid var(--line-soft);
+      background: linear-gradient(180deg, rgba(7, 10, 16, .94), rgba(4, 6, 10, .96));
+      box-shadow: .65rem 0 2rem rgba(0, 0, 0, .2);
+      overflow: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .8rem;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(240, 202, 113, .17);
+      background:
+        linear-gradient(180deg, rgba(20, 32, 47, .72), rgba(8, 12, 18, .74)),
+        radial-gradient(circle at 82% 0%, rgba(240, 202, 113, .16), transparent 10rem);
+      margin-bottom: .9rem;
+    }
+    .brand-mark {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: .9rem;
+      border: 1px solid var(--line-strong);
+      background: radial-gradient(circle at 34% 24%, #fff0b9 0, var(--gold-2) 22%, var(--gold-0) 48%, #251509 70%, var(--navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,202,113,.22);
+      position: relative;
+      flex: 0 0 auto;
+    }
+    .brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--gold-2);
+      line-height: 1;
+    }
+    .brand-subtitle {
+      color: var(--text-3);
+      font-size: .68rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-top: .18rem;
+    }
+
+    .context-card {
+      padding: .85rem;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-lg);
+      background: rgba(7, 10, 14, .42);
+      margin-bottom: 1rem;
+      display: grid;
+      gap: .64rem;
+    }
+    .context-row { display: grid; gap: .24rem; }
+    .context-label,
+    .nav-section-title,
+    .eyebrow,
+    .tiny-label {
+      color: var(--text-3);
+      font-size: .68rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .context-value {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .6rem;
+      font-weight: 800;
+      color: var(--text-0);
+    }
+
+    .nav-section-title { margin: 1rem 0 .45rem .55rem; }
+    .nav-list {
+      display: grid;
+      gap: .28rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      padding: .62rem .68rem;
+      color: var(--text-1);
+      text-decoration: none;
+      border-radius: .85rem;
+      border: 1px solid transparent;
+      transition: 120ms ease;
+    }
+    .nav-link:hover,
+    .nav-link.is-active {
+      color: var(--text-0);
+      border-color: rgba(240,202,113,.16);
+      background: linear-gradient(90deg, rgba(240,202,113,.13), rgba(45,110,159,.12));
+    }
+    .nav-link.is-active { box-shadow: inset 3px 0 0 var(--gold-1); }
+    .nav-icon {
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: .55rem;
+      display: grid;
+      place-items: center;
+      background: rgba(240,202,113,.08);
+      color: var(--gold-1);
+      border: 1px solid rgba(240,202,113,.08);
+      flex: 0 0 auto;
+      font-size: .67rem;
+      font-weight: 900;
+      letter-spacing: .02em;
+    }
+    .nav-label { min-width: 0; }
+    .nav-sub {
+      display: block;
+      color: var(--text-3);
+      font-size: .68rem;
+      margin-top: .08rem;
+      line-height: 1.25;
+    }
+    .nav-link.is-active .nav-sub { color: var(--text-2); }
+
+    .topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(18rem, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      padding: .65rem 1rem;
+      border-bottom: 1px solid var(--line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,202,113,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem var(--shadow);
+    }
+    .topbar-title { display: grid; gap: .12rem; }
+    .topbar-title strong {
+      font-family: var(--font-display);
+      font-size: 1.18rem;
+      color: var(--text-0);
+    }
+    .topbar-title span { color: var(--text-2); font-size: .78rem; }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      justify-content: flex-end;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .search,
+    .select,
+    .context-pill {
+      min-height: 2.22rem;
+      border-radius: 999px;
+      border: 1px solid rgba(240,202,113,.12);
+      background: rgba(5,8,12,.42);
+      color: var(--text-1);
+      padding: .42rem .72rem;
+      outline: none;
+    }
+    .search { min-width: 17rem; }
+    .select.future {
+      color: var(--text-3);
+      max-width: 10.5rem;
+      opacity: .78;
+    }
+    .context-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      color: var(--text-1);
+      background: rgba(240,202,113,.055);
+    }
+    .context-pill strong { color: var(--text-0); }
+
+    .main {
+      grid-area: main;
+      min-width: 0;
+      padding: 1.1rem;
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .25rem .55rem;
+      border-radius: 999px;
+      border: 1px solid var(--line-soft);
+      color: var(--text-1);
+      background: rgba(7,10,14,.45);
+      font-size: .77rem;
+      white-space: nowrap;
+    }
+    .badge.gold { color: var(--gold-2); border-color: rgba(240,202,113,.32); }
+    .badge.green { color: #bde6b0; border-color: rgba(121,173,102,.46); }
+    .badge.blue { color: #b9def3; border-color: rgba(101,174,227,.46); }
+    .badge.red { color: #f2b4aa; border-color: rgba(194,100,82,.46); }
+    .badge.purple { color: #d9c8ff; border-color: rgba(164,134,219,.46); }
+    .badge.muted { color: var(--text-2); }
+
+    .button-row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: .75rem; }
+    .button {
+      min-height: 2.2rem;
+      padding: .46rem .76rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--text-0);
+      background: linear-gradient(180deg, rgba(240,202,113,.2), rgba(91,58,19,.32));
+      cursor: pointer;
+      box-shadow: inset 0 1px rgba(255,255,255,.07);
+    }
+    .button.ghost { background: rgba(8,12,18,.54); color: var(--text-1); }
+    .text-link {
+      color: var(--gold-2);
+      text-decoration: none;
+      font-size: .76rem;
+      border-bottom: 1px solid rgba(240,202,113,.22);
+    }
+
+    .page-hero {
+      position: relative;
+      min-height: 8.5rem;
+      display: grid;
+      grid-template-columns: minmax(28rem, 1.35fr) minmax(20rem, .85fr);
+      gap: 1rem;
+      padding: .95rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background:
+        linear-gradient(100deg, rgba(7,11,17,.95), rgba(12,26,41,.72), rgba(7,10,15,.9)),
+        radial-gradient(circle at 72% 18%, rgba(240,202,113,.14), transparent 22rem);
+      box-shadow: 0 .9rem 2rem rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.04);
+    }
+    .page-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(240,202,113,.08), transparent 14%, transparent 86%, rgba(240,202,113,.06)),
+        repeating-linear-gradient(90deg, transparent 0 3.2rem, rgba(255,255,255,.025) 3.2rem 3.25rem);
+      pointer-events: none;
+      opacity: .75;
+    }
+    .page-hero > * { position: relative; z-index: 1; }
+    .title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 3.2vw, 3.35rem);
+      line-height: .95;
+      color: var(--gold-2);
+    }
+    .copy {
+      margin: .75rem 0 0;
+      max-width: 64rem;
+      color: var(--text-1);
+      line-height: 1.45;
+      font-size: .92rem;
+    }
+
+    .summary-card,
+    .card,
+    .workspace-tile,
+    .action-card {
+      border: 1px solid var(--line-soft);
+      background:
+        linear-gradient(180deg, rgba(18,27,39,.68), rgba(7,10,15,.78)),
+        radial-gradient(circle at top right, rgba(240,202,113,.085), transparent 13rem);
+      box-shadow: 0 .75rem 1.9rem rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.035);
+      backdrop-filter: blur(10px);
+    }
+    .summary-card {
+      display: grid;
+      gap: .58rem;
+      padding: .85rem;
+      border-radius: var(--radius-lg);
+      background: rgba(7,10,14,.34);
+    }
+    .summary-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: .75rem;
+      color: var(--text-2);
+      font-size: .88rem;
+    }
+    .summary-row strong { color: var(--text-0); }
+
+    .draft-strip {
+      display: grid;
+      grid-template-columns: minmax(18rem, 1.15fr) minmax(11rem, .7fr) minmax(12rem, .78fr) auto;
+      gap: .65rem;
+      align-items: stretch;
+      padding: .72rem;
+      border: 1px solid rgba(240,202,113,.22);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(90deg, rgba(240,202,113,.1), rgba(45,110,159,.07)),
+        rgba(5,8,12,.36);
+    }
+    .draft-main,
+    .draft-cell {
+      padding: .62rem .68rem;
+      border-radius: .9rem;
+      border: 1px solid rgba(240,202,113,.1);
+      background: rgba(0,0,0,.15);
+      display: grid;
+      gap: .18rem;
+      min-width: 0;
+    }
+    .draft-main { border-color: rgba(240,202,113,.28); box-shadow: inset 3px 0 0 var(--gold-1); }
+    .draft-main strong,
+    .draft-cell strong { color: var(--text-0); font-size: .86rem; }
+    .draft-main span,
+    .draft-cell span { color: var(--text-2); font-size: .74rem; line-height: 1.32; }
+    .draft-actions { display: flex; align-items: center; gap: .48rem; justify-content: flex-end; flex-wrap: wrap; }
+
+    .card {
+      position: relative;
+      padding: .95rem;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+    .card::after,
+    .workspace-tile::after,
+    .action-card::after {
+      content: "";
+      position: absolute;
+      inset: .45rem;
+      border-radius: calc(var(--radius-xl) - .35rem);
+      border: 1px solid rgba(240,202,113,.045);
+      pointer-events: none;
+    }
+    .card > *,
+    .workspace-tile > *,
+    .action-card > * { position: relative; z-index: 1; }
+    .card.navy { background: linear-gradient(180deg, rgba(14,36,57,.72), rgba(7,11,18,.82)); }
+    .card-head { display: grid; gap: .25rem; margin-bottom: .75rem; }
+    .card-title-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+    .card-title { margin: 0; font-family: var(--font-display); font-size: 1.22rem; color: var(--text-0); }
+    .card-subtitle { margin: .2rem 0 0; color: var(--text-2); font-size: .84rem; line-height: 1.4; }
+
+    .action-required {
+      display: grid;
+      grid-template-columns: .58fr repeat(3, minmax(0, 1fr));
+      gap: .75rem;
+      align-items: stretch;
+    }
+    .action-intro {
+      padding: .85rem;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(240,202,113,.12);
+      background: rgba(0,0,0,.14);
+    }
+    .action-intro h2 {
+      margin: .25rem 0 .35rem;
+      font-family: var(--font-display);
+      color: var(--text-0);
+      font-size: 1.18rem;
+    }
+    .action-intro p { margin: 0; color: var(--text-2); font-size: .8rem; line-height: 1.36; }
+    .action-card {
+      position: relative;
+      padding: .82rem;
+      border-radius: var(--radius-xl);
+      display: grid;
+      gap: .55rem;
+      min-height: 8.4rem;
+      overflow: hidden;
+    }
+    .action-card.warning { border-color: rgba(194,100,82,.28); }
+    .action-card.attention { border-color: rgba(240,202,113,.28); }
+    .action-card.info { border-color: rgba(101,174,227,.24); }
+    .action-head { display: flex; justify-content: space-between; align-items: flex-start; gap: .55rem; }
+    .action-head strong { color: var(--text-0); font-size: .88rem; }
+    .action-count { font-family: var(--font-display); font-size: 1.5rem; color: var(--gold-2); line-height: 1; }
+    .action-card ul { margin: 0; padding-left: 1rem; color: var(--text-2); font-size: .76rem; line-height: 1.32; }
+    .action-card li { margin: .16rem 0; }
+
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(17.25rem, 21.5rem));
+      gap: .9rem;
+      max-width: 67rem;
+      margin-inline: auto;
+      justify-content: center;
+      align-items: stretch;
+    }
+    .workspace-tile {
+      position: relative;
+      min-height: 18.25rem;
+      border-radius: var(--radius-xl);
+      padding: .85rem;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: .62rem;
+    }
+    .workspace-tile.is-primary {
+      border-color: rgba(240,202,113,.34);
+      background:
+        linear-gradient(180deg, rgba(38, 33, 22, .78), rgba(8, 13, 19, .84)),
+        radial-gradient(circle at top right, rgba(240,202,113,.16), transparent 13rem);
+      box-shadow: inset 3px 0 0 var(--gold-1), 0 .75rem 1.9rem rgba(0,0,0,.24);
+    }
+    .tile-top {
+      display: flex;
+      justify-content: space-between;
+      gap: .7rem;
+      align-items: flex-start;
+    }
+    .tile-icon {
+      width: 2rem;
+      height: 2rem;
+      border-radius: .68rem;
+      border: 1px solid rgba(240,202,113,.14);
+      display: grid;
+      place-items: center;
+      color: var(--gold-1);
+      background: radial-gradient(circle, rgba(240,202,113,.14), rgba(45,110,159,.08));
+      font-weight: 900;
+      font-size: .68rem;
+      flex: 0 0 auto;
+    }
+    .tile-title {
+      margin: 0;
+      color: var(--text-0);
+      font-family: var(--font-display);
+      font-size: 1.11rem;
+      line-height: 1.06;
+    }
+    .tile-purpose {
+      margin: 0;
+      color: var(--text-1);
+      font-size: .8rem;
+      line-height: 1.34;
+    }
+    .tile-mode {
+      color: var(--text-3);
+      font-size: .64rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-top: .14rem;
+    }
+    .tile-examples {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: .25rem;
+      align-content: start;
+    }
+    .tile-examples li {
+      display: flex;
+      gap: .34rem;
+      color: var(--text-2);
+      font-size: .74rem;
+      line-height: 1.26;
+    }
+    .tile-examples li::before {
+      content: "·";
+      color: var(--gold-1);
+      font-weight: 900;
+      flex: 0 0 auto;
+    }
+    .tile-details {
+      margin-top: -.1rem;
+      color: var(--text-2);
+      font-size: .72rem;
+    }
+    .tile-details summary {
+      cursor: pointer;
+      color: var(--text-2);
+      width: fit-content;
+    }
+    .tile-details div {
+      margin-top: .28rem;
+      padding: .42rem;
+      border-radius: .72rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.14);
+      line-height: 1.3;
+    }
+    .tile-actions {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: .65rem;
+      flex-wrap: wrap;
+      padding-top: .1rem;
+    }
+    .secondary-links { display: flex; gap: .48rem; flex-wrap: wrap; }
+
+    .appendix {
+      border-color: rgba(240,202,113,.08);
+      background:
+        linear-gradient(180deg, rgba(9,15,23,.74), rgba(5,8,12,.84));
+    }
+    .appendix details {
+      border-radius: .9rem;
+      border: 1px solid rgba(240,202,113,.09);
+      background: rgba(0,0,0,.14);
+      padding: .75rem;
+    }
+    .appendix summary {
+      cursor: pointer;
+      color: var(--text-0);
+      font-weight: 800;
+    }
+    .appendix-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 1rem; margin-top: .8rem; }
+    .decision-list { display: grid; gap: .6rem; }
+    .decision {
+      padding: .72rem;
+      border-radius: .9rem;
+      border: 1px solid rgba(240,202,113,.1);
+      background: rgba(0,0,0,.16);
+    }
+    .decision strong { display: block; color: var(--text-0); font-size: .86rem; margin-bottom: .24rem; }
+    .decision span { color: var(--text-2); font-size: .78rem; line-height: 1.4; }
+    .route-table { display: grid; gap: .45rem; }
+    .route-row {
+      display: grid;
+      grid-template-columns: minmax(10rem, .85fr) minmax(0, 1.15fr) minmax(7rem, auto);
+      gap: .55rem;
+      align-items: center;
+      padding: .55rem;
+      border-radius: .78rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(5,8,12,.35);
+    }
+    .route-row strong { color: var(--text-0); font-size: .82rem; }
+    .route-row span { color: var(--text-2); font-size: .72rem; line-height: 1.35; }
+
+    @media (max-width: 1580px) {
+      .action-required { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .draft-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .appendix-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 1060px) {
+      .workspace-grid {
+        grid-template-columns: repeat(2, minmax(17rem, 21.5rem));
+        max-width: 44rem;
+      }
+    }
+    @media (max-width: 1180px) {
+      .app-shell { display: block; }
+      .topbar { position: static; grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--line-soft); }
+      .page-hero { grid-template-columns: 1fr; }
+      .search { min-width: 12rem; }
+    }
+    @media (max-width: 860px) {
+      .main { padding: .75rem; }
+      .workspace-grid,
+      .action-required { grid-template-columns: 1fr; }
+      .workspace-grid { max-width: 23rem; }
+      .route-row { grid-template-columns: 1fr; }
+      .card-title-row { align-items: flex-start; flex-direction: column; }
+      .workspace-tile { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <section class="brand" aria-label="Mythsworn Admin">
+        <div class="brand-mark"></div>
+        <div>
+          <div class="brand-title">Mythsworn</div>
+          <div class="brand-subtitle">Admin console</div>
+        </div>
+      </section>
+
+      <section class="context-card">
+        <div class="context-row">
+          <div class="context-label">Admin context</div>
+          <div class="context-value"><span>Global Admin</span></div>
+        </div>
+        <div class="context-row">
+          <div class="context-label">Server focus</div>
+          <div class="context-value"><span>All servers</span></div>
+        </div>
+        <div class="context-row">
+          <div class="context-label">Balance draft</div>
+          <div class="context-value"><span>Global Balance Draft</span><span class="badge gold">active</span></div>
+        </div>
+      </section>
+
+      <div class="nav-section-title">Overview</div>
+      <ul class="nav-list">
+        <li><a class="nav-link is-active" href="#overview"><span class="nav-icon">OV</span><span class="nav-label">Admin Hub<span class="nav-sub">orientation, context, warnings</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Governance</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#draft"><span class="nav-icon">BD</span><span class="nav-label">Balance Draft<span class="nav-sub">live vs proposed, conflicts, apply</span></span></a></li>
+        <li><a class="nav-link" href="#config"><span class="nav-icon">CG</span><span class="nav-label">Config Governance<span class="nav-sub">definitions, values, change sets</span></span></a></li>
+        <li><a class="nav-link" href="#formulas"><span class="nav-icon">FM</span><span class="nav-label">Formula Library<span class="nav-sub">targets, variables, assignments</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Game Balance</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#items"><span class="nav-icon">IT</span><span class="nav-label">Item Generation<span class="nav-sub">bases, affixes, quality, buckets</span></span></a></li>
+        <li><a class="nav-link" href="#estate"><span class="nav-icon">ES</span><span class="nav-label">Estate Balance<span class="nav-sub">buildings, costs, caps, requirements</span></span></a></li>
+        <li><a class="nav-link" href="#combat"><span class="nav-icon">CB</span><span class="nav-label">Combat Balance<span class="nav-sub">opponents, combat content, formulas</span></span></a></li>
+        <li><a class="nav-link" href="#progression"><span class="nav-icon">PR</span><span class="nav-label">Progression<span class="nav-sub">level, stat cost, reward pacing</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Exploration & PvE</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#trials"><span class="nav-icon">TR</span><span class="nav-label">Trials<span class="nav-sub">definitions and readiness</span></span></a></li>
+        <li><a class="nav-link" href="#encounters"><span class="nav-icon">EN</span><span class="nav-label">Encounters<span class="nav-sub">candidates, effects, combat links</span></span></a></li>
+        <li><a class="nav-link" href="#rewards"><span class="nav-icon">RW</span><span class="nav-label">Reward Profiles<span class="nav-sub">PvE reward wiring and previews</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Operations</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#moderation"><span class="nav-icon">AA</span><span class="nav-label">Moderation & Anti-abuse<span class="nav-sub">cases, sanctions, item recovery</span></span></a></li>
+        <li><a class="nav-link" href="#servers"><span class="nav-icon">SO</span><span class="nav-label">Server Operations<span class="nav-sub">staff, server events, lifecycle</span></span></a></li>
+        <li><a class="nav-link" href="#reports"><span class="nav-icon">RN</span><span class="nav-label">Reports & Notifications<span class="nav-sub">readability, registry, inboxes</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Sandbox / Diagnostics</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#labs"><span class="nav-icon">LB</span><span class="nav-label">Labs & Debug Tools<span class="nav-sub">Luck Lab, Exploration Lab, runtime inspectors</span></span></a></li>
+      </ul>
+    </aside>
+
+    <header class="topbar">
+      <div class="topbar-title">
+        <strong>Admin Hub</strong>
+        <span>Workspace-first console: action required, draft context and clean navigation IA</span>
+      </div>
+      <div class="topbar-right">
+        <span class="context-pill"><span>Context</span><strong>Global Admin</strong></span>
+        <span class="context-pill"><span>Server</span><strong>All servers</strong></span>
+        <select class="select future" aria-label="Future scope selector"><option>Change context</option><option>Selected Server</option><option>Sandbox/Test</option></select>
+        <input class="search" placeholder="Search workspace, key, hero, item..." />
+      </div>
+    </header>
+
+    <main class="main" id="overview">
+      <section class="page-hero">
+        <div>
+          <p class="eyebrow">Admin IA Prototype v5</p>
+          <h1 class="title">Admin Shell + Hub</h1>
+          <p class="copy">Admin panel nie jest płaskim katalogiem route’ów. Hub prowadzi do workspace’ów według rodzaju pracy i pokazuje tylko te alerty, które wymagają działania.</p>
+          <div class="button-row">
+            <span class="badge gold">workspace-first</span>
+            <span class="badge">route ≠ surface</span>
+          </div>
+        </div>
+        <aside class="summary-card">
+          <div class="summary-row"><span>Selected scope</span><strong>Global Admin</strong></div>
+          <div class="summary-row"><span>Server focus</span><strong>All servers</strong></div>
+          <div class="summary-row"><span>Active balance draft</span><strong>Global Balance Draft</strong></div>
+          <div class="summary-row"><span>Apply model</span><strong>Atomic apply only</strong></div>
+          <div class="summary-row"><span>Hub purpose</span><strong>Choose the right workspace</strong></div>
+        </aside>
+      </section>
+
+      <section class="draft-strip" aria-label="Persistent balance draft context">
+        <article class="draft-main">
+          <span class="tiny-label">Persistent balance context</span>
+          <strong>Active Global Balance Draft</strong>
+          <span>Stały kontekst dla governance, balance i PvE: live-only vs draft overlay.</span>
+        </article>
+        <article class="draft-cell">
+          <span class="tiny-label">Draft state</span>
+          <strong>17 proposed changes</strong>
+          <span>Czeka na review, mark ready i atomic apply.</span>
+        </article>
+        <article class="draft-cell">
+          <span class="tiny-label">Preview context</span>
+          <strong>Live + draft overlay</strong>
+          <span>Admin/sandbox only. Bez aktywnych zmian albo po wyborze live-only: Live only. Live gameplay widzi draft dopiero po apply.</span>
+        </article>
+        <div class="draft-actions">
+          <span class="badge green">no conflicts</span>
+          <button class="button ghost">Inspect diff</button>
+          <button class="button">Open draft</button>
+        </div>
+      </section>
+
+      <section class="action-required" aria-label="Action required">
+        <article class="action-intro">
+          <p class="eyebrow">Overview alerts</p>
+          <h2>Action required</h2>
+          <p>Nie pokazujemy tu liczby narzędzi ani powtórki draftu. Tylko rzeczy, które wymagają decyzji, uzupełnienia danych albo wejścia w workflow.</p>
+        </article>
+        <article class="action-card warning">
+          <div class="action-head"><strong>Open anti-abuse cases</strong><span class="action-count">11</span></div>
+          <ul>
+            <li>3 cases waiting for operator verdict.</li>
+            <li>2 sanctions pending application review.</li>
+            <li>1 item recovery request needs evidence check.</li>
+          </ul>
+          <div><a class="text-link" href="#moderation">Open case queue</a></div>
+        </article>
+        <article class="action-card attention">
+          <div class="action-head"><strong>PvE content blockers</strong><span class="action-count">4</span></div>
+          <ul>
+            <li>2 Trials without reward profile.</li>
+            <li>1 Encounter missing combat candidate.</li>
+            <li>1 Reward profile inactive in current draft.</li>
+          </ul>
+          <div><a class="text-link" href="#trials">Review PvE readiness</a></div>
+        </article>
+        <article class="action-card info">
+          <div class="action-head"><strong>Missing metadata / diagnostics</strong><span class="action-count">3</span></div>
+          <ul>
+            <li>2 admin labels fall back to raw keys.</li>
+            <li>1 preview failed because metadata is incomplete.</li>
+          </ul>
+          <div><a class="text-link" href="#labs">Open diagnostics</a></div>
+        </article>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div class="card-title-row">
+            <div>
+              <h2 class="card-title">Workspace Map</h2>
+              <p class="card-subtitle">Operator-facing hub. Kafelki są krótkie: po co tu wchodzę, co zrobię i czy dotykam live/draft/sandbox/read-only.</p>
+            </div>
+            <div class="button-row" style="margin-top:0">
+              <button class="button ghost">Filter by action</button>
+              <button class="button ghost">Show diagnostics</button>
+            </div>
+          </div>
+        </div>
+
+        <section class="workspace-grid" aria-label="Admin workspace tiles">
+          <article class="workspace-tile is-primary">
+            <div class="tile-top">
+              <div>
+                <h3 class="tile-title">Governance & Drafts</h3>
+                <div class="tile-mode">Governance · draft → ready → apply</div>
+              </div>
+              <div class="tile-icon">GV</div>
+            </div>
+            <p class="tile-purpose">Kontrolujesz źródła prawdy: config, formuły, aktywny draft i konflikt przed apply.</p>
+            <ul class="tile-examples">
+              <li>Live vs proposed values and conflict diff.</li>
+              <li>Config definitions, values and change sets.</li>
+              <li>Formula targets, variables and assignments.</li>
+            </ul>
+            <div class="tile-actions">
+              <button class="button">Open workspace</button>
+              <div class="secondary-links"><a class="text-link" href="#draft">Draft</a><a class="text-link" href="#formulas">Formulas</a></div>
+            </div>
+          </article>
+
+          <article class="workspace-tile">
+            <div class="tile-top">
+              <div>
+                <h3 class="tile-title">Game Balance</h3>
+                <div class="tile-mode">Configurator · draft-aware preview</div>
+              </div>
+              <div class="tile-icon">GB</div>
+            </div>
+            <p class="tile-purpose">Stroisz parametry gry i content, który po apply zmienia live gameplay.</p>
+            <ul class="tile-examples">
+              <li>Item Generation: bases, affixes, quality, buckets.</li>
+              <li>Buildings: costs, caps, requirements.</li>
+              <li>Combat Content and progression pacing.</li>
+            </ul>
+            <div class="tile-actions">
+              <button class="button">Open workspace</button>
+              <div class="secondary-links"><a class="text-link" href="#items">Item Gen</a><a class="text-link" href="#combat">Combat</a></div>
+            </div>
+          </article>
+
+          <article class="workspace-tile">
+            <div class="tile-top">
+              <div>
+                <h3 class="tile-title">Exploration & PvE</h3>
+                <div class="tile-mode">Content wiring · readiness</div>
+              </div>
+              <div class="tile-icon">EX</div>
+            </div>
+            <p class="tile-purpose">Ustawiasz core loop PvE: Trials, Encounters i reward wiring z kontrolą gotowości.</p>
+            <ul class="tile-examples">
+              <li>Trial definitions and presentation metadata.</li>
+              <li>Encounter candidates, effects and combat links.</li>
+              <li>Reward Profiles and drop distribution previews.</li>
+            </ul>
+            <div class="tile-actions">
+              <button class="button">Open workspace</button>
+              <div class="secondary-links"><a class="text-link" href="#trials">Trials</a><a class="text-link" href="#rewards">Rewards</a></div>
+            </div>
+          </article>
+
+          <article class="workspace-tile">
+            <div class="tile-top">
+              <div>
+                <h3 class="tile-title">Moderation & Anti-abuse</h3>
+                <div class="tile-mode">Workflow · server-scoped action</div>
+              </div>
+              <div class="tile-icon">AA</div>
+            </div>
+            <p class="tile-purpose">Obsługujesz przypadki, decyzje, sankcje, nadużycia i odzyskiwanie szkód.</p>
+            <ul class="tile-examples">
+              <li>Case queue/detail with signals and reports.</li>
+              <li>Sanctions, CP penalties and mandatory reasons.</li>
+              <li>Scrapped item recovery as abuse recovery.</li>
+            </ul>
+            <div class="tile-actions">
+              <button class="button">Open workspace</button>
+              <div class="secondary-links"><a class="text-link" href="#moderation">Cases</a><a class="text-link" href="#recovery">Recovery</a></div>
+            </div>
+          </article>
+
+          <article class="workspace-tile">
+            <div class="tile-top">
+              <div>
+                <h3 class="tile-title">Server Operations</h3>
+                <div class="tile-mode">Operations · staff/server state</div>
+              </div>
+              <div class="tile-icon">SO</div>
+            </div>
+            <p class="tile-purpose">Zarządzasz żywymi serwerami, staffem i operacyjnym stanem świata.</p>
+            <ul class="tile-examples">
+              <li>Staff roles, scopes and server assignments.</li>
+              <li>Server lifecycle/status contexts.</li>
+              <li>Server Events as operational state.</li>
+            </ul>
+            <div class="tile-actions">
+              <button class="button">Open workspace</button>
+              <div class="secondary-links"><a class="text-link" href="#staff">Staff</a><a class="text-link" href="#events">Events</a></div>
+            </div>
+          </article>
+
+          <article class="workspace-tile">
+            <div class="tile-top">
+              <div>
+                <h3 class="tile-title">Reports & Notifications</h3>
+                <div class="tile-mode">Reports · readability · registries</div>
+              </div>
+              <div class="tile-icon">RN</div>
+            </div>
+            <p class="tile-purpose">Sprawdzasz, co gracz albo staff zobaczy w raportach i powiadomieniach.</p>
+            <ul class="tile-examples">
+              <li>Notification types, hooks and severity.</li>
+              <li>Game report readability and producer surfaces.</li>
+              <li>Operator inbox/readability slots.</li>
+            </ul>
+            <div class="tile-actions">
+              <button class="button">Open workspace</button>
+              <div class="secondary-links"><a class="text-link" href="#notifications">Notifications</a><a class="text-link" href="#reports">Reports</a></div>
+            </div>
+          </article>
+
+          <article class="workspace-tile">
+            <div class="tile-top">
+              <div>
+                <h3 class="tile-title">Sandbox / Diagnostics</h3>
+                <div class="tile-mode">Diagnostics · read-only/test helpers</div>
+              </div>
+              <div class="tile-icon">DX</div>
+            </div>
+            <p class="tile-purpose">Sprawdzasz, symulujesz i debugujesz bez udawania, że to główny configurator.</p>
+            <ul class="tile-examples">
+              <li>Luck Lab and draft-aware comparisons.</li>
+              <li>Exploration Lab and runtime inspectors.</li>
+              <li>Combat sandbox/admin tests.</li>
+            </ul>
+            <details class="tile-details">
+              <summary>More diagnostic context</summary>
+              <div>PvP readiness diagnostics zostają tutaj albo jako contextual link, dopóki PvP nie ma pełnej player-facing i operator-facing powierzchni.</div>
+            </details>
+            <div class="tile-actions">
+              <button class="button">Open diagnostics</button>
+              <div class="secondary-links"><a class="text-link" href="#luck-lab">Luck Lab</a><a class="text-link" href="#exploration-lab">Exploration Lab</a></div>
+            </div>
+          </article>
+        </section>
+      </section>
+
+      <section class="card appendix">
+        <div class="card-head">
+          <h2 class="card-title">Implementation notes / IA appendix</h2>
+          <p class="card-subtitle">Materiał dla projektowania i późniejszej implementacji. Nie jest głównym UI operatora.</p>
+        </div>
+        <details open>
+          <summary>Show IA decisions and route placement reference</summary>
+          <div class="appendix-grid">
+            <section>
+              <div class="decision-list">
+                <div class="decision"><strong>Combat Balance → Game Balance</strong><span>Definicje przeciwników, combat content i formuły są balansowaniem gry. Sandbox ma tylko symulatory i debug.</span></div>
+                <div class="decision"><strong>Reward Profiles → Exploration & PvE</strong><span>Reward Profiles są główną częścią PvE reward wiring. Game Balance może mieć cross-link, ale primary home jest przy Trials/Encounters.</span></div>
+                <div class="decision"><strong>PvP diagnostics → de-emphasized</strong><span>Dopóki player-facing PvP nie jest dużym modułem UI, diagnostyki PvP nie dominują top-level admin hubu. Są w diagnostics/moderation/combat cross-linkach.</span></div>
+                <div class="decision"><strong>Reports & Notifications → workspace</strong><span>Raporty i notyfikacje mają własną operator-facing czytelność. Audit pozostaje cross-cutting support, nie trzecią równorzędną rzeczą w nazwie.</span></div>
+                <div class="decision"><strong>Server Events → Server Operations</strong><span>Server Events są operacyjnym stanem serwera, nawet gdy wpływają na gameplay. Nie są zwykłym Game Balance.</span></div>
+              </div>
+            </section>
+            <section class="route-table">
+              <div class="route-row"><strong>/admin</strong><span>Admin Hub: orientation, selected context, active draft, warnings, workspace map.</span><span>Overview</span></div>
+              <div class="route-row"><strong>/admin/config-change-sets</strong><span>Governance: active draft, changes, ready/apply/cancel, conflict diff.</span><span>Governance</span></div>
+              <div class="route-row"><strong>/admin/config-definitions</strong><span>Governance: definitions, value type, governance scope, metadata and read model.</span><span>Governance</span></div>
+              <div class="route-row"><strong>/admin/formulas</strong><span>Governance: reusable Formula Library for the whole game, not a Balance subpage.</span><span>Governance</span></div>
+              <div class="route-row"><strong>/admin/balance</strong><span>Split into Game Balance sub-workspaces; formula sections move conceptually to Governance.</span><span>Game Balance</span></div>
+              <div class="route-row"><strong>/admin/exploration-trials</strong><span>Trial definitions, readiness, candidate wiring and draft-aware PvE preview context.</span><span>Exploration & PvE</span></div>
+              <div class="route-row"><strong>/admin/exploration-encounters</strong><span>Encounter definitions, candidates, effects, combat links and readiness checks.</span><span>Exploration & PvE</span></div>
+              <div class="route-row"><strong>/admin/reward-profiles</strong><span>PvE reward profiles and reward/effect wiring; Game Balance cross-link only.</span><span>Exploration & PvE</span></div>
+              <div class="route-row"><strong>/admin/anti-abuse-cases</strong><span>Case queue/detail workflow, signals, sanctions, penalties, item recovery context.</span><span>Moderation</span></div>
+              <div class="route-row"><strong>/admin/scrapped-item-recovery</strong><span>Operator recovery workflow for harm/abuse incidents, not an item catalog feature.</span><span>Moderation</span></div>
+              <div class="route-row"><strong>/admin/staff-management</strong><span>Server staff, roles, scopes, server operations and future lifecycle/state screens.</span><span>Operations</span></div>
+              <div class="route-row"><strong>/admin/notification-types</strong><span>Notification registry and admin readability, with cross-links from operations/governance.</span><span>Reports</span></div>
+              <div class="route-row"><strong>/admin/audit-logs</strong><span>Audit support reachable from relevant workflows; not a primary daily-work dashboard.</span><span>Cross-link</span></div>
+              <div class="route-row"><strong>/admin/exploration-lab</strong><span>Sandbox/diagnostic tool. Accessible, but not a main admin area card.</span><span>Diagnostics</span></div>
+            </section>
+          </div>
+        </details>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
