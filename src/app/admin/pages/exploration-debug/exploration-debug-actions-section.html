@@ -3,10 +3,11 @@
   <div class="flex-col gap-md">
     <form class="grid-form" [formGroup]="actions.remainingActionsForm">
       <p class="muted-text mb-0">
-        Adds remaining daily trial attempts for this hero on the selected date.
+        Dodaje dzienne próby Trial dla wybranego bohatera na wskazaną datę.
       </p>
+      <strong>{{ actions.currentTrialCountLabel() }}</strong>
       <label class="form-field">
-        <span>Daily action type</span>
+        <span>Typ akcji dziennej</span>
         <p-select
           formControlName="actionKind"
           [options]="actions.dailyActionTypeOptions"
@@ -14,12 +15,21 @@
           optionValue="value"
         />
       </label>
-      <p-inputnumber formControlName="amount" [min]="1" />
-      <input pInputText type="date" formControlName="actionDate" />
-      <input pInputText type="text" formControlName="reason" placeholder="reason" />
+      <label class="form-field">
+        <span>Ile prób dodać</span>
+        <p-inputnumber formControlName="amount" [min]="1" />
+      </label>
+      <label class="form-field">
+        <span>Data eksploracji</span>
+        <input pInputText type="date" formControlName="actionDate" />
+      </label>
+      <label class="form-field">
+        <span>Powód</span>
+        <input pInputText type="text" formControlName="reason" placeholder="powód" />
+      </label>
       <p-button
         type="button"
-        label="Add actions"
+        label="Dodaj próby Trial"
         [disabled]="actions.isRunningAction()"
         (onClick)="actions.addRemainingActions()"
       />

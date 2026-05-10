@@ -1,5 +1,5 @@
 export const DAILY_ACTION_TYPE_OPTIONS = [
-  { label: 'Trial attempts', value: 'trial' },
+  { label: 'Próby Trial', value: 'trial' },
 ];
 
 export const FORCED_OUTCOME_OPTIONS = [

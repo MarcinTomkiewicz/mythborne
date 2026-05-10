@@ -172,11 +172,14 @@ describe('ExplorationDebugPageState', () => {
     expect(toast.show).toHaveBeenCalledWith(
       'success',
       'Exploration debug',
-      'Remaining exploration actions updated.',
+      'Dodano próby Trial.',
     );
     expect(state.debugState()?.counters[0]?.actionKind).toBe('trial');
     expect(state.debugState()?.counters[0]?.actionDate).toBe('2026-05-01');
     expect(state.debugState()?.counters[0]?.remainingCount).toBe(2);
+    expect(state.actions.currentTrialCountLabel()).toBe(
+      'Aktualnie dostępne próby Trial: 2.',
+    );
   });
 
   it('falls back to scope exploration date when add actions date input is blank', () => {
@@ -199,6 +202,20 @@ describe('ExplorationDebugPageState', () => {
       actionDate: '2026-05-01',
       reason: 'Manual sandbox counter.',
     });
+  });
+
+  it('shows Polish fallback when adding Trial attempts fails without DB message', () => {
+    debug.addRemainingActions.and.returnValue(throwError(() => null));
+    state.selectHeroTarget(heroTarget());
+    state.actions.remainingActionsForm.patchValue({
+      actionKind: 'trial',
+      amount: 2,
+      reason: 'Manual sandbox counter.',
+    });
+
+    state.actions.addRemainingActions();
+
+    expect(state.error()).toBe('Nie udało się dodać prób Trial.');
   });
 
   it('loads active difficulty tiers for picker-driven debug actions', () => {

@@ -10076,6 +10076,8 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 - Helper/RPC errors are shown in readable Polish copy.
 - No direct table update is introduced.
 
+**Status:** Accepted on 2026-05-10. `/admin/exploration-debug` now shows the current loaded Trial attempt count from existing debug state and presents the remaining-actions helper as a scoped Polish Trial-attempt action. The mutation still runs through `HeroExplorationDebug.addRemainingActions(...)` / `add_hero_remaining_actions(...)`, uses the existing selected-server/hero scope, stale guard and refresh path, and does not introduce a duplicate workflow, direct write, DB/schema/generated type edit or player runtime change. Manual smoke remains user-side pending for sandbox tester loading debug state, seeing the current Trial count, adding attempts, confirming the refreshed count, and verifying normal/live users cannot access the helper.
+
 ---
 
 ## Task W9 — Exploration Trial/Encounter resolution UI cleanup

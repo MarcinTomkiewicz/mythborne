@@ -48,6 +48,26 @@ export class ExplorationDebugActionsState {
   readonly forcedOutcomeOptions = FORCED_OUTCOME_OPTIONS;
   readonly manifestationStatusOptions = MANIFESTATION_STATUS_OPTIONS;
   readonly challengeSuccessOptions = CHALLENGE_SUCCESS_OPTIONS;
+  readonly currentTrialCount = computed(() => {
+    const state = this.runtime.debugState();
+    const explorationCount = state?.explorations
+      .map((entry) => entry.remainingTrials)
+      .find((remainingTrials) => remainingTrials !== null && remainingTrials !== undefined);
+
+    if (explorationCount !== undefined && explorationCount !== null) {
+      return explorationCount;
+    }
+
+    return state?.counters.find((counter) => counter.actionKind === 'trial')
+      ?.remainingCount ?? null;
+  });
+  readonly currentTrialCountLabel = computed(() => {
+    const count = this.currentTrialCount();
+
+    return count === null
+      ? 'Załaduj debug state bohatera, aby zobaczyć aktualny licznik.'
+      : `Aktualnie dostępne próby Trial: ${count}.`;
+  });
   readonly activeStepTimer = computed(() =>
     (this.runtime.debugState()?.explorations ?? [])
       .map((entry) => entry.activeStep)
@@ -112,7 +132,8 @@ export class ExplorationDebugActionsState {
         actionDate,
         reason: trimText(this.remainingActionsForm.controls.reason.value),
       }),
-      'Remaining exploration actions updated.',
+      'Dodano próby Trial.',
+      'Nie udało się dodać prób Trial.',
     );
   }
 
@@ -284,6 +305,7 @@ export class ExplorationDebugActionsState {
     scope: ExplorationDebugScope,
     action: Observable<unknown>,
     successMessage: string,
+    errorMessage = 'Exploration debug action failed.',
   ): void {
     const token = this.actionToken.next();
 
@@ -313,7 +335,7 @@ export class ExplorationDebugActionsState {
           }
 
           this.feedback.error.set(
-            getErrorMessage(error, 'Exploration debug action failed.'),
+            getErrorMessage(error, errorMessage),
           );
         },
       });
