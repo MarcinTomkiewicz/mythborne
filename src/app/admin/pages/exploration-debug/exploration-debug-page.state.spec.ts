@@ -1,9 +1,10 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { HeroExplorationDebugStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { ModerationHeroTarget } from '../../../core/domain/moderation/moderation-action.model';
 import { SelectedGameServer, ServerAccessState } from '../../../core/interfaces/server/active-server.interface';
+import { ConfigDefinitions } from '../../../core/services/config/config-definitions';
 import { ExplorationDefinitions } from '../../../core/services/exploration/exploration-definitions';
 import { HeroExplorationDebug } from '../../../core/services/exploration/hero-exploration-debug';
 import { ModerationActions } from '../../../core/services/moderation/moderation-actions';
@@ -15,6 +16,7 @@ import { ExplorationDebugScopeState } from './exploration-debug-scope.state';
 import { ExplorationDebugFeedbackState } from './exploration-debug-feedback.state';
 import { ExplorationDebugPageState } from './exploration-debug-page.state';
 import { ExplorationDebugRuntimeState } from './exploration-debug-runtime.state';
+import { ExplorationTimerConfigState } from './exploration-timer-config.state';
 
 describe('ExplorationDebugPageState', () => {
   let activeServer: Partial<ActiveServer>;
@@ -22,6 +24,7 @@ describe('ExplorationDebugPageState', () => {
   let accessSignal: ReturnType<typeof signal<ServerAccessState>>;
   let debug: jasmine.SpyObj<HeroExplorationDebug>;
   let definitions: jasmine.SpyObj<ExplorationDefinitions>;
+  let configDefinitions: jasmine.SpyObj<ConfigDefinitions>;
   let moderationActions: jasmine.SpyObj<ModerationActions>;
   let toast: jasmine.SpyObj<ToastService>;
   let state: ExplorationDebugPageState;
@@ -68,6 +71,7 @@ describe('ExplorationDebugPageState', () => {
         'getEnabledItemQualities',
         'getDistrictOptions',
         'getStatOptions',
+        'getStepDurationSeconds',
       ],
     );
     definitions.getActiveDifficultyTiers.and.returnValue(of([difficulty()]));
@@ -78,6 +82,11 @@ describe('ExplorationDebugPageState', () => {
     definitions.getEnabledItemQualities.and.returnValue(of([]));
     definitions.getDistrictOptions.and.returnValue(of([]));
     definitions.getStatOptions.and.returnValue(of([]));
+    definitions.getStepDurationSeconds.and.returnValue(of(180));
+    configDefinitions = jasmine.createSpyObj<ConfigDefinitions>('ConfigDefinitions', [
+      'getDefinitionExplainability',
+    ]);
+    configDefinitions.getDefinitionExplainability.and.returnValue(of([durationConfigExplainability()]));
     moderationActions = jasmine.createSpyObj<ModerationActions>('ModerationActions', [
       'searchHeroTargets',
     ]);
@@ -90,11 +99,13 @@ describe('ExplorationDebugPageState', () => {
         ExplorationDebugScopeState,
         ExplorationDefinitionsState,
         ExplorationDebugRuntimeState,
+        ExplorationTimerConfigState,
         ExplorationDebugActionsState,
         ExplorationDebugPageState,
         { provide: ActiveServer, useValue: activeServer },
         { provide: HeroExplorationDebug, useValue: debug },
         { provide: ExplorationDefinitions, useValue: definitions },
+        { provide: ConfigDefinitions, useValue: configDefinitions },
         { provide: ModerationActions, useValue: moderationActions },
         { provide: ToastService, useValue: toast },
       ],
@@ -188,12 +199,58 @@ describe('ExplorationDebugPageState', () => {
 
   it('loads active difficulty tiers for picker-driven debug actions', () => {
     state.loadInitialData();
+    TestBed.flushEffects();
 
     expect(definitions.getActiveDifficultyTiers).toHaveBeenCalled();
+    expect(definitions.getStepDurationSeconds).toHaveBeenCalledWith({
+      serverId: 'server-1',
+      difficultyKey: 'easy',
+    });
+    expect(configDefinitions.getDefinitionExplainability).toHaveBeenCalledWith({
+      serverId: 'server-1',
+      includeInactive: true,
+    });
     expect(state.definitions.difficultyOptions()).toEqual([
       { label: 'Easy (easy)', value: 'easy' },
     ]);
     expect(state.hasActiveDifficulties()).toBeTrue();
+    expect(state.timerConfig.durations()[0]).toEqual(jasmine.objectContaining({
+      difficultyKey: 'easy',
+      stepDurationMultiplier: 1.5,
+      effectiveDurationSeconds: 180,
+      inferredBaseDurationSeconds: 120,
+    }));
+    expect(state.timerConfig.configExplainability()[0].configKey).toBe(
+      'exploration_step_duration_seconds',
+    );
+  });
+
+  it('reports missing timer config explainability while preserving DB effective duration', () => {
+    configDefinitions.getDefinitionExplainability.and.returnValue(of([]));
+
+    state.loadInitialData();
+    TestBed.flushEffects();
+
+    expect(state.timerConfig.durations()[0]?.effectiveDurationSeconds).toBe(180);
+    expect(state.timerConfig.missingConfigContractMessage()).toContain(
+      'DB did not expose base/global/server step-duration config explainability',
+    );
+  });
+
+  it('preserves DB effective duration when timer config explainability fails', () => {
+    configDefinitions.getDefinitionExplainability.and.returnValue(
+      throwError(() => new Error('Config explainability unavailable.')),
+    );
+
+    state.loadInitialData();
+    TestBed.flushEffects();
+
+    expect(state.timerConfig.durations()[0]?.effectiveDurationSeconds).toBe(180);
+    expect(state.timerConfig.configExplainability()).toEqual([]);
+    expect(state.timerConfig.missingConfigContractMessage()).toContain(
+      'Config explainability unavailable.',
+    );
+    expect(state.timerConfig.error()).toBeNull();
   });
 
   it('searches heroes by staff-facing target search and stores selected hero id', () => {
@@ -297,6 +354,48 @@ function debugActionResult() {
     remainingCount: 2,
     counterId: 'counter-1',
   };
+}
+
+function durationConfigExplainability() {
+  return {
+    configDefinitionId: 'config-1',
+    configKey: 'exploration_step_duration_seconds',
+    label: 'Exploration step duration',
+    description: 'Base exploration step duration.',
+    helperText: 'Used by exploration step timers.',
+    governanceScope: 'global',
+    governanceScopeLabel: 'Global',
+    governanceScopeDescription: 'Global config.',
+    governanceScopeHelperText: '',
+    governanceScopeWarningText: '',
+    managedEntityType: 'global',
+    managedEntityTypeLabel: 'Global',
+    managedEntityTypeDescription: '',
+    managedEntityKey: 'exploration',
+    valueType: 'integer',
+    valueTypeLabel: 'Integer',
+    valueTypeDescription: '',
+    appliesToKind: 'exploration',
+    appliesToLabel: 'Exploration',
+    appliesToDescription: '',
+    appliesToHelperText: '',
+    expectedChangeKind: 'global_value_change',
+    expectedChangeKindLabel: 'Global value change',
+    effectiveValue: 120,
+    effectiveValueSourceKey: 'global',
+    effectiveValueSourceLabel: 'Global value',
+    effectiveValueSourceDescription: '',
+    gameplayImpactSummary: '',
+    changeWarning: '',
+    previewKind: 'duration',
+    previewLabel: 'Duration',
+    previewDescription: '',
+    uiGroupKey: 'exploration_runtime',
+    uiGroupLabel: 'Exploration runtime',
+    selectedServerId: 'server-1',
+    metadata: {},
+    sortOrder: 10,
+  } as never;
 }
 
 function heroTarget(heroId = 'hero-1'): ModerationHeroTarget {
@@ -442,6 +541,7 @@ function difficulty() {
   return {
     key: 'easy',
     label: 'Easy',
+    stepDurationMultiplier: 1.5,
   } as never;
 }
 

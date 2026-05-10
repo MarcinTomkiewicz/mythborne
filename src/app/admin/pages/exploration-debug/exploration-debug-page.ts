@@ -16,6 +16,7 @@ import { ExplorationDebugScopeState } from './exploration-debug-scope.state';
 import { ExplorationDebugFeedbackState } from './exploration-debug-feedback.state';
 import { ExplorationDebugPageState } from './exploration-debug-page.state';
 import { ExplorationDebugRuntimeState } from './exploration-debug-runtime.state';
+import { ExplorationTimerConfigState } from './exploration-timer-config.state';
 
 @Component({
   selector: 'app-exploration-debug-page',
@@ -37,6 +38,7 @@ import { ExplorationDebugRuntimeState } from './exploration-debug-runtime.state'
     ExplorationDebugScopeState,
     ExplorationDefinitionsState,
     ExplorationDebugRuntimeState,
+    ExplorationTimerConfigState,
     ExplorationDebugActionsState,
     ExplorationDebugPageState,
   ],

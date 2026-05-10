@@ -10025,6 +10025,8 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 - Missing config is reported as a DB/config blocker.
 - Player-facing timer continues to use DB-owned runtime values.
 
+**Status:** Accepted on 2026-05-10. `/admin/exploration-debug` now exposes DB-owned exploration step duration configuration for sandbox testers through `get_exploration_step_duration_seconds(...)`, showing effective duration per difficulty, difficulty multiplier and an inferred base-duration diagnostic without changing player runtime timers. Config explainability is read from `get_config_definition_explainability(...)` by exact `configKey = exploration_step_duration_seconds`; missing or failing explainability shows a diagnostic while preserving the authoritative duration RPC rows. Existing duration formatting is reused via `toBuildingDurationLabel`, no DB/schema/generated type edits, direct writes or player-facing timer/runtime changes were introduced. Manual smoke remains user-side pending for effective duration rows, inferred/base diagnostic, missing/failing config warning and player timer behavior staying DB-owned.
+
 ---
 
 ## Task W7 — Sandbox timer skip / finish workflow

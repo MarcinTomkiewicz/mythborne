@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
+import { RPC } from '../../constants/rpc.const';
 import {
   EncounterDefinitionReadModel,
   ExplorationDifficultyTierReadModel,
@@ -14,6 +15,10 @@ import { RewardProfileReadModel } from '../../domain/exploration/exploration-rew
 import { FilterOperator } from '../../enums/filter-operators';
 import { BuildingDistrictOption, BuildingStatOption } from '../../types/building.types';
 import { Row } from '../../types/supabase.types';
+import {
+  GetExplorationStepDurationSecondsRpcArgs,
+  GetExplorationStepDurationSecondsRpcResult,
+} from '../../types/exploration-runtime-rpc.types';
 import { mapBuildingDistricts, mapBuildingStats } from '../../utils/building-admin-mappers';
 import {
   mapEncounterDefinition,
@@ -45,6 +50,21 @@ export class ExplorationDefinitions {
         camelCase: false,
       })
       .pipe(map((rows) => rows.map(mapExplorationDifficultyTier)));
+  }
+
+  getStepDurationSeconds(input: {
+    serverId: string;
+    difficultyKey: string;
+  }): Observable<GetExplorationStepDurationSecondsRpcResult> {
+    const args: GetExplorationStepDurationSecondsRpcArgs = {
+      p_server_id: input.serverId,
+      p_difficulty_key: input.difficultyKey,
+    };
+
+    return this.backend.rpc<GetExplorationStepDurationSecondsRpcResult>(
+      RPC.get_exploration_step_duration_seconds,
+      args,
+    );
   }
 
   getActiveRewardProfiles(): Observable<RewardProfileReadModel[]> {
