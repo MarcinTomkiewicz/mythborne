@@ -17,12 +17,12 @@
       <p-inputnumber formControlName="amount" [min]="1" />
       <input pInputText type="date" formControlName="actionDate" />
       <input pInputText type="text" formControlName="reason" placeholder="reason" />
-      <button
-        pButton
+      <p-button
         type="button"
         label="Add actions"
-        (click)="actions.addRemainingActions()"
-      ></button>
+        [disabled]="actions.isRunningAction()"
+        (onClick)="actions.addRemainingActions()"
+      />
     </form>
 
     <form class="grid-form" [formGroup]="actions.resetForm">
@@ -41,16 +41,27 @@
       </label>
       <input pInputText type="date" formControlName="explorationDate" />
       <input pInputText type="text" formControlName="reason" placeholder="reason" />
-      <button
-        pButton
+      <p-button
         type="button"
         label="Reset exploration"
-        (click)="actions.resetExploration()"
-      ></button>
+        [disabled]="actions.isRunningAction()"
+        (onClick)="actions.resetExploration()"
+      />
     </form>
 
     <form class="grid-form" [formGroup]="actions.skipTimerForm">
       <p class="muted-text mb-0">Makes selected pending movement step ready to resolve.</p>
+      <div class="flex-col gap-xs">
+        <strong>Active step timer</strong>
+        <span class="muted-text">{{ actions.activeStepTimerLabel() }}</span>
+        <p-button
+          type="button"
+          label="Use active step"
+          severity="secondary"
+          [disabled]="!actions.activeStepTimer() || actions.isRunningAction()"
+          (onClick)="actions.useActiveStepTimer()"
+        />
+      </div>
       <label class="form-field">
         <span>Step</span>
         <p-select
@@ -62,12 +73,12 @@
         />
       </label>
       <input pInputText type="text" formControlName="reason" placeholder="reason" />
-      <button
-        pButton
+      <p-button
         type="button"
         label="Skip step timer"
-        (click)="actions.skipStepTimer()"
-      ></button>
+        [disabled]="actions.isRunningAction()"
+        (onClick)="actions.skipStepTimer()"
+      />
     </form>
 
     <form class="grid-form" [formGroup]="actions.rewardForm">
@@ -94,12 +105,12 @@
         }
       </label>
       <input pInputText type="text" formControlName="reason" placeholder="reason" />
-      <button
-        pButton
+      <p-button
         type="button"
         label="Grant reward profile"
-        (click)="actions.grantRewardProfile()"
-      ></button>
+        [disabled]="actions.isRunningAction()"
+        (onClick)="actions.grantRewardProfile()"
+      />
     </form>
 
     <form class="grid-form" [formGroup]="actions.overrideForm">
@@ -168,12 +179,12 @@
       </label>
       <p-inputnumber formControlName="expiresInMinutes" [min]="1" />
       <input pInputText type="text" formControlName="reason" placeholder="reason" />
-      <button
-        pButton
+      <p-button
         type="button"
         label="Set next outcome"
-        (click)="actions.setNextOutcomeOverride()"
-      ></button>
+        [disabled]="actions.isRunningAction()"
+        (onClick)="actions.setNextOutcomeOverride()"
+      />
     </form>
 
     <form class="grid-form" [formGroup]="actions.forceChallengeForm">
@@ -198,12 +209,12 @@
         />
       </label>
       <input pInputText type="text" formControlName="reason" placeholder="reason" />
-      <button
-        pButton
+      <p-button
         type="button"
         label="Force complete challenge"
-        (click)="actions.forceCompleteChallenge()"
-      ></button>
+        [disabled]="actions.isRunningAction()"
+        (onClick)="actions.forceCompleteChallenge()"
+      />
     </form>
   </div>
 </article>

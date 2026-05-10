@@ -1,7 +1,10 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of, Subject, throwError } from 'rxjs';
-import { HeroExplorationDebugStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
+import {
+  HeroExplorationDebugStateReadModel,
+  HeroExplorationStepResolutionReadModel,
+} from '../../../core/domain/exploration/exploration-runtime.model';
 import { ModerationHeroTarget } from '../../../core/domain/moderation/moderation-action.model';
 import { SelectedGameServer, ServerAccessState } from '../../../core/interfaces/server/active-server.interface';
 import { ConfigDefinitions } from '../../../core/services/config/config-definitions';
@@ -60,6 +63,7 @@ describe('ExplorationDebugPageState', () => {
         counterId: 'counter-1',
       }),
     );
+    debug.skipStepTimer.and.returnValue(of(stepResolution()));
     definitions = jasmine.createSpyObj<ExplorationDefinitions>(
       'ExplorationDefinitions',
       [
@@ -343,6 +347,37 @@ describe('ExplorationDebugPageState', () => {
     expect(debug.forceCompleteChallengeAttempt).not.toHaveBeenCalled();
     expect(state.error()).toBe('Select a hero for exploration debug tools.');
   });
+
+  it('uses the loaded active step timer and refreshes state after DB skip helper', () => {
+    debug.getDebugState.and.returnValues(
+      of(debugState({ withActiveStep: true })),
+      of(debugState()),
+    );
+    state.selectHeroTarget(heroTarget());
+    state.loadDebugState();
+
+    expect(state.actions.activeStepTimerLabel()).toContain('resolves 2026-05-01T10:05:00.000Z');
+
+    state.actions.useActiveStepTimer();
+    state.actions.skipTimerForm.controls.reason.setValue('Skip timer.');
+    state.actions.skipStepTimer();
+
+    expect(debug.skipStepTimer).toHaveBeenCalledOnceWith({
+      serverId: 'server-1',
+      stepId: 'step-active',
+      reason: 'Skip timer.',
+    });
+    expect(debug.getDebugState).toHaveBeenCalledWith({
+      serverId: 'server-1',
+      heroId: 'hero-1',
+      explorationDate: null,
+    });
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Exploration debug',
+      'Step timer skipped through DB helper.',
+    );
+  });
 });
 
 function debugActionResult() {
@@ -353,6 +388,26 @@ function debugActionResult() {
     actionDate: '2026-05-01',
     remainingCount: 2,
     counterId: 'counter-1',
+  };
+}
+
+function stepResolution(): HeroExplorationStepResolutionReadModel {
+  return {
+    stepId: 'step-active',
+    explorationId: 'exploration-1',
+    status: 'resolved',
+    outcomeKind: 'nothing',
+    rawOutcomeKind: 'nothing',
+    currentNodeId: 'node-1',
+    toNodeId: 'node-1',
+    trialDefinitionId: null,
+    encounterDefinitionId: null,
+    challengeAttemptId: null,
+    remainingTrials: 0,
+    trialDryStepCount: 1,
+    selectedDefinition: null,
+    selectionDiagnostic: null,
+    metadataJson: {},
   };
 }
 
@@ -455,7 +510,7 @@ function access(patch: Partial<ServerAccessState> = {}): ServerAccessState {
 }
 
 function debugState(
-  options: { withTrialCounter?: boolean } = {},
+  options: { withTrialCounter?: boolean; withActiveStep?: boolean } = {},
 ): HeroExplorationDebugStateReadModel {
   return {
     serverId: 'server-1',
@@ -497,7 +552,35 @@ function debugState(
         remainingTrials: options.withTrialCounter ? 2 : 0,
         currentNode: null,
         edges: [],
-        activeStep: null,
+        activeStep: options.withActiveStep
+          ? {
+              id: 'step-active',
+              serverId: 'server-1',
+              heroId: 'hero-1',
+              explorationId: 'exploration-1',
+              edgeId: null,
+              fromNodeId: 'node-1',
+              toNodeId: 'node-2',
+              directionKey: 'north',
+              stepKind: 'movement',
+              status: 'pending',
+              outcomeKind: 'known_path',
+              difficultyKey: 'easy',
+              districtCode: 'district-a',
+              trialDefinitionId: null,
+              encounterDefinitionId: null,
+              trialOpportunityChance: null,
+              trialOpportunityRoll: null,
+              encounterChance: null,
+              encounterRoll: null,
+              metadataJson: {},
+              startedAt: '2026-05-01T10:00:00.000Z',
+              resolvesAt: '2026-05-01T10:05:00.000Z',
+              resolvedAt: null,
+              createdAt: '2026-05-01T10:00:00.000Z',
+              updatedAt: '2026-05-01T10:00:00.000Z',
+            }
+          : null,
         activeChallenge: null,
         activeEffect: null,
         recentSteps: [

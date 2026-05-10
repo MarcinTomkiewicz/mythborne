@@ -10050,6 +10050,8 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 - No frontend direct table mutation is introduced.
 - Live server never exposes skip timer control.
 
+**Status:** Accepted on 2026-05-10. `/admin/exploration-debug` now surfaces the active step timer from loaded debug state and provides a sandbox-only `Use active step` convenience action that only prefills the existing skip form. The actual skip still runs through `HeroExplorationDebug.skipStepTimer(...)` / `skip_hero_exploration_step_timer(...)`, keeps the existing selected-server/hero scope and stale guards, refreshes debug state after success, and does not alter normal player timer/runtime behavior. Touched debug action buttons now use canonical `<p-button />`; no DB/schema/generated type edits or direct writes were introduced. Manual smoke remains user-side pending for sandbox/tester loading an active movement step, using the active step, skipping the timer, confirming refreshed state, and verifying live/normal users cannot access the helper.
+
 ---
 
 ## Task W8 — Sandbox daily Trial attempts / remaining actions workflow

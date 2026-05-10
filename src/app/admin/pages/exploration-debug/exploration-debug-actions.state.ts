@@ -48,6 +48,18 @@ export class ExplorationDebugActionsState {
   readonly forcedOutcomeOptions = FORCED_OUTCOME_OPTIONS;
   readonly manifestationStatusOptions = MANIFESTATION_STATUS_OPTIONS;
   readonly challengeSuccessOptions = CHALLENGE_SUCCESS_OPTIONS;
+  readonly activeStepTimer = computed(() =>
+    (this.runtime.debugState()?.explorations ?? [])
+      .map((entry) => entry.activeStep)
+      .find((step) => step !== null) ?? null,
+  );
+  readonly activeStepTimerLabel = computed(() => {
+    const step = this.activeStepTimer();
+
+    return step
+      ? `${step.stepKind} / ${step.status} / started ${step.startedAt} / resolves ${step.resolvesAt}`
+      : 'No active movement step loaded for the selected hero.';
+  });
   readonly stepOptions = computed(() =>
     (this.runtime.debugState()?.explorations ?? [])
       .flatMap((entry) => [...(entry.activeStep ? [entry.activeStep] : []), ...entry.recentSteps])
@@ -139,6 +151,18 @@ export class ExplorationDebugActionsState {
       }),
       'Step timer skipped through DB helper.',
     );
+  }
+
+  useActiveStepTimer(): void {
+    const activeStep = this.activeStepTimer();
+
+    if (!activeStep) {
+      this.feedback.error.set('Load a hero debug state with an active movement step first.');
+      return;
+    }
+
+    this.skipTimerForm.controls.stepId.setValue(activeStep.id);
+    this.skipTimerForm.controls.stepId.markAsDirty();
   }
 
   grantRewardProfile(): void {
