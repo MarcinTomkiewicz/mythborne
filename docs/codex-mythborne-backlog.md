@@ -9744,6 +9744,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Remaining limitations are concrete.
 - Luck Foundation vs Luck Lab boundaries remain clear.
 
+**Status:** Accepted on 2026-05-10. Added `docs/luck-lab-final-integration-report.md` as the final Epic V report. It lists implemented `/admin/luck-lab` panels, DB/RPC preview contracts used, boundaries between Luck Foundation and Luck Lab, current metadata/IA limitations, follow-up needs, verification reference and pending user-side manual smoke. No code, DB/RPC contracts, generated types, direct writes, local formula execution, local RNG or drop simulation were changed by V15.
+
 ---
 
 # Epic W — Exploration Core Completion
