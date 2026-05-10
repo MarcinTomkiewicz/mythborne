@@ -33,6 +33,8 @@ export class LuckLabDropDistributionSection implements OnInit {
       reason: summary.reason,
       sampleSize: summary.sampleSize,
       domainRows: this.lab.result().explanationRows,
+      formulaContextJson: summary.formulaContextJson,
+      summaryJson: summary.summaryJson,
     });
   }
 }

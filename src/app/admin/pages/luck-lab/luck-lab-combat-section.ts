@@ -26,6 +26,10 @@ export class LuckLabCombatSection implements OnInit {
     return combatExplanationRows({
       explanation: this.section.preview()?.explanation ?? null,
       domainRows: this.lab.result().explanationRows,
+      formulaTargetKeys: this.section
+        .rows()
+        .map((row) => row.formulaTargetKey)
+        .filter((key): key is string => key !== null),
     });
   }
 }

@@ -25,6 +25,7 @@ export class LuckLabGeneratedItemSection {
       bucketMetadata: preview
         ? `Bucket ${preview.bucketProfileName} (${preview.bucketProfileKey})`
         : null,
+      formulaContextJson: preview?.formulaContextJson ?? {},
     });
   }
 }

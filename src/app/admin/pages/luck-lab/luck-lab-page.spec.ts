@@ -2,6 +2,7 @@ import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 import { LuckLabCombatSection } from './luck-lab-combat-section';
 import { LuckLabCombatSectionState } from './luck-lab-combat-section.state';
 import { LuckLabDropDistributionSection } from './luck-lab-drop-distribution-section';
@@ -539,6 +540,7 @@ describe('LuckLabPage', () => {
 
     await TestBed.configureTestingModule({
       imports: [LuckLabPage],
+      providers: [provideRouter([])],
     })
       .overrideComponent(LuckLabPage, {
         set: {
@@ -608,6 +610,7 @@ describe('LuckLabPage', () => {
     expect(text).toContain('luck_influence');
     expect(text).toContain('DB luck expression');
     expect(text).toContain('trial_power');
+    expect(text).toContain('Formula target keys: luck_influence, trial_power');
     expect(text).toContain('DB trial expression');
     expect(text).toContain('30 + 4 = 34');
     expect(text).toContain('DB Trial Power preview.');
@@ -616,8 +619,10 @@ describe('LuckLabPage', () => {
     expect(text).toContain('DB Opportunity surface');
     expect(text).toContain('DB opportunity helper.');
     expect(text).toContain('Formula: trial_opportunity_chance');
+    expect(text).toContain('Formula target keys: trial_opportunity_chance');
     expect(text).toContain('DB Manifestation surface');
     expect(text).toContain('DB manifestation helper.');
+    expect(text).toContain('Formula target keys: trial_manifestation_chance');
     expect(text).toContain('Difficulty context');
     expect(text).toContain('Difficulty override: easy');
     expect(text).toContain('District override: district-a');
@@ -632,6 +637,9 @@ describe('LuckLabPage', () => {
     expect(text).toContain('DB Auto-resolve surface');
     expect(text).toContain('DB auto-resolve helper.');
     expect(text).toContain('Formula: challenge_auto_resolve_success_chance');
+    expect(text).toContain(
+      'Formula target keys: challenge_auto_resolve_success_chance',
+    );
     expect(text).toContain('DB auto-resolve preview.');
     expect(text).toContain('Manual chance reference');
     expect(text).toContain('Auto-resolve chance: 24%');
@@ -640,6 +648,7 @@ describe('LuckLabPage', () => {
     expect(text).toContain('DB Encounter surface');
     expect(text).toContain('DB encounter helper.');
     expect(text).toContain('Formula: non_trial_encounter_chance');
+    expect(text).toContain('Formula target keys: non_trial_encounter_chance');
     expect(text).toContain('DB encounter fallback preview.');
     expect(text).toContain('Encounter chance: 16%');
     expect(text).toContain('nothing is the deterministic fallback outcome');
@@ -648,6 +657,7 @@ describe('LuckLabPage', () => {
     expect(text).toContain('Damager vs target preview');
     expect(text).toContain('DB Combat surface');
     expect(text).toContain('DB combat helper.');
+    expect(text).toContain('Formula target keys: combat_hit_green_zone');
     expect(text).toContain('DB combat Luck preview.');
     expect(text).toContain('Dexterity: 22');
     expect(text).toContain('combat_hit_green_zone');
@@ -688,6 +698,16 @@ describe('LuckLabPage', () => {
     expect(text).not.toContain(
       ['Missing required', 'Luck Lab DB explanation metadata'].join(' '),
     );
+    expect(text).toContain('Open formula governance');
+    const formulaLinks = Array.from<HTMLAnchorElement>(
+      fixture.nativeElement.querySelectorAll('a[href="/admin/formulas"]'),
+    );
+
+    expect(formulaLinks.length).toBeGreaterThan(0);
+    expect(
+      formulaLinks.every((link) => link.getAttribute('href') === '/admin/formulas'),
+    ).toBeTrue();
+
     const bareSummaryValues = cardSummaryValues(fixture);
 
     expect(bareSummaryValues).not.toContain('DB default');

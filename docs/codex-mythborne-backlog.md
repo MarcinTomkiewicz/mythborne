@@ -9697,6 +9697,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Missing deep links do not break the page.
 - Luck Lab does not duplicate the formula editor.
 
+**Status:** Accepted on 2026-05-10. Added formula governance navigation from Luck Lab explanation rows to the existing generic `/admin/formulas` route. Rows show returned/known formula keys or target keys as secondary metadata where target-specific deep links are not available. No formula editor, fake target-specific deep links, generated type edits, direct writes, local formula execution, local RNG or drop simulation were added. Focused Luck Lab specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps passed. Manual smoke remains pending/user-side for `/admin/luck-lab` formula governance links.
+
 ---
 
 ## Task V14 — Luck Lab performance and stale-response hardening
