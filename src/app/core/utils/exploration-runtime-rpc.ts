@@ -19,6 +19,8 @@ import {
   StartOrGetHeroExplorationRpcRow,
 } from '../types/exploration-runtime-rpc.types';
 import { Json } from '../types/database.types';
+import { jsonRecord, read } from './json-read';
+import { mapExplorationStepSelectionDiagnosticJson } from './exploration-readiness-mappers';
 import { trimText, trimToNull } from './normalize-text';
 
 export function toGetHeroExplorationStateRpcArgs(input: {
@@ -215,19 +217,27 @@ export function firstAutoResolveHeroExplorationChallengeAttemptRow(
 export function mapResolveHeroExplorationStepResult(
   row: ResolveHeroExplorationStepRpcRow,
 ): HeroExplorationStepResolutionReadModel {
+  const metadataJson = row.metadata_json as Json;
+  const selectionDiagnostic = mapExplorationStepSelectionDiagnosticJson(
+    readSelectionDiagnosticJson(metadataJson),
+  );
+
   return {
     stepId: row.step_id,
     explorationId: row.exploration_id,
     status: row.status,
-    outcomeKind: row.outcome_kind,
-    currentNodeId: row.current_node_id,
-    toNodeId: row.to_node_id,
-    trialDefinitionId: row.trial_definition_id,
-    encounterDefinitionId: row.encounter_definition_id,
-    challengeAttemptId: row.challenge_attempt_id,
+    outcomeKind: canonicalStepOutcomeKind(row.outcome_kind),
+    rawOutcomeKind: row.outcome_kind,
+    currentNodeId: trimToNull(row.current_node_id),
+    toNodeId: trimToNull(row.to_node_id),
+    trialDefinitionId: trimToNull(row.trial_definition_id),
+    encounterDefinitionId: trimToNull(row.encounter_definition_id),
+    challengeAttemptId: trimToNull(row.challenge_attempt_id),
     remainingTrials: row.remaining_trials,
     trialDryStepCount: row.trial_dry_step_count,
-    metadataJson: row.metadata_json as Json,
+    selectedDefinition: selectionDiagnostic?.selectedDefinition ?? null,
+    selectionDiagnostic,
+    metadataJson,
   };
 }
 
@@ -315,4 +325,22 @@ function optionalFiniteNumber(value: number | null | undefined): number | null {
   const normalized = Number(value);
 
   return Number.isFinite(normalized) ? normalized : null;
+}
+
+function canonicalStepOutcomeKind(value: string): HeroExplorationStepResolutionReadModel['outcomeKind'] {
+  return value === 'trial' || value === 'encounter' ? value : 'nothing';
+}
+
+function readSelectionDiagnosticJson(value: Json): Json {
+  const metadata = jsonRecord(value);
+
+  return read(
+    metadata,
+    'selectionDiagnostic',
+    'selection_diagnostic',
+    'stepSelectionDiagnostic',
+    'step_selection_diagnostic',
+    'selectionDebug',
+    'selection_debug',
+  ) ?? null;
 }

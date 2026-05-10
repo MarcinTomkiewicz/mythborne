@@ -3,6 +3,7 @@ import { firstValueFrom, of } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import { Row } from '../../types/supabase.types';
+import { mapResolveHeroExplorationStepResult } from '../../utils/exploration-runtime-rpc';
 import { Backend } from '../backend/backend';
 import { HeroExplorations } from './hero-explorations';
 
@@ -148,6 +149,45 @@ describe('HeroExplorations', () => {
     expect(backend.create).not.toHaveBeenCalled();
     expect(backend.update).not.toHaveBeenCalled();
     expect(backend.delete).not.toHaveBeenCalled();
+  });
+
+  it('maps step resolution to canonical outcomes and preserves selection diagnostics', () => {
+    const result = mapResolveHeroExplorationStepResult({
+      ...resolveStepRow(),
+      outcome_kind: 'encounter',
+      encounter_definition_id: 'encounter-1',
+      metadata_json: {
+        selection_diagnostic: {
+          outcome_kind: 'encounter',
+          encounter_definition_id: 'encounter-1',
+          encounter_definition_key: 'minor_resource_find',
+          encounter_definition_ready: true,
+          encounter_kind: 'resource',
+          encounter_readiness_reasons_json: [],
+          selected_at: '2026-05-01T10:10:00.000Z',
+        },
+      },
+    });
+
+    expect(result.outcomeKind).toBe('encounter');
+    expect(result.rawOutcomeKind).toBe('encounter');
+    expect(result.selectedDefinition).toEqual(jasmine.objectContaining({
+      definitionKind: 'encounter',
+      definitionId: 'encounter-1',
+      definitionKey: 'minor_resource_find',
+      encounterKind: 'resource',
+    }));
+    expect(result.selectionDiagnostic?.selectedAt).toBe('2026-05-01T10:10:00.000Z');
+  });
+
+  it('normalizes legacy non-Trial/Encounter step outcomes to Nothing fallback', () => {
+    const result = mapResolveHeroExplorationStepResult({
+      ...resolveStepRow(),
+      outcome_kind: 'known_path',
+    });
+
+    expect(result.outcomeKind).toBe('nothing');
+    expect(result.rawOutcomeKind).toBe('known_path');
   });
 
   it('completes challenge attempts through RPC before refreshing the canonical state', async () => {
@@ -300,9 +340,9 @@ function resolveStepRow() {
     to_node_id: 'node-2',
     status: 'resolved',
     outcome_kind: 'nothing',
-    trial_definition_id: null,
-    encounter_definition_id: null,
-    challenge_attempt_id: null,
+    trial_definition_id: '',
+    encounter_definition_id: '',
+    challenge_attempt_id: '',
     remaining_trials: 1,
     trial_dry_step_count: 1,
     metadata_json: {},

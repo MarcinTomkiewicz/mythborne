@@ -1,5 +1,10 @@
 import { Json } from '../../types/database.types';
 import { Row } from '../../types/supabase.types';
+import {
+  ExplorationSelectedDefinitionReadModel,
+  ExplorationStepOutcomeKind,
+  ExplorationStepSelectionDiagnosticReadModel,
+} from './exploration-readiness.model';
 
 export type HeroExplorationStatus = Row<'hero_explorations'>['status'];
 export type HeroExplorationStepStatus = Row<'hero_exploration_steps'>['status'];
@@ -250,7 +255,8 @@ export interface HeroExplorationStepResolutionReadModel {
   stepId: string;
   explorationId: string;
   status: string;
-  outcomeKind: string;
+  outcomeKind: ExplorationStepOutcomeKind;
+  rawOutcomeKind: string;
   currentNodeId: string | null;
   toNodeId: string | null;
   trialDefinitionId: string | null;
@@ -258,6 +264,8 @@ export interface HeroExplorationStepResolutionReadModel {
   challengeAttemptId: string | null;
   remainingTrials: number;
   trialDryStepCount: number;
+  selectedDefinition: ExplorationSelectedDefinitionReadModel | null;
+  selectionDiagnostic: ExplorationStepSelectionDiagnosticReadModel | null;
   metadataJson: Json;
 }
 

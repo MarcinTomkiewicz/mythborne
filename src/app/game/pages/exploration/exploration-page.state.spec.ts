@@ -7,6 +7,7 @@ import {
 import { ExplorationDifficultyTierReadModel } from '../../../core/domain/exploration/exploration-definition.model';
 import { TrialOpportunityCurvePreview } from '../../../core/domain/exploration/exploration-preview.model';
 import { ExplorationChallengeRewardReadModel } from '../../../core/domain/exploration/exploration-reward.model';
+import { ExplorationStepOutcomeKind } from '../../../core/domain/exploration/exploration-readiness.model';
 import {
   HeroExplorationChallengeCompletionWorkflowResult,
   HeroExplorationStateReadModel,
@@ -203,11 +204,36 @@ describe('ExplorationPageState', () => {
       string,
       string,
     ]> = [
-      [{ outcomeKind: 'known_path' }, 'Path resolved', 'Current node: node-2.'],
-      [{ outcomeKind: 'empty', currentNodeId: null, toNodeId: null }, 'Nothing found', 'database runtime'],
-      [{ outcomeKind: 'encounter', encounterDefinitionId: 'encounter-1', challengeAttemptId: 'challenge-1' }, 'Encounter started', 'An encounter challenge is ready.'],
-      [{ outcomeKind: 'trial', trialDefinitionId: 'trial-1', challengeAttemptId: 'challenge-1' }, 'Trial manifested', 'A trial challenge is ready.'],
-      [{ outcomeKind: 'trial', trialDefinitionId: 'trial-1' }, 'Trial did not manifest', 'daily trial opportunity was consumed'],
+      [{ outcomeKind: 'nothing', currentNodeId: null, toNodeId: null }, 'Nothing found', 'database fallback'],
+      [
+        {
+          outcomeKind: 'encounter',
+          encounterDefinitionId: 'encounter-1',
+          challengeAttemptId: 'challenge-1',
+          selectedDefinition: selectedEncounter('encounter-1', 'light_combat', 'combat'),
+        },
+        'Combat Encounter started',
+        'requires resolution',
+      ],
+      [
+        {
+          outcomeKind: 'encounter',
+          encounterDefinitionId: 'encounter-2',
+          selectedDefinition: selectedEncounter('encounter-2', 'minor_resource_find', 'resource'),
+        },
+        'Resource Encounter resolved',
+        'database reward flow',
+      ],
+      [
+        {
+          outcomeKind: 'encounter',
+          encounterDefinitionId: 'encounter-3',
+          selectedDefinition: selectedEncounter('encounter-3', 'blessing', 'buff'),
+        },
+        'Buff Encounter resolved',
+        'database-owned effect',
+      ],
+      [{ outcomeKind: 'trial', trialDefinitionId: 'trial-1', challengeAttemptId: 'challenge-1' }, 'Trial manifested', 'Resolve it to continue'],
     ];
 
     page.loadData();
@@ -751,7 +777,10 @@ function stepResolutionWorkflow(
   difficultyKey: string,
   patch: Partial<HeroExplorationStepResolutionWorkflowResult['result']> | string = 'nothing',
 ): HeroExplorationStepResolutionWorkflowResult {
-  const resultPatch = typeof patch === 'string' ? { outcomeKind: patch } : patch;
+  const resultPatch: Partial<HeroExplorationStepResolutionWorkflowResult['result']> =
+    typeof patch === 'string'
+      ? { outcomeKind: patch as ExplorationStepOutcomeKind }
+      : patch;
 
   return {
     result: {
@@ -764,8 +793,11 @@ function stepResolutionWorkflow(
       trialDefinitionId: null,
       encounterDefinitionId: null,
       challengeAttemptId: null,
+      rawOutcomeKind: 'nothing',
       remainingTrials: 1,
       trialDryStepCount: 1,
+      selectedDefinition: null,
+      selectionDiagnostic: null,
       metadataJson: { flavorText: 'The passage is quiet.' },
       ...resultPatch,
     },
@@ -791,6 +823,21 @@ function challengeCompletionWorkflow(
       ...patch,
     },
     state: activeExplorationState(difficultyKey),
+  };
+}
+
+function selectedEncounter(
+  definitionId: string,
+  definitionKey: string,
+  encounterKind: string,
+): HeroExplorationStepResolutionWorkflowResult['result']['selectedDefinition'] {
+  return {
+    definitionKind: 'encounter',
+    definitionId,
+    definitionKey,
+    isReady: true,
+    encounterKind,
+    readinessReasons: [],
   };
 }
 

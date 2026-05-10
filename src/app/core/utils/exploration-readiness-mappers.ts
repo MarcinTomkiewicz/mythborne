@@ -18,11 +18,13 @@ import {
 } from '../types/exploration-runtime-rpc.types';
 import { Row } from '../types/supabase.types';
 import {
-  jsonValue,
+  booleanValue,
   jsonRecord,
+  jsonValue,
   mapJsonArray,
   numberValue,
   optionalBoolean,
+  optionalNumber,
   optionalText,
   read,
   text,
@@ -100,6 +102,86 @@ export function mapExplorationStepSelectionDiagnostic(
   };
 }
 
+export function mapExplorationStepSelectionDiagnosticJson(
+  value: Json,
+): ExplorationStepSelectionDiagnosticReadModel | null {
+  const row = jsonRecord(value);
+
+  if (!row) {
+    return null;
+  }
+
+  const outcomeKind = toOutcomeKind(text(read(row, 'outcomeKind', 'outcome_kind')));
+  const encounterReasonsJson = jsonValue(
+    read(row, 'encounterReadinessReasonsJson', 'encounter_readiness_reasons_json'),
+  );
+  const encounterSkippedReason = optionalText(
+    read(row, 'encounterSelectionSkippedReason', 'encounter_selection_skipped_reason'),
+  );
+  const selectedDefinition = selectedDefinitionForOutcome({
+    outcomeKind,
+    trialDefinitionId: optionalText(read(row, 'trialDefinitionId', 'trial_definition_id')),
+    trialDefinitionKey: optionalText(read(row, 'trialDefinitionKey', 'trial_definition_key')),
+    trialDefinitionReady: optionalBoolean(
+      read(row, 'trialDefinitionReady', 'trial_definition_ready'),
+    ),
+    trialReasonsJson: jsonValue(
+      read(row, 'trialReadinessReasonsJson', 'trial_readiness_reasons_json'),
+    ),
+    encounterDefinitionId: optionalText(
+      read(row, 'encounterDefinitionId', 'encounter_definition_id'),
+    ),
+    encounterDefinitionKey: optionalText(
+      read(row, 'encounterDefinitionKey', 'encounter_definition_key'),
+    ),
+    encounterDefinitionReady: optionalBoolean(
+      read(row, 'encounterDefinitionReady', 'encounter_definition_ready'),
+    ),
+    encounterKind: optionalText(read(row, 'encounterKind', 'encounter_kind')),
+    encounterReasonsJson,
+  });
+
+  return {
+    stepId: text(read(row, 'stepId', 'step_id')),
+    serverId: text(read(row, 'serverId', 'server_id')),
+    heroId: text(read(row, 'heroId', 'hero_id')),
+    explorationId: text(read(row, 'explorationId', 'exploration_id')),
+    stepKind: text(read(row, 'stepKind', 'step_kind')),
+    stepStatus: text(read(row, 'stepStatus', 'step_status')),
+    resolutionAttemptId: optionalText(read(row, 'resolutionAttemptId', 'challenge_attempt_id')),
+    resolutionAttemptStatus: optionalText(
+      read(row, 'resolutionAttemptStatus', 'challenge_status'),
+    ),
+    rewardGrantId: optionalText(read(row, 'rewardGrantId', 'reward_grant_id')),
+    outcomeKind,
+    readinessGuarded: booleanValue(read(row, 'readinessGuarded', 'readiness_guarded')),
+    forcedOverrideId: optionalText(read(row, 'forcedOverrideId', 'forced_override_id')),
+    trialOpportunityChance: optionalNumber(
+      read(row, 'trialOpportunityChance', 'trial_opportunity_chance'),
+    ),
+    trialOpportunityRoll: optionalNumber(
+      read(row, 'trialOpportunityRoll', 'trial_opportunity_roll'),
+    ),
+    encounterChance: optionalNumber(read(row, 'encounterChance', 'encounter_chance')),
+    encounterRoll: optionalNumber(read(row, 'encounterRoll', 'encounter_roll')),
+    selectedDefinition,
+    skippedDefinition: encounterSkippedReason
+      ? {
+          definitionKind: 'encounter',
+          definitionId: optionalText(read(row, 'encounterDefinitionId', 'encounter_definition_id')),
+          definitionKey: optionalText(
+            read(row, 'encounterDefinitionKey', 'encounter_definition_key'),
+          ),
+          reasonKey: encounterSkippedReason,
+          readinessReasons: mapReadinessReasons(encounterReasonsJson),
+        }
+      : null,
+    finalOutcomeKind: selectedDefinition?.definitionKind ?? outcomeKind,
+    selectedAt: optionalText(read(row, 'selectedAt', 'selected_at')),
+    metadataJson: jsonValue(read(row, 'metadataJson', 'metadata_json', 'metadata')),
+  };
+}
+
 function mapDefinitionReadiness(
   row: DefinitionReadinessRpcRow,
   definitionKind: ExplorationDefinitionKind,
@@ -129,25 +211,51 @@ function mapSelectedDefinition(
   row: GetExplorationStepSelectionDiagnosticRpcRow,
   outcomeKind: ExplorationStepOutcomeKind,
 ): ExplorationSelectedDefinitionReadModel | null {
-  if (outcomeKind === 'trial') {
+  return selectedDefinitionForOutcome({
+    outcomeKind,
+    trialDefinitionId: row.trial_definition_id,
+    trialDefinitionKey: row.trial_definition_key,
+    trialDefinitionReady: row.trial_definition_ready,
+    trialReasonsJson: row.trial_readiness_reasons_json,
+    encounterDefinitionId: row.encounter_definition_id,
+    encounterDefinitionKey: row.encounter_definition_key,
+    encounterDefinitionReady: row.encounter_definition_ready,
+    encounterKind: row.encounter_kind,
+    encounterReasonsJson: row.encounter_readiness_reasons_json,
+  });
+}
+
+function selectedDefinitionForOutcome(input: {
+  outcomeKind: ExplorationStepOutcomeKind;
+  trialDefinitionId: string | null;
+  trialDefinitionKey: string | null;
+  trialDefinitionReady: boolean | null;
+  trialReasonsJson: Json;
+  encounterDefinitionId: string | null;
+  encounterDefinitionKey: string | null;
+  encounterDefinitionReady: boolean | null;
+  encounterKind: string | null;
+  encounterReasonsJson: Json;
+}): ExplorationSelectedDefinitionReadModel | null {
+  if (input.outcomeKind === 'trial') {
     return selectedDefinition({
       definitionKind: 'trial',
-      definitionId: row.trial_definition_id,
-      definitionKey: row.trial_definition_key,
-      isReady: row.trial_definition_ready,
+      definitionId: input.trialDefinitionId,
+      definitionKey: input.trialDefinitionKey,
+      isReady: input.trialDefinitionReady,
       encounterKind: null,
-      readinessReasonsJson: row.trial_readiness_reasons_json,
+      readinessReasonsJson: input.trialReasonsJson,
     });
   }
 
-  if (outcomeKind === 'encounter') {
+  if (input.outcomeKind === 'encounter') {
     return selectedDefinition({
       definitionKind: 'encounter',
-      definitionId: row.encounter_definition_id,
-      definitionKey: row.encounter_definition_key,
-      isReady: row.encounter_definition_ready,
-      encounterKind: row.encounter_kind,
-      readinessReasonsJson: row.encounter_readiness_reasons_json,
+      definitionId: input.encounterDefinitionId,
+      definitionKey: input.encounterDefinitionKey,
+      isReady: input.encounterDefinitionReady,
+      encounterKind: input.encounterKind,
+      readinessReasonsJson: input.encounterReasonsJson,
     });
   }
 

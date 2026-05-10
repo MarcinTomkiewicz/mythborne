@@ -9902,6 +9902,8 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 - Selection diagnostics can be shown in sandbox/tester mode.
 - Normal player view remains concise.
 
+**Status:** Accepted on 2026-05-10. Step resolution state now exposes canonical Trial/Encounter/Nothing outcome names, preserves `rawOutcomeKind` for diagnostics, and maps DB-owned selected definition / selection diagnostic metadata from result metadata when present. `/game/exploration` result copy distinguishes Combat/Resource/Buff/Debuff Encounters only when DB metadata provides `encounterKind`, and old `known_path` / `empty` player-facing result semantics were removed from the touched flow. No generated types, DB/RPC contracts, direct writes, local selection authority or parallel readiness logic were added. Manual smoke remains user-side pending for Trial, Combat Encounter, Resource Encounter, Buff/Debuff Encounter and Nothing outcomes.
+
 ---
 
 ## Task W3 — Sandbox exploration diagnostics panel

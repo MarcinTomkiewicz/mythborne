@@ -136,27 +136,23 @@ export class ExplorationStepState {
       return '';
     }
 
-    if (result.challengeAttemptId && result.trialDefinitionId) {
+    if (result.outcomeKind === 'trial' && result.challengeAttemptId) {
       return 'Trial manifested';
     }
 
-    if (result.challengeAttemptId && result.encounterDefinitionId) {
-      return 'Encounter started';
+    if (result.outcomeKind === 'trial') {
+      return 'Trial resolved';
     }
 
-    if (result.trialDefinitionId) {
-      return 'Trial did not manifest';
+    if (result.outcomeKind === 'encounter' && result.challengeAttemptId) {
+      return `${this.encounterKindPrefix(result)}Encounter started`;
     }
 
-    if (this.isMovementOutcome(result.outcomeKind)) {
-      return 'Path resolved';
+    if (result.outcomeKind === 'encounter') {
+      return `${this.encounterKindPrefix(result)}Encounter resolved`;
     }
 
-    if (this.isEmptyOutcome(result.outcomeKind)) {
-      return 'Nothing found';
-    }
-
-    return this.humanizeKey(result.outcomeKind);
+    return 'Nothing found';
   }
 
   private resultDescription(result: HeroExplorationStepResolutionReadModel | null): string {
@@ -164,23 +160,23 @@ export class ExplorationStepState {
       return '';
     }
 
-    if (result.challengeAttemptId && result.trialDefinitionId) {
-      return 'A trial challenge is ready. Resolve the challenge flow to continue.';
+    if (result.outcomeKind === 'trial' && result.challengeAttemptId) {
+      return 'A Trial is ready. Resolve it to continue exploration.';
     }
 
-    if (result.challengeAttemptId && result.encounterDefinitionId) {
-      return 'An encounter challenge is ready. Resolve the encounter flow to continue.';
+    if (result.outcomeKind === 'trial') {
+      return 'A Trial outcome was returned by the database runtime.';
     }
 
-    if (result.trialDefinitionId) {
-      return 'The daily trial opportunity was consumed, but no trial manifested and no reward is granted.';
+    if (result.outcomeKind === 'encounter' && result.challengeAttemptId) {
+      return `A ${this.encounterKindPrefix(result)}Encounter requires resolution before exploration can continue.`;
     }
 
-    if (result.toNodeId || result.currentNodeId) {
-      return `Current node: ${result.currentNodeId ?? result.toNodeId}.`;
+    if (result.outcomeKind === 'encounter') {
+      return this.encounterOutcomeDescription(result);
     }
 
-    return 'The step was resolved by the database runtime.';
+    return 'Nothing was selected; this is the database fallback after Trial and Encounter selection.';
   }
 
   private resultFlavor(result: HeroExplorationStepResolutionReadModel | null): string | null {
@@ -198,26 +194,34 @@ export class ExplorationStepState {
     );
   }
 
-  private isMovementOutcome(value: string): boolean {
-    return [
-      'known_path',
-      'known_path_movement',
-      'backtracking',
-      'movement',
-      'moved',
-    ].includes(value);
+  private encounterKindPrefix(result: HeroExplorationStepResolutionReadModel): string {
+    const kind = result.selectedDefinition?.encounterKind;
+
+    switch (kind) {
+      case 'combat':
+        return 'Combat ';
+      case 'resource':
+        return 'Resource ';
+      case 'buff':
+        return 'Buff ';
+      case 'debuff':
+        return 'Debuff ';
+      default:
+        return '';
+    }
   }
 
-  private isEmptyOutcome(value: string): boolean {
-    return ['nothing', 'empty', 'none'].includes(value);
-  }
-
-  private humanizeKey(value: string): string {
-    return value
-      .split(/[_\s-]+/)
-      .filter(Boolean)
-      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-      .join(' ') || 'Step resolved';
+  private encounterOutcomeDescription(result: HeroExplorationStepResolutionReadModel): string {
+    switch (result.selectedDefinition?.encounterKind) {
+      case 'resource':
+        return 'A Resource Encounter resolved through the database reward flow.';
+      case 'buff':
+        return 'A Buff Encounter applied its database-owned effect.';
+      case 'debuff':
+        return 'A Debuff Encounter applied its database-owned effect.';
+      default:
+        return 'An Encounter outcome was returned by the database runtime.';
+    }
   }
 
   private progressPercent(step: HeroExplorationStepReadModel | null): number {
