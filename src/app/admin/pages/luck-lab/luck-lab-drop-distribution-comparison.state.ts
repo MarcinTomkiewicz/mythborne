@@ -10,6 +10,8 @@ import { getErrorMessage } from '../../../core/utils/error-message';
 import { RequestToken } from '../../../core/utils/request-token';
 import { luckLabComparisonPresets } from './luck-lab-comparison-presets';
 
+const DROP_DISTRIBUTION_COMPARISON_DEBOUNCE_MS = 900;
+
 export interface DropDistributionComparisonRow {
   label: string;
   luckValue: number | null;
@@ -42,10 +44,13 @@ export class LuckLabDropDistributionComparisonState {
       clearTimeout(this.debounceHandle);
     }
 
+    this.token.next();
+    this.isLoadingSource.set(true);
+    this.errorSource.set(null);
     this.debounceHandle = setTimeout(() => {
       this.debounceHandle = null;
       this.reload(input);
-    }, 250);
+    }, DROP_DISTRIBUTION_COMPARISON_DEBOUNCE_MS);
   }
 
   reload(input: LuckLabInputState): void {

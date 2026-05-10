@@ -86,7 +86,79 @@ describe('LuckLabState', () => {
       ...DEFAULT_LUCK_LAB_INPUT,
       luckValue: 20,
     });
+    expect(previews.previewDropDistribution).not.toHaveBeenCalled();
+    expect(state.loadingBySection().dropDistribution).toBeTrue();
+
+    await delay(900);
+
+    expect(previews.previewDropDistribution).toHaveBeenCalledOnceWith({
+      ...DEFAULT_LUCK_LAB_INPUT,
+      luckValue: 20,
+    });
     expect(state.isLoading()).toBeFalse();
+  });
+
+  it('does not run drop distribution for non-distribution input changes', async () => {
+    state.setDifficultyKey('hard');
+
+    await delay(275);
+
+    expect(previews.previewTrialOpportunity).toHaveBeenCalledOnceWith({
+      ...DEFAULT_LUCK_LAB_INPUT,
+      difficultyKey: 'hard',
+    });
+    expect(previews.previewDropDistribution).not.toHaveBeenCalled();
+    expect(state.loadingBySection().dropDistribution).toBeFalse();
+  });
+
+  it('keeps all pending fast sections when different controls change quickly', async () => {
+    state.setLuckValue(20);
+    state.setBucketProfileId('bucket-1');
+
+    await delay(275);
+
+    const expectedInput = {
+      ...DEFAULT_LUCK_LAB_INPUT,
+      luckValue: 20,
+      bucketProfileId: 'bucket-1',
+    };
+
+    expect(previews.previewTrialPower).toHaveBeenCalledOnceWith(expectedInput);
+    expect(previews.previewCombat).toHaveBeenCalledOnceWith(expectedInput);
+    expect(previews.previewGeneratedItem).toHaveBeenCalledOnceWith(expectedInput);
+    expect(previews.previewDropDistribution).not.toHaveBeenCalled();
+  });
+
+  it('keeps in-flight drop distribution current while faster sections reload', async () => {
+    const dropDistribution = new Subject<LuckLabDropDistributionSummary>();
+    previews.previewDropDistribution.and.returnValue(dropDistribution);
+
+    state.reloadNow();
+    state.setTestedStatValue(10);
+
+    await delay(275);
+    dropDistribution.next(dropDistributionSummary());
+    dropDistribution.complete();
+
+    expect(state.result().dropDistribution.status).toBe('available');
+    expect(state.result().dropDistribution.sampleSize).toBe(100);
+  });
+
+  it('keeps current input when an older accepted distribution section completes', async () => {
+    const dropDistribution = new Subject<LuckLabDropDistributionSummary>();
+    previews.previewDropDistribution.and.returnValue(dropDistribution);
+
+    state.reloadNow();
+    state.setTestedStatValue(10);
+
+    await delay(275);
+    expect(state.result().input.testedStatValue).toBe(10);
+
+    dropDistribution.next(dropDistributionSummary());
+    dropDistribution.complete();
+
+    expect(state.result().dropDistribution.status).toBe('available');
+    expect(state.result().input.testedStatValue).toBe(10);
   });
 
   it('ignores stale section responses', () => {

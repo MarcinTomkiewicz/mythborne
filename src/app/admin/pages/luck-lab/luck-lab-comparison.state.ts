@@ -51,6 +51,9 @@ export class LuckLabComparisonState {
       clearTimeout(this.trialPowerDebounceHandle);
     }
 
+    this.trialPowerToken.next();
+    this.isTrialPowerLoadingSource.set(true);
+    this.trialPowerErrorSource.set(null);
     this.trialPowerDebounceHandle = setTimeout(() => {
       this.trialPowerDebounceHandle = null;
       this.reloadTrialPower(input);
@@ -99,6 +102,9 @@ export class LuckLabComparisonState {
       clearTimeout(this.trialChanceDebounceHandle);
     }
 
+    this.trialChanceToken.next();
+    this.isTrialChanceLoadingSource.set(true);
+    this.trialChanceErrorSource.set(null);
     this.trialChanceDebounceHandle = setTimeout(() => {
       this.trialChanceDebounceHandle = null;
       this.reloadTrialChance(input);
@@ -156,6 +162,9 @@ export class LuckLabComparisonState {
       clearTimeout(this.autoResolveDebounceHandle);
     }
 
+    this.autoResolveToken.next();
+    this.isAutoResolveLoadingSource.set(true);
+    this.autoResolveErrorSource.set(null);
     this.autoResolveDebounceHandle = setTimeout(() => {
       this.autoResolveDebounceHandle = null;
       this.reloadAutoResolve(input);

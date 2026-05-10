@@ -9721,6 +9721,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Errors stay scoped to the relevant panel.
 - Build and focused state tests pass.
 
+**Status:** Accepted on 2026-05-10. Added per-section Luck Lab preview request tokens, independent fast-section vs drop-distribution scheduling, pending fast-section batching, longer debounce for DB-owned drop distribution previews and comparison rows, and immediate section loading/error feedback while debounced work is pending. `LuckLabPreviewResult.input` now stays aligned with current Luck Lab input even when an older still-valid section result, such as drop distribution, completes after unrelated input changes. The section request/patch switch logic was extracted to `luck-lab-section-requests.ts`, reducing `LuckLabState` orchestration weight. No DB/RPC changes, generated type edits, direct writes, local formula execution, local RNG or drop simulation were added. Focused Luck Lab specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps passed. Manual smoke remains pending/user-side for `/admin/luck-lab` slider responsiveness, distribution refresh behavior and stale UI checks.
+
 ---
 
 ## Task V15 — Luck Lab final integration report

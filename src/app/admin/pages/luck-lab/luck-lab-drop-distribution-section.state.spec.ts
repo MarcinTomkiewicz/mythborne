@@ -11,6 +11,7 @@ import { LuckLabDropDistributionSectionState } from './luck-lab-drop-distributio
 
 describe('LuckLabDropDistributionSectionState', () => {
   let state: LuckLabDropDistributionSectionState;
+  let comparison: LuckLabDropDistributionComparisonState;
   let previews: jasmine.SpyObj<LuckLabPreviews>;
 
   beforeEach(() => {
@@ -59,6 +60,7 @@ describe('LuckLabDropDistributionSectionState', () => {
       ],
     });
     state = TestBed.inject(LuckLabDropDistributionSectionState);
+    comparison = TestBed.inject(LuckLabDropDistributionComparisonState);
   });
 
   it('exposes DB-owned drop distribution metrics and comparison rows', () => {
@@ -110,6 +112,21 @@ describe('LuckLabDropDistributionSectionState', () => {
       averageDeltaFromLuckZero: 50,
     });
   });
+
+  it('debounces expensive distribution comparison refreshes with loading feedback', async () => {
+    comparison.schedule({ ...DEFAULT_LUCK_LAB_INPUT, luckValue: 50 });
+
+    expect(comparison.isLoading()).toBeTrue();
+
+    await delay(300);
+
+    expect(previews.previewDropDistribution).not.toHaveBeenCalled();
+
+    await delay(650);
+
+    expect(previews.previewDropDistribution).toHaveBeenCalledTimes(5);
+    expect(comparison.isLoading()).toBeFalse();
+  });
 });
 
 function dropDistributionSummary(luckValue = 12): LuckLabDropDistributionSummary {
@@ -154,4 +171,8 @@ function dropDistributionSummary(luckValue = 12): LuckLabDropDistributionSummary
     formulaContextJson: {},
     summaryJson: {},
   };
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

@@ -40,6 +40,9 @@ export class LuckLabEncounterComparisonState {
       clearTimeout(this.debounceHandle);
     }
 
+    this.token.next();
+    this.isLoadingSource.set(true);
+    this.errorSource.set(null);
     this.debounceHandle = setTimeout(() => {
       this.debounceHandle = null;
       this.reload(input);

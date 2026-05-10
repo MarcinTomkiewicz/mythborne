@@ -1,44 +1,30 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, finalize, forkJoin, map } from 'rxjs';
-import {
-  LuckInfluencePreview,
-  LuckLabInputState,
-  LuckLabPreviewResult,
-  TrialPowerRead,
-} from '../../domain/luck/luck.model';
+import { finalize } from 'rxjs';
+import { LuckLabInputState, LuckLabPreviewResult } from '../../domain/luck/luck.model';
 import { getErrorMessage } from '../../utils/error-message';
 import { DEFAULT_LUCK_LAB_INPUT, mapLuckLabPreviewResult } from '../../utils/luck-lab-mappers';
-import { RequestToken } from '../../utils/request-token';
 import { LuckLabPreviews } from './luck-lab-previews';
-
-export type LuckLabPreviewSection =
-  | 'surfaces'
-  | 'trialPower'
-  | 'chancePreviews'
-  | 'combat'
-  | 'rewardProfile'
-  | 'generatedItem'
-  | 'dropDistribution';
-
-type SectionRecord<T> = Record<LuckLabPreviewSection, T>;
-
-const PREVIEW_SECTIONS: readonly LuckLabPreviewSection[] = [
-  'surfaces',
-  'trialPower',
-  'chancePreviews',
-  'combat',
-  'rewardProfile',
-  'generatedItem',
-  'dropDistribution',
-];
+import {
+  createSectionRecord,
+  createSectionTokens,
+  DROP_DISTRIBUTION_DEBOUNCE_MS,
+  FAST_PREVIEW_SECTIONS,
+  luckLabSectionPatch,
+  luckLabSectionRequest,
+  LuckLabPreviewSection,
+  PREVIEW_SECTIONS,
+  SectionRecord,
+} from './luck-lab-section-requests';
 
 @Injectable({ providedIn: 'root' })
 export class LuckLabState {
   private readonly previews = inject(LuckLabPreviews);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly previewToken = new RequestToken();
+  private readonly sectionTokens = createSectionTokens();
+  private readonly pendingPreviewSections = new Set<LuckLabPreviewSection>();
   private debounceHandle: ReturnType<typeof setTimeout> | null = null;
+  private dropDistributionDebounceHandle: ReturnType<typeof setTimeout> | null = null;
 
   readonly luckValue = signal(DEFAULT_LUCK_LAB_INPUT.luckValue);
   readonly testedStatValue = signal(DEFAULT_LUCK_LAB_INPUT.testedStatValue);
@@ -93,141 +79,140 @@ export class LuckLabState {
 
   setLuckValue(value: number): void {
     this.luckValue.set(normalizeNonNegativeInteger(value));
-    this.schedulePreviewReload();
+    this.schedulePreviewSections([
+      'trialPower',
+      'chancePreviews',
+      'combat',
+      'rewardProfile',
+      'generatedItem',
+    ]);
+    this.scheduleDropDistributionReload();
   }
 
   setTestedStatValue(value: number): void {
     this.testedStatValue.set(normalizeNonNegativeInteger(value));
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['trialPower', 'chancePreviews']);
   }
 
   setSpiritualityValue(value: number): void {
     this.spiritualityValue.set(normalizeNonNegativeInteger(value));
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['chancePreviews', 'rewardProfile']);
   }
 
   setDifficultyKey(value: string | null): void {
     this.difficultyKey.set(value);
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['chancePreviews']);
   }
 
   setDistrictCode(value: string | null): void {
     this.districtCode.set(value);
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['chancePreviews']);
   }
 
   setTestedStatKey(value: string | null): void {
     this.testedStatKey.set(value);
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['trialPower', 'chancePreviews']);
   }
 
   setTrialDefinitionId(value: string | null): void {
     this.trialDefinitionId.set(value);
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['chancePreviews']);
   }
 
   setSelectedCombatProfileKey(value: string | null): void {
     this.selectedCombatProfileKey.set(value);
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['combat']);
   }
 
   setRewardProfileId(value: string | null): void {
     this.rewardProfileId.set(value);
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['rewardProfile']);
   }
 
   setBucketProfileId(value: string | null): void {
     this.bucketProfileId.set(value);
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['rewardProfile', 'generatedItem']);
+    this.scheduleDropDistributionReload();
   }
 
   setMaxQualityKey(value: string | null): void {
     this.maxQualityKey.set(value);
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['rewardProfile', 'generatedItem']);
+    this.scheduleDropDistributionReload();
   }
 
   setPreviewCount(value: number): void {
     this.previewCount.set(Math.max(1, normalizeNonNegativeInteger(value)));
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['rewardProfile']);
+    this.scheduleDropDistributionReload();
   }
 
   setDryStepCount(value: number): void {
     this.dryStepCount.set(normalizeNonNegativeInteger(value));
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['chancePreviews']);
   }
 
   setStepsToPreview(value: number): void {
     this.stepsToPreview.set(Math.max(1, normalizeNonNegativeInteger(value)));
-    this.schedulePreviewReload();
+    this.schedulePreviewSections(['chancePreviews']);
   }
 
   reloadNow(): void {
     this.clearScheduledReload();
-    this.runPreview(this.input());
+    this.clearScheduledDropDistributionReload();
+    this.pendingPreviewSections.clear();
+    this.runSections(this.input(), PREVIEW_SECTIONS);
   }
 
   schedulePreviewReload(delayMs = 250): void {
+    this.schedulePreviewSections(FAST_PREVIEW_SECTIONS, delayMs);
+    this.scheduleDropDistributionReload(Math.max(delayMs, DROP_DISTRIBUTION_DEBOUNCE_MS));
+  }
+
+  private schedulePreviewSections(
+    sections: readonly LuckLabPreviewSection[],
+    delayMs = 250,
+  ): void {
+    for (const section of sections) {
+      this.pendingPreviewSections.add(section);
+    }
+
     this.clearScheduledReload();
+    this.markSectionsPending(sections);
     this.debounceHandle = setTimeout(() => {
       this.debounceHandle = null;
-      this.runPreview(this.input());
+      const sectionsToRun = [...this.pendingPreviewSections];
+      this.pendingPreviewSections.clear();
+      this.runSections(this.input(), sectionsToRun);
     }, delayMs);
   }
 
-  private runPreview(input: LuckLabInputState): void {
-    const token = this.previewToken.next();
+  private scheduleDropDistributionReload(delayMs = DROP_DISTRIBUTION_DEBOUNCE_MS): void {
+    this.clearScheduledDropDistributionReload();
+    this.markSectionsPending(['dropDistribution']);
+    this.dropDistributionDebounceHandle = setTimeout(() => {
+      this.dropDistributionDebounceHandle = null;
+      this.runSections(this.input(), ['dropDistribution']);
+    }, delayMs);
+  }
 
-    this.loadingBySection.set(createSectionRecord(true));
-    this.errorsBySection.set(createSectionRecord(null));
-    this.runSection(token, 'surfaces', this.previews.getSurfaces(), (surfaces) =>
-      this.patchResult(input, { surfaces }),
-    );
-    this.runSection(
-      token,
-      'trialPower',
-      this.previews.previewTrialPower(input),
-      (trialPowerRows) => {
-        const trialPower = trialPowerRows[0] ?? null;
+  private runSections(
+    input: LuckLabInputState,
+    sections: readonly LuckLabPreviewSection[],
+  ): void {
+    for (const section of sections) {
+      this.patchSectionLoading(section, true);
+      this.patchSectionError(section, null);
+      this.runSection(section, input);
+    }
+  }
 
-        this.patchResult(input, {
-          luckInfluence: trialPower ? toLuckInfluencePreview(trialPower) : null,
-          trialPower,
-        });
-      },
-    );
-    this.runSection(
-      token,
-      'chancePreviews',
-      forkJoin([
-        this.previews.previewTrialOpportunity(input),
-        this.previews.previewTrialManifestation(input),
-        this.previews.previewChallengeAutoResolve(input),
-        this.previews.previewNonTrialEncounter(input),
-        this.previews.previewExplorationRngChain(input),
-      ]).pipe(map((rows) => rows.flat())),
-      (chancePreviews) => this.patchResult(input, { chancePreviews }),
-    );
-    this.runSection(token, 'combat', this.previews.previewCombat(input), (rows) =>
-      this.patchResult(input, { combatPreview: rows[0] ?? null }),
-    );
-    this.runSection(
-      token,
-      'rewardProfile',
-      this.previews.previewRewardProfile(input),
-      (rewardRangePreviews) => this.patchResult(input, { rewardRangePreviews }),
-    );
-    this.runSection(
-      token,
-      'generatedItem',
-      this.previews.previewGeneratedItem(input),
-      (generatedItemPreviews) => this.patchResult(input, { generatedItemPreviews }),
-    );
-    this.runSection(
-      token,
-      'dropDistribution',
-      this.previews.previewDropDistribution(input),
-      (dropDistribution) => this.patchResult(input, { dropDistribution }),
-    );
+  private markSectionsPending(sections: readonly LuckLabPreviewSection[]): void {
+    for (const section of sections) {
+      this.sectionTokens[section].next();
+      this.patchSectionLoading(section, true);
+      this.patchSectionError(section, null);
+    }
   }
 
   private clearScheduledReload(): void {
@@ -237,16 +222,21 @@ export class LuckLabState {
     }
   }
 
-  private runSection<T>(
-    token: number,
-    section: LuckLabPreviewSection,
-    request: Observable<T>,
-    applyResult: (value: T) => void,
-  ): void {
+  private clearScheduledDropDistributionReload(): void {
+    if (this.dropDistributionDebounceHandle !== null) {
+      clearTimeout(this.dropDistributionDebounceHandle);
+      this.dropDistributionDebounceHandle = null;
+    }
+  }
+
+  private runSection(section: LuckLabPreviewSection, input: LuckLabInputState): void {
+    const token = this.sectionTokens[section].next();
+    const request = luckLabSectionRequest(this.previews, section, input);
+
     request
       .pipe(
         finalize(() => {
-          if (this.previewToken.isCurrent(token)) {
+          if (this.sectionTokens[section].isCurrent(token)) {
             this.patchSectionLoading(section, false);
           }
         }),
@@ -254,12 +244,12 @@ export class LuckLabState {
       )
       .subscribe({
         next: (value) => {
-          if (this.previewToken.isCurrent(token)) {
-            applyResult(value);
+          if (this.sectionTokens[section].isCurrent(token)) {
+            this.patchResult(luckLabSectionPatch(section, value));
           }
         },
         error: (error: unknown) => {
-          if (this.previewToken.isCurrent(token)) {
+          if (this.sectionTokens[section].isCurrent(token)) {
             this.patchSectionError(
               section,
               getErrorMessage(error, 'Luck Lab preview failed.'),
@@ -270,7 +260,6 @@ export class LuckLabState {
   }
 
   private patchResult(
-    input: LuckLabInputState,
     patch: Partial<Pick<
       LuckLabPreviewResult,
       | 'surfaces'
@@ -287,7 +276,7 @@ export class LuckLabState {
 
     this.result.set(
       mapLuckLabPreviewResult({
-        input,
+        input: this.input(),
         surfaces: hasPatch(patch, 'surfaces') ? patch.surfaces : current.surfaces,
         luckInfluence: hasPatch(patch, 'luckInfluence')
           ? patch.luckInfluence
@@ -337,16 +326,6 @@ export class LuckLabState {
   }
 }
 
-function createSectionRecord<T>(value: T): SectionRecord<T> {
-  return PREVIEW_SECTIONS.reduce(
-    (record, section) => ({
-      ...record,
-      [section]: value,
-    }),
-    {} as SectionRecord<T>,
-  );
-}
-
 function normalizeNonNegativeInteger(value: number): number {
   return Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 0;
 }
@@ -356,13 +335,4 @@ function hasPatch<T extends object, K extends keyof T>(
   key: K,
 ): patch is Partial<T> & Pick<T, K> {
   return Object.prototype.hasOwnProperty.call(patch, key);
-}
-
-function toLuckInfluencePreview(trialPower: TrialPowerRead): LuckInfluencePreview {
-  return {
-    luckValue: trialPower.luckValue,
-    luckInfluence: trialPower.luckInfluence,
-    formula: trialPower.luckInfluenceFormula,
-    explanation: trialPower.explanation,
-  };
 }
