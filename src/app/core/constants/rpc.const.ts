@@ -185,6 +185,9 @@ export const RPC = {
   get_hero_exploration_state: 'get_hero_exploration_state',
   preview_challenge_auto_resolve_success_chance:
     'preview_challenge_auto_resolve_success_chance',
+  preview_combat_luck_formula_context: 'preview_combat_luck_formula_context',
+  preview_exploration_luck_rng_chain: 'preview_exploration_luck_rng_chain',
+  preview_non_trial_encounter_chance: 'preview_non_trial_encounter_chance',
   preview_reward_generated_item: 'preview_reward_generated_item',
   preview_reward_generated_item_luck: 'preview_reward_generated_item_luck',
   preview_reward_profile: 'preview_reward_profile',

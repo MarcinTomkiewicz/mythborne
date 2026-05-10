@@ -60,9 +60,13 @@ export interface LuckLabInputState {
   districtCode: string | null;
   testedStatKey: string | null;
   trialDefinitionId: string | null;
+  selectedCombatProfileKey: string | null;
   rewardProfileId: string | null;
   bucketProfileId: string | null;
+  maxQualityKey: string | null;
   previewCount: number;
+  dryStepCount: number;
+  stepsToPreview: number;
 }
 
 export interface LuckInfluencePreview {

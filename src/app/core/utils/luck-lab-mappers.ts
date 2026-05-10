@@ -24,9 +24,13 @@ export const DEFAULT_LUCK_LAB_INPUT: LuckLabInputState = {
   districtCode: null,
   testedStatKey: null,
   trialDefinitionId: null,
+  selectedCombatProfileKey: null,
   rewardProfileId: null,
   bucketProfileId: null,
+  maxQualityKey: null,
   previewCount: 10,
+  dryStepCount: 0,
+  stepsToPreview: 8,
 };
 
 export function mapLuckInfluencePreview(

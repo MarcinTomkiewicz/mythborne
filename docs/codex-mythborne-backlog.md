@@ -9375,6 +9375,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Missing DB preview contracts are represented clearly.
 - No hardcoded Luck formulas are added.
 
+**Status:** Accepted on 2026-05-10. Added reusable `LuckLabPreviews`, `LuckLabState` and Luck Lab RPC args mapping over DB/RPC preview contracts. State exposes signal inputs, debounced reloads, stale-response guards and section-specific loading/error/result patching so partial failures do not poison all sections. Drop distribution remains explicit `unsupported` until DB exposes a dedicated simulation contract. `selectedCombatProfileKey` is intentionally future input only because current combat preview RPC does not consume it. Later V3/V14 UI should render per-section loading/error clearly because section patching may temporarily retain older section data while reloading.
+
 ---
 
 ## Task V3 — Luck Lab admin route and shell
