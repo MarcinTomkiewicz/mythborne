@@ -1,6 +1,9 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, computed, inject } from '@angular/core';
+import { GameServerKind } from '../../../core/enums/active-server.enum';
+import { ExplorationStepSelectionDiagnosticReadModel } from '../../../core/domain/exploration/exploration-readiness.model';
 import { HeroExplorationEdgeReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { TrialOpportunityCurvePreview } from '../../../core/domain/exploration/exploration-preview.model';
+import { ActiveServer } from '../../../core/services/server/active-server';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationMovementState } from './exploration-movement.state';
@@ -12,6 +15,7 @@ import { ExplorationStartState } from './exploration-start.state';
 
 @Injectable()
 export class ExplorationPageState {
+  private readonly activeServer = inject(ActiveServer);
   readonly feedback = inject(ExplorationFeedbackState);
   readonly overview = inject(ExplorationOverviewState);
   readonly movement = inject(ExplorationMovementState);
@@ -76,6 +80,17 @@ export class ExplorationPageState {
   readonly activeStepLabel = this.overview.activeStepLabel;
   readonly activeChallengeLabel = this.overview.activeChallengeLabel;
   readonly activeEffectLabel = this.overview.activeEffectLabel;
+  readonly canShowSelectionDiagnostics = computed(() => {
+    const server = this.activeServer.selectedServer();
+    const access = this.activeServer.access();
+
+    return server?.kind === GameServerKind.Sandbox && access.canAccessSandbox;
+  });
+  readonly stepSelectionDiagnostic = computed(() =>
+    this.canShowSelectionDiagnostics()
+      ? this.currentStepResult()?.selectionDiagnostic ?? null
+      : null,
+  );
 
   loadData(): void {
     this.overview.loadData();
@@ -125,6 +140,74 @@ export class ExplorationPageState {
     return this.movement.edgeStatusLabel(edge);
   }
 
+  diagnosticOutcomeLabel(
+    diagnostic: ExplorationStepSelectionDiagnosticReadModel,
+  ): string {
+    return this.humanizeDiagnosticKey(diagnostic.finalOutcomeKind);
+  }
+
+  diagnosticSelectionReason(
+    diagnostic: ExplorationStepSelectionDiagnosticReadModel,
+  ): string {
+    if (diagnostic.forcedOverrideId) {
+      return 'Sandbox override selected this outcome.';
+    }
+
+    if (diagnostic.readinessGuarded) {
+      return 'DB readiness filtering was applied before selecting the final outcome.';
+    }
+
+    return 'Selected by the DB runtime selection flow.';
+  }
+
+  diagnosticDefinitionLabel(
+    diagnostic: ExplorationStepSelectionDiagnosticReadModel,
+  ): string {
+    const selected = diagnostic.selectedDefinition;
+
+    if (!selected) {
+      return 'No Trial or Encounter definition selected.';
+    }
+
+    const kind = selected.encounterKind
+      ? `${this.humanizeDiagnosticKey(selected.encounterKind)} Encounter`
+      : this.humanizeDiagnosticKey(selected.definitionKind);
+
+    return `${kind}: ${selected.definitionKey}`;
+  }
+
+  diagnosticSkippedLabel(
+    diagnostic: ExplorationStepSelectionDiagnosticReadModel,
+  ): string | null {
+    const skipped = diagnostic.skippedDefinition;
+
+    if (!skipped) {
+      return null;
+    }
+
+    const definition = skipped.definitionKey ?? skipped.definitionId ?? 'unknown definition';
+    const reason = skipped.reasonKey ?? 'unspecified';
+
+    return `${this.humanizeDiagnosticKey(skipped.definitionKind)} ${definition} skipped: ${reason}`;
+  }
+
+  diagnosticReasonLabels(
+    diagnostic: ExplorationStepSelectionDiagnosticReadModel,
+  ): string[] {
+    return [
+      ...(diagnostic.selectedDefinition?.readinessReasons ?? []),
+      ...(diagnostic.skippedDefinition?.readinessReasons ?? []),
+    ].map((reason) =>
+      [
+        reason.label ?? reason.key,
+        reason.description,
+        reason.isBlocking === true ? 'blocking' : null,
+      ]
+        .filter(Boolean)
+        .join(' - '),
+    );
+  }
+
   previewRows(difficultyKey: string): TrialOpportunityCurvePreview[] {
     return this.preview.previewRows(difficultyKey);
   }
@@ -135,4 +218,12 @@ export class ExplorationPageState {
   participantHpLabel = this.challenge.participantHpLabel.bind(this.challenge);
   combatEventMetaLabel = this.challenge.eventMetaLabel.bind(this.challenge);
   timingManifestLabel = this.challenge.timingManifestLabel.bind(this.challenge);
+
+  private humanizeDiagnosticKey(value: string): string {
+    return value
+      .split(/[_\s-]+/)
+      .filter(Boolean)
+      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+      .join(' ') || 'Unknown';
+  }
 }

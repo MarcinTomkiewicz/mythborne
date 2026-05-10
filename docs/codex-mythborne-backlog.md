@@ -9932,6 +9932,8 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 - Debug details are expandable/collapsed, not noisy by default.
 - No sandbox diagnostics are shown on live servers.
 
+**Status:** Accepted on 2026-05-10. `/game/exploration` now renders a sandbox-only selection diagnostics card for sandbox-access contexts, showing DB-owned selection reason, selected/final outcome, selected/skipped definition context, readiness reason labels and a collapsed raw selection payload via the existing JSON preview component. Standard/live contexts hide the diagnostics. No runtime selection logic, DB/RPC contracts, generated types or status-independent readiness logic were changed. The touched exploration status template uses standalone `<p-button />` instead of `button pButton`. Manual smoke remains user-side pending for sandbox tester/admin visibility, standard/live hiding and collapsed raw payload behavior.
+
 ---
 
 ## Task W4 — Trial readiness display in admin configurator

@@ -1,0 +1,41 @@
+@if (page.stepSelectionDiagnostic(); as diagnostic) {
+  <div class="mg-card p-md">
+    <div class="flex-col gap-sm">
+      <div class="flex-row-between-center flex-col-sm gap-sm">
+        <div class="flex-col gap-xs">
+          <strong>Sandbox selection diagnostics</strong>
+          <span class="muted-text">{{ page.diagnosticSelectionReason(diagnostic) }}</span>
+        </div>
+        <span class="tag-badge tag-badge--info">
+          {{ page.diagnosticOutcomeLabel(diagnostic) }}
+        </span>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-xs">
+        <span class="tag-badge tag-badge--muted">
+          Selected: {{ page.diagnosticDefinitionLabel(diagnostic) }}
+        </span>
+        <span class="tag-badge tag-badge--muted">
+          At: {{ diagnostic.selectedAt ?? 'N/D' }}
+        </span>
+        <span class="tag-badge tag-badge--muted">
+          Final: {{ page.diagnosticOutcomeLabel(diagnostic) }}
+        </span>
+      </div>
+
+      @if (page.diagnosticSkippedLabel(diagnostic); as skippedLabel) {
+        <p class="mb-0">{{ skippedLabel }}</p>
+      }
+
+      @if (page.diagnosticReasonLabels(diagnostic).length) {
+        <div class="flex-col gap-xs">
+          @for (reason of page.diagnosticReasonLabels(diagnostic); track reason) {
+            <span>{{ reason }}</span>
+          }
+        </div>
+      }
+
+      <app-collapsed-json-preview label="Raw selection debug payload" [value]="diagnostic" />
+    </div>
+  </div>
+}

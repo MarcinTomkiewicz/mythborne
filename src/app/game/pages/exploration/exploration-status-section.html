@@ -63,6 +63,7 @@
           </div>
         }
 
+        <app-exploration-selection-diagnostics-card></app-exploration-selection-diagnostics-card>
         <app-exploration-challenge-result-card></app-exploration-challenge-result-card>
         <app-exploration-reward-card></app-exploration-reward-card>
 
@@ -88,13 +89,12 @@
                 </span>
               </div>
 
-              <button
-                pButton
+              <p-button
                 type="button"
                 label="Check result"
                 [disabled]="!page.canCheckResult()"
-                (click)="page.checkStepResult()"
-              ></button>
+                (onClick)="page.checkStepResult()"
+              />
             </div>
           </div>
         }
@@ -134,13 +134,12 @@
                     <span class="muted-text">Destination is undiscovered.</span>
                   }
 
-                  <button
-                    pButton
+                  <p-button
                     type="button"
                     label="Go"
                     [disabled]="!page.canChooseDirection(edge)"
-                    (click)="page.chooseDirection(edge)"
-                  ></button>
+                    (onClick)="page.chooseDirection(edge)"
+                  />
                 </div>
               </article>
             } @empty {
@@ -153,13 +152,12 @@
           <p class="muted-text mb-0">
             No exploration has been started for this hero, date and difficulty.
           </p>
-          <button
-            pButton
+          <p-button
             type="button"
             label="Start exploration"
             [disabled]="page.isLoading() || page.isStarting() || !page.selectedDifficultyKey()"
-            (click)="page.startSelectedDifficulty()"
-          ></button>
+            (onClick)="page.startSelectedDifficulty()"
+          />
         </div>
       }
     </div>

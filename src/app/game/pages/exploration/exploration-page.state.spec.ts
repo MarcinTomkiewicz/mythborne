@@ -1,5 +1,6 @@
 ﻿import { TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
+import { signal } from '@angular/core';
 import {
   CombatLiveStateReadModel,
   CombatResultDetailReadModel,
@@ -18,6 +19,7 @@ import { ExplorationLiveCombat } from '../../../core/services/combat/exploration
 import { HeroExplorationRewards } from '../../../core/services/exploration/hero-exploration-rewards';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
+import { ActiveServer } from '../../../core/services/server/active-server';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationLiveCombatState } from './exploration-live-combat.state';
@@ -35,6 +37,8 @@ describe('ExplorationPageState', () => {
   let explorations: jasmine.SpyObj<HeroExplorations>;
   let liveCombat: jasmine.SpyObj<ExplorationLiveCombat>;
   let rewards: jasmine.SpyObj<HeroExplorationRewards>;
+  let selectedServer: ReturnType<typeof signal<{ kind: string; canUseAsSandbox: boolean } | null>>;
+  let serverAccess: ReturnType<typeof signal<{ canAccessSandbox: boolean }>>;
   let page: ExplorationPageState;
   let feedback: ExplorationFeedbackState;
 
@@ -86,6 +90,8 @@ describe('ExplorationPageState', () => {
     })));
     liveCombat.getResultDetail.and.returnValue(of(combatResultDetail()));
     rewards.getLatestChallengeReward.and.returnValue(of(null));
+    selectedServer = signal({ kind: 'standard', canUseAsSandbox: false });
+    serverAccess = signal({ canAccessSandbox: false });
 
     TestBed.configureTestingModule({
       imports: [ExplorationPage],
@@ -104,6 +110,13 @@ describe('ExplorationPageState', () => {
         { provide: HeroExplorations, useValue: explorations },
         { provide: ExplorationLiveCombat, useValue: liveCombat },
         { provide: HeroExplorationRewards, useValue: rewards },
+        {
+          provide: ActiveServer,
+          useValue: {
+            selectedServer: () => selectedServer(),
+            access: () => serverAccess(),
+          },
+        },
       ],
     });
     page = TestBed.inject(ExplorationPageState);
@@ -255,6 +268,64 @@ describe('ExplorationPageState', () => {
       expect(page.stepResultTitle()).toBe(title);
       expect(page.stepResultDescription()).toContain(description);
     }
+  });
+
+  it('shows selection diagnostics only for sandbox-access context', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', true, false, pastStepTiming()));
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy', {
+        outcomeKind: 'encounter',
+        encounterDefinitionId: 'encounter-1',
+        selectedDefinition: selectedEncounter('encounter-1', 'minor_resource_find', 'resource'),
+        selectionDiagnostic: selectionDiagnostic(),
+      })),
+    );
+
+    page.checkStepResult();
+
+    expect(page.stepSelectionDiagnostic()).toBeNull();
+
+    selectedServer.set({ kind: 'sandbox', canUseAsSandbox: true });
+    serverAccess.set({ canAccessSandbox: true });
+
+    expect(page.stepSelectionDiagnostic()).toEqual(jasmine.objectContaining({
+      finalOutcomeKind: 'encounter',
+      readinessGuarded: true,
+    }));
+    expect(page.diagnosticSkippedLabel(page.stepSelectionDiagnostic()!))
+      .toContain('incomplete_selected_definition');
+  });
+
+  it('renders collapsed sandbox selection diagnostics on the exploration route', () => {
+    selectedServer.set({ kind: 'sandbox', canUseAsSandbox: true });
+    serverAccess.set({ canAccessSandbox: true });
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
+      'easy',
+      true,
+      false,
+      pastStepTiming(),
+    )));
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy', {
+        outcomeKind: 'encounter',
+        encounterDefinitionId: 'encounter-1',
+        selectedDefinition: selectedEncounter('encounter-1', 'minor_resource_find', 'resource'),
+        selectionDiagnostic: selectionDiagnostic(),
+      })),
+    );
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    fixture.componentInstance.page.checkStepResult();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Sandbox selection diagnostics');
+    expect(text).toContain('Resource Encounter');
+    expect(text).toContain('minor_resource_find');
+    expect(text).toContain('Raw selection debug payload');
   });
 
   it('hides stale resolved step results after exploration context changes', () => {
@@ -838,6 +909,47 @@ function selectedEncounter(
     isReady: true,
     encounterKind,
     readinessReasons: [],
+  };
+}
+
+function selectionDiagnostic(): NonNullable<HeroExplorationStepResolutionWorkflowResult['result']['selectionDiagnostic']> {
+  return {
+    stepId: 'step-1',
+    serverId: 'server-1',
+    heroId: 'hero-1',
+    explorationId: 'exploration-1',
+    stepKind: 'movement',
+    stepStatus: 'resolved',
+    resolutionAttemptId: null,
+    resolutionAttemptStatus: null,
+    rewardGrantId: 'reward-1',
+    outcomeKind: 'encounter',
+    readinessGuarded: true,
+    forcedOverrideId: null,
+    trialOpportunityChance: 25,
+    trialOpportunityRoll: 80,
+    encounterChance: 40,
+    encounterRoll: 10,
+    selectedDefinition: selectedEncounter('encounter-1', 'minor_resource_find', 'resource'),
+    skippedDefinition: {
+      definitionKind: 'encounter',
+      definitionId: 'encounter-skipped',
+      definitionKey: 'broken_resource',
+      reasonKey: 'incomplete_selected_definition',
+      readinessReasons: [
+        {
+          key: 'missing_reward_assignment',
+          label: 'Missing reward assignment',
+          description: 'Configure reward profile assignment.',
+          severity: 'error',
+          isBlocking: true,
+          metadataJson: {},
+        },
+      ],
+    },
+    finalOutcomeKind: 'encounter',
+    selectedAt: '2026-05-01T10:10:00.000Z',
+    metadataJson: { source: 'spec' },
   };
 }
 
