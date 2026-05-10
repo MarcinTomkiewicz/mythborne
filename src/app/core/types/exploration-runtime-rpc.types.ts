@@ -23,6 +23,31 @@ export type ResolveHeroExplorationStepRpcArgs =
 export type ResolveHeroExplorationStepRpcRow =
   Rpc<'resolve_hero_exploration_step'>['Returns'][number];
 
+export type GetExplorationStepSelectionDiagnosticRpcArgs =
+  Rpc<'get_exploration_step_selection_diagnostic'>['Args'];
+export type GetExplorationStepSelectionDiagnosticRpcRow =
+  Rpc<'get_exploration_step_selection_diagnostic'>['Returns'][number];
+
+export type GetExplorationRewardExecutionDiagnosticRpcArgs =
+  Rpc<'get_exploration_reward_execution_diagnostic'>['Args'];
+export type GetExplorationRewardExecutionDiagnosticRpcRow =
+  Rpc<'get_exploration_reward_execution_diagnostic'>['Returns'][number];
+
+export type GetExplorationStepDurationSecondsRpcArgs =
+  Rpc<'get_exploration_step_duration_seconds'>['Args'];
+export type GetExplorationStepDurationSecondsRpcResult =
+  Rpc<'get_exploration_step_duration_seconds'>['Returns'];
+
+export type GetTrialDefinitionReadinessRpcArgs =
+  Rpc<'get_trial_definition_readiness'>['Args'];
+export type GetTrialDefinitionReadinessRpcRow =
+  Rpc<'get_trial_definition_readiness'>['Returns'][number];
+
+export type GetEncounterDefinitionReadinessRpcArgs =
+  Rpc<'get_encounter_definition_readiness'>['Args'];
+export type GetEncounterDefinitionReadinessRpcRow =
+  Rpc<'get_encounter_definition_readiness'>['Returns'][number];
+
 export type CompleteHeroExplorationChallengeAttemptRpcArgs =
   Rpc<'complete_hero_exploration_challenge_attempt'>['Args'];
 export type CompleteHeroExplorationChallengeAttemptRpcRow =

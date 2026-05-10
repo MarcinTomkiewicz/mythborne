@@ -9870,6 +9870,8 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 - Mappers do not invent player-facing “Challenge” terminology.
 - Mapper handles missing optional debug payload safely.
 
+**Status:** Accepted on 2026-05-10. Added typed Trial/Encounter readiness, readiness reason metadata, selected/skipped definition and step selection diagnostic read models plus generated RPC aliases and pure mappers/specs. Selected Trial/Encounter diagnostics require complete id+key identity; partial identities map to `null`. No UI, generated types, local eligibility logic, direct writes or status-independent runtime selection were changed. Manual smoke: N/A.
+
 ---
 
 ## Task W2 — Exploration runtime result model cleanup

@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mythsworn Config Registry Workspace Prototype v2</title>
+  <style>
+    /*
+      VISUAL REFERENCE ONLY.
+      Prototype goal: Config Registry Workspace v2.
+      IA level: Governance & Drafts -> Config Registry.
+      Purpose: find, understand and prepare governed config changes; not a raw JSON/table browser.
+      Production assumption: examples are illustrative. Production data must come from DB-backed config registry/read models. Relational balance entities such as bucket profiles, qualities, formulas and assignments live in their own workspaces or in Active Draft Diff when included in a draft.
+      Do not copy CSS into Angular feature components.
+    */
+    :root {
+      --bg-0: #05070b;
+      --navy-0: #07111d;
+      --gold-0: #8b5c20;
+      --gold-1: #c28b36;
+      --gold-2: #f0ca71;
+      --text-0: #f7eedb;
+      --text-1: #d7c8ab;
+      --text-2: #a39781;
+      --text-3: #706755;
+      --red: #c26452;
+      --green: #79ad66;
+      --blue: #65aee3;
+      --purple: #a486db;
+      --line-soft: rgba(240, 202, 113, .12);
+      --line: rgba(240, 202, 113, .24);
+      --line-strong: rgba(240, 202, 113, .42);
+      --shadow: rgba(0, 0, 0, .42);
+      --sidebar-w: 19rem;
+      --topbar-h: 4.35rem;
+      --radius-lg: 1rem;
+      --radius-xl: 1.35rem;
+      --font-display: Georgia, "Times New Roman", serif;
+      --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-ui);
+      color: var(--text-0);
+      background:
+        radial-gradient(circle at 14% 4%, rgba(240, 202, 113, .13), transparent 27rem),
+        radial-gradient(circle at 86% 8%, rgba(101, 174, 227, .17), transparent 34rem),
+        linear-gradient(135deg, var(--bg-0), #070a10 44%, #040508 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .12;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 80%);
+    }
+    button, input, select { font: inherit; }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+      grid-template-areas: "sidebar topbar" "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+      padding: 1rem .85rem;
+      border-right: 1px solid var(--line-soft);
+      background: linear-gradient(180deg, rgba(7, 10, 16, .94), rgba(4, 6, 10, .96));
+      box-shadow: .65rem 0 2rem rgba(0, 0, 0, .2);
+      overflow: auto;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .8rem;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(240, 202, 113, .17);
+      background:
+        linear-gradient(180deg, rgba(20, 32, 47, .72), rgba(8, 12, 18, .74)),
+        radial-gradient(circle at 82% 0%, rgba(240, 202, 113, .16), transparent 10rem);
+      margin-bottom: .9rem;
+    }
+    .brand-mark {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: .9rem;
+      border: 1px solid var(--line-strong);
+      background: radial-gradient(circle at 34% 24%, #fff0b9 0, var(--gold-2) 22%, var(--gold-0) 48%, #251509 70%, var(--navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,202,113,.22);
+      position: relative;
+      flex: 0 0 auto;
+    }
+    .brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--gold-2);
+      line-height: 1;
+    }
+    .brand-subtitle {
+      color: var(--text-3);
+      font-size: .68rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-top: .18rem;
+    }
+
+    .context-card {
+      padding: .85rem;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-lg);
+      background: rgba(7, 10, 14, .42);
+      margin-bottom: 1rem;
+      display: grid;
+      gap: .64rem;
+    }
+    .context-row { display: grid; gap: .24rem; }
+    .context-label,
+    .nav-section-title,
+    .eyebrow,
+    .tiny-label {
+      color: var(--text-3);
+      font-size: .68rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .context-value {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .6rem;
+      font-weight: 800;
+      color: var(--text-0);
+    }
+
+    .nav-section-title { margin: 1rem 0 .45rem .55rem; }
+    .nav-list {
+      display: grid;
+      gap: .28rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      padding: .62rem .68rem;
+      color: var(--text-1);
+      text-decoration: none;
+      border-radius: .85rem;
+      border: 1px solid transparent;
+      transition: 120ms ease;
+    }
+    .nav-link:hover,
+    .nav-link.is-active {
+      color: var(--text-0);
+      border-color: rgba(240,202,113,.16);
+      background: linear-gradient(90deg, rgba(240,202,113,.13), rgba(45,110,159,.12));
+    }
+    .nav-link.is-active { box-shadow: inset 3px 0 0 var(--gold-1); }
+    .nav-icon {
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: .55rem;
+      display: grid;
+      place-items: center;
+      background: rgba(240,202,113,.08);
+      color: var(--gold-1);
+      border: 1px solid rgba(240,202,113,.08);
+      flex: 0 0 auto;
+      font-size: .67rem;
+      font-weight: 900;
+      letter-spacing: .02em;
+    }
+    .nav-label { min-width: 0; }
+    .nav-sub {
+      display: block;
+      color: var(--text-3);
+      font-size: .68rem;
+      margin-top: .08rem;
+      line-height: 1.25;
+    }
+    .nav-link.is-active .nav-sub { color: var(--text-2); }
+
+    .topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(18rem, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      padding: .65rem 1rem;
+      border-bottom: 1px solid var(--line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,202,113,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem var(--shadow);
+    }
+    .topbar-title { display: grid; gap: .12rem; }
+    .topbar-title strong {
+      font-family: var(--font-display);
+      font-size: 1.18rem;
+      color: var(--text-0);
+    }
+    .topbar-title span { color: var(--text-2); font-size: .78rem; }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      justify-content: flex-end;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .search,
+    .context-pill,
+    .select {
+      min-height: 2.22rem;
+      border-radius: 999px;
+      border: 1px solid rgba(240,202,113,.12);
+      background: rgba(5,8,12,.42);
+      color: var(--text-1);
+      padding: .42rem .72rem;
+      outline: none;
+    }
+    .search { min-width: 17rem; }
+    .context-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      color: var(--text-1);
+      background: rgba(240,202,113,.055);
+    }
+    .context-pill strong { color: var(--text-0); }
+
+    .main {
+      grid-area: main;
+      min-width: 0;
+      padding: 1rem;
+      display: grid;
+      gap: .9rem;
+      align-content: start;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .24rem .55rem;
+      border-radius: 999px;
+      border: 1px solid var(--line-soft);
+      color: var(--text-1);
+      background: rgba(7,10,14,.45);
+      font-size: .76rem;
+      white-space: nowrap;
+    }
+    .badge.gold { color: var(--gold-2); border-color: rgba(240,202,113,.32); }
+    .badge.green { color: #bde6b0; border-color: rgba(121,173,102,.46); }
+    .badge.blue { color: #b9def3; border-color: rgba(101,174,227,.46); }
+    .badge.red { color: #f2b4aa; border-color: rgba(194,100,82,.46); }
+    .badge.purple { color: #d9c8ff; border-color: rgba(164,134,219,.46); }
+    .badge.muted { color: var(--text-2); }
+
+    .button-row { display: flex; gap: .45rem; flex-wrap: wrap; align-items: center; }
+    .button {
+      min-height: 2.18rem;
+      padding: .45rem .76rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--text-0);
+      background: linear-gradient(180deg, rgba(240,202,113,.2), rgba(91,58,19,.32));
+      cursor: pointer;
+      box-shadow: inset 0 1px rgba(255,255,255,.07);
+    }
+    .button.ghost { background: rgba(8,12,18,.54); color: var(--text-1); }
+    .button.disabled { opacity: .52; cursor: not-allowed; filter: grayscale(.25); }
+    .text-link {
+      color: var(--gold-2);
+      text-decoration: none;
+      font-size: .76rem;
+      border-bottom: 1px solid rgba(240,202,113,.22);
+    }
+
+    .card,
+    .panel-card,
+    .list-card,
+    .table-card,
+    .status-strip,
+    .help-card {
+      position: relative;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(180deg, rgba(18,27,39,.68), rgba(7,10,15,.78)),
+        radial-gradient(circle at top right, rgba(240,202,113,.085), transparent 13rem);
+      box-shadow: 0 .75rem 1.9rem rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.035);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+    }
+    .card::after,
+    .panel-card::after,
+    .list-card::after,
+    .table-card::after,
+    .status-strip::after,
+    .help-card::after {
+      content: "";
+      position: absolute;
+      inset: .45rem;
+      border-radius: calc(var(--radius-xl) - .35rem);
+      border: 1px solid rgba(240,202,113,.045);
+      pointer-events: none;
+    }
+    .card > *,
+    .panel-card > *,
+    .list-card > *,
+    .table-card > *,
+    .status-strip > *,
+    .help-card > * { position: relative; z-index: 1; }
+
+    .page-header {
+      padding: .9rem;
+      display: grid;
+      grid-template-columns: minmax(24rem, 1fr) auto;
+      gap: 1rem;
+      align-items: center;
+      border-color: rgba(240,202,113,.18);
+      background:
+        linear-gradient(100deg, rgba(7,11,17,.95), rgba(12,26,41,.72), rgba(7,10,15,.9)),
+        radial-gradient(circle at 78% 8%, rgba(240,202,113,.14), transparent 22rem);
+    }
+    .page-title-block { display: grid; gap: .35rem; }
+    .page-title-line { display: flex; gap: .65rem; align-items: center; flex-wrap: wrap; }
+    .page-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.85rem, 2.6vw, 2.9rem);
+      line-height: .98;
+      color: var(--gold-2);
+    }
+    .page-subtitle {
+      margin: 0;
+      max-width: 62rem;
+      color: var(--text-1);
+      line-height: 1.42;
+      font-size: .9rem;
+    }
+    .header-actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: minmax(18rem, 1fr) repeat(3, minmax(10rem, .55fr));
+      gap: .62rem;
+      padding: .68rem;
+      border-color: rgba(240,202,113,.2);
+      background:
+        linear-gradient(90deg, rgba(240,202,113,.1), rgba(45,110,159,.07)),
+        rgba(5,8,12,.36);
+    }
+    .status-cell {
+      padding: .62rem .68rem;
+      border-radius: .9rem;
+      border: 1px solid rgba(240,202,113,.1);
+      background: rgba(0,0,0,.15);
+      display: grid;
+      gap: .16rem;
+      min-width: 0;
+    }
+    .status-cell.is-main { border-color: rgba(240,202,113,.28); box-shadow: inset 3px 0 0 var(--gold-1); }
+    .status-cell span { color: var(--text-3); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; }
+    .status-cell strong { color: var(--text-0); font-size: .86rem; }
+    .status-cell p { margin: 0; color: var(--text-2); font-size: .73rem; line-height: 1.3; }
+
+    .registry-layout {
+      display: grid;
+      grid-template-columns: minmax(19rem, .72fr) minmax(0, 1.28fr) 25rem;
+      gap: .9rem;
+      align-items: start;
+    }
+    .list-card,
+    .table-card,
+    .panel-card { padding: .88rem; }
+    .side-stack {
+      display: grid;
+      gap: .85rem;
+      position: sticky;
+      top: calc(var(--topbar-h) + .9rem);
+    }
+    .card-head { display: grid; gap: .24rem; margin-bottom: .68rem; }
+    .card-title-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+    .card-title { margin: 0; font-family: var(--font-display); font-size: 1.18rem; color: var(--text-0); }
+    .card-subtitle { margin: .18rem 0 0; color: var(--text-2); font-size: .8rem; line-height: 1.36; }
+
+    .filter-stack { display: grid; gap: .5rem; }
+    .filter-row { display: grid; gap: .22rem; }
+    .filter-row label { color: var(--text-3); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; }
+    .filter-row input,
+    .filter-row select {
+      width: 100%;
+      min-height: 2.15rem;
+      border-radius: .8rem;
+      border: 1px solid rgba(240,202,113,.1);
+      background: rgba(0,0,0,.18);
+      color: var(--text-1);
+      padding: .42rem .55rem;
+      outline: none;
+    }
+    .filter-pills { display: flex; gap: .38rem; flex-wrap: wrap; margin-top: .55rem; }
+    .filter-pill {
+      border: 1px solid rgba(240,202,113,.1);
+      border-radius: 999px;
+      padding: .28rem .55rem;
+      color: var(--text-2);
+      background: rgba(0,0,0,.14);
+      font-size: .73rem;
+    }
+    .filter-pill.is-active { color: var(--text-0); border-color: rgba(240,202,113,.3); background: rgba(240,202,113,.08); }
+
+    .config-list { display: grid; gap: .45rem; margin-top: .7rem; }
+    .config-list-item {
+      padding: .62rem;
+      border-radius: .85rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.14);
+      display: grid;
+      gap: .25rem;
+      cursor: pointer;
+    }
+    .config-list-item.is-selected {
+      border-color: rgba(240,202,113,.3);
+      background: linear-gradient(90deg, rgba(240,202,113,.1), rgba(45,110,159,.06));
+      box-shadow: inset 3px 0 0 var(--gold-1);
+    }
+    .config-list-item strong { color: var(--text-0); font-size: .82rem; }
+    .config-list-item span { color: var(--text-2); font-size: .72rem; line-height: 1.28; }
+    .config-meta { display: flex; gap: .35rem; flex-wrap: wrap; align-items: center; }
+
+    .config-table { display: grid; gap: .42rem; }
+    .config-head,
+    .config-row {
+      display: grid;
+      grid-template-columns: minmax(12rem, 1.05fr) minmax(8rem, .6fr) minmax(8rem, .65fr) minmax(8rem, .7fr) auto;
+      gap: .55rem;
+      align-items: center;
+    }
+    .config-head {
+      padding: 0 .58rem .22rem;
+      color: var(--text-3);
+      font-size: .66rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .config-row {
+      padding: .58rem;
+      border-radius: .85rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(5,8,12,.35);
+    }
+    .config-row.is-selected {
+      border-color: rgba(240,202,113,.3);
+      background: linear-gradient(90deg, rgba(240,202,113,.1), rgba(45,110,159,.06));
+      box-shadow: inset 3px 0 0 var(--gold-1);
+    }
+    .config-row.has-draft { border-color: rgba(240,202,113,.25); }
+    .config-row.has-gap { border-color: rgba(101,174,227,.24); }
+    .config-row strong { display: block; color: var(--text-0); font-size: .82rem; }
+    .config-row span { color: var(--text-2); font-size: .72rem; line-height: 1.3; }
+    .value-block { display: grid; gap: .14rem; }
+    .value-block span { color: var(--text-3); font-size: .66rem; letter-spacing: .11em; text-transform: uppercase; }
+    .value-block strong { color: var(--text-0); }
+    .value-block.proposed strong { color: var(--gold-2); }
+
+    .field-list { display: grid; gap: .5rem; }
+    .field-row {
+      padding: .58rem;
+      border-radius: .8rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(0,0,0,.14);
+      display: grid;
+      gap: .18rem;
+    }
+    .field-row span { color: var(--text-3); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; }
+    .field-row strong { color: var(--text-0); font-size: .82rem; line-height: 1.28; }
+    .field-row p { margin: 0; color: var(--text-2); font-size: .74rem; line-height: 1.34; }
+    .field-row code {
+      color: var(--text-2);
+      font-size: .72rem;
+      word-break: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .preview-box {
+      padding: .62rem;
+      border-radius: .85rem;
+      border: 1px solid rgba(240,202,113,.12);
+      background: rgba(0,0,0,.16);
+      display: grid;
+      gap: .38rem;
+    }
+    .preview-values {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .5rem;
+    }
+    .preview-value {
+      padding: .5rem;
+      border-radius: .72rem;
+      border: 1px solid rgba(240,202,113,.08);
+      background: rgba(5,8,12,.32);
+      display: grid;
+      gap: .15rem;
+    }
+    .preview-value span { color: var(--text-3); font-size: .65rem; text-transform: uppercase; letter-spacing: .12em; }
+    .preview-value strong { color: var(--text-0); font-size: .9rem; }
+    .preview-value.proposed strong { color: var(--gold-2); }
+
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 25rem;
+      gap: .9rem;
+      align-items: start;
+    }
+    .help-card { padding: .85rem; }
+    .help-card details {
+      border-radius: .9rem;
+      border: 1px solid rgba(240,202,113,.09);
+      background: rgba(0,0,0,.14);
+      padding: .72rem;
+    }
+    .help-card summary { cursor: pointer; color: var(--text-0); font-weight: 800; }
+    .note-list { margin: .35rem 0 0; padding-left: 1rem; color: var(--text-2); font-size: .78rem; line-height: 1.45; }
+
+    @media (max-width: 1680px) {
+      .registry-layout { grid-template-columns: minmax(17rem, .72fr) minmax(0, 1.28fr); }
+      .side-stack { grid-column: 1 / -1; position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .status-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 1280px) {
+      .registry-layout,
+      .bottom-grid { grid-template-columns: 1fr; }
+      .side-stack { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 1180px) {
+      .app-shell { display: block; }
+      .topbar { position: static; grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--line-soft); }
+      .page-header { grid-template-columns: 1fr; }
+      .header-actions { justify-content: flex-start; }
+      .search { min-width: 12rem; }
+      .config-head { display: none; }
+      .config-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 860px) {
+      .main { padding: .75rem; }
+      .status-strip,
+      .preview-values { grid-template-columns: 1fr; }
+      .card-title-row { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <section class="brand" aria-label="Mythsworn Admin">
+        <div class="brand-mark"></div>
+        <div>
+          <div class="brand-title">Mythsworn</div>
+          <div class="brand-subtitle">Admin console</div>
+        </div>
+      </section>
+
+      <section class="context-card">
+        <div class="context-row">
+          <div class="context-label">Admin context</div>
+          <div class="context-value"><span>Global Admin</span></div>
+        </div>
+        <div class="context-row">
+          <div class="context-label">Server focus</div>
+          <div class="context-value"><span>All servers</span></div>
+        </div>
+        <div class="context-row">
+          <div class="context-label">Active draft</div>
+          <div class="context-value"><span>Global Balance Draft</span><span class="badge gold">active</span></div>
+        </div>
+      </section>
+
+      <div class="nav-section-title">Overview</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#overview"><span class="nav-icon">OV</span><span class="nav-label">Admin Hub<span class="nav-sub">orientation and alerts</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Governance</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#governance"><span class="nav-icon">GV</span><span class="nav-label">Governance & Drafts<span class="nav-sub">workspace overview</span></span></a></li>
+        <li><a class="nav-link" href="#draft"><span class="nav-icon">BD</span><span class="nav-label">Active Balance Draft<span class="nav-sub">diff, readiness, apply</span></span></a></li>
+        <li><a class="nav-link is-active" href="#config"><span class="nav-icon">CG</span><span class="nav-label">Config Registry<span class="nav-sub">definitions, values, scope</span></span></a></li>
+        <li><a class="nav-link" href="#formulas"><span class="nav-icon">FM</span><span class="nav-label">Formula Library<span class="nav-sub">targets and assignments</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Game Balance</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#items"><span class="nav-icon">IT</span><span class="nav-label">Item Generation<span class="nav-sub">bases, affixes, quality</span></span></a></li>
+        <li><a class="nav-link" href="#estate"><span class="nav-icon">ES</span><span class="nav-label">Estate Balance<span class="nav-sub">buildings, costs, caps</span></span></a></li>
+        <li><a class="nav-link" href="#combat"><span class="nav-icon">CB</span><span class="nav-label">Combat Balance<span class="nav-sub">opponents and content</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Exploration & PvE</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#trials"><span class="nav-icon">TR</span><span class="nav-label">Trials<span class="nav-sub">definitions and readiness</span></span></a></li>
+        <li><a class="nav-link" href="#encounters"><span class="nav-icon">EN</span><span class="nav-label">Encounters<span class="nav-sub">candidates and effects</span></span></a></li>
+        <li><a class="nav-link" href="#rewards"><span class="nav-icon">RW</span><span class="nav-label">Reward Profiles<span class="nav-sub">PvE reward wiring</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Operations</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#moderation"><span class="nav-icon">AA</span><span class="nav-label">Moderation & Anti-abuse<span class="nav-sub">cases and sanctions</span></span></a></li>
+        <li><a class="nav-link" href="#servers"><span class="nav-icon">SO</span><span class="nav-label">Server Operations<span class="nav-sub">staff, events, lifecycle</span></span></a></li>
+        <li><a class="nav-link" href="#reports"><span class="nav-icon">RN</span><span class="nav-label">Reports & Notifications<span class="nav-sub">readability</span></span></a></li>
+      </ul>
+
+      <div class="nav-section-title">Sandbox / Diagnostics</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#labs"><span class="nav-icon">LB</span><span class="nav-label">Labs & Debug Tools<span class="nav-sub">Luck Lab, Exploration Lab</span></span></a></li>
+      </ul>
+    </aside>
+
+    <header class="topbar">
+      <div class="topbar-title">
+        <strong>Config Registry</strong>
+        <span>Znajdź config, zrozum jego source-of-truth i przygotuj governed change</span>
+      </div>
+      <div class="topbar-right">
+        <span class="context-pill"><span>Context</span><strong>Global Admin</strong></span>
+        <span class="context-pill"><span>Preview</span><strong>Live + draft overlay</strong></span>
+        <input class="search" placeholder="Search config key, label, area..." />
+      </div>
+    </header>
+
+    <main class="main" id="config">
+      <section class="card page-header">
+        <div class="page-title-block">
+          <p class="eyebrow">Config Registry Prototype v2</p>
+          <div class="page-title-line">
+            <h1 class="page-title">Config Registry</h1>
+            <span class="badge gold">governance source</span>
+            <span class="badge">not raw JSON browser</span>
+          </div>
+          <p class="page-subtitle">Workspace do odnalezienia i zrozumienia configu: definicja, live/effective value, draft overlay, governance scope, metadata i wpływ na gameplay/admin flow. Przykłady są illustrative; produkcyjnie lista pochodzi z DB-backed config registry/read models.</p>
+        </div>
+        <div class="header-actions">
+          <button class="button">Open/Edit selected draft entry</button>
+          <button class="button ghost">Open active draft</button>
+          <button class="button ghost">View config history</button>
+        </div>
+      </section>
+
+      <section class="status-strip" aria-label="Config registry status summary">
+        <article class="status-cell is-main">
+          <span>Persistent balance context</span>
+          <strong>Active Global Balance Draft</strong>
+          <p>Registry pokazuje live/effective values oraz proposed value, jeśli config ma zmianę w aktywnym draftcie.</p>
+        </article>
+        <article class="status-cell">
+          <span>Preview context</span>
+          <strong>Live + draft overlay</strong>
+          <p>Admin/sandbox only. Live gameplay widzi draft dopiero po apply.</p>
+        </article>
+        <article class="status-cell">
+          <span>Config coverage</span>
+          <strong>DB-backed definitions</strong>
+          <p>Config definitions / values only. Relacyjne balance entities żyją w swoich workspace’ach.</p>
+        </article>
+        <article class="status-cell">
+          <span>Metadata quality</span>
+          <strong>3 gaps</strong>
+          <p>Raw-key fallback / missing helper text / incomplete admin description.</p>
+        </article>
+      </section>
+
+      <section class="registry-layout">
+        <aside class="list-card" aria-label="Config filters and quick list">
+          <div class="card-head">
+            <h2 class="card-title">Find config</h2>
+            <p class="card-subtitle">Szukaj po sensie, nie tylko po raw key.</p>
+          </div>
+          <div class="filter-stack">
+            <div class="filter-row">
+              <label for="searchConfig">Search</label>
+              <input id="searchConfig" value="trial daily" />
+            </div>
+            <div class="filter-row">
+              <label for="areaFilter">Area</label>
+              <select id="areaFilter"><option>Game Balance</option><option>Exploration & PvE</option><option>Server Operations</option><option>Anti-abuse</option></select>
+            </div>
+            <div class="filter-row">
+              <label for="scopeFilter">Governance scope</label>
+              <select id="scopeFilter"><option>Any scope</option><option>Global balance</option><option>Product global</option><option>Live server</option><option>Test override</option></select>
+            </div>
+          </div>
+          <div class="filter-pills">
+            <span class="filter-pill is-active">All</span>
+            <span class="filter-pill">Has draft change</span>
+            <span class="filter-pill">Missing metadata</span>
+            <span class="filter-pill">Formula ref</span>
+          </div>
+
+          <div class="config-list">
+            <article class="config-list-item is-selected">
+              <strong>Trial daily action limit</strong>
+              <span>Exploration scalar config · global balance</span>
+              <div class="config-meta"><span class="badge gold">draft entry</span><span class="badge">integer</span></div>
+            </article>
+            <article class="config-list-item">
+              <strong>Guild creation drachma cost</strong>
+              <span>Guild scalar config · product global</span>
+              <div class="config-meta"><span class="badge gold">draft change</span><span class="badge">integer</span></div>
+            </article>
+            <article class="config-list-item">
+              <strong>Anti-abuse repeated PvP threshold</strong>
+              <span>Anti-abuse config · live server</span>
+              <div class="config-meta"><span class="badge blue">server value</span><span class="badge">integer</span></div>
+            </article>
+            <article class="config-list-item">
+              <strong>Server launch grace minutes</strong>
+              <span>Server launch scalar config · server_launch</span>
+              <div class="config-meta"><span class="badge">integer</span></div>
+            </article>
+            <article class="config-list-item">
+              <strong>raw_key: pvp_matchmaking_margin</strong>
+              <span>Missing metadata · displayed as quality gap</span>
+              <div class="config-meta"><span class="badge blue">metadata gap</span></div>
+            </article>
+          </div>
+        </aside>
+
+        <article class="table-card" aria-label="Config definitions table">
+          <div class="card-head">
+            <div class="card-title-row">
+              <div>
+                <h2 class="card-title">Config Definitions</h2>
+                <p class="card-subtitle">Lista definicji z wartościami live/effective i informacją, czy aktywny draft proponuje zmianę.</p>
+              </div>
+              <div class="button-row"><button class="button ghost">Columns</button><button class="button ghost">Export</button></div>
+            </div>
+          </div>
+
+          <div class="config-head" aria-hidden="true">
+            <span>Definition</span><span>Live / effective</span><span>Draft overlay</span><span>Scope / source</span><span>Action</span>
+          </div>
+          <div class="config-table">
+            <div class="config-row is-selected has-draft">
+              <div>
+                <strong>Trial daily action limit</strong>
+                <span>Key: exploration_trial_daily_limit · integer</span>
+              </div>
+              <div class="value-block"><span>Live</span><strong>12</strong></div>
+              <div class="value-block proposed"><span>Proposed</span><strong>10</strong></div>
+              <div><span>global_balance · draft overlay</span><br><span class="badge gold">in active draft</span></div>
+              <div><button class="button ghost">Open/Edit draft entry</button></div>
+            </div>
+            <div class="config-row has-draft">
+              <div>
+                <strong>Guild creation drachma cost</strong>
+                <span>Key: guild_creation_drachma_cost · integer</span>
+              </div>
+              <div class="value-block"><span>Live</span><strong>5,000</strong></div>
+              <div class="value-block proposed"><span>Proposed</span><strong>4,500</strong></div>
+              <div><span>product_global · draft overlay</span><br><span class="badge gold">in active draft</span></div>
+              <div><button class="button ghost">Open/Edit draft entry</button></div>
+            </div>
+            <div class="config-row">
+              <div>
+                <strong>Anti-abuse repeated PvP threshold</strong>
+                <span>Key: anti_abuse_repeated_pvp_threshold · integer</span>
+              </div>
+              <div class="value-block"><span>Effective</span><strong>5</strong></div>
+              <div class="value-block"><span>Proposed</span><strong>none</strong></div>
+              <div><span>live_server · selected server value</span><br><span class="badge blue">server scoped</span></div>
+              <div><button class="button ghost disabled">Pending path</button></div>
+            </div>
+            <div class="config-row">
+              <div>
+                <strong>Server launch grace minutes</strong>
+                <span>Key: server_launch_grace_minutes · integer</span>
+              </div>
+              <div class="value-block"><span>Live</span><strong>60</strong></div>
+              <div class="value-block"><span>Proposed</span><strong>none</strong></div>
+              <div><span>server_launch · live source</span><br><span class="badge green">ready</span></div>
+              <div><button class="button ghost">Add draft change</button></div>
+            </div>
+            <div class="config-row has-gap">
+              <div>
+                <strong>raw_key: pvp_matchmaking_margin</strong>
+                <span>Missing label/helper metadata · not acceptable as primary label</span>
+              </div>
+              <div class="value-block"><span>Live</span><strong>15</strong></div>
+              <div class="value-block"><span>Proposed</span><strong>none</strong></div>
+              <div><span>global_balance · live source</span><br><span class="badge blue">metadata gap</span></div>
+              <div><button class="button ghost">Open gap</button></div>
+            </div>
+          </div>
+        </article>
+
+        <aside class="side-stack">
+          <article class="panel-card" aria-label="Selected config detail">
+            <div class="card-head">
+              <h2 class="card-title">Selected Config</h2>
+              <p class="card-subtitle">Trial daily action limit</p>
+            </div>
+            <div class="field-list">
+              <div class="field-row">
+                <span>Co to robi</span>
+                <strong>Ustawia dzienny limit Trial actions dla standardowego Exploration loopu.</strong>
+                <p>Balancer używa tego do strojenia tempa PvE bez ręcznego dotykania runtime counters. To przykład scalar configu, nie relacyjnej definicji Trial.</p>
+              </div>
+              <div class="field-row">
+                <span>Governance scope</span>
+                <strong>Global balance</strong>
+                <p>Zmiana trafia do aktywnego globalnego balance draftu. Live gameplay zobaczy ją dopiero po apply.</p>
+              </div>
+              <div class="field-row">
+                <span>Technical key</span>
+                <code>exploration_trial_daily_limit</code>
+              </div>
+              <div class="field-row">
+                <span>Value type / schema</span>
+                <strong>integer · min 0 · max 5000</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel-card" aria-label="Selected config values and draft action">
+            <div class="card-head">
+              <h2 class="card-title">Live vs Draft</h2>
+              <p class="card-subtitle">Ten config ma istniejący draft entry, więc primary action prowadzi do edycji wpisu.</p>
+            </div>
+            <div class="preview-box">
+              <div class="preview-values">
+                <div class="preview-value"><span>Live value</span><strong>12</strong></div>
+                <div class="preview-value proposed"><span>Proposed value</span><strong>10</strong></div>
+              </div>
+              <div class="field-row">
+                <span>Preview context</span>
+                <strong>Live + draft overlay</strong>
+                <p>Admin/sandbox preview może użyć proposed value. Live gameplay nadal używa live value.</p>
+              </div>
+              <div class="field-row">
+                <span>Draft entry reason</span>
+                <strong>Reduce daily Trial pace during early balancing while monitoring completion rates.</strong>
+              </div>
+            </div>
+            <div class="button-row" style="margin-top:.65rem">
+              <button class="button">Open/Edit draft entry</button>
+              <button class="button ghost">Open active draft</button>
+              <button class="button ghost">View history</button>
+            </div>
+          </article>
+        </aside>
+      </section>
+
+      <section class="bottom-grid">
+        <article class="card">
+          <div class="card-head">
+            <h2 class="card-title">Registry quality checks</h2>
+            <p class="card-subtitle">Te problemy nie są liczbą narzędzi diagnostycznych. To braki jakości danych, które pogarszają czytelność admina.</p>
+          </div>
+          <div class="field-list">
+            <div class="field-row"><span>Metadata gaps</span><strong>3 config definitions need label/helper/admin description.</strong><p>Nie maskować stałym copy w Angularze. Pokazać namespace/key gap i naprawić metadata.</p></div>
+            <div class="field-row"><span>Draft overlay consistency</span><strong>2 configs already have active draft entries.</strong><p>Registry should link to Open/Edit draft entry instead of creating duplicate competing changes.</p></div>
+            <div class="field-row"><span>Unsupported governed path</span><strong>Some values may be visible but not editable from this registry yet.</strong><p>If no supported draft path exists, show dependency/pending state instead of an active Add change action.</p></div>
+            <div class="field-row"><span>Server scoped values</span><strong>Live server configs must show selected server source.</strong><p>Do not visually merge product/global/live-server values as if they were one flat table.</p></div>
+          </div>
+        </article>
+
+        <aside class="help-card">
+          <details open>
+            <summary>IA note</summary>
+            <ul class="note-list">
+              <li><strong>Config Registry</strong> odpowiada: czym jest config definition/value, jaka jest wartość live/effective, czy aktywny draft proponuje zmianę i jaki jest governance scope.</li>
+              <li>Przykłady są illustrative. Produkcyjnie lista musi pochodzić z DB-backed config registry/read models.</li>
+              <li>Relacyjne balance entities — bucket profiles, qualities, formulas, assignments — żyją w odpowiednich workspace’ach albo w Active Draft Diff, jeśli są częścią draftu.</li>
+              <li>To nie jest raw JSON/table browser. Technical key jest secondary metadata.</li>
+              <li>Zmiana configu nie mutuje live bezpośrednio. Trafia do active balance draft albo odpowiedniego governed change workflow, jeśli taki path istnieje.</li>
+              <li>Missing metadata to realny quality gap: label/helper/admin description/source explanation.</li>
+            </ul>
+          </details>
+        </aside>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
