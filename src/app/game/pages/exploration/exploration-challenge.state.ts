@@ -346,7 +346,7 @@ export class ExplorationChallengeState {
 
   private chanceRollLabel(chance: number | null, roll: number | null): string {
     const chanceLabel = chance === null ? 'N/D' : `${chance}%`;
-    const rollLabel = roll === null ? 'not rolled' : `roll ${roll}`;
+    const rollLabel = roll === null ? 'roll N/D' : `roll ${roll}`;
 
     return `${chanceLabel} (${rollLabel})`;
   }

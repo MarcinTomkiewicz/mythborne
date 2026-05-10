@@ -10133,6 +10133,8 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 - Missing/failed reward generation is visible and explainable.
 - Refresh is safe and does not create duplicate rewards.
 
+**Status:** Accepted on 2026-05-10. `/game/exploration` reward/drop display now renders durable `reward_grants`, `reward_grant_entries` and persisted `items` read-model data with Polish-facing copy. XP and Character Points entries remain visible, generated/item entries without `itemId` stay hidden from visible reward rows while surfacing DB metadata reasons/diagnostics when present, and item rows show the persisted item name/id once plus durable item details. The stale `No reward entries were recorded` and manual-combat `not rolled` wording was removed from the touched flow. No DB/schema/generated type edits, direct writes, reward generation logic or runtime reward authority were introduced. Verification passed with focused `/game/exploration` specs, `npx tsc --noEmit`, `npm run build` with known warnings and scoped greps. Manual smoke remains user-side pending for XP/PP reward, item drop, legal no-item drop, DB failure reason and refresh safety.
+
 ---
 
 ## Task W11 — Exploration reward execution diagnostics

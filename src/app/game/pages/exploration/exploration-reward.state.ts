@@ -6,6 +6,7 @@ import {
   RewardGrantEntryReadModel,
 } from '../../../core/domain/exploration/exploration-reward.model';
 import { HeroExplorationRewards } from '../../../core/services/exploration/hero-exploration-rewards';
+import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 import { humanizeKey } from '../../../core/utils/normalize-text';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
@@ -26,6 +27,26 @@ export class ExplorationRewardState {
   readonly visibleRewardEntries = computed(() =>
     this.reward()?.entries.filter(isVisibleRewardEntry) ?? [],
   );
+  readonly hiddenRewardDiagnostics = computed(() =>
+    this.reward()?.entries
+      .filter((entry) => !isVisibleRewardEntry(entry))
+      .map((entry) => this.hiddenEntryDiagnostic(entry)) ?? [],
+  );
+  readonly rewardGrantDiagnostic = computed(() => {
+    const grant = this.reward()?.rewardGrant ?? null;
+
+    if (!grant) {
+      return null;
+    }
+
+    if (grant.status === 'granted' && !grant.reason) {
+      return null;
+    }
+
+    return grant.reason
+      ? `Status grantu: ${grant.status}. Powód DB: ${sentenceText(grant.reason)}`
+      : `Status grantu: ${grant.status}. DB nie zwróciła dodatkowego powodu.`;
+  });
   readonly rewardSummary = computed(() => this.summary(this.reward()));
 
   constructor() {
@@ -49,16 +70,18 @@ export class ExplorationRewardState {
         return `${entry.amount ?? 0} EXP`;
       case 'character_points':
       case 'hero_points':
-        return `${entry.amount ?? 0} Character Points`;
+        return `${entry.amount ?? 0} Punktów Postaci`;
       case 'resource':
-        return `${entry.amount ?? 0} ${entry.resourceType ?? 'resource'}`;
+        return `${entry.amount ?? 0} ${entry.resourceType ?? 'zasób'}`;
       case 'item':
       case 'generated_item':
-        return entry.itemId ? `Generated item ${entry.itemId}` : 'Item generation recorded';
+        return entry.itemId
+          ? `Przedmiot: ${this.itemLabel(entry.itemId)}`
+          : 'Losowanie przedmiotu bez utworzonego itemu';
       case 'effect':
         return entry.effectDefinitionId
-          ? `Effect ${entry.effectDefinitionId}`
-          : 'Effect reward';
+          ? `Efekt ${entry.effectDefinitionId}`
+          : 'Nagroda efektu';
       default:
         return `${humanizeKey(entry.entryKind, 'Reward')}${entry.amount === null ? '' : `: ${entry.amount}`}`;
     }
@@ -67,24 +90,40 @@ export class ExplorationRewardState {
   itemLabel(itemId: string | null): string {
     const item = this.reward()?.items.find((entry) => entry.id === itemId);
 
-    return item?.name ?? itemId ?? 'N/D';
+    return item ? `${item.name} (${item.id})` : itemId ?? 'N/D';
   }
 
   itemDetails(itemId: string | null): string {
     const item = this.reward()?.items.find((entry) => entry.id === itemId);
 
     if (!item) {
-      return 'Item row was not found or no item was generated.';
+      return 'DB nie zwróciła trwałego wiersza itemu dla tej nagrody.';
     }
 
     return [
-      `Value ${item.drachmaValue ?? 'N/D'}`,
-      `Quality ${item.generationQualityKey ?? 'N/D'}`,
-      `Base ${item.generationBaseId ?? 'N/D'}`,
+      `Wartość ${item.drachmaValue ?? 'N/D'}`,
+      `Jakość ${item.generationQualityKey ?? 'N/D'}`,
+      `Baza ${item.generationBaseId ?? 'N/D'}`,
       `Prefix ${item.prefixAffixId ?? 'N/D'}`,
       `Suffix ${item.suffixAffixId ?? 'N/D'}`,
       `Status ${item.status}`,
     ].join(' - ');
+  }
+
+  entryDetails(entry: RewardGrantEntryReadModel): string | null {
+    if (entry.itemId) {
+      return this.itemDetails(entry.itemId);
+    }
+
+    if (entry.effectDefinitionId) {
+      return `Efekt DB: ${entry.effectDefinitionId}`;
+    }
+
+    if (entry.resourceType) {
+      return `Zasób DB: ${entry.resourceType}`;
+    }
+
+    return null;
   }
 
   private loadReward(explorationId: string): void {
@@ -124,7 +163,7 @@ export class ExplorationRewardState {
             return;
           }
 
-          this.feedback.setError(error, 'Failed to load exploration reward.');
+          this.feedback.setError(error, 'Nie udało się odczytać nagrody eksploracji.');
         },
       });
   }
@@ -144,18 +183,29 @@ export class ExplorationRewardState {
 
   private summary(reward: ExplorationChallengeRewardReadModel | null): string {
     if (!reward) {
-      return 'No completed challenge reward has been recorded for this exploration yet.';
+      return 'DB nie zapisała jeszcze ukończonego challenge reward dla tej eksploracji.';
     }
 
     if (reward.success === false || !reward.rewardGrantId) {
-      return 'The latest completed challenge did not grant a reward.';
+      return 'Ostatni ukończony challenge nie przyznał nagrody.';
     }
 
     if (!reward.entries.length) {
-      return 'The reward grant exists, but it has no recorded reward entries.';
+      return 'Reward grant istnieje, ale DB nie zapisała wpisów nagrody.';
     }
 
-    return `${reward.entries.length} reward entr${reward.entries.length === 1 ? 'y' : 'ies'} recorded by the database.`;
+    return `DB zapisała ${reward.entries.length} wpis${reward.entries.length === 1 ? '' : 'y'} nagrody.`;
+  }
+
+  private hiddenEntryDiagnostic(entry: RewardGrantEntryReadModel): string {
+    const reason = metadataReason(entry);
+    const label = diagnosticEntryLabel(entry);
+
+    if (reason) {
+      return `${label} nie utworzył itemu. Powód DB: ${sentenceText(reason)}`;
+    }
+
+    return `${label} nie ma itemId. To może oznaczać legalny wynik bez dropu albo brak szczegółu diagnostycznego w DB.`;
   }
 
 }
@@ -166,4 +216,45 @@ function isVisibleRewardEntry(entry: RewardGrantEntryReadModel): boolean {
 
 function isItemRewardEntry(entry: RewardGrantEntryReadModel): boolean {
   return entry.entryKind === 'item' || entry.entryKind === 'generated_item';
+}
+
+function metadataReason(entry: RewardGrantEntryReadModel): string | null {
+  const metadata = jsonRecord(entry.metadataJson);
+
+  return optionalText(read(
+    metadata,
+    'failureReason',
+    'failure_reason',
+    'reason',
+    'statusReason',
+    'status_reason',
+    'itemGenerationReason',
+    'item_generation_reason',
+    'itemGenerationError',
+    'item_generation_error',
+  ));
+}
+
+function sentenceText(value: string): string {
+  return /[.!?]$/.test(value) ? value : `${value}.`;
+}
+
+function diagnosticEntryLabel(entry: RewardGrantEntryReadModel): string {
+  switch (entry.entryKind) {
+    case 'item':
+    case 'generated_item':
+      return 'Wpis losowania przedmiotu';
+    case 'experience':
+    case 'exp':
+      return 'Wpis EXP';
+    case 'character_points':
+    case 'hero_points':
+      return 'Wpis Punktów Postaci';
+    case 'resource':
+      return 'Wpis zasobu';
+    case 'effect':
+      return 'Wpis efektu';
+    default:
+      return `Wpis ${humanizeKey(entry.entryKind, 'Reward')}`;
+  }
 }

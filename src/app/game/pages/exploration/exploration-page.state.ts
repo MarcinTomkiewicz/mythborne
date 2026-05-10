@@ -78,6 +78,8 @@ export class ExplorationPageState {
   readonly isLoadingReward = this.rewardState.isLoadingReward;
   readonly reward = this.rewardState.reward;
   readonly visibleRewardEntries = this.rewardState.visibleRewardEntries;
+  readonly hiddenRewardDiagnostics = this.rewardState.hiddenRewardDiagnostics;
+  readonly rewardGrantDiagnostic = this.rewardState.rewardGrantDiagnostic;
   readonly rewardSummary = this.rewardState.rewardSummary;
   readonly movementBlockReason = this.movement.movementBlockReason;
   readonly remainingTrialsLabel = this.overview.remainingTrialsLabel;
@@ -218,6 +220,7 @@ export class ExplorationPageState {
   }
 
   rewardEntryLabel = this.rewardState.entryLabel.bind(this.rewardState);
+  rewardEntryDetails = this.rewardState.entryDetails.bind(this.rewardState);
   rewardItemLabel = this.rewardState.itemLabel.bind(this.rewardState);
   rewardItemDetails = this.rewardState.itemDetails.bind(this.rewardState);
   participantHpLabel = this.challenge.participantHpLabel.bind(this.challenge);

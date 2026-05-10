@@ -3,7 +3,7 @@
     <div class="flex-col gap-sm">
       <div class="flex-row-between-center flex-col-sm gap-sm">
         <div class="flex-col gap-xs">
-          <strong>Challenge reward</strong>
+          <strong>Nagroda za challenge</strong>
           <span class="muted-text">{{ page.rewardSummary() }}</span>
         </div>
         <span class="tag-badge tag-badge--info">{{ reward.status }}</span>
@@ -11,18 +11,24 @@
 
       <div class="flex-row-start-center flex-wrap gap-xs">
         <span class="tag-badge tag-badge--muted">
-          Success: {{ reward.success === null ? 'N/D' : reward.success ? 'Yes' : 'No' }}
+          Wynik: {{ reward.success === null ? 'N/D' : reward.success ? 'Sukces' : 'Porażka' }}
         </span>
         <span class="tag-badge tag-badge--muted">
-          Mode: {{ reward.completionMode ?? 'N/D' }}
+          Tryb: {{ reward.completionMode ?? 'N/D' }}
         </span>
         <span class="tag-badge tag-badge--muted">
           Grant: {{ reward.rewardGrantId ?? 'N/D' }}
         </span>
         <span class="tag-badge tag-badge--muted">
-          Completed: {{ reward.completedAt ?? 'N/D' }}
+          Ukończono: {{ reward.completedAt ?? 'N/D' }}
         </span>
       </div>
+
+      @if (page.rewardGrantDiagnostic(); as diagnostic) {
+        <p class="mb-0">
+          {{ diagnostic }}
+        </p>
+      }
 
       @if (page.visibleRewardEntries().length) {
         <div class="flex-col gap-xs">
@@ -30,46 +36,52 @@
             <div class="flex-row-between-start flex-col-sm gap-sm">
               <span>{{ page.rewardEntryLabel(entry) }}</span>
               <span class="muted-text">
-                @if (entry.itemId) {
-                  {{ page.rewardItemLabel(entry.itemId) }} - {{ page.rewardItemDetails(entry.itemId) }}
-                } @else {
-                  {{ entry.entryKind }}
+                @if (page.rewardEntryDetails(entry); as details) {
+                  {{ details }}
                 }
               </span>
             </div>
           }
         </div>
       } @else if (reward.entries.length) {
-        <p class="muted-text mb-0">
-          Reward entries were recorded, but none created a displayed stat, resource or item reward.
+        <p class="mb-0">
+          DB zapisała wpisy nagrody, ale żaden nie utworzył widocznej wartości, zasobu ani itemu.
         </p>
       } @else {
-        <p class="muted-text mb-0">
-          Reward grant exists, but reward_grant_entries is empty.
+        <p class="mb-0">
+          Reward grant istnieje, ale `reward_grant_entries` jest puste.
         </p>
+      }
+
+      @if (page.hiddenRewardDiagnostics().length) {
+        <div class="flex-col gap-xs">
+          @for (diagnostic of page.hiddenRewardDiagnostics(); track diagnostic) {
+            <p class="mb-0">{{ diagnostic }}</p>
+          }
+        </div>
       }
     </div>
   </div>
 } @else if (page.isLoadingReward()) {
   <div class="mg-card p-md">
-    <span class="tag-badge tag-badge--muted">Loading reward</span>
+    <span class="tag-badge tag-badge--muted">Ładowanie nagrody</span>
   </div>
 } @else if (page.currentChallengeResult(); as result) {
   <div class="mg-card p-md">
     <div class="flex-col gap-sm">
-      <strong>Reward diagnostic</strong>
+      <strong>Diagnostyka nagrody</strong>
       @if (result.success && !result.rewardGrantId) {
-        <p class="muted-text mb-0">
+        <p class="mb-0">
           DB zakończyła challenge sukcesem, ale nie zwróciła `reward_grant_id`.
           Sprawdź konfigurację reward profile dla tego Triala/Encountera.
         </p>
       } @else if (result.success) {
-        <p class="muted-text mb-0">
+        <p class="mb-0">
           Reward grant {{ result.rewardGrantId }} został zwrócony przez resolver,
           ale trwały reward nie został jeszcze odczytany przez istniejący reward read path.
         </p>
       } @else {
-        <p class="muted-text mb-0">
+        <p class="mb-0">
           Challenge zakończył się porażką, więc DB nie przyznała rewardu.
         </p>
       }

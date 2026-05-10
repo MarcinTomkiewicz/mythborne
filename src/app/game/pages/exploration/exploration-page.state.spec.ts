@@ -663,10 +663,10 @@ describe('ExplorationPageState', () => {
       heroId: 'hero-1',
       explorationId: 'exploration-1',
     });
-    expect(page.rewardSummary()).toContain('2 reward entries');
+    expect(page.rewardSummary()).toContain('DB zapisała 2 wpisy nagrody');
     expect(page.rewardEntryLabel(page.reward()!.entries[0])).toBe('20 EXP');
-    expect(page.rewardItemLabel('item-1')).toBe('Reward blade');
-    expect(page.rewardItemDetails('item-1')).toContain('Quality fine');
+    expect(page.rewardItemLabel('item-1')).toBe('Reward blade (item-1)');
+    expect(page.rewardItemDetails('item-1')).toContain('Jakość fine');
   });
 
   it('shows XP and Character Points while hiding generated-item entries without items', async () => {
@@ -694,11 +694,60 @@ describe('ExplorationPageState', () => {
     page.startSelectedDifficulty();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(page.rewardSummary()).toContain('3 reward entries');
+    expect(page.rewardSummary()).toContain('DB zapisała 3 wpisy nagrody');
     expect(page.visibleRewardEntries().map((entry) => entry.id))
       .toEqual(['entry-xp', 'entry-cp']);
     expect(page.visibleRewardEntries().map((entry) => page.rewardEntryLabel(entry)))
-      .toEqual(['70 EXP', '70 Character Points']);
+      .toEqual(['70 EXP', '70 Punktów Postaci']);
+    expect(page.visibleRewardEntries().map((entry) => page.rewardEntryDetails(entry)))
+      .toEqual([null, null]);
+    expect(page.hiddenRewardDiagnostics()[0]).toContain('Wpis losowania przedmiotu');
+  });
+
+  it('shows DB reason for generated-item reward entries without item rows', async () => {
+    rewards.getLatestChallengeReward.and.returnValue(
+      of(challengeReward({
+        entries: [
+          rewardEntry({
+            id: 'entry-item',
+            entryKind: 'generated_item',
+            amount: 0,
+            itemId: null,
+            metadataJson: { itemGenerationReason: 'Item count roll returned zero.' },
+          }),
+        ],
+        items: [],
+      })),
+    );
+
+    page.loadData();
+    page.startSelectedDifficulty();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(page.visibleRewardEntries()).toEqual([]);
+    expect(page.hiddenRewardDiagnostics()).toEqual([
+      'Wpis losowania przedmiotu nie utworzył itemu. Powód DB: Item count roll returned zero.',
+    ]);
+  });
+
+  it('shows DB reward grant reason when a grant is not fully granted', async () => {
+    rewards.getLatestChallengeReward.and.returnValue(
+      of(challengeReward({
+        rewardGrant: {
+          ...challengeReward().rewardGrant!,
+          status: 'failed',
+          reason: 'Reward profile entry failed.',
+        },
+      })),
+    );
+
+    page.loadData();
+    page.startSelectedDifficulty();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(page.rewardGrantDiagnostic()).toBe(
+      'Status grantu: failed. Powód DB: Reward profile entry failed.',
+    );
   });
 
   it('shows clear no-reward state for failed persisted challenges', async () => {
@@ -716,7 +765,7 @@ describe('ExplorationPageState', () => {
     page.startSelectedDifficulty();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(page.rewardSummary()).toBe('The latest completed challenge did not grant a reward.');
+    expect(page.rewardSummary()).toBe('Ostatni ukończony challenge nie przyznał nagrody.');
   });
 
   it('clears stale reward while loading a new exploration and ignores stale responses', async () => {
