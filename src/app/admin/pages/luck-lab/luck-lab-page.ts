@@ -11,6 +11,7 @@ import { LuckLabState } from '../../../core/services/luck/luck-lab.state';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { ExplorationDefinitionsState } from '../exploration-shared/exploration-definitions.state';
 import { LuckLabAutoResolveSection } from './luck-lab-auto-resolve-section';
+import { LuckLabCombatSection } from './luck-lab-combat-section';
 import { LuckLabComparisonState } from './luck-lab-comparison.state';
 import { LuckLabEncounterComparisonState } from './luck-lab-encounter-comparison.state';
 import { LuckLabEncounterSection } from './luck-lab-encounter-section';
@@ -30,6 +31,7 @@ import { LuckLabTrialPowerSection } from './luck-lab-trial-power-section';
     AdminServerSwitcher,
     AdminTagLinks,
     LuckLabAutoResolveSection,
+    LuckLabCombatSection,
     LuckLabEncounterSection,
     LuckLabTrialChanceSection,
     LuckLabTrialPowerSection,

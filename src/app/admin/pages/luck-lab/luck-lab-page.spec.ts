@@ -2,6 +2,8 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { LuckLabCombatSection } from './luck-lab-combat-section';
+import { LuckLabCombatSectionState } from './luck-lab-combat-section.state';
 import { LuckLabPage } from './luck-lab-page';
 import { LuckLabPageState } from './luck-lab-page.state';
 
@@ -44,6 +46,18 @@ describe('LuckLabPage', () => {
     | 'selectedTrialContextLabel'
     | 'selectedTrialContextId'
     | 'lab'
+  >;
+  let combatSectionState: Pick<
+    LuckLabCombatSectionState,
+    | 'load'
+    | 'preview'
+    | 'rows'
+    | 'valueText'
+    | 'isLoading'
+    | 'error'
+    | 'comparisonRows'
+    | 'isComparisonLoading'
+    | 'comparisonError'
   >;
 
   beforeEach(async () => {
@@ -198,6 +212,73 @@ describe('LuckLabPage', () => {
         }),
       } as never,
     };
+    combatSectionState = {
+      load: jasmine.createSpy('load'),
+      preview: signal({
+        attackCount: 1,
+        attackIndex: 1,
+        attackerCunning: 11,
+        attackerDexterity: 22,
+        attackerLuck: 12,
+        attackerLuckInfluence: 4,
+        combatantAgility: 9,
+        combatantIntelligence: 8,
+        critBonusFromItems: 1,
+        defenderLuck: 6,
+        defenderLuckInfluence: 2,
+        defenderAgility: 13,
+        defenderDefense: 3,
+        evasionBonusFromItems: 2,
+        hitGreenZone: 62,
+        hitBonusFromItems: 5,
+        evasionChance: 14,
+        criticalChance: 11,
+        criticalMultiplier: 1.5,
+        initiativeScore: 20,
+        rolledDamage: 18,
+        finalDamage: 27,
+        formulasJson: {},
+        explanation: 'DB combat Luck preview.',
+      }),
+      rows: signal([
+        {
+          surfaceKey: 'hit',
+          label: 'Hit chance',
+          formulaTargetKey: 'combat_hit_green_zone',
+          value: 62,
+          unit: 'percent',
+          helperText: 'Damager hit window after DB-owned combat formula context.',
+        },
+        {
+          surfaceKey: 'critical_damage',
+          label: 'Critical damage multiplier',
+          formulaTargetKey: null,
+          value: 1.5,
+          unit: 'multiplier',
+          helperText: 'DB-returned critical multiplier context.',
+        },
+      ]),
+      valueText: (row) => row.unit === 'multiplier' ? `x${row.value}` : `${row.value}%`,
+      isLoading: signal(false),
+      error: signal(null),
+      comparisonRows: signal([
+        {
+          label: 'Current Luck',
+          attackerLuck: 12,
+          attackerLuckInfluence: 4,
+          defenderLuck: 6,
+          defenderLuckInfluence: 2,
+          hitGreenZone: 62,
+          evasionChance: 14,
+          criticalChance: 11,
+          criticalMultiplier: 1.5,
+          finalDamage: 27,
+          initiativeScore: 20,
+        },
+      ]),
+      isComparisonLoading: signal(false),
+      comparisonError: signal(null),
+    };
 
     await TestBed.configureTestingModule({
       imports: [LuckLabPage],
@@ -205,6 +286,13 @@ describe('LuckLabPage', () => {
       .overrideComponent(LuckLabPage, {
         set: {
           providers: [{ provide: LuckLabPageState, useValue: pageState }],
+        },
+      })
+      .overrideComponent(LuckLabCombatSection, {
+        set: {
+          providers: [
+            { provide: LuckLabCombatSectionState, useValue: combatSectionState },
+          ],
         },
       })
       .compileComponents();
@@ -251,6 +339,14 @@ describe('LuckLabPage', () => {
     expect(text).toContain('DB encounter fallback preview.');
     expect(text).toContain('nothing is the deterministic fallback outcome');
     expect(text).toContain('Encounter subtype');
+    expect(text).toContain('Combat RNG');
+    expect(text).toContain('Damager vs target preview');
+    expect(text).toContain('DB combat Luck preview.');
+    expect(text).toContain('Dexterity 22');
+    expect(text).toContain('combat_hit_green_zone');
+    expect(text).toContain('not exposed by current DB metadata');
+    expect(text).toContain('62%');
+    expect(text).toContain('x1.5');
     expect(fixture.debugElement.queryAll(By.css('p-slider')).length).toBe(2);
     expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(4);
   });

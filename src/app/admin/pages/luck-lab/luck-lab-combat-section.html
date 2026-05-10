@@ -1,0 +1,130 @@
+<section class="mg-card p-lg w-100 flex-col gap-md">
+  <div class="flex-row-between-center flex-col-sm gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Combat RNG</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Damager vs target preview</h3>
+      <p class="mb-0">
+        This panel previews the DB-owned combat formula context for one damager against one
+        target. It does not run a combat simulator or resolve a fight outcome.
+      </p>
+    </div>
+
+    @if (section.isLoading()) {
+      <span class="card-legend">Refreshing</span>
+    }
+  </div>
+
+  @if (section.error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  @if (section.preview(); as combat) {
+    <div class="grid-3 gap-md">
+      <article class="mg-surface-card p-md flex-col gap-xs">
+        <span class="card-legend">Damager</span>
+        <strong>Luck {{ combat.attackerLuck }} -> influence {{ combat.attackerLuckInfluence }}</strong>
+        <span>Dexterity {{ combat.attackerDexterity }}</span>
+        <span>Cunning {{ combat.attackerCunning }}</span>
+        <span>Hit bonus from items {{ combat.hitBonusFromItems }}</span>
+      </article>
+
+      <article class="mg-surface-card p-md flex-col gap-xs">
+        <span class="card-legend">Target</span>
+        <strong>Luck {{ combat.defenderLuck }} -> influence {{ combat.defenderLuckInfluence }}</strong>
+        <span>Agility {{ combat.defenderAgility }}</span>
+        <span>Defense {{ combat.defenderDefense }}</span>
+        <span>Evasion bonus from items {{ combat.evasionBonusFromItems }}</span>
+      </article>
+
+      <article class="mg-surface-card p-md flex-col gap-xs">
+        <span class="card-legend">Attack context</span>
+        <strong>Attack {{ combat.attackIndex }} of {{ combat.attackCount }}</strong>
+        <span>Rolled damage {{ combat.rolledDamage }}</span>
+        <span>Crit bonus from items {{ combat.critBonusFromItems }}</span>
+        <span>{{ combat.explanation }}</span>
+      </article>
+    </div>
+  } @else {
+    <p>Waiting for DB combat RNG preview.</p>
+  }
+
+  <div class="grid-2 gap-md">
+    @for (row of section.rows(); track row.surfaceKey) {
+      <article class="mg-surface-card p-md flex-col gap-sm">
+        <span class="card-legend">{{ row.label }}</span>
+        <strong>{{ section.valueText(row) }}</strong>
+        <span>{{ row.helperText }}</span>
+        @if (row.formulaTargetKey) {
+          <span class="muted-text">Formula target: {{ row.formulaTargetKey }}</span>
+        } @else {
+          <span class="muted-text">Formula target: not exposed by current DB metadata</span>
+        }
+      </article>
+    }
+  </div>
+
+  @if (section.comparisonError(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  <p-table [value]="section.comparisonRows()" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Preset</th>
+        <th>Damager Luck</th>
+        <th>Damager influence</th>
+        <th>Target Luck</th>
+        <th>Target influence</th>
+        <th>Hit</th>
+        <th>Evasion</th>
+        <th>Crit</th>
+        <th>Crit damage</th>
+        <th>Final damage</th>
+        <th>Initiative</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td>{{ row.label }}</td>
+        <td>{{ row.attackerLuck ?? 'N/A' }}</td>
+        <td>{{ row.attackerLuckInfluence ?? 'N/A' }}</td>
+        <td>{{ row.defenderLuck ?? 'N/A' }}</td>
+        <td>{{ row.defenderLuckInfluence ?? 'N/A' }}</td>
+        <td>
+          @if (row.hitGreenZone === null) {
+            N/A
+          } @else {
+            {{ row.hitGreenZone }}%
+          }
+        </td>
+        <td>
+          @if (row.evasionChance === null) {
+            N/A
+          } @else {
+            {{ row.evasionChance }}%
+          }
+        </td>
+        <td>
+          @if (row.criticalChance === null) {
+            N/A
+          } @else {
+            {{ row.criticalChance }}%
+          }
+        </td>
+        <td>
+          @if (row.criticalMultiplier === null) {
+            N/A
+          } @else {
+            x{{ row.criticalMultiplier }}
+          }
+        </td>
+        <td>{{ row.finalDamage ?? 'N/A' }}</td>
+        <td>{{ row.initiativeScore ?? 'N/A' }}</td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  @if (section.isComparisonLoading()) {
+    <p class="card-legend mb-0">Refreshing combat comparison rows</p>
+  }
+</section>

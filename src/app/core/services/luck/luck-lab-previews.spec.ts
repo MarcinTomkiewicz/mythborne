@@ -107,6 +107,10 @@ describe('LuckLabPreviews', () => {
       'non_trial_encounter',
     );
     expect(result.combatPreview?.hitGreenZone).toBe(62);
+    expect(result.combatPreview?.attackerDexterity).toBe(10);
+    expect(result.combatPreview?.defenderAgility).toBe(10);
+    expect(result.combatPreview?.initiativeScore).toBe(10);
+    expect(result.combatPreview?.rolledDamage).toBe(20);
     expect(result.generatedItemPreviews[0].prefixAffix?.key).toBe('sharp');
     expect(result.dropDistribution.status).toBe('unsupported');
   });

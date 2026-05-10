@@ -396,6 +396,7 @@ describe('LuckLabPageState', () => {
       },
     ]);
   });
+
 });
 
 function chancePreview(

@@ -165,14 +165,27 @@ export interface LuckGeneratedItemAffixPreview {
 }
 
 export interface CombatLuckPreview {
+  attackCount: number;
+  attackIndex: number;
+  attackerCunning: number;
+  attackerDexterity: number;
   attackerLuck: number;
   attackerLuckInfluence: number;
+  combatantAgility: number;
+  combatantIntelligence: number;
+  critBonusFromItems: number;
   defenderLuck: number;
   defenderLuckInfluence: number;
+  defenderAgility: number;
+  defenderDefense: number;
+  evasionBonusFromItems: number;
   hitGreenZone: number;
+  hitBonusFromItems: number;
   evasionChance: number;
   criticalChance: number;
   criticalMultiplier: number;
+  initiativeScore: number;
+  rolledDamage: number;
   finalDamage: number;
   formulasJson: Json;
   explanation: string;

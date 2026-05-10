@@ -9549,6 +9549,8 @@ If a required DB/RPC contract is missing, Codex must report a DB dependency inst
 - Existing DB formula target labels are used.
 - No duplicate frontend formula target naming is introduced.
 
+**Status:** Accepted on 2026-05-10. Added a dedicated Combat RNG panel over DB-owned `previewCombat`, showing hit chance, evasion chance, critical chance, DB-returned critical multiplier, final damage and optional initiative with Luck 0/current/high comparison rows. Combat-specific row mapping, formatting and comparison accessors live in section-local state rather than `LuckLabPageState`. The local `formulasJson` compatibility parser was removed; formula target keys are shown only as metadata, and missing stable combat formula labels / separate critical multiplier target are tracked as a DB metadata gap. No combat simulator, local formula/RNG/drop simulation, direct writes, generated type edits or gameplay authority were added. Verification passed with focused Luck Lab page/page-state/combat-section-state/service-state specs, `npx tsc --noEmit`, `npm run build` with known warnings, static greps and prerender route output for `/admin/luck-lab`. Follow-up for V14/performance: narrow `LuckLabCombatSectionState` comparison reload dependencies if the current combat preview continues to consume only attacker Luck.
+
 ---
 
 ## Task V9 — Drop single-roll preview panel
