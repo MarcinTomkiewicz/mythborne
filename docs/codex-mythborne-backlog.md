@@ -10639,6 +10639,8 @@ Po stworzeniu hero wejść do gry i domyślnie otworzyć stat allocation, ale ni
 - Refresh / ponowne wejście z tym samym hero prowadzi na dashboard.
 - Zapis statów nadal działa przez istniejący canonical flow.
 
+**Status:** Accepted on 2026-05-11. X4 confirmed the post-creation handoff uses DB `route_next_action = stat_allocation` to route freshly created heroes to `/hero/attributes`, while returning existing heroes with DB dashboard entry route to `/hero/dashboard` through the start-flow entry state. `/hero/attributes` now exposes a normal dashboard exit link, so stat allocation is an ordinary in-game screen rather than a locked tutorial/wizard. The canonical `create_hero_start_flow` and `save_stat_allocation(...)` paths were unchanged; no auth uid as hero id, direct hero/start-flow/stat-allocation writes, generated-type edits, migrations or pre-acceptance status docs changes were added. Verification passed with focused routing/start-flow/stat-allocation specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps. Manual/browser smoke remains pending.
+
 ---
 
 ## Task X5 — Sandbox multi-hero switcher

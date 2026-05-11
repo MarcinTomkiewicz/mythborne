@@ -1,6 +1,6 @@
 Cześć. Pracujemy nad projektem Mythsworn.
 
-Najpierw przeczytaj `AGENTS.md` oraz `mythborne_codex_review_standards.md`, jeśli istnieje. Potem pracuj zgodnie z bieżącym taskiem i aktualnymi plikami projektu. Jeśli któryś z wymaganych plików nie istnieje, odnotuj to w raporcie końcowym, ale nie zatrzymuj pracy, chyba że brak pliku realnie blokuje task.
+Najpierw przeczytaj `AGENTS.md` oraz `mythborne_codex_review_standards.md`, jeśli istnieją. Potem pracuj zgodnie z bieżącym taskiem i aktualnymi plikami projektu. Jeśli któryś z wymaganych plików nie istnieje, odnotuj to w raporcie końcowym, ale nie zatrzymuj pracy, chyba że brak pliku realnie blokuje task.
 
 Twoim zadaniem jest implementować dokładnie wskazany task w istniejącym repozytorium. Pracuj małymi, kontrolowanymi zmianami:
 - realizuj tylko bieżący task;
@@ -13,8 +13,18 @@ Twoim zadaniem jest implementować dokładnie wskazany task w istniejącym repoz
 Przed rozpoczęciem edycji kodu wykonaj krótki preflight dla siebie:
 - sprawdź `git status --short`;
 - sprawdź właściwe dokumenty i źródła dla taska;
-- znajdź istniejące wzorce do reuse;
+- sprawdź istniejące wzorce do reuse;
 - ustal, czy jest blocker.
+
+Reuse oznacza przede wszystkim ponowne użycie istniejącej logiki: metod, helperów, utilsów, mapperów, validators, factories, form configów, serwisów RPC, state patterns i shared workflow patterns. Samo użycie komponentu/klasy, która naturalnie należy do edytowanej strony, nie jest wystarczającym dowodem reuse. Przed dopisaniem nowej logiki sprawdź zwłaszcza:
+- `core/factories`;
+- `core/validators`;
+- `core/utils`;
+- form configi i `FormFieldConfig`;
+- istniejące domain models/mappers;
+- `core/constants`;
+- istniejące services/RPC helpers;
+- shared/admin/game UI wrappers dopiero tam, gdzie chodzi o UI pattern.
 
 Nie zatrzymuj się po preflight, jeśli nie ma blockera albo nieoczekiwanego dirty tree. Preflight ma być początkiem pracy, nie osobnym zadaniem do akceptacji. Wynik preflightu uwzględnij dopiero w raporcie końcowym.
 
@@ -39,10 +49,17 @@ Raport końcowy maksymalnie 20 linijek. Tylko:
 - `Preflight`
 - `Changed`
 - `Not changed`
+- `Cleanup`
 - `Verification`
 - `Static checks`
+- `Reuse`
 - `Manual smoke: user-side checklist / N/A`
 - `Blockers/risks`
 - `Status docs: touched/not touched`
+
+W `Reuse` nie wymieniaj klas/komponentów tylko dlatego, że były częścią edytowanej strony. Napisz krótko:
+- `reused:` konkretne metody/helpery/utils/mappers/factories/validators/services/patterns użyte ponownie;
+- `checked but not reused:` konkretne istniejące rzeczy sprawdzone i powód odrzucenia;
+- `new:` nowe helpery/state/services/mappers/components i dlaczego istniejący wzorzec nie wystarczył.
 
 Nie pisz epopei. Nie streszczaj oczywistości. Jeśli jesteś zablokowany, napisz krótko: co blokuje, czego brakuje i jaki kontrakt/plik jest potrzebny.

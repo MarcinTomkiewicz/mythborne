@@ -101,6 +101,26 @@ describe('StartFlowEntryState', () => {
     expect(state.blocker()).toBe('District A is full.');
   });
 
+  it('routes an existing active hero to dashboard instead of stat allocation or creation', () => {
+    activeHeroState.set(activeContext('hero-1'));
+    activeHero.loadActiveHero.and.returnValue(of(activeContext('hero-1')));
+    startFlow.getServerAvailability.and.returnValue(of([
+      availability({
+        canEnterGame: true,
+        canCreateHero: false,
+        nextAction: 'dashboard',
+        defaultHeroId: 'hero-1',
+      }),
+    ]));
+
+    state.load();
+    state.enterSelectedServer();
+
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/dashboard');
+    expect(router.navigateByUrl).not.toHaveBeenCalledWith('/hero/attributes');
+    expect(router.navigateByUrl).not.toHaveBeenCalledWith('/auth/create-character');
+  });
+
   it('uses sandbox hero selection for multi-hero sandbox servers', () => {
     selectedServer.set(server({ kind: 'sandbox', key: 'sandbox' }));
     servers.set([server({ kind: 'sandbox', key: 'sandbox' })]);

@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
@@ -8,7 +9,7 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
 @Component({
   selector: 'app-hero-attributes-page',
   standalone: true,
-  imports: [ButtonModule, TableModule, TooltipModule, LoadingOverlay],
+  imports: [ButtonModule, RouterLink, TableModule, TooltipModule, LoadingOverlay],
   providers: [AttributeAllocationPageFacade],
   templateUrl: './attributes-page.html',
 })

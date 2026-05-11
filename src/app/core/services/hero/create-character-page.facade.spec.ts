@@ -80,6 +80,22 @@ describe('CreateCharacterPageFacade', () => {
     }));
   });
 
+  it('routes a freshly created hero to in-game stat allocation when DB returns stat_allocation', () => {
+    createHero.createHero.and.returnValue(of(heroCreationResult({
+      routeNextAction: 'stat_allocation',
+    })));
+    fillValidCreationForm(facade);
+
+    facade.submit();
+
+    expect(createHero.createHero).toHaveBeenCalled();
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/attributes');
+    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
+      severity: 'success',
+      summary: 'Bohater został stworzony',
+    }));
+  });
+
   it('shows a player-readable duplicate hero name error from the DB/RPC workflow', () => {
     createHero.createHero.and.returnValue(
       throwError(() => new Error('duplicate key value violates unique constraint')),
