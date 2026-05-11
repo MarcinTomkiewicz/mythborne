@@ -71,6 +71,14 @@ jobs:
       name: mythsworn-${{ needs.resolve-target.outputs.target }}
 
     steps:
+      - name: Workflow version marker
+        shell: bash
+        run: |
+          echo "Deploy Mythsworn workflow version: 2026-05-10-no-tar-listing"
+          echo "Branch/ref: ${{ github.ref_name }}"
+          echo "Target: ${{ needs.resolve-target.outputs.target }}"
+          echo "Port: ${{ needs.resolve-target.outputs.port }}"
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -140,7 +148,8 @@ jobs:
         shell: bash
         run: |
           tar czf mythsworn-dist.tgz -C dist/mythos-hunter-2-0 browser server
-          tar tzf mythsworn-dist.tgz | head -50
+          test -s mythsworn-dist.tgz
+          ls -lh mythsworn-dist.tgz
 
       - name: Prepare SSH
         shell: bash
