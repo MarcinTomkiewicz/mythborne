@@ -20,6 +20,7 @@ import { ExplorationDebugFeedbackState } from './exploration-debug-feedback.stat
 import { ExplorationDebugPageState } from './exploration-debug-page.state';
 import { ExplorationDebugRuntimeState } from './exploration-debug-runtime.state';
 import { ExplorationTimerConfigState } from './exploration-timer-config.state';
+import { ExplorationSmokeReadinessState } from './exploration-smoke-readiness.state';
 
 describe('ExplorationDebugPageState', () => {
   let activeServer: Partial<ActiveServer>;
@@ -30,6 +31,7 @@ describe('ExplorationDebugPageState', () => {
   let configDefinitions: jasmine.SpyObj<ConfigDefinitions>;
   let moderationActions: jasmine.SpyObj<ModerationActions>;
   let toast: jasmine.SpyObj<ToastService>;
+  let smokeReadiness: Partial<ExplorationSmokeReadinessState>;
   let state: ExplorationDebugPageState;
 
   beforeEach(() => {
@@ -96,6 +98,12 @@ describe('ExplorationDebugPageState', () => {
     ]);
     moderationActions.searchHeroTargets.and.returnValue(of([heroTarget()]));
     toast = jasmine.createSpyObj<ToastService>('ToastService', ['show', 'clear']);
+    smokeReadiness = {
+      items: signal([]),
+      isLoading: signal(false),
+      error: signal(null),
+      load: jasmine.createSpy('loadSmokeReadiness'),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -106,6 +114,7 @@ describe('ExplorationDebugPageState', () => {
         ExplorationTimerConfigState,
         ExplorationDebugActionsState,
         ExplorationDebugPageState,
+        { provide: ExplorationSmokeReadinessState, useValue: smokeReadiness },
         { provide: ActiveServer, useValue: activeServer },
         { provide: HeroExplorationDebug, useValue: debug },
         { provide: ExplorationDefinitions, useValue: definitions },

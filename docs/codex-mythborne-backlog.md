@@ -6,7 +6,7 @@ Use this as a practical task queue. Concept documents remain informational; this
 
 ## Latest accepted W11 follow-up
 
-**Implementation note:** W11 accepted on 2026-05-11. The `/game/exploration` reward path no longer uses stale latest-challenge fallback behavior: challenge rewards read only exact `getChallengeReward({ challengeAttemptId })`, direct Resource Encounter rewards read exact `getStepReward({ stepId })`, and the old `hero_exploration_challenge_attempts` fallback scan was removed. Trial manifestation failure is distinct from ordinary Nothing, empty/null canonical reward read models show explicit DB-read-model unavailability, resource reward labels no longer duplicate resource type text, and sandbox backend-shape diagnostics remain gated. Private/public report detail consumes the regenerated contextual report sections from canonical report RPCs. Verification passed with focused reward/report/exploration specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for removed latest-challenge fallback terms. Representative live-loop smoke moves to W12/W13.
+**Implementation note:** W12 accepted on 2026-05-11. `/admin/exploration-debug` now shows a global exploration smoke readiness matrix for the minimum Trial, Encounter, reward and effect content needed by W13. The matrix reuses `ExplorationTrialAdmin.getAdminData()` and `ExplorationEncounterAdmin.getAdminData()`, shows 10 `ready / missing / incomplete` rows with definition, reward assignment/profile/entry and effect label/summary data quality issues, and does not seed, mutate, infer from Armory/latest challenge, edit generated types, or add fallback reward resolution. Verification passed with focused smoke readiness/debug specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for seeding/mutation/inference paths. Representative full-loop smoke moves to W13.
 
 Canonical source order:
 
@@ -10180,7 +10180,7 @@ Ensure admin/tester surfaces clearly show whether the minimum exploration smoke 
   - one complete Buff Encounter;
   - one complete Debuff Encounter;
   - Trial reward with item generation;
-  - Combat Trial/Encounter XP/CP reward path;
+  - Combat Encounter XP reward path;
   - Resource Encounter resource reward path;
   - Buff Encounter active buff effect path;
   - Debuff Encounter active debuff effect path.
@@ -10221,6 +10221,8 @@ Ensure admin/tester surfaces clearly show whether the minimum exploration smoke 
   - no frontend content seeding;
   - no direct inserts/updates;
   - no Armory reward inference.
+
+**Status:** Accepted on 2026-05-11. W12 added the global smoke readiness matrix to `/admin/exploration-debug`, backed by existing Trial/Encounter admin read models rather than a new direct table aggregation. It surfaces complete Combat Trial, Combat Encounter, Resource Encounter, Buff Encounter, Debuff Encounter, Trial item-generation reward, Combat Encounter XP reward, Resource Encounter resource reward, Buff active effect and Debuff active effect readiness. Screenshot smoke confirmed the 10 readiness rows render as ready with definitions, rewards and effects; missing/incomplete live states remain covered by focused mapper specs only. Focused specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps passed.
 
 ---
 

@@ -17,6 +17,7 @@ import { ExplorationDebugFeedbackState } from './exploration-debug-feedback.stat
 import { ExplorationDebugPageState } from './exploration-debug-page.state';
 import { ExplorationDebugRuntimeState } from './exploration-debug-runtime.state';
 import { ExplorationTimerConfigState } from './exploration-timer-config.state';
+import { ExplorationSmokeReadinessState } from './exploration-smoke-readiness.state';
 
 @Component({
   selector: 'app-exploration-debug-page',
@@ -37,6 +38,7 @@ import { ExplorationTimerConfigState } from './exploration-timer-config.state';
     ExplorationDebugFeedbackState,
     ExplorationDebugScopeState,
     ExplorationDefinitionsState,
+    ExplorationSmokeReadinessState,
     ExplorationDebugRuntimeState,
     ExplorationTimerConfigState,
     ExplorationDebugActionsState,

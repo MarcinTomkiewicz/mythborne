@@ -36,6 +36,79 @@
         testing player exploration; trial counters alone are not enough to start the flow.
       </p-message>
     }
+    @if (page.smokeReadiness.error(); as message) {
+      <p-message severity="error">{{ message }}</p-message>
+    }
+
+    <section class="mg-card p-lg w-100">
+      <div class="flex-col gap-md">
+        <div class="flex-col gap-xs">
+          <h3 class="mg-section__title mg-section__title--xs mb-0">
+            Exploration smoke readiness
+          </h3>
+          <p class="muted-text mb-0">
+            Global Trial, Encounter, reward and effect content readiness needed for W13 smoke.
+          </p>
+        </div>
+
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
+          @for (item of page.smokeReadiness.items(); track item.key) {
+            <div class="flex-col gap-xs">
+              <div class="flex-row-between-start flex-col-sm gap-xs">
+                <strong>{{ item.label }}</strong>
+                <span
+                  class="tag-badge"
+                  [class.tag-badge--success]="item.status === 'ready'"
+                  [class.tag-badge--danger]="item.status === 'missing'"
+                  [class.tag-badge--warning]="item.status === 'incomplete'"
+                >
+                  {{ item.status }}
+                </span>
+              </div>
+
+              @if (item.definition; as definition) {
+                <span>
+                  {{ definition.label }} ({{ definition.key }})
+                </span>
+                <span class="muted-text">
+                  {{ definition.kind }} / {{ definition.subtype ?? 'no subtype' }} / {{ definition.id }}
+                </span>
+              } @else {
+                <span class="muted-text">No matching definition exposed by DB read models.</span>
+              }
+
+              @if (item.reward; as reward) {
+                <span class="muted-text">
+                  Reward assignment {{ reward.assignmentId ?? 'missing' }};
+                  profile {{ reward.profileLabel ?? reward.profileId ?? 'missing' }};
+                  entries {{ reward.entryKinds.length ? reward.entryKinds.join(', ') : 'none' }}
+                </span>
+              }
+
+              @if (item.effect; as effect) {
+                <span class="muted-text">
+                  Effect payload {{ effect.payloadId ?? 'missing' }};
+                  definition {{ effect.label ?? effect.definitionKey ?? effect.definitionId ?? 'missing' }};
+                  summary {{ effect.summary ?? 'missing' }};
+                  kind {{ effect.effectKind ?? 'missing' }};
+                  active {{ effect.isDefinitionActive ?? 'unknown' }}
+                </span>
+              }
+
+              @if (item.issues.length) {
+                <ul class="mb-0">
+                  @for (issue of item.issues; track issue) {
+                    <li>{{ issue }}</li>
+                  }
+                </ul>
+              }
+            </div>
+          } @empty {
+            <p class="muted-text mb-0">Readiness matrix has no rows.</p>
+          }
+        </div>
+      </div>
+    </section>
 
     <section class="mg-card p-lg w-100">
       <div class="grid-form" [formGroup]="page.scopeForm">
