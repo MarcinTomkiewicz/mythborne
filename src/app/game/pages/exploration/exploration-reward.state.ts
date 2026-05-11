@@ -1,16 +1,34 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
+import { Observable, finalize } from 'rxjs';
+import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import {
   ExplorationChallengeRewardReadModel,
   RewardGrantEntryReadModel,
 } from '../../../core/domain/exploration/exploration-reward.model';
+import { HeroExplorationStepResolutionReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
+import { ItemReadModel } from '../../../core/domain/item/item.model';
 import { HeroExplorationRewards } from '../../../core/services/exploration/hero-exploration-rewards';
 import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
-import { humanizeKey } from '../../../core/utils/normalize-text';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
+import {
+  rewardDisplay,
+  rewardEntryDetails,
+  rewardEntryLabel,
+  rewardItemDetails,
+  rewardItemLabel,
+} from './exploration-reward-card-ui';
+import {
+  rewardBackendDiagnosticRows,
+  rewardDiagnosticRows,
+} from './exploration-reward-diagnostics-ui';
+import { ExplorationStepState } from './exploration-step.state';
+
+type RewardSource =
+  | { kind: 'challenge_attempt'; explorationId: string; challengeAttemptId: string }
+  | { kind: 'step'; explorationId: string; stepId: string };
 
 @Injectable()
 export class ExplorationRewardState {
@@ -18,130 +36,123 @@ export class ExplorationRewardState {
   private readonly feedback = inject(ExplorationFeedbackState);
   private readonly overview = inject(ExplorationOverviewState);
   private readonly rewards = inject(HeroExplorationRewards);
+  private readonly step = inject(ExplorationStepState);
   private readonly loadToken = new RequestToken();
+  private readonly currentSource = signal<RewardSource | null>(null);
+  private readonly preferredChallengeReward = signal<{
+    explorationId: string;
+    challengeAttemptId: string;
+  } | null>(null);
 
   readonly reward = signal<ExplorationChallengeRewardReadModel | null>(null);
   readonly isLoadingReward = signal(false);
-  readonly hasRewardGrant = computed(() => Boolean(this.reward()?.rewardGrant));
-  readonly hasRewardEntries = computed(() => Boolean(this.reward()?.entries.length));
-  readonly visibleRewardEntries = computed(() =>
-    this.reward()?.entries.filter(isVisibleRewardEntry) ?? [],
+  readonly rewardDisplay = computed(() => rewardDisplay(this.reward()));
+  readonly rewardDiagnostics = computed(() => rewardDiagnosticRows(this.reward()));
+  readonly rewardBackendDiagnostics = computed(() =>
+    rewardBackendDiagnosticRows(this.reward(), this.currentSource(), this.isLoadingReward()),
   );
-  readonly hiddenRewardDiagnostics = computed(() =>
-    this.reward()?.entries
-      .filter((entry) => !isVisibleRewardEntry(entry))
-      .map((entry) => this.hiddenEntryDiagnostic(entry)) ?? [],
+  readonly rewardUnavailableMessage = computed(() =>
+    this.currentSource() && !this.isLoadingReward() && !this.reward()
+      ? 'Reward details are unavailable from the DB read model.'
+      : null,
   );
-  readonly rewardGrantDiagnostic = computed(() => {
-    const grant = this.reward()?.rewardGrant ?? null;
-
-    if (!grant) {
-      return null;
-    }
-
-    if (grant.status === 'granted' && !grant.reason) {
-      return null;
-    }
-
-    return grant.reason
-      ? `Status grantu: ${grant.status}. Powód DB: ${sentenceText(grant.reason)}`
-      : `Status grantu: ${grant.status}. DB nie zwróciła dodatkowego powodu.`;
-  });
-  readonly rewardSummary = computed(() => this.summary(this.reward()));
 
   constructor() {
     effect(() => {
-      const state = this.overview.state();
-      const explorationId = state?.exploration?.id ?? null;
+      const source = this.resolveRewardSource();
+      this.currentSource.set(source);
 
-      if (!explorationId) {
-        this.reward.set(null);
+      if (!source) {
+        this.clearReward();
         return;
       }
 
-      this.loadReward(explorationId);
+      this.loadReward(source);
     });
   }
 
+  preferCompletedChallengeReward(
+    explorationId: string | null,
+    challengeAttemptId: string | null,
+  ): void {
+    if (explorationId && challengeAttemptId) {
+      this.preferredChallengeReward.set({ explorationId, challengeAttemptId });
+    }
+  }
+
   entryLabel(entry: RewardGrantEntryReadModel): string {
-    switch (entry.entryKind) {
-      case 'experience':
-      case 'exp':
-        return `${entry.amount ?? 0} EXP`;
-      case 'character_points':
-      case 'hero_points':
-        return `${entry.amount ?? 0} Punktów Postaci`;
-      case 'resource':
-        return `${entry.amount ?? 0} ${entry.resourceType ?? 'zasób'}`;
-      case 'item':
-      case 'generated_item':
-        return entry.itemId
-          ? `Przedmiot: ${this.itemLabel(entry.itemId)}`
-          : 'Losowanie przedmiotu bez utworzonego itemu';
-      case 'effect':
-        return entry.effectDefinitionId
-          ? `Efekt ${entry.effectDefinitionId}`
-          : 'Nagroda efektu';
-      default:
-        return `${humanizeKey(entry.entryKind, 'Reward')}${entry.amount === null ? '' : `: ${entry.amount}`}`;
-    }
-  }
-
-  itemLabel(itemId: string | null): string {
-    const item = this.reward()?.items.find((entry) => entry.id === itemId);
-
-    return item ? `${item.name} (${item.id})` : itemId ?? 'N/D';
-  }
-
-  itemDetails(itemId: string | null): string {
-    const item = this.reward()?.items.find((entry) => entry.id === itemId);
-
-    if (!item) {
-      return 'DB nie zwróciła trwałego wiersza itemu dla tej nagrody.';
-    }
-
-    return [
-      `Wartość ${item.drachmaValue ?? 'N/D'}`,
-      `Jakość ${item.generationQualityKey ?? 'N/D'}`,
-      `Baza ${item.generationBaseId ?? 'N/D'}`,
-      `Prefix ${item.prefixAffixId ?? 'N/D'}`,
-      `Suffix ${item.suffixAffixId ?? 'N/D'}`,
-      `Status ${item.status}`,
-    ].join(' - ');
+    return rewardEntryLabel(entry);
   }
 
   entryDetails(entry: RewardGrantEntryReadModel): string | null {
-    if (entry.itemId) {
-      return this.itemDetails(entry.itemId);
-    }
-
-    if (entry.effectDefinitionId) {
-      return `Efekt DB: ${entry.effectDefinitionId}`;
-    }
-
-    if (entry.resourceType) {
-      return `Zasób DB: ${entry.resourceType}`;
-    }
-
-    return null;
+    return rewardEntryDetails(entry);
   }
 
-  private loadReward(explorationId: string): void {
+  itemLabel(item: ItemReadModel): string {
+    return rewardItemLabel(item);
+  }
+
+  itemDetails(item: ItemReadModel): string {
+    return rewardItemDetails(item);
+  }
+
+  private resolveRewardSource(): RewardSource | null {
+    const state = this.overview.state();
+    const explorationId = state?.exploration?.id ?? null;
+
+    if (!explorationId || state?.activeStep) {
+      return null;
+    }
+
+    const stepResult = this.step.currentStepResult();
+    const preferred = this.preferredChallengeReward();
+
+    if (stepResult?.explorationId === explorationId) {
+      if (stepResult.challengeAttemptId) {
+        return preferred?.explorationId === explorationId &&
+          preferred.challengeAttemptId === stepResult.challengeAttemptId
+          ? {
+              kind: 'challenge_attempt',
+              explorationId,
+              challengeAttemptId: stepResult.challengeAttemptId,
+            }
+          : null;
+      }
+
+      return stepResult.outcomeKind === 'encounter' &&
+        this.stepEncounterKind(stepResult) === ENCOUNTER_KIND.resource
+        ? { kind: 'step', explorationId, stepId: stepResult.stepId }
+        : null;
+    }
+
+    return preferred?.explorationId === explorationId
+      ? {
+          kind: 'challenge_attempt',
+          explorationId,
+          challengeAttemptId: preferred.challengeAttemptId,
+        }
+      : null;
+  }
+
+  private loadReward(source: RewardSource): void {
     const context = this.overview.currentContext();
 
     if (!context) {
+      this.clearReward();
       return;
     }
 
     const token = this.loadToken.next();
+    const request: Observable<ExplorationChallengeRewardReadModel | null> =
+      source.kind === 'step'
+        ? this.rewards.getStepReward({ stepId: source.stepId })
+        : this.rewards.getChallengeReward({
+            challengeAttemptId: source.challengeAttemptId,
+          });
 
     this.reward.set(null);
     this.isLoadingReward.set(true);
-    this.rewards
-      .getLatestChallengeReward({
-        heroId: context.heroId,
-        explorationId,
-      })
+    request
       .pipe(
         finalize(() => {
           if (this.loadToken.isCurrent(token)) {
@@ -152,18 +163,14 @@ export class ExplorationRewardState {
       )
       .subscribe({
         next: (reward) => {
-          if (!this.isCurrentLoad(token, context.heroId, context.difficultyKey, explorationId)) {
-            return;
+          if (this.isCurrentLoad(token, context.heroId, context.difficultyKey, source)) {
+            this.reward.set(reward);
           }
-
-          this.reward.set(reward);
         },
         error: (error: unknown) => {
-          if (!this.isCurrentLoad(token, context.heroId, context.difficultyKey, explorationId)) {
-            return;
+          if (this.isCurrentLoad(token, context.heroId, context.difficultyKey, source)) {
+            this.feedback.setError(error, 'Nie udało się odczytać nagrody eksploracji.');
           }
-
-          this.feedback.setError(error, 'Nie udało się odczytać nagrody eksploracji.');
         },
       });
   }
@@ -172,89 +179,34 @@ export class ExplorationRewardState {
     token: number,
     heroId: string,
     difficultyKey: string,
-    explorationId: string,
+    source: RewardSource,
   ): boolean {
+    const current = this.currentSource();
+
     return (
       this.loadToken.isCurrent(token) &&
       this.overview.isCurrentContext(heroId, difficultyKey) &&
-      this.overview.state()?.exploration?.id === explorationId
+      current?.kind === source.kind &&
+      current.explorationId === source.explorationId &&
+      (
+        source.kind === 'step'
+          ? current.kind === 'step' && current.stepId === source.stepId
+          : current.kind === 'challenge_attempt' &&
+            current.challengeAttemptId === source.challengeAttemptId
+      )
     );
   }
 
-  private summary(reward: ExplorationChallengeRewardReadModel | null): string {
-    if (!reward) {
-      return 'DB nie zapisała jeszcze ukończonego challenge reward dla tej eksploracji.';
-    }
-
-    if (reward.success === false || !reward.rewardGrantId) {
-      return 'Ostatni ukończony challenge nie przyznał nagrody.';
-    }
-
-    if (!reward.entries.length) {
-      return 'Reward grant istnieje, ale DB nie zapisała wpisów nagrody.';
-    }
-
-    return `DB zapisała ${reward.entries.length} wpis${reward.entries.length === 1 ? '' : 'y'} nagrody.`;
+  private clearReward(): void {
+    this.loadToken.next();
+    this.reward.set(null);
+    this.isLoadingReward.set(false);
   }
 
-  private hiddenEntryDiagnostic(entry: RewardGrantEntryReadModel): string {
-    const reason = metadataReason(entry);
-    const label = diagnosticEntryLabel(entry);
+  private stepEncounterKind(result: HeroExplorationStepResolutionReadModel): string | null {
+    const metadata = jsonRecord(result.metadataJson);
 
-    if (reason) {
-      return `${label} nie utworzył itemu. Powód DB: ${sentenceText(reason)}`;
-    }
-
-    return `${label} nie ma itemId. To może oznaczać legalny wynik bez dropu albo brak szczegółu diagnostycznego w DB.`;
-  }
-
-}
-
-function isVisibleRewardEntry(entry: RewardGrantEntryReadModel): boolean {
-  return !isItemRewardEntry(entry) || Boolean(entry.itemId);
-}
-
-function isItemRewardEntry(entry: RewardGrantEntryReadModel): boolean {
-  return entry.entryKind === 'item' || entry.entryKind === 'generated_item';
-}
-
-function metadataReason(entry: RewardGrantEntryReadModel): string | null {
-  const metadata = jsonRecord(entry.metadataJson);
-
-  return optionalText(read(
-    metadata,
-    'failureReason',
-    'failure_reason',
-    'reason',
-    'statusReason',
-    'status_reason',
-    'itemGenerationReason',
-    'item_generation_reason',
-    'itemGenerationError',
-    'item_generation_error',
-  ));
-}
-
-function sentenceText(value: string): string {
-  return /[.!?]$/.test(value) ? value : `${value}.`;
-}
-
-function diagnosticEntryLabel(entry: RewardGrantEntryReadModel): string {
-  switch (entry.entryKind) {
-    case 'item':
-    case 'generated_item':
-      return 'Wpis losowania przedmiotu';
-    case 'experience':
-    case 'exp':
-      return 'Wpis EXP';
-    case 'character_points':
-    case 'hero_points':
-      return 'Wpis Punktów Postaci';
-    case 'resource':
-      return 'Wpis zasobu';
-    case 'effect':
-      return 'Wpis efektu';
-    default:
-      return `Wpis ${humanizeKey(entry.entryKind, 'Reward')}`;
+    return result.selectedDefinition?.encounterKind
+      ?? optionalText(read(metadata, 'encounterKind', 'encounter_kind'));
   }
 }

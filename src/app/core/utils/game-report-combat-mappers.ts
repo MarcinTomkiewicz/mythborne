@@ -92,7 +92,7 @@ function parseCombatAttacks(value: Json | undefined): GameReportCombatAttack[] {
       actorSide: requiredJsonString(readJsonField(record, 'actorSide'), 'actorSide'),
       targetSide: requiredJsonString(readJsonField(record, 'targetSide'), 'targetSide'),
       sourceKind: optionalJsonString(readJsonField(record, 'sourceKind')),
-      sourceLabel: requiredJsonString(readJsonField(record, 'sourceLabel'), 'sourceLabel'),
+      sourceLabel: optionalJsonString(readJsonField(record, 'sourceLabel')),
       timingHit: optionalJsonBoolean(readJsonField(record, 'timingHit')),
       evaded: optionalJsonBoolean(readJsonField(record, 'evaded')) ?? false,
       critical: optionalJsonBoolean(readJsonField(record, 'critical')) ?? false,

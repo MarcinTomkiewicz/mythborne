@@ -189,4 +189,127 @@ describe('GameReportContent', () => {
     expect(text).not.toContain('PvP combat report content pending');
     expect(text).not.toContain('pvp_attack_results');
   });
+
+  it('renders DB-owned Trial story sections before related combat reports', () => {
+    fixture.componentRef.setInput('report', {
+      participants: [],
+      itemReferences: [],
+      trialSection: {
+        sectionKind: 'trial',
+        title: 'Trial completed',
+        summary: 'Hero One survived the arena.',
+        badge: 'Success',
+        facts: [{ label: 'Outcome', value: 'Victory' }],
+        items: [],
+      },
+      encounterSection: null,
+      effectSection: null,
+      rewardSection: {
+        sectionKind: 'reward',
+        title: 'Reward',
+        summary: 'The DB granted the trial reward.',
+        badge: null,
+        facts: [],
+        items: [
+          {
+            label: 'Experience',
+            value: '70 EXP',
+            details: ['70 Character Points', 'Reward blade'],
+          },
+        ],
+      },
+      combatSection: {
+        sourceType: 'trial',
+        outcome: 'initiator_victory',
+        winnerSide: 'hero',
+        loserSide: 'opponent',
+        turnsCompleted: 1,
+        startedAt: null,
+        completedAt: null,
+        participants: [],
+        attacks: [
+          {
+            turnNumber: 1,
+            attackOrder: 10,
+            actorSide: 'hero',
+            targetSide: 'opponent',
+            sourceKind: 'item',
+            sourceLabel: null,
+            timingHit: true,
+            evaded: false,
+            critical: false,
+            criticalDamage: null,
+            rolledDamage: 8,
+            finalDamage: 8,
+            targetHealthBefore: 8,
+            targetHealthAfter: 0,
+            displayText: 'Hero One ends the fight.',
+          },
+        ],
+      },
+      relatedReports: [
+        {
+          reportId: 'combat-report-1',
+          publicToken: 'combat-token-1',
+          reportTypeKey: 'combat',
+          reportTypeLabel: 'Combat',
+          title: 'Combat detail',
+          summary: 'Technical combat report.',
+          relationLabel: 'Embedded combat',
+        },
+      ],
+      contextualReadiness: null,
+    });
+
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('Trial completed');
+    expect(text).toContain('Hero One survived the arena.');
+    expect(text).toContain('Outcome: Victory');
+    expect(text).toContain('Reward');
+    expect(text).toContain('70 EXP');
+    expect(text).toContain('Hero One ends the fight.');
+    expect(text).toContain('Combat detail');
+    expect(text).not.toContain('No combat section for this report');
+    expect(text).not.toContain('sourceLabel must be a non-empty string');
+  });
+
+  it('renders effect sections for Buff and Debuff encounters without requiring rewards', () => {
+    fixture.componentRef.setInput('report', {
+      participants: [],
+      itemReferences: [],
+      trialSection: null,
+      encounterSection: {
+        sectionKind: 'encounter',
+        title: 'Buff Encounter resolved',
+        summary: 'The encounter applied an exploration effect.',
+        badge: 'Buff',
+        facts: [],
+        items: [],
+      },
+      effectSection: {
+        sectionKind: 'effect',
+        title: 'Applied effect',
+        summary: 'Blessing remains active for this exploration.',
+        badge: 'Active',
+        facts: [{ label: 'Effect', value: 'Blessing' }],
+        items: [],
+      },
+      rewardSection: null,
+      combatSection: null,
+      relatedReports: [],
+      contextualReadiness: null,
+    });
+
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('Buff Encounter resolved');
+    expect(text).toContain('Applied effect');
+    expect(text).toContain('Effect: Blessing');
+    expect(text).not.toContain('Reward assignment lookup');
+  });
 });

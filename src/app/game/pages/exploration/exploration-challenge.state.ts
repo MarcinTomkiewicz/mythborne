@@ -22,6 +22,7 @@ import {
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationLiveCombatState } from './exploration-live-combat.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
+import { ExplorationRewardState } from './exploration-reward.state';
 
 @Injectable()
 export class ExplorationChallengeState {
@@ -30,6 +31,7 @@ export class ExplorationChallengeState {
   private readonly feedback = inject(ExplorationFeedbackState);
   private readonly overview = inject(ExplorationOverviewState);
   private readonly liveCombatState = inject(ExplorationLiveCombatState);
+  private readonly rewardState = inject(ExplorationRewardState);
   private readonly completionToken = new RequestToken();
   private readonly lastCompletion = signal<ChallengeCompletionSnapshot | null>(null);
 
@@ -49,6 +51,7 @@ export class ExplorationChallengeState {
   readonly combatWalkingSpeed = this.liveCombatState.combatWalkingSpeed;
   readonly combatParticipants = this.liveCombatState.combatParticipants;
   readonly combatEvents = this.liveCombatState.combatEvents;
+  readonly combatTimelineRows = this.liveCombatState.combatTimelineRows;
   readonly completedCombatLiveState = this.liveCombatState.completedCombatLiveState;
   readonly currentCombatActor = this.liveCombatState.currentCombatActor;
   readonly combatStatusLabel = this.liveCombatState.combatStatusLabel;
@@ -183,6 +186,10 @@ export class ExplorationChallengeState {
           }
 
           this.setCompletion(workflow.result, workflow.state.exploration?.id ?? null);
+          this.rewardState.preferCompletedChallengeReward(
+            workflow.state.exploration?.id ?? null,
+            workflow.result.challengeAttemptId,
+          );
           this.overview.setStateFromWorkflow(workflow.state);
           this.feedback.setSuccess('Challenge auto-resolved.');
         },
@@ -248,6 +255,10 @@ export class ExplorationChallengeState {
           }
 
           this.setCompletion(workflow.result, workflow.state.exploration?.id ?? null);
+          this.rewardState.preferCompletedChallengeReward(
+            workflow.state.exploration?.id ?? null,
+            workflow.result.challengeAttemptId,
+          );
           this.overview.setStateFromWorkflow(workflow.state);
           this.feedback.setSuccess('Challenge completed.');
         },

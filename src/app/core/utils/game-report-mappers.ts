@@ -11,6 +11,7 @@ import {
   GetHeroGameReportsRpcRow,
   GetPublicGameReportByTokenRpcRow,
 } from '../types/game-report-rpc.types';
+import { Json } from '../types/database.types';
 import { resolveGameReportContextualReadiness } from './game-report-contextual-readiness';
 import { parseGameReportCombatSectionJson } from './game-report-combat-mappers';
 import {
@@ -19,6 +20,10 @@ import {
   parsePublicGameReportItemReferencesJson,
 } from './game-report-content-mappers';
 import { nullableText } from './game-report-json-reader';
+import {
+  parseGameReportContextSection,
+  parseGameReportRelatedReports,
+} from './game-report-section-mappers';
 
 export {
   mapGameReportItemReferenceRow,
@@ -70,17 +75,24 @@ export function mapPrivateGameReportDetail(
     reportTypeDescription: row.report_type_description,
     title: row.title,
     summary: nullableText(row.summary),
+    sourceLabel: nullableText(row.source_label),
     sourceEntityType: row.source_entity_type,
     sourceEntityId: row.source_entity_id,
     createdAt: row.created_at,
     readState,
     participants: parseGameReportParticipantsJson(row.participants_json),
     itemReferences: parseGameReportItemReferencesJson(row.item_references_json),
+    trialSection: parseGameReportContextSection(row.trial_section_json, 'trial'),
+    encounterSection: parseGameReportContextSection(row.encounter_section_json, 'encounter'),
+    rewardSection: parseGameReportContextSection(row.reward_section_json, 'reward'),
+    effectSection: parseGameReportContextSection(row.effect_section_json, 'effect'),
     combatSection: parseGameReportCombatSectionJson(row.combat_section_json),
+    relatedReports: parseGameReportRelatedReports(row.related_reports_json),
     contextualReadiness: resolveGameReportContextualReadiness({
       reportTypeKey: row.report_type_key,
       sourceEntityType: row.source_entity_type,
     }),
+    rawJson: row as unknown as Json,
   };
 }
 
@@ -94,11 +106,17 @@ export function mapPublicGameReport(
     reportTypeDescription: row.report_type_description,
     title: row.title,
     summary: nullableText(row.summary),
+    sourceLabel: nullableText(row.source_label),
     sourceEntityType: row.source_entity_type,
     createdAt: row.created_at,
     participants: parseGameReportParticipantsJson(row.participants_json),
     itemReferences: parsePublicGameReportItemReferencesJson(row.item_references_json),
+    trialSection: parseGameReportContextSection(row.trial_section_json, 'trial'),
+    encounterSection: parseGameReportContextSection(row.encounter_section_json, 'encounter'),
+    rewardSection: parseGameReportContextSection(row.reward_section_json, 'reward'),
+    effectSection: parseGameReportContextSection(row.effect_section_json, 'effect'),
     combatSection: parseGameReportCombatSectionJson(row.combat_section_json),
+    relatedReports: parseGameReportRelatedReports(row.related_reports_json),
     contextualReadiness: resolveGameReportContextualReadiness({
       reportTypeKey: row.report_type_key,
       sourceEntityType: row.source_entity_type,

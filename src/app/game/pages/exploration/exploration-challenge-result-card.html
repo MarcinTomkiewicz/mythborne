@@ -5,7 +5,7 @@
         <div class="flex-col gap-xs">
           <strong>Walka zakończona</strong>
           <span class="muted-text">
-            Wynik, HP i log pochodzą z live combat DB state.
+            Wynik, HP i przebieg walki pochodzą z live combat DB state.
           </span>
         </div>
         <span class="tag-badge tag-badge--info">{{ combat.statusLabel }}</span>
@@ -40,17 +40,22 @@
         }
       </div>
 
-      @if (page.combatEvents().length) {
+      @if (page.combatTimelineRows().length) {
         <div class="flex-col gap-xs">
-          <strong>Log DB</strong>
-          @for (event of page.combatEvents(); track event.eventIndex) {
+          <strong>Przebieg walki</strong>
+          @for (event of page.combatTimelineRows(); track event.id) {
             <article class="mg-card p-sm flex-col gap-xs">
               <div class="flex-row-between-center flex-col-sm gap-xs">
-                <span class="heading-color">{{ event.label }}</span>
-                <span class="tag-badge tag-badge--muted">
-                  {{ page.combatEventMetaLabel(event) }}
-                </span>
+                <span class="heading-color">{{ event.title }}</span>
+                <span class="tag-badge tag-badge--muted">{{ event.meta }}</span>
               </div>
+              @if (event.badges.length) {
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  @for (badge of event.badges; track badge) {
+                    <span class="tag-badge tag-badge--info">{{ badge }}</span>
+                  }
+                </div>
+              }
               @for (detail of event.details; track detail) {
                 <span class="muted-text">{{ detail }}</span>
               }
@@ -96,9 +101,6 @@
         <span class="tag-badge tag-badge--muted">Status: {{ result.status }}</span>
         <span class="tag-badge tag-badge--muted">
           Success: {{ result.success ? 'Yes' : 'No' }}
-        </span>
-        <span class="tag-badge tag-badge--muted">
-          Reward: {{ result.rewardGrantId ?? 'N/D' }}
         </span>
         @if (result.autoResolveChance !== null) {
           <span class="tag-badge tag-badge--muted">

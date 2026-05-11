@@ -3,6 +3,7 @@ import {
   GameReportItemSourceKind,
   GameReportSourceEntityType,
 } from '../../types/game-report-rpc.types';
+import { Json } from '../../types/database.types';
 
 export interface GameReportTypeEntry {
   key: string;
@@ -76,7 +77,7 @@ export interface GameReportCombatAttack {
   actorSide: string;
   targetSide: string;
   sourceKind: string | null;
-  sourceLabel: string;
+  sourceLabel: string | null;
   timingHit: boolean | null;
   evaded: boolean;
   critical: boolean;
@@ -105,6 +106,36 @@ export interface GameReportContextualReadiness {
   title: string;
   producerStatus: string;
   expectedSections: string[];
+}
+
+export interface GameReportSectionFact {
+  label: string;
+  value: string;
+}
+
+export interface GameReportSectionItem {
+  label: string;
+  value: string | null;
+  details: string[];
+}
+
+export interface GameReportRelatedReport {
+  reportId: string | null;
+  publicToken: string | null;
+  reportTypeKey: string | null;
+  reportTypeLabel: string | null;
+  title: string;
+  summary: string | null;
+  relationLabel: string | null;
+}
+
+export interface GameReportContextSection {
+  sectionKind: 'trial' | 'encounter' | 'reward' | 'effect';
+  title: string;
+  summary: string | null;
+  badge: string | null;
+  facts: GameReportSectionFact[];
+  items: GameReportSectionItem[];
 }
 
 export interface PrivateGameReportListItem {
@@ -187,9 +218,16 @@ export interface PrivateGameReportDetail extends Omit<
   'itemReferencesCount'
 > {
   reportTypeDescription: string;
+  sourceLabel: string | null;
   itemReferences: GameReportItemReference[];
+  trialSection: GameReportContextSection | null;
+  encounterSection: GameReportContextSection | null;
+  rewardSection: GameReportContextSection | null;
+  effectSection: GameReportContextSection | null;
   combatSection: GameReportCombatSection | null;
+  relatedReports: GameReportRelatedReport[];
   contextualReadiness: GameReportContextualReadiness | null;
+  rawJson: Json;
 }
 
 export interface PublicGameReport {
@@ -199,10 +237,16 @@ export interface PublicGameReport {
   reportTypeDescription: string;
   title: string;
   summary: string | null;
+  sourceLabel: string | null;
   sourceEntityType: GameReportSourceEntityType;
   createdAt: string;
   participants: GameReportParticipant[];
   itemReferences: PublicGameReportItemReference[];
+  trialSection: GameReportContextSection | null;
+  encounterSection: GameReportContextSection | null;
+  rewardSection: GameReportContextSection | null;
+  effectSection: GameReportContextSection | null;
   combatSection: GameReportCombatSection | null;
+  relatedReports: GameReportRelatedReport[];
   contextualReadiness: GameReportContextualReadiness | null;
 }

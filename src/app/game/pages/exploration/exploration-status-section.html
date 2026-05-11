@@ -34,7 +34,24 @@
           </article>
           <article class="mg-card p-md">
             <strong>Effect</strong>
-            <p class="muted-text mb-0">{{ page.activeEffectLabel() }}</p>
+            @if (page.activeEffectDisplay(); as effect) {
+              <div class="flex-col gap-xs">
+                <p class="mb-0">{{ effect.title }}</p>
+                <p class="muted-text mb-0">{{ effect.summary }}</p>
+                @if (effect.warning) {
+                  <span class="tag-badge tag-badge--warn">{{ effect.warning }}</span>
+                }
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  @for (fact of effect.facts; track fact.label) {
+                    <span class="tag-badge tag-badge--muted">
+                      {{ fact.label }}: {{ fact.value }}
+                    </span>
+                  }
+                </div>
+              </div>
+            } @else {
+              <p class="muted-text mb-0">{{ page.activeEffectLabel() }}</p>
+            }
           </article>
         </div>
 
@@ -59,6 +76,20 @@
                 <span class="tag-badge tag-badge--muted">Trials left: {{ result.remainingTrials }}</span>
                 <span class="tag-badge tag-badge--muted">Dry steps: {{ result.trialDryStepCount }}</span>
               </div>
+
+              @if (page.canShowSelectionDiagnostics()) {
+                <details class="mg-card p-md w-100">
+                  <summary class="muted-text">Step result backend shape</summary>
+                  <div class="flex-col gap-xs mt-sm">
+                    @for (diagnostic of page.stepBackendDiagnostics(); track diagnostic.label) {
+                      <div class="flex-row-between-start flex-col-sm gap-sm">
+                        <strong>{{ diagnostic.label }}</strong>
+                        <span class="muted-text">{{ diagnostic.value }}</span>
+                      </div>
+                    }
+                  </div>
+                </details>
+              }
             </div>
           </div>
         }

@@ -167,6 +167,11 @@ export interface RewardGrantEntryReadModel {
 export interface ExplorationChallengeRewardReadModel {
   challengeAttemptId: string;
   challengeKind: string;
+  stepId: string | null;
+  outcomeKind: string | null;
+  rewardSourceKind: string | null;
+  rewardSourceId: string | null;
+  rewardSourceLabel: string | null;
   status: string;
   success: boolean | null;
   completionMode: string | null;
@@ -175,6 +180,15 @@ export interface ExplorationChallengeRewardReadModel {
   rewardGrant: RewardGrantReadModel | null;
   entries: RewardGrantEntryReadModel[];
   items: ItemReadModel[];
+  rewardStatusKey: string | null;
+  rewardStatusLabel: string | null;
+  rewardEntryCount: number | null;
+  generatedItemCount: number | null;
+  noRewardReasonKey: string | null;
+  noRewardReasonLabel: string | null;
+  noRewardReasonHelperText: string | null;
+  explanation: string | null;
+  rawJson: Json;
 }
 
 export interface RewardProfileAdminData {

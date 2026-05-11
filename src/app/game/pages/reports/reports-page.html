@@ -31,17 +31,6 @@
     </section>
   }
 
-  @if (page.uiMetadata.missingGaps().length > 0) {
-    <section class="mg-card flex-col gap-sm p-lg w-100">
-      <strong class="heading-color">Missing UI metadata</strong>
-      <div class="flex-row-start-center flex-wrap gap-sm">
-        @for (gap of page.uiMetadata.missingGaps(); track gap) {
-          <span class="tag-badge tag-badge--warn">{{ gap }}</span>
-        }
-      </div>
-    </section>
-  }
-
   <section class="mg-card p-lg w-100" [formGroup]="page.form">
     <div class="flex-col gap-xs mb-md">
       <p class="card-legend mb-0">

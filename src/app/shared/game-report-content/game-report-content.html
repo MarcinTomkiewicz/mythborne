@@ -35,6 +35,52 @@
   </section>
 }
 
+@for (section of contextSections(); track section.sectionKind) {
+  <section class="mg-card flex-col gap-md p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">{{ section.title }}</p>
+        @if (section.summary) {
+          <p class="mb-0">{{ section.summary }}</p>
+        }
+      </div>
+      @if (section.badge) {
+        <span class="tag-badge tag-badge--info">{{ section.badge }}</span>
+      }
+    </div>
+
+    @if (section.facts.length) {
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        @for (fact of section.facts; track fact.label) {
+          <span class="tag-badge tag-badge--muted">
+            {{ fact.label }}: {{ fact.value }}
+          </span>
+        }
+      </div>
+    }
+
+    @if (section.items.length) {
+      <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+        @for (item of section.items; track item.label + (item.value ?? '')) {
+          <div class="mg-card flex-col gap-xs p-md">
+            <strong class="heading-color">{{ item.label }}</strong>
+            @if (item.value) {
+              <span>{{ item.value }}</span>
+            }
+            @if (item.details.length) {
+              <div class="flex-row-start-center flex-wrap gap-sm">
+                @for (detail of item.details; track detail) {
+                  <span class="tag-badge tag-badge--muted">{{ detail }}</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </section>
+}
+
 <section class="mg-card flex-col gap-md p-lg w-100">
   <div class="flex-col gap-xs">
     <p class="card-legend mb-0">{{ itemReferencesTitle() }}</p>
@@ -59,6 +105,38 @@
     }
   </div>
 </section>
+
+@if (relatedReports().length) {
+  <section class="mg-card flex-col gap-md p-lg w-100">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Related reports</p>
+      <p class="muted-text mb-0">
+        Linked DB reports for this event.
+      </p>
+    </div>
+
+    <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+      @for (related of relatedReports(); track related.publicToken ?? related.reportId ?? related.title) {
+        <div class="mg-card flex-col gap-xs p-md">
+          <strong class="heading-color">{{ related.title }}</strong>
+          @if (related.summary) {
+            <span>{{ related.summary }}</span>
+          }
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            @if (related.relationLabel) {
+              <span class="tag-badge tag-badge--info">{{ related.relationLabel }}</span>
+            }
+            @if (related.reportTypeLabel ?? related.reportTypeKey) {
+              <span class="tag-badge tag-badge--muted">
+                {{ related.reportTypeLabel ?? related.reportTypeKey }}
+              </span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+}
 
 <section class="mg-card flex-col gap-md p-lg w-100">
   <div class="flex-col gap-xs">
@@ -159,7 +237,9 @@
             <strong class="heading-color">
               Turn {{ attack.turnNumber }} / order {{ attack.attackOrder }}
             </strong>
-            <span class="tag-badge tag-badge--info">{{ attack.sourceLabel }}</span>
+            @if (attack.sourceLabel) {
+              <span class="tag-badge tag-badge--info">{{ attack.sourceLabel }}</span>
+            }
           </div>
           <span class="muted-text">{{ attack.displayText }}</span>
           <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-sm">
@@ -179,7 +259,5 @@
         </div>
       }
     </div>
-  } @else {
-    <p class="mb-0 muted-text">No combat section for this report.</p>
   }
 </section>

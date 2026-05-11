@@ -20,6 +20,9 @@
           @if (report.summary) {
             <p class="muted-text mb-0">{{ report.summary }}</p>
           }
+          @if (report.sourceLabel) {
+            <span class="tag-badge tag-badge--muted">{{ report.sourceLabel }}</span>
+          }
         </div>
 
         <div class="flex-row-start-center flex-wrap gap-sm">
@@ -33,17 +36,6 @@
         </div>
       </div>
     </section>
-
-    @if (page.uiMetadata.missingGaps().length > 0) {
-      <section class="mg-card flex-col gap-sm p-lg w-100">
-        <strong class="heading-color">Missing UI metadata</strong>
-        <div class="flex-row-start-center flex-wrap gap-sm">
-          @for (gap of page.uiMetadata.missingGaps(); track gap) {
-            <span class="tag-badge tag-badge--warn">{{ gap }}</span>
-          }
-        </div>
-      </section>
-    }
 
     @if (page.error()) {
       <section class="mg-card flex-col gap-sm p-lg w-100">
@@ -98,5 +90,19 @@
       [combatSectionTitle]="page.uiMetadata.sectionTitle(page.uiMetadata.section.combatSection)"
       [combatSectionText]="page.uiMetadata.sectionText(page.uiMetadata.section.combatSection)"
     />
+
+    @if (page.canShowBackendDiagnostics()) {
+      <details class="mg-card p-lg w-100">
+        <summary class="muted-text">Report RPC backend shape</summary>
+        <div class="flex-col gap-xs mt-sm">
+          @for (diagnostic of page.reportBackendDiagnostics(); track diagnostic.label) {
+            <div class="flex-row-between-start flex-col-sm gap-sm">
+              <strong>{{ diagnostic.label }}</strong>
+              <span class="muted-text">{{ diagnostic.value }}</span>
+            </div>
+          }
+        </div>
+      </details>
+    }
   </div>
 }

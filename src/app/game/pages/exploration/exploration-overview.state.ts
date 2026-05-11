@@ -9,6 +9,7 @@ import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import {
   explorationActiveChallengeLabel,
+  explorationActiveEffectDisplay,
   explorationActiveEffectLabel,
   explorationActiveStepLabel,
   explorationCurrentNodeLabel,
@@ -46,6 +47,7 @@ export class ExplorationOverviewState {
     explorationActiveChallengeLabel(this.state()),
   );
   readonly activeEffectLabel = computed(() => explorationActiveEffectLabel(this.state()));
+  readonly activeEffectDisplay = computed(() => explorationActiveEffectDisplay(this.state()));
 
   loadData(): void {
     const token = this.loadToken.next();

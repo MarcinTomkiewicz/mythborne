@@ -1,38 +1,36 @@
-@if (page.reward(); as reward) {
+@if (page.rewardDisplay(); as reward) {
   <div class="mg-card p-md">
     <div class="flex-col gap-sm">
       <div class="flex-row-between-center flex-col-sm gap-sm">
         <div class="flex-col gap-xs">
-          <strong>Nagroda za challenge</strong>
-          <span class="muted-text">{{ page.rewardSummary() }}</span>
+          <strong>{{ reward.title }}</strong>
+          <span class="muted-text">{{ reward.summary }}</span>
         </div>
-        <span class="tag-badge tag-badge--info">{{ reward.status }}</span>
+        <span class="tag-badge tag-badge--info">{{ reward.badge }}</span>
       </div>
 
       <div class="flex-row-start-center flex-wrap gap-xs">
-        <span class="tag-badge tag-badge--muted">
-          Wynik: {{ reward.success === null ? 'N/D' : reward.success ? 'Sukces' : 'Porażka' }}
-        </span>
-        <span class="tag-badge tag-badge--muted">
-          Tryb: {{ reward.completionMode ?? 'N/D' }}
-        </span>
-        <span class="tag-badge tag-badge--muted">
-          Grant: {{ reward.rewardGrantId ?? 'N/D' }}
-        </span>
-        <span class="tag-badge tag-badge--muted">
-          Ukończono: {{ reward.completedAt ?? 'N/D' }}
-        </span>
+        @for (fact of reward.facts; track fact.label) {
+          <span class="tag-badge tag-badge--muted">
+            {{ fact.label }}: {{ fact.value }}
+          </span>
+        }
       </div>
 
-      @if (page.rewardGrantDiagnostic(); as diagnostic) {
-        <p class="mb-0">
-          {{ diagnostic }}
-        </p>
+      @if (reward.items.length) {
+        <div class="flex-col gap-xs">
+          @for (item of reward.items; track item.id) {
+            <div class="flex-row-between-start flex-col-sm gap-sm">
+              <span>{{ page.rewardItemLabel(item) }}</span>
+              <span class="muted-text">{{ page.rewardItemDetails(item) }}</span>
+            </div>
+          }
+        </div>
       }
 
-      @if (page.visibleRewardEntries().length) {
+      @if (reward.entries.length) {
         <div class="flex-col gap-xs">
-          @for (entry of page.visibleRewardEntries(); track entry.id) {
+          @for (entry of reward.entries; track entry.id) {
             <div class="flex-row-between-start flex-col-sm gap-sm">
               <span>{{ page.rewardEntryLabel(entry) }}</span>
               <span class="muted-text">
@@ -43,22 +41,40 @@
             </div>
           }
         </div>
-      } @else if (reward.entries.length) {
-        <p class="mb-0">
-          DB zapisała wpisy nagrody, ale żaden nie utworzył widocznej wartości, zasobu ani itemu.
-        </p>
-      } @else {
-        <p class="mb-0">
-          Reward grant istnieje, ale `reward_grant_entries` jest puste.
-        </p>
+      } @else if (!reward.items.length) {
+        <p class="mb-0">{{ reward.emptyMessage }}</p>
       }
 
-      @if (page.hiddenRewardDiagnostics().length) {
-        <div class="flex-col gap-xs">
-          @for (diagnostic of page.hiddenRewardDiagnostics(); track diagnostic) {
-            <p class="mb-0">{{ diagnostic }}</p>
-          }
-        </div>
+      @for (message of reward.hiddenMessages; track message) {
+        <p class="mb-0">{{ message }}</p>
+      }
+
+      @if (page.canShowSelectionDiagnostics() && page.rewardDiagnostics().length) {
+        <details class="mg-card p-md w-100">
+          <summary class="muted-text">Diagnostyka wykonania rewardu</summary>
+          <div class="flex-col gap-xs mt-sm">
+            @for (diagnostic of page.rewardDiagnostics(); track diagnostic.label) {
+              <div class="flex-row-between-start flex-col-sm gap-sm">
+                <strong>{{ diagnostic.label }}</strong>
+                <span class="muted-text">{{ diagnostic.value }}</span>
+              </div>
+            }
+          </div>
+        </details>
+      }
+
+      @if (page.canShowSelectionDiagnostics() && page.rewardBackendDiagnostics().length) {
+        <details class="mg-card p-md w-100">
+          <summary class="muted-text">Reward RPC backend shape</summary>
+          <div class="flex-col gap-xs mt-sm">
+            @for (diagnostic of page.rewardBackendDiagnostics(); track diagnostic.label) {
+              <div class="flex-row-between-start flex-col-sm gap-sm">
+                <strong>{{ diagnostic.label }}</strong>
+                <span class="muted-text">{{ diagnostic.value }}</span>
+              </div>
+            }
+          </div>
+        </details>
       }
     </div>
   </div>
@@ -66,25 +82,37 @@
   <div class="mg-card p-md">
     <span class="tag-badge tag-badge--muted">Ładowanie nagrody</span>
   </div>
-} @else if (page.currentChallengeResult(); as result) {
+} @else if (page.rewardUnavailableMessage(); as message) {
   <div class="mg-card p-md">
     <div class="flex-col gap-sm">
-      <strong>Diagnostyka nagrody</strong>
-      @if (result.success && !result.rewardGrantId) {
-        <p class="mb-0">
-          DB zakończyła challenge sukcesem, ale nie zwróciła `reward_grant_id`.
-          Sprawdź konfigurację reward profile dla tego Triala/Encountera.
-        </p>
-      } @else if (result.success) {
-        <p class="mb-0">
-          Reward grant {{ result.rewardGrantId }} został zwrócony przez resolver,
-          ale trwały reward nie został jeszcze odczytany przez istniejący reward read path.
-        </p>
-      } @else {
-        <p class="mb-0">
-          Challenge zakończył się porażką, więc DB nie przyznała rewardu.
-        </p>
+      <strong>Nagroda za wynik eksploracji</strong>
+      <p class="mb-0">{{ message }}</p>
+
+      @if (page.canShowSelectionDiagnostics() && page.rewardBackendDiagnostics().length) {
+        <details class="mg-card p-md w-100">
+          <summary class="muted-text">Reward RPC backend shape</summary>
+          <div class="flex-col gap-xs mt-sm">
+            @for (diagnostic of page.rewardBackendDiagnostics(); track diagnostic.label) {
+              <div class="flex-row-between-start flex-col-sm gap-sm">
+                <strong>{{ diagnostic.label }}</strong>
+                <span class="muted-text">{{ diagnostic.value }}</span>
+              </div>
+            }
+          </div>
+        </details>
       }
     </div>
   </div>
+} @else if (page.canShowSelectionDiagnostics() && page.rewardBackendDiagnostics().length) {
+  <details class="mg-card p-md w-100">
+    <summary class="muted-text">Reward RPC backend shape</summary>
+    <div class="flex-col gap-xs mt-sm">
+      @for (diagnostic of page.rewardBackendDiagnostics(); track diagnostic.label) {
+        <div class="flex-row-between-start flex-col-sm gap-sm">
+          <strong>{{ diagnostic.label }}</strong>
+          <span class="muted-text">{{ diagnostic.value }}</span>
+        </div>
+      }
+    </div>
+  </details>
 }

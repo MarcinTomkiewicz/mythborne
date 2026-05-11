@@ -16,11 +16,14 @@ import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import {
   combatEventMetaLabel,
+  combatTimelineRows,
   combatTimingManifestLabel,
   explorationCombatRequestId,
   participantHpLabel,
 } from './exploration-live-combat-labels';
 import { ExplorationOverviewState } from './exploration-overview.state';
+import { ExplorationRewardState } from './exploration-reward.state';
+import { ExplorationStepState } from './exploration-step.state';
 
 @Injectable()
 export class ExplorationLiveCombatState {
@@ -29,6 +32,8 @@ export class ExplorationLiveCombatState {
   private readonly liveCombat = inject(ExplorationLiveCombat);
   private readonly feedback = inject(ExplorationFeedbackState);
   private readonly overview = inject(ExplorationOverviewState);
+  private readonly rewardState = inject(ExplorationRewardState);
+  private readonly step = inject(ExplorationStepState);
   private readonly sessionToken = new RequestToken();
   private readonly actionToken = new RequestToken();
   private readonly detailToken = new RequestToken();
@@ -76,6 +81,9 @@ export class ExplorationLiveCombatState {
   readonly combatWalkingSpeed = computed(() => this.combatTimingManifest()?.speed ?? 0);
   readonly combatParticipants = computed(() => this.combatLiveState()?.participants ?? []);
   readonly combatEvents = computed(() => this.combatLiveState()?.events ?? []);
+  readonly combatTimelineRows = computed(() =>
+    combatTimelineRows(this.combatEvents(), this.combatParticipants()),
+  );
   readonly completedCombatLiveState = computed(() => {
     const state = this.combatLiveState();
 
@@ -104,8 +112,21 @@ export class ExplorationLiveCombatState {
     effect(() => {
       const context = this.overview.currentContext();
       const challenge = this.activeChallenge();
+      const stepResult = this.step.currentStepResult();
 
       if (!context) {
+        this.resetCombatSession();
+        return;
+      }
+
+      if (
+        this.overview.state()?.activeStep ||
+        (
+          this.combatLiveState() &&
+          stepResult &&
+          stepResult.challengeAttemptId !== this.combatLiveState()?.sourceEntityId
+        )
+      ) {
         this.resetCombatSession();
         return;
       }
@@ -286,6 +307,10 @@ export class ExplorationLiveCombatState {
           this.setCombatLiveState(state, false);
 
           if (state.statusKey === 'completed' && state.finalCombatResultId) {
+            this.rewardState.preferCompletedChallengeReward(
+              this.overview.state()?.exploration?.id ?? null,
+              challenge.id,
+            );
             this.loadCombatResultDetail(state.finalCombatResultId, state.sessionId);
             this.refreshExplorationState(context.heroId, context.difficultyKey, challenge.id);
           }
@@ -315,6 +340,10 @@ export class ExplorationLiveCombatState {
   ): void {
     if (state.statusKey === 'completed') {
       this.feedback.setSuccess('Walka została zakończona przez DB.');
+      this.rewardState.preferCompletedChallengeReward(
+        this.overview.state()?.exploration?.id ?? null,
+        challengeAttemptId,
+      );
 
       if (state.finalCombatResultId) {
         this.loadCombatResultDetail(state.finalCombatResultId, state.sessionId);

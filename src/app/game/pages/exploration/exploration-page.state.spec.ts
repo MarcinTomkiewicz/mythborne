@@ -46,7 +46,8 @@ describe('ExplorationPageState', () => {
   beforeEach(() => {
     activeHero = jasmine.createSpyObj<ActiveHero>('ActiveHero', ['requireActiveHero']);
     rewards = jasmine.createSpyObj<HeroExplorationRewards>('HeroExplorationRewards', [
-      'getLatestChallengeReward',
+      'getChallengeReward',
+      'getStepReward',
     ]);
     liveCombat = jasmine.createSpyObj<ExplorationLiveCombat>('ExplorationLiveCombat', [
       'ensureSession',
@@ -87,10 +88,20 @@ describe('ExplorationPageState', () => {
     liveCombat.submitPlayerAction.and.returnValue(of(combatLiveState({
       awaitingPlayerAction: true,
       eventCount: 2,
-      events: [combatEvent(1), combatEvent(2)],
+      events: [combatEvent(1), combatEvent(2, {
+        label: 'Attack Resolved',
+        rawJson: {
+          finalDamage: 18,
+          targetHealthBefore: 30,
+          targetHealthAfter: 12,
+          timingHit: true,
+          critical: true,
+        },
+      })],
     })));
     liveCombat.getResultDetail.and.returnValue(of(combatResultDetail()));
-    rewards.getLatestChallengeReward.and.returnValue(of(null));
+    rewards.getChallengeReward.and.returnValue(of(null));
+    rewards.getStepReward.and.returnValue(of(null));
     selectedServer = signal({ kind: 'standard', canUseAsSandbox: false });
     serverAccess = signal({ canAccessSandbox: false });
 
@@ -119,6 +130,10 @@ describe('ExplorationPageState', () => {
           },
         },
       ],
+    });
+    TestBed.overrideComponent(ExplorationPage, {
+      remove: { providers: [ExplorationLiveCombat] },
+      add: { providers: [{ provide: ExplorationLiveCombat, useValue: liveCombat }] },
     });
     page = TestBed.inject(ExplorationPageState);
     feedback = TestBed.inject(ExplorationFeedbackState);
@@ -502,6 +517,54 @@ describe('ExplorationPageState', () => {
     expect(JSON.stringify(input)).not.toContain('opponent');
     expect(JSON.stringify(input)).not.toContain('outcome');
     expect(page.combatEvents().map((event) => event.eventIndex)).toEqual([1, 2]);
+    expect(page.combatTimelineRows()[1]).toEqual(jasmine.objectContaining({
+      title: 'Hero attacks Opponent',
+      badges: jasmine.arrayContaining(['Hit', 'Critical', 'Damage 18', 'HP 30 -> 12']),
+    }));
+  });
+
+  it('routes a resolved Combat Encounter into live combat instead of a step reward read', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState(
+      'easy',
+      true,
+      false,
+      pastStepTiming(),
+    ));
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy', {
+        outcomeKind: 'encounter',
+        encounterDefinitionId: 'encounter-combat',
+        challengeAttemptId: 'challenge-1',
+        selectedDefinition: selectedEncounter(
+          'encounter-combat',
+          'light_combat',
+          ENCOUNTER_KIND.combat,
+        ),
+      }, {
+        activeChallenge: activeExplorationState(
+          'easy',
+          false,
+          true,
+          undefined,
+          'exploration-1',
+          ENCOUNTER_KIND.combat,
+        ).activeChallenge,
+      })),
+    );
+
+    page.checkStepResult();
+    TestBed.flushEffects();
+
+    expect(page.stepResultTitle()).toBe('Combat Encounter started');
+    expect(page.isCombatChallenge()).toBeTrue();
+    expect(liveCombat.ensureSession).toHaveBeenCalledWith(jasmine.objectContaining({
+      challengeAttemptId: 'challenge-1',
+    }));
+    expect(rewards.getStepReward).not.toHaveBeenCalled();
+    expect(page.combatParticipants().map((participant) => participant.displayName))
+      .toEqual(['Hero', 'Opponent']);
   });
 
   it('loads final live combat result detail and refreshes exploration state after DB completion', () => {
@@ -511,7 +574,26 @@ describe('ExplorationPageState', () => {
       awaitingPlayerAction: false,
       finalCombatResultId: 'combat-result-1',
       eventCount: 2,
-      events: [combatEvent(1), combatEvent(2, { eventKind: 'session_completed' })],
+      events: [combatEvent(1, {
+        label: 'Attack Resolved',
+        rawJson: {
+          displayText: 'Hero strikes Opponent.',
+          finalDamage: 18,
+          targetHealthBefore: 30,
+          targetHealthAfter: 12,
+          timingHit: true,
+        },
+      }), combatEvent(2, {
+        eventKind: 'session_completed',
+        label: 'Attack Resolved',
+        rawJson: {
+          displayText: 'Hero strikes Opponent.',
+          finalDamage: 18,
+          targetHealthBefore: 30,
+          targetHealthAfter: 12,
+          timingHit: true,
+        },
+      })],
     })));
     explorations.getHeroExplorationState.and.returnValues(
       of(noExplorationState('easy')),
@@ -540,6 +622,108 @@ describe('ExplorationPageState', () => {
     expect(feedback.successMessage()).toBe('Walka została zakończona przez DB.');
   });
 
+  it('renders exact completed Combat Encounter reward without using step reward', async () => {
+    liveCombat.submitPlayerAction.and.returnValue(of(combatLiveState({
+      statusKey: 'completed',
+      statusLabel: 'Completed',
+      awaitingPlayerAction: false,
+      finalCombatResultId: 'combat-result-1',
+      eventCount: 2,
+      events: [combatEvent(1, {
+        label: 'Attack Resolved',
+        rawJson: {
+          displayText: 'Hero strikes Opponent.',
+          finalDamage: 18,
+          targetHealthBefore: 30,
+          targetHealthAfter: 12,
+          timingHit: true,
+        },
+      }), combatEvent(2, { eventKind: 'session_completed' })],
+    })));
+    rewards.getChallengeReward.and.callFake((input: {
+      challengeAttemptId: string;
+    }) => of(input.challengeAttemptId === 'challenge-1'
+      ? challengeReward({
+          entries: [
+            rewardEntry({ id: 'entry-xp', entryKind: 'experience', amount: 70 }),
+            rewardEntry({ id: 'entry-cp', entryKind: 'character_points', amount: 5 }),
+            rewardEntry({
+              id: 'entry-item',
+              entryKind: 'item_generation',
+              amount: 1,
+              itemId: 'item-1',
+            }),
+          ],
+          items: [
+            {
+              ...challengeReward().items[0],
+              id: 'item-1',
+              name: 'Combat reward blade',
+            },
+          ],
+        })
+      : null));
+    explorations.getHeroExplorationState.and.returnValues(
+      of(noExplorationState('easy')),
+      of(activeExplorationState('easy')),
+    );
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy', {
+        outcomeKind: 'encounter',
+        encounterDefinitionId: 'encounter-combat',
+        challengeAttemptId: 'challenge-1',
+        selectedDefinition: selectedEncounter(
+          'encounter-combat',
+          'light_combat',
+          ENCOUNTER_KIND.combat,
+        ),
+      }, {
+        activeChallenge: activeExplorationState(
+          'easy',
+          false,
+          true,
+          undefined,
+          'exploration-1',
+          ENCOUNTER_KIND.combat,
+        ).activeChallenge,
+      })),
+    );
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', true, false, pastStepTiming()),
+    );
+    fixture.componentInstance.page.checkStepResult();
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    expect(liveCombat.ensureSession).toHaveBeenCalledWith(jasmine.objectContaining({
+      challengeAttemptId: 'challenge-1',
+    }));
+
+    fixture.componentInstance.page.startCombatChallenge();
+    fixture.componentInstance.page.submitCombatChallengeStrike();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const exactRewardCall = rewards.getChallengeReward.calls.allArgs().some(([input]) =>
+      input.challengeAttemptId === 'challenge-1',
+    );
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(exactRewardCall).toBeTrue();
+    expect(rewards.getStepReward).not.toHaveBeenCalled();
+    expect(text).toContain('70 EXP');
+    expect(text).toContain('5 Punktów Postaci');
+    expect(text).toContain('Przedmiot: Combat reward blade (item-1)');
+    expect(text).toContain('Hero strikes Opponent.');
+    expect(text).toContain('Damage 18');
+    expect(text).toContain('HP 30 -> 12');
+  });
+
   it('exposes live combat participants, events and final detail without legacy resolver', () => {
     explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
     liveCombat.ensureSession.and.returnValue(of(combatLiveState({
@@ -550,7 +734,7 @@ describe('ExplorationPageState', () => {
       eventCount: 2,
       events: [combatEvent(1), combatEvent(2, { eventKind: 'session_completed' })],
     })));
-    rewards.getLatestChallengeReward.and.returnValue(of(null));
+    rewards.getChallengeReward.and.returnValue(of(null));
 
     page.loadData();
     page.startSelectedDifficulty();
@@ -621,9 +805,45 @@ describe('ExplorationPageState', () => {
       page.checkStepResult();
 
       expect(page.stepResultTitle()).toBe(`${title} resolved`);
-      expect(page.stepResultDescription()).toContain('applied DB effect effect-definition-1');
-      expect(page.activeEffectLabel()).toContain(`${encounterKind === ENCOUNTER_KIND.buff ? 'Buff' : 'Debuff'} effect active`);
+      expect(page.stepResultDescription()).toContain('applied an exploration effect');
+      expect(page.activeEffectDisplay()).toEqual(jasmine.objectContaining({
+        title: `${encounterKind === ENCOUNTER_KIND.buff ? 'Buff' : 'Debuff'} effect active`,
+        summary: 'Effect details unavailable from the DB read model.',
+        warning: 'Effect details unavailable from DB read model.',
+      }));
     }
+  });
+
+  it('renders DB-owned active effect label and summary when the refreshed state provides them', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', true, false, pastStepTiming()));
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy', {
+        outcomeKind: 'encounter',
+        encounterDefinitionId: 'buff-encounter',
+        selectedDefinition: selectedEncounter(
+          'buff-encounter',
+          'blessing',
+          ENCOUNTER_KIND.buff,
+        ),
+      }, {
+        activeEffect: activeEffect(ENCOUNTER_KIND.buff, {
+          metadataJson: {
+            effectLabel: 'Blessing of Focus',
+            summary: 'Focus is increased for the next Trial.',
+          },
+        }),
+      })),
+    );
+
+    page.checkStepResult();
+
+    expect(page.activeEffectDisplay()).toEqual(jasmine.objectContaining({
+      title: 'Blessing of Focus',
+      summary: 'Focus is increased for the next Trial.',
+      warning: null,
+    }));
   });
 
   it('labels auto-resolve as manual combat for active combat challenges', () => {
@@ -652,25 +872,588 @@ describe('ExplorationPageState', () => {
     );
   });
 
-  it('loads persisted challenge rewards for the current exploration', async () => {
-    rewards.getLatestChallengeReward.and.returnValue(of(challengeReward()));
+  it('does not load challenge rewards without an explicit current-event source', async () => {
+    rewards.getChallengeReward.and.returnValue(of(challengeReward()));
 
     page.loadData();
     page.startSelectedDifficulty();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(rewards.getLatestChallengeReward).toHaveBeenCalledWith({
-      heroId: 'hero-1',
-      explorationId: 'exploration-1',
-    });
-    expect(page.rewardSummary()).toContain('DB zapisała 2 wpisy nagrody');
-    expect(page.rewardEntryLabel(page.reward()!.entries[0])).toBe('20 EXP');
-    expect(page.rewardItemLabel('item-1')).toBe('Reward blade (item-1)');
-    expect(page.rewardItemDetails('item-1')).toContain('Jakość fine');
+    expect(rewards.getChallengeReward).not.toHaveBeenCalled();
+    expect(page.reward()).toBeNull();
+    expect(page.rewardDisplay()).toBeNull();
+  });
+
+  it('renders persisted XP, Character Points and generated item reward rows on the route', async () => {
+    rewards.getChallengeReward.and.returnValue(
+      of(challengeReward({
+        entries: [
+          rewardEntry({ id: 'entry-xp', entryKind: 'experience', amount: 70 }),
+          rewardEntry({
+            id: 'entry-cp',
+            entryKind: 'character_points',
+            amount: 70,
+          }),
+          rewardEntry({
+            id: 'entry-item',
+            entryKind: 'generated_item',
+            amount: 1,
+            itemId: 'item-1',
+          }),
+        ],
+      })),
+    );
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.rewardState.preferCompletedChallengeReward(
+      'exploration-1',
+      'challenge-1',
+    );
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('70 EXP');
+    expect(text).toContain('70 Punktów Postaci');
+    expect(text).toContain('Przedmiot: Reward blade (item-1)');
+    expect(text).toContain('Jakość fine');
+    expect(text).not.toContain('reward_grant_entries` jest puste');
+  });
+
+  it('renders the exact workflow challenge reward instead of a later manifestation-failed no-reward attempt', async () => {
+    rewards.getChallengeReward.and.callFake((input: {
+      challengeAttemptId: string;
+    }) => of(input.challengeAttemptId === 'challenge-1'
+      ? challengeReward({
+          entries: [
+            rewardEntry({ id: 'entry-xp', entryKind: 'experience', amount: 70 }),
+            rewardEntry({
+              id: 'entry-cp',
+              entryKind: 'character_points',
+              amount: 70,
+            }),
+            rewardEntry({
+              id: 'entry-item',
+              entryKind: 'generated_item',
+              amount: 1,
+              itemId: 'item-1',
+            }),
+          ],
+        })
+      : challengeReward({
+          challengeAttemptId: 'challenge-manifestation-failed',
+          success: false,
+          rewardGrantId: null,
+          rewardGrant: null,
+          entries: [],
+          items: [],
+          rewardStatusKey: 'not_granted',
+          rewardStatusLabel: 'Manifestation failed',
+          noRewardReasonKey: 'manifestation_failed',
+          noRewardReasonLabel: 'Manifestation failed',
+        })));
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', false, true),
+    );
+    fixture.componentInstance.page.completeChallenge(true);
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    const exactRewardCall = rewards.getChallengeReward.calls.allArgs().some(([input]) =>
+      input.challengeAttemptId === 'challenge-1',
+    );
+
+    expect(exactRewardCall).toBeTrue();
+    expect(text).toContain('70 EXP');
+    expect(text).toContain('70 Punktów Postaci');
+    expect(text).toContain('Przedmiot: Reward blade (item-1)');
+    expect(text).not.toContain('Manifestation failed');
+  });
+
+  it('hides the previous challenge reward after starting a new movement step', async () => {
+    rewards.getChallengeReward.and.returnValue(
+      of(challengeReward({
+        entries: [rewardEntry({ id: 'entry-xp', entryKind: 'experience', amount: 70 })],
+      })),
+    );
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', false, true),
+    );
+    fixture.componentInstance.page.completeChallenge(true);
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent ?? '').toContain('70 EXP');
+
+    fixture.componentInstance.page.chooseDirection(fixture.componentInstance.page.edges()[0]);
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('movement - pending');
+    expect(text).not.toContain('70 EXP');
+    expect(fixture.componentInstance.page.reward()).toBeNull();
+  });
+
+  it('clears the previous completed combat result after starting a new movement step', async () => {
+    liveCombat.ensureSession.and.returnValue(of(combatLiveState({
+      statusKey: 'completed',
+      statusLabel: 'Completed',
+      awaitingPlayerAction: false,
+      finalCombatResultId: 'combat-result-1',
+      eventCount: 2,
+      events: [combatEvent(1), combatEvent(2, { eventKind: 'session_completed' })],
+    })));
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', ENCOUNTER_KIND.combat),
+    );
+    TestBed.flushEffects();
+
+    expect(page.completedCombatLiveState()).not.toBeNull();
+
+    page.overview.setStateFromWorkflow(activeExplorationState('easy'));
+    page.chooseDirection(page.edges()[0]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(page.completedCombatLiveState()).toBeNull();
+  });
+
+  it('does not show the previous challenge reward for a Nothing found step result', async () => {
+    rewards.getChallengeReward.and.returnValue(
+      of(challengeReward({
+        entries: [rewardEntry({ id: 'entry-xp', entryKind: 'experience', amount: 70 })],
+      })),
+    );
+    rewards.getStepReward.and.returnValue(of(null));
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', false, true),
+    );
+    fixture.componentInstance.page.completeChallenge(true);
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent ?? '').toContain('70 EXP');
+
+    fixture.componentInstance.page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', true, false, pastStepTiming()),
+    );
+    fixture.componentInstance.page.checkStepResult();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Nothing found');
+    expect(rewards.getStepReward).not.toHaveBeenCalled();
+    expect(text).not.toContain('70 EXP');
+    expect(fixture.componentInstance.page.reward()).toBeNull();
+  });
+
+  it('clears the previous completed combat result for a Nothing found step result', () => {
+    liveCombat.ensureSession.and.returnValue(of(combatLiveState({
+      statusKey: 'completed',
+      statusLabel: 'Completed',
+      awaitingPlayerAction: false,
+      finalCombatResultId: 'combat-result-1',
+      eventCount: 2,
+      events: [combatEvent(1), combatEvent(2, { eventKind: 'session_completed' })],
+    })));
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', ENCOUNTER_KIND.combat),
+    );
+    TestBed.flushEffects();
+
+    expect(page.completedCombatLiveState()).not.toBeNull();
+
+    page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', true, false, pastStepTiming()),
+    );
+    page.checkStepResult();
+    TestBed.flushEffects();
+
+    expect(page.stepResultTitle()).toBe('Nothing found');
+    expect(page.completedCombatLiveState()).toBeNull();
+  });
+
+  it('shows sandbox step reward RPC diagnostics when a Resource Encounter reward read returns empty', async () => {
+    rewards.getStepReward.and.returnValue(of(null));
+    selectedServer.set({ kind: 'sandbox', canUseAsSandbox: true });
+    serverAccess.set({ canAccessSandbox: true });
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
+      'easy',
+      true,
+      false,
+      pastStepTiming(),
+    )));
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy', {
+        outcomeKind: 'encounter',
+        encounterDefinitionId: 'encounter-resource',
+        challengeAttemptId: null,
+        selectedDefinition: selectedEncounter(
+          'encounter-resource',
+          'minor_resource_find',
+          ENCOUNTER_KIND.resource,
+        ),
+      })),
+    );
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.checkStepResult();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(rewards.getStepReward).toHaveBeenCalledWith({ stepId: 'step-1' });
+    expect(text).toContain('Resource Encounter resolved');
+    expect(text).toContain('Reward details are unavailable from the DB read model.');
+    expect(text).toContain('Reward RPC backend shape');
+    expect(text).toContain('get_exploration_step_reward_read_model');
+    expect(text).toContain('{"p_step_id":"step-1"}');
+    expect(text).toContain('null/empty response');
+    expect(text).toContain('Backend row shape');
+  });
+
+  it('does not render a stale challenge reward for a direct Encounter step result', async () => {
+    rewards.getChallengeReward.and.returnValue(of(challengeReward()));
+    rewards.getStepReward.and.returnValue(of(challengeReward({
+      challengeAttemptId: '',
+      challengeKind: 'encounter',
+      status: 'resolved',
+      stepId: 'step-1',
+      outcomeKind: 'encounter',
+      rewardSourceKind: 'exploration_step',
+      rewardSourceId: 'step-1',
+      rewardSourceLabel: 'Resource Encounter reward',
+      entries: [
+        rewardEntry({
+          id: 'entry-materials',
+          entryKind: 'resource',
+          amount: 12,
+          resourceType: 'materials',
+        }),
+        rewardEntry({
+          id: 'entry-workforce',
+          entryKind: 'resource',
+          amount: 3,
+          resourceType: 'workforce',
+        }),
+        rewardEntry({
+          id: 'entry-drachma',
+          entryKind: 'resource',
+          amount: 20,
+          resourceType: 'drachma',
+        }),
+        rewardEntry({ id: 'entry-xp', entryKind: 'experience', amount: 70 }),
+        rewardEntry({ id: 'entry-cp', entryKind: 'character_points', amount: 5 }),
+        rewardEntry({
+          id: 'entry-item',
+          entryKind: 'generated_item',
+          amount: 1,
+          itemId: 'item-1',
+        }),
+      ],
+    })));
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
+      'easy',
+      true,
+      false,
+      pastStepTiming(),
+    )));
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy', {
+        outcomeKind: 'encounter',
+        encounterDefinitionId: 'encounter-resource',
+        challengeAttemptId: null,
+        selectedDefinition: null,
+        metadataJson: {
+          encounterKind: ENCOUNTER_KIND.resource,
+        },
+      })),
+    );
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent ?? '')
+      .not.toContain('Przedmiot: Reward blade (item-1)');
+
+    fixture.componentInstance.page.checkStepResult();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Resource Encounter resolved');
+    expect(rewards.getStepReward).toHaveBeenCalledWith({ stepId: 'step-1' });
+    expect(text).toContain('Nagroda za Resource Encounter');
+    expect(text).toContain('Status nagrody: Nagroda przyznana');
+    expect(text).toContain('Materials +12');
+    expect(text).toContain('Workforce +3');
+    expect(text).toContain('Drachma +20');
+    expect(text).toContain('70 EXP');
+    expect(text).toContain('5 Punktów Postaci');
+    expect(text).toContain('Przedmiot: Reward blade (item-1)');
+    expect(text).not.toContain('Nagroda za challenge');
+    expect(text).not.toContain('Resource Encounter reward');
+    expect(text).not.toContain('Wynik: N/D');
+    expect(text).not.toContain('Tryb: N/D');
+    expect(text).not.toContain('Tryb: manual');
+    expect(text).not.toContain('reward_grant_id');
+  });
+
+  it('renders item_generation rewards from generated item read-model rows before non-item entries', async () => {
+    rewards.getStepReward.and.returnValue(of(challengeReward({
+      challengeAttemptId: '',
+      challengeKind: 'encounter',
+      status: 'resolved',
+      stepId: 'step-1',
+      outcomeKind: 'encounter',
+      rewardSourceKind: 'exploration_step',
+      rewardSourceId: 'step-1',
+      rewardSourceLabel: 'Resource Encounter reward',
+      rewardEntryCount: 3,
+      generatedItemCount: 1,
+      entries: [
+        rewardEntry({ id: 'entry-xp', entryKind: 'experience', amount: 70 }),
+        rewardEntry({ id: 'entry-cp', entryKind: 'character_points', amount: 70 }),
+        rewardEntry({
+          id: 'entry-item',
+          entryKind: 'item_generation',
+          amount: 1,
+          itemId: 'item-1',
+        }),
+      ],
+      items: [
+        {
+          ...challengeReward().items[0],
+          id: 'item-1',
+          name: 'Live reward blade',
+          generationQualityKey: 'fine',
+          generationBaseId: 'iron_blade',
+          prefixAffixId: 'sharp',
+          suffixAffixId: 'focus',
+          drachmaValue: 135,
+          metadataJson: {
+            qualityLabel: 'Fine',
+            baseName: 'Iron blade',
+            prefixName: 'Sharp',
+            suffixName: 'of Focus',
+            rewardEntryIds: ['entry-item'],
+          },
+        },
+      ],
+    })));
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
+      'easy',
+      true,
+      false,
+      pastStepTiming(),
+    )));
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy', {
+        outcomeKind: 'encounter',
+        encounterDefinitionId: 'encounter-resource',
+        challengeAttemptId: null,
+        selectedDefinition: selectedEncounter(
+          'encounter-resource',
+          'minor_resource_find',
+          ENCOUNTER_KIND.resource,
+        ),
+      })),
+    );
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.checkStepResult();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    const itemIndex = text.indexOf('Przedmiot: Live reward blade (item-1)');
+    const xpIndex = text.indexOf('70 EXP');
+
+    expect(itemIndex).toBeGreaterThanOrEqual(0);
+    expect(xpIndex).toBeGreaterThanOrEqual(0);
+    expect(itemIndex).toBeLessThan(xpIndex);
+    expect(text).toContain('Przyznano 2 wpisy nagrody i 1 przedmiot.');
+    expect(text).toContain('Jakość Fine');
+    expect(text).toContain('Baza Iron blade');
+    expect(text).toContain('Prefix Sharp');
+    expect(text).toContain('Suffix of Focus');
+    expect(text).toContain('70 Punktów Postaci');
+    expect(text).not.toContain('Nagroda została przyznana, ale szczegóły nagrody nie są dostępne.');
+    expect(text).not.toContain('Ten wynik eksploracji nie przyznał nagrody.');
+    expect(text).not.toContain('Resource Encounter reward');
+  });
+
+  it('ignores a stale challenge reward response after switching to a step reward source', async () => {
+    const staleChallengeReward = new Subject<ExplorationChallengeRewardReadModel | null>();
+    const stepReward = new Subject<ExplorationChallengeRewardReadModel | null>();
+
+    rewards.getChallengeReward.and.returnValue(staleChallengeReward.asObservable());
+    rewards.getStepReward.and.returnValue(stepReward.asObservable());
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
+      'easy',
+      true,
+      false,
+      pastStepTiming(),
+    )));
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy', {
+        outcomeKind: 'encounter',
+        encounterDefinitionId: 'encounter-resource',
+        challengeAttemptId: null,
+        selectedDefinition: selectedEncounter(
+          'encounter-resource',
+          'minor_resource_find',
+          ENCOUNTER_KIND.resource,
+        ),
+      })),
+    );
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    fixture.componentInstance.page.checkStepResult();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    staleChallengeReward.next(challengeReward({
+      rewardSourceLabel: 'Stale Trial reward',
+    }));
+    staleChallengeReward.complete();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent ?? '')
+      .not.toContain('Stale Trial reward');
+
+    stepReward.next(challengeReward({
+      challengeAttemptId: '',
+      challengeKind: 'encounter',
+      status: 'resolved',
+      stepId: 'step-1',
+      outcomeKind: 'encounter',
+      rewardSourceKind: 'exploration_step',
+      rewardSourceId: 'step-1',
+      rewardSourceLabel: 'Current step reward',
+      entries: [rewardEntry({ id: 'entry-xp', entryKind: 'experience', amount: 45 })],
+    }));
+    stepReward.complete();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Nagroda za wynik eksploracji');
+    expect(text).toContain('45 EXP');
+    expect(text).not.toContain('Stale Trial reward');
+    expect(text).not.toContain('Current step reward');
+  });
+
+  it('shows DB no-reward reason for direct step reward read models', async () => {
+    rewards.getStepReward.and.returnValue(of(challengeReward({
+      challengeAttemptId: '',
+      challengeKind: 'encounter',
+      status: 'resolved',
+      stepId: 'step-1',
+      outcomeKind: 'encounter',
+      rewardSourceKind: 'exploration_step',
+      rewardSourceId: 'step-1',
+      rewardSourceLabel: 'Resource Encounter reward',
+      rewardGrantId: null,
+      rewardGrant: null,
+      entries: [],
+      items: [],
+      rewardStatusKey: 'not_granted',
+      rewardStatusLabel: 'Nagroda nieprzyznana',
+      noRewardReasonKey: 'no_reward_profile',
+      noRewardReasonLabel: 'Brak profilu nagrody dla encountera',
+      noRewardReasonHelperText: 'DB nie znalazła aktywnego profilu dla wyniku kroku.',
+    })));
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
+      'easy',
+      true,
+      false,
+      pastStepTiming(),
+    )));
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy', {
+        outcomeKind: 'encounter',
+        encounterDefinitionId: 'encounter-resource',
+        challengeAttemptId: null,
+        selectedDefinition: selectedEncounter(
+          'encounter-resource',
+          'minor_resource_find',
+          ENCOUNTER_KIND.resource,
+        ),
+      })),
+    );
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.checkStepResult();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Ten wynik eksploracji nie przyznał nagrody.');
+    expect(text).toContain('Brak skonfigurowanej nagrody dla tego wyniku.');
+    expect(text).not.toContain('Brak profilu nagrody dla encountera');
+    expect(text).not.toContain('DB nie znalazła aktywnego profilu dla wyniku kroku.');
+    expect(text).not.toContain('No reward grant was attached to this step');
+    expect(text).not.toContain('reward_grant_id');
+    expect(text).not.toContain('Reward assignment lookup');
+    expect(text).not.toContain('Item generation');
+    expect(text).not.toContain('Tryb: manual');
   });
 
   it('shows XP and Character Points while hiding generated-item entries without items', async () => {
-    rewards.getLatestChallengeReward.and.returnValue(
+    rewards.getChallengeReward.and.returnValue(
       of(challengeReward({
         entries: [
           rewardEntry({ id: 'entry-xp', entryKind: 'experience', amount: 70 }),
@@ -692,20 +1475,21 @@ describe('ExplorationPageState', () => {
 
     page.loadData();
     page.startSelectedDifficulty();
+    page.rewardState.preferCompletedChallengeReward('exploration-1', 'challenge-1');
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(page.rewardSummary()).toContain('DB zapisała 3 wpisy nagrody');
-    expect(page.visibleRewardEntries().map((entry) => entry.id))
+    expect(page.rewardDisplay()?.summary).toContain('Przyznano 2 wpisy nagrody');
+    expect(page.rewardDisplay()?.entries.map((entry) => entry.id))
       .toEqual(['entry-xp', 'entry-cp']);
-    expect(page.visibleRewardEntries().map((entry) => page.rewardEntryLabel(entry)))
+    expect(page.rewardDisplay()?.entries.map((entry) => page.rewardEntryLabel(entry)))
       .toEqual(['70 EXP', '70 Punktów Postaci']);
-    expect(page.visibleRewardEntries().map((entry) => page.rewardEntryDetails(entry)))
+    expect(page.rewardDisplay()?.entries.map((entry) => page.rewardEntryDetails(entry)))
       .toEqual([null, null]);
-    expect(page.hiddenRewardDiagnostics()[0]).toContain('Wpis losowania przedmiotu');
+    expect(page.rewardDisplay()?.hiddenMessages[0]).toContain('Wpis losowania przedmiotu');
   });
 
-  it('shows DB reason for generated-item reward entries without item rows', async () => {
-    rewards.getLatestChallengeReward.and.returnValue(
+  it('shows player-safe generated-item no-drop copy without raw DB reason', async () => {
+    rewards.getChallengeReward.and.returnValue(
       of(challengeReward({
         entries: [
           rewardEntry({
@@ -722,16 +1506,17 @@ describe('ExplorationPageState', () => {
 
     page.loadData();
     page.startSelectedDifficulty();
+    page.rewardState.preferCompletedChallengeReward('exploration-1', 'challenge-1');
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(page.visibleRewardEntries()).toEqual([]);
-    expect(page.hiddenRewardDiagnostics()).toEqual([
-      'Wpis losowania przedmiotu nie utworzył itemu. Powód DB: Item count roll returned zero.',
+    expect(page.rewardDisplay()?.entries).toEqual([]);
+    expect(page.rewardDisplay()?.hiddenMessages).toEqual([
+      'Wpis losowania przedmiotu nie utworzył itemu.',
     ]);
   });
 
-  it('shows DB reward grant reason when a grant is not fully granted', async () => {
-    rewards.getLatestChallengeReward.and.returnValue(
+  it('does not render DB reward grant reason in the standard reward card', async () => {
+    rewards.getChallengeReward.and.returnValue(
       of(challengeReward({
         rewardGrant: {
           ...challengeReward().rewardGrant!,
@@ -740,18 +1525,142 @@ describe('ExplorationPageState', () => {
         },
       })),
     );
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.rewardState.preferCompletedChallengeReward(
+      'exploration-1',
+      'challenge-1',
+    );
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).not.toContain('Reward profile entry failed.');
+    expect(text).not.toContain('Status grantu');
+  });
+
+  it('does not describe a granted reward with empty mapped entries as no reward', async () => {
+    rewards.getChallengeReward.and.returnValue(
+      of(challengeReward({
+        entries: [],
+        items: [],
+        rewardEntryCount: 2,
+        generatedItemCount: 1,
+        rewardStatusKey: 'granted',
+        rewardStatusLabel: 'Nagroda przyznana',
+      })),
+    );
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.rewardState.preferCompletedChallengeReward(
+      'exploration-1',
+      'challenge-1',
+    );
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Nagroda przyznana');
+    expect(text).toContain('Nagroda została przyznana, ale szczegóły nagrody nie są dostępne.');
+    expect(text).not.toContain('Ten challenge nie przyznał nagrody');
+    expect(text).not.toContain('Ostatni ukończony challenge nie przyznał nagrody');
+  });
+
+  it('builds sandbox reward execution diagnostics from DB reward payload', async () => {
+    rewards.getChallengeReward.and.returnValue(
+      of(challengeReward({
+        entries: [
+          rewardEntry({ id: 'entry-xp', entryKind: 'experience', amount: 70 }),
+          rewardEntry({
+            id: 'entry-item',
+            entryKind: 'generated_item',
+            amount: 0,
+            itemId: null,
+            metadataJson: {
+              itemGenerationReason: 'Item count roll returned zero.',
+              skippedReason: 'Generated item count was zero.',
+            },
+          }),
+        ],
+        items: [],
+      })),
+    );
+    selectedServer.set({ kind: 'sandbox', canUseAsSandbox: true });
+    serverAccess.set({ canAccessSandbox: true });
 
     page.loadData();
     page.startSelectedDifficulty();
+    page.rewardState.preferCompletedChallengeReward('exploration-1', 'challenge-1');
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(page.rewardGrantDiagnostic()).toBe(
-      'Status grantu: failed. Powód DB: Reward profile entry failed.',
+    expect(page.canShowSelectionDiagnostics()).toBeTrue();
+    expect(page.rewardDiagnostics().map((row) => row.label)).toContain(
+      'Reward assignment lookup',
     );
+    expect(page.rewardDiagnostics().map((row) => row.value).join(' | '))
+      .toContain('Item count roll returned zero.');
+    expect(page.rewardDiagnostics().map((row) => row.value).join(' | '))
+      .toContain('Generated item count was zero.');
+  });
+
+  it('does not render full reward execution diagnostics for standard servers', async () => {
+    rewards.getChallengeReward.and.returnValue(of(challengeReward()));
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.rewardState.preferCompletedChallengeReward(
+      'exploration-1',
+      'challenge-1',
+    );
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(fixture.componentInstance.page.canShowSelectionDiagnostics()).toBeFalse();
+    expect(text).not.toContain('Diagnostyka wykonania rewardu');
+    expect(text).not.toContain('Reward assignment lookup');
+    expect(text).not.toContain('Item generation');
+    expect(text).not.toContain('reward_grant_id');
+  });
+
+  it('renders reward execution diagnostics collapsed for sandbox access', async () => {
+    rewards.getChallengeReward.and.returnValue(of(challengeReward()));
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    selectedServer.set({ kind: 'sandbox', canUseAsSandbox: true });
+    serverAccess.set({ canAccessSandbox: true });
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.rewardState.preferCompletedChallengeReward(
+      'exploration-1',
+      'challenge-1',
+    );
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const details = (fixture.nativeElement as HTMLElement).querySelector('details');
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(fixture.componentInstance.page.canShowSelectionDiagnostics()).toBeTrue();
+    expect(details?.hasAttribute('open')).toBeFalse();
+    expect(text).toContain('Diagnostyka wykonania rewardu');
+    expect(text).toContain('Reward assignment lookup');
   });
 
   it('shows clear no-reward state for failed persisted challenges', async () => {
-    rewards.getLatestChallengeReward.and.returnValue(
+    rewards.getChallengeReward.and.returnValue(
       of(challengeReward({
         success: false,
         rewardGrantId: null,
@@ -763,43 +1672,66 @@ describe('ExplorationPageState', () => {
 
     page.loadData();
     page.startSelectedDifficulty();
+    page.rewardState.preferCompletedChallengeReward('exploration-1', 'challenge-1');
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(page.rewardSummary()).toBe('Ostatni ukończony challenge nie przyznał nagrody.');
+    expect(page.rewardDisplay()?.summary).toBe('Ostatni ukończony challenge nie przyznał nagrody.');
   });
 
-  it('clears stale reward while loading a new exploration and ignores stale responses', async () => {
-    const firstReward = new Subject<ExplorationChallengeRewardReadModel | null>();
-    const secondReward = new Subject<ExplorationChallengeRewardReadModel | null>();
-    rewards.getLatestChallengeReward.and.returnValues(
-      of(challengeReward()),
-      firstReward.asObservable(),
-      secondReward.asObservable(),
+  it('shows player-safe no-reward copy from the canonical reward read model', async () => {
+    rewards.getChallengeReward.and.returnValue(
+      of(challengeReward({
+        rewardGrantId: null,
+        rewardGrant: null,
+        entries: [],
+        items: [],
+        rewardStatusKey: 'not_granted',
+        rewardStatusLabel: 'Nagroda nieprzyznana',
+        noRewardReasonKey: 'no_reward_profile',
+        noRewardReasonLabel: 'Brak pasującego profilu nagrody',
+        noRewardReasonHelperText: 'DB nie znalazła aktywnego reward profile dla tego wyniku.',
+      })),
     );
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.componentInstance.page.rewardState.preferCompletedChallengeReward(
+      'exploration-1',
+      'challenge-1',
+    );
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Ostatni ukończony challenge nie przyznał nagrody.');
+    expect(text).toContain('Brak skonfigurowanej nagrody dla tego wyniku.');
+    expect(text).not.toContain('Brak pasującego profilu nagrody');
+    expect(text).not.toContain('DB nie znalazła aktywnego reward profile dla tego wyniku.');
+    expect(text).not.toContain('reward_grant_entries` jest puste');
+  });
+
+  it('clears stale reward while leaving an explicit challenge reward source', async () => {
+    const firstReward = new Subject<ExplorationChallengeRewardReadModel | null>();
+    rewards.getChallengeReward.and.returnValue(firstReward.asObservable());
 
     page.loadData();
     page.startSelectedDifficulty();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(page.reward()?.rewardGrantId).toBe('reward-1');
-
-    page.overview.setStateFromWorkflow(activeExplorationState('easy', false, false, pastStepTiming(), 'exploration-2'));
+    page.rewardState.preferCompletedChallengeReward('exploration-1', 'challenge-1');
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(page.reward()).toBeNull();
     expect(page.isLoadingReward()).toBeTrue();
 
-    page.overview.setStateFromWorkflow(activeExplorationState('easy', false, false, pastStepTiming(), 'exploration-3'));
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', true, false, pastStepTiming()));
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(page.reward()).toBeNull();
-    expect(page.isLoadingReward()).toBeTrue();
+    expect(page.isLoadingReward()).toBeFalse();
 
     firstReward.next(challengeReward({ rewardGrantId: 'stale-reward' }));
     firstReward.complete();
     expect(page.reward()).toBeNull();
-    expect(page.isLoadingReward()).toBeTrue();
-
-    secondReward.next(challengeReward({ rewardGrantId: 'reward-2' }));
-    secondReward.complete();
-    expect(page.reward()?.rewardGrantId).toBe('reward-2');
     expect(page.isLoadingReward()).toBeFalse();
   });
 
@@ -1035,6 +1967,7 @@ function stepResolutionWorkflow(
 
 function activeEffect(
   effectKind: typeof ENCOUNTER_KIND.buff | typeof ENCOUNTER_KIND.debuff,
+  patch: Partial<NonNullable<HeroExplorationStateReadModel['activeEffect']>> = {},
 ): NonNullable<HeroExplorationStateReadModel['activeEffect']> {
   return {
     id: 'effect-1',
@@ -1053,6 +1986,7 @@ function activeEffect(
     metadataJson: {},
     createdAt: '2026-05-01T10:10:00.000Z',
     updatedAt: '2026-05-01T10:10:00.000Z',
+    ...patch,
   };
 }
 
@@ -1264,11 +2198,25 @@ function challengeReward(
   return {
     challengeAttemptId: 'challenge-1',
     challengeKind: 'trial',
+    stepId: 'step-1',
+    outcomeKind: null,
+    rewardSourceKind: 'challenge_attempt',
+    rewardSourceId: 'challenge-1',
+    rewardSourceLabel: 'Nagroda za challenge',
     status: 'completed',
     success: true,
     completionMode: 'manual',
     completedAt: '2026-05-01T10:20:00.000Z',
     rewardGrantId: 'reward-1',
+    rewardStatusKey: 'granted',
+    rewardStatusLabel: 'Nagroda przyznana',
+    rewardEntryCount: 2,
+    generatedItemCount: 1,
+    noRewardReasonKey: null,
+    noRewardReasonLabel: null,
+    noRewardReasonHelperText: null,
+    explanation: null,
+    rawJson: {},
     rewardGrant: {
       id: 'reward-1',
       serverId: 'server-1',
@@ -1371,3 +2319,6 @@ function pastStepTiming(): { startedAt: string; resolvesAt: string } {
     resolvesAt: new Date(Date.now() - 1_000).toISOString(),
   };
 }
+
+
+

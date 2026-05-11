@@ -1,16 +1,19 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { UiMetadataEntryReadModel } from '../../../core/domain/admin-ui-metadata.model';
 import { PrivateGameReportDetail } from '../../../core/domain/reports/game-report.model';
+import { GameServerKind } from '../../../core/enums/active-server.enum';
 import { GameReports } from '../../../core/services/reports/game-reports';
 import { GameReportUiMetadataService } from '../../../core/services/reports/game-report-ui-metadata';
+import { ActiveServer } from '../../../core/services/server/active-server';
 import { ToastService } from '../../../core/services/ui/toast';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { ReportDetailUiMetadata } from './reports-ui-metadata';
 
 @Injectable()
 export class ReportDetailPageState {
+  private readonly activeServer = inject(ActiveServer);
   private readonly gameReports = inject(GameReports);
   private readonly uiMetadataService = inject(GameReportUiMetadataService);
   private readonly toast = inject(ToastService);
@@ -26,6 +29,12 @@ export class ReportDetailPageState {
   readonly isMarkingRead = signal(false);
   readonly deletingReportId = signal<string | null>(null);
   readonly error = signal<string | null>(null);
+  readonly canShowBackendDiagnostics = computed(() => {
+    const server = this.activeServer.selectedServer();
+    const access = this.activeServer.access();
+
+    return server?.kind === GameServerKind.Sandbox && access.canAccessSandbox;
+  });
 
   loadData(reportId: string): void {
     const requestId = ++this.loadRequestId;
@@ -123,6 +132,20 @@ export class ReportDetailPageState {
 
   toDateTimeLabel(value: string): string {
     return new Date(value).toLocaleString();
+  }
+
+  reportBackendDiagnostics(): Array<{ label: string; value: string }> {
+    const report = this.report();
+
+    if (!report) {
+      return [];
+    }
+
+    return [
+      { label: 'RPC', value: 'get_hero_game_report_detail' },
+      { label: 'Args', value: JSON.stringify({ p_report_id: report.reportId }) },
+      { label: 'Backend row shape', value: JSON.stringify(report.rawJson) },
+    ];
   }
 
   private markRead(reportId: string, loadRequestId: number): void {

@@ -33,6 +33,15 @@ export type GetExplorationRewardExecutionDiagnosticRpcArgs =
 export type GetExplorationRewardExecutionDiagnosticRpcRow =
   Rpc<'get_exploration_reward_execution_diagnostic'>['Returns'][number];
 
+export type GetExplorationChallengeRewardReadModelRpcArgs =
+  Rpc<'get_exploration_challenge_reward_read_model'>['Args'];
+export type GetExplorationChallengeRewardReadModelRpcRow =
+  Rpc<'get_exploration_challenge_reward_read_model'>['Returns'][number];
+export type GetExplorationStepRewardReadModelRpcArgs =
+  Rpc<'get_exploration_step_reward_read_model'>['Args'];
+export type GetExplorationStepRewardReadModelRpcRow =
+  Rpc<'get_exploration_step_reward_read_model'>['Returns'][number];
+
 export type GetExplorationStepDurationSecondsRpcArgs =
   Rpc<'get_exploration_step_duration_seconds'>['Args'];
 export type GetExplorationStepDurationSecondsRpcResult =

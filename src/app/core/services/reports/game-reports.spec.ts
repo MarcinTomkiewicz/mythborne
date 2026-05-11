@@ -104,7 +104,19 @@ describe('GameReports', () => {
     );
     expect(detail).toEqual(jasmine.objectContaining({
       reportId: 'report-1',
-      reportTypeLabel: 'Combat',
+      reportTypeLabel: 'Trial',
+      sourceLabel: 'Arena Trial',
+      trialSection: jasmine.objectContaining({
+        title: 'Trial completed',
+      }),
+      rewardSection: jasmine.objectContaining({
+        title: 'Reward',
+      }),
+      relatedReports: [
+        jasmine.objectContaining({
+          title: 'Combat detail',
+        }),
+      ],
       itemReferences: [
         jasmine.objectContaining({
           displayName: 'Fine Bronze Blade',
@@ -153,7 +165,11 @@ describe('GameReports', () => {
     );
     expect(report).toEqual(jasmine.objectContaining({
       publicToken: 'public-token-1',
-      reportTypeLabel: 'Combat',
+      reportTypeLabel: 'Trial',
+      sourceLabel: 'Arena Trial',
+      trialSection: jasmine.objectContaining({
+        title: 'Trial completed',
+      }),
       itemReferences: [
         {
           sourceKind: 'reward_drop',
@@ -221,7 +237,43 @@ function listRow(): GetHeroGameReportsRpcRow {
 function detailRow(): GetHeroGameReportDetailRpcRow {
   return {
     ...listRow(),
+    report_type_key: 'trial',
+    report_type_label: 'Trial',
+    source_entity_type: 'trial_result',
     report_type_description: 'Combat report.',
+    source_label: 'Arena Trial',
+    trial_section_json: {
+      title: 'Trial completed',
+      summary: 'Hero One survived the arena trial.',
+      badge: 'Success',
+      facts: [
+        { label: 'Outcome', value: 'Success' },
+      ],
+    },
+    encounter_section_json: null,
+    reward_section_json: {
+      title: 'Reward',
+      summary: 'The trial granted persisted rewards.',
+      items: [
+        {
+          label: 'Experience',
+          value: '70 EXP',
+          details: ['70 Character Points'],
+        },
+      ],
+    },
+    effect_section_json: null,
+    related_reports_json: [
+      {
+        reportId: 'combat-report-1',
+        publicToken: 'combat-token-1',
+        reportTypeKey: 'combat',
+        reportTypeLabel: 'Combat',
+        title: 'Combat detail',
+        summary: 'Technical combat report.',
+        relationLabel: 'Combat section source',
+      },
+    ],
     item_references_json: [
       {
         sourceKind: 'reward_drop',
@@ -281,6 +333,12 @@ function publicRow(): GetPublicGameReportByTokenRpcRow {
     report_type_description: detail.report_type_description,
     report_type_key: detail.report_type_key,
     report_type_label: detail.report_type_label,
+    source_label: detail.source_label,
+    trial_section_json: detail.trial_section_json,
+    encounter_section_json: detail.encounter_section_json,
+    reward_section_json: detail.reward_section_json,
+    effect_section_json: detail.effect_section_json,
+    related_reports_json: detail.related_reports_json,
     source_entity_type: detail.source_entity_type,
     summary: detail.summary,
     title: detail.title,

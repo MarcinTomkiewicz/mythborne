@@ -182,6 +182,10 @@ export const RPC = {
   buy_now_player_auction: 'buy_now_player_auction',
   close_player_auction_listing: 'close_player_auction_listing',
   cancel_player_auction_listing: 'cancel_player_auction_listing',
+  get_exploration_challenge_reward_read_model:
+    'get_exploration_challenge_reward_read_model',
+  get_exploration_step_reward_read_model:
+    'get_exploration_step_reward_read_model',
   get_exploration_step_duration_seconds: 'get_exploration_step_duration_seconds',
   get_hero_exploration_state: 'get_hero_exploration_state',
   get_encounter_definition_readiness: 'get_encounter_definition_readiness',

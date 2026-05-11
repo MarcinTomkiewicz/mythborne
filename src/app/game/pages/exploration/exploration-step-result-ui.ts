@@ -3,6 +3,7 @@ import {
   HeroExplorationEffectReadModel,
   HeroExplorationStepResolutionReadModel,
 } from '../../../core/domain/exploration/exploration-runtime.model';
+import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 
 const ENCOUNTER_KIND_LABEL: Record<string, string> = {
   [ENCOUNTER_KIND.combat]: 'Combat ',
@@ -21,6 +22,10 @@ export function explorationStepResultTitle(
 ): string {
   if (!result) {
     return '';
+  }
+
+  if (isTrialManifestationFailure(result)) {
+    return 'Trial manifestation failed';
   }
 
   if (result.outcomeKind === 'trial') {
@@ -46,6 +51,10 @@ export function explorationStepResultDescription(
     return '';
   }
 
+  if (isTrialManifestationFailure(result)) {
+    return 'A Trial opportunity appeared, but manifestation failed. DB did not grant a reward for this outcome.';
+  }
+
   if (result.outcomeKind === 'trial') {
     return result.challengeAttemptId
       ? 'A Trial challenge is active. Resolve it through the supported Trial action to continue exploration.'
@@ -64,14 +73,14 @@ export function explorationStepResultDescription(
 function encounterKindPrefix(
   result: HeroExplorationStepResolutionReadModel,
 ): string {
-  return ENCOUNTER_KIND_LABEL[result.selectedDefinition?.encounterKind ?? ''] ?? '';
+  return ENCOUNTER_KIND_LABEL[encounterKind(result) ?? ''] ?? '';
 }
 
 function encounterOutcomeDescription(
   result: HeroExplorationStepResolutionReadModel,
   activeEffect: HeroExplorationEffectReadModel | null,
 ): string {
-  const kind = result.selectedDefinition?.encounterKind;
+  const kind = encounterKind(result);
 
   if (kind === ENCOUNTER_KIND.resource) {
     return 'A Resource Encounter resolved through the database reward flow.';
@@ -81,9 +90,31 @@ function encounterOutcomeDescription(
     const label = EFFECT_ENCOUNTER_LABEL[kind];
 
     return activeEffect
-      ? `A ${label} applied DB effect ${activeEffect.effectDefinitionId}.`
+      ? `A ${label} applied an exploration effect.`
       : `A ${label} resolved; DB did not return an active effect row in the refreshed state.`;
   }
 
   return 'An Encounter outcome was returned by the database runtime.';
+}
+
+function encounterKind(result: HeroExplorationStepResolutionReadModel): string | null {
+  const metadata = jsonRecord(result.metadataJson);
+
+  return result.selectedDefinition?.encounterKind
+    ?? optionalText(read(metadata, 'encounterKind', 'encounter_kind'));
+}
+
+function isTrialManifestationFailure(
+  result: HeroExplorationStepResolutionReadModel,
+): boolean {
+  const metadata = jsonRecord(result.metadataJson);
+
+  return (
+    result.outcomeKind === 'nothing' &&
+    (
+      result.rawOutcomeKind === 'trial_opportunity' ||
+      read(metadata, 'rawOutcomeKind', 'raw_outcome_kind') === 'trial_opportunity'
+    ) &&
+    read(metadata, 'trialManifested', 'trial_manifested') === false
+  );
 }

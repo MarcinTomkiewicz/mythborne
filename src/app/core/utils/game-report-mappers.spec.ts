@@ -101,19 +101,26 @@ describe('game report mappers', () => {
       'combatSection',
       'contextualReadiness',
       'createdAt',
+      'effectSection',
+      'encounterSection',
       'itemReferences',
       'participants',
       'publicToken',
+      'relatedReports',
       'reportTypeDescription',
       'reportTypeKey',
       'reportTypeLabel',
+      'rewardSection',
+      'sourceLabel',
       'sourceEntityType',
       'summary',
       'title',
+      'trialSection',
     ].sort());
     expect(report).toEqual(jasmine.objectContaining({
       publicToken: 'public-token-1',
       reportTypeLabel: 'Combat',
+      sourceLabel: 'Training combat',
       sourceEntityType: 'combat_result',
       contextualReadiness: null,
     }));
@@ -247,6 +254,116 @@ describe('game report mappers', () => {
     expect(detail.itemReferences).toEqual([]);
     expect(JSON.stringify(detail.contextualReadiness)).not.toContain('trial_attempt');
     expect(JSON.stringify(detail.contextualReadiness)).not.toContain('exploration_graph');
+  });
+
+  it('maps DB-owned contextual report sections without reconstructing them locally', () => {
+    const detail = mapPrivateGameReportDetail(privateDetailRow({
+      report_type_key: 'trial',
+      report_type_label: 'Trial',
+      source_entity_type: 'trial_result',
+      trial_section_json: {
+        title: 'Trial completed',
+        summary: 'Hero One completed the arena trial.',
+        badge: 'Success',
+        facts: [{ label: 'Outcome', value: 'Victory' }],
+      },
+      reward_section_json: {
+        title: 'Reward',
+        summary: 'Rewards were granted by DB.',
+        items: [
+          {
+            label: 'resources',
+            resourceType: 'materials',
+            amount: 12,
+          },
+          {
+            resource_type: 'workforce',
+            amount: 3,
+          },
+          {
+            resourceType: 'drachma',
+            amount: 20,
+          },
+          {
+            label: 'Experience',
+            value: '70 EXP',
+            details: ['70 Character Points', 'Reward blade'],
+          },
+        ],
+      },
+      effect_section_json: {
+        title: 'Blessing of Focus',
+        summary: 'Focus is increased for the next Trial.',
+        badge: 'Buff',
+        facts: [{ label: 'Duration', value: 'Next Trial' }],
+        effects: [
+          {
+            label: 'Effect',
+            value: 'Active',
+            details: ['Consumed by next Trial'],
+          },
+        ],
+      },
+      related_reports_json: [
+        {
+          reportId: 'combat-report-1',
+          publicToken: 'combat-token-1',
+          reportTypeKey: 'combat',
+          reportTypeLabel: 'Combat',
+          title: 'Combat detail',
+          summary: 'Low-level combat report.',
+          relationLabel: 'Embedded combat',
+        },
+      ],
+    }));
+
+    expect(detail.trialSection).toEqual(jasmine.objectContaining({
+      title: 'Trial completed',
+      summary: 'Hero One completed the arena trial.',
+      badge: 'Success',
+      facts: [{ label: 'Outcome', value: 'Victory' }],
+    }));
+    expect(detail.rewardSection?.items).toEqual([
+      {
+        label: 'Materials',
+        value: '+12',
+        details: [],
+      },
+      {
+        label: 'Workforce',
+        value: '+3',
+        details: [],
+      },
+      {
+        label: 'Drachma',
+        value: '+20',
+        details: [],
+      },
+      {
+        label: 'Experience',
+        value: '70 EXP',
+        details: ['70 Character Points', 'Reward blade'],
+      },
+    ]);
+    expect(detail.effectSection).toEqual(jasmine.objectContaining({
+      title: 'Blessing of Focus',
+      summary: 'Focus is increased for the next Trial.',
+      badge: 'Buff',
+      facts: [{ label: 'Duration', value: 'Next Trial' }],
+      items: [
+        {
+          label: 'Effect',
+          value: 'Active',
+          details: ['Consumed by next Trial'],
+        },
+      ],
+    }));
+    expect(detail.relatedReports).toEqual([
+      jasmine.objectContaining({
+        title: 'Combat detail',
+        relationLabel: 'Embedded combat',
+      }),
+    ]);
   });
 
   it('maps public encounter reports to safe producer readiness', () => {
@@ -528,6 +645,12 @@ function privateDetailRow(
     combat_section_json: combatSectionJson(),
     item_references_json: itemReferencesJson(),
     report_type_description: 'Combat report.',
+    source_label: 'Training combat',
+    trial_section_json: null,
+    encounter_section_json: null,
+    reward_section_json: null,
+    effect_section_json: null,
+    related_reports_json: [],
     ...overrides,
   } as unknown as GetHeroGameReportDetailRpcRow;
 }
@@ -544,9 +667,15 @@ function publicReportRow(
     report_type_description: 'Combat report.',
     report_type_key: 'combat',
     report_type_label: 'Combat',
+    source_label: 'Training combat',
     source_entity_type: 'combat_result',
     summary: 'A training fight was completed.',
     title: 'Training combat',
+    trial_section_json: null,
+    encounter_section_json: null,
+    reward_section_json: null,
+    effect_section_json: null,
+    related_reports_json: [],
     ...overrides,
   };
 }

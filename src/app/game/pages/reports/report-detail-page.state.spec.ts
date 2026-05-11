@@ -8,6 +8,7 @@ import {
 } from '../../../core/domain/reports/game-report.model';
 import { GameReports } from '../../../core/services/reports/game-reports';
 import { GameReportUiMetadataService } from '../../../core/services/reports/game-report-ui-metadata';
+import { ActiveServer } from '../../../core/services/server/active-server';
 import { ToastService } from '../../../core/services/ui/toast';
 import { ReportDetailPageState } from './report-detail-page.state';
 
@@ -46,6 +47,13 @@ describe('ReportDetailPageState', () => {
         { provide: GameReportUiMetadataService, useValue: uiMetadata },
         { provide: ToastService, useValue: toast },
         { provide: Router, useValue: router },
+        {
+          provide: ActiveServer,
+          useValue: {
+            selectedServer: () => ({ kind: 'standard', canUseAsSandbox: false }),
+            access: () => ({ canAccessSandbox: false }),
+          },
+        },
       ],
     });
     state = TestBed.inject(ReportDetailPageState);
@@ -139,6 +147,7 @@ function detail(
     reportTypeDescription: 'Combat report.',
     title: 'Training combat',
     summary: 'A combat was completed.',
+    sourceLabel: 'Training combat',
     sourceEntityType: 'combat_result',
     sourceEntityId: 'combat-result-1',
     createdAt: '2026-05-05T10:00:00.000Z',
@@ -149,8 +158,14 @@ function detail(
     },
     participants: [],
     itemReferences: [],
+    trialSection: null,
+    encounterSection: null,
+    rewardSection: null,
+    effectSection: null,
     combatSection: null,
+    relatedReports: [],
     contextualReadiness: null,
+    rawJson: {},
     ...overrides,
   };
 }

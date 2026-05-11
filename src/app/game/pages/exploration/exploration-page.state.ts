@@ -51,6 +51,7 @@ export class ExplorationPageState {
   readonly combatTimingManifest = this.challenge.combatTimingManifest;
   readonly combatParticipants = this.challenge.combatParticipants;
   readonly combatEvents = this.challenge.combatEvents;
+  readonly combatTimelineRows = this.challenge.combatTimelineRows;
   readonly completedCombatLiveState = this.challenge.completedCombatLiveState;
   readonly currentCombatActor = this.challenge.currentCombatActor;
   readonly combatStatusLabel = this.challenge.combatStatusLabel;
@@ -77,16 +78,17 @@ export class ExplorationPageState {
   readonly autoResolveExplanation = this.challenge.autoResolveExplanation;
   readonly isLoadingReward = this.rewardState.isLoadingReward;
   readonly reward = this.rewardState.reward;
-  readonly visibleRewardEntries = this.rewardState.visibleRewardEntries;
-  readonly hiddenRewardDiagnostics = this.rewardState.hiddenRewardDiagnostics;
-  readonly rewardGrantDiagnostic = this.rewardState.rewardGrantDiagnostic;
-  readonly rewardSummary = this.rewardState.rewardSummary;
+  readonly rewardDisplay = this.rewardState.rewardDisplay;
+  readonly rewardDiagnostics = this.rewardState.rewardDiagnostics;
+  readonly rewardBackendDiagnostics = this.rewardState.rewardBackendDiagnostics;
+  readonly rewardUnavailableMessage = this.rewardState.rewardUnavailableMessage;
   readonly movementBlockReason = this.movement.movementBlockReason;
   readonly remainingTrialsLabel = this.overview.remainingTrialsLabel;
   readonly currentNodeLabel = this.overview.currentNodeLabel;
   readonly activeStepLabel = this.overview.activeStepLabel;
   readonly activeChallengeLabel = this.overview.activeChallengeLabel;
   readonly activeEffectLabel = this.overview.activeEffectLabel;
+  readonly activeEffectDisplay = this.overview.activeEffectDisplay;
   readonly canShowSelectionDiagnostics = computed(() => {
     const server = this.activeServer.selectedServer();
     const access = this.activeServer.access();
@@ -226,5 +228,19 @@ export class ExplorationPageState {
   participantHpLabel = this.challenge.participantHpLabel.bind(this.challenge);
   combatEventMetaLabel = this.challenge.eventMetaLabel.bind(this.challenge);
   timingManifestLabel = this.challenge.timingManifestLabel.bind(this.challenge);
+
+  stepBackendDiagnostics(): Array<{ label: string; value: string }> {
+    const result = this.currentStepResult();
+
+    if (!result) {
+      return [];
+    }
+
+    return [
+      { label: 'RPC', value: 'resolve_hero_exploration_step' },
+      { label: 'Args', value: JSON.stringify({ p_step_id: result.stepId }) },
+      { label: 'Mapped result shape', value: JSON.stringify(result) },
+    ];
+  }
 
 }

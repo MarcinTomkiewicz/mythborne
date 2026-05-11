@@ -3,15 +3,22 @@ import {
   GameReportCombatSection,
   GameReportCombatParticipant,
   GameReportContextualReadiness,
+  GameReportContextSection,
   GameReportItemReference,
   GameReportParticipant,
+  GameReportRelatedReport,
   PublicGameReportItemReference,
 } from '../../core/domain/reports/game-report.model';
 
 export interface GameReportContentReadModel {
   participants: GameReportParticipant[];
   itemReferences: Array<GameReportItemReference | PublicGameReportItemReference>;
+  trialSection: GameReportContextSection | null;
+  encounterSection: GameReportContextSection | null;
+  rewardSection: GameReportContextSection | null;
+  effectSection: GameReportContextSection | null;
   combatSection: GameReportCombatSection | null;
+  relatedReports: GameReportRelatedReport[];
   contextualReadiness: GameReportContextualReadiness | null;
 }
 
@@ -66,6 +73,8 @@ export class GameReportContent {
     if (
       report.participants.length > 0 ||
       report.itemReferences.length > 0 ||
+      this.contextSections().length > 0 ||
+      this.relatedReports().length > 0 ||
       report.combatSection !== null
     ) {
       return null;
@@ -86,5 +95,20 @@ export class GameReportContent {
       participant.evasionChance !== null ||
       participant.stats.length > 0
     );
+  }
+
+  contextSections(): GameReportContextSection[] {
+    const report = this.report();
+
+    return [
+      report.trialSection,
+      report.encounterSection,
+      report.effectSection,
+      report.rewardSection,
+    ].filter((section): section is GameReportContextSection => section != null);
+  }
+
+  relatedReports(): GameReportRelatedReport[] {
+    return this.report().relatedReports ?? [];
   }
 }

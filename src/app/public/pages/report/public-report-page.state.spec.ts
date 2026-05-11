@@ -67,11 +67,17 @@ function report(): PublicGameReport {
     reportTypeDescription: 'Combat report.',
     title: 'Training combat',
     summary: 'A combat was completed.',
+    sourceLabel: 'Training combat',
     sourceEntityType: 'combat_result',
     createdAt: '2026-05-05T10:00:00.000Z',
     participants: [],
     itemReferences: [],
+    trialSection: null,
+    encounterSection: null,
+    rewardSection: null,
+    effectSection: null,
     combatSection: null,
+    relatedReports: [],
     contextualReadiness: null,
   };
 }

@@ -4,9 +4,9 @@ Purpose: this backlog translates current project decisions into small, promptabl
 
 Use this as a practical task queue. Concept documents remain informational; this file is for execution.
 
-## Latest accepted guild follow-up
+## Latest accepted W11 follow-up
 
-**Implementation note:** T22 accepted on 2026-05-09. The `/game/guild` in-guild state now has real membership, invite and join-request management UI through a focused `GuildMembershipManagementSection`. The section reuses existing `GuildMembersState`, `GuildInvitesState`, `GuildJoinRequestsState` and `CurrentGuildState`; renders members and roles; exposes pending invite/request sections; supports invite create/cancel; supports incoming join-request accept/reject; and supports outgoing request cancel when DB-backed flags allow it. Accepted join requests refresh the member list, action feedback uses `ToastService`, blocking read/load errors remain inline, invite target hero input uses shared trim-required validation plus trimmed payloads, and repeated explicit action toasts are not suppressed by component-local dedupe. No DB/RPC changes, generated type edits, direct table access, guild armory changes, emergency election actions, role-management/kick/promote/demote UI or fake siege/Argonautics actions were added. Verification passed with focused T22 specs, full guild + route/sidebar specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for `button pButton`, `.from(` and direct write patterns. Manual smoke for `/game/guild` in-guild invite/request/member-management flows remains pending.
+**Implementation note:** W11 accepted on 2026-05-11. The `/game/exploration` reward path no longer uses stale latest-challenge fallback behavior: challenge rewards read only exact `getChallengeReward({ challengeAttemptId })`, direct Resource Encounter rewards read exact `getStepReward({ stepId })`, and the old `hero_exploration_challenge_attempts` fallback scan was removed. Trial manifestation failure is distinct from ordinary Nothing, empty/null canonical reward read models show explicit DB-read-model unavailability, resource reward labels no longer duplicate resource type text, and sandbox backend-shape diagnostics remain gated. Private/public report detail consumes the regenerated contextual report sections from canonical report RPCs. Verification passed with focused reward/report/exploration specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for removed latest-challenge fallback terms. Representative live-loop smoke moves to W12/W13.
 
 Canonical source order:
 
@@ -10162,67 +10162,174 @@ If any DB/RPC contract is missing, Codex must report the DB dependency instead o
 - Diagnostics use DB/RPC payload, not frontend guesses.
 - Normal player reward UI remains concise.
 
+**Status:** Accepted on 2026-05-11. W11 removed the stale current-event/latest-challenge reward fallback and the fallback scan of `hero_exploration_challenge_attempts`: challenge rewards now read only exact `getChallengeReward({ challengeAttemptId })`, and direct Resource Encounter rewards read exact `getStepReward({ stepId })`. Trial manifestation failure is no longer rendered as ordinary Nothing, empty/null canonical reward read models show explicit DB-read-model unavailability, resource reward labels no longer duplicate resource type text, and sandbox backend-shape diagnostics remain gated. After Migrator fixed and regenerated the report detail contract, private and public report detail consume `trial_section_json`, `encounter_section_json`, `combat_section_json`, `reward_section_json`, `effect_section_json`, `related_reports_json`, and `source_label` from the canonical report RPCs. The shared report renderer shows DB-owned Trial/Encounter story sections before reward/effect/combat/related report sections, hides the old detail-page missing-metadata warning, and no longer throws when a combat attack source label is absent. Focused reward/report/exploration specs, `npx tsc --noEmit`, `npm run build` with known warnings, and static greps for the removed latest-challenge fallback passed. Final representative live-loop smoke moves to W12/W13.
+
 ---
 
-## Task W12 — Minimal exploration smoke content visibility
+## Task W12 — Exploration smoke content readiness matrix
 
-**Goal:** Ensure the minimal complete content set for exploration smoke is visible and usable from admin/tester surfaces.
+**Goal:**  
+Ensure admin/tester surfaces clearly show whether the minimum exploration smoke content set is configured, complete, and usable by the DB runtime.
 
 **Scope:**
 
-- Surface or confirm the configured minimal content set:
+- Surface a single tester/admin readiness view for the minimum exploration smoke set:
   - one complete Combat Trial;
   - one complete Combat Encounter;
   - one complete Resource Encounter;
   - one complete Buff Encounter;
   - one complete Debuff Encounter;
   - Trial reward with item generation;
-  - Combat Encounter XP reward;
-  - Resource Encounter resource reward;
-  - Buff Encounter buff effect;
-  - Debuff Encounter debuff effect.
-- If these already exist, do not duplicate them.
-- If any are missing or incomplete, show the specific readiness reason.
-- Do not seed content from Angular.
+  - Combat Trial/Encounter XP/CP reward path;
+  - Resource Encounter resource reward path;
+  - Buff Encounter active buff effect path;
+  - Debuff Encounter active debuff effect path.
+- For every required smoke item, show:
+  - definition key / label / id where available;
+  - readiness status;
+  - reward profile / assignment status where relevant;
+  - effect definition status where relevant;
+  - missing or blocking readiness reasons from DB/read models.
+- If the content already exists, reuse it and display it.
+- If content is missing or incomplete, show the exact missing piece; do not create duplicates.
+- Make active effect label/summary availability visible as a readiness/data quality issue, but do not invent labels in Angular.
+- Use DB/RPC/read-model-owned data only.
+- Do not seed, duplicate, mutate, or repair content from Angular.
+
+**Non-goals:**
+
+- No frontend fallback reward inference.
+- No Armory-based reward inference.
+- No selection-diagnostic-based reward inference.
+- No report UI rewrite.
+- No Angular-side content seeding.
 
 **Acceptance criteria:**
 
-- Admin/tester can identify the minimum content needed for full exploration smoke.
-- Missing pieces are visible and actionable.
-- No duplicate definitions are created by frontend work.
+- Admin/tester can identify the full minimum content set needed for exploration smoke.
+- Each Trial/Encounter/reward/effect path has a visible `ready / missing / incomplete` state.
+- Missing reward assignments, missing reward entries, missing effect definitions, or missing effect labels are explicit and actionable.
+- Existing definitions are not duplicated by frontend work.
+- The surface is useful for W13 full-loop smoke without needing raw SQL inspection.
+
+**Verification:**
+
+- Focused specs for the readiness view/mappers.
+- `npx tsc --noEmit`.
+- `npm run build`.
+- Static grep:
+  - no frontend content seeding;
+  - no direct inserts/updates;
+  - no Armory reward inference.
 
 ---
 
 ## Task W13 — Exploration full loop player/sandbox integration
 
-**Goal:** Tie the completed runtime pieces into one stable player/sandbox exploration loop.
+**Goal:**  
+Tie the completed runtime pieces into one stable player/sandbox exploration loop using canonical DB/RPC outputs only.
+
+**Prerequisite:**
+
+- W11 accepted after removing stale latest-challenge reward fallback.
+- W12 minimum smoke content readiness is visible enough for tester/admin to know what path is being exercised.
 
 **Scope:**
 
-- Ensure the flow works across:
+- Ensure the player/sandbox flow works across:
   - start exploration;
   - direction selection;
   - step timer;
-  - skip timer in sandbox;
+  - sandbox timer acceleration / skip;
   - check result;
-  - Nothing;
+  - ordinary Nothing;
+  - Trial manifestation failed;
   - Combat Trial;
   - Combat Encounter;
   - Resource Encounter;
-  - Buff/Debuff Encounter;
-  - reward/effect display;
-  - continue exploration.
-- Preserve stale guards on selected server/active hero/exploration state.
-- Surface errors in Polish.
+  - Buff Encounter;
+  - Debuff Encounter;
+  - reward display;
+  - active effect display;
+  - continue exploration after resolved result.
+- Preserve stale guards across:
+  - selected server;
+  - active hero;
+  - difficulty;
+  - exploration id;
+  - step id;
+  - challenge attempt id;
+  - combat session id.
+- Player-facing UI must remain concise:
+  - no normal raw DB/log/debug blocks outside sandbox diagnostics;
+  - no duplicated reward labels like `Drachma +90 Drachma`;
+  - no stale previous reward/combat result after moving to the next step.
+- Sandbox diagnostics may remain available and collapsed:
+  - step result backend shape;
+  - reward RPC backend shape;
+  - selection diagnostics;
+  - report backend shape only where already present and useful.
+- Errors and impossible states must be explicit and in Polish.
 - Do not hide DB/RPC failures behind generic fallback success.
+
+**Important runtime rules:**
+
+- Resource Encounter reward display must use `get_exploration_step_reward_read_model` via exact `stepId`.
+- Trial/Combat reward display must use exact `challengeAttemptId`.
+- No latest-challenge fallback.
+- No Armory inference.
+- No selection diagnostic reward inference.
+- No local reward reconstruction from raw metadata when the canonical reward read model is missing.
+- If a reward source is explicit but the reward read model returns null/empty, show a clear missing DB read-model message.
+
+**Reports handling for this task:**
+
+- Do not block W13 on full report UX.
+- Existing report links/details may remain imperfect.
+- Do not do a report rewrite here unless it is required to keep exploration loop functional.
+- Report follow-ups should be documented separately if smoke shows gaps.
 
 **Acceptance criteria:**
 
-- Core exploration loop can be followed end-to-end.
-- Sandbox tester can accelerate waiting without breaking runtime.
-- Player-facing flow remains concise.
-- Errors and impossible states are explicit.
+- Core exploration loop can be followed end-to-end without stale UI state.
+- Sandbox tester can accelerate waiting without breaking runtime state.
+- Nothing, Trial manifestation failure, Combat Trial, Combat Encounter, Resource Encounter, Buff Encounter, and Debuff Encounter are distinguishable in the UI.
+- Rewards/effects shown in the current loop match canonical DB/RPC read models.
+- Missing reward/effect read-model details are explicit, not silently hidden.
+- Player-facing flow remains concise enough for later UI/UX polish.
+- W13 does not add another layer of fallback/workaround code.
 
+**Code quality acceptance:**
+
+- No new broad fallback systems.
+- No duplicate helper/method families for nearly identical display logic.
+- Remove dead code introduced during W11 diagnostics/rewrite if it is no longer used.
+- Any LOC increase must be justified by actual new behavior; cleanup should remove obsolete W11 workaround code where possible.
+- Keep tests focused; do not keep growing one giant route spec unless the case is truly route-level.
+
+**Verification:**
+
+- Focused exploration loop specs.
+- Focused reward/effect display specs.
+- Focused sandbox timer/skip specs.
+- `npx tsc --noEmit`.
+- `npm run build`.
+- Static greps:
+  - no latest-challenge reward fallback;
+  - no Armory reward inference;
+  - no selectionDiagnostic reward inference;
+  - no direct DB writes from exploration frontend;
+  - no normal-player raw `Log DB`/backend-shape blocks outside sandbox-gated diagnostics.
+- Manual smoke:
+  - ordinary Nothing;
+  - Trial manifestation failed;
+  - Combat Trial;
+  - Combat Encounter;
+  - Resource Encounter with Drachma/Materials/Workforce;
+  - Buff Encounter;
+  - Debuff Encounter;
+  - continue after each resolved outcome.
+  
 ---
 
 ## Task W14 — Exploration Core completion report and docs handoff
