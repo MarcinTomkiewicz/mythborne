@@ -10355,6 +10355,8 @@ Tie the completed runtime pieces into one stable player/sandbox exploration loop
 - Remaining blockers are concrete and actionable.
 - Report separates core runtime issues from future minigames/UI redesign.
 
+**Status:** Deferred on 2026-05-11 after W13 acceptance. W14 is kept as a later Exploration Core completion/handoff report after representative real-session `/game/exploration` smoke, while implementation focus moves to Epic X.
+
 ---
 
 # Epic X — Onboarding / Start Flow Completion
