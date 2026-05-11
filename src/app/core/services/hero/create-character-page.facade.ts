@@ -6,6 +6,7 @@ import { MessageService } from 'primeng/api';
 import { Origin } from '../../domain/origin/origin.model';
 import { StartFlowServerAvailability } from '../../domain/start-flow/start-flow.model';
 import { CreateCharacterFormFactory } from '../../factories/forms/create-character-form.factory';
+import { getErrorMessage } from '../../utils/error-message';
 import { trimText } from '../../utils/normalize-text';
 import { Auth } from '../auth/auth';
 import { AuthState } from '../auth/auth-state';
@@ -93,8 +94,8 @@ export class CreateCharacterPageFacade {
       this.accountForm.markAllAsTouched();
       this.showToast(
         'warn',
-        'Account step incomplete',
-        'Provide a valid email and password before continuing.'
+        'Dane konta są niepełne',
+        'Podaj poprawny email i hasło przed przejściem dalej.'
       );
       return;
     }
@@ -107,8 +108,8 @@ export class CreateCharacterPageFacade {
       this.heroForm.markAllAsTouched();
       this.showToast(
         'warn',
-        'Hero step incomplete',
-        'Choose a valid hero name before continuing.'
+        'Nazwa bohatera jest niepełna',
+        'Podaj poprawną nazwę bohatera przed przejściem dalej.'
       );
       return;
     }
@@ -146,19 +147,19 @@ export class CreateCharacterPageFacade {
       this.profileForm.markAllAsTouched();
       this.showToast(
         'warn',
-        'Profile step incomplete',
-        'Complete the required profile fields before creating the character.'
+        'Profil jest niepełny',
+        'Uzupełnij wymagane pola profilu przed stworzeniem bohatera.'
       );
       return;
     }
 
     if (!this.form.controls.originId.valid) {
-      this.errorMessage.set('Choose an origin before finishing character creation.');
+      this.errorMessage.set('Wybierz pochodzenie przed stworzeniem bohatera.');
       this.step.set(3);
       this.showToast(
         'warn',
-        'Origin missing',
-        'Choose an origin before finishing character creation.'
+        'Brak pochodzenia',
+        'Wybierz pochodzenie przed stworzeniem bohatera.'
       );
       return;
     }
@@ -166,9 +167,9 @@ export class CreateCharacterPageFacade {
     const availability = this.selectedServerAvailability();
     if (availability && !availability.canCreateHero) {
       const message =
-        availability.blockReason || 'Selected server is not available for hero creation.';
+        availability.blockReason || 'Na wybranym serwerze nie można teraz stworzyć bohatera.';
       this.errorMessage.set(message);
-      this.showToast('error', 'Hero creation blocked', message);
+      this.showToast('error', 'Tworzenie bohatera zablokowane', message);
       return;
     }
 
@@ -177,8 +178,8 @@ export class CreateCharacterPageFacade {
     this.messageService.clear('global');
     this.showToast(
       'info',
-      'Creating character',
-      'Account, hero, estate and starting records are being created.'
+      'Tworzenie bohatera',
+      'DB tworzy bohatera, początkowe zasoby, punkty postaci i posiadłość.'
     );
 
     const account = this.accountForm.getRawValue();
@@ -209,28 +210,24 @@ export class CreateCharacterPageFacade {
           if (!route) {
             const message = `Unsupported start-flow route action returned by DB: ${result.routeNextAction || 'empty'}.`;
             this.errorMessage.set(message);
-            this.showToast('error', 'Character creation route blocked', message);
+            this.showToast('error', 'Przekierowanie po stworzeniu zablokowane', message);
             return;
           }
 
           this.showToast(
             'success',
-            'Character created',
-            'Character creation finished. Redirecting to attribute assignment.'
+            'Bohater został stworzony',
+            'Tworzenie bohatera zakończone. Przechodzisz do przydzielania atrybutów.'
           );
           void this.router.navigateByUrl(route);
         },
         error: (error) => {
-          console.error('[CreateCharacter] Error during hero creation:', error);
-          this.errorMessage.set(
-            error instanceof Error
-              ? error.message
-              : 'Character creation failed. Check the data and try again.'
-          );
+          const message = toHeroCreationErrorMessage(error);
+          this.errorMessage.set(message);
           this.showToast(
             'error',
-            'Character creation failed',
-            error?.message ?? 'Check the data and try again.'
+            'Nie udało się stworzyć bohatera',
+            message
           );
         },
       });
@@ -250,7 +247,7 @@ export class CreateCharacterPageFacade {
           this.serverAvailabilityError.set(
             error instanceof Error
               ? error.message
-              : 'Failed to load start-flow server availability.',
+              : 'Nie udało się wczytać dostępności serwerów start-flow.',
           );
         },
       });
@@ -290,5 +287,37 @@ export class CreateCharacterPageFacade {
       styleClass: severityClassMap[severity],
     });
   }
+}
+
+function toHeroCreationErrorMessage(error: unknown): string {
+  const rawMessage = getErrorMessage(error, '');
+  const message = rawMessage.toLowerCase();
+
+  if (message.includes('duplicate') || message.includes('already exists') || message.includes('unique')) {
+    return 'Ta nazwa bohatera jest już zajęta na wybranym serwerze.';
+  }
+
+  if (message.includes('district') && message.includes('full')) {
+    return 'Dzielnica startowa na wybranym serwerze jest pełna.';
+  }
+
+  if (message.includes('server') && message.includes('full')) {
+    return 'Wybrany serwer jest pełny.';
+  }
+
+  if (message.includes('origin')) {
+    return 'Wybrane pochodzenie jest niedostępne. Wybierz inną opcję.';
+  }
+
+  if (
+    message.includes('permission') ||
+    message.includes('membership') ||
+    message.includes('not allowed') ||
+    message.includes('unauthorized')
+  ) {
+    return 'Nie masz uprawnień do stworzenia bohatera na wybranym serwerze.';
+  }
+
+  return rawMessage || 'Nie udało się stworzyć bohatera. Sprawdź dane i spróbuj ponownie.';
 }
 

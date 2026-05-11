@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import {
   StartFlowHeroCreationResult,
   StartFlowServerAvailability,
@@ -76,10 +76,103 @@ describe('CreateCharacterPageFacade', () => {
     );
     expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
       severity: 'error',
-      summary: 'Character creation route blocked',
+      summary: 'Przekierowanie po stworzeniu zablokowane',
+    }));
+  });
+
+  it('shows a player-readable duplicate hero name error from the DB/RPC workflow', () => {
+    createHero.createHero.and.returnValue(
+      throwError(() => new Error('duplicate key value violates unique constraint')),
+    );
+    fillValidCreationForm(facade);
+
+    facade.submit();
+
+    expect(createHero.createHero).toHaveBeenCalled();
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+    expect(facade.errorMessage()).toBe(
+      'Ta nazwa bohatera jest już zajęta na wybranym serwerze.',
+    );
+    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
+      severity: 'error',
+      summary: 'Nie udało się stworzyć bohatera',
+      detail: 'Ta nazwa bohatera jest już zajęta na wybranym serwerze.',
+    }));
+  });
+
+  it('maps DB/RPC hero creation blockers to player-readable copy', () => {
+    const cases: Array<[unknown, string]> = [
+      [
+        new Error('District A is full.'),
+        'Dzielnica startowa na wybranym serwerze jest pełna.',
+      ],
+      [
+        new Error('Server is full.'),
+        'Wybrany serwer jest pełny.',
+      ],
+      [
+        new Error('Invalid origin selected.'),
+        'Wybrane pochodzenie jest niedostępne. Wybierz inną opcję.',
+      ],
+      [
+        new Error('Permission denied for this server.'),
+        'Nie masz uprawnień do stworzenia bohatera na wybranym serwerze.',
+      ],
+      [
+        new Error('Membership is not active.'),
+        'Nie masz uprawnień do stworzenia bohatera na wybranym serwerze.',
+      ],
+      [
+        { code: 'P0001' },
+        'Nie udało się stworzyć bohatera. Sprawdź dane i spróbuj ponownie.',
+      ],
+    ];
+
+    fillValidCreationForm(facade);
+
+    for (const [error, message] of cases) {
+      createHero.createHero.and.returnValue(throwError(() => error));
+      messageService.add.calls.reset();
+      facade.errorMessage.set(null);
+
+      facade.submit();
+
+      expect(router.navigateByUrl).not.toHaveBeenCalled();
+      expect(facade.errorMessage()).toBe(message);
+      expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
+        severity: 'error',
+        summary: 'Nie udało się stworzyć bohatera',
+        detail: message,
+      }));
+    }
+  });
+
+  it('blocks creation with the DB server availability reason before submitting the RPC', () => {
+    facade.serverAvailability.set([{
+      serverId: 'server-1',
+      canCreateHero: false,
+      blockReason: 'Dzielnica startowa na tym serwerze jest pełna.',
+    } as StartFlowServerAvailability]);
+    facade.heroForm.controls.characterName.setValue('Hero Name');
+    facade.form.controls.originId.setValue('origin-1');
+    facade.profileForm.controls.name.setValue('Player Name');
+
+    facade.submit();
+
+    expect(createHero.createHero).not.toHaveBeenCalled();
+    expect(facade.errorMessage()).toBe('Dzielnica startowa na tym serwerze jest pełna.');
+    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
+      severity: 'error',
+      summary: 'Tworzenie bohatera zablokowane',
     }));
   });
 });
+
+function fillValidCreationForm(facade: CreateCharacterPageFacade): void {
+  facade.heroForm.controls.characterName.setValue('Hero Name');
+  facade.form.controls.originId.setValue('origin-1');
+  facade.profileForm.controls.name.setValue('Player Name');
+}
 
 function heroCreationResult(
   patch: Partial<StartFlowHeroCreationResult> = {},

@@ -10589,6 +10589,8 @@ Zaimplementować hero creation UI, które pozwala wybrać nazwę i origin, a nas
 - Próba stworzenia na full serverze pokazuje błąd.
 - Udane stworzenie hero odświeża active hero i przechodzi dalej do stat allocation.
 
+**Status:** Accepted with follow-up on 2026-05-11. X3 updated the account-side hero creation surface so hero name + origin are the only player inputs and creation continues through the canonical `create_hero_start_flow` path from X1. The origin step consumes DB-backed start-flow origin options, shows DB-returned description/bonus summary and explicit one-time-origin copy, while origin artwork remains the existing static carousel asset convention derived from `origin_key`, not DB-backed artwork. Creation feedback now surfaces Polish player-facing blockers for duplicate name, district/server full, invalid origin, permission/membership and unknown failures; `toHeroCreationErrorMessage(...)` reuses `getErrorMessage(...)` for raw extraction and stays private/feature-local for this single start-flow creation surface. No direct hero/bootstrap writes, local 1000 CP/district/resources/stats/origin bonus fallback, generated-type edit, migration, seeding or extra refactor follow-up was added. Verification passed with focused create-character/start-flow/origin specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for exact RPC path/no direct writes/no local bootstrap fallbacks. Manual/browser smoke remains pending.
+
 ---
 
 ## Task X4 — Post-creation routing and stat allocation entry

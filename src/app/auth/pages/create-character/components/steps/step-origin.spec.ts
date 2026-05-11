@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
+import { StartFlowOriginOption } from '../../../../../core/domain/start-flow/start-flow.model';
 import { StartFlow } from '../../../../../core/services/start-flow/start-flow';
 import { StepOrigin } from './step-origin';
 
@@ -39,6 +40,15 @@ describe('StepOrigin', () => {
     expect(textContent(fixture)).not.toContain('Loading origins...');
   });
 
+  it('shows DB-backed origin selection copy that the choice is one-time', () => {
+    startFlow.getOriginOptions.and.returnValue(of([originOption()]));
+
+    const fixture = createComponent();
+
+    expect(textContent(fixture)).toContain('Pochodzenie jest wybierane raz');
+    expect(textContent(fixture)).toContain('Nazwy, opisy i bonusy pochodzą z DB start-flow');
+  });
+
   function createComponent(): ComponentFixture<StepOrigin> {
     const fixture = TestBed.createComponent(StepOrigin);
     fixture.detectChanges();
@@ -47,5 +57,24 @@ describe('StepOrigin', () => {
 
   function textContent(fixture: ComponentFixture<StepOrigin>): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
+  }
+
+  function originOption(): StartFlowOriginOption {
+    return {
+      id: 'origin-1',
+      key: 'nomad',
+      name: 'Nomad',
+      description: 'Road-born hunter.',
+      imageUrl: '/images/origins/nomad.png',
+      createdAt: null,
+      originId: 'origin-1',
+      originKey: 'nomad',
+      originLabel: 'Nomad',
+      originDescription: 'Road-born hunter.',
+      sortOrder: 1,
+      isActive: true,
+      bonusesJson: [],
+      bonusSummaryText: '+5 Dexterity',
+    };
   }
 });

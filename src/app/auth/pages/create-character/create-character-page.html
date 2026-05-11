@@ -1,17 +1,23 @@
 <section class="mg-card mg-card--legend flex-col gap-lg w-100">
   <app-loading-overlay
     [visible]="page.isSubmitting()"
-    label="Creating character..."
-    description="Saving account profile, hero, estate and starting resources."
+    label="Tworzenie bohatera..."
+    description="DB zapisuje bohatera, posiadłość, punkty postaci i zasoby startowe."
   />
 
   <div class="flex-col gap-xs">
     <p class="card-legend mb-0">Create Character</p>
     <h1 class="mg-section__title mb-0">Forge your hunter</h1>
-    <p class="mb-0 text-muted">
-      Complete the onboarding flow to unlock the game, estate and stat assignment.
+    <p class="mb-0 muted-text">
+      Wybierz nazwę i pochodzenie. DB utworzy bohatera, punkty postaci, zasoby startowe i posiadłość w jednym workflow.
     </p>
   </div>
+
+  @if (page.serverAvailabilityError()) {
+    <div class="mg-card border-danger bg-danger-soft flex-col gap-xs w-100">
+      <p class="mb-0 text-danger">{{ page.serverAvailabilityError() }}</p>
+    </div>
+  }
 
   @if (page.errorMessage()) {
     <div class="mg-card border-danger bg-danger-soft flex-col gap-xs w-100">

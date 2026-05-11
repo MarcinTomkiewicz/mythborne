@@ -12,6 +12,9 @@ import { FormFields } from '../../../../../shared/form-fields/form-fields';
   template: `
     <div [formGroup]="form()" class="mg-form flex-col gap-md w-100">
       <h2 class="mg-section__title mg-section__title--xs mb-sm">Name your hero</h2>
+      <p class="mb-0 muted-text">
+        Nazwa musi być unikalna na wybranym serwerze. Ostateczną walidację wykonuje DB podczas tworzenia bohatera.
+      </p>
 
       <app-form-fields [form]="form()" [fields]="fields" />
 

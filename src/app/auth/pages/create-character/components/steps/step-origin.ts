@@ -22,6 +22,13 @@ import { Carousel } from '../../../../../shared/carousel/carousel';
   template: `
     @if (origins().length > 0) {
       <section class="flex-col gap-lg">
+        <div class="flex-col gap-xs">
+          <h2 class="mg-section__title mg-section__title--xs mb-0">Wybierz pochodzenie</h2>
+          <p class="mb-0 muted-text">
+            Pochodzenie jest wybierane raz przy tworzeniu bohatera. Nazwy, opisy i bonusy pochodzą z DB start-flow.
+          </p>
+        </div>
+
         <app-carousel
           [origins]="origins()"
           [bonusSummaryText]="currentBonusSummaryText()"
