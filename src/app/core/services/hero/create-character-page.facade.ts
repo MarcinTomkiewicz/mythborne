@@ -25,6 +25,7 @@ export class CreateCharacterPageFacade {
   private readonly messageService = inject(MessageService);
   private readonly router = inject(Router);
   private readonly startFlow = inject(StartFlow);
+  private availabilityLoadToken = 0;
 
   readonly step = signal(1);
   readonly selectedOrigin = signal<Origin | null>(null);
@@ -74,6 +75,7 @@ export class CreateCharacterPageFacade {
 
     effect(() => {
       if (!this.user()) {
+        this.availabilityLoadToken++;
         this.serverAvailability.set([]);
         this.serverAvailabilityError.set(null);
         return;
@@ -165,7 +167,15 @@ export class CreateCharacterPageFacade {
     }
 
     const availability = this.selectedServerAvailability();
-    if (availability && !availability.canCreateHero) {
+    const availabilityBlocker = this.creationAvailabilityBlocker(availability);
+
+    if (availabilityBlocker) {
+      this.errorMessage.set(availabilityBlocker);
+      this.showToast('error', 'Tworzenie bohatera zablokowane', availabilityBlocker);
+      return;
+    }
+
+    if (availability && (availability.blockReason || !availability.canCreateHero)) {
       const message =
         availability.blockReason || 'Na wybranym serwerze nie można teraz stworzyć bohatera.';
       this.errorMessage.set(message);
@@ -234,15 +244,28 @@ export class CreateCharacterPageFacade {
   }
 
   private loadServerAvailability() {
+    const token = ++this.availabilityLoadToken;
+
+    this.serverAvailability.set([]);
+    this.serverAvailabilityError.set(null);
+
     this.startFlow
       .getServerAvailability()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (availability) => {
+          if (token !== this.availabilityLoadToken) {
+            return;
+          }
+
           this.serverAvailability.set(availability);
           this.serverAvailabilityError.set(null);
         },
         error: (error: unknown) => {
+          if (token !== this.availabilityLoadToken) {
+            return;
+          }
+
           this.serverAvailability.set([]);
           this.serverAvailabilityError.set(
             error instanceof Error
@@ -251,6 +274,20 @@ export class CreateCharacterPageFacade {
           );
         },
       });
+  }
+
+  private creationAvailabilityBlocker(
+    availability: StartFlowServerAvailability | null,
+  ): string | null {
+    if (this.serverAvailabilityError()) {
+      return this.serverAvailabilityError();
+    }
+
+    if (this.hasExistingAccount() && !availability) {
+      return 'Nie udało się potwierdzić dostępności wybranego serwera.';
+    }
+
+    return null;
   }
 
   private routeForNextAction(nextAction: string): string | null {

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import {
   StartFlowHeroCreationResult,
   StartFlowServerAvailability,
@@ -180,6 +180,112 @@ describe('CreateCharacterPageFacade', () => {
     expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
       severity: 'error',
       summary: 'Tworzenie bohatera zablokowane',
+    }));
+  });
+
+  it('blocks creation when DB availability returns a blocker even if canCreateHero is true', () => {
+    facade.serverAvailability.set([{
+      serverId: 'server-1',
+      canCreateHero: true,
+      blockReason: 'Sandbox creation is temporarily blocked.',
+    } as StartFlowServerAvailability]);
+    fillValidCreationForm(facade);
+
+    facade.submit();
+
+    expect(createHero.createHero).not.toHaveBeenCalled();
+    expect(facade.errorMessage()).toBe('Sandbox creation is temporarily blocked.');
+    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
+      severity: 'error',
+      summary: 'Tworzenie bohatera zablokowane',
+    }));
+  });
+
+  it('blocks existing-account creation when selected server availability is missing', () => {
+    facade.serverAvailability.set([]);
+    fillValidCreationForm(facade);
+
+    facade.submit();
+
+    expect(createHero.createHero).not.toHaveBeenCalled();
+    expect(facade.errorMessage()).toBe(
+      'Nie udało się potwierdzić dostępności wybranego serwera.',
+    );
+  });
+
+  it('blocks creation while server availability has a load error', () => {
+    facade.serverAvailabilityError.set('Start-flow availability failed.');
+    fillValidCreationForm(facade);
+
+    facade.submit();
+
+    expect(createHero.createHero).not.toHaveBeenCalled();
+    expect(facade.errorMessage()).toBe('Start-flow availability failed.');
+  });
+
+  it('ignores stale availability responses after the user context is cleared', () => {
+    const pendingAvailability = new Subject<StartFlowServerAvailability[]>();
+    startFlow.getServerAvailability.and.returnValue(pendingAvailability.asObservable());
+
+    authState.setUser({ id: 'user-2', email: 'next@example.com' } as ReturnType<AuthState['user']>);
+    TestBed.flushEffects();
+    authState.setUser(null);
+    TestBed.flushEffects();
+    facade.serverAvailabilityError.set('Current context error.');
+
+    pendingAvailability.next([{
+      serverId: 'server-1',
+      canCreateHero: true,
+      blockReason: null,
+    } as StartFlowServerAvailability]);
+    pendingAvailability.complete();
+
+    expect(facade.serverAvailability()).toEqual([]);
+    expect(facade.serverAvailabilityError()).toBe('Current context error.');
+
+    authState.setUser({ id: 'user-3', email: 'third@example.com' } as ReturnType<AuthState['user']>);
+    TestBed.flushEffects();
+    fillValidCreationForm(facade);
+
+    facade.submit();
+
+    expect(createHero.createHero).not.toHaveBeenCalled();
+    expect(facade.errorMessage()).toBe(
+      'Nie udało się potwierdzić dostępności wybranego serwera.',
+    );
+  });
+
+  it('blocks submit after direct user change until the new availability response arrives', () => {
+    const userBAvailability = new Subject<StartFlowServerAvailability[]>();
+
+    expect(facade.serverAvailability()[0]).toEqual(jasmine.objectContaining({
+      serverId: 'server-1',
+      canCreateHero: true,
+    }));
+
+    startFlow.getServerAvailability.and.returnValue(userBAvailability.asObservable());
+    authState.setUser({ id: 'user-2', email: 'next@example.com' } as ReturnType<AuthState['user']>);
+    TestBed.flushEffects();
+    fillValidCreationForm(facade);
+
+    facade.submit();
+
+    expect(createHero.createHero).not.toHaveBeenCalled();
+    expect(facade.serverAvailability()).toEqual([]);
+    expect(facade.errorMessage()).toBe(
+      'Nie udało się potwierdzić dostępności wybranego serwera.',
+    );
+
+    userBAvailability.next([{
+      serverId: 'server-1',
+      canCreateHero: true,
+      blockReason: null,
+    } as StartFlowServerAvailability]);
+    userBAvailability.complete();
+
+    expect(facade.serverAvailability()[0]).toEqual(jasmine.objectContaining({
+      serverId: 'server-1',
+      canCreateHero: true,
     }));
   });
 });

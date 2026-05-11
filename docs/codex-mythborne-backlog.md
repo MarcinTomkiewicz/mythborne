@@ -10768,6 +10768,8 @@ Domknąć end-to-end start flow i usunąć niespójności między server picker,
 - Refresh po creation nie wraca do hero creation.
 - Zmiana servera nie wymaga relogowania.
 
+**Status:** Accepted on 2026-05-11. X6 hardened the end-to-end start-flow integration around server picker, hero creation, sandbox switching and active hero routing without changing the canonical RPC path. `CreateCharacterPageFacade` now blocks submit when selected server availability is missing for an existing account, when availability loading failed, or when DB availability returns a blocker even with `canCreateHero = true`; direct user-context changes clear stale availability immediately and in-flight availability loads remain token-guarded so stale responses cannot re-enable creation. Fresh creation still routes from DB `route_next_action = stat_allocation` to `/hero/attributes`, returning heroes continue through dashboard entry, sandbox multi-hero switching remains on DB-returned hero options, and full/district/permission/duplicate-origin/RPC failures stay visible through the existing player-facing error paths. No direct hero/bootstrap writes, auth uid as hero id, generated-type edit, migration or pre-acceptance status docs change was added. Verification passed with focused create-character/guard/server-entry/start-flow/mapper specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for no direct writes, no auth uid as hero id, no local CP/estate/origin authority and exact start-flow RPC path unchanged. Manual/browser smoke remains pending with real start-flow/session data.
+
 ---
 
 # Epic Y — Prestige Foundation Frontend Integration
