@@ -14,10 +14,11 @@ import { Backend } from '../../../core/services/backend/backend';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveServer } from '../../../core/services/server/active-server';
 import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-policy';
+import { SessionLogoutButton } from '../../../shared/session-logout-button/session-logout-button';
 
 @Component({
   selector: 'app-game-sidebar',
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, SessionLogoutButton],
   templateUrl: './game-sidebar.html',
   styleUrl: './game-sidebar.scss',
 })

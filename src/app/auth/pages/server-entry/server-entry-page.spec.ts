@@ -2,8 +2,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { StartFlowHeroOption, StartFlowServerAvailability } from '../../../core/domain/start-flow/start-flow.model';
 import { SelectedGameServer } from '../../../core/interfaces/server/active-server.interface';
+import { Auth } from '../../../core/services/auth/auth';
 import { StartFlowEntryState } from '../../../core/services/start-flow/start-flow-entry.state';
 import { ServerEntryPage } from './server-entry-page';
 
@@ -32,6 +34,14 @@ describe('ServerEntryPage', () => {
     expect(text).toContain('Second');
     expect(text).toContain('Nowa postać');
     expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(1);
+  });
+
+  it('renders logout action on server entry', () => {
+    const fixture = createFixture(stateStub());
+
+    fixture.detectChanges();
+
+    expect(textContent(fixture)).toContain('Wyloguj');
   });
 
   it('selects another DB-returned sandbox hero from the compact switcher', () => {
@@ -149,7 +159,15 @@ function createFixture(
 ): ComponentFixture<ServerEntryPage> {
   TestBed.configureTestingModule({
     imports: [ServerEntryPage],
-    providers: [provideRouter([])],
+    providers: [
+      provideRouter([]),
+      {
+        provide: Auth,
+        useValue: jasmine.createSpyObj<Auth>('Auth', {
+          logout: of(void 0),
+        }),
+      },
+    ],
   });
   TestBed.overrideComponent(ServerEntryPage, {
     remove: { providers: [StartFlowEntryState] },

@@ -11,6 +11,7 @@ import {
   SelectedGameServer,
   ServerAccessState,
 } from '../../../core/interfaces/server/active-server.interface';
+import { Auth } from '../../../core/services/auth/auth';
 import { AuthState } from '../../../core/services/auth/auth-state';
 import { Backend } from '../../../core/services/backend/backend';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
@@ -69,6 +70,12 @@ describe('GameSidebar', () => {
           },
         },
         { provide: Backend, useValue: backend },
+        {
+          provide: Auth,
+          useValue: jasmine.createSpyObj<Auth>('Auth', {
+            logout: of(void 0),
+          }),
+        },
       ],
     });
 
@@ -104,6 +111,10 @@ describe('GameSidebar', () => {
       'get_hero_prestige_public_summary',
       { p_hero_id: 'hero-1' },
     );
+  });
+
+  it('renders a visible logout action in the authenticated shell', () => {
+    expect(textContent(fixture)).toContain('Wyloguj');
   });
 
   it('shows the vicinity navigation entry without introducing neighborhood labels', () => {

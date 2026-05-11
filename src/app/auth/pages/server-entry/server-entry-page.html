@@ -1,10 +1,16 @@
 <section class="flex-col gap-lg w-100">
   <div class="flex-col gap-xs">
-    <p class="card-legend mb-0">Choose Server</p>
-    <h1 class="mg-section__title mb-0">Enter Mythsworn</h1>
-    <p class="mb-0 muted-text">
-      Select the server context for your active hero or character creation.
-    </p>
+    <div class="flex-row-between-start flex-wrap gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Choose Server</p>
+        <h1 class="mg-section__title mb-0">Enter Mythsworn</h1>
+        <p class="mb-0 muted-text">
+          Select the server context for your active hero or character creation.
+        </p>
+      </div>
+
+      <app-session-logout-button />
+    </div>
   </div>
 
   @if (state.error()) {

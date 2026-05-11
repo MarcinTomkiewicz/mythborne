@@ -4,11 +4,12 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { StartFlowEntryState } from '../../../core/services/start-flow/start-flow-entry.state';
+import { SessionLogoutButton } from '../../../shared/session-logout-button/session-logout-button';
 
 @Component({
   selector: 'app-server-entry-page',
   standalone: true,
-  imports: [ButtonModule, ReactiveFormsModule, RouterLink, SelectModule],
+  imports: [ButtonModule, ReactiveFormsModule, RouterLink, SelectModule, SessionLogoutButton],
   providers: [StartFlowEntryState],
   templateUrl: './server-entry-page.html',
 })

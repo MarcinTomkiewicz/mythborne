@@ -138,10 +138,15 @@ export class Auth {
 
   logout() {
     return from(this.supabase.auth.signOut()).pipe(
-      tap(() => {
+      tap(({ error }) => {
+        if (error) {
+          throw error;
+        }
+
         this.authState.setUser(null);
         this.activeHero.clear();
-      })
+      }),
+      map(() => void 0),
     );
   }
 }
