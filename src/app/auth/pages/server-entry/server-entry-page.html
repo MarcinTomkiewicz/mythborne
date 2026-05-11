@@ -76,44 +76,45 @@
             }
 
             @if (state.selectedServer()?.id === server.id && state.showHeroSelection()) {
-              <div class="flex-col gap-sm">
+              <section class="flex-col gap-sm w-100">
                 <div class="flex-col gap-xs">
-                  <p class="mb-0 heading-color">Choose sandbox hero</p>
+                  <p class="mb-0 heading-color">Postacie na tym sandboxie</p>
                   @if (state.selectedDefaultHeroOption(); as defaultHero) {
                     <p class="mb-0">
-                      Default hero:
+                      Domyślna postać:
                       <strong class="heading-color">{{ defaultHero.heroName }}</strong>
+                    </p>
+                  }
+                  @if (state.activeHeroOption(); as activeHero) {
+                    <p class="mb-0">
+                      Aktywna postać:
+                      <strong class="heading-color">{{ activeHero.heroName }}</strong>
                     </p>
                   }
                 </div>
 
-                @for (hero of state.selectedHeroOptions(); track hero.heroId) {
-                  <div class="flex-row-between-center gap-sm">
-                    <div class="flex-row-start-center flex-wrap gap-xs">
-                      <strong class="heading-color">{{ hero.heroName }}</strong>
-                      @if (state.selectedDefaultHeroOption()?.heroId === hero.heroId) {
-                        <span class="tag-badge tag-badge--info">Default</span>
-                      }
-                      @if (state.activeHeroOption()?.heroId === hero.heroId) {
-                        <span class="tag-badge tag-badge--success">Current</span>
-                      }
-                    </div>
-                    <p-button
-                      type="button"
-                      [label]="state.activeHeroOption()?.heroId === hero.heroId ? 'Current hero' : 'Use hero'"
-                      size="small"
-                      [disabled]="state.isTransitioning() || state.activeHeroOption()?.heroId === hero.heroId"
-                      (onClick)="state.selectHero(hero.heroId)"
-                    />
-                  </div>
-                }
-
-                @if (state.canCreateSandboxHero()) {
-                  <a routerLink="/auth/create-character" class="tag-badge tag-badge--muted w-fit">
-                    Create another sandbox hero
-                  </a>
-                }
-              </div>
+                <div class="flex-row-start-center flex-wrap gap-sm">
+                  <p-select
+                    class="w-100"
+                    [formControl]="selectedSandboxHeroControl"
+                    [options]="state.selectedHeroOptions()"
+                    optionLabel="heroName"
+                    optionValue="heroId"
+                    placeholder="Wybierz postać"
+                    appendTo="body"
+                  />
+                  <p-button
+                    type="button"
+                    label="Przełącz"
+                    [disabled]="
+                      state.isTransitioning() ||
+                      !selectedSandboxHeroControl.value ||
+                      selectedSandboxHeroControl.value === state.activeHeroOption()?.heroId
+                    "
+                    (onClick)="switchSelectedSandboxHero()"
+                  />
+                </div>
+              </section>
             }
 
             <div class="flex-row-end-center gap-sm">
@@ -126,6 +127,14 @@
                   (onClick)="state.selectServer(server.id)"
                 />
               } @else {
+                @if (state.canCreateSandboxHero()) {
+                  <p-button
+                    type="button"
+                    label="Nowa postać"
+                    routerLink="/auth/create-character"
+                    severity="secondary"
+                  />
+                }
                 <p-button
                   type="button"
                   label="Continue"

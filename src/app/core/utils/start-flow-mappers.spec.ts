@@ -46,6 +46,33 @@ describe('start flow mappers', () => {
     ]);
   });
 
+  it('maps camelCase sandbox hero options from DB JSON payloads', () => {
+    const result = mapStartFlowHeroOptions([
+      { heroId: 'hero-2', heroName: 'Second', createdAt: '2026-05-02T10:00:00Z' },
+      { heroId: 'hero-1', heroName: 'First', createdAt: '2026-05-01T10:00:00Z' },
+    ]);
+
+    expect(result.map((hero) => hero.heroId)).toEqual(['hero-1', 'hero-2']);
+    expect(result[1]).toEqual(jasmine.objectContaining({
+      heroId: 'hero-2',
+      heroName: 'Second',
+      createdAt: '2026-05-02T10:00:00Z',
+    }));
+  });
+
+  it('preserves mapped heroes from server availability read model', () => {
+    const result = mapStartFlowServerAvailability(serverAvailabilityRow({
+      is_sandbox: true,
+      can_enter_game: true,
+      heroes_json: [
+        { heroId: 'hero-1', heroName: 'First', createdAt: '2026-05-01T10:00:00Z' },
+        { heroId: 'hero-2', heroName: 'Second', createdAt: '2026-05-02T10:00:00Z' },
+      ],
+    }));
+
+    expect(result.heroes.map((hero) => hero.heroId)).toEqual(['hero-1', 'hero-2']);
+  });
+
   it('maps DB-backed origin option display without local bonus calculation', () => {
     const result = mapStartFlowOriginOption(originOptionRow());
 

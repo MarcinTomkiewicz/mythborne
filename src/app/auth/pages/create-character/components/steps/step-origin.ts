@@ -42,7 +42,7 @@ import { Carousel } from '../../../../../shared/carousel/carousel';
           }
           <p-button
             type="button"
-            label="Next"
+            [label]="nextLabel()"
             severity="success"
             (click)="next.emit(origins()[selectedIndex()])"
           />
@@ -63,6 +63,7 @@ export class StepOrigin implements OnInit {
 
   readonly selectedOrigin = input<Origin | null>(null);
   readonly showBack = input(true);
+  readonly nextLabel = input('Next');
   readonly origins = signal<StartFlowOriginOption[]>([]);
   readonly isLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { StartFlowHeroOption, StartFlowServerAvailability } from '../../../core/domain/start-flow/start-flow.model';
 import { SelectedGameServer } from '../../../core/interfaces/server/active-server.interface';
@@ -7,7 +8,7 @@ import { StartFlowEntryState } from '../../../core/services/start-flow/start-flo
 import { ServerEntryPage } from './server-entry-page';
 
 describe('ServerEntryPage', () => {
-  it('renders sandbox hero switcher with default/current context and sandbox creation link', () => {
+  it('renders compact sandbox hero switcher with default/current context and sandbox creation action', () => {
     const state = stateStub({
       selectedHeroOptions: [
         heroOption({ heroId: 'hero-1', heroName: 'First' }),
@@ -24,13 +25,83 @@ describe('ServerEntryPage', () => {
 
     const text = textContent(fixture);
 
-    expect(text).toContain('Choose sandbox hero');
-    expect(text).toContain('Default hero:');
+    expect(text).toContain('Postacie na tym sandboxie');
+    expect(text).toContain('Domyślna postać:');
     expect(text).toContain('First');
-    expect(text).toContain('Default');
+    expect(text).toContain('Aktywna postać:');
     expect(text).toContain('Second');
-    expect(text).toContain('Current');
-    expect(text).toContain('Create another sandbox hero');
+    expect(text).toContain('Nowa postać');
+    expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(1);
+  });
+
+  it('selects another DB-returned sandbox hero from the compact switcher', () => {
+    const state = stateStub({
+      selectedHeroOptions: [
+        heroOption({ heroId: 'hero-1', heroName: 'First' }),
+        heroOption({ heroId: 'hero-2', heroName: 'Second' }),
+      ],
+      defaultHero: heroOption({ heroId: 'hero-1', heroName: 'First' }),
+      activeHero: heroOption({ heroId: 'hero-1', heroName: 'First' }),
+      canCreateSandboxHero: true,
+      showHeroSelection: true,
+    });
+    const fixture = createFixture(state);
+
+    fixture.detectChanges();
+    fixture.componentInstance.selectedSandboxHeroControl.setValue('hero-2');
+    fixture.detectChanges();
+    const useHeroButton = fixture.debugElement
+      .queryAll(By.css('p-button'))
+      .find((entry) => entry.componentInstance.label === 'Przełącz');
+
+    useHeroButton?.triggerEventHandler('onClick', {});
+
+    expect(state.selectHero).toHaveBeenCalledOnceWith('hero-2');
+  });
+
+  it('does not render one switch button per sandbox hero', () => {
+    const state = stateStub({
+      selectedHeroOptions: Array.from({ length: 25 }, (_, index) =>
+        heroOption({
+          heroId: `hero-${index + 1}`,
+          heroName: `Hero ${index + 1}`,
+          createdAt: `2026-05-${String(index + 1).padStart(2, '0')}T10:00:00Z`,
+        }),
+      ),
+      defaultHero: heroOption({ heroId: 'hero-1', heroName: 'Hero 1' }),
+      activeHero: heroOption({ heroId: 'hero-1', heroName: 'Hero 1' }),
+      canCreateSandboxHero: true,
+      showHeroSelection: true,
+    });
+    const fixture = createFixture(state);
+
+    fixture.detectChanges();
+
+    const switchButtons = fixture.debugElement
+      .queryAll(By.css('p-button'))
+      .filter((entry) => entry.componentInstance.label === 'Przełącz');
+
+    expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(1);
+    expect(switchButtons.length).toBe(1);
+  });
+
+  it('renders sandbox creation action next to continue for selected sandbox dashboard entry', () => {
+    const state = stateStub({
+      selectedHeroOptions: [
+        heroOption({ heroId: 'hero-1', heroName: 'First' }),
+      ],
+      activeHero: heroOption({ heroId: 'hero-1', heroName: 'First' }),
+      canCreateSandboxHero: true,
+      showHeroSelection: false,
+    });
+    const fixture = createFixture(state);
+
+    fixture.detectChanges();
+
+    const text = textContent(fixture);
+
+    expect(text).toContain('Continue');
+    expect(text).toContain('Nowa postać');
   });
 
   it('does not render sandbox hero switcher for standard server state', () => {
@@ -45,8 +116,8 @@ describe('ServerEntryPage', () => {
 
     const text = textContent(fixture);
 
-    expect(text).not.toContain('Choose sandbox hero');
-    expect(text).not.toContain('Create another sandbox hero');
+    expect(text).not.toContain('Postacie na tym sandboxie');
+    expect(text).not.toContain('Nowa postać');
   });
 
   it('does not render sandbox creation link when DB blocks sandbox creation', () => {
@@ -68,8 +139,8 @@ describe('ServerEntryPage', () => {
 
     const text = textContent(fixture);
 
-    expect(text).toContain('Choose sandbox hero');
-    expect(text).not.toContain('Create another sandbox hero');
+    expect(text).toContain('Postacie na tym sandboxie');
+    expect(text).not.toContain('Nowa postać');
   });
 });
 

@@ -19,7 +19,9 @@ import { FormFields } from '../../../../../shared/form-fields/form-fields';
       <app-form-fields [form]="form()" [fields]="fields" />
 
       <div class="flex-row-end-center gap-sm mt-xl">
-        <p-button type="button" label="Back" severity="secondary" (click)="back.emit()" />
+        @if (showBack()) {
+          <p-button type="button" label="Back" severity="secondary" (click)="back.emit()" />
+        }
         <p-button type="button" label="Next" (click)="next.emit()" />
       </div>
     </div>
@@ -27,6 +29,7 @@ import { FormFields } from '../../../../../shared/form-fields/form-fields';
 })
 export class StepHero {
   readonly form = input.required<CreateCharacterHeroForm>();
+  readonly showBack = input(true);
   readonly fields = CREATE_CHARACTER_HERO_FIELDS;
   readonly back = output<void>();
   readonly next = output<void>();

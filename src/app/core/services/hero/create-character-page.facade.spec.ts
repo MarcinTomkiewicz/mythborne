@@ -7,6 +7,7 @@ import {
   StartFlowHeroCreationResult,
   StartFlowServerAvailability,
 } from '../../domain/start-flow/start-flow.model';
+import { Origin } from '../../domain/origin/origin.model';
 import { Auth } from '../auth/auth';
 import { AuthState } from '../auth/auth-state';
 import { ActiveServer } from '../server/active-server';
@@ -93,6 +94,58 @@ describe('CreateCharacterPageFacade', () => {
     expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
       severity: 'success',
       summary: 'Bohater został stworzony',
+    }));
+  });
+
+  it('creates another hero for an existing account without requiring profile data again', () => {
+    createHero.createHero.and.returnValue(of(heroCreationResult({
+      routeNextAction: 'stat_allocation',
+    })));
+    facade.heroForm.controls.characterName.setValue('Sandbox Hero');
+    facade.form.controls.originId.setValue('origin-1');
+
+    facade.submit();
+
+    expect(auth.register).not.toHaveBeenCalled();
+    expect(auth.saveUserData).not.toHaveBeenCalled();
+    expect(createHero.createHero).toHaveBeenCalledOnceWith('Sandbox Hero', 'origin-1');
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/attributes');
+  });
+
+  it('moves existing-account hero creation from Hero to Origin and submits after origin selection', () => {
+    createHero.createHero.and.returnValue(of(heroCreationResult({
+      routeNextAction: 'stat_allocation',
+    })));
+    facade.heroForm.controls.characterName.setValue('Sandbox Hero');
+
+    facade.nextFromHero();
+
+    expect(facade.step()).toBe(2);
+
+    facade.onOriginNext(origin());
+
+    expect(facade.form.controls.originId.value).toBe('origin-1');
+    expect(createHero.createHero).toHaveBeenCalledOnceWith('Sandbox Hero', 'origin-1');
+    expect(auth.saveUserData).not.toHaveBeenCalled();
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/attributes');
+  });
+
+  it('keeps profile data required for the unauthenticated new account flow', () => {
+    authState.setUser(null);
+    TestBed.flushEffects();
+    facade.accountForm.controls.email.setValue('new@example.com');
+    facade.accountForm.controls.password.setValue('secret1');
+    facade.heroForm.controls.characterName.setValue('New Hero');
+    facade.form.controls.originId.setValue('origin-1');
+
+    facade.submit();
+
+    expect(auth.register).not.toHaveBeenCalled();
+    expect(auth.saveUserData).not.toHaveBeenCalled();
+    expect(createHero.createHero).not.toHaveBeenCalled();
+    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
+      severity: 'warn',
+      summary: 'Profil jest niepełny',
     }));
   });
 
@@ -320,5 +373,16 @@ function heroCreationResult(
     createdNewHero: true,
     auditLogId: 'audit-1',
     ...patch,
+  };
+}
+
+function origin(): Origin {
+  return {
+    id: 'origin-1',
+    key: 'nomad',
+    name: 'Nomad',
+    description: 'Nomad origin.',
+    imageUrl: null,
+    createdAt: '2026-05-01T10:00:00Z',
   };
 }

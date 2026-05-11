@@ -32,7 +32,7 @@ export class CreateHero {
         }),
       ),
       switchMap((result) =>
-        this.activeHero.loadActiveHero().pipe(map(() => result)),
+        this.activeHero.selectHero(result.heroId).pipe(map(() => result)),
       ),
     );
   }

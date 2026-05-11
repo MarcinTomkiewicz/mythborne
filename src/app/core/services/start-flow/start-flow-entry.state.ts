@@ -44,9 +44,13 @@ export class StartFlowEntryState {
   readonly selectedHeroOptions = computed<StartFlowHeroOption[]>(() =>
     this.selectedAvailability()?.heroes ?? [],
   );
-  readonly selectedDefaultHeroOption = computed<StartFlowHeroOption | null>(() =>
-    this.selectedHeroOptions()[0] ?? null,
-  );
+  readonly selectedDefaultHeroOption = computed<StartFlowHeroOption | null>(() => {
+    const defaultHeroId = this.selectedAvailability()?.defaultHeroId ?? null;
+
+    return defaultHeroId
+      ? this.selectedHeroOptions().find((hero) => hero.heroId === defaultHeroId) ?? null
+      : null;
+  });
   readonly activeHeroOption = computed<StartFlowHeroOption | null>(() => {
     const activeHeroId = this.activeHeroState()?.heroId ?? null;
 
@@ -60,7 +64,7 @@ export class StartFlowEntryState {
     return !!availability?.isSandbox && availability.canCreateHero && !availability.blockReason;
   });
   readonly showHeroSelection = computed(() => {
-    return this.selectedDecision().action === 'hero_selection';
+    return this.selectedDecision().action === 'hero_selection' || this.canUseSelectedHeroSelection();
   });
   readonly selectedDecision = computed(() =>
     resolveStartFlowEntryDecision(
@@ -154,8 +158,20 @@ export class StartFlowEntryState {
       return;
     }
 
-    if (decision.action === 'hero_selection') {
-      this.blocker.set(null);
+    if (decision.action === 'hero_selection' || this.canUseSelectedHeroSelection()) {
+      if (this.activeHeroOption()) {
+        this.blocker.set(null);
+        void this.router.navigateByUrl('/hero/dashboard');
+        return;
+      }
+
+      const defaultHero = this.selectedDefaultHeroOption();
+      if (defaultHero) {
+        this.selectHero(defaultHero.heroId);
+        return;
+      }
+
+      this.blocker.set('Select a sandbox hero before entering the game.');
       return;
     }
 
@@ -178,7 +194,7 @@ export class StartFlowEntryState {
       return;
     }
 
-    if (decision.action !== 'hero_selection') {
+    if (decision.action !== 'hero_selection' && !this.canUseSelectedHeroSelection()) {
       this.blocker.set(
         decision.message || 'Hero selection is not available for this server.',
       );
@@ -227,6 +243,15 @@ export class StartFlowEntryState {
     return (
       this.availability().find((entry) => entry.serverId === server.id) ?? null
     );
+  }
+
+  private canUseSelectedHeroSelection(): boolean {
+    const availability = this.selectedAvailability();
+
+    return !!availability?.isSandbox &&
+      availability.canEnterGame &&
+      !availability.blockReason &&
+      this.selectedHeroOptions().length > 1;
   }
 }
 

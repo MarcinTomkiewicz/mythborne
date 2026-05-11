@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { finalize, of, switchMap } from 'rxjs';
+import { finalize, Observable, of, switchMap } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { Origin } from '../../domain/origin/origin.model';
 import { StartFlowServerAvailability } from '../../domain/start-flow/start-flow.model';
@@ -116,7 +116,7 @@ export class CreateCharacterPageFacade {
       return;
     }
 
-    this.step.set(3);
+    this.step.set(this.hasExistingAccount() ? 2 : 3);
   }
 
   prevStep(step: number) {
@@ -126,15 +126,25 @@ export class CreateCharacterPageFacade {
   onOriginNext(origin: Origin) {
     this.selectedOrigin.set(origin);
     this.form.controls.originId.setValue(origin.id);
+
+    if (this.hasExistingAccount()) {
+      this.submit();
+      return;
+    }
+
     this.step.set(4);
   }
 
   canOpenStep(step: number): boolean {
+    if (this.hasExistingAccount()) {
+      return this.canOpenExistingAccountStep(step);
+    }
+
     switch (step) {
       case 1:
         return true;
       case 2:
-        return this.hasExistingAccount() || this.accountForm.valid;
+        return this.accountForm.valid;
       case 3:
         return this.canOpenStep(2) && this.heroForm.valid;
       case 4:
@@ -145,7 +155,7 @@ export class CreateCharacterPageFacade {
   }
 
   submit() {
-    if (this.profileForm.invalid) {
+    if (!this.hasExistingAccount() && this.profileForm.invalid) {
       this.profileForm.markAllAsTouched();
       this.showToast(
         'warn',
@@ -196,18 +206,19 @@ export class CreateCharacterPageFacade {
     const hero = this.heroForm.getRawValue();
     const originId = this.form.controls.originId.getRawValue();
     const existingUser = this.user();
-    const user$ = existingUser
+    const accountReady$: Observable<unknown> = existingUser
       ? of(existingUser)
-      : this.auth.register(account.email, account.password);
+      : this.auth.register(account.email, account.password).pipe(
+          switchMap((user) =>
+            this.auth.saveUserData(
+              user.id,
+              this.formFactory.buildUserData(this.form, user.email ?? account.email)
+            )
+          ),
+        );
 
-    user$
+    accountReady$
       .pipe(
-        switchMap((user) =>
-          this.auth.saveUserData(
-            user.id,
-            this.formFactory.buildUserData(this.form, user.email ?? account.email)
-          )
-        ),
         switchMap(() =>
           this.createHero.createHero(trimText(hero.characterName), originId)
         ),
@@ -288,6 +299,17 @@ export class CreateCharacterPageFacade {
     }
 
     return null;
+  }
+
+  private canOpenExistingAccountStep(step: number): boolean {
+    switch (step) {
+      case 1:
+        return true;
+      case 2:
+        return this.heroForm.valid;
+      default:
+        return false;
+    }
   }
 
   private routeForNextAction(nextAction: string): string | null {

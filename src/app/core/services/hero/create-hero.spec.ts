@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { StartFlowHeroCreationResult } from '../../domain/start-flow/start-flow.model';
+import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
 import { AuthState } from '../auth/auth-state';
 import { ActiveServer } from '../server/active-server';
 import { StartFlow } from '../start-flow/start-flow';
@@ -15,7 +16,10 @@ describe('CreateHero', () => {
   let service: CreateHero;
 
   beforeEach(() => {
-    activeHero = jasmine.createSpyObj<ActiveHero>('ActiveHero', ['loadActiveHero']);
+    activeHero = jasmine.createSpyObj<ActiveHero>('ActiveHero', [
+      'loadActiveHero',
+      'selectHero',
+    ]);
     activeServer = jasmine.createSpyObj<ActiveServer>('ActiveServer', [
       'loadAccessibleServers',
       'selectedServer',
@@ -26,6 +30,7 @@ describe('CreateHero', () => {
     authState.user.and.returnValue({ id: 'user-1' } as ReturnType<AuthState['user']>);
     activeServer.selectedServer.and.returnValue({ id: 'server-1' } as ReturnType<ActiveServer['selectedServer']>);
     activeHero.loadActiveHero.and.returnValue(of(null));
+    activeHero.selectHero.and.returnValue(of(activeContext('hero-1')));
     startFlow.createHero.and.returnValue(of(heroCreationResult()));
 
     TestBed.configureTestingModule({
@@ -40,7 +45,7 @@ describe('CreateHero', () => {
     service = TestBed.inject(CreateHero);
   });
 
-  it('creates a hero through the start-flow RPC service and refreshes active hero', async () => {
+  it('creates a hero through the start-flow RPC service and selects the returned hero', async () => {
     const result = await firstValueFrom(
       service.createHero('  Hero Name  ', 'origin-1'),
     );
@@ -52,7 +57,22 @@ describe('CreateHero', () => {
       heroName: 'Hero Name',
       requestId: jasmine.stringMatching(/^start-flow:server-1:/),
     }));
-    expect(activeHero.loadActiveHero).toHaveBeenCalled();
+    expect(activeHero.selectHero).toHaveBeenCalledOnceWith('hero-1');
+    expect(activeHero.loadActiveHero).not.toHaveBeenCalled();
+  });
+
+  it('selects a newly created sandbox hero instead of preserving the old active hero', async () => {
+    startFlow.createHero.and.returnValue(of(heroCreationResult({
+      heroId: 'hero-new',
+    })));
+    activeHero.selectHero.and.returnValue(of(activeContext('hero-new')));
+
+    const result = await firstValueFrom(
+      service.createHero('New Sandbox Hero', 'origin-1'),
+    );
+
+    expect(result.heroId).toBe('hero-new');
+    expect(activeHero.selectHero).toHaveBeenCalledOnceWith('hero-new');
   });
 
   it('loads accessible servers before creating when no server is selected', async () => {
@@ -77,6 +97,7 @@ describe('CreateHero', () => {
       .toThrowError('Cannot create a hero without an authenticated user.');
     expect(startFlow.createHero).not.toHaveBeenCalled();
     expect(activeHero.loadActiveHero).not.toHaveBeenCalled();
+    expect(activeHero.selectHero).not.toHaveBeenCalled();
   });
 });
 
@@ -104,5 +125,16 @@ function heroCreationResult(
     createdNewHero: true,
     auditLogId: 'audit-1',
     ...patch,
+  };
+}
+
+function activeContext(heroId: string): ActiveHeroState {
+  return {
+    userId: 'user-1',
+    serverId: 'server-1',
+    heroId,
+    server: { id: 'server-1' } as ActiveHeroState['server'],
+    hero: { id: heroId, name: 'Hero', serverId: 'server-1' } as ActiveHeroState['hero'],
+    heroRow: { id: heroId, server_id: 'server-1' } as ActiveHeroState['heroRow'],
   };
 }

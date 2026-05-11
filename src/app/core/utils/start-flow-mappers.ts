@@ -67,8 +67,8 @@ function mapStartFlowHeroOption(entry: unknown): StartFlowHeroOption | null {
   }
 
   const record = entry as Record<string, unknown>;
-  const heroId = stringValue(record['hero_id'] ?? record['id']);
-  const heroName = stringValue(record['hero_name'] ?? record['name']);
+  const heroId = stringValue(record['hero_id'] ?? record['heroId'] ?? record['id']);
+  const heroName = stringValue(record['hero_name'] ?? record['heroName'] ?? record['name']);
 
   if (!heroId || !heroName) {
     return null;
@@ -77,7 +77,7 @@ function mapStartFlowHeroOption(entry: unknown): StartFlowHeroOption | null {
   return {
     heroId,
     heroName,
-    createdAt: stringValue(record['created_at']) || null,
+    createdAt: stringValue(record['created_at'] ?? record['createdAt']) || null,
   };
 }
 

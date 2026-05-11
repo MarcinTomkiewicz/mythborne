@@ -25,63 +25,100 @@
     </div>
   }
 
-  <p-stepper
-    class="w-100"
-    [value]="page.step()"
-    [linear]="true"
-    (valueChange)="page.onStepChange($event)"
-  >
-    <p-step-list>
-      <p-step [value]="1">Account</p-step>
-      <p-step [value]="2" [disabled]="!page.canOpenStep(2)">Hero</p-step>
-      <p-step [value]="3" [disabled]="!page.canOpenStep(3)">Origin</p-step>
-      <p-step [value]="4" [disabled]="!page.canOpenStep(4)">Profile</p-step>
-    </p-step-list>
+  @if (page.hasExistingAccount()) {
+    <p-stepper
+      class="w-100"
+      [value]="page.step()"
+      [linear]="true"
+      (valueChange)="page.onStepChange($event)"
+    >
+      <p-step-list>
+        <p-step [value]="1">Hero</p-step>
+        <p-step [value]="2" [disabled]="!page.canOpenStep(2)">Origin</p-step>
+      </p-step-list>
 
-    <p-step-panels>
-      <p-step-panel [value]="1">
-        <ng-template #content>
-          <app-step-account
-            [form]="page.accountForm"
-            [isExistingAccount]="page.hasExistingAccount()"
-            [existingEmail]="page.user()?.email ?? ''"
-            (next)="page.nextFromAccount()"
-          />
-        </ng-template>
-      </p-step-panel>
+      <p-step-panels>
+        <p-step-panel [value]="1">
+          <ng-template #content>
+            <app-step-hero
+              [form]="page.heroForm"
+              [showBack]="false"
+              (next)="page.nextFromHero()"
+            />
+          </ng-template>
+        </p-step-panel>
 
-      <p-step-panel [value]="2">
-        <ng-template #content>
-          <app-step-hero
-            [form]="page.heroForm"
-            (back)="page.prevStep(1)"
-            (next)="page.nextFromHero()"
-          />
-        </ng-template>
-      </p-step-panel>
+        <p-step-panel [value]="2">
+          <ng-template #content>
+            <app-step-origin
+              [selectedOrigin]="page.selectedOrigin()"
+              [nextLabel]="'Stwórz bohatera'"
+              (back)="page.prevStep(1)"
+              (next)="page.onOriginNext($event)"
+            />
+          </ng-template>
+        </p-step-panel>
+      </p-step-panels>
+    </p-stepper>
+  } @else {
+    <p-stepper
+      class="w-100"
+      [value]="page.step()"
+      [linear]="true"
+      (valueChange)="page.onStepChange($event)"
+    >
+      <p-step-list>
+        <p-step [value]="1">Account</p-step>
+        <p-step [value]="2" [disabled]="!page.canOpenStep(2)">Hero</p-step>
+        <p-step [value]="3" [disabled]="!page.canOpenStep(3)">Origin</p-step>
+        <p-step [value]="4" [disabled]="!page.canOpenStep(4)">Profile</p-step>
+      </p-step-list>
 
-      <p-step-panel [value]="3">
-        <ng-template #content>
-          <app-step-origin
-            [selectedOrigin]="page.selectedOrigin()"
-            [showBack]="true"
-            (back)="page.prevStep(2)"
-            (next)="page.onOriginNext($event)"
-          />
-        </ng-template>
-      </p-step-panel>
+      <p-step-panels>
+        <p-step-panel [value]="1">
+          <ng-template #content>
+            <app-step-account
+              [form]="page.accountForm"
+              [isExistingAccount]="false"
+              [existingEmail]="''"
+              (next)="page.nextFromAccount()"
+            />
+          </ng-template>
+        </p-step-panel>
 
-      <p-step-panel [value]="4">
-        <ng-template #content>
-          <app-step-user
-            [form]="page.profileForm"
-            [submitting]="page.isSubmitting()"
-            (back)="page.prevStep(3)"
-            (submit)="page.submit()"
-          />
-        </ng-template>
-      </p-step-panel>
-    </p-step-panels>
-  </p-stepper>
+        <p-step-panel [value]="2">
+          <ng-template #content>
+            <app-step-hero
+              [form]="page.heroForm"
+              (back)="page.prevStep(1)"
+              (next)="page.nextFromHero()"
+            />
+          </ng-template>
+        </p-step-panel>
+
+        <p-step-panel [value]="3">
+          <ng-template #content>
+            <app-step-origin
+              [selectedOrigin]="page.selectedOrigin()"
+              [showBack]="true"
+              (back)="page.prevStep(2)"
+              (next)="page.onOriginNext($event)"
+            />
+          </ng-template>
+        </p-step-panel>
+
+        <p-step-panel [value]="4">
+          <ng-template #content>
+            <app-step-user
+              [form]="page.profileForm"
+              [submitting]="page.isSubmitting()"
+              (back)="page.prevStep(3)"
+              (submit)="page.submit()"
+            />
+          </ng-template>
+        </p-step-panel>
+      </p-step-panels>
+    </p-stepper>
+  }
 </section>
 

@@ -26,7 +26,14 @@ describe('StartFlow', () => {
   });
 
   it('loads server availability through the canonical start-flow RPC', async () => {
-    backend.rpc.and.returnValue(of([serverAvailabilityRow()]));
+    backend.rpc.and.returnValue(of([serverAvailabilityRow({
+      is_sandbox: true,
+      can_enter_game: true,
+      heroes_json: [
+        { heroId: 'hero-1', heroName: 'First', createdAt: '2026-05-01T10:00:00Z' },
+        { heroId: 'hero-2', heroName: 'Second', createdAt: '2026-05-02T10:00:00Z' },
+      ],
+    })]));
 
     const result = await firstValueFrom(service.getServerAvailability());
 
@@ -35,6 +42,7 @@ describe('StartFlow', () => {
       canCreateHero: true,
       nextAction: 'hero_creation',
     }));
+    expect(result[0].heroes.map((hero) => hero.heroId)).toEqual(['hero-1', 'hero-2']);
     expect(backend.rpc).toHaveBeenCalledOnceWith(
       RPC.get_start_flow_server_availability,
     );
@@ -94,7 +102,9 @@ describe('StartFlow', () => {
   });
 });
 
-function serverAvailabilityRow(): StartFlowServerAvailabilityRow {
+function serverAvailabilityRow(
+  patch: Partial<StartFlowServerAvailabilityRow> = {},
+): StartFlowServerAvailabilityRow {
   return {
     server_id: 'server-1',
     server_key: 'standard',
@@ -121,6 +131,7 @@ function serverAvailabilityRow(): StartFlowServerAvailabilityRow {
     district_a_free: 88,
     heroes_json: [],
     eligibility_json: {},
+    ...patch,
   };
 }
 

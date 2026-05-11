@@ -142,9 +142,7 @@ describe('StartFlowEntryState', () => {
     activeHero.selectHero.and.returnValue(of(activeContext('hero-2')));
 
     state.load();
-    state.enterSelectedServer();
 
-    expect(router.navigateByUrl).not.toHaveBeenCalled();
     expect(state.showHeroSelection()).toBeTrue();
 
     state.selectHero('hero-2');
@@ -153,7 +151,7 @@ describe('StartFlowEntryState', () => {
     expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/dashboard');
   });
 
-  it('uses mapped sandbox hero option order and exposes default/current context', () => {
+  it('continues to dashboard from sandbox hero selection when the current hero is active', () => {
     selectedServer.set(server({ kind: 'sandbox', key: 'sandbox' }));
     servers.set([server({ kind: 'sandbox', key: 'sandbox' })]);
     activeHeroState.set(activeContext('hero-2'));
@@ -175,12 +173,124 @@ describe('StartFlowEntryState', () => {
     state.load();
     state.enterSelectedServer();
 
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/dashboard');
+    expect(activeHero.selectHero).not.toHaveBeenCalled();
+  });
+
+  it('selects the DB default hero before continuing from sandbox hero selection without active hero context', () => {
+    selectedServer.set(server({ kind: 'sandbox', key: 'sandbox' }));
+    servers.set([server({ kind: 'sandbox', key: 'sandbox' })]);
+    activeHero.selectHero.and.returnValue(of(activeContext('hero-2')));
+    startFlow.getServerAvailability.and.returnValue(of([
+      availability({
+        isStandard: false,
+        isSandbox: true,
+        canEnterGame: true,
+        canCreateHero: true,
+        nextAction: 'hero_selection',
+        userHeroCount: 2,
+        defaultHeroId: 'hero-2',
+        heroes: [
+          { heroId: 'hero-1', heroName: 'First', createdAt: '2026-05-01T10:00:00Z' },
+          { heroId: 'hero-2', heroName: 'Second', createdAt: '2026-05-02T10:00:00Z' },
+        ],
+      }),
+    ]));
+
+    state.load();
+    state.enterSelectedServer();
+
+    expect(activeHero.selectHero).toHaveBeenCalledOnceWith('hero-2');
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/dashboard');
+  });
+
+  it('does not invent a default sandbox hero when DB omits defaultHeroId', () => {
+    selectedServer.set(server({ kind: 'sandbox', key: 'sandbox' }));
+    servers.set([server({ kind: 'sandbox', key: 'sandbox' })]);
+    startFlow.getServerAvailability.and.returnValue(of([
+      availability({
+        isStandard: false,
+        isSandbox: true,
+        canEnterGame: true,
+        canCreateHero: true,
+        nextAction: 'hero_selection',
+        userHeroCount: 2,
+        defaultHeroId: null,
+        heroes: [
+          { heroId: 'hero-1', heroName: 'First', createdAt: '2026-05-01T10:00:00Z' },
+          { heroId: 'hero-2', heroName: 'Second', createdAt: '2026-05-02T10:00:00Z' },
+        ],
+      }),
+    ]));
+
+    state.load();
+    state.enterSelectedServer();
+
+    expect(state.selectedDefaultHeroOption()).toBeNull();
+    expect(activeHero.selectHero).not.toHaveBeenCalled();
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+    expect(state.blocker()).toBe('Select a sandbox hero before entering the game.');
+  });
+
+  it('uses mapped sandbox hero option order and exposes default/current context', () => {
+    selectedServer.set(server({ kind: 'sandbox', key: 'sandbox' }));
+    servers.set([server({ kind: 'sandbox', key: 'sandbox' })]);
+    activeHeroState.set(activeContext('hero-2'));
+    startFlow.getServerAvailability.and.returnValue(of([
+      availability({
+        isStandard: false,
+        isSandbox: true,
+        canEnterGame: true,
+        canCreateHero: true,
+        nextAction: 'hero_selection',
+        userHeroCount: 2,
+        defaultHeroId: 'hero-2',
+        heroes: [
+          { heroId: 'hero-1', heroName: 'First', createdAt: '2026-05-01T10:00:00Z' },
+          { heroId: 'hero-2', heroName: 'Second', createdAt: '2026-05-02T10:00:00Z' },
+        ],
+      }),
+    ]));
+
+    state.load();
+    state.enterSelectedServer();
+
     expect(state.showHeroSelection()).toBeTrue();
     expect(state.selectedHeroOptions().map((hero) => hero.heroId))
       .toEqual(['hero-1', 'hero-2']);
-    expect(state.selectedDefaultHeroOption()?.heroId).toBe('hero-1');
+    expect(state.selectedDefaultHeroOption()?.heroId).toBe('hero-2');
     expect(state.activeHeroOption()?.heroId).toBe('hero-2');
     expect(state.canCreateSandboxHero()).toBeTrue();
+  });
+
+  it('exposes sandbox hero selection from DB-returned heroes when sandbox entry is otherwise allowed', () => {
+    selectedServer.set(server({ kind: 'sandbox', key: 'sandbox' }));
+    servers.set([server({ kind: 'sandbox', key: 'sandbox' })]);
+    activeHeroState.set(activeContext('hero-1'));
+    startFlow.getServerAvailability.and.returnValue(of([
+      availability({
+        isStandard: false,
+        isSandbox: true,
+        canEnterGame: true,
+        canCreateHero: true,
+        nextAction: 'dashboard',
+        userHeroCount: 2,
+        heroes: [
+          { heroId: 'hero-1', heroName: 'First', createdAt: '2026-05-01T10:00:00Z' },
+          { heroId: 'hero-2', heroName: 'Second', createdAt: '2026-05-02T10:00:00Z' },
+        ],
+      }),
+    ]));
+    activeHero.selectHero.and.returnValue(of(activeContext('hero-2')));
+
+    state.load();
+
+    expect(state.showHeroSelection()).toBeTrue();
+
+    state.selectHero('hero-2');
+
+    expect(activeHero.selectHero).toHaveBeenCalledOnceWith('hero-2');
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/dashboard');
   });
 
   it('does not expose hero selection or sandbox creation affordances for standard servers', () => {
