@@ -17,8 +17,9 @@ import { OriginBonus } from '../../core/domain/origin/origin.model';
 export class Carousel {
   origins = input.required<any[]>();
   indexInput = input(0);
-  bonuses = input<OriginBonus[]>();
-  statLabels = input<Record<string, string>>();
+  bonuses = input<OriginBonus[]>([]);
+  bonusSummaryText = input<string | null>(null);
+  statLabels = input<Partial<Record<string, string>>>({});
 
   indexChange = output<number>();
 

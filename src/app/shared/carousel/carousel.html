@@ -32,15 +32,21 @@
         {{ origins()[index()]?.description }}
       </p>
 
-      <div class="bonuses flex-row-center-center flex-wrap gap-sm mt-lg">
-        @for (bonus of bonuses(); track bonus.id) {
-          <span class="tag-badge tag-badge--info">
-            <strong>{{ statLabels()?.[bonus.target] ?? bonus.target }}</strong
-            >:
-            {{ bonus.baseValue > 0 ? "+" + bonus.baseValue : bonus.baseValue }}
-          </span>
-        }
-      </div>
+      @if (bonusSummaryText()) {
+        <p class="origin-info__description text-center mt-lg mb-0">
+          {{ bonusSummaryText() }}
+        </p>
+      } @else {
+        <div class="bonuses flex-row-center-center flex-wrap gap-sm mt-lg">
+          @for (bonus of bonuses(); track bonus.id) {
+            <span class="tag-badge tag-badge--info">
+              <strong>{{ statLabels()[bonus.target] ?? bonus.target }}</strong
+              >:
+              {{ bonus.baseValue > 0 ? "+" + bonus.baseValue : bonus.baseValue }}
+            </span>
+          }
+        </div>
+      }
     </div>
   </div>
 

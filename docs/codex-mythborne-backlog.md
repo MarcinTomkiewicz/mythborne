@@ -10456,6 +10456,8 @@ Podłączyć frontendowy start flow do zatwierdzonego DB/RPC kontraktu dla serve
 - DB/RPC blocker, jeśli wystąpił;
 - manual smoke checklist, jeśli flow jest już możliwy do kliknięcia.
 
+**Status:** Accepted on 2026-05-11. X1 added the generated-type-backed start-flow integration layer over `get_start_flow_server_availability`, `get_start_flow_origin_options` and `create_hero_start_flow`, replaced the old `CreateHero` direct-write bootstrap with the atomic DB/RPC workflow, reloads `ActiveHero` through the selected server -> active hero path after creation, and blocks unsupported DB `route_next_action` values instead of silently routing to dashboard. The existing origin carousel consumes DB `bonus_summary_text`; origin artwork still follows the existing static asset convention derived from `origin_key` and is not DB-backed artwork. No direct writes to hero/bootstrap/estate/CP tables, HeroFactory/assignFreeEstate fallback path, migrations, seeding, generated-type patching or status-independent fallback were added. Verification passed with focused start-flow/create-hero/create-character/origin specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps. Manual/browser smoke remains pending until the user has a clear login/logout and sandbox multi-hero creation path.
+
 ---
 
 ## Task X2 — Server picker and entry routing
