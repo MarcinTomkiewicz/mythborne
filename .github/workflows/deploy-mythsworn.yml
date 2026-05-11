@@ -140,8 +140,7 @@ jobs:
         shell: bash
         run: |
           tar czf mythsworn-dist.tgz -C dist/mythos-hunter-2-0 browser server
-          tar tzf mythsworn-dist.tgz > /tmp/mythsworn-dist-list.txt
-          sed -n '1,50p' /tmp/mythsworn-dist-list.txt
+          tar tzf mythsworn-dist.tgz | head -50
 
       - name: Prepare SSH
         shell: bash
