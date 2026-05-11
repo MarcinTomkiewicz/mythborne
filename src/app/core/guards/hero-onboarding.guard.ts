@@ -18,7 +18,7 @@ function resolveOnboardedHeroRedirect(
   }
 
   if (!authState.hero()) {
-    return router.parseUrl('/auth/create-character');
+    return router.parseUrl('/auth/server-entry');
   }
 
   return true;
@@ -42,7 +42,23 @@ export const createCharacterEntryGuard: CanActivateFn = () => {
   return from(auth.initialize()).pipe(
     map(() => {
       if (authState.user() && authState.hero()) {
-        return router.parseUrl('/hero/dashboard');
+        return router.parseUrl('/auth/server-entry');
+      }
+
+      return true;
+    })
+  );
+};
+
+export const serverEntryGuard: CanActivateFn = () => {
+  const auth = inject(Auth);
+  const authState = inject(AuthState);
+  const router = inject(Router);
+
+  return from(auth.initialize()).pipe(
+    map(() => {
+      if (!authState.user()) {
+        return router.parseUrl('/public');
       }
 
       return true;
@@ -58,11 +74,11 @@ export const authEntryGuard: CanActivateFn = () => {
   return from(auth.initialize()).pipe(
     map(() => {
       if (authState.user() && authState.hero()) {
-        return router.parseUrl('/hero/dashboard');
+        return router.parseUrl('/auth/server-entry');
       }
 
       if (authState.user()) {
-        return router.parseUrl('/auth/create-character');
+        return router.parseUrl('/auth/server-entry');
       }
 
       return true;

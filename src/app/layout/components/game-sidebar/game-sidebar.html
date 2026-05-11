@@ -22,6 +22,9 @@
       <span class="muted-text">Status</span>
       <span [class]="serverStatusClass()">{{ serverStatusLabel() }}</span>
     </div>
+    <a class="tag-badge tag-badge--muted" routerLink="/auth/server-entry">
+      Change server
+    </a>
     <div class="flex-row-between-center gap-sm">
       <span class="muted-text">Prestige</span>
       <strong class="heading-color">

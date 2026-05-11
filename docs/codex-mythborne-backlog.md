@@ -10520,6 +10520,8 @@ Zbudować player entry routing od wyboru serwera do właściwego ekranu: hero cr
 - Staff/tester na sandboxie z wieloma hero → default najwcześniej utworzony + możliwość przełączenia.
 - Zmiana servera nie wymaga relogowania.
 
+**Status:** Accepted on 2026-05-11. X2 added the `/auth/server-entry` route and server entry state over the X1 start-flow availability read model, routing logged-in entry through selected server -> active hero decisions instead of directly guessing create-character/dashboard. Standard servers route to hero creation, dashboard or a visible DB blocker according to `next_action`, `can_enter_game`, `can_create_hero` and `block_reason`; sandbox multi-hero selection is available only when the DB read model allows hero selection/entry, and selected hero ids must exist in the DB-returned hero options. Active hero load failures block entry instead of being masked, dashboard routing requires an active hero context, and the sidebar exposes server switching without relogging. Verification passed with focused start-flow entry/active-hero/mapper specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for no direct start-flow/create-hero writes, no auth uid as hero id and exact start-flow RPC path unchanged. Manual/browser smoke remains pending.
+
 ---
 
 ## Task X3 — Hero creation UI with DB-backed origin selection

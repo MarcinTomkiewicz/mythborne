@@ -41,6 +41,7 @@ export interface StartFlowServerAvailability {
   districtAFree: number;
   heroesJson: Json;
   eligibilityJson: Json;
+  heroes: StartFlowHeroOption[];
 }
 
 export interface StartFlowOriginOption extends Origin {
@@ -81,4 +82,22 @@ export interface StartFlowHeroCreationResult {
   routeNextAction: string;
   createdNewHero: boolean;
   auditLogId: string;
+}
+
+export interface StartFlowHeroOption {
+  heroId: string;
+  heroName: string;
+  createdAt: string | null;
+}
+
+export type StartFlowEntryRouteAction =
+  | 'create_hero'
+  | 'dashboard'
+  | 'hero_selection'
+  | 'blocked';
+
+export interface StartFlowEntryDecision {
+  action: StartFlowEntryRouteAction;
+  route: string | null;
+  message: string | null;
 }

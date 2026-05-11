@@ -15,12 +15,8 @@ const appShellRoutes: Routes = [
     redirectTo: () => {
       const authState = inject(AuthState);
 
-      if (authState.hero()) {
-        return '/hero/dashboard';
-      }
-
       if (authState.user()) {
-        return '/auth/create-character';
+        return '/auth/server-entry';
       }
 
       return '/public';

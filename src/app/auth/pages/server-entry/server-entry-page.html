@@ -1,0 +1,121 @@
+<section class="flex-col gap-lg w-100">
+  <div class="flex-col gap-xs">
+    <p class="card-legend mb-0">Choose Server</p>
+    <h1 class="mg-section__title mb-0">Enter Mythsworn</h1>
+    <p class="mb-0 muted-text">
+      Select the server context for your active hero or character creation.
+    </p>
+  </div>
+
+  @if (state.error()) {
+    <div class="mg-card border-danger bg-danger-soft flex-col gap-xs w-100">
+      <p class="mb-0 text-danger">{{ state.error() }}</p>
+    </div>
+  }
+
+  @if (state.blocker()) {
+    <div class="mg-card flex-col gap-xs w-100">
+      <p class="status-text-warning mb-0">{{ state.blocker() }}</p>
+    </div>
+  }
+
+  @if (state.isLoading()) {
+    <div class="mg-card flex-col gap-xs w-100">
+      <p class="mb-0 heading-color">Loading available servers...</p>
+    </div>
+  } @else if (!state.error() && state.visibleAvailability().length === 0) {
+    <div class="mg-card flex-col gap-xs w-100">
+      <p class="mb-0 heading-color">No game servers are available for this account.</p>
+    </div>
+  } @else {
+    <div class="mg-grid-auto-fit gap-md">
+      @for (server of state.servers(); track server.id) {
+        @if (state.serverAvailability(server); as availability) {
+        @if (availability.isVisible) {
+          <article
+            class="mg-card flex-col gap-md w-100"
+          >
+            <div class="flex-row-between-start gap-md">
+              <div class="flex-col gap-xs">
+                <h2 class="mg-section__title mg-section__title--sm mb-0">
+                  {{ availability.serverName }}
+                </h2>
+                <p class="mb-0 muted-text">{{ availability.description }}</p>
+              </div>
+
+              <span
+                class="tag-badge"
+                [class.tag-badge--success]="availability.canCreateHero || availability.canEnterGame"
+                [class.tag-badge--danger]="!availability.canCreateHero && !availability.canEnterGame"
+              >
+                @if (availability.canEnterGame) {
+                  Ready
+                } @else if (availability.canCreateHero) {
+                  Can create
+                } @else if (availability.isDistrictAFull) {
+                  District A full
+                } @else {
+                  Blocked
+                }
+              </span>
+            </div>
+
+            <div class="flex-row-start-center flex-wrap gap-sm">
+              <span class="tag-badge tag-badge--muted">{{ availability.serverKind }}</span>
+              <span class="tag-badge tag-badge--muted">{{ availability.serverStatus }}</span>
+
+              @if (availability.userHeroCount > 0) {
+                <span class="tag-badge tag-badge--muted">
+                  Heroes: {{ availability.userHeroCount }}
+                </span>
+              }
+            </div>
+
+            @if (availability.blockReason && !availability.canCreateHero && !availability.canEnterGame) {
+              <p class="mb-0 heading-color">{{ availability.blockReason }}</p>
+            }
+
+            @if (state.selectedServer()?.id === server.id && state.showHeroSelection()) {
+              <div class="flex-col gap-sm">
+                <p class="mb-0 heading-color">Choose sandbox hero</p>
+
+                @for (hero of state.selectedHeroOptions(); track hero.heroId) {
+                  <div class="flex-row-between-center gap-sm">
+                    <span>{{ hero.heroName }}</span>
+                    <p-button
+                      type="button"
+                      label="Use hero"
+                      size="small"
+                      [disabled]="state.isTransitioning()"
+                      (onClick)="state.selectHero(hero.heroId)"
+                    />
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="flex-row-end-center gap-sm">
+              @if (state.selectedServer()?.id !== server.id) {
+                <p-button
+                  type="button"
+                  label="Select"
+                  severity="secondary"
+                  [disabled]="state.isTransitioning()"
+                  (onClick)="state.selectServer(server.id)"
+                />
+              } @else {
+                <p-button
+                  type="button"
+                  label="Continue"
+                  [disabled]="state.isTransitioning()"
+                  (onClick)="state.enterSelectedServer()"
+                />
+              }
+            </div>
+          </article>
+        }
+        }
+      }
+    </div>
+  }
+</section>

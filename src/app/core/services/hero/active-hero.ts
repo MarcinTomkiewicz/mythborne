@@ -1,5 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { map, Observable, of, switchMap, tap } from 'rxjs';
+import { map, Observable, of, switchMap, tap, throwError } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
 import { mapHero } from '../../domain/hero/hero.mapper';
 import { HeroOrderColumn } from '../../enums/active-hero.enum';
@@ -51,6 +51,45 @@ export class ActiveHero {
             error instanceof Error
               ? error.message
               : 'Failed to load active hero state.',
+          );
+          this._isLoading.set(false);
+        },
+      }),
+    );
+  }
+
+  selectHero(heroId: string): Observable<ActiveHeroState> {
+    const userId = this.authState.user()?.id ?? null;
+
+    if (!userId) {
+      return throwError(() => new Error('No authenticated user for hero selection.'));
+    }
+
+    this._isLoading.set(true);
+    this._error.set(null);
+
+    return this.resolveSelectedServerId().pipe(
+      switchMap((serverId) => this.loadHeroRows(userId, serverId)),
+      map((heroRows) => {
+        const heroRow = heroRows.find((row) => row.id === heroId) ?? null;
+
+        if (!heroRow) {
+          throw new Error('Selected hero is not available on this server.');
+        }
+
+        return this.toState(userId, heroRow);
+      }),
+      tap({
+        next: (state) => {
+          this._state.set(state);
+          this.authState.setHero(state.hero);
+          this._isLoading.set(false);
+        },
+        error: (error: unknown) => {
+          this._error.set(
+            error instanceof Error
+              ? error.message
+              : 'Failed to select active hero.',
           );
           this._isLoading.set(false);
         },
@@ -149,6 +188,28 @@ export class ActiveHero {
       userId,
       serverId: server.id,
       heroId: heroRow?.id ?? null,
+      server,
+      hero,
+      heroRow,
+    };
+  }
+
+  private toState(
+    userId: string,
+    heroRow: Row<'hero'>,
+  ): ActiveHeroState {
+    const server = this.activeServer.selectedServer();
+
+    if (!server) {
+      throw new Error('No selected server for active hero selection.');
+    }
+
+    const hero = mapHero(heroRow);
+
+    return {
+      userId,
+      serverId: server.id,
+      heroId: heroRow.id,
       server,
       hero,
       heroRow,

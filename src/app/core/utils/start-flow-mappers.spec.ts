@@ -1,5 +1,6 @@
 import {
   mapStartFlowHeroCreationResult,
+  mapStartFlowHeroOptions,
   mapStartFlowOriginOption,
   mapStartFlowServerAvailability,
 } from './start-flow-mappers';
@@ -22,6 +23,27 @@ describe('start flow mappers', () => {
       districtAFree: 0,
     }));
     expect(JSON.stringify(result.heroesJson)).toBe('[{"heroId":"hero-1"}]');
+  });
+
+  it('maps DB-returned sandbox hero options without inventing hero rows', () => {
+    const result = mapStartFlowHeroOptions([
+      { hero_id: 'hero-2', hero_name: 'Second', created_at: '2026-05-02T10:00:00Z' },
+      { hero_id: 'hero-1', hero_name: 'First', created_at: '2026-05-01T10:00:00Z' },
+      { hero_id: '', hero_name: 'Broken' },
+    ]);
+
+    expect(result).toEqual([
+      {
+        heroId: 'hero-1',
+        heroName: 'First',
+        createdAt: '2026-05-01T10:00:00Z',
+      },
+      {
+        heroId: 'hero-2',
+        heroName: 'Second',
+        createdAt: '2026-05-02T10:00:00Z',
+      },
+    ]);
   });
 
   it('maps DB-backed origin option display without local bonus calculation', () => {

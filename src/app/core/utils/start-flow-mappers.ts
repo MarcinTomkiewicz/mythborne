@@ -1,5 +1,6 @@
 import {
   StartFlowCreateHeroRow,
+  StartFlowHeroOption,
   StartFlowHeroCreationResult,
   StartFlowOriginOption,
   StartFlowOriginOptionRow,
@@ -36,6 +37,47 @@ export function mapStartFlowServerAvailability(
     districtAFree: row.district_a_free,
     heroesJson: row.heroes_json,
     eligibilityJson: row.eligibility_json,
+    heroes: mapStartFlowHeroOptions(row.heroes_json),
+  };
+}
+
+export function mapStartFlowHeroOptions(json: unknown): StartFlowHeroOption[] {
+  if (!Array.isArray(json)) {
+    return [];
+  }
+
+  return json
+    .map((entry) => mapStartFlowHeroOption(entry))
+    .filter((entry): entry is StartFlowHeroOption => !!entry)
+    .sort((left, right) => {
+      const leftCreatedAt = left.createdAt ?? '';
+      const rightCreatedAt = right.createdAt ?? '';
+
+      if (leftCreatedAt !== rightCreatedAt) {
+        return leftCreatedAt.localeCompare(rightCreatedAt);
+      }
+
+      return left.heroName.localeCompare(right.heroName);
+    });
+}
+
+function mapStartFlowHeroOption(entry: unknown): StartFlowHeroOption | null {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+
+  const record = entry as Record<string, unknown>;
+  const heroId = stringValue(record['hero_id'] ?? record['id']);
+  const heroName = stringValue(record['hero_name'] ?? record['name']);
+
+  if (!heroId || !heroName) {
+    return null;
+  }
+
+  return {
+    heroId,
+    heroName,
+    createdAt: stringValue(record['created_at']) || null,
   };
 }
 
@@ -84,4 +126,8 @@ export function mapStartFlowHeroCreationResult(
     createdNewHero: row.created_new_hero,
     auditLogId: row.audit_log_id,
   };
+}
+
+function stringValue(value: unknown): string {
+  return typeof value === 'string' ? value : '';
 }
