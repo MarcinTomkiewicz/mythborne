@@ -4,9 +4,9 @@ Purpose: this backlog translates current project decisions into small, promptabl
 
 Use this as a practical task queue. Concept documents remain informational; this file is for execution.
 
-## Latest accepted W11 follow-up
+## Latest accepted W follow-up
 
-**Implementation note:** W12 accepted on 2026-05-11. `/admin/exploration-debug` now shows a global exploration smoke readiness matrix for the minimum Trial, Encounter, reward and effect content needed by W13. The matrix reuses `ExplorationTrialAdmin.getAdminData()` and `ExplorationEncounterAdmin.getAdminData()`, shows 10 `ready / missing / incomplete` rows with definition, reward assignment/profile/entry and effect label/summary data quality issues, and does not seed, mutate, infer from Armory/latest challenge, edit generated types, or add fallback reward resolution. Verification passed with focused smoke readiness/debug specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for seeding/mutation/inference paths. Representative full-loop smoke moves to W13.
+**Implementation note:** W13 accepted on 2026-05-11. `/game/exploration` now keeps stale challenge/reward/combat results out of the next step/result context, preserves exact reward reads through `getStepReward(stepId)` and `getChallengeReward(challengeAttemptId)`, and uses Polish blocker/error/feedback copy for the touched challenge and movement loop states. Active effect label/summary still comes from DB-returned `state.activeEffect.metadataJson`; Angular does not seed content, infer rewards from Armory/latest challenge/selection diagnostics, edit generated types, or add fallback reward resolution. Verification passed with focused exploration specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps. Manual full-loop smoke remains pending on real data/session.
 
 Canonical source order:
 
@@ -10331,6 +10331,8 @@ Tie the completed runtime pieces into one stable player/sandbox exploration loop
   - Buff Encounter;
   - Debuff Encounter;
   - continue after each resolved outcome.
+
+**Status:** Accepted on 2026-05-11. W13 tightened the `/game/exploration` player/sandbox loop without adding new services/helpers/components: stale challenge completion results are hidden while a next movement step is active and after later non-challenge step resolution, previous challenge rewards and completed combat results remain cleared by the exact current context, and canonical reward reads stay limited to exact `getStepReward(stepId)` / `getChallengeReward(challengeAttemptId)`. The touched challenge/movement blocker, error and success feedback copy is Polish-facing, immediate non-combat Encounter active states explicitly say they should resolve through the step result/reward/effect flow, and missing reward/effect read-model details remain explicit. Active effect label/summary is read from DB-returned `state.activeEffect.metadataJson`, not a local Angular resolver. No DB/schema/generated type edits, direct exploration writes, content seeding, Armory/latest-challenge inference, reports rewrite or status-independent fallback layer were introduced. Focused `/game/exploration` specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps passed. Manual full-loop smoke remains pending on a real session/data set for Nothing, Trial manifestation failure, Combat Trial, Combat Encounter, Resource Encounter, Buff Encounter, Debuff Encounter and continue-after-result.
   
 ---
 

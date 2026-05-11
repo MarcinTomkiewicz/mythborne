@@ -88,12 +88,12 @@ export class ExplorationStepState {
     this.feedback.clear();
 
     if (!context || !step) {
-      this.feedback.setError(null, 'No active movement step to check.');
+      this.feedback.setError(null, 'Brak aktywnego kroku ruchu do sprawdzenia.');
       return;
     }
 
     if (!this.isActiveStepReady()) {
-      this.feedback.setError(null, 'Movement step is not ready yet.');
+      this.feedback.setError(null, 'Krok ruchu nie jest jeszcze gotowy.');
       return;
     }
 
@@ -122,14 +122,14 @@ export class ExplorationStepState {
 
           this.lastResolvedStep.set(workflow.result);
           this.overview.setStateFromWorkflow(workflow.state);
-          this.feedback.setSuccess('Movement result checked.');
+          this.feedback.setSuccess('Wynik ruchu został sprawdzony.');
         },
         error: (error: unknown) => {
           if (!this.isCurrentResolve(token, context.heroId, context.difficultyKey, step.id)) {
             return;
           }
 
-          this.feedback.setError(error, 'Failed to check movement result.');
+          this.feedback.setError(error, 'Nie udało się sprawdzić wyniku ruchu.');
         },
       });
   }

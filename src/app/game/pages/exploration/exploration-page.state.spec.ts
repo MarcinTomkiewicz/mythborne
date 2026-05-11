@@ -372,7 +372,7 @@ describe('ExplorationPageState', () => {
     page.checkStepResult();
 
     expect(explorations.resolveHeroExplorationStep).not.toHaveBeenCalled();
-    expect(feedback.error()).toBe('Movement step is not ready yet.');
+    expect(feedback.error()).toBe('Krok ruchu nie jest jeszcze gotowy.');
   });
 
   it('completes active challenges through the manual completion RPC', () => {
@@ -391,7 +391,7 @@ describe('ExplorationPageState', () => {
     });
     expect(page.challengeResultTitle()).toBe('Challenge completed');
     expect(page.challengeResultDescription()).toContain('Manual completion succeeded');
-    expect(feedback.successMessage()).toBe('Challenge completed.');
+    expect(feedback.successMessage()).toBe('Wyzwanie zostało ukończone.');
   });
 
   it('hides Trial auto-resolve when DB does not return an auto chance', () => {
@@ -419,14 +419,14 @@ describe('ExplorationPageState', () => {
     expect(page.canShowManualResolveActions()).toBeTrue();
     expect(page.canShowAutoResolveAction()).toBeFalse();
     expect(page.autoResolveExplanation()).toBe(
-      'DB did not return an auto-resolve chance for this Trial.',
+      'DB nie zwróciła szansy automatycznego rozstrzygnięcia dla tej próby.',
     );
 
     page.autoResolveChallenge();
 
     expect(explorations.autoResolveHeroExplorationChallengeAttempt).not.toHaveBeenCalled();
     expect(feedback.error()).toBe(
-      'DB did not return an auto-resolve chance for this Trial.',
+      'DB nie zwróciła szansy automatycznego rozstrzygnięcia dla tej próby.',
     );
   });
 
@@ -459,7 +459,7 @@ describe('ExplorationPageState', () => {
     page.completeChallenge(true);
 
     expect(explorations.completeHeroExplorationChallengeAttempt).not.toHaveBeenCalled();
-    expect(feedback.error()).toContain('should resolve through the step outcome/reward/effect flow');
+    expect(feedback.error()).toContain('powinien rozwiązać się przez wynik kroku, nagrodę albo efekt');
   });
 
   it('ensures live combat session and submits one DB player action per strike', () => {
@@ -757,7 +757,7 @@ describe('ExplorationPageState', () => {
     page.overview.setStateFromWorkflow(activeExplorationState('easy', false, true));
 
     expect(page.autoResolveExplanation()).toBe(
-      'Auto-resolve uses the DB-owned success chance for this challenge: 35%.',
+      'Automatyczne rozstrzygnięcie używa szansy sukcesu zwróconej przez DB dla tego wyzwania: 35%.',
     );
     expect(page.challengeFacts().map((fact) => fact.label).filter((label) =>
       label.startsWith('Auto ') || label === 'Auto-resolve Luck',
@@ -774,7 +774,7 @@ describe('ExplorationPageState', () => {
       challengeAttemptId: 'challenge-1',
     });
     expect(page.currentChallengeResult()?.completionMode).toBe('auto');
-    expect(feedback.successMessage()).toBe('Challenge auto-resolved.');
+    expect(feedback.successMessage()).toBe('Wyzwanie zostało automatycznie rozstrzygnięte.');
   });
 
   it('describes DB-applied Buff and Debuff Encounter effects from refreshed state', () => {
@@ -808,8 +808,8 @@ describe('ExplorationPageState', () => {
       expect(page.stepResultDescription()).toContain('applied an exploration effect');
       expect(page.activeEffectDisplay()).toEqual(jasmine.objectContaining({
         title: `${encounterKind === ENCOUNTER_KIND.buff ? 'Buff' : 'Debuff'} effect active`,
-        summary: 'Effect details unavailable from the DB read model.',
-        warning: 'Effect details unavailable from DB read model.',
+        summary: 'Szczegóły efektu są niedostępne w kanonicznym read modelu DB.',
+        warning: 'Brak szczegółów efektu w kanonicznym read modelu DB.',
       }));
     }
   });
@@ -858,7 +858,7 @@ describe('ExplorationPageState', () => {
 
     expect(autoResolveFact?.value).toBe('Manual combat');
     expect(page.autoResolveExplanation()).toBe(
-      'Combat challenges use the live combat flow.',
+      'Wyzwanie bojowe wymaga ręcznej walki.',
     );
     expect(page.challengeFacts().map((fact) => fact.label).filter((label) =>
       label.startsWith('Auto ') || label === 'Auto-resolve Luck',
@@ -868,7 +868,7 @@ describe('ExplorationPageState', () => {
 
     expect(explorations.autoResolveHeroExplorationChallengeAttempt).not.toHaveBeenCalled();
     expect(feedback.error()).toBe(
-      'Combat challenges use the live combat flow and cannot be auto-resolved from this action.',
+      'Wyzwanie bojowe wymaga ręcznej walki i nie może zostać automatycznie rozstrzygnięte z tej akcji.',
     );
   });
 
@@ -1141,7 +1141,7 @@ describe('ExplorationPageState', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(rewards.getStepReward).toHaveBeenCalledWith({ stepId: 'step-1' });
     expect(text).toContain('Resource Encounter resolved');
-    expect(text).toContain('Reward details are unavailable from the DB read model.');
+    expect(text).toContain('Szczegóły nagrody są niedostępne w kanonicznym read modelu DB.');
     expect(text).toContain('Reward RPC backend shape');
     expect(text).toContain('get_exploration_step_reward_read_model');
     expect(text).toContain('{"p_step_id":"step-1"}');
@@ -1745,6 +1745,41 @@ describe('ExplorationPageState', () => {
 
     page.overview.setStateFromWorkflow(activeExplorationState('hard', false, false, pastStepTiming(), 'exploration-2'));
 
+    expect(page.currentChallengeResult()).toBeNull();
+  });
+
+  it('hides stale challenge completion results while the next movement step is active', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', false, true));
+    page.completeChallenge(true);
+
+    expect(page.currentChallengeResult()).not.toBeNull();
+
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', true, false, pastStepTiming()));
+
+    expect(page.currentChallengeResult()).toBeNull();
+  });
+
+  it('hides stale challenge completion results after a later non-challenge step resolves', () => {
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', false, true));
+    page.completeChallenge(true);
+
+    expect(page.currentChallengeResult()).not.toBeNull();
+
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', true, false, pastStepTiming()));
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy', {
+        challengeAttemptId: null,
+        outcomeKind: 'nothing',
+        rawOutcomeKind: 'nothing',
+      })),
+    );
+    page.checkStepResult();
+
+    expect(page.currentStepResult()?.outcomeKind).toBe('nothing');
     expect(page.currentChallengeResult()).toBeNull();
   });
 

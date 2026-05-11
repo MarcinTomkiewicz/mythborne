@@ -23,6 +23,7 @@ import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationLiveCombatState } from './exploration-live-combat.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationRewardState } from './exploration-reward.state';
+import { ExplorationStepState } from './exploration-step.state';
 
 @Injectable()
 export class ExplorationChallengeState {
@@ -32,6 +33,7 @@ export class ExplorationChallengeState {
   private readonly overview = inject(ExplorationOverviewState);
   private readonly liveCombatState = inject(ExplorationLiveCombatState);
   private readonly rewardState = inject(ExplorationRewardState);
+  private readonly stepState = inject(ExplorationStepState);
   private readonly completionToken = new RequestToken();
   private readonly lastCompletion = signal<ChallengeCompletionSnapshot | null>(null);
 
@@ -59,10 +61,15 @@ export class ExplorationChallengeState {
   readonly currentChallengeResult = computed(() => {
     const state = this.overview.state();
     const completion = this.lastCompletion();
+    const stepResult = this.stepState.currentStepResult();
+    const isCompletionStep = !stepResult ||
+      stepResult.challengeAttemptId === completion?.result.challengeAttemptId;
 
     return completion &&
       state?.exploration?.id === completion.explorationId &&
+      !state.activeStep &&
       !state.activeChallenge
+      && isCompletionStep
       ? completion.result
       : null;
   });
@@ -133,14 +140,14 @@ export class ExplorationChallengeState {
     this.feedback.clear();
 
     if (!context || !challenge) {
-      this.feedback.setError(null, 'No active challenge to auto-resolve.');
+      this.feedback.setError(null, 'Brak aktywnego wyzwania do automatycznego rozstrzygnięcia.');
       return;
     }
 
     if (challenge.minigameKey === ENCOUNTER_KIND.combat) {
       this.feedback.setError(
         null,
-        'Combat challenges use the live combat flow and cannot be auto-resolved from this action.',
+        'Wyzwanie bojowe wymaga ręcznej walki i nie może zostać automatycznie rozstrzygnięte z tej akcji.',
       );
       return;
     }
@@ -152,13 +159,13 @@ export class ExplorationChallengeState {
       this.feedback.setError(
         null,
         explorationChallengeActionBlocker(challenge)
-          ?? 'This challenge does not expose a player auto-resolve action.',
+          ?? 'To wyzwanie nie udostępnia graczowi akcji automatycznego rozstrzygnięcia.',
       );
       return;
     }
 
     if (!hasChallengeAutoResolveChance(challenge)) {
-      this.feedback.setError(null, 'DB did not return an auto-resolve chance for this Trial.');
+      this.feedback.setError(null, 'DB nie zwróciła szansy automatycznego rozstrzygnięcia dla tej próby.');
       return;
     }
 
@@ -191,14 +198,14 @@ export class ExplorationChallengeState {
             workflow.result.challengeAttemptId,
           );
           this.overview.setStateFromWorkflow(workflow.state);
-          this.feedback.setSuccess('Challenge auto-resolved.');
+          this.feedback.setSuccess('Wyzwanie zostało automatycznie rozstrzygnięte.');
         },
         error: (error: unknown) => {
           if (!this.isCurrentCompletion(token, context.heroId, context.difficultyKey, challenge.id)) {
             return;
           }
 
-          this.feedback.setError(error, 'Failed to auto-resolve challenge.');
+          this.feedback.setError(error, 'Nie udało się automatycznie rozstrzygnąć wyzwania.');
         },
       });
   }
@@ -214,7 +221,7 @@ export class ExplorationChallengeState {
     this.feedback.clear();
 
     if (!context || !challenge) {
-      this.feedback.setError(null, 'No active challenge to complete.');
+      this.feedback.setError(null, 'Brak aktywnego wyzwania do ukończenia.');
       return;
     }
 
@@ -224,7 +231,7 @@ export class ExplorationChallengeState {
       this.feedback.setError(
         null,
         explorationChallengeActionBlocker(challenge, mode)
-          ?? 'This challenge does not expose a manual completion action.',
+          ?? 'To wyzwanie nie udostępnia ręcznej akcji ukończenia.',
       );
       return;
     }
@@ -260,14 +267,14 @@ export class ExplorationChallengeState {
             workflow.result.challengeAttemptId,
           );
           this.overview.setStateFromWorkflow(workflow.state);
-          this.feedback.setSuccess('Challenge completed.');
+          this.feedback.setSuccess('Wyzwanie zostało ukończone.');
         },
         error: (error: unknown) => {
           if (!this.isCurrentCompletion(token, context.heroId, context.difficultyKey, challenge.id)) {
             return;
           }
 
-          this.feedback.setError(error, 'Failed to complete challenge.');
+          this.feedback.setError(error, 'Nie udało się ukończyć wyzwania.');
         },
       });
   }
@@ -294,7 +301,7 @@ export class ExplorationChallengeState {
 
   private title(challenge: HeroExplorationChallengeAttemptReadModel | null): string {
     if (!challenge) {
-      return 'No active challenge.';
+      return 'Brak aktywnego wyzwania.';
     }
 
     const prefix = challenge.minigameKey === ENCOUNTER_KIND.combat ? 'Combat ' : '';
@@ -332,7 +339,7 @@ export class ExplorationChallengeState {
     challenge: HeroExplorationChallengeAttemptReadModel | null,
   ): string {
     if (challenge?.minigameKey === ENCOUNTER_KIND.combat) {
-      return 'Combat challenges use the live combat flow.';
+      return 'Wyzwanie bojowe wymaga ręcznej walki.';
     }
 
     if (
@@ -340,11 +347,11 @@ export class ExplorationChallengeState {
       EXPLORATION_CHALLENGE_ACTION_MODE.manualTrial
     ) {
       return explorationChallengeActionBlocker(challenge)
-        ?? 'This challenge does not expose an auto-resolve action.';
+        ?? 'To wyzwanie nie udostępnia akcji automatycznego rozstrzygnięcia.';
     }
 
     if (!hasChallengeAutoResolveChance(challenge)) {
-      return 'DB did not return an auto-resolve chance for this Trial.';
+      return 'DB nie zwróciła szansy automatycznego rozstrzygnięcia dla tej próby.';
     }
 
     const chance = challenge?.autoResolve?.chance ?? challenge?.autoResolveChance;
@@ -352,7 +359,7 @@ export class ExplorationChallengeState {
       ? 'the DB-returned chance'
       : `${chance}%`;
 
-    return `Auto-resolve uses the DB-owned success chance for this challenge: ${chanceLabel}.`;
+    return `Automatyczne rozstrzygnięcie używa szansy sukcesu zwróconej przez DB dla tego wyzwania: ${chanceLabel}.`;
   }
 
   private chanceRollLabel(chance: number | null, roll: number | null): string {

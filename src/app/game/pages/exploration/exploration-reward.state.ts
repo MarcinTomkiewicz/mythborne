@@ -53,7 +53,7 @@ export class ExplorationRewardState {
   );
   readonly rewardUnavailableMessage = computed(() =>
     this.currentSource() && !this.isLoadingReward() && !this.reward()
-      ? 'Reward details are unavailable from the DB read model.'
+      ? 'Szczegóły nagrody są niedostępne w kanonicznym read modelu DB.'
       : null,
   );
 

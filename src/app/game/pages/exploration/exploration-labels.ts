@@ -82,8 +82,8 @@ export function explorationActiveEffectDisplay(
 
   return {
     title: dbLabel ?? `${kindLabel} ${status}`,
-    summary: dbSummary ?? 'Effect details unavailable from the DB read model.',
-    warning: dbLabel ? null : 'Effect details unavailable from DB read model.',
+    summary: dbSummary ?? 'Szczegóły efektu są niedostępne w kanonicznym read modelu DB.',
+    warning: dbLabel ? null : 'Brak szczegółów efektu w kanonicznym read modelu DB.',
     facts: [
       { label: 'Kind', value: kindLabel },
       { label: 'Status', value: status },
