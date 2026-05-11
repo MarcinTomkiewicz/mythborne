@@ -77,19 +77,41 @@
 
             @if (state.selectedServer()?.id === server.id && state.showHeroSelection()) {
               <div class="flex-col gap-sm">
-                <p class="mb-0 heading-color">Choose sandbox hero</p>
+                <div class="flex-col gap-xs">
+                  <p class="mb-0 heading-color">Choose sandbox hero</p>
+                  @if (state.selectedDefaultHeroOption(); as defaultHero) {
+                    <p class="mb-0">
+                      Default hero:
+                      <strong class="heading-color">{{ defaultHero.heroName }}</strong>
+                    </p>
+                  }
+                </div>
 
                 @for (hero of state.selectedHeroOptions(); track hero.heroId) {
                   <div class="flex-row-between-center gap-sm">
-                    <span>{{ hero.heroName }}</span>
+                    <div class="flex-row-start-center flex-wrap gap-xs">
+                      <strong class="heading-color">{{ hero.heroName }}</strong>
+                      @if (state.selectedDefaultHeroOption()?.heroId === hero.heroId) {
+                        <span class="tag-badge tag-badge--info">Default</span>
+                      }
+                      @if (state.activeHeroOption()?.heroId === hero.heroId) {
+                        <span class="tag-badge tag-badge--success">Current</span>
+                      }
+                    </div>
                     <p-button
                       type="button"
-                      label="Use hero"
+                      [label]="state.activeHeroOption()?.heroId === hero.heroId ? 'Current hero' : 'Use hero'"
                       size="small"
-                      [disabled]="state.isTransitioning()"
+                      [disabled]="state.isTransitioning() || state.activeHeroOption()?.heroId === hero.heroId"
                       (onClick)="state.selectHero(hero.heroId)"
                     />
                   </div>
+                }
+
+                @if (state.canCreateSandboxHero()) {
+                  <a routerLink="/auth/create-character" class="tag-badge tag-badge--muted w-fit">
+                    Create another sandbox hero
+                  </a>
                 }
               </div>
             }

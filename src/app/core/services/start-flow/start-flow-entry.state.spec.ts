@@ -153,6 +153,81 @@ describe('StartFlowEntryState', () => {
     expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/dashboard');
   });
 
+  it('uses mapped sandbox hero option order and exposes default/current context', () => {
+    selectedServer.set(server({ kind: 'sandbox', key: 'sandbox' }));
+    servers.set([server({ kind: 'sandbox', key: 'sandbox' })]);
+    activeHeroState.set(activeContext('hero-2'));
+    startFlow.getServerAvailability.and.returnValue(of([
+      availability({
+        isStandard: false,
+        isSandbox: true,
+        canEnterGame: true,
+        canCreateHero: true,
+        nextAction: 'hero_selection',
+        userHeroCount: 2,
+        heroes: [
+          { heroId: 'hero-1', heroName: 'First', createdAt: '2026-05-01T10:00:00Z' },
+          { heroId: 'hero-2', heroName: 'Second', createdAt: '2026-05-02T10:00:00Z' },
+        ],
+      }),
+    ]));
+
+    state.load();
+    state.enterSelectedServer();
+
+    expect(state.showHeroSelection()).toBeTrue();
+    expect(state.selectedHeroOptions().map((hero) => hero.heroId))
+      .toEqual(['hero-1', 'hero-2']);
+    expect(state.selectedDefaultHeroOption()?.heroId).toBe('hero-1');
+    expect(state.activeHeroOption()?.heroId).toBe('hero-2');
+    expect(state.canCreateSandboxHero()).toBeTrue();
+  });
+
+  it('does not expose hero selection or sandbox creation affordances for standard servers', () => {
+    startFlow.getServerAvailability.and.returnValue(of([
+      availability({
+        isStandard: true,
+        isSandbox: false,
+        canEnterGame: true,
+        canCreateHero: false,
+        nextAction: 'dashboard',
+        userHeroCount: 1,
+        heroes: [
+          { heroId: 'hero-1', heroName: 'Standard Hero', createdAt: '2026-05-01T10:00:00Z' },
+        ],
+      }),
+    ]));
+    activeHeroState.set(activeContext('hero-1'));
+
+    state.load();
+
+    expect(state.showHeroSelection()).toBeFalse();
+    expect(state.canCreateSandboxHero()).toBeFalse();
+  });
+
+  it('does not expose sandbox creation when DB returns a blocker', () => {
+    selectedServer.set(server({ kind: 'sandbox', key: 'sandbox' }));
+    servers.set([server({ kind: 'sandbox', key: 'sandbox' })]);
+    startFlow.getServerAvailability.and.returnValue(of([
+      availability({
+        isStandard: false,
+        isSandbox: true,
+        canEnterGame: true,
+        canCreateHero: true,
+        blockReason: 'Sandbox creation is blocked.',
+        nextAction: 'hero_selection',
+        userHeroCount: 2,
+        heroes: [
+          { heroId: 'hero-1', heroName: 'First', createdAt: '2026-05-01T10:00:00Z' },
+        ],
+      }),
+    ]));
+
+    state.load();
+
+    expect(state.canCreateSandboxHero()).toBeFalse();
+  });
+
   it('ignores stale hero selection responses after selected server changes', () => {
     startFlow.getServerAvailability.and.returnValue(of([
       availability({

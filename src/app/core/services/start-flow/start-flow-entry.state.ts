@@ -44,6 +44,21 @@ export class StartFlowEntryState {
   readonly selectedHeroOptions = computed<StartFlowHeroOption[]>(() =>
     this.selectedAvailability()?.heroes ?? [],
   );
+  readonly selectedDefaultHeroOption = computed<StartFlowHeroOption | null>(() =>
+    this.selectedHeroOptions()[0] ?? null,
+  );
+  readonly activeHeroOption = computed<StartFlowHeroOption | null>(() => {
+    const activeHeroId = this.activeHeroState()?.heroId ?? null;
+
+    return activeHeroId
+      ? this.selectedHeroOptions().find((hero) => hero.heroId === activeHeroId) ?? null
+      : null;
+  });
+  readonly canCreateSandboxHero = computed(() => {
+    const availability = this.selectedAvailability();
+
+    return !!availability?.isSandbox && availability.canCreateHero && !availability.blockReason;
+  });
   readonly showHeroSelection = computed(() => {
     return this.selectedDecision().action === 'hero_selection';
   });

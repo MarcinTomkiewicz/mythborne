@@ -1,7 +1,7 @@
 # Mythsworn — Database Current
 
-Rewritten: 2026-05-10  
-Primary source: latest `mythborne_schema.sql` dump from 2026-05-10 plus the previous `database-current.md` and DB/RPC changes verified in the migrator conversation.
+Rewritten: 2026-05-11  
+Primary source: latest `mythborne_schema.sql` dump from 2026-05-11 plus the previous `database-current.md` and DB/RPC changes verified in the migrator conversation.
 
 ## Purpose
 
@@ -39,7 +39,7 @@ When this document conflicts with newer facts, prefer:
 
 Regenerate Supabase generated types before Codex consumes any schema, enum, table or RPC signature change.
 
-Known regeneration-required contracts after the 2026-05-10 DB/RPC updates:
+Known regeneration-required contracts after the 2026-05-11 DB/RPC updates:
 
 - guild updates:
   - `search_guilds_for_hero(...)`;
@@ -70,6 +70,25 @@ Known regeneration-required contracts after the 2026-05-10 DB/RPC updates:
   - updated `build_opponent_combatant_snapshot_for_resolver(...)` semantics where consumed.
 - Luck Lab generated item distribution simulation:
   - `preview_reward_generated_item_distribution_luck(...)`.
+- Epic W report/reward/effect read-model completion:
+  - `get_exploration_step_reward_read_model(p_step_id uuid)`;
+  - `get_exploration_challenge_reward_read_model(p_challenge_attempt_id uuid)`;
+  - changed `get_hero_game_report_detail(...)` return signature with `trial_section_json`, `encounter_section_json`, `reward_section_json`, `effect_section_json` and `related_reports_json`;
+  - changed `get_public_game_report_by_token(...)` return signature with the same report section payloads;
+  - `build_game_report_trial_section_json(...)`;
+  - `build_game_report_encounter_section_json(...)`;
+  - `build_game_report_combat_section_json(...)`;
+  - `build_game_report_reward_section_json(...)`;
+  - `build_game_report_effect_section_json(...)`;
+  - `build_game_report_related_reports_json(...)`;
+  - `attach_reward_grant_items_to_game_report(...)`;
+  - updated `get_hero_exploration_state(...)` active-effect payload fields where consumed by UI.
+- Epic X start-flow contracts:
+  - `get_start_flow_server_availability()`;
+  - `get_start_flow_origin_options()`;
+  - `create_hero_start_flow(p_server_id uuid, p_origin_id uuid, p_hero_name text, p_request_id text default null)`;
+  - `format_start_flow_bonus_value(...)`;
+  - `start_flow_resolve_character_point_reason()`.
 
 No type regeneration is required for data-only seeds or same-signature function body fixes, including:
 
@@ -103,6 +122,39 @@ No type regeneration is required for data-only seeds or same-signature function 
 - Use `can_read_hero(p_hero_id)` style owner/staff-safe checks in RPCs.
 - Use `get_hero_normal_gameplay_block_reason(p_hero_id)` / `assert_hero_can_use_normal_gameplay(...)` where normal gameplay should be blocked by membership/status/activity.
 - Frontend must not use auth user id as hero id and must not query hero-owned tables directly when a domain read model exists.
+
+## Start flow / onboarding contracts
+
+Epic X now has DB/RPC-owned start-flow contracts. They are canonical for server entry, origin selection and hero creation. Angular must consume these contracts and must not recreate hero creation through direct table writes.
+
+Read contracts:
+
+- `get_start_flow_server_availability()` returns authenticated user-visible server rows with server identity, kind/status, membership status, user hero count, default hero, sandbox hero list, District A capacity/occupied/free counts, `can_create_hero`, `can_enter_game`, `next_action`, `block_reason` and `eligibility_json`.
+- `get_start_flow_origin_options()` returns DB-backed origin options from `origin` plus canonical `entity_bonuses(entity_type = origin)` display data. It includes origin id/key/label/description, sort order, `bonuses_json` and `bonus_summary_text`.
+
+Creation contract:
+
+- `create_hero_start_flow(p_server_id uuid, p_origin_id uuid, p_hero_name text, p_request_id text default null)` is the canonical atomic hero creation RPC.
+- It authenticates through `auth.uid()`, validates target server availability via `get_start_flow_server_availability()`, validates the origin, validates hero name, and uses a server-level advisory lock for address/name-sensitive creation.
+- It enforces server-local hero name uniqueness and District A starting-address availability.
+- It creates `hero` with `user_id = auth.uid()`, selected server, selected origin, level 1, experience 0, `character_points = 1000`, `total_character_points_earned = 1000`.
+- It seeds only existing canonical base stats from `public.stats` in the nine-stat order: `strength`, `dexterity`, `endurance`, `agility`, `cunning`, `charisma`, `wisdom`, `intelligence`, `spirituality`. Each starts at `1`. It does **not** insert `luck` into `hero_stats`.
+- It seeds durable `hero_resources` rows for `drachma`, `materials` and `workforce`, all starting at `amount = 0` and `per_hour = 0`.
+- It creates and binds a starting `estates` row in district `A` using a randomly selected free address from `estate_district_address_capacities`. The frontend does not choose or preview this address before creation.
+- It runs `ensure_estate_building_baseline(...)`, writes a starting `character_point_ledger` row, initializes Prestige through `ensure_hero_prestige_state(...)`, and best-effort writes audit through known audit action keys without making missing audit dictionary rows fatal to hero creation.
+- It returns the created hero, origin, estate/address, starting Character Points ledger id, Prestige rank, resources, hero stats, `created_new_hero = true`, and `route_next_action = 'stat_allocation'`.
+
+Helper contracts:
+
+- `format_start_flow_bonus_value(...)` formats origin bonus values for the origin read model.
+- `start_flow_resolve_character_point_reason()` chooses a usable `character_point_ledger_reason` enum value for start-flow CP ledger entries from current enum reality. It exists to avoid hardcoding an enum value that may not exist in older dumps.
+
+Rules:
+
+- Standard server with an existing user hero routes to existing hero/game entry, not new hero creation.
+- Standard server without a hero routes to creation only if the server is live, the user is not suspended/banned and District A has free capacity.
+- Sandbox/test servers may allow staff/tester multi-hero creation; default sandbox hero is the earliest created hero unless a more explicit selector exists.
+- `user_has_hero_on_server(...)` remains too small for Epic X by itself; use `get_start_flow_server_availability()` for player routing and eligibility.
 
 ---
 
@@ -363,6 +415,8 @@ Current canonical base stat keys:
 - `spirituality`.
 
 Do not use old concept-doc stat lists as implementation authority.
+
+Start-flow creation seeds exactly these canonical base stats at value `1`. `Luck` is a special/derived/runtime value and must not be inserted into `hero_stats`. Origin bonuses are displayed and resolved through the bonus model; they are not copied into base stat rows during creation.
 
 ## Stat allocation and progression
 
@@ -721,6 +775,29 @@ Rules:
 - Luck-aware reward amount and item count helpers should be used for range/item-generation reward entries.
 - Angular must not compute durable reward amounts or generated item outcomes.
 
+## Exploration reward read models
+
+W11 added canonical player-safe reward read models for `/game/exploration`. These are the preferred UI reward sources after an Exploration step/challenge resolves.
+
+- `get_exploration_step_reward_read_model(p_step_id uuid)` returns a player-safe resolved step reward card model for direct non-combat Encounter step rewards and step-linked challenge rewards. It includes step/encounter/challenge identity, source label, reward grant, profile, persisted `reward_entries_json`, `generated_items_json`, status labels and no-reward reason labels/helper text.
+- `get_exploration_challenge_reward_read_model(p_challenge_attempt_id uuid)` returns the equivalent challenge-owned reward model for completed Trial or combat Encounter challenge attempts.
+
+Rules:
+
+- These read models do not infer rewards from Armory, latest challenge fallback, selection diagnostics or raw sandbox debug state.
+- Generated items should be read from these exact source read models and/or report reward/item reference sections, not reconstructed from `items` by guessing.
+- Resource rewards use `reward_entries_json` with entry kind/resource type/amount and profile entry labels/helper text.
+- Item-generation rewards expose `generated_items_json` where the reward grant has generated item rows.
+- No-reward states are explicit through `reward_status_key`, `no_reward_reason_key`, labels and helper text.
+
+## Report item references for generated rewards
+
+Game reports may include generated reward items both in `reward_section_json.entries` and in `item_references_json`.
+
+- `attach_reward_grant_items_to_game_report(p_report_id uuid, p_reward_grant_id uuid, p_reason text default ..., p_request_id text default null)` attaches generated `item_generation` reward entries to `game_report_item_references` via `attach_reward_drop_item_to_game_report(...)`.
+- The helper is idempotent and does not regenerate rewards or items.
+- Report producers/backfills should use it when generated reward items need showcase references in private/public report detail.
+
 ## Generated item distribution simulation
 
 Luck Lab has a dedicated DB-owned generated item distribution simulation RPC for V10-style drop distribution panels:
@@ -827,10 +904,12 @@ Core tables include:
 
 Core player/read RPCs include:
 
-- `get_hero_exploration_state(p_hero_id)`;
+- `get_hero_exploration_state(p_hero_id, p_difficulty_key text)`;
 - `start_hero_exploration_step(...)`;
 - `resolve_hero_exploration_step(...)`;
-- `get_hero_exploration_debug_state(...)`.
+- `get_hero_exploration_debug_state(...)`;
+- `get_exploration_step_reward_read_model(...)`;
+- `get_exploration_challenge_reward_read_model(...)`.
 
 Rules:
 
@@ -838,6 +917,37 @@ Rules:
 - Angular must not direct-write exploration runtime tables.
 - Player-facing persistent mutations go through canonical PvE/exploration RPCs.
 - Read policies/grants are read-only; mutation authority remains RPC-owned.
+
+## Active exploration effects
+
+Temporary Exploration buff/debuff state is stored in `hero_exploration_effects` and defined by `exploration_effect_definitions`. The active effect read contract is `get_hero_exploration_state(...).activeEffect`.
+
+Current `activeEffect` payload is enriched with player-facing fields from `exploration_effect_definitions`, `bonus_templates`, `bonus_types`, `bonus_targets` and `bonus_scopes`, including both camelCase and snake_case variants for UI compatibility:
+
+- effect identity/copy: `effectKey`, `effectLabel`, `effectDescription`, `effectHelperText`, `effectKindLabel`;
+- duration/value: `defaultValue`, `defaultDurationSteps`, `valueDisplay`;
+- bonus metadata: `bonusTemplateKey`, `bonusTemplateLabel`, `bonusTypeKey`, `bonusTypeLabel`, `effectTargetKey`, `effectTargetLabel`, `effectScopeKey`, `effectScopeLabel`;
+- player summary: `playerSummary`, e.g. `Minor fatigue: -10 Endurance` or `Critical chance: +10% Critical chance`;
+- lifecycle: `status`, `is_active`, `applied_at`, `consumed_at` from the underlying effect row.
+
+Rules:
+
+- Angular should display DB-returned labels/summary/value, not infer target/stat/effect copy locally.
+- The current storage rule is one active Exploration effect per exploration (`hero_exploration_effects_one_active_idx`).
+- `consume_active_exploration_effect(p_exploration_id, p_consumed_by_kind, p_consumed_by_id)` consumes active effects when the runtime flow decides they were used by a Trial/combat Encounter/etc.
+- Effect application happens through `grant_reward_profile_to_hero(...)` for `exploration_effect` reward entries when an Exploration context is available.
+
+## Trial manifestation semantics
+
+A Trial opportunity and a Trial manifestation are separate states. A failed manifestation is not ordinary Nothing Found.
+
+Current DB/report semantics:
+
+- The resolved step may still have `outcome_kind = 'trial_opportunity'` because the opportunity appeared.
+- A `hero_exploration_challenge_attempts` row is created for the attempted Trial source.
+- When manifestation fails, the challenge attempt has `status = 'manifestation_failed'`, `manifestation_status = 'failed'`, `success = false`, and no reward grant.
+- Trial report detail uses `build_game_report_trial_section_json(...)` and returns player-facing section fields: `trialManifested = false`, `manifestationStatus = 'failed'`, `resultKind = 'trial_manifestation'`, `resultKey = 'trial_manifestation_failed'`, `outcomeKind = 'trial_manifestation_failed'`, `outcomeLabel = 'Trial did not manifest'`.
+- UI should use these report/read-model fields and must not collapse failed manifestation into the ordinary `nothing` state.
 
 ## Trial admin/readiness
 
@@ -1427,9 +1537,37 @@ Core concepts:
 - source entity types: `combat_result`, `trial_result`, `encounter_result`, `pvp_result`, `siege_result`;
 - item references for reward/drop showcase where safe.
 
+Detail RPCs:
+
+- `get_hero_game_report_detail(p_hero_id uuid, p_report_id uuid)` for private/authenticated hero report detail.
+- `get_public_game_report_by_token(p_public_token text)` for shareable public-safe report snapshots.
+
+Current report detail payload sections:
+
+- `participants_json`;
+- `item_references_json`;
+- `trial_section_json`;
+- `encounter_section_json`;
+- `combat_section_json`;
+- `reward_section_json`;
+- `effect_section_json`;
+- `related_reports_json`.
+
+Section builders / helpers:
+
+- `build_game_report_source_label(p_report_id)` gives a non-empty contextual source label where possible, including Trial/Encounter labels for low-level combat reports.
+- `build_game_report_trial_section_json(p_report_id, p_public_safe)` returns Trial status, manifestation/completion outcome and source labels.
+- `build_game_report_encounter_section_json(p_report_id, p_public_safe)` returns direct Encounter step or combat-Encounter challenge context.
+- `build_game_report_combat_section_json(p_report_id, p_public_safe)` returns persisted combat participants and attack timeline; it must use persisted combat rows only, not live combat state.
+- `build_game_report_reward_section_json(p_report_id, p_public_safe)` returns reward grant entries including resource, XP/Character Points, generated item display names and effect reward rows.
+- `build_game_report_effect_section_json(p_report_id, p_public_safe)` returns player-facing buff/debuff effect sections and reward effect entries with effect labels, helper text, target/value display and lifecycle status.
+- `build_game_report_related_reports_json(p_report_id, p_public_safe)` links contextual Trial/Encounter parent reports and low-level child combat reports where reports are split.
+
 Rules:
 
 - Player reports show safe gameplay outcome context.
+- Trial/Encounter reports that involve combat should expose combat context/section or related report references; frontend must not infer this from stale challenge/live-combat state.
+- Rewards/items/effects should come from the report sections or exact reward read models, not from Armory/latest challenge fallbacks.
 - Staff/admin debug reports may expose more context where gated.
 - Report producers should be low-level RPC/domain producers, not Angular constructors.
 
@@ -1541,6 +1679,15 @@ Frontend rules:
 
 Resolved for Codex after generated type regeneration:
 
+- Epic X start flow:
+  - DB/RPC contracts now exist for server availability, DB-backed origin options and atomic hero creation;
+  - creation is RPC-owned and covers hero row, origin, starting CP/ledger, base stats at 1, resources at 0, random free District A estate, estate binding, baseline buildings, Prestige initialization and route handoff to stat allocation;
+  - Angular must not reintroduce direct-write hero creation.
+- Epic W report/reward/effect read models:
+  - exact step/challenge reward read models exist;
+  - report detail/public token payloads expose Trial/Encounter/Combat/Reward/Effect/Related sections;
+  - Trial manifestation failure is distinct from ordinary Nothing in Trial report section fields;
+  - active Exploration effects expose player-facing label/summary/value/target metadata.
 - Manual Trial Runtime Foundation:
   - DB/RPC contracts exist for Trial Offer, start session, manifest read, action-log submit, backend verdict, report handoff and auto-resolve/inactivity/exit wrappers.
 - U13 generated PvE opponent equipment:
@@ -1578,6 +1725,7 @@ Do not drop these without explicit cleanup task and reference search:
 - inactive legacy Trial `strength` — superseded by active `strength_trial`.
 - old requirement JSON/legacy requirement columns — replaced by central `entity_requirements` for new paths.
 - old notes implying manual combat full-resolution RPC or non-streak manifest — superseded by live combat session model.
+- `user_has_hero_on_server(...)` — still exists but is insufficient for Epic X routing/capacity/origin/create semantics; use `get_start_flow_server_availability()` for start-flow decisions.
 
 Cleanup candidates should be reported, not silently removed.
 
