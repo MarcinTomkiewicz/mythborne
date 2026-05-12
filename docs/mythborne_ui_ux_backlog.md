@@ -849,6 +849,8 @@ Verification:
 
 **Acceptance criteria:** icons visible for `pi pi-cash`, `pi pi-marble`, `pi pi-workforce`; values strong; per-hour readable; layout does not break topbar.
 
+**Status:** Accepted with follow-up on 2026-05-12 as fallback cleanup only. The existing resource fallback keeps Drachma, Materials and Workforce visible with icon, label, strong value and rate using `tag-badge`/utility/icon classes, and the rate is no longer rendered as `muted-text`. This does not implement the accepted prototype resource-chip visual pattern, does not add `mg-resource-chip` classes or local SCSS, and does not change HTML structure beyond the text-hierarchy cleanup. Follow-up/backlog gap: UI-SHELL-15 is no-code decision only; if final resource-chip styling is approved, a concrete later runtime implementation task still needs to be added.
+
 ---
 
 ## UI-SHELL-15 — Resource chip final pattern decision, no code unless explicitly approved
