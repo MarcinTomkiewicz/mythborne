@@ -71,15 +71,31 @@ describe('StaffNotificationBell', () => {
     expect(notificationInbox.getStaffUnreadCount).toHaveBeenCalledWith('server-1');
     expect(text).toContain('2');
     expect(text).toContain('Staff notifications');
-    expect(text).toContain('Athena');
     expect(text).toContain('Case opened');
     expect(text).toContain('Anti-abuse case requires review.');
-    expect(text).toContain('anti_abuse');
-    expect(text).toContain('warning');
     expect(text).toContain('Unread');
-    expect(text).toContain('Actor linked');
+    expect(text).not.toContain('Athena');
+    expect(text).not.toContain('anti_abuse');
+    expect(text).not.toContain('warning');
+    expect(text).not.toContain('Actor linked');
     expect(text).not.toContain('ViewState');
     expect(link.getAttribute('href')).toBe('/admin/anti-abuse-cases/case-1');
+  });
+
+  it('closes the dropdown on outside click', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    clickStaffBell();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.state.isOpen()).toBeTrue();
+
+    document.body.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.state.isOpen()).toBeFalse();
   });
 
   it('does not expose staff notifications to normal player access', async () => {

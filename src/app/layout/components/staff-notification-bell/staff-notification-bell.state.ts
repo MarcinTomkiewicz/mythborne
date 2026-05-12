@@ -6,9 +6,11 @@ import { ActiveServer } from '../../../core/services/server/active-server';
 import { NotificationInbox } from '../../../core/services/notifications/notification-inbox';
 import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-policy';
 import { NotificationBellDisplayFormatter } from '../notification-bell/notification-bell-display-formatter';
+import { TopbarDropdownCoordinator } from '../topbar-dropdown/topbar-dropdown-coordinator';
 import { StaffNotificationActionRoutePolicy } from './staff-notification-action-route-policy';
 
 const STAFF_DROPDOWN_NOTIFICATION_LIMIT = 6;
+const STAFF_NOTIFICATION_DROPDOWN_ID = 'staff-notifications';
 
 interface StaffNotificationBellPayload {
   notifications: StaffNotificationListItem[];
@@ -27,12 +29,19 @@ export class StaffNotificationBellState implements OnDestroy {
   private readonly notificationInbox = inject(NotificationInbox);
   private readonly displayFormatter = inject(NotificationBellDisplayFormatter);
   private readonly actionRoutePolicy = inject(StaffNotificationActionRoutePolicy);
+  private readonly dropdownCoordinator = inject(TopbarDropdownCoordinator, {
+    optional: true,
+  });
   private readonly selectedServer$ = toObservable(this.activeServer.selectedServer);
   private readonly access$ = toObservable(this.activeServer.access);
   private subscription?: Subscription;
   private serverId = signal<string | null>(null);
+  private readonly fallbackIsOpen = signal(false);
 
-  readonly isOpen = signal(false);
+  readonly isOpen = computed(() =>
+    this.dropdownCoordinator?.isOpen(STAFF_NOTIFICATION_DROPDOWN_ID) ??
+    this.fallbackIsOpen(),
+  );
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly notifications = signal<StaffNotificationListItem[]>([]);
@@ -98,11 +107,21 @@ export class StaffNotificationBellState implements OnDestroy {
   }
 
   toggleDropdown(): void {
-    this.isOpen.update((value) => !value);
+    if (this.dropdownCoordinator) {
+      this.dropdownCoordinator.toggle(STAFF_NOTIFICATION_DROPDOWN_ID);
+      return;
+    }
+
+    this.fallbackIsOpen.update((value) => !value);
   }
 
   closeDropdown(): void {
-    this.isOpen.set(false);
+    if (this.dropdownCoordinator) {
+      this.dropdownCoordinator.close(STAFF_NOTIFICATION_DROPDOWN_ID);
+      return;
+    }
+
+    this.fallbackIsOpen.set(false);
   }
 
   severityBadgeClass(notification: StaffNotificationListItem): string {
@@ -153,7 +172,7 @@ export class StaffNotificationBellState implements OnDestroy {
 
   private reset(): void {
     this.clearLoadState();
-    this.isOpen.set(false);
+    this.closeDropdown();
   }
 
   private failLoad(): void {

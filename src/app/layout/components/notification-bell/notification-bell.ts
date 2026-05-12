@@ -5,11 +5,12 @@ import { NotificationBellActionRunner } from './notification-bell-action-runner'
 import { NotificationBellDisplayFormatter } from './notification-bell-display-formatter';
 import { NotificationFreshToastPresenter } from './notification-fresh-toast-presenter';
 import { NotificationBellState } from './notification-bell.state';
+import { DropdownOutsideClose } from '../topbar-dropdown/topbar-dropdown-coordinator';
 
 @Component({
   selector: 'app-notification-bell',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, DropdownOutsideClose],
   providers: [
     NotificationActionRoutePolicy,
     NotificationBellActionRunner,

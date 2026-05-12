@@ -30,10 +30,12 @@ import { CORE_RESOURCE_DISPLAY_DEFINITIONS } from '../../../core/config/resource
 import { GameBar } from '../../../shared/game-bar/game-bar';
 import { NotificationBell } from '../notification-bell/notification-bell';
 import { StaffNotificationBell } from '../staff-notification-bell/staff-notification-bell';
+import { TopbarDropdownCoordinator } from '../topbar-dropdown/topbar-dropdown-coordinator';
 
 @Component({
   selector: 'app-game-topbar',
   imports: [GameBar, NotificationBell, StaffNotificationBell],
+  providers: [TopbarDropdownCoordinator],
   templateUrl: './game-topbar.html',
 })
 export class GameTopbar implements OnInit {

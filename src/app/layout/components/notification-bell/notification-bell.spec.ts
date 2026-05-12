@@ -89,11 +89,12 @@ describe('NotificationBell', () => {
     expect(text).toContain('3');
     expect(text).toContain('Building completed');
     expect(text).toContain('A building job was completed.');
-    expect(text).toContain('estate');
-    expect(text).toContain('notice');
     expect(text).toContain('Unread');
     expect(text).toContain('Mark read');
     expect(text).toContain('Dismiss');
+    expect(text).not.toContain('Latest player inbox items');
+    expect(text).not.toContain('estate');
+    expect(text).not.toContain('notice');
     expect(text).not.toContain('report-1');
     expect(text).not.toContain('staff-notification');
   });
@@ -118,6 +119,22 @@ describe('NotificationBell', () => {
     expect(notificationInbox.markPlayerNotificationRead)
       .toHaveBeenCalledWith('notification-1');
     expect(router.url).toBe('/game/mansion');
+    expect(fixture.componentInstance.state.isOpen()).toBeFalse();
+  });
+
+  it('closes the dropdown on outside click', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    clickBell();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.state.isOpen()).toBeTrue();
+
+    document.body.click();
+    fixture.detectChanges();
+
     expect(fixture.componentInstance.state.isOpen()).toBeFalse();
   });
 

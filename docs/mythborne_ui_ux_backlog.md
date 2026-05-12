@@ -1287,6 +1287,8 @@ Verification:
 - brand pozostaje centered;
 - controls nie wyglądają jak przypadkowe tagi.
 
+**Status:** Accepted on 2026-05-12. Topbar notification and staff controls remain grouped in the right zone without changing brand/topbar/resource layout. Player and staff notification components remain separate domain components, while the shared `TopbarDropdownCoordinator` prevents overlapping open dropdowns and the shared `DropdownOutsideClose` directive closes the open dropdown on outside click. Dropdown rows are flatter and less noisy, with technical category/type metadata removed from topbar previews; `.dropdown-anchor` no longer uses `!important`, row padding uses spacing tokens, and the weak border-only unread highlight was removed because read/unread badges carry the state. No DB/RPC/generated-type changes or broad notification architecture rewrite were added. Manual smoke remains user-side.
+
 ---
 
 ## UI-SHELL-29 — Shell responsive visual pass

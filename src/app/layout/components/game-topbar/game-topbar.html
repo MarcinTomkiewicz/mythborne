@@ -55,7 +55,10 @@
       <div
         class="flex-row-end-center flex-row-start-center-lg flex-wrap gap-sm"
       >
-        <app-notification-bell /> <app-staff-notification-bell />
+        <div class="flex-row-start-center gap-xs" aria-label="Topbar alerts">
+          <app-notification-bell />
+          <app-staff-notification-bell />
+        </div>
         <div class="flex-row-end-center gap-sm" aria-label="Resources">
           @for (resource of resourceDisplay(); track resource.type) {
             <span class="mg-resource-summary flex-row-center-center gap-sm">
