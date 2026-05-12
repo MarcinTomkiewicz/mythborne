@@ -676,6 +676,8 @@ Verification:
 
 **Acceptance criteria:** main content scrolls, route content is contained, no feature layout is redesigned.
 
+**Status:** Accepted on 2026-05-12. The shell host now has a narrow `mg-game-shell` viewport containment rule because no existing `100dvh` utility exists, while the route body stays inside `mg-container`. Scroll containment is applied to `main` only; the sidebar keeps its fixed shell column without a separate scrollbar. The task preserved the accepted shell zones from the prototype direction and did not redesign route content, topbar, sidebar or feature pages. Manual smoke remains user-side for stable topbar/sidebar and main-only scrolling.
+
 ---
 
 ## UI-SHELL-06 — Shell boundary surfaces and theme tokens

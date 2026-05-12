@@ -1,5 +1,9 @@
 @use "../abstracts/variables" as v;
 
+.mg-game-shell {
+  height: 100dvh;
+}
+
 .mg-brand-mark-fallback {
   display: inline-grid;
   place-items: center;
@@ -20,4 +24,3 @@
   font-weight: 800;
   line-height: 1;
 }
-
