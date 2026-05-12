@@ -1260,6 +1260,8 @@ Verification:
 - card spacing i width są bliższe prototypowi;
 - brak globalnego side effectu na admin/wide layout.
 
+**Status:** Accepted on 2026-05-12 after centering check. `mg-container` already centers constrained content with `margin: 0 auto`, so no extra centering rule was needed. The shell content rhythm pass keeps `mg-container` as the route wrapper, adds only a tokenized `$shell-container-max-width` and scopes the wider shell content width to `.mg-game-shell__main > .mg-container`; existing `max-w-none` still overrides this for admin/wide routes. No feature page templates, TS, DB/RPC, generated types or local component SCSS were touched. Manual visual smoke remains user-side.
+
 ---
 
 ## UI-SHELL-28 — Notifications and staff controls visual placement

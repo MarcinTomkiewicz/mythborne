@@ -36,6 +36,10 @@
   background: inherit;
 }
 
+.mg-game-shell__main > .mg-container {
+  max-width: v.$shell-container-max-width;
+}
+
 .mg-shell-nav-item {
   position: relative;
   display: flex;
