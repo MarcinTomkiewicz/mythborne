@@ -1,3 +1,4 @@
+@use "sass:map";
 @use "abstracts/variables" as v;
 
 .mg-game-shell {
@@ -38,4 +39,30 @@
   font-family: v.$font-family-display;
   font-weight: 800;
   line-height: 1;
+}
+
+.mg-resource-summary {
+  min-width: 4.5rem;
+}
+
+.mg-resource-summary__icon {
+  color: v.$color-secondary;
+  font-size: map.get(v.$font-sizes, "lg");
+}
+
+.mg-resource-summary__content {
+  text-align: right;
+  line-height: 1.05;
+}
+
+.mg-resource-summary__label {
+  color: v.$color-text;
+}
+
+.mg-resource-summary__value {
+  color: v.$heading-color;
+}
+
+.mg-resource-summary__rate {
+  color: v.$color-success;
 }

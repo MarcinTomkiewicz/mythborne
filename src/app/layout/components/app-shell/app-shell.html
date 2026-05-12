@@ -1,7 +1,7 @@
 @if (shouldShowShellChrome()) {
   <div class="mg-game-shell flex-col overflow-hidden">
     <header class="mg-game-shell__topbar position-sticky top-0 z-10 backdrop-blur-xl flex-row-between-center gap-md py-sm px-lg w-100">
-      <app-game-topbar [showHeroContent]="shouldShowHeroTopbarContent()" />
+      <app-game-topbar [showHeroContent]="shouldShowHeroTopbarContent()" class="w-100" />
     </header>
 
     <div class="flex-row-start-stretch flex-1 min-h-0 w-100">
