@@ -1169,6 +1169,8 @@ Verification:
 - missing keys są wypisane;
 - rozmiar/rytm ikon zbliżony do prototypu.
 
+**Status:** Accepted on 2026-05-12 with user-side icon adjustments. Sidebar logged-in menu icons now use custom/project icon classes through the existing Prime/custom icon registry and render as `pi pi-*` icon entries instead of broken image assets. Accepted classes include `pi pi-helmet`, `pi pi-skills`, `pi pi-hydra`, `pi pi-shield-bash`, `pi pi-chest`, `pi pi-capitol`, `pi pi-trail`, `pi pi-overlord`, `pi pi-tied-scroll`, `pi pi-trade`, `pi pi-shop-bag` and `pi pi-d20`. Missing icon keys were resolved by existing registry entries plus the user-added `capitol` asset/key. No local sidebar SCSS, DB/RPC, generated-type, route or access-policy semantics changes were added. Manual smoke remains user-side.
+
 ---
 
 ## UI-SHELL-25 — Sidebar/topbar status badge visual semantics
@@ -1201,6 +1203,8 @@ Verification:
 - muted-text audit przechodzi;
 - ważne wartości są strong/semantic;
 - badge hierarchy jest zgodna z prototypem.
+
+**Status:** Accepted on 2026-05-12. Shell status/badge semantics were tightened in the touched sidebar/blocker surfaces: non-live or unavailable selected-server status now uses `tag-badge--warn` instead of muted, membership suspension timing is shown as a warning badge, and membership block reason is strong/primary text instead of muted helper copy. Topbar resource values/rates and existing notification unread/error badges already had semantic/strong treatment, while timestamps, helper copy and read/dismissed metadata remain muted intentionally. No new badge variants, local sidebar SCSS, DB/RPC, generated-type or route/access semantics changes were added. Manual visual smoke remains user-side.
 
 ---
 

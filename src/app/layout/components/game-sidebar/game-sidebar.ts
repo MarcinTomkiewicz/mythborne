@@ -44,7 +44,7 @@ export class GameSidebar implements OnInit {
   readonly serverStatusClass = computed(() =>
     this.selectedServer()?.status === 'live'
       ? 'tag-badge tag-badge--success'
-      : 'tag-badge tag-badge--muted',
+      : 'tag-badge tag-badge--warn',
   );
   readonly staffAccessPolicy = computed(() =>
     resolveStaffAccessPolicy({

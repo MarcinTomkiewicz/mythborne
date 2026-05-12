@@ -7,11 +7,13 @@
     <h2 class="mg-section__title mg-section__title--sm mb-0">{{ title() }}</h2>
 
     @if (isSuspended() && suspendedUntil()) {
-      <p class="muted-text mb-0">Suspended until {{ suspendedUntil() }}</p>
+      <p class="mb-0">
+        <span class="tag-badge tag-badge--warn">Suspended until {{ suspendedUntil() }}</span>
+      </p>
     }
 
     @if (reason()) {
-      <p class="muted-text mb-0">{{ reason() }}</p>
+      <p class="mb-0 heading-color">{{ reason() }}</p>
     }
   </div>
 </section>
