@@ -47,19 +47,23 @@
 
   <app-session-logout-button />
 
-  <nav class="flex-col gap-xs">
-    <div class="mg-game-sidebar__nav-list flex-col gap-xs">
-      @for (item of menuItems(); track item.title) {
-        <a
-          class="mg-card position-relative flex-row-start-center gap-sm p-sm"
-          [routerLink]="item.url"
-          routerLinkActive="is-active heading-color"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          <img [src]="item.icon" [alt]="item.title" class="w-px-20 h-px-20" />
-          <span>{{ item.title }}</span>
-        </a>
-      }
-    </div>
+  <nav class="flex-col gap-md" aria-label="Game navigation">
+    @for (group of menuGroups(); track group.title) {
+      <section class="flex-col gap-xs" [attr.aria-label]="group.title">
+        <span class="muted-text text-xs font-bold">{{ group.title }}</span>
+
+        @for (item of group.items; track item.title) {
+          <a
+            class="mg-card position-relative flex-row-start-center gap-sm p-sm"
+            [routerLink]="item.url"
+            routerLinkActive="is-active heading-color"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            <img [src]="item.icon" [alt]="item.title" class="w-px-20 h-px-20" />
+            <span>{{ item.title }}</span>
+          </a>
+        }
+      </section>
+    }
   </nav>
 </aside>

@@ -1084,6 +1084,8 @@ Verification:
 - aktywny item dalej działa;
 - brak route bez istniejącego targetu.
 
+**Status:** Accepted on 2026-05-12. Sidebar navigation IA is now grouped from `menu-config.ts` as Hero, World and Operations, with `GameSidebar` rendering groups from config while preserving existing access-policy filtering and route active behavior. `Guild` lives under World, `Reports` remains under World as the accepted current IA decision because `/game/reports` owns Reports/Notifications tabs, and all grouped links were checked against existing routes. No fake links, SCSS, final nav visual styling, DB/RPC or generated-type changes were added. Manual smoke remains user-side.
+
 ---
 
 ## UI-SHELL-22 — Sidebar nav item final pattern implementation

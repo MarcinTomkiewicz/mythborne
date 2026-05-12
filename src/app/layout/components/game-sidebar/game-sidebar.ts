@@ -3,7 +3,10 @@ import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angula
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
-import { MENU_LOGGED_IN } from '../../../core/config/menu-config';
+import {
+  MENU_LOGGED_IN_GROUPS,
+  type MenuGroup,
+} from '../../../core/config/menu-config';
 import { RPC } from '../../../core/constants/rpc.const';
 import {
   GetHeroPrestigePublicSummaryRpcArgs,
@@ -49,21 +52,29 @@ export class GameSidebar implements OnInit {
       selectedServer: this.activeServer.selectedServer(),
     }),
   );
-  readonly menuItems = computed(() => {
+  readonly menuGroups = computed<MenuGroup[]>(() => {
     const policy = this.staffAccessPolicy();
 
-    return MENU_LOGGED_IN.filter((item) => {
-      if (isAdminMenuUrl(item.url)) {
-        return policy.canAccessAdminShell;
-      }
+    return MENU_LOGGED_IN_GROUPS
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => {
+          if (isAdminMenuUrl(item.url)) {
+            return policy.canAccessAdminShell;
+          }
 
-      if (policy.isStaffGameplayBlocked && isGameplayMenuUrl(item.url)) {
-        return false;
-      }
+          if (policy.isStaffGameplayBlocked && isGameplayMenuUrl(item.url)) {
+            return false;
+          }
 
-      return true;
-    });
+          return true;
+        }),
+      }))
+      .filter((group) => group.items.length > 0);
   });
+  readonly menuItems = computed(() =>
+    this.menuGroups().flatMap((group) => group.items),
+  );
 
   ngOnInit(): void {
     combineLatest([
