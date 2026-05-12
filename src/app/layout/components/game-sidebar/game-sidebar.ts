@@ -24,7 +24,6 @@ import { SessionLogoutButton } from '../../../shared/session-logout-button/sessi
   selector: 'app-game-sidebar',
   imports: [CommonModule, RouterLink, RouterLinkActive, SessionLogoutButton],
   templateUrl: './game-sidebar.html',
-  styleUrl: './game-sidebar.scss',
 })
 export class GameSidebar implements OnInit {
   private readonly authState = inject(AuthState);
