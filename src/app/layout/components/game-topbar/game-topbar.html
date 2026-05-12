@@ -1,10 +1,10 @@
 @if (shouldRenderTopbarContent()) {
-  <section
-    class="flex-row-between-center flex-col-lg gap-md w-100"
-    [attr.aria-label]="hasHeroContent() ? 'Hero status and resources' : 'Staff notifications'"
-  >
-    @if (hasHeroContent()) {
-      <div class="flex-row-start-center flex-wrap gap-sm flex-1">
+  @if (hasHeroContent()) {
+    <section
+      class="mg-grid grid-cols-3 grid-cols-1-lg grid-items-center gap-md w-100"
+      aria-label="Hero status and resources"
+    >
+      <div class="flex-row-start-center flex-wrap gap-sm">
         <div class="tag-badge tag-badge--muted gap-sm">
           <i class="pi pi-heart" aria-hidden="true"></i>
           <span>Health</span>
@@ -39,7 +39,7 @@
         </div>
       </div>
 
-      <div class="flex-row-center-center gap-sm flex-none min-w-200 text-left" aria-label="Mythsworn">
+      <div class="flex-row-center-center gap-sm min-w-200 text-left" aria-label="Mythsworn">
         <span class="mg-brand-mark-fallback" aria-hidden="true">M</span>
         <div class="flex-col gap-xs">
           <h1 class="mg-section__title mg-section__title--sm mg-section__title--no-margin">
@@ -49,7 +49,7 @@
         </div>
       </div>
 
-      <div class="flex-row-end-center flex-row-start-center-lg flex-wrap gap-sm flex-1">
+      <div class="flex-row-end-center flex-row-start-center-lg flex-wrap gap-sm">
         <app-notification-bell />
         <app-staff-notification-bell />
 
@@ -75,10 +75,10 @@
           </div>
         }
       </div>
-    } @else {
-      <div class="flex-1 flex-row-end-center">
-        <app-staff-notification-bell />
-      </div>
-    }
-  </section>
+    </section>
+  } @else {
+    <section class="flex-row-end-center gap-md w-100" aria-label="Staff notifications">
+      <app-staff-notification-bell />
+    </section>
+  }
 }

@@ -757,6 +757,8 @@ Verification:
 
 **Acceptance criteria:** brand is centered relative to full topbar; left/right zones do not overlap.
 
+**Status:** Accepted on 2026-05-12. `game-topbar.html` now uses existing `mg-grid`, `grid-cols-3`, `grid-cols-1-lg` and `grid-items-center` utilities for the normal hero topbar, replacing flex-based pseudo-centering without adding new SCSS, `.mg-game-topbar` or BEM zone classes. The three zones keep existing content/components and remove obsolete `flex-1` / `flex-none` class noise. Manual visual smoke remains user-side; any further responsive overlap/wrap refinement belongs to UI-SHELL-18.
+
 ---
 
 ## UI-SHELL-10 — Topbar notifications and staff placement
