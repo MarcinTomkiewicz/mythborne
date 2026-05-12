@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { catchError, combineLatest, map, of, Subscription, switchMap } from 'rxjs';
+import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import { MENU_LOGGED_IN } from '../../../core/config/menu-config';
 import { RPC } from '../../../core/constants/rpc.const';
 import {
@@ -13,6 +13,7 @@ import { AuthState } from '../../../core/services/auth/auth-state';
 import { Backend } from '../../../core/services/backend/backend';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveServer } from '../../../core/services/server/active-server';
+import { humanizeKey } from '../../../core/utils/normalize-text';
 import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-policy';
 import { SessionLogoutButton } from '../../../shared/session-logout-button/session-logout-button';
 
@@ -22,14 +23,14 @@ import { SessionLogoutButton } from '../../../shared/session-logout-button/sessi
   templateUrl: './game-sidebar.html',
   styleUrl: './game-sidebar.scss',
 })
-export class GameSidebar implements OnInit, OnDestroy {
+export class GameSidebar implements OnInit {
   private readonly authState = inject(AuthState);
   private readonly backend = inject(Backend);
   private readonly activeHero = inject(ActiveHero);
   private readonly activeServer = inject(ActiveServer);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly activeHeroState$ = toObservable(this.activeHero.state);
   private readonly selectedServer$ = toObservable(this.activeServer.selectedServer);
-  private prestigeSubscription?: Subscription;
 
   readonly hero = this.authState.hero;
   readonly selectedServer = this.activeServer.selectedServer;
@@ -65,12 +66,14 @@ export class GameSidebar implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    this.prestigeSubscription = combineLatest([
+    combineLatest([
       this.activeHeroState$,
       this.selectedServer$,
     ])
       .pipe(
         switchMap(([activeHeroState, server]) => {
+          this.prestigeSummary.set(null);
+
           if (!activeHeroState?.heroId || !server?.id) {
             return of(null);
           }
@@ -100,17 +103,17 @@ export class GameSidebar implements OnInit, OnDestroy {
                   return null;
                 }
 
-                return rows[0] ?? null;
+                return rows.find((row) =>
+                  row.hero_id === requestContext.heroId
+                  && row.server_id === requestContext.serverId
+                ) ?? null;
               }),
               catchError(() => of(null)),
             );
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((summary) => this.prestigeSummary.set(summary));
-  }
-
-  ngOnDestroy(): void {
-    this.prestigeSubscription?.unsubscribe();
   }
 }
 
@@ -120,12 +123,4 @@ function isGameplayMenuUrl(url: unknown): boolean {
 
 function isAdminMenuUrl(url: unknown): boolean {
   return typeof url === 'string' && url.startsWith('/admin');
-}
-
-function humanizeKey(value: string): string {
-  return value
-    .split(/[_\s-]+/)
-    .filter(Boolean)
-    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-    .join(' ') || 'Status';
 }

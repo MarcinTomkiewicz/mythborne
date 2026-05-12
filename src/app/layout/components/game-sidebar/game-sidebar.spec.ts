@@ -28,19 +28,7 @@ describe('GameSidebar', () => {
 
   beforeEach(() => {
     backend = jasmine.createSpyObj<Backend>('Backend', ['rpc']);
-    backend.rpc.and.returnValue(of([
-      {
-        district_code: 'A',
-        helper_text: 'Current prestige rank.',
-        hero_id: 'hero-1',
-        player_label: 'Zeugitai',
-        rank_name: 'Zeugitai',
-        rank_number: 2,
-        rank_uuid: 'rank-2',
-        server_id: 'server-1',
-        updated_at: '2026-05-08T00:00:00.000Z',
-      },
-    ]));
+    backend.rpc.and.returnValue(of([prestigeRow()]));
     activeHeroState = signal({
       userId: 'user-1',
       serverId: 'server-1',
@@ -111,6 +99,45 @@ describe('GameSidebar', () => {
       'get_hero_prestige_public_summary',
       { p_hero_id: 'hero-1' },
     );
+  });
+
+  it('clears prestige summary when selected server context is missing', async () => {
+    component.prestigeSummary.set(prestigeRow());
+
+    selectedServer.set(null);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const text = textContent(fixture);
+
+    expect(component.prestigeSummary()).toBeNull();
+    expect(text).toContain('Prestige unavailable');
+    expect(text).not.toContain('Zeugitai');
+  });
+
+  it('ignores prestige rows returned for a stale server context', async () => {
+    backend.rpc.and.returnValue(of([prestigeRow({ server_id: 'server-1' })]));
+
+    selectedServer.set(createServer({ id: 'server-2', name: 'Sparta' }));
+    activeHeroState.set({
+      userId: 'user-1',
+      serverId: 'server-2',
+      heroId: 'hero-1',
+      server: createServer({ id: 'server-2', name: 'Sparta' }),
+      hero: { id: 'hero-1', name: 'Hero', level: 1 },
+      heroRow: { id: 'hero-1', name: 'Hero', level: 1 },
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const text = textContent(fixture);
+
+    expect(component.prestigeSummary()).toBeNull();
+    expect(text).toContain('Sparta');
+    expect(text).toContain('Prestige unavailable');
+    expect(text).not.toContain('Zeugitai');
   });
 
   it('renders a visible logout action in the authenticated shell', () => {
@@ -220,6 +247,21 @@ function createServer(
     staffRole: null,
     canManage: false,
     canUseAsSandbox: false,
+    ...overrides,
+  };
+}
+
+function prestigeRow(overrides: Record<string, unknown> = {}) {
+  return {
+    district_code: 'A',
+    helper_text: 'Current prestige rank.',
+    hero_id: 'hero-1',
+    player_label: 'Zeugitai',
+    rank_name: 'Zeugitai',
+    rank_number: 2,
+    rank_uuid: 'rank-2',
+    server_id: 'server-1',
+    updated_at: '2026-05-08T00:00:00.000Z',
     ...overrides,
   };
 }

@@ -1049,6 +1049,8 @@ Verification:
 - zmiana hero/server nie zostawia starego prestige;
 - brak lokalnych fallbacków maskujących DB/read-model brak.
 
+**Status:** Accepted on 2026-05-12. Sidebar context data now uses `ActiveServer` for selected server/status and DB-backed `get_hero_prestige_public_summary` for Prestige. Async Prestige loading clears stale context on hero/server changes, guards returned rows against the current hero and selected server, and uses `takeUntilDestroyed` instead of manual subscription cleanup. Local `humanizeKey(...)` was removed in favor of `core/utils/normalize-text.humanizeKey`; `isGameplayMenuUrl(...)` / `isAdminMenuUrl(...)` remain local for now and should be revisited during sidebar IA/navigation cleanup. No HTML, SCSS, DB/RPC/generated-type or visual changes were added. Manual smoke remains user-side.
+
 ---
 
 ## UI-SHELL-21 — Sidebar nav: prototype grouping and visual rhythm
@@ -2948,6 +2950,8 @@ Verification:
 - stale guard if async Prestige summary depends on active hero/server.
 
 **Acceptance criteria:** data source and stale guard are clear; no visual layout change required.
+
+**Status:** Accepted on 2026-05-12. Implemented in the runtime UI-SHELL-20 pass: selected server/status come from `ActiveServer`, Prestige uses the DB-backed public summary RPC, stale hero/server responses are cleared/ignored, and shared `humanizeKey` is reused. Route URL classification remains local as a sidebar IA cleanup candidate. No visual changes were made.
 
 ---
 
