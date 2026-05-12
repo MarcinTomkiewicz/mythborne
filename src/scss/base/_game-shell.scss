@@ -2,17 +2,17 @@
 
 .mg-game-shell {
   height: 100dvh;
-  background: v.$color-bg;
+  background: v.$color-shell-bg;
 }
 
 .mg-game-shell__topbar {
-  border-bottom: 1px solid v.$color-border;
-  background: v.$color-bg-surface-elevated;
+  border-bottom: 1px solid v.$color-shell-border;
+  background: v.$color-shell-surface-elevated;
 }
 
 .mg-game-shell__sidebar {
-  border-right: 1px solid v.$color-border;
-  background: v.$color-bg-surface;
+  border-right: 1px solid v.$color-shell-border;
+  background: v.$color-shell-surface;
 }
 
 .mg-game-shell__main {

@@ -47,6 +47,46 @@
 .tag-badge.golden { @include m.badge-golden; }
 
 /* =========================================================
+   CHIP PATTERN
+   ========================================================= */
+
+.mg-chip {
+  min-height: 2.15rem;
+  padding: 0.38rem 0.72rem;
+  border: 1px solid v.$color-chip-border;
+  border-radius: 999px;
+  background: v.$color-chip-bg;
+  color: v.$color-text-muted;
+  font-size: map.get(v.$font-sizes, "xs");
+  font-weight: 700;
+}
+
+.mg-chip--progress {
+  padding: 0.35rem 0.7rem;
+}
+
+.mg-chip__icon {
+  color: v.$color-secondary;
+}
+
+.mg-chip__label {
+  color: v.$color-text-muted;
+}
+
+.mg-chip__value {
+  color: v.$heading-color;
+  font-weight: 800;
+}
+
+.mg-chip--health .mg-chip__icon {
+  color: v.$color-primary;
+}
+
+.mg-chip--xp .mg-chip__value {
+  color: v.$color-secondary;
+}
+
+/* =========================================================
    LEGACY / ALIASES (STARE KLASY – BEZ @extend)
    ========================================================= */
 

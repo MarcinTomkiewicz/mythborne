@@ -771,6 +771,8 @@ Verification:
 
 **Acceptance criteria:** player and staff notifications are right-zone items; app-shell fallback is only for hidden topbar or non-game context if still required.
 
+**Status:** Accepted on 2026-05-12. Already satisfied by UI-SHELL-08/09 runtime changes: `app-shell` renders only `app-game-topbar`, while the normal hero topbar places both `app-notification-bell` and `app-staff-notification-bell` in the right grid zone before resource chips. The remaining staff-only fallback is owned by `game-topbar` and is not a parallel `app-shell` topbar. No notification styling, unread count logic or staff access logic was changed.
+
 ---
 
 ## UI-SHELL-11 — Health display semantics
@@ -787,6 +789,8 @@ Verification:
 
 **Acceptance criteria:** health display semantics are clear and report names the data source.
 
+**Status:** Postponed on 2026-05-12. The topbar must display `current / max` HP, but the current topbar read path only exposes derived/max health from `HeroDerivedStats.resolveActiveHeroDerivedStats()`. Until a canonical current-HP read model is scoped, the UI uses a temporary `max / max` fallback so the format stays correct without inventing live HP. Do not treat this as final Health semantics.
+
 ---
 
 ## UI-SHELL-12 — XP / Level progress semantics
@@ -802,6 +806,14 @@ Verification:
 - If next threshold is missing, show XP as value only and report dependency.
 
 **Acceptance criteria:** no new hardcoded progression semantics; XP bar appears only when max/threshold is real.
+
+---
+
+## UI-SHELL-12B — Topbar Health/XP visual pattern
+
+**Goal:** align Health and XP/Level topbar chip/progress visuals with the accepted shell prototype without changing UI-SHELL-11/12 data semantics.
+
+**Status:** Accepted on 2026-05-12. Health and XP/Level now use the shared `mg-chip` skin primitive while layout/stretching stays in the template through existing flex/gap/width utilities. `app-game-bar` was cleaned up to one smooth shared progress pattern driven by `value`, `max`, `type`, `compact`, `showLabel` and `showValue`; the unused segmented API/template/CSS path was removed after checking current call sites. XP progress uses theme-backed progress tokens and fills the XP chip width. Health keeps the UI-SHELL-11 temporary `max / max` display until a canonical current-HP read model exists. Resource chip polish remains for later UI-SHELL/UI-CORE tasks.
 
 ---
 

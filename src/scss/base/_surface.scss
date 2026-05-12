@@ -8,6 +8,11 @@
   padding: 1rem;
 }
 
+.mg-game-shell .mg-card {
+  border-color: v.$color-shell-border;
+  background: v.$color-shell-surface;
+}
+
 .mg-card--legend {
   position: relative;
   padding-top: 1.35rem;
@@ -27,4 +32,14 @@
     v.$color-bg-surface 100%
   );
   line-height: 1;
+}
+
+.mg-game-shell .card-legend {
+  background: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 50%,
+    v.$color-shell-surface 50%,
+    v.$color-shell-surface 100%
+  );
 }

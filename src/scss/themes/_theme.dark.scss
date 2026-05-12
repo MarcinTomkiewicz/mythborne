@@ -4,13 +4,13 @@
 
 $c: common.$common;
 
-$bg: #080d14;
-$surface: #101927;
-$surface-elevated: #162337;
+$bg: #06080c;
+$surface: #0b1018;
+$surface-elevated: #101a27;
 $border: rgba(240, 201, 111, 0.2);
 $text: #f6edda;
-$text-muted: rgba(246, 237, 218, 0.76);
-$secondary: #d6a84c;
+$text-muted: #d7c8ab;
+$secondary: #c8923a;
 $info: #77b6dc;
 $danger: #d36a5b;
 $success: #8fcf74;
@@ -31,6 +31,18 @@ $dark: (
   "color-bg-surface": $surface,
   "color-bg-surface-elevated": $surface-elevated,
   "color-border": $border,
+  "color-shell-bg": $bg,
+  "color-shell-surface": rgba($surface, 0.86),
+  "color-shell-surface-elevated": rgba($surface-elevated, 0.88),
+  "color-shell-border": rgba($secondary, 0.24),
+  "color-chip-bg": rgba($surface-elevated, 0.78),
+  "color-chip-border": rgba($secondary, 0.18),
+  "color-progress-track": rgba(#000000, 0.38),
+  "color-progress-track-border": rgba(#f0c96f, 0.08),
+  "color-progress-gold-start": #9c6723,
+  "color-progress-gold-end": #f0c96f,
+  "color-progress-gold-glow": rgba(#f0c96f, 0.3),
+  "color-progress-danger": $danger,
   "color-text": $text,
   "color-text-muted": $text-muted,
   "color-link": $link,
@@ -43,10 +55,10 @@ $dark: (
     ),
     radial-gradient(
       circle at 82% 4%,
-      rgba($info, 0.18),
+      rgba(map.get($c, "color-crimson"), 0.08),
       transparent 34rem
     ),
-    linear-gradient(135deg, $bg 0%, #0b111b 42%, #05070b 100%)
+    linear-gradient(135deg, $bg 0%, #080b11 42%, #050608 100%)
   ),
   "color-paper-bg": linear-gradient(
       180deg,

@@ -72,6 +72,19 @@ $color-bg-surface: var(--mg-color-bg-surface);
 $color-bg-surface-elevated: var(--mg-color-bg-surface-elevated);
 $color-border: var(--mg-color-border);
 
+$color-shell-bg: var(--mg-color-shell-bg, var(--mg-color-bg));
+$color-shell-surface: var(--mg-color-shell-surface, var(--mg-color-bg-surface));
+$color-shell-surface-elevated: var(--mg-color-shell-surface-elevated, var(--mg-color-bg-surface-elevated));
+$color-shell-border: var(--mg-color-shell-border, var(--mg-color-border));
+$color-chip-bg: var(--mg-color-chip-bg, var(--mg-color-bg-surface));
+$color-chip-border: var(--mg-color-chip-border, var(--mg-color-border));
+$color-progress-track: var(--mg-color-progress-track, var(--mg-color-bg));
+$color-progress-track-border: var(--mg-color-progress-track-border, var(--mg-color-border));
+$color-progress-gold-start: var(--mg-color-progress-gold-start, var(--mg-color-secondary));
+$color-progress-gold-end: var(--mg-color-progress-gold-end, var(--mg-color-secondary));
+$color-progress-gold-glow: var(--mg-color-progress-gold-glow, transparent);
+$color-progress-danger: var(--mg-color-progress-danger, var(--mg-color-danger));
+
 $heading-color: var(--mg-heading-color);
 $heading-style: var(--mg-heading-style);
 

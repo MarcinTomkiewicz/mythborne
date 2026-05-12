@@ -5,37 +5,33 @@
       aria-label="Hero status and resources"
     >
       <div class="flex-row-start-center flex-wrap gap-sm">
-        <div class="tag-badge tag-badge--muted gap-sm">
-          <i class="pi pi-heart" aria-hidden="true"></i>
-          <span>Health</span>
-          <strong class="heading-color">{{ healthValue() }}</strong>
+        <div class="mg-chip mg-chip--health flex-row-center-center gap-sm">
+          <i class="pi pi-heart mg-chip__icon" aria-hidden="true"></i>
+          <span class="mg-chip__label">Health</span>
+          <strong class="mg-chip__value">{{ currentHealthValue() }} / {{ maxHealthValue() }}</strong>
         </div>
 
-        <div class="tag-badge tag-badge--muted gap-sm min-w-250 w-100-xs">
-          <i class="pi pi-sun-eclipse" aria-hidden="true"></i>
-          <div class="flex-col gap-xs flex-1">
-            <div class="flex-row-between-center gap-sm">
-              <span>Level {{ hero()?.level ?? 1 }}</span>
-              <strong class="heading-color">
-                XP {{ experienceValue() }}
-                @if (experienceToNextLevel() > 0) {
-                  / {{ experienceToNextLevel() }}
-                }
-              </strong>
-            </div>
-
-            @if (experienceToNextLevel() > 0) {
-              <app-game-bar
-                [value]="experienceValue()"
-                [max]="experienceToNextLevel()"
-                type="xp"
-                [segments]="10"
-                [compact]="true"
-                [showLabel]="false"
-                [showValue]="false"
-              />
-            }
+        <div class="mg-chip mg-chip--progress mg-chip--xp flex-col gap-xs min-w-250 w-100-xs">
+          <div class="flex-row-between-center gap-sm w-100">
+            <span class="mg-chip__label">Level {{ heroLevelValue() }}</span>
+            <strong class="mg-chip__value">
+              XP {{ experienceValue() }}
+              @if (experienceToNextLevel() > 0) {
+                / {{ experienceToNextLevel() }}
+              }
+            </strong>
           </div>
+
+          @if (experienceToNextLevel() > 0) {
+            <app-game-bar
+              [value]="experienceValue()"
+              [max]="experienceToNextLevel()"
+              type="xp"
+              [compact]="true"
+              [showLabel]="false"
+              [showValue]="false"
+            />
+          }
         </div>
       </div>
 

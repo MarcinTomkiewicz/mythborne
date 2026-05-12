@@ -71,8 +71,17 @@ export class GameTopbar implements OnInit, OnDestroy {
   readonly shouldRenderTopbarContent = computed(
     () => this.hasHeroContent() || !this.showHeroContent(),
   );
-  readonly healthValue = computed(() => Math.max(this.derived()?.health ?? 0, 0));
-  readonly experienceValue = computed(() => Math.max(this.hero()?.experience ?? 0, 0));
+  readonly currentHealthValue = computed(() => this.maxHealthValue());
+  readonly maxHealthValue = computed(() => Math.max(this.derived()?.health ?? 0, 0));
+  readonly heroLevelValue = computed(
+    () => Math.max(this.experienceProgress()?.level ?? this.hero()?.level ?? 1, 1),
+  );
+  readonly experienceValue = computed(() =>
+    Math.max(
+      this.experienceProgress()?.currentExperience ?? this.hero()?.experience ?? 0,
+      0,
+    ),
+  );
   readonly experienceToNextLevel = computed(
     () => this.experienceProgress()?.experienceToNextLevel ?? 0,
   );
