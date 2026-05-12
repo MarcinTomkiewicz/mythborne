@@ -1141,6 +1141,8 @@ Verification:
 - selector scope jest bezpieczny;
 - brak lokalnych jednorazowych kolorów.
 
+**Status:** Accepted on 2026-05-12. `mg-shell-nav-item` now has a visible token-based `:focus-visible` ring while preserving the active left gold inset from UI-SHELL-22. Hover, focus and active styling remain centralized in the shared shell nav pattern in `_game-shell.scss`, with no HTML, IA, TS, DB/RPC, generated-type or local sidebar SCSS changes. `min-height: 100dvh` for `.mg-game-shell` is accepted as the current shell baseline because it avoids hard-locking sidebar/content height and keeps the page scrollable when sidebar content is taller than the viewport. Manual visual/a11y smoke remains user-side.
+
 ---
 
 ## UI-SHELL-24 — Sidebar icon visual and registry pass
