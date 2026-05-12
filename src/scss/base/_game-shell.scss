@@ -2,7 +2,7 @@
 @use "abstracts/variables" as v;
 
 .mg-game-shell {
-  height: 100dvh;
+  min-height: 100dvh;
   background: v.$color-shell-bg;
 }
 
@@ -23,6 +23,55 @@
 
 .mg-game-shell__main {
   background: inherit;
+}
+
+.mg-shell-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: map.get(v.$spacings, "sm");
+  box-sizing: border-box;
+  width: 100%;
+  padding: map.get(v.$spacings, "sm");
+  border: 1px solid transparent;
+  border-radius: v.$radius-lg;
+  color: v.$color-text-muted;
+  text-decoration: none;
+  transition: v.$transition-fast;
+
+  &:hover,
+  &:focus-visible,
+  &.is-active {
+    border-color: color-mix(in srgb, v.$color-secondary 16%, transparent);
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, v.$color-secondary 13%, transparent),
+        color-mix(in srgb, v.$color-info 12%, transparent)
+      );
+    color: v.$heading-color;
+  }
+
+  &.is-active {
+    box-shadow: inset 3px 0 0 v.$color-secondary;
+  }
+}
+
+.mg-shell-nav-item__icon {
+  display: inline-grid;
+  place-items: center;
+  width: map.get(v.$spacings, "lg");
+  height: map.get(v.$spacings, "lg");
+  border: 1px solid color-mix(in srgb, v.$color-secondary 8%, transparent);
+  border-radius: v.$radius-sm;
+  background: color-mix(in srgb, v.$color-secondary 8%, transparent);
+  color: v.$color-secondary;
+  font-size: map.get(v.$font-sizes, "sm");
+}
+
+.mg-shell-nav-item__label {
+  min-width: 0;
+  font-weight: 700;
 }
 
 .mg-brand-mark-fallback {

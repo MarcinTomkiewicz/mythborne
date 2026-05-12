@@ -1113,6 +1113,8 @@ Verification:
 - active route ma gold emphasis/inset i nie jest color-only;
 - HTML pozostaje czytelny.
 
+**Status:** Accepted on 2026-05-12. The temporary `mg-card` sidebar nav fallback was replaced with the shared/global `mg-shell-nav-item` pattern in shell SCSS, while grouped IA remains owned by `menu-config.ts`. Active route state now has a visible left gold inset and hover/focus/active styling is centralized in the shell nav pattern rather than local sidebar SCSS. Sidebar menu icons use the accepted project/custom icon classes `pi pi-helmet`, `pi pi-skills`, `pi pi-hydra` and `pi pi-trade`. No local component SCSS, DB/RPC, generated-type or route semantics changes were added. Manual smoke remains user-side. Cleanup candidate: normalize the `menu-config.ts` import quote to project style when the file is next touched.
+
 ---
 
 ## UI-SHELL-23 — Sidebar active/hover/focus interaction pass

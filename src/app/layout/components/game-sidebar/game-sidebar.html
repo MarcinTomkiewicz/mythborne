@@ -47,20 +47,20 @@
 
   <app-session-logout-button />
 
-  <nav class="flex-col gap-md" aria-label="Game navigation">
+  <nav class="flex-col gap-md w-100" aria-label="Game navigation">
     @for (group of menuGroups(); track group.title) {
-      <section class="flex-col gap-xs" [attr.aria-label]="group.title">
+      <section class="flex-col gap-xs w-100" [attr.aria-label]="group.title">
         <span class="muted-text text-xs font-bold">{{ group.title }}</span>
 
         @for (item of group.items; track item.title) {
           <a
-            class="mg-card position-relative flex-row-start-center gap-sm p-sm"
+            class="mg-shell-nav-item"
             [routerLink]="item.url"
-            routerLinkActive="is-active heading-color"
+            routerLinkActive="is-active"
             [routerLinkActiveOptions]="{ exact: true }"
           >
-            <img [src]="item.icon" [alt]="item.title" class="w-px-20 h-px-20" />
-            <span>{{ item.title }}</span>
+            <i [class]="item.icon + ' mg-shell-nav-item__icon'" aria-hidden="true"></i>
+            <span class="mg-shell-nav-item__label">{{ item.title }}</span>
           </a>
         }
       </section>
