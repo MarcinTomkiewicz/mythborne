@@ -984,6 +984,8 @@ Verification:
 - narrow layout pozostaje czytelny;
 - manual smoke user-side pozostaje acceptance gate.
 
+**Status:** Deferred / not implemented on 2026-05-12. The responsive-only utility patch was reverted after reviewer direction, restoring the accepted UI-SHELL-15/17 topbar state. Manual responsive smoke and any intentional topbar responsive fix remain deferred for a later user/reviewer-led pass.
+
 ---
 
 ## UI-SHELL-19 — Sidebar context card: prototype visual implementation
