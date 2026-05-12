@@ -4,9 +4,9 @@
 
 $c: common.$common;
 
-$bg: #06080c;
-$surface: #0b1018;
-$surface-elevated: #101a27;
+$bg: #05080d;
+$surface: #09111a;
+$surface-elevated: #0f1a26;
 $border: rgba(240, 201, 111, 0.2);
 $text: #f6edda;
 $text-muted: #d7c8ab;
@@ -32,9 +32,9 @@ $dark: (
   "color-bg-surface-elevated": $surface-elevated,
   "color-border": $border,
   "color-shell-bg": $bg,
-  "color-shell-surface": rgba($surface, 0.86),
-  "color-shell-surface-elevated": rgba($surface-elevated, 0.88),
-  "color-shell-border": rgba($secondary, 0.24),
+  "color-shell-surface": rgba($surface, 0.78),
+  "color-shell-surface-elevated": rgba($surface-elevated, 0.86),
+  "color-shell-border": rgba($secondary, 0.3),
   "color-chip-bg": rgba($surface-elevated, 0.78),
   "color-chip-border": rgba($secondary, 0.18),
   "color-progress-track": rgba(#000000, 0.38),

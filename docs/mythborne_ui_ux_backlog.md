@@ -1233,6 +1233,8 @@ Verification:
 - gold border/glow są subtelne i tokenizowane;
 - brak local rgba/hex poza theme token definitions.
 
+**Status:** Accepted on 2026-05-12. Shell surface palette alignment now uses token-level/global shell changes: dark shell tokens were tuned toward the accepted navy/gold direction, `.mg-game-shell` consumes the theme background gradient, shell cards and context surfaces use shared shell surface tokens, and topbar/context/brand elevations consume `v.$shadow-shell`, `v.$shadow-premium` and `v.$shadow-brand-mark`. Raw shadow values remain in theme token definitions, while global shell/surface patterns consume `v.$shadow-*` variables. No templates, TS, local component SCSS, DB/RPC or generated-type changes were introduced. Manual visual smoke remains user-side.
+
 ---
 
 ## UI-SHELL-27 — Shell content container and card rhythm pass

@@ -11,7 +11,14 @@
 
 .mg-game-shell .mg-card {
   border-color: v.$color-shell-border;
-  background: v.$color-shell-surface;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-surface-elevated 74%, transparent),
+      color-mix(in srgb, v.$color-shell-surface 90%, transparent)
+    ),
+    v.$color-shell-surface;
+  box-shadow: v.$shadow-premium;
 }
 
 .mg-card--legend {
@@ -62,7 +69,7 @@
       color-mix(in srgb, v.$color-secondary 16%, transparent),
       transparent 10rem
     );
-  box-shadow: v.$shadow-soft;
+  box-shadow: v.$shadow-premium;
 }
 
 .mg-context-card__section {
