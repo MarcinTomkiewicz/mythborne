@@ -957,6 +957,8 @@ Verification:
 - brak `!important`;
 - visual report porównuje: background, border, elevation, chip contrast.
 
+**Status:** Accepted with user-side visual adjustment on 2026-05-12. The topbar now uses the semantic `mg-game-shell__topbar` shell pattern with a darker token-based gradient, the existing shell gold border, and user-adjusted elevation through the `shadow-shell` utility backed by dark-theme shadow tokens. Brand and resource summaries remain readable on the darker topbar; no brittle structural selectors, local component SCSS, TS/resource semantics, DB/RPC or generated-type changes were added. Manual smoke remains user-side.
+
 ---
 
 ## UI-SHELL-18 — Topbar responsive behavior implementation

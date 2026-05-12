@@ -8,7 +8,12 @@
 
 .mg-game-shell__topbar {
   border-bottom: 1px solid v.$color-shell-border;
-  background: v.$color-shell-surface-elevated;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-surface-elevated 92%, v.$color-bg),
+      color-mix(in srgb, v.$color-shell-surface 86%, v.$color-bg)
+    );
 }
 
 .mg-game-shell__sidebar {
@@ -21,6 +26,7 @@
 }
 
 .mg-brand-mark-fallback {
+  flex: 0 0 auto;
   display: inline-grid;
   place-items: center;
   width: 2.35rem;
@@ -35,8 +41,11 @@
       v.$color-bg 100%
     );
   color: v.$color-bg;
-  box-shadow: inset 0 0 0 3px color-mix(in srgb, v.$color-bg 58%, transparent);
+  box-shadow:
+    inset 0 0 0 3px color-mix(in srgb, v.$color-bg 58%, transparent),
+    0 0 1.15rem color-mix(in srgb, v.$color-secondary 24%, transparent);
   font-family: v.$font-family-display;
+  font-size: map.get(v.$font-sizes, "lg");
   font-weight: 800;
   line-height: 1;
 }
