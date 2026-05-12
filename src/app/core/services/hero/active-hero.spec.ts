@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
 import { FilterOperator } from '../../enums/filter-operators';
 import { AuthState } from '../auth/auth-state';
 import { Backend } from '../backend/backend';
+import { Platform } from '../platform/platform';
 import { ActiveServer } from '../server/active-server';
 import { ActiveHero } from './active-hero';
 
@@ -35,6 +36,7 @@ describe('ActiveHero', () => {
         AuthState,
         ActiveHero,
         { provide: Backend, useValue: backend },
+        { provide: Platform, useValue: { isBrowser: true, isServer: false } },
         { provide: ActiveServer, useValue: activeServer },
       ],
     });
@@ -42,6 +44,11 @@ describe('ActiveHero', () => {
     authState = TestBed.inject(AuthState);
     authState.setUser({ id: 'user-1' } as ReturnType<AuthState['user']>);
     activeHero = TestBed.inject(ActiveHero);
+    window.localStorage.removeItem('mythsworn.selectedHeroId.user-1.server-1');
+  });
+
+  afterEach(() => {
+    window.localStorage.removeItem('mythsworn.selectedHeroId.user-1.server-1');
   });
 
   it('selects a hero only through the selected server scoped active-hero read path', (done) => {
@@ -59,6 +66,17 @@ describe('ActiveHero', () => {
       expect(authState.hero()?.id).toBe('hero-2');
       done();
     });
+  });
+
+  it('restores the selected hero for the selected server after in-memory state is cleared', async () => {
+    await firstValueFrom(activeHero.selectHero('hero-2'));
+
+    activeHero.clear();
+
+    const state = await firstValueFrom(activeHero.loadActiveHero());
+
+    expect(state?.heroId).toBe('hero-2');
+    expect(authState.hero()?.id).toBe('hero-2');
   });
 });
 

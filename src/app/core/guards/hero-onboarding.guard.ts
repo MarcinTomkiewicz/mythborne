@@ -9,6 +9,7 @@ import { catchError, map, from, of, switchMap } from 'rxjs';
 import { StartFlowServerAvailability } from '../domain/start-flow/start-flow.model';
 import { AuthState } from '../services/auth/auth-state';
 import { Auth } from '../services/auth/auth';
+import { ActiveHero } from '../services/hero/active-hero';
 import { ActiveServer } from '../services/server/active-server';
 import { StartFlow } from '../services/start-flow/start-flow';
 
@@ -29,11 +30,23 @@ function resolveOnboardedHeroRedirect(
 
 export const requireOnboardedHeroGuard: CanActivateChildFn = () => {
   const auth = inject(Auth);
+  const activeHero = inject(ActiveHero);
   const authState = inject(AuthState);
   const router = inject(Router);
 
   return from(auth.initialize()).pipe(
-    map(() => resolveOnboardedHeroRedirect(authState, router))
+    switchMap(() => {
+      const initialDecision = resolveOnboardedHeroRedirect(authState, router);
+
+      if (initialDecision === true || !authState.user()) {
+        return of(initialDecision);
+      }
+
+      return activeHero.loadActiveHero().pipe(
+        map(() => resolveOnboardedHeroRedirect(authState, router)),
+        catchError(() => of(router.parseUrl('/auth/server-entry'))),
+      );
+    })
   );
 };
 
@@ -77,6 +90,22 @@ export const serverEntryGuard: CanActivateFn = () => {
     map(() => {
       if (!authState.user()) {
         return router.parseUrl('/public');
+      }
+
+      return true;
+    })
+  );
+};
+
+export const publicEntryGuard: CanActivateFn = () => {
+  const auth = inject(Auth);
+  const authState = inject(AuthState);
+  const router = inject(Router);
+
+  return from(auth.initialize()).pipe(
+    map(() => {
+      if (authState.user()) {
+        return router.parseUrl('/auth/server-entry');
       }
 
       return true;

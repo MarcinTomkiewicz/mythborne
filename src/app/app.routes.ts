@@ -1,10 +1,11 @@
-import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 import { adminRoutes } from './admin/admin.routes';
 import { authRoutes } from './auth/auth.routes';
 import { requireAdminAccessGuard } from './core/guards/admin-access.guard';
-import { requireOnboardedHeroGuard } from './core/guards/hero-onboarding.guard';
-import { AuthState } from './core/services/auth/auth-state';
+import {
+  publicEntryGuard,
+  requireOnboardedHeroGuard,
+} from './core/guards/hero-onboarding.guard';
 import { gameRoutes } from './game/game.routes';
 import { heroRoutes } from './hero/hero.routes';
 import { publicRoutes } from './public/public.routes';
@@ -12,19 +13,12 @@ import { publicRoutes } from './public/public.routes';
 const appShellRoutes: Routes = [
   {
     path: '',
-    redirectTo: () => {
-      const authState = inject(AuthState);
-
-      if (authState.user()) {
-        return '/auth/server-entry';
-      }
-
-      return '/public';
-    },
+    redirectTo: '/auth/server-entry',
     pathMatch: 'full'
   },
   {
     path: 'public',
+    canActivate: [publicEntryGuard],
     children: publicRoutes
   },
   {

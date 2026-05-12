@@ -4,11 +4,13 @@
 
     <div class="flex-col gap-xs">
       <p class="heading-color mb-0">
-        <strong>{{ hero()?.name || user()?.email || 'Account' }}</strong>
+        <strong>{{ hero()?.name ?? 'Active hero required' }}</strong>
       </p>
-      <p class="muted-text mb-0">
-        {{ hero() ? 'Level ' + (hero()?.level || 1) : 'Active hero required' }}
-      </p>
+      @if (hero()) {
+        <p class="muted-text mb-0">Level {{ hero()?.level || 1 }}</p>
+      } @else {
+        <span class="tag-badge tag-badge--warn">Hero context missing</span>
+      }
     </div>
   </div>
 
@@ -25,7 +27,7 @@
       <span [class]="serverStatusClass()">{{ serverStatusLabel() }}</span>
     </div>
     <a class="tag-badge tag-badge--muted" routerLink="/auth/server-entry">
-      Change server
+      Zmień serwer / postać
     </a>
     <div class="flex-row-between-center gap-sm">
       <span class="muted-text">Prestige</span>

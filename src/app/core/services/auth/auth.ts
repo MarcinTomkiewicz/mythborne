@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { from, map, of, switchMap, take, tap } from 'rxjs';
+import { from, map, Observable, of, shareReplay, switchMap, take, tap } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
 import { IUserData } from '../../interfaces/i-user-data/i-user-data';
 import { Insert } from '../../types/supabase.types';
@@ -16,18 +16,20 @@ export class Auth {
   private readonly authState = inject(AuthState);
   private readonly activeHero = inject(ActiveHero);
   private readonly platform = inject(Platform);
-  private initializationStarted = false;
+  private initialization$: Observable<void> | null = null;
   private authListenerRegistered = false;
 
-  initialize() {
+  initialize(): Observable<void> {
     this.registerAuthListener();
 
-    if (!this.initializationStarted) {
-      this.initializationStarted = true;
-      return this.initializeAuthState().pipe(take(1));
+    if (!this.initialization$) {
+      this.initialization$ = this.initializeAuthState().pipe(
+        take(1),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
     }
 
-    return of(void 0);
+    return this.initialization$;
   }
 
   initializeAuthState() {

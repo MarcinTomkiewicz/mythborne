@@ -6,9 +6,13 @@ import { StartFlowServerAvailability } from '../domain/start-flow/start-flow.mod
 import { SelectedGameServer } from '../interfaces/server/active-server.interface';
 import { Auth } from '../services/auth/auth';
 import { AuthState } from '../services/auth/auth-state';
+import { ActiveHero } from '../services/hero/active-hero';
 import { ActiveServer } from '../services/server/active-server';
 import { StartFlow } from '../services/start-flow/start-flow';
-import { createCharacterEntryGuard } from './hero-onboarding.guard';
+import {
+  createCharacterEntryGuard,
+  requireOnboardedHeroGuard,
+} from './hero-onboarding.guard';
 
 describe('createCharacterEntryGuard', () => {
   let activeServer: jasmine.SpyObj<ActiveServer>;
@@ -112,6 +116,61 @@ describe('createCharacterEntryGuard', () => {
     }
 
     return router.serializeUrl(result as UrlTree);
+  }
+});
+
+describe('requireOnboardedHeroGuard', () => {
+  let activeHero: jasmine.SpyObj<ActiveHero>;
+  let auth: jasmine.SpyObj<Auth>;
+  let authState: AuthState;
+
+  beforeEach(() => {
+    activeHero = jasmine.createSpyObj<ActiveHero>('ActiveHero', ['loadActiveHero']);
+    activeHero.loadActiveHero.and.returnValue(of(null));
+    auth = jasmine.createSpyObj<Auth>('Auth', ['initialize']);
+    auth.initialize.and.returnValue(of(void 0));
+
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        AuthState,
+        { provide: ActiveHero, useValue: activeHero },
+        { provide: Auth, useValue: auth },
+      ],
+    });
+
+    authState = TestBed.inject(AuthState);
+  });
+
+  it('loads active hero before deciding direct protected-route entry after reload', async () => {
+    authState.setUser({ id: 'user-1', email: 'hero@example.com' } as never);
+    activeHero.loadActiveHero.and.callFake(() => {
+      authState.setHero({ id: 'hero-1', name: 'Hero' } as never);
+
+      return of({
+        userId: 'user-1',
+        serverId: 'server-1',
+        heroId: 'hero-1',
+        server: server(),
+        hero: { id: 'hero-1', name: 'Hero' },
+        heroRow: { id: 'hero-1', name: 'Hero' },
+      } as never);
+    });
+
+    const result = await runCanActivateChild(requireOnboardedHeroGuard);
+
+    expect(result).toBeTrue();
+    expect(activeHero.loadActiveHero).toHaveBeenCalled();
+  });
+
+  async function runCanActivateChild(
+    guard: typeof requireOnboardedHeroGuard,
+  ): Promise<unknown> {
+    const result = TestBed.runInInjectionContext(() =>
+      guard({} as never, {} as never),
+    );
+
+    return isObservable(result) ? firstValueFrom(result) : result;
   }
 });
 

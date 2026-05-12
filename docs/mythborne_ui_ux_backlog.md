@@ -430,165 +430,702 @@ The prototype archive is visual reference only. `docs/ui-ux/README.md` maps the 
 
 # 8. UI-SHELL — game shell hardening and implementation sequence
 
-## UI-SHELL-0 — Game shell preflight and visual-anchor mapping
+This section replaces broad shell tasks with microtasks. The goal is to make Codex execute one narrow, reviewable step at a time instead of improvising a full shell/topbar/sidebar redesign.
 
-**Goal:**  
-Before touching code, map the accepted shell prototype to current production utilities, SCSS and missing patterns.
+## 8.0. UI-SHELL execution rules
 
-**Required visual anchors from `game-shell-v1`:**
+These rules apply to every `UI-SHELL-*` task.
+
+### Mandatory README-first lookup
+
+Every task starts with `docs/ui-ux/README.md` and then the task-relevant UI-CORE docs. Codex must report concrete files/classes/patterns, not just `docs checked`.
+
+For shell/topbar/sidebar work, check at minimum:
+
+- `docs/ui-ux/README.md`;
+- `docs/ui-ux/mythsworn-style-contract.md`;
+- `docs/ui-ux/global-scss-shared-inventory.md`;
+- `docs/ui-ux/local-scss-budget-checklist.md`;
+- `docs/ui-ux/prototype-production-mapping.md`;
+- `docs/ui-ux/utility-class-audit.md`;
+- `docs/ui-ux/layout-section-pattern-cleanup.md`;
+- `docs/ui-ux/text-utility-semantics.md`;
+- `docs/ui-ux/shared-surface-patterns.md`;
+- `docs/ui-ux/surface-badge-pattern-expansion.md`;
+- `docs/ui-ux/icon-brand-registry.md`;
+- `docs/ui-ux/icon-placeholder-mapping.md`.
+
+### Default no-new-class rule
+
+Default assumption: **adding a new CSS class is wrong**.
+
+A new class is allowed only when all are true:
+
+1. the task explicitly permits that exact class or pattern;
+2. existing utilities/patterns were checked and listed;
+3. the class represents a real reusable pattern or unavoidable structural shell gap;
+4. the report explains why existing utilities are insufficient.
+
+Creating a class that merely rewrites flex/grid/gap/padding/position/sizing utilities is a blocker.
+
+### UI-SHELL source/prototype anchors
+
+Shell tasks are backed by `game-shell-v1.html` / accepted shell prototype direction. Codex must preserve these visual anchors unless a task explicitly says otherwise:
 
 - desktop topbar uses three-zone composition: left hero status, centered brand, right resources;
 - brand is centered in desktop topbar unless explicit task says otherwise;
-- fallback `M` brand mark is preserved;
-- left topbar area shows Health and XP/Level summary;
-- right topbar area shows Drachmas, Materials and Workforce;
-- resource chips are stacked/compact: label + strong value + per-hour secondary line;
+- fallback `M` brand mark is visible and visually distinct from a normal status badge;
+- left topbar shows Health and XP/Level summary;
+- right topbar shows Notifications/Staff when applicable plus Drachmas, Materials and Workforce;
+- resources are compact stacked chips/cards: icon + label + strong value + per-hour secondary line;
 - sidebar selected server/prestige block is a compact premium context card, not a flat generic row panel;
-- selected server block uses label/value hierarchy: small label, strong value, status badge;
+- selected server block uses label/value/status hierarchy: small label, strong value, status badge;
 - Prestige is separated inside the same surface, with label, strong rank value and rank/tier badge;
-- active sidebar nav uses gold left inset or equivalent active affordance;
+- active sidebar nav uses a gold left inset or equivalent active affordance;
+- hover/focus/active states use the accepted dark navy/gold/blue visual language;
 - important values are not muted.
+
+### Color and interaction rule
+
+Shell is responsible for establishing the reusable base for:
+
+- shell background/surface/border token usage;
+- brand mark fallback;
+- topbar resource chip fallback or later pattern;
+- sidebar selected context surface;
+- sidebar nav active state, hover state and focus-visible state;
+- semantic status badge usage.
+
+Color work must be token-level or global/shared-pattern-level. Do not add one-off component colors. If a color/hover/active need is repeated and no token/pattern exists, report a token/pattern gap and put it in the relevant microtask below.
+
+### Standard report for every UI-SHELL task
+
+Every task report must include:
+
+```md
+Preflight:
+- README checked:
+- UI-CORE docs checked:
+- source files checked:
+- dirty tree:
+
+Lookup:
+- existing utilities/classes/patterns used:
+- checked but not used:
+- missing patterns/gaps:
+
+Scope control:
+- files changed:
+- new classes added:
+- SCSS kept and why:
+- local/component SCSS added:
+- copied from prototype CSS/classes:
+
+Visual anchors:
+- matched:
+- not matched:
+- deferred:
+
+Verification:
+- tsc:
+- build:
+- focused specs:
+- manual/browser smoke or blocked reason:
+```
+
+---
+
+## UI-SHELL-00 — Shell README-first inventory, no code
+
+**Goal:** produce a concrete lookup table for the shell before any implementation.
+
+**Allowed changes:** none. Documentation/report only.
 
 **Scope:**
 
 - Read `docs/ui-ux/README.md` first.
-- Read style contract, global inventory, local SCSS checklist, prototype mapping, utility audit, layout cleanup, text semantics, surface/badge docs and icon registry.
-- Inspect actual `src/scss` utilities and current layout components.
-- Produce mapping only; no code.
+- Read the mandatory UI-CORE docs listed in `8.0`.
+- Inspect actual SCSS files, not only docs:
+  - `src/scss/base/_flex.scss`;
+  - `src/scss/layouts/_grid.scss`;
+  - `src/scss/utilities/_gap.scss`;
+  - `src/scss/utilities/_spacings.scss`;
+  - `src/scss/utilities/_width.scss`;
+  - `src/scss/utilities/_height.scss`;
+  - `src/scss/utilities/_display.scss`;
+  - `src/scss/utilities/_position.scss`;
+  - `src/scss/utilities/_overflow.scss`;
+  - `src/scss/utilities/_z-index.scss`;
+  - `src/scss/utilities/_backdrop.scss`;
+  - `src/scss/base/_surface.scss`;
+  - `src/scss/base/_badges.scss`;
+  - `src/scss/base/_typography.scss`;
+  - `src/scss/abstracts/_custom-icons.scss`.
+- Inspect current shell components:
+  - `src/app/layout/components/app-shell/*`;
+  - `src/app/layout/components/game-topbar/*`;
+  - `src/app/layout/components/game-sidebar/*`;
+  - notification bell components.
 
-**Acceptance criteria:**
+**Output table:**
 
-- For each visual anchor, mapping says: existing pattern / utility composition / missing production pattern / defer.
-- Missing patterns are named explicitly.
-- Reviewer can decide which implementation task should own which pattern.
+| Shell need | Existing class/component/pattern | Source file | Use now? | Gap/follow-up |
+|---|---|---|---|---|
+| three-zone desktop topbar | ... | ... | yes/no | ... |
+| flex row start/center | ... | ... | yes/no | ... |
+| flex row end/center | ... | ... | yes/no | ... |
+| flex wrap | ... | ... | yes/no | ... |
+| full-width/flex fill | ... | ... | yes/no | ... |
+| compact resource chip fallback | ... | ... | yes/no | ... |
+| brand mark fallback | ... | ... | yes/no | ... |
+| selected server/prestige card | ... | ... | yes/no | ... |
+| active nav inset | ... | ... | yes/no | ... |
+| nav hover/focus states | ... | ... | yes/no | ... |
+| shell surface/background/border | ... | ... | yes/no | ... |
 
-**Required report:** standard UI report plus visual-anchor mapping.
-
----
-
-## UI-SHELL-1 — Game shell skeleton only
-
-**Goal:**  
-Create or stabilize the game shell skeleton without solving every visual pattern at once.
-
-**Scope:**
-
-- Shell grid/areas: topbar, sidebar, main.
-- Main content containment.
-- Active hero/server game context only; no public/account/guest/login/create-character flow.
-- Use utilities-first.
-
-**Out of scope:**
-
-- final brand/logo pattern;
-- final resource chips;
-- final selected server/prestige card;
-- final sidebar nav item pattern;
-- dashboard redesign;
-- account/public shell.
-
-**SCSS rules:**
-
-- SCSS may contain named shell grid/areas and boundary styling only where no utility/pattern exists.
-- Do not write flex/gap/padding/position/z-index/overflow/backdrop manually if utilities exist.
-- Pseudo-element active inset is allowed only as a temporary exception if it cannot be expressed by utilities.
-
-**Acceptance criteria:**
-
-- Game shell renders topbar/sidebar/main.
-- No local component SCSS.
-- No direct copied prototype CSS.
-- No utility shadowing.
-- No guest/public/account flow.
-- Missing visual patterns are reported, not silently flattened.
+**Acceptance criteria:** no code changed; reviewer can approve the exact next microtask.
 
 ---
 
-## UI-SHELL-2 — Topbar visual anchor pass
+## UI-SHELL-01 — Current shell diff and rollback boundary, no code
 
-**Goal:**  
-Implement topbar composition according to `game-shell-v1` visual anchors.
+**Goal:** identify which current shell changes are baseline, which are experimental UI-SHELL-1/2 leftovers, and what may be safely removed.
 
-**Required visual anchors:**
-
-- three-zone desktop composition;
-- centered brand;
-- left hero Health + XP/Level;
-- right stacked resource chips;
-- important resource values strong, per-hour line secondary but readable;
-- no `muted-text` for resource values;
-- responsive wrapping does not destroy hierarchy.
+**Allowed changes:** none.
 
 **Scope:**
 
-- Use existing topbar/game bar components where possible.
-- If resource chip pattern is missing, either add a minimal global/shared pattern if approved by this task or report/defer.
+- Compare current `app-shell`, `game-topbar`, `game-sidebar`, `_game-shell.scss` with accepted prior state or current git diff.
+- Mark every shell class as one of:
+  - existing baseline;
+  - accepted UI-SHELL-1 skeleton;
+  - experimental UI-SHELL-2;
+  - should remove;
+  - unknown/user decision.
 
-**Out of scope:**
-
-- sidebar nav pattern;
-- dashboard cards;
-- account/public shell.
-
-**Acceptance criteria:**
-
-- Topbar looks recognizably like the prototype anchors, even if production palette differs.
-- Resource chips are not flattened to one-line generic muted badges unless user approves that change.
-- `prototype visual anchors` report is complete.
+**Acceptance criteria:** report lists exact remove/keep candidates before code changes.
 
 ---
 
-## UI-SHELL-3 — Sidebar selected server / Prestige context card
+## UI-SHELL-02 — Shell token and color anchor inventory, no code
 
-**Goal:**  
-Implement the compact premium selected-server/prestige context surface from the shell prototype.
+**Goal:** explicitly map shell prototype colors/interactions to current theme tokens and gaps.
 
-**Required visual anchors:**
-
-- one compact premium sidebar surface;
-- selected server label/value/status row;
-- Prestige separated inside same surface;
-- label muted/secondary, value strong;
-- server name and Prestige rank not muted;
-- status is a semantic badge;
-- rank/tier badge aligned and readable.
+**Allowed changes:** none.
 
 **Scope:**
 
-- Use DB-backed selected server and public Prestige summary.
-- Use existing `mg-card`, badge and utility foundations first.
-- If a true context-card pattern is missing, report it and use a minimal fallback only with visual-anchor comparison.
+- Check `src/scss/abstracts/_variables.scss` and `src/scss/themes/*`.
+- Check surface, badge, text and interaction utilities.
+- Map these visual needs:
+  - dark navy shell background;
+  - elevated topbar surface;
+  - sidebar surface;
+  - soft gold border;
+  - active nav gold inset;
+  - active nav hover gold/blue wash;
+  - brand mark gold/navy medallion;
+  - resource chip border/background;
+  - selected server/prestige premium card;
+  - focus-visible ring/outline.
 
-**Acceptance criteria:**
+**Output:** token/pattern gap table.
 
-- Production surface resembles the prototype composition, not only the information content.
-- Muted-text audit passes.
-- Stale guard exists if Prestige is loaded async.
+**Acceptance criteria:** color/hover/active needs are not left implicit; future color changes have owners.
 
 ---
 
-## UI-SHELL-4 — Sidebar nav item and active state pattern
+## UI-SHELL-03 — Game shell skeleton ownership only
 
-**Goal:**  
-Create or choose the shared sidebar nav item pattern.
+**Goal:** keep or implement only the shell grid/areas and route containment.
+
+**Allowed files:**
+
+- `app-shell.html`;
+- `_game-shell.scss` only for named shell grid/areas and shell boundary styling when no utility exists.
+
+**Allowed new classes:** none beyond existing `mg-game-shell`, `mg-game-shell__topbar`, `mg-game-shell__sidebar`, `mg-game-shell__main` if already used by the shell.
+
+**Out of scope:** topbar content layout, brand mark, resources, selected server card, nav item pattern, dashboard.
+
+**Acceptance criteria:** shell renders topbar/sidebar/main; no guest/account flow; no utility shadowing.
+
+---
+
+## UI-SHELL-04 — Remove game shell guest/account/public leakage
+
+**Goal:** ensure game shell is only for active server + active hero context.
+
+**Allowed files:** shell/sidebar templates and minimal TS if current template still branches into guest/login/create-character.
+
+**Out of scope:** account entry shell and hero creation.
+
+**Acceptance criteria:** no `Guest`, `Login`, `Create character` or account/public flow is rendered inside game shell; blockers/redirects remain explicit.
+
+**Status:** Accepted on 2026-05-12. The shell/auth containment pass removes guest/login/create-character leakage from the authenticated game shell, keeps logged-in users with visible authenticated chrome/navigation, and hardens hard-refresh context restoration: `Auth.initialize()` shares the in-flight bootstrap, `ActiveServer` restores the preferred accessible server before default fallback, and `ActiveHero` restores the selected hero per `userId + serverId` before falling back to the first returned hero row. The sidebar server/hero switch copy is Polish. No DB/RPC/generated-type changes were made; manual smoke was user-side.
+
+---
+
+## UI-SHELL-05 — Main content containment and scroll boundary
+
+**Goal:** stabilize `main` and route content containment without touching visual patterns.
+
+**Allowed files:** `app-shell.html`, `_game-shell.scss` only if a structural shell gap exists.
+
+**Rules:** use `mg-container`, width, overflow and padding utilities if they exist. Do not write manual overflow/padding/width in SCSS.
+
+**Acceptance criteria:** main content scrolls, route content is contained, no feature layout is redesigned.
+
+---
+
+## UI-SHELL-06 — Shell boundary surfaces and theme tokens
+
+**Goal:** ensure topbar/sidebar/main boundaries use the global theme tokens established by UI-CORE-16 or current theme.
+
+**Allowed files:** `_game-shell.scss`, theme files only if a token gap is explicitly approved.
 
 **Scope:**
 
-- Existing nav/link patterns reuse check.
-- Active state with gold left inset.
-- Keyboard/focus states.
-- Decide whether `mg-card` is acceptable as temporary nav surface or whether a dedicated pattern is needed.
+- topbar border/background;
+- sidebar border/background;
+- main background inheritance;
+- no component-local color fixes.
 
-**Out of scope:**
+**Acceptance criteria:** no copied prototype rgba values; no random one-off color declarations; every declaration maps to current token.
 
-- topbar resource chips;
-- dashboard redesign.
+---
 
-**Acceptance criteria:**
+## UI-SHELL-07 — Topbar visual-anchor mapping, no code
 
-- No new local nav visual system hidden inside one feature.
-- If a new pattern is added, it is global/shared and documented.
-- Active state is not color-only.
+**Goal:** map topbar anchors to current HTML/components/utilities before coding.
+
+**Allowed changes:** none.
+
+**Required output:**
+
+| Topbar anchor | Current implementation | Existing utility/component | Gap | Next task owner |
+|---|---|---|---|---|
+| left Health | ... | ... | ... | ... |
+| XP/Level | ... | ... | ... | ... |
+| centered brand | ... | ... | ... | ... |
+| right notifications | ... | ... | ... | ... |
+| staff bell | ... | ... | ... | ... |
+| Drachma chip | ... | ... | ... | ... |
+| Materials chip | ... | ... | ... | ... |
+| Workforce chip | ... | ... | ... | ... |
+| responsive wrap | ... | ... | ... | ... |
+
+**Acceptance criteria:** no code; reviewer can approve UI-SHELL-08/09/10 ordering.
+
+---
+
+## UI-SHELL-08 — Topbar delegation boundary
+
+**Goal:** decide and implement where topbar composition lives.
+
+**Allowed files:** `app-shell.html`, `game-topbar.html`, `game-topbar.ts` only if imports are needed.
+
+**Rules:**
+
+- `app-shell` should own shell placement only.
+- `app-game-topbar` should own topbar content composition when visible.
+- Staff bell must be inside the right topbar zone or explicitly outside with centering proof.
+
+**Out of scope:** resource redesign, brand mark styling, health/XP data changes.
+
+**Acceptance criteria:** `app-shell` does not have parallel topbar children that break centering.
+
+---
+
+## UI-SHELL-09 — Topbar three-zone layout with existing utilities first
+
+**Goal:** implement the desktop left/center/right composition with the smallest possible production structure.
+
+**Allowed files:** `game-topbar.html`; `_game-shell.scss` only if no existing utility/grid pattern can express the three-zone layout.
+
+**Allowed new SCSS:** at most one structural `.mg-game-topbar` rule for three-zone grid, if and only if UI-SHELL-00/07 proved no exact utility/pattern exists.
+
+**Blocked:** `mg-game-topbar__hero`, `mg-game-topbar__resources`, `mg-game-topbar__brand`, `mg-game-topbar__metric`, or any BEM alias for flex/gap/width.
+
+**Acceptance criteria:** brand is centered relative to full topbar; left/right zones do not overlap.
+
+---
+
+## UI-SHELL-10 — Topbar notifications and staff placement
+
+**Goal:** place player notification bell and staff notification bell in the right zone without affecting brand centering.
+
+**Allowed files:** `game-topbar.html`, `game-topbar.ts` only for imports.
+
+**Out of scope:** notification styling, unread count logic, staff access logic.
+
+**Acceptance criteria:** player and staff notifications are right-zone items; app-shell fallback is only for hidden topbar or non-game context if still required.
+
+---
+
+## UI-SHELL-11 — Health display semantics
+
+**Goal:** display hero health honestly without implying unavailable current/max state.
+
+**Allowed files:** `game-topbar.html`, `game-topbar.ts`.
+
+**Rules:**
+
+- If only derived/max health exists, label must not imply live current HP unless current HP is available.
+- Do not create fake full bars.
+- Use existing `app-game-bar` only when `value` and `max` are meaningful.
+
+**Acceptance criteria:** health display semantics are clear and report names the data source.
+
+---
+
+## UI-SHELL-12 — XP / Level progress semantics
+
+**Goal:** display Level and XP progress from existing service/RPC/read model.
+
+**Allowed files:** `game-topbar.html`, `game-topbar.ts`.
+
+**Rules:**
+
+- Do not hardcode `experienceMax = 1000` unless that is already the canonical service output.
+- Prefer existing `Hero.getHeroExperienceProgress()` or DB-backed experience-to-next read path if current.
+- If next threshold is missing, show XP as value only and report dependency.
+
+**Acceptance criteria:** no new hardcoded progression semantics; XP bar appears only when max/threshold is real.
+
+---
+
+## UI-SHELL-13 — Resource data source and live amount boundary
+
+**Goal:** confirm resource amounts/per-hour use current hero/resource read path and do not invent resource semantics.
+
+**Allowed files:** `game-topbar.ts` and existing resource service only if necessary.
+
+**Rules:**
+
+- Drachma, Materials, Workforce are production resources.
+- Character Points must not be shown as produced resource.
+- Live amount calculation must reuse existing service/helper if one exists; if not, report why local calculation is still current behavior.
+
+**Acceptance criteria:** data source is named; no resource meaning is hardcoded beyond existing resource type keys.
+
+---
+
+## UI-SHELL-14 — Resource chip fallback using existing classes only
+
+**Goal:** implement compact stacked resource display without adding a new resource-chip SCSS pattern.
+
+**Allowed files:** `game-topbar.html` only unless TS resource display shape needs no new semantics.
+
+**Allowed classes:** existing `tag-badge`, `tag-badge--*`, `mg-card`, flex/grid/spacing utilities, icon classes.
+
+**Blocked:** `mg-resource-chip`, `mg-resource-chip__*`, local chip SCSS.
+
+**Required visual anchors:** icon, label, strong value, per-hour secondary line.
+
+**Acceptance criteria:** icons visible for `pi pi-cash`, `pi pi-marble`, `pi pi-workforce`; values strong; per-hour readable; layout does not break topbar.
+
+---
+
+## UI-SHELL-15 — Resource chip final pattern decision, no code unless explicitly approved
+
+**Goal:** decide whether a real global `mg-chip` / resource-chip pattern should be implemented now or deferred.
+
+**Allowed changes:** report only unless user explicitly approves runtime SCSS.
+
+**Output:**
+
+- current fallback screenshot/manual observation;
+- whether existing `tag-badge` fallback is visually sufficient;
+- whether `mg-chip` should be implemented in UI-CORE pattern work;
+- proposed class contract if needed: icon / label / value / rate.
+
+**Acceptance criteria:** no accidental resource chip SCSS in shell task.
+
+---
+
+## UI-SHELL-16 — Brand mark fallback inventory, no code
+
+**Goal:** verify brand asset state and fallback rule before editing the `M` mark.
+
+**Allowed changes:** none.
+
+**Scope:**
+
+- Check `icon-brand-registry.md`.
+- Check actual custom icon registry.
+- Check existing shell brand markup.
+- Confirm no dedicated `brand-mark-m` asset/key exists.
+
+**Acceptance criteria:** report says whether fallback CSS/text `M` is required.
+
+---
+
+## UI-SHELL-17 — Brand mark fallback implementation
+
+**Goal:** implement only the temporary `M` brand fallback if still needed.
+
+**Allowed files:** `game-topbar.html`, `_game-shell.scss` or a more appropriate global brand/icon SCSS file if one exists.
+
+**Allowed new class:** one class only, e.g. `mg-brand-mark-fallback`, if no better global pattern exists.
+
+**Rules:**
+
+- Do not use ordinary `tag-badge` if it makes the brand look like a random badge.
+- Do not copy prototype `.mb-brand-mark` CSS 1:1.
+- Use production tokens.
+
+**Acceptance criteria:** visible gold/navy `M` medallion direction is preserved; class is documented as temporary until `brand-mark-m`.
+
+---
+
+## UI-SHELL-18 — Topbar responsive wrapping smoke and minimal fix
+
+**Goal:** make topbar degrade without overlap at narrower widths.
+
+**Allowed files:** `game-topbar.html`, `_game-shell.scss` only for structural responsive grid if no utility exists.
+
+**Rules:**
+
+- No new visual pattern.
+- Use existing responsive utility classes first.
+- Do not solve mobile-perfect design here; avoid overlap and unreadable controls.
+
+**Acceptance criteria:** desktop and tablet/narrow shell do not overlap; report manual smoke or environment-blocked.
+
+---
+
+## UI-SHELL-19 — Sidebar context card visual-anchor mapping, no code
+
+**Goal:** map the selected server / Prestige card from prototype to production classes.
+
+**Allowed changes:** none.
+
+**Required mapping:**
+
+- compact premium surface;
+- selected server label/value/status;
+- separator between server and prestige;
+- Prestige label/rank/tier;
+- label muted, values strong;
+- status badge semantic.
+
+**Acceptance criteria:** report identifies whether existing `mg-card`/`mg-card--legend` fallback is sufficient or whether a context-card pattern is missing.
+
+---
+
+## UI-SHELL-20 — Sidebar context card data semantics
+
+**Goal:** verify selected server/status/Prestige data sources before visual work.
+
+**Allowed files:** `game-sidebar.ts` only if current data loading is wrong or stale-guard missing.
+
+**Rules:**
+
+- selected server from `ActiveServer`/current resolver;
+- Prestige from DB-backed public summary/read model;
+- no raw points in player-facing sidebar;
+- stale guard if async Prestige summary depends on active hero/server.
+
+**Acceptance criteria:** data source and stale guard are clear; no visual layout change required.
+
+---
+
+## UI-SHELL-21 — Sidebar selected server / Prestige card implementation
+
+**Goal:** implement the compact premium context card using existing surfaces/utilities first.
+
+**Allowed files:** `game-sidebar.html`, minimal `game-sidebar.ts` if existing display model needs no new domain logic.
+
+**Blocked:** new local/sidebar card SCSS unless UI-SHELL-19 approved a global/shared pattern task.
+
+**Acceptance criteria:** card resembles prototype composition, not just content; muted-text audit passes; server name and rank are strong.
+
+---
+
+## UI-SHELL-22 — Sidebar context card color/hover/active surface token check
+
+**Goal:** make sure the context card uses the same shell surface/token language as topbar and cards.
+
+**Allowed files:** global theme/surface SCSS only if a token/pattern gap was approved; otherwise template classes only.
+
+**Acceptance criteria:** no one-off rgba colors; any elevated/premium surface gap reported for future `mg-card--elevated` / context-card work.
+
+---
+
+## UI-SHELL-23 — Sidebar nav inventory, no code
+
+**Goal:** check existing nav/link/card/button patterns before touching nav items.
+
+**Allowed changes:** none.
+
+**Scope:**
+
+- Check current `game-sidebar` template and SCSS.
+- Check global link/card/badge/flex utilities.
+- Check whether a nav item pattern already exists.
+
+**Acceptance criteria:** report lists actual patterns checked and recommends either fallback or new global nav item pattern.
+
+---
+
+## UI-SHELL-24 — Sidebar navigation IA groups
+
+**Goal:** align player sidebar grouping without redesigning nav visuals.
+
+**Allowed files:** menu config and sidebar template only if labels/groups are wrong.
+
+**Required groups:**
+
+- Hero: Dashboard, Exploration, Attributes/Statistics, Challenges/Trials if current route exists, Armory;
+- World: Mansion/Estate, Vicinity, Trade, Auctions, PvP where current routes exist;
+- Reports/Notifications where current IA decides;
+- Operations/Staff/Admin separated from player navigation and access-gated.
+
+**Acceptance criteria:** no fake links; route visibility follows current access policy; no visual pattern work.
+
+---
+
+## UI-SHELL-25 — Sidebar nav item temporary fallback
+
+**Goal:** use existing classes for nav items until a final pattern is approved.
+
+**Allowed files:** `game-sidebar.html` only unless route config is wrong.
+
+**Rules:**
+
+- Prefer existing link/card utilities.
+- Do not add `mg-game-sidebar__nav-link` visual system.
+- If `mg-card` is used as nav surface, mark as temporary debt to UI-SHELL-27.
+
+**Acceptance criteria:** nav remains usable; no new nav SCSS except active inset if already baseline.
+
+---
+
+## UI-SHELL-26 — Sidebar active state gold inset
+
+**Goal:** implement or preserve active route gold inset as its own narrowly scoped task.
+
+**Allowed files:** global shell/sidebar SCSS only if no utility can express pseudo-element inset.
+
+**Rules:**
+
+- Active state must be visible and not color-only.
+- Parent link must use existing `position-relative` utility if needed.
+- Pseudo-element CSS is allowed only because utilities cannot be applied to `::before`.
+
+**Acceptance criteria:** active route has left gold inset; selector is safely scoped; no hover visual system added here.
+
+---
+
+## UI-SHELL-27 — Sidebar nav hover/focus color pass
+
+**Goal:** implement hover and focus-visible behavior for sidebar nav using tokens/global pattern, not local one-off colors.
+
+**Allowed files:** global/shared nav pattern SCSS if UI-SHELL-23 approved creating one; otherwise no code and report gap.
+
+**Scope:**
+
+- hover background/wash;
+- focus-visible outline/ring;
+- active + hover interaction;
+- text/icon contrast.
+
+**Acceptance criteria:** hover/focus matches accepted dark navy/gold/blue language; no copied prototype CSS; no unapproved local classes.
+
+---
+
+## UI-SHELL-28 — Sidebar icon registry and sizing pass
+
+**Goal:** ensure sidebar icons use existing custom/Prime/icon registry and stable sizing.
+
+**Allowed files:** menu config, sidebar template; no direct SVG refs unless current legacy menu already uses them and task explicitly preserves them.
+
+**Rules:**
+
+- Use custom icon registry keys where available.
+- Missing keys are reported, not silently replaced by emoji/prototype initials.
+- Icon sizing uses existing utilities/patterns.
+
+**Acceptance criteria:** icons render; missing icons are listed; icon-only controls have accessible labels if any.
+
+---
+
+## UI-SHELL-29 — Shell status/badge semantics pass
+
+**Goal:** clean shell badge/status usage so `muted` is not the default for important state.
+
+**Allowed files:** topbar/sidebar templates only.
+
+**Scope:**
+
+- server status;
+- membership/status chips;
+- resource labels vs values;
+- staff/admin badges;
+- notification count.
+
+**Rules:** labels may be muted; values/statuses must be normal/strong/semantic.
+
+**Acceptance criteria:** muted-text audit passes; no important value is muted.
+
+---
+
+## UI-SHELL-30 — Shell visual color interaction smoke
+
+**Goal:** compare production shell against accepted visual anchors after UI-SHELL-09 through UI-SHELL-29.
+
+**Allowed changes:** none unless reviewer explicitly approves tiny token/pattern fix.
+
+**Scope:**
+
+- screenshot or browser smoke at desktop width;
+- active nav visible;
+- hover/focus observed;
+- topbar centered brand;
+- resources readable;
+- server/prestige card resembles premium context card;
+- dark navy/gold/blue language visible.
+
+**Acceptance criteria:** report says matched / not matched / missing pattern for each anchor.
+
+---
+
+## UI-SHELL-31 — Shell cleanup: remove orphan classes and dead SCSS
+
+**Goal:** remove leftover shell/topbar/sidebar classes created during failed iterations.
+
+**Allowed files:** shell SCSS/templates only.
+
+**Scope:**
+
+- grep for `mg-game-topbar__*`, `mg-resource-chip*`, old shell aliases, unused brand/nav classes;
+- remove only if no production usage remains;
+- do not delete v2/prototype archive CSS.
+
+**Acceptance criteria:** no orphan production classes from failed shell iterations; build passes.
+
+---
+
+## UI-SHELL-32 — Shell final acceptance report
+
+**Goal:** produce a final decision-ready shell report before marking shell foundation accepted.
+
+**Allowed changes:** none.
+
+**Report must include:**
+
+- completed microtasks;
+- remaining deferred patterns;
+- exact SCSS classes kept for shell;
+- exact global/shared patterns added, if any;
+- visual anchors matched;
+- visual anchors still deferred;
+- DB/read model dependencies;
+- accessibility/responsive smoke;
+- manual smoke checklist.
+
+**Acceptance criteria:** reviewer/user can accept shell foundation or name remaining blockers without re-reading all implementation history.
 
 ---
 
@@ -1894,6 +2431,8 @@ Verification:
 **Out of scope:** account entry shell and hero creation.
 
 **Acceptance criteria:** no `Guest`, `Login`, `Create character` or account/public flow is rendered inside game shell; blockers/redirects remain explicit.
+
+**Status:** Accepted on 2026-05-12. The shell/auth containment pass removes guest/login/create-character leakage from the authenticated game shell, keeps logged-in users with visible authenticated chrome/navigation, and hardens hard-refresh context restoration: `Auth.initialize()` shares the in-flight bootstrap, `ActiveServer` restores the preferred accessible server before default fallback, and `ActiveHero` restores the selected hero per `userId + serverId` before falling back to the first returned hero row. The sidebar server/hero switch copy is Polish. No DB/RPC/generated-type changes were made; manual smoke was user-side.
 
 ---
 

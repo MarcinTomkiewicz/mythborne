@@ -1,32 +1,36 @@
-<div class="flex-col min-h-full">
-  <header class="mg-card border-0 position-sticky top-0 z-10 backdrop-blur-xl flex-row-between-center gap-md py-sm px-lg w-100">
-    @if (shouldShowTopbar()) {
-      <app-game-topbar></app-game-topbar>
-    } @else {
-      <div class="flex-1 flex-row-end-center">
-        <app-staff-notification-bell />
-      </div>
-    }
-  </header>
+@if (shouldShowShellChrome()) {
+  <div class="flex-col min-h-full">
+    <header class="mg-card border-0 position-sticky top-0 z-10 backdrop-blur-xl flex-row-between-center gap-md py-sm px-lg w-100">
+      @if (shouldShowTopbar()) {
+        <app-game-topbar></app-game-topbar>
+      } @else {
+        <div class="flex-1 flex-row-end-center">
+          <app-staff-notification-bell />
+        </div>
+      }
+    </header>
 
-  <div class="flex-row-start-stretch flex-1 w-100">
-    <aside class="mg-card border-0 flex-none w-px-250 overflow-y-auto">
-      <app-game-sidebar></app-game-sidebar>
-    </aside>
+    <div class="flex-row-start-stretch flex-1 w-100">
+      <aside class="mg-card border-0 flex-none w-px-250 overflow-y-auto">
+        <app-game-sidebar></app-game-sidebar>
+      </aside>
 
-    <main class="flex-1 overflow-y-auto w-100">
-      <div
-        class="mg-container py-lg w-100"
-        [class.max-w-none]="isWideContent()"
-      >
-        @if (isGameplayBlocked()) {
-          <app-membership-blocked-notice />
-        } @else if (isStaffGameplayBlocked()) {
-          <app-staff-gameplay-blocked-notice />
-        } @else {
-          <router-outlet></router-outlet>
-        }
-      </div>
-    </main>
+      <main class="flex-1 overflow-y-auto w-100">
+        <div
+          class="mg-container py-lg w-100"
+          [class.max-w-none]="isWideContent()"
+        >
+          @if (isGameplayBlocked()) {
+            <app-membership-blocked-notice />
+          } @else if (isStaffGameplayBlocked()) {
+            <app-staff-gameplay-blocked-notice />
+          } @else {
+            <router-outlet></router-outlet>
+          }
+        </div>
+      </main>
+    </div>
   </div>
-</div>
+} @else {
+  <router-outlet></router-outlet>
+}

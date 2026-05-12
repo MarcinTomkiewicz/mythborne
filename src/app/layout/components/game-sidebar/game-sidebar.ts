@@ -31,11 +31,9 @@ export class GameSidebar implements OnInit, OnDestroy {
   private readonly selectedServer$ = toObservable(this.activeServer.selectedServer);
   private prestigeSubscription?: Subscription;
 
-  readonly user = this.authState.user;
   readonly hero = this.authState.hero;
   readonly selectedServer = this.activeServer.selectedServer;
   readonly prestigeSummary = signal<GetHeroPrestigePublicSummaryRpcRow | null>(null);
-  readonly isLoggedIn = computed(() => !!this.user());
   readonly serverStatusLabel = computed(() =>
     humanizeKey(this.selectedServer()?.status ?? 'server_unavailable'),
   );

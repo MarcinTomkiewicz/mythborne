@@ -11,13 +11,17 @@ import {
 import { Row } from '../../types/supabase.types';
 import { AuthState } from '../auth/auth-state';
 import { Backend } from '../backend/backend';
+import { Platform } from '../platform/platform';
 import { ActiveServer } from '../server/active-server';
+
+const SELECTED_HERO_STORAGE_KEY_PREFIX = 'mythsworn.selectedHeroId';
 
 @Injectable({ providedIn: 'root' })
 export class ActiveHero {
   private readonly authState = inject(AuthState);
   private readonly backend = inject(Backend);
   private readonly activeServer = inject(ActiveServer);
+  private readonly platform = inject(Platform);
   private readonly _state = signal<ActiveHeroState | null>(null);
   private readonly _isLoading = signal(false);
   private readonly _error = signal<string | null>(null);
@@ -38,8 +42,17 @@ export class ActiveHero {
     this._error.set(null);
 
     return this.resolveSelectedServerId().pipe(
-      switchMap((serverId) => this.loadHeroRows(userId, serverId)),
-      map((heroRows) => this.resolveState(userId, heroRows)),
+      switchMap((serverId) =>
+        this.loadHeroRows(userId, serverId).pipe(
+          map((heroRows) =>
+            this.resolveState(
+              userId,
+              heroRows,
+              this.readStoredSelectedHeroId(userId, serverId),
+            ),
+          ),
+        ),
+      ),
       tap({
         next: (state) => {
           this._state.set(state);
@@ -83,6 +96,7 @@ export class ActiveHero {
         next: (state) => {
           this._state.set(state);
           this.authState.setHero(state.hero);
+          this.persistSelectedHero(userId, state.serverId, state.heroId);
           this._isLoading.set(false);
         },
         error: (error: unknown) => {
@@ -170,6 +184,7 @@ export class ActiveHero {
   private resolveState(
     userId: string,
     heroRows: Row<'hero'>[],
+    preferredHeroId: string | null,
   ): ActiveHeroState | null {
     const server = this.activeServer.selectedServer();
 
@@ -180,6 +195,7 @@ export class ActiveHero {
     const currentHero = this._state()?.heroRow ?? null;
     const heroRow =
       heroRows.find((row) => row.id === currentHero?.id) ??
+      heroRows.find((row) => row.id === preferredHeroId) ??
       heroRows[0] ??
       null;
     const hero = heroRow ? mapHero(heroRow) : null;
@@ -214,5 +230,53 @@ export class ActiveHero {
       hero,
       heroRow,
     };
+  }
+
+  private selectedHeroStorageKey(
+    userId: string | null,
+    serverId: string | null,
+  ): string | null {
+    return userId && serverId
+      ? `${SELECTED_HERO_STORAGE_KEY_PREFIX}.${userId}.${serverId}`
+      : null;
+  }
+
+  private readStoredSelectedHeroId(
+    userId: string | null,
+    serverId: string | null,
+  ): string | null {
+    const key = this.selectedHeroStorageKey(userId, serverId);
+
+    if (!key || !this.platform.isBrowser) {
+      return null;
+    }
+
+    try {
+      return window.localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+
+  private persistSelectedHero(
+    userId: string | null,
+    serverId: string | null,
+    heroId: string | null,
+  ): void {
+    const key = this.selectedHeroStorageKey(userId, serverId);
+
+    if (!key || !this.platform.isBrowser) {
+      return;
+    }
+
+    try {
+      if (heroId) {
+        window.localStorage.setItem(key, heroId);
+      } else {
+        window.localStorage.removeItem(key);
+      }
+    } catch {
+      // Storage is best-effort; selected server hero rows remain authoritative.
+    }
   }
 }

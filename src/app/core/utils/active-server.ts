@@ -25,6 +25,7 @@ export function resolveActiveServerState(
   rows: ActiveServerRows,
   userId: string | null,
   currentServer: SelectedGameServer | null,
+  preferredServerId: string | null = null,
 ): ResolvedActiveServerState {
   const selectedServers = toAccessibleServers(
     rows.servers,
@@ -33,7 +34,11 @@ export function resolveActiveServerState(
     userId,
     rows.globalRoleKey,
   );
-  const selectedServer = resolveSelectedServer(selectedServers, currentServer);
+  const selectedServer = resolveSelectedServer(
+    selectedServers,
+    currentServer,
+    preferredServerId,
+  );
 
   return {
     selectedServers,
@@ -158,9 +163,19 @@ function toAccessibleServers(
 function resolveSelectedServer(
   servers: SelectedGameServer[],
   currentServer: SelectedGameServer | null,
+  preferredServerId: string | null,
 ): SelectedGameServer | null {
   if (currentServer && servers.some((server) => server.id === currentServer.id)) {
     return servers.find((server) => server.id === currentServer.id) ?? null;
+  }
+
+  if (preferredServerId) {
+    const preferredServer =
+      servers.find((server) => server.id === preferredServerId) ?? null;
+
+    if (preferredServer) {
+      return preferredServer;
+    }
   }
 
   return (
