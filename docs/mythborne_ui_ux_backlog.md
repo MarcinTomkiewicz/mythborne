@@ -695,6 +695,8 @@ Verification:
 
 **Acceptance criteria:** no copied prototype rgba values; no random one-off color declarations; every declaration maps to current token.
 
+**Status:** Accepted with follow-up on 2026-05-12. Shell boundary styling now uses explicit `mg-game-shell__topbar`, `mg-game-shell__sidebar` and `mg-game-shell__main` structure classes instead of brittle structural selectors. The boundary declarations map to current theme tokens: `v.$color-bg`, `v.$color-bg-surface-elevated`, `v.$color-bg-surface` and `v.$color-border`; no `!important`, raw prototype colors, component-local color fixes, TS changes or specs were added. Final color/elevation matching remains deferred to UI-CORE-16 / later color pass, and manual smoke remains user-side.
+
 ---
 
 ## UI-SHELL-07 — Topbar visual-anchor mapping, no code

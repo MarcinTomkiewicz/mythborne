@@ -1,6 +1,6 @@
 @if (shouldShowShellChrome()) {
   <div class="mg-game-shell flex-col overflow-hidden">
-    <header class="mg-card border-0 position-sticky top-0 z-10 backdrop-blur-xl flex-row-between-center gap-md py-sm px-lg w-100">
+    <header class="mg-game-shell__topbar position-sticky top-0 z-10 backdrop-blur-xl flex-row-between-center gap-md py-sm px-lg w-100">
       @if (shouldShowTopbar()) {
         <app-game-topbar></app-game-topbar>
       } @else {
@@ -11,11 +11,11 @@
     </header>
 
     <div class="flex-row-start-stretch flex-1 min-h-0 w-100">
-      <aside class="mg-card border-0 flex-none w-px-250">
+      <aside class="mg-game-shell__sidebar flex-none w-px-250">
         <app-game-sidebar></app-game-sidebar>
       </aside>
 
-      <main class="flex-1 min-h-0 min-w-0 overflow-y-auto w-100">
+      <main class="mg-game-shell__main flex-1 min-h-0 min-w-0 overflow-y-auto w-100">
         <div
           class="mg-container py-lg w-100"
           [class.max-w-none]="isWideContent()"

@@ -1,7 +1,22 @@
-@use "../abstracts/variables" as v;
+@use "abstracts/variables" as v;
 
 .mg-game-shell {
   height: 100dvh;
+  background: v.$color-bg;
+}
+
+.mg-game-shell__topbar {
+  border-bottom: 1px solid v.$color-border;
+  background: v.$color-bg-surface-elevated;
+}
+
+.mg-game-shell__sidebar {
+  border-right: 1px solid v.$color-border;
+  background: v.$color-bg-surface;
+}
+
+.mg-game-shell__main {
+  background: inherit;
 }
 
 .mg-brand-mark-fallback {
