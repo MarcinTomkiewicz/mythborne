@@ -1,26 +1,23 @@
-import { toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   Component,
   computed,
+  DestroyRef,
   inject,
   input,
-  OnDestroy,
   OnInit,
-  PLATFORM_ID,
   signal,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { forkJoin, Observable, of, Subscription } from 'rxjs';
+import { forkJoin, interval, Observable, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { HeroExperienceProgress, IHeroDerived } from '../../../core/types/hero.types';
 import { FilterOperator } from '../../../core/enums/filter-operators';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { Row } from '../../../core/types/supabase.types';
 import {
-  GameTopbarResourceDefinition,
-  GameTopbarResourceDisplay,
   HeroResourceRow,
-} from '../../../core/types/game-topbar.types';
+  ResourceAmountDisplay,
+} from '../../../core/types/resource-display.types';
 import { AuthState } from '../../../core/services/auth/auth-state';
 import { Backend } from '../../../core/services/backend/backend';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
@@ -28,34 +25,27 @@ import { Hero } from '../../../core/services/hero/hero';
 import { HeroDerivedStats } from '../../../core/services/hero/hero-derived-stats';
 import { EstateAddresses } from '../../../core/services/estate/estate-addresses';
 import { TABLES } from '../../../core/constants/tables.const';
+import { Platform } from '../../../core/services/platform/platform';
+import { CORE_RESOURCE_DISPLAY_DEFINITIONS } from '../../../core/config/resource-display.config';
 import { GameBar } from '../../../shared/game-bar/game-bar';
 import { NotificationBell } from '../notification-bell/notification-bell';
 import { StaffNotificationBell } from '../staff-notification-bell/staff-notification-bell';
-
-const RESOURCE_DEFINITIONS: GameTopbarResourceDefinition[] = [
-  { type: 'drachma', label: 'Drachma' },
-  { type: 'materials', label: 'Materials' },
-  { type: 'workforce', label: 'Workforce' },
-];
 
 @Component({
   selector: 'app-game-topbar',
   imports: [GameBar, NotificationBell, StaffNotificationBell],
   templateUrl: './game-topbar.html',
-  host: { class: 'd-block flex-1 w-100' },
 })
-export class GameTopbar implements OnInit, OnDestroy {
+export class GameTopbar implements OnInit {
   private readonly authState = inject(AuthState);
   private readonly activeHero = inject(ActiveHero);
   private readonly heroService = inject(Hero);
   private readonly heroDerivedStats = inject(HeroDerivedStats);
   private readonly estateAddresses = inject(EstateAddresses);
   private readonly backend = inject(Backend);
-  private readonly platformId = inject(PLATFORM_ID);
+  private readonly platform = inject(Platform);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly activeHeroState$ = toObservable(this.activeHero.state);
-
-  private heroSubscription?: Subscription;
-  private tickHandle: number | null = null;
 
   readonly showHeroContent = input(true);
   readonly currentTime = signal(Date.now());
@@ -85,10 +75,10 @@ export class GameTopbar implements OnInit, OnDestroy {
   readonly experienceToNextLevel = computed(
     () => this.experienceProgress()?.experienceToNextLevel ?? 0,
   );
-  readonly resourceDisplay = computed<GameTopbarResourceDisplay[]>(() => {
+  readonly resourceDisplay = computed<ResourceAmountDisplay[]>(() => {
     this.currentTime();
 
-    return RESOURCE_DEFINITIONS.map((definition) => {
+    return CORE_RESOURCE_DISPLAY_DEFINITIONS.map((definition) => {
       const resource = this.resources().find(
         (entry) => entry.resource_type === definition.type
       );
@@ -102,9 +92,10 @@ export class GameTopbar implements OnInit, OnDestroy {
   });
 
   ngOnInit() {
-    this.heroSubscription = this.activeHeroState$
+    this.activeHeroState$
       .pipe(
         switchMap((state) => this.loadTopbarState(state)),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((payload) => {
         if (!payload) {
@@ -118,22 +109,16 @@ export class GameTopbar implements OnInit, OnDestroy {
         this.resources.set(payload.resources);
       });
 
-    if (isPlatformBrowser(this.platformId)) {
-      this.tickHandle = window.setInterval(() => {
-        this.currentTime.set(Date.now());
-      }, 1000);
+    if (this.platform.isBrowser) {
+      interval(1000)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => this.currentTime.set(Date.now()));
     }
 
     if (this.authState.user() && !this.activeHero.state()) {
-      this.activeHero.loadActiveHero().subscribe();
-    }
-  }
-
-  ngOnDestroy() {
-    this.heroSubscription?.unsubscribe();
-
-    if (this.tickHandle !== null) {
-      window.clearInterval(this.tickHandle);
+      this.activeHero.loadActiveHero()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe();
     }
   }
 

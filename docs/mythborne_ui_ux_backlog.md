@@ -831,6 +831,8 @@ Verification:
 
 **Acceptance criteria:** data source is named; no resource meaning is hardcoded beyond existing resource type keys.
 
+**Status:** Accepted on 2026-05-12. `game-topbar` keeps the current active-hero `hero_resources` read path for resource rows and the existing live amount behavior based on `amount`, `per_hour` and `updated_at`, after checking that no shared live-amount helper exists. Drachma, Materials and Workforce display definitions now live in shared `CORE_RESOURCE_DISPLAY_DEFINITIONS` under `core/config/resource-display.config.ts`, labels come from `resourceTypeLabel(...)`, shared resource display types live in `core/types/resource-display.types.ts`, and the obsolete `game-topbar.types.ts` split was removed. Character Points are not shown as a produced resource. No HTML/SCSS visual changes, services, DB/RPC/generated-type edits or broad resource architecture were added; manual smoke remains user-side.
+
 ---
 
 ## UI-SHELL-14 — Resource chip fallback using existing classes only
