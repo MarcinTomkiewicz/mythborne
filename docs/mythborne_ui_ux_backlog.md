@@ -1022,6 +1022,8 @@ Verification:
 - status jest semantyczny;
 - separator/rytm carda zbliżony do prototypu.
 
+**Status:** Accepted on 2026-05-12. Sidebar context now uses a shared/global `mg-context-card` pattern instead of local/sidebar SCSS or `mg-card--legend`. Hero, selected server/status and Prestige live in one compact context card with separators; the separate sidebar `M` block was removed. Server/hero/prestige values remain strong, status and rank use semantic badges, spacing uses existing spacing tokens, `letter-spacing: 0.15em` remains a label typography detail, and `v.$shadow-soft` remains until a semantic premium/elevated shadow variable exists. No TS, DB/RPC, generated-type or sidebar data semantics changes were added. Manual visual smoke remains user-side.
+
 ---
 
 ## UI-SHELL-20 — Sidebar context data and stale guard cleanup

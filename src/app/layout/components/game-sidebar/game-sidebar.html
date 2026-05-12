@@ -1,44 +1,53 @@
-<aside class="flex-col gap-md min-h-full w-100 p-md">
-  <div class="mg-card flex-row-start-center gap-md">
-    <span class="tag-badge tag-badge--golden" aria-hidden="true">M</span>
-
-    <div class="flex-col gap-xs">
-      <p class="heading-color mb-0">
-        <strong>{{ hero()?.name ?? 'Active hero required' }}</strong>
-      </p>
-      @if (hero()) {
-        <p class="muted-text mb-0">Level {{ hero()?.level || 1 }}</p>
-      } @else {
-        <span class="tag-badge tag-badge--warn">Hero context missing</span>
-      }
+<aside class="flex-col gap-md min-h-full w-100 py-md px-sm">
+  <section class="mg-context-card w-100" aria-label="Selected world context">
+    <div class="mg-context-card__section">
+      <span class="mg-context-card__label">Hero</span>
+      <div class="mg-context-card__value-row">
+        <strong class="mg-context-card__value">
+          {{ hero()?.name ?? 'Active hero required' }}
+        </strong>
+        @if (hero()) {
+          <span class="tag-badge tag-badge--golden">
+            Level {{ hero()?.level || 1 }}
+          </span>
+        } @else {
+          <span class="tag-badge tag-badge--warn">Hero context missing</span>
+        }
+      </div>
     </div>
-  </div>
 
-  <app-session-logout-button />
+    <div class="mg-context-card__section mg-context-card__section--separated">
+      <span class="mg-context-card__label">Selected server</span>
+      <div class="mg-context-card__value-row">
+        <strong class="mg-context-card__value">
+          {{ selectedServer()?.name ?? 'No server selected' }}
+        </strong>
+        <span [class]="serverStatusClass()">{{ serverStatusLabel() }}</span>
+      </div>
+    </div>
 
-  <section class="mg-card mg-card--legend flex-col gap-sm" aria-label="Selected world context">
-    <p class="card-legend mb-sm">World</p>
-    <div class="flex-row-between-center gap-sm">
-      <span class="muted-text">Server</span>
-      <strong class="heading-color">{{ selectedServer()?.name ?? 'No server selected' }}</strong>
-    </div>
-    <div class="flex-row-between-center gap-sm">
-      <span class="muted-text">Status</span>
-      <span [class]="serverStatusClass()">{{ serverStatusLabel() }}</span>
-    </div>
     <a class="tag-badge tag-badge--muted" routerLink="/auth/server-entry">
       Zmień serwer / postać
     </a>
-    <div class="flex-row-between-center gap-sm">
-      <span class="muted-text">Prestige</span>
-      <strong class="heading-color">
-        {{ prestigeSummary()?.player_label ?? 'Prestige unavailable' }}
-      </strong>
+
+    <div class="mg-context-card__section mg-context-card__section--separated">
+      <span class="mg-context-card__label">Prestige</span>
+      <div class="mg-context-card__value-row">
+        <strong class="mg-context-card__value">
+          {{ prestigeSummary()?.player_label ?? 'Prestige unavailable' }}
+        </strong>
+        @if (prestigeSummary()?.rank_number) {
+          <span class="tag-badge tag-badge--golden">
+            Rank {{ prestigeSummary()?.rank_number }}
+          </span>
+        }
+      </div>
     </div>
   </section>
 
-  <nav class="flex-col gap-xs">
+  <app-session-logout-button />
 
+  <nav class="flex-col gap-xs">
     <div class="mg-game-sidebar__nav-list flex-col gap-xs">
       @for (item of menuItems(); track item.title) {
         <a

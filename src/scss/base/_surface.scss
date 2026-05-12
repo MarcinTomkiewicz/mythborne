@@ -1,4 +1,5 @@
-@use "../abstracts/variables" as v;
+@use "sass:map";
+@use "abstracts/variables" as v;
 
 .mg-card {
   border-radius: v.$radius-lg;
@@ -42,4 +43,55 @@
     v.$color-shell-surface 50%,
     v.$color-shell-surface 100%
   );
+}
+
+.mg-context-card {
+  display: grid;
+  gap: map.get(v.$spacings, "md");
+  padding: map.get(v.$spacings, "md");
+  border: 1px solid v.$color-shell-border;
+  border-radius: v.$radius-lg;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-surface-elevated 78%, transparent),
+      color-mix(in srgb, v.$color-shell-surface 82%, transparent)
+    ),
+    radial-gradient(
+      circle at 80% 0%,
+      color-mix(in srgb, v.$color-secondary 16%, transparent),
+      transparent 10rem
+    );
+  box-shadow: v.$shadow-soft;
+}
+
+.mg-context-card__section {
+  display: grid;
+  gap: map.get(v.$spacings, "sm");
+}
+
+.mg-context-card__section--separated {
+  padding-top: map.get(v.$spacings, "md");
+  border-top: 1px solid color-mix(in srgb, v.$color-shell-border 48%, transparent);
+}
+
+.mg-context-card__label {
+  color: v.$color-text-muted;
+  font-size: map.get(v.$font-sizes, "xs");
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.mg-context-card__value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: map.get(v.$spacings, "sm");
+}
+
+.mg-context-card__value {
+  color: v.$color-text;
+  font-weight: 800;
 }
