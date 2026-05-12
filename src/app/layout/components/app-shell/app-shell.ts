@@ -8,7 +8,6 @@ import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-polic
 import { GameSidebar } from '../game-sidebar/game-sidebar';
 import { GameTopbar } from '../game-topbar/game-topbar';
 import { MembershipBlockedNotice } from '../membership-blocked-notice/membership-blocked-notice';
-import { StaffNotificationBell } from '../staff-notification-bell/staff-notification-bell';
 import { StaffGameplayBlockedNotice } from '../staff-gameplay-blocked-notice/staff-gameplay-blocked-notice';
 
 @Component({
@@ -18,7 +17,6 @@ import { StaffGameplayBlockedNotice } from '../staff-gameplay-blocked-notice/sta
     GameSidebar,
     GameTopbar,
     MembershipBlockedNotice,
-    StaffNotificationBell,
     StaffGameplayBlockedNotice,
   ],
   templateUrl: './app-shell.html',
@@ -64,5 +62,7 @@ export class AppShell {
   readonly isStaffGameplayBlocked = computed(
     () => this.isGameplayRoute() && this.staffAccessPolicy().isStaffGameplayBlocked,
   );
-  readonly shouldShowTopbar = computed(() => !this.isStaffGameplayBlocked());
+  readonly shouldShowHeroTopbarContent = computed(
+    () => !this.isStaffGameplayBlocked(),
+  );
 }

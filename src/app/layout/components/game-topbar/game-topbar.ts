@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  input,
   OnDestroy,
   OnInit,
   PLATFORM_ID,
@@ -56,6 +57,7 @@ export class GameTopbar implements OnInit, OnDestroy {
   private heroSubscription?: Subscription;
   private tickHandle: number | null = null;
 
+  readonly showHeroContent = input(true);
   readonly currentTime = signal(Date.now());
   readonly hero = signal<Row<'hero'> | null>(null);
   readonly derived = signal<IHeroDerived | null>(null);
@@ -63,7 +65,12 @@ export class GameTopbar implements OnInit, OnDestroy {
   readonly currentAddress = signal<string | null>(null);
   readonly resources = signal<HeroResourceRow[]>([]);
 
-  readonly isVisible = computed(() => !!this.authState.hero());
+  readonly hasHeroContent = computed(
+    () => this.showHeroContent() && !!this.authState.hero(),
+  );
+  readonly shouldRenderTopbarContent = computed(
+    () => this.hasHeroContent() || !this.showHeroContent(),
+  );
   readonly healthValue = computed(() => Math.max(this.derived()?.health ?? 0, 0));
   readonly experienceValue = computed(() => Math.max(this.hero()?.experience ?? 0, 0));
   readonly experienceToNextLevel = computed(

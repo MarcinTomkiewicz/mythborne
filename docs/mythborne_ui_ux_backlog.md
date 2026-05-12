@@ -721,6 +721,8 @@ Verification:
 
 **Acceptance criteria:** no code; reviewer can approve UI-SHELL-08/09/10 ordering.
 
+**Status:** Accepted on 2026-05-12. Completed as `docs/ui-ux/ui-shell-07-topbar-anchor-mapping.md`. The mapping separates prototype anchors from current production implementation, confirms `app-shell` as shell placement and `app-game-topbar` as the normal topbar content owner, and identifies gaps for guaranteed desktop brand centering, temporary `tag-badge` resource chips, staff fallback containment, and Health/XP/resource runtime semantics. No Angular, SCSS, TS, specs, generated types or runtime verification were added.
+
 ---
 
 ## UI-SHELL-08 — Topbar delegation boundary
@@ -738,6 +740,8 @@ Verification:
 **Out of scope:** resource redesign, brand mark styling, health/XP data changes.
 
 **Acceptance criteria:** `app-shell` does not have parallel topbar children that break centering.
+
+**Status:** Accepted with follow-up on 2026-05-12. `app-shell` now owns only shell/header placement and renders `app-game-topbar` with a focused `showHeroContent` ownership input. `app-game-topbar` owns normal topbar content and the staff-only fallback composition; `StaffNotificationBell` was removed from `app-shell`. No resource redesign, brand styling, Health/XP data changes, SCSS, routes, generated types or extra specs were added. Follow-up: `GameTopbar` still initializes hero/resource loading when `showHeroContent=false`; leave this alone unless a later focused cleanup scopes it.
 
 ---
 

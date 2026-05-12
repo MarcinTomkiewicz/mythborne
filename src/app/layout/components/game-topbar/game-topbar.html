@@ -1,78 +1,84 @@
-@if (isVisible()) {
+@if (shouldRenderTopbarContent()) {
   <section
     class="flex-row-between-center flex-col-lg gap-md w-100"
-    aria-label="Hero status and resources"
+    [attr.aria-label]="hasHeroContent() ? 'Hero status and resources' : 'Staff notifications'"
   >
-    <div class="flex-row-start-center flex-wrap gap-sm flex-1">
-      <div class="tag-badge tag-badge--muted gap-sm">
-        <i class="pi pi-heart" aria-hidden="true"></i>
-        <span>Health</span>
-        <strong class="heading-color">{{ healthValue() }}</strong>
-      </div>
-
-      <div class="tag-badge tag-badge--muted gap-sm min-w-250 w-100-xs">
-        <i class="pi pi-sun-eclipse" aria-hidden="true"></i>
-        <div class="flex-col gap-xs flex-1">
-          <div class="flex-row-between-center gap-sm">
-            <span>Level {{ hero()?.level ?? 1 }}</span>
-            <strong class="heading-color">
-              XP {{ experienceValue() }}
-              @if (experienceToNextLevel() > 0) {
-                / {{ experienceToNextLevel() }}
-              }
-            </strong>
-          </div>
-
-          @if (experienceToNextLevel() > 0) {
-            <app-game-bar
-              [value]="experienceValue()"
-              [max]="experienceToNextLevel()"
-              type="xp"
-              [segments]="10"
-              [compact]="true"
-              [showLabel]="false"
-              [showValue]="false"
-            />
-          }
-        </div>
-      </div>
-    </div>
-
-    <div class="flex-row-center-center gap-sm flex-none min-w-200 text-left" aria-label="Mythsworn">
-      <span class="mg-brand-mark-fallback" aria-hidden="true">M</span>
-      <div class="flex-col gap-xs">
-        <h1 class="mg-section__title mg-section__title--sm mg-section__title--no-margin">
-          Mythsworn
-        </h1>
-        <p class="muted-text mb-0">{{ currentAddress() ?? 'Address unavailable' }}</p>
-      </div>
-    </div>
-
-    <div class="flex-row-end-center flex-row-start-center-lg flex-wrap gap-sm flex-1">
-      <app-notification-bell />
-      <app-staff-notification-bell />
-
-      @for (resource of resourceDisplay(); track resource.type) {
+    @if (hasHeroContent()) {
+      <div class="flex-row-start-center flex-wrap gap-sm flex-1">
         <div class="tag-badge tag-badge--muted gap-sm">
-          @switch (resource.type) {
-            @case ('drachma') {
-              <i class="pi pi-cash" aria-hidden="true"></i>
-            }
-            @case ('materials') {
-              <i class="pi pi-marble" aria-hidden="true"></i>
-            }
-            @case ('workforce') {
-              <i class="pi pi-workforce" aria-hidden="true"></i>
-            }
-          }
-
-          <span class="flex-col gap-xs">
-            <span>{{ resource.label }}</span>
-            <strong class="heading-color">{{ resource.amount }}</strong>
-            <span class="muted-text">+{{ resource.perHour }}/h</span>
-          </span>
+          <i class="pi pi-heart" aria-hidden="true"></i>
+          <span>Health</span>
+          <strong class="heading-color">{{ healthValue() }}</strong>
         </div>
-      }
-    </div>
+
+        <div class="tag-badge tag-badge--muted gap-sm min-w-250 w-100-xs">
+          <i class="pi pi-sun-eclipse" aria-hidden="true"></i>
+          <div class="flex-col gap-xs flex-1">
+            <div class="flex-row-between-center gap-sm">
+              <span>Level {{ hero()?.level ?? 1 }}</span>
+              <strong class="heading-color">
+                XP {{ experienceValue() }}
+                @if (experienceToNextLevel() > 0) {
+                  / {{ experienceToNextLevel() }}
+                }
+              </strong>
+            </div>
+
+            @if (experienceToNextLevel() > 0) {
+              <app-game-bar
+                [value]="experienceValue()"
+                [max]="experienceToNextLevel()"
+                type="xp"
+                [segments]="10"
+                [compact]="true"
+                [showLabel]="false"
+                [showValue]="false"
+              />
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="flex-row-center-center gap-sm flex-none min-w-200 text-left" aria-label="Mythsworn">
+        <span class="mg-brand-mark-fallback" aria-hidden="true">M</span>
+        <div class="flex-col gap-xs">
+          <h1 class="mg-section__title mg-section__title--sm mg-section__title--no-margin">
+            Mythsworn
+          </h1>
+          <p class="muted-text mb-0">{{ currentAddress() ?? 'Address unavailable' }}</p>
+        </div>
+      </div>
+
+      <div class="flex-row-end-center flex-row-start-center-lg flex-wrap gap-sm flex-1">
+        <app-notification-bell />
+        <app-staff-notification-bell />
+
+        @for (resource of resourceDisplay(); track resource.type) {
+          <div class="tag-badge tag-badge--muted gap-sm">
+            @switch (resource.type) {
+              @case ('drachma') {
+                <i class="pi pi-cash" aria-hidden="true"></i>
+              }
+              @case ('materials') {
+                <i class="pi pi-marble" aria-hidden="true"></i>
+              }
+              @case ('workforce') {
+                <i class="pi pi-workforce" aria-hidden="true"></i>
+              }
+            }
+
+            <span class="flex-col gap-xs">
+              <span>{{ resource.label }}</span>
+              <strong class="heading-color">{{ resource.amount }}</strong>
+              <span class="muted-text">+{{ resource.perHour }}/h</span>
+            </span>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="flex-1 flex-row-end-center">
+        <app-staff-notification-bell />
+      </div>
+    }
   </section>
 }
