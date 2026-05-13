@@ -1600,6 +1600,8 @@ Global UI-DASHBOARD rules:
 
 ## UI-DASHBOARD-04 — Primary hero action strip
 
+**Status:** Accepted on 2026-05-13 as a desktop-first action strip. The dashboard now shows a small `Hero actions / Next steps` strip with real route CTAs only: neutral `Continue Exploration` to `/game/exploration`, conditional `Spend Character Points` to `/hero/attributes` only when unspent Character Points are available, and conditional `Open Vicinity` to `/game/vicinity` only when the real estate address exists. Armory and Reports actions remain omitted until scoped dashboard equipment preview or unread/action-needed report state exists. No TS/services, dashboard-local SCSS, new classes, fake data, generated type edits or responsive redesign were added.
+
 **Goal:** provide a small set of immediate, hero-relevant next actions without duplicating the sidebar.
 
 **Allowed actions only if routes/flows exist:**

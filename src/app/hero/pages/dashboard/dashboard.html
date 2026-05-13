@@ -87,6 +87,31 @@
     </div>
   </section>
 
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Hero actions</p>
+        <h3 class="mg-section__title mg-section__title--xs mb-0">Next steps</h3>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <a routerLink="/game/exploration" class="tag-badge tag-badge--info">
+          Continue Exploration
+        </a>
+        @if (page.characterPoints() > 0) {
+          <a routerLink="/hero/attributes" class="tag-badge tag-badge--warn">
+            Spend Character Points
+          </a>
+        }
+        @if (page.estateAddress()) {
+          <a routerLink="/game/vicinity" class="tag-badge tag-badge--muted">
+            Open Vicinity
+          </a>
+        }
+      </div>
+    </div>
+  </section>
+
   <div class="grid-1-1 gap-xl w-100">
     <section class="mg-card p-lg w-100">
       <div class="flex-row-between-center gap-md mb-md">
