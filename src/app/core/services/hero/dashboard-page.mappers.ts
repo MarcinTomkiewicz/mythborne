@@ -14,8 +14,7 @@ export interface DashboardBaseStatRow {
 export interface DashboardDerivedStatRow {
   key: string;
   label: string;
-  value: number | string;
-  damageRows: HeroRuntimeDamageRow[];
+  value: number | string | null;
 }
 
 export interface DashboardHealthSource {
@@ -63,32 +62,39 @@ export function mapDashboardHealthDisplay(
 export function mapDashboardDerivedStatRows(
   runtime: HeroDashboardRuntimeStatsReadModel | null,
 ): DashboardDerivedStatRow[] {
+  if (!runtime) {
+    return [];
+  }
+
   return [
-    {
-      key: 'damage',
-      label: 'Damage',
-      value: runtime?.damageRows.length ? '' : 'No attack sources returned',
-      damageRows: runtime?.damageRows ?? [],
-    },
-    derivedRow('defense', 'Defense', runtime?.defense ?? 0),
-    derivedRow('luck', 'Luck', runtime?.luck ?? 0),
+    ...runtime.damageRows.map(damageRow),
+    derivedRow('defense', 'Defense', runtime.defense),
+    derivedRow('luck', 'Luck', runtime.luck),
     derivedRow(
       'critical_chance',
       'Critical chance',
-      percentValue(runtime?.criticalChanceBonus ?? 0),
+      percentValue(runtime.criticalChanceBonus),
     ),
     derivedRow(
       'critical_damage',
       'Critical damage',
-      percentValue(runtime?.criticalDamage ?? 0),
+      percentValue(runtime.criticalDamage),
     ),
     derivedRow(
       'evasion',
       'Evasion',
-      percentValue(runtime?.evasionChanceBonus ?? 0),
+      percentValue(runtime.evasionChanceBonus),
     ),
-    derivedRow('attack_count', 'Attack count', runtime?.attackCount ?? 0),
+    derivedRow('attack_count', 'Attack count', runtime.attackCount),
   ];
+}
+
+function damageRow(row: HeroRuntimeDamageRow): DashboardDerivedStatRow {
+  return {
+    key: `damage-${row.key}`,
+    label: row.label,
+    value: row.displayValue || null,
+  };
 }
 
 function derivedRow(
@@ -100,7 +106,6 @@ function derivedRow(
     key,
     label,
     value,
-    damageRows: [],
   };
 }
 

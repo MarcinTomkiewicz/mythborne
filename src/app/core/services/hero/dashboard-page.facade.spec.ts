@@ -216,21 +216,14 @@ describe('DashboardPageFacade', () => {
 
     expect(runtimeStats.getActiveHeroRuntimeStats).toHaveBeenCalled();
     expect(facade.derivedStatRows()).toEqual([
-      {
-        key: 'damage',
-        label: 'Damage',
-        value: '',
-        damageRows: [
-          { key: 'main_hand', label: 'Demonic Dagger', displayValue: '21-28' },
-          { key: 'off_hand', label: 'Unarmed', displayValue: '20-21' },
-        ],
-      },
-      { key: 'defense', label: 'Defense', value: 104, damageRows: [] },
-      { key: 'luck', label: 'Luck', value: 3, damageRows: [] },
-      { key: 'critical_chance', label: 'Critical chance', value: '2%', damageRows: [] },
-      { key: 'critical_damage', label: 'Critical damage', value: '50%', damageRows: [] },
-      { key: 'evasion', label: 'Evasion', value: '8%', damageRows: [] },
-      { key: 'attack_count', label: 'Attack count', value: 2, damageRows: [] },
+      { key: 'damage-main_hand', label: 'Demonic Dagger', value: '21-28' },
+      { key: 'damage-off_hand', label: 'Unarmed', value: '20-21' },
+      { key: 'defense', label: 'Defense', value: 104 },
+      { key: 'luck', label: 'Luck', value: 3 },
+      { key: 'critical_chance', label: 'Critical chance', value: '2%' },
+      { key: 'critical_damage', label: 'Critical damage', value: '50%' },
+      { key: 'evasion', label: 'Evasion', value: '8%' },
+      { key: 'attack_count', label: 'Attack count', value: 2 },
     ]);
     expect(facade.derivedDisplay().health).toBe(120);
     expect(facade.healthDisplay()).toEqual({

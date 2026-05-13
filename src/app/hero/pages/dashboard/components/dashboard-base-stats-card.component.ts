@@ -4,7 +4,7 @@ import { DashboardPageFacade } from '../../../../core/services/hero/dashboard-pa
 @Component({
   selector: 'app-dashboard-base-stats-card',
   standalone: true,
-  host: { class: 'd-block w-100' },
+  host: { class: 'd-block w-100 h-100' },
   templateUrl: './dashboard-base-stats-card.component.html',
 })
 export class DashboardBaseStatsCardComponent {

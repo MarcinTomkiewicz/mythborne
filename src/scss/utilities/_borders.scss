@@ -1,3 +1,9 @@
+@use "../abstracts/variables" as v;
+
 .border-0 {
   border: 0 !important;
+}
+
+.border-bottom {
+  border-bottom: 1px solid v.$color-border !important;
 }

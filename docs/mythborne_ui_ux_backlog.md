@@ -1664,6 +1664,8 @@ Global UI-DASHBOARD rules:
 
 ## UI-DASHBOARD-06 — Derived stats card
 
+**Status:** Accepted on 2026-05-13. Derived Stats now render as a compact full-width row list from dashboard runtime read-model rows instead of repeated stat cards. Damage rows use the DB-owned `damage_rows_json` display contract through the dashboard runtime mapper, with main-hand/off-hand labels coming from the runtime row label and values shown only when the runtime row exposes a damage display. Defense, Luck, critical chance, critical damage, evasion and attack count remain player-safe runtime rows. Row rhythm uses existing global utilities (`flex-row-between-end`, `border-bottom`, `pb-xs`, `color-muted`, `small-caps`, `uppercase`, `text-xs`, `color-heading`, `text-md`) and the Hero Stats / Derived Stats cards are height-aligned with existing height/host utilities. Item popover is intentionally deferred because the dashboard damage row contract exposes no stable item reference; future integration belongs to the shared UI-CORE-6 / UI-ITEMS item popover contract.
+
 **Goal:** render current derived combat/progression stats without exposing raw debug formula internals.
 
 **Data source:**

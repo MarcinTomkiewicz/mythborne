@@ -22,6 +22,10 @@ $font-weights: (
   "black": 900,
 );
 
+$text-transforms: (
+  "uppercase": uppercase,
+);
+
 /* =========================================================
    FONT SIZE
    ========================================================= */
@@ -39,5 +43,15 @@ $font-weights: (
 @each $name, $value in $font-weights {
   .font-#{$name} {
     font-weight: $value !important;
+  }
+}
+
+/* =========================================================
+   TEXT TRANSFORM
+   ========================================================= */
+
+@each $name, $value in $text-transforms {
+  .#{$name} {
+    text-transform: $value !important;
   }
 }
