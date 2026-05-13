@@ -16,6 +16,7 @@ import {
   HeroDashboardRuntimeStatsReadModel,
   HeroRuntimeDamageRow,
 } from './hero-dashboard-runtime-stats';
+import { ActiveServer } from '../server/active-server';
 
 interface DerivedStatRow {
   key: string;
@@ -31,6 +32,9 @@ export class DashboardPageFacade {
   private readonly characterPointHistory = inject(CharacterPointHistory);
   private readonly statsService = inject(StatsService);
   private readonly originsService = inject(Origins);
+  private readonly activeServer = inject(ActiveServer);
+
+  readonly selectedServer = this.activeServer.selectedServer;
 
   heroName = signal('');
   level = signal(1);

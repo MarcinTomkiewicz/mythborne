@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { Hero } from './hero';
@@ -6,11 +7,14 @@ import { StatsService } from '../stats/stats';
 import { DashboardPageFacade } from './dashboard-page.facade';
 import { CharacterPointHistory } from './character-point-history';
 import { HeroDashboardRuntimeStats } from './hero-dashboard-runtime-stats';
+import { ActiveServer } from '../server/active-server';
+import { SelectedGameServer } from '../../interfaces/server/active-server.interface';
 
 describe('DashboardPageFacade', () => {
   let facade: DashboardPageFacade;
   let hero: jasmine.SpyObj<Hero>;
   let runtimeStats: jasmine.SpyObj<HeroDashboardRuntimeStats>;
+  let selectedServer: ReturnType<typeof signal<SelectedGameServer | null>>;
 
   beforeEach(() => {
     hero = jasmine.createSpyObj<Hero>('Hero', [
@@ -43,6 +47,21 @@ describe('DashboardPageFacade', () => {
         experiencePercent: 25,
       }),
     );
+    selectedServer = signal<SelectedGameServer | null>({
+      id: 'server-1',
+      key: 'sandbox',
+      name: 'Sandbox',
+      kind: 'sandbox',
+      status: 'live',
+      description: null,
+      launchedAt: null,
+      archivedAt: null,
+      membershipStatus: 'active',
+      membership: null,
+      staffRole: null,
+      canManage: false,
+      canUseAsSandbox: true,
+    });
 
     runtimeStats = jasmine.createSpyObj<HeroDashboardRuntimeStats>('HeroDashboardRuntimeStats', {
       getActiveHeroRuntimeStats: of({
@@ -102,6 +121,10 @@ describe('DashboardPageFacade', () => {
             ]),
           }),
         },
+        {
+          provide: ActiveServer,
+          useValue: { selectedServer: selectedServer.asReadonly() },
+        },
       ],
     });
     facade = TestBed.inject(DashboardPageFacade);
@@ -121,6 +144,7 @@ describe('DashboardPageFacade', () => {
     expect(facade.characterPoints()).toBe(9);
     expect(facade.totalCharacterPointsEarned()).toBe(42);
     expect(facade.estateAddress()).toBe('A-3');
+    expect(facade.selectedServer()?.name).toBe('Sandbox');
   });
 
   it('loads recent Character Points history without calculating current balance from it', () => {

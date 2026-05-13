@@ -1565,6 +1565,8 @@ Global UI-DASHBOARD rules:
 
 ## UI-DASHBOARD-03 — Hero banner identity block
 
+**Status:** Accepted on 2026-05-13 as the desktop-first hero banner identity/context pass. The accepted banner preserves the avatar | identity/progress | context structure, removes the extra `Current hero` label, keeps Health and Experience as direct non-duplicated `app-game-bar` rows, keeps Origin / Character Points / real conditional Address as the primary vertical context stack, and adds selected Server from the real `ActiveServer.selectedServer` source in a separate secondary context column. No fake Guild/Prestige/District/equipment/estate cards, dashboard-local SCSS, generated type edits or responsive redesign were added.
+
 **Goal:** implement the top hero banner as the dashboard’s primary visual anchor.
 
 **Data sources:**
