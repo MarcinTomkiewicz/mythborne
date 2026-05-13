@@ -1,11 +1,12 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { DashboardPageFacade } from '../../../core/services/hero/dashboard-page.facade';
 import { GameBar } from '../../../shared/game-bar/game-bar';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [GameBar],
+  imports: [GameBar, RouterLink],
   providers: [DashboardPageFacade],
   templateUrl: './dashboard.html',
 })

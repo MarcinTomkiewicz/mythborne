@@ -34,7 +34,11 @@ export class AppShell {
     ),
     { initialValue: this.router.url },
   );
-  readonly isWideContent = computed(() => this.currentUrl().startsWith('/admin'));
+  readonly isWideContent = computed(() => {
+    const url = this.currentUrl();
+
+    return url.startsWith('/admin') || url.startsWith('/hero/dashboard');
+  });
   readonly activeServerAccess = this.activeServer.access;
   readonly isGameplayRoute = computed(
     () =>

@@ -36,6 +36,7 @@ export class DashboardPageFacade {
   level = signal(1);
   characterPoints = signal(0);
   totalCharacterPointsEarned = signal(0);
+  estateAddress = signal<string | null>(null);
   readonly heroLevel = signal(1);
   experience = signal(0);
   totalExperienceEarned = signal(0);
@@ -113,9 +114,17 @@ export class DashboardPageFacade {
       }
     });
 
+    this.loadEstateAddress();
     this.loadRuntimeStats();
     this.loadCharacterPointHistory();
     this.loadExperienceProgress();
+  }
+
+  private loadEstateAddress(): void {
+    this.heroService.getHeroEstateAddress().subscribe({
+      next: (address) => this.estateAddress.set(address),
+      error: () => this.estateAddress.set(null),
+    });
   }
 
   private loadExperienceProgress(): void {

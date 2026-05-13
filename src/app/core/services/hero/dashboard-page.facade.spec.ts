@@ -16,6 +16,7 @@ describe('DashboardPageFacade', () => {
     hero = jasmine.createSpyObj<Hero>('Hero', [
       'getHeroData',
       'getHeroStats',
+      'getHeroEstateAddress',
       'getHeroExperienceProgress',
     ]);
     hero.getHeroData.and.returnValue(
@@ -31,6 +32,7 @@ describe('DashboardPageFacade', () => {
       }) as ReturnType<Hero['getHeroData']>,
     );
     hero.getHeroStats.and.throwError('Dashboard must use runtime stats_json.');
+    hero.getHeroEstateAddress.and.returnValue(of('A-3'));
     hero.getHeroExperienceProgress.and.returnValue(
       of({
         level: 4,
@@ -118,6 +120,7 @@ describe('DashboardPageFacade', () => {
     expect(facade.experienceError()).toBeNull();
     expect(facade.characterPoints()).toBe(9);
     expect(facade.totalCharacterPointsEarned()).toBe(42);
+    expect(facade.estateAddress()).toBe('A-3');
   });
 
   it('loads recent Character Points history without calculating current balance from it', () => {

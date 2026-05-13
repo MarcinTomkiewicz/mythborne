@@ -1532,6 +1532,8 @@ Global UI-DASHBOARD rules:
 
 ## UI-DASHBOARD-02 — Dashboard page frame and card rhythm
 
+**Status:** Accepted on 2026-05-13 as a desktop-first dashboard frame. The accepted dashboard uses the route `mg-container` full-width path, one full-width hero card with avatar | identity/progress | vertical context, direct non-duplicated `app-game-bar` Health/Experience rows, real conditional `/game/vicinity` Address, and separate Hero Stats / Derived Stats cards. No dashboard-local SCSS, fake Guild/Prestige/District/equipment/estate cards, generated type edits or responsive redesign were added. Mobile/tablet responsiveness, lower dashboard polish, Guild/Prestige/District context and equipment/estate/persistent widgets remain deferred to later tasks.
+
 **Goal:** create the production dashboard layout skeleton matching the accepted prototype direction.
 
 **Allowed files:** dashboard HTML and only existing/global SCSS if a missing shared pattern is genuinely required.
