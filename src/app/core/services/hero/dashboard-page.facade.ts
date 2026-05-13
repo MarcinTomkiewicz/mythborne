@@ -1,9 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize } from 'rxjs';
-import {
-  CharacterPointHistoryReadModel,
-  IHeroDerived,
-} from '../../types/hero.types';
+import { CharacterPointHistoryReadModel } from '../../types/hero.types';
 import { Origin } from '../../domain/origin/origin.model';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import { Hero } from './hero';
@@ -14,16 +11,15 @@ import { CharacterPointHistory } from './character-point-history';
 import {
   HeroDashboardRuntimeStats,
   HeroDashboardRuntimeStatsReadModel,
-  HeroRuntimeDamageRow,
 } from './hero-dashboard-runtime-stats';
 import { ActiveServer } from '../server/active-server';
-
-interface DerivedStatRow {
-  key: string;
-  label: string;
-  value: number | string;
-  damageRows: HeroRuntimeDamageRow[];
-}
+import {
+  DashboardBaseStatRow,
+  DashboardDerivedStatRow,
+  mapDashboardBaseStatRows,
+  mapDashboardDerivedDisplay,
+  mapDashboardDerivedStatRows,
+} from './dashboard-page.mappers';
 
 @Injectable()
 export class DashboardPageFacade {
@@ -62,40 +58,17 @@ export class DashboardPageFacade {
     this.runtimeStats()?.stats ?? {}
   );
 
-  derivedDisplay = computed(() =>
-    toDerivedDisplay(this.runtimeStats())
+  baseStatRows = computed<DashboardBaseStatRow[]>(() =>
+    mapDashboardBaseStatRows(this.statsList(), this.statsDisplay())
   );
 
-  derivedStatRows = computed<DerivedStatRow[]>(() => {
-    const runtime = this.runtimeStats();
+  derivedDisplay = computed(() =>
+    mapDashboardDerivedDisplay(this.runtimeStats())
+  );
 
-    return [
-      {
-        key: 'damage',
-        label: 'Damage',
-        value: runtime?.damageRows.length ? '' : 'No attack sources returned',
-        damageRows: runtime?.damageRows ?? [],
-      },
-      row('defense', 'Defense', runtime?.defense ?? 0),
-      row('luck', 'Luck', runtime?.luck ?? 0),
-      row(
-        'critical_chance',
-        'Critical chance',
-        percentValue(runtime?.criticalChanceBonus ?? 0),
-      ),
-      row(
-        'critical_damage',
-        'Critical damage',
-        percentValue(runtime?.criticalDamage ?? 0),
-      ),
-      row(
-        'evasion',
-        'Evasion',
-        percentValue(runtime?.evasionChanceBonus ?? 0),
-      ),
-      row('attack_count', 'Attack count', runtime?.attackCount ?? 0),
-    ];
-  });
+  derivedStatRows = computed<DashboardDerivedStatRow[]>(() =>
+    mapDashboardDerivedStatRows(this.runtimeStats())
+  );
 
   loadData() {
     this.statsService.getStats().subscribe(this.statsList.set);
@@ -188,36 +161,4 @@ export class DashboardPageFacade {
       },
     });
   }
-}
-
-function row(
-  key: string,
-  label: string,
-  value: number | string,
-): DerivedStatRow {
-  return {
-    key,
-    label,
-    value,
-    damageRows: [],
-  };
-}
-
-function percentValue(value: number): string {
-  return `${value}%`;
-}
-
-function toDerivedDisplay(
-  runtime: HeroDashboardRuntimeStatsReadModel | null,
-): IHeroDerived {
-  return {
-    health: runtime?.maxHealth ?? 0,
-    def: runtime?.defense ?? 0,
-    minDmg: 0,
-    maxDmg: 0,
-    luck: runtime?.luck ?? 0,
-    critical: runtime?.criticalChanceBonus ?? 0,
-    criticalDamage: runtime?.criticalDamage ?? 0,
-    evasion: runtime?.evasionChanceBonus ?? 0,
-  };
 }

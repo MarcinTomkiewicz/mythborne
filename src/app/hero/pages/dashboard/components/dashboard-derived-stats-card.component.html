@@ -1,0 +1,36 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-col gap-xs mb-md">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">
+      Derived Stats
+    </h3>
+  </div>
+
+  @if (page().runtimeStatsError(); as runtimeStatsError) {
+    <p class="warn-text mb-0">{{ runtimeStatsError }}</p>
+  }
+
+  <div class="mg-grid grid-cols-2 grid-cols-1-md gap-sm mt-md">
+    @for (row of page().derivedStatRows(); track row.key) {
+      <article class="mg-card flex-col gap-xs p-sm">
+        <div class="flex-row-between-center gap-md">
+          <strong class="color-heading">{{ row.label }}:</strong>
+          @if (!row.damageRows.length) {
+            <strong class="color-heading">{{ row.value }}</strong>
+          }
+        </div>
+        @if (row.damageRows.length) {
+          <div class="flex-col gap-xs">
+            @for (damage of row.damageRows; track damage.key) {
+              <div class="flex-row-between-center gap-sm">
+                <span class="color-muted">{{ damage.label }}</span>
+                <strong class="color-heading">{{
+                  damage.displayValue
+                }}</strong>
+              </div>
+            }
+          </div>
+        }
+      </article>
+    }
+  </div>
+</section>

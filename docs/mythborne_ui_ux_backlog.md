@@ -1650,6 +1650,8 @@ Global UI-DASHBOARD rules:
 - no local stat dictionary if a shared one exists;
 - stat card visually resembles the prototype stat tile rhythm.
 
+**Implementation note:** accepted on 2026-05-13. Base Stats render through `DashboardPageFacade.baseStatRows()`, pairing runtime `get_hero_dashboard_runtime_stats.stats_json` values with `StatsService.getStats()` labels and omitting missing runtime values instead of rendering empty tiles. The dashboard route template was split into thin presentational section components over the existing page facade, with the existing `d-block w-100` component-host pattern preserving the accepted desktop-first width rhythm. Display projections moved into focused dashboard mappers, and repeated dashboard value/label colors now use normal text color utilities from `src/scss/utilities/_text-colors.scss` instead of `heading-color` gradient or status text classes. No fake values, local dashboard SCSS, generated type edits or responsive/mobile redesign were added.
+
 ---
 
 ## UI-DASHBOARD-06 — Derived stats card

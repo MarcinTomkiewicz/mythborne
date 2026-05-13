@@ -99,7 +99,29 @@ describe('DashboardPageFacade', () => {
         {
           provide: StatsService,
           useValue: jasmine.createSpyObj<StatsService>('StatsService', {
-            getStats: of([]),
+            getStats: of([
+              {
+                id: 'stat-strength',
+                key: 'strength',
+                label: 'Strength',
+                order: 1,
+                description: null,
+              },
+              {
+                id: 'stat-dexterity',
+                key: 'dexterity',
+                label: 'Dexterity',
+                order: 2,
+                description: null,
+              },
+              {
+                id: 'stat-vitality',
+                key: 'vitality',
+                label: 'Vitality',
+                order: 3,
+                description: null,
+              },
+            ]),
           }),
         },
         {
@@ -191,6 +213,10 @@ describe('DashboardPageFacade', () => {
       strength: 19,
       dexterity: 6,
     });
+    expect(facade.baseStatRows()).toEqual([
+      { key: 'strength', label: 'Strength', value: 19 },
+      { key: 'dexterity', label: 'Dexterity', value: 6 },
+    ]);
     expect(hero.getHeroStats).not.toHaveBeenCalled();
   });
 
