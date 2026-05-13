@@ -1,9 +1,15 @@
-<div class="flex-col gap-xl w-100">
-  <app-dashboard-hero-banner [page]="page" />
-  <app-dashboard-next-steps [page]="page" />
+<div class="flex-col gap-md w-100">
+  <div class="grid-1-1 gap-md w-100">
+    <div class="flex-col gap-sm w-100">
+      <app-dashboard-hero-banner [page]="page" />
+      <app-dashboard-next-steps [page]="page" />
+    </div>
 
-  <div class="grid-1-1 gap-xl w-100">
     <app-dashboard-base-stats-card [page]="page" />
+  </div>
+
+  <div class="grid-1-1 gap-md w-100">
+    <app-dashboard-equipment-preview [page]="page" [compact]="true" />
     <app-dashboard-derived-stats-card [page]="page" />
   </div>
 

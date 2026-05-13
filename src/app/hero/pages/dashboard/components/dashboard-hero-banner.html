@@ -49,36 +49,32 @@
         </div>
       </div>
 
-      <div class="flex-row-start-start gap-md">
-        <div class="flex-col gap-md flex-none min-w-250 min-w-auto-sm">
+      <div class="flex-col gap-sm flex-none min-w-250 min-w-auto-sm">
+        @if (page().selectedServer(); as selectedServer) {
           <div class="flex-col gap-xs">
-            <span class="color-muted">Origin</span>
-            <strong class="color-heading">{{
-              page().origin()?.name ?? "Unknown"
-            }}</strong>
+            <span class="color-muted">Server</span>
+            <strong class="color-heading">{{ selectedServer.name }}</strong>
           </div>
+        }
 
-          <div class="flex-col gap-xs">
-            <span class="color-muted">Character Points</span>
-            <strong class="color-heading">{{ page().characterPoints() }}</strong>
-          </div>
-
-          @if (page().estateAddress(); as estateAddress) {
-            <div class="flex-col gap-xs">
-              <span class="color-muted">Address</span>
-              <a routerLink="/game/vicinity">
-                <strong class="color-heading">{{ estateAddress }}</strong>
-              </a>
-            </div>
-          }
+        <div class="flex-col gap-xs">
+          <span class="color-muted">Origin</span>
+          <strong class="color-heading">{{
+            page().origin()?.name ?? "Unknown"
+          }}</strong>
         </div>
 
-        @if (page().selectedServer(); as selectedServer) {
-          <div class="flex-col gap-md flex-none min-w-250 min-w-auto-sm">
-            <div class="flex-col gap-xs">
-              <span class="color-muted">Server</span>
-              <strong class="color-heading">{{ selectedServer.name }}</strong>
-            </div>
+        <div class="flex-col gap-xs">
+          <span class="color-muted">Character Points</span>
+          <strong class="color-heading">{{ page().characterPoints() }}</strong>
+        </div>
+
+        @if (page().estateAddress(); as estateAddress) {
+          <div class="flex-col gap-xs">
+            <span class="color-muted">Address</span>
+            <a routerLink="/game/vicinity">
+              <strong class="color-heading">{{ estateAddress }}</strong>
+            </a>
           </div>
         }
       </div>

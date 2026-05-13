@@ -1,22 +1,25 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { DashboardPageFacade } from '../../../core/services/hero/dashboard-page.facade';
-import { DashboardBaseStatsCardComponent } from './components/dashboard-base-stats-card.component';
-import { DashboardCharacterPointsHistoryComponent } from './components/dashboard-character-points-history.component';
-import { DashboardDerivedStatsCardComponent } from './components/dashboard-derived-stats-card.component';
-import { DashboardHeroBannerComponent } from './components/dashboard-hero-banner.component';
-import { DashboardNextStepsComponent } from './components/dashboard-next-steps.component';
+import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
+import { DashboardBaseStatsCard } from './components/dashboard-base-stats-card';
+import { DashboardCharacterPointsHistory } from './components/dashboard-character-points-history';
+import { DashboardDerivedStatsCard } from './components/dashboard-derived-stats-card';
+import { DashboardEquipmentPreview } from './components/dashboard-equipment-preview';
+import { DashboardHeroBanner } from './components/dashboard-hero-banner';
+import { DashboardNextSteps } from './components/dashboard-next-steps';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
-    DashboardBaseStatsCardComponent,
-    DashboardCharacterPointsHistoryComponent,
-    DashboardDerivedStatsCardComponent,
-    DashboardHeroBannerComponent,
-    DashboardNextStepsComponent,
+    DashboardBaseStatsCard,
+    DashboardCharacterPointsHistory,
+    DashboardDerivedStatsCard,
+    DashboardEquipmentPreview,
+    DashboardHeroBanner,
+    DashboardNextSteps,
   ],
-  providers: [DashboardPageFacade],
+  providers: [DashboardPageFacade, CurrentEquipmentState],
   templateUrl: './dashboard.html',
 })
 export class Dashboard implements OnInit {

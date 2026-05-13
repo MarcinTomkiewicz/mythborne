@@ -10,12 +10,21 @@ import { HeroDashboardRuntimeStats } from './hero-dashboard-runtime-stats';
 import { ActiveServer } from '../server/active-server';
 import { SelectedGameServer } from '../../interfaces/server/active-server.interface';
 import { ActiveHeroVitalsState } from './active-hero-vitals-state';
+import { HeroEquipment } from '../items/hero-equipment';
+import { CurrentEquipmentState } from '../items/current-equipment.state';
+import { EquippedItemSummary } from '../../domain/item/item-equipment.model';
 
 describe('DashboardPageFacade', () => {
   let facade: DashboardPageFacade;
   let hero: jasmine.SpyObj<Hero>;
   let runtimeStats: jasmine.SpyObj<HeroDashboardRuntimeStats>;
+  let heroEquipment: jasmine.SpyObj<HeroEquipment>;
   let selectedServer: ReturnType<typeof signal<SelectedGameServer | null>>;
+  let equipmentLoad: jasmine.Spy;
+  let equipmentStatus: ReturnType<typeof signal<string>>;
+  let equipmentError: ReturnType<typeof signal<string | null>>;
+  let equipmentIsLoading: ReturnType<typeof signal<boolean>>;
+  let equippedSlots: ReturnType<typeof signal<EquippedItemSummary[]>>;
   let vitalsLoad: jasmine.Spy;
   let vitalsLevel: ReturnType<typeof signal<number | null>>;
   let vitalsCurrentHealth: ReturnType<typeof signal<number>>;
@@ -99,12 +108,75 @@ describe('DashboardPageFacade', () => {
         statsJson: {},
       }),
     });
+    heroEquipment = jasmine.createSpyObj<HeroEquipment>('HeroEquipment', {
+      getEquipmentSlots: of([
+        {
+          slotKey: 'main_hand',
+          label: 'Main hand',
+          sortOrder: 10,
+          equipmentArea: 'weapon',
+          equipmentSlotGroup: 'hand',
+        },
+        {
+          slotKey: 'off_hand',
+          label: 'Off hand',
+          sortOrder: 20,
+          equipmentArea: 'weapon',
+          equipmentSlotGroup: 'hand',
+        },
+      ]),
+    });
+    equipmentLoad = jasmine.createSpy('load');
+    equipmentStatus = signal('loaded');
+    equipmentError = signal<string | null>(null);
+    equipmentIsLoading = signal(false);
+    equippedSlots = signal<EquippedItemSummary[]>([
+      {
+        itemId: 'item-main',
+        heroId: 'hero-1',
+        ownerHeroId: 'hero-1',
+        itemName: 'Demonic Dagger',
+        lifecycleStatus: 'active',
+        generationBaseId: 'base-1',
+        generationQualityKey: 'normal',
+        prefixAffixId: null,
+        suffixAffixId: null,
+        slotKey: 'main_hand',
+        slotLabel: 'Main hand',
+        slotSortOrder: 10,
+        equipmentArea: 'weapon',
+        equipmentSlotGroup: 'hand',
+        equippedAt: '2026-05-13T10:00:00.000Z',
+        baseKey: 'dagger',
+        baseName: 'Dagger',
+        baseTypeKey: 'weapon',
+        handUsage: 'one_handed',
+        qualityLabel: 'Normal',
+        qualityMultiplier: 1,
+        prefixKey: null,
+        prefixName: null,
+        suffixKey: null,
+        suffixName: null,
+        isRuntimeUsable: true,
+      },
+    ]);
 
     TestBed.configureTestingModule({
       providers: [
         DashboardPageFacade,
         { provide: Hero, useValue: hero },
         { provide: HeroDashboardRuntimeStats, useValue: runtimeStats },
+        { provide: HeroEquipment, useValue: heroEquipment },
+        {
+          provide: CurrentEquipmentState,
+          useValue: {
+            load: equipmentLoad,
+            status: equipmentStatus.asReadonly(),
+            error: equipmentError.asReadonly(),
+            isLoading: equipmentIsLoading.asReadonly(),
+            slots: equippedSlots.asReadonly(),
+          },
+        },
         {
           provide: ActiveHeroVitalsState,
           useValue: {
@@ -196,6 +268,32 @@ describe('DashboardPageFacade', () => {
     expect(facade.totalCharacterPointsEarned()).toBe(42);
     expect(facade.estateAddress()).toBe('A-3');
     expect(facade.selectedServer()?.name).toBe('Sandbox');
+  });
+
+  it('combines confirmed equipment slot definitions with current equipment state', () => {
+    facade.loadData();
+
+    expect(equipmentLoad).toHaveBeenCalled();
+    expect(heroEquipment.getEquipmentSlots).toHaveBeenCalled();
+    expect(facade.equipmentPreviewRows()).toEqual([
+      {
+        slotKey: 'main_hand',
+        label: 'Main hand',
+        sortOrder: 10,
+        iconClass: 'pi pi-one-handed',
+        item: {
+          name: 'Demonic Dagger',
+          metadata: 'Main hand \u00b7 Normal',
+        },
+      },
+      {
+        slotKey: 'off_hand',
+        label: 'Off hand',
+        sortOrder: 20,
+        iconClass: 'pi pi-one-handed',
+        item: null,
+      },
+    ]);
   });
 
   it('loads recent Character Points history without calculating current balance from it', () => {

@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { CharacterPointHistoryReadModel } from '../../types/hero.types';
 import { Origin } from '../../domain/origin/origin.model';
+import { EquipmentSlot } from '../../domain/item/item-equipment.model';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import { Hero } from './hero';
 import { ActiveHeroVitalsState } from './active-hero-vitals-state';
@@ -13,14 +14,18 @@ import {
   HeroDashboardRuntimeStatsReadModel,
 } from './hero-dashboard-runtime-stats';
 import { ActiveServer } from '../server/active-server';
+import { HeroEquipment } from '../items/hero-equipment';
+import { CurrentEquipmentState } from '../items/current-equipment.state';
 import {
   DashboardBaseStatRow,
   DashboardDerivedStatRow,
   mapDashboardBaseStatRows,
   mapDashboardDerivedDisplay,
+  mapDashboardEquipmentPreviewRows,
   mapDashboardDerivedStatRows,
   mapDashboardHealthDisplay,
 } from './dashboard-page.mappers';
+import { EquipmentPreviewSlotRow } from '../../domain/equipment/equipment-preview.model';
 
 @Injectable()
 export class DashboardPageFacade {
@@ -31,6 +36,8 @@ export class DashboardPageFacade {
   private readonly statsService = inject(StatsService);
   private readonly originsService = inject(Origins);
   private readonly activeServer = inject(ActiveServer);
+  private readonly heroEquipment = inject(HeroEquipment);
+  private readonly currentEquipment = inject(CurrentEquipmentState);
 
   readonly selectedServer = this.activeServer.selectedServer;
 
@@ -56,6 +63,13 @@ export class DashboardPageFacade {
   runtimeStatsError = signal<string | null>(null);
   characterPointHistoryEntries = signal<CharacterPointHistoryReadModel[]>([]);
   characterPointHistoryError = signal<string | null>(null);
+  equipmentSlots = signal<EquipmentSlot[]>([]);
+  equipmentSlotsError = signal<string | null>(null);
+  readonly isEquipmentLoading = this.currentEquipment.isLoading;
+  readonly equipmentStatus = this.currentEquipment.status;
+  readonly equipmentError = computed(() =>
+    this.equipmentSlotsError() ?? this.currentEquipment.error()
+  );
 
   statsDisplay = computed(() =>
     this.runtimeStats()?.stats ?? {}
@@ -80,6 +94,13 @@ export class DashboardPageFacade {
     mapDashboardDerivedStatRows(this.runtimeStats())
   );
 
+  equipmentPreviewRows = computed<EquipmentPreviewSlotRow[]>(() =>
+    mapDashboardEquipmentPreviewRows(
+      this.equipmentSlots(),
+      this.currentEquipment.slots(),
+    )
+  );
+
   loadData() {
     this.statsService.getStats().subscribe(this.statsList.set);
 
@@ -102,6 +123,7 @@ export class DashboardPageFacade {
     this.loadEstateAddress();
     this.loadRuntimeStats();
     this.loadCharacterPointHistory();
+    this.loadEquipmentPreview();
   }
 
   private loadEstateAddress(): void {
@@ -136,6 +158,21 @@ export class DashboardPageFacade {
         this.runtimeStats.set(null);
         this.runtimeStatsError.set(
           getErrorMessage(error, 'Dashboard runtime stats could not be loaded.'),
+        );
+      },
+    });
+  }
+
+  private loadEquipmentPreview(): void {
+    this.equipmentSlotsError.set(null);
+    this.currentEquipment.load();
+
+    this.heroEquipment.getEquipmentSlots().subscribe({
+      next: (slots) => this.equipmentSlots.set(slots),
+      error: (error: unknown) => {
+        this.equipmentSlots.set([]);
+        this.equipmentSlotsError.set(
+          getErrorMessage(error, 'Equipment slots could not be loaded.'),
         );
       },
     });

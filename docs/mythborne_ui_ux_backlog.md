@@ -1730,6 +1730,8 @@ Global UI-DASHBOARD rules:
 
 **Goal:** implement the dashboard equipment preview if UI-DASHBOARD-07 confirms real data is available.
 
+**Status:** Accepted on 2026-05-13 as a reusable paperdoll-style equipment preview. The dashboard now renders real equipment slots from `HeroEquipment.getEquipmentSlots()` and current equipped items from `CurrentEquipmentState` through display-only `EquipmentPreviewSlotRow` rows, with empty slots shown only from confirmed slot definitions. The shared `app-equipment-preview` component uses `warrior.png`, config-driven stable `slotKey` placement, typed icon classes and dashboard-only `Open Armory` CTA via `isArmory=false`; Armory mode is prepared without action wiring. No fake slots/items, equipment mutation/direct writes, local dashboard SCSS, generated type edits or local item popover were added.
+
 **Allowed files:** dashboard component/template; shared equipment display helpers only if already existing or clearly reusable.
 
 **Prototype anchors:**

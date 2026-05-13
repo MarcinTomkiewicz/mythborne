@@ -1,0 +1,116 @@
+<section
+  class="mg-card w-100"
+  [class.p-md]="compact()"
+  [class.p-lg]="!compact()"
+>
+  <div
+    class="flex-row-between-center flex-col-sm gap-md"
+    [class.mb-sm]="compact()"
+    [class.mb-md]="!compact()"
+  >
+    <div class="flex-col gap-xs">
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        {{ title() }}
+      </h3>
+    </div>
+
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      @if (isLoading()) {
+        <span class="tag-badge tag-badge--muted">Loading</span>
+      } @else if (isUnavailable() || error()) {
+        <span class="tag-badge tag-badge--warn">Unavailable</span>
+      }
+
+      @if (!isArmory()) {
+        <a [routerLink]="armoryLink()" class="tag-badge tag-badge--muted">
+          Open Armory
+        </a>
+      }
+    </div>
+  </div>
+
+  @if (error(); as equipmentError) {
+    <p class="warn-text mb-md">{{ equipmentError }}</p>
+  }
+
+  @if (rows().length === 0 && !isLoading()) {
+    <p class="color-muted mb-0">No equipment slots returned.</p>
+  } @else {
+    <div class="equipment-preview">
+      <div
+        class="equipment-preview__board mg-card p-sm gap-sm"
+        [class.equipment-preview__board--compact]="compact()"
+      >
+        @for (group of paperdollGroups(); track group.key) {
+          <div class="flex-col gap-sm {{ group.zoneClass }}">
+            @for (slot of group.rows; track slot.slotKey) {
+              <article
+                class="equipment-preview__slot-card mg-card flex-row-start-center gap-sm p-sm w-100"
+                [class.bg-transparent]="!slot.item"
+              >
+                <span class="equipment-preview__slot-icon flex-row-center-center flex-none">
+                  <i class="color-text text-xxl" [ngClass]="slot.iconClass" aria-hidden="true"></i>
+                </span>
+                <span class="flex-col gap-xs min-w-0">
+                  @if (showSlotLabels()) {
+                    <span class="color-muted text-xs small-caps uppercase">{{ slot.label }}</span>
+                  }
+
+                  @if (slot.item; as item) {
+                    <strong class="equipment-preview__item-name color-heading">{{ item.name }}</strong>
+                    @if (item.metadata && !compact()) {
+                      <span class="color-muted text-xs">{{ item.metadata }}</span>
+                    }
+                  } @else {
+                    <strong class="equipment-preview__item-name color-heading">Empty slot</strong>
+                    @if (!compact()) {
+                      <span class="color-muted text-xs">No item equipped</span>
+                    }
+                  }
+                </span>
+              </article>
+            }
+          </div>
+        }
+
+        <div class="equipment-preview__figure mg-card flex-row-center-center">
+          <img
+            src="images/warrior.png"
+            alt="Warrior equipment preview"
+            class="equipment-preview__figure-image"
+          />
+        </div>
+      </div>
+
+      @if (otherRows().length) {
+        <div class="flex-col gap-sm p-sm">
+          @for (slot of otherRows(); track slot.slotKey) {
+            <article
+              class="equipment-preview__slot-card mg-card flex-row-start-stretch gap-sm p-sm"
+              [class.bg-transparent]="!slot.item"
+            >
+              <span class="equipment-preview__slot-icon flex-row-center-center flex-none">
+                <i class="color-heading" [ngClass]="slot.iconClass" aria-hidden="true"></i>
+              </span>
+              <span class="flex-col gap-xs min-w-0">
+                @if (showSlotLabels()) {
+                  <span class="color-muted text-xs small-caps uppercase">{{ slot.label }}</span>
+                }
+
+                @if (slot.item; as item) {
+                  <strong class="equipment-preview__item-name color-heading">{{ item.name }}</strong>
+                  @if (item.metadata) {
+                    <span class="color-muted text-xs">{{ item.metadata }}</span>
+                  }
+                } @else {
+                  <strong class="equipment-preview__item-name color-heading">Empty slot</strong>
+                  <span class="color-muted text-xs">No item equipped</span>
+                }
+              </span>
+            </article>
+          }
+        </div>
+      }
+    </div>
+  }
+</section>

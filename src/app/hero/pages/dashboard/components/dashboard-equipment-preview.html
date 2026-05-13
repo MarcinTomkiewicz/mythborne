@@ -1,0 +1,10 @@
+<app-equipment-preview
+  [rows]="page().equipmentPreviewRows()"
+  [isArmory]="false"
+  [isLoading]="page().isEquipmentLoading()"
+  [isUnavailable]="page().equipmentStatus() === 'error'"
+  [error]="page().equipmentError()"
+  [compact]="compact()"
+  [showSlotLabels]="!compact()"
+  armoryLink="/game/armory"
+/>

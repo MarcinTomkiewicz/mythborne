@@ -1,14 +1,12 @@
 import { Component, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { DashboardPageFacade } from '../../../../core/services/hero/dashboard-page.facade';
 
 @Component({
-  selector: 'app-dashboard-next-steps',
+  selector: 'app-dashboard-character-points-history',
   standalone: true,
-  imports: [RouterLink],
   host: { class: 'd-block w-100' },
-  templateUrl: './dashboard-next-steps.component.html',
+  templateUrl: './dashboard-character-points-history.html',
 })
-export class DashboardNextStepsComponent {
+export class DashboardCharacterPointsHistory {
   readonly page = input.required<DashboardPageFacade>();
 }
