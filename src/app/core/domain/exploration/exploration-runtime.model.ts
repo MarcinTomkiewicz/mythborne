@@ -180,6 +180,34 @@ export interface HeroExplorationEffectReadModel {
   updatedAt: string;
 }
 
+export interface HeroPendingCombatEffectStateReadModel {
+  effectId: string;
+  serverId: string;
+  heroId: string;
+  explorationId: string;
+  effectDefinitionId: string;
+  effectKey: string;
+  effectLabel: string;
+  effectDescription: string;
+  effectHelperText: string;
+  effectKind: string;
+  effectKindLabel: string;
+  effectTargetKey: string;
+  effectTargetLabel: string;
+  bonusTemplateKey: string;
+  bonusTemplateLabel: string;
+  valueDisplay: string;
+  status: string;
+  isActive: boolean;
+  runtimeIncluded: boolean;
+  playerSummary: string;
+  metadataJson: Json;
+  appliedAt: string;
+  consumedAt: string | null;
+  consumedByKind: string | null;
+  consumedById: string | null;
+}
+
 export interface HeroExplorationChallengeAttemptReadModel {
   id: string;
   serverId: string;

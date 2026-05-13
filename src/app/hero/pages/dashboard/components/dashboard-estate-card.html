@@ -1,0 +1,40 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+    <div class="flex-col gap-xs">
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        Estate
+      </h3>
+    </div>
+  </div>
+
+  @if (page().estateAddressError(); as estateAddressError) {
+    <p class="warn-text mb-0">{{ estateAddressError }}</p>
+  } @else if (page().currentEstateAddress(); as estateAddress) {
+    <div class="flex-col gap-sm">
+      <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+        <span class="color-muted small-caps uppercase text-xs">Address</span>
+        <strong class="color-heading">{{ estateAddress.addressLabel }}</strong>
+      </div>
+
+      <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+        <span class="color-muted small-caps uppercase text-xs">District</span>
+        <strong class="color-heading">
+          @if (estateAddress.districtName) {
+            {{ estateAddress.districtName }} ({{ estateAddress.districtCode }})
+          } @else {
+            District {{ estateAddress.districtCode }}
+          }
+        </strong>
+      </div>
+
+      <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+        <span class="color-muted small-caps uppercase text-xs">Vicinity view</span>
+        <a routerLink="/game/vicinity">
+          <strong class="color-heading">Open Vicinity</strong>
+        </a>
+      </div>
+    </div>
+  } @else {
+    <p class="color-muted mb-0">No estate address available.</p>
+  }
+</section>

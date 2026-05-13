@@ -24,6 +24,8 @@ describe('HeroExplorations', () => {
       switch (functionName) {
         case RPC.get_hero_exploration_state:
           return of(playerStateJson());
+        case RPC.get_hero_pending_combat_effect_state:
+          return of([pendingCombatEffectRow()]);
         case RPC.start_or_get_hero_exploration:
           return of([startRow()]);
         case RPC.start_hero_exploration_step:
@@ -77,6 +79,49 @@ describe('HeroExplorations', () => {
       p_hero_id: 'hero-1',
       p_difficulty_key: 'easy',
     });
+  });
+
+  it('reads active combat effect state without requiring exploration difficulty', async () => {
+    const result = await firstValueFrom(
+      service.getHeroPendingCombatEffectState('hero-1'),
+    );
+
+    expect(result[0]).toEqual(jasmine.objectContaining({
+      effectId: 'effect-1',
+      effectKind: 'buff',
+      playerSummary: 'Blessing: +10% defense',
+    }));
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_hero_pending_combat_effect_state,
+      { p_hero_id: 'hero-1' },
+    );
+  });
+
+  it('reads latest trial counter from daily action counters without exploration difficulty', async () => {
+    backend.getAll.and.returnValue(of([dailyActionCounterRow()]));
+
+    const result = await firstValueFrom(
+      service.getHeroTrialCounter({
+        heroId: 'hero-1',
+        serverId: 'server-1',
+      }),
+    );
+
+    expect(result?.remainingCount).toBe(3);
+    expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
+      table: TABLES.hero_daily_action_counters,
+      filters: jasmine.objectContaining({
+        heroId: jasmine.objectContaining({ value: 'hero-1' }),
+        serverId: jasmine.objectContaining({ value: 'server-1' }),
+        actionKind: jasmine.objectContaining({ value: 'trial' }),
+      }),
+      orderBy: [
+        { column: 'actionDate', ascending: false },
+        { column: 'updatedAt', ascending: false },
+      ],
+      range: { from: 0, to: 0 },
+      camelCase: false,
+    }));
   });
 
   it('starts exploration through RPC before refreshing the canonical state', async () => {
@@ -383,5 +428,49 @@ function trialOpportunityPreviewRow() {
     trial_opportunity_step_cap: 3,
     is_guaranteed_by_step_cap: false,
     explanation: 'Preview only.',
+  };
+}
+
+function pendingCombatEffectRow() {
+  return {
+    applied_at: '2026-05-13T10:00:00.000Z',
+    bonus_template_key: 'defense_percent',
+    bonus_template_label: 'Defense percent',
+    consumed_at: null,
+    consumed_by_id: null,
+    consumed_by_kind: null,
+    effect_definition_id: 'effect-definition-1',
+    effect_description: 'Defensive blessing.',
+    effect_helper_text: 'Improves defense in combat.',
+    effect_id: 'effect-1',
+    effect_key: 'blessing',
+    effect_kind: 'buff',
+    effect_kind_label: 'Buff',
+    effect_label: 'Blessing',
+    effect_target_key: 'defense',
+    effect_target_label: 'Defense',
+    exploration_id: 'exploration-1',
+    hero_id: 'hero-1',
+    is_active: true,
+    metadata_json: {},
+    player_summary: 'Blessing: +10% defense',
+    runtime_included: true,
+    server_id: 'server-1',
+    status: 'pending',
+    value_display: '+10%',
+  };
+}
+
+function dailyActionCounterRow(): Row<'hero_daily_action_counters'> {
+  return {
+    id: 'counter-1',
+    server_id: 'server-1',
+    hero_id: 'hero-1',
+    action_kind: 'trial',
+    action_date: '2026-05-13',
+    remaining_count: 3,
+    metadata_json: {},
+    created_at: '2026-05-13T00:00:00.000Z',
+    updated_at: '2026-05-13T10:00:00.000Z',
   };
 }

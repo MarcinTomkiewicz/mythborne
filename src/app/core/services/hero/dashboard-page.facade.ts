@@ -1,7 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { catchError, forkJoin, map, of } from 'rxjs';
 import { CharacterPointHistoryReadModel } from '../../types/hero.types';
 import { Origin } from '../../domain/origin/origin.model';
 import { EquipmentSlot } from '../../domain/item/item-equipment.model';
+import { CurrentEstateAddressReadModel } from '../../domain/estate/estate-address.model';
+import { MansionBuildingJob } from '../../domain/building/building.model';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import { Hero } from './hero';
 import { ActiveHeroVitalsState } from './active-hero-vitals-state';
@@ -16,16 +19,27 @@ import {
 import { ActiveServer } from '../server/active-server';
 import { HeroEquipment } from '../items/hero-equipment';
 import { CurrentEquipmentState } from '../items/current-equipment.state';
+import { EstateAddresses } from '../estate/estate-addresses';
+import { BuildingsService } from '../buildings/buildings';
+import { GameReports } from '../reports/game-reports';
+import { HeroExplorations } from '../exploration/hero-explorations';
+import { ActiveHero } from './active-hero';
+import { RequestToken } from '../../utils/request-token';
 import {
   DashboardBaseStatRow,
   DashboardDerivedStatRow,
   mapDashboardBaseStatRows,
   mapDashboardDerivedDisplay,
-  mapDashboardEquipmentPreviewRows,
   mapDashboardDerivedStatRows,
   mapDashboardHealthDisplay,
 } from './dashboard-page.mappers';
+import { mapEquipmentPreviewRows } from '../../domain/equipment/equipment-preview.mapper';
+import { mapDashboardPersistentStateRows } from './dashboard-persistent-state.mapper';
 import { EquipmentPreviewSlotRow } from '../../domain/equipment/equipment-preview.model';
+import {
+  HeroDailyActionCounterReadModel,
+  HeroPendingCombatEffectStateReadModel,
+} from '../../domain/exploration/exploration-runtime.model';
 
 @Injectable()
 export class DashboardPageFacade {
@@ -38,6 +52,16 @@ export class DashboardPageFacade {
   private readonly activeServer = inject(ActiveServer);
   private readonly heroEquipment = inject(HeroEquipment);
   private readonly currentEquipment = inject(CurrentEquipmentState);
+  private readonly estateAddresses = inject(EstateAddresses);
+  private readonly buildingsService = inject(BuildingsService);
+  private readonly gameReports = inject(GameReports);
+  private readonly heroExplorations = inject(HeroExplorations);
+  private readonly activeHeroState = inject(ActiveHero);
+  private readonly persistentStateLoadToken = new RequestToken();
+  private readonly persistentStateContext = signal<{
+    heroId: string;
+    serverId: string;
+  } | null>(null);
 
   readonly selectedServer = this.activeServer.selectedServer;
 
@@ -46,7 +70,11 @@ export class DashboardPageFacade {
   readonly level = computed(() => this.vitals.level() ?? this.heroLevelFallback());
   characterPoints = signal(0);
   totalCharacterPointsEarned = signal(0);
-  estateAddress = signal<string | null>(null);
+  currentEstateAddress = signal<CurrentEstateAddressReadModel | null>(null);
+  readonly estateAddress = computed(() =>
+    this.currentEstateAddress()?.addressLabel ?? null
+  );
+  estateAddressError = signal<string | null>(null);
   readonly heroLevel = this.level;
   readonly experience = this.vitals.currentExperience;
   readonly totalExperienceEarned = this.vitals.totalExperienceEarned;
@@ -65,10 +93,33 @@ export class DashboardPageFacade {
   characterPointHistoryError = signal<string | null>(null);
   equipmentSlots = signal<EquipmentSlot[]>([]);
   equipmentSlotsError = signal<string | null>(null);
+  activeBuildingJob = signal<MansionBuildingJob | null>(null);
+  isBuildingJobStateLoaded = signal(false);
+  unreadReportCount = signal(0);
+  isReportsStateLoaded = signal(false);
+  trialCounter = signal<HeroDailyActionCounterReadModel | null>(null);
+  isTrialCounterLoaded = signal(false);
+  activeCombatEffect = signal<HeroPendingCombatEffectStateReadModel | null>(null);
+  isCombatEffectStateLoaded = signal(false);
+  persistentStateErrors = signal<string[]>([]);
+  isPersistentStateLoading = signal(false);
+  isPersistentStateLoaded = signal(false);
   readonly isEquipmentLoading = this.currentEquipment.isLoading;
   readonly equipmentStatus = this.currentEquipment.status;
   readonly equipmentError = computed(() =>
     this.equipmentSlotsError() ?? this.currentEquipment.error()
+  );
+  readonly persistentStateRows = computed(() =>
+    mapDashboardPersistentStateRows({
+      activeBuildingJob: this.activeBuildingJob(),
+      isBuildingJobStateLoaded: this.isBuildingJobStateLoaded(),
+      unreadReportCount: this.unreadReportCount(),
+      isReportsStateLoaded: this.isReportsStateLoaded(),
+      trialCounter: this.trialCounter(),
+      isTrialCounterLoaded: this.isTrialCounterLoaded(),
+      activeCombatEffect: this.activeCombatEffect(),
+      isCombatEffectStateLoaded: this.isCombatEffectStateLoaded(),
+    })
   );
 
   statsDisplay = computed(() =>
@@ -95,7 +146,7 @@ export class DashboardPageFacade {
   );
 
   equipmentPreviewRows = computed<EquipmentPreviewSlotRow[]>(() =>
-    mapDashboardEquipmentPreviewRows(
+    mapEquipmentPreviewRows(
       this.equipmentSlots(),
       this.currentEquipment.slots(),
     )
@@ -110,6 +161,7 @@ export class DashboardPageFacade {
       this.characterPoints.set(hero.character_points ?? 0);
       this.totalCharacterPointsEarned.set(hero.total_character_points_earned ?? 0);
       this.vitals.load();
+      this.loadPersistentStates(hero.id, hero.server_id);
 
       if (hero.origin_id) {
         this.originsService
@@ -127,9 +179,18 @@ export class DashboardPageFacade {
   }
 
   private loadEstateAddress(): void {
-    this.heroService.getHeroEstateAddress().subscribe({
-      next: (address) => this.estateAddress.set(address),
-      error: () => this.estateAddress.set(null),
+    this.estateAddressError.set(null);
+
+    this.estateAddresses.getActiveHeroCurrentAddress().subscribe({
+      next: (address) => {
+        this.currentEstateAddress.set(address);
+      },
+      error: (error: unknown) => {
+        this.currentEstateAddress.set(null);
+        this.estateAddressError.set(
+          getErrorMessage(error, 'Estate context could not be loaded.'),
+        );
+      },
     });
   }
 
@@ -177,4 +238,136 @@ export class DashboardPageFacade {
       },
     });
   }
+
+  private loadPersistentStates(heroId: string, serverId: string): void {
+    const token = this.persistentStateLoadToken.next();
+
+    this.persistentStateContext.set({ heroId, serverId });
+    this.activeBuildingJob.set(null);
+    this.isBuildingJobStateLoaded.set(false);
+    this.unreadReportCount.set(0);
+    this.isReportsStateLoaded.set(false);
+    this.trialCounter.set(null);
+    this.isTrialCounterLoaded.set(false);
+    this.activeCombatEffect.set(null);
+    this.isCombatEffectStateLoaded.set(false);
+    this.persistentStateErrors.set([]);
+    this.isPersistentStateLoaded.set(false);
+    this.isPersistentStateLoading.set(true);
+
+    forkJoin({
+      estateView: this.buildingsService.getMansionEstateView().pipe(
+        map((view) => ({ view, isLoaded: true, error: null })),
+        catchError((error: unknown) => of({
+          view: null,
+          isLoaded: false,
+          error: getErrorMessage(error, 'Estate persistent state could not be loaded.'),
+        })),
+      ),
+      unreadReports: this.gameReports.getActiveHeroUnreadCount().pipe(
+        map((count) => ({ count, isLoaded: true, error: null })),
+        catchError((error: unknown) => of({
+          count: 0,
+          isLoaded: false,
+          error: getErrorMessage(error, 'Report attention state could not be loaded.'),
+        })),
+      ),
+      trialCounter: this.heroExplorations.getHeroTrialCounter({ heroId, serverId }).pipe(
+        map((counter) => ({ counter, isLoaded: true, error: null })),
+        catchError((error: unknown) => of({
+          counter: null,
+          isLoaded: false,
+          error: getErrorMessage(error, 'Trial counter could not be loaded.'),
+        })),
+      ),
+      combatEffects: this.heroExplorations.getHeroPendingCombatEffectState(heroId).pipe(
+        map((effects) => ({ effects, isLoaded: true, error: null })),
+        catchError((error: unknown) => of({
+          effects: [],
+          isLoaded: false,
+          error: getErrorMessage(error, 'Active state could not be loaded.'),
+        })),
+      ),
+    }).subscribe(({ estateView, unreadReports, trialCounter, combatEffects }) => {
+      if (
+        !this.persistentStateLoadToken.isCurrent(token)
+        || !this.isCurrentPersistentStateContext(heroId, serverId)
+      ) {
+        return;
+      }
+
+      if (
+        estateView.view
+        && (
+          estateView.view.heroId !== heroId
+          || estateView.view.serverId !== serverId
+        )
+      ) {
+        this.activeBuildingJob.set(null);
+        this.persistentStateErrors.set([
+          'Estate persistent state returned a stale hero/server result.',
+        ]);
+        this.unreadReportCount.set(unreadReports.count);
+        this.trialCounter.set(validTrialCounter(trialCounter.counter, heroId, serverId));
+        this.activeCombatEffect.set(validCombatEffect(combatEffects.effects, heroId, serverId));
+        this.isBuildingJobStateLoaded.set(false);
+        this.isReportsStateLoaded.set(unreadReports.isLoaded);
+        this.isTrialCounterLoaded.set(trialCounter.isLoaded);
+        this.isCombatEffectStateLoaded.set(combatEffects.isLoaded);
+        this.isPersistentStateLoaded.set(true);
+        this.isPersistentStateLoading.set(false);
+        return;
+      }
+
+      this.activeBuildingJob.set(estateView.view?.activeBuildingJob ?? null);
+      this.isBuildingJobStateLoaded.set(estateView.isLoaded);
+      this.unreadReportCount.set(unreadReports.count);
+      this.isReportsStateLoaded.set(unreadReports.isLoaded);
+      this.trialCounter.set(validTrialCounter(trialCounter.counter, heroId, serverId));
+      this.isTrialCounterLoaded.set(trialCounter.isLoaded);
+      this.activeCombatEffect.set(validCombatEffect(combatEffects.effects, heroId, serverId));
+      this.isCombatEffectStateLoaded.set(combatEffects.isLoaded);
+      this.persistentStateErrors.set([
+        estateView.error,
+        unreadReports.error,
+        trialCounter.error,
+        combatEffects.error,
+      ].filter((error): error is string => error !== null));
+      this.isPersistentStateLoaded.set(true);
+      this.isPersistentStateLoading.set(false);
+    });
+  }
+
+  private isCurrentPersistentStateContext(heroId: string, serverId: string): boolean {
+    const context = this.persistentStateContext();
+    const activeHero = this.activeHeroState.state();
+
+    return context?.heroId === heroId
+      && context.serverId === serverId
+      && activeHero?.heroId === heroId
+      && activeHero.serverId === serverId
+      && this.selectedServer()?.id === serverId;
+  }
+}
+
+function validTrialCounter(
+  counter: HeroDailyActionCounterReadModel | null,
+  heroId: string,
+  serverId: string,
+): HeroDailyActionCounterReadModel | null {
+  return counter?.heroId === heroId && counter.serverId === serverId
+    ? counter
+    : null;
+}
+
+function validCombatEffect(
+  effects: HeroPendingCombatEffectStateReadModel[],
+  heroId: string,
+  serverId: string,
+): HeroPendingCombatEffectStateReadModel | null {
+  return effects.find((effect) =>
+    effect.heroId === heroId
+    && effect.serverId === serverId
+    && effect.isActive
+  ) ?? null;
 }

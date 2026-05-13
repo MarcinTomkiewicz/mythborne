@@ -5,6 +5,8 @@ import { TABLES } from '../../constants/tables.const';
 import { ExplorationDifficultyTierReadModel } from '../../domain/exploration/exploration-definition.model';
 import {
   HeroExplorationChallengeCompletionWorkflowResult,
+  HeroDailyActionCounterReadModel,
+  HeroPendingCombatEffectStateReadModel,
   HeroExplorationStateReadModel,
   HeroExplorationStepResolutionWorkflowResult,
 } from '../../domain/exploration/exploration-runtime.model';
@@ -15,6 +17,7 @@ import {
   AutoResolveHeroExplorationChallengeAttemptRpcRow,
   CompleteHeroExplorationChallengeAttemptRpcRow,
   GetHeroExplorationStateRpcResult,
+  GetHeroPendingCombatEffectStateRpcRow,
   PreviewTrialOpportunityCurveRpcRow,
   ResolveHeroExplorationStepRpcRow,
   StartHeroExplorationStepRpcRow,
@@ -23,6 +26,10 @@ import {
 import { mapExplorationDifficultyTier } from '../../utils/exploration-definition-mappers';
 import { mapTrialOpportunityCurvePreview } from '../../utils/exploration-preview-mappers';
 import { mapHeroExplorationStateJson } from '../../utils/exploration-runtime-json-mappers';
+import {
+  mapHeroDailyActionCounter,
+  mapHeroPendingCombatEffectState,
+} from '../../utils/exploration-runtime-mappers';
 import {
   explorationChallengeCompletionWorkflowResult,
   firstResolveHeroExplorationStepRow,
@@ -74,6 +81,39 @@ export class HeroExplorations {
         toGetHeroExplorationStateRpcArgs(input),
       )
       .pipe(map(mapHeroExplorationStateJson));
+  }
+
+  getHeroPendingCombatEffectState(
+    heroId: string,
+  ): Observable<HeroPendingCombatEffectStateReadModel[]> {
+    return this.backend
+      .rpc<GetHeroPendingCombatEffectStateRpcRow[]>(
+        RPC.get_hero_pending_combat_effect_state,
+        { p_hero_id: heroId },
+      )
+      .pipe(map((rows) => rows.map(mapHeroPendingCombatEffectState)));
+  }
+
+  getHeroTrialCounter(input: {
+    heroId: string;
+    serverId: string;
+  }): Observable<HeroDailyActionCounterReadModel | null> {
+    return this.backend
+      .getAll<Row<'hero_daily_action_counters'>>({
+        table: TABLES.hero_daily_action_counters,
+        filters: {
+          heroId: { operator: FilterOperator.EQ, value: input.heroId },
+          serverId: { operator: FilterOperator.EQ, value: input.serverId },
+          actionKind: { operator: FilterOperator.EQ, value: 'trial' },
+        },
+        orderBy: [
+          { column: 'actionDate', ascending: false },
+          { column: 'updatedAt', ascending: false },
+        ],
+        range: { from: 0, to: 0 },
+        camelCase: false,
+      })
+      .pipe(map((rows) => rows[0] ? mapHeroDailyActionCounter(rows[0]) : null));
   }
 
   startOrGetHeroExploration(input: {

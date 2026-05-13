@@ -7,6 +7,10 @@ export type GetHeroExplorationStateRpcArgs =
   Rpc<'get_hero_exploration_state'>['Args'];
 export type GetHeroExplorationStateRpcResult =
   Rpc<'get_hero_exploration_state'>['Returns'];
+export type GetHeroPendingCombatEffectStateRpcArgs =
+  Rpc<'get_hero_pending_combat_effect_state'>['Args'];
+export type GetHeroPendingCombatEffectStateRpcRow =
+  Rpc<'get_hero_pending_combat_effect_state'>['Returns'][number];
 
 export type StartOrGetHeroExplorationRpcArgs =
   Rpc<'start_or_get_hero_exploration'>['Args'];

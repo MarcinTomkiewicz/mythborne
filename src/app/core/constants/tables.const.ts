@@ -31,6 +31,7 @@ export const TABLES = {
   estate_district_address_capacities: 'estate_district_address_capacities',
   estate_districts: 'estate_districts',
   hero: 'hero',
+  hero_daily_action_counters: 'hero_daily_action_counters',
   hero_equipment: 'hero_equipment',
   hero_level_stat_bonus_grants: 'hero_level_stat_bonus_grants',
   hero_progression_ledger: 'hero_progression_ledger',

@@ -1,0 +1,44 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-col gap-xs mb-md">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">
+      Current State
+    </h3>
+  </div>
+
+  @if (page().isPersistentStateLoading()) {
+    <p class="color-muted mb-0">Loading current state...</p>
+  } @else {
+    @if (page().persistentStateErrors().length > 0) {
+      <div class="flex-col gap-xs mb-md">
+        @for (error of page().persistentStateErrors(); track error) {
+          <p class="warn-text mb-0">{{ error }}</p>
+        }
+      </div>
+    }
+
+    @if (page().persistentStateRows().length > 0) {
+      <div class="flex-col gap-sm">
+        @for (row of page().persistentStateRows(); track row.key) {
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">
+              {{ row.label }}
+            </span>
+
+            @if (row.route) {
+              <a [routerLink]="row.route">
+                <strong class="color-heading text-md">{{ row.value }}</strong>
+              </a>
+            } @else {
+              <strong class="color-heading text-md">{{ row.value }}</strong>
+            }
+          </div>
+        }
+      </div>
+    } @else if (
+      page().isPersistentStateLoaded()
+      && page().persistentStateErrors().length === 0
+    ) {
+      <p class="color-muted mb-0">No current persistent state.</p>
+    }
+  }
+</section>
