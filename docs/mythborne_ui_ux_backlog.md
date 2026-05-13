@@ -2055,11 +2055,11 @@ Global UI-DASHBOARD rules:
 - dashboard can be accepted without rereading UI-SHELL history;
 - remaining items are concrete and actionable.
 
-This section preserves the former `UI-SHELL-2 — Dashboard hero-centric layout` and `UI-SHELL-5 — Persistent state widget boundary` scopes.
+<!-- This section preserves the former `UI-SHELL-2 — Dashboard hero-centric layout` and `UI-SHELL-5 — Persistent state widget boundary` scopes.
 
-The `UI-SHELL-00–32` microtasks above replace shell/topbar/sidebar implementation only. They do **not** delete dashboard or persistent-state work.
+The `UI-SHELL-00–32` microtasks above replace shell/topbar/sidebar implementation only. They do **not** delete dashboard or persistent-state work. -->
 
-## UI-DASHBOARD-1 — Dashboard hero-centric layout
+<!-- ## UI-DASHBOARD-1 — Dashboard hero-centric layout
 
 **Goal:** keep the game dashboard as a hero-centric overview, not a generic portal to every system and not a copy of the sidebar.
 
@@ -2132,7 +2132,7 @@ The `UI-SHELL-00–32` microtasks above replace shell/topbar/sidebar implementat
 **Acceptance criteria:**
 
 - dashboard is accepted without relying on old shell task history;
-- remaining gaps are concrete follow-up tasks, not generic “polish”.
+- remaining gaps are concrete follow-up tasks, not generic “polish”. -->
 
 # 10. UI-CORE — Foundations and style contract
 

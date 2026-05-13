@@ -92,13 +92,6 @@ export class DashboardPageFacade {
     ];
   });
 
-  equipment = [
-    { slot: 'Helmet', name: null, bonus: null },
-    { slot: 'Weapon', name: null, bonus: null },
-    { slot: 'Armor', name: null, bonus: null },
-    { slot: 'Shield', name: null, bonus: null },
-  ];
-
   loadData() {
     this.statsService.getStats().subscribe(this.statsList.set);
 

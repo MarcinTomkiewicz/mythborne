@@ -12,7 +12,6 @@
         <span class="tag-badge tag-badge--info">
           {{ page.origin()?.name ?? 'Unknown Origin' }}
         </span>
-        <span class="tag-badge tag-badge--muted">Guild: None</span>
       </div>
     </div>
 
@@ -66,7 +65,7 @@
               </p>
             }
             @if (page.experienceError(); as experienceError) {
-              <p class="muted-text mb-0">{{ experienceError }}</p>
+              <p class="status-text-warning mb-0">{{ experienceError }}</p>
             }
           </div>
         </div>
@@ -75,21 +74,17 @@
       <div class="mg-card flex-col gap-sm p-md">
         <p class="card-legend mb-0">Hero Details</p>
 
-        <div class="flex-row-between-center gap-md muted-text mt-sm">
-          <strong class="heading-color">Origin</strong>
-          <span>{{ page.origin()?.name ?? 'Unknown' }}</span>
+        <div class="flex-row-between-center gap-md mt-sm">
+          <span class="muted-text">Origin</span>
+          <strong class="heading-color">{{ page.origin()?.name ?? 'Unknown' }}</strong>
         </div>
-        <div class="flex-row-between-center gap-md muted-text">
-          <strong class="heading-color">Guild</strong>
-          <span>None</span>
+        <div class="flex-row-between-center gap-md">
+          <span class="muted-text">Spendable Character Points</span>
+          <strong class="heading-color">{{ page.characterPoints() }}</strong>
         </div>
-        <div class="flex-row-between-center gap-md muted-text">
-          <strong class="heading-color">Spendable Character Points</strong>
-          <span>{{ page.characterPoints() }}</span>
-        </div>
-        <div class="flex-row-between-center gap-md muted-text">
-          <strong class="heading-color">Lifetime Character Points earned</strong>
-          <span>{{ page.totalCharacterPointsEarned() }}</span>
+        <div class="flex-row-between-center gap-md">
+          <span class="muted-text">Lifetime Character Points earned</span>
+          <strong class="heading-color">{{ page.totalCharacterPointsEarned() }}</strong>
         </div>
       </div>
     </div>
@@ -128,11 +123,11 @@
 
       <div class="flex-col gap-sm mt-md">
         @for (row of page.derivedStatRows(); track row.key) {
-          <div class="mg-card flex-col gap-xs p-sm muted-text">
+          <div class="mg-card flex-col gap-xs p-sm">
             <div class="flex-row-between-center gap-md">
               <strong class="heading-color">{{ row.label }}:</strong>
               @if (!row.damageRows.length) {
-                <span>{{ row.value }}</span>
+                <strong>{{ row.value }}</strong>
               }
             </div>
             @if (row.damageRows.length) {
@@ -158,47 +153,25 @@
     </div>
 
     @if (page.characterPointHistoryError(); as historyError) {
-      <p class="muted-text mb-0">{{ historyError }}</p>
+      <p class="status-text-warning mb-0">{{ historyError }}</p>
     } @else if (page.characterPointHistoryEntries().length === 0) {
       <p class="muted-text mb-0">No Character Points history yet.</p>
     } @else {
       <div class="flex-col gap-sm">
         @for (entry of page.characterPointHistoryEntries(); track entry.id) {
-          <div class="mg-card flex-row-between-center gap-md p-sm muted-text">
+          <div class="mg-card flex-row-between-center gap-md p-sm">
             <div class="flex-col gap-xs">
               <strong class="heading-color">{{ entry.reasonLabel }}</strong>
-              <span>{{ entry.createdAt }}</span>
+              <span class="muted-text">{{ entry.createdAt }}</span>
             </div>
             <div class="flex-col gap-xs text-right">
               <strong class="heading-color">{{ entry.amountLabel }}</strong>
-              <span>Balance after: {{ entry.balanceAfter }}</span>
+              <span class="muted-text">Balance after: {{ entry.balanceAfter }}</span>
             </div>
           </div>
         }
       </div>
     }
-  </section>
-
-  <section class="mg-card p-lg w-100">
-    <div class="flex-col gap-xs mb-md">
-      <p class="card-legend mb-0">Loadout</p>
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Equipment</h3>
-    </div>
-
-    <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md mt-md">
-      @for (item of page.equipment; track item.slot) {
-        <div class="mg-card flex-col-center-center gap-sm p-md text-center">
-          <div class="heading-color"><strong>{{ item.slot }}</strong></div>
-          <div class="my-xs">{{ item.name || 'Empty slot' }}</div>
-
-          @if (item.bonus) {
-            <div class="muted-text">{{ item.bonus }}</div>
-          } @else {
-            <div class="muted-text">No bonus equipped</div>
-          }
-        </div>
-      }
-    </div>
   </section>
 </div>
 
