@@ -27,6 +27,7 @@ export interface HeroDashboardRuntimeStatsReadModel {
   damageRows: HeroRuntimeDamageRow[];
   stats: Record<string, number>;
   defense: number;
+  currentHealth: number;
   maxHealth: number;
   luck: number;
   criticalChanceBonus: number;
@@ -89,6 +90,7 @@ function mapHeroDashboardRuntimeStats(
     damageRows: mapDamageRows(row.damage_rows_json),
     stats: mapStats(row.stats_json),
     defense: row.defense,
+    currentHealth: row.current_health,
     maxHealth: row.max_health,
     luck: row.luck,
     criticalChanceBonus: row.critical_chance_bonus,

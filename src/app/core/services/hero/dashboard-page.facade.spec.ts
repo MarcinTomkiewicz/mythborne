@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { Hero } from './hero';
 import { Origins } from '../origins/origins';
 import { StatsService } from '../stats/stats';
@@ -9,19 +9,30 @@ import { CharacterPointHistory } from './character-point-history';
 import { HeroDashboardRuntimeStats } from './hero-dashboard-runtime-stats';
 import { ActiveServer } from '../server/active-server';
 import { SelectedGameServer } from '../../interfaces/server/active-server.interface';
+import { ActiveHeroVitalsState } from './active-hero-vitals-state';
 
 describe('DashboardPageFacade', () => {
   let facade: DashboardPageFacade;
   let hero: jasmine.SpyObj<Hero>;
   let runtimeStats: jasmine.SpyObj<HeroDashboardRuntimeStats>;
   let selectedServer: ReturnType<typeof signal<SelectedGameServer | null>>;
+  let vitalsLoad: jasmine.Spy;
+  let vitalsLevel: ReturnType<typeof signal<number | null>>;
+  let vitalsCurrentHealth: ReturnType<typeof signal<number>>;
+  let vitalsMaxHealth: ReturnType<typeof signal<number>>;
+  let vitalsCurrentExperience: ReturnType<typeof signal<number>>;
+  let vitalsTotalExperienceEarned: ReturnType<typeof signal<number>>;
+  let vitalsExperienceToNextLevel: ReturnType<typeof signal<number | null>>;
+  let vitalsRemainingExperience: ReturnType<typeof signal<number | null>>;
+  let vitalsExperiencePercent: ReturnType<typeof signal<number>>;
+  let vitalsIsLoading: ReturnType<typeof signal<boolean>>;
+  let vitalsError: ReturnType<typeof signal<string | null>>;
 
   beforeEach(() => {
     hero = jasmine.createSpyObj<Hero>('Hero', [
       'getHeroData',
       'getHeroStats',
       'getHeroEstateAddress',
-      'getHeroExperienceProgress',
     ]);
     hero.getHeroData.and.returnValue(
       of({
@@ -37,16 +48,17 @@ describe('DashboardPageFacade', () => {
     );
     hero.getHeroStats.and.throwError('Dashboard must use runtime stats_json.');
     hero.getHeroEstateAddress.and.returnValue(of('A-3'));
-    hero.getHeroExperienceProgress.and.returnValue(
-      of({
-        level: 4,
-        currentExperience: 125,
-        totalExperienceEarned: 2125,
-        experienceToNextLevel: 500,
-        remainingExperience: 375,
-        experiencePercent: 25,
-      }),
-    );
+    vitalsLoad = jasmine.createSpy('load');
+    vitalsLevel = signal<number | null>(4);
+    vitalsCurrentHealth = signal(84);
+    vitalsMaxHealth = signal(120);
+    vitalsCurrentExperience = signal(125);
+    vitalsTotalExperienceEarned = signal(2125);
+    vitalsExperienceToNextLevel = signal<number | null>(500);
+    vitalsRemainingExperience = signal<number | null>(375);
+    vitalsExperiencePercent = signal(25);
+    vitalsIsLoading = signal(false);
+    vitalsError = signal<string | null>(null);
     selectedServer = signal<SelectedGameServer | null>({
       id: 'server-1',
       key: 'sandbox',
@@ -75,6 +87,7 @@ describe('DashboardPageFacade', () => {
           dexterity: 6,
         },
         defense: 104,
+        currentHealth: 84,
         maxHealth: 120,
         luck: 3,
         criticalChanceBonus: 2,
@@ -92,6 +105,22 @@ describe('DashboardPageFacade', () => {
         DashboardPageFacade,
         { provide: Hero, useValue: hero },
         { provide: HeroDashboardRuntimeStats, useValue: runtimeStats },
+        {
+          provide: ActiveHeroVitalsState,
+          useValue: {
+            load: vitalsLoad,
+            level: vitalsLevel.asReadonly(),
+            currentHealth: vitalsCurrentHealth.asReadonly(),
+            maxHealth: vitalsMaxHealth.asReadonly(),
+            currentExperience: vitalsCurrentExperience.asReadonly(),
+            totalExperienceEarned: vitalsTotalExperienceEarned.asReadonly(),
+            experienceToNextLevel: vitalsExperienceToNextLevel.asReadonly(),
+            remainingExperience: vitalsRemainingExperience.asReadonly(),
+            experiencePercent: vitalsExperiencePercent.asReadonly(),
+            isLoading: vitalsIsLoading.asReadonly(),
+            error: vitalsError.asReadonly(),
+          },
+        },
         {
           provide: Origins,
           useValue: jasmine.createSpyObj<Origins>('Origins', ['getOriginWithBonuses']),
@@ -155,7 +184,7 @@ describe('DashboardPageFacade', () => {
   it('displays XP progress from the canonical threshold read model', () => {
     facade.loadData();
 
-    expect(hero.getHeroExperienceProgress).toHaveBeenCalled();
+    expect(vitalsLoad).toHaveBeenCalled();
     expect(facade.level()).toBe(4);
     expect(facade.experience()).toBe(125);
     expect(facade.experienceToNextLevel()).toBe(500);
@@ -204,6 +233,10 @@ describe('DashboardPageFacade', () => {
       { key: 'attack_count', label: 'Attack count', value: 2, damageRows: [] },
     ]);
     expect(facade.derivedDisplay().health).toBe(120);
+    expect(facade.healthDisplay()).toEqual({
+      currentHealth: 84,
+      maxHealth: 120,
+    });
   });
 
   it('uses DB-provided runtime stats_json for Hero Stats display', () => {
@@ -221,9 +254,10 @@ describe('DashboardPageFacade', () => {
   });
 
   it('surfaces XP threshold errors instead of using a hardcoded display threshold', () => {
-    hero.getHeroExperienceProgress.and.returnValue(
-      throwError(() => new Error('Formula target "Hero experience to next level" failed.')),
-    );
+    vitalsExperienceToNextLevel.set(null);
+    vitalsRemainingExperience.set(null);
+    vitalsExperiencePercent.set(0);
+    vitalsError.set('Formula target "Hero experience to next level" failed.');
 
     facade.loadData();
 

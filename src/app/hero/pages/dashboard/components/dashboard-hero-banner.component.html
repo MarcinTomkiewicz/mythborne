@@ -26,8 +26,8 @@
         <div class="flex-col gap-md w-100">
           <app-game-bar
             label="Health"
-            [value]="page().derivedDisplay()['health']"
-            [max]="page().derivedDisplay()['health']"
+            [value]="page().healthDisplay().currentHealth"
+            [max]="page().healthDisplay().maxHealth"
             type="hp"
           />
 

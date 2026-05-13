@@ -48,6 +48,7 @@ describe('HeroDashboardRuntimeStats', () => {
         },
       ],
       defense: 104,
+      current_health: 84,
       max_health: 120,
       luck: 7,
       critical_chance_bonus: 2,
@@ -85,6 +86,8 @@ describe('HeroDashboardRuntimeStats', () => {
       { key: 'off_hand', label: 'Unarmed', displayValue: '20-21' },
     ]);
     expect(result.defense).toBe(104);
+    expect(result.currentHealth).toBe(84);
+    expect(result.maxHealth).toBe(120);
     expect(result.criticalChanceBonus).toBe(2);
     expect(result.stats).toEqual({
       strength: 19,
@@ -97,6 +100,7 @@ describe('HeroDashboardRuntimeStats', () => {
       hero_id: 'hero-2',
       damage_rows_json: [],
       defense: 0,
+      current_health: 0,
       max_health: 0,
       luck: 0,
       critical_chance_bonus: 0,

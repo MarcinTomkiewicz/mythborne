@@ -1654,6 +1654,14 @@ Global UI-DASHBOARD rules:
 
 ---
 
+## Health State frontend integration — Dashboard/topbar shared vitals cleanup
+
+**Status:** Accepted on 2026-05-13. Frontend Health display now consumes canonical DB-owned `current_health / max_health` through `HeroHealthState` and shared `ActiveHeroVitalsState`. Dashboard and topbar share the same active-hero vitals state for current Health, max Health, level and XP progress; dashboard runtime stats remains scoped to dashboard-only stats/derived/damage rows. Topbar no longer directly loads `HeroHealthState`, `HeroDerivedStats` or `Hero.getHeroExperienceProgress()`, and `DashboardPageFacade` no longer owns separate XP loading. No generated type edits, fake Health fallback, local current-HP calculation/reset, `hero_derived` dashboard/topbar runtime authority, local dashboard SCSS or responsive redesign were added.
+
+**Deferred:** manual smoke for Vlad `152 / 152`, a non-full-health hero and combat/report health; optional later split if backend/read models stop returning health in dashboard runtime stats; optional partial-failure resilience for shared vitals if topbar resilience needs it.
+
+---
+
 ## UI-DASHBOARD-06 — Derived stats card
 
 **Goal:** render current derived combat/progression stats without exposing raw debug formula internals.

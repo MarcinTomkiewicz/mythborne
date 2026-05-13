@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { forkJoin, interval, Observable, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { HeroExperienceProgress, IHeroDerived } from '../../../core/types/hero.types';
 import { FilterOperator } from '../../../core/enums/filter-operators';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { Row } from '../../../core/types/supabase.types';
@@ -21,8 +20,7 @@ import {
 import { AuthState } from '../../../core/services/auth/auth-state';
 import { Backend } from '../../../core/services/backend/backend';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
-import { Hero } from '../../../core/services/hero/hero';
-import { HeroDerivedStats } from '../../../core/services/hero/hero-derived-stats';
+import { ActiveHeroVitalsState } from '../../../core/services/hero/active-hero-vitals-state';
 import { EstateAddresses } from '../../../core/services/estate/estate-addresses';
 import { TABLES } from '../../../core/constants/tables.const';
 import { Platform } from '../../../core/services/platform/platform';
@@ -41,8 +39,7 @@ import { TopbarDropdownCoordinator } from '../topbar-dropdown/topbar-dropdown-co
 export class GameTopbar implements OnInit {
   private readonly authState = inject(AuthState);
   private readonly activeHero = inject(ActiveHero);
-  private readonly heroService = inject(Hero);
-  private readonly heroDerivedStats = inject(HeroDerivedStats);
+  private readonly vitals = inject(ActiveHeroVitalsState);
   private readonly estateAddresses = inject(EstateAddresses);
   private readonly backend = inject(Backend);
   private readonly platform = inject(Platform);
@@ -52,8 +49,6 @@ export class GameTopbar implements OnInit {
   readonly showHeroContent = input(true);
   readonly currentTime = signal(Date.now());
   readonly hero = signal<Row<'hero'> | null>(null);
-  readonly derived = signal<IHeroDerived | null>(null);
-  readonly experienceProgress = signal<HeroExperienceProgress | null>(null);
   readonly currentAddress = signal<string | null>(null);
   readonly resources = signal<HeroResourceRow[]>([]);
 
@@ -63,19 +58,16 @@ export class GameTopbar implements OnInit {
   readonly shouldRenderTopbarContent = computed(
     () => this.hasHeroContent() || !this.showHeroContent(),
   );
-  readonly currentHealthValue = computed(() => this.maxHealthValue());
-  readonly maxHealthValue = computed(() => Math.max(this.derived()?.health ?? 0, 0));
+  readonly currentHealthValue = this.vitals.currentHealth;
+  readonly maxHealthValue = this.vitals.maxHealth;
   readonly heroLevelValue = computed(
-    () => Math.max(this.experienceProgress()?.level ?? this.hero()?.level ?? 1, 1),
+    () => Math.max(this.vitals.level() ?? 1, 1),
   );
   readonly experienceValue = computed(() =>
-    Math.max(
-      this.experienceProgress()?.currentExperience ?? this.hero()?.experience ?? 0,
-      0,
-    ),
+    Math.max(this.vitals.currentExperience(), 0),
   );
   readonly experienceToNextLevel = computed(
-    () => this.experienceProgress()?.experienceToNextLevel ?? 0,
+    () => this.vitals.experienceToNextLevel() ?? 0,
   );
   readonly resourceDisplay = computed<ResourceAmountDisplay[]>(() => {
     this.currentTime();
@@ -105,8 +97,6 @@ export class GameTopbar implements OnInit {
         }
 
         this.hero.set(payload.hero);
-        this.derived.set(payload.derived);
-        this.experienceProgress.set(payload.experienceProgress);
         this.currentAddress.set(payload.currentAddress);
         this.resources.set(payload.resources);
       });
@@ -141,28 +131,20 @@ export class GameTopbar implements OnInit {
 
   private loadTopbarState(state: ActiveHeroState | null): Observable<{
     hero: Row<'hero'>;
-    derived: IHeroDerived | null;
-    experienceProgress: HeroExperienceProgress | null;
     currentAddress: string | null;
     resources: HeroResourceRow[];
   } | null> {
     if (!state?.heroRow || !state.heroId) {
       this.hero.set(null);
-      this.derived.set(null);
-      this.experienceProgress.set(null);
       this.currentAddress.set(null);
       this.resources.set([]);
       return of(null);
     }
 
+    this.vitals.load();
+
     return forkJoin({
       hero: of(state.heroRow),
-      derived: this.heroDerivedStats
-        .resolveActiveHeroDerivedStats()
-        .pipe(catchError(() => of(null))),
-      experienceProgress: this.heroService
-        .getHeroExperienceProgress()
-        .pipe(catchError(() => of(null))),
       currentAddress: this.loadHeroEstateAddress(state.heroRow).pipe(
         catchError(() => of(null)),
       ),

@@ -2,6 +2,7 @@ import {
   mapDashboardBaseStatRows,
   mapDashboardDerivedDisplay,
   mapDashboardDerivedStatRows,
+  mapDashboardHealthDisplay,
 } from './dashboard-page.mappers';
 import { HeroDashboardRuntimeStatsReadModel } from './hero-dashboard-runtime-stats';
 
@@ -17,6 +18,7 @@ describe('dashboard page mappers', () => {
       dexterity: 6,
     },
     defense: 104,
+    currentHealth: 84,
     maxHealth: 120,
     luck: 3,
     criticalChanceBonus: 2,
@@ -62,6 +64,13 @@ describe('dashboard page mappers', () => {
       critical: 2,
       criticalDamage: 50,
       evasion: 8,
+    });
+  });
+
+  it('maps dashboard health display from DB-returned current and max health', () => {
+    expect(mapDashboardHealthDisplay(runtimeStats)).toEqual({
+      currentHealth: 84,
+      maxHealth: 120,
     });
   });
 

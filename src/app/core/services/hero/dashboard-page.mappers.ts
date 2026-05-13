@@ -18,6 +18,11 @@ export interface DashboardDerivedStatRow {
   damageRows: HeroRuntimeDamageRow[];
 }
 
+export interface DashboardHealthSource {
+  currentHealth: number;
+  maxHealth: number;
+}
+
 export function mapDashboardBaseStatRows(
   statsList: IStat[],
   stats: Record<string, number>,
@@ -43,6 +48,15 @@ export function mapDashboardDerivedDisplay(
     critical: runtime?.criticalChanceBonus ?? 0,
     criticalDamage: runtime?.criticalDamage ?? 0,
     evasion: runtime?.evasionChanceBonus ?? 0,
+  };
+}
+
+export function mapDashboardHealthDisplay(
+  runtime: DashboardHealthSource | null,
+): { currentHealth: number; maxHealth: number } {
+  return {
+    currentHealth: runtime?.currentHealth ?? 0,
+    maxHealth: runtime?.maxHealth ?? 0,
   };
 }
 
