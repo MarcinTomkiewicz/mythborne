@@ -18,15 +18,15 @@ describe('StepOrigin', () => {
     });
   });
 
-  it('renders an empty state when the DB origin read model returns no options', () => {
+  it('renders an empty state when the origin read model returns no options', () => {
     startFlow.getOriginOptions.and.returnValue(of([]));
 
     const fixture = createComponent();
 
     expect(textContent(fixture)).toContain(
-      'No origin options are available for character creation.',
+      'Brak dostępnych pochodzeń dla tworzenia bohatera.',
     );
-    expect(textContent(fixture)).not.toContain('Loading origins...');
+    expect(textContent(fixture)).not.toContain('Wczytywanie pochodzeń...');
   });
 
   it('renders the DB/RPC error when origin options fail to load', () => {
@@ -37,16 +37,18 @@ describe('StepOrigin', () => {
     const fixture = createComponent();
 
     expect(textContent(fixture)).toContain('Origin read model unavailable.');
-    expect(textContent(fixture)).not.toContain('Loading origins...');
+    expect(textContent(fixture)).not.toContain('Wczytywanie pochodzeń...');
   });
 
-  it('shows DB-backed origin selection copy that the choice is one-time', () => {
+  it('shows DB-backed origin selection copy and creation summary', () => {
     startFlow.getOriginOptions.and.returnValue(of([originOption()]));
 
     const fixture = createComponent();
 
     expect(textContent(fixture)).toContain('Pochodzenie jest wybierane raz');
-    expect(textContent(fixture)).toContain('Nazwy, opisy i bonusy pochodzą z DB start-flow');
+    expect(textContent(fixture)).toContain('Nazwy, opisy i bonusy pochodzą z konfiguracji świata');
+    expect(textContent(fixture)).toContain('Podsumowanie tworzenia');
+    expect(textContent(fixture)).toContain('Przydzielane po utworzeniu');
   });
 
   function createComponent(): ComponentFixture<StepOrigin> {
@@ -62,15 +64,15 @@ describe('StepOrigin', () => {
   function originOption(): StartFlowOriginOption {
     return {
       id: 'origin-1',
-      key: 'nomad',
-      name: 'Nomad',
-      description: 'Road-born hunter.',
-      imageUrl: '/images/origins/nomad.png',
+      key: 'spartan',
+      name: 'Spartanin',
+      description: 'Disciplined hoplite.',
+      imageUrl: '/images/origins/spartan.png',
       createdAt: null,
       originId: 'origin-1',
-      originKey: 'nomad',
-      originLabel: 'Nomad',
-      originDescription: 'Road-born hunter.',
+      originKey: 'spartan',
+      originLabel: 'Spartanin',
+      originDescription: 'Disciplined hoplite.',
       sortOrder: 1,
       isActive: true,
       bonusesJson: [],

@@ -73,7 +73,7 @@ describe('CreateCharacterPageFacade', () => {
     expect(createHero.createHero).toHaveBeenCalled();
     expect(router.navigateByUrl).not.toHaveBeenCalled();
     expect(facade.errorMessage()).toBe(
-      'Unsupported start-flow route action returned by DB: unexpected_action.',
+      'Nieobsługiwane przekierowanie po utworzeniu bohatera: unexpected_action.',
     );
     expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
       severity: 'error',
@@ -110,6 +110,21 @@ describe('CreateCharacterPageFacade', () => {
     expect(auth.saveUserData).not.toHaveBeenCalled();
     expect(createHero.createHero).toHaveBeenCalledOnceWith('Sandbox Hero', 'origin-1');
     expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/attributes');
+  });
+
+  it('blocks submit when hero name is missing on the combined creation screen', () => {
+    facade.form.controls.originId.setValue('origin-1');
+
+    facade.submit();
+
+    expect(createHero.createHero).not.toHaveBeenCalled();
+    expect(facade.errorMessage()).toBe(
+      'Podaj poprawną nazwę bohatera przed stworzeniem postaci.',
+    );
+    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
+      severity: 'warn',
+      summary: 'Nazwa bohatera jest niepełna',
+    }));
   });
 
   it('moves existing-account hero creation from Hero to Origin and submits after origin selection', () => {

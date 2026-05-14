@@ -1,6 +1,5 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import { FormControl, FormGroup } from '@angular/forms';
 import { of } from 'rxjs';
 import { StartFlowOriginOption } from '../../../core/domain/start-flow/start-flow.model';
@@ -8,30 +7,35 @@ import { StartFlow } from '../../../core/services/start-flow/start-flow';
 import { CreateCharacterForm } from '../../../core/types/forms/create-character-form.types';
 import { CreateCharacterPage } from './create-character-page';
 import { CreateCharacterPageFacade } from '../../../core/services/hero/create-character-page.facade';
-import { StepHero } from './components/steps/step-hero';
 
 describe('CreateCharacterPage', () => {
-  it('shows only hero and origin steps for an existing account hero creation flow', () => {
+  it('shows one account-side hero creation screen for an existing account flow', () => {
     const fixture = createFixture(true);
 
     fixture.detectChanges();
 
     const text = textContent(fixture);
-    expect(text).toContain('Hero');
-    expect(text).toContain('Origin');
-    expect(text).not.toContain('Account');
-    expect(text).not.toContain('Profile');
-    expect(text).not.toContain('Tell us about yourself');
+    expect(text).toContain('Nazwij bohatera i wybierz pochodzenie.');
+    expect(text).toContain('Wybrany serwer');
+    expect(text).toContain('Nazwa bohatera');
+    expect(text).toContain('Pochodzenie');
+    expect(text).toContain('Podsumowanie tworzenia');
+    expect(text).not.toContain('Konto');
+    expect(text).not.toContain('Profil');
+    expect(text).not.toContain('Opowiedz o sobie');
   });
 
-  it('shows the origin panel after Hero next in an existing account flow', () => {
+  it('renders DB-backed origin selection and creation summary without stepping', () => {
     const fixture = createFixture(true);
 
     fixture.detectChanges();
-    fixture.debugElement.query(By.directive(StepHero)).componentInstance.next.emit();
-    fixture.detectChanges();
 
-    expect(textContent(fixture)).toContain('Wybierz pochodzenie');
+    const text = textContent(fixture);
+
+    expect(text).toContain('Spartanin');
+    expect(text).toContain('No bonuses.');
+    expect(text).toContain('Przydzielane po utworzeniu');
+    expect(text).toContain('Adres zostanie przydzielony automatycznie');
   });
 
   it('keeps account and profile steps for the unauthenticated new account flow', () => {
@@ -40,10 +44,10 @@ describe('CreateCharacterPage', () => {
     fixture.detectChanges();
 
     const text = textContent(fixture);
-    expect(text).toContain('Account');
-    expect(text).toContain('Hero');
-    expect(text).toContain('Origin');
-    expect(text).toContain('Profile');
+    expect(text).toContain('Konto');
+    expect(text).toContain('Bohater');
+    expect(text).toContain('Pochodzenie');
+    expect(text).toContain('Profil');
   });
 });
 
@@ -90,6 +94,49 @@ function facadeStub(hasExistingAccount: boolean): Partial<CreateCharacterPageFac
     prevStep: jasmine.createSpy('prevStep'),
     profileForm: form.controls.profile,
     selectedOrigin: signal(null).asReadonly(),
+    selectedServer: signal({
+      id: 'server-1',
+      key: 'sandbox',
+      name: 'Sandbox',
+      kind: 'sandbox',
+      status: 'live',
+      description: null,
+      launchedAt: null,
+      archivedAt: null,
+      membershipStatus: 'active',
+      membership: null,
+      staffRole: null,
+      canManage: false,
+      canUseAsSandbox: true,
+    }).asReadonly(),
+    selectedServerAvailability: signal({
+      serverId: 'server-1',
+      serverKey: 'sandbox',
+      serverName: 'Sandbox',
+      serverKind: 'sandbox',
+      serverStatus: 'live',
+      description: 'Sandbox server.',
+      membershipStatus: 'active',
+      isVisible: true,
+      isStandard: false,
+      isSandbox: true,
+      isStaffContext: true,
+      canEnterGame: true,
+      canCreateHero: true,
+      nextAction: 'create_hero',
+      blockReason: null,
+      userHeroCount: 0,
+      defaultHeroId: null,
+      defaultHeroName: null,
+      isServerFull: false,
+      isDistrictAFull: false,
+      districtACapacity: 100,
+      districtAOccupied: 2,
+      districtAFree: 98,
+      heroesJson: [],
+      eligibilityJson: {},
+      heroes: [],
+    }).asReadonly(),
     serverAvailabilityError: signal<string | null>(null).asReadonly(),
     step: step.asReadonly(),
     onStepChange: jasmine.createSpy('onStepChange'),
@@ -101,15 +148,15 @@ function facadeStub(hasExistingAccount: boolean): Partial<CreateCharacterPageFac
 function originOption(): StartFlowOriginOption {
   return {
     id: 'origin-1',
-    key: 'nomad',
-    name: 'Nomad',
-    description: 'Nomad origin.',
-    imageUrl: null,
+    key: 'spartan',
+    name: 'Spartanin',
+    description: 'Spartan origin.',
+    imageUrl: '/images/origins/spartan.png',
     createdAt: '2026-05-01T10:00:00Z',
     originId: 'origin-1',
-    originKey: 'nomad',
-    originLabel: 'Nomad',
-    originDescription: 'Nomad origin.',
+    originKey: 'spartan',
+    originLabel: 'Spartanin',
+    originDescription: 'Spartan origin.',
     sortOrder: 1,
     isActive: true,
     bonusesJson: [],

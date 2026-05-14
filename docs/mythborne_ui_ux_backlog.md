@@ -3046,6 +3046,8 @@ Implement account/public shell before the player enters a specific server+hero g
 
 ## UI-HERO-CREATION-1 — Hero Creation Origin Carousel
 
+**Status:** Accepted on 2026-05-14. Existing-account hero creation now uses one account-side screen with readonly selected server context, editable hero name, DB/read-model-backed origin carousel, creation summary and `Stwórz bohatera` action through the existing canonical `create_hero_start_flow` path. Player-facing copy was cleaned to Polish product language and no longer exposes DB/backend/Angular/workflow wording. No DB/RPC changes, generated type edits, direct writes, auth/start-flow rewrite or local SCSS were added. Manual visual smoke remains user-side/final confirmation.
+
 **Goal:**  
 Implement the second and final account-side creation screen: name + origin + create hero.
 

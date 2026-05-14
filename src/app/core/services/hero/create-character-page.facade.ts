@@ -34,6 +34,7 @@ export class CreateCharacterPageFacade {
   readonly serverAvailability = signal<StartFlowServerAvailability[]>([]);
   readonly serverAvailabilityError = signal<string | null>(null);
   readonly user = this.authState.user;
+  readonly selectedServer = this.activeServer.selectedServer;
   readonly hasExistingAccount = computed(() => !!this.user());
   readonly form = this.formFactory.createForm();
   readonly selectedServerAvailability = computed(() => {
@@ -155,6 +156,17 @@ export class CreateCharacterPageFacade {
   }
 
   submit() {
+    if (this.heroForm.invalid) {
+      this.heroForm.markAllAsTouched();
+      this.errorMessage.set('Podaj poprawną nazwę bohatera przed stworzeniem postaci.');
+      this.showToast(
+        'warn',
+        'Nazwa bohatera jest niepełna',
+        'Podaj poprawną nazwę bohatera przed stworzeniem postaci.'
+      );
+      return;
+    }
+
     if (!this.hasExistingAccount() && this.profileForm.invalid) {
       this.profileForm.markAllAsTouched();
       this.showToast(
@@ -199,7 +211,7 @@ export class CreateCharacterPageFacade {
     this.showToast(
       'info',
       'Tworzenie bohatera',
-      'DB tworzy bohatera, początkowe zasoby, punkty postaci i posiadłość.'
+      'Gra tworzy bohatera, przydziela punkty postaci, zasoby startowe i pierwszą posiadłość.'
     );
 
     const account = this.accountForm.getRawValue();
@@ -229,7 +241,7 @@ export class CreateCharacterPageFacade {
           const route = this.routeForNextAction(result.routeNextAction);
 
           if (!route) {
-            const message = `Unsupported start-flow route action returned by DB: ${result.routeNextAction || 'empty'}.`;
+            const message = `Nieobsługiwane przekierowanie po utworzeniu bohatera: ${result.routeNextAction || 'brak'}.`;
             this.errorMessage.set(message);
             this.showToast('error', 'Przekierowanie po stworzeniu zablokowane', message);
             return;
@@ -281,7 +293,7 @@ export class CreateCharacterPageFacade {
           this.serverAvailabilityError.set(
             error instanceof Error
               ? error.message
-              : 'Nie udało się wczytać dostępności serwerów start-flow.',
+              : 'Nie udało się wczytać dostępności serwerów dla tworzenia bohatera.',
           );
         },
       });

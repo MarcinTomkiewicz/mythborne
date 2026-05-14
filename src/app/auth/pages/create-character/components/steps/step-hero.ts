@@ -11,18 +11,18 @@ import { FormFields } from '../../../../../shared/form-fields/form-fields';
   imports: [ReactiveFormsModule, ButtonModule, FormFields],
   template: `
     <div [formGroup]="form()" class="mg-form flex-col gap-md w-100">
-      <h2 class="mg-section__title mg-section__title--xs mb-sm">Name your hero</h2>
+      <h2 class="mg-section__title mg-section__title--xs mb-sm">Nazwij bohatera</h2>
       <p class="mb-0 muted-text">
-        Nazwa musi być unikalna na wybranym serwerze. Ostateczną walidację wykonuje DB podczas tworzenia bohatera.
+        Nazwa musi być unikalna na wybranym serwerze. Sprawdzimy ją podczas tworzenia bohatera.
       </p>
 
       <app-form-fields [form]="form()" [fields]="fields" />
 
       <div class="flex-row-end-center gap-sm mt-xl">
         @if (showBack()) {
-          <p-button type="button" label="Back" severity="secondary" (click)="back.emit()" />
+          <p-button type="button" label="Wstecz" severity="secondary" (click)="back.emit()" />
         }
-        <p-button type="button" label="Next" (click)="next.emit()" />
+        <p-button type="button" label="Dalej" (click)="next.emit()" />
       </div>
     </div>
   `,
