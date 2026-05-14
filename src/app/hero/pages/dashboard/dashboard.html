@@ -10,12 +10,11 @@
 
   <div class="grid-1-1 gap-md w-100">
     <app-dashboard-equipment-preview [page]="page" [compact]="true" />
-    <app-dashboard-derived-stats-card [page]="page" />
+    <div class="flex-col gap-md w-100">
+      <app-dashboard-derived-stats-card [page]="page" />
+      <app-dashboard-persistent-state [page]="page" />
+    </div>
   </div>
-
-  <app-dashboard-persistent-state [page]="page" />
-
-  <app-dashboard-estate-card [page]="page" />
 
   <app-dashboard-character-points-history [page]="page" />
 </div>

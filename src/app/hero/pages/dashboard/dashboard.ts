@@ -4,7 +4,6 @@ import { CurrentEquipmentState } from '../../../core/services/items/current-equi
 import { DashboardBaseStatsCard } from './components/dashboard-base-stats-card';
 import { DashboardCharacterPointsHistory } from './components/dashboard-character-points-history';
 import { DashboardDerivedStatsCard } from './components/dashboard-derived-stats-card';
-import { DashboardEstateCard } from './components/dashboard-estate-card';
 import { DashboardEquipmentPreview } from './components/dashboard-equipment-preview';
 import { DashboardHeroBanner } from './components/dashboard-hero-banner';
 import { DashboardNextSteps } from './components/dashboard-next-steps';
@@ -17,7 +16,6 @@ import { DashboardPersistentState } from './components/dashboard-persistent-stat
     DashboardBaseStatsCard,
     DashboardCharacterPointsHistory,
     DashboardDerivedStatsCard,
-    DashboardEstateCard,
     DashboardEquipmentPreview,
     DashboardHeroBanner,
     DashboardNextSteps,

@@ -359,6 +359,7 @@ describe('DashboardPageFacade', () => {
     expect(facade.currentEstateAddress()).toBeNull();
     expect(facade.estateAddress()).toBeNull();
     expect(facade.estateAddressError()).toBe('Estate read failed.');
+    expect(facade.worldStateErrors()).toContain('Estate read failed.');
   });
 
   it('exposes only real persistent state rows from approved read models', () => {
@@ -372,16 +373,9 @@ describe('DashboardPageFacade', () => {
       .toHaveBeenCalledWith('hero-1');
     expect(facade.persistentStateRows()).toEqual([
       {
-        key: 'unread-reports',
-        label: 'Reports',
-        value: '2 unread reports',
-        route: '/game/reports',
-        isAttention: true,
-      },
-      {
         key: 'estate-job-job-1',
         label: 'Building job',
-        value: 'Farm to level 2',
+        value: 'Farm to level 2 - 30 min remaining',
         route: '/game/mansion',
         isAttention: true,
       },
@@ -398,6 +392,27 @@ describe('DashboardPageFacade', () => {
         value: 'Blessing: +10% defense',
         route: '/game/exploration',
         isAttention: true,
+      },
+      {
+        key: 'unread-reports',
+        label: 'Unread reports',
+        value: '2 unread reports',
+        route: '/game/reports',
+        isAttention: true,
+      },
+      {
+        key: 'estate-district',
+        label: 'District',
+        value: 'Agora District (A)',
+        route: null,
+        isAttention: false,
+      },
+      {
+        key: 'vicinity-view',
+        label: 'Vicinity view',
+        value: 'Open Vicinity',
+        route: '/game/vicinity',
+        isAttention: false,
       },
     ]);
     expect(facade.isPersistentStateLoaded()).toBeTrue();
@@ -420,13 +435,6 @@ describe('DashboardPageFacade', () => {
 
     expect(facade.persistentStateRows()).toEqual([
       {
-        key: 'unread-reports',
-        label: 'Reports',
-        value: 'No unread reports',
-        route: null,
-        isAttention: false,
-      },
-      {
         key: 'estate-job-none',
         label: 'Building job',
         value: 'No building in progress',
@@ -447,6 +455,27 @@ describe('DashboardPageFacade', () => {
         route: null,
         isAttention: false,
       },
+      {
+        key: 'unread-reports',
+        label: 'Unread reports',
+        value: 'No unread reports',
+        route: null,
+        isAttention: false,
+      },
+      {
+        key: 'estate-district',
+        label: 'District',
+        value: 'Agora District (A)',
+        route: null,
+        isAttention: false,
+      },
+      {
+        key: 'vicinity-view',
+        label: 'Vicinity view',
+        value: 'Open Vicinity',
+        route: '/game/vicinity',
+        isAttention: false,
+      },
     ]);
     expect(facade.isPersistentStateLoaded()).toBeTrue();
     expect(facade.persistentStateErrors()).toEqual([]);
@@ -461,13 +490,6 @@ describe('DashboardPageFacade', () => {
 
     expect(facade.persistentStateRows()).toEqual([
       {
-        key: 'unread-reports',
-        label: 'Reports',
-        value: '2 unread reports',
-        route: '/game/reports',
-        isAttention: true,
-      },
-      {
         key: 'trials-remaining',
         label: 'Trials remaining',
         value: '3 trials remaining',
@@ -481,6 +503,27 @@ describe('DashboardPageFacade', () => {
         route: '/game/exploration',
         isAttention: true,
       },
+      {
+        key: 'unread-reports',
+        label: 'Unread reports',
+        value: '2 unread reports',
+        route: '/game/reports',
+        isAttention: true,
+      },
+      {
+        key: 'estate-district',
+        label: 'District',
+        value: 'Agora District (A)',
+        route: null,
+        isAttention: false,
+      },
+      {
+        key: 'vicinity-view',
+        label: 'Vicinity view',
+        value: 'Open Vicinity',
+        route: '/game/vicinity',
+        isAttention: false,
+      },
     ]);
     expect(facade.persistentStateErrors()).toEqual(['Estate state failed.']);
   });
@@ -489,10 +532,12 @@ describe('DashboardPageFacade', () => {
     facade.loadData();
 
     expect(facade.persistentStateRows().map((row) => row.label)).toEqual([
-      'Reports',
       'Building job',
       'Trials remaining',
       'Active state',
+      'Unread reports',
+      'District',
+      'Vicinity view',
     ]);
     expect(facade.persistentStateRows().some((row) =>
       row.label === 'Active exploration'
@@ -509,16 +554,9 @@ describe('DashboardPageFacade', () => {
 
     expect(facade.persistentStateRows()).toEqual([
       {
-        key: 'unread-reports',
-        label: 'Reports',
-        value: '2 unread reports',
-        route: '/game/reports',
-        isAttention: true,
-      },
-      {
         key: 'estate-job-job-1',
         label: 'Building job',
-        value: 'Farm to level 2',
+        value: 'Farm to level 2 - 30 min remaining',
         route: '/game/mansion',
         isAttention: true,
       },
@@ -529,16 +567,39 @@ describe('DashboardPageFacade', () => {
         route: '/game/exploration',
         isAttention: true,
       },
+      {
+        key: 'unread-reports',
+        label: 'Unread reports',
+        value: '2 unread reports',
+        route: '/game/reports',
+        isAttention: true,
+      },
+      {
+        key: 'estate-district',
+        label: 'District',
+        value: 'Agora District (A)',
+        route: null,
+        isAttention: false,
+      },
+      {
+        key: 'vicinity-view',
+        label: 'Vicinity view',
+        value: 'Open Vicinity',
+        route: '/game/vicinity',
+        isAttention: false,
+      },
     ]);
     expect(facade.persistentStateErrors()).toEqual(['Active effect failed.']);
   });
 
   it('ignores stale persistent state responses after the active hero changes', () => {
+    const estateAddressResponse = new Subject<CurrentEstateAddressReadModel>();
     const estateViewResponse = new Subject<MansionEstateView>();
     const unreadReportsResponse = new Subject<number>();
     const trialCounterResponse = new Subject<HeroDailyActionCounterReadModel | null>();
     const activeStateResponse = new Subject<HeroPendingCombatEffectStateReadModel[]>();
 
+    estateAddresses.getActiveHeroCurrentAddress.and.returnValue(estateAddressResponse);
     buildingsService.getMansionEstateView.and.returnValue(estateViewResponse);
     gameReports.getActiveHeroUnreadCount.and.returnValue(unreadReportsResponse);
     heroExplorations.getHeroTrialCounter.and.returnValue(trialCounterResponse);
@@ -547,6 +608,8 @@ describe('DashboardPageFacade', () => {
     facade.loadData();
 
     activeHeroState.set(activeHeroContext({ heroId: 'hero-2' }));
+    estateAddressResponse.next(currentEstateAddress());
+    estateAddressResponse.complete();
     estateViewResponse.next(mansionEstateView());
     estateViewResponse.complete();
     unreadReportsResponse.next(2);

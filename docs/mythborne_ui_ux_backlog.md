@@ -1761,7 +1761,7 @@ Global UI-DASHBOARD rules:
 
 ## UI-DASHBOARD-09 — Home / estate / vicinity context card
 
-**Status:** Accepted on 2026-05-13. Dashboard now uses `DashboardEstateCard` / `app-dashboard-estate-card` with real `EstateAddresses.getActiveHeroCurrentAddress()` data. The card renders a compact row list for Address, District and a `/game/vicinity` row action, with `estateAddress` computed from `currentEstateAddress`. Server context stays in the hero banner, nearby range remains deferred until a real read model exposes it, and no fake range, local dashboard SCSS or generated type edits were added.
+**Status:** Accepted on 2026-05-13. Dashboard estate context uses real `EstateAddresses.getActiveHeroCurrentAddress()` data, with `estateAddress` computed from `currentEstateAddress`. Server context and Address stay in the hero banner; District and `/game/vicinity` row action were later merged into the UI-DASHBOARD-11 `World State` card. Nearby range remains deferred until a real read model exposes it, and no fake range, local dashboard SCSS or generated type edits were added.
 
 **Goal:** add light world context without turning dashboard into Mansion/Vicinity.
 
@@ -1834,7 +1834,7 @@ Global UI-DASHBOARD rules:
 
 ## UI-DASHBOARD-11 — Persistent state container implementation
 
-**Status:** Accepted on 2026-05-13. Current State is a compact row-list backed by approved sources: unread reports, estate building job, trials remaining from the latest permission-safe `hero_daily_action_counters` row scoped by hero/server/`action_kind = trial`, and active state from `get_hero_pending_combat_effect_state(p_hero_id)`. Active exploration, active step and challenge handoff remain deferred until a dashboard-safe difficulty/current exploration context source exists; notifications remain out of dashboard scope.
+**Status:** Accepted on 2026-05-13. `World State` is a compact row-list placed under Derived Stats in the right dashboard column. It is backed by approved sources: estate building job with DB-owned `remainingSeconds` countdown display, trials remaining from the latest permission-safe `hero_daily_action_counters` row scoped by hero/server/`action_kind = trial`, active state from `get_hero_pending_combat_effect_state(p_hero_id)`, unread reports, and District/Vicinity rows from `EstateAddresses.getActiveHeroCurrentAddress()`. Active exploration, active step and challenge handoff remain deferred until a dashboard-safe difficulty/current exploration context source exists; notifications remain out of dashboard scope.
 
 **Goal:** implement the shared dashboard area for real persistent states.
 

@@ -1,4 +1,5 @@
 import { MansionBuildingJob } from '../../domain/building/building.model';
+import { CurrentEstateAddressReadModel } from '../../domain/estate/estate-address.model';
 import {
   HeroDailyActionCounterReadModel,
   HeroPendingCombatEffectStateReadModel,
@@ -17,19 +18,14 @@ describe('dashboard persistent state mapper', () => {
         isTrialCounterLoaded: true,
         activeCombatEffect: combatEffect(),
         isCombatEffectStateLoaded: true,
+        estateAddress: estateAddress(),
+        isEstateAddressLoaded: true,
       }),
     ).toEqual([
       {
-        key: 'unread-reports',
-        label: 'Reports',
-        value: '2 unread reports',
-        route: '/game/reports',
-        isAttention: true,
-      },
-      {
         key: 'estate-job-job-1',
         label: 'Building job',
-        value: 'Farm to level 2',
+        value: 'Farm to level 2 - 30 min remaining',
         route: '/game/mansion',
         isAttention: true,
       },
@@ -47,6 +43,52 @@ describe('dashboard persistent state mapper', () => {
         route: '/game/exploration',
         isAttention: true,
       },
+      {
+        key: 'unread-reports',
+        label: 'Unread reports',
+        value: '2 unread reports',
+        route: '/game/reports',
+        isAttention: true,
+      },
+      {
+        key: 'estate-district',
+        label: 'District',
+        value: 'Agora District (A)',
+        route: null,
+        isAttention: false,
+      },
+      {
+        key: 'vicinity-view',
+        label: 'Vicinity view',
+        value: 'Open Vicinity',
+        route: '/game/vicinity',
+        isAttention: false,
+      },
+    ]);
+  });
+
+  it('maps a ready building job without inventing dashboard completion', () => {
+    expect(
+      mapDashboardPersistentStateRows({
+        activeBuildingJob: { ...buildingJob(), remainingSeconds: 0 },
+        isBuildingJobStateLoaded: true,
+        unreadReportCount: 0,
+        isReportsStateLoaded: false,
+        trialCounter: null,
+        isTrialCounterLoaded: false,
+        activeCombatEffect: null,
+        isCombatEffectStateLoaded: false,
+        estateAddress: null,
+        isEstateAddressLoaded: false,
+      }),
+    ).toEqual([
+      {
+        key: 'estate-job-job-1',
+        label: 'Building job',
+        value: 'Farm to level 2 - Ready / refresh mansion',
+        route: '/game/mansion',
+        isAttention: true,
+      },
     ]);
   });
 
@@ -61,13 +103,10 @@ describe('dashboard persistent state mapper', () => {
         isTrialCounterLoaded: true,
         activeCombatEffect: null,
         isCombatEffectStateLoaded: true,
+        estateAddress: estateAddress({ districtName: null }),
+        isEstateAddressLoaded: true,
       }),
     ).toEqual([
-      jasmine.objectContaining({
-        key: 'unread-reports',
-        value: 'No unread reports',
-        isAttention: false,
-      }),
       jasmine.objectContaining({
         key: 'estate-job-none',
         value: 'No building in progress',
@@ -83,6 +122,21 @@ describe('dashboard persistent state mapper', () => {
         value: 'No active state',
         isAttention: false,
       }),
+      jasmine.objectContaining({
+        key: 'unread-reports',
+        value: 'No unread reports',
+        isAttention: false,
+      }),
+      jasmine.objectContaining({
+        key: 'estate-district',
+        value: 'District A',
+        isAttention: false,
+      }),
+      jasmine.objectContaining({
+        key: 'vicinity-view',
+        value: 'Open Vicinity',
+        route: '/game/vicinity',
+      }),
     ]);
   });
 
@@ -97,6 +151,8 @@ describe('dashboard persistent state mapper', () => {
         isTrialCounterLoaded: false,
         activeCombatEffect: null,
         isCombatEffectStateLoaded: false,
+        estateAddress: null,
+        isEstateAddressLoaded: false,
       }),
     ).toEqual([]);
   });
@@ -162,5 +218,19 @@ function combatEffect(): HeroPendingCombatEffectStateReadModel {
     consumedAt: null,
     consumedByKind: null,
     consumedById: null,
+  };
+}
+
+function estateAddress(
+  overrides: Partial<CurrentEstateAddressReadModel> = {},
+): CurrentEstateAddressReadModel {
+  return {
+    estateId: 'estate-1',
+    serverId: 'server-1',
+    districtCode: 'A',
+    districtName: 'Agora District',
+    addressNumber: 3,
+    addressLabel: 'A-3',
+    ...overrides,
   };
 }

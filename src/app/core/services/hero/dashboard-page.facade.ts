@@ -57,6 +57,7 @@ export class DashboardPageFacade {
   private readonly gameReports = inject(GameReports);
   private readonly heroExplorations = inject(HeroExplorations);
   private readonly activeHeroState = inject(ActiveHero);
+  private readonly estateAddressLoadToken = new RequestToken();
   private readonly persistentStateLoadToken = new RequestToken();
   private readonly persistentStateContext = signal<{
     heroId: string;
@@ -74,6 +75,7 @@ export class DashboardPageFacade {
   readonly estateAddress = computed(() =>
     this.currentEstateAddress()?.addressLabel ?? null
   );
+  isEstateAddressLoaded = signal(false);
   estateAddressError = signal<string | null>(null);
   readonly heroLevel = this.level;
   readonly experience = this.vitals.currentExperience;
@@ -104,6 +106,10 @@ export class DashboardPageFacade {
   persistentStateErrors = signal<string[]>([]);
   isPersistentStateLoading = signal(false);
   isPersistentStateLoaded = signal(false);
+  readonly worldStateErrors = computed(() => [
+    ...this.persistentStateErrors(),
+    this.estateAddressError(),
+  ].filter((error): error is string => error !== null));
   readonly isEquipmentLoading = this.currentEquipment.isLoading;
   readonly equipmentStatus = this.currentEquipment.status;
   readonly equipmentError = computed(() =>
@@ -119,6 +125,8 @@ export class DashboardPageFacade {
       isTrialCounterLoaded: this.isTrialCounterLoaded(),
       activeCombatEffect: this.activeCombatEffect(),
       isCombatEffectStateLoaded: this.isCombatEffectStateLoaded(),
+      estateAddress: this.currentEstateAddress(),
+      isEstateAddressLoaded: this.isEstateAddressLoaded(),
     })
   );
 
@@ -179,14 +187,34 @@ export class DashboardPageFacade {
   }
 
   private loadEstateAddress(): void {
+    const token = this.estateAddressLoadToken.next();
+    const activeHero = this.activeHeroState.state();
+
+    this.isEstateAddressLoaded.set(false);
     this.estateAddressError.set(null);
 
     this.estateAddresses.getActiveHeroCurrentAddress().subscribe({
       next: (address) => {
+        if (
+          !this.estateAddressLoadToken.isCurrent(token)
+          || !this.isCurrentActiveHeroContext(activeHero?.heroId, activeHero?.serverId)
+        ) {
+          return;
+        }
+
         this.currentEstateAddress.set(address);
+        this.isEstateAddressLoaded.set(true);
       },
       error: (error: unknown) => {
+        if (
+          !this.estateAddressLoadToken.isCurrent(token)
+          || !this.isCurrentActiveHeroContext(activeHero?.heroId, activeHero?.serverId)
+        ) {
+          return;
+        }
+
         this.currentEstateAddress.set(null);
+        this.isEstateAddressLoaded.set(false);
         this.estateAddressError.set(
           getErrorMessage(error, 'Estate context could not be loaded.'),
         );
@@ -340,13 +368,23 @@ export class DashboardPageFacade {
 
   private isCurrentPersistentStateContext(heroId: string, serverId: string): boolean {
     const context = this.persistentStateContext();
-    const activeHero = this.activeHeroState.state();
 
     return context?.heroId === heroId
       && context.serverId === serverId
-      && activeHero?.heroId === heroId
-      && activeHero.serverId === serverId
+      && this.isCurrentActiveHeroContext(heroId, serverId)
       && this.selectedServer()?.id === serverId;
+  }
+
+  private isCurrentActiveHeroContext(
+    heroId: string | null | undefined,
+    serverId: string | null | undefined,
+  ): boolean {
+    const activeHero = this.activeHeroState.state();
+
+    return !!heroId
+      && !!serverId
+      && activeHero?.heroId === heroId
+      && activeHero.serverId === serverId;
   }
 }
 

@@ -262,9 +262,9 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UI-DASHBOARD-05 - Base Stats card with runtime stats_json values, DB-backed labels, component split, mapper cleanup and normal text color utilities.
 - Completed and confirmed: Health State frontend integration - shared `ActiveHeroVitalsState` drives dashboard/topbar DB-owned `currentHealth / maxHealth`, level and XP progress.
 - Completed and confirmed: UI-DASHBOARD-06 - Derived Stats compact row list with DB-owned runtime rows and deferred item popover pending a stable item reference.
-- Completed and confirmed: UI-DASHBOARD-09 - Estate card with real current address/district rows, `/game/vicinity` row action, computed address state and no fake nearby range.
+- Completed and confirmed: UI-DASHBOARD-09 - estate context uses real current address/district source, computed address state and no fake nearby range; District and `/game/vicinity` row action now live in UI-DASHBOARD-11 `World State`.
 - Completed and confirmed: UI-DASHBOARD-10 - persistent state source matrix; UI-DASHBOARD-11 may only implement states with dashboard-safe read sources, while active exploration/step/challenge remain blocked/conditional until a dashboard-safe current difficulty source exists.
-- Completed and confirmed: UI-DASHBOARD-11 - Current State row-list backed by unread reports, estate building job, trials remaining from latest hero/server `trial` counter row, and active state from pending combat effect state; no notifications, fake timers, guessed difficulty or fake empty rows.
+- Completed and confirmed: UI-DASHBOARD-11 - `World State` row-list under Derived Stats backed by estate building job countdown from DB timing, trials remaining from latest hero/server `trial` counter row, active state from pending combat effect state, unread reports, District and Vicinity action; no notifications, fake timers, guessed difficulty or fake empty rows.
 - Completed and confirmed: S12 - Unequip slot action.
 - Completed and confirmed: S13 - Bulk equip action.
 - Completed and confirmed conditionally: S14 - Preset domain service and `PlayerEquipment` -> `HeroEquipment` rename.

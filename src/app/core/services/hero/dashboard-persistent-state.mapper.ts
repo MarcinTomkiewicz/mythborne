@@ -1,8 +1,10 @@
 import { MansionBuildingJob } from '../../domain/building/building.model';
+import { CurrentEstateAddressReadModel } from '../../domain/estate/estate-address.model';
 import {
   HeroDailyActionCounterReadModel,
   HeroPendingCombatEffectStateReadModel,
 } from '../../domain/exploration/exploration-runtime.model';
+import { toBuildingDurationLabel } from '../../utils/building-display';
 
 export interface DashboardPersistentStateRow {
   key: string;
@@ -21,15 +23,19 @@ export function mapDashboardPersistentStateRows(input: {
   isTrialCounterLoaded: boolean;
   activeCombatEffect: HeroPendingCombatEffectStateReadModel | null;
   isCombatEffectStateLoaded: boolean;
+  estateAddress: CurrentEstateAddressReadModel | null;
+  isEstateAddressLoaded: boolean;
 }): DashboardPersistentStateRow[] {
   return [
-    reportsRow(input.unreadReportCount, input.isReportsStateLoaded),
     buildingJobRow(input.activeBuildingJob, input.isBuildingJobStateLoaded),
     trialsRemainingRow(input.trialCounter, input.isTrialCounterLoaded),
     activeCombatEffectRow(
       input.activeCombatEffect,
       input.isCombatEffectStateLoaded,
     ),
+    reportsRow(input.unreadReportCount, input.isReportsStateLoaded),
+    districtRow(input.estateAddress, input.isEstateAddressLoaded),
+    vicinityRow(input.estateAddress, input.isEstateAddressLoaded),
   ].filter((row): row is DashboardPersistentStateRow => row !== null);
 }
 
@@ -54,10 +60,20 @@ function buildingJobRow(
   return {
     key: `estate-job-${job.id}`,
     label: 'Building job',
-    value: `${job.buildingName} to level ${job.targetLevel}`,
+    value: buildingJobValue(job),
     route: '/game/mansion',
     isAttention: true,
   };
+}
+
+function buildingJobValue(job: MansionBuildingJob): string {
+  const jobLabel = `${job.buildingName} to level ${job.targetLevel}`;
+
+  if (job.remainingSeconds <= 0) {
+    return `${jobLabel} - Ready / refresh mansion`;
+  }
+
+  return `${jobLabel} - ${toBuildingDurationLabel(job.remainingSeconds)} remaining`;
 }
 
 function reportsRow(
@@ -70,7 +86,7 @@ function reportsRow(
 
   return {
     key: 'unread-reports',
-    label: 'Reports',
+    label: 'Unread reports',
     value: count > 0
       ? `${count} unread ${count === 1 ? 'report' : 'reports'}`
       : 'No unread reports',
@@ -130,4 +146,40 @@ function combatEffectValue(effect: HeroPendingCombatEffectStateReadModel): strin
     || effect.effectLabel
     || effect.effectKindLabel
     || 'Active state';
+}
+
+function districtRow(
+  estateAddress: CurrentEstateAddressReadModel | null,
+  isLoaded: boolean,
+): DashboardPersistentStateRow | null {
+  if (!isLoaded || !estateAddress) {
+    return null;
+  }
+
+  return {
+    key: 'estate-district',
+    label: 'District',
+    value: estateAddress.districtName
+      ? `${estateAddress.districtName} (${estateAddress.districtCode})`
+      : `District ${estateAddress.districtCode}`,
+    route: null,
+    isAttention: false,
+  };
+}
+
+function vicinityRow(
+  estateAddress: CurrentEstateAddressReadModel | null,
+  isLoaded: boolean,
+): DashboardPersistentStateRow | null {
+  if (!isLoaded || !estateAddress) {
+    return null;
+  }
+
+  return {
+    key: 'vicinity-view',
+    label: 'Vicinity view',
+    value: 'Open Vicinity',
+    route: '/game/vicinity',
+    isAttention: false,
+  };
 }

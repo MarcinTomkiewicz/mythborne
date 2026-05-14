@@ -1,16 +1,16 @@
 <section class="mg-card p-lg w-100">
   <div class="flex-col gap-xs mb-md">
     <h3 class="mg-section__title mg-section__title--xs mb-0">
-      Current State
+      World State
     </h3>
   </div>
 
   @if (page().isPersistentStateLoading()) {
-    <p class="color-muted mb-0">Loading current state...</p>
+    <p class="color-muted mb-0">Loading world state...</p>
   } @else {
-    @if (page().persistentStateErrors().length > 0) {
+    @if (page().worldStateErrors().length > 0) {
       <div class="flex-col gap-xs mb-md">
-        @for (error of page().persistentStateErrors(); track error) {
+        @for (error of page().worldStateErrors(); track error) {
           <p class="warn-text mb-0">{{ error }}</p>
         }
       </div>
@@ -36,9 +36,9 @@
       </div>
     } @else if (
       page().isPersistentStateLoaded()
-      && page().persistentStateErrors().length === 0
+      && page().worldStateErrors().length === 0
     ) {
-      <p class="color-muted mb-0">No current persistent state.</p>
+      <p class="color-muted mb-0">No world state available.</p>
     }
   }
 </section>
