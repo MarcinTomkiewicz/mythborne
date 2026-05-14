@@ -171,13 +171,6 @@ describe('dashboard page mappers', () => {
         parts: [{ text: '142', className: 'success-text text-md' }],
       },
       {
-        key: 'luck',
-        label: 'Luck',
-        value: '21',
-        valueClass: 'color-heading text-md',
-        parts: [{ text: '21', className: 'color-heading text-md' }],
-      },
-      {
         key: 'critical_chance',
         label: 'Critical chance',
         value: '6%',
@@ -197,6 +190,13 @@ describe('dashboard page mappers', () => {
         value: '3',
         valueClass: 'color-heading text-md',
         parts: [{ text: '3', className: 'color-heading text-md' }],
+      },
+      {
+        key: 'luck',
+        label: 'Luck',
+        value: '21',
+        valueClass: 'color-heading text-md',
+        parts: [{ text: '21', className: 'color-heading text-md' }],
       },
     ]);
   });

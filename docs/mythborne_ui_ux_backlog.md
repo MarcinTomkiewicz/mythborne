@@ -1956,6 +1956,8 @@ Global UI-DASHBOARD rules:
 
 ## UI-DASHBOARD-16 — Dashboard text hierarchy and muted-text audit
 
+**Interim note (2026-05-14):** Dashboard presentation/order cleanup keeps source-backed values out of muted styling, plain dashboard row links use global base link styling, Derived Stats render display-contract tone classes from `display_stats_json`, Luck is pinned to the final Derived Stats row while remaining neutral through `colorableFinalValue=false`, and World State rows render in the reviewed order: Trials remaining, Active state, Building job, District, Vicinity view, Unread reports. This is not UI-DASHBOARD-16 completion/acceptance. No dashboard-local SCSS, local stat math, display-string parsing, generated type edits or DB/RPC changes were added.
+
 **Goal:** clean dashboard label/value/status hierarchy.
 
 **Scope:**

@@ -75,10 +75,19 @@ export function mapDashboardDerivedStatRows(
 
   return [
     ...runtime.displayStats.damageRows.map(damageRow),
-    ...runtime.displayStats.derivedStats
-      .filter((row) => row.statKey !== 'health')
+    ...orderDerivedStats(runtime.displayStats.derivedStats)
       .map(derivedStatRow),
   ];
+}
+
+function orderDerivedStats(
+  rows: HeroDashboardDisplayStatRow[],
+): HeroDashboardDisplayStatRow[] {
+  const visibleRows = rows.filter((row) => row.statKey !== 'health');
+  const luckRows = visibleRows.filter((row) => row.statKey === 'luck');
+  const nonLuckRows = visibleRows.filter((row) => row.statKey !== 'luck');
+
+  return [...nonLuckRows, ...luckRows];
 }
 
 function damageRow(row: HeroDashboardDisplayDamageRow): DashboardDerivedStatRow {

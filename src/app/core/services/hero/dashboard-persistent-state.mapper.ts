@@ -5,14 +5,7 @@ import {
   HeroPendingCombatEffectStateReadModel,
 } from '../../domain/exploration/exploration-runtime.model';
 import { toBuildingDurationLabel } from '../../utils/building-display';
-
-export interface DashboardPersistentStateRow {
-  key: string;
-  label: string;
-  value: string;
-  route: string | null;
-  isAttention: boolean;
-}
+import { DashboardPersistentStateRow } from './dashboard-persistent-state.model';
 
 export function mapDashboardPersistentStateRows(input: {
   activeBuildingJob: MansionBuildingJob | null;
@@ -27,15 +20,15 @@ export function mapDashboardPersistentStateRows(input: {
   isEstateAddressLoaded: boolean;
 }): DashboardPersistentStateRow[] {
   return [
-    buildingJobRow(input.activeBuildingJob, input.isBuildingJobStateLoaded),
     trialsRemainingRow(input.trialCounter, input.isTrialCounterLoaded),
     activeCombatEffectRow(
       input.activeCombatEffect,
       input.isCombatEffectStateLoaded,
     ),
-    reportsRow(input.unreadReportCount, input.isReportsStateLoaded),
+    buildingJobRow(input.activeBuildingJob, input.isBuildingJobStateLoaded),
     districtRow(input.estateAddress, input.isEstateAddressLoaded),
     vicinityRow(input.estateAddress, input.isEstateAddressLoaded),
+    reportsRow(input.unreadReportCount, input.isReportsStateLoaded),
   ].filter((row): row is DashboardPersistentStateRow => row !== null);
 }
 

@@ -441,13 +441,6 @@ describe('DashboardPageFacade', () => {
       .toHaveBeenCalledWith('hero-1');
     expect(facade.persistentStateRows()).toEqual([
       {
-        key: 'estate-job-job-1',
-        label: 'Building job',
-        value: 'Farm to level 2 - 30 min remaining',
-        route: '/game/mansion',
-        isAttention: true,
-      },
-      {
         key: 'trials-remaining',
         label: 'Trials remaining',
         value: '3 trials remaining',
@@ -462,10 +455,10 @@ describe('DashboardPageFacade', () => {
         isAttention: true,
       },
       {
-        key: 'unread-reports',
-        label: 'Unread reports',
-        value: '2 unread reports',
-        route: '/game/reports',
+        key: 'estate-job-job-1',
+        label: 'Building job',
+        value: 'Farm to level 2 - 30 min remaining',
+        route: '/game/mansion',
         isAttention: true,
       },
       {
@@ -481,6 +474,13 @@ describe('DashboardPageFacade', () => {
         value: 'Open Vicinity',
         route: '/game/vicinity',
         isAttention: false,
+      },
+      {
+        key: 'unread-reports',
+        label: 'Unread reports',
+        value: '2 unread reports',
+        route: '/game/reports',
+        isAttention: true,
       },
     ]);
     expect(facade.isPersistentStateLoaded()).toBeTrue();
@@ -503,13 +503,6 @@ describe('DashboardPageFacade', () => {
 
     expect(facade.persistentStateRows()).toEqual([
       {
-        key: 'estate-job-none',
-        label: 'Building job',
-        value: 'No building in progress',
-        route: null,
-        isAttention: false,
-      },
-      {
         key: 'trials-remaining',
         label: 'Trials remaining',
         value: '0 trials remaining',
@@ -524,9 +517,9 @@ describe('DashboardPageFacade', () => {
         isAttention: false,
       },
       {
-        key: 'unread-reports',
-        label: 'Unread reports',
-        value: 'No unread reports',
+        key: 'estate-job-none',
+        label: 'Building job',
+        value: 'No building in progress',
         route: null,
         isAttention: false,
       },
@@ -542,6 +535,13 @@ describe('DashboardPageFacade', () => {
         label: 'Vicinity view',
         value: 'Open Vicinity',
         route: '/game/vicinity',
+        isAttention: false,
+      },
+      {
+        key: 'unread-reports',
+        label: 'Unread reports',
+        value: 'No unread reports',
+        route: null,
         isAttention: false,
       },
     ]);
@@ -572,13 +572,6 @@ describe('DashboardPageFacade', () => {
         isAttention: true,
       },
       {
-        key: 'unread-reports',
-        label: 'Unread reports',
-        value: '2 unread reports',
-        route: '/game/reports',
-        isAttention: true,
-      },
-      {
         key: 'estate-district',
         label: 'District',
         value: 'Agora District (A)',
@@ -592,6 +585,13 @@ describe('DashboardPageFacade', () => {
         route: '/game/vicinity',
         isAttention: false,
       },
+      {
+        key: 'unread-reports',
+        label: 'Unread reports',
+        value: '2 unread reports',
+        route: '/game/reports',
+        isAttention: true,
+      },
     ]);
     expect(facade.persistentStateErrors()).toEqual(['Estate state failed.']);
   });
@@ -600,12 +600,12 @@ describe('DashboardPageFacade', () => {
     facade.loadData();
 
     expect(facade.persistentStateRows().map((row) => row.label)).toEqual([
-      'Building job',
       'Trials remaining',
       'Active state',
-      'Unread reports',
+      'Building job',
       'District',
       'Vicinity view',
+      'Unread reports',
     ]);
     expect(facade.persistentStateRows().some((row) =>
       row.label === 'Active exploration'
@@ -622,13 +622,6 @@ describe('DashboardPageFacade', () => {
 
     expect(facade.persistentStateRows()).toEqual([
       {
-        key: 'estate-job-job-1',
-        label: 'Building job',
-        value: 'Farm to level 2 - 30 min remaining',
-        route: '/game/mansion',
-        isAttention: true,
-      },
-      {
         key: 'trials-remaining',
         label: 'Trials remaining',
         value: '3 trials remaining',
@@ -636,10 +629,10 @@ describe('DashboardPageFacade', () => {
         isAttention: true,
       },
       {
-        key: 'unread-reports',
-        label: 'Unread reports',
-        value: '2 unread reports',
-        route: '/game/reports',
+        key: 'estate-job-job-1',
+        label: 'Building job',
+        value: 'Farm to level 2 - 30 min remaining',
+        route: '/game/mansion',
         isAttention: true,
       },
       {
@@ -655,6 +648,13 @@ describe('DashboardPageFacade', () => {
         value: 'Open Vicinity',
         route: '/game/vicinity',
         isAttention: false,
+      },
+      {
+        key: 'unread-reports',
+        label: 'Unread reports',
+        value: '2 unread reports',
+        route: '/game/reports',
+        isAttention: true,
       },
     ]);
     expect(facade.persistentStateErrors()).toEqual(['Active effect failed.']);
@@ -726,13 +726,6 @@ describe('DashboardPageFacade', () => {
         parts: [{ text: '104', className: 'color-heading text-md' }],
       },
       {
-        key: 'luck',
-        label: 'Luck',
-        value: '3',
-        valueClass: 'color-heading text-md',
-        parts: [{ text: '3', className: 'color-heading text-md' }],
-      },
-      {
         key: 'critical_chance',
         label: 'Critical chance',
         value: '2%',
@@ -759,6 +752,13 @@ describe('DashboardPageFacade', () => {
         value: '2',
         valueClass: 'color-heading text-md',
         parts: [{ text: '2', className: 'color-heading text-md' }],
+      },
+      {
+        key: 'luck',
+        label: 'Luck',
+        value: '3',
+        valueClass: 'color-heading text-md',
+        parts: [{ text: '3', className: 'color-heading text-md' }],
       },
     ]);
     expect(facade.derivedDisplay().health).toBe(120);

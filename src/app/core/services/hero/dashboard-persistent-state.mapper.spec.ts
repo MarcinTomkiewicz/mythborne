@@ -23,13 +23,6 @@ describe('dashboard persistent state mapper', () => {
       }),
     ).toEqual([
       {
-        key: 'estate-job-job-1',
-        label: 'Building job',
-        value: 'Farm to level 2 - 30 min remaining',
-        route: '/game/mansion',
-        isAttention: true,
-      },
-      {
         key: 'trials-remaining',
         label: 'Trials remaining',
         value: '3 trials remaining',
@@ -44,10 +37,10 @@ describe('dashboard persistent state mapper', () => {
         isAttention: true,
       },
       {
-        key: 'unread-reports',
-        label: 'Unread reports',
-        value: '2 unread reports',
-        route: '/game/reports',
+        key: 'estate-job-job-1',
+        label: 'Building job',
+        value: 'Farm to level 2 - 30 min remaining',
+        route: '/game/mansion',
         isAttention: true,
       },
       {
@@ -63,6 +56,13 @@ describe('dashboard persistent state mapper', () => {
         value: 'Open Vicinity',
         route: '/game/vicinity',
         isAttention: false,
+      },
+      {
+        key: 'unread-reports',
+        label: 'Unread reports',
+        value: '2 unread reports',
+        route: '/game/reports',
+        isAttention: true,
       },
     ]);
   });
@@ -108,11 +108,6 @@ describe('dashboard persistent state mapper', () => {
       }),
     ).toEqual([
       jasmine.objectContaining({
-        key: 'estate-job-none',
-        value: 'No building in progress',
-        isAttention: false,
-      }),
-      jasmine.objectContaining({
         key: 'trials-remaining',
         value: '0 trials remaining',
         isAttention: false,
@@ -123,8 +118,8 @@ describe('dashboard persistent state mapper', () => {
         isAttention: false,
       }),
       jasmine.objectContaining({
-        key: 'unread-reports',
-        value: 'No unread reports',
+        key: 'estate-job-none',
+        value: 'No building in progress',
         isAttention: false,
       }),
       jasmine.objectContaining({
@@ -136,6 +131,11 @@ describe('dashboard persistent state mapper', () => {
         key: 'vicinity-view',
         value: 'Open Vicinity',
         route: '/game/vicinity',
+      }),
+      jasmine.objectContaining({
+        key: 'unread-reports',
+        value: 'No unread reports',
+        isAttention: false,
       }),
     ]);
   });

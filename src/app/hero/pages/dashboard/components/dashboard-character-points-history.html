@@ -26,9 +26,10 @@
           </div>
           <div class="flex-col gap-xs text-right">
             <strong class="color-heading">{{ entry.amountLabel }}</strong>
-            <span class="color-muted"
-              >Balance after: {{ entry.balanceAfter }}</span
-            >
+            <span>
+              <span class="color-muted">Balance after: </span>
+              <strong class="color-heading">{{ entry.balanceAfter }}</strong>
+            </span>
           </div>
         </article>
       }
