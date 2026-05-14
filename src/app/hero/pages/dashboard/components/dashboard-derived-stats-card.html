@@ -14,7 +14,11 @@
       <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
         <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>
         @if (row.value !== null && row.value !== "") {
-          <strong class="color-heading text-md">{{ row.value }}</strong>
+          <strong [class]="row.valueClass">
+            @for (part of row.parts; track $index) {
+              <span [class]="part.className">{{ part.text }}</span>
+            }
+          </strong>
         }
       </div>
     }

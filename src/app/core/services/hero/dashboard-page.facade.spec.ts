@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import { of, Subject, throwError } from 'rxjs';
 import { Hero } from './hero';
 import { Origins } from '../origins/origins';
-import { StatsService } from '../stats/stats';
 import { DashboardPageFacade } from './dashboard-page.facade';
 import { CharacterPointHistory } from './character-point-history';
 import { HeroDashboardRuntimeStats } from './hero-dashboard-runtime-stats';
@@ -72,7 +71,7 @@ describe('DashboardPageFacade', () => {
         origin_id: null,
       }) as ReturnType<Hero['getHeroData']>,
     );
-    hero.getHeroStats.and.throwError('Dashboard must use runtime stats_json.');
+    hero.getHeroStats.and.throwError('Dashboard must use runtime display_stats_json.');
     vitalsLoad = jasmine.createSpy('load');
     vitalsLevel = signal<number | null>(4);
     vitalsCurrentHealth = signal(84);
@@ -104,13 +103,113 @@ describe('DashboardPageFacade', () => {
     runtimeStats = jasmine.createSpyObj<HeroDashboardRuntimeStats>('HeroDashboardRuntimeStats', {
       getActiveHeroRuntimeStats: of({
         heroId: 'hero-1',
-        damageRows: [
-          { key: 'main_hand', label: 'Demonic Dagger', displayValue: '21-28' },
-          { key: 'off_hand', label: 'Unarmed', displayValue: '20-21' },
-        ],
-        stats: {
-          strength: 19,
-          dexterity: 6,
+        displayStats: {
+          heroStats: [
+            {
+              statKey: 'strength',
+              label: 'Strength',
+              displayValue: '19',
+              finalValue: 19,
+              tone: 'neutral',
+              colorableFinalValue: false,
+              sortOrder: 10,
+            },
+            {
+              statKey: 'dexterity',
+              label: 'Dexterity',
+              displayValue: '6',
+              finalValue: 6,
+              tone: 'neutral',
+              colorableFinalValue: false,
+              sortOrder: 20,
+            },
+          ],
+          derivedStats: [
+            {
+              statKey: 'defense',
+              label: 'Defense',
+              displayValue: '104',
+              finalValue: 104,
+              tone: 'neutral',
+              colorableFinalValue: true,
+              sortOrder: 10,
+            },
+            {
+              statKey: 'luck',
+              label: 'Luck',
+              displayValue: '3',
+              finalValue: 3,
+              tone: 'positive',
+              colorableFinalValue: false,
+              sortOrder: 20,
+            },
+            {
+              statKey: 'critical_chance',
+              label: 'Critical chance',
+              displayValue: '2%',
+              finalValue: 2,
+              tone: 'positive',
+              colorableFinalValue: true,
+              sortOrder: 30,
+            },
+            {
+              statKey: 'critical_damage',
+              label: 'Critical damage',
+              displayValue: '50%',
+              finalValue: 50,
+              tone: 'neutral',
+              colorableFinalValue: true,
+              sortOrder: 40,
+            },
+            {
+              statKey: 'evasion',
+              label: 'Evasion',
+              displayValue: '8%',
+              finalValue: 8,
+              tone: 'neutral',
+              colorableFinalValue: true,
+              sortOrder: 50,
+            },
+            {
+              statKey: 'attack_count',
+              label: 'Attack count',
+              displayValue: '2',
+              finalValue: 2,
+              tone: 'positive',
+              colorableFinalValue: false,
+              sortOrder: 60,
+            },
+          ],
+          damageRows: [
+            {
+              key: 'main_hand',
+              label: 'Demonic Dagger',
+              displayValue: '21-28',
+              baseDamage: { min: '21', max: '28' },
+              finalDamage: { min: '21', max: '28' },
+              minDelta: 0,
+              maxDelta: 0,
+              minTone: 'neutral',
+              maxTone: 'neutral',
+              tone: 'neutral',
+              colorableFinalValue: true,
+              sortOrder: 10,
+            },
+            {
+              key: 'off_hand',
+              label: 'Unarmed',
+              displayValue: '20-21',
+              baseDamage: { min: '20', max: '21' },
+              finalDamage: { min: '20', max: '21' },
+              minDelta: 0,
+              maxDelta: 0,
+              minTone: 'neutral',
+              maxTone: 'neutral',
+              tone: 'neutral',
+              colorableFinalValue: true,
+              sortOrder: 20,
+            },
+          ],
         },
         defense: 104,
         currentHealth: 84,
@@ -120,9 +219,6 @@ describe('DashboardPageFacade', () => {
         criticalDamage: 50,
         evasionChanceBonus: 8,
         attackCount: 2,
-        attackPlanJson: {},
-        sourceJson: {},
-        statsJson: {},
       }),
     });
     heroEquipment = jasmine.createSpyObj<HeroEquipment>('HeroEquipment', {
@@ -234,34 +330,6 @@ describe('DashboardPageFacade', () => {
         {
           provide: Origins,
           useValue: jasmine.createSpyObj<Origins>('Origins', ['getOriginWithBonuses']),
-        },
-        {
-          provide: StatsService,
-          useValue: jasmine.createSpyObj<StatsService>('StatsService', {
-            getStats: of([
-              {
-                id: 'stat-strength',
-                key: 'strength',
-                label: 'Strength',
-                order: 1,
-                description: null,
-              },
-              {
-                id: 'stat-dexterity',
-                key: 'dexterity',
-                label: 'Dexterity',
-                order: 2,
-                description: null,
-              },
-              {
-                id: 'stat-vitality',
-                key: 'vitality',
-                label: 'Vitality',
-                order: 3,
-                description: null,
-              },
-            ]),
-          }),
         },
         {
           provide: CharacterPointHistory,
@@ -628,14 +696,70 @@ describe('DashboardPageFacade', () => {
 
     expect(runtimeStats.getActiveHeroRuntimeStats).toHaveBeenCalled();
     expect(facade.derivedStatRows()).toEqual([
-      { key: 'damage-main_hand', label: 'Demonic Dagger', value: '21-28' },
-      { key: 'damage-off_hand', label: 'Unarmed', value: '20-21' },
-      { key: 'defense', label: 'Defense', value: 104 },
-      { key: 'luck', label: 'Luck', value: 3 },
-      { key: 'critical_chance', label: 'Critical chance', value: '2%' },
-      { key: 'critical_damage', label: 'Critical damage', value: '50%' },
-      { key: 'evasion', label: 'Evasion', value: '8%' },
-      { key: 'attack_count', label: 'Attack count', value: 2 },
+      {
+        key: 'damage-main_hand',
+        label: 'Demonic Dagger',
+        value: '21-28',
+        valueClass: 'text-md',
+        parts: [
+          { text: '21', className: 'color-heading text-md' },
+          { text: '-', className: 'color-heading text-md' },
+          { text: '28', className: 'color-heading text-md' },
+        ],
+      },
+      {
+        key: 'damage-off_hand',
+        label: 'Unarmed',
+        value: '20-21',
+        valueClass: 'text-md',
+        parts: [
+          { text: '20', className: 'color-heading text-md' },
+          { text: '-', className: 'color-heading text-md' },
+          { text: '21', className: 'color-heading text-md' },
+        ],
+      },
+      {
+        key: 'defense',
+        label: 'Defense',
+        value: '104',
+        valueClass: 'color-heading text-md',
+        parts: [{ text: '104', className: 'color-heading text-md' }],
+      },
+      {
+        key: 'luck',
+        label: 'Luck',
+        value: '3',
+        valueClass: 'color-heading text-md',
+        parts: [{ text: '3', className: 'color-heading text-md' }],
+      },
+      {
+        key: 'critical_chance',
+        label: 'Critical chance',
+        value: '2%',
+        valueClass: 'success-text text-md',
+        parts: [{ text: '2%', className: 'success-text text-md' }],
+      },
+      {
+        key: 'critical_damage',
+        label: 'Critical damage',
+        value: '50%',
+        valueClass: 'color-heading text-md',
+        parts: [{ text: '50%', className: 'color-heading text-md' }],
+      },
+      {
+        key: 'evasion',
+        label: 'Evasion',
+        value: '8%',
+        valueClass: 'color-heading text-md',
+        parts: [{ text: '8%', className: 'color-heading text-md' }],
+      },
+      {
+        key: 'attack_count',
+        label: 'Attack count',
+        value: '2',
+        valueClass: 'color-heading text-md',
+        parts: [{ text: '2', className: 'color-heading text-md' }],
+      },
     ]);
     expect(facade.derivedDisplay().health).toBe(120);
     expect(facade.healthDisplay()).toEqual({
@@ -644,16 +768,22 @@ describe('DashboardPageFacade', () => {
     });
   });
 
-  it('uses DB-provided runtime stats_json for Hero Stats display', () => {
+  it('uses DB-provided display_stats_json for Hero Stats display', () => {
     facade.loadData();
 
-    expect(facade.statsDisplay()).toEqual({
-      strength: 19,
-      dexterity: 6,
-    });
     expect(facade.baseStatRows()).toEqual([
-      { key: 'strength', label: 'Strength', value: 19 },
-      { key: 'dexterity', label: 'Dexterity', value: 6 },
+      {
+        key: 'strength',
+        label: 'Strength',
+        value: '19',
+        valueClass: 'color-heading text-lg',
+      },
+      {
+        key: 'dexterity',
+        label: 'Dexterity',
+        value: '6',
+        valueClass: 'color-heading text-lg',
+      },
     ]);
     expect(hero.getHeroStats).not.toHaveBeenCalled();
   });

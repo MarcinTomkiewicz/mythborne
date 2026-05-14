@@ -47,6 +47,43 @@ describe('HeroDashboardRuntimeStats', () => {
           slot_key: 'off_hand',
         },
       ],
+      display_stats_json: {
+        heroStats: [
+          {
+            statKey: 'strength',
+            label: 'Strength',
+            displayValue: '19',
+            finalValue: 19,
+            tone: 'positive',
+            colorableFinalValue: true,
+            sortOrder: 10,
+          },
+        ],
+        derivedStats: [
+          {
+            statKey: 'luck',
+            label: 'Luck',
+            displayValue: '7',
+            finalValue: 7,
+            tone: 'positive',
+            colorableFinalValue: false,
+            sortOrder: 10,
+          },
+        ],
+        damageRows: [
+          {
+            key: 'main_hand',
+            label: 'Demonic Dagger',
+            baseDamage: { min: 21, max: 28 },
+            finalDamage: { min: 21, max: 30 },
+            minTone: 'neutral',
+            maxTone: 'positive',
+            tone: 'positive',
+            colorableFinalValue: true,
+            sortOrder: 10,
+          },
+        ],
+      },
       defense: 104,
       current_health: 84,
       max_health: 120,
@@ -81,17 +118,24 @@ describe('HeroDashboardRuntimeStats', () => {
       RPC.get_hero_dashboard_runtime_stats,
       { p_hero_id: 'hero-1' },
     );
-    expect(result.damageRows).toEqual([
-      { key: 'main_hand', label: 'Demonic Dagger', displayValue: '21-28' },
-      { key: 'off_hand', label: 'Unarmed', displayValue: '20-21' },
-    ]);
     expect(result.defense).toBe(104);
     expect(result.currentHealth).toBe(84);
     expect(result.maxHealth).toBe(120);
     expect(result.criticalChanceBonus).toBe(2);
-    expect(result.stats).toEqual({
-      strength: 19,
-      dexterity: 6,
+    expect(result.displayStats.heroStats).toEqual([
+      {
+        statKey: 'strength',
+        label: 'Strength',
+        displayValue: '19',
+        finalValue: 19,
+        tone: 'positive',
+        colorableFinalValue: true,
+        sortOrder: 10,
+      },
+    ]);
+    expect(result.displayStats.damageRows[0].finalDamage).toEqual({
+      min: '21',
+      max: '30',
     });
   });
 
@@ -99,6 +143,7 @@ describe('HeroDashboardRuntimeStats', () => {
     backend.rpc.and.returnValue(of([{
       hero_id: 'hero-2',
       damage_rows_json: [],
+      display_stats_json: {},
       defense: 0,
       current_health: 0,
       max_health: 0,

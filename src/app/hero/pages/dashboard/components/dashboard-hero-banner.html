@@ -14,10 +14,10 @@
       <div class="flex-col-between-start gap-xl min-w-250">
         <div class="flex-col gap-sm w-100">
           <div class="flex-row-between-center flex-wrap gap-sm w-100">
-            <h2 class="mg-section__title mg-section__title--sm mb-0">
+            <h2 class="mg-section__title mg-section__title--sm mb-0 small-caps">
               {{ page().heroName() }}
             </h2>
-            <span class="tag-badge tag-badge--warn"
+            <span class="tag-badge tag-badge--warn small-caps"
               >Level {{ page().level() }}</span
             >
           </div>
@@ -39,7 +39,7 @@
               type="xp"
             />
           } @else {
-            <span class="tag-badge tag-badge--danger"
+            <span class="tag-badge tag-badge--danger small-caps"
               >Experience unavailable</span
             >
           }
@@ -52,26 +52,26 @@
       <div class="flex-col gap-sm flex-none min-w-250 min-w-auto-sm">
         @if (page().selectedServer(); as selectedServer) {
           <div class="flex-col gap-xs">
-            <span class="color-muted">Server</span>
+            <span class="color-muted small-caps">Server</span>
             <strong class="color-heading">{{ selectedServer.name }}</strong>
           </div>
         }
 
         <div class="flex-col gap-xs">
-          <span class="color-muted">Origin</span>
+          <span class="color-muted small-caps">Origin</span>
           <strong class="color-heading">{{
             page().origin()?.name ?? "Unknown"
           }}</strong>
         </div>
 
         <div class="flex-col gap-xs">
-          <span class="color-muted">Character Points</span>
+          <span class="color-muted small-caps">Character Points</span>
           <strong class="color-heading">{{ page().characterPoints() }}</strong>
         </div>
 
         @if (page().estateAddress(); as estateAddress) {
           <div class="flex-col gap-xs">
-            <span class="color-muted">Address</span>
+            <span class="color-muted small-caps">Address</span>
             <a routerLink="/game/vicinity">
               <strong>{{ estateAddress }}</strong>
             </a>

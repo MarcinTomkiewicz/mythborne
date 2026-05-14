@@ -5,17 +5,15 @@ import { Origin } from '../../domain/origin/origin.model';
 import { EquipmentSlot } from '../../domain/item/item-equipment.model';
 import { CurrentEstateAddressReadModel } from '../../domain/estate/estate-address.model';
 import { MansionBuildingJob } from '../../domain/building/building.model';
-import { IStat } from '../../interfaces/i-stats/i-stats';
 import { Hero } from './hero';
 import { ActiveHeroVitalsState } from './active-hero-vitals-state';
 import { Origins } from '../origins/origins';
-import { StatsService } from '../stats/stats';
 import { getErrorMessage } from '../../utils/error-message';
 import { CharacterPointHistory } from './character-point-history';
 import {
-  HeroDashboardRuntimeStats,
   HeroDashboardRuntimeStatsReadModel,
-} from './hero-dashboard-runtime-stats';
+} from '../../domain/hero/hero-dashboard-runtime-stats.model';
+import { HeroDashboardRuntimeStats } from './hero-dashboard-runtime-stats';
 import { ActiveServer } from '../server/active-server';
 import { HeroEquipment } from '../items/hero-equipment';
 import { CurrentEquipmentState } from '../items/current-equipment.state';
@@ -47,7 +45,6 @@ export class DashboardPageFacade {
   private readonly vitals = inject(ActiveHeroVitalsState);
   private readonly runtimeStatsService = inject(HeroDashboardRuntimeStats);
   private readonly characterPointHistory = inject(CharacterPointHistory);
-  private readonly statsService = inject(StatsService);
   private readonly originsService = inject(Origins);
   private readonly activeServer = inject(ActiveServer);
   private readonly heroEquipment = inject(HeroEquipment);
@@ -88,7 +85,6 @@ export class DashboardPageFacade {
 
   origin = signal<Origin | null>(null);
 
-  statsList = signal<IStat[]>([]);
   runtimeStats = signal<HeroDashboardRuntimeStatsReadModel | null>(null);
   runtimeStatsError = signal<string | null>(null);
   characterPointHistoryEntries = signal<CharacterPointHistoryReadModel[]>([]);
@@ -130,12 +126,8 @@ export class DashboardPageFacade {
     })
   );
 
-  statsDisplay = computed(() =>
-    this.runtimeStats()?.stats ?? {}
-  );
-
   baseStatRows = computed<DashboardBaseStatRow[]>(() =>
-    mapDashboardBaseStatRows(this.statsList(), this.statsDisplay())
+    mapDashboardBaseStatRows(this.runtimeStats())
   );
 
   derivedDisplay = computed(() =>
@@ -161,8 +153,6 @@ export class DashboardPageFacade {
   );
 
   loadData() {
-    this.statsService.getStats().subscribe(this.statsList.set);
-
     this.heroService.getHeroData().subscribe((hero) => {
       this.heroName.set(hero.name);
       this.heroLevelFallback.set(hero.level ?? 1);

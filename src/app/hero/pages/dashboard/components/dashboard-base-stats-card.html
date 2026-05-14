@@ -11,7 +11,7 @@
     @for (stat of page().baseStatRows(); track stat.key) {
       <article class="mg-card flex-col p-sm">
         <span class="color-muted text-xs small-caps uppercase">{{ stat.label }}</span>
-        <strong class="color-heading text-lg">{{ stat.value }}</strong>
+        <strong [class]="stat.valueClass">{{ stat.value }}</strong>
       </article>
     }
   </div>

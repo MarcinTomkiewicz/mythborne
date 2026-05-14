@@ -1,20 +1,29 @@
-import { IStat } from '../../interfaces/i-stats/i-stats';
 import { IHeroDerived } from '../../types/hero.types';
 import {
+  HeroDashboardDisplayDamageRow,
+  HeroDashboardDisplayStatRow,
+  HeroDashboardStatTone,
   HeroDashboardRuntimeStatsReadModel,
-  HeroRuntimeDamageRow,
-} from './hero-dashboard-runtime-stats';
+} from '../../domain/hero/hero-dashboard-runtime-stats.model';
 
 export interface DashboardBaseStatRow {
   key: string;
   label: string;
-  value: number;
+  value: string;
+  valueClass: string;
+}
+
+export interface DashboardStatValuePart {
+  text: string;
+  className: string;
 }
 
 export interface DashboardDerivedStatRow {
   key: string;
   label: string;
-  value: number | string | null;
+  value: string | null;
+  valueClass: string;
+  parts: DashboardStatValuePart[];
 }
 
 export interface DashboardHealthSource {
@@ -23,16 +32,14 @@ export interface DashboardHealthSource {
 }
 
 export function mapDashboardBaseStatRows(
-  statsList: IStat[],
-  stats: Record<string, number>,
+  runtime: HeroDashboardRuntimeStatsReadModel | null,
 ): DashboardBaseStatRow[] {
-  return statsList
-    .filter((stat) => Object.hasOwn(stats, stat.key))
-    .map((stat) => ({
-      key: stat.key,
-      label: stat.label,
-      value: stats[stat.key],
-    }));
+  return runtime?.displayStats.heroStats.map((row) => ({
+    key: row.statKey,
+    label: row.label,
+    value: row.displayValue,
+    valueClass: statValueClass(row, 'text-lg'),
+  })) ?? [];
 }
 
 export function mapDashboardDerivedDisplay(
@@ -67,48 +74,92 @@ export function mapDashboardDerivedStatRows(
   }
 
   return [
-    ...runtime.damageRows.map(damageRow),
-    derivedRow('defense', 'Defense', runtime.defense),
-    derivedRow('luck', 'Luck', runtime.luck),
-    derivedRow(
-      'critical_chance',
-      'Critical chance',
-      percentValue(runtime.criticalChanceBonus),
-    ),
-    derivedRow(
-      'critical_damage',
-      'Critical damage',
-      percentValue(runtime.criticalDamage),
-    ),
-    derivedRow(
-      'evasion',
-      'Evasion',
-      percentValue(runtime.evasionChanceBonus),
-    ),
-    derivedRow('attack_count', 'Attack count', runtime.attackCount),
+    ...runtime.displayStats.damageRows.map(damageRow),
+    ...runtime.displayStats.derivedStats
+      .filter((row) => row.statKey !== 'health')
+      .map(derivedStatRow),
   ];
 }
 
-function damageRow(row: HeroRuntimeDamageRow): DashboardDerivedStatRow {
+function damageRow(row: HeroDashboardDisplayDamageRow): DashboardDerivedStatRow {
+  const parts = damageParts(row);
+  const value = parts.map((part) => part.text).join('');
+
   return {
     key: `damage-${row.key}`,
     label: row.label,
-    value: row.displayValue || null,
+    value: value || row.displayValue || null,
+    valueClass: 'text-md',
+    parts: parts.length > 0
+      ? parts
+      : valueParts(row.displayValue, row.colorableFinalValue ? row.tone : 'neutral'),
   };
 }
 
-function derivedRow(
-  key: string,
-  label: string,
-  value: number | string,
-): DashboardDerivedStatRow {
+function derivedStatRow(row: HeroDashboardDisplayStatRow): DashboardDerivedStatRow {
   return {
-    key,
-    label,
-    value,
+    key: row.statKey,
+    label: row.label,
+    value: row.displayValue || null,
+    valueClass: statValueClass(row, 'text-md'),
+    parts: valueParts(
+      row.displayValue,
+      row.colorableFinalValue ? row.tone : 'neutral',
+    ),
   };
 }
 
-function percentValue(value: number): string {
-  return `${value}%`;
+function damageParts(row: HeroDashboardDisplayDamageRow): DashboardStatValuePart[] {
+  if (!row.finalDamage.min) {
+    return [];
+  }
+
+  if (!row.finalDamage.max) {
+    return valueParts(
+      row.finalDamage.min,
+      row.colorableFinalValue ? row.minTone : 'neutral',
+    );
+  }
+
+  return [
+    ...valueParts(
+      row.finalDamage.min,
+      row.colorableFinalValue ? row.minTone : 'neutral',
+    ),
+    { text: '-', className: toneClass('neutral', 'text-md') },
+    ...valueParts(
+      row.finalDamage.max,
+      row.colorableFinalValue ? row.maxTone : 'neutral',
+    ),
+  ];
+}
+
+function valueParts(
+  value: string,
+  tone: HeroDashboardStatTone,
+): DashboardStatValuePart[] {
+  return value ? [{ text: value, className: toneClass(tone, 'text-md') }] : [];
+}
+
+function statValueClass(
+  row: HeroDashboardDisplayStatRow,
+  textSizeClass: string,
+): string {
+  return toneClass(
+    row.colorableFinalValue ? row.tone : 'neutral',
+    textSizeClass,
+  );
+}
+
+function toneClass(
+  tone: HeroDashboardStatTone,
+  textSizeClass: string,
+): string {
+  const colorClass = tone === 'positive'
+    ? 'success-text'
+    : tone === 'negative'
+      ? 'error-text'
+      : 'color-heading';
+
+  return `${colorClass} ${textSizeClass}`;
 }

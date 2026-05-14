@@ -7,7 +7,7 @@
       <div class="flex-row-start-center flex-wrap gap-sm">
         <div class="mg-chip mg-chip--health flex-row-center-center gap-sm">
           <i class="pi pi-heart mg-chip__icon" aria-hidden="true"></i>
-          <span class="mg-chip__label">Health</span>
+          <span class="mg-chip__label small-caps">Health</span>
           <strong class="mg-chip__value"
             >{{ currentHealthValue() }} / {{ maxHealthValue() }}</strong
           >
@@ -16,8 +16,10 @@
           class="mg-chip mg-chip--progress mg-chip--xp flex-col gap-xs min-w-250 w-100-xs"
         >
           <div class="flex-row-between-center gap-sm w-100">
-            <span class="mg-chip__label">Level {{ heroLevelValue() }}</span>
-            <strong class="mg-chip__value">
+            <span class="mg-chip__label small-caps"
+              >Level {{ heroLevelValue() }}</span
+            >
+            <strong class="mg-chip__value small-caps">
               XP {{ experienceValue() }}
               @if (experienceToNextLevel() > 0) {
                 / {{ experienceToNextLevel() }}
@@ -37,17 +39,21 @@
         </div>
       </div>
       <div
-        class="flex-row-center-center gap-sm min-w-200 text-left"
+        class="flex-row-center-center gap-sm min-w-200 text-left small-caps"
         aria-label="Mythsworn"
       >
-        <span class="mg-brand-mark-fallback shadow-brand-mark" aria-hidden="true">M</span>
+        <span
+          class="mg-brand-mark-fallback shadow-brand-mark"
+          aria-hidden="true"
+          >M</span
+        >
         <div class="flex-col gap-xs">
           <h1
             class="mg-section__title mg-section__title--sm mg-section__title--no-margin"
           >
             Mythsworn
           </h1>
-          <p class="muted-text mb-0">
+          <p class="muted-text mb-0 small-caps">
             {{ currentAddress() ?? "Address unavailable" }}
           </p>
         </div>
@@ -59,7 +65,7 @@
           <app-notification-bell />
           <app-staff-notification-bell />
         </div>
-        <div class="flex-row-end-center gap-sm" aria-label="Resources">
+        <div class="flex-row-end-center gap-sm small-caps" aria-label="Resources">
           @for (resource of resourceDisplay(); track resource.type) {
             <span class="mg-resource-summary flex-row-center-center gap-sm">
               @switch (resource.type) {
@@ -90,7 +96,8 @@
                   resource.amount
                 }}</strong>
                 <small class="mg-resource-summary__rate font-xs font-light">
-                  +{{ resource.perHour }}/h</small>
+                  +{{ resource.perHour }}/h</small
+                >
               </span>
             </span>
           }
