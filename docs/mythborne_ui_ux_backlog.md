@@ -2975,6 +2975,8 @@ Required Codex report:
 
 ## UI-ACCOUNT-1 — Account Entry Shell
 
+**Status:** Accepted on 2026-05-14. Account entry now separates existing hero entry from creation with `Enter game`, `Join new world` and `Create new hero` copy, shows standard-server District A free/capacity values from `get_start_flow_server_availability`, keeps sandbox multi-hero selection compact and DB-backed, and avoids duplicating existing hero context beside the sandbox switcher. No DB/RPC changes, generated type edits, auth/start-flow rewrite or local SCSS were added. Manual visual smoke remains user-side/pending.
+
 **Goal:**  
 Implement account/public shell before the player enters a specific server+hero game context.
 

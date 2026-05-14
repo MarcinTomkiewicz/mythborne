@@ -3,7 +3,11 @@ import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { StartFlowHeroOption, StartFlowServerAvailability } from '../../../core/domain/start-flow/start-flow.model';
+import {
+  StartFlowEntryDecision,
+  StartFlowHeroOption,
+  StartFlowServerAvailability,
+} from '../../../core/domain/start-flow/start-flow.model';
 import { SelectedGameServer } from '../../../core/interfaces/server/active-server.interface';
 import { Auth } from '../../../core/services/auth/auth';
 import { StartFlowEntryState } from '../../../core/services/start-flow/start-flow-entry.state';
@@ -32,7 +36,7 @@ describe('ServerEntryPage', () => {
     expect(text).toContain('First');
     expect(text).toContain('Aktywna postać:');
     expect(text).toContain('Second');
-    expect(text).toContain('Nowa postać');
+    expect(text).toContain('Create new hero');
     expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(1);
   });
 
@@ -110,8 +114,8 @@ describe('ServerEntryPage', () => {
 
     const text = textContent(fixture);
 
-    expect(text).toContain('Continue');
-    expect(text).toContain('Nowa postać');
+    expect(text).toContain('Enter game');
+    expect(text).toContain('Create new hero');
   });
 
   it('does not render sandbox hero switcher for standard server state', () => {
@@ -127,7 +131,7 @@ describe('ServerEntryPage', () => {
     const text = textContent(fixture);
 
     expect(text).not.toContain('Postacie na tym sandboxie');
-    expect(text).not.toContain('Nowa postać');
+    expect(text).not.toContain('Create new hero');
   });
 
   it('does not render sandbox creation link when DB blocks sandbox creation', () => {
@@ -150,7 +154,90 @@ describe('ServerEntryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Postacie na tym sandboxie');
-    expect(text).not.toContain('Nowa postać');
+    expect(text).not.toContain('Create new hero');
+  });
+
+  it('shows standard server creation capacity from the start-flow read model', () => {
+    const state = stateStub({
+      availability: availability({
+        isSandbox: false,
+        isStandard: true,
+        canEnterGame: false,
+        canCreateHero: true,
+        nextAction: 'create_hero',
+        userHeroCount: 0,
+        districtACapacity: 100,
+        districtAOccupied: 96,
+        districtAFree: 4,
+      }),
+      selectedDecision: {
+        action: 'create_hero',
+        route: '/auth/create-character',
+        message: null,
+      },
+    });
+    const fixture = createFixture(state);
+
+    fixture.detectChanges();
+
+    const text = textContent(fixture);
+
+    expect(text).toContain('Create hero');
+    expect(text).toContain('District A: 4 / 100 free');
+    expect(text).toContain('Join new world');
+    expect(text).not.toContain('Origin');
+  });
+
+  it('shows existing hero context as the entry path without mixing in creation form', () => {
+    const state = stateStub({
+      availability: availability({
+        isSandbox: false,
+        isStandard: true,
+        canEnterGame: true,
+        canCreateHero: false,
+        nextAction: 'dashboard',
+        userHeroCount: 1,
+        defaultHeroName: 'Ariadne',
+        defaultHeroId: 'hero-1',
+      }),
+      activeHero: heroOption({ heroId: 'hero-1', heroName: 'Ariadne' }),
+      selectedDecision: {
+        action: 'dashboard',
+        route: '/hero/dashboard',
+        message: null,
+      },
+    });
+    const fixture = createFixture(state);
+
+    fixture.detectChanges();
+
+    const text = textContent(fixture);
+
+    expect(text).toContain('Enter game');
+    expect(text).toContain('Existing hero context:');
+    expect(text).toContain('Ariadne');
+    expect(text).not.toContain('Hero name');
+  });
+
+  it('does not duplicate existing hero context when sandbox hero switcher is visible', () => {
+    const state = stateStub({
+      selectedHeroOptions: [
+        heroOption({ heroId: 'hero-1', heroName: 'First' }),
+        heroOption({ heroId: 'hero-2', heroName: 'Second' }),
+      ],
+      defaultHero: heroOption({ heroId: 'hero-1', heroName: 'First' }),
+      activeHero: heroOption({ heroId: 'hero-2', heroName: 'Second' }),
+      canCreateSandboxHero: true,
+      showHeroSelection: true,
+    });
+    const fixture = createFixture(state);
+
+    fixture.detectChanges();
+
+    const text = textContent(fixture);
+
+    expect(text).toContain('Postacie na tym sandboxie');
+    expect(text).not.toContain('Existing hero context:');
   });
 });
 
@@ -184,6 +271,7 @@ function stateStub(input: {
   activeHero?: StartFlowHeroOption | null;
   canCreateSandboxHero?: boolean;
   showHeroSelection?: boolean;
+  selectedDecision?: StartFlowEntryDecision;
 } = {}): Partial<StartFlowEntryState> {
   const selectedServer = server();
   const currentAvailability = input.availability ?? availability();
@@ -198,6 +286,19 @@ function stateStub(input: {
     isTransitioning: signal(false).asReadonly(),
     load: jasmine.createSpy('load'),
     selectedDefaultHeroOption: signal(input.defaultHero ?? null).asReadonly(),
+    selectedDecision: signal(input.selectedDecision ?? {
+      action: currentAvailability.nextAction === 'create_hero'
+        ? 'create_hero'
+        : currentAvailability.canEnterGame
+          ? 'dashboard'
+          : 'blocked',
+      route: currentAvailability.nextAction === 'create_hero'
+        ? '/auth/create-character'
+        : currentAvailability.canEnterGame
+          ? '/hero/dashboard'
+          : null,
+      message: currentAvailability.blockReason,
+    } as StartFlowEntryDecision).asReadonly(),
     selectedHeroOptions: signal(input.selectedHeroOptions ?? []).asReadonly(),
     selectedServer: signal<SelectedGameServer | null>(selectedServer).asReadonly(),
     selectHero: jasmine.createSpy('selectHero'),

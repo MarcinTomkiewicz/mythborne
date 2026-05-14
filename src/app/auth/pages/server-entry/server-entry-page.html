@@ -4,7 +4,7 @@
       <div class="flex-col gap-xs">
         <h1 class="mg-section__title mb-0">Enter Mythsworn</h1>
         <p class="mb-0 muted-text">
-          Select the server context for your active hero or character creation.
+          Choose an existing hero context, enter the game, or start a new hero on an eligible world.
         </p>
       </div>
 
@@ -54,9 +54,9 @@
                 [class.tag-badge--danger]="!availability.canCreateHero && !availability.canEnterGame"
               >
                 @if (availability.canEnterGame) {
-                  Ready
+                  Enter game
                 } @else if (availability.canCreateHero) {
-                  Can create
+                  Create hero
                 } @else if (availability.isDistrictAFull) {
                   District A full
                 } @else {
@@ -74,10 +74,28 @@
                   Heroes: {{ availability.userHeroCount }}
                 </span>
               }
+
+              @if (availability.isStandard) {
+                <span
+                  class="tag-badge"
+                  [class.tag-badge--success]="!availability.isDistrictAFull && availability.districtAFree > 0"
+                  [class.tag-badge--danger]="availability.isDistrictAFull || availability.districtAFree <= 0"
+                >
+                  District A: {{ availability.districtAFree }} / {{ availability.districtACapacity }} free
+                </span>
+              }
             </div>
 
             @if (availability.blockReason && !availability.canCreateHero && !availability.canEnterGame) {
               <p class="mb-0 heading-color">{{ availability.blockReason }}</p>
+            }
+
+            @if (availability.canEnterGame && availability.defaultHeroName && !state.showHeroSelection()) {
+              <p class="mb-0">
+                <span class="muted-text">Existing hero context:</span>
+                <strong class="heading-color">{{ availability.defaultHeroName }}</strong>
+                on {{ availability.serverName }}
+              </p>
             }
 
             @if (state.selectedServer()?.id === server.id && state.showHeroSelection()) {
@@ -135,14 +153,14 @@
                 @if (state.canCreateSandboxHero()) {
                   <p-button
                     type="button"
-                    label="Nowa postać"
+                    label="Create new hero"
                     routerLink="/auth/create-character"
                     severity="secondary"
                   />
                 }
                 <p-button
                   type="button"
-                  label="Continue"
+                  [label]="state.selectedDecision().action === 'create_hero' ? 'Join new world' : 'Enter game'"
                   [disabled]="state.isTransitioning()"
                   (onClick)="state.enterSelectedServer()"
                 />
