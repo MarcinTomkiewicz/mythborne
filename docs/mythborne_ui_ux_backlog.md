@@ -2048,6 +2048,8 @@ Global UI-DASHBOARD rules:
 
 ## UI-DASHBOARD-19 — Dashboard cleanup and orphan removal
 
+**Status:** Accepted on 2026-05-14. Dashboard cleanup removed the obsolete `mapDashboardDerivedDisplay` / `derivedDisplay` legacy path and the dashboard mapper no longer imports `IHeroDerived`. The remaining dashboard presentation uses `display_stats_json` rows plus the separate vitals-backed `healthDisplay`. Focused specs, `npx tsc --noEmit` and `npm run build` passed; manual smoke remains user-side/pending.
+
 **Goal:** remove leftover dashboard code from failed iterations.
 
 **Scope:**
@@ -2074,6 +2076,8 @@ Global UI-DASHBOARD rules:
 ---
 
 ## UI-DASHBOARD-20 — Dashboard final acceptance report
+
+**Status:** Completed on 2026-05-14 by acceptance decision. Dashboard finalization is closed for this UI-DASHBOARD pass; manual smoke remains user-side/pending before commit handoff. Next scope moves to UI-ACCOUNT.
 
 **Goal:** produce final decision-ready dashboard report.
 

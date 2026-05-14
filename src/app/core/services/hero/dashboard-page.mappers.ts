@@ -1,4 +1,3 @@
-import { IHeroDerived } from '../../types/hero.types';
 import {
   HeroDashboardDisplayDamageRow,
   HeroDashboardDisplayStatRow,
@@ -40,21 +39,6 @@ export function mapDashboardBaseStatRows(
     value: row.displayValue,
     valueClass: statValueClass(row, 'text-lg'),
   })) ?? [];
-}
-
-export function mapDashboardDerivedDisplay(
-  runtime: HeroDashboardRuntimeStatsReadModel | null,
-): IHeroDerived {
-  return {
-    health: runtime?.maxHealth ?? 0,
-    def: runtime?.defense ?? 0,
-    minDmg: 0,
-    maxDmg: 0,
-    luck: runtime?.luck ?? 0,
-    critical: runtime?.criticalChanceBonus ?? 0,
-    criticalDamage: runtime?.criticalDamage ?? 0,
-    evasion: runtime?.evasionChanceBonus ?? 0,
-  };
 }
 
 export function mapDashboardHealthDisplay(

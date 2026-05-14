@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-05-13
+Updated: 2026-05-14
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -265,6 +265,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UI-DASHBOARD-09 - estate context uses real current address/district source, computed address state and no fake nearby range; District and `/game/vicinity` row action now live in UI-DASHBOARD-11 `World State`.
 - Completed and confirmed: UI-DASHBOARD-10 - persistent state source matrix; UI-DASHBOARD-11 may only implement states with dashboard-safe read sources, while active exploration/step/challenge remain blocked/conditional until a dashboard-safe current difficulty source exists.
 - Completed and confirmed: UI-DASHBOARD-11 - `World State` row-list under Derived Stats backed by estate building job countdown from DB timing, trials remaining from latest hero/server `trial` counter row, active state from pending combat effect state, unread reports, District and Vicinity action; no notifications, fake timers, guessed difficulty or fake empty rows.
+- Completed and confirmed: UI-DASHBOARD-12 through UI-DASHBOARD-20 dashboard closeout - 12-15 remain cancelled/deferred, 16-18 follow-up ordering/stale-state cleanup is accepted, 19 removed the obsolete legacy derived display path, and 20 is completed by acceptance decision. Manual dashboard smoke remains user-side/pending; next UI backlog area is UI-ACCOUNT after commit.
 - Completed and confirmed: S12 - Unequip slot action.
 - Completed and confirmed: S13 - Bulk equip action.
 - Completed and confirmed conditionally: S14 - Preset domain service and `PlayerEquipment` -> `HeroEquipment` rename.

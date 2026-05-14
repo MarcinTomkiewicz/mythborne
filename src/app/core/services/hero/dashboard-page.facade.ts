@@ -25,7 +25,6 @@ import {
   DashboardBaseStatRow,
   DashboardDerivedStatRow,
   mapDashboardBaseStatRows,
-  mapDashboardDerivedDisplay,
   mapDashboardDerivedStatRows,
   mapDashboardHealthDisplay,
 } from './dashboard-page.mappers';
@@ -146,10 +145,6 @@ export class DashboardPageFacade {
 
   baseStatRows = computed<DashboardBaseStatRow[]>(() =>
     mapDashboardBaseStatRows(this.runtimeStats())
-  );
-
-  derivedDisplay = computed(() =>
-    mapDashboardDerivedDisplay(this.runtimeStats())
   );
 
   healthDisplay = computed(() =>

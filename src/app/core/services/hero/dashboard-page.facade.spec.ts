@@ -835,7 +835,6 @@ describe('DashboardPageFacade', () => {
         parts: [{ text: '3', className: 'color-heading text-md' }],
       },
     ]);
-    expect(facade.derivedDisplay().health).toBe(120);
     expect(facade.healthDisplay()).toEqual({
       currentHealth: 84,
       maxHealth: 120,

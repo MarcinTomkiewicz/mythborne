@@ -1,6 +1,5 @@
 import {
   mapDashboardBaseStatRows,
-  mapDashboardDerivedDisplay,
   mapDashboardDerivedStatRows,
   mapDashboardHealthDisplay,
 } from './dashboard-page.mappers';
@@ -128,19 +127,6 @@ describe('dashboard page mappers', () => {
         valueClass: 'color-heading text-lg',
       },
     ]);
-  });
-
-  it('maps runtime stats to the legacy dashboard derived display contract', () => {
-    expect(mapDashboardDerivedDisplay(runtimeStats)).toEqual({
-      health: 120,
-      def: 104,
-      minDmg: 0,
-      maxDmg: 0,
-      luck: 3,
-      critical: 2,
-      criticalDamage: 50,
-      evasion: 8,
-    });
   });
 
   it('maps dashboard health display from DB-returned current and max health', () => {
