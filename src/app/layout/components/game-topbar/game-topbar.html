@@ -1,10 +1,10 @@
 @if (shouldRenderTopbarContent()) {
   @if (hasHeroContent()) {
     <section
-      class="mg-grid grid-cols-3 grid-cols-1-lg grid-items-center gap-md w-100"
+      class="mg-grid grid-cols-3 grid-cols-1-lg grid-items-end gap-md w-100"
       aria-label="Hero status and resources"
     >
-      <div class="flex-row-start-center flex-wrap gap-sm">
+      <div class="flex-row-start-end flex-wrap gap-sm">
         <div class="mg-chip mg-chip--health flex-row-center-center gap-sm">
           <i class="pi pi-heart mg-chip__icon" aria-hidden="true"></i>
           <span class="mg-chip__label small-caps">Health</span>
@@ -39,24 +39,14 @@
         </div>
       </div>
       <div
-        class="flex-row-center-center gap-sm min-w-200 text-left small-caps"
+        class="flex-row-center-center min-w-200"
         aria-label="Mythsworn"
       >
-        <span
-          class="mg-brand-mark-fallback shadow-brand-mark"
-          aria-hidden="true"
-          >M</span
-        >
-        <div class="flex-col gap-xs">
-          <h1
-            class="mg-section__title mg-section__title--sm mg-section__title--no-margin"
-          >
-            Mythsworn
-          </h1>
-          <p class="muted-text mb-0 small-caps">
-            {{ currentAddress() ?? "Address unavailable" }}
-          </p>
-        </div>
+        <img
+          src="/images/banner.png"
+          alt="Mythsworn"
+          class="mg-brand-banner"
+        />
       </div>
       <div
         class="flex-row-end-center flex-row-start-center-lg flex-wrap gap-sm"

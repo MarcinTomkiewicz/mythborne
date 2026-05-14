@@ -1,0 +1,100 @@
+<section class="mg-account-entry-stage" aria-label="Wybór świata do stworzenia bohatera">
+  <header class="mg-account-entry-stage__header">
+    <p class="mg-account-entry-stage__kicker">Tworzenie bohatera</p>
+    <h3 class="mg-account-entry-stage__title">Wybierz świat do stworzenia bohatera</h3>
+    <p class="mg-account-entry-stage__copy">
+      Wybierz świat, na którym chcesz rozpocząć nową postać. Lista pokazuje tylko światy zwrócone przez konfigurację wejścia i tworzenia bohatera.
+    </p>
+    <div class="flex-row-start-center flex-wrap gap-sm mt-sm">
+      <span class="tag-badge tag-badge--muted">Serwer</span>
+      <span class="tag-badge tag-badge--muted">Dostępność tworzenia</span>
+      <span class="tag-badge tag-badge--muted">Tworzenie bohatera</span>
+    </div>
+  </header>
+
+  <div class="mg-account-entry-stage__layout">
+    <article class="mg-account-entry-panel">
+      <div>
+        <h4 class="mg-account-entry-panel__title">Wybierz świat</h4>
+        <p class="mg-account-entry-panel__copy">
+          Po wybraniu świata sprawdzisz dostępność tworzenia i przejdziesz do osobnego etapu tworzenia bohatera.
+        </p>
+      </div>
+
+      <div class="mg-account-entry-select-block">
+        <span class="mg-account-entry-select-block__label">Serwer</span>
+        <form [formGroup]="form()" class="w-100">
+          <p-select
+            class="w-100"
+            formControlName="selectedServerId"
+            name="selectedCreationServer"
+            [options]="options()"
+            optionLabel="label"
+            optionValue="id"
+            placeholder="Wybierz świat"
+            appendTo="body"
+          />
+        </form>
+      </div>
+
+      @if (details(); as details) {
+        <section class="mg-account-entry-detail" aria-label="Szczegóły świata">
+          <div class="mg-account-entry-detail__header">
+            <div>
+              <h4 class="mg-account-entry-detail__title">{{ details.title }}</h4>
+              <p class="mg-account-entry-detail__copy">{{ details.description }}</p>
+              <div class="flex-row-start-center flex-wrap gap-sm mt-sm">
+                @for (badge of details.badges; track badge.label) {
+                  <span
+                    class="tag-badge"
+                    [class.tag-badge--muted]="badge.tone === 'muted'"
+                    [class.tag-badge--success]="badge.tone === 'success'"
+                    [class.tag-badge--danger]="badge.tone === 'danger'"
+                  >
+                    {{ badge.label }}
+                  </span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <app-account-entry-summary-rows [rows]="details.summaryRows" />
+        </section>
+      }
+    </article>
+
+    @if (details(); as details) {
+      <aside class="flex-col gap-md" aria-label="Zasady tworzenia">
+        <section class="mg-account-entry-side-card">
+          <h4 class="mg-account-entry-side-card__title">Następny ekran</h4>
+          <p class="mg-account-entry-side-card__copy">
+            Po potwierdzeniu wyboru przejdziesz do etapu nazwy, pochodzenia i utworzenia bohatera.
+          </p>
+          <app-account-entry-summary-rows [rows]="details.sideRows" />
+        </section>
+
+        <section class="mg-account-entry-side-card">
+          <h4 class="mg-account-entry-side-card__title">Zasada tworzenia</h4>
+          <p class="mg-account-entry-side-card__copy">
+            Tworzenie nowej postaci opiera się na dostępności zwróconej przez backend. Istniejący bohater może nadal prowadzić do wejścia do gry.
+          </p>
+        </section>
+      </aside>
+    }
+  </div>
+
+  @if (details(); as details) {
+    <footer class="mg-account-entry-stage__footer">
+      <div>
+        <strong class="mg-account-entry-stage__footer-title">{{ details.footerTitle }}</strong>
+        <p class="mg-account-entry-stage__footer-copy">{{ details.footerCopy }}</p>
+      </div>
+      <p-button
+        type="button"
+        [label]="details.ctaLabel"
+        [disabled]="!details.canContinue"
+        (onClick)="continue.emit()"
+      />
+    </footer>
+  }
+</section>

@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { Auth } from '../../core/services/auth/auth';
@@ -16,12 +17,15 @@ describe('AccountEntryLayout', () => {
 
     const text = textContent(fixture);
 
-    expect(text).toContain('Mythsworn');
+    const brand = fixture.debugElement.query(By.css('header img[alt="Mythsworn"]'));
+
+    expect(brand).toBeTruthy();
+    expect(brand.nativeElement.getAttribute('src')).toBe('/images/banner.png');
     expect(text).toContain('Zalogowano jako');
     expect(text).toContain('player@example.com');
     expect(text).toContain('Wybrany serwer');
     expect(text).toContain('Sandbox');
-    expect(text).toContain('Aktywny bohater');
+    expect(text).toContain('Bohater do wejścia');
     expect(text).toContain('Ariadne');
     expect(text).toContain('Wejdź do gry');
     expect(text).toContain('Stwórz bohatera');

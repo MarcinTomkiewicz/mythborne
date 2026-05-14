@@ -182,6 +182,22 @@
   background: color-mix(in srgb, v.$color-bg 34%, transparent);
 }
 
+.mg-account-entry-summary__row--primary {
+  padding: 0.8rem 0.9rem;
+  border-color: color-mix(in srgb, v.$color-secondary 52%, v.$color-shell-border);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-secondary 13%, v.$color-shell-surface-elevated),
+      color-mix(in srgb, v.$color-shell-surface 80%, transparent)
+    );
+}
+
+.mg-account-entry-summary__row--danger {
+  border-color: color-mix(in srgb, v.$color-danger 54%, v.$color-shell-border);
+  background: color-mix(in srgb, v.$color-danger 10%, v.$color-bg);
+}
+
 .mg-account-entry-summary__label {
   color: v.$color-text-muted;
   font-size: map.get(v.$font-sizes, "xs");

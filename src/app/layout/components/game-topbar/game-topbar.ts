@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { forkJoin, interval, Observable, of } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { catchError, switchMap } from 'rxjs/operators';
 import { FilterOperator } from '../../../core/enums/filter-operators';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { Row } from '../../../core/types/supabase.types';
@@ -21,7 +21,6 @@ import { AuthState } from '../../../core/services/auth/auth-state';
 import { Backend } from '../../../core/services/backend/backend';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveHeroVitalsState } from '../../../core/services/hero/active-hero-vitals-state';
-import { EstateAddresses } from '../../../core/services/estate/estate-addresses';
 import { TABLES } from '../../../core/constants/tables.const';
 import { Platform } from '../../../core/services/platform/platform';
 import { CORE_RESOURCE_DISPLAY_DEFINITIONS } from '../../../core/config/resource-display.config';
@@ -40,7 +39,6 @@ export class GameTopbar implements OnInit {
   private readonly authState = inject(AuthState);
   private readonly activeHero = inject(ActiveHero);
   private readonly vitals = inject(ActiveHeroVitalsState);
-  private readonly estateAddresses = inject(EstateAddresses);
   private readonly backend = inject(Backend);
   private readonly platform = inject(Platform);
   private readonly destroyRef = inject(DestroyRef);
@@ -49,7 +47,6 @@ export class GameTopbar implements OnInit {
   readonly showHeroContent = input(true);
   readonly currentTime = signal(Date.now());
   readonly hero = signal<Row<'hero'> | null>(null);
-  readonly currentAddress = signal<string | null>(null);
   readonly resources = signal<HeroResourceRow[]>([]);
 
   readonly hasHeroContent = computed(
@@ -97,7 +94,6 @@ export class GameTopbar implements OnInit {
         }
 
         this.hero.set(payload.hero);
-        this.currentAddress.set(payload.currentAddress);
         this.resources.set(payload.resources);
       });
 
@@ -131,12 +127,10 @@ export class GameTopbar implements OnInit {
 
   private loadTopbarState(state: ActiveHeroState | null): Observable<{
     hero: Row<'hero'>;
-    currentAddress: string | null;
     resources: HeroResourceRow[];
   } | null> {
     if (!state?.heroRow || !state.heroId) {
       this.hero.set(null);
-      this.currentAddress.set(null);
       this.resources.set([]);
       return of(null);
     }
@@ -145,25 +139,8 @@ export class GameTopbar implements OnInit {
 
     return forkJoin({
       hero: of(state.heroRow),
-      currentAddress: this.loadHeroEstateAddress(state.heroRow).pipe(
-        catchError(() => of(null)),
-      ),
       resources: this.loadHeroResources(state.heroId).pipe(catchError(() => of([]))),
     });
-  }
-
-  private loadHeroEstateAddress(hero: Row<'hero'>): Observable<string | null> {
-    if (!hero.estate_id) {
-      return of(null);
-    }
-
-    return this.estateAddresses
-      .getCurrentAddress({
-        estateId: hero.estate_id,
-        heroId: hero.id,
-        serverId: hero.server_id,
-      })
-      .pipe(map((address) => address?.addressLabel ?? null));
   }
 
   private loadHeroResources(heroId: string): Observable<HeroResourceRow[]> {

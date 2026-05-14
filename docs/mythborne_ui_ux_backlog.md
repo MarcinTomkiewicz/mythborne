@@ -3282,6 +3282,8 @@ Utworzyć account-shell section `Enter the game`, która pokazuje tylko istniej�
 
 ## UI-ONBOARDING-ADD-3 — Create New Hero / Join New World server eligibility selector
 
+**Status:** Accepted with follow-up on 2026-05-14. `/auth/create-character` now starts existing-account hero creation with a compact server eligibility selector before the Hero Creation stage. The selected-server detail shows DB/read-model District A free/capacity values, full District A disables the creation CTA with a visible reason, standard servers with an existing hero are blocked from create flow, and sandbox/test creation remains available when the backend returns `canCreateHero=true` without `blockReason`. The ADD-3 selector does not render hero name, origin carousel or create mutation before handoff to the creation stage. Final layout smoke was user-side confirmed after the account selector width/top-spacing correction. Follow-ups are non-blocking: polish emphasis for `Dzielnica A` / `Tworzenie`, copy improvements and broader helper/template cleanup when this area is next touched.
+
 **Goal:**  
 Utworzyć account-shell section `Create new hero` / `Join new world`, która pozwala wybrać serwer kwalifikujący się do stworzenia postaci i pokazuje creation availability oraz district A capacity.
 

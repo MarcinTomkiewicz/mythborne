@@ -37,7 +37,7 @@ describe('ServerEntryPage', () => {
     expect(text).not.toContain('Armory');
     expect(text).not.toContain('World State');
     expect(fixture.nativeElement.classList).toContain('d-block');
-    expect((fixture.nativeElement as HTMLElement).style.width).toBe('100%');
+    expect(fixture.nativeElement.classList).toContain('w-100');
   });
 
   it('renders compact sandbox hero context selector with default/current context', () => {

@@ -1,18 +1,34 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { finalize, Observable, of, switchMap } from 'rxjs';
+import { finalize, forkJoin, Observable, of, switchMap } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { Origin } from '../../domain/origin/origin.model';
 import { StartFlowServerAvailability } from '../../domain/start-flow/start-flow.model';
 import { CreateCharacterFormFactory } from '../../factories/forms/create-character-form.factory';
-import { getErrorMessage } from '../../utils/error-message';
 import { trimText } from '../../utils/normalize-text';
 import { Auth } from '../auth/auth';
 import { AuthState } from '../auth/auth-state';
 import { ActiveServer } from '../server/active-server';
 import { StartFlow } from '../start-flow/start-flow';
 import { CreateHero } from './create-hero';
+import {
+  CreateCharacterCreationGate,
+  CreateCharacterServerDetails,
+  CreateCharacterServerOption,
+} from '../../interfaces/hero/create-character-server-options.interface';
+import {
+  mapCreateCharacterServerDetails,
+  mapCreateCharacterServerOptions,
+  resolveCreateCharacterCreationGate,
+} from './create-character-server-options';
+import {
+  routeForHeroCreationNextAction,
+  toHeroCreationErrorMessage,
+} from './create-character-result-routing';
+import { addCreateCharacterToast } from './create-character-toast';
+
+export type ExistingAccountCreateStage = 'server_select' | 'hero_creation';
 
 @Injectable()
 export class CreateCharacterPageFacade {
@@ -28,6 +44,7 @@ export class CreateCharacterPageFacade {
   private availabilityLoadToken = 0;
 
   readonly step = signal(1);
+  readonly existingAccountCreateStage = signal<ExistingAccountCreateStage>('server_select');
   readonly selectedOrigin = signal<Origin | null>(null);
   readonly isSubmitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -44,6 +61,22 @@ export class CreateCharacterPageFacade {
       ? this.serverAvailability().find((server) => server.serverId === serverId) ?? null
       : null;
   });
+  readonly creationServerOptions = computed<CreateCharacterServerOption[]>(() =>
+    mapCreateCharacterServerOptions(this.serverAvailability()),
+  );
+  readonly selectedCreationGate = computed<CreateCharacterCreationGate>(() =>
+    resolveCreateCharacterCreationGate(
+      this.selectedServerAvailability(),
+      this.serverAvailabilityError(),
+      this.hasExistingAccount(),
+    ),
+  );
+  readonly selectedServerDetails = computed<CreateCharacterServerDetails | null>(() =>
+    mapCreateCharacterServerDetails(
+      this.selectedServerAvailability(),
+      this.selectedCreationGate(),
+    ),
+  );
 
   get accountForm() {
     return this.form.controls.account;
@@ -155,7 +188,67 @@ export class CreateCharacterPageFacade {
     }
   }
 
+  selectCreationServer(serverId: string | null): void {
+    if (!serverId || this.activeServer.selectedServer()?.id === serverId) {
+      return;
+    }
+
+    const selected = this.activeServer.selectServer(serverId);
+
+    if (!selected) {
+      this.errorMessage.set('Wybrany świat nie jest dostępny dla tego konta.');
+      this.showToast(
+        'error',
+        'Nie można wybrać świata',
+        'Wybrany świat nie jest dostępny dla tego konta.',
+      );
+      return;
+    }
+
+    this.errorMessage.set(null);
+    if (this.hasExistingAccount()) {
+      this.existingAccountCreateStage.set('server_select');
+      this.selectedOrigin.set(null);
+      this.form.controls.originId.setValue('', { emitEvent: false });
+    }
+  }
+
+  continueToHeroCreation(): void {
+    const gate = this.selectedCreationGate();
+
+    if (!gate.canCreate) {
+      const message = gate.blocker ?? 'Na wybranym świecie nie można teraz stworzyć bohatera.';
+      this.errorMessage.set(message);
+      this.showToast('error', 'Tworzenie bohatera zablokowane', message);
+      return;
+    }
+
+    this.errorMessage.set(null);
+    this.existingAccountCreateStage.set('hero_creation');
+  }
+
   submit() {
+    if (this.hasExistingAccount() && this.existingAccountCreateStage() !== 'hero_creation') {
+      this.errorMessage.set('Najpierw wybierz świat dostępny do stworzenia bohatera.');
+      this.showToast(
+        'warn',
+        'Wybierz świat',
+        'Najpierw wybierz świat dostępny do stworzenia bohatera.',
+      );
+      return;
+    }
+
+    if (this.hasExistingAccount()) {
+      const gate = this.selectedCreationGate();
+
+      if (!gate.canCreate) {
+        const message = gate.blocker ?? 'Na wybranym świecie nie można teraz stworzyć bohatera.';
+        this.errorMessage.set(message);
+        this.showToast('error', 'Tworzenie bohatera zablokowane', message);
+        return;
+      }
+    }
+
     if (this.heroForm.invalid) {
       this.heroForm.markAllAsTouched();
       this.errorMessage.set('Podaj poprawną nazwę bohatera przed stworzeniem postaci.');
@@ -188,23 +281,10 @@ export class CreateCharacterPageFacade {
       return;
     }
 
-    const availability = this.selectedServerAvailability();
-    const availabilityBlocker = this.creationAvailabilityBlocker(availability);
+    this.startHeroCreation();
+  }
 
-    if (availabilityBlocker) {
-      this.errorMessage.set(availabilityBlocker);
-      this.showToast('error', 'Tworzenie bohatera zablokowane', availabilityBlocker);
-      return;
-    }
-
-    if (availability && (availability.blockReason || !availability.canCreateHero)) {
-      const message =
-        availability.blockReason || 'Na wybranym serwerze nie można teraz stworzyć bohatera.';
-      this.errorMessage.set(message);
-      this.showToast('error', 'Tworzenie bohatera zablokowane', message);
-      return;
-    }
-
+  private startHeroCreation(): void {
     this.isSubmitting.set(true);
     this.errorMessage.set(null);
     this.messageService.clear('global');
@@ -238,7 +318,7 @@ export class CreateCharacterPageFacade {
       )
       .subscribe({
         next: (result) => {
-          const route = this.routeForNextAction(result.routeNextAction);
+          const route = routeForHeroCreationNextAction(result.routeNextAction);
 
           if (!route) {
             const message = `Nieobsługiwane przekierowanie po utworzeniu bohatera: ${result.routeNextAction || 'brak'}.`;
@@ -272,11 +352,13 @@ export class CreateCharacterPageFacade {
     this.serverAvailability.set([]);
     this.serverAvailabilityError.set(null);
 
-    this.startFlow
-      .getServerAvailability()
+    forkJoin({
+      servers: this.activeServer.loadAccessibleServers(),
+      availability: this.startFlow.getServerAvailability(),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (availability) => {
+        next: ({ availability }) => {
           if (token !== this.availabilityLoadToken) {
             return;
           }
@@ -299,96 +381,19 @@ export class CreateCharacterPageFacade {
       });
   }
 
-  private creationAvailabilityBlocker(
-    availability: StartFlowServerAvailability | null,
-  ): string | null {
-    if (this.serverAvailabilityError()) {
-      return this.serverAvailabilityError();
-    }
-
-    if (this.hasExistingAccount() && !availability) {
-      return 'Nie udało się potwierdzić dostępności wybranego serwera.';
-    }
-
-    return null;
-  }
-
   private canOpenExistingAccountStep(step: number): boolean {
     switch (step) {
       case 1:
         return true;
       case 2:
-        return this.heroForm.valid;
+        return this.selectedCreationGate().canCreate;
       default:
         return false;
     }
   }
 
-  private routeForNextAction(nextAction: string): string | null {
-    switch (nextAction) {
-      case 'stat_allocation':
-        return '/hero/attributes';
-      case 'dashboard':
-      case 'game_shell':
-        return '/hero/dashboard';
-      default:
-        return null;
-    }
+  private showToast(severity: 'info' | 'success' | 'warn' | 'error', summary: string, detail: string) {
+    addCreateCharacterToast(this.messageService, severity, summary, detail);
   }
-
-
-  private showToast(
-    severity: 'info' | 'success' | 'warn' | 'error',
-    summary: string,
-    detail: string
-  ) {
-    const severityClassMap = {
-      info: 'mg-toast mg-toast--info',
-      success: 'mg-toast mg-toast--success',
-      warn: 'mg-toast mg-toast--arcane',
-      error: 'mg-toast mg-toast--danger',
-    } as const;
-
-    this.messageService.add({
-      key: 'global',
-      severity,
-      summary,
-      detail,
-      life: severity === 'info' ? 2500 : 4500,
-      styleClass: severityClassMap[severity],
-    });
-  }
-}
-
-function toHeroCreationErrorMessage(error: unknown): string {
-  const rawMessage = getErrorMessage(error, '');
-  const message = rawMessage.toLowerCase();
-
-  if (message.includes('duplicate') || message.includes('already exists') || message.includes('unique')) {
-    return 'Ta nazwa bohatera jest już zajęta na wybranym serwerze.';
-  }
-
-  if (message.includes('district') && message.includes('full')) {
-    return 'Dzielnica startowa na wybranym serwerze jest pełna.';
-  }
-
-  if (message.includes('server') && message.includes('full')) {
-    return 'Wybrany serwer jest pełny.';
-  }
-
-  if (message.includes('origin')) {
-    return 'Wybrane pochodzenie jest niedostępne. Wybierz inną opcję.';
-  }
-
-  if (
-    message.includes('permission') ||
-    message.includes('membership') ||
-    message.includes('not allowed') ||
-    message.includes('unauthorized')
-  ) {
-    return 'Nie masz uprawnień do stworzenia bohatera na wybranym serwerze.';
-  }
-
-  return rawMessage || 'Nie udało się stworzyć bohatera. Sprawdź dane i spróbuj ponownie.';
 }
 

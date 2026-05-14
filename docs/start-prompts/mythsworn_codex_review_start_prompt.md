@@ -14,21 +14,6 @@ Zanim zaczniesz review, sprawdź aktualne źródła projektu dostępne w rozmowi
 - `current-decisions.md`, `project-context.md`, `database-current.md`, dump/generated types, jeśli review dotyczy DB/RPC/schema;
 - UI/UX backlog i UI guidance/prototype docs, jeśli review dotyczy UI.
 
-Nie oceniaj z pamięci, jeśli aktualne pliki są dostępne. Najpierw sprawdź źródła, potem oceniaj.
-
-Jeśli review dotyczy kandydata do podmiany pliku, zawsze porównuj:
-
-1. aktualnego kandydata z bieżącym plikiem w źródłach projektu;
-2. dopiero potem różnice weryfikuj z właściwymi plikami źródłowymi, dumpem lub decyzjami.
-
-Nie porównuj kandydata z poprzednimi kandydatami z pamięci rozmowy, chyba że użytkownik wyraźnie o to poprosi.
-
-Na początku review napisz krótko:
-
-- które pliki standardów były dostępne i przeczytane;
-- jaki artefakt faktycznie reviewujesz;
-- względem czego go porównujesz.
-
 Review ma być konkretne i techniczne. Sprawdzaj przede wszystkim:
 
 - czy Codex wykonał dokładnie scope taska;
