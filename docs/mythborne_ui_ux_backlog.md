@@ -1858,6 +1858,8 @@ Global UI-DASHBOARD rules:
 
 ## UI-DASHBOARD-12 — Exploration persistent state widget
 
+**Status:** Deferred / cancelled on 2026-05-14 by user direction. Active exploration, pending step and challenge handoff remain blocked by the missing dashboard-safe current exploration difficulty/source; do not implement this as a separate dashboard widget until that source exists.
+
 **Goal:** show current Exploration state if the current read model supports it.
 
 **Allowed states:**
@@ -1885,6 +1887,8 @@ Global UI-DASHBOARD rules:
 
 ## UI-DASHBOARD-13 — Estate building job persistent state widget
 
+**Status:** Deferred / cancelled on 2026-05-14 by user direction. The real estate job row is already covered inside the accepted UI-DASHBOARD-11 `World State` container, so no separate widget task should be implemented now.
+
 **Goal:** show active estate building job if current settled mansion/estate runtime exposes one.
 
 **Rules:**
@@ -1904,6 +1908,8 @@ Global UI-DASHBOARD rules:
 
 ## UI-DASHBOARD-14 — Reports/notifications attention widget
 
+**Status:** Deferred / cancelled on 2026-05-14 by user direction. Unread reports are already covered by the accepted UI-DASHBOARD-11 `World State` row, while dashboard notifications remain deferred to avoid duplicating the topbar inbox.
+
 **Goal:** show compact attention state for unread/action-needed reports or notifications if existing read models expose it.
 
 **Rules:**
@@ -1922,6 +1928,8 @@ Global UI-DASHBOARD rules:
 ---
 
 ## UI-DASHBOARD-15 — Trial/Encounter/Combat handoff widget
+
+**Status:** Deferred / cancelled on 2026-05-14 by user direction. Durable Trial/Encounter/Combat handoff stays deferred until a player-safe dashboard read model exposes that continuation state.
 
 **Goal:** show blocking gameplay handoff only if backend/read model exposes a durable handoff state.
 

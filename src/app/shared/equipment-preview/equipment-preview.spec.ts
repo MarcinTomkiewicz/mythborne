@@ -61,6 +61,18 @@ describe('EquipmentPreview', () => {
     expect(textContent(host)).not.toContain('Runtime usable');
   });
 
+  it('renders a provided origin-specific paperdoll image', () => {
+    fixture.componentRef.setInput('rows', [slot({ slotKey: 'helmet' })]);
+    fixture.componentRef.setInput('paperdollImageUrl', '/images/paperdolls/spartan.png');
+
+    fixture.detectChanges();
+
+    const host: HTMLElement = fixture.nativeElement;
+    const image = host.querySelector<HTMLImageElement>('.equipment-preview__figure-image');
+
+    expect(image?.src).toContain('/images/paperdolls/spartan.png');
+  });
+
   it('maps canonical slot keys to intended paperdoll regions', () => {
     expect(equipmentPreviewRegionFor(slot({ slotKey: 'helmet' }))).toBe('head');
     expect(equipmentPreviewRegionFor(slot({ slotKey: 'armor' }))).toBe('torso');

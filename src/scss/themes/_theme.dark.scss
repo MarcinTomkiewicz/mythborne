@@ -16,7 +16,8 @@ $danger: #d36a5b;
 $success: #8fcf74;
 $warn: #e0ae45;
 $help: #a58bd8;
-$link: #9bc8e5;
+$link: #c6b3ff;
+$link-hover: #eadfff;
 
 $dark: (
   "color-primary": map.get($c, "color-crimson"),
@@ -46,7 +47,7 @@ $dark: (
   "color-text": $text,
   "color-text-muted": $text-muted,
   "color-link": $link,
-  "color-link-hover": color.scale($link, $lightness: 18%),
+  "color-link-hover": $link-hover,
   "bg-gradient": (
     radial-gradient(
       circle at 18% 8%,

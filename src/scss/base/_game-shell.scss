@@ -63,8 +63,9 @@
         90deg,
         color-mix(in srgb, v.$color-secondary 13%, transparent),
         color-mix(in srgb, v.$color-info 12%, transparent)
-      );
+    );
     color: v.$heading-color;
+    text-decoration: none;
   }
 
   &:focus-visible {
@@ -113,6 +114,7 @@
     border-color v.$transition-fast,
     color v.$transition-fast,
     box-shadow v.$transition-fast;
+  text-decoration: none;
 
   &:hover,
   &:focus-visible {
@@ -122,8 +124,9 @@
         180deg,
         color-mix(in srgb, v.$color-secondary 16%, v.$color-shell-surface-elevated),
         color-mix(in srgb, v.$color-info 12%, v.$color-shell-surface)
-      );
+    );
     color: v.$color-secondary;
+    text-decoration: none;
   }
 
   &:focus-visible {

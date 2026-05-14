@@ -23,7 +23,7 @@ export interface LuckLabExplanationRow {
             <span class="muted-text">{{ row.metadata }}</span>
           }
           @if (row.formulaTargetKeys?.length) {
-            <a class="text-link" routerLink="/admin/formulas">
+            <a routerLink="/admin/formulas">
               Open formula governance
             </a>
             <span class="muted-text">

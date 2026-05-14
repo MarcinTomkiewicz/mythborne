@@ -21,7 +21,13 @@
   border-radius: 999px;
   font-weight: 700;
   letter-spacing: 0.2px;
+  text-decoration: none;
   white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: none;
+  }
 }
 
 /* =========================================================

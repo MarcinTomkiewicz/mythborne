@@ -12,11 +12,17 @@
   border-radius: v.$radius-md;
   font-family: v.$font-family-body;
   font-weight: 700;
+  text-decoration: none;
   transition:
     background-color v.$transition-fast,
     border-color v.$transition-fast,
     color v.$transition-fast,
     box-shadow v.$transition-fast;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: none;
+  }
 
   &:focus-visible {
     outline: 0;
@@ -51,6 +57,7 @@
   box-shadow: none;
   width: $width;
   justify-content: start;
+  text-decoration: none;
 
   @if $width == auto {
     min-width: auto;
@@ -58,6 +65,8 @@
   }
 
   &:hover {
+    text-decoration: none;
+
     @if $background-on-hover {
       background-color: color-mix(
         in srgb,
@@ -76,6 +85,7 @@
       v.$color-bg-surface 82%,
       v.$color-primary
     );
+    text-decoration: none;
   }
 }
 
@@ -288,6 +298,7 @@
 .link-like.is-active {
   background-color: color-mix(in srgb, v.$color-bg-surface 72%, v.$color-primary);
   border-color: v.$color-secondary;
+  text-decoration: none;
 }
 
 .link-like-inline {

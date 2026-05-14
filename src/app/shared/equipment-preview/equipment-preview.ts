@@ -31,6 +31,7 @@ export class EquipmentPreview {
   readonly armoryLink = input('/game/armory');
   readonly compact = input(false);
   readonly showSlotLabels = input(true);
+  readonly paperdollImageUrl = input('/images/warrior.png');
 
   readonly paperdollGroups = computed<EquipmentPreviewGroup[]>(() =>
     EQUIPMENT_PREVIEW_GROUPS.map((group) => ({
