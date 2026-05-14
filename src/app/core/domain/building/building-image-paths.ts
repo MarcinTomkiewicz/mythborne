@@ -10,6 +10,7 @@ const BUILDING_IMAGE_PATHS: Record<string, Record<string, string>> = {
     'lumber-mill': '/images/buildings/district-a/lumber-mill.png',
     'trade-route': '/images/buildings/district-a/trade-routes.png',
     'trade-routes': '/images/buildings/district-a/trade-routes.png',
+    hippokaion: '/images/buildings/district-a/hippocaion.png',
   },
 };
 

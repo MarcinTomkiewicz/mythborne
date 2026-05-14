@@ -43,6 +43,7 @@ export const RPC = {
   create_entity_requirement: 'create_entity_requirement',
   get_ui_metadata_entries: 'get_ui_metadata_entries',
   get_start_flow_server_availability: 'get_start_flow_server_availability',
+  get_account_entry_hero_contexts: 'get_account_entry_hero_contexts',
   get_start_flow_origin_options: 'get_start_flow_origin_options',
   create_hero_start_flow: 'create_hero_start_flow',
   get_combat_turn_limit: 'get_combat_turn_limit',

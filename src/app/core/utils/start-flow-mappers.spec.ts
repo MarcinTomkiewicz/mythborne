@@ -1,10 +1,12 @@
 import {
+  mapAccountEntryHeroContext,
   mapStartFlowHeroCreationResult,
   mapStartFlowHeroOptions,
   mapStartFlowOriginOption,
   mapStartFlowServerAvailability,
 } from './start-flow-mappers';
 import {
+  AccountEntryHeroContextRow,
   StartFlowCreateHeroRow,
   StartFlowOriginOptionRow,
   StartFlowServerAvailabilityRow,
@@ -58,6 +60,26 @@ describe('start flow mappers', () => {
       heroName: 'Second',
       createdAt: '2026-05-02T10:00:00Z',
     }));
+  });
+
+  it('maps account-entry hero contexts from the player-safe JSON payload', () => {
+    const result = mapAccountEntryHeroContext(accountEntryHeroContextRow());
+
+    expect(result).toEqual({
+      heroId: 'hero-1',
+      serverId: 'server-1',
+      serverKey: 'sandbox',
+      serverName: 'Sandbox',
+      heroName: 'Ariadne',
+      heroLevel: 4,
+      estateId: 'estate-1',
+      districtCode: 'A',
+      addressNumber: 3,
+      address: 'legacy-address',
+      addressLabel: 'A-3',
+      createdAt: '2026-05-01T10:00:00Z',
+      routeNextAction: 'hero_dashboard',
+    });
   });
 
   it('preserves mapped heroes from server availability read model', () => {
@@ -136,6 +158,42 @@ function serverAvailabilityRow(
     district_a_free: 0,
     heroes_json: [{ heroId: 'hero-1' }],
     eligibility_json: { reason: 'district_a_full' },
+    ...patch,
+  };
+}
+
+function accountEntryHeroContextRow(
+  patch: Partial<AccountEntryHeroContextRow> = {},
+): AccountEntryHeroContextRow {
+  return {
+    hero_id: 'hero-1',
+    server_id: 'server-1',
+    server_key: 'sandbox',
+    server_name: 'Sandbox',
+    hero_name: 'Ariadne',
+    hero_level: 4,
+    estate_id: 'estate-1',
+    district_code: 'A',
+    address_number: 3,
+    address: 'legacy-address',
+    address_label: 'A-3',
+    created_at: '2026-05-01T10:00:00Z',
+    route_next_action: 'hero_dashboard',
+    hero_context_json: {
+      heroId: 'hero-1',
+      serverId: 'server-1',
+      serverKey: 'sandbox',
+      serverName: 'Sandbox',
+      heroName: 'Ariadne',
+      heroLevel: 4,
+      estateId: 'estate-1',
+      districtCode: 'A',
+      addressNumber: 3,
+      address: 'legacy-address',
+      addressLabel: 'A-3',
+      createdAt: '2026-05-01T10:00:00Z',
+      routeNextAction: 'hero_dashboard',
+    },
     ...patch,
   };
 }

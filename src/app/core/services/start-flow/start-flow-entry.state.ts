@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import {
   StartFlowEntryDecision,
+  AccountEntryHeroContext,
   StartFlowHeroOption,
   StartFlowServerAvailability,
 } from '../../domain/start-flow/start-flow.model';
@@ -23,6 +24,7 @@ export class StartFlowEntryState {
   private transitionToken = 0;
 
   readonly availability = signal<StartFlowServerAvailability[]>([]);
+  readonly accountEntryHeroContexts = signal<AccountEntryHeroContext[]>([]);
   readonly isLoading = signal(false);
   readonly isTransitioning = signal(false);
   readonly error = signal<string | null>(null);
@@ -42,7 +44,7 @@ export class StartFlowEntryState {
       : null;
   });
   readonly selectedHeroOptions = computed<StartFlowHeroOption[]>(() =>
-    this.selectedAvailability()?.heroes ?? [],
+    heroOptionsForAvailability(this.selectedAvailability()),
   );
   readonly selectedDefaultHeroOption = computed<StartFlowHeroOption | null>(() => {
     const defaultHeroId = this.selectedAvailability()?.defaultHeroId ?? null;
@@ -83,16 +85,18 @@ export class StartFlowEntryState {
     forkJoin({
       servers: this.activeServer.loadAccessibleServers(),
       availability: this.startFlow.getServerAvailability(),
+      heroContexts: this.startFlow.getAccountEntryHeroContexts(),
       activeHero: this.activeHero.loadActiveHero(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ availability }) => {
+        next: ({ availability, heroContexts }) => {
           if (token !== this.loadToken) {
             return;
           }
 
           this.availability.set(availability);
+          this.accountEntryHeroContexts.set(heroContexts);
           this.isLoading.set(false);
         },
         error: (error: unknown) => {
@@ -101,6 +105,7 @@ export class StartFlowEntryState {
           }
 
           this.availability.set([]);
+          this.accountEntryHeroContexts.set([]);
           this.error.set(
             error instanceof Error
               ? error.message
@@ -185,24 +190,141 @@ export class StartFlowEntryState {
 
   selectHero(heroId: string): void {
     const selectedServerId = this.selectedServer()?.id ?? null;
-    const decision = this.selectedDecision();
-    const heroOptions = this.selectedHeroOptions();
-    const token = ++this.transitionToken;
 
     if (!selectedServerId) {
       this.blocker.set('Select a server before choosing a hero.');
       return;
     }
 
-    if (decision.action !== 'hero_selection' && !this.canUseSelectedHeroSelection()) {
+    this.enterHeroContext(selectedServerId, heroId);
+  }
+
+  enterHeroContext(serverId: string, heroId: string): void {
+    const token = ++this.transitionToken;
+    const availability = this.availabilityForServer(serverId);
+
+    if (!this.canEnterHeroContext(availability)) {
       this.blocker.set(
-        decision.message || 'Hero selection is not available for this server.',
+        availability?.blockReason || 'Hero selection is not available for this server.',
       );
       return;
     }
 
-    if (!heroOptions.some((hero) => hero.heroId === heroId)) {
-      this.blocker.set('Selected hero is not available in the current start-flow state.');
+    if (!this.canUseAccountEntryHeroContext(serverId, heroId)) {
+      this.blocker.set('Selected hero is not available in the current account-entry state.');
+      return;
+    }
+
+    if (this.selectedServer()?.id === serverId) {
+      this.selectHeroForCurrentServer(serverId, heroId, token);
+      return;
+    }
+
+    const selected = this.activeServer.selectServer(serverId);
+
+    if (!selected) {
+      this.blocker.set('Selected server is not available for this account.');
+      return;
+    }
+
+    this.isTransitioning.set(true);
+    this.blocker.set(null);
+    this.activeHero.clear();
+
+    this.activeHero
+      .loadActiveHero()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          if (
+            token !== this.transitionToken ||
+            this.activeServer.selectedServer()?.id !== serverId
+          ) {
+            return;
+          }
+
+          this.selectHeroForCurrentServer(serverId, heroId, token);
+        },
+        error: (error: unknown) => {
+          if (token !== this.transitionToken) {
+            return;
+          }
+
+          this.blocker.set(
+            error instanceof Error
+              ? error.message
+              : 'Failed to load active hero for the selected server.',
+          );
+          this.isTransitioning.set(false);
+        },
+      });
+  }
+
+  serverAvailability(server: SelectedGameServer): StartFlowServerAvailability | null {
+    return (
+      this.availability().find((entry) => entry.serverId === server.id) ?? null
+    );
+  }
+
+  private canUseSelectedHeroSelection(): boolean {
+    const availability = this.selectedAvailability();
+
+    return !!availability?.isSandbox &&
+      availability.canEnterGame &&
+      !availability.blockReason &&
+      this.selectedHeroOptions().length > 1;
+  }
+
+  private canSelectExistingHeroContext(decision: StartFlowEntryDecision): boolean {
+    const availability = this.selectedAvailability();
+
+    if (!availability?.canEnterGame || availability.blockReason) {
+      return false;
+    }
+
+    return decision.action === 'hero_selection' ||
+      decision.action === 'dashboard' ||
+      isDashboardEntryAction(availability.nextAction) ||
+      this.canUseSelectedHeroSelection();
+  }
+
+  private canEnterHeroContext(availability: StartFlowServerAvailability | null): boolean {
+    if (!availability?.canEnterGame || availability.blockReason) {
+      return false;
+    }
+
+    return isDashboardEntryAction(availability.nextAction) ||
+      availability.nextAction === 'hero_selection' ||
+      availability.nextAction === 'sandbox_hero_selection';
+  }
+
+  private canUseAccountEntryHeroContext(serverId: string, heroId: string): boolean {
+    return this.accountEntryHeroContexts().some((context) =>
+      context.serverId === serverId &&
+      context.heroId === heroId &&
+      context.routeNextAction === 'hero_dashboard',
+    );
+  }
+
+  private availabilityForServer(serverId: string): StartFlowServerAvailability | null {
+    return this.availability().find((entry) => entry.serverId === serverId) ?? null;
+  }
+
+  private selectHeroForCurrentServer(
+    serverId: string,
+    heroId: string,
+    token: number,
+  ): void {
+    const decision = this.selectedDecision();
+
+    if (
+      this.selectedServer()?.id !== serverId ||
+      !this.canSelectExistingHeroContext(decision)
+    ) {
+      this.blocker.set(
+        decision.message || 'Hero selection is not available for this server.',
+      );
+      this.isTransitioning.set(false);
       return;
     }
 
@@ -216,7 +338,8 @@ export class StartFlowEntryState {
         next: (state) => {
           if (
             token !== this.transitionToken ||
-            state.serverId !== this.activeServer.selectedServer()?.id
+            state.serverId !== serverId ||
+            this.activeServer.selectedServer()?.id !== serverId
           ) {
             return;
           }
@@ -238,21 +361,28 @@ export class StartFlowEntryState {
         },
       });
   }
+}
 
-  serverAvailability(server: SelectedGameServer): StartFlowServerAvailability | null {
-    return (
-      this.availability().find((entry) => entry.serverId === server.id) ?? null
-    );
+export function heroOptionsForAvailability(
+  availability: StartFlowServerAvailability | null,
+): StartFlowHeroOption[] {
+  if (!availability) {
+    return [];
   }
 
-  private canUseSelectedHeroSelection(): boolean {
-    const availability = this.selectedAvailability();
-
-    return !!availability?.isSandbox &&
-      availability.canEnterGame &&
-      !availability.blockReason &&
-      this.selectedHeroOptions().length > 1;
+  if (availability.heroes.length > 0) {
+    return availability.heroes;
   }
+
+  if (availability.defaultHeroId && availability.defaultHeroName) {
+    return [{
+      heroId: availability.defaultHeroId,
+      heroName: availability.defaultHeroName,
+      createdAt: null,
+    }];
+  }
+
+  return [];
 }
 
 export function resolveStartFlowEntryDecision(
@@ -322,4 +452,10 @@ export function resolveStartFlowEntryDecision(
       availability.blockReason ||
       'This server is not available for character creation.',
   };
+}
+
+function isDashboardEntryAction(action: string): boolean {
+  return action === 'dashboard' ||
+    action === 'game_shell' ||
+    action === 'enter_game';
 }

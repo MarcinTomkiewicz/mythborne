@@ -50,9 +50,16 @@
   padding: map.get(v.$spacings, "sm");
   border: 1px solid transparent;
   border-radius: v.$radius-lg;
+  background: transparent;
   color: v.$color-text-muted;
+  font: inherit;
+  text-align: left;
   text-decoration: none;
   transition: v.$transition-fast;
+
+  &:not(:disabled) {
+    cursor: pointer;
+  }
 
   &:hover,
   &:focus-visible,
@@ -75,6 +82,17 @@
 
   &.is-active {
     box-shadow: inset 3px 0 0 v.$color-secondary;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+  }
+
+  &:disabled:hover {
+    border-color: transparent;
+    background: transparent;
+    color: v.$color-text-muted;
   }
 }
 

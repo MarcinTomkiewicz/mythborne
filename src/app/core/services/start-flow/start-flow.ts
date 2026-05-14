@@ -2,6 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
+  AccountEntryHeroContext,
+  AccountEntryHeroContextRow,
   StartFlowCreateHeroArgs,
   StartFlowCreateHeroRow,
   StartFlowHeroCreationInput,
@@ -12,6 +14,7 @@ import {
   StartFlowServerAvailabilityRow,
 } from '../../domain/start-flow/start-flow.model';
 import {
+  mapAccountEntryHeroContext,
   mapStartFlowHeroCreationResult,
   mapStartFlowOriginOption,
   mapStartFlowServerAvailability,
@@ -28,6 +31,19 @@ export class StartFlow {
         RPC.get_start_flow_server_availability,
       )
       .pipe(map((rows) => rows.map(mapStartFlowServerAvailability)));
+  }
+
+  getAccountEntryHeroContexts(
+    serverId: string | null = null,
+  ): Observable<AccountEntryHeroContext[]> {
+    const args = serverId ? { p_server_id: serverId } : {};
+
+    return this.backend
+      .rpc<AccountEntryHeroContextRow[]>(
+        RPC.get_account_entry_hero_contexts,
+        args,
+      )
+      .pipe(map((rows) => rows.map(mapAccountEntryHeroContext)));
   }
 
   getOriginOptions(): Observable<StartFlowOriginOption[]> {

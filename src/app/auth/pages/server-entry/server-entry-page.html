@@ -1,17 +1,4 @@
 <section class="flex-col gap-lg w-100">
-  <div class="flex-col gap-xs">
-    <div class="flex-row-between-start flex-wrap gap-md">
-      <div class="flex-col gap-xs">
-        <h1 class="mg-section__title mb-0">Enter Mythsworn</h1>
-        <p class="mb-0 muted-text">
-          Choose an existing hero context, enter the game, or start a new hero on an eligible world.
-        </p>
-      </div>
-
-      <app-session-logout-button />
-    </div>
-  </div>
-
   @if (state.error()) {
     <div class="mg-card border-danger bg-danger-soft flex-col gap-xs w-100">
       <p class="mb-0 text-danger">{{ state.error() }}</p>
@@ -26,150 +13,34 @@
 
   @if (state.isLoading()) {
     <div class="mg-card flex-col gap-xs w-100">
-      <p class="mb-0 heading-color">Loading available servers...</p>
+      <p class="mb-0 heading-color">Wczytywanie dostępnych serwerów...</p>
     </div>
   } @else if (!state.error() && state.visibleAvailability().length === 0) {
     <div class="mg-card flex-col gap-xs w-100">
-      <p class="mb-0 heading-color">No game servers are available for this account.</p>
+      <p class="mb-0 heading-color">Brak dostępnych serwerów dla tego konta.</p>
     </div>
   } @else {
-    <div class="mg-grid-auto-fit gap-md">
-      @for (server of state.servers(); track server.id) {
-        @if (state.serverAvailability(server); as availability) {
-        @if (availability.isVisible) {
-          <article
-            class="mg-card flex-col gap-md w-100"
-          >
-            <div class="flex-row-between-start gap-md">
-              <div class="flex-col gap-xs">
-                <h2 class="mg-section__title mg-section__title--sm mb-0">
-                  {{ availability.serverName }}
-                </h2>
-                <p class="mb-0 muted-text">{{ availability.description }}</p>
-              </div>
-
-              <span
-                class="tag-badge"
-                [class.tag-badge--success]="availability.canCreateHero || availability.canEnterGame"
-                [class.tag-badge--danger]="!availability.canCreateHero && !availability.canEnterGame"
-              >
-                @if (availability.canEnterGame) {
-                  Enter game
-                } @else if (availability.canCreateHero) {
-                  Create hero
-                } @else if (availability.isDistrictAFull) {
-                  District A full
-                } @else {
-                  Blocked
-                }
-              </span>
-            </div>
-
-            <div class="flex-row-start-center flex-wrap gap-sm">
-              <span class="tag-badge tag-badge--muted">{{ availability.serverKind }}</span>
-              <span class="tag-badge tag-badge--muted">{{ availability.serverStatus }}</span>
-
-              @if (availability.userHeroCount > 0) {
-                <span class="tag-badge tag-badge--muted">
-                  Heroes: {{ availability.userHeroCount }}
-                </span>
-              }
-
-              @if (availability.isStandard) {
-                <span
-                  class="tag-badge"
-                  [class.tag-badge--success]="!availability.isDistrictAFull && availability.districtAFree > 0"
-                  [class.tag-badge--danger]="availability.isDistrictAFull || availability.districtAFree <= 0"
-                >
-                  District A: {{ availability.districtAFree }} / {{ availability.districtACapacity }} free
-                </span>
-              }
-            </div>
-
-            @if (availability.blockReason && !availability.canCreateHero && !availability.canEnterGame) {
-              <p class="mb-0 heading-color">{{ availability.blockReason }}</p>
-            }
-
-            @if (availability.canEnterGame && availability.defaultHeroName && !state.showHeroSelection()) {
-              <p class="mb-0">
-                <span class="muted-text">Existing hero context:</span>
-                <strong class="heading-color">{{ availability.defaultHeroName }}</strong>
-                on {{ availability.serverName }}
-              </p>
-            }
-
-            @if (state.selectedServer()?.id === server.id && state.showHeroSelection()) {
-              <section class="flex-col gap-sm w-100">
-                <div class="flex-col gap-xs">
-                  <p class="mb-0 heading-color">Postacie na tym sandboxie</p>
-                  @if (state.selectedDefaultHeroOption(); as defaultHero) {
-                    <p class="mb-0">
-                      Domyślna postać:
-                      <strong class="heading-color">{{ defaultHero.heroName }}</strong>
-                    </p>
-                  }
-                  @if (state.activeHeroOption(); as activeHero) {
-                    <p class="mb-0">
-                      Aktywna postać:
-                      <strong class="heading-color">{{ activeHero.heroName }}</strong>
-                    </p>
-                  }
-                </div>
-
-                <div class="flex-row-start-center flex-wrap gap-sm">
-                  <p-select
-                    class="w-100"
-                    [formControl]="selectedSandboxHeroControl"
-                    [options]="state.selectedHeroOptions()"
-                    optionLabel="heroName"
-                    optionValue="heroId"
-                    placeholder="Wybierz postać"
-                    appendTo="body"
-                  />
-                  <p-button
-                    type="button"
-                    label="Przełącz"
-                    [disabled]="
-                      state.isTransitioning() ||
-                      !selectedSandboxHeroControl.value ||
-                      selectedSandboxHeroControl.value === state.activeHeroOption()?.heroId
-                    "
-                    (onClick)="switchSelectedSandboxHero()"
-                  />
-                </div>
-              </section>
-            }
-
-            <div class="flex-row-end-center gap-sm">
-              @if (state.selectedServer()?.id !== server.id) {
-                <p-button
-                  type="button"
-                  label="Select"
-                  severity="secondary"
-                  [disabled]="state.isTransitioning()"
-                  (onClick)="state.selectServer(server.id)"
-                />
-              } @else {
-                @if (state.canCreateSandboxHero()) {
-                  <p-button
-                    type="button"
-                    label="Create new hero on this sandbox"
-                    routerLink="/auth/create-character"
-                    severity="secondary"
-                  />
-                }
-                <p-button
-                  type="button"
-                  [label]="state.selectedDecision().action === 'create_hero' ? 'Join new world' : 'Enter game'"
-                  [disabled]="state.isTransitioning()"
-                  (onClick)="state.enterSelectedServer()"
-                />
-              }
-            </div>
-          </article>
-        }
-        }
+    <section class="flex-col gap-md w-100">
+      @if (!hasPlayableHeroContext()) {
+        <div class="mg-card flex-col gap-sm">
+          <p class="mb-0 heading-color">Nie masz jeszcze bohatera gotowego do gry.</p>
+          <p class="mb-0 muted-text">Stwórz bohatera na dostępnym świecie, aby wejść do gry.</p>
+          <p-button
+            type="button"
+            label="Stwórz bohatera"
+            severity="secondary"
+            routerLink="/auth/create-character"
+          />
+        </div>
+      } @else {
+        <app-account-entry-hero-selector
+          [form]="heroContextForm"
+          [options]="playableHeroContextOptions()"
+          [selectedContext]="selectedHeroContext()"
+          [isTransitioning]="state.isTransitioning()"
+          (enter)="enterSelectedHeroContext()"
+        />
       }
-    </div>
+    </section>
   }
 </section>

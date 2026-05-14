@@ -3144,6 +3144,8 @@ All tasks below inherit Part I strict execution rules: prototype visual anchors 
 
 ## UI-ONBOARDING-ADD-1 — Account Entry Shell information architecture
 
+**Status:** Accepted on 2026-05-14 as the account/onboarding shell-frame implementation. `/auth/server-entry` now uses a separate account shell frame instead of GameTopbar/GameSidebar, with a centered Mythsworn topbar, account context panel and distinct `Wejdź do gry` / `Stwórz bohatera` account navigation. The central enter-game selector/detail-card redesign is intentionally deferred to UI-ONBOARDING-ADD-2, not omitted.
+
 **Goal:**  
 Zdefiniować i wdrożyć account/public shell dla zalogowanego użytkownika przed wejściem w konkretny server+hero game shell.
 
@@ -3212,6 +3214,8 @@ Zdefiniować i wdrożyć account/public shell dla zalogowanego użytkownika prze
 ---
 
 ## UI-ONBOARDING-ADD-2 — Enter The Game existing-hero selector
+
+**Status:** Accepted/completed on 2026-05-14 as the routed account-entry existing-hero selector. `/auth/server-entry` and `/auth/create-character` now render under the real `AccountEntryLayout` with `<router-outlet />`; `ServerEntryPage` owns only the entry page content and no longer contains account shell chrome or local enter/create section routing. The existing-hero selector uses the player-safe `get_account_entry_hero_contexts` read model for selectable hero contexts, displays server, hero, level and address, and keeps `enterHeroContext(serverId, heroId)` as the canonical dashboard entry action. Manual smoke remains user-side before commit handoff.
 
 **Goal:**  
 Utworzyć account-shell section `Enter the game`, która pokazuje tylko istniejące grywalne hero contexty i prowadzi do dashboard/game shell.

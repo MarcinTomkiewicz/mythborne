@@ -1,0 +1,86 @@
+<section class="mg-game-shell flex-col">
+  <header class="mg-game-shell__topbar position-sticky top-0 z-10 backdrop-blur-xl py-sm px-lg w-100 shadow-shell mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+    <div class="flex-row-start-center gap-sm justify-self-start justify-self-start-sm">
+      <span class="tag-badge tag-badge--muted">{{ accountLabel() }}</span>
+    </div>
+
+    <div class="flex-row-center-center gap-sm justify-self-center justify-self-start-sm" aria-label="Mythsworn">
+      <span class="mg-brand-mark-fallback" aria-hidden="true">M</span>
+      <h1 class="mg-section__title mg-section__title--sm mb-0">Mythsworn</h1>
+    </div>
+
+    <div class="flex-row-end-center justify-self-end justify-self-start-sm">
+      <span class="tag-badge tag-badge--muted">
+        Serwer: {{ selectedServerName() ?? 'nie wybrano' }}
+      </span>
+    </div>
+  </header>
+
+  <div class="flex-row-start-stretch flex-1 w-100">
+    <aside class="mg-game-shell__sidebar flex-none w-px-250">
+      <div class="flex-col gap-md min-h-full w-100 py-md px-sm">
+        <section class="mg-context-card w-100" aria-label="Dane konta">
+          <div class="mg-context-card__section">
+            <span class="mg-context-card__label">Zalogowano jako</span>
+            <div class="mg-context-card__value-row">
+              <strong class="mg-context-card__value">{{ accountLabel() }}</strong>
+            </div>
+          </div>
+
+          <div class="mg-context-card__section mg-context-card__section--separated">
+            <span class="mg-context-card__label">Wybrany serwer</span>
+            <div class="mg-context-card__value-row">
+              <strong class="mg-context-card__value">
+                {{ selectedServerName() ?? 'Nie wybrano serwera' }}
+              </strong>
+            </div>
+          </div>
+
+          <div class="mg-context-card__section mg-context-card__section--separated">
+            <span class="mg-context-card__label">Aktywny bohater</span>
+            <div class="mg-context-card__value-row">
+              <strong class="mg-context-card__value">
+                {{ activeHeroName() ?? 'Nie wybrano bohatera' }}
+              </strong>
+            </div>
+          </div>
+        </section>
+
+        <nav class="flex-col gap-md w-100" aria-label="Nawigacja konta">
+          <section class="flex-col gap-xs w-100" aria-label="Gra">
+            <span class="muted-text text-xs font-bold">Gra</span>
+            <a class="mg-shell-nav-item" routerLink="/auth/server-entry" routerLinkActive="is-active">
+              <span class="mg-shell-nav-item__icon" aria-hidden="true">WG</span>
+              <span class="mg-shell-nav-item__label">Wejdź do gry</span>
+            </a>
+            <a class="mg-shell-nav-item" routerLink="/auth/create-character" routerLinkActive="is-active">
+              <span class="mg-shell-nav-item__icon" aria-hidden="true">SB</span>
+              <span class="mg-shell-nav-item__label">Stwórz bohatera</span>
+            </a>
+          </section>
+
+          <section class="flex-col gap-xs w-100" aria-label="Konto">
+            <span class="muted-text text-xs font-bold">Konto</span>
+            <button type="button" class="mg-shell-nav-item" disabled>
+              <span class="mg-shell-nav-item__icon" aria-hidden="true">UK</span>
+              <span class="mg-shell-nav-item__label">Ustawienia konta</span>
+              <span class="tag-badge tag-badge--muted">wkrótce</span>
+            </button>
+            <button type="button" class="mg-shell-nav-item" disabled>
+              <span class="mg-shell-nav-item__icon" aria-hidden="true">PW</span>
+              <span class="mg-shell-nav-item__label">Powiadomienia</span>
+              <span class="tag-badge tag-badge--muted">wkrótce</span>
+            </button>
+            <app-session-logout-button />
+          </section>
+        </nav>
+      </div>
+    </aside>
+
+    <main class="mg-game-shell__main flex-1 min-w-0 w-100">
+      <div class="mg-container max-w-none py-lg w-100">
+        <router-outlet />
+      </div>
+    </main>
+  </div>
+</section>

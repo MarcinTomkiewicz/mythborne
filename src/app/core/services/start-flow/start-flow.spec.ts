@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
+  AccountEntryHeroContextRow,
   StartFlowCreateHeroRow,
   StartFlowOriginOptionRow,
   StartFlowServerAvailabilityRow,
@@ -59,6 +60,36 @@ describe('StartFlow', () => {
     }));
     expect(backend.rpc).toHaveBeenCalledOnceWith(
       RPC.get_start_flow_origin_options,
+    );
+  });
+
+  it('loads account-entry hero contexts through the player-safe read model', async () => {
+    backend.rpc.and.returnValue(of([accountEntryHeroContextRow()]));
+
+    const result = await firstValueFrom(service.getAccountEntryHeroContexts());
+
+    expect(result[0]).toEqual(jasmine.objectContaining({
+      heroId: 'hero-1',
+      serverId: 'server-1',
+      heroName: 'Ariadne',
+      heroLevel: 4,
+      addressLabel: 'A-3',
+      routeNextAction: 'hero_dashboard',
+    }));
+    expect(backend.rpc).toHaveBeenCalledOnceWith(
+      RPC.get_account_entry_hero_contexts,
+      {},
+    );
+  });
+
+  it('can scope account-entry hero contexts to a server', async () => {
+    backend.rpc.and.returnValue(of([accountEntryHeroContextRow()]));
+
+    await firstValueFrom(service.getAccountEntryHeroContexts('server-1'));
+
+    expect(backend.rpc).toHaveBeenCalledOnceWith(
+      RPC.get_account_entry_hero_contexts,
+      { p_server_id: 'server-1' },
     );
   });
 
@@ -131,6 +162,42 @@ function serverAvailabilityRow(
     district_a_free: 88,
     heroes_json: [],
     eligibility_json: {},
+    ...patch,
+  };
+}
+
+function accountEntryHeroContextRow(
+  patch: Partial<AccountEntryHeroContextRow> = {},
+): AccountEntryHeroContextRow {
+  return {
+    hero_id: 'hero-1',
+    server_id: 'server-1',
+    server_key: 'sandbox',
+    server_name: 'Sandbox',
+    hero_name: 'Ariadne',
+    hero_level: 4,
+    estate_id: 'estate-1',
+    district_code: 'A',
+    address_number: 3,
+    address: 'legacy-address',
+    address_label: 'A-3',
+    created_at: '2026-05-01T10:00:00Z',
+    route_next_action: 'hero_dashboard',
+    hero_context_json: {
+      heroId: 'hero-1',
+      serverId: 'server-1',
+      serverKey: 'sandbox',
+      serverName: 'Sandbox',
+      heroName: 'Ariadne',
+      heroLevel: 4,
+      estateId: 'estate-1',
+      districtCode: 'A',
+      addressNumber: 3,
+      address: 'legacy-address',
+      addressLabel: 'A-3',
+      createdAt: '2026-05-01T10:00:00Z',
+      routeNextAction: 'hero_dashboard',
+    },
     ...patch,
   };
 }

@@ -1,4 +1,6 @@
 import {
+  AccountEntryHeroContext,
+  AccountEntryHeroContextRow,
   StartFlowCreateHeroRow,
   StartFlowHeroOption,
   StartFlowHeroCreationResult,
@@ -7,6 +9,12 @@ import {
   StartFlowServerAvailability,
   StartFlowServerAvailabilityRow,
 } from '../domain/start-flow/start-flow.model';
+import {
+  jsonRecord,
+  optionalNumber,
+  optionalText,
+  read,
+} from './json-read';
 
 export function mapStartFlowServerAvailability(
   row: StartFlowServerAvailabilityRow,
@@ -59,6 +67,32 @@ export function mapStartFlowHeroOptions(json: unknown): StartFlowHeroOption[] {
 
       return left.heroName.localeCompare(right.heroName);
     });
+}
+
+export function mapAccountEntryHeroContext(
+  row: AccountEntryHeroContextRow,
+): AccountEntryHeroContext {
+  const context = jsonRecord(row.hero_context_json);
+
+  return {
+    heroId: requiredText(read(context, 'heroId'), row.hero_id, 'heroId'),
+    serverId: requiredText(read(context, 'serverId'), row.server_id, 'serverId'),
+    serverKey: requiredText(read(context, 'serverKey'), row.server_key, 'serverKey'),
+    serverName: requiredText(read(context, 'serverName'), row.server_name, 'serverName'),
+    heroName: requiredText(read(context, 'heroName'), row.hero_name, 'heroName'),
+    heroLevel: requiredNumber(read(context, 'heroLevel'), row.hero_level, 'heroLevel'),
+    estateId: optionalText(read(context, 'estateId')) ?? nullableString(row.estate_id),
+    districtCode: optionalText(read(context, 'districtCode')) ?? nullableString(row.district_code),
+    addressNumber: optionalNumber(read(context, 'addressNumber')) ?? nullableNumber(row.address_number),
+    address: optionalText(read(context, 'address')) ?? nullableString(row.address),
+    addressLabel: optionalText(read(context, 'addressLabel')) ?? nullableString(row.address_label),
+    createdAt: optionalText(read(context, 'createdAt')) ?? nullableString(row.created_at),
+    routeNextAction: requiredText(
+      read(context, 'routeNextAction'),
+      row.route_next_action,
+      'routeNextAction',
+    ),
+  };
 }
 
 function mapStartFlowHeroOption(entry: unknown): StartFlowHeroOption | null {
@@ -130,4 +164,44 @@ export function mapStartFlowHeroCreationResult(
 
 function stringValue(value: unknown): string {
   return typeof value === 'string' ? value : '';
+}
+
+function requiredText(
+  value: unknown,
+  fallback: unknown,
+  fieldName: string,
+): string {
+  const text = stringValue(value) || stringValue(fallback);
+
+  if (!text) {
+    throw new Error(`Account entry hero context is missing ${fieldName}.`);
+  }
+
+  return text;
+}
+
+function requiredNumber(
+  value: unknown,
+  fallback: unknown,
+  fieldName: string,
+): number {
+  const numeric = typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : typeof fallback === 'number' && Number.isFinite(fallback)
+      ? fallback
+      : null;
+
+  if (numeric === null) {
+    throw new Error(`Account entry hero context is missing ${fieldName}.`);
+  }
+
+  return numeric;
+}
+
+function nullableString(value: unknown): string | null {
+  return stringValue(value) || null;
+}
+
+function nullableNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }

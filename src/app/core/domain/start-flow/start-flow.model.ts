@@ -11,6 +11,8 @@ export type StartFlowServerAvailabilityRow =
   RpcRow<'get_start_flow_server_availability'>;
 export type StartFlowOriginOptionRow =
   RpcRow<'get_start_flow_origin_options'>;
+export type AccountEntryHeroContextRow =
+  RpcRow<'get_account_entry_hero_contexts'>;
 export type StartFlowCreateHeroArgs =
   Database['public']['Functions']['create_hero_start_flow']['Args'];
 export type StartFlowCreateHeroRow = RpcRow<'create_hero_start_flow'>;
@@ -88,6 +90,22 @@ export interface StartFlowHeroOption {
   heroId: string;
   heroName: string;
   createdAt: string | null;
+}
+
+export interface AccountEntryHeroContext {
+  heroId: string;
+  serverId: string;
+  serverKey: string;
+  serverName: string;
+  heroName: string;
+  heroLevel: number;
+  estateId: string | null;
+  districtCode: string | null;
+  addressNumber: number | null;
+  address: string | null;
+  addressLabel: string | null;
+  createdAt: string | null;
+  routeNextAction: string;
 }
 
 export type StartFlowEntryRouteAction =

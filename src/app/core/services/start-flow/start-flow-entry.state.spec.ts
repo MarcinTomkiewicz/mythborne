@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 import {
+  AccountEntryHeroContext,
   StartFlowServerAvailability,
 } from '../../domain/start-flow/start-flow.model';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
@@ -42,7 +43,10 @@ describe('StartFlowEntryState', () => {
       servers: servers.asReadonly(),
     });
     router = jasmine.createSpyObj<Router>('Router', ['navigateByUrl']);
-    startFlow = jasmine.createSpyObj<StartFlow>('StartFlow', ['getServerAvailability']);
+    startFlow = jasmine.createSpyObj<StartFlow>('StartFlow', [
+      'getAccountEntryHeroContexts',
+      'getServerAvailability',
+    ]);
 
     activeHero.loadActiveHero.and.returnValue(of(null));
     activeHero.selectHero.and.returnValue(of(activeContext('hero-1')));
@@ -55,6 +59,7 @@ describe('StartFlowEntryState', () => {
     startFlow.getServerAvailability.and.returnValue(
       of([availability({ canCreateHero: true, nextAction: 'create_hero' })]),
     );
+    startFlow.getAccountEntryHeroContexts.and.returnValue(of([]));
 
     TestBed.configureTestingModule({
       providers: [
@@ -81,6 +86,20 @@ describe('StartFlowEntryState', () => {
     expect(activeServer.loadAccessibleServers).toHaveBeenCalled();
     expect(startFlow.getServerAvailability).toHaveBeenCalled();
     expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/auth/create-character');
+  });
+
+  it('loads account-entry hero contexts without selecting an active hero', () => {
+    startFlow.getAccountEntryHeroContexts.and.returnValue(of([
+      accountEntryHeroContext(),
+    ]));
+
+    state.load();
+
+    expect(startFlow.getAccountEntryHeroContexts).toHaveBeenCalledOnceWith();
+    expect(activeHero.selectHero).not.toHaveBeenCalled();
+    expect(state.accountEntryHeroContexts()).toEqual([
+      accountEntryHeroContext(),
+    ]);
   });
 
   it('shows the DB blocker for a full standard server instead of routing to creation', () => {
@@ -139,6 +158,10 @@ describe('StartFlowEntryState', () => {
         ],
       }),
     ]));
+    startFlow.getAccountEntryHeroContexts.and.returnValue(of([
+      accountEntryHeroContext({ heroId: 'hero-1', heroName: 'First' }),
+      accountEntryHeroContext({ heroId: 'hero-2', heroName: 'Second' }),
+    ]));
     activeHero.selectHero.and.returnValue(of(activeContext('hero-2')));
 
     state.load();
@@ -169,6 +192,10 @@ describe('StartFlowEntryState', () => {
         ],
       }),
     ]));
+    startFlow.getAccountEntryHeroContexts.and.returnValue(of([
+      accountEntryHeroContext({ heroId: 'hero-1', heroName: 'First' }),
+      accountEntryHeroContext({ heroId: 'hero-2', heroName: 'Second' }),
+    ]));
 
     state.load();
     state.enterSelectedServer();
@@ -195,6 +222,10 @@ describe('StartFlowEntryState', () => {
           { heroId: 'hero-2', heroName: 'Second', createdAt: '2026-05-02T10:00:00Z' },
         ],
       }),
+    ]));
+    startFlow.getAccountEntryHeroContexts.and.returnValue(of([
+      accountEntryHeroContext({ heroId: 'hero-1', heroName: 'First' }),
+      accountEntryHeroContext({ heroId: 'hero-2', heroName: 'Second' }),
     ]));
 
     state.load();
@@ -281,6 +312,10 @@ describe('StartFlowEntryState', () => {
         ],
       }),
     ]));
+    startFlow.getAccountEntryHeroContexts.and.returnValue(of([
+      accountEntryHeroContext({ heroId: 'hero-1', heroName: 'First' }),
+      accountEntryHeroContext({ heroId: 'hero-2', heroName: 'Second' }),
+    ]));
     activeHero.selectHero.and.returnValue(of(activeContext('hero-2')));
 
     state.load();
@@ -313,6 +348,137 @@ describe('StartFlowEntryState', () => {
 
     expect(state.showHeroSelection()).toBeFalse();
     expect(state.canCreateSandboxHero()).toBeFalse();
+  });
+
+  it('can select an existing standard hero context before entering dashboard', () => {
+    startFlow.getServerAvailability.and.returnValue(of([
+      availability({
+        isStandard: true,
+        isSandbox: false,
+        canEnterGame: true,
+        canCreateHero: false,
+        nextAction: 'dashboard',
+        userHeroCount: 1,
+        defaultHeroId: 'hero-1',
+        defaultHeroName: 'Standard Hero',
+        heroes: [
+          { heroId: 'hero-1', heroName: 'Standard Hero', createdAt: '2026-05-01T10:00:00Z' },
+        ],
+      }),
+    ]));
+    startFlow.getAccountEntryHeroContexts.and.returnValue(of([
+      accountEntryHeroContext({ heroId: 'hero-1', heroName: 'Standard Hero' }),
+    ]));
+    activeHero.selectHero.and.returnValue(of(activeContext('hero-1')));
+
+    state.load();
+    state.selectHero('hero-1');
+
+    expect(activeHero.selectHero).toHaveBeenCalledOnceWith('hero-1');
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/dashboard');
+  });
+
+  it('switches server before selecting a hero context from another server', () => {
+    const activeHeroReload = new Subject<ActiveHeroState | null>();
+
+    servers.set([
+      server(),
+      server({ id: 'server-2', key: 'sandbox', name: 'Sandbox', kind: 'sandbox' }),
+    ]);
+    activeHero.selectHero.and.returnValue(of(activeContext('hero-2', 'server-2')));
+    startFlow.getServerAvailability.and.returnValue(of([
+      availability({
+        canEnterGame: true,
+        nextAction: 'dashboard',
+        defaultHeroId: 'hero-1',
+        defaultHeroName: 'Standard Hero',
+        heroes: [
+          { heroId: 'hero-1', heroName: 'Standard Hero', createdAt: '2026-05-01T10:00:00Z' },
+        ],
+      }),
+      availability({
+        serverId: 'server-2',
+        serverKey: 'sandbox',
+        serverName: 'Sandbox',
+        serverKind: 'sandbox',
+        isStandard: false,
+        isSandbox: true,
+        canEnterGame: true,
+        nextAction: 'hero_selection',
+        userHeroCount: 1,
+        heroes: [
+          { heroId: 'hero-2', heroName: 'Second', createdAt: '2026-05-02T10:00:00Z' },
+        ],
+      }),
+    ]));
+    startFlow.getAccountEntryHeroContexts.and.returnValue(of([
+      accountEntryHeroContext({
+        heroId: 'hero-2',
+        serverId: 'server-2',
+        serverKey: 'sandbox',
+        serverName: 'Sandbox',
+        heroName: 'Second',
+      }),
+    ]));
+
+    state.load();
+    activeHero.loadActiveHero.and.returnValue(activeHeroReload.asObservable());
+    state.enterHeroContext('server-2', 'hero-2');
+
+    expect(activeServer.selectServer).toHaveBeenCalledOnceWith('server-2');
+    expect(activeHero.clear).toHaveBeenCalled();
+    expect(activeHero.selectHero).not.toHaveBeenCalled();
+
+    activeHeroReload.next(activeContext('hero-1', 'server-2'));
+    activeHeroReload.complete();
+
+    expect(activeHero.selectHero).toHaveBeenCalledOnceWith('hero-2');
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/dashboard');
+  });
+
+  it('ignores stale cross-server hero context entry after another transition starts', () => {
+    const activeHeroReload = new Subject<ActiveHeroState | null>();
+
+    servers.set([
+      server(),
+      server({ id: 'server-2', key: 'sandbox', name: 'Sandbox', kind: 'sandbox' }),
+    ]);
+    startFlow.getServerAvailability.and.returnValue(of([
+      availability({
+        serverId: 'server-2',
+        serverKey: 'sandbox',
+        serverName: 'Sandbox',
+        serverKind: 'sandbox',
+        isStandard: false,
+        isSandbox: true,
+        canEnterGame: true,
+        nextAction: 'hero_selection',
+        userHeroCount: 1,
+        heroes: [
+          { heroId: 'hero-2', heroName: 'Second', createdAt: '2026-05-02T10:00:00Z' },
+        ],
+      }),
+    ]));
+    startFlow.getAccountEntryHeroContexts.and.returnValue(of([
+      accountEntryHeroContext({
+        heroId: 'hero-2',
+        serverId: 'server-2',
+        serverKey: 'sandbox',
+        serverName: 'Sandbox',
+        heroName: 'Second',
+      }),
+    ]));
+
+    state.load();
+    activeHero.loadActiveHero.and.returnValue(activeHeroReload.asObservable());
+    state.enterHeroContext('server-2', 'hero-2');
+    state.selectServer('server-1');
+
+    activeHeroReload.next(activeContext('hero-2', 'server-2'));
+    activeHeroReload.complete();
+
+    expect(activeHero.selectHero).not.toHaveBeenCalled();
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
   });
 
   it('does not expose sandbox creation when DB returns a blocker', () => {
@@ -352,6 +518,10 @@ describe('StartFlowEntryState', () => {
           { heroId: 'hero-2', heroName: 'Second', createdAt: '2026-05-02T10:00:00Z' },
         ],
       }),
+    ]));
+    startFlow.getAccountEntryHeroContexts.and.returnValue(of([
+      accountEntryHeroContext({ heroId: 'hero-1', heroName: 'First' }),
+      accountEntryHeroContext({ heroId: 'hero-2', heroName: 'Second' }),
     ]));
     const firstSelection = new Subject<ActiveHeroState>();
     activeHero.selectHero.and.returnValue(firstSelection.asObservable());
@@ -410,14 +580,44 @@ describe('StartFlowEntryState', () => {
         ],
       }),
     ]));
+    startFlow.getAccountEntryHeroContexts.and.returnValue(of([
+      accountEntryHeroContext({ heroId: 'hero-1', heroName: 'First' }),
+    ]));
 
     state.load();
     state.selectHero('hero-2');
 
     expect(activeHero.selectHero).not.toHaveBeenCalled();
     expect(state.blocker()).toBe(
-      'Selected hero is not available in the current start-flow state.',
+      'Selected hero is not available in the current account-entry state.',
     );
+  });
+
+  it('enters a hero context returned by account-entry read model even when availability heroes are empty', () => {
+    startFlow.getServerAvailability.and.returnValue(of([
+      availability({
+        canEnterGame: true,
+        canCreateHero: false,
+        nextAction: 'dashboard',
+        userHeroCount: 1,
+        defaultHeroId: null,
+        defaultHeroName: null,
+        heroes: [],
+      }),
+    ]));
+    startFlow.getAccountEntryHeroContexts.and.returnValue(of([
+      accountEntryHeroContext({
+        heroId: 'hero-2',
+        heroName: 'Second',
+      }),
+    ]));
+    activeHero.selectHero.and.returnValue(of(activeContext('hero-2')));
+
+    state.load();
+    state.enterHeroContext('server-1', 'hero-2');
+
+    expect(activeHero.selectHero).toHaveBeenCalledOnceWith('hero-2');
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/dashboard');
   });
 
   it('does not silently continue when active hero load fails during entry load', () => {
@@ -543,5 +743,26 @@ function activeContext(
     server: server({ id: serverId }),
     hero: { id: heroId, name: 'Hero', serverId } as ActiveHeroState['hero'],
     heroRow: { id: heroId, server_id: serverId } as ActiveHeroState['heroRow'],
+  };
+}
+
+function accountEntryHeroContext(
+  patch: Partial<AccountEntryHeroContext> = {},
+): AccountEntryHeroContext {
+  return {
+    heroId: 'hero-1',
+    serverId: 'server-1',
+    serverKey: 'standard',
+    serverName: 'Standard',
+    heroName: 'Standard Hero',
+    heroLevel: 4,
+    estateId: 'estate-1',
+    districtCode: 'A',
+    addressNumber: 3,
+    address: 'A-3',
+    addressLabel: 'A-3',
+    createdAt: '2026-05-01T10:00:00Z',
+    routeNextAction: 'hero_dashboard',
+    ...patch,
   };
 }
