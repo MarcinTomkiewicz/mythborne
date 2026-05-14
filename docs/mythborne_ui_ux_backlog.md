@@ -3007,6 +3007,8 @@ Implement account/public shell before the player enters a specific server+hero g
 
 ## UI-ACCOUNT-2 — Sandbox create new hero entry action
 
+**Status:** Accepted on 2026-05-14. Sandbox/test server entry now exposes the secondary `Create new hero on this sandbox` CTA next to `Enter game` when the start-flow read model allows sandbox hero creation. Standard servers with an existing hero keep only the enter action. The route remains the existing `/auth/create-character` canonical start-flow path, with no DB/RPC changes, generated type edits, start-flow/auth rewrite, direct table writes or local SCSS. Manual smoke passed.
+
 **Goal:** allow privileged/test users on sandbox/test servers to start creation of an additional hero on the selected sandbox server without logging out.
 
 **Required anchors:**

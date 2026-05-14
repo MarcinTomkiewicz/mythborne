@@ -36,7 +36,7 @@ describe('ServerEntryPage', () => {
     expect(text).toContain('First');
     expect(text).toContain('Aktywna postać:');
     expect(text).toContain('Second');
-    expect(text).toContain('Create new hero');
+    expect(text).toContain('Create new hero on this sandbox');
     expect(fixture.debugElement.queryAll(By.css('p-select')).length).toBe(1);
   });
 
@@ -115,10 +115,10 @@ describe('ServerEntryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Enter game');
-    expect(text).toContain('Create new hero');
+    expect(text).toContain('Create new hero on this sandbox');
   });
 
-  it('does not render sandbox hero switcher for standard server state', () => {
+  it('does not render sandbox hero switcher or creation action for standard server state', () => {
     const state = stateStub({
       availability: availability({ isSandbox: false, isStandard: true }),
       canCreateSandboxHero: false,
@@ -131,7 +131,36 @@ describe('ServerEntryPage', () => {
     const text = textContent(fixture);
 
     expect(text).not.toContain('Postacie na tym sandboxie');
-    expect(text).not.toContain('Create new hero');
+    expect(text).not.toContain('Create new hero on this sandbox');
+  });
+
+  it('renders only the enter action for standard server state with an existing hero', () => {
+    const state = stateStub({
+      availability: availability({
+        isSandbox: false,
+        isStandard: true,
+        canEnterGame: true,
+        canCreateHero: false,
+        nextAction: 'dashboard',
+        userHeroCount: 1,
+        defaultHeroName: 'Ariadne',
+      }),
+      activeHero: heroOption({ heroId: 'hero-1', heroName: 'Ariadne' }),
+      canCreateSandboxHero: false,
+      selectedDecision: {
+        action: 'dashboard',
+        route: '/hero/dashboard',
+        message: null,
+      },
+    });
+    const fixture = createFixture(state);
+
+    fixture.detectChanges();
+
+    const text = textContent(fixture);
+
+    expect(text).toContain('Enter game');
+    expect(text).not.toContain('Create new hero on this sandbox');
   });
 
   it('does not render sandbox creation link when DB blocks sandbox creation', () => {
@@ -154,7 +183,7 @@ describe('ServerEntryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Postacie na tym sandboxie');
-    expect(text).not.toContain('Create new hero');
+    expect(text).not.toContain('Create new hero on this sandbox');
   });
 
   it('shows standard server creation capacity from the start-flow read model', () => {
