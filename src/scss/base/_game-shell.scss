@@ -176,8 +176,9 @@
   line-height: 1;
 }
 
-.mg-brand-banner {
-  mix-blend-mode: screen;
+.mg-game-shell__topbar [aria-label="Mythsworn"] > img {
+  mask-image: linear-gradient(90deg, transparent 0, black 12%, black 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, black 12%, black 88%, transparent 100%);
 }
 
 .mg-resource-summary {
