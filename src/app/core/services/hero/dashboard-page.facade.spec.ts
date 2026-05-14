@@ -1,10 +1,9 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { of, Subject, throwError } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 import { Hero } from './hero';
 import { Origins } from '../origins/origins';
 import { DashboardPageFacade } from './dashboard-page.facade';
-import { CharacterPointHistory } from './character-point-history';
 import { HeroDashboardRuntimeStats } from './hero-dashboard-runtime-stats';
 import { ActiveServer } from '../server/active-server';
 import { SelectedGameServer } from '../../interfaces/server/active-server.interface';
@@ -37,6 +36,7 @@ describe('DashboardPageFacade', () => {
   let activeHeroState: ReturnType<typeof signal<ActiveHeroState | null>>;
   let selectedServer: ReturnType<typeof signal<SelectedGameServer | null>>;
   let equipmentLoad: jasmine.Spy;
+  let equipmentClear: jasmine.Spy;
   let equipmentStatus: ReturnType<typeof signal<string>>;
   let equipmentError: ReturnType<typeof signal<string | null>>;
   let equipmentIsLoading: ReturnType<typeof signal<boolean>>;
@@ -253,6 +253,7 @@ describe('DashboardPageFacade', () => {
       getHeroPendingCombatEffectState: of([combatEffectState()]),
     });
     equipmentLoad = jasmine.createSpy('load');
+    equipmentClear = jasmine.createSpy('clear');
     equipmentStatus = signal('loaded');
     equipmentError = signal<string | null>(null);
     equipmentIsLoading = signal(false);
@@ -286,6 +287,9 @@ describe('DashboardPageFacade', () => {
         isRuntimeUsable: true,
       },
     ]);
+    const initialEquippedSlots = equippedSlots();
+    equipmentClear.and.callFake(() => equippedSlots.set([]));
+    equipmentLoad.and.callFake(() => equippedSlots.set(initialEquippedSlots));
 
     TestBed.configureTestingModule({
       providers: [
@@ -305,6 +309,7 @@ describe('DashboardPageFacade', () => {
           provide: CurrentEquipmentState,
           useValue: {
             load: equipmentLoad,
+            clear: equipmentClear,
             status: equipmentStatus.asReadonly(),
             error: equipmentError.asReadonly(),
             isLoading: equipmentIsLoading.asReadonly(),
@@ -332,25 +337,6 @@ describe('DashboardPageFacade', () => {
           useValue: jasmine.createSpyObj<Origins>('Origins', ['getOriginWithBonuses']),
         },
         {
-          provide: CharacterPointHistory,
-          useValue: jasmine.createSpyObj<CharacterPointHistory>('CharacterPointHistory', {
-            getActiveHeroHistory: of([
-              {
-                id: 'cp-ledger-1',
-                heroId: 'hero-1',
-                serverId: 'server-1',
-                reason: 'experience_gain',
-                entryType: 'xp_gain',
-                reasonLabel: 'XP-derived Character Points',
-                amountDelta: 25,
-                amountLabel: '+25 Character Points',
-                balanceAfter: 42,
-                createdAt: '2026-05-03T10:00:00.000Z',
-              },
-            ]),
-          }),
-        },
-        {
           provide: ActiveServer,
           useValue: { selectedServer: selectedServer.asReadonly() },
         },
@@ -371,7 +357,6 @@ describe('DashboardPageFacade', () => {
     expect(facade.experiencePercent()).toBe(25);
     expect(facade.experienceError()).toBeNull();
     expect(facade.characterPoints()).toBe(9);
-    expect(facade.totalCharacterPointsEarned()).toBe(42);
     expect(facade.estateAddress()).toBe('A-3');
     expect(facade.currentEstateAddress()).toEqual(currentEstateAddress());
     expect(facade.estateAddressError()).toBeNull();
@@ -401,19 +386,6 @@ describe('DashboardPageFacade', () => {
         iconClass: 'pi pi-one-handed',
         item: null,
       },
-    ]);
-  });
-
-  it('loads recent Character Points history without calculating current balance from it', () => {
-    facade.loadData();
-
-    expect(facade.characterPoints()).toBe(9);
-    expect(facade.characterPointHistoryEntries()).toEqual([
-      jasmine.objectContaining({
-        reasonLabel: 'XP-derived Character Points',
-        amountLabel: '+25 Character Points',
-        balanceAfter: 42,
-      }),
     ]);
   });
 
@@ -691,6 +663,108 @@ describe('DashboardPageFacade', () => {
     expect(facade.isPersistentStateLoaded()).toBeFalse();
   });
 
+  it('ignores stale estate address responses after selected server changes', () => {
+    const estateAddressResponse = new Subject<CurrentEstateAddressReadModel>();
+
+    estateAddresses.getActiveHeroCurrentAddress.and.returnValue(estateAddressResponse);
+
+    facade.loadData();
+    selectedServer.set({
+      ...selectedGameServer(),
+      id: 'server-2',
+      key: 'other',
+      name: 'Other',
+    });
+    TestBed.flushEffects();
+
+    estateAddressResponse.next(currentEstateAddress());
+    estateAddressResponse.complete();
+
+    expect(facade.currentEstateAddress()).toBeNull();
+    expect(facade.estateAddress()).toBeNull();
+    expect(facade.isEstateAddressLoaded()).toBeFalse();
+    expect(facade.estateAddressError()).toBeNull();
+  });
+
+  it('ignores stale estate address errors after selected server clears', () => {
+    const estateAddressResponse = new Subject<CurrentEstateAddressReadModel>();
+
+    estateAddresses.getActiveHeroCurrentAddress.and.returnValue(estateAddressResponse);
+
+    facade.loadData();
+    selectedServer.set(null);
+    TestBed.flushEffects();
+
+    estateAddressResponse.error(new Error('Stale estate read failed.'));
+
+    expect(facade.currentEstateAddress()).toBeNull();
+    expect(facade.estateAddress()).toBeNull();
+    expect(facade.isEstateAddressLoaded()).toBeFalse();
+    expect(facade.estateAddressError()).toBeNull();
+  });
+
+  it('clears dashboard data and ignores stale hero responses after active hero changes', () => {
+    const staleHeroResponse =
+      new Subject<ObservableValue<ReturnType<Hero['getHeroData']>>>();
+    const pendingHeroResponse =
+      new Subject<ObservableValue<ReturnType<Hero['getHeroData']>>>();
+    const pendingRuntimeStats = new Subject<
+      ObservableValue<ReturnType<HeroDashboardRuntimeStats['getActiveHeroRuntimeStats']>>
+    >();
+    const pendingEstateAddress = new Subject<CurrentEstateAddressReadModel>();
+    const pendingEquipmentSlots =
+      new Subject<ObservableValue<ReturnType<HeroEquipment['getEquipmentSlots']>>>();
+
+    hero.getHeroData.and.returnValues(
+      staleHeroResponse as ReturnType<Hero['getHeroData']>,
+      pendingHeroResponse as ReturnType<Hero['getHeroData']>,
+    );
+    runtimeStats.getActiveHeroRuntimeStats.and.returnValue(
+      pendingRuntimeStats as ReturnType<
+        HeroDashboardRuntimeStats['getActiveHeroRuntimeStats']
+      >,
+    );
+    estateAddresses.getActiveHeroCurrentAddress.and.returnValue(
+      pendingEstateAddress as ReturnType<
+        EstateAddresses['getActiveHeroCurrentAddress']
+      >,
+    );
+    heroEquipment.getEquipmentSlots.and.returnValue(
+      pendingEquipmentSlots as ReturnType<HeroEquipment['getEquipmentSlots']>,
+    );
+
+    facade.loadData();
+    equipmentLoad.and.stub();
+    activeHeroState.set(activeHeroContext({ heroId: 'hero-2' }));
+    TestBed.flushEffects();
+
+    staleHeroResponse.next({
+      id: 'hero-1',
+      name: 'Stale Ariadne',
+      level: 7,
+      server_id: 'server-1',
+      experience: 999,
+      total_experience_earned: 999,
+      character_points: 99,
+      total_character_points_earned: 99,
+      origin_id: null,
+      created_at: null,
+      estate_id: null,
+      profile_picture: null,
+      rank: null,
+      user_id: 'user-1',
+    });
+    staleHeroResponse.complete();
+
+    expect(facade.heroName()).toBe('');
+    expect(facade.characterPoints()).toBe(0);
+    expect(facade.baseStatRows()).toEqual([]);
+    expect(facade.derivedStatRows()).toEqual([]);
+    expect(facade.persistentStateRows()).toEqual([]);
+    expect(facade.equipmentPreviewRows()).toEqual([]);
+    expect(facade.estateAddress()).toBeNull();
+  });
+
   it('exposes DB-owned runtime combat stat rows for dashboard rendering', () => {
     facade.loadData();
 
@@ -924,3 +998,5 @@ function combatEffectState(): HeroPendingCombatEffectStateReadModel {
     consumedById: null,
   };
 }
+
+type ObservableValue<T> = T extends Observable<infer Value> ? Value : never;

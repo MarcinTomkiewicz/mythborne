@@ -1988,6 +1988,8 @@ Global UI-DASHBOARD rules:
 
 ## UI-DASHBOARD-17 — Dashboard visual prototype alignment pass
 
+**Status:** Checked on 2026-05-14; decision changed and accepted as-is during implementation. The dashboard visual direction remains the current production composition using existing global utilities/shared patterns. No extra prototype-alignment patch is required here; future dashboard content may add other statistic surfaces, but Character Points history is not part of the dashboard direction.
+
 **Goal:** make the dashboard visually approach the accepted prototype using production patterns.
 
 **Scope:**
@@ -2017,6 +2019,8 @@ Global UI-DASHBOARD rules:
 ---
 
 ## UI-DASHBOARD-18 — Dashboard stale state and active hero/server switch hardening
+
+**Status:** Accepted on 2026-05-14. Dashboard data now reloads on active hero/server context changes, clears existing dashboard cards before the new load resolves, and guards hero, runtime stats, estate address, equipment slot and persistent-state responses with the active hero/server context, including stale estate address success/error after selected server changes. Character Points History was removed from the dashboard composition because CP ledger history is no longer a dashboard widget. No DB/RPC changes, generated type edits, local stat math, display-string parsing, global store or dashboard-local SCSS were added.
 
 **Goal:** ensure dashboard does not show stale hero/dashboard data after active hero or selected server changes.
 

@@ -1,6 +1,5 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { catchError, forkJoin, map, of } from 'rxjs';
-import { CharacterPointHistoryReadModel } from '../../types/hero.types';
 import { Origin } from '../../domain/origin/origin.model';
 import { EquipmentSlot } from '../../domain/item/item-equipment.model';
 import { CurrentEstateAddressReadModel } from '../../domain/estate/estate-address.model';
@@ -9,7 +8,6 @@ import { Hero } from './hero';
 import { ActiveHeroVitalsState } from './active-hero-vitals-state';
 import { Origins } from '../origins/origins';
 import { getErrorMessage } from '../../utils/error-message';
-import { CharacterPointHistory } from './character-point-history';
 import {
   HeroDashboardRuntimeStatsReadModel,
 } from '../../domain/hero/hero-dashboard-runtime-stats.model';
@@ -44,7 +42,6 @@ export class DashboardPageFacade {
   private readonly heroService = inject(Hero);
   private readonly vitals = inject(ActiveHeroVitalsState);
   private readonly runtimeStatsService = inject(HeroDashboardRuntimeStats);
-  private readonly characterPointHistory = inject(CharacterPointHistory);
   private readonly originsService = inject(Origins);
   private readonly activeServer = inject(ActiveServer);
   private readonly heroEquipment = inject(HeroEquipment);
@@ -54,20 +51,43 @@ export class DashboardPageFacade {
   private readonly gameReports = inject(GameReports);
   private readonly heroExplorations = inject(HeroExplorations);
   private readonly activeHeroState = inject(ActiveHero);
+  readonly selectedServer = this.activeServer.selectedServer;
+
+  private readonly dashboardLoadToken = new RequestToken();
   private readonly estateAddressLoadToken = new RequestToken();
   private readonly persistentStateLoadToken = new RequestToken();
+  private readonly hasLoadedDashboard = signal(false);
+  private readonly loadedContextKey = signal<string | null>(null);
   private readonly persistentStateContext = signal<{
     heroId: string;
     serverId: string;
   } | null>(null);
 
-  readonly selectedServer = this.activeServer.selectedServer;
+  private readonly reloadOnContextChange = effect(() => {
+    const context = this.currentDashboardContext();
+    const contextKey = context ? dashboardContextKey(context) : null;
+
+    if (!this.hasLoadedDashboard()) {
+      return;
+    }
+
+    untracked(() => {
+      if (!context) {
+        this.clearDashboardState();
+        this.loadedContextKey.set(null);
+        return;
+      }
+
+      if (this.loadedContextKey() !== contextKey) {
+        this.loadData();
+      }
+    });
+  });
 
   heroName = signal('');
   private readonly heroLevelFallback = signal(1);
   readonly level = computed(() => this.vitals.level() ?? this.heroLevelFallback());
   characterPoints = signal(0);
-  totalCharacterPointsEarned = signal(0);
   currentEstateAddress = signal<CurrentEstateAddressReadModel | null>(null);
   readonly estateAddress = computed(() =>
     this.currentEstateAddress()?.addressLabel ?? null
@@ -87,8 +107,6 @@ export class DashboardPageFacade {
 
   runtimeStats = signal<HeroDashboardRuntimeStatsReadModel | null>(null);
   runtimeStatsError = signal<string | null>(null);
-  characterPointHistoryEntries = signal<CharacterPointHistoryReadModel[]>([]);
-  characterPointHistoryError = signal<string | null>(null);
   equipmentSlots = signal<EquipmentSlot[]>([]);
   equipmentSlotsError = signal<string | null>(null);
   activeBuildingJob = signal<MansionBuildingJob | null>(null);
@@ -152,33 +170,53 @@ export class DashboardPageFacade {
     )
   );
 
-  loadData() {
+  loadData(): void {
+    const context = this.currentDashboardContext();
+    const token = this.dashboardLoadToken.next();
+
+    this.hasLoadedDashboard.set(true);
+    this.loadedContextKey.set(context ? dashboardContextKey(context) : null);
+    this.clearDashboardState();
+
+    if (!context) {
+      return;
+    }
+
+    this.loadEstateAddress(context);
+    this.loadRuntimeStats(context, token);
+    this.loadEquipmentPreview(context, token);
+
     this.heroService.getHeroData().subscribe((hero) => {
+      if (
+        !this.acceptsDashboardResponse(token, context)
+        || hero.id !== context.heroId
+        || hero.server_id !== context.serverId
+      ) {
+        return;
+      }
+
       this.heroName.set(hero.name);
       this.heroLevelFallback.set(hero.level ?? 1);
       this.characterPoints.set(hero.character_points ?? 0);
-      this.totalCharacterPointsEarned.set(hero.total_character_points_earned ?? 0);
       this.vitals.load();
-      this.loadPersistentStates(hero.id, hero.server_id);
+      this.loadPersistentStates(context.heroId, context.serverId);
 
       if (hero.origin_id) {
         this.originsService
           .getOriginWithBonuses(hero.origin_id)
           .subscribe(({ origin }) => {
+            if (!this.acceptsDashboardResponse(token, context)) {
+              return;
+            }
+
             this.origin.set(origin);
           });
       }
     });
-
-    this.loadEstateAddress();
-    this.loadRuntimeStats();
-    this.loadCharacterPointHistory();
-    this.loadEquipmentPreview();
   }
 
-  private loadEstateAddress(): void {
+  private loadEstateAddress(context: DashboardContext): void {
     const token = this.estateAddressLoadToken.next();
-    const activeHero = this.activeHeroState.state();
 
     this.isEstateAddressLoaded.set(false);
     this.estateAddressError.set(null);
@@ -187,7 +225,7 @@ export class DashboardPageFacade {
       next: (address) => {
         if (
           !this.estateAddressLoadToken.isCurrent(token)
-          || !this.isCurrentActiveHeroContext(activeHero?.heroId, activeHero?.serverId)
+          || !this.isCurrentDashboardContext(context)
         ) {
           return;
         }
@@ -198,7 +236,7 @@ export class DashboardPageFacade {
       error: (error: unknown) => {
         if (
           !this.estateAddressLoadToken.isCurrent(token)
-          || !this.isCurrentActiveHeroContext(activeHero?.heroId, activeHero?.serverId)
+          || !this.isCurrentDashboardContext(context)
         ) {
           return;
         }
@@ -212,28 +250,25 @@ export class DashboardPageFacade {
     });
   }
 
-  private loadCharacterPointHistory(): void {
-    this.characterPointHistoryError.set(null);
-
-    this.characterPointHistory
-      .getActiveHeroHistory({ limit: 5 })
-      .subscribe({
-        next: (entries) => this.characterPointHistoryEntries.set(entries),
-        error: (error: unknown) => {
-          this.characterPointHistoryEntries.set([]);
-          this.characterPointHistoryError.set(
-            getErrorMessage(error, 'Character Points history could not be loaded.'),
-          );
-        },
-      });
-  }
-
-  private loadRuntimeStats(): void {
+  private loadRuntimeStats(context: DashboardContext, token: number): void {
     this.runtimeStatsError.set(null);
 
     this.runtimeStatsService.getActiveHeroRuntimeStats().subscribe({
-      next: (stats) => this.runtimeStats.set(stats),
+      next: (stats) => {
+        if (
+          !this.acceptsDashboardResponse(token, context)
+          || stats.heroId !== context.heroId
+        ) {
+          return;
+        }
+
+        this.runtimeStats.set(stats);
+      },
       error: (error: unknown) => {
+        if (!this.acceptsDashboardResponse(token, context)) {
+          return;
+        }
+
         this.runtimeStats.set(null);
         this.runtimeStatsError.set(
           getErrorMessage(error, 'Dashboard runtime stats could not be loaded.'),
@@ -242,19 +277,56 @@ export class DashboardPageFacade {
     });
   }
 
-  private loadEquipmentPreview(): void {
+  private loadEquipmentPreview(context: DashboardContext, token: number): void {
     this.equipmentSlotsError.set(null);
     this.currentEquipment.load();
 
     this.heroEquipment.getEquipmentSlots().subscribe({
-      next: (slots) => this.equipmentSlots.set(slots),
+      next: (slots) => {
+        if (!this.acceptsDashboardResponse(token, context)) {
+          return;
+        }
+
+        this.equipmentSlots.set(slots);
+      },
       error: (error: unknown) => {
+        if (!this.acceptsDashboardResponse(token, context)) {
+          return;
+        }
+
         this.equipmentSlots.set([]);
         this.equipmentSlotsError.set(
           getErrorMessage(error, 'Equipment slots could not be loaded.'),
         );
       },
     });
+  }
+
+  private clearDashboardState(): void {
+    this.heroName.set('');
+    this.heroLevelFallback.set(1);
+    this.characterPoints.set(0);
+    this.origin.set(null);
+    this.runtimeStats.set(null);
+    this.runtimeStatsError.set(null);
+    this.currentEstateAddress.set(null);
+    this.isEstateAddressLoaded.set(false);
+    this.estateAddressError.set(null);
+    this.equipmentSlots.set([]);
+    this.equipmentSlotsError.set(null);
+    this.currentEquipment.clear();
+    this.activeBuildingJob.set(null);
+    this.isBuildingJobStateLoaded.set(false);
+    this.unreadReportCount.set(0);
+    this.isReportsStateLoaded.set(false);
+    this.trialCounter.set(null);
+    this.isTrialCounterLoaded.set(false);
+    this.activeCombatEffect.set(null);
+    this.isCombatEffectStateLoaded.set(false);
+    this.persistentStateErrors.set([]);
+    this.isPersistentStateLoaded.set(false);
+    this.isPersistentStateLoading.set(false);
+    this.persistentStateContext.set(null);
   }
 
   private loadPersistentStates(heroId: string, serverId: string): void {
@@ -376,6 +448,48 @@ export class DashboardPageFacade {
       && activeHero?.heroId === heroId
       && activeHero.serverId === serverId;
   }
+
+  private currentDashboardContext(): DashboardContext | null {
+    const activeHero = this.activeHeroState.state();
+    const selectedServer = this.selectedServer();
+
+    if (
+      !activeHero?.heroId
+      || !activeHero.serverId
+      || !selectedServer
+      || selectedServer.id !== activeHero.serverId
+    ) {
+      return null;
+    }
+
+    return {
+      heroId: activeHero.heroId,
+      serverId: activeHero.serverId,
+    };
+  }
+
+  private acceptsDashboardResponse(
+    token: number,
+    context: DashboardContext,
+  ): boolean {
+    return this.dashboardLoadToken.isCurrent(token)
+      && this.loadedContextKey() === dashboardContextKey(context)
+      && this.isCurrentDashboardContext(context);
+  }
+
+  private isCurrentDashboardContext(context: DashboardContext): boolean {
+    return this.isCurrentActiveHeroContext(context.heroId, context.serverId)
+      && this.selectedServer()?.id === context.serverId;
+  }
+}
+
+interface DashboardContext {
+  heroId: string;
+  serverId: string;
+}
+
+function dashboardContextKey(context: DashboardContext): string {
+  return `${context.serverId}:${context.heroId}`;
 }
 
 function validTrialCounter(

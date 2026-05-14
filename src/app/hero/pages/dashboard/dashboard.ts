@@ -2,7 +2,6 @@ import { Component, OnInit, inject } from '@angular/core';
 import { DashboardPageFacade } from '../../../core/services/hero/dashboard-page.facade';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { DashboardBaseStatsCard } from './components/dashboard-base-stats-card';
-import { DashboardCharacterPointsHistory } from './components/dashboard-character-points-history';
 import { DashboardDerivedStatsCard } from './components/dashboard-derived-stats-card';
 import { DashboardEquipmentPreview } from './components/dashboard-equipment-preview';
 import { DashboardHeroBanner } from './components/dashboard-hero-banner';
@@ -14,7 +13,6 @@ import { DashboardPersistentState } from './components/dashboard-persistent-stat
   standalone: true,
   imports: [
     DashboardBaseStatsCard,
-    DashboardCharacterPointsHistory,
     DashboardDerivedStatsCard,
     DashboardEquipmentPreview,
     DashboardHeroBanner,
