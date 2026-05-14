@@ -3353,6 +3353,8 @@ Utworzyć account-shell section `Create new hero` / `Join new world`, która poz
 
 ## UI-ONBOARDING-ADD-4 — Hero Creation screen: name + origin carousel
 
+**Status:** Accepted with follow-up on 2026-05-14. Existing-account `/auth/create-character` opens the Hero Creation stage after eligible server selection and shows readonly selected-server context, `Imię bohatera`, the existing start-flow-backed origin carousel, creation summary with `Punkty postaci: 1000`, and the canonical `Stwórz bohatera` action disabled while the hero name is invalid. Direct origin buttons/dots, stat allocation UI, server selector UI, account registration UI and technical backend/read-model copy are not part of this stage. Status docs/generated types were not touched during implementation. Follow-ups are non-blocking: visual polish against the dashboard/game-shell baseline, carousel typography/color tuning, summary card polish and possible later rename/cleanup of `shared/carousel` if it remains origin-specific.
+
 **Goal:**  
 Wdrożyć Hero Creation screen jako drugi i ostatni account-side creation screen: readonly server context, hero name, origin carousel, creation summary and `Create hero`.
 

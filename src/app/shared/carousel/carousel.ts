@@ -6,7 +6,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { OriginBonus } from '../../core/domain/origin/origin.model';
+import { Origin, OriginBonus } from '../../core/domain/origin/origin.model';
 
 @Component({
   selector: 'app-carousel',
@@ -15,7 +15,7 @@ import { OriginBonus } from '../../core/domain/origin/origin.model';
   styleUrl: './carousel.scss',
 })
 export class Carousel {
-  origins = input.required<any[]>();
+  origins = input.required<Origin[]>();
   indexInput = input(0);
   bonuses = input<OriginBonus[]>([]);
   bonusSummaryText = input<string | null>(null);
@@ -34,27 +34,33 @@ export class Carousel {
   }
 
   prev() {
-    const newIndex =
-      (this.selectedIndex() - 1 + this.origins().length) %
-      this.origins().length;
-    this.selectedIndex.set(newIndex);
-    this.indexChange.emit(newIndex);
+    this.select(this.selectedIndex() - 1);
   }
 
   next() {
-    const newIndex = (this.selectedIndex() + 1) % this.origins().length;
+    this.select(this.selectedIndex() + 1);
+  }
+
+  select(index: number): void {
+    const count = this.origins().length;
+
+    if (count === 0) {
+      return;
+    }
+
+    const newIndex = (index + count) % count;
     this.selectedIndex.set(newIndex);
     this.indexChange.emit(newIndex);
   }
 
   getLeftIndex(): number {
-    return (this.selectedIndex() + 1) % this.origins().length;
-  }
-
-  getRightIndex(): number {
     return (
       (this.selectedIndex() - 1 + this.origins().length) % this.origins().length
     );
+  }
+
+  getRightIndex(): number {
+    return (this.selectedIndex() + 1) % this.origins().length;
   }
 
   isVisible(i: number): boolean {

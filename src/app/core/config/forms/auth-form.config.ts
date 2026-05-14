@@ -39,7 +39,7 @@ export const CREATE_CHARACTER_HERO_FIELDS: readonly FormFieldConfig[] = [
   {
     type: FormFieldType.Text,
     controlName: 'characterName',
-    label: 'Nazwa bohatera',
+    label: 'Imię bohatera',
     autocomplete: 'off',
   },
 ];

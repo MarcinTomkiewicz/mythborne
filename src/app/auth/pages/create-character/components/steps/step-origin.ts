@@ -11,24 +11,26 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { Origin } from '../../../../../core/domain/origin/origin.model';
+import { CreateCharacterSummaryRow } from '../../../../../core/interfaces/hero/create-character-server-options.interface';
 import {
   StartFlowOriginOption,
   StartFlowServerAvailability,
 } from '../../../../../core/domain/start-flow/start-flow.model';
 import { StartFlow } from '../../../../../core/services/start-flow/start-flow';
 import { Carousel } from '../../../../../shared/carousel/carousel';
+import { AccountEntrySummaryRows } from '../../account-entry-summary-rows';
 
 @Component({
   selector: 'app-step-origin',
   standalone: true,
-  imports: [Carousel, ButtonModule],
+  imports: [Carousel, ButtonModule, AccountEntrySummaryRows],
   template: `
     @if (origins().length > 0) {
-      <section class="flex-col gap-lg">
+      <section class="flex-col gap-lg" aria-label="Wybór pochodzenia">
         <div class="flex-col gap-xs">
-          <h2 class="mg-section__title mg-section__title--xs mb-0">Pochodzenie</h2>
+          <h2 class="color-heading text-lg mb-0">Wybierz pochodzenie bohatera</h2>
           <p class="mb-0 muted-text">
-            Pochodzenie jest wybierane raz przy tworzeniu bohatera. Nazwy, opisy i bonusy pochodzą z konfiguracji świata.
+            Pochodzenie wybierasz raz. Nazwy, opisy i bonusy pochodzą z konfiguracji świata.
           </p>
         </div>
 
@@ -39,57 +41,15 @@ import { Carousel } from '../../../../../shared/carousel/carousel';
           (indexChange)="onIndexChange($event)"
         />
 
-        <div class="flex-row-center-center flex-wrap gap-sm">
-          @for (origin of origins(); track origin.id; let index = $index) {
-            <p-button
-              type="button"
-              [label]="origin.name"
-              severity="secondary"
-              [outlined]="index !== selectedIndex()"
-              (onClick)="onIndexChange(index)"
-            />
-          }
-        </div>
-
-        <section class="mg-grid-2 gap-md">
-          <article class="mg-card flex-col gap-sm">
-            <h3 class="mg-section__title mg-section__title--xs mb-0">Podsumowanie tworzenia</h3>
-            <div class="flex-col gap-xs">
-              <div class="flex-row-between-center gap-md">
-                <span class="muted-text">Serwer</span>
-                <strong class="heading-color">{{ serverAvailability()?.serverName ?? 'Wybrany serwer' }}</strong>
-              </div>
-              <div class="flex-row-between-center gap-md">
-                <span class="muted-text">Nazwa bohatera</span>
-                <strong class="heading-color">{{ heroNamePreview() }}</strong>
-              </div>
-              <div class="flex-row-between-center gap-md">
-                <span class="muted-text">Pochodzenie</span>
-                <strong class="heading-color">{{ currentOrigin().name }}</strong>
-              </div>
-              <div class="flex-row-between-center gap-md">
-                <span class="muted-text">Punkty postaci</span>
-                <strong class="heading-color">Przydzielane po utworzeniu</strong>
-              </div>
-              <div class="flex-row-between-center gap-md">
-                <span class="muted-text">Posiadłość</span>
-                <strong class="heading-color">Adres zostanie przydzielony automatycznie</strong>
-              </div>
-            </div>
+        <section class="mg-grid-2 gap-md" aria-label="Podsumowanie tworzenia">
+          <article class="mg-card p-lg flex-col gap-sm h-100">
+            <h3 class="color-heading mb-0">Podsumowanie tworzenia</h3>
+            <app-account-entry-summary-rows [rows]="creationSummaryRows()" />
           </article>
 
-          <article class="mg-card flex-col gap-sm">
-            <h3 class="mg-section__title mg-section__title--xs mb-0">Wybrane pochodzenie</h3>
-            <div class="flex-col gap-xs">
-              <div class="flex-row-between-center gap-md">
-                <span class="muted-text">Opis i bonusy</span>
-                <strong class="heading-color">Z konfiguracji świata</strong>
-              </div>
-              <div class="flex-row-between-center gap-md">
-                <span class="muted-text">Wygląd</span>
-                <strong class="heading-color">{{ currentOrigin().name }}</strong>
-              </div>
-            </div>
+          <article class="mg-card p-lg flex-col gap-sm h-100">
+            <h3 class="color-heading mb-0">Wybrane pochodzenie</h3>
+            <app-account-entry-summary-rows [rows]="selectedOriginRows()" />
             <p class="mb-0 muted-text">
               Po utworzeniu bohatera przejdziesz do pierwszego przydziału atrybutów.
             </p>
@@ -105,6 +65,7 @@ import { Carousel } from '../../../../../shared/carousel/carousel';
               type="button"
               [label]="nextLabel()"
               severity="success"
+              [disabled]="submitDisabled() || !currentOrigin()"
               (onClick)="next.emit(origin)"
             />
           }
@@ -128,6 +89,7 @@ export class StepOrigin implements OnInit {
   readonly heroName = input('');
   readonly showBack = input(true);
   readonly nextLabel = input('Dalej');
+  readonly submitDisabled = input(false);
   readonly origins = signal<StartFlowOriginOption[]>([]);
   readonly isLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
@@ -146,6 +108,42 @@ export class StepOrigin implements OnInit {
 
     return name || 'Jeszcze bez nazwy';
   });
+  readonly creationSummaryRows = computed<CreateCharacterSummaryRow[]>(() => [
+    {
+      label: 'Serwer',
+      value: this.serverAvailability()?.serverName ?? 'Wybrany serwer',
+      primary: true,
+    },
+    {
+      label: 'Imię bohatera',
+      value: this.heroNamePreview(),
+    },
+    {
+      label: 'Pochodzenie',
+      value: this.currentOrigin()?.name ?? 'Wybierz pochodzenie',
+    },
+    {
+      label: 'Punkty postaci',
+      value: '1000',
+    },
+    {
+      label: 'Posiadłość',
+      value: 'Adres zostanie przydzielony automatycznie',
+      multiline: true,
+    },
+  ]);
+  readonly selectedOriginRows = computed<CreateCharacterSummaryRow[]>(() => [
+    {
+      label: 'Pochodzenie',
+      value: this.currentOrigin()?.name ?? 'Wybierz pochodzenie',
+      primary: true,
+    },
+    {
+      label: 'Bonusy',
+      value: this.currentBonusSummaryText() || 'Bonusy zostaną zastosowane przy utworzeniu bohatera',
+      multiline: true,
+    },
+  ]);
 
   ngOnInit(): void {
     this.startFlow.getOriginOptions().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({

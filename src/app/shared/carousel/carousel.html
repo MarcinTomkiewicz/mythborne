@@ -1,61 +1,67 @@
-<div class="carousel-wrapper">
+<section class="carousel-wrapper" aria-label="Karuzela pochodzeń">
   <button
     class="nav prev"
     type="button"
     (click)="prev()"
-    aria-label="Previous origin"
+    aria-label="Poprzednie pochodzenie"
   >
     &#10094;
   </button>
 
   <div class="carousel-content">
-    <div class="images">
+    <div class="images" aria-live="polite">
       @for (origin of origins(); track origin.id; let i = $index) {
-        <div
+        <figure
           class="carousel-image"
           [class.center]="i === index()"
           [class.left]="i === getLeftIndex()"
           [class.right]="i === getRightIndex()"
           [class.hidden]="!isVisible(i)"
+          [attr.aria-hidden]="i === index() ? null : 'true'"
         >
           <img [src]="origin.imageUrl" [alt]="origin.name" />
-        </div>
+        </figure>
       }
     </div>
 
-    <div class="origin-info">
-      <h2 class="heading-color text-center mb-sm">
+    <article class="origin-info">
+      <h2 class="color-heading text-lg mb-sm">
         {{ origins()[index()]?.name }}
       </h2>
 
-      <p class="origin-info__description text-center mb-0">
+      <p class="origin-info__description mb-0">
         {{ origins()[index()]?.description }}
       </p>
 
-      @if (bonusSummaryText()) {
-        <p class="origin-info__description text-center mt-lg mb-0">
-          {{ bonusSummaryText() }}
-        </p>
-      } @else {
-        <div class="bonuses flex-row-center-center flex-wrap gap-sm mt-lg">
-          @for (bonus of bonuses(); track bonus.id) {
-            <span class="tag-badge tag-badge--info">
-              <strong>{{ statLabels()[bonus.target] ?? bonus.target }}</strong
-              >:
-              {{ bonus.baseValue > 0 ? "+" + bonus.baseValue : bonus.baseValue }}
-            </span>
-          }
-        </div>
-      }
-    </div>
+      <div class="origin-info__bonus">
+        <span class="color-muted small-caps uppercase text-xs">Bonusy</span>
+        @if (bonusSummaryText()) {
+          <strong class="color-heading small-caps">
+            {{ bonusSummaryText() }}
+          </strong>
+        } @else if (bonuses().length > 0) {
+          <div class="bonuses flex-row-start-center flex-wrap gap-sm">
+            @for (bonus of bonuses(); track bonus.id) {
+              <span class="tag-badge tag-badge--info">
+                <strong>{{ statLabels()[bonus.target] ?? bonus.target }}</strong
+                >:
+                {{ bonus.baseValue > 0 ? "+" + bonus.baseValue : bonus.baseValue }}
+              </span>
+            }
+          </div>
+        } @else {
+          <p class="mb-0 muted-text">Brak opisu bonusów w konfiguracji pochodzenia.</p>
+        }
+      </div>
+    </article>
   </div>
 
   <button
     class="nav next"
     type="button"
     (click)="next()"
-    aria-label="Next origin"
+    aria-label="Następne pochodzenie"
   >
     &#10095;
   </button>
-</div>
+</section>

@@ -35,47 +35,74 @@
     }
 
     @case ('hero_creation') {
-      <ng-container [ngTemplateOutlet]="heroCreationHeader" />
+      <section class="flex-col gap-lg w-100" aria-label="Tworzenie bohatera">
+        <header class="mg-card p-lg flex-col gap-xs w-100">
+          <h1 class="mg-section__title mb-0">Wybierz imię i pochodzenie bohatera</h1>
+          <p class="mb-0 muted-text">
+            Wybierz imię bohatera i pochodzenie z dostępnych opcji.
+          </p>
+        </header>
 
-      @if (page.selectedServerAvailability(); as availability) {
-        <section class="mg-card flex-row-between-center flex-wrap gap-md w-100" aria-label="Wybrany świat">
-          <div class="flex-col gap-xs">
-            <p class="card-legend mb-0">Wybrany świat</p>
-            <strong class="heading-color text-lg">{{ availability.serverName }}</strong>
-            <span class="muted-text">{{ availability.description }}</span>
-          </div>
-          @if (availability.districtACapacity > 0) {
-            <span class="tag-badge tag-badge--muted">
-              Dzielnica A: {{ availability.districtAFree }} / {{ availability.districtACapacity }}
-            </span>
-          }
-        </section>
-      }
+        <div class="grid-2-1 gap-xl w-100">
+          <article class="flex-col gap-lg">
+            @if (page.selectedServerAvailability(); as availability) {
+              <section class="mg-card p-md flex-col gap-sm w-100" aria-label="Wybrany świat">
+                <div class="flex-col gap-xs">
+                  <span class="color-muted small-caps uppercase text-xs">Serwer</span>
+                  <strong class="color-heading text-lg">{{ availability.serverName }}</strong>
+                  <p class="mb-0 muted-text">{{ availability.description }}</p>
+                </div>
+                @if (availability.districtACapacity > 0) {
+                  <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+                    <span class="color-muted small-caps uppercase text-xs">Dzielnica A</span>
+                    <strong class="color-heading">
+                      {{ availability.districtAFree }} / {{ availability.districtACapacity }}
+                    </strong>
+                  </div>
+                }
+              </section>
+            }
 
-      <section class="grid-2-1 gap-xl w-100">
-        <div class="flex-col gap-lg">
-          <form [formGroup]="page.heroForm" class="mg-form flex-col gap-md w-100">
-            <div class="flex-col gap-xs">
-              <h2 class="mg-section__title mg-section__title--xs mb-0">
-                Nazwij bohatera
-              </h2>
+            <form [formGroup]="page.heroForm" class="mg-card mg-form p-md flex-col gap-md w-100">
+              <div class="flex-col gap-xs">
+                <h2 class="color-heading text-lg mb-0">
+                  Imię bohatera
+                </h2>
+                <p class="mb-0 muted-text">
+                  Imię musi być unikalne na wybranym serwerze. Gra sprawdzi je podczas tworzenia bohatera.
+                </p>
+              </div>
+
+              <app-form-fields [form]="page.heroForm" [fields]="heroFields" />
+            </form>
+
+            <app-step-origin
+              [selectedOrigin]="page.selectedOrigin()"
+              [serverAvailability]="page.selectedServerAvailability()"
+              [heroName]="page.heroForm.controls.characterName.value"
+              [showBack]="false"
+              [nextLabel]="'Stwórz bohatera'"
+              [submitDisabled]="page.heroForm.invalid"
+              (next)="page.onOriginNext($event)"
+            />
+          </article>
+
+          <aside class="flex-col gap-md" aria-label="Zasady pochodzenia">
+            <section class="mg-card p-lg flex-col gap-sm">
+              <h4 class="color-heading mb-0">Pochodzenie bohatera</h4>
               <p class="mb-0 muted-text">
-                Nazwa musi być unikalna na wybranym serwerze. Sprawdzimy ją podczas tworzenia bohatera.
+                Pochodzenie wybierasz raz. Jego opis i bonusy pochodzą z konfiguracji świata i zostaną przypisane przy utworzeniu bohatera.
               </p>
-            </div>
+            </section>
 
-            <app-form-fields [form]="page.heroForm" [fields]="heroFields" />
-          </form>
+            <section class="mg-card p-lg flex-col gap-sm">
+              <h4 class="color-heading mb-0">Następny krok</h4>
+              <p class="mb-0 muted-text">
+                Po utworzeniu bohatera przejdziesz do pierwszego przydziału atrybutów. Adres startowy zostanie przydzielony automatycznie.
+              </p>
+            </section>
+          </aside>
         </div>
-
-        <app-step-origin
-          [selectedOrigin]="page.selectedOrigin()"
-          [serverAvailability]="page.selectedServerAvailability()"
-          [heroName]="page.heroForm.controls.characterName.value"
-          [showBack]="false"
-          [nextLabel]="'Stwórz bohatera'"
-          (next)="page.onOriginNext($event)"
-        />
       </section>
     }
 
@@ -121,6 +148,7 @@
             <ng-template #content>
               <app-step-origin
                 [selectedOrigin]="page.selectedOrigin()"
+                [heroName]="page.heroForm.controls.characterName.value"
                 [showBack]="true"
                 (back)="page.prevStep(2)"
                 (next)="page.onOriginNext($event)"
@@ -146,10 +174,9 @@
 
 <ng-template #heroCreationHeader>
   <div class="flex-col gap-xs">
-    <p class="card-legend mb-0">Tworzenie bohatera</p>
-    <h1 class="mg-section__title mb-0">Nazwij bohatera i wybierz pochodzenie.</h1>
+    <h1 class="mg-section__title mb-0">Wybierz imię i pochodzenie bohatera</h1>
     <p class="mb-0 muted-text">
-      Wybierz nazwę i pochodzenie. Po utworzeniu bohatera gra przydzieli punkty postaci, zasoby startowe i pierwszą posiadłość.
+      Wybierz imię i pochodzenie. Po utworzeniu bohatera gra przydzieli punkty postaci, zasoby startowe i pierwszą posiadłość.
     </p>
   </div>
 </ng-template>
