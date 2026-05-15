@@ -423,6 +423,10 @@ The prototype archive is visual reference only. `docs/ui-ux/README.md` maps the 
 | Hero Creation Origin Carousel | accepted direction | name + origin carousel + DB-backed bonuses/artwork |
 | Trial minigames | accepted direction per minigame | manual trial renderer and minigame hosts |
 
+Accepted onboarding prototype archive files:
+- Account Entry Shell / server+hero context selector: `docs/ui-ux/prototypes/mythsworn_server_select.html`;
+- Hero Creation Origin Carousel: `docs/ui-ux/prototypes/mythsworn_origin_screen.html`.
+
 ---
 
 ## 7.2. Naming contract
@@ -3577,6 +3581,8 @@ Define the content/read-model requirements for production origin carousel implem
 - No build required if audit-only.
 - If code changes are made: `npx tsc --noEmit`, `npm run build`.
 
+**Status:** Accepted on 2026-05-15 as documentation/audit only. `docs/ui-ux/onboarding-origin-content-read-model-audit.md` records that origin labels, descriptions, active/sort order and bonus display are currently sourced from `get_start_flow_origin_options()` over `origin` plus canonical `entity_bonuses(entity_type = origin)`, while artwork remains the existing app-side asset convention derived from DB-owned `origin_key`. Missing live seed confirmation for the four canonical origins, DB/content-backed artwork, and an admin/content editing route remain content/admin follow-ups, not Angular fallbacks. No code, DB/RPC, generated types or status-independent runtime changes were made.
+
 ---
 
 ## UI-ONBOARDING-ADD-7 — Archive accepted onboarding prototypes and production mapping
@@ -3630,6 +3636,8 @@ Add the accepted account entry and hero creation carousel prototypes to the UI/U
 - Docs-only review.
 - Confirm filenames/paths with user before status docs update.
 
+**Status:** Accepted on 2026-05-15 as documentation/mapping only. The accepted onboarding prototype archive paths are now recorded in the UI/UX backlog and README: `docs/ui-ux/prototypes/mythsworn_server_select.html` for Account Entry Shell / server+hero context selector and `docs/ui-ux/prototypes/mythsworn_origin_screen.html` for Hero Creation Origin Carousel. The ADD-7 onboarding entries in `docs/ui-ux/prototype-production-mapping.md` now map account shell, existing-hero entry, create-new-hero eligibility, hero creation carousel, origin content/artwork read-model boundaries and post-create Stat Allocation handoff to current production patterns and blockers; the broader UI-CORE-11 document remains marked draft for review. Prototype CSS/JS remains visual reference only and was not copied into Angular.
+
 ---
 
 ## UI-ONBOARDING-ADD-8 — Mobile/responsive check for account entry and hero creation carousel
@@ -3680,6 +3688,8 @@ Zapisać i później sprawdzić minimalne mobile/tablet constraints dla account 
 - Browser responsive smoke at desktop/tablet/mobile widths.
 - Keyboard smoke for carousel controls.
 - Reduced-motion smoke where practical.
+
+**Status:** Postponed on 2026-05-15. Responsive/mobile verification for account entry and Hero Creation carousel remains a separate manual/browser smoke task. No responsive runtime changes, browser smoke, dev server or mobile redesign were performed in this documentation batch.
 
 ---
 

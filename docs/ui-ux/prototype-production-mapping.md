@@ -1,6 +1,6 @@
 # Prototype To Production Mapping
 
-Status: UI-CORE-11 draft for review  
+Status: UI-CORE-11 draft for review; UI-ONBOARDING-ADD-7 onboarding entries accepted on 2026-05-15  
 Scope: mapping only; no Angular/SCSS implementation
 
 This document maps accepted prototype families to production patterns. Prototype HTML remains visual reference only. Do not copy prototype CSS, `mb-*` class names, gradients, palette values or layout class names into Angular.
@@ -13,9 +13,26 @@ Use with:
 
 ## Source Rule
 
-Prototype status and archive naming come from `docs/mythborne_ui_ux_backlog.md` section `4.1. Current accepted prototype map`. `docs/ui-ux/README.md` is the prototype archive index and production mapping index. If those two disagree, use the backlog accepted map for task authority and report the mismatch.
+Prototype status and archive naming come from `docs/mythborne_ui_ux_backlog.md` section `4.1. Current accepted prototype map`. `docs/ui-ux/README.md` lists currently present prototype archive files. If those two disagree, use the backlog accepted map for task authority and report the mismatch.
 
 Every prototype-backed implementation must still check current Angular/shared/global SCSS code before adding markup, styles or components.
+
+## Known Archive Name Mismatches
+
+`docs/ui-ux/README.md` lists the currently present files in `docs/ui-ux/prototypes/`. Some older UI-CORE-11 archive names below are stale aliases from prototype acceptance history and should be resolved in a future archive cleanup, not silently treated as missing runtime sources:
+
+| family | mapping alias | currently present README/archive file |
+|---|---|---|
+| Game shell / dashboard shell | `game-shell-v1.html` | `dashboard-v3.html`, plus source prototype `mythborne_ui_shell_prototype.html` |
+| Exploration | `exploration-flow-v2.html` | `exploration-flow-v3.html`, plus source prototype `mythborne_exploration_flow_v_2.html` |
+| Armory / equipment | `armory-v2.html` | `armory-v3.html`, plus source prototype `mythborne_armory_v_1.html` |
+| Estate / buildings | `estate-v3.html` | `estate-v2.html`, plus source prototype `mythborne_estate_v_1.html` |
+
+The ADD-7 onboarding entries are not mismatched: `mythsworn_server_select.html` and `mythsworn_origin_screen.html` are the accepted archive files currently present in README and this mapping.
+
+## Onboarding Prototype Rule
+
+For Account Entry Shell and Hero Creation, the accepted prototypes are UX/layout anchors only: screen structure, information hierarchy, flow, required states, CTA relationships and constraints. The current dashboard/game shell remains the production visual baseline: use existing `mg-*` surfaces, global utilities, PrimeNG wrappers, dark blue/gold treatment and account/game shell production rhythm instead of copying prototype CSS, `mb-*` classes, gradients or standalone visual language.
 
 ## Shared Production Patterns
 
@@ -54,6 +71,9 @@ Every prototype-backed implementation must still check current Angular/shared/gl
 | Reports | `reports-center-v2.html` | `reports-center-v2.html` | accepted direction | `shared/game-report-content`, report services/mappers, `.mg-card`, `.tag-badge`, PrimeNG tabs/paginator/table/list wrappers | Reports archive entry row, selected/unread state, filter panel pattern; durable report snapshots only | Reports split-list/detail layout only |
 | Notifications | `notifications-center-v1.html` | `notifications-center-v1.html` | accepted direction | `notification-bell`, `staff-notification-bell`, notification services/mappers, `.mg-card`, `.tag-badge`, PrimeNG tabs/paginator/list wrappers | Notification archive entry row; short notification archive must not replace full reports | Notifications list/filter layout only |
 | Admin Overview | `admin-overview-v7.html` | `admin-overview-v7.html` | accepted direction | Admin route components, PrimeNG wrappers, `.mg-card`, `.mg-grid`, `.tag-badge`, metadata/json preview components | Admin shell/orientation hub pattern, scope strip, area map, coverage checklist, explainability panel | Admin overview dense layout only |
+| Account Entry Shell | `mythsworn_server_select.html` | `mythsworn_server_select.html` | accepted direction | `AccountEntryLayout`, account shell route children, `.mg-card`, `.mg-grid`, `.tag-badge`, PrimeNG buttons/selects and start-flow/account-entry states | Final account-shell shared pattern and mobile responsive pass; server/hero/create eligibility must stay DB/RPC/read-model backed | Account entry selector/detail layout only |
+| Hero Creation Origin Carousel | `mythsworn_origin_screen.html` | `mythsworn_origin_screen.html` | accepted direction | `/auth/create-character`, existing `shared/carousel`, `StartFlow.getOriginOptions()`, `.mg-card`, `.mg-grid`, `.tag-badge`, PrimeNG buttons and Reactive Forms | DB/content artwork source or asset registry; admin/content route for origin lore/artwork/bonus presentation; responsive/mobile smoke postponed | Carousel host/detail/summary layout only |
+| Onboarding post-create stat allocation handoff | `mythsworn_origin_screen.html` | `mythsworn_origin_screen.html` | accepted direction | `create_hero_start_flow`, `CreateHero`, `ActiveHero.selectHero(result.heroId)`, `routeForHeroCreationNextAction(...)`, `/hero/attributes` | None for current canonical route; future copy cleanup for remaining `Nazwa bohatera` validation/toast text | No local layout exception |
 
 ## Archive-Present Families Needing Review
 
