@@ -66,6 +66,15 @@ describe('AttributeAllocationPageFacade', () => {
               getActiveHeroRuntimeStats: of(null) as unknown as ReturnType<
                 HeroDashboardRuntimeStats['getActiveHeroRuntimeStats']
               >,
+              getActiveHeroAttributeAllocationPreviewManifest: of({
+                contractVersion: 'hero_attribute_allocation_preview_manifest_v2',
+                oneShotManifest: true,
+                perClickRpcPreviewRequired: false,
+                frontendMayEvaluateLocally: true,
+                rows: [],
+              }) as unknown as ReturnType<
+                HeroDashboardRuntimeStats['getActiveHeroAttributeAllocationPreviewManifest']
+              >,
             },
           ),
         },

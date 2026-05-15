@@ -3823,6 +3823,8 @@ Pokazać, jak derived stats zmienią się po zapisaniu aktualnego draftu stat al
 - limitations:
 - local SCSS added:
 
+**Status:** Accepted on 2026-05-15. `/hero/attributes` Derived preview now uses the canonical `get_hero_attribute_allocation_preview_manifest(...)` one-shot manifest and a descriptor-driven local interpreter for allocation draft deltas, split from manifest normalization. User-side manual smoke confirmed `+ Endurance` Health `156 -> 161 (+5)` and Defense `142 -> 143 (+1)`, plus `+ Strength` Demonic Dagger `35-51 -> 36-52 (+1)` and Quality Cunning Mace `44-63 -> 45-64 (+1)`. Current-only, unsupported and unknown-descriptor rows remain current-only; future supported scalar rows with `draftDependencies`, `currentValue` and allowlisted descriptors are handled by the generic scalar path without row-key branches. Damage rows use DB-provided `currentMin/currentMax/currentStrength/strengthVariable`; plus/minus remains local draft state with no per-click RPC. Verification accepted by the user: focused specs, `npx tsc --noEmit`, `npm run build` with existing warnings only, static greps for no debug logs/eval/new Function/display-string parsing, and user-side manual smoke.
+
 ## UI-HERO-3 — Stat allocation draft and save flow
 
 **Goal:**  

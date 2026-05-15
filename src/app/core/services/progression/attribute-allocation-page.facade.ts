@@ -1,13 +1,20 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, finalize, forkJoin, map, of } from 'rxjs';
-import { HeroDashboardRuntimeStatsReadModel } from '../../domain/hero/hero-dashboard-runtime-stats.model';
+import {
+  attributeAllocationPreviewManifestError,
+  isUsableAttributeAllocationPreviewManifest,
+} from '../../domain/progression/attribute-allocation-preview-manifest.mapper';
+import { mapAttributeAllocationPreviewRows } from '../../domain/progression/attribute-allocation-preview.interpreter';
+import {
+  AttributeAllocationPreviewManifest,
+  AttributeAllocationPreviewRow,
+} from '../../domain/progression/attribute-allocation-preview-manifest.model';
 import { StatProgressionRules } from '../../domain/progression/stat-progression.model';
-import { BaseStatSnapshot } from '../../domain/stats/base-stat.model';
 import { mapBaseStatSnapshots } from '../../domain/stats/base-stat.mapper';
+import { BaseStatSnapshot } from '../../domain/stats/base-stat.model';
 import { getErrorMessage } from '../../utils/error-message';
 import { nonNegativeInteger, positiveInteger } from '../../utils/number';
-import { mapDashboardDerivedStatRows } from '../hero/dashboard-page.mappers';
 import { Hero } from '../hero/hero';
 import { HeroDashboardRuntimeStats } from '../hero/hero-dashboard-runtime-stats';
 import { StatsService } from '../stats/stats';
@@ -31,8 +38,8 @@ export class AttributeAllocationPageFacade {
   readonly characterPoints = signal(0);
   readonly draftStats = signal<Record<string, number>>({});
   readonly progressionRules = signal<StatProgressionRules | null>(null);
-  readonly runtimeStats = signal<HeroDashboardRuntimeStatsReadModel | null>(null);
-  readonly runtimeStatsError = signal<string | null>(null);
+  readonly previewManifest = signal<AttributeAllocationPreviewManifest | null>(null);
+  readonly previewManifestError = signal<string | null>(null);
   private readonly baseStats = signal<BaseStatSnapshot[]>([]);
 
   readonly tooltipFallback = 'Description for this stat is not configured yet. Tooltip is ready for admin-managed descriptions.';
@@ -80,7 +87,26 @@ export class AttributeAllocationPageFacade {
     ? 'Stat upgrade cost cannot be calculated because the active formula configuration is broken.'
     : null);
 
-  readonly derivedStatRows = computed(() => mapDashboardDerivedStatRows(this.runtimeStats()));
+  readonly derivedStatRows = computed<AttributeAllocationPreviewRow[]>(() => {
+    const manifest = this.previewManifest();
+    return isUsableAttributeAllocationPreviewManifest(manifest)
+      ? mapAttributeAllocationPreviewRows(
+          manifest,
+          this.currentBaseStatValues(),
+          this.draftBaseStatValues(),
+        )
+      : [];
+  });
+
+  readonly derivedPreviewBadge = computed(() =>
+    this.derivedStatRows().length > 0 ? 'Allocation preview' : 'Current preview only',
+  );
+
+  readonly derivedPreviewDescription = computed(() =>
+    this.derivedStatRows().length > 0
+      ? 'Current values and unsaved stat changes are shown below where preview data is available.'
+      : 'Current values for allocation-related stats are not available for this hero yet.',
+  );
 
   readonly hasPendingChanges = computed(() =>
     this.baseStats().some((stat) => stat.currentValue !== this.plannedValue(stat)),
@@ -173,7 +199,7 @@ export class AttributeAllocationPageFacade {
           })));
           this.draftStats.set({ ...result.stats });
           this.characterPoints.set(result.characterPointsAfter);
-          this.loadRuntimeStats();
+          this.loadPreviewManifest();
           this.toast.show('success', 'Attributes saved', 'Stat allocation was saved.');
         },
         error: (error: unknown) => {
@@ -191,22 +217,25 @@ export class AttributeAllocationPageFacade {
       stats: this.heroService.getHeroStats(),
       definitions: this.statsService.getStats(),
       rules: this.statProgression.getRules(),
-      runtimeStats: this.runtimeStatsResult(),
+      previewManifest: this.previewManifestResult(),
     })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoading.set(false)),
       )
       .subscribe({
-        next: ({ hero, stats, definitions, rules, runtimeStats }) => {
+        next: ({ hero, stats, definitions, rules, previewManifest }) => {
           this.heroName.set(hero.name);
           this.heroLevel.set(positiveInteger(hero.level ?? 1));
           this.characterPoints.set(nonNegativeInteger(hero.character_points ?? 0));
           this.baseStats.set(mapBaseStatSnapshots(definitions, stats));
           this.draftStats.set({ ...stats });
           this.progressionRules.set(rules);
-          this.runtimeStats.set(runtimeStats.stats);
-          this.runtimeStatsError.set(runtimeStats.error);
+          this.previewManifest.set(previewManifest.manifest);
+          this.previewManifestError.set(
+            previewManifest.error
+              ?? attributeAllocationPreviewManifestError(previewManifest.manifest),
+          );
         },
         error: (error: unknown) => {
           const message = getErrorMessage(error, 'Failed to load hero progression.');
@@ -238,22 +267,24 @@ export class AttributeAllocationPageFacade {
     );
   }
 
-  private loadRuntimeStats(): void {
-    this.runtimeStatsError.set(null);
-    this.runtimeStatsResult()
+  private loadPreviewManifest(): void {
+    this.previewManifestError.set(null);
+    this.previewManifestResult()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ stats, error }) => {
-        this.runtimeStats.set(stats);
-        this.runtimeStatsError.set(error);
+      .subscribe(({ manifest, error }) => {
+        this.previewManifest.set(manifest);
+        this.previewManifestError.set(
+          error ?? attributeAllocationPreviewManifestError(manifest),
+        );
       });
   }
 
-  private runtimeStatsResult() {
-    return this.runtimeStatsService.getActiveHeroRuntimeStats().pipe(
-      map((stats) => ({ stats, error: null })),
+  private previewManifestResult() {
+    return this.runtimeStatsService.getActiveHeroAttributeAllocationPreviewManifest().pipe(
+      map((manifest) => ({ manifest, error: null })),
       catchError((error: unknown) =>
         of({
-          stats: null,
+          manifest: null,
           error: getErrorMessage(error, 'Derived preview could not be loaded.'),
         }),
       ),
@@ -283,5 +314,16 @@ export class AttributeAllocationPageFacade {
 
   private plannedValue(stat: BaseStatSnapshot): number {
     return this.draftStats()[stat.key] ?? stat.currentValue;
+  }
+
+  private currentBaseStatValues(): Record<string, number> {
+    return Object.fromEntries(this.baseStats().map((stat) => [stat.key, stat.currentValue]));
+  }
+
+  private draftBaseStatValues(): Record<string, number> {
+    return {
+      ...this.currentBaseStatValues(),
+      ...this.draftStats(),
+    };
   }
 }

@@ -111,6 +111,8 @@ export const RPC = {
   get_hero_equipment_runtime_bonus_totals:
     'get_hero_equipment_runtime_bonus_totals',
   get_hero_dashboard_runtime_stats: 'get_hero_dashboard_runtime_stats',
+  get_hero_attribute_allocation_preview_manifest:
+    'get_hero_attribute_allocation_preview_manifest',
   get_hero_health_state: 'get_hero_health_state',
   cancel_guild_join_request: 'cancel_guild_join_request',
   demote_guild_officer: 'demote_guild_officer',

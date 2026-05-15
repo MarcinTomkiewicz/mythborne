@@ -1,7 +1,8 @@
 # Mythsworn — Database Current
 
 Rewritten: 2026-05-11  
-Primary source: latest `mythborne_schema.sql` dump from 2026-05-11 plus the previous `database-current.md` and DB/RPC changes verified in the migrator conversation.
+Updated: 2026-05-15  
+Primary source: latest `mythborne_schema.sql` dump from 2026-05-11 plus the previous `database-current.md` and DB/RPC changes verified in the migrator conversation. The 2026-05-15 sync preserves this source file and adds the latest post-dump UI-HERO-2, account-entry, PvP/building-preview contracts verified in the Migrator conversation.
 
 ## Purpose
 
@@ -39,7 +40,7 @@ When this document conflicts with newer facts, prefer:
 
 Regenerate Supabase generated types before Codex consumes any schema, enum, table or RPC signature change.
 
-Known regeneration-required contracts after the 2026-05-11 DB/RPC updates:
+Known regeneration-required contracts after the 2026-05-11 DB/RPC updates and later post-dump Migrator changes:
 
 - guild updates:
   - `search_guilds_for_hero(...)`;
@@ -89,6 +90,17 @@ Known regeneration-required contracts after the 2026-05-11 DB/RPC updates:
   - `create_hero_start_flow(p_server_id uuid, p_origin_id uuid, p_hero_name text, p_request_id text default null)`;
   - `format_start_flow_bonus_value(...)`;
   - `start_flow_resolve_character_point_reason()`.
+- UI-HERO-2 / attribute allocation preview manifest:
+  - `get_hero_attribute_allocation_preview_manifest(p_hero_id uuid)`;
+  - `contractVersion = hero_attribute_allocation_preview_manifest_v2`;
+  - frontend consumption requires regenerated RPC return typing before Angular integration.
+- Account-entry existing hero selector:
+  - `get_account_entry_hero_contexts(p_server_id uuid default null)`.
+- PvP role/return-runtime helper contracts where consumed by frontend/generated types:
+  - `resolve_hero_pvp_role_health_bonus(p_hero_id uuid, p_role text)`;
+  - `build_pvp_hero_combatant_snapshot_for_resolver(p_hero_id uuid, p_side combat_side)`;
+  - `schedule_pvp_action_return_runtime_activity(...)`;
+  - `complete_due_pvp_return_runtime_activities(...)`.
 
 No type regeneration is required for data-only seeds or same-signature function body fixes, including:
 
@@ -131,6 +143,16 @@ Read contracts:
 
 - `get_start_flow_server_availability()` returns authenticated user-visible server rows with server identity, kind/status, membership status, user hero count, default hero, sandbox hero list, District A capacity/occupied/free counts, `can_create_hero`, `can_enter_game`, `next_action`, `block_reason` and `eligibility_json`.
 - `get_start_flow_origin_options()` returns DB-backed origin options from `origin` plus canonical `entity_bonuses(entity_type = origin)` display data. It includes origin id/key/label/description, sort order, `bonuses_json` and `bonus_summary_text`.
+
+Account-entry existing hero selector:
+
+- `get_account_entry_hero_contexts(p_server_id uuid default null)` is the canonical player-safe read model for `/auth/server-entry` existing hero selection/detail cards.
+- It requires `auth.uid()`, returns only heroes owned by the authenticated account, and can optionally filter by server.
+- It does not switch active hero and does not require frontend direct reads from `hero` or `estates`.
+- Returned relational columns include `hero_id`, `server_id`, `server_key`, `server_name`, `hero_name`, `hero_level`, `estate_id`, `district_code`, `address_number`, `address`, `address_label`, `created_at`, `route_next_action`.
+- `hero_context_json` exposes stable camelCase keys for frontend mapping: `heroId`, `serverId`, `serverKey`, `serverName`, `heroName`, `heroLevel`, `estateId`, `districtCode`, `addressNumber`, `address`, `addressLabel`, `createdAt`, `routeNextAction`.
+- UI should prefer `addressLabel` for compact display and fall back to `address`.
+- Expected existing-hero route action is `hero_dashboard`.
 
 Creation contract:
 
@@ -462,6 +484,95 @@ Important combat/derived semantics:
 - Final crit multiplier is `1 + finalCriticalDamagePercent / 100`.
 - Do not use old hardcoded `x2` crit multiplier.
 
+## Attribute allocation draft preview manifest / UI-HERO-2
+
+Canonical one-shot preview manifest:
+
+- `get_hero_attribute_allocation_preview_manifest(p_hero_id uuid) returns jsonb`;
+- current contract version: `hero_attribute_allocation_preview_manifest_v2`;
+- player-safe: requires `auth.uid()`, checks `hero.user_id = auth.uid()`, and asserts normal gameplay use;
+- owner context is applied for nested owner-safe helpers;
+- intended frontend path: `/hero/attributes`;
+- this is a page-load manifest, not a per-click preview RPC.
+
+UI-HERO-2 rules exposed by the manifest:
+
+- `rules.oneShotManifest = true`;
+- `rules.perClickRpcPreviewRequired = false`;
+- `rules.frontendMayEvaluateLocally = true`;
+- `rules.frontendMayUseEval = false`;
+- `rules.frontendMayGuessFormulas = false`;
+- `rules.saveAuthority = canonical_db_rpc_workflow`;
+- `rules.pvpRoleScopedHealthExcludedFromAttributePreview = true`;
+- after save, frontend must refresh current runtime stats from DB.
+
+Manifest top-level payload:
+
+- `contractVersion = hero_attribute_allocation_preview_manifest_v2`;
+- `heroId`, `serverId`, `generatedAt`, `source`;
+- `baseStatInputs`: object keyed by base stat key. Each row includes `currentAllocatedValue`, `currentEffectiveValue`, `additiveContextDelta`, `draftVariable`, `effectiveVariable`, `sourceRows`, and an `allocated_plus_context_delta` descriptor. Frontend derives effective draft stats from DB-provided context instead of guessing stat aggregation.
+- `allowedDraftVariables` and `allowedEffectiveVariables` for the safe descriptor interpreter.
+- `currentRuntimeSnapshot`: current DB runtime values plus `attributePreviewMaxHealth` and DB-provided damage preview rows.
+- `bonusContext`: player-safe current bonus totals/context for display and descriptor inputs.
+- `supportedDerivedStats`: descriptor-backed values that Angular may preview locally.
+- `unsupportedDerivedStats`: current-only values with `unsupportedReason` and `uiPolicy`.
+- `frontendEvaluationPolicy`: descriptor whitelist and unknown-descriptor behavior.
+
+Supported local-preview stats in v2:
+
+- `health`:
+  - label: `Health`;
+  - value kind: `value`;
+  - draft dependency: `endurance`;
+  - descriptor kind: `linear_stat_scaled_sum_v1`;
+  - formula semantics: `max(1, (30 + effectiveStats.endurance * 5 + additiveConstants) * percentMultiplier * multiplier)`;
+  - `additiveConstants` include player-safe flat Health context and Health event flat delta;
+  - PvP role-scoped Health from Koszary/Forteca is explicitly excluded;
+  - this previews max Health only, not mutation of current Health.
+- `defense`:
+  - draft dependency: `endurance`;
+  - descriptor kind: `max_zero_scaled_sum_v1`;
+  - formula semantics: effective Endurance plus DB-provided defense bonuses/event context, clamped at zero.
+- `damage_rows`:
+  - value kind: `damage_rows`;
+  - draft dependency: `strength`;
+  - descriptor kind: `damage_rows_strength_delta_v1`;
+  - rows include `label`, `rowKey`, `slotKey`, `sourceItemId`, `currentMin`, `currentMax`, `currentDisplayValue`, `currentStrength`, `strengthVariable`, `formulaDescriptor`, and the original DB `sourceRow`;
+  - frontend may only apply Strength delta to DB-provided rows: `draftMin = currentMin + (draftEffectiveStrength - currentStrength)` and `draftMax = currentMax + (draftEffectiveStrength - currentStrength)`;
+  - frontend must not rebuild attack plan, item grouping, equipment source rows, attack count or item modifier logic locally.
+- `critical_chance`, `critical_damage`, `evasion_chance`:
+  - currently supported as descriptor/current-context values, but have no draft dependencies unless a future DB contract adds stat-based dependencies;
+  - frontend should render current/constant preview and must not invent Dexterity/Agility/Cunning formulas.
+
+Unsupported/current-only in v2:
+
+- `current_health`: current Health is runtime state; show current value only.
+- `luck`: DB-owned runtime logic; show current snapshot only.
+- `attack_count`: DB attack plan/equipment projection; show current snapshot only.
+
+Descriptor whitelist in v2:
+
+- `allocated_plus_context_delta`;
+- `max_zero_scaled_sum_v1`;
+- `linear_stat_scaled_sum_v1`;
+- `damage_rows_strength_delta_v1`;
+- `runtime_context_constant_for_stat_allocation_v1`.
+
+Frontend/Codex contract for UI-HERO-2:
+
+- Regenerate Supabase types before consuming the RPC.
+- Do not use `eval`.
+- Do not parse display strings for math.
+- Do not call the preview RPC per plus/minus click.
+- Unknown descriptor kind must be treated as unsupported.
+- Durable stat save remains through canonical DB/RPC stat allocation workflow.
+
+Expected behavior from the v2 manifest:
+
+- `+1 Endurance` previews Defense increasing by the descriptor-calculated amount, currently usually `+1` when no percent/multiplier context applies.
+- `+1 Endurance` previews max Health increasing by `+5` before any DB-provided Health percent/multiplier context.
+- `+1 Strength` previews every DB-provided damage row by shifting min/max by the Strength delta, e.g. `35-51 -> 36-52`.
+
 ## Luck foundation
 
 Luck is DB/RPC/formula-authoritative and affects opportunities, ranges and distributions rather than guaranteeing perfect outcomes.
@@ -526,6 +637,41 @@ Rules:
 - Requirements must be separate from bonuses.
 
 Runtime equipment/origin/building/stat paths should use the DB-owned bonus resolver/read models rather than local Angular aggregation.
+
+## Building bonus preview and PvP role-scoped Health
+
+Current building bonus preview support includes hero-aware formula resolution:
+
+- `resolve_hero_building_bonus_preview_value(p_hero_id, p_building_id, p_entity_bonus_id, p_current_level, p_rank default 1)`;
+- this helper is required for building bonuses whose preview depends on hero-specific context such as a scaling stat;
+- `get_hero_estate_runtime_state(p_hero_id)` uses this hero-aware helper for player-facing building `bonusesJson`.
+
+Mansion/estate building `bonusesJson` exposes effective display metadata for scoped building bonuses, including:
+
+- `targetLabel` / `displayLabel`;
+- `scopeKey`, `scopeLabel`, `effectiveScopeKey`, `effectiveScopeLabel`;
+- `templateScopeKey`;
+- `scopeOverrideKey`;
+- `scalingStatKey`, `scalingStatLabel`, `scalingStatValue`;
+- `currentValue`, `nextValue`, `displayValue`, `nextDisplayValue`, `deltaDisplayValue`;
+- `displayContract = building_bonus_effective_scope_display_v2`.
+
+Frontend must render DB-provided values and labels. It must not recompute building preview values from `baseBonus`, `currentLevel` and `nextLevel`, because some bonuses are stat-scaled.
+
+PvP role-scoped building Health semantics:
+
+- Koszary (`buildings.key = barracks`) use existing `health_flat` template with `scope_key_override = pvp_attack`, `scaling_stat_key_override = cunning`, and formula `pvp-role-building-health-linear`.
+- Forteca (`buildings.key = fortress`) uses existing `health_flat` template with `scope_key_override = pvp_defense`, `scaling_stat_key_override = intelligence`, and formula `pvp-role-building-health-linear`.
+- Formula semantics: `buildingLevel * baseBonus * scalingStatValue`; current seed uses `baseBonus = 1`.
+- Koszary therefore add PvP attacker Health equal to `barracksLevel * Cunning`.
+- Forteca adds PvP defender Health equal to `fortressLevel * Intelligence`.
+- These bonuses do not modify dashboard/base Health and are not included in `/hero/attributes` max-Health allocation preview.
+
+Runtime PvP snapshot helpers:
+
+- `resolve_hero_pvp_role_health_bonus(p_hero_id, p_role)` returns the role-scoped Health bonus row for attacker/defender preview/runtime.
+- `build_pvp_hero_combatant_snapshot_for_resolver(p_hero_id, p_side)` wraps the base combatant snapshot and applies the correct PvP role-scoped Health bonus only inside PvP combat snapshots.
+- `ensure_pvp_combat_session(...)` and `settle_due_pvp_attack_action(...)` use the PvP-aware snapshot path in current DB/RPC state.
 
 ## Requirements
 
@@ -623,6 +769,15 @@ Rules:
 - `buildings.max_level = 0` means unlimited.
 - `building_district_level_caps` stores overrides; missing override falls back to `buildings.max_level`.
 - `buildings.district_code` is minimum district; a building is available in that district and higher districts.
+
+Current player-facing building runtime notes added after the 2026-05-15 Migrator work:
+
+- `get_hero_estate_runtime_state(p_hero_id)` returns player-facing `buildings_json` with `upgradePreviewJson`, `resourceCostsJson`, `requirementsJson` and `bonusesJson` contract data.
+- `upgradePreviewJson.contractVersion` is currently `estate_building_upgrade_preview_v2` where effective scoped bonus labels/values are exposed.
+- Hippokaion is a District A building for PvP travel-time reduction. It uses `pvp_travel_time_reduction_percent`, linear capped preview semantics, and the PvP travel resolver caps final reduction at 50% with minimum attack/spy travel floors.
+- Resource buildings Agora/Farm/Lumber Mill remain production-focused and should be tuned through building costs, bonus values and requirements rather than frontend formulas.
+- Zbrojownia/Armory controls visible item capacity through the `visible_item_capacity` target. It should not be reinterpreted as generic item storage ownership.
+- Koszary/Forteca are role-scoped PvP Health buildings as described in the bonus section; they do not affect base/dashboard Health.
 
 ---
 
@@ -1438,6 +1593,19 @@ Core concepts:
 Rules:
 
 - Frontend must not compute target legality, travel timing, protection expiry, resource transfer, XP reward, Prestige delta, reports or notifications as authority.
+
+
+## PvP travel, spy, return runtime and role-scoped snapshots
+
+Additional current PvP contracts verified in the Migrator conversation:
+
+- `start_pvp_action(...)` is DB-owned for target validation, travel time, protection and runtime activity creation. Frontend must not compute travel/protection as authority.
+- Spy actions resolve to `pvp_spy_results` through DB helpers and produce a player-facing report/notification chain. Report display may still require frontend support, but result/report creation is DB-owned.
+- Due PvP actions are settled through `settle_due_pvp_actions_for_hero(...)` / internal helpers before active runtime activity reads where applicable.
+- After attack or spy result resolution, the attacker gets a return runtime leg. `schedule_pvp_action_return_runtime_activity(...)` schedules the return, and `complete_due_pvp_return_runtime_activities(...)` clears due return activities.
+- The intended runtime rule is: outbound travel time is mirrored by return travel time; a hero may not start the next blocking action until the return activity is complete.
+- `get_hero_active_runtime_activity(p_hero_id)` should complete due return activities before reporting the hero as busy.
+- PvP combat snapshots must use `build_pvp_hero_combatant_snapshot_for_resolver(...)`, not the base snapshot helper directly, so Koszary/Forteca role-scoped Health is applied only in PvP.
 
 ## PvP result chain
 

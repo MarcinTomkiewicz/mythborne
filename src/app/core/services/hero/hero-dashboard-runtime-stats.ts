@@ -3,7 +3,11 @@ import { map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import { mapHeroDashboardRuntimeStats } from '../../domain/hero/hero-dashboard-runtime-stats.mapper';
 import { HeroDashboardRuntimeStatsReadModel } from '../../domain/hero/hero-dashboard-runtime-stats.model';
+import { mapAttributeAllocationPreviewManifest } from '../../domain/progression/attribute-allocation-preview-manifest.mapper';
+import { AttributeAllocationPreviewManifest } from '../../domain/progression/attribute-allocation-preview-manifest.model';
 import {
+  GetHeroAttributeAllocationPreviewManifestRpcArgs,
+  GetHeroAttributeAllocationPreviewManifestRpcResult,
   GetHeroDashboardRuntimeStatsRpcArgs,
   GetHeroDashboardRuntimeStatsRpcRow,
 } from '../../types/hero-runtime-stats-rpc.types';
@@ -50,6 +54,37 @@ export class HeroDashboardRuntimeStats {
           return mapHeroDashboardRuntimeStats(row);
         }),
       );
+  }
+
+  getActiveHeroAttributeAllocationPreviewManifest(): Observable<AttributeAllocationPreviewManifest> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) =>
+        this.getAttributeAllocationPreviewManifest(context.heroId).pipe(
+          map((manifest) => {
+            if (this.activeHero.state()?.heroId !== context.heroId) {
+              throw new Error('Attribute allocation preview manifest context changed.');
+            }
+
+            return manifest;
+          }),
+        ),
+      ),
+    );
+  }
+
+  getAttributeAllocationPreviewManifest(
+    heroId: string,
+  ): Observable<AttributeAllocationPreviewManifest> {
+    const args: GetHeroAttributeAllocationPreviewManifestRpcArgs = {
+      p_hero_id: heroId,
+    };
+
+    return this.backend
+      .rpc<GetHeroAttributeAllocationPreviewManifestRpcResult>(
+        RPC.get_hero_attribute_allocation_preview_manifest,
+        args,
+      )
+      .pipe(map((manifest) => mapAttributeAllocationPreviewManifest(manifest)));
   }
 }
 

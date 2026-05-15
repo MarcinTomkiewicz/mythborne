@@ -147,6 +147,7 @@ Nie pisz self-fulfilling specs:
 - nie produkuj setek linii testów dla kilkunastu linii UI.
 
 Nie uruchamiaj dev servera, web preview ani browser/manual smoke. Manual smoke wykonuje użytkownik/reviewer. W raporcie wpisz `Manual smoke: user-side`.
+Przejście testów, `tsc`, builda i static grepów nie oznacza automatycznie, że task został wykonany. Testy są tylko weryfikacją techniczną. Dla tasków UI/player-facing nie raportuj zachowania jako `pass`, jeśli nie zostało faktycznie potwierdzone manual smoke przez użytkownika/reviewera. W takim przypadku wpisz: `Manual smoke: user-side pending`.
 
 ## Status docs
 
@@ -184,5 +185,7 @@ Jeśli task był poprawiany po review, dodaj:
 
 Jeśli review ograniczało zakres poprawki, dodaj:
 - `Scope restriction respected: yes`
+
+Nie używaj `pass` przy player-visible acceptance, jeśli potwierdzeniem są tylko testy/build; wpisz wtedy `implemented, manual smoke pending`.
 
 Nie pisz epopei. Nie streszczaj oczywistości. Jeśli jesteś zablokowany, napisz krótko: co blokuje, czego brakuje i jaki pattern/plik/kontrakt jest potrzebny.

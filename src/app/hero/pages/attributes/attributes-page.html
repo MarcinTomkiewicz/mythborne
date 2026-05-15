@@ -195,31 +195,37 @@
             <div class="flex-col gap-xs">
               <h3 class="color-heading text-lg mb-0">Derived preview</h3>
               <p class="muted-text mb-0">
-                Current runtime preview for equipped items, active bonuses and hero state.
-                Draft-based derived deltas are not shown on this screen yet.
+                {{ page.derivedPreviewDescription() }}
               </p>
             </div>
-            <span class="tag-badge tag-badge--info">Current preview only</span>
+            <span class="tag-badge tag-badge--info">{{ page.derivedPreviewBadge() }}</span>
           </div>
 
-          @if (page.runtimeStatsError(); as runtimeStatsError) {
-            <p class="warn-text mb-0">{{ runtimeStatsError }}</p>
+          @if (page.previewManifestError(); as previewManifestError) {
+            <p class="warn-text mb-0">{{ previewManifestError }}</p>
           }
 
           <div class="flex-col gap-sm">
             @for (row of page.derivedStatRows(); track row.key) {
               <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
                 <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>
-                @if (row.value !== null && row.value !== "") {
-                  <strong [class]="row.valueClass">
-                    @for (part of row.parts; track $index) {
-                      <span [class]="part.className">{{ part.text }}</span>
-                    }
+                @if (row.draftDisplay && row.deltaDisplay) {
+                  <strong class="text-md">
+                    <span class="color-heading text-md">{{ row.currentDisplay }}</span>
+                    <span class="color-muted text-xs"> -> </span>
+                    <span [class]="row.tone === 'positive' ? 'success-text text-md' : 'error-text text-md'">
+                      {{ row.draftDisplay }}
+                    </span>
+                    <span [class]="row.tone === 'positive' ? 'success-text text-xs' : 'error-text text-xs'">
+                      {{ row.deltaDisplay }}
+                    </span>
                   </strong>
+                } @else {
+                  <strong class="color-heading text-md">{{ row.currentDisplay }}</strong>
                 }
               </div>
             } @empty {
-              @if (!page.runtimeStatsError()) {
+              @if (!page.previewManifestError()) {
                 <p class="muted-text mb-0">Derived preview is not available for this hero yet.</p>
               }
             }
