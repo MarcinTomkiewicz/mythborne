@@ -3515,6 +3515,8 @@ Ensure the UI handoff from Hero Creation to gameplay matches Epic X: one backend
   - refresh after creation routes to dashboard on later entry;
   - stat allocation can be left.
 
+**Status:** Accepted with follow-up on 2026-05-15. Hero Creation still uses the canonical `create_hero_start_flow` backend workflow through the existing start-flow/create-hero services, blocks unknown post-create `route_next_action` values instead of silently routing, and keeps fresh hero creation routed to in-game Stat Allocation. The submit path now guards stale success/error responses with the submitted server/name/origin context, so changed context does not overwrite UI state or navigate. No DB/RPC/generated-type/status-doc changes were made during implementation, and focused stale-submit specs cover the success/error guard. Follow-ups are non-blocking: split `CreateCharacterPageFacade` when this flow is next touched, align remaining `Nazwa bohatera` validation/toast copy to `Imię bohatera` in a later copy cleanup, and keep UI-ONBOARDING-ADD-6/7 docs/audit plus UI-ONBOARDING-ADD-8 responsive/manual smoke as separate tasks.
+
 ---
 
 ## UI-ONBOARDING-ADD-6 — Origin content and artwork registry/read-model follow-up

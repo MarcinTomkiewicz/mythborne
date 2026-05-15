@@ -1,6 +1,6 @@
 # Monster Hunt - Current TODO
 
-Updated: 2026-05-14
+Updated: 2026-05-15
 
 This file lists pending work derived from:
 - `docs/project-context.md`
@@ -273,6 +273,7 @@ Order reflects implementation priority, not final business priority.
 - Completed and confirmed: UI-ONBOARDING-ADD-2 - `/auth/server-entry` and `/auth/create-character` now render under the routed `AccountEntryLayout`; `ServerEntryPage` owns only entry states and the existing-hero selector, which uses `get_account_entry_hero_contexts` for server, hero, level and address and enters through `enterHeroContext(serverId, heroId)`. Manual smoke remains user-side before commit handoff.
 - Completed and confirmed: UI-ONBOARDING-ADD-3 - `/auth/create-character` now starts existing-account hero creation with a compact server eligibility selector before the Hero Creation stage. The selector shows DB/read-model District A free/capacity in selected-server details, blocks full District A and standard existing-hero create flow, keeps sandbox/test creation available when `canCreateHero=true` without `blockReason`, and does not render hero name/origin/create mutation before handoff. User-side smoke confirmed the final layout correction; visual emphasis/copy/helper cleanup remain non-blocking follow-ups.
 - Completed and confirmed with follow-up: UI-ONBOARDING-ADD-4 - after eligible server selection, `/auth/create-character` shows the Hero Creation stage with readonly selected-server context, `Imię bohatera`, the start-flow-backed origin carousel, creation summary with `Punkty postaci: 1000`, and canonical create action disabled while the hero name is invalid. Direct origin buttons/dots, stat allocation UI, server selector UI, account registration UI and technical backend/read-model copy are absent from this stage. User-side smoke accepted the functional ADD-4 scope; follow-ups are visual polish against the dashboard/game-shell baseline, carousel typography/color tuning, summary card polish and possible later `shared/carousel` rename/cleanup if it remains origin-specific.
+- Completed and confirmed with follow-up: UI-ONBOARDING-ADD-5 - Hero Creation remains on the canonical `create_hero_start_flow` backend workflow, fresh creation still routes to in-game Stat Allocation, unknown post-create route actions stay blocked, and stale submit success/error responses are ignored when the submitted server/name/origin context changes. Follow-ups: split `CreateCharacterPageFacade` when the flow is next touched, align remaining `Nazwa bohatera` validation/toast copy to `Imię bohatera`, and keep ADD-6/ADD-7 docs/audit plus ADD-8 responsive/manual smoke separate.
 - Completed and confirmed: S12 - Unequip slot action.
 - Completed and confirmed: S13 - Bulk equip action.
 - Completed and confirmed conditionally: S14 - Preset domain service and `PlayerEquipment` -> `HeroEquipment` rename.

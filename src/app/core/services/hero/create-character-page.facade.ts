@@ -30,6 +30,13 @@ import { addCreateCharacterToast } from './create-character-toast';
 
 export type ExistingAccountCreateStage = 'server_select' | 'hero_creation';
 
+interface HeroCreationSubmitContext {
+  token: number;
+  serverId: string | null;
+  originId: string;
+  heroName: string;
+}
+
 @Injectable()
 export class CreateCharacterPageFacade {
   private readonly auth = inject(Auth);
@@ -42,6 +49,7 @@ export class CreateCharacterPageFacade {
   private readonly router = inject(Router);
   private readonly startFlow = inject(StartFlow);
   private availabilityLoadToken = 0;
+  private heroCreationSubmitToken = 0;
 
   readonly step = signal(1);
   readonly existingAccountCreateStage = signal<ExistingAccountCreateStage>('server_select');
@@ -117,6 +125,14 @@ export class CreateCharacterPageFacade {
 
       this.loadServerAvailability();
     });
+
+    this.heroForm.controls.characterName.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.invalidateActiveHeroCreationSubmit());
+
+    this.form.controls.originId.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.invalidateActiveHeroCreationSubmit());
   }
 
   onStepChange(step: number | undefined) {
@@ -207,6 +223,7 @@ export class CreateCharacterPageFacade {
 
     this.errorMessage.set(null);
     if (this.hasExistingAccount()) {
+      this.invalidateActiveHeroCreationSubmit();
       this.existingAccountCreateStage.set('server_select');
       this.selectedOrigin.set(null);
       this.form.controls.originId.setValue('', { emitEvent: false });
@@ -285,6 +302,15 @@ export class CreateCharacterPageFacade {
   }
 
   private startHeroCreation(): void {
+    const hero = this.heroForm.getRawValue();
+    const originId = this.form.controls.originId.getRawValue();
+    const submitContext: HeroCreationSubmitContext = {
+      token: ++this.heroCreationSubmitToken,
+      serverId: this.activeServer.selectedServer()?.id ?? null,
+      originId,
+      heroName: trimText(hero.characterName),
+    };
+
     this.isSubmitting.set(true);
     this.errorMessage.set(null);
     this.messageService.clear('global');
@@ -295,8 +321,6 @@ export class CreateCharacterPageFacade {
     );
 
     const account = this.accountForm.getRawValue();
-    const hero = this.heroForm.getRawValue();
-    const originId = this.form.controls.originId.getRawValue();
     const existingUser = this.user();
     const accountReady$: Observable<unknown> = existingUser
       ? of(existingUser)
@@ -312,12 +336,20 @@ export class CreateCharacterPageFacade {
     accountReady$
       .pipe(
         switchMap(() =>
-          this.createHero.createHero(trimText(hero.characterName), originId)
+          this.createHero.createHero(submitContext.heroName, submitContext.originId)
         ),
-        finalize(() => this.isSubmitting.set(false))
+        finalize(() => {
+          if (this.isActiveHeroCreationSubmit(submitContext)) {
+            this.isSubmitting.set(false);
+          }
+        })
       )
       .subscribe({
         next: (result) => {
+          if (!this.isActiveHeroCreationSubmit(submitContext)) {
+            return;
+          }
+
           const route = routeForHeroCreationNextAction(result.routeNextAction);
 
           if (!route) {
@@ -335,6 +367,10 @@ export class CreateCharacterPageFacade {
           void this.router.navigateByUrl(route);
         },
         error: (error) => {
+          if (!this.isActiveHeroCreationSubmit(submitContext)) {
+            return;
+          }
+
           const message = toHeroCreationErrorMessage(error);
           this.errorMessage.set(message);
           this.showToast(
@@ -344,6 +380,23 @@ export class CreateCharacterPageFacade {
           );
         },
       });
+  }
+
+  private invalidateActiveHeroCreationSubmit(): void {
+    if (!this.isSubmitting()) {
+      return;
+    }
+
+    this.heroCreationSubmitToken++;
+    this.isSubmitting.set(false);
+    this.errorMessage.set(null);
+  }
+
+  private isActiveHeroCreationSubmit(context: HeroCreationSubmitContext): boolean {
+    return this.heroCreationSubmitToken === context.token &&
+      this.activeServer.selectedServer()?.id === context.serverId &&
+      this.form.controls.originId.getRawValue() === context.originId &&
+      trimText(this.heroForm.getRawValue().characterName) === context.heroName;
   }
 
   private loadServerAvailability() {

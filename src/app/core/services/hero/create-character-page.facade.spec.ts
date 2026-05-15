@@ -105,6 +105,53 @@ describe('CreateCharacterPageFacade', () => {
     }));
   });
 
+  it('ignores stale hero creation success after the submitted hero name changes', () => {
+    const pendingCreation = new Subject<StartFlowHeroCreationResult>();
+    createHero.createHero.and.returnValue(pendingCreation.asObservable());
+    openExistingAccountCreationStage(facade);
+    fillValidCreationForm(facade);
+
+    facade.submit();
+
+    expect(facade.isSubmitting()).toBeTrue();
+
+    facade.heroForm.controls.characterName.setValue('Changed Hero');
+    pendingCreation.next(heroCreationResult({
+      routeNextAction: 'stat_allocation',
+    }));
+    pendingCreation.complete();
+
+    expect(facade.isSubmitting()).toBeFalse();
+    expect(facade.errorMessage()).toBeNull();
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+    expect(messageService.add).not.toHaveBeenCalledWith(jasmine.objectContaining({
+      severity: 'success',
+      summary: 'Bohater został stworzony',
+    }));
+  });
+
+  it('ignores stale hero creation errors after the selected server changes', () => {
+    const pendingCreation = new Subject<StartFlowHeroCreationResult>();
+    createHero.createHero.and.returnValue(pendingCreation.asObservable());
+    openExistingAccountCreationStage(facade);
+    fillValidCreationForm(facade);
+
+    facade.submit();
+
+    expect(facade.isSubmitting()).toBeTrue();
+
+    facade.selectCreationServer('server-2');
+    pendingCreation.error(new Error('duplicate key value violates unique constraint'));
+
+    expect(facade.isSubmitting()).toBeFalse();
+    expect(facade.errorMessage()).toBeNull();
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+    expect(messageService.add).not.toHaveBeenCalledWith(jasmine.objectContaining({
+      severity: 'error',
+      summary: 'Nie udało się stworzyć bohatera',
+    }));
+  });
+
   it('creates another hero for an existing account without requiring profile data again', () => {
     createHero.createHero.and.returnValue(of(heroCreationResult({
       routeNextAction: 'stat_allocation',
