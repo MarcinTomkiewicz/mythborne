@@ -4,7 +4,7 @@
     <div class="flex-col gap-md">
       @for (report of reports(); track report.id) {
         @let type = reportType(report);
-        <article class="mg-surface-card p-md flex-col gap-sm">
+        <article class="mg-card p-md flex-col gap-sm">
           <div class="flex-row-between-center flex-col-sm gap-sm">
             <strong class="heading-color text-break">{{ type?.label ?? report.title }}</strong>
             <span class="mg-tag">{{ reportStatusLabel(report.status) }}</span>
@@ -27,7 +27,7 @@
     <div class="flex-col gap-md">
       @for (declaration of declarations(); track declaration.id) {
         @let type = declarationType(declaration);
-        <article class="mg-surface-card p-md flex-col gap-sm">
+        <article class="mg-card p-md flex-col gap-sm">
           <div class="flex-row-between-center flex-col-sm gap-sm">
             <strong class="heading-color text-break">{{ type?.label ?? declaration.title }}</strong>
             <span class="mg-tag">{{ declarationStatusLabel(declaration.status) }}</span>

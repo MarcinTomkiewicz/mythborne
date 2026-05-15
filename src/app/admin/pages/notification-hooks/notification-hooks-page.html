@@ -27,21 +27,21 @@
 
     <section class="mg-card p-lg w-100">
       <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Producenci z RPC DB</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">
             {{ producerCount() }}
           </strong>
         </div>
 
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">DB/RPC blockery</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">
             {{ missingCount() }}
           </strong>
         </div>
 
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Jawne non-producery</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">
             {{ nonProducerCount() }}
@@ -63,7 +63,7 @@
 
       <div class="flex-col gap-md">
         @for (diagnostic of diagnostics(); track diagnostic.producerKey) {
-          <article class="mg-surface-card p-md flex-col gap-sm">
+          <article class="mg-card p-md flex-col gap-sm">
             <div class="flex-row-between-center flex-col-sm gap-sm">
               <div class="flex-col gap-xs">
                 <h4 class="mg-section__title mg-section__title--xs mb-0">

@@ -61,7 +61,7 @@
         />
       </div>
 
-      <form [formGroup]="page.formulas.assignmentForm" class="mg-surface-card flex-col gap-md p-lg">
+      <form [formGroup]="page.formulas.assignmentForm" class="mg-card flex-col gap-md p-lg">
         <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
           <app-form-fields [form]="page.formulas.assignmentForm" [fields]="formulaFields()" />
         </div>
@@ -87,7 +87,7 @@
         <app-form-fields [form]="page.building.selectorForm" [fields]="selectorFields()" />
       </form>
 
-      <form [formGroup]="page.building.editorForm" class="mg-surface-card flex-col gap-lg p-lg">
+      <form [formGroup]="page.building.editorForm" class="mg-card flex-col gap-lg p-lg">
         <section class="mg-card flex-col gap-sm p-md">
           <p class="card-legend mb-0">
             {{ page.uiMetadata.adminSectionTitle(page.uiMetadata.adminSection.buildingIdentity) }}

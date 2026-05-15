@@ -10,21 +10,21 @@
   </div>
 
   <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100 mb-lg">
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="muted-text">Progression formula targets</span>
       <strong class="mg-section__title mg-section__title--xs mb-0">
         {{ formulaRows().length }}
       </strong>
     </div>
 
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="muted-text">Metadata gaps</span>
       <strong class="mg-section__title mg-section__title--xs mb-0">
         {{ metadataGaps().length }}
       </strong>
     </div>
 
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="muted-text">Missing formula targets</span>
       <strong class="mg-section__title mg-section__title--xs mb-0">
         {{ missingFormulaTargetKeys().length }}
@@ -33,7 +33,7 @@
   </div>
 
   @if (missingFormulaTargetKeys().length) {
-    <div class="mg-surface-card p-md flex-col gap-xs mb-lg">
+    <div class="mg-card p-md flex-col gap-xs mb-lg">
       <strong class="heading-color">Missing progression formula target keys</strong>
       @for (key of missingFormulaTargetKeys(); track key) {
         <span class="muted-text">{{ key }}</span>
@@ -50,7 +50,7 @@
     </div>
 
     @for (row of formulaRows(); track row.target.id) {
-      <article class="mg-surface-card p-md flex-col gap-md">
+      <article class="mg-card p-md flex-col gap-md">
         <div class="flex-row-between-center flex-col-sm gap-sm">
           <div class="flex-col gap-xs">
             <strong class="heading-color">{{ row.target.label }}</strong>
@@ -115,7 +115,7 @@
 
     <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
       @for (row of explanationRows(); track row.namespace + '/' + row.key) {
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <strong class="heading-color">{{ row.label }}</strong>
           <span class="muted-text">{{ row.text }}</span>
           <small class="muted-text">{{ row.namespace }}/{{ row.key }}</small>
@@ -125,7 +125,7 @@
   </div>
 
   @if (metadataGaps().length) {
-    <div class="mg-surface-card p-md flex-col gap-xs mt-lg">
+    <div class="mg-card p-md flex-col gap-xs mt-lg">
       <strong class="heading-color">Missing UI metadata</strong>
       @for (gap of metadataGaps(); track gap) {
         <span class="muted-text">{{ gap }}</span>

@@ -10,22 +10,22 @@
 
   @if (aggregationSettings(); as settings) {
     <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md mb-lg">
-      <div class="mg-surface-card flex-col gap-xs p-md">
+      <div class="mg-card flex-col gap-xs p-md">
         <span class="muted-text">Aggregation rule</span>
         <strong class="heading-color">Highest component + additional fraction</strong>
       </div>
 
-      <div class="mg-surface-card flex-col gap-xs p-md">
+      <div class="mg-card flex-col gap-xs p-md">
         <span class="muted-text">Additional component fraction</span>
         <strong class="heading-color">{{ settings.additionalRequirementFraction }}</strong>
       </div>
 
-      <div class="mg-surface-card flex-col gap-xs p-md">
+      <div class="mg-card flex-col gap-xs p-md">
         <span class="muted-text">Minimum required value</span>
         <strong class="heading-color">{{ settings.minRequiredValue }}</strong>
       </div>
 
-      <div class="mg-surface-card flex-col gap-xs p-md">
+      <div class="mg-card flex-col gap-xs p-md">
         <span class="muted-text">Rounding mode</span>
         <strong class="heading-color">{{ settings.roundingMode }}</strong>
       </div>
@@ -37,7 +37,7 @@
   }
 
   <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md mb-lg">
-    <article class="mg-surface-card flex-col gap-sm p-md">
+    <article class="mg-card flex-col gap-sm p-md">
       <span class="muted-text">Base contribution</span>
       <strong class="heading-color">Item generation base requirements</strong>
       <p class="mb-0 muted-text">
@@ -45,7 +45,7 @@
       </p>
     </article>
 
-    <article class="mg-surface-card flex-col gap-sm p-md">
+    <article class="mg-card flex-col gap-sm p-md">
       <span class="muted-text">Prefix contribution</span>
       <strong class="heading-color">Item generation affix requirements</strong>
       <p class="mb-0 muted-text">
@@ -53,7 +53,7 @@
       </p>
     </article>
 
-    <article class="mg-surface-card flex-col gap-sm p-md">
+    <article class="mg-card flex-col gap-sm p-md">
       <span class="muted-text">Suffix contribution</span>
       <strong class="heading-color">Item generation affix requirements</strong>
       <p class="mb-0 muted-text">
@@ -64,7 +64,7 @@
 
   <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md">
     @for (quality of qualities(); track quality.key) {
-      <article class="mg-surface-card flex-col gap-sm p-md">
+      <article class="mg-card flex-col gap-sm p-md">
         <div class="flex-row-between-center flex-col-sm gap-sm">
           <div class="flex-col gap-xs">
             <span class="muted-text">Quality</span>

@@ -1,4 +1,4 @@
-<div class="mg-surface-card flex-col gap-md p-lg">
+<div class="mg-card flex-col gap-md p-lg">
   <div class="flex-row-between-center flex-col-sm gap-md">
     <div class="flex-col gap-xs">
       <p class="card-legend mb-0">Requirements</p>
@@ -25,7 +25,7 @@
     @for (requirementGroup of requirements.form.controls; track $index) {
       @let definition = requirements.definitionFor($index);
 
-      <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="requirementGroup">
+      <div class="mg-card flex-col gap-md p-md" [formGroup]="requirementGroup">
         <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
           <div class="flex-col gap-sm">
             <span class="muted-text">Requirement definition</span>

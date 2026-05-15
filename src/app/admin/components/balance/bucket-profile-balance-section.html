@@ -12,14 +12,14 @@
     <app-form-fields [form]="page.profile.selectorForm" [fields]="selectorFields()" />
   </form>
 
-  <form [formGroup]="page.profile.editorForm" class="mg-surface-card flex-col gap-md p-lg">
+  <form [formGroup]="page.profile.editorForm" class="mg-card flex-col gap-md p-lg">
     <p class="mb-0 muted-text">Key is generated from the profile name.</p>
 
     <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100 grid-items-start">
       <app-form-fields [form]="page.profile.editorForm" [fields]="editorFields" />
     </div>
 
-    <div class="mg-surface-card flex-col gap-sm p-md">
+    <div class="mg-card flex-col gap-sm p-md">
       <p class="card-legend mb-0">Preview</p>
       <div class="flex-row-start-center flex-wrap gap-sm">
         @for (bucket of page.bucketPreview(); track bucket) {

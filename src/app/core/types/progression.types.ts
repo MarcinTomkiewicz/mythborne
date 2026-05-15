@@ -25,11 +25,8 @@ export interface AttributeAllocationRow {
   plannedValue: number;
   pendingLevels: number;
   nextLevelCost: number | null;
-  maxAllowedValue: number | null;
   canIncrease: boolean;
   canDecrease: boolean;
-  increaseReason: string | null;
-  formulaError: string | null;
 }
 
 export const STAT_PROGRESSION_TARGET_KEYS = {

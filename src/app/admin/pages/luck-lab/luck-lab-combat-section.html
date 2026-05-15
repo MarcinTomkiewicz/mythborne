@@ -22,7 +22,7 @@
 
   @if (section.preview(); as combat) {
     <div class="grid-3 gap-md">
-      <article class="mg-surface-card p-md flex-col gap-xs">
+      <article class="mg-card p-md flex-col gap-xs">
         <span class="card-legend">Damager</span>
         <strong>Damager Luck: {{ combat.attackerLuck }}; influence: {{ combat.attackerLuckInfluence }}</strong>
         <span>Dexterity: {{ combat.attackerDexterity }}</span>
@@ -30,7 +30,7 @@
         <span>Hit bonus from items: {{ combat.hitBonusFromItems }}</span>
       </article>
 
-      <article class="mg-surface-card p-md flex-col gap-xs">
+      <article class="mg-card p-md flex-col gap-xs">
         <span class="card-legend">Target</span>
         <strong>Target Luck: {{ combat.defenderLuck }}; influence: {{ combat.defenderLuckInfluence }}</strong>
         <span>Agility: {{ combat.defenderAgility }}</span>
@@ -38,7 +38,7 @@
         <span>Evasion bonus from items: {{ combat.evasionBonusFromItems }}</span>
       </article>
 
-      <article class="mg-surface-card p-md flex-col gap-xs">
+      <article class="mg-card p-md flex-col gap-xs">
         <span class="card-legend">Attack context</span>
         <strong>Attack index: {{ combat.attackIndex }} of {{ combat.attackCount }}</strong>
         <span>Rolled damage: {{ combat.rolledDamage }}</span>
@@ -52,7 +52,7 @@
 
   <div class="grid-2 gap-md">
     @for (row of section.rows(); track row.surfaceKey) {
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">{{ row.label }}</span>
         <strong>{{ row.label }}: {{ section.valueText(row) }}</strong>
         <span>{{ row.helperText }}</span>

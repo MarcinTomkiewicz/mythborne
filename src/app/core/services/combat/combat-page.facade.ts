@@ -10,6 +10,7 @@ import {
   SandboxCombatResult,
 } from '../../domain/combat/combat-sandbox.model';
 import { OriginBonus, Origin } from '../../domain/origin/origin.model';
+import { mapBaseStatSnapshots } from '../../domain/stats/base-stat.mapper';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import {
   advanceWalkingDeadTimingFrame,
@@ -218,14 +219,10 @@ export class CombatPageFacade {
   }
 
   baseStatEntries(combatant: CombatantSnapshot): Array<{ key: string; label: string; value: number }> {
-    const labels = Object.fromEntries(
-      this.statsDefinitions().map((definition) => [definition.key, definition.label])
-    );
-
-    return Object.entries(combatant.baseStats).map(([key, value]) => ({
-      key,
-      label: labels[key] ?? key,
-      value,
+    return mapBaseStatSnapshots(this.statsDefinitions(), combatant.baseStats).map((stat) => ({
+      key: stat.key,
+      label: stat.label,
+      value: stat.currentValue,
     }));
   }
 

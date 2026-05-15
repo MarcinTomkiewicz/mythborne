@@ -1,4 +1,4 @@
-<div class="mg-surface-card flex-col gap-md p-md">
+<div class="mg-card flex-col gap-md p-md">
   <div class="flex-row-between-center flex-col-sm gap-md">
     <div class="flex-col gap-xs">
       <p class="card-legend mb-0">
@@ -14,7 +14,7 @@
 
   <div class="flex-col gap-md">
     @for (bonusGroup of page().bonusEditor.controls; track $index) {
-      <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
+      <div class="mg-card flex-col gap-md p-md" [formGroup]="bonusGroup">
         <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
           <div class="flex-col gap-md">
             <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100 align-items-center">

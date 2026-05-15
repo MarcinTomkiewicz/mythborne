@@ -1,162 +1,231 @@
 <app-loading-overlay
   [visible]="page.isLoading() && page.loadError() === null"
-  label="Loading attribute allocation..."
-  description="Fetching hero stats, available Character Points and active progression formulas."
+  label="Loading hero statistics..."
+  description="Fetching base stats, Character Points and current derived preview."
 />
 
 @if (page.loadError()) {
   <section class="mg-card flex-col gap-sm p-lg w-100">
-    <p class="card-legend mb-0">Error</p>
-    <p class="mb-0 muted-text">{{ page.loadError() }}</p>
+    <h2 class="color-heading text-lg mb-0">Hero statistics unavailable</h2>
+    <p class="mb-0 error-text">{{ page.loadError() }}</p>
   </section>
 } @else {
-  <div class="flex-col gap-xl w-100">
+  <div class="flex-col gap-lg w-100">
     <section class="mg-card p-lg w-100">
-      <div class="flex-row-between-center flex-col-sm gap-md">
+      <div class="grid-2-1 gap-lg w-100 grid-items-center">
         <div class="flex-col gap-xs">
-          <p class="card-legend mb-0">Hero</p>
-          <h2 class="mg-section__title mg-section__title--sm mb-0">Attribute Allocation</h2>
+          <p class="color-muted small-caps uppercase text-xs mb-0">Statistics</p>
+          <h2 class="color-heading text-xl mb-0">Base stats allocation</h2>
           <p class="muted-text mb-0">
-            Spend Character Points on base stats. The next level cost is calculated separately
-            for each stat, and lowering a stat below its persisted value is blocked.
+            Spend Character Points on the nine canonical base stats. Plus and minus controls
+            create a local draft; saving confirms the allocation through the canonical workflow.
           </p>
         </div>
 
-        <div class="flex-row-start-center flex-wrap gap-sm">
-          <a routerLink="/hero/dashboard" class="tag-badge tag-badge--muted">Dashboard</a>
-          <span class="tag-badge tag-badge--warn">Level {{ page.heroLevel() }}</span>
-          <span class="tag-badge tag-badge--golden">
-            Available Character Points:
-            {{ page.remainingCharacterPoints() === null ? 'Unavailable' : page.remainingCharacterPoints() }}
-          </span>
-          <span class="tag-badge tag-badge--muted">
-            Spent Character Points:
-            {{ page.spentCharacterPoints() === null ? 'Unavailable' : page.spentCharacterPoints() }}
-          </span>
-          <span class="tag-badge tag-badge--info">
-            Stat level cap:
-            {{ page.statCapSummaryError() ? 'Formula error' : (page.capPreview().value ?? 0) }}
-          </span>
-        </div>
+        <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Hero</span>
+            <strong class="color-heading text-md">{{ page.heroName() }}</strong>
+          </div>
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Level</span>
+            <strong class="color-heading text-md">{{ page.heroLevel() }}</strong>
+          </div>
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Character Points</span>
+            <strong class="color-heading text-md">{{ page.characterPoints() }}</strong>
+          </div>
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Stat cap</span>
+            <strong
+              class="color-heading text-md"
+              [class.error-text]="page.statCapSummaryError()"
+            >
+              {{ page.statCapSummaryError() ? 'Formula error' : (page.capPreview().value ?? 0) }}
+            </strong>
+          </div>
+        </aside>
       </div>
       @if (page.statCapSummaryError(); as capError) {
-        <p class="muted-text mb-0 mt-md">{{ capError }}</p>
+        <p class="warn-text mb-0 mt-md">{{ capError }}</p>
       }
       @if (page.characterPointSummaryError(); as summaryError) {
-        <p class="muted-text mb-0 mt-md">{{ summaryError }}</p>
+        <p class="warn-text mb-0 mt-md">{{ summaryError }}</p>
       }
     </section>
 
-    <section class="mg-card p-lg w-100">
-      <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="grid-2-1 gap-lg w-100 grid-items-start">
+      <section class="mg-card p-lg w-100">
+        <div class="flex-col gap-xs mb-lg">
+          <div class="flex-col gap-xs">
+            <h3 class="color-heading text-lg mb-0">Primary stats</h3>
+            <p class="muted-text mb-0">
+              Current values, planned draft values, next-level costs and the active stat cap
+              are calculated from the current progression formulas.
+            </p>
+          </div>
+        </div>
+
         <div class="flex-col gap-xs">
-          <p class="card-legend mb-0">Progression</p>
-          <h3 class="mg-section__title mg-section__title--xs mb-0">Primary stats</h3>
-          <p class="muted-text mb-0">
-            Stat caps and next-level costs are calculated from active formulas assigned in the admin panel.
-          </p>
-        </div>
-
-        <div class="flex-row-start-center flex-wrap gap-sm">
-          <p-button
-            label="Reset"
-            [text]="true"
-            [disabled]="!page.hasPendingChanges() || page.isSaving()"
-            (onClick)="page.resetDraft()"
-          />
-          <p-button
-            label="Save allocation"
-            [loading]="page.isSaving()"
-            [disabled]="page.isSaving() || !page.canSaveDraft()"
-            (onClick)="page.saveDraft()"
-          />
-        </div>
-      </div>
-
-      <p-table [value]="page.statRows()" responsiveLayout="scroll">
-        <ng-template pTemplate="header">
-          <tr>
-            <th>Stat</th>
-            <th>Current</th>
-            <th>Planned</th>
-            <th>Next level cost</th>
-            <th>Level cap</th>
-            <th>Controls</th>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="body" let-row>
-          <tr>
-            <td>
+          @for (row of page.statRows(); track row.key) {
+            <article class="mg-data-row mg-data-row--stat w-100">
               <div class="flex-row-start-center gap-sm">
-                <strong class="heading-color">{{ row.label }}</strong>
+                <strong class="color-text small-caps text-md">{{ row.label }}</strong>
                 <i
                   class="pi pi-info-circle muted-text"
                   [pTooltip]="row.description || page.tooltipFallback"
                   tooltipPosition="top"
                 ></i>
               </div>
-            </td>
 
-            <td>
-              <div class="flex-row-start-center flex-wrap gap-xs">
-                <span class="tag-badge tag-badge--muted">{{ row.currentValue }}</span>
+              <div class="mg-data-row__meta">
+                <span class="mg-data-row__metric">
+                  <strong class="color-heading text-lg">{{ row.currentValue }}</strong>
+                </span>
+
+                <span class="mg-data-row__metric">
+                  <strong [class]="row.pendingLevels > 0 ? 'success-text text-lg' : 'color-heading text-lg'">
+                    {{ row.plannedValue }}
+                  </strong>
+                  @if (row.pendingLevels > 0) {
+                    <span class="success-text text-xs">+{{ row.pendingLevels }}</span>
+                  }
+                </span>
+
+                <span class="mg-data-row__metric">
+                  @if (row.nextLevelCost !== null) {
+                    <span class="color-muted text-xs">cost {{ row.nextLevelCost }}</span>
+                  } @else {
+                    <span class="error-text text-xs">Unavailable</span>
+                  }
+                </span>
+
+                <span class="mg-data-row__actions">
+                  <p-button
+                    icon="pi pi-minus"
+                    size="small"
+                    [outlined]="true"
+                    severity="secondary"
+                    styleClass="mg-compact-icon-button"
+                    ariaLabel="Decrease {{ row.label }}"
+                    [disabled]="!row.canDecrease || page.isSaving()"
+                    (onClick)="page.decrementStat(row.key)"
+                  />
+                  <p-button
+                    icon="pi pi-plus"
+                    size="small"
+                    [outlined]="true"
+                    severity="secondary"
+                    styleClass="mg-compact-icon-button"
+                    ariaLabel="Increase {{ row.label }}"
+                    [disabled]="!row.canIncrease || page.isSaving()"
+                    (onClick)="page.incrementStat(row.key)"
+                  />
+                </span>
+
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+
+      <aside class="flex-col gap-lg w-100">
+        <section class="mg-card p-lg w-100">
+          <div class="flex-col gap-xs mb-lg">
+            <h3 class="color-heading text-lg mb-0">Allocation draft</h3>
+            <p class="muted-text mb-0">
+              Unsaved base stat changes and Character Point impact.
+            </p>
+          </div>
+
+          <div class="flex-col gap-sm mb-lg">
+            @if (page.hasPendingChanges()) {
+              @for (row of page.statRows(); track row.key) {
                 @if (row.pendingLevels > 0) {
-                  <span class="tag-badge tag-badge--success">+{{ row.pendingLevels }}</span>
+                  <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+                    <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>
+                    <strong class="success-text text-md">+{{ row.pendingLevels }}</strong>
+                  </div>
                 }
-              </div>
-            </td>
-
-            <td>
-              <strong class="heading-color">{{ row.plannedValue }}</strong>
-            </td>
-
-            <td>
-              <div class="flex-col gap-xs">
-                @if (row.nextLevelCost !== null) {
-                  <span class="tag-badge tag-badge--golden">
-                    {{ row.nextLevelCost }} Character Points
-                  </span>
-                } @else {
-                  <span class="tag-badge tag-badge--danger">Unavailable</span>
-                }
-
-                @if (row.increaseReason; as reason) {
-                  <span class="muted-text">{{ reason }}</span>
-                }
-              </div>
-            </td>
-
-            <td>
-              @if (row.maxAllowedValue !== null) {
-                <span class="tag-badge tag-badge--info">{{ row.maxAllowedValue }}</span>
-              } @else {
-                <span class="tag-badge tag-badge--danger">Formula error</span>
               }
-            </td>
+            } @else {
+              <p class="muted-text mb-0">No pending stat changes.</p>
+            }
+          </div>
 
-            <td>
-              <div class="flex-row-start-center gap-sm">
-                <p-button
-                  icon="pi pi-minus"
-                  [text]="true"
-                  severity="secondary"
-                  [rounded]="true"
-                  [disabled]="!row.canDecrease || page.isSaving()"
-                  (onClick)="page.decrementStat(row.key)"
-                />
-                <p-button
-                  icon="pi pi-plus"
-                  [rounded]="true"
-                  [disabled]="!row.canIncrease || page.isSaving()"
-                  (onClick)="page.incrementStat(row.key)"
-                />
+          <div class="flex-col gap-sm mb-lg">
+            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+              <span class="color-muted small-caps uppercase text-xs">Total cost</span>
+              @if (page.spentCharacterPoints() !== null) {
+                <strong class="color-heading text-md">{{ page.spentCharacterPoints() }} CP</strong>
+              } @else {
+                <strong class="error-text text-md">Unavailable</strong>
+              }
+            </div>
+            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+              <span class="color-muted small-caps uppercase text-xs">Remaining</span>
+              @if (page.remainingCharacterPoints() !== null) {
+                <strong [class]="page.remainingCharacterPoints()! >= 0 ? 'success-text text-md' : 'error-text text-md'">
+                  {{ page.remainingCharacterPoints() }} CP
+                </strong>
+              } @else {
+                <strong class="error-text text-md">Unavailable</strong>
+              }
+            </div>
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            <p-button
+              label="Save allocation"
+              [loading]="page.isSaving()"
+              [disabled]="page.isSaving() || !page.canSaveDraft()"
+              (onClick)="page.saveDraft()"
+            />
+            <p-button
+              label="Reset draft"
+              [text]="true"
+              [disabled]="!page.hasPendingChanges() || page.isSaving()"
+              (onClick)="page.resetDraft()"
+            />
+          </div>
+        </section>
+
+        <section class="mg-card p-lg w-100">
+          <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+            <div class="flex-col gap-xs">
+              <h3 class="color-heading text-lg mb-0">Derived preview</h3>
+              <p class="muted-text mb-0">
+                Current runtime preview for equipped items, active bonuses and hero state.
+                Draft-based derived deltas are not shown on this screen yet.
+              </p>
+            </div>
+            <span class="tag-badge tag-badge--info">Current preview only</span>
+          </div>
+
+          @if (page.runtimeStatsError(); as runtimeStatsError) {
+            <p class="warn-text mb-0">{{ runtimeStatsError }}</p>
+          }
+
+          <div class="flex-col gap-sm">
+            @for (row of page.derivedStatRows(); track row.key) {
+              <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+                <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>
+                @if (row.value !== null && row.value !== "") {
+                  <strong [class]="row.valueClass">
+                    @for (part of row.parts; track $index) {
+                      <span [class]="part.className">{{ part.text }}</span>
+                    }
+                  </strong>
+                }
               </div>
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </section>
+            } @empty {
+              @if (!page.runtimeStatsError()) {
+                <p class="muted-text mb-0">Derived preview is not available for this hero yet.</p>
+              }
+            }
+          </div>
+        </section>
+      </aside>
+    </div>
   </div>
 }
-

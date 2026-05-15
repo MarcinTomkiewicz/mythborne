@@ -24,15 +24,15 @@
   <app-luck-lab-explanation-list [rows]="explanationRows()" />
 
   <div class="grid-3 gap-md">
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="card-legend">Selected bucket</span>
       <strong>Bucket profile override: {{ section.selectedBucketLabel() }}</strong>
     </div>
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="card-legend">Maximum quality</span>
       <strong>Maximum quality override: {{ section.selectedMaxQualityLabel() }}</strong>
     </div>
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="card-legend">Roll count</span>
       <strong>Roll count: {{ section.summary().sampleSize }}</strong>
       <span>Simulation workload is owned by the DB preview RPC.</span>
@@ -41,19 +41,19 @@
 
   @if (section.summary().status === 'available') {
     <div class="grid-3 gap-md">
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">Current Luck</span>
         <strong>Current Luck: {{ section.summary().current?.luckValue ?? 'N/A' }}</strong>
         <span>Current Luck influence: {{ section.summary().current?.luckInfluence ?? 'N/A' }}</span>
       </article>
 
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">Luck 0 comparison</span>
         <strong>Compare Luck: {{ section.summary().comparison?.luckValue ?? 'N/A' }}</strong>
         <span>Compare Luck influence: {{ section.summary().comparison?.luckInfluence ?? 'N/A' }}</span>
       </article>
 
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">Average delta</span>
         <strong>
           Average delta: {{ section.valueText(section.summary().averageDelta, 'drachma') }}
@@ -120,7 +120,7 @@
     }
 
     <div class="grid-2 gap-md">
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">Bucket distribution</span>
         <p-table [value]="section.summary().bucketRows" styleClass="p-datatable-sm">
           <ng-template pTemplate="header">
@@ -140,7 +140,7 @@
         </p-table>
       </article>
 
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">Quality distribution</span>
         <p-table [value]="section.summary().qualityRows" styleClass="p-datatable-sm">
           <ng-template pTemplate="header">
@@ -162,7 +162,7 @@
     </div>
 
     <div class="grid-2 gap-md">
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">Compare bucket distribution</span>
         <p-table [value]="section.summary().compareBucketRows" styleClass="p-datatable-sm">
           <ng-template pTemplate="header">
@@ -182,7 +182,7 @@
         </p-table>
       </article>
 
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">Compare quality distribution</span>
         <p-table [value]="section.summary().compareQualityRows" styleClass="p-datatable-sm">
           <ng-template pTemplate="header">

@@ -3767,6 +3767,8 @@ Zbudować Statistics/Hero stats page jako player-facing ekran rozdawania base st
 - local SCSS added:
 - not added intentionally:
 
+**Status:** Accepted on 2026-05-15. `/hero/attributes` is the accepted UI-HERO-1 base-stat allocation screen: it uses the wide game-shell content path, a dashboard-aligned header with one summary card, compact stat allocation rows, an `Allocation draft` panel using the same divider-row pattern as the header/derived preview, and a current-only derived preview. Save/reset/cap/cost/no-Character-Points behavior remains on the canonical stat allocation workflow. `AttributeAllocationPageFacade` was reduced and cleaned after review, base stat definition/value mapping is centralized in `mapBaseStatSnapshots(...)`, and combat now reuses the same mapper for base stat entries. Verification accepted by the user: focused allocation and combat specs passed, `npx tsc --noEmit` passed, `npm run build` passed with existing budget/CommonJS warnings, and manual smoke was user-side. Copy/i18n polish remains a non-blocking later pass.
+
 ## UI-HERO-2 — Derived stat delta preview
 
 **Goal:**  

@@ -91,3 +91,21 @@
   cursor: not-allowed;
   opacity: 0.45;
 }
+
+.mg-compact-icon-button.p-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0;
+  border-radius: v.$radius-sm;
+  border-color: color-mix(in srgb, v.$color-shell-border 72%, v.$color-text-muted);
+  line-height: 1;
+}
+
+.mg-compact-icon-button.p-button .p-button-icon {
+  font-size: 0.75rem;
+}

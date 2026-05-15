@@ -82,7 +82,7 @@
           @for (candidate of page.candidateSearch.candidates(); track candidate.userId) {
             <article
               class="mg-card flex-col gap-sm p-md"
-              [class.mg-surface-card]="page.candidateSearch.selectedCandidate()?.userId === candidate.userId"
+              [class.mg-card]="page.candidateSearch.selectedCandidate()?.userId === candidate.userId"
             >
               <div class="flex-row-between-center flex-wrap gap-sm">
                 <div class="flex-col gap-xs min-w-0">
@@ -148,7 +148,7 @@
         </div>
 
         @if (page.candidateSearch.selectedCandidate(); as candidate) {
-          <div class="mg-surface-card flex-col gap-xs p-md">
+          <div class="mg-card flex-col gap-xs p-md">
             <strong class="heading-color">{{ candidate.displayName }}</strong>
             <span class="muted-text">{{ candidate.email }}</span>
             <span class="muted-text">{{ candidate.eligibilityMessage }}</span>

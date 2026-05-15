@@ -22,37 +22,37 @@
 
   @if (page.trialPower(); as trialPower) {
     <div class="grid-4 gap-md">
-      <div class="mg-surface-card p-md flex-col gap-xs">
+      <div class="mg-card p-md flex-col gap-xs">
         <span class="card-legend">Tested stat</span>
         <strong>Tested stat: {{ trialPower.testedStatValue }}</strong>
       </div>
-      <div class="mg-surface-card p-md flex-col gap-xs">
+      <div class="mg-card p-md flex-col gap-xs">
         <span class="card-legend">Raw Luck</span>
         <strong>Raw Luck: {{ trialPower.luckValue }}</strong>
       </div>
-      <div class="mg-surface-card p-md flex-col gap-xs">
+      <div class="mg-card p-md flex-col gap-xs">
         <span class="card-legend">Luck influence</span>
         <strong>Luck influence: {{ trialPower.luckInfluence }}</strong>
       </div>
-      <div class="mg-surface-card p-md flex-col gap-xs">
+      <div class="mg-card p-md flex-col gap-xs">
         <span class="card-legend">Trial Power</span>
         <strong>Trial Power: {{ trialPower.trialPower }}</strong>
       </div>
     </div>
 
-    <div class="mg-surface-card p-md flex-col gap-sm">
+    <div class="mg-card p-md flex-col gap-sm">
       <span class="card-legend">Equation</span>
       <strong>{{ page.trialPowerEquation() }}</strong>
       <span>{{ trialPower.explanation }}</span>
     </div>
 
     <div class="grid-2 gap-md">
-      <div class="mg-surface-card p-md flex-col gap-xs">
+      <div class="mg-card p-md flex-col gap-xs">
         <span class="card-legend">Luck influence formula</span>
         <strong>{{ trialPower.luckInfluenceFormula?.formulaKey ?? 'Not returned' }}</strong>
         <span>{{ trialPower.luckInfluenceFormula?.formulaExpression ?? 'No DB expression returned.' }}</span>
       </div>
-      <div class="mg-surface-card p-md flex-col gap-xs">
+      <div class="mg-card p-md flex-col gap-xs">
         <span class="card-legend">Trial Power formula</span>
         <strong>{{ trialPower.trialPowerFormula?.formulaKey ?? 'Not returned' }}</strong>
         <span>{{ trialPower.trialPowerFormula?.formulaExpression ?? 'No DB expression returned.' }}</span>

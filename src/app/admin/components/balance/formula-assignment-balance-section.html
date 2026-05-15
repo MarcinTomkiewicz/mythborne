@@ -16,13 +16,13 @@
     />
   </div>
 
-  <form [formGroup]="page.formulas.assignmentForm" class="mg-surface-card flex-col gap-md p-lg">
+  <form [formGroup]="page.formulas.assignmentForm" class="mg-card flex-col gap-md p-lg">
     <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
       <app-form-fields [form]="page.formulas.assignmentForm" [fields]="fields()" />
     </div>
 
     @if (page.formulas.selectedTarget(); as target) {
-      <div class="mg-surface-card flex-col gap-md p-md">
+      <div class="mg-card flex-col gap-md p-md">
         <p class="card-legend mb-0">Target details</p>
         <p class="mb-0 muted-text">{{ target.description }}</p>
         <div class="flex-row-start-center flex-wrap gap-sm">
@@ -61,7 +61,7 @@
 
           <div class="flex-col gap-md">
             @for (variable of page.formulas.selectedTargetVariablesDraft(); track $index) {
-              <div class="mg-surface-card flex-col gap-md p-md">
+              <div class="mg-card flex-col gap-md p-md">
                 <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100 align-items-center">
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Variable key</span>
