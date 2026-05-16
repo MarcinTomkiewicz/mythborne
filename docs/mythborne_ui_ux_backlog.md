@@ -4005,15 +4005,17 @@ Zbudować Armory overview pokazujące wyposażenie bohatera oraz listę posiadan
 - local SCSS added:
 - not added intentionally:
 
+**Status:** Accepted on 2026-05-16. `/game/armory` now uses the shared dashboard equipment preview path for equipped items, with the Armory page host following the accepted full-width host pattern. The inventory surface shows visible/owned count, capacity and hidden count clearly, renders shelves from highest position down with Unsorted last, and uses the same order for move targets. Item cards preserve name/status/guild context, drachma value on a separate line, Details popover entry, equip, bulk equip, move, vendor and guild restriction behavior. Full requirements remain available through the existing Details popover/detail contract; always-visible list-card requirement/type/slot summaries are a future read-model enhancement, not a blocker. No fake item semantics, direct DB writes, generated type changes or player-facing admin links were added. Manual visual smoke was user-side accepted.
+
 ## UI-ITEMS-2 — Stands sorting UI
 
 **Goal:**  
-Dodać stands as armory organization/visibility priority UI: stand 10 has highest visibility priority, stand 1 is default/lowest.
+Dodać stands as armory organization/visibility priority UI: stand 10 has highest visibility priority, stand 0 is default/lowest.
 
 **Scope:**
 - 10 stands visible,
-- default stand = 1,
-- display item groups from stand 10 down to stand 1,
+- default stand = 0,
+- display item groups from stand 10 down to stand 0,
 - empty stands visibly present,
 - item assignment/stand movement UI if backend/state exists,
 - optional drag/drop as UX enhancement only if safe,

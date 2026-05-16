@@ -8,14 +8,15 @@ import {
   EquippedItemSummary,
   ItemLifecycleStatus,
 } from '../../../core/domain/item/item-equipment.model';
-import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { mapEquipmentPreviewRows } from '../../../core/domain/equipment/equipment-preview.mapper';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
+import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-preview';
 import { ArmoryItemDetailPopover } from '../../components/armory-item-detail-popover/armory-item-detail-popover';
 import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
 import {
@@ -28,11 +29,11 @@ import {
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    RouterLink,
     ButtonModule,
     CheckboxModule,
     InputTextModule,
     SelectModule,
+    EquipmentPreview,
     ArmoryItemDetailPopover,
     LoadoutPresetManagement,
   ],
@@ -43,21 +44,30 @@ import {
     ArmoryGuildItemUsageState,
   ],
   templateUrl: './armory-page.html',
+  host: { class: 'd-block w-100' },
 })
 export class ArmoryPage implements OnInit {
   readonly page = inject(ArmoryPageFacade);
   readonly equipment = inject(CurrentEquipmentState);
   readonly armory = inject(ArmoryShelfState);
   readonly guildItemUsageState = inject(ArmoryGuildItemUsageState);
-  readonly paperdollSlots = computed(() =>
-    this.page.equipmentSlots().map((slot) => ({
-      slotKey: slot.slotKey,
-      label: slot.label,
-      item: this.equipment.slot(slot.slotKey),
-    })),
+  readonly equipmentPreviewRows = computed(() =>
+    mapEquipmentPreviewRows(
+      this.page.equipmentSlots(),
+      this.equipment.slots(),
+    ),
+  );
+  readonly displayShelves = computed(() =>
+    [...this.armory.shelves()].sort((left, right) => {
+      if (left.isUnsortedDropArea !== right.isUnsortedDropArea) {
+        return left.isUnsortedDropArea ? 1 : -1;
+      }
+
+      return right.position - left.position;
+    }),
   );
   readonly moveTargetShelves = computed(() =>
-    this.armory.shelves().map((shelf) => ({
+    this.displayShelves().map((shelf) => ({
       position: shelf.position,
       label: shelf.isUnsortedDropArea
         ? this.shelfLabel(shelf)
@@ -87,15 +97,6 @@ export class ArmoryPage implements OnInit {
     this.equipment.load();
     this.armory.load();
     this.guildItemUsageState.load();
-  }
-
-  itemLayerLabel(item: EquippedItemSummary): string {
-    return [
-      item.qualityLabel,
-      item.baseName,
-      item.prefixName,
-      item.suffixName,
-    ].filter(Boolean).join(' - ') || 'No item layers recorded';
   }
 
   itemStatusLabel(item: EquippedItemSummary): string {

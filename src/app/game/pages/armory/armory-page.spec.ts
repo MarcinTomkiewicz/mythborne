@@ -27,6 +27,7 @@ import {
   ArmoryGuildItemUsageState,
   ArmoryGuildItemUsage,
 } from './armory-guild-item-usage.state';
+import { EquipmentPreviewSlotRow } from '../../../core/domain/equipment/equipment-preview.model';
 
 describe('ArmoryPage', () => {
   let fixture: ComponentFixture<ArmoryPage>;
@@ -52,6 +53,7 @@ describe('ArmoryPage', () => {
             CheckboxModule,
             InputTextModule,
             SelectModule,
+            MockEquipmentPreview,
             MockArmoryItemDetailPopover,
             MockLoadoutPresetManagement,
           ],
@@ -76,7 +78,7 @@ describe('ArmoryPage', () => {
     expect(guildItemUsage.load).toHaveBeenCalled();
   });
 
-  it('renders all paperdoll slots with empty slot copy', () => {
+  it('renders dashboard equipment preview rows with empty slot copy', () => {
     page.equipmentSlots.set([
       equipmentSlot({ slotKey: 'main_hand', label: 'Main hand', sortOrder: 10 }),
       equipmentSlot({ slotKey: 'off_hand', label: 'Off hand', sortOrder: 20 }),
@@ -104,7 +106,7 @@ describe('ArmoryPage', () => {
     expect(text).toContain('No item equipped');
   });
 
-  it('renders equipped item layers and active lifecycle status', () => {
+  it('renders equipped item name and active lifecycle status', () => {
     page.equipmentSlots.set([
       equipmentSlot({ slotKey: 'main_hand', label: 'Blade slot', sortOrder: 30 }),
     ]);
@@ -124,7 +126,6 @@ describe('ArmoryPage', () => {
 
     expect(text).toContain('Fine Bronze Blade');
     expect(text).toContain('Blade slot');
-    expect(text).toContain('Fine - Bronze blade - Dawn - Guard');
     expect(text).toContain('Active');
   });
 
@@ -230,7 +231,48 @@ describe('ArmoryPage', () => {
     expect(text).toContain('Fresh Drop Blade');
     expect(text).toContain('Shelf Sword');
     expect(text).toContain('2 / 5 visible');
-    expect(text).toContain('3 stored beyond visible range');
+    expect(text).toContain('Capacity 0');
+    expect(text).toContain('3 hidden');
+  });
+
+  it('renders visible shelves from highest position down with unsorted last', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 0,
+        name: 'Unsorted',
+        isUnsortedDropArea: true,
+      }),
+      armoryShelf({ position: 1, name: 'Shelf One' }),
+      armoryShelf({ position: 10, name: 'Shelf Ten' }),
+      armoryShelf({ position: 7, name: 'Shelf Seven' }),
+    ]);
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text.indexOf('Shelf Ten')).toBeLessThan(text.indexOf('Shelf Seven'));
+    expect(text.indexOf('Shelf Seven')).toBeLessThan(text.indexOf('Shelf One'));
+    expect(text.indexOf('Shelf One')).toBeLessThan(text.indexOf('Unsorted'));
+    expect(fixture.componentInstance.moveTargetShelves().map((shelf) =>
+      shelf.position,
+    )).toEqual([10, 7, 1, 0]);
+  });
+
+  it('uses full-width armory host and dashboard equipment preview invocation', () => {
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const preview = (fixture.nativeElement as HTMLElement)
+      .querySelector('app-equipment-preview');
+
+    expect(host.classList).toContain('w-100');
+    expect(preview?.classList).toContain('d-block');
+    expect(preview?.classList).toContain('w-100');
+  });
+
+  it('does not render admin links in the player-facing armory header', () => {
+    const text = textContent(fixture);
+
+    expect(text).not.toContain('Admin item catalog');
+    expect(text).not.toContain('Admin balance');
   });
 
   it('does not expose rename action for unsorted position zero', () => {
@@ -535,7 +577,7 @@ describe('ArmoryPage', () => {
       .querySelector('p-select[aria-label="Equip item slot"]')).toBeNull();
   });
 
-  it('calls unequip for the selected paperdoll slot and refreshes armory after response', () => {
+  it('calls unequip for the selected equipped slot and refreshes armory after response', () => {
     page.equipmentSlots.set([
       equipmentSlot({ slotKey: 'armor', label: 'Pancerz' }),
     ]);
@@ -750,7 +792,7 @@ describe('ArmoryPage', () => {
     fixture.detectChanges();
     const text = textContent(fixture);
 
-    expect(text).toContain('Limit 123');
+    expect(text).toContain('Capacity 123');
     expect(text).not.toContain('Limit 30');
     expect(text).not.toContain('Limit 35');
   });
@@ -861,6 +903,49 @@ class FakeArmoryGuildItemUsageState {
   template: '<section>Loadout presets</section>',
 })
 class MockLoadoutPresetManagement {}
+
+@Component({
+  selector: 'app-equipment-preview',
+  standalone: true,
+  template: `
+    <section>
+      @for (row of rows(); track row.slotKey) {
+        <article>
+          <span>{{ row.label }}</span>
+          <span>{{ row.slotKey }}</span>
+          @if (row.item; as item) {
+            <strong>{{ item.name }}</strong>
+            @if (item.metadata) {
+              <span>{{ item.metadata }}</span>
+            }
+          } @else {
+            <strong>Empty slot</strong>
+            <span>No item equipped</span>
+          }
+        </article>
+      }
+      @if (isLoading()) {
+        <span>Loading</span>
+      }
+      @if (isUnavailable()) {
+        <span>Unavailable</span>
+      }
+      @if (error()) {
+        <span>{{ error() }}</span>
+      }
+    </section>
+  `,
+})
+class MockEquipmentPreview {
+  readonly rows = input.required<EquipmentPreviewSlotRow[]>();
+  readonly isArmory = input(false);
+  readonly isLoading = input(false);
+  readonly isUnavailable = input(false);
+  readonly error = input<string | null>(null);
+  readonly compact = input(false);
+  readonly showSlotLabels = input(true);
+  readonly armoryLink = input('/game/armory');
+}
 
 @Component({
   selector: 'app-armory-item-detail-popover',

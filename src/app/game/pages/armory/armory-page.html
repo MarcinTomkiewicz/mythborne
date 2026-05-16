@@ -2,162 +2,210 @@
   <section class="mg-card p-lg w-100">
     <div class="flex-row-between-center flex-col-sm gap-md">
       <div class="flex-col gap-xs">
+        <p class="card-legend mb-0">Game</p>
         <h2 class="mg-section__title mg-section__title--sm mb-0">Armory</h2>
         <p class="muted-text mb-0">
-          Ekwipunek, crafting, jakość przedmiotów i generowanie dropów należą do warstwy gry.
+          Equipment and visible inventory for the active hero.
         </p>
       </div>
 
       <div class="flex-row-start-center flex-wrap gap-sm">
-        <span class="tag-badge tag-badge--info">Hero luck: {{ page.heroLuck() }}</span>
-        <a routerLink="/admin/item-catalog" class="tag-badge tag-badge--muted">
-          Admin item catalog
-        </a>
-        <a routerLink="/admin/balance" class="tag-badge tag-badge--muted">
-          Admin balance
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <app-loadout-preset-management />
-
-  <section class="mg-card p-lg w-100">
-    <div class="flex-row-between-center flex-col-sm gap-md mb-md">
-      <div class="flex-col gap-xs">
-        <p class="card-legend mb-0">Equipment</p>
-        <h3 class="mg-section__title mg-section__title--xs mb-0">Current loadout</h3>
-      </div>
-
-      <div class="flex-row-start-center flex-wrap gap-sm">
-        @if (equipment.isLoading()) {
-          <span class="tag-badge tag-badge--muted">Loading</span>
-        } @else if (equipment.isEmpty()) {
-          <span class="tag-badge tag-badge--muted">Empty loadout</span>
-        } @else if (equipment.status() === 'loaded') {
-          <span class="tag-badge tag-badge--info">
-            {{ equipment.slots().length }} equipped
-          </span>
-        } @else if (equipment.status() === 'error') {
-          <span class="tag-badge tag-badge--warn">Unavailable</span>
-        }
-      </div>
-    </div>
-
-    @if (equipment.error()) {
-      <p class="status-text-warning mb-md">{{ equipment.error() }}</p>
-    }
-    @if (equipment.actionError()) {
-      <p class="status-text-warning mb-md">{{ equipment.actionError() }}</p>
-    }
-    @if (equipment.actionJournal(); as journal) {
-      <div class="mg-card p-md flex-col gap-sm mb-md">
-        <div class="flex-row-between-center gap-sm">
-          <strong class="heading-color">Equipment result</strong>
-          @if (journal.success) {
-            <span class="tag-badge tag-badge--success">Accepted</span>
-          } @else {
-            <span class="tag-badge tag-badge--warn">Failed</span>
-          }
-        </div>
-        @for (entry of equipmentJournalEntries('equipped'); track $index) {
-          <p class="mb-0">Equipped: {{ operationMessage(entry) }}</p>
-        }
-        @for (entry of equipmentJournalEntries('shifted'); track $index) {
-          <p class="mb-0">Shifted: {{ operationMessage(entry) }}</p>
-        }
-        @for (entry of equipmentJournalEntries('unequipped'); track $index) {
-          <p class="mb-0">Unequipped: {{ operationMessage(entry) }}</p>
-        }
-        @for (entry of equipmentJournalEntries('failed'); track $index) {
-          <p class="status-text-warning mb-0">
-            Failed: {{ operationMessage(entry) }}
-          </p>
-        }
-        @for (entry of equipmentJournalEntries('skipped'); track $index) {
-          <p class="mb-0">Skipped: {{ operationMessage(entry) }}</p>
-        }
-        @if (journal.finalEquipment; as finalEquipment) {
-          <div class="flex-col gap-xs">
-            <strong class="heading-color">Final equipment</strong>
-            @if (finalEquipment.slots.length) {
-              @for (slot of finalEquipment.slots; track slot.slotKey) {
-                <p class="mb-0">{{ slot.slotLabel }}: {{ slot.itemName }}</p>
-              }
-            } @else {
-              <p class="muted-text mb-0">No equipped items returned.</p>
-            }
-          </div>
-        }
-      </div>
-    }
-
-    <div class="mg-grid grid-cols-3 grid-cols-2-md grid-cols-1-sm gap-md">
-      @for (slot of paperdollSlots(); track slot.slotKey) {
-        <article class="mg-card p-md flex-col gap-sm">
-          <div class="flex-row-between-center gap-sm">
-            <strong class="heading-color">{{ slot.label }}</strong>
-            <span class="tag-badge tag-badge--muted">{{ slot.slotKey }}</span>
-          </div>
-
-          @if (slot.item; as item) {
-            <div class="flex-col gap-xs">
-              <strong>{{ item.itemName }}</strong>
-              <span class="muted-text">{{ itemLayerLabel(item) }}</span>
-              <span [class]="itemStatusClass(item)">
-                {{ itemStatusLabel(item) }}
-              </span>
-              <app-armory-item-detail-popover [item]="item" />
-              <p-button
-                type="button"
-                severity="secondary"
-                size="small"
-                label="Unequip"
-                [disabled]="equipment.isMutating()"
-                (onClick)="unequipSlot(slot.slotKey)"
-              />
-            </div>
-          } @else {
-            <div class="flex-col gap-xs">
-              <strong>Empty slot</strong>
-              <span class="muted-text">No item equipped</span>
-            </div>
-          }
-        </article>
-      }
-    </div>
-  </section>
-
-  <section class="mg-card p-lg w-100">
-    <div class="flex-row-between-center flex-col-sm gap-md mb-md">
-      <div class="flex-col gap-xs">
-        <p class="card-legend mb-0">Armory shelves</p>
-        <h3 class="mg-section__title mg-section__title--xs mb-0">Visible items</h3>
-      </div>
-
-      <div class="flex-row-start-center flex-wrap gap-sm">
-        @if (armory.isLoading()) {
-          <span class="tag-badge tag-badge--muted">Loading</span>
-        } @else if (armory.status() === 'error') {
-          <span class="tag-badge tag-badge--warn">Unavailable</span>
-        } @else if (armory.visibility(); as visibility) {
+        @if (armory.visibility(); as visibility) {
           <span class="tag-badge tag-badge--info">
             {{ visibility.visibleItemCount }} / {{ visibility.totalOwnedItemCount }} visible
           </span>
           <span class="tag-badge tag-badge--muted">
-            Limit {{ visibility.visibilityLimit }}
+            Capacity {{ visibility.visibilityLimit }}
           </span>
           @if (visibility.hiddenItemCount > 0) {
             <span class="tag-badge tag-badge--muted">
-              {{ visibility.hiddenItemCount }} stored beyond visible range
+              {{ visibility.hiddenItemCount }} hidden
             </span>
           }
         }
-        @if (selectedBulkItems().length > 0) {
-          <span class="tag-badge tag-badge--info">
-            {{ selectedBulkItems().length }} selected
-          </span>
+        <span class="tag-badge tag-badge--info">Hero luck: {{ page.heroLuck() }}</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="mg-grid grid-cols-2 grid-cols-1-lg gap-lg">
+    <section class="flex-col gap-md min-w-0">
+      <app-equipment-preview
+        class="d-block w-100"
+        [rows]="equipmentPreviewRows()"
+        [isArmory]="false"
+        [isLoading]="equipment.isLoading()"
+        [isUnavailable]="equipment.status() === 'error'"
+        [error]="equipment.error()"
+        [compact]="true"
+        [showSlotLabels]="false"
+        armoryLink="/game/armory"
+      />
+
+      <section class="mg-card p-lg w-100">
+        <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+          <div class="flex-col gap-xs">
+            <p class="card-legend mb-0">Equipment actions</p>
+            <h3 class="mg-section__title mg-section__title--xs mb-0">Current loadout</h3>
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            @if (equipment.isLoading()) {
+              <span class="tag-badge tag-badge--muted">Loading</span>
+            } @else if (equipment.isEmpty()) {
+              <span class="tag-badge tag-badge--muted">Empty loadout</span>
+            } @else if (equipment.status() === 'loaded') {
+              <span class="tag-badge tag-badge--info">
+                {{ equipment.slots().length }} equipped
+              </span>
+            } @else if (equipment.status() === 'error') {
+              <span class="tag-badge tag-badge--warn">Unavailable</span>
+            }
+          </div>
+        </div>
+
+        @if (equipment.error()) {
+          <p class="status-text-warning mb-md">{{ equipment.error() }}</p>
         }
+        @if (equipment.actionError()) {
+          <p class="status-text-warning mb-md">{{ equipment.actionError() }}</p>
+        }
+        @if (equipment.actionJournal(); as journal) {
+          <div class="mg-card p-md flex-col gap-sm mb-md">
+            <div class="flex-row-between-center gap-sm">
+              <strong class="heading-color">Equipment result</strong>
+              @if (journal.success) {
+                <span class="tag-badge tag-badge--success">Accepted</span>
+              } @else {
+                <span class="tag-badge tag-badge--warn">Failed</span>
+              }
+            </div>
+            @for (entry of equipmentJournalEntries('equipped'); track $index) {
+              <p class="mb-0">Equipped: {{ operationMessage(entry) }}</p>
+            }
+            @for (entry of equipmentJournalEntries('shifted'); track $index) {
+              <p class="mb-0">Shifted: {{ operationMessage(entry) }}</p>
+            }
+            @for (entry of equipmentJournalEntries('unequipped'); track $index) {
+              <p class="mb-0">Unequipped: {{ operationMessage(entry) }}</p>
+            }
+            @for (entry of equipmentJournalEntries('failed'); track $index) {
+              <p class="status-text-warning mb-0">
+                Failed: {{ operationMessage(entry) }}
+              </p>
+            }
+            @for (entry of equipmentJournalEntries('skipped'); track $index) {
+              <p class="mb-0">Skipped: {{ operationMessage(entry) }}</p>
+            }
+            @if (journal.finalEquipment; as finalEquipment) {
+              <div class="flex-col gap-xs">
+                <strong class="heading-color">Final equipment</strong>
+                @if (finalEquipment.slots.length) {
+                  @for (slot of finalEquipment.slots; track slot.slotKey) {
+                    <p class="mb-0">{{ slot.slotLabel }}: {{ slot.itemName }}</p>
+                  }
+                } @else {
+                  <p class="muted-text mb-0">No equipped items returned.</p>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        @if (equipment.slots().length) {
+          <div class="flex-col gap-sm">
+            @for (item of equipment.slots(); track item.slotKey) {
+              <div class="flex-row-between-center flex-col-sm gap-sm w-100 border-bottom pb-xs">
+                <div class="flex-col gap-xs min-w-0">
+                  <span class="color-muted text-xs small-caps uppercase">{{ item.slotLabel }}</span>
+                  <strong class="color-heading">{{ item.itemName }}</strong>
+                </div>
+
+                <div class="flex-row-start-center flex-wrap gap-xs">
+                  <span [class]="itemStatusClass(item)">
+                    {{ itemStatusLabel(item) }}
+                  </span>
+                  <app-armory-item-detail-popover [item]="item" />
+                  <p-button
+                    type="button"
+                    severity="secondary"
+                    size="small"
+                    label="Unequip"
+                    [disabled]="equipment.isMutating()"
+                    (onClick)="unequipSlot(item.slotKey)"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (!equipment.isLoading()) {
+          <p class="muted-text mb-0">No equipped items available for actions.</p>
+        }
+      </section>
+
+      <app-loadout-preset-management />
+    </section>
+
+    <section class="mg-card p-lg w-100 min-w-0">
+      <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+        <div class="flex-col gap-xs">
+          <p class="card-legend mb-0">Inventory</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Visible armory</h3>
+          @if (armory.visibility()) {
+            <p class="muted-text mb-0">
+              Armory visibility is capped by the current estate capacity.
+            </p>
+          }
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          @if (armory.isLoading()) {
+            <span class="tag-badge tag-badge--muted">Loading</span>
+          } @else if (armory.status() === 'error') {
+            <span class="tag-badge tag-badge--warn">Unavailable</span>
+          } @else if (armory.visibility(); as visibility) {
+            <span class="tag-badge tag-badge--info">
+              {{ visibility.visibleItemCount }} / {{ visibility.totalOwnedItemCount }} visible
+            </span>
+            <span class="tag-badge tag-badge--muted">
+              Capacity {{ visibility.visibilityLimit }}
+            </span>
+            @if (visibility.hiddenItemCount > 0) {
+              <span class="tag-badge tag-badge--muted">
+                {{ visibility.hiddenItemCount }} hidden
+              </span>
+            }
+          }
+        </div>
+      </div>
+
+      @if (armory.visibility(); as visibility) {
+        <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-sm mb-md">
+          <div class="mg-card p-sm flex-col gap-xs">
+            <span class="muted-text">Owned items</span>
+            <strong class="heading-color">{{ visibility.totalOwnedItemCount }}</strong>
+          </div>
+          <div class="mg-card p-sm flex-col gap-xs">
+            <span class="muted-text">Visible capacity</span>
+            <strong class="heading-color">{{ visibility.visibilityLimit }}</strong>
+          </div>
+          <div class="mg-card p-sm flex-col gap-xs">
+            <span class="muted-text">Hidden</span>
+            <strong class="heading-color">{{ visibility.hiddenItemCount }}</strong>
+          </div>
+        </div>
+      }
+
+      <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          @if (selectedBulkItems().length > 0) {
+            <span class="tag-badge tag-badge--info">
+              {{ selectedBulkItems().length }} selected
+            </span>
+          } @else {
+            <span class="tag-badge tag-badge--muted">No bulk selection</span>
+          }
+        </div>
         <p-button
           type="button"
           severity="secondary"
@@ -167,165 +215,179 @@
           (onClick)="bulkEquipSelectedItems()"
         />
       </div>
-    </div>
 
-    @if (armory.error()) {
-      <p class="status-text-warning mb-md">{{ armory.error() }}</p>
-    }
-    @if (guildItemUsageState.error()) {
-      <p class="status-text-warning mb-md">
-        {{ guildItemUsageState.error() }} Private item actions are hidden until guild armory item state is available.
-      </p>
-    }
-    @if (armory.actionError()) {
-      <p class="status-text-warning mb-md">{{ armory.actionError() }}</p>
-    }
-    @if (armory.actionMessage()) {
-      <p class="status-text-success mb-md">{{ armory.actionMessage() }}</p>
-    }
+      @if (armory.error()) {
+        <p class="status-text-warning mb-md">{{ armory.error() }}</p>
+      }
+      @if (guildItemUsageState.error()) {
+        <p class="status-text-warning mb-md">
+          {{ guildItemUsageState.error() }} Private item actions are hidden until guild armory item state is available.
+        </p>
+      }
+      @if (armory.actionError()) {
+        <p class="status-text-warning mb-md">{{ armory.actionError() }}</p>
+      }
+      @if (armory.actionMessage()) {
+        <p class="status-text-success mb-md">{{ armory.actionMessage() }}</p>
+      }
 
-    @if (armory.visibility()) {
-      <p class="muted-text mb-md">
-        Armory visibility is capped by the current estate capacity. Items outside
-        the visible range still exist in the database and are not shown here.
-      </p>
-    }
+      <div class="flex-col gap-md">
+        @for (shelf of displayShelves(); track shelf.position) {
+          <section class="flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm border-bottom pb-xs">
+              <div class="flex-col gap-xs min-w-0">
+                <strong class="heading-color">{{ shelfLabel(shelf) }}</strong>
+                <span class="muted-text">
+                  @if (shelf.isUnsortedDropArea) {
+                    Position 0
+                  } @else {
+                    Shelf {{ shelf.position }}
+                  }
+                </span>
+              </div>
 
-    <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
-      @for (shelf of armory.shelves(); track shelf.position) {
-        <article class="mg-card p-md flex-col gap-sm">
-          <div class="flex-row-between-center gap-sm">
-            <div class="flex-col gap-xs">
-              <strong class="heading-color">{{ shelfLabel(shelf) }}</strong>
-              <span class="muted-text">
-                @if (shelf.isUnsortedDropArea) {
-                  Position 0
-                } @else {
-                  Shelf {{ shelf.position }}
-                }
-              </span>
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                <span class="tag-badge tag-badge--muted">
+                  {{ shelf.visibleItems.length }} visible
+                </span>
+              </div>
             </div>
-            <span class="tag-badge tag-badge--muted">
-              {{ shelf.visibleItems.length }} visible
-            </span>
-          </div>
-          @if (!shelf.isUnsortedDropArea) {
-            <div class="flex-row-start-center flex-col-sm gap-xs">
-              <input
-                #shelfName
-                pInputText
-                class="w-100"
-                type="text"
-                [value]="shelf.name"
-                aria-label="Shelf name"
-              />
-              <p-button
-                type="button"
-                severity="secondary"
-                label="Rename"
-                [disabled]="armory.isMutating()"
-                (onClick)="renameShelf(shelf, shelfName.value)"
-              />
-            </div>
-          }
 
-          @if (shelf.visibleItems.length) {
-            <div class="flex-col gap-sm">
-              @for (item of shelf.visibleItems; track item.itemId) {
-                @let guildUsage = guildItemUsage(item);
-                <div class="mg-card p-sm flex-col gap-xs">
-                  <div class="flex-row-between-center flex-col-sm gap-xs">
-                    <strong>{{ item.name }}</strong>
-                    <div class="flex-row-start-center flex-wrap gap-xs">
-                      <span [class]="armoryItemStatusClass(item)">
-                        {{ armoryItemStatusLabel(item) }}
-                      </span>
-                      <span
-                        class="tag-badge"
-                        [class.tag-badge--info]="guildUsage.key === 'owned_private'"
-                        [class.tag-badge--warn]="guildUsage.key === 'deposited_in_guild_armory' || guildUsage.key === 'borrowed_by_guild_member'"
-                        [class.tag-badge--success]="guildUsage.key === 'borrowed_from_guild_armory'"
-                        [class.tag-badge--muted]="guildUsage.key === 'unknown'"
-                      >
-                        {{ guildUsage.label }}
-                      </span>
-                    </div>
-                  </div>
-                  @if (guildUsage.detail) {
-                    <span class="muted-text">{{ guildUsage.detail }}</span>
-                  }
-                  @if (guildUsage.privateActionsAllowed) {
-                    <div class="flex-row-start-center gap-sm" [formGroup]="bulkSelectionForm">
-                      <p-checkbox
-                        [binary]="true"
-                        [formControlName]="item.itemId"
-                        [inputId]="'bulk-equip-' + item.itemId"
-                        (onChange)="setBulkItemSelected(item, $event.checked === true)"
-                      />
-                      <label [for]="'bulk-equip-' + item.itemId">Select for bulk equip</label>
-                    </div>
-                  }
-                  @if (item.drachmaValue !== null) {
-                    <span class="muted-text">{{ item.drachmaValue }} drachma</span>
-                  }
-                  <app-armory-item-detail-popover
-                    [item]="item"
-                    [guildContextLabel]="guildUsage.label"
-                    [guildContextDetail]="guildUsage.detail"
+            @if (!shelf.isUnsortedDropArea) {
+              <details class="w-100">
+                <summary class="tag-badge tag-badge--muted">Rename shelf</summary>
+                <div class="flex-row-start-center flex-col-sm gap-xs pt-xs">
+                  <input
+                    #shelfName
+                    pInputText
+                    class="w-100"
+                    type="text"
+                    [value]="shelf.name"
+                    aria-label="Shelf name"
                   />
-                  @if (item.lifecycleStatus !== 'active') {
-                    <span class="muted-text">
-                      Owned item reserved by market state.
-                    </span>
-                  }
-                  @if (guildUsage.privateActionsAllowed) {
-                    <div class="flex-row-start-center flex-col-sm gap-xs">
-                      <p-button
-                        type="button"
-                        severity="secondary"
-                        label="Equip"
-                        [disabled]="equipment.isMutating()"
-                        (onClick)="equipItem(item)"
-                      />
-                      <div class="w-100" [formGroup]="moveTargetShelfForm">
-                        <p-select
-                          styleClass="w-100"
+                  <p-button
+                    type="button"
+                    severity="secondary"
+                    size="small"
+                    label="Rename"
+                    [disabled]="armory.isMutating()"
+                    (onClick)="renameShelf(shelf, shelfName.value)"
+                  />
+                </div>
+              </details>
+            }
+
+            @if (shelf.visibleItems.length) {
+              <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-sm">
+                @for (item of shelf.visibleItems; track item.itemId) {
+                  @let guildUsage = guildItemUsage(item);
+                  <article class="mg-card p-sm flex-col gap-sm">
+                    <div class="flex-col gap-xs min-w-0">
+                      <strong class="color-heading">{{ item.name }}</strong>
+                      <div class="flex-row-start-center flex-wrap gap-xs">
+                        <span [class]="armoryItemStatusClass(item)">
+                          {{ armoryItemStatusLabel(item) }}
+                        </span>
+                        <span
+                          class="tag-badge"
+                          [class.tag-badge--info]="guildUsage.key === 'owned_private'"
+                          [class.tag-badge--warn]="guildUsage.key === 'deposited_in_guild_armory' || guildUsage.key === 'borrowed_by_guild_member'"
+                          [class.tag-badge--success]="guildUsage.key === 'borrowed_from_guild_armory'"
+                          [class.tag-badge--muted]="guildUsage.key === 'unknown'"
+                        >
+                          {{ guildUsage.label }}
+                        </span>
+                      </div>
+                    </div>
+
+                    @if (guildUsage.detail) {
+                      <span class="muted-text">{{ guildUsage.detail }}</span>
+                    }
+
+                    @if (item.drachmaValue !== null) {
+                      <div class="flex-col gap-xs">
+                        <span class="muted-text">Drachma value</span>
+                        <strong class="heading-color">{{ item.drachmaValue }} drachma</strong>
+                      </div>
+                    }
+
+                    @if (guildUsage.privateActionsAllowed) {
+                      <div class="flex-row-start-center gap-sm" [formGroup]="bulkSelectionForm">
+                        <p-checkbox
+                          [binary]="true"
                           [formControlName]="item.itemId"
-                          [options]="moveTargetShelves()"
-                          optionLabel="label"
-                          optionValue="position"
-                          aria-label="Move item to shelf"
+                          [inputId]="'bulk-equip-' + item.itemId"
+                          (onChange)="setBulkItemSelected(item, $event.checked === true)"
+                        />
+                        <label [for]="'bulk-equip-' + item.itemId">Select for bulk equip</label>
+                      </div>
+                    }
+
+                    <div class="flex-row-start-center flex-wrap gap-xs">
+                      <app-armory-item-detail-popover
+                        [item]="item"
+                        [guildContextLabel]="guildUsage.label"
+                        [guildContextDetail]="guildUsage.detail"
+                      />
+                      @if (guildUsage.privateActionsAllowed) {
+                        <p-button
+                          type="button"
+                          severity="secondary"
+                          size="small"
+                          label="Equip"
+                          [disabled]="equipment.isMutating()"
+                          (onClick)="equipItem(item)"
+                        />
+                      }
+                      @if (canUseLifecycleActions(item)) {
+                        <p-button
+                          type="button"
+                          severity="secondary"
+                          size="small"
+                          label="Sell to vendor"
+                          [disabled]="armory.isMutating() || equipment.isMutating()"
+                          (onClick)="vendorScrapItem(item)"
+                        />
+                      }
+                    </div>
+
+                    @if (guildUsage.privateActionsAllowed) {
+                      <div class="flex-row-start-center flex-col-sm gap-xs">
+                        <div class="w-100" [formGroup]="moveTargetShelfForm">
+                          <p-select
+                            styleClass="w-100"
+                            [formControlName]="item.itemId"
+                            [options]="moveTargetShelves()"
+                            optionLabel="label"
+                            optionValue="position"
+                            aria-label="Move item to shelf"
+                          />
+                        </div>
+                        <p-button
+                          type="button"
+                          severity="secondary"
+                          size="small"
+                          label="Move"
+                          [disabled]="armory.isMutating()"
+                          (onClick)="moveItemToSelectedShelf(item)"
                         />
                       </div>
-                      <p-button
-                        type="button"
-                        severity="secondary"
-                        label="Move"
-                        [disabled]="armory.isMutating()"
-                        (onClick)="moveItemToSelectedShelf(item)"
-                      />
-                    </div>
-                  }
-                  @if (canUseLifecycleActions(item)) {
-                    <div class="flex-row-start-center flex-col-sm gap-xs">
-                      <p-button
-                        type="button"
-                        severity="secondary"
-                        label="Sell to vendor"
-                        [disabled]="armory.isMutating() || equipment.isMutating()"
-                        (onClick)="vendorScrapItem(item)"
-                      />
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-          } @else {
-            <p class="muted-text mb-0">No visible items on this shelf.</p>
-          }
-        </article>
-      }
-    </div>
-  </section>
-</div>
+                    }
 
+                    @if (item.lifecycleStatus !== 'active') {
+                      <span class="muted-text">
+                        Owned item reserved by market state.
+                      </span>
+                    }
+                  </article>
+                }
+              </div>
+            } @else {
+              <p class="muted-text mb-0">No visible items on this shelf.</p>
+            }
+          </section>
+        }
+      </div>
+    </section>
+  </div>
+</div>
