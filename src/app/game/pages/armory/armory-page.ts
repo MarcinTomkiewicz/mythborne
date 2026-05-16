@@ -10,6 +10,7 @@ import {
 } from '../../../core/domain/item/item-equipment.model';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { mapEquipmentPreviewRows } from '../../../core/domain/equipment/equipment-preview.mapper';
@@ -31,6 +32,7 @@ import {
     ReactiveFormsModule,
     ButtonModule,
     CheckboxModule,
+    InplaceModule,
     InputTextModule,
     SelectModule,
     EquipmentPreview,
@@ -57,8 +59,15 @@ export class ArmoryPage implements OnInit {
       this.equipment.slots(),
     ),
   );
+  readonly paperdollImageUrl = computed(() => {
+    const originKey = this.page.origin()?.key;
+
+    return originKey
+      ? `/images/paperdolls/${originKey.toLowerCase()}.png`
+      : '/images/warrior.png';
+  });
   readonly displayShelves = computed(() =>
-    [...this.armory.shelves()].sort((left, right) => {
+    completeArmoryShelfDisplay(this.armory.shelves()).sort((left, right) => {
       if (left.isUnsortedDropArea !== right.isUnsortedDropArea) {
         return left.isUnsortedDropArea ? 1 : -1;
       }
@@ -67,16 +76,25 @@ export class ArmoryPage implements OnInit {
     }),
   );
   readonly moveTargetShelves = computed(() =>
-    this.displayShelves().map((shelf) => ({
-      position: shelf.position,
-      label: shelf.isUnsortedDropArea
-        ? this.shelfLabel(shelf)
-        : `${this.shelfLabel(shelf)} (${shelf.position})`,
-    })),
+    [...this.armory.shelves()]
+      .sort((left, right) => {
+        if (left.isUnsortedDropArea !== right.isUnsortedDropArea) {
+          return left.isUnsortedDropArea ? 1 : -1;
+        }
+
+        return right.position - left.position;
+      })
+      .map((shelf) => ({
+        position: shelf.position,
+        label: shelf.isUnsortedDropArea
+          ? this.shelfLabel(shelf)
+          : `${this.shelfLabel(shelf)} (${shelf.position})`,
+      })),
   );
   readonly selectedBulkItemIds = signal<string[]>([]);
   readonly bulkSelectionForm = new FormRecord<FormControl<boolean>>({});
   readonly moveTargetShelfForm = new FormRecord<FormControl<number>>({});
+  readonly renameStandForm = new FormRecord<FormControl<string>>({});
   readonly selectedBulkItems = computed(() => {
     const selectedIds = this.selectedBulkItemIds();
     const itemsById = new Map(
@@ -90,6 +108,9 @@ export class ArmoryPage implements OnInit {
   });
   private readonly syncArmoryForms = effect(() =>
     this.syncArmoryItemForms(this.armory.visibleItems()),
+  );
+  private readonly syncRenameStandForms = effect(() =>
+    this.syncStandRenameControls(this.displayShelves()),
   );
 
   ngOnInit(): void {
@@ -130,6 +151,47 @@ export class ArmoryPage implements OnInit {
       shelfPosition: shelf.position,
       newName,
     });
+  }
+
+  renameStandControl(shelf: ArmoryShelfReadModel): FormControl<string> {
+    this.ensureRenameStandControl(shelf);
+
+    return this.renameStandForm.controls[renameStandControlKey(shelf)];
+  }
+
+  renameStandActionIsCancel(control: FormControl<string>): boolean {
+    return control.pristine || control.value.trim().length === 0;
+  }
+
+  renameStandActionIcon(control: FormControl<string>): string {
+    return this.renameStandActionIsCancel(control)
+      ? 'pi pi-interdiction'
+      : 'pi pi-scroll-quill';
+  }
+
+  renameStandActionSeverity(control: FormControl<string>): 'danger' | 'secondary' {
+    return this.renameStandActionIsCancel(control) ? 'danger' : 'secondary';
+  }
+
+  renameStandActionLabel(control: FormControl<string>): string {
+    return this.renameStandActionIsCancel(control) ? 'Cancel' : 'Rename stand';
+  }
+
+  handleRenameStandInplaceAction(
+    shelf: ArmoryShelfReadModel,
+    control: FormControl<string>,
+    closeCallback: (event?: Event) => void,
+    event: Event,
+  ): void {
+    if (this.renameStandActionIsCancel(control)) {
+      this.resetRenameStandControl(shelf, control);
+      closeCallback(event);
+      return;
+    }
+
+    this.renameShelf(shelf, control.value.trim());
+    control.markAsPristine();
+    closeCallback(event);
   }
 
   moveItemToShelf(
@@ -344,6 +406,54 @@ export class ArmoryPage implements OnInit {
     );
   }
 
+  private syncStandRenameControls(shelves: readonly ArmoryShelfReadModel[]): void {
+    const editableShelfKeys = new Set(
+      shelves
+        .filter((shelf) => shelf.isPersisted && !shelf.isUnsortedDropArea)
+        .map(renameStandControlKey),
+    );
+
+    for (const shelf of shelves) {
+      if (shelf.isPersisted && !shelf.isUnsortedDropArea) {
+        this.ensureRenameStandControl(shelf);
+      }
+    }
+
+    for (const key of Object.keys(this.renameStandForm.controls)) {
+      if (!editableShelfKeys.has(key)) {
+        this.renameStandForm.removeControl(key, { emitEvent: false });
+      }
+    }
+  }
+
+  private ensureRenameStandControl(shelf: ArmoryShelfReadModel): void {
+    const key = renameStandControlKey(shelf);
+    const control = this.renameStandForm.controls[key];
+
+    if (control) {
+      if (control.pristine && control.value !== shelf.name) {
+        control.setValue(shelf.name, { emitEvent: false });
+        control.markAsPristine();
+      }
+
+      return;
+    }
+
+    this.renameStandForm.addControl(
+      key,
+      new FormControl<string>(shelf.name, { nonNullable: true }),
+      { emitEvent: false },
+    );
+  }
+
+  private resetRenameStandControl(
+    shelf: ArmoryShelfReadModel,
+    control: FormControl<string>,
+  ): void {
+    control.setValue(shelf.name, { emitEvent: false });
+    control.markAsPristine();
+  }
+
 }
 
 function humanizeKey(value: string): string {
@@ -370,4 +480,33 @@ function shelfPositionValue(value: string | number | null | undefined): number {
   }
 
   return parsed;
+}
+
+function renameStandControlKey(shelf: Pick<ArmoryShelfReadModel, 'position'>): string {
+  return String(shelf.position);
+}
+
+function completeArmoryShelfDisplay(
+  shelves: readonly ArmoryShelfReadModel[],
+): ArmoryShelfReadModel[] {
+  const heroId = shelves[0]?.heroId ?? '';
+  const shelvesByPosition = new Map(
+    shelves.map((shelf) => [shelf.position, shelf]),
+  );
+  const shelfAt = (position: number): ArmoryShelfReadModel =>
+    shelvesByPosition.get(position) ?? {
+      shelfId: null,
+      heroId,
+      position,
+      name: position === 0 ? 'Unsorted' : `Shelf ${position}`,
+      updatedAt: null,
+      isPersisted: false,
+      isUnsortedDropArea: position === 0,
+      visibleItems: [],
+    };
+
+  return [
+    ...Array.from({ length: 10 }, (_, index) => shelfAt(index + 1)),
+    shelfAt(0),
+  ];
 }

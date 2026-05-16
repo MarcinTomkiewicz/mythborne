@@ -81,6 +81,11 @@ $grid-common-patterns: (
     columns: minmax(0, 1fr) minmax(0, 2fr),
     collapse-bp: "md"
   ),
+  "1-2-balanced": (
+    columns: minmax(0, 1fr) minmax(0, 2fr),
+    balance-bp: "xl",
+    collapse-bp: "md"
+  ),
   "1-1": (
     columns: repeat(2, minmax(0, 1fr)),
     collapse-bp: "sm"
@@ -117,6 +122,12 @@ $grid-common-patterns: (
       map.get(v.$spacings, "xl"),
       stretch
     );
+
+    @if map.has-key($config, balance-bp) {
+      @include m.down(map.get($config, balance-bp)) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
 
     @include m.down(map.get($config, collapse-bp)) {
       grid-template-columns: 1fr;

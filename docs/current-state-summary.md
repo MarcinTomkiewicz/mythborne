@@ -1,6 +1,6 @@
 # Monster Hunt - Current State Summary
 
-Updated: 2026-05-15
+Updated: 2026-05-16
 
 This file summarizes the current implementation state against:
 - `docs/project-context.md`
@@ -22,7 +22,7 @@ This is an operational estimate, not a formal audit.
 | Bonus-template based modular stats | 75% | Used across origins, items, and buildings, including `percent` and `per_4_levels`. |
 | Formula system | 85% | Targets, formulas, assignments, block library, human preview, chart, target-defined variables, and combat balance targets are implemented. |
 | Hero progression formulas | 70% | Stat cost and cap formulas are live, including support for `statLevel`. |
-| Armory / item visibility layer | 50% | Core item catalog and armory surface exist, but broader gameplay loops are still incomplete. |
+| Armory / item visibility layer | 52% | Core item catalog and armory surface exist. The Armory equipment preview now shares the dashboard-backed paperdoll portrait source, and the visible standy presentation has full-width inventory surfaces, structured stand headers, inline PrimeNG Inplace rename and reusable global badge utilities. Broader gameplay loops are still incomplete. |
 | Combat | 55% | Canonical combat contracts, opponent resolution, attack plans, initiative, core resolution, result persistence, a temporary `/game/combat` Walking Dead test surface, read-only admin/balance inspection tooling and write-capable combat opponent admin configurator exist. Production encounter/trial/PvP consequences remain caller-owned and not wired. |
 | Exploration / trials / encounters | 42% | DB/RPC foundation and guarded frontend models/mappers exist. `/game/exploration` now has player-facing status/start, DB-backed graph/direction display, movement start, DB-time-gated step resolve, resolved outcome presentation, DB-shaped Trial/Encounter action UI, live-combat boundary handling, durable reward/drop display and W13 stale result/reward/combat cleanup with exact reward read paths. Full runtime smoke is still pending real data/session coverage. |
 | Prestige / reputation | 0% | Not implemented yet. |

@@ -3,6 +3,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import {
@@ -51,6 +52,7 @@ describe('ArmoryPage', () => {
             ReactiveFormsModule,
             ButtonModule,
             CheckboxModule,
+            InplaceModule,
             InputTextModule,
             SelectModule,
             MockEquipmentPreview,
@@ -227,7 +229,7 @@ describe('ArmoryPage', () => {
     expect(text).toContain('Unsorted');
     expect(text).toContain('Position 0');
     expect(text).toContain('Weapons');
-    expect(text).toContain('Shelf 1');
+    expect(text).toContain('Stand 1');
     expect(text).toContain('Fresh Drop Blade');
     expect(text).toContain('Shelf Sword');
     expect(text).toContain('2 / 5 visible');
@@ -300,17 +302,54 @@ describe('ArmoryPage', () => {
     ]);
     fixture.detectChanges();
 
+    activateRenameStand(fixture);
+    fixture.detectChanges();
+
     const input = fixture.nativeElement.querySelector(
-      'input[aria-label="Shelf name"]',
+      'input[aria-label="Stand name"]',
     ) as HTMLInputElement;
-    const button = buttonWithText(fixture, 'Rename');
     input.value = 'Materials II';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const button = buttonWithAriaLabel(fixture, 'Rename stand');
     button.click();
 
     expect(armory.renameShelf).toHaveBeenCalledWith({
       shelfPosition: 2,
       newName: 'Materials II',
     });
+  });
+
+  it('shows cancel icon action for pristine or blank inline stand rename', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 2,
+        name: 'Materials',
+      }),
+    ]);
+    fixture.detectChanges();
+
+    activateRenameStand(fixture);
+    fixture.detectChanges();
+
+    let button = buttonWithAriaLabel(fixture, 'Cancel');
+
+    expect(button.classList).toContain('p-button-danger');
+    expect(button.classList).toContain('p-button-outlined');
+    expect(button.querySelector('.pi-interdiction')).not.toBeNull();
+
+    const input = fixture.nativeElement.querySelector(
+      'input[aria-label="Stand name"]',
+    ) as HTMLInputElement;
+    input.value = '';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    button = buttonWithAriaLabel(fixture, 'Cancel');
+
+    expect(button.classList).toContain('p-button-danger');
+    expect(button.querySelector('.pi-interdiction')).not.toBeNull();
+    expect(armory.renameShelf).not.toHaveBeenCalled();
   });
 
   it('renders locked armory items as owned items without unusable copy', () => {
@@ -731,9 +770,12 @@ describe('ArmoryPage', () => {
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
 
-    expect(element.querySelector('input[aria-label="Shelf name"]')).not.toBeNull();
-    expect(element.querySelector('p-select[aria-label="Move item to shelf"]')).not.toBeNull();
-    expect(element.querySelector('select[aria-label="Move item to shelf"]')).toBeNull();
+    activateRenameStand(fixture);
+    fixture.detectChanges();
+
+    expect(element.querySelector('input[aria-label="Stand name"]')).not.toBeNull();
+    expect(element.querySelector('p-select[aria-label="Move item to stand"]')).not.toBeNull();
+    expect(element.querySelector('select[aria-label="Move item to stand"]')).toBeNull();
     expect(element.querySelector('.form-control')).toBeNull();
     expect(element.querySelector('.btn.btn-secondary')).toBeNull();
   });
@@ -801,6 +843,7 @@ describe('ArmoryPage', () => {
 class FakeArmoryPageFacade {
   readonly heroLuck = signal(0);
   readonly equipmentSlots = signal<EquipmentSlot[]>([]);
+  readonly origin = signal<{ key: string } | null>(null);
   readonly loadData = jasmine.createSpy('loadData');
 }
 
@@ -945,6 +988,7 @@ class MockEquipmentPreview {
   readonly compact = input(false);
   readonly showSlotLabels = input(true);
   readonly armoryLink = input('/game/armory');
+  readonly paperdollImageUrl = input('/images/warrior.png');
 }
 
 @Component({
@@ -984,6 +1028,31 @@ function buttonsWithText(
   ) as HTMLButtonElement[];
 
   return buttons.filter((entry) => (entry.textContent ?? '').trim() === label);
+}
+
+function buttonWithAriaLabel(
+  fixture: ComponentFixture<ArmoryPage>,
+  label: string,
+): HTMLButtonElement {
+  const button = (fixture.nativeElement as HTMLElement)
+    .querySelector(`button[aria-label="${label}"]`) as HTMLButtonElement | null;
+
+  if (!button) {
+    throw new Error(`Button with aria-label "${label}" was not rendered.`);
+  }
+
+  return button;
+}
+
+function activateRenameStand(fixture: ComponentFixture<ArmoryPage>): void {
+  const element = (fixture.nativeElement as HTMLElement)
+    .querySelector('.p-inplace-display') as HTMLElement | null;
+
+  if (!element) {
+    throw new Error('Rename stand inplace display was not rendered.');
+  }
+
+  element.click();
 }
 
 function equippedItem(

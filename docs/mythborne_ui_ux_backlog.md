@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-12 — cleaned single-file canonical UI/UX backlog
+Updated: 2026-05-16 — Armory standy visual cleanup accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -4061,6 +4061,8 @@ Dodać stands as armory organization/visibility priority UI: stand 10 has highes
 - move/persistence path:
 - drag/drop used or deferred:
 - local SCSS added:
+
+**Status:** Accepted on 2026-05-16 as the Armory standy visual cleanup. The `Visible armory` standy presentation now uses full-width elevated inventory surfaces, full-width headers with fixed number badges, normal text-color stand titles, secondary visible-count state and subtle empty stand content below the header. Rename is inline through PrimeNG Inplace in the stand header, uses Reactive Forms, dark themed `pInputText`, icon-only confirm/cancel actions and no checkbox or speculative selection behavior. The stand number badge uses reusable global `radius-circle` and `square-9` utilities instead of inline styles or Armory-local CSS. The paperdoll/equipment preview layout was not changed in this pass. No fake item/type/slot/requirement logic, DB/read-model changes or new item actions were added. Focused Armory specs, `npx tsc --noEmit`, `npm run build` and static greps passed; manual visual smoke was user-side accepted.
 
 ## UI-ITEMS-3 — Item popover shared display
 

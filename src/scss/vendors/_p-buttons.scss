@@ -8,6 +8,11 @@
   color: $color;
 }
 
+:root {
+  --p-button-icon-only-width: 40px;
+  --p-button-sm-icon-only-width: 40px;
+}
+
 .p-button {
   min-height: 2.55rem;
   padding: 0.58rem 0.9rem;
@@ -108,4 +113,25 @@
 
 .mg-compact-icon-button.p-button .p-button-icon {
   font-size: 0.75rem;
+}
+
+.p-button.p-button-icon-only {
+  width: var(--p-button-icon-only-width);
+  min-width: var(--p-button-icon-only-width);
+  padding: 0;
+}
+
+.small-icon.p-button,
+.small-icon .p-button {
+  min-width: auto !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  --p-button-icon-only-width: auto;
+  --p-button-sm-icon-only-width: auto;
+}
+
+.small-icon.p-button.p-button-icon-only,
+.small-icon .p-button.p-button-icon-only {
+  padding: 0 !important;
 }
