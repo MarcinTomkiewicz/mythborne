@@ -4436,6 +4436,8 @@ Create a consistent shell for item cards in visible stands, without changing ite
 - popover preserved:
 - local SCSS added:
 
+**Status:** Accepted/completed on 2026-05-18 after user-side visual checkpoint. The visible Inventory item cards now follow the accepted compact prototype direction with real project item icons, item name, classification-backed metadata, drachma value, visible `Equip` / `Sell to vendor` actions and click-to-select card state. The item grid uses the accepted compact global utility direction so cards distribute without overflowing the stand. The current card/grid direction is frozen for UI-ITEMS-10; do not change EquipmentPreview, paperdoll, popover behavior, stand headers, empty stand cards, TS services, DB/RPC contracts or generated types from this accepted task.
+
 ---
 
 ## UI-ITEMS-11 — Item card status badges

@@ -21,6 +21,7 @@ import { movableArmoryShelfPosition } from '../../../core/utils/armory-shelf-pos
 import { humanizeKey, trimText } from '../../../core/utils/normalize-text';
 import {
   armoryItemIconClass,
+  classifyItemDisplay,
   equippedItemIconClass,
   mapEquipmentPreviewRows,
 } from '../../../core/domain/equipment/equipment-preview.mapper';
@@ -362,6 +363,14 @@ export class ArmoryPage implements OnInit {
     return this.selectedBulkItemIds().includes(item.itemId);
   }
 
+  toggleBulkItemSelection(item: ArmoryItemSummary): void {
+    if (!this.canUsePrivateItemActions(item)) {
+      return;
+    }
+
+    this.setBulkItemSelected(item, !this.isBulkItemSelected(item));
+  }
+
   setBulkItemSelected(item: ArmoryItemSummary, selected: boolean): void {
     const currentIds = this.selectedBulkItemIds();
     this.ensureBulkSelectionControl(item);
@@ -383,6 +392,20 @@ export class ArmoryPage implements OnInit {
     this.selectedBulkItemIds.set(
       currentIds.filter((itemId) => itemId !== item.itemId),
     );
+  }
+
+  armoryItemMetadata(item: ArmoryItemSummary): string {
+    const display = classifyItemDisplay({
+      baseTypeKey: item.baseTypeKey,
+      handUsageKey: item.handUsageKey,
+      primarySlotKey: item.primarySlotKey,
+      allowedSlotKeys: item.allowedSlotKeys,
+    });
+    const metadata = [display.kindLabel, display.slotLabel]
+      .filter(Boolean)
+      .join(' · ');
+
+    return metadata || item.baseName || 'Item';
   }
 
   private lifecycleStatusLabel(status: ItemLifecycleStatus): string {

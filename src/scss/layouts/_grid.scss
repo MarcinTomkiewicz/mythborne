@@ -167,6 +167,13 @@ $grid-common-patterns: (
   align-items: stretch;
 }
 
+.mg-grid-auto-fill-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  gap: map.get(v.$spacings, "xl");
+  align-items: stretch;
+}
+
 /* =========================================================
    READY-TO-USE LAYOUTS
    ========================================================= */
