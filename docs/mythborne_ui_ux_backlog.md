@@ -4263,6 +4263,8 @@ Improve only the header area of the `Visible armory` panel so it matches the pro
 - counts/badges used:
 - behavior unchanged confirmation:
 
+**Status:** Accepted/completed on 2026-05-18. The `Visible armory` panel header was intentionally simplified to a single `Inventory` heading so it no longer duplicates the main Armory page header metrics or capacity explanation. The existing capacity mini-summary cards remain below the header, and stand sections, item cards, filters, EquipmentPreview, equip/unequip behavior, DB/RPC contracts and generated types were not changed for this accepted slice. Manual visual smoke remains user-side pending. Follow-ups remain separate: Armory page split/refactor and later item/stand/filter tasks.
+
 ---
 
 ## UI-ITEMS-7 — Capacity mini-summary cards

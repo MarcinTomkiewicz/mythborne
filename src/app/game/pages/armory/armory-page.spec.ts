@@ -13,12 +13,14 @@ import {
   EquipmentOperationJournal,
   EquipmentSlot,
   EquippedItemSummary,
+  LoadoutPreset,
 } from '../../../core/domain/item/item-equipment.model';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { ArmoryShelfReadStatus } from '../../../core/types/armory-shelf.types';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { CurrentEquipmentReadStatus } from '../../../core/types/current-equipment.types';
+import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
 import { ArmoryPage } from './armory-page';
 import {
   ArmoryGuildItemUsageState,
@@ -34,12 +36,14 @@ describe('ArmoryPage', () => {
   let page: FakeArmoryPageFacade;
   let equipment: FakeCurrentEquipmentState;
   let armory: FakeArmoryShelfState;
+  let loadoutPresets: FakeHeroLoadoutPresetsState;
   let guildItemUsage: FakeArmoryGuildItemUsageState;
 
   beforeEach(async () => {
     page = new FakeArmoryPageFacade();
     equipment = new FakeCurrentEquipmentState();
     armory = new FakeArmoryShelfState();
+    loadoutPresets = new FakeHeroLoadoutPresetsState();
     guildItemUsage = new FakeArmoryGuildItemUsageState();
 
     await TestBed.configureTestingModule({
@@ -62,6 +66,7 @@ describe('ArmoryPage', () => {
             { provide: ArmoryPageFacade, useValue: page },
             { provide: CurrentEquipmentState, useValue: equipment },
             { provide: ArmoryShelfState, useValue: armory },
+            { provide: HeroLoadoutPresetsState, useValue: loadoutPresets },
             { provide: ArmoryGuildItemUsageState, useValue: guildItemUsage },
           ],
         },
@@ -230,9 +235,9 @@ describe('ArmoryPage', () => {
     expect(text).toContain('Stand 1');
     expect(text).toContain('Fresh Drop Blade');
     expect(text).toContain('Shelf Sword');
-    expect(text).toContain('2 / 5 visible');
-    expect(text).toContain('Capacity 0');
-    expect(text).toContain('3 hidden');
+    expect(text).toContain('Visible 2 / 0');
+    expect(text).toContain('Total 5');
+    expect(text).toContain('Hidden 3');
   });
 
   it('renders visible shelves from highest position down with unsorted last', () => {
@@ -886,7 +891,7 @@ describe('ArmoryPage', () => {
     fixture.detectChanges();
     const text = textContent(fixture);
 
-    expect(text).toContain('Capacity 123');
+    expect(text).toContain('Visible 0 / 123');
     expect(text).not.toContain('Limit 30');
     expect(text).not.toContain('Limit 35');
   });
@@ -971,6 +976,11 @@ class FakeArmoryShelfState {
     this.status.set(summary.visibleItemCount ? 'loaded' : 'empty');
     this.isEmpty.set(summary.visibleItemCount === 0);
   }
+}
+
+class FakeHeroLoadoutPresetsState {
+  readonly presets = signal<LoadoutPreset[]>([]);
+  readonly isLoading = signal(false);
 }
 
 class FakeArmoryGuildItemUsageState {

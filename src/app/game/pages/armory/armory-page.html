@@ -181,35 +181,9 @@
     </section>
 
     <section class="mg-card p-lg w-100 min-w-0">
-      <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+      <div class="flex-row-between-start flex-col-sm gap-md mb-md">
         <div class="flex-col gap-xs">
-          <p class="card-legend mb-0">Inventory</p>
-          <h3 class="mg-section__title mg-section__title--xs mb-0">Visible armory</h3>
-          @if (armory.visibility()) {
-            <p class="muted-text mb-0">
-              Armory visibility is capped by the current estate capacity.
-            </p>
-          }
-        </div>
-
-        <div class="flex-row-start-center flex-wrap gap-sm">
-          @if (armory.isLoading()) {
-            <span class="tag-badge tag-badge--muted">Loading</span>
-          } @else if (armory.status() === 'error') {
-            <span class="tag-badge tag-badge--warn">Unavailable</span>
-          } @else if (armory.visibility(); as visibility) {
-            <span class="tag-badge tag-badge--info">
-              {{ visibility.visibleItemCount }} / {{ visibility.totalOwnedItemCount }} visible
-            </span>
-            <span class="tag-badge tag-badge--muted">
-              Capacity {{ visibility.visibilityLimit }}
-            </span>
-            @if (visibility.hiddenItemCount > 0) {
-              <span class="tag-badge tag-badge--muted">
-                {{ visibility.hiddenItemCount }} hidden
-              </span>
-            }
-          }
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Inventory</h3>
         </div>
       </div>
 
