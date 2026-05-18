@@ -2,10 +2,8 @@ import { Component, input, output, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
 import {
   ArmoryItemSummary,
   ArmoryShelfReadModel,
@@ -54,10 +52,8 @@ describe('ArmoryPage', () => {
           imports: [
             ReactiveFormsModule,
             ButtonModule,
-            CheckboxModule,
             InplaceModule,
             InputTextModule,
-            SelectModule,
             MockEquipmentPreview,
             MockArmoryItemDetailPopover,
             MockLoadoutPresetManagement,
@@ -257,9 +253,46 @@ describe('ArmoryPage', () => {
     expect(text.indexOf('Shelf Ten')).toBeLessThan(text.indexOf('Shelf Seven'));
     expect(text.indexOf('Shelf Seven')).toBeLessThan(text.indexOf('Shelf One'));
     expect(text.indexOf('Shelf One')).toBeLessThan(text.indexOf('Unsorted'));
-    expect(fixture.componentInstance.moveTargetShelves().map((shelf) =>
-      shelf.position,
-    )).toEqual([10, 7, 1, 0]);
+  });
+
+  it('keeps equipped items out of visible inventory shelves and stored capacity count', () => {
+    equipment.setSlots([
+      equippedItem({
+        itemId: 'item-equipped',
+        itemName: 'Equipped Sword',
+        slotKey: 'main_hand',
+      }),
+    ]);
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [
+          armoryItem({
+            itemId: 'item-equipped',
+            name: 'Equipped Sword',
+          }),
+          armoryItem({
+            itemId: 'item-stored',
+            name: 'Stored Axe',
+          }),
+        ],
+      }),
+    ], visibility({
+      visibleItemCount: 2,
+      visibilityLimit: 30,
+    }));
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Current loadout');
+    expect(text).toContain('Equipped Sword');
+    expect(text).toContain('Stored Axe');
+    expect(text).toContain('Armory capacity 1 / 30');
+    expect(fixture.componentInstance.displayShelves()
+      .flatMap((shelf) => shelf.visibleItems.map((item) => item.itemId)))
+      .toEqual(['item-stored']);
+    expect(fixture.componentInstance.selectedBulkItems()).toEqual([]);
   });
 
   it('uses full-width armory host and dashboard equipment preview invocation', () => {
@@ -426,14 +459,14 @@ describe('ArmoryPage', () => {
 
     expect(text).toContain('Guild Spear');
     expect(text).toContain('Deposited in guild armory');
-    expect(text).toContain('Withdraw from guild armory before equipping');
+    expect(text).not.toContain('Withdraw from guild armory before equipping');
     expect(text).not.toContain('Select for bulk equip');
     expect(text).not.toContain('Sell to vendor');
     expect(buttonsWithText(fixture, 'Equip').length).toBe(0);
     expect(buttonsWithText(fixture, 'Move').length).toBe(0);
   });
 
-  it('blocks direct private item action calls for guild armory items', () => {
+  it('blocks direct private equip and vendor calls for guild armory items', () => {
     const item = armoryItem({ itemId: 'item-borrowed' });
     guildItemUsage.setUsage('item-borrowed', usage({
       key: 'borrowed_by_guild_member',
@@ -443,11 +476,9 @@ describe('ArmoryPage', () => {
     }));
 
     fixture.componentInstance.equipItem(item);
-    fixture.componentInstance.moveItemToShelf(item, 1);
     fixture.componentInstance.vendorScrapItem(item);
 
     expect(equipment.equipItem).not.toHaveBeenCalled();
-    expect(armory.moveItemToShelf).not.toHaveBeenCalled();
     expect(armory.vendorScrapItem).not.toHaveBeenCalled();
   });
 
@@ -496,35 +527,6 @@ describe('ArmoryPage', () => {
     expect(equipment.refresh).toHaveBeenCalled();
     expect(guildItemUsage.load).toHaveBeenCalledTimes(2);
     expect(page.loadData).toHaveBeenCalledTimes(2);
-  });
-
-  it('calls item move action and supports target position zero', () => {
-    const item = armoryItem({
-      itemId: 'item-locked',
-      name: 'Auction Locked Shield',
-      lifecycleStatus: 'locked_auction',
-      shelfPosition: 2,
-    });
-    armory.setShelves([
-      armoryShelf({
-        position: 0,
-        name: 'Unsorted',
-        isUnsortedDropArea: true,
-      }),
-      armoryShelf({
-        position: 2,
-        name: 'Market reserves',
-        visibleItems: [item],
-      }),
-    ]);
-    fixture.detectChanges();
-
-    fixture.componentInstance.moveItemToShelf(item, '0');
-
-    expect(armory.moveItemToShelf).toHaveBeenCalledWith({
-      itemId: 'item-locked',
-      targetShelfPosition: 0,
-    });
   });
 
   it('renders simple equip action without exposing slot selection', () => {
@@ -598,7 +600,7 @@ describe('ArmoryPage', () => {
     expect(fixture.componentInstance.selectedBulkItems()).toEqual([]);
   });
 
-  it('renders bulk equip selection controls without exposing slot selection', () => {
+  it('renders bulk equip action without exposing checkbox or slot selection', () => {
     armory.setShelves([
       armoryShelf({
         position: 1,
@@ -613,7 +615,7 @@ describe('ArmoryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Equip selected');
-    expect(text).toContain('Select for bulk equip');
+    expect(text).not.toContain('Select for bulk equip');
     expect((fixture.nativeElement as HTMLElement)
       .querySelector('p-select[aria-label="Equip item slot"]')).toBeNull();
   });
@@ -798,24 +800,6 @@ describe('ArmoryPage', () => {
     expect(text).toContain('Main hand: Demonic Dagger');
   });
 
-  it('rejects blank, null, and non-numeric move targets before state action', () => {
-    const item = armoryItem({ itemId: 'item-1' });
-
-    expect(() => fixture.componentInstance.moveItemToShelf(
-      item,
-      '',
-    )).toThrowError('targetShelfPosition is required for armory action.');
-    expect(() => fixture.componentInstance.moveItemToShelf(
-      item,
-      null,
-    )).toThrowError('targetShelfPosition is required for armory action.');
-    expect(() => fixture.componentInstance.moveItemToShelf(
-      item,
-      'not-a-number',
-    )).toThrowError('targetShelfPosition must be a number.');
-    expect(armory.moveItemToShelf).not.toHaveBeenCalled();
-  });
-
   it('uses styled PrimeNG controls instead of raw browser controls', () => {
     armory.setShelves([
       armoryShelf({
@@ -831,7 +815,7 @@ describe('ArmoryPage', () => {
     fixture.detectChanges();
 
     expect(element.querySelector('input[aria-label="Stand name"]')).not.toBeNull();
-    expect(element.querySelector('p-select[aria-label="Move item to stand"]')).not.toBeNull();
+    expect(element.querySelector('p-select[aria-label="Move item to stand"]')).toBeNull();
     expect(element.querySelector('select[aria-label="Move item to stand"]')).toBeNull();
     expect(element.querySelector('.form-control')).toBeNull();
     expect(element.querySelector('.btn.btn-secondary')).toBeNull();
@@ -955,7 +939,6 @@ class FakeArmoryShelfState {
   readonly load = jasmine.createSpy('load');
   readonly refresh = jasmine.createSpy('refresh');
   readonly renameShelf = jasmine.createSpy('renameShelf');
-  readonly moveItemToShelf = jasmine.createSpy('moveItemToShelf');
   readonly vendorScrapItem = jasmine
     .createSpy('vendorScrapItem')
     .and.callFake((_itemId, afterResponse?: () => void) => afterResponse?.());

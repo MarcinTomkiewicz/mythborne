@@ -9,16 +9,13 @@ import {
   ItemLifecycleStatus,
 } from '../../../core/domain/item/item-equipment.model';
 import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
 import {
   ARMORY_PLAYER_SHELF_POSITIONS,
   ARMORY_UNSORTED_SHELF_POSITION,
 } from '../../../core/constants/armory-shelves.const';
-import { movableArmoryShelfPosition } from '../../../core/utils/armory-shelf-position';
-import { humanizeKey, trimText } from '../../../core/utils/normalize-text';
+import { humanizeKey } from '../../../core/utils/normalize-text';
 import {
   armoryItemIconClass,
   classifyItemDisplay,
@@ -44,10 +41,8 @@ import {
   imports: [
     ReactiveFormsModule,
     ButtonModule,
-    CheckboxModule,
     InplaceModule,
     InputTextModule,
-    SelectModule,
     EquipmentPreview,
     ArmoryItemDetailPopover,
     LoadoutPresetManagement,
@@ -82,7 +77,7 @@ export class ArmoryPage implements OnInit {
       : '/images/warrior.png';
   });
   readonly displayShelves = computed(() =>
-    completeArmoryShelfDisplay(this.armory.shelves()).sort((left, right) => {
+    completeArmoryShelfDisplay(this.storedArmoryShelves()).sort((left, right) => {
       if (left.isUnsortedDropArea !== right.isUnsortedDropArea) {
         return left.isUnsortedDropArea ? 1 : -1;
       }
@@ -90,22 +85,16 @@ export class ArmoryPage implements OnInit {
       return right.position - left.position;
     }),
   );
-  readonly moveTargetShelves = computed(() =>
-    [...this.armory.shelves()]
-      .sort((left, right) => {
-        if (left.isUnsortedDropArea !== right.isUnsortedDropArea) {
-          return left.isUnsortedDropArea ? 1 : -1;
-        }
+  readonly storedArmoryVisibility = computed(() => {
+    const visibility = this.armory.visibility();
 
-        return right.position - left.position;
-      })
-      .map((shelf) => ({
-        position: shelf.position,
-        label: shelf.isUnsortedDropArea
-          ? this.shelfLabel(shelf)
-          : `${this.shelfLabel(shelf)} (${shelf.position})`,
-      })),
-  );
+    return visibility
+      ? {
+        ...visibility,
+        visibleItemCount: this.storedArmoryItems().length,
+      }
+      : null;
+  });
   readonly selectedBulkItemIds = signal<string[]>([]);
   readonly selectedPaperdollItemIds = signal<string[]>([]);
   readonly savedLoadoutCount = computed(() =>
@@ -113,13 +102,11 @@ export class ArmoryPage implements OnInit {
       .filter((preset) => preset.savedAt !== null)
       .length,
   );
-  readonly bulkSelectionForm = new FormRecord<FormControl<boolean>>({});
-  readonly moveTargetShelfForm = new FormRecord<FormControl<number>>({});
   readonly renameStandForm = new FormRecord<FormControl<string>>({});
   readonly selectedBulkItems = computed(() => {
     const selectedIds = this.selectedBulkItemIds();
     const itemsById = new Map(
-      this.armory.visibleItems().map((item) => [item.itemId, item]),
+      this.storedArmoryItems().map((item) => [item.itemId, item]),
     );
 
     return selectedIds.flatMap((itemId) => {
@@ -127,8 +114,8 @@ export class ArmoryPage implements OnInit {
       return item ? [item] : [];
     }).filter((item) => this.canUsePrivateItemActions(item));
   });
-  private readonly syncArmoryForms = effect(() =>
-    this.syncArmoryItemForms(this.armory.visibleItems()),
+  private readonly syncArmorySelection = effect(() =>
+    this.pruneBulkSelection(this.storedArmoryItems()),
   );
   private readonly syncRenameStandForms = effect(() =>
     this.syncStandRenameControls(this.displayShelves()),
@@ -226,22 +213,6 @@ export class ArmoryPage implements OnInit {
     closeCallback(event);
   }
 
-  moveItemToShelf(
-    item: ArmoryItemSummary,
-    targetShelfPosition: string | number | null | undefined,
-  ): void {
-    if (!this.canUsePrivateItemActions(item)) {
-      return;
-    }
-
-    const parsedTargetShelfPosition = targetShelfPositionValue(targetShelfPosition);
-
-    this.armory.moveItemToShelf({
-      itemId: item.itemId,
-      targetShelfPosition: parsedTargetShelfPosition,
-    });
-  }
-
   equipItem(item: ArmoryItemSummary): void {
     if (!this.canUsePrivateItemActions(item)) {
       return;
@@ -305,16 +276,6 @@ export class ArmoryPage implements OnInit {
     this.bulkUnequipPaperdollItems(items);
   }
 
-  moveItemToSelectedShelf(item: ArmoryItemSummary): void {
-    if (!this.canUsePrivateItemActions(item)) {
-      return;
-    }
-
-    const targetShelfPosition = this.moveTargetShelfForm.controls[item.itemId]?.value;
-
-    this.moveItemToShelf(item, targetShelfPosition);
-  }
-
   unequipSlot(slotKey: string): void {
     this.equipment.unequipSlot({
       slotKey,
@@ -373,12 +334,6 @@ export class ArmoryPage implements OnInit {
 
   setBulkItemSelected(item: ArmoryItemSummary, selected: boolean): void {
     const currentIds = this.selectedBulkItemIds();
-    this.ensureBulkSelectionControl(item);
-    const control = this.bulkSelectionForm.controls[item.itemId];
-
-    if (control.value !== selected) {
-      control.setValue(selected, { emitEvent: false });
-    }
 
     if (selected) {
       this.selectedBulkItemIds.set(
@@ -408,6 +363,25 @@ export class ArmoryPage implements OnInit {
     return metadata || item.baseName || 'Item';
   }
 
+  private readonly equippedItemIds = computed(() =>
+    new Set(this.equipment.slots().map((item) => item.itemId)),
+  );
+  private readonly storedArmoryItems = computed(() => {
+    const equippedItemIds = this.equippedItemIds();
+
+    return this.armory.visibleItems()
+      .filter((item) => !equippedItemIds.has(item.itemId));
+  });
+  private readonly storedArmoryShelves = computed(() => {
+    const equippedItemIds = this.equippedItemIds();
+
+    return this.armory.shelves().map((shelf) => ({
+      ...shelf,
+      visibleItems: shelf.visibleItems
+        .filter((item) => !equippedItemIds.has(item.itemId)),
+    }));
+  });
+
   private lifecycleStatusLabel(status: ItemLifecycleStatus): string {
     return humanizeKey(status, 'Status');
   }
@@ -432,9 +406,6 @@ export class ArmoryPage implements OnInit {
 
   private clearBulkSelection(): void {
     this.selectedBulkItemIds.set([]);
-    for (const control of Object.values(this.bulkSelectionForm.controls)) {
-      control.setValue(false, { emitEvent: false });
-    }
   }
 
   private bulkUnequipPaperdollItems(
@@ -464,7 +435,7 @@ export class ArmoryPage implements OnInit {
     }
   }
 
-  private syncArmoryItemForms(items: readonly ArmoryItemSummary[]): void {
+  private pruneBulkSelection(items: readonly ArmoryItemSummary[]): void {
     const visibleItemIds = new Set(items.map((item) => item.itemId));
     const selectedIds = this.selectedBulkItemIds();
     const visibleSelectedIds = selectedIds.filter((itemId) =>
@@ -474,53 +445,6 @@ export class ArmoryPage implements OnInit {
     if (visibleSelectedIds.length !== selectedIds.length) {
       this.selectedBulkItemIds.set(visibleSelectedIds);
     }
-
-    for (const item of items) {
-      this.ensureBulkSelectionControl(item);
-      this.ensureMoveTargetShelfControl(item);
-    }
-
-    for (const itemId of Object.keys(this.bulkSelectionForm.controls)) {
-      if (!visibleItemIds.has(itemId)) {
-        this.bulkSelectionForm.removeControl(itemId, { emitEvent: false });
-      }
-    }
-
-    for (const itemId of Object.keys(this.moveTargetShelfForm.controls)) {
-      if (!visibleItemIds.has(itemId)) {
-        this.moveTargetShelfForm.removeControl(itemId, { emitEvent: false });
-      }
-    }
-  }
-
-  private ensureBulkSelectionControl(item: ArmoryItemSummary): void {
-    if (this.bulkSelectionForm.contains(item.itemId)) {
-      return;
-    }
-
-    this.bulkSelectionForm.addControl(
-      item.itemId,
-      new FormControl<boolean>(
-        this.isBulkItemSelected(item),
-        { nonNullable: true },
-      ),
-      { emitEvent: false },
-    );
-  }
-
-  private ensureMoveTargetShelfControl(item: ArmoryItemSummary): void {
-    if (this.moveTargetShelfForm.contains(item.itemId)) {
-      return;
-    }
-
-    this.moveTargetShelfForm.addControl(
-      item.itemId,
-      new FormControl<number>(
-        item.shelfPosition,
-        { nonNullable: true },
-      ),
-      { emitEvent: false },
-    );
   }
 
   private syncStandRenameControls(shelves: readonly ArmoryShelfReadModel[]): void {
@@ -571,23 +495,6 @@ export class ArmoryPage implements OnInit {
     control.markAsPristine();
   }
 
-}
-
-function targetShelfPositionValue(value: string | number | null | undefined): number {
-  if (value === null || value === undefined) {
-    throw new Error('targetShelfPosition is required for armory action.');
-  }
-
-  if (typeof value === 'string' && !trimText(value)) {
-    throw new Error('targetShelfPosition is required for armory action.');
-  }
-
-  const parsed = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(parsed)) {
-    throw new Error('targetShelfPosition must be a number.');
-  }
-
-  return movableArmoryShelfPosition(parsed);
 }
 
 function renameStandControlKey(shelf: Pick<ArmoryShelfReadModel, 'position'>): string {

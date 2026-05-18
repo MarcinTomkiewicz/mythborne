@@ -4478,7 +4478,7 @@ Make equipped/private/locked/lifecycle state badges readable and consistent on i
 - statuses not available:
 - behavior unchanged confirmation:
 
-**Status:** Accepted/completed on 2026-05-18. Visible Inventory item cards now show lifecycle/guild badges only for non-default states, keeping default `Active` and `Owned private item` hidden so compact cards do not regain status noise. The accepted UI-ITEMS-10 grid/card direction, popover behavior and visible `Equip` / `Sell to vendor` actions were preserved; no TS services, DB/RPC contracts, generated types or status-inference logic were changed. Full manual Inventory smoke remains user-side/pending.
+**Status:** Accepted/completed on 2026-05-18. Visible Inventory item cards now show lifecycle/guild badges only for non-default states, keeping default `Active` and `Owned private item` hidden so compact cards do not regain status noise. The accepted UI-ITEMS-10 grid/card direction, popover behavior and visible `Equip` / `Sell to vendor` actions were preserved; no DB/RPC contracts, generated types or status-inference logic were changed. Follow-up capacity semantics and TS cleanup are also accepted: equipped items are filtered out of visible Inventory stands and the displayed `Armory capacity` numerator, while dead checkbox/select/Move form/control code was removed and bulk selection remains signal-based. Full manual Inventory smoke remains user-side/pending.
 
 ---
 
@@ -4725,6 +4725,9 @@ Add a simple stand filter after item search/status filters are stable.
 
 **Goal:**  
 Make current visible capacity and hidden item count understandable without implementing pagination yet.
+
+**Resolved prerequisite:**  
+Capacity semantics for equipped vs stored inventory were implemented after UI-ITEMS-11 acceptance. Equipped items remain in Equipment Preview / Current loadout, are filtered out of visible Inventory stands, and `Armory capacity` displays the stored visible item count rather than stored plus equipped items. The UI should not show confusing states such as `39 / 30` only because items are currently equipped.
 
 **Scope:**
 - Explain owned / visible / hidden relationship.
