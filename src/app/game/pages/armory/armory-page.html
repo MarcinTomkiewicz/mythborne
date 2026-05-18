@@ -340,6 +340,25 @@
                         <strong class="color-heading text-xs">{{ item.drachmaValue }} drachma</strong>
                       }
 
+                      @if (item.lifecycleStatus !== 'active' || guildUsage.key !== 'owned_private') {
+                        <div class="flex-row-start-center flex-wrap gap-xs">
+                          @if (item.lifecycleStatus !== 'active') {
+                            <span class="tag-badge tag-badge--warn">
+                              {{ armoryItemStatusLabel(item) }}
+                            </span>
+                          }
+                          @if (guildUsage.key !== 'owned_private') {
+                            <span
+                              class="tag-badge"
+                              [class.tag-badge--warn]="guildUsage.key === 'deposited_in_guild_armory' || guildUsage.key === 'borrowed_by_guild_member' || guildUsage.key === 'unknown'"
+                              [class.tag-badge--success]="guildUsage.key === 'borrowed_from_guild_armory'"
+                            >
+                              {{ guildUsage.label }}
+                            </span>
+                          }
+                        </div>
+                      }
+
                       <div class="flex-row-start-center flex-wrap gap-xs border-top pt-xs" (click)="$event.stopPropagation()">
                         @if (guildUsage.privateActionsAllowed) {
                           <p-button

@@ -4478,6 +4478,8 @@ Make equipped/private/locked/lifecycle state badges readable and consistent on i
 - statuses not available:
 - behavior unchanged confirmation:
 
+**Status:** Accepted/completed on 2026-05-18. Visible Inventory item cards now show lifecycle/guild badges only for non-default states, keeping default `Active` and `Owned private item` hidden so compact cards do not regain status noise. The accepted UI-ITEMS-10 grid/card direction, popover behavior and visible `Equip` / `Sell to vendor` actions were preserved; no TS services, DB/RPC contracts, generated types or status-inference logic were changed. Full manual Inventory smoke remains user-side/pending.
+
 ---
 
 ## UI-ITEMS-12 — Bulk selection toolbar polish
