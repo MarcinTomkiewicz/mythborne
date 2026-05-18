@@ -375,8 +375,13 @@ describe('DashboardPageFacade', () => {
         sortOrder: 10,
         iconClass: 'pi pi-one-handed',
         item: {
+          itemId: 'item-main',
           name: 'Demonic Dagger',
           metadata: 'Main hand \u00b7 Normal',
+          statusLabel: 'active',
+          qualityLabel: 'Normal',
+          kindLabel: 'Dagger',
+          slotLabel: 'Main hand',
         },
       },
       {

@@ -5,6 +5,7 @@ import {
   GetHeroHealthStateRpcArgs,
   GetHeroHealthStateRpcRow,
 } from '../../types/hero-runtime-stats-rpc.types';
+import { firstRpcRow } from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 
 export interface HeroHealthStateReadModel {
@@ -29,7 +30,7 @@ export class HeroHealthState {
       .rpc<GetHeroHealthStateRpcRow[]>(RPC.get_hero_health_state, args)
       .pipe(
         map((rows) => {
-          const row = firstRow(rows, RPC.get_hero_health_state);
+          const row = firstRpcRow(rows, RPC.get_hero_health_state);
 
           if (row.hero_id !== heroId) {
             throw new Error('Hero health state returned a row for a different hero.');
@@ -50,14 +51,4 @@ function mapHeroHealthState(row: GetHeroHealthStateRpcRow): HeroHealthStateReadM
     resetPolicyKey: row.reset_policy_key,
     syncedAt: row.synced_at,
   };
-}
-
-function firstRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error(`${rpcName} returned no health state row.`);
-  }
-
-  return row;
 }

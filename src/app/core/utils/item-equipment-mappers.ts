@@ -251,6 +251,14 @@ function armoryRpcItemSummary(
     drachmaValue: row.drachma_value,
     shelfPosition: row.armory_shelf_position,
     shelfName: row.shelf_name,
+    baseKey: row.base_key,
+    baseName: row.base_name,
+    baseTypeKey: row.base_type_key,
+    itemCategoryKey: row.item_category_key,
+    equipmentArea: row.equipment_area,
+    handUsageKey: row.hand_usage_key,
+    primarySlotKey: row.primary_slot_key,
+    allowedSlotKeys: row.allowed_slot_keys,
     requirementPreview: null,
   };
 }

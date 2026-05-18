@@ -11,6 +11,7 @@ import {
   GetHeroDashboardRuntimeStatsRpcArgs,
   GetHeroDashboardRuntimeStatsRpcRow,
 } from '../../types/hero-runtime-stats-rpc.types';
+import { firstRpcRow } from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from './active-hero';
 
@@ -45,7 +46,7 @@ export class HeroDashboardRuntimeStats {
       )
       .pipe(
         map((rows) => {
-          const row = firstRow(rows, RPC.get_hero_dashboard_runtime_stats);
+          const row = firstRpcRow(rows, RPC.get_hero_dashboard_runtime_stats);
 
           if (row.hero_id !== heroId) {
             throw new Error('Dashboard runtime stats returned a row for a different hero.');
@@ -88,12 +89,3 @@ export class HeroDashboardRuntimeStats {
   }
 }
 
-function firstRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error(`${rpcName} returned no runtime stats row.`);
-  }
-
-  return row;
-}

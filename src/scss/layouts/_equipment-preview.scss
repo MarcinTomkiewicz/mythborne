@@ -81,6 +81,24 @@ $compact-icon-overlay-min-width:
   min-height: 34rem;
 }
 
+@media (min-width: 1024px) {
+  .equipment-preview__board {
+    min-height: 0;
+    height: 570px;
+    max-height: 570px;
+  }
+
+  .equipment-preview__figure {
+    min-height: 0;
+    max-height: 570px;
+  }
+
+  .equipment-preview__board--compact {
+    min-height: 0;
+    max-height: 570px;
+  }
+}
+
 .equipment-preview__board--compact {
   position: relative;
   overflow: visible;

@@ -17,6 +17,7 @@ import {
   toDisbandGuildRpcArgs,
   toLeaveGuildRpcArgs,
 } from '../../utils/guild-lifecycle-mappers';
+import { firstRpcRow } from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
@@ -51,7 +52,7 @@ export class PlayerGuildLifecycle {
         RPC.leave_guild,
         toLeaveGuildRpcArgs(actorHeroId, withRequestId(input, 'guild-leave')),
       )
-      .pipe(map((rows) => mapGuildLeaveResult(firstRow(rows, RPC.leave_guild))));
+      .pipe(map((rows) => mapGuildLeaveResult(firstRpcRow(rows, RPC.leave_guild))));
   }
 
   disbandGuildForActiveHero(
@@ -82,7 +83,7 @@ export class PlayerGuildLifecycle {
         RPC.disband_guild,
         toDisbandGuildRpcArgs(actorHeroId, withRequestId(input, 'guild-disband')),
       )
-      .pipe(map((rows) => mapGuildDisbandResult(firstRow(rows, RPC.disband_guild))));
+      .pipe(map((rows) => mapGuildDisbandResult(firstRpcRow(rows, RPC.disband_guild))));
   }
 }
 
@@ -95,16 +96,6 @@ function createRequestId(prefix: string): string {
     ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   return `${prefix}:${randomId}`;
-}
-
-function firstRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error(`${rpcName} returned no guild lifecycle row.`);
-  }
-
-  return row;
 }
 
 function assertActiveContext(

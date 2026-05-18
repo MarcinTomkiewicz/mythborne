@@ -44,31 +44,32 @@
         @for (group of paperdollGroups(); track group.key) {
           <div class="flex-col gap-sm {{ group.zoneClass }}">
             @for (slot of group.rows; track slot.slotKey) {
-              <article
-                class="equipment-preview__slot-card mg-card flex-row-start-center gap-sm p-sm w-100"
-                [class.bg-transparent]="!slot.item"
-              >
-                <span class="equipment-preview__slot-icon flex-row-center-center flex-none">
-                  <i class="color-text text-xxl" [ngClass]="slot.iconClass" aria-hidden="true"></i>
-                </span>
-                <span class="flex-col gap-xs min-w-0">
-                  @if (showSlotLabels()) {
-                    <span class="color-muted text-xs small-caps uppercase">{{ slot.label }}</span>
-                  }
-
-                  @if (slot.item; as item) {
-                    <strong class="equipment-preview__item-name color-heading">{{ item.name }}</strong>
-                    @if (item.metadata && !compact()) {
-                      <span class="color-muted text-xs">{{ item.metadata }}</span>
-                    }
-                  } @else {
-                    <strong class="equipment-preview__item-name color-heading">Empty slot</strong>
-                    @if (!compact()) {
-                      <span class="color-muted text-xs">No item equipped</span>
-                    }
-                  }
-                </span>
-              </article>
+              @if (slot.item; as item) {
+                <app-item-detail-popover
+                  class="equipment-preview__slot-popover"
+                  [itemId]="item.itemId"
+                  [fallbackName]="item.name"
+                  [statusLabel]="item.statusLabel"
+                  [qualityLabel]="item.qualityLabel"
+                  [kindLabel]="item.kindLabel"
+                  [slotLabel]="item.slotLabel"
+                  [iconClass]="slot.iconClass"
+                  contextKind="current"
+                  contextLabel="Current equipped item"
+                  [buttonTrigger]="false"
+                  [triggerFullWidth]="true"
+                >
+                  <ng-container
+                    [ngTemplateOutlet]="slotCard"
+                    [ngTemplateOutletContext]="{ slot: slot, item: item, stretch: false }"
+                  />
+                </app-item-detail-popover>
+              } @else {
+                <ng-container
+                  [ngTemplateOutlet]="slotCard"
+                  [ngTemplateOutletContext]="{ slot: slot, item: null, stretch: false }"
+                />
+              }
             }
           </div>
         }
@@ -85,32 +86,72 @@
       @if (otherRows().length) {
         <div class="flex-col gap-sm p-sm">
           @for (slot of otherRows(); track slot.slotKey) {
-            <article
-              class="equipment-preview__slot-card mg-card flex-row-start-stretch gap-sm p-sm"
-              [class.bg-transparent]="!slot.item"
-            >
-              <span class="equipment-preview__slot-icon flex-row-center-center flex-none">
-                <i class="color-heading" [ngClass]="slot.iconClass" aria-hidden="true"></i>
-              </span>
-              <span class="flex-col gap-xs min-w-0">
-                @if (showSlotLabels()) {
-                  <span class="color-muted text-xs small-caps uppercase">{{ slot.label }}</span>
-                }
-
-                @if (slot.item; as item) {
-                  <strong class="equipment-preview__item-name color-heading">{{ item.name }}</strong>
-                  @if (item.metadata) {
-                    <span class="color-muted text-xs">{{ item.metadata }}</span>
-                  }
-                } @else {
-                  <strong class="equipment-preview__item-name color-heading">Empty slot</strong>
-                  <span class="color-muted text-xs">No item equipped</span>
-                }
-              </span>
-            </article>
+            @if (slot.item; as item) {
+              <app-item-detail-popover
+                class="equipment-preview__slot-popover"
+                [itemId]="item.itemId"
+                [fallbackName]="item.name"
+                [statusLabel]="item.statusLabel"
+                [qualityLabel]="item.qualityLabel"
+                [kindLabel]="item.kindLabel"
+                [slotLabel]="item.slotLabel"
+                [iconClass]="slot.iconClass"
+                contextKind="current"
+                contextLabel="Current equipped item"
+                [buttonTrigger]="false"
+                [triggerFullWidth]="true"
+              >
+                <ng-container
+                  [ngTemplateOutlet]="slotCard"
+                  [ngTemplateOutletContext]="{ slot: slot, item: item, stretch: true }"
+                />
+              </app-item-detail-popover>
+            } @else {
+              <ng-container
+                [ngTemplateOutlet]="slotCard"
+                [ngTemplateOutletContext]="{ slot: slot, item: null, stretch: true }"
+              />
+            }
           }
         </div>
       }
     </div>
   }
 </section>
+
+<ng-template #slotCard let-slot="slot" let-item="item" let-stretch="stretch">
+  <article
+    class="equipment-preview__slot-card mg-card gap-sm min-w-0 p-sm"
+    [class.flex-row-start-stretch]="stretch"
+    [class.flex-row-start-center]="!stretch"
+    [class.bg-transparent]="!item"
+    [attr.aria-label]="item ? slot.label + ': ' + item.name : slot.label + ': empty slot'"
+  >
+    <span
+      class="equipment-preview__slot-icon-host mg-card p-xs flex-row-center-center flex-none"
+      [class.opacity-35]="!item"
+    >
+      <i
+        class="color-text text-xxl"
+        [ngClass]="slot.iconClass"
+        aria-hidden="true"
+      ></i>
+    </span>
+
+    <span class="equipment-preview__slot-content flex-col gap-xs min-w-0">
+      @if (showSlotLabels()) {
+        <span class="color-muted text-xs small-caps uppercase">{{ slot.label }}</span>
+      }
+
+      <strong class="equipment-preview__item-name color-heading text-sm">
+        {{ item ? item.name : 'Empty slot' }}
+      </strong>
+
+      @if (item?.metadata && !compact()) {
+        <span class="color-muted text-xs">{{ item.metadata }}</span>
+      } @else if (!item && !compact()) {
+        <span class="color-muted text-xs">No item equipped</span>
+      }
+    </span>
+  </article>
+</ng-template>

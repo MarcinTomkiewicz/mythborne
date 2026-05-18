@@ -21,6 +21,7 @@ import {
   toKickGuildMemberRpcArgs,
   toPromoteGuildMemberRpcArgs,
 } from '../../utils/guild-member-mappers';
+import { firstRpcRow } from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
@@ -82,7 +83,7 @@ export class PlayerGuildMembers {
       )
       .pipe(
         map((rows) =>
-          mapGuildMemberOperationResult(firstRow(rows, RPC.kick_guild_member))
+          mapGuildMemberOperationResult(firstRpcRow(rows, RPC.kick_guild_member))
         ),
       );
   }
@@ -120,7 +121,7 @@ export class PlayerGuildMembers {
       )
       .pipe(
         map((rows) =>
-          mapGuildMemberOperationResult(firstRow(rows, RPC.promote_guild_member_to_officer))
+          mapGuildMemberOperationResult(firstRpcRow(rows, RPC.promote_guild_member_to_officer))
         ),
       );
   }
@@ -158,7 +159,7 @@ export class PlayerGuildMembers {
       )
       .pipe(
         map((rows) =>
-          mapGuildMemberOperationResult(firstRow(rows, RPC.demote_guild_officer))
+          mapGuildMemberOperationResult(firstRpcRow(rows, RPC.demote_guild_officer))
         ),
       );
   }
@@ -173,16 +174,6 @@ function createRequestId(prefix: string): string {
     ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   return `${prefix}:${randomId}`;
-}
-
-function firstRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error(`${rpcName} returned no guild member row.`);
-  }
-
-  return row;
 }
 
 function assertActiveContext(

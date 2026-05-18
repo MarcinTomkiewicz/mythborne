@@ -2,22 +2,20 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { EMPTY, Observable, switchMap, tap } from 'rxjs';
 import { HeroArmoryReadModel } from '../../domain/item/item-equipment.model';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
+import {
+  MoveArmoryItemToShelfInput,
+  RenameArmoryShelfInput,
+} from '../../interfaces/item/armory-actions.interface';
+import {
+  ArmoryLifecycleMutationInput,
+  ArmoryMutationOptions,
+} from '../../interfaces/item/armory-shelf-mutation.interface';
+import { ArmoryShelfReadStatus } from '../../types/armory-shelf.types';
 import { getErrorMessage } from '../../utils/error-message';
 import { ActiveHero } from '../hero/active-hero';
 import { ItemLifecycleService } from './item-lifecycle';
 import { ArmoryShelfMutationRunner } from './armory-shelf-mutation-runner';
-import {
-  MoveArmoryItemToShelfInput,
-  PlayerArmory,
-  RenameArmoryShelfInput,
-} from './player-armory';
-
-export type ArmoryShelfReadStatus =
-  | 'idle'
-  | 'loading'
-  | 'loaded'
-  | 'empty'
-  | 'error';
+import { PlayerArmory } from './player-armory';
 
 @Injectable()
 export class ArmoryShelfState {
@@ -203,26 +201,6 @@ export class ArmoryShelfState {
     this.readModel.set(null);
     this.status.set('error');
   }
-}
-
-interface ArmoryMutationOptions {
-  operation: (
-    requestId: number,
-    requestContextKey: string,
-    acceptsCurrentContext: () => boolean,
-  ) => Observable<HeroArmoryReadModel>;
-  afterResponse?: () => void;
-  successMessage?: string;
-  failureMessage: string;
-  committedRefreshFailureMessage?: string;
-  hasCommitted?: () => boolean;
-}
-
-interface ArmoryLifecycleMutationInput<T> {
-  itemId: string;
-  operation: (actorHeroId: string, itemId: string) => Observable<T>;
-  afterResponse?: () => void;
-  successMessage: string;
 }
 
 function requiredItemId(itemId: string): string {

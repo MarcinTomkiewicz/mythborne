@@ -33,6 +33,7 @@ import {
   toGuildArmoryLoanActionRpcArgs,
   toSetGuildArmoryMemberAccessRpcArgs,
 } from '../../utils/guild-armory-action-mappers';
+import { firstRpcRow } from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
@@ -66,7 +67,7 @@ export class PlayerGuildArmoryActions {
       )
       .pipe(
         map((rows) =>
-          mapGuildArmoryDepositResult(firstRow(rows, RPC.deposit_guild_armory_item))
+          mapGuildArmoryDepositResult(firstRpcRow(rows, RPC.deposit_guild_armory_item))
         ),
       );
   }
@@ -96,7 +97,7 @@ export class PlayerGuildArmoryActions {
       )
       .pipe(
         map((rows) =>
-          mapGuildArmoryBorrowResult(firstRow(rows, RPC.borrow_guild_armory_item))
+          mapGuildArmoryBorrowResult(firstRpcRow(rows, RPC.borrow_guild_armory_item))
         ),
       );
   }
@@ -126,7 +127,7 @@ export class PlayerGuildArmoryActions {
       )
       .pipe(
         map((rows) =>
-          mapGuildArmoryReturnResult(firstRow(rows, RPC.return_guild_armory_loan))
+          mapGuildArmoryReturnResult(firstRpcRow(rows, RPC.return_guild_armory_loan))
         ),
       );
   }
@@ -157,7 +158,7 @@ export class PlayerGuildArmoryActions {
       .pipe(
         map((rows) =>
           mapGuildArmoryForceReturnResult(
-            firstRow(rows, RPC.force_return_guild_armory_loan),
+            firstRpcRow(rows, RPC.force_return_guild_armory_loan),
           )
         ),
       );
@@ -189,7 +190,7 @@ export class PlayerGuildArmoryActions {
       .pipe(
         map((rows) =>
           mapGuildArmoryWithdrawResult(
-            firstRow(rows, RPC.withdraw_guild_armory_item),
+            firstRpcRow(rows, RPC.withdraw_guild_armory_item),
           )
         ),
       );
@@ -220,7 +221,7 @@ export class PlayerGuildArmoryActions {
       )
       .pipe(
         map((rows) =>
-          mapGuildArmoryRemoveResult(firstRow(rows, RPC.remove_guild_armory_item))
+          mapGuildArmoryRemoveResult(firstRpcRow(rows, RPC.remove_guild_armory_item))
         ),
       );
   }
@@ -251,7 +252,7 @@ export class PlayerGuildArmoryActions {
       .pipe(
         map((rows) =>
           mapGuildArmoryAccessLockState(
-            firstRow(rows, RPC.set_guild_armory_member_access),
+            firstRpcRow(rows, RPC.set_guild_armory_member_access),
           )
         ),
       );
@@ -288,16 +289,6 @@ function createRequestId(prefix: string): string {
     ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   return `${prefix}:${randomId}`;
-}
-
-function firstRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error(`${rpcName} returned no guild armory row.`);
-  }
-
-  return row;
 }
 
 function assertActiveContext(

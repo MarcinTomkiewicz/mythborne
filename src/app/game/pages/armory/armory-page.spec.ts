@@ -227,7 +227,6 @@ describe('ArmoryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Unsorted');
-    expect(text).toContain('Position 0');
     expect(text).toContain('Weapons');
     expect(text).toContain('Stand 1');
     expect(text).toContain('Fresh Drop Blade');
@@ -289,7 +288,6 @@ describe('ArmoryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Unsorted');
-    expect(text).toContain('Position 0');
     expect(text).not.toContain('Rename');
   });
 
@@ -994,12 +992,14 @@ class MockEquipmentPreview {
 @Component({
   selector: 'app-armory-item-detail-popover',
   standalone: true,
-  template: '<button type="button">Details</button>',
+  template: '<ng-content /><button type="button">Details</button>',
 })
 class MockArmoryItemDetailPopover {
   readonly item = input.required<ArmoryItemSummary | EquippedItemSummary>();
   readonly guildContextLabel = input<string | null>(null);
   readonly guildContextDetail = input<string | null>(null);
+  readonly buttonTrigger = input(true);
+  readonly triggerFullWidth = input(false);
 }
 
 function textContent(fixture: ComponentFixture<ArmoryPage>): string {

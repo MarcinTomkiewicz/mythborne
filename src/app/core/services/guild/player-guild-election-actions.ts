@@ -32,6 +32,7 @@ import {
   toStartGuildEmergencyElectionVotingRpcArgs,
   toVoteGuildEmergencyElectionRpcArgs,
 } from '../../utils/guild-emergency-election-action-mappers';
+import { firstRpcRow } from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
@@ -74,7 +75,7 @@ export class PlayerGuildElectionActions {
       .pipe(
         map((rows) =>
           mapGuildEmergencyElectionStartResult(
-            firstRow(rows, RPC.start_guild_emergency_election),
+            firstRpcRow(rows, RPC.start_guild_emergency_election),
           )
         ),
       );
@@ -114,7 +115,7 @@ export class PlayerGuildElectionActions {
       .pipe(
         map((rows) =>
           mapGuildEmergencyElectionNominationResult(
-            firstRow(rows, RPC.nominate_guild_emergency_leader_candidate),
+            firstRpcRow(rows, RPC.nominate_guild_emergency_leader_candidate),
           )
         ),
       );
@@ -154,7 +155,7 @@ export class PlayerGuildElectionActions {
       .pipe(
         map((rows) =>
           mapGuildEmergencyElectionVotingStartResult(
-            firstRow(rows, RPC.start_guild_emergency_election_voting),
+            firstRpcRow(rows, RPC.start_guild_emergency_election_voting),
           )
         ),
       );
@@ -194,7 +195,7 @@ export class PlayerGuildElectionActions {
       .pipe(
         map((rows) =>
           mapGuildEmergencyElectionVoteResult(
-            firstRow(rows, RPC.vote_guild_emergency_election),
+            firstRpcRow(rows, RPC.vote_guild_emergency_election),
           )
         ),
       );
@@ -234,7 +235,7 @@ export class PlayerGuildElectionActions {
       .pipe(
         map((rows) =>
           mapGuildEmergencyElectionFinalizeResult(
-            firstRow(rows, RPC.finalize_guild_emergency_election),
+            firstRpcRow(rows, RPC.finalize_guild_emergency_election),
           )
         ),
       );
@@ -253,16 +254,6 @@ function createRequestId(prefix: string): string {
     ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   return `${prefix}:${randomId}`;
-}
-
-function firstRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error(`${rpcName} returned no guild emergency election row.`);
-  }
-
-  return row;
 }
 
 function assertActiveContext(

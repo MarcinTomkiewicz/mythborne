@@ -66,10 +66,10 @@
         </div>
 
         @if (equipment.error()) {
-          <p class="status-text-warning mb-md">{{ equipment.error() }}</p>
+          <p class="warn-text mb-md">{{ equipment.error() }}</p>
         }
         @if (equipment.actionError()) {
-          <p class="status-text-warning mb-md">{{ equipment.actionError() }}</p>
+          <p class="warn-text mb-md">{{ equipment.actionError() }}</p>
         }
         @if (equipment.actionJournal(); as journal) {
           <div class="mg-card p-md flex-col gap-sm mb-md">
@@ -91,7 +91,7 @@
               <p class="mb-0">Unequipped: {{ operationMessage(entry) }}</p>
             }
             @for (entry of equipmentJournalEntries('failed'); track $index) {
-              <p class="status-text-warning mb-0">
+              <p class="warn-text mb-0">
                 Failed: {{ operationMessage(entry) }}
               </p>
             }
@@ -117,16 +117,26 @@
           <div class="flex-col gap-sm">
             @for (item of equipment.slots(); track item.slotKey) {
               <div class="flex-row-between-center flex-col-sm gap-sm w-100 border-bottom pb-xs">
-                <div class="flex-col gap-xs min-w-0">
-                  <span class="color-muted text-xs small-caps uppercase">{{ item.slotLabel }}</span>
-                  <strong class="color-heading">{{ item.itemName }}</strong>
-                </div>
+                <app-armory-item-detail-popover
+                  class="d-block min-w-0"
+                  [item]="item"
+                  [buttonTrigger]="false"
+                >
+                  <div class="mg-card flex-row-start-center gap-sm p-sm min-w-0">
+                    <span class="mg-card p-sm flex-row-center-center">
+                      <i class="color-text text-xl {{ equippedItemIconClass(item) }}" aria-hidden="true"></i>
+                    </span>
+                    <div class="flex-col gap-xs min-w-0">
+                      <span class="color-muted text-xs font-bold uppercase">{{ item.slotLabel }}</span>
+                      <strong class="color-text text-sm">{{ item.itemName }}</strong>
+                    </div>
+                  </div>
+                </app-armory-item-detail-popover>
 
                 <div class="flex-row-start-center flex-wrap gap-xs">
                   <span [class]="itemStatusClass(item)">
                     {{ itemStatusLabel(item) }}
                   </span>
-                  <app-armory-item-detail-popover [item]="item" />
                   <p-button
                     type="button"
                     severity="secondary"
@@ -218,18 +228,18 @@
       </div>
 
       @if (armory.error()) {
-        <p class="status-text-warning mb-md">{{ armory.error() }}</p>
+        <p class="warn-text mb-md">{{ armory.error() }}</p>
       }
       @if (guildItemUsageState.error()) {
-        <p class="status-text-warning mb-md">
+        <p class="warn-text mb-md">
           {{ guildItemUsageState.error() }} Private item actions are hidden until guild armory item state is available.
         </p>
       }
       @if (armory.actionError()) {
-        <p class="status-text-warning mb-md">{{ armory.actionError() }}</p>
+        <p class="warn-text mb-md">{{ armory.actionError() }}</p>
       }
       @if (armory.actionMessage()) {
-        <p class="status-text-success mb-md">{{ armory.actionMessage() }}</p>
+        <p class="success-text mb-md">{{ armory.actionMessage() }}</p>
       }
 
       <div class="flex-col gap-sm">
@@ -309,65 +319,73 @@
               <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-sm w-100">
                 @for (item of shelf.visibleItems; track item.itemId) {
                   @let guildUsage = guildItemUsage(item);
-                  <article class="mg-card p-md flex-col gap-sm w-100">
-                    <div class="flex-row-between-start gap-sm">
-                      <div class="flex-col gap-xs min-w-0">
-                        <strong class="color-heading">{{ item.name }}</strong>
-                        @if (item.drachmaValue !== null) {
-                          <span class="muted-text">{{ item.drachmaValue }} drachma</span>
-                        }
+                  <app-armory-item-detail-popover
+                    class="d-block w-100"
+                    [item]="item"
+                    [guildContextLabel]="guildUsage.label"
+                    [guildContextDetail]="guildUsage.detail"
+                    [buttonTrigger]="false"
+                    [triggerFullWidth]="true"
+                  >
+                    <article class="mg-card p-md flex-col gap-sm w-100">
+                      <div class="flex-row-between-start gap-sm">
+                        <div class="flex-row-start-start gap-sm min-w-0">
+                          <span class="mg-card p-sm flex-row-center-center">
+                            <i class="color-text text-xl {{ armoryItemIconClass(item) }}" aria-hidden="true"></i>
+                          </span>
+                          <div class="flex-col gap-xs min-w-0">
+                          <strong class="color-text text-sm">{{ item.name }}</strong>
+                          @if (item.drachmaValue !== null) {
+                            <span class="color-muted text-xs">{{ item.drachmaValue }} drachma</span>
+                          }
+                          </div>
+                        </div>
+                        <span [class]="armoryItemStatusClass(item)">
+                          {{ armoryItemStatusLabel(item) }}
+                        </span>
                       </div>
-                      <span [class]="armoryItemStatusClass(item)">
-                        {{ armoryItemStatusLabel(item) }}
-                      </span>
-                    </div>
 
-                    <div class="flex-row-start-center flex-wrap gap-xs">
-                      <span
-                        class="tag-badge"
-                        [class.tag-badge--info]="guildUsage.key === 'owned_private'"
-                        [class.tag-badge--warn]="guildUsage.key === 'deposited_in_guild_armory' || guildUsage.key === 'borrowed_by_guild_member'"
-                        [class.tag-badge--success]="guildUsage.key === 'borrowed_from_guild_armory'"
-                        [class.tag-badge--muted]="guildUsage.key === 'unknown'"
-                      >
-                        {{ guildUsage.label }}
-                      </span>
-                    </div>
-
-                    @if (guildUsage.detail) {
-                      <span class="muted-text">{{ guildUsage.detail }}</span>
-                    }
-
-                    @if (guildUsage.privateActionsAllowed) {
-                      <div class="flex-row-start-center gap-sm" [formGroup]="bulkSelectionForm">
-                        <p-checkbox
-                          [binary]="true"
-                          [formControlName]="item.itemId"
-                          [inputId]="'bulk-equip-' + item.itemId"
-                          (onChange)="setBulkItemSelected(item, $event.checked === true)"
-                        />
-                        <label [for]="'bulk-equip-' + item.itemId">Select for bulk equip</label>
+                      <div class="flex-row-start-center flex-wrap gap-xs">
+                        <span
+                          class="tag-badge"
+                          [class.tag-badge--info]="guildUsage.key === 'owned_private'"
+                          [class.tag-badge--warn]="guildUsage.key === 'deposited_in_guild_armory' || guildUsage.key === 'borrowed_by_guild_member'"
+                          [class.tag-badge--success]="guildUsage.key === 'borrowed_from_guild_armory'"
+                          [class.tag-badge--muted]="guildUsage.key === 'unknown'"
+                        >
+                          {{ guildUsage.label }}
+                        </span>
                       </div>
-                    }
 
-                    <div class="flex-row-start-center flex-wrap gap-xs">
-                      <app-armory-item-detail-popover
-                        [item]="item"
-                        [guildContextLabel]="guildUsage.label"
-                        [guildContextDetail]="guildUsage.detail"
-                      />
-                      @if (guildUsage.privateActionsAllowed) {
-                        <p-button
-                          type="button"
-                          severity="secondary"
-                          size="small"
-                          label="Equip"
-                          [disabled]="equipment.isMutating()"
-                          (onClick)="equipItem(item)"
-                        />
+                      @if (guildUsage.detail) {
+                        <span class="muted-text">{{ guildUsage.detail }}</span>
                       }
-                      @if (canUseLifecycleActions(item)) {
-                        <p-button
+
+                      @if (guildUsage.privateActionsAllowed) {
+                        <div class="flex-row-start-center gap-sm" [formGroup]="bulkSelectionForm">
+                          <p-checkbox
+                            [binary]="true"
+                            [formControlName]="item.itemId"
+                            [inputId]="'bulk-equip-' + item.itemId"
+                            (onChange)="setBulkItemSelected(item, $event.checked === true)"
+                          />
+                          <label [for]="'bulk-equip-' + item.itemId">Select for bulk equip</label>
+                        </div>
+                      }
+
+                      <div class="flex-row-start-center flex-wrap gap-xs">
+                        @if (guildUsage.privateActionsAllowed) {
+                          <p-button
+                            type="button"
+                            severity="secondary"
+                            size="small"
+                            label="Equip"
+                            [disabled]="equipment.isMutating()"
+                            (onClick)="equipItem(item)"
+                          />
+                        }
+                        @if (canUseLifecycleActions(item)) {
+                          <p-button
                           type="button"
                           severity="secondary"
                           size="small"
@@ -402,11 +420,12 @@
                     }
 
                     @if (item.lifecycleStatus !== 'active') {
-                      <span class="muted-text">
+                      <span class="warn-text">
                         Owned item reserved by market state.
                       </span>
                     }
                   </article>
+                  </app-armory-item-detail-popover>
                 }
               </div>
             } @else {

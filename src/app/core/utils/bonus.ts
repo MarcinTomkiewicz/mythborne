@@ -6,58 +6,50 @@ import {
   BonusType,
   EditableAppliedBonus,
 } from '../types/bonus.types';
+import { BONUS_SCOPES } from '../constants/bonus-scopes.const';
 import { uniqueSorted } from './collection';
-import { trimText } from './normalize-text';
+import { normalizeKeyText, trimText } from './normalize-text';
 
-export const FALLBACK_BONUS_TYPE_OPTIONS = [
-  { label: 'flat', value: 'flat' },
-  { label: 'percent', value: 'percent' },
-  { label: 'per levels', value: 'per_levels' },
-  { label: 'scaled stat bonus', value: 'scaled_stat_bonus' },
-  { label: 'resource flat', value: 'resource_flat' },
-  { label: 'resource percent', value: 'resource_percent' },
-  { label: 'capacity flat', value: 'capacity_flat' },
-  { label: 'unlock feature', value: 'unlock_feature' },
-] as const;
-
-// Temporary UI fallback. Runtime/admin data should read dictionary tables.
-export const BONUS_TYPE_OPTIONS = FALLBACK_BONUS_TYPE_OPTIONS;
-
-const BONUS_TYPES = new Set<BonusType>(
-  FALLBACK_BONUS_TYPE_OPTIONS.map((option) => option.value),
-);
-const BONUS_SCOPES = new Set<BonusScope>(
-  [
-    'global',
-    'combat',
-    'pvp_attack',
-    'pvp_defense',
-    'trial',
-    'exploration',
-    'requirements',
-    'trade',
-    'auction',
-    'economy',
-    'building_management',
-  ],
-);
+const BONUS_SCOPE_VALUES = new Set<BonusScope>(Object.values(BONUS_SCOPES));
 
 export function normalizeBonusType(
   value: string | null | undefined,
 ): BonusType {
-  return BONUS_TYPES.has(value as BonusType) ? (value as BonusType) : 'flat';
+  switch (value) {
+    case 'flat':
+    case 'percent':
+    case 'per_levels':
+    case 'scaled_stat_bonus':
+    case 'resource_flat':
+    case 'resource_percent':
+    case 'capacity_flat':
+    case 'unlock_feature':
+      return value;
+    default:
+      return 'flat';
+  }
 }
 
 export function normalizeBonusScope(
   value: string | null | undefined,
 ): BonusScope {
-  return BONUS_SCOPES.has(value as BonusScope)
+  return BONUS_SCOPE_VALUES.has(value as BonusScope)
     ? (value as BonusScope)
     : 'global';
 }
 
 export function normalizeBonusTarget(value: string | null | undefined): string {
   return trimText(value);
+}
+
+export function normalizeBonusTargetKey(value: string | null | undefined): string | null {
+  const normalized = normalizeKeyText(normalizeBonusTarget(value))
+    .replace(/_flat$/i, '')
+    .replace(/_percent$/i, '')
+    .replace(/^maximum_/, 'max_')
+    .replace(/^minimum_/, 'min_');
+
+  return normalized || null;
 }
 
 export function toEditableAppliedBonus(

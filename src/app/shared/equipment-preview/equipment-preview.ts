@@ -1,6 +1,7 @@
-import { NgClass } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ItemDetailPopover } from '../item-detail-popover/item-detail-popover';
 import {
   EQUIPMENT_PREVIEW_GROUPS,
   EquipmentPreviewRegion,
@@ -8,16 +9,10 @@ import {
 } from './equipment-preview.config';
 import { EquipmentPreviewSlotRow } from '../../core/domain/equipment/equipment-preview.model';
 
-interface EquipmentPreviewGroup {
-  key: EquipmentPreviewRegion;
-  zoneClass: string;
-  rows: EquipmentPreviewSlotRow[];
-}
-
 @Component({
   selector: 'app-equipment-preview',
   standalone: true,
-  imports: [NgClass, RouterLink],
+  imports: [NgClass, NgTemplateOutlet, RouterLink, ItemDetailPopover],
   host: { class: 'd-block w-100' },
   templateUrl: './equipment-preview.html',
 })
@@ -33,7 +28,7 @@ export class EquipmentPreview {
   readonly showSlotLabels = input(true);
   readonly paperdollImageUrl = input('/images/warrior.png');
 
-  readonly paperdollGroups = computed<EquipmentPreviewGroup[]>(() =>
+  readonly paperdollGroups = computed(() =>
     EQUIPMENT_PREVIEW_GROUPS.map((group) => ({
       ...group,
       rows: this.rowsForRegion(group.key),

@@ -13,7 +13,15 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
-import { mapEquipmentPreviewRows } from '../../../core/domain/equipment/equipment-preview.mapper';
+import {
+  ARMORY_PLAYER_SHELF_POSITIONS,
+  ARMORY_UNSORTED_SHELF_POSITION,
+} from '../../../core/constants/armory-shelves.const';
+import {
+  armoryItemIconClass,
+  equippedItemIconClass,
+  mapEquipmentPreviewRows,
+} from '../../../core/domain/equipment/equipment-preview.mapper';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
@@ -128,12 +136,20 @@ export class ArmoryPage implements OnInit {
     return this.lifecycleStatusClass(item.lifecycleStatus);
   }
 
+  equippedItemIconClass(item: EquippedItemSummary): string {
+    return equippedItemIconClass(item);
+  }
+
   armoryItemStatusLabel(item: ArmoryItemSummary): string {
     return this.lifecycleStatusLabel(item.lifecycleStatus);
   }
 
   armoryItemStatusClass(item: ArmoryItemSummary): string {
     return this.lifecycleStatusClass(item.lifecycleStatus);
+  }
+
+  armoryItemIconClass(item: ArmoryItemSummary): string {
+    return armoryItemIconClass(item);
   }
 
   shelfLabel(shelf: ArmoryShelfReadModel): string {
@@ -506,7 +522,7 @@ function completeArmoryShelfDisplay(
     };
 
   return [
-    ...Array.from({ length: 10 }, (_, index) => shelfAt(index + 1)),
-    shelfAt(0),
+    ...ARMORY_PLAYER_SHELF_POSITIONS.map(shelfAt),
+    shelfAt(ARMORY_UNSORTED_SHELF_POSITION),
   ];
 }

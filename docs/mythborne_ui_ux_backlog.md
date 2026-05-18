@@ -4124,6 +4124,8 @@ Wprowadzić lub zastosować shared item popover display wszędzie tam, gdzie poj
 - missing fields:
 - local SCSS added:
 
+**Status:** Accepted on 2026-05-18 for the core shared item popover behavior. Item popovers on item icons/cards are usable, item detail display covers the accepted value/stat/bonus/requirement behavior for this task, icons render visibly, requirement state does not rely on visible `Met` / `Not met` row badges, and stats/bonus/value alignment is acceptable. Known non-blocking follow-up: `EquipmentPreview` / paperdoll responsive geometry remains imperfect across breakpoints, including possible boots/greaves ordering and slot positioning issues; handle this later as a dedicated paperdoll breakpoint refactor, not as a blocker for UI-ITEMS-3. Broader manual breakpoint smoke remains tester-side/future.
+
 ## UI-ITEMS-4 — Equipment/paperdoll preview reuse
 
 **Goal:**  

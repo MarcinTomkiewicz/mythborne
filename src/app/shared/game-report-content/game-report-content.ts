@@ -1,30 +1,20 @@
 import { Component, input } from '@angular/core';
 import {
-  GameReportCombatSection,
   GameReportCombatParticipant,
   GameReportContextualReadiness,
   GameReportContextSection,
   GameReportItemReference,
-  GameReportParticipant,
   GameReportRelatedReport,
   PublicGameReportItemReference,
 } from '../../core/domain/reports/game-report.model';
-
-export interface GameReportContentReadModel {
-  participants: GameReportParticipant[];
-  itemReferences: Array<GameReportItemReference | PublicGameReportItemReference>;
-  trialSection: GameReportContextSection | null;
-  encounterSection: GameReportContextSection | null;
-  rewardSection: GameReportContextSection | null;
-  effectSection: GameReportContextSection | null;
-  combatSection: GameReportCombatSection | null;
-  relatedReports: GameReportRelatedReport[];
-  contextualReadiness: GameReportContextualReadiness | null;
-}
+import { GameReportContentReadModel } from '../../core/interfaces/reports/game-report-content.interface';
+import { humanizeKey } from '../../core/utils/normalize-text';
+import { ItemDetailPopover } from '../item-detail-popover/item-detail-popover';
 
 @Component({
   selector: 'app-game-report-content',
   standalone: true,
+  imports: [ItemDetailPopover],
   templateUrl: './game-report-content.html',
 })
 export class GameReportContent {
@@ -36,12 +26,15 @@ export class GameReportContent {
   readonly combatSectionTitle = input.required<string>();
   readonly combatSectionText = input.required<string>();
 
-  toBooleanLabel(value: boolean | null): string {
-    if (value === null) {
-      return 'n/a';
-    }
+  itemReferenceTrackKey(
+    index: number,
+    item: GameReportItemReference | PublicGameReportItemReference,
+  ): string {
+    return `${item.sourceKind}-${item.displayName}-${item.sortOrder}-${index}`;
+  }
 
-    return value ? 'yes' : 'no';
+  toBooleanLabel(value: boolean | null): string {
+    return value === null ? 'n/a' : value ? 'yes' : 'no';
   }
 
   toOptionalNumberLabel(value: number | null): string {
@@ -57,14 +50,13 @@ export class GameReportContent {
   }
 
   toItemSourceKindLabel(value: string): string {
-    return value === 'reward_drop' ? 'Reward drop' : value;
+    return value === 'reward_drop' ? 'Reward drop' : humanizeKey(value, value);
   }
 
-  itemReferenceTrackKey(
-    index: number,
+  itemReferenceId(
     item: GameReportItemReference | PublicGameReportItemReference,
-  ): string {
-    return `${item.sourceKind}-${item.displayName}-${item.sortOrder}-${index}`;
+  ): string | null {
+    return 'sourceItemId' in item ? item.sourceItemId : null;
   }
 
   contextualReadiness(): GameReportContextualReadiness | null {

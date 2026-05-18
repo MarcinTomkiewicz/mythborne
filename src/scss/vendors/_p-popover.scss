@@ -17,6 +17,12 @@
   color: v.$color-text;
 }
 
+.mg-item-popover-overlay .p-popover-content[data-pc-section="content"] {
+  padding: 0;
+  overflow: hidden;
+  border-radius: v.$radius-lg;
+}
+
 /* Arrow */
 .p-popover:after {
   border-bottom-color: v.$color-bg-surface;

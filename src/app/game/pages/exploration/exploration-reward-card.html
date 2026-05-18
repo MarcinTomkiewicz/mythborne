@@ -21,8 +21,20 @@
         <div class="flex-col gap-xs">
           @for (item of reward.items; track item.id) {
             <div class="flex-row-between-start flex-col-sm gap-sm">
-              <span>{{ page.rewardItemLabel(item) }}</span>
-              <span class="muted-text">{{ page.rewardItemDetails(item) }}</span>
+              <div class="flex-col gap-xs">
+                <span>{{ page.rewardItemLabel(item) }}</span>
+                <span class="muted-text">{{ page.rewardItemDetails(item) }}</span>
+              </div>
+              <app-item-detail-popover
+                [itemId]="item.id"
+                [fallbackName]="item.name"
+                [statusLabel]="item.status"
+                [drachmaValue]="item.drachmaValue"
+                contextKind="reward_item"
+                contextLabel="Reward item"
+                contextSourceLabel="Exploration reward"
+                triggerLabel="Details"
+              />
             </div>
           }
         </div>

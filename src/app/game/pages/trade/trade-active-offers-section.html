@@ -27,23 +27,21 @@
           <div class="flex-row-start-center flex-wrap gap-sm">
             <span class="tag-badge tag-badge--info">{{ offer.status }}</span>
             @if (actions.canConfirm(offer)) {
-              <button
-                pButton
+              <p-button
                 type="button"
                 label="Confirm"
                 [disabled]="actions.isSaving()"
-                (click)="actions.confirmOffer(offer)"
-              ></button>
+                (onClick)="actions.confirmOffer(offer)"
+              />
             }
             @if (actions.canCancel(offer)) {
-              <button
-                pButton
+              <p-button
                 type="button"
                 label="Cancel"
                 severity="secondary"
                 [disabled]="actions.isSaving()"
-                (click)="actions.cancelOffer(offer)"
-              ></button>
+                (onClick)="actions.cancelOffer(offer)"
+              />
             }
           </div>
         </div>
@@ -51,9 +49,23 @@
         @if (offer.items.length) {
           <div class="flex-row-start-center flex-wrap gap-xs mt-sm">
             @for (item of offer.items; track item.id) {
-              <span class="tag-badge tag-badge--muted">
-                {{ item.itemName ?? item.itemId }} - {{ item.side }}
-              </span>
+              <div class="flex-row-start-center gap-xs">
+                <span class="tag-badge tag-badge--muted">
+                  {{ item.itemName ?? item.itemId }} - {{ item.side }}
+                </span>
+                <app-item-detail-popover
+                  [itemId]="item.itemId"
+                  [fallbackName]="item.itemName ?? item.itemId"
+                  [statusLabel]="item.itemStatus"
+                  [drachmaValue]="item.itemDrachmaValue"
+                  contextKind="current"
+                  contextLabel="Active trade item"
+                  contextSourceLabel="Direct trade offer"
+                  triggerLabel="Details"
+                  triggerIcon="pi pi-search"
+                  [triggerOutlined]="true"
+                />
+              </div>
             }
           </div>
         }

@@ -1,11 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { equipmentPreviewRegionFor } from './equipment-preview.config';
 import { EquipmentPreview } from './equipment-preview';
 import {
   EquipmentPreviewItemDisplay,
   EquipmentPreviewSlotRow,
 } from '../../core/domain/equipment/equipment-preview.model';
+import { ItemDetailReader } from '../../core/services/items/item-detail-reader';
 
 describe('EquipmentPreview', () => {
   let fixture: ComponentFixture<EquipmentPreview>;
@@ -13,7 +15,15 @@ describe('EquipmentPreview', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [EquipmentPreview],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ItemDetailReader,
+          useValue: {
+            readItemDetail: jasmine.createSpy('readItemDetail').and.returnValue(of(null)),
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EquipmentPreview);
@@ -54,6 +64,8 @@ describe('EquipmentPreview', () => {
       .toContain('/images/warrior.png');
     expect(host.querySelectorAll('.equipment-preview__slot-card').length)
       .toBe(rows.length);
+    expect(host.querySelectorAll('app-item-detail-popover').length)
+      .toBe(2);
     expect(host.querySelectorAll('.equipment-preview__slot-icon .pi').length)
       .toBe(rows.length);
     expect(textContent(host)).toContain('Main hand \u00b7 Quality');
@@ -162,8 +174,13 @@ function item(
   overrides: Partial<EquipmentPreviewItemDisplay>,
 ): EquipmentPreviewItemDisplay {
   return {
+    itemId: 'item-1',
     name: 'Item',
     metadata: 'Slot \u00b7 Normal',
+    statusLabel: 'active',
+    qualityLabel: 'Normal',
+    kindLabel: 'Item',
+    slotLabel: 'Slot',
     ...overrides,
   };
 }

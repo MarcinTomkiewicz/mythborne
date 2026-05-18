@@ -1,0 +1,168 @@
+@let detail = item();
+
+<span
+  class="mg-item-popover-trigger"
+  [class.d-block]="triggerFullWidth()"
+  [class.w-100]="triggerFullWidth()"
+  [attr.tabindex]="buttonTrigger() ? null : 0"
+  [attr.aria-label]="buttonTrigger() ? null : 'Show item details for ' + detail.name"
+  (mouseenter)="openFromPointer($event, popover)"
+  (mouseleave)="scheduleClose(popover)"
+  (focusin)="openFromFocus($event, popover)"
+  (focusout)="scheduleClose(popover)"
+  (click)="buttonTrigger() ? null : openFromClick($event, popover)"
+>
+  @if (buttonTrigger()) {
+    <p-button
+      type="button"
+      [severity]="triggerSeverity()"
+      size="small"
+      [label]="triggerIcon() ? undefined : triggerLabel()"
+      [icon]="triggerIcon() ?? undefined"
+      [outlined]="triggerOutlined()"
+      [attr.aria-label]="'Show item details for ' + detail.name"
+      (onClick)="openFromClick($event, popover)"
+    />
+  } @else {
+    <ng-content />
+  }
+</span>
+
+<p-popover
+  #popover
+  styleClass="mg-item-popover-overlay"
+  (mouseenter)="keepOpen()"
+  (mouseleave)="scheduleClose(popover)"
+>
+  <article class="mg-item-popover mg-card flex-col gap-md p-md min-w-0 shadow-premium" [attr.aria-label]="detail.name + ' details'">
+    <header class="mg-item-popover__header gap-sm pb-sm">
+      <div class="mg-item-popover__icon flex-row-center-center color-secondary text-lg">
+        <i class="text-xxl {{ detail.iconClass }}" aria-hidden="true"></i>
+      </div>
+      <div class="flex-col gap-xs min-w-0">
+        <strong class="heading-color text-lg">{{ detail.name }}</strong>
+        <div class="flex-row-start-center flex-wrap gap-xs color-muted text-xs">
+          @if (detail.qualityLabel) {
+            <span class="tag-badge tag-badge--info">{{ detail.qualityLabel }}</span>
+          }
+          @if (detail.kindLabel) {
+            <span>{{ detail.kindLabel }}</span>
+          }
+          @if (detail.kindLabel && detail.slotLabel) {
+            <span aria-hidden="true">&middot;</span>
+          }
+          @if (detail.slotLabel) {
+            <span>{{ detail.slotLabel }}</span>
+          }
+        </div>
+        <div class="color-secondary text-sm font-extrabold">
+          @if (detail.drachmaValue !== null) {
+            Value: {{ detail.drachmaValue }} drachma
+          } @else {
+            No drachma value.
+          }
+        </div>
+      </div>
+    </header>
+
+    @if (detail.isLoading) {
+      <span class="mg-item-popover__empty color-muted text-sm">Loading item detail...</span>
+    }
+    @if (detail.error) {
+      <span class="warn-text">{{ detail.error }}</span>
+    }
+    @if (detail.description) {
+      <p class="mb-0">{{ detail.description }}</p>
+    }
+
+    @if (detail.nativeStats.length) {
+      <section class="mg-item-popover__section flex-col gap-xs w-100 pb-sm">
+        <strong class="mg-item-popover__section-title">Item stats</strong>
+        @for (stat of detail.nativeStats; track stat.key) {
+          <div class="mg-item-popover__row color-text text-sm gap-sm">
+            <span class="mg-item-popover__row-code flex-row-center-center">{{ rowCode(stat.label) }}</span>
+            @if (stat.displayValue) {
+              <span>{{ stat.label }}</span>
+              <strong
+                class="mg-item-popover__row-value text-md"
+                [class.is-boosted]="stat.valueTone === 'positive'"
+                [class.is-weakened]="stat.valueTone === 'negative'"
+              >
+                @for (part of stat.valueParts; track $index) {
+                  <span
+                    [class.is-boosted]="part.tone === 'positive'"
+                    [class.is-weakened]="part.tone === 'negative'"
+                  >{{ part.text }}</span>
+                }
+              </strong>
+            } @else {
+              <span class="mg-item-popover__row-label--wide color-muted">{{ stat.label }}</span>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    <section class="mg-item-popover__section flex-col gap-xs w-100 pb-sm">
+      <strong class="mg-item-popover__section-title">Bonuses</strong>
+      @for (bonus of detail.bonusRows; track bonus.key) {
+        <div class="mg-item-popover__row color-text text-sm gap-sm">
+          <span class="mg-item-popover__row-code flex-row-center-center">{{ rowCode(bonus.label) }}</span>
+          <span>{{ bonus.label }}</span>
+          <strong
+            class="mg-item-popover__row-value text-md"
+            [class.is-boosted]="bonus.valueTone === 'positive'"
+            [class.is-weakened]="bonus.valueTone === 'negative'"
+          >
+            @for (part of bonus.valueParts; track $index) {
+              <span
+                [class.is-boosted]="part.tone === 'positive'"
+                [class.is-weakened]="part.tone === 'negative'"
+              >{{ part.text }}</span>
+            }
+          </strong>
+        </div>
+      } @empty {
+        <span class="mg-item-popover__empty color-muted text-sm">No bonuses.</span>
+      }
+    </section>
+
+    @if (
+      detail.requirementRows.length
+      || detail.requirementState?.kind === 'met'
+      || detail.requirementState?.kind === 'not_met'
+    ) {
+    <section class="mg-item-popover__section flex-col gap-xs w-100 pb-sm">
+      <strong class="mg-item-popover__section-title">Requirements</strong>
+      @for (requirement of detail.requirementRows; track requirement.key) {
+        <div
+          class="mg-item-popover__row color-text text-sm gap-sm"
+          [class.is-requirement-met]="requirement.isMet === true"
+          [class.is-requirement-missing]="requirement.isMet === false"
+        >
+          <span class="mg-item-popover__row-code flex-row-center-center">{{ rowCode(requirement.label) }}</span>
+          <span class="flex-col gap-xs">
+            <span>{{ requirement.label }}</span>
+            @if (requirement.currentValue) {
+              <span class="color-muted text-xs font-bold">Current: {{ requirement.currentValue }}</span>
+            }
+            @if (requirement.failureReason) {
+              <span class="color-muted text-xs font-bold">{{ requirement.failureReason }}</span>
+            }
+          </span>
+          <strong class="mg-item-popover__row-value text-md">
+            <span>{{ requirement.requiredValue }}</span>
+          </strong>
+        </div>
+      } @empty {
+        @if (detail.requirementState?.kind === 'met') {
+          <span class="mg-item-popover__empty color-muted text-sm">No requirements.</span>
+        } @else {
+          <span class="mg-item-popover__empty color-muted text-sm">Requirements unavailable.</span>
+        }
+      }
+    </section>
+    }
+
+  </article>
+</p-popover>

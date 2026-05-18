@@ -22,6 +22,7 @@ import {
   toSearchRecoverableScrappedItemsPageRpcArgs,
   toVendorScrapHeroItemRpcArgs,
 } from '../../utils/item-lifecycle-rpc';
+import { firstRpcRow } from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 
 @Injectable({ providedIn: 'root' })
@@ -40,7 +41,9 @@ export class ItemLifecycleService {
         RPC.vendor_scrap_hero_item,
         toVendorScrapHeroItemRpcArgs(input),
       )
-      .pipe(map((rows) => mapVendorScrapHeroItemResult(firstRow(rows))));
+      .pipe(map((rows) => mapVendorScrapHeroItemResult(
+        firstRpcRow(rows, 'Item lifecycle workflow'),
+      )));
   }
 
   searchRecoverableScrappedItems(
@@ -62,16 +65,8 @@ export class ItemLifecycleService {
         RPC.recover_scrapped_item,
         toRecoverScrappedItemRpcArgs(input),
       )
-      .pipe(map((rows) => mapItemLifecycleOperationResult(firstRow(rows))));
+      .pipe(map((rows) => mapItemLifecycleOperationResult(
+        firstRpcRow(rows, 'Item lifecycle workflow'),
+      )));
   }
-}
-
-function firstRow<T>(rows: readonly T[]): T {
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error('Item lifecycle workflow returned no row.');
-  }
-
-  return row;
 }
