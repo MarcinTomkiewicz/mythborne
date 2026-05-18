@@ -4267,40 +4267,46 @@ Improve only the header area of the `Visible armory` panel so it matches the pro
 
 ---
 
-## UI-ITEMS-7 — Capacity mini-summary cards
+## UI-ITEMS-7 — Remove redundant Inventory mini-summary cards
 
 **Goal:**  
-Add or polish the small capacity summary cards inside `Visible armory`: Owned items, Visible capacity, Hidden.
+Remove the redundant Inventory mini-summary cards because `Armory capacity`, `Total items`, `Equipped items` and `Saved loadouts` are owned by the main Armory header.
 
 **Scope:**
-- Only the three summary mini-cards.
-- Use existing `armory.visibility()` values.
-- Make values important/readable; do not use muted text for values.
-- Keep cards compact.
+- remove the three Inventory mini summary cards: `Owned items`, `Visible capacity`, `Hidden`;
+- leave the simple `Inventory` panel header;
+- leave bulk selection toolbar below it;
+- do not replace the removed cards with another summary/copy/badge row.
 
 **Out of scope:**
 - Search/filter controls.
 - Stand sections.
 - Item cards.
 - Pagination.
+- Top Armory header.
 - DB/RPC changes.
 
 **File limit:**
 - Prefer `armory-page.html` only.
 
 **Acceptance criteria:**
-- Three mini summary cards are visually aligned and consistent.
-- Values are prominent.
-- No data logic changes.
+- `Inventory` panel no longer repeats metrics already shown in the main header.
+- No new replacement summary is added.
+- Layout still reads cleanly.
 
 **Verification/smoke:**
-- Values render correctly.
+- `/game/armory` visual smoke.
+- Inventory panel starts with one `Inventory` heading, then bulk selection / content.
 - Build/tsc.
 
 **Required Codex report:**
 - files changed:
-- values rendered:
+- exact removed block:
+- confirmation no replacement summary added:
+- confirmation no TS/SCSS/behavior changes:
 - manual smoke pending:
+
+**Status:** Accepted/completed on 2026-05-18. The three Inventory mini-summary cards (`Owned items`, `Visible capacity`, `Hidden`) were removed because those metrics are owned by the main Armory header (`Armory capacity`, `Total items`, `Equipped items`, `Saved loadouts`). No replacement summary/copy/badge row was added; the Inventory panel now starts with the single `Inventory` heading followed by bulk selection/content. User-side visual smoke passed. No TS, SCSS, EquipmentPreview, item cards, stand sections, filters, equip/unequip behavior, DB/RPC contracts or generated types were changed for this accepted task.
 
 ---
 

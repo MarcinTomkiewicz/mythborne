@@ -235,9 +235,9 @@ describe('ArmoryPage', () => {
     expect(text).toContain('Stand 1');
     expect(text).toContain('Fresh Drop Blade');
     expect(text).toContain('Shelf Sword');
-    expect(text).toContain('Visible 2 / 0');
-    expect(text).toContain('Total 5');
-    expect(text).toContain('Hidden 3');
+    expect(text).not.toContain('Owned items');
+    expect(text).not.toContain('Visible capacity');
+    expect(text).not.toContain('Hidden3');
   });
 
   it('renders visible shelves from highest position down with unsorted last', () => {
@@ -874,7 +874,6 @@ describe('ArmoryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Shelf From DB');
-    expect(text).toContain('current estate capacity');
     expect(text).not.toContain('visible_item_capacity');
     expect(text).not.toContain('secretDebug');
     expect(text).not.toContain('unsorted-json');
@@ -891,7 +890,7 @@ describe('ArmoryPage', () => {
     fixture.detectChanges();
     const text = textContent(fixture);
 
-    expect(text).toContain('Visible 0 / 123');
+    expect(text).toContain('Armory capacity 0 / 123');
     expect(text).not.toContain('Limit 30');
     expect(text).not.toContain('Limit 35');
   });
