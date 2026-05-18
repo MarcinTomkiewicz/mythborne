@@ -23,7 +23,6 @@ import {
     ButtonModule,
     InputTextModule,
   ],
-  providers: [HeroLoadoutPresetsState],
   templateUrl: './loadout-preset-management.html',
 })
 export class LoadoutPresetManagement implements OnInit {

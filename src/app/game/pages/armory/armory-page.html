@@ -1,30 +1,49 @@
 <div class="flex-col gap-xl min-w-0">
   <section class="mg-card p-lg w-100">
-    <div class="flex-row-between-center flex-col-sm gap-md">
-      <div class="flex-col gap-xs">
-        <p class="card-legend mb-0">Game</p>
-        <h2 class="mg-section__title mg-section__title--sm mb-0">Armory</h2>
-        <p class="muted-text mb-0">
-          Equipment and visible inventory for the active hero.
+    <div class="grid-2-1 gap-lg grid-items-center">
+      <div class="flex-col gap-xs min-w-0">
+        <p class="small-caps color-muted text-xs mb-0">Armory</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">
+          Equipment and stored items
+        </h2>
+        <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
+          Manage the active loadout and the inventory currently visible from estate capacity.
         </p>
       </div>
 
-      <div class="flex-row-start-center flex-wrap gap-sm">
+      <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
         @if (armory.visibility(); as visibility) {
-          <span class="tag-badge tag-badge--info">
-            {{ visibility.visibleItemCount }} / {{ visibility.totalOwnedItemCount }} visible
-          </span>
-          <span class="tag-badge tag-badge--muted">
-            Capacity {{ visibility.visibilityLimit }}
-          </span>
-          @if (visibility.hiddenItemCount > 0) {
-            <span class="tag-badge tag-badge--muted">
-              {{ visibility.hiddenItemCount }} hidden
-            </span>
-          }
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Armory capacity</span>
+            <strong class="color-heading text-md">
+              {{ visibility.visibleItemCount }} / {{ visibility.visibilityLimit }}
+            </strong>
+          </div>
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Total items</span>
+            <strong class="color-heading text-md">{{ visibility.totalOwnedItemCount }}</strong>
+          </div>
+        } @else {
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Armory capacity</span>
+            <strong class="color-heading text-md">Loading</strong>
+          </div>
         }
-        <span class="tag-badge tag-badge--info">Hero luck: {{ page.heroLuck() }}</span>
-      </div>
+        <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+          <span class="color-muted small-caps uppercase text-xs">Equipped items</span>
+          <strong class="color-heading text-md">{{ equipment.slots().length }}</strong>
+        </div>
+        <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+          <span class="color-muted small-caps uppercase text-xs">Saved loadouts</span>
+          <strong class="color-heading text-md">
+            @if (loadoutPresets.isLoading()) {
+              Loading
+            } @else {
+              {{ savedLoadoutCount() }}
+            }
+          </strong>
+        </div>
+      </aside>
     </div>
   </section>
 
@@ -45,7 +64,6 @@
         (equippedItemToggle)="togglePaperdollItemSelection($event)"
         (unequipSelected)="unequipSelectedPaperdollItems()"
         (unequipAll)="unequipAllPaperdollItems()"
-        armoryLink="/game/armory"
       />
 
       <section class="mg-card p-lg w-100">

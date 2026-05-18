@@ -4178,54 +4178,652 @@ Ujednolicić equipment/paperdoll preview między Dashboard, Armory i przyszłymi
 
 **Status:** Accepted/completed on 2026-05-18 for Armory shared `EquipmentPreview` reuse, paperdoll equipped-item selection and bulk unequip actions. Armory mode now controls selected equipped slots through page state, exposes `Unequip Selected` and `Unequip All`, and uses the canonical `bulk_unequip_hero_items(...)` RPC path without direct `hero_equipment` writes, DB/RPC/schema changes or generated type edits. The accepted item popover behavior remains preserved. Known follow-up: paperdoll responsive geometry/breakpoint polish remains imperfect and should be handled later as a dedicated paperdoll breakpoint pass, not as a blocker for UI-ITEMS-4. Broader manual visual smoke remains user/tester-side pending.
 
-## UI-ITEMS-5 — Armory item list filtering and visibility
+## UI-ITEMS-5 — Armory top header and summary badges
 
 **Goal:**  
-Dodać podstawowe, rozsądne filtrowanie itemów w Armory bez komplikowania inventory UI.
+Make the top `/game/armory` header read closer to the prototype: clear Armory title, short explanatory copy, and compact owned/visible/capacity/hidden/hero luck badges.
 
 **Scope:**
-- filters by slot/kind, equippable/not equippable, stand, search,
-- visible count respects armory capacity and stand priority,
-- pagination/scrolling if item count large,
-- row/card states for locked_trade, locked_auction, scrapped hidden from normal inventory where appropriate.
+- Only the Armory top page header section.
+- Arrange existing title/copy/badges into a cleaner hierarchy.
+- Use current read-model values already available in the page.
+- Keep badge labels short and readable.
+- Keep production shell style, not prototype CSS.
 
 **Out of scope:**
-- advanced sorting economy tools,
-- auction/direct trade creation from Armory unless explicitly routed,
-- vendor scrap UI unless separate task.
+- Stand cards.
+- Item cards.
+- Filters.
+- Search.
+- Paperdoll changes.
+- Equip/unequip logic.
+- DB/RPC/read model changes.
 
-**Data/source rules:**
-- item statuses from item lifecycle read model,
-- normal inventory hides scrapped items,
-- locked trade/auction states are visible if relevant and not selectable for equip/trade actions,
-- no direct item writes.
-
-**UI/SCSS rules:**
-- use shared filters/paginator/list patterns,
-- do not build local dense item table unless UI-CORE-14 chooses table for this context,
-- important lock/equippable states use badges/status pills.
-
-**Dependencies/blockers:**
-- if read model lacks status/stand/equippable fields, report dependency,
-- if item count pagination missing, use safe client display only for prototype or report service gap.
+**File limit:**
+- Prefer `armory-page.html` only.
+- If unavoidable, one small SCSS/global utility touch may be reported first before coding.
 
 **Acceptance criteria:**
-- filters are clear and not overbuilt,
-- visible items respect capacity/stand priority,
-- locked/scrapped handling follows lifecycle rules,
-- build passes.
+- Header visually reads as Armory landing/header, not a random card.
+- Owned/visible/capacity/hidden/luck summary remains correct.
+- No behavior changes.
+- Dashboard unaffected.
 
 **Verification/smoke:**
-- filter smoke,
-- locked item display smoke if data exists,
-- large list smoke if available,
-- build/tsc.
+- `/game/armory` visual smoke desktop.
+- Counts still display.
+- Build/tsc.
 
 **Required Codex report:**
-- item filter data source:
-- lifecycle statuses handled:
-- paginator/list pattern used:
+- files changed:
+- header hierarchy changed:
+- data fields used:
 - local SCSS added:
+- manual smoke pending:
+
+**Status:** Accepted on 2026-05-18 for the current Armory visual/header slice only. The `/game/armory` top header now follows the accepted title, description and structured metrics direction, with `Armory capacity`, `Total items`, `Equipped items` and `Saved loadouts` displayed as compact metric rows. Saved loadouts reuse the shared `HeroLoadoutPresetsState` path rather than a fake value or separate local fetch, and `.mg-section__title` no longer applies a gold gradient by default; gradient heading treatment is opt-in only. This acceptance covers the split header task, not the original broad filtering/list-visibility scope. Manual visual smoke remains user-side pending. Follow-ups: filtering/visibility/pagination/locked-status work remains in later split UI-ITEMS tasks; Armory page component split/cleanup remains a future refactor; do not churn `EquipmentPreview` geometry or accepted popover behavior from this status update.
+
+---
+
+## UI-ITEMS-6 — Visible Armory panel header only
+
+**Goal:**  
+Improve only the header area of the `Visible armory` panel so it matches the prototype direction: title, short capacity explanation, and compact status badges.
+
+**Scope:**
+- Only the top header block inside the `Visible armory` panel.
+- Keep existing item/stand rendering untouched.
+- Add or rearrange badges for visible/owned/capacity/hidden if already available.
+- Keep text concise.
+
+**Out of scope:**
+- Stand section redesign.
+- Item card redesign.
+- Filters/search.
+- Bulk selection changes.
+- Any paperdoll work.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- `Visible armory` header is clearer and closer to prototype.
+- Existing stand/item behavior unchanged.
+- No new local component.
+
+**Verification/smoke:**
+- Armory visual smoke.
+- Existing equip/move controls still present.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- panel header changes:
+- counts/badges used:
+- behavior unchanged confirmation:
+
+---
+
+## UI-ITEMS-7 — Capacity mini-summary cards
+
+**Goal:**  
+Add or polish the small capacity summary cards inside `Visible armory`: Owned items, Visible capacity, Hidden.
+
+**Scope:**
+- Only the three summary mini-cards.
+- Use existing `armory.visibility()` values.
+- Make values important/readable; do not use muted text for values.
+- Keep cards compact.
+
+**Out of scope:**
+- Search/filter controls.
+- Stand sections.
+- Item cards.
+- Pagination.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- Three mini summary cards are visually aligned and consistent.
+- Values are prominent.
+- No data logic changes.
+
+**Verification/smoke:**
+- Values render correctly.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- values rendered:
+- manual smoke pending:
+
+---
+
+## UI-ITEMS-8 — Stand section header compact polish
+
+**Goal:**  
+Make each stand section header more like the prototype: clear stand number, stand label, item count badge, and rename action without visual noise.
+
+**Scope:**
+- Only stand section headers.
+- Preserve existing stand order.
+- Preserve rename behavior.
+- Keep empty and occupied stand headers structurally consistent.
+- Use existing badges/status utilities.
+
+**Out of scope:**
+- Item card layout inside stands.
+- Empty stand body.
+- Filtering.
+- Drag/drop.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+- No TS unless a tiny computed label is absolutely required; ask/report before adding.
+
+**Acceptance criteria:**
+- Stand headers are visually consistent.
+- Stand number and item count are easy to scan.
+- Rename action remains available.
+- No action behavior changes.
+
+**Verification/smoke:**
+- Stand 10/9/empty stand header smoke.
+- Rename UI still appears.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- stand header fields used:
+- rename behavior preserved:
+- local SCSS added:
+
+---
+
+## UI-ITEMS-9 — Empty stand body visual state
+
+**Goal:**  
+Make empty stands look intentional and prototype-like: visible empty state, ready/reserved copy, no broken large blank panels.
+
+**Scope:**
+- Only empty stand body rendering.
+- Keep existing stand header untouched except where already changed in UI-ITEMS-8.
+- Use current copy or simple improved copy.
+- Use existing card/border/muted/warn/status utility patterns.
+
+**Out of scope:**
+- Drag/drop.
+- Reserving stands.
+- Item movement behavior.
+- Filtering.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- Empty stands are clearly empty, not broken.
+- Empty stand body aligns visually with occupied stand sections.
+- No action behavior changes.
+
+**Verification/smoke:**
+- Empty stand visible.
+- Occupied stand unchanged.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- empty-state copy:
+- behavior unchanged confirmation:
+
+---
+
+## UI-ITEMS-10 — Visible item card shell
+
+**Goal:**  
+Create a consistent shell for item cards in visible stands, without changing item actions yet.
+
+**Scope:**
+- Only the outer visual shell of item cards in `Visible armory`.
+- Keep existing item action controls and popover wrapper.
+- Use a consistent icon/name/value stack.
+- Preserve item popover behavior.
+- Preserve equip/vendor/move controls for now.
+
+**Out of scope:**
+- Action redesign.
+- Filters.
+- Sorting.
+- New component extraction.
+- DB/RPC changes.
+- Paperdoll.
+
+**File limit:**
+- Prefer `armory-page.html`.
+- No new component in this task.
+
+**Acceptance criteria:**
+- Item cards look consistent.
+- Item name and drachma value are readable.
+- Popover still opens.
+- Existing actions still appear.
+
+**Verification/smoke:**
+- Item card hover/focus/click popover.
+- Equip button still visible.
+- Vendor/move controls still visible if previously visible.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- item card shell changes:
+- popover preserved:
+- local SCSS added:
+
+---
+
+## UI-ITEMS-11 — Item card status badges
+
+**Goal:**  
+Make equipped/private/locked/lifecycle state badges readable and consistent on item cards.
+
+**Scope:**
+- Only item-card badges/status labels.
+- Use existing lifecycle/guild usage labels already available.
+- Important statuses must not be muted if they communicate action restrictions.
+- Keep actions unchanged.
+
+**Out of scope:**
+- New lifecycle logic.
+- New read-model fields.
+- Filters.
+- Sorting.
+- Item card shell changes beyond small badge placement.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- Equipped/private/locked states are visible.
+- Badges do not overwhelm the card.
+- No fake status inference.
+
+**Verification/smoke:**
+- Active item smoke.
+- Equipped item smoke.
+- Locked item smoke if data exists.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- statuses displayed:
+- statuses not available:
+- behavior unchanged confirmation:
+
+---
+
+## UI-ITEMS-12 — Bulk selection toolbar polish
+
+**Goal:**  
+Make bulk selection controls clear and prototype-adjacent without changing the bulk equip workflow.
+
+**Scope:**
+- Only the bulk selection toolbar above visible stands.
+- Keep existing bulk equip behavior.
+- Display selected count clearly.
+- Keep disabled state readable.
+- Do not add new actions.
+
+**Out of scope:**
+- Item card selection redesign.
+- Filtering.
+- Sorting.
+- Bulk unequip paperdoll actions.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- Selected count and `Equip selected` are easy to understand.
+- Disabled state is clear.
+- No workflow changes.
+
+**Verification/smoke:**
+- Select visible item for bulk equip.
+- Button enabled/disabled state.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- toolbar changes:
+- behavior unchanged confirmation:
+
+---
+
+## UI-ITEMS-13 — Item card action layout cleanup
+
+**Goal:**  
+Reduce visual noise of per-item actions inside visible item cards while preserving behavior.
+
+**Scope:**
+- Only layout/order/grouping of existing actions: Equip, Sell to vendor, Move, shelf select.
+- Do not add or remove actions unless already conditionally hidden by existing logic.
+- Keep form controls and handlers unchanged.
+- Keep PrimeNG usage valid.
+
+**Out of scope:**
+- New action workflows.
+- Auction/trade creation.
+- Vendor economy changes.
+- DB/RPC changes.
+- Component extraction.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- Actions are easier to scan.
+- Item cards are less chaotic.
+- Existing controls still work.
+
+**Verification/smoke:**
+- Equip item action.
+- Move item action.
+- Vendor scrap if available.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- action layout changes:
+- handlers preserved:
+- manual smoke pending:
+
+---
+
+## UI-ITEMS-14 — Basic Armory search only
+
+**Goal:**  
+Add a simple search input for visible armory items after the visual layout is stable.
+
+**Scope:**
+- Search by item name only at first.
+- Client-side filtering over current visible read model only.
+- Clear empty filtered state.
+- Preserve stand grouping: stands remain visible or hidden according to simple, documented rule.
+
+**Out of scope:**
+- Slot/kind/status filters.
+- Server-side search.
+- Pagination.
+- Sorting.
+- Search by bonus/requirement unless already trivial and safe.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.ts` + `armory-page.html`.
+- No new service.
+
+**Acceptance criteria:**
+- Search is clear and not overbuilt.
+- Empty result is understandable.
+- Existing actions still work on filtered items.
+
+**Verification/smoke:**
+- Search matching item.
+- Search with no result.
+- Clear search.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- search fields used:
+- filtering location:
+- empty result behavior:
+
+---
+
+## UI-ITEMS-15 — Slot/kind filter only
+
+**Goal:**  
+Add one compact slot/kind filter after search is stable.
+
+**Scope:**
+- One filter control for item slot/kind group.
+- Use fields already present in current item read model.
+- If field is missing/ambiguous, report dependency instead of inventing logic.
+- Preserve search behavior from UI-ITEMS-14.
+
+**Out of scope:**
+- Lifecycle/status filter.
+- Stand filter.
+- Sorting.
+- Server-side filtering.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.ts` + `armory-page.html`.
+
+**Acceptance criteria:**
+- Filter options are clear.
+- Filter combines predictably with search.
+- No fake classification if data missing.
+
+**Verification/smoke:**
+- Weapons filter.
+- Armor filter.
+- Jewelry filter if data exists.
+- Search + filter combined.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- filter data fields:
+- missing fields:
+- filter combination rule:
+
+---
+
+## UI-ITEMS-16 — Lifecycle/status filter only
+
+**Goal:**  
+Add lifecycle/status filter after search and slot/kind filter are stable.
+
+**Scope:**
+- Filter by status/action state available in read model: active, equipped, locked_trade, locked_auction where available.
+- Normal inventory should not surface scrapped items unless current read model explicitly includes relevant recoverable/scrapped state.
+- Locked states must not appear selectable for invalid actions.
+
+**Out of scope:**
+- New lifecycle rules.
+- Recover scrapped UI.
+- Auction/trade workflows.
+- Server-side filter.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.ts` + `armory-page.html`.
+
+**Acceptance criteria:**
+- Status filter is readable.
+- Locked/equipped/active states are handled honestly from data.
+- Missing statuses are reported, not faked.
+
+**Verification/smoke:**
+- Active status filter.
+- Equipped filter.
+- Locked status smoke if data exists.
+- Build/tsc.
+
+**Required Codex report:**
+- lifecycle source:
+- statuses handled:
+- statuses unavailable:
+- no fake status inference confirmation:
+
+---
+
+## UI-ITEMS-17 — Stand filter only
+
+**Goal:**  
+Add a simple stand filter after item search/status filters are stable.
+
+**Scope:**
+- Filter visible items by stand/shelf position.
+- Use current shelf/stand data.
+- Keep stand sections understandable.
+- Preserve search/slot/status filters.
+
+**Out of scope:**
+- Stand priority logic changes.
+- Capacity rule changes.
+- Drag/drop.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.ts` + `armory-page.html`.
+
+**Acceptance criteria:**
+- Stand filter options match visible stands.
+- Empty stand/filter result state is clear.
+- Existing item actions work.
+
+**Verification/smoke:**
+- Filter by Stand 10.
+- Filter by empty stand if applicable.
+- Combined filters.
+- Build/tsc.
+
+**Required Codex report:**
+- stand data source:
+- filter options:
+- empty result behavior:
+
+---
+
+## UI-ITEMS-18 — Capacity cutoff explanation
+
+**Goal:**  
+Make current visible capacity and hidden item count understandable without implementing pagination yet.
+
+**Scope:**
+- Explain owned / visible / hidden relationship.
+- If capacity cuts off lower-priority stands, show a small note/badge.
+- Do not change actual visibility logic.
+- Do not add pagination.
+
+**Out of scope:**
+- Large-list pagination.
+- Server-side pagination.
+- Stand priority changes.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- User can understand why some items are hidden.
+- Counts match read model.
+- No fake data.
+
+**Verification/smoke:**
+- Capacity full state.
+- Hidden count > 0 state.
+- Hidden count = 0 state if data available.
+- Build/tsc.
+
+**Required Codex report:**
+- capacity fields used:
+- copy added:
+- no logic change confirmation:
+
+---
+
+## UI-ITEMS-19 — Large visible list safe display
+
+**Goal:**  
+Prevent large visible item lists from making Armory unusable, using existing project list/scroll/paginator patterns only.
+
+**Scope:**
+- Review existing list/paginator/scroll patterns.
+- Apply the smallest existing pattern that fits.
+- If no good pattern exists, report follow-up instead of building custom local virtual scroll.
+- Keep filters from UI-ITEMS-14–17 intact.
+
+**Out of scope:**
+- New backend pagination.
+- Custom virtual scroll.
+- Table redesign.
+- Economy sorting.
+- DB/RPC changes.
+
+**File limit:**
+- Depends on existing pattern, but Codex must report planned touched files before implementing if more than 3 production files.
+
+**Acceptance criteria:**
+- Large visible list remains usable.
+- Existing visual hierarchy remains intact.
+- No local dense table unless already an accepted project pattern.
+
+**Verification/smoke:**
+- Large list smoke if data exists.
+- Filter + large list smoke.
+- Build/tsc.
+
+**Required Codex report:**
+- existing pattern checked:
+- pattern used or rejected:
+- files changed:
+- large-list smoke:
+
+---
+
+## UI-ITEMS-20 — Armory final visual consolidation checkpoint
+
+**Goal:**  
+Do a final small visual consistency pass after UI-ITEMS-5–19, without adding new features.
+
+**Scope:**
+- Check spacing consistency between header, equipment preview, visible armory, stand sections and item cards.
+- Remove only obvious duplicate/obsolete local classes introduced in these Armory tasks.
+- Verify no prototype CSS/`mb-*` leaked.
+- Verify no `NgClass`.
+- Verify no unnecessary local SCSS.
+
+**Out of scope:**
+- New filters.
+- New actions.
+- Component split.
+- Large TS refactor.
+- DB/RPC changes.
+- Paperdoll geometry redesign.
+
+**File limit:**
+- Codex must provide a no-code inventory first if it expects to touch more than 3 production files.
+
+**Acceptance criteria:**
+- Armory is visually coherent enough for tester usage.
+- No obvious temporary classes/comments/debug markup.
+- No broad churn.
+- Manual smoke checklist is documented.
+
+**Verification/smoke:**
+- Armory desktop visual smoke.
+- Dashboard preview smoke.
+- Popover smoke.
+- Bulk equip/unequip smoke.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- obsolete classes removed:
+- static greps:
+- manual smoke pending/done:
+- known follow-ups:
 
 ---
 

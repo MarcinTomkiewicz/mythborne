@@ -46,6 +46,10 @@
   font-family: v.$font-family-display;
   font-size: map.get(v.$font-sizes, "xxl");
   font-weight: 700;
+  background: none;
+  background-clip: initial;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: currentColor;
   color: v.$heading-color;
 
   @include m.down('md') {
@@ -77,11 +81,11 @@
   margin-bottom: 0;
 }
 
-:root .mg-section__title {
+.mg-section__title--gradient {
   @include m.gold-gradient-text;
 }
 
-:root[data-theme="light"] .mg-section__title {
+:root[data-theme="light"] .mg-section__title--gradient {
   background: none;
   background-clip: initial;
   -webkit-background-clip: initial;

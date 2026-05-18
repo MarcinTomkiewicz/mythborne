@@ -28,6 +28,7 @@ import { EquipmentPreviewSlotRow } from '../../../core/domain/equipment/equipmen
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
+import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
 import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-preview';
 import { ArmoryItemDetailPopover } from '../../components/armory-item-detail-popover/armory-item-detail-popover';
 import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
@@ -54,6 +55,7 @@ import {
     ArmoryPageFacade,
     CurrentEquipmentState,
     ArmoryShelfState,
+    HeroLoadoutPresetsState,
     ArmoryGuildItemUsageState,
   ],
   templateUrl: './armory-page.html',
@@ -63,6 +65,7 @@ export class ArmoryPage implements OnInit {
   readonly page = inject(ArmoryPageFacade);
   readonly equipment = inject(CurrentEquipmentState);
   readonly armory = inject(ArmoryShelfState);
+  readonly loadoutPresets = inject(HeroLoadoutPresetsState);
   readonly guildItemUsageState = inject(ArmoryGuildItemUsageState);
   readonly equipmentPreviewRows = computed(() =>
     mapEquipmentPreviewRows(
@@ -104,6 +107,11 @@ export class ArmoryPage implements OnInit {
   );
   readonly selectedBulkItemIds = signal<string[]>([]);
   readonly selectedPaperdollItemIds = signal<string[]>([]);
+  readonly savedLoadoutCount = computed(() =>
+    this.loadoutPresets.presets()
+      .filter((preset) => preset.savedAt !== null)
+      .length,
+  );
   readonly bulkSelectionForm = new FormRecord<FormControl<boolean>>({});
   readonly moveTargetShelfForm = new FormRecord<FormControl<number>>({});
   readonly renameStandForm = new FormRecord<FormControl<string>>({});
