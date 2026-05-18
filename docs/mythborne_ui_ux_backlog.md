@@ -4390,6 +4390,8 @@ Make empty stands look intentional and prototype-like: visible empty state, read
 - empty-state copy:
 - behavior unchanged confirmation:
 
+**Status:** Accepted/completed on 2026-05-18. Empty stand body now renders as a simple intentional empty state with an icon and `Empty stand` only, without replacement summary copy or behavior changes. Manual visual smoke is user-side accepted for this slice.
+
 ---
 
 ## UI-ITEMS-10 — Visible item card shell
