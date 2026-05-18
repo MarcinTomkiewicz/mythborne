@@ -21,7 +21,24 @@
         <span class="tag-badge tag-badge--warn">Unavailable</span>
       }
 
-      @if (!isArmory()) {
+      @if (isArmory()) {
+        <p-button
+          type="button"
+          severity="secondary"
+          size="small"
+          label="Unequip Selected"
+          [disabled]="selectionActionDisabled() || !hasSelectedEquippedItems()"
+          (onClick)="unequipSelected.emit()"
+        />
+        <p-button
+          type="button"
+          severity="secondary"
+          size="small"
+          label="Unequip All"
+          [disabled]="selectionActionDisabled() || !hasEquippedItems()"
+          (onClick)="unequipAll.emit()"
+        />
+      } @else {
         <a [routerLink]="armoryLink()" class="tag-badge tag-badge--muted">
           Open Armory
         </a>
@@ -125,15 +142,17 @@
     [class.flex-row-start-stretch]="stretch"
     [class.flex-row-start-center]="!stretch"
     [class.bg-transparent]="!item"
+    [class.equipment-preview__slot-card--selected]="isSelected(slot)"
     [attr.aria-label]="item ? slot.label + ': ' + item.name : slot.label + ': empty slot'"
+    [attr.aria-pressed]="isArmory() && item ? isSelected(slot) : null"
+    (click)="toggleEquippedItem(slot)"
   >
     <span
-      class="equipment-preview__slot-icon-host mg-card p-xs flex-row-center-center flex-none"
+      class="equipment-preview__slot-icon equipment-preview__slot-icon-host mg-card p-xs flex-row-center-center flex-none"
       [class.opacity-35]="!item"
     >
       <i
-        class="color-text text-xxl"
-        [ngClass]="slot.iconClass"
+        class="color-text text-xxl {{ slot.iconClass }}"
         aria-hidden="true"
       ></i>
     </span>
@@ -143,9 +162,15 @@
         <span class="color-muted text-xs small-caps uppercase">{{ slot.label }}</span>
       }
 
-      <strong class="equipment-preview__item-name color-heading text-sm">
-        {{ item ? item.name : 'Empty slot' }}
-      </strong>
+      @if (item) {
+        <strong class="equipment-preview__item-name color-heading text-sm">
+          {{ item.name }}
+        </strong>
+      } @else {
+        <strong class="equipment-preview__item-name equipment-preview__item-name--empty color-heading text-sm">
+          Empty slot
+        </strong>
+      }
 
       @if (item?.metadata && !compact()) {
         <span class="color-muted text-xs">{{ item.metadata }}</span>

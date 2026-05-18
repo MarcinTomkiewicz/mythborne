@@ -59,6 +59,11 @@ export type UnequipHeroItemRpcArgs =
 export type UnequipHeroItemRpcRow =
   Database['public']['Functions']['unequip_hero_item']['Returns'][number];
 
+export type BulkUnequipHeroItemsRpcArgs =
+  Database['public']['Functions']['bulk_unequip_hero_items']['Args'];
+export type BulkUnequipHeroItemsRpcRow =
+  Database['public']['Functions']['bulk_unequip_hero_items']['Returns'][number];
+
 export type BulkEquipHeroItemsRpcArgs =
   Database['public']['Functions']['bulk_equip_hero_items']['Args'];
 export type BulkEquipHeroItemsRpcRow =
@@ -112,5 +117,6 @@ export type CheckHeroMeetsItemRequirementsRpcRow =
 export type EquipmentOperationRpcRow =
   | EquipHeroItemRpcRow
   | UnequipHeroItemRpcRow
+  | BulkUnequipHeroItemsRpcRow
   | BulkEquipHeroItemsRpcRow
   | ApplyHeroLoadoutPresetRpcRow;

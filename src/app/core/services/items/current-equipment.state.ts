@@ -3,26 +3,20 @@ import { Observable } from 'rxjs';
 import {
   CurrentEquipmentLoadout,
   EquipmentOperationJournal,
-  EquipmentSlotKey,
   EquippedItemSummary,
 } from '../../domain/item/item-equipment.model';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
 import { getErrorMessage } from '../../utils/error-message';
 import { ActiveHero } from '../hero/active-hero';
+import { HeroEquipment } from './hero-equipment';
 import {
-  EquipHeroItemInput,
   BulkEquipHeroItemsInput,
-  HeroEquipment,
+  BulkUnequipHeroItemsInput,
+  EquipHeroItemInput,
   LoadoutPresetInput,
   UnequipHeroSlotInput,
-} from './hero-equipment';
-
-export type CurrentEquipmentReadStatus =
-  | 'idle'
-  | 'loading'
-  | 'loaded'
-  | 'empty'
-  | 'error';
+} from '../../interfaces/item/equipment-actions.interface';
+import { CurrentEquipmentReadStatus } from '../../types/current-equipment.types';
 
 @Injectable()
 export class CurrentEquipmentState {
@@ -97,7 +91,7 @@ export class CurrentEquipmentState {
     this.isMutating.set(false);
   }
 
-  slot(slotKey: EquipmentSlotKey): EquippedItemSummary | null {
+  slot(slotKey: string): EquippedItemSummary | null {
     return this.slotMap().get(slotKey) ?? null;
   }
 
@@ -111,6 +105,13 @@ export class CurrentEquipmentState {
   bulkEquipItems(input: BulkEquipHeroItemsInput, afterResponse?: () => void): void {
     this.runEquipmentAction(
       () => this.equipment.bulkEquipItems(input),
+      afterResponse,
+    );
+  }
+
+  bulkUnequipItems(input: BulkUnequipHeroItemsInput, afterResponse?: () => void): void {
+    this.runEquipmentAction(
+      () => this.equipment.bulkUnequipItems(input),
       afterResponse,
     );
   }

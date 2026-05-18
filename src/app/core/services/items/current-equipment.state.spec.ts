@@ -22,6 +22,7 @@ describe('CurrentEquipmentState', () => {
       'getCurrentEquipment',
       'equipItem',
       'bulkEquipItems',
+      'bulkUnequipItems',
       'applyLoadoutPreset',
       'unequipSlot',
     ]);
@@ -296,6 +297,38 @@ describe('CurrentEquipmentState', () => {
     }));
     expect(equipment.getCurrentEquipment).toHaveBeenCalledTimes(1);
     expect(state.status()).toBe('empty');
+  });
+
+  it('bulk unequips items and applies final equipment from the operation journal', () => {
+    equipment.bulkUnequipItems.and.returnValue(of(operationJournal({
+      unequipped: [{
+        action: 'unequipped',
+        itemId: 'item-main',
+        slotKey: 'main_hand',
+        reason: 'slot_cleared',
+        message: 'Unequipped.',
+        success: true,
+        detailsJson: null,
+      }],
+      finalEquipment: loadout([
+        equippedSlot({ itemId: 'item-ring', slotKey: 'ring_1' }),
+      ]),
+    })));
+
+    state.bulkUnequipItems({
+      items: [
+        { itemId: 'item-main', slotKey: 'main_hand' },
+      ],
+    });
+
+    expect(equipment.bulkUnequipItems).toHaveBeenCalledOnceWith({
+      items: [
+        { itemId: 'item-main', slotKey: 'main_hand' },
+      ],
+    });
+    expect(state.actionJournal()?.unequipped[0].itemId).toBe('item-main');
+    expect(state.slot('ring_1')?.itemId).toBe('item-ring');
+    expect(state.slot('main_hand')).toBeNull();
   });
 });
 

@@ -66,7 +66,7 @@ describe('EquipmentPreview', () => {
       .toBe(rows.length);
     expect(host.querySelectorAll('app-item-detail-popover').length)
       .toBe(2);
-    expect(host.querySelectorAll('.equipment-preview__slot-icon .pi').length)
+    expect(host.querySelectorAll('.equipment-preview__slot-icon-host .pi').length)
       .toBe(rows.length);
     expect(textContent(host)).toContain('Main hand \u00b7 Quality');
     expect(textContent(host)).not.toContain('Usable');
@@ -104,6 +104,53 @@ describe('EquipmentPreview', () => {
     fixture.detectChanges();
 
     expect(textContent(fixture.nativeElement)).not.toContain('Open Armory');
+    expect(textContent(fixture.nativeElement)).toContain('Unequip Selected');
+    expect(textContent(fixture.nativeElement)).toContain('Unequip All');
+  });
+
+  it('marks selected equipped items without selecting empty slots', () => {
+    fixture.componentRef.setInput('isArmory', true);
+    fixture.componentRef.setInput('selectedItemIds', ['item-main']);
+    fixture.componentRef.setInput('rows', [
+      slot({
+        slotKey: 'main_hand',
+        item: item({ itemId: 'item-main', name: 'Selected blade' }),
+      }),
+      slot({ slotKey: 'ring_1', label: 'Ring 1' }),
+    ]);
+
+    fixture.detectChanges();
+
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelectorAll('.equipment-preview__slot-card--selected').length)
+      .toBe(1);
+    expect(host.querySelector('[aria-pressed="true"]')?.textContent)
+      .toContain('Selected blade');
+    expect(host.querySelectorAll('[aria-pressed="false"]').length).toBe(0);
+  });
+
+  it('emits an armory selection toggle while preserving the popover trigger', () => {
+    const toggledRows: EquipmentPreviewSlotRow[] = [];
+    fixture.componentInstance.equippedItemToggle.subscribe((row) =>
+      toggledRows.push(row),
+    );
+    fixture.componentRef.setInput('isArmory', true);
+    fixture.componentRef.setInput('rows', [
+      slot({
+        slotKey: 'main_hand',
+        item: item({ itemId: 'item-main', name: 'Selectable blade' }),
+      }),
+    ]);
+
+    fixture.detectChanges();
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLElement>('.equipment-preview__slot-card')
+      ?.click();
+
+    expect(toggledRows.map((row) => row.slotKey)).toEqual(['main_hand']);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-item-detail-popover'),
+    ).not.toBeNull();
   });
 
   it('applies the compact board class when compact mode is enabled', () => {

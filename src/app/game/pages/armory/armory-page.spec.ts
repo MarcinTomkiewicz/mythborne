@@ -1,4 +1,4 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ButtonModule } from 'primeng/button';
@@ -15,20 +15,19 @@ import {
   EquippedItemSummary,
 } from '../../../core/domain/item/item-equipment.model';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
-import {
-  ArmoryShelfReadStatus,
-  ArmoryShelfState,
-} from '../../../core/services/items/armory-shelf.state';
-import {
-  CurrentEquipmentReadStatus,
-  CurrentEquipmentState,
-} from '../../../core/services/items/current-equipment.state';
+import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
+import { ArmoryShelfReadStatus } from '../../../core/types/armory-shelf.types';
+import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
+import { CurrentEquipmentReadStatus } from '../../../core/types/current-equipment.types';
 import { ArmoryPage } from './armory-page';
 import {
   ArmoryGuildItemUsageState,
   ArmoryGuildItemUsage,
 } from './armory-guild-item-usage.state';
-import { EquipmentPreviewSlotRow } from '../../../core/domain/equipment/equipment-preview.model';
+import {
+  EquipmentPreviewItemDisplay,
+  EquipmentPreviewSlotRow,
+} from '../../../core/domain/equipment/equipment-preview.model';
 
 describe('ArmoryPage', () => {
   let fixture: ComponentFixture<ArmoryPage>;
@@ -637,6 +636,61 @@ describe('ArmoryPage', () => {
     expect(page.loadData).toHaveBeenCalledTimes(2);
   });
 
+  it('toggles paperdoll equipped item selection without mutating equipment', () => {
+    const row = previewRow({
+      slotKey: 'main_hand',
+      item: previewItem({ itemId: 'item-main' }),
+    });
+
+    fixture.componentInstance.togglePaperdollItemSelection(row);
+    fixture.componentInstance.togglePaperdollItemSelection(row);
+
+    expect(fixture.componentInstance.selectedPaperdollItemIds()).toEqual([]);
+    expect(equipment.bulkUnequipItems).not.toHaveBeenCalled();
+    expect(equipment.unequipSlot).not.toHaveBeenCalled();
+  });
+
+  it('bulk unequips selected paperdoll items through current equipment state', () => {
+    equipment.setSlots([
+      equippedItem({ itemId: 'item-main', slotKey: 'main_hand' }),
+      equippedItem({ itemId: 'item-ring', slotKey: 'ring_1' }),
+    ]);
+    fixture.detectChanges();
+
+    fixture.componentInstance.togglePaperdollItemSelection(previewRow({
+      slotKey: 'ring_1',
+      item: previewItem({ itemId: 'item-ring' }),
+    }));
+    fixture.componentInstance.unequipSelectedPaperdollItems();
+
+    expect(equipment.bulkUnequipItems).toHaveBeenCalledWith({
+      items: [
+        { itemId: 'item-ring', slotKey: 'ring_1' },
+      ],
+    }, jasmine.any(Function));
+    expect(equipment.unequipSlot).not.toHaveBeenCalled();
+    expect(armory.refresh).toHaveBeenCalled();
+    expect(page.loadData).toHaveBeenCalledTimes(2);
+    expect(fixture.componentInstance.selectedPaperdollItemIds()).toEqual([]);
+  });
+
+  it('bulk unequips all paperdoll items through current equipment state', () => {
+    equipment.setSlots([
+      equippedItem({ itemId: 'item-main', slotKey: 'main_hand' }),
+      equippedItem({ itemId: 'item-ring', slotKey: 'ring_1' }),
+    ]);
+
+    fixture.componentInstance.unequipAllPaperdollItems();
+
+    expect(equipment.bulkUnequipItems).toHaveBeenCalledWith({
+      items: [
+        { itemId: 'item-main', slotKey: 'main_hand' },
+        { itemId: 'item-ring', slotKey: 'ring_1' },
+      ],
+    }, jasmine.any(Function));
+    expect(equipment.unequipSlot).not.toHaveBeenCalled();
+  });
+
   it('renders domain failure journal as player-facing feedback', () => {
     equipment.actionJournal.set(operationJournal({
       success: false,
@@ -862,6 +916,9 @@ class FakeCurrentEquipmentState {
   readonly bulkEquipItems = jasmine
     .createSpy('bulkEquipItems')
     .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
+  readonly bulkUnequipItems = jasmine
+    .createSpy('bulkUnequipItems')
+    .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
   readonly applyLoadoutPreset = jasmine
     .createSpy('applyLoadoutPreset')
     .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
@@ -987,6 +1044,11 @@ class MockEquipmentPreview {
   readonly showSlotLabels = input(true);
   readonly armoryLink = input('/game/armory');
   readonly paperdollImageUrl = input('/images/warrior.png');
+  readonly selectedItemIds = input<readonly string[]>([]);
+  readonly selectionActionDisabled = input(false);
+  readonly equippedItemToggle = output<EquipmentPreviewSlotRow>();
+  readonly unequipSelected = output<void>();
+  readonly unequipAll = output<void>();
 }
 
 @Component({
@@ -1085,6 +1147,34 @@ function equippedItem(
     suffixKey: null,
     suffixName: null,
     isRuntimeUsable: true,
+    ...overrides,
+  };
+}
+
+function previewRow(
+  overrides: Partial<EquipmentPreviewSlotRow> = {},
+): EquipmentPreviewSlotRow {
+  return {
+    slotKey: 'main_hand',
+    label: 'Main hand',
+    sortOrder: 10,
+    iconClass: 'pi pi-one-handed',
+    item: null,
+    ...overrides,
+  };
+}
+
+function previewItem(
+  overrides: Partial<EquipmentPreviewItemDisplay> = {},
+): EquipmentPreviewItemDisplay {
+  return {
+    itemId: 'item-1',
+    name: 'Bronze Blade',
+    metadata: 'Main hand · Normal',
+    statusLabel: 'active',
+    qualityLabel: 'Normal',
+    kindLabel: 'Weapon',
+    slotLabel: 'Main hand',
     ...overrides,
   };
 }

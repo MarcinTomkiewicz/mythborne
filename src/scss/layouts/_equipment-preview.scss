@@ -17,6 +17,8 @@ $compact-overlay-min-width:
   calc((#{$compact-slot-min-width} * 2) + #{$compact-figure-min-width} + (#{$compact-gap} * 2));
 $compact-icon-overlay-min-width:
   calc((#{$compact-icon-slot-size} * 2) + #{$compact-icon-figure-min-width} + (#{$compact-gap} * 2));
+$slot-card-width: 185px;
+$slot-card-height: 70px;
 
 .equipment-preview {
   container-type: inline-size;
@@ -75,6 +77,21 @@ $compact-icon-overlay-min-width:
 .equipment-preview__zone--off-hand { grid-area: offHand; }
 .equipment-preview__zone--legs { grid-area: legs; }
 .equipment-preview__zone--feet { grid-area: feet; }
+
+.equipment-preview__zone--head,
+.equipment-preview__zone--torso,
+.equipment-preview__zone--ring1,
+.equipment-preview__zone--main-hand,
+.equipment-preview__zone--feet {
+  justify-self: end;
+}
+
+.equipment-preview__zone--neck,
+.equipment-preview__zone--ring2,
+.equipment-preview__zone--off-hand,
+.equipment-preview__zone--legs {
+  justify-self: start;
+}
 
 .equipment-preview__figure {
   grid-area: figure;
@@ -335,6 +352,16 @@ $compact-icon-overlay-min-width:
   object-fit: contain;
 }
 
+.equipment-preview__slot-card {
+  box-sizing: border-box;
+  inline-size: $slot-card-width;
+  block-size: $slot-card-height;
+  min-inline-size: $slot-card-width;
+  max-inline-size: $slot-card-width;
+  min-block-size: $slot-card-height;
+  max-block-size: $slot-card-height;
+}
+
 .equipment-preview__slot-icon {
   align-self: stretch;
   width: 3rem;
@@ -342,4 +369,28 @@ $compact-icon-overlay-min-width:
   border: 1px solid v.$color-border;
   border-radius: v.$radius-sm;
   background: v.$color-bg-surface;
+}
+
+.equipment-preview__slot-card--selected {
+  border-color: v.$color-secondary;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #{v.$color-secondary} 18%, transparent),
+      color-mix(in srgb, #{v.$color-secondary} 6%, transparent)
+    ),
+    v.$color-bg-surface;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, #{v.$color-secondary} 46%, transparent),
+    0 0 1rem color-mix(in srgb, #{v.$color-secondary} 28%, transparent),
+    v.$shadow-soft;
+}
+
+.equipment-preview__slot-card--selected .equipment-preview__slot-icon-host {
+  border-color: v.$color-primary;
+  background: color-mix(in srgb, #{v.$color-primary} 24%, #{v.$color-bg-surface});
+  color: v.$heading-color;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #{v.$color-primary} 42%, transparent),
+    0 0 0.85rem color-mix(in srgb, #{v.$color-primary} 30%, transparent);
 }

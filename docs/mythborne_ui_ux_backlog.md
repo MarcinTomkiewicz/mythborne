@@ -4176,6 +4176,8 @@ Ujednolicić equipment/paperdoll preview między Dashboard, Armory i przyszłymi
 - mutation intentionally not added:
 - local SCSS added:
 
+**Status:** Accepted/completed on 2026-05-18 for Armory shared `EquipmentPreview` reuse, paperdoll equipped-item selection and bulk unequip actions. Armory mode now controls selected equipped slots through page state, exposes `Unequip Selected` and `Unequip All`, and uses the canonical `bulk_unequip_hero_items(...)` RPC path without direct `hero_equipment` writes, DB/RPC/schema changes or generated type edits. The accepted item popover behavior remains preserved. Known follow-up: paperdoll responsive geometry/breakpoint polish remains imperfect and should be handled later as a dedicated paperdoll breakpoint pass, not as a blocker for UI-ITEMS-4. Broader manual visual smoke remains user/tester-side pending.
+
 ## UI-ITEMS-5 — Armory item list filtering and visibility
 
 **Goal:**  
