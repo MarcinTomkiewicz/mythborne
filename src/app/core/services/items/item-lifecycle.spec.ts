@@ -65,6 +65,38 @@ describe('ItemLifecycleService', () => {
     expect(result.balanceAfter).toBe(160);
   });
 
+  it('bulk vendor scraps selected hero items through the canonical vendor RPC', async () => {
+    backend.rpc.and.returnValue(of([bulkVendorScrapResultRow()]));
+
+    const result = await firstValueFrom(
+      service.bulkVendorScrapHeroItems({
+        actorHeroId: 'hero-1',
+        items: [{ itemId: 'item-1' }, { itemId: 'item-2' }],
+        reason: 'Bulk sold to vendor',
+      }),
+    );
+
+    expect(backend.rpc.calls.allArgs()).toEqual([
+      [
+        RPC.bulk_vendor_scrap_hero_items,
+        {
+          p_actor_hero_id: 'hero-1',
+          p_selection_json: [
+            { itemId: 'item-1' },
+            { itemId: 'item-2' },
+          ],
+          p_reason: 'Bulk sold to vendor',
+        },
+      ],
+    ]);
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+    expect(result.soldCount).toBe(2);
+    expect(result.totalDrachmaAmount).toBe(120);
+    expect(result.balanceAfter).toBe(220);
+  });
+
   it('fails when the vendor lifecycle RPC returns no row', async () => {
     backend.rpc.and.returnValue(of([]));
 
@@ -136,6 +168,25 @@ function vendorScrapResultRow(itemId: string) {
     balance_after: 160,
     item_audit_log_id: 'audit-item-1',
     vendor_audit_log_id: 'audit-vendor-1',
+  };
+}
+
+function bulkVendorScrapResultRow() {
+  return {
+    hero_id: 'hero-1',
+    server_id: 'server-1',
+    request_id: 'request-1',
+    success: true,
+    selected_count: 2,
+    sold_count: 2,
+    skipped_count: 0,
+    failed_count: 0,
+    total_drachma_amount: 120,
+    balance_after: 220,
+    result_journal_json: [],
+    final_equipment_json: [],
+    visible_items_json: [],
+    armory_state_json: {},
   };
 }
 

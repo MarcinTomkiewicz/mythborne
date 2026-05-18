@@ -2,6 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
+  BulkVendorScrapHeroItemsInput,
+  BulkVendorScrapHeroItemsResult,
   ItemLifecycleOperationResult,
   RecoverableScrappedItemSearchResult,
   RecoverScrappedItemInput,
@@ -10,14 +12,17 @@ import {
   VendorScrapHeroItemResult,
 } from '../../domain/item/item-lifecycle.model';
 import {
+  BulkVendorScrapHeroItemsRpcRow,
   ItemLifecycleOperationRpcRow,
   SearchRecoverableScrappedItemsPageRpcRow,
   VendorScrapHeroItemRpcRow,
 } from '../../types/item-lifecycle-rpc.types';
 import {
+  mapBulkVendorScrapHeroItemsResult,
   mapItemLifecycleOperationResult,
   mapRecoverableScrappedItemSearchResult,
   mapVendorScrapHeroItemResult,
+  toBulkVendorScrapHeroItemsRpcArgs,
   toRecoverScrappedItemRpcArgs,
   toSearchRecoverableScrappedItemsPageRpcArgs,
   toVendorScrapHeroItemRpcArgs,
@@ -43,6 +48,19 @@ export class ItemLifecycleService {
       )
       .pipe(map((rows) => mapVendorScrapHeroItemResult(
         firstRpcRow(rows, 'Item lifecycle workflow'),
+      )));
+  }
+
+  bulkVendorScrapHeroItems(
+    input: BulkVendorScrapHeroItemsInput,
+  ): Observable<BulkVendorScrapHeroItemsResult> {
+    return this.backend
+      .rpc<BulkVendorScrapHeroItemsRpcRow[]>(
+        RPC.bulk_vendor_scrap_hero_items,
+        toBulkVendorScrapHeroItemsRpcArgs(input),
+      )
+      .pipe(map((rows) => mapBulkVendorScrapHeroItemsResult(
+        firstRpcRow(rows, 'Bulk item lifecycle workflow'),
       )));
   }
 

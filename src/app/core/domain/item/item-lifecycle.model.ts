@@ -7,6 +7,13 @@ export interface VendorScrapHeroItemInput {
   requestId?: string | null;
 }
 
+export interface BulkVendorScrapHeroItemsInput {
+  actorHeroId: string;
+  items: readonly { itemId: string }[];
+  reason?: string | null;
+  requestId?: string | null;
+}
+
 export interface RecoverScrappedItemInput {
   itemId: string;
   targetHeroId: string;
@@ -39,6 +46,19 @@ export interface VendorScrapHeroItemResult {
   balanceAfter: number;
   itemAuditLogId: string;
   vendorAuditLogId: string;
+}
+
+export interface BulkVendorScrapHeroItemsResult {
+  heroId: string;
+  serverId: string;
+  requestId: string;
+  success: boolean;
+  selectedCount: number;
+  soldCount: number;
+  skippedCount: number;
+  failedCount: number;
+  totalDrachmaAmount: number;
+  balanceAfter: number;
 }
 
 export interface RecoverableScrappedItem {

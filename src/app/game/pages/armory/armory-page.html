@@ -1,4 +1,6 @@
 <div class="flex-col gap-xl min-w-0">
+  <p-confirmdialog styleClass="mg-dialog mg-dialog--danger" />
+
   <section class="mg-card p-lg w-100">
     <div class="grid-2-1 gap-lg grid-items-center">
       <div class="flex-col gap-xs min-w-0">
@@ -91,50 +93,6 @@
         @if (equipment.error()) {
           <p class="warn-text mb-md">{{ equipment.error() }}</p>
         }
-        @if (equipment.actionError()) {
-          <p class="warn-text mb-md">{{ equipment.actionError() }}</p>
-        }
-        @if (equipment.actionJournal(); as journal) {
-          <div class="mg-card p-md flex-col gap-sm mb-md">
-            <div class="flex-row-between-center gap-sm">
-              <strong class="heading-color">Equipment result</strong>
-              @if (journal.success) {
-                <span class="tag-badge tag-badge--success">Accepted</span>
-              } @else {
-                <span class="tag-badge tag-badge--warn">Failed</span>
-              }
-            </div>
-            @for (entry of equipmentJournalEntries('equipped'); track $index) {
-              <p class="mb-0">Equipped: {{ operationMessage(entry) }}</p>
-            }
-            @for (entry of equipmentJournalEntries('shifted'); track $index) {
-              <p class="mb-0">Shifted: {{ operationMessage(entry) }}</p>
-            }
-            @for (entry of equipmentJournalEntries('unequipped'); track $index) {
-              <p class="mb-0">Unequipped: {{ operationMessage(entry) }}</p>
-            }
-            @for (entry of equipmentJournalEntries('failed'); track $index) {
-              <p class="warn-text mb-0">
-                Failed: {{ operationMessage(entry) }}
-              </p>
-            }
-            @for (entry of equipmentJournalEntries('skipped'); track $index) {
-              <p class="mb-0">Skipped: {{ operationMessage(entry) }}</p>
-            }
-            @if (journal.finalEquipment; as finalEquipment) {
-              <div class="flex-col gap-xs">
-                <strong class="heading-color">Final equipment</strong>
-                @if (finalEquipment.slots.length) {
-                  @for (slot of finalEquipment.slots; track slot.slotKey) {
-                    <p class="mb-0">{{ slot.slotLabel }}: {{ slot.itemName }}</p>
-                  }
-                } @else {
-                  <p class="muted-text mb-0">No equipped items returned.</p>
-                }
-              </div>
-            }
-          </div>
-        }
 
         @if (equipment.slots().length) {
           <div class="flex-col gap-sm">
@@ -187,23 +145,14 @@
         </div>
       </div>
 
-      <div class="flex-row-between-center flex-col-sm gap-md mb-md">
-        <div class="flex-row-start-center flex-wrap gap-sm">
-          @if (selectedBulkItems().length > 0) {
-            <span class="tag-badge tag-badge--info">
-              {{ selectedBulkItems().length }} selected
-            </span>
-          } @else {
-            <span class="tag-badge tag-badge--muted">No bulk selection</span>
-          }
-        </div>
-        <p-button
-          type="button"
-          severity="secondary"
-          size="small"
-          label="Equip selected"
-          [disabled]="equipment.isMutating() || selectedBulkItems().length === 0"
-          (onClick)="bulkEquipSelectedItems()"
+      <div class="mb-md">
+        <app-armory-bulk-actions-toolbar
+          [selectedCount]="selectedBulkItems().length"
+          [drachmaValue]="selectedBulkSellSummary().drachmaValue"
+          [canSell]="canBulkVendorScrapSelectedItems()"
+          [isActionBusy]="equipment.isMutating() || armory.isMutating()"
+          (equipSelected)="bulkEquipSelectedItems()"
+          (sellSelected)="confirmBulkVendorScrapSelectedItems()"
         />
       </div>
 
@@ -214,12 +163,6 @@
         <p class="warn-text mb-md">
           {{ guildItemUsageState.error() }} Private item actions are hidden until guild armory item state is available.
         </p>
-      }
-      @if (armory.actionError()) {
-        <p class="warn-text mb-md">{{ armory.actionError() }}</p>
-      }
-      @if (armory.actionMessage()) {
-        <p class="success-text mb-md">{{ armory.actionMessage() }}</p>
       }
 
       <div class="flex-col gap-sm">
@@ -403,6 +346,17 @@
             }
           </section>
         }
+      </div>
+
+      <div class="mt-md">
+        <app-armory-bulk-actions-toolbar
+          [selectedCount]="selectedBulkItems().length"
+          [drachmaValue]="selectedBulkSellSummary().drachmaValue"
+          [canSell]="canBulkVendorScrapSelectedItems()"
+          [isActionBusy]="equipment.isMutating() || armory.isMutating()"
+          (equipSelected)="bulkEquipSelectedItems()"
+          (sellSelected)="confirmBulkVendorScrapSelectedItems()"
+        />
       </div>
     </section>
   </div>

@@ -1,4 +1,6 @@
 import {
+  BulkVendorScrapHeroItemsInput,
+  BulkVendorScrapHeroItemsResult,
   ItemLifecycleOperationResult,
   RecoverableScrappedItem,
   RecoverableScrappedItemSearchResult,
@@ -8,6 +10,8 @@ import {
   VendorScrapHeroItemResult,
 } from '../domain/item/item-lifecycle.model';
 import {
+  BulkVendorScrapHeroItemsRpcArgs,
+  BulkVendorScrapHeroItemsRpcRow,
   ItemLifecycleRpcRow,
   RecoverScrappedItemRpcArgs,
   SearchRecoverableScrappedItemsPageRpcArgs,
@@ -23,6 +27,23 @@ export function toVendorScrapHeroItemRpcArgs(
   const args: VendorScrapHeroItemRpcArgs = {
     p_actor_hero_id: requiredText(input.actorHeroId, 'actorHeroId'),
     p_item_id: requiredText(input.itemId, 'itemId'),
+  };
+
+  addOptionalText(args, 'p_reason', input.reason);
+  addOptionalText(args, 'p_request_id', input.requestId);
+
+  return args;
+}
+
+export function toBulkVendorScrapHeroItemsRpcArgs(
+  input: BulkVendorScrapHeroItemsInput,
+): BulkVendorScrapHeroItemsRpcArgs {
+  const selection = input.items.map((item, index) => ({
+    itemId: requiredText(item.itemId, `items[${index}].itemId`),
+  }));
+  const args: BulkVendorScrapHeroItemsRpcArgs = {
+    p_actor_hero_id: requiredText(input.actorHeroId, 'actorHeroId'),
+    p_selection_json: selection,
   };
 
   addOptionalText(args, 'p_reason', input.reason);
@@ -96,6 +117,23 @@ export function mapVendorScrapHeroItemResult(
     balanceAfter: row.balance_after,
     itemAuditLogId: row.item_audit_log_id,
     vendorAuditLogId: row.vendor_audit_log_id,
+  };
+}
+
+export function mapBulkVendorScrapHeroItemsResult(
+  row: BulkVendorScrapHeroItemsRpcRow,
+): BulkVendorScrapHeroItemsResult {
+  return {
+    heroId: row.hero_id,
+    serverId: row.server_id,
+    requestId: row.request_id,
+    success: row.success,
+    selectedCount: row.selected_count,
+    soldCount: row.sold_count,
+    skippedCount: row.skipped_count,
+    failedCount: row.failed_count,
+    totalDrachmaAmount: row.total_drachma_amount,
+    balanceAfter: row.balance_after,
   };
 }
 

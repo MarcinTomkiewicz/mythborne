@@ -158,6 +158,7 @@ export const RPC = {
   unequip_hero_item: 'unequip_hero_item',
   bulk_unequip_hero_items: 'bulk_unequip_hero_items',
   bulk_equip_hero_items: 'bulk_equip_hero_items',
+  bulk_vendor_scrap_hero_items: 'bulk_vendor_scrap_hero_items',
   get_hero_loadout_presets: 'get_hero_loadout_presets',
   rename_hero_loadout_preset: 'rename_hero_loadout_preset',
   save_current_hero_loadout_preset: 'save_current_hero_loadout_preset',

@@ -4519,6 +4519,8 @@ Make bulk selection controls clear and prototype-adjacent without changing the b
 - toolbar changes:
 - behavior unchanged confirmation:
 
+**Status:** Accepted/completed on 2026-05-18. The Armory bulk actions toolbar is now a compact reusable `app-armory-bulk-actions-toolbar` rendered both above and below the visible stand list, showing `N selected · X drachma` with clear disabled/action-busy states. Bulk equip keeps the existing equipment workflow, and bulk vendor sell now uses the canonical `bulk_vendor_scrap_hero_items(...)` path with a PrimeNG `ConfirmDialogModule` confirmation, project dialog styling, success/danger confirm buttons and toast-based action feedback. The accepted Inventory card/grid direction, EquipmentPreview, popovers, stand headers and empty states were not changed. Manual smoke remains user-side/pending.
+
 ---
 
 ## UI-ITEMS-13 — Item card action layout cleanup

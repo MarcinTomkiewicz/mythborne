@@ -1,5 +1,9 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { EMPTY, Observable, switchMap, tap } from 'rxjs';
+import {
+  BulkVendorScrapHeroItemsResult,
+  VendorScrapHeroItemResult,
+} from '../../domain/item/item-lifecycle.model';
 import { HeroArmoryReadModel } from '../../domain/item/item-equipment.model';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
 import {
@@ -7,6 +11,7 @@ import {
   RenameArmoryShelfInput,
 } from '../../interfaces/item/armory-actions.interface';
 import {
+  ArmoryBulkLifecycleMutationInput,
   ArmoryLifecycleMutationInput,
   ArmoryMutationOptions,
 } from '../../interfaces/item/armory-shelf-mutation.interface';
@@ -104,7 +109,10 @@ export class ArmoryShelfState {
     });
   }
 
-  vendorScrapItem(itemId: string, afterResponse?: () => void): void {
+  vendorScrapItem(
+    itemId: string,
+    afterResponse?: (result: VendorScrapHeroItemResult) => void,
+  ): void {
     this.runLifecycleMutation({
       itemId,
       afterResponse,
@@ -114,6 +122,23 @@ export class ArmoryShelfState {
           actorHeroId,
           itemId: normalizedItemId,
           reason: 'Player vendor scrap',
+        }),
+    });
+  }
+
+  bulkVendorScrapItems(
+    itemIds: readonly string[],
+    afterResponse?: (result: BulkVendorScrapHeroItemsResult) => void,
+  ): void {
+    this.runBulkLifecycleMutation({
+      itemIds,
+      afterResponse,
+      successMessage: 'Selected items sold to vendor.',
+      operation: (actorHeroId, normalizedItemIds) =>
+        this.lifecycle.bulkVendorScrapHeroItems({
+          actorHeroId,
+          items: normalizedItemIds.map((itemId) => ({ itemId })),
+          reason: 'Player bulk vendor scrap',
         }),
     });
   }
@@ -153,7 +178,6 @@ export class ArmoryShelfState {
   private runLifecycleMutation<T>(input: ArmoryLifecycleMutationInput<T>): void {
     let lifecycleSucceeded = false;
     this.runMutation({
-      afterResponse: input.afterResponse,
       successMessage: input.successMessage,
       failureMessage: 'Item lifecycle action failed.',
       committedRefreshFailureMessage:
@@ -164,14 +188,50 @@ export class ArmoryShelfState {
         const itemId = requiredItemId(input.itemId);
 
         return input.operation(actorHeroId, itemId).pipe(
-          tap(() => {
+          tap((result) => {
             lifecycleSucceeded = true;
             if (!acceptsCurrentContext()) {
               return;
             }
 
             this.actionMessage.set(input.successMessage);
-            input.afterResponse?.();
+            input.afterResponse?.(result);
+          }),
+          switchMap(() => {
+            if (!acceptsCurrentContext()) {
+              return EMPTY;
+            }
+
+            return this.armory.getArmory();
+          }),
+        );
+      },
+    });
+  }
+
+  private runBulkLifecycleMutation<T>(
+    input: ArmoryBulkLifecycleMutationInput<T>,
+  ): void {
+    let lifecycleSucceeded = false;
+    this.runMutation({
+      successMessage: input.successMessage,
+      failureMessage: 'Item lifecycle action failed.',
+      committedRefreshFailureMessage:
+        'Armory refresh failed after item lifecycle action.',
+      hasCommitted: () => lifecycleSucceeded,
+      operation: (_requestId, _requestContextKey, acceptsCurrentContext) => {
+        const actorHeroId = requiredActorHeroId(this.activeHero.state());
+        const itemIds = requiredItemIds(input.itemIds);
+
+        return input.operation(actorHeroId, itemIds).pipe(
+          tap((result) => {
+            lifecycleSucceeded = true;
+            if (!acceptsCurrentContext()) {
+              return;
+            }
+
+            this.actionMessage.set(input.successMessage);
+            input.afterResponse?.(result);
           }),
           switchMap(() => {
             if (!acceptsCurrentContext()) {
@@ -211,6 +271,18 @@ function requiredItemId(itemId: string): string {
   }
 
   return normalizedItemId;
+}
+
+function requiredItemIds(itemIds: readonly string[]): string[] {
+  const normalizedItemIds = itemIds
+    .map(requiredItemId)
+    .filter((itemId, index, ids) => ids.indexOf(itemId) === index);
+
+  if (!normalizedItemIds.length) {
+    throw new Error('itemIds are required for item lifecycle action.');
+  }
+
+  return normalizedItemIds;
 }
 
 function requiredActorHeroId(state: Pick<ActiveHeroState, 'heroId'> | null): string {

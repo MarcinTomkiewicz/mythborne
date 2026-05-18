@@ -3,6 +3,11 @@ import { Database } from './database.types';
 export type VendorScrapHeroItemRpcArgs =
   Database['public']['Functions']['vendor_scrap_hero_item']['Args'];
 
+export type BulkVendorScrapHeroItemsRpcArgs =
+  Database['public']['Functions']['bulk_vendor_scrap_hero_items']['Args'];
+export type BulkVendorScrapHeroItemsRpcRow =
+  Database['public']['Functions']['bulk_vendor_scrap_hero_items']['Returns'][number];
+
 export type VendorScrapHeroItemRpcRow = {
   balance_after: number;
   drachma_amount: number;

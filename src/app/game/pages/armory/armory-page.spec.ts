@@ -2,6 +2,8 @@ import { Component, input, output, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ButtonModule } from 'primeng/button';
+import { Confirmation, ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import {
@@ -19,6 +21,8 @@ import { ArmoryShelfReadStatus } from '../../../core/types/armory-shelf.types';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { CurrentEquipmentReadStatus } from '../../../core/types/current-equipment.types';
 import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
+import { ToastService } from '../../../core/services/ui/toast';
+import { ArmoryBulkActionsToolbar } from '../../components/armory-bulk-actions-toolbar/armory-bulk-actions-toolbar';
 import { ArmoryPage } from './armory-page';
 import {
   ArmoryGuildItemUsageState,
@@ -36,6 +40,9 @@ describe('ArmoryPage', () => {
   let armory: FakeArmoryShelfState;
   let loadoutPresets: FakeHeroLoadoutPresetsState;
   let guildItemUsage: FakeArmoryGuildItemUsageState;
+  let confirmationService: ConfirmationService;
+  let lastConfirmation: Confirmation | null;
+  let toast: FakeToastService;
 
   beforeEach(async () => {
     page = new FakeArmoryPageFacade();
@@ -43,6 +50,8 @@ describe('ArmoryPage', () => {
     armory = new FakeArmoryShelfState();
     loadoutPresets = new FakeHeroLoadoutPresetsState();
     guildItemUsage = new FakeArmoryGuildItemUsageState();
+    lastConfirmation = null;
+    toast = new FakeToastService();
 
     await TestBed.configureTestingModule({
       imports: [ArmoryPage],
@@ -52,8 +61,10 @@ describe('ArmoryPage', () => {
           imports: [
             ReactiveFormsModule,
             ButtonModule,
+            ConfirmDialogModule,
             InplaceModule,
             InputTextModule,
+            ArmoryBulkActionsToolbar,
             MockEquipmentPreview,
             MockArmoryItemDetailPopover,
             MockLoadoutPresetManagement,
@@ -64,13 +75,21 @@ describe('ArmoryPage', () => {
             { provide: ArmoryShelfState, useValue: armory },
             { provide: HeroLoadoutPresetsState, useValue: loadoutPresets },
             { provide: ArmoryGuildItemUsageState, useValue: guildItemUsage },
+            ConfirmationService,
+            { provide: ToastService, useValue: toast },
           ],
         },
       })
       .compileComponents();
 
     fixture = TestBed.createComponent(ArmoryPage);
+    confirmationService = fixture.debugElement.injector.get(ConfirmationService);
+    spyOn(confirmationService, 'confirm').and.callFake((confirmation) => {
+      lastConfirmation = confirmation;
+      return confirmationService;
+    });
     fixture.detectChanges();
+    toast.show.calls.reset();
   });
 
   it('loads armory support data and current equipment on init', () => {
@@ -601,23 +620,86 @@ describe('ArmoryPage', () => {
   });
 
   it('renders bulk equip action without exposing checkbox or slot selection', () => {
+    const first = armoryItem({ itemId: 'item-first', name: 'First Blade' });
     armory.setShelves([
       armoryShelf({
         position: 1,
         name: 'Weapons',
         visibleItems: [
-          armoryItem({ itemId: 'item-first', name: 'First Blade' }),
+          first,
           armoryItem({ itemId: 'item-second', name: 'Second Blade' }),
         ],
       }),
     ]);
     fixture.detectChanges();
-    const text = textContent(fixture);
 
-    expect(text).toContain('Equip selected');
-    expect(text).not.toContain('Select for bulk equip');
+    expect(textContent(fixture)).toContain('No items selected');
+    expect(buttonsWithText(fixture, 'Equip selected')[0].hasAttribute('disabled'))
+      .toBeTrue();
+    expect(buttonsWithText(fixture, 'Sell selected')[0].hasAttribute('disabled'))
+      .toBeTrue();
+    expect((fixture.nativeElement as HTMLElement)
+      .querySelector('.pi-equip')).not.toBeNull();
+    expect((fixture.nativeElement as HTMLElement)
+      .querySelector('.pi-sold')).not.toBeNull();
+
+    fixture.componentInstance.setBulkItemSelected(first, true);
+    fixture.detectChanges();
+
+    expect(textContent(fixture)).toContain('1 selected');
+    expect(textContent(fixture)).toContain('20 drachma');
+    expect(textContent(fixture)).not.toContain('Bulk equip');
+    expect(textContent(fixture)).not.toContain('Sellable: 1');
+    expect(buttonsWithText(fixture, 'Equip selected')[0].hasAttribute('disabled'))
+      .toBeFalse();
+    expect(buttonsWithText(fixture, 'Sell selected')[0].hasAttribute('disabled'))
+      .toBeFalse();
+    expect(textContent(fixture)).not.toContain('Select for bulk equip');
     expect((fixture.nativeElement as HTMLElement)
       .querySelector('p-select[aria-label="Equip item slot"]')).toBeNull();
+  });
+
+  it('confirms bulk vendor scrap before selling selected active items', () => {
+    const first = armoryItem({ itemId: 'item-first', name: 'First Blade' });
+    const locked = armoryItem({
+      itemId: 'item-locked',
+      name: 'Locked Blade',
+      lifecycleStatus: 'locked_trade',
+    });
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [first, locked],
+      }),
+    ]);
+    fixture.detectChanges();
+
+    fixture.componentInstance.setBulkItemSelected(first, true);
+    fixture.componentInstance.setBulkItemSelected(locked, true);
+    fixture.componentInstance.confirmBulkVendorScrapSelectedItems();
+
+    expect(armory.bulkVendorScrapItems).not.toHaveBeenCalled();
+    expect(confirmationService.confirm).toHaveBeenCalled();
+    expect(lastConfirmation?.message).toBe(
+      'Sell to vendor <strong class="color-heading">1 items</strong> for <strong class="color-heading">20 drachmas</strong>?',
+    );
+
+    lastConfirmation?.accept?.();
+
+    expect(armory.bulkVendorScrapItems).toHaveBeenCalledWith(
+      ['item-first'],
+      jasmine.any(Function),
+    );
+    expect(equipment.refresh).toHaveBeenCalled();
+    expect(guildItemUsage.load).toHaveBeenCalledTimes(2);
+    expect(page.loadData).toHaveBeenCalledTimes(2);
+    expect(fixture.componentInstance.selectedBulkItems()).toEqual([]);
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Items sold to vendor',
+      '1 sold for 20 drachma.',
+    );
   });
 
   it('calls unequip for the selected equipped slot and refreshes armory after response', () => {
@@ -698,7 +780,7 @@ describe('ArmoryPage', () => {
     expect(equipment.unequipSlot).not.toHaveBeenCalled();
   });
 
-  it('renders domain failure journal as player-facing feedback', () => {
+  it('shows domain failure journal as toast feedback', () => {
     equipment.actionJournal.set(operationJournal({
       success: false,
       failed: [{
@@ -712,13 +794,16 @@ describe('ArmoryPage', () => {
       }],
     }));
     fixture.detectChanges();
-    const text = textContent(fixture);
 
-    expect(text).toContain('Equipment result');
-    expect(text).toContain('Failed: Requirements not met.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Equipment action failed',
+      '1 failed, 0 skipped.',
+    );
+    expect(textContent(fixture)).not.toContain('Equipment result');
   });
 
-  it('renders unequip journal feedback', () => {
+  it('shows unequip journal as toast feedback', () => {
     equipment.actionJournal.set(operationJournal({
       unequipped: [{
         action: 'unequipped',
@@ -731,13 +816,16 @@ describe('ArmoryPage', () => {
       }],
     }));
     fixture.detectChanges();
-    const text = textContent(fixture);
 
-    expect(text).toContain('Equipment result');
-    expect(text).toContain('Unequipped: Unequipped.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Equipment updated',
+      '1 item changed.',
+    );
+    expect(textContent(fixture)).not.toContain('Equipment result');
   });
 
-  it('renders shifted journal feedback with neutral equipment wording', () => {
+  it('shows shifted journal as neutral toast feedback', () => {
     equipment.actionJournal.set(operationJournal({
       shifted: [{
         action: 'shifted',
@@ -750,14 +838,16 @@ describe('ArmoryPage', () => {
       }],
     }));
     fixture.detectChanges();
-    const text = textContent(fixture);
 
-    expect(text).toContain('Equipment result');
-    expect(text).toContain('Shifted: Moved to off hand.');
-    expect(text).not.toContain('Already equipped:');
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Equipment updated',
+      '1 item changed.',
+    );
+    expect(textContent(fixture)).not.toContain('Already equipped:');
   });
 
-  it('renders preset apply skipped entries and final equipment from DB journal', () => {
+  it('shows preset apply skipped entries as warning toast', () => {
     equipment.actionJournal.set(operationJournal({
       success: false,
       equipped: [{
@@ -791,13 +881,13 @@ describe('ArmoryPage', () => {
       },
     }));
     fixture.detectChanges();
-    const text = textContent(fixture);
 
-    expect(text).toContain('Equipment result');
-    expect(text).toContain('Equipped: Applied exact item.');
-    expect(text).toContain('Skipped: Saved ring is missing.');
-    expect(text).toContain('Final equipment');
-    expect(text).toContain('Main hand: Demonic Dagger');
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Equipment action failed',
+      '1 failed, 1 skipped.',
+    );
+    expect(textContent(fixture)).not.toContain('Equipment result');
   });
 
   it('uses styled PrimeNG controls instead of raw browser controls', () => {
@@ -941,7 +1031,24 @@ class FakeArmoryShelfState {
   readonly renameShelf = jasmine.createSpy('renameShelf');
   readonly vendorScrapItem = jasmine
     .createSpy('vendorScrapItem')
-    .and.callFake((_itemId, afterResponse?: () => void) => afterResponse?.());
+    .and.callFake((_itemId, afterResponse?: (result: {
+      drachmaAmount: number;
+    }) => void) => afterResponse?.({ drachmaAmount: 20 }));
+  readonly bulkVendorScrapItems = jasmine
+    .createSpy('bulkVendorScrapItems')
+    .and.callFake((itemIds: readonly string[], afterResponse?: (result: {
+      selectedCount: number;
+      soldCount: number;
+      skippedCount: number;
+      failedCount: number;
+      totalDrachmaAmount: number;
+    }) => void) => afterResponse?.({
+      selectedCount: itemIds.length,
+      soldCount: itemIds.length,
+      skippedCount: 0,
+      failedCount: 0,
+      totalDrachmaAmount: itemIds.length * 20,
+    }));
 
   setShelves(
     shelves: ArmoryShelfReadModel[],
@@ -985,6 +1092,11 @@ class FakeArmoryGuildItemUsageState {
       [itemId]: itemUsage,
     });
   }
+}
+
+class FakeToastService {
+  readonly show = jasmine.createSpy('show');
+  readonly clear = jasmine.createSpy('clear');
 }
 
 @Component({

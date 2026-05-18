@@ -1,13 +1,14 @@
 import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import {
   ArmoryItemSummary,
   ArmoryShelfReadModel,
-  EquipmentOperationAction,
-  EquipmentOperationJournalEntry,
   EquippedItemSummary,
   ItemLifecycleStatus,
 } from '../../../core/domain/item/item-equipment.model';
+import { BulkVendorScrapHeroItemsResult } from '../../../core/domain/item/item-lifecycle.model';
 import { ButtonModule } from 'primeng/button';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
@@ -27,7 +28,9 @@ import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facad
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
+import { ToastService } from '../../../core/services/ui/toast';
 import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-preview';
+import { ArmoryBulkActionsToolbar } from '../../components/armory-bulk-actions-toolbar/armory-bulk-actions-toolbar';
 import { ArmoryItemDetailPopover } from '../../components/armory-item-detail-popover/armory-item-detail-popover';
 import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
 import {
@@ -41,9 +44,11 @@ import {
   imports: [
     ReactiveFormsModule,
     ButtonModule,
+    ConfirmDialogModule,
     InplaceModule,
     InputTextModule,
     EquipmentPreview,
+    ArmoryBulkActionsToolbar,
     ArmoryItemDetailPopover,
     LoadoutPresetManagement,
   ],
@@ -53,6 +58,7 @@ import {
     ArmoryShelfState,
     HeroLoadoutPresetsState,
     ArmoryGuildItemUsageState,
+    ConfirmationService,
   ],
   templateUrl: './armory-page.html',
   host: { class: 'd-block w-100' },
@@ -63,6 +69,8 @@ export class ArmoryPage implements OnInit {
   readonly armory = inject(ArmoryShelfState);
   readonly loadoutPresets = inject(HeroLoadoutPresetsState);
   readonly guildItemUsageState = inject(ArmoryGuildItemUsageState);
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly toast = inject(ToastService);
   readonly equipmentPreviewRows = computed(() =>
     mapEquipmentPreviewRows(
       this.page.equipmentSlots(),
@@ -114,6 +122,20 @@ export class ArmoryPage implements OnInit {
       return item ? [item] : [];
     }).filter((item) => this.canUsePrivateItemActions(item));
   });
+  readonly selectedBulkSellableItems = computed(() =>
+    this.selectedBulkItems().filter((item) => this.canUseLifecycleActions(item)),
+  );
+  readonly selectedBulkSellSummary = computed(() => {
+    const items = this.selectedBulkSellableItems();
+
+    return {
+      count: items.length,
+      drachmaValue: items.reduce(
+        (total, item) => total + (item.drachmaValue ?? 0),
+        0,
+      ),
+    };
+  });
   private readonly syncArmorySelection = effect(() =>
     this.pruneBulkSelection(this.storedArmoryItems()),
   );
@@ -123,6 +145,55 @@ export class ArmoryPage implements OnInit {
   private readonly syncPaperdollSelection = effect(() =>
     this.prunePaperdollSelection(this.equipment.slots()),
   );
+  private readonly equipmentActionToast = effect(() => {
+    const error = this.equipment.actionError();
+    const journal = this.equipment.actionJournal();
+
+    if (error) {
+      this.toast.show('error', 'Equipment action failed', error);
+      return;
+    }
+
+    if (!journal) {
+      return;
+    }
+
+    const failedCount = journal.failed.length;
+    const skippedCount = journal.skipped.length;
+    const changedCount =
+      journal.equipped.length + journal.shifted.length + journal.unequipped.length;
+
+    if (!journal.success || failedCount > 0) {
+      this.toast.show(
+        'error',
+        'Equipment action failed',
+        `${failedCount || 1} failed, ${skippedCount} skipped.`,
+      );
+      return;
+    }
+
+    if (skippedCount > 0) {
+      this.toast.show(
+        'warn',
+        'Equipment action partially applied',
+        `${changedCount} changed, ${skippedCount} skipped.`,
+      );
+      return;
+    }
+
+    this.toast.show(
+      'success',
+      'Equipment updated',
+      `${changedCount} item${changedCount === 1 ? '' : 's'} changed.`,
+    );
+  });
+  private readonly armoryActionErrorToast = effect(() => {
+    const error = this.armory.actionError();
+
+    if (error) {
+      this.toast.show('error', 'Armory action failed', error);
+    }
+  });
 
   ngOnInit(): void {
     this.page.loadData();
@@ -240,6 +311,40 @@ export class ArmoryPage implements OnInit {
     });
   }
 
+  confirmBulkVendorScrapSelectedItems(): void {
+    const summary = this.selectedBulkSellSummary();
+
+    if (!summary.count) {
+      return;
+    }
+
+    this.confirmationService.confirm({
+      header: 'Sell selected items',
+      message: `Sell to vendor <strong class="color-heading">${summary.count} items</strong> for <strong class="color-heading">${summary.drachmaValue} drachmas</strong>?`,
+      acceptLabel: 'Sell selected',
+      rejectLabel: 'Cancel',
+      acceptIcon: 'pi pi-sold',
+      rejectIcon: 'pi pi-times',
+      acceptButtonStyleClass: 'p-button-success',
+      rejectButtonStyleClass: 'p-button-danger',
+      accept: () => this.bulkVendorScrapSelectedItems(),
+    });
+  }
+
+  private bulkVendorScrapSelectedItems(): void {
+    const items = this.selectedBulkSellableItems();
+
+    if (!items.length) {
+      return;
+    }
+
+    this.armory.bulkVendorScrapItems(items.map((item) => item.itemId), (result) => {
+      this.clearBulkSelection();
+      this.showBulkVendorScrapToast(result);
+      this.refreshEquipmentAndDerivedStats();
+    });
+  }
+
   togglePaperdollItemSelection(row: EquipmentPreviewSlotRow): void {
     const itemId = row.item?.itemId;
 
@@ -289,7 +394,14 @@ export class ArmoryPage implements OnInit {
 
     this.armory.vendorScrapItem(
       item.itemId,
-      () => this.refreshEquipmentAndDerivedStats(),
+      (result) => {
+        this.toast.show(
+          'success',
+          'Item sold to vendor',
+          `${item.name} sold for ${result.drachmaAmount} drachma.`,
+        );
+        this.refreshEquipmentAndDerivedStats();
+      },
     );
   }
 
@@ -298,26 +410,16 @@ export class ArmoryPage implements OnInit {
       && this.canUsePrivateItemActions(item);
   }
 
+  canBulkVendorScrapSelectedItems(): boolean {
+    return this.selectedBulkSellSummary().count > 0;
+  }
+
   canUsePrivateItemActions(item: ArmoryItemSummary): boolean {
     return this.guildItemUsageState.canUsePrivateItemActions(item);
   }
 
   guildItemUsage(item: ArmoryItemSummary): ArmoryGuildItemUsage {
     return this.guildItemUsageState.usageForItem(item);
-  }
-
-  equipmentJournalEntries(
-    action: EquipmentOperationAction,
-  ): EquipmentOperationJournalEntry[] {
-    const journal = this.equipment.actionJournal();
-
-    return journal ? journal[action] : [];
-  }
-
-  operationMessage(entry: EquipmentOperationJournalEntry): string {
-    return entry.message
-      ?? entry.reason
-      ?? (entry.success ? 'Operation accepted.' : 'Operation failed.');
   }
 
   isBulkItemSelected(item: ArmoryItemSummary): boolean {
@@ -402,6 +504,27 @@ export class ArmoryPage implements OnInit {
     this.equipment.refresh();
     this.guildItemUsageState.load();
     this.page.loadData();
+  }
+
+  private showBulkVendorScrapToast(result: BulkVendorScrapHeroItemsResult): void {
+    const partial = result.failedCount > 0
+      || result.skippedCount > 0
+      || result.soldCount < result.selectedCount;
+
+    if (result.soldCount === 0 || result.failedCount > 0) {
+      this.toast.show(
+        result.soldCount > 0 ? 'warn' : 'error',
+        result.soldCount > 0 ? 'Bulk sell partially applied' : 'Bulk sell failed',
+        `${result.soldCount} sold for ${result.totalDrachmaAmount} drachma, ${result.failedCount} failed, ${result.skippedCount} skipped.`,
+      );
+      return;
+    }
+
+    this.toast.show(
+      partial ? 'warn' : 'success',
+      partial ? 'Bulk sell partially applied' : 'Items sold to vendor',
+      `${result.soldCount} sold for ${result.totalDrachmaAmount} drachma.`,
+    );
   }
 
   private clearBulkSelection(): void {

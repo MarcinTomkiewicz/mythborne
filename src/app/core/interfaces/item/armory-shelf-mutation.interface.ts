@@ -17,6 +17,13 @@ export interface ArmoryMutationOptions {
 export interface ArmoryLifecycleMutationInput<T> {
   itemId: string;
   operation: (actorHeroId: string, itemId: string) => Observable<T>;
-  afterResponse?: () => void;
+  afterResponse?: (result: T) => void;
+  successMessage: string;
+}
+
+export interface ArmoryBulkLifecycleMutationInput<T> {
+  itemIds: readonly string[];
+  operation: (actorHeroId: string, itemIds: readonly string[]) => Observable<T>;
+  afterResponse?: (result: T) => void;
   successMessage: string;
 }
