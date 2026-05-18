@@ -4350,6 +4350,8 @@ Make each stand section header more like the prototype: clear stand number, stan
 - rename behavior preserved:
 - local SCSS added:
 
+**Status:** Accepted/completed on 2026-05-18. Stand section headers now keep the stand number, primary stand label, item-count badge and rename action compact and consistent without changing stand order or rename behavior. Manual visual smoke remains user-side pending for: custom persisted stand label, default `Stand N` label, `Unsorted` label, item-count badge, and rename open/save/cancel.
+
 ---
 
 ## UI-ITEMS-9 — Empty stand body visual state

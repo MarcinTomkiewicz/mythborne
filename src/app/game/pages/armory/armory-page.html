@@ -238,31 +238,34 @@
                 </div>
                 <div class="flex-col gap-xs min-w-0">
                   <div class="flex-row-start-center flex-wrap gap-xs">
-                    <strong class="color-text">
-                      @if (shelf.isUnsortedDropArea) {
-                        Unsorted
-                      } @else {
-                        Stand {{ shelf.position }}
-                      }
-                    </strong>
                     @if (
                       !shelf.isUnsortedDropArea
                       && shelf.isPersisted
                       && shelfLabel(shelf) !== 'Shelf ' + shelf.position
                     ) {
-                      <span class="color-muted">{{ shelfLabel(shelf) }}</span>
+                      <strong class="color-text">{{ shelfLabel(shelf) }}</strong>
+                      <span class="color-muted text-sm">Stand {{ shelf.position }}</span>
+                    } @else {
+                      <strong class="color-text">
+                        @if (shelf.isUnsortedDropArea) {
+                          Unsorted
+                        } @else {
+                          Stand {{ shelf.position }}
+                        }
+                      </strong>
                     }
                   </div>
                 </div>
               </div>
 
               <div class="flex-row-start-center flex-wrap gap-sm">
-                <span class="tag-badge tag-badge--muted">
+                <span
+                  class="tag-badge"
+                  [class.tag-badge--info]="shelf.visibleItems.length > 0"
+                  [class.tag-badge--muted]="shelf.visibleItems.length === 0"
+                >
                   {{ shelf.visibleItems.length > 0 ? shelf.visibleItems.length + ' item' + (shelf.visibleItems.length > 1 ? 's' : '') : 'No items' }}
                 </span>
-                @if (!shelf.isPersisted && !shelf.isUnsortedDropArea) {
-                  <span class="tag-badge tag-badge--muted">Available</span>
-                }
                 @if (!shelf.isUnsortedDropArea && shelf.isPersisted) {
                   @let renameControl = renameStandControl(shelf);
                   <p-inplace styleClass="mg-form">
