@@ -44,6 +44,16 @@ export function read(record: JsonRecord | null, ...keys: string[]): Json | undef
   return undefined;
 }
 
+export function readPath(
+  value: Json | undefined,
+  ...path: string[]
+): Json | undefined {
+  return path.reduce<Json | undefined>((current, key) => {
+    const record = jsonRecord(current);
+    return record ? record[key] : undefined;
+  }, value);
+}
+
 export function text(value: Json | undefined): string {
   return typeof value === 'string' ? value : '';
 }

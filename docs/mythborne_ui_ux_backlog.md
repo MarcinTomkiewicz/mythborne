@@ -5255,6 +5255,22 @@ Add compact DB-backed preview values to difficulty cards.
 - local SCSS added:
 
 
+**Status:** Accepted/completed on 2026-05-19. UI-EXPLORATION-5 now uses
+`get_hero_exploration_difficulty_card_previews(...)` as the canonical source for Difficulty card preview values and
+selected difficulty Trial detail rows. The old `preview_trial_opportunity_curve(...)` path is not used as the card
+source. Difficulty preview UI was split into focused standalone components for the section, card, chance metric row and
+Trial detail section; cards show DB-provided Step time, Trial opportunity, Approx. manifestation, Approx. auto result and
+Reward items, with chance values rendered through the shared `GameBar type="chance"` variant and `max=100`. The selected
+difficulty drives the Trial detail by stat section, which renders 9 DB-backed stat rows without Trial power, Tested stat
+or source/debug rows in player-facing UI. The mapper keeps required DB contract fields strict, including exactly 9 stat
+detail rows and required manifestation/auto-result display plus numeric chance fields. No local chance math, direct table
+reads, DB/RPC/schema/generated edits or local page SCSS were added. Verification passed with `npx tsc --noEmit`,
+`npm run build` with known budget/CommonJS warnings, and static greps. Manual visual smoke remains user-side for 3 cards,
+selected card glow, full-width chance bars, selected difficulty switching and 9 visible stat rows. Follow-ups: polish card
+typography/hierarchy, tune global `.mg-card--selected` if visual smoke says the glow is too weak, and keep
+`GameBar type="chance"` percent formatting player-safe if future usage enables `showValue=true`.
+
+
 ## UI-EXPLORATION-6 — Difficulty start/continue CTA behavior
 
 **Goal:**  

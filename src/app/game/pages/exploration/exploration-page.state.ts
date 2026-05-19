@@ -2,7 +2,6 @@ import { Injectable, computed, inject } from '@angular/core';
 import { GameServerKind } from '../../../core/enums/active-server.enum';
 import { ExplorationStepSelectionDiagnosticReadModel } from '../../../core/domain/exploration/exploration-readiness.model';
 import { HeroExplorationEdgeReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
-import { TrialOpportunityCurvePreview } from '../../../core/domain/exploration/exploration-preview.model';
 import { ActiveServer } from '../../../core/services/server/active-server';
 import { humanizeKey } from '../../../core/utils/normalize-text';
 import { ExplorationChallengeState } from './exploration-challenge.state';
@@ -26,10 +25,13 @@ export class ExplorationPageState {
   readonly rewardState = inject(ExplorationRewardState);
   readonly start = inject(ExplorationStartState);
 
-  readonly difficulties = this.overview.difficulties;
+  readonly difficultyCardPreviews = this.preview.difficultyCardPreviews;
   readonly state = this.overview.state;
   readonly selectedDifficultyKey = this.overview.selectedDifficultyKey;
   readonly selectedDifficulty = this.overview.selectedDifficulty;
+  readonly selectedDifficultyCardPreview = computed(() =>
+    this.preview.difficultyCardPreview(this.selectedDifficultyKey()),
+  );
   readonly isLoading = this.overview.isLoading;
   readonly isMoving = this.movement.isMoving;
   readonly isResolvingStep = this.step.isResolving;
@@ -275,10 +277,6 @@ export class ExplorationPageState {
         .filter(Boolean)
         .join(' - '),
     );
-  }
-
-  previewRows(difficultyKey: string): TrialOpportunityCurvePreview[] {
-    return this.preview.previewRows(difficultyKey);
   }
 
   rewardEntryLabel = this.rewardState.entryLabel.bind(this.rewardState);

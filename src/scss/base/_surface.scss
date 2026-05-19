@@ -32,6 +32,28 @@
   padding-top: 1.35rem;
 }
 
+.mg-card--selected {
+  border-color: color-mix(in srgb, v.$color-secondary 72%, transparent);
+  box-shadow: v.$shadow-gold-glow;
+}
+
+.mg-game-shell .mg-card--selected {
+  border-color: color-mix(in srgb, v.$color-secondary 82%, transparent);
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, v.$color-secondary 18%, transparent),
+      transparent 14rem
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-surface-elevated 84%, transparent),
+      color-mix(in srgb, v.$color-shell-surface 88%, transparent)
+    ),
+    v.$color-shell-surface;
+  box-shadow: v.$shadow-gold-glow;
+}
+
 .card-legend {
   position: absolute;
   top: 0;

@@ -1,0 +1,46 @@
+@let preview = difficulty();
+
+<div class="flex-col gap-sm mt-lg">
+  <div class="flex-row-between-center flex-col-sm gap-sm">
+    <div class="flex-col gap-xs">
+      <h4 class="mg-section__title mg-section__title--xs mb-0">
+        Trial detail by stat
+      </h4>
+      <p class="muted-text mb-0">
+        DB-provided manifestation and auto-result preview for the selected difficulty.
+      </p>
+    </div>
+    <span class="tag-badge tag-badge--info">
+      {{ preview.difficultyLabel }}
+    </span>
+  </div>
+
+  <div class="mg-grid grid-cols-3 grid-cols-1-md gap-sm w-100">
+    @for (row of preview.statDetails; track row.statKey) {
+      <article class="mg-card p-md w-100 h-100">
+        <div class="flex-col gap-sm w-100 h-100">
+          <div class="flex-col gap-xs w-100">
+            <strong>{{ row.statLabel }}</strong>
+          </div>
+
+          <div class="flex-col gap-sm w-100">
+            <app-exploration-chance-metric-row
+              label="Manifestation"
+              [display]="row.manifestationDisplay"
+              [value]="row.manifestationChance"
+            />
+            <app-exploration-chance-metric-row
+              label="Auto result"
+              [display]="row.autoResultDisplay"
+              [value]="row.autoResultSuccessChance"
+            />
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <p class="muted-text mb-0">
+        Trial detail is unavailable for the selected difficulty.
+      </p>
+    }
+  </div>
+</div>

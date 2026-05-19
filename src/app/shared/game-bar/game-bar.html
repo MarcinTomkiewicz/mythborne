@@ -8,7 +8,7 @@
       }
 
       @if (showValue()) {
-        <span class="heading-color">{{ value() }} / {{ max() }}</span>
+        <span class="heading-color">{{ displayValue() }}</span>
       }
     </div>
   }
@@ -17,11 +17,13 @@
     class="game-bar__track"
     [class.game-bar__track--compact]="compact()"
     [class.game-bar__track--xp]="isXp()"
+    [class.game-bar__track--chance]="isChance()"
   >
     <div
       class="game-bar__fill"
       [class.game-bar__fill--hp]="isHp()"
       [class.game-bar__fill--xp]="isXp()"
+      [class.game-bar__fill--chance]="isChance()"
       [style.width.%]="percentValue()"
     ></div>
   </div>

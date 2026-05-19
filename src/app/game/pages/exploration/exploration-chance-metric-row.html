@@ -1,0 +1,15 @@
+<div class="flex-col gap-xs w-100">
+  <div class="flex-row-between-center gap-sm w-100">
+    <span class="color-muted small-caps text-xs">{{ label() }}</span>
+    <strong class="color-heading">{{ display() }}</strong>
+  </div>
+  <app-game-bar
+    [label]="label()"
+    [value]="value()"
+    [max]="100"
+    type="chance"
+    [compact]="true"
+    [showLabel]="false"
+    [showValue]="false"
+  />
+</div>

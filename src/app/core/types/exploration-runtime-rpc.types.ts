@@ -11,6 +11,10 @@ export type GetHeroPendingCombatEffectStateRpcArgs =
   Rpc<'get_hero_pending_combat_effect_state'>['Args'];
 export type GetHeroPendingCombatEffectStateRpcRow =
   Rpc<'get_hero_pending_combat_effect_state'>['Returns'][number];
+export type GetHeroExplorationDifficultyCardPreviewsRpcArgs =
+  Rpc<'get_hero_exploration_difficulty_card_previews'>['Args'];
+export type GetHeroExplorationDifficultyCardPreviewsRpcRow =
+  Rpc<'get_hero_exploration_difficulty_card_previews'>['Returns'][number];
 
 export type StartOrGetHeroExplorationRpcArgs =
   Rpc<'start_or_get_hero_exploration'>['Args'];

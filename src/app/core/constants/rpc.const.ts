@@ -197,6 +197,8 @@ export const RPC = {
   get_exploration_step_reward_read_model:
     'get_exploration_step_reward_read_model',
   get_exploration_step_duration_seconds: 'get_exploration_step_duration_seconds',
+  get_hero_exploration_difficulty_card_previews:
+    'get_hero_exploration_difficulty_card_previews',
   get_hero_exploration_state: 'get_hero_exploration_state',
   get_hero_pending_combat_effect_state: 'get_hero_pending_combat_effect_state',
   get_encounter_definition_readiness: 'get_encounter_definition_readiness',

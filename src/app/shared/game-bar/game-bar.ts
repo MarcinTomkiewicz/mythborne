@@ -10,7 +10,7 @@ export class GameBar {
   label = input('XP');
   value = input(0);
   max = input(100);
-  type = input<'hp' | 'xp'>('hp');
+  type = input<'hp' | 'xp' | 'chance'>('hp');
   compact = input(false);
   showLabel = input(true);
   showValue = input(true);
@@ -22,4 +22,10 @@ export class GameBar {
   readonly percentValue = computed(() => this.percent() * 100);
   readonly isHp = computed(() => this.type() === 'hp');
   readonly isXp = computed(() => this.type() === 'xp');
+  readonly isChance = computed(() => this.type() === 'chance');
+  readonly displayValue = computed(() =>
+    this.isChance()
+      ? `${this.value()}%`
+      : `${this.value()} / ${this.max()}`,
+  );
 }

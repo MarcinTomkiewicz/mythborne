@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, forkJoin, of, switchMap } from 'rxjs';
-import { ExplorationDifficultyTierReadModel } from '../../../core/domain/exploration/exploration-definition.model';
+import { HeroExplorationDifficultyCardPreview } from '../../../core/domain/exploration/exploration-preview.model';
 import { HeroExplorationStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
@@ -27,14 +27,12 @@ export class ExplorationOverviewState {
 
   private activeHeroId: string | null = null;
 
-  readonly difficulties = signal<ExplorationDifficultyTierReadModel[]>([]);
   readonly state = signal<HeroExplorationStateReadModel | null>(null);
   readonly selectedDifficultyKey = signal<string | null>(null);
   readonly isLoading = signal(false);
 
   readonly selectedDifficulty = computed(() => {
-    const key = this.selectedDifficultyKey();
-    return this.difficulties().find((difficulty) => difficulty.key === key) ?? null;
+    return this.previews.difficultyCardPreview(this.selectedDifficultyKey());
   });
 
   readonly remainingTrialsLabel = computed(() => {
@@ -54,6 +52,7 @@ export class ExplorationOverviewState {
 
     this.isLoading.set(true);
     this.feedback.clear();
+    this.clearHeroScopedPreviewState();
 
     this.activeHero
       .requireActiveHero()
@@ -106,21 +105,23 @@ export class ExplorationOverviewState {
   }
 
   private loadOverview(heroId: string, token: number): void {
-    this.explorations
-      .getActiveDifficultyTiers()
+    this.previews
+      .loadDifficultyCardPreviews(heroId)
       .pipe(
-        switchMap((difficulties) => {
+        switchMap((difficultyCardPreviews) => {
           if (!this.loadToken.isCurrent(token)) {
             return of(null);
           }
 
-          this.difficulties.set(difficulties);
-          const selectedKey = this.resolveSelectedDifficultyKey(difficulties);
+          this.previews.difficultyCardPreviews.set(difficultyCardPreviews);
+          const selectedKey = this.resolveSelectedDifficultyKey(
+            difficultyCardPreviews,
+          );
           this.selectedDifficultyKey.set(selectedKey);
 
           if (!selectedKey) {
             this.state.set(null);
-            return of({ state: null, previews: {} });
+            return of({ state: null });
           }
 
           return forkJoin({
@@ -128,7 +129,6 @@ export class ExplorationOverviewState {
               heroId,
               difficultyKey: selectedKey,
             }),
-            previews: this.previews.loadPreviews(difficulties),
           });
         }),
         finalize(() => {
@@ -145,7 +145,6 @@ export class ExplorationOverviewState {
           }
 
           this.state.set(result.state);
-          this.previews.previewByDifficulty.set(result.previews);
         },
         error: (error: unknown) => {
           if (!this.isCurrentLoad(token, heroId)) {
@@ -155,6 +154,13 @@ export class ExplorationOverviewState {
           this.feedback.setError(error, 'Failed to load exploration status.');
         },
       });
+  }
+
+  private clearHeroScopedPreviewState(): void {
+    this.activeHeroId = null;
+    this.state.set(null);
+    this.selectedDifficultyKey.set(null);
+    this.previews.difficultyCardPreviews.set([]);
   }
 
   private loadSelectedState(): void {
@@ -198,12 +204,14 @@ export class ExplorationOverviewState {
   }
 
   private resolveSelectedDifficultyKey(
-    difficulties: readonly ExplorationDifficultyTierReadModel[],
+    difficultyCardPreviews: readonly HeroExplorationDifficultyCardPreview[],
   ): string | null {
     const current = this.selectedDifficultyKey();
 
-    return difficulties.find((difficulty) => difficulty.key === current)?.key
-      ?? difficulties[0]?.key
+    return difficultyCardPreviews.find(
+      (preview) => preview.difficultyKey === current,
+    )?.difficultyKey
+      ?? difficultyCardPreviews[0]?.difficultyKey
       ?? null;
   }
 

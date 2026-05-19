@@ -22,6 +22,10 @@
   border-color: v.$color-progress-track-border;
 }
 
+.game-bar__track--chance {
+  border-color: color-mix(in srgb, v.$color-info 38%, v.$color-progress-track-border);
+}
+
 .game-bar__fill {
   height: 100%;
   border-radius: inherit;
@@ -38,4 +42,13 @@
     v.$color-progress-gold-end
   );
   box-shadow: 0 0 0.8rem v.$color-progress-gold-glow;
+}
+
+.game-bar__fill--chance {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, v.$color-info 86%, v.$color-secondary),
+    v.$color-progress-gold-end
+  );
+  box-shadow: 0 0 0.65rem color-mix(in srgb, v.$color-info 28%, transparent);
 }

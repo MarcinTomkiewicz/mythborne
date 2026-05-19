@@ -6,8 +6,7 @@ import {
   CombatLiveStateReadModel,
   CombatResultDetailReadModel,
 } from '../../../core/domain/combat/combat-live.model';
-import { ExplorationDifficultyTierReadModel } from '../../../core/domain/exploration/exploration-definition.model';
-import { TrialOpportunityCurvePreview } from '../../../core/domain/exploration/exploration-preview.model';
+import { HeroExplorationDifficultyCardPreview } from '../../../core/domain/exploration/exploration-preview.model';
 import { ExplorationChallengeRewardReadModel } from '../../../core/domain/exploration/exploration-reward.model';
 import { ExplorationStepOutcomeKind } from '../../../core/domain/exploration/exploration-readiness.model';
 import {
@@ -57,6 +56,7 @@ describe('ExplorationPageState', () => {
     ]);
     explorations = jasmine.createSpyObj<HeroExplorations>('HeroExplorations', [
       'getActiveDifficultyTiers',
+      'getHeroExplorationDifficultyCardPreviews',
       'getHeroExplorationState',
       'startHeroExplorationStep',
       'startOrGetHeroExploration',
@@ -67,13 +67,14 @@ describe('ExplorationPageState', () => {
     ]);
 
     activeHero.requireActiveHero.and.returnValue(of(activeHeroContext()));
-    explorations.getActiveDifficultyTiers.and.returnValue(of([difficulty('easy')]));
+    explorations.getHeroExplorationDifficultyCardPreviews.and.returnValue(
+      of([difficultyCardPreview('easy')]),
+    );
     explorations.getHeroExplorationState.and.returnValue(of(noExplorationState('easy')));
     explorations.startHeroExplorationStep.and.returnValue(
       of(activeExplorationState('easy', true)),
     );
     explorations.startOrGetHeroExploration.and.returnValue(of(activeExplorationState('easy')));
-    explorations.previewTrialOpportunityCurve.and.returnValue(of([previewRow('easy')]));
     explorations.resolveHeroExplorationStep.and.returnValue(
       of(stepResolutionWorkflow('easy')),
     );
@@ -139,20 +140,21 @@ describe('ExplorationPageState', () => {
     feedback = TestBed.inject(ExplorationFeedbackState);
   });
 
-  it('loads active hero context, DB difficulty tiers and selected exploration state', () => {
+  it('loads active hero context, DB difficulty card previews and selected exploration state', () => {
     page.loadData();
 
-    expect(page.difficulties()[0].key).toBe('easy');
+    expect(page.difficultyCardPreviews()[0].difficultyKey).toBe('easy');
     expect(page.selectedDifficultyKey()).toBe('easy');
     expect(page.state()?.remainingTrials).toBe(2);
+    expect(explorations.getHeroExplorationDifficultyCardPreviews).toHaveBeenCalledWith({
+      heroId: 'hero-1',
+      stepsToPreview: 3,
+    });
     expect(explorations.getHeroExplorationState).toHaveBeenCalledWith({
       heroId: 'hero-1',
       difficultyKey: 'easy',
     });
-    expect(explorations.previewTrialOpportunityCurve).toHaveBeenCalledWith({
-      difficultyKey: 'easy',
-      stepsToPreview: 3,
-    });
+    expect(explorations.previewTrialOpportunityCurve).not.toHaveBeenCalled();
   });
 
   it('creates the exploration route component with local page state providers', () => {
@@ -1786,8 +1788,8 @@ describe('ExplorationPageState', () => {
   it('ignores stale state responses after difficulty changes', () => {
     const firstState = new Subject<HeroExplorationStateReadModel>();
     const secondState = new Subject<HeroExplorationStateReadModel>();
-    explorations.getActiveDifficultyTiers.and.returnValue(
-      of([difficulty('easy'), difficulty('hard')]),
+    explorations.getHeroExplorationDifficultyCardPreviews.and.returnValue(
+      of([difficultyCardPreview('easy'), difficultyCardPreview('hard')]),
     );
     explorations.getHeroExplorationState.and.returnValues(
       of(noExplorationState('easy')),
@@ -1817,19 +1819,26 @@ function activeHeroContext(): RequiredActiveHeroState {
   } as RequiredActiveHeroState;
 }
 
-function difficulty(key: string): ExplorationDifficultyTierReadModel {
+function difficultyCardPreview(key: string): HeroExplorationDifficultyCardPreview {
   return {
-    key,
-    label: key.toUpperCase(),
-    description: `${key} difficulty.`,
-    trialOpportunityStepCap: 3,
-  } as ExplorationDifficultyTierReadModel;
-}
-
-function previewRow(difficultyKey: string): TrialOpportunityCurvePreview {
-  return {
-    difficultyKey,
-  } as TrialOpportunityCurvePreview;
+    difficultyKey: key,
+    difficultyLabel: key.toUpperCase(),
+    difficultyDescription: `${key} difficulty.`,
+    difficultyHelperText: null,
+    isActive: true,
+    isAvailable: true,
+    stepDurationDisplay: '01:00',
+    stepDurationSeconds: 60,
+    trialOpportunityDisplay: '18%',
+    trialOpportunityChance: 18,
+    trialOpportunityIsGuaranteedByStepCap: false,
+    manifestationDisplay: '64%',
+    manifestationChance: 64,
+    autoResultDisplay: '57%',
+    autoResultSuccessChance: 57,
+    rewardItemCountDisplay: '2-3 items',
+    statDetails: [],
+  };
 }
 
 function noExplorationState(difficultyKey: string): HeroExplorationStateReadModel {

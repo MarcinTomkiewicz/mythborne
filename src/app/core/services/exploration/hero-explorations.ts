@@ -10,12 +10,16 @@ import {
   HeroExplorationStateReadModel,
   HeroExplorationStepResolutionWorkflowResult,
 } from '../../domain/exploration/exploration-runtime.model';
-import { TrialOpportunityCurvePreview } from '../../domain/exploration/exploration-preview.model';
+import {
+  HeroExplorationDifficultyCardPreview,
+  TrialOpportunityCurvePreview,
+} from '../../domain/exploration/exploration-preview.model';
 import { FilterOperator } from '../../enums/filter-operators';
 import { Row } from '../../types/supabase.types';
 import {
   AutoResolveHeroExplorationChallengeAttemptRpcRow,
   CompleteHeroExplorationChallengeAttemptRpcRow,
+  GetHeroExplorationDifficultyCardPreviewsRpcRow,
   GetHeroExplorationStateRpcResult,
   GetHeroPendingCombatEffectStateRpcRow,
   PreviewTrialOpportunityCurveRpcRow,
@@ -24,7 +28,10 @@ import {
   StartOrGetHeroExplorationRpcRow,
 } from '../../types/exploration-runtime-rpc.types';
 import { mapExplorationDifficultyTier } from '../../utils/exploration-definition-mappers';
-import { mapTrialOpportunityCurvePreview } from '../../utils/exploration-preview-mappers';
+import {
+  mapHeroExplorationDifficultyCardPreview,
+  mapTrialOpportunityCurvePreview,
+} from '../../utils/exploration-preview-mappers';
 import { mapHeroExplorationStateJson } from '../../utils/exploration-runtime-json-mappers';
 import {
   mapHeroDailyActionCounter,
@@ -43,6 +50,7 @@ import {
   mapResolveHeroExplorationStepResult,
   toAutoResolveHeroExplorationChallengeAttemptRpcArgs,
   toCompleteHeroExplorationChallengeAttemptRpcArgs,
+  toGetHeroExplorationDifficultyCardPreviewsRpcArgs,
   toGetHeroExplorationStateRpcArgs,
   toPreviewTrialOpportunityCurveRpcArgs,
   toResolveHeroExplorationStepRpcArgs,
@@ -81,6 +89,18 @@ export class HeroExplorations {
         toGetHeroExplorationStateRpcArgs(input),
       )
       .pipe(map(mapHeroExplorationStateJson));
+  }
+
+  getHeroExplorationDifficultyCardPreviews(input: {
+    heroId: string;
+    stepsToPreview?: number | null;
+  }): Observable<HeroExplorationDifficultyCardPreview[]> {
+    return this.backend
+      .rpc<GetHeroExplorationDifficultyCardPreviewsRpcRow[]>(
+        RPC.get_hero_exploration_difficulty_card_previews,
+        toGetHeroExplorationDifficultyCardPreviewsRpcArgs(input),
+      )
+      .pipe(map((rows) => rows.map(mapHeroExplorationDifficultyCardPreview)));
   }
 
   getHeroPendingCombatEffectState(

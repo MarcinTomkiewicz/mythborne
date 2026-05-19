@@ -9,6 +9,7 @@ import {
   AutoResolveHeroExplorationChallengeAttemptRpcRow,
   CompleteHeroExplorationChallengeAttemptRpcArgs,
   CompleteHeroExplorationChallengeAttemptRpcRow,
+  GetHeroExplorationDifficultyCardPreviewsRpcArgs,
   GetHeroExplorationStateRpcArgs,
   PreviewTrialOpportunityCurveRpcArgs,
   ResolveHeroExplorationStepRpcArgs,
@@ -31,6 +32,22 @@ export function toGetHeroExplorationStateRpcArgs(input: {
     p_hero_id: requiredText(input.heroId, 'heroId'),
     p_difficulty_key: requiredText(input.difficultyKey, 'difficultyKey'),
   };
+}
+
+export function toGetHeroExplorationDifficultyCardPreviewsRpcArgs(input: {
+  heroId: string | null | undefined;
+  stepsToPreview?: number | null;
+}): GetHeroExplorationDifficultyCardPreviewsRpcArgs {
+  const args: GetHeroExplorationDifficultyCardPreviewsRpcArgs = {
+    p_hero_id: requiredText(input.heroId, 'heroId'),
+  };
+  const stepsToPreview = optionalPositiveInteger(input.stepsToPreview);
+
+  if (stepsToPreview !== null) {
+    args.p_steps_to_preview = stepsToPreview;
+  }
+
+  return args;
 }
 
 export function toStartOrGetHeroExplorationRpcArgs(input: {
