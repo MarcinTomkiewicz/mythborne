@@ -4862,222 +4862,671 @@ Do a final small visual consistency pass after UI-ITEMS-5–19, without adding n
 
 # 14. UI-EXPLORATION — Exploration flow
 
-Cel: difficulty choice, trial detail, progress timer/modal, direction choice, result/report boundary. Exploration UI musi rozróżniać start flow, progress state, trial/encounter challenge and report result. Nie wolno budować fake mapy ani fake action queue.
+Execution rule for all UI-EXPLORATION tasks:
 
-## UI-EXPLORATION task index
+- Treat `mythborne_exploration_flow_v_2.html` as visual/UX anchor, not production CSS source.
+- Do not copy prototype `mb-*` classes, raw colors, raw gradients, raw dimensions or local prototype CSS.
+- Adapt the prototype intent to the current accepted Mythsworn dashboard/game-shell style.
+- Use existing global card/page-header/button/badge/progress/panel patterns.
+- No local SCSS unless the task explicitly proves a missing production pattern.
+- No DB/RPC/schema/generated type changes unless the task explicitly says so.
+- No fake gameplay state, fake counters, fake timers, fake chance math or fake map/story content.
+- Runtime/gameplay authority remains backend/RPC/read-model owned.
+- If required data is missing from the current read model, report dependency instead of inventing frontend fallback.
+- Use `<p-button />`, PrimeNG standalone components and existing wrappers/patterns. Do not use native `<button pButton>`, `ngModel`, `FormsModule`, `NgClass`/`ngClass`, or `className`.
+- Important values, outcomes, state, probabilities and action-needed text must not be `muted-text`.
+- Helper/metadata/descriptions may be muted.
+- Each task must report exact reused helpers/components/services/patterns, checked-but-not-reused, and any new helpers/components.
+- Manual smoke may remain user-side pending if Codex cannot execute real session/data smoke.
 
-- UI-EXPLORATION-1 — Exploration start/difficulty screen
-- UI-EXPLORATION-2 — Trial detail by stat
-- UI-EXPLORATION-3 — Exploration timer/modal and inline state
-- UI-EXPLORATION-4 — Direction choice and step state
-- UI-EXPLORATION-5 — Result/report boundary
 
-## UI-EXPLORATION-1 — Exploration start/difficulty screen
+## UI-EXPLORATION-0 — Exploration UI source/prototype preflight
 
 **Goal:**  
-Zbudować czytelny start screen do wyboru difficulty i rozpoczęcia exploration, bez udawania mapy/story systemu, którego nie ma.
+Prepare a no-code map of the current `/game/exploration` UI, backend/read-model support and prototype anchors before implementation continues.
 
 **Scope:**
-- route/page target: existing exploration route if present,
-- difficulty cards/list,
-- available attempts/daily counters if read model exists,
-- current exploration state if already in progress,
-- clear start action,
-- helper copy explaining difficulty impact,
-- disabled/locked difficulty states if backend/read model provides them.
+- Read `AGENTS.md`, UI/UX backlog, UI-CORE guidance and this UI-EXPLORATION section.
+- Inspect `mythborne_exploration_flow_v_2.html` as visual anchor.
+- Inspect current `/game/exploration` route/page/components.
+- Identify current services/read models/RPC paths used by Exploration UI.
+- Map prototype areas to current implementation readiness:
+  - implement now;
+  - already implemented;
+  - dependency/blocker;
+  - later task.
 
 **Out of scope:**
-- full branching map,
-- trial challenge implementation,
-- encounter result screen,
-- reward persistence,
-- fake timer if backend state missing.
+- Production code changes.
+- New components.
+- DB/RPC/schema/generated type edits.
+- Fake data/timers/counters/chance values.
 
 **Data/source rules:**
-- difficulty/dictionary labels from DB/read model if available,
-- active hero/server context required,
-- start action must use canonical exploration RPC/service if exists,
-- no hardcoded permanent difficulty lists if DB exists.
-
-**UI/SCSS rules:**
-- use global card/page header/button patterns,
-- difficulty cards should not become separate local card system,
-- locked/disabled states use semantic badges/status, not opacity only.
-
-**Dependencies/blockers:**
-- if exploration start RPC/read model missing, render planning/prototype surface only and report blocker,
-- if daily action counters missing, do not fake counters.
+- Difficulty, status, active step, timer, trial chance preview, direction choices, result/reward/report values must be mapped to existing sources or marked missing.
+- Do not infer backend contracts from prototype text.
 
 **Acceptance criteria:**
-- player can understand/select difficulty where supported,
-- unavailable choices are clearly disabled/blocked,
-- no fake map,
-- start action not direct-write,
-- build passes.
+- Report lists exact files checked.
+- Report lists exact service/read-model/RPC sources.
+- Report lists which prototype anchors are in scope for UI-EXPLORATION-1–14.
+- No code changes.
 
 **Verification/smoke:**
-- route smoke,
-- difficulty selection smoke,
-- start action smoke if backend exists; otherwise pending manual/dependency,
+- N/A no-code.
+
+**Required Codex report:**
+- prototype source:
+- files checked:
+- services/read models/RPC sources:
+- implement now:
+- dependencies/blockers:
+- deferred prototype anchors:
+- local SCSS needed: no/why:
+
+**Status:** Accepted/completed on 2026-05-19 as the Exploration UI source/prototype preflight. The production pass mapped `docs/ui-ux/prototypes/mythborne_exploration_flow_v_2.html`, the Exploration row in `docs/ui-ux/prototype-production-mapping.md`, current `/game/exploration` page/status/state files, `HeroExplorations.getActiveDifficultyTiers()` over `exploration_difficulty_tiers`, and `HeroExplorations.getHeroExplorationState(...)` over `get_hero_exploration_state`. Difficulty labels, top route state, remaining Trials and active effect are backed by current read models; difficulty card redesign, compact status card, timer, trial detail, route/direction, result/reward/report and any missing richer prototype anchors remain deferred to later UI-EXPLORATION tasks. No code, DB/RPC/schema/generated types, SCSS or specs were changed for this preflight.
+
+
+## UI-EXPLORATION-1 — Page header and top state summary
+
+**Goal:**  
+Create the top Exploration page header and compact state summary, without touching difficulty cards or runtime panels.
+
+**Scope:**
+- Header/title/copy for `/game/exploration`.
+- Compact summary surface aligned with prototype intent:
+  - exploration readiness/state;
+  - selected/current difficulty label;
+  - daily Trial availability if read model exists;
+  - blocking content/active effect summary if read model exists.
+- Keep summary short and player-facing.
+
+**Out of scope:**
+- Difficulty card layout.
+- Active step/timer panel.
+- Trial detail by stat.
+- Direction choices.
+- Result/reward/report UI.
+- Modal.
+- New data reads.
+
+**Data/source rules:**
+- Difficulty label must come from current difficulty read model where available.
+- Do not show raw difficulty key as the main badge/value.
+- Daily counters only if existing read model provides them.
+- No fake “daily reset”/counter values.
+
+**UI/SCSS rules:**
+- Use existing `mg-card`, `mg-section__title`, `tag-badge`, grid/flex utilities.
+- Important summary values use `color-text`, `color-heading` or semantic badge, not `muted-text`.
+- Helper copy may be muted.
+- No local SCSS.
+
+**Dependencies/blockers:**
+- Missing daily counter/readiness field → omit and report dependency.
+- Missing readable difficulty label → use existing humanizer or report source gap.
+
+**Acceptance criteria:**
+- Header communicates what Exploration screen is for.
+- Compact state summary is readable.
+- No raw key as primary state label.
+- No fake counters or chance values.
+- Build passes.
+
+**Verification/smoke:**
+- `/game/exploration` route visual smoke.
+- No-exploration state smoke.
+- Existing exploration state smoke if data exists.
+- `npx tsc --noEmit`.
+- `npm run build`.
+
+**Required Codex report:**
+- header/status data source:
+- difficulty label source:
+- daily counter source or dependency:
+- reused UI patterns:
+- local SCSS added:
+
+**Status:** Accepted/completed on 2026-05-19. The `/game/exploration` header now uses the accepted production rhythm with a concise Exploration title/description and a right-side premium summary surface (`mg-card p-lg flex-col gap-sm w-100 shadow-premium`). Difficulty uses the current selected difficulty read model label, shows `Loading` only while the page is loading, and otherwise shows a non-misleading no-selection fallback; route state, remaining Trials and active effect use the existing page/read-model signals without fake counters or new reads. Current status section, timer, trial detail, directions, rewards/reports, TS logic, SCSS, DB/RPC/schema/generated types and specs were not changed. Manual smoke remains user-side pending for header rhythm, no-exploration state, existing exploration state and selected difficulty/top summary values.
+
+
+## UI-EXPLORATION-2 — Current status compact card
+
+**Goal:**  
+Make the current Exploration runtime status readable as a compact card under/near the header, without touching difficulty cards.
+
+**Scope:**
+- Current status section only.
+- Show current runtime status if available:
+  - route/exploration state;
+  - difficulty label;
+  - current node/step/challenge/effect labels where available;
+  - blockers / “ready to start” / no-exploration state.
+- Remove or demote debug/raw-looking display from the main player-facing section.
+
+**Out of scope:**
+- Active timer/progress bar.
+- Direction choices.
+- Result/reward/report summaries.
+- Difficulty card redesign.
+- New backend reads.
+
+**Data/source rules:**
+- Use existing Exploration page/state/facade/read model.
+- Raw IDs/keys only in gated diagnostics, not primary UI.
+- If a label is missing, use existing label/humanizer helper or report gap.
+
+**UI/SCSS rules:**
+- Primary status values not muted.
+- Helper/metadata may be muted.
+- Status/outcome/blocking values use badges/status styles.
+- No local SCSS.
+
+**Dependencies/blockers:**
+- If diagnostics are visible, confirm they are gated by existing debug/staff condition.
+- If current status read model is missing key labels, report dependency rather than fake text.
+
+**Acceptance criteria:**
+- Player can understand whether exploration exists, is ready, blocked, or in progress.
+- Current status is no longer debug-looking.
+- Important values are not muted.
+- Build passes.
+
+**Verification/smoke:**
+- no-exploration state;
+- active exploration state if data exists;
+- diagnostics hidden/gated where expected;
+- `tsc`;
+- build.
+
+**Required Codex report:**
+- current status data source:
+- label/humanizer sources:
+- diagnostics gating:
+- local SCSS added:
+
+
+## UI-EXPLORATION-3 — Active exploration step inline panel
+
+**Goal:**  
+Show active exploration step/progress inline when a step is running or ready to resolve.
+
+**Scope:**
+- Active step inline card/panel.
+- Time remaining / ready state.
+- Check result button only when allowed.
+- Step status and progress display from current read model.
+- Loading/error/unavailable states.
+
+**Out of scope:**
+- Modal timer.
+- Direction choice.
+- Result/reward/report UI.
+- Fake timer authority.
+- LocalStorage gameplay state.
+- New RPCs.
+
+**Data/source rules:**
+- Timer/progress/readiness from existing exploration read model/service.
+- Frontend countdown is display only over backend-owned timestamps.
+- Check result action through existing canonical service/RPC only.
+
+**UI/SCSS rules:**
+- Use shared card/progress/timer/button patterns.
+- Ready/action-needed state not muted.
+- Raw timestamps can be secondary metadata, not dominant UI.
+- No local SCSS.
+
+**Dependencies/blockers:**
+- Missing timer/readiness fields → dependency.
+- Missing check-result action → show dependency, not fake action.
+
+**Acceptance criteria:**
+- Active step state is clear.
+- Time remaining/ready state is visible.
+- Check result appears only when allowed.
+- No fake timer authority.
+- Build passes.
+
+**Verification/smoke:**
+- active step state smoke;
+- ready-to-check state smoke if data exists;
+- no-active-step state smoke;
+- `tsc`;
+- build.
+
+**Required Codex report:**
+- active step data source:
+- timer/readiness source:
+- check-result source:
+- stale guard approach:
+- local SCSS added:
+
+
+## UI-EXPLORATION-4 — Difficulty card shell and selected state
+
+**Goal:**  
+Build the difficulty card shell and selected-state behavior only, without adding detailed chance breakdowns.
+
+**Scope:**
+- Difficulty cards/list layout.
+- Difficulty label/description/helper copy.
+- Selected difficulty visual state.
+- Available/locked/disabled badges if data exists.
+- Basic card action:
+  - `Select` on non-selected cards;
+  - selected card visually highlighted.
+
+**Out of scope:**
+- Start exploration CTA.
+- Chance/probability rows.
+- Stat-by-stat breakdown.
+- Timer/active step.
+- Result/reward/report UI.
+- New chance math.
+
+**Data/source rules:**
+- Difficulty list from existing service/read model.
+- Labels/descriptions from DB/read model where available.
+- No hardcoded permanent difficulty list if DB/read model exists.
+
+**UI/SCSS rules:**
+- Use existing card/badge/button patterns.
+- Selected state through existing border/glow/badge patterns.
+- Disabled states use semantic badges/status, not opacity only.
+- No local card system or local SCSS.
+
+**Dependencies/blockers:**
+- Missing difficulty read model → dependency/blocker.
+- Missing labels → use existing humanizer or report gap.
+
+**Acceptance criteria:**
+- Difficulty cards render from real data.
+- Selected card is visually clear.
+- Unavailable/locked states are clear where data exists.
+- No start action yet except existing unchanged behavior if already present.
+- Build passes.
+
+**Verification/smoke:**
+- difficulty list render;
+- selection change;
+- selected state;
 - build/tsc.
 
 **Required Codex report:**
 - difficulty source:
-- start workflow source:
+- label/source metadata:
+- selected state pattern reused:
 - checked but not reused:
 - local SCSS added:
 
-## UI-EXPLORATION-2 — Trial detail by stat
+
+## UI-EXPLORATION-5 — Difficulty card DB-backed preview values
 
 **Goal:**  
-Pokazać trial detail z jasnym rozdzieleniem manifestation chance i auto-result success chance według konkretnej statystyki.
+Add compact DB-backed preview values to difficulty cards.
 
 **Scope:**
-- trial type/label,
-- tested stat,
-- manifestation chance display,
-- auto-result success chance display,
-- manual challenge entry if needed,
-- stat contribution/explanation,
-- clear failure/success state placeholders if result already known.
+- Per-card compact preview rows/bars if current read model supports them:
+  - step time;
+  - Trial opportunity chance;
+  - approximate manifestation chance;
+  - approximate auto-result chance;
+  - reward profile/multiplier.
+- Preview values only on difficulty cards.
+- No stat-by-stat detail.
 
 **Out of scope:**
-- final minigame implementations,
-- combat challenge UI,
-- reward granting,
-- local chance calculations if backend/read model owns them.
+- Trial detail by stat section.
+- Local chance calculations.
+- Start CTA logic changes.
+- Timer/direction/result UI.
+- DB/RPC edits.
 
 **Data/source rules:**
-- trial definitions, tested stat, minigame, labels from DB-backed definitions/dictionaries,
-- chance values from backend/read model if available,
-- if chance values missing, show dependency rather than fake formulas,
-- no hardcoded stat list if stats dictionary exists.
+- Values from backend/read model only.
+- If a value is missing, omit it or show dependency state; do not fake.
+- Do not call `page.previewRows(difficulty.key)` repeatedly in template; assign once with `@let` or equivalent.
 
 **UI/SCSS rules:**
-- two separate visual bars/rows for manifestation and auto-result,
-- labels must make difference obvious,
-- use shared progress/bar/stat patterns if available,
-- important probabilities not muted.
+- Important probabilities/values not muted.
+- Use existing progress/bar/value row patterns where available.
+- No local SCSS.
+- Labels must not conflate manifestation and auto-result.
 
 **Dependencies/blockers:**
-- missing chance read model -> blocker/dependency,
-- missing minigame route -> show route pending, not fake.
+- Missing preview read model → dependency, not fake.
+- Missing labels → report source gap.
 
 **Acceptance criteria:**
-- manifestation and auto-result are not conflated,
-- tested stat visible,
-- labels/descriptions DB-backed where available,
-- no fake chance math,
-- build passes.
+- Preview values are visible and readable where data exists.
+- Manifestation and auto-result are not conflated.
+- No fake chance math.
+- Build passes.
 
 **Verification/smoke:**
-- visual smoke for one trial,
-- missing-data state smoke,
+- one difficulty with preview values;
+- missing preview value state;
 - build/tsc.
 
 **Required Codex report:**
-- trial data source:
+- preview source:
 - chance source:
-- DB labels/metadata used:
+- missing-value handling:
 - local SCSS added:
 
-## UI-EXPLORATION-3 — Exploration timer/modal and inline state
+
+## UI-EXPLORATION-6 — Difficulty start/continue CTA behavior
 
 **Goal:**  
-Pokazać exploration progress timer jako modal first, a po dismiss jako inline persistent progress state.
+Wire and present the start/continue action for the selected difficulty card only.
 
 **Scope:**
-- modal with timer/progress when exploration step starts,
-- dismiss action moves progress to inline panel/card,
-- inline state shows time remaining / check result availability,
-- route back to current exploration state,
-- safe stale/loading/error handling.
+- Selected difficulty owns `Start exploration` CTA.
+- If exploration already exists, show route/current-state CTA or “current route ready” state using existing behavior.
+- Disabled/loading/starting states.
+- Error/success feedback placement if already available.
+- Ensure no direct writes.
 
 **Out of scope:**
-- global action queue,
-- timers for unrelated systems,
-- fake local-only timer as production state,
-- combat/PvP timers.
+- Card layout redesign.
+- Preview rows.
+- Timer modal.
+- Direction choices.
+- Result/reward/report UI.
+- New backend workflow.
 
 **Data/source rules:**
-- timer state from exploration read model/service,
-- if timer is backend-owned, frontend countdown is display only,
-- stale guard if active hero/server changes,
-- no localStorage permanent gameplay state.
+- Start action through canonical existing Exploration service/RPC.
+- Active hero/server context required.
+- No direct table writes.
+- No invented request payload fields.
 
 **UI/SCSS rules:**
-- modal/dialog through PrimeNG/vendor wrapper,
-- progress/timer through global/shared pattern,
-- inline state uses persistent state pattern from UI-SHELL-5,
-- action-needed state not muted.
+- Use `<p-button />`.
+- Loading/disabled state clear.
+- Action-needed state not muted.
+- No local SCSS.
 
 **Dependencies/blockers:**
-- missing timer read model -> dependency,
-- missing modal/vendor wrapper -> use existing PrimeNG dialog wrapper or report gap.
+- Missing canonical start service/RPC → dependency/blocker.
+- Missing selected difficulty state → dependency.
 
 **Acceptance criteria:**
-- modal appears at start where state exists,
-- dismiss leaves inline progress visible,
-- check result action appears only when available,
-- no fake action queue,
-- build passes.
+- Player can start exploration from selected difficulty where backend supports it.
+- Start disabled/loading state is clear.
+- Existing exploration state does not show misleading start action.
+- Build passes.
 
 **Verification/smoke:**
-- modal open/dismiss smoke,
-- inline progress smoke,
-- completed timer/check result smoke if data available,
+- select difficulty + start smoke if backend/data exists;
+- disabled/loading state;
+- already-has-exploration state;
+- build/tsc.
+
+**Required Codex report:**
+- start workflow source:
+- active hero/server guard source:
+- mutation path:
+- local SCSS added:
+
+
+## UI-EXPLORATION-7 — Trial detail by stat section shell
+
+**Goal:**  
+Add the section shell for Trial detail by stat without implementing detailed bars if data is not ready.
+
+**Scope:**
+- Section container/title/helper.
+- Render stat rows/cards only if current read model has data.
+- Missing-data/dependency state if data not available.
+- Keep section optional/collapsible if needed.
+
+**Out of scope:**
+- Manifestation/auto-result bars.
+- Minigame implementations.
+- Combat challenge UI.
+- Reward result UI.
+- Local stat list if dictionary/read model missing.
+
+**Data/source rules:**
+- Stat list/labels from existing stats dictionary/read model.
+- Trial type/tested stat from backend/read model if available.
+- No hardcoded permanent stat list.
+
+**UI/SCSS rules:**
+- Use shared card/grid/stat patterns.
+- Important stat names not muted.
+- No local SCSS.
+
+**Dependencies/blockers:**
+- Missing stat/trial detail read model → show dependency state and report.
+- Missing stat labels → use existing dictionary/humanizer or report gap.
+
+**Acceptance criteria:**
+- Section shell exists without fake values.
+- Missing-data state is explicit and non-misleading.
+- No fake stat/chance data.
+- Build passes.
+
+**Verification/smoke:**
+- section with data if available;
+- missing-data state;
+- build/tsc.
+
+**Required Codex report:**
+- stat data source:
+- trial detail source:
+- missing-data handling:
+- local SCSS added:
+
+
+## UI-EXPLORATION-8 — Trial detail manifestation/auto-result bars
+
+**Goal:**  
+Render Trial detail values with separate manifestation chance and auto-result success chance by stat.
+
+**Scope:**
+- For each available stat/trial row:
+  - tested stat label;
+  - manifestation chance;
+  - auto-result success chance;
+  - optional short explanation.
+- Two separate visual bars/rows per stat.
+
+**Out of scope:**
+- Minigame implementations.
+- Reward granting.
+- Local chance calculations.
+- New DB/RPC contracts.
+- Combat trial UI.
+
+**Data/source rules:**
+- Manifestation and auto-result values from backend/read model.
+- No frontend chance formula authority.
+- No fake values if read model lacks them.
+
+**UI/SCSS rules:**
+- Manifestation and auto-result must be visually distinct.
+- Important probabilities not muted.
+- Use existing progress/bar patterns where possible.
+- No local SCSS unless missing-pattern gap is reported.
+
+**Dependencies/blockers:**
+- Missing chance read model → blocker/dependency.
+- Missing stat label data → dependency or humanizer fallback.
+
+**Acceptance criteria:**
+- Manifestation and auto-result are not conflated.
+- Values are DB/read-model-backed.
+- Visual distinction is clear.
+- Build passes.
+
+**Verification/smoke:**
+- visual smoke for selected difficulty;
+- missing-data state;
+- build/tsc.
+
+**Required Codex report:**
+- manifestation chance source:
+- auto-result chance source:
+- stat label source:
+- local SCSS added:
+
+
+## UI-EXPLORATION-9 — Timer modal first pass
+
+**Goal:**  
+Show a modal/dialog timer when a new exploration step starts, if backend state supports it.
+
+**Scope:**
+- Dialog/modal shown from real active step state after start.
+- Timer/progress display.
+- Dismiss action.
+- Loading/error state where needed.
+- No persistent inline work except existing unchanged state.
+
+**Out of scope:**
+- Full inline persistent progress behavior.
+- Direction choices.
+- Result/reward/report UI.
+- Global action queue.
+- Fake local-only timer.
+
+**Data/source rules:**
+- Modal opens from real backend/read-model active step/timer state.
+- Frontend countdown is display-only.
+- No localStorage gameplay authority.
+
+**UI/SCSS rules:**
+- Use PrimeNG dialog or existing project dialog wrapper.
+- Use shared progress/timer pattern if available.
+- Action-ready state not muted.
+- No prototype CSS/classes.
+
+**Dependencies/blockers:**
+- Missing active step/timer state → dependency.
+- Missing dialog wrapper → use existing PrimeNG pattern or report gap.
+
+**Acceptance criteria:**
+- Modal appears only when real state supports it.
+- Timer/readiness display is clear.
+- Dismiss works.
+- No fake timer authority.
+- Build passes.
+
+**Verification/smoke:**
+- start → modal smoke if data exists;
+- dismiss smoke;
+- no-timer-state smoke;
 - build/tsc.
 
 **Required Codex report:**
 - timer data source:
-- dialog/progress wrapper reused:
+- dialog wrapper reused:
+- progress pattern reused:
+- local SCSS added:
+
+
+## UI-EXPLORATION-10 — Dismissed timer inline persistent state
+
+**Goal:**  
+After timer modal is dismissed, show active progress inline persistently on the route.
+
+**Scope:**
+- Inline persistent active step/timer panel after dismiss.
+- Route revisit/return shows current active state.
+- Check result CTA appears only when backend says ready.
+- Dismissed modal does not remove backend state.
+
+**Out of scope:**
+- Modal implementation changes except needed event wiring.
+- Direction choices.
+- Result/reward/report UI.
+- Global action queue.
+- LocalStorage gameplay authority.
+
+**Data/source rules:**
+- Inline state from backend/read model.
+- Modal dismissed state may be UI-only, but not gameplay authority.
+- No permanent local gameplay state.
+
+**UI/SCSS rules:**
+- Inline panel uses existing persistent state/card pattern.
+- Ready/action-needed state not muted.
+- No local SCSS.
+
+**Dependencies/blockers:**
+- Missing timer/readiness read model → dependency.
+- Missing check-result support → dependency.
+
+**Acceptance criteria:**
+- Dismissing modal leaves inline progress visible.
+- Returning to route shows current state.
+- Check result appears only when allowed.
+- Build passes.
+
+**Verification/smoke:**
+- modal dismiss → inline smoke;
+- route leave/return smoke;
+- ready-to-check smoke if data exists;
+- build/tsc.
+
+**Required Codex report:**
+- inline state source:
+- dismiss state approach:
+- check-result source:
 - stale guard approach:
 - local SCSS added:
 
-## UI-EXPLORATION-4 — Direction choice and step state
+
+## UI-EXPLORATION-11 — Direction choice cards
 
 **Goal:**  
-Zaprojektować/zaimplementować ekran wyboru kierunku po kroku exploration, jeśli backend/read model go wspiera.
+Render direction choices for the next exploration step if backend/read model supports them.
 
 **Scope:**
-- current exploration scene/step summary,
-- up to three direction choices,
-- direction labels/descriptions,
-- disabled/locked states if any,
-- action starts next wait/timer,
-- link to report/result when step resolved.
+- Current scene/step summary.
+- Up to three direction choices.
+- Direction labels/descriptions/status.
+- Disabled/locked states if data exists.
+- Action starts next movement/wait state.
 
 **Out of scope:**
-- procedural map generation,
-- story authoring system,
-- fake branching if backend has no choices,
-- reward result UI.
+- Procedural map UI.
+- Story authoring system.
+- Fake branching.
+- Timer modal.
+- Reward/result UI.
+- New backend mutations.
 
 **Data/source rules:**
-- direction choices from exploration read model/backend,
-- if no direction model exists, report dependency and keep prototype only,
-- mutations through canonical exploration service/RPC,
-- active hero/server guard required.
+- Direction choices from existing read model/backend.
+- Direction action through canonical exploration service/RPC.
+- Active hero/server guard required.
+- No hardcoded fake directions.
 
 **UI/SCSS rules:**
-- choice cards use shared card/action pattern,
-- direction arrows/icons from custom icon registry or placeholders in prototype only,
-- no local map CSS.
+- Choice cards use shared card/action pattern.
+- Direction icons only from existing icon registry/pattern, or no icon.
+- Disabled states use semantic badge/status.
+- No local map CSS.
 
 **Dependencies/blockers:**
-- missing choice read model -> dependency,
-- missing next-step RPC -> dependency.
+- Missing direction read model → dependency.
+- Missing next-step RPC/action → dependency.
 
 **Acceptance criteria:**
-- direction choices are readable,
-- max three choices supported,
-- unavailable choices clear,
-- next action starts proper state where backend exists,
-- build passes.
+- Direction choices are readable where data exists.
+- Supports max three choices.
+- Unavailable choices clear.
+- Next action starts backend-owned state.
+- Build passes.
 
 **Verification/smoke:**
-- choice selection smoke if backend exists,
-- no-choice/loading state smoke,
+- direction choice render;
+- choice action smoke if backend/data exists;
+- no-choice/loading state;
 - build/tsc.
 
 **Required Codex report:**
@@ -5086,58 +5535,183 @@ Zaprojektować/zaimplementować ekran wyboru kierunku po kroku exploration, jeś
 - missing backend notes:
 - local SCSS added:
 
-## UI-EXPLORATION-5 — Result/report boundary
+
+## UI-EXPLORATION-12 — Step/trial/encounter result summary
 
 **Goal:**  
-Ustalić UI boundary między exploration result summary a pełnym reportem.
+Show a compact result summary after an exploration step, Trial or Encounter resolves.
 
 **Scope:**
-- trial result summary,
-- encounter result summary,
-- reward summary,
-- item drops with shared item popovers,
-- Open full report action,
-- Continue exploration / return actions where backend supports them.
+- Step result summary.
+- Trial result summary if present.
+- Encounter result summary if present.
+- Outcome/status badge.
+- Short player-facing description.
+- Continue/return action where backend supports it.
 
 **Out of scope:**
-- full report route implementation if handled by UI-REPORTS,
-- live recomputation of historical results,
-- reward granting logic,
-- permanent local result storage.
+- Reward/drop item popovers.
+- Full game report handoff.
+- Reward granting logic.
+- Live recompute of historical results.
+- Fake report/result generation.
 
 **Data/source rules:**
-- result from durable backend result/read model,
-- report from game report snapshot/source where available,
-- item drops through item read model or report references,
-- no live recompute of historical rewards.
+- Result from durable backend result/read model.
+- No local recomputation of outcome.
+- Raw result keys only secondary/debug.
 
 **UI/SCSS rules:**
-- use shared report/result summary pattern,
-- item popovers via UI-CORE-6,
-- success/failure outcomes use badges/status, not just color text.
+- Outcome/status uses semantic badge/status.
+- Important result values not muted.
+- Helper/flavor may be muted.
+- No local SCSS.
 
 **Dependencies/blockers:**
-- if report generation not implemented, show result summary and report dependency,
-- if reward snapshot missing, report data gap.
+- Missing result read model → dependency.
+- Missing labels/descriptions → use existing DB metadata/read model or report gap.
 
 **Acceptance criteria:**
-- result summary is readable,
-- full report handoff clear,
-- item drops show shared popover where possible,
-- no recompute/fake report,
-- build passes.
+- Result summary is readable.
+- Trial/Encounter/Step result are not conflated.
+- No fake result/recompute.
+- Build passes.
 
 **Verification/smoke:**
-- result summary smoke with sample/read data,
-- full report link smoke if available,
-- item popover smoke,
+- result summary smoke with available data;
+- no-result state;
 - build/tsc.
 
 **Required Codex report:**
 - result data source:
+- outcome label source:
+- continue/return action source:
+- local SCSS added:
+
+
+## UI-EXPLORATION-13 — Reward/drop and report handoff
+
+**Goal:**  
+Connect result summary to reward/drop display and full report handoff where data exists.
+
+**Scope:**
+- Reward summary.
+- Item drops using shared item popover if item references are available.
+- `Open full report` action/link if report exists.
+- Continue exploration / return actions where backend supports them.
+
+**Out of scope:**
+- Full report route implementation if owned by UI-REPORTS.
+- Reward granting logic.
+- Fake item drops.
+- Live recomputation of rewards.
+- Permanent local result storage.
+
+**Data/source rules:**
+- Reward from durable backend/read model.
+- Report from game report snapshot/source where available.
+- Item drops through item read model/report item references.
+- No fake report generation.
+
+**UI/SCSS rules:**
+- Use shared report/result summary patterns.
+- Item popovers via shared item popover component.
+- Reward values not muted.
+- No local SCSS.
+
+**Dependencies/blockers:**
+- Missing report link → show dependency, not fake.
+- Missing reward snapshot → report data gap.
+- Missing item refs → no fake item popover.
+
+**Acceptance criteria:**
+- Reward summary is readable where data exists.
+- Report handoff is clear where available.
+- Item drops use shared popover where possible.
+- No fake report/reward.
+- Build passes.
+
+**Verification/smoke:**
+- reward summary smoke with available data;
+- report link smoke if available;
+- item popover smoke if available;
+- build/tsc.
+
+**Required Codex report:**
+- reward data source:
 - report source/link:
 - item popover reused:
 - limitations:
+
+
+## UI-EXPLORATION-14 — Exploration UI cleanup/control pass
+
+**Goal:**  
+Perform a final control pass after UI-EXPLORATION-1–13 to remove UI duplication, stale/debug display, and accidental prototype/local patterns.
+
+**Scope:**
+- Review touched Exploration templates/components.
+- Remove dead/duplicated UI blocks.
+- Check `muted-text` usage.
+- Check raw keys/IDs in player-facing display.
+- Check PrimeNG usage.
+- Check local SCSS/class proliferation.
+- Check repeated template calls that should be `@let`.
+
+**Out of scope:**
+- New features.
+- DB/RPC/schema/generated changes.
+- Broad redesign outside Exploration.
+- New prototype interpretation.
+
+**Data/source rules:**
+- Do not add data fields.
+- If data gap remains, document dependency.
+
+**UI/SCSS rules:**
+- No `button pButton`.
+- No `ngModel` / `FormsModule`.
+- No `NgClass`/`ngClass` for simple class state.
+- No prototype `mb-*`.
+- No local SCSS unless already accepted and justified.
+- Important values not muted.
+
+**Dependencies/blockers:**
+- Any runtime/browser smoke error in touched Exploration UI is blocker.
+- Any missing backend contract discovered late should be reported, not patched with fallback.
+
+**Acceptance criteria:**
+- Exploration UI is consistent with production style.
+- No obvious duplicate panels/values.
+- No raw player-facing keys where labels exist.
+- No fake runtime data.
+- Build passes.
+
+**Verification/smoke:**
+- `/game/exploration` route smoke.
+- no-exploration state.
+- active exploration state if data exists.
+- selected difficulty/start.
+- active step/check result if data exists.
+- result/reward/report if data exists.
+- `npx tsc --noEmit`.
+- `npm run build`.
+- static greps:
+  - `button pButton`;
+  - `ngModel`;
+  - `FormsModule`;
+  - `NgClass`/`ngClass`;
+  - `className`;
+  - prototype `mb-*`;
+  - debug/TODO/temporary copy.
+
+**Required Codex report:**
+- files reviewed:
+- issues removed:
+- issues intentionally left as follow-up:
+- static greps:
+- manual smoke:
+- local SCSS remaining:
 
 ---
 

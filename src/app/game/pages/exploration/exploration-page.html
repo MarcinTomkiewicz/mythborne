@@ -1,12 +1,69 @@
 <div class="flex-col gap-xl min-w-0">
   <section class="mg-card p-lg w-100">
-    <div class="flex-row-between-center flex-col-sm gap-md">
+    <div class="grid-2-1 gap-lg grid-items-center">
       <div class="flex-col gap-xs">
-        <p class="card-legend mb-0">Game</p>
-        <h2 class="mg-section__title mg-section__title--sm mb-0">Exploration</h2>
-        <p class="muted-text mb-0">Daily exploration status for the active hero.</p>
+        <p class="small-caps color-muted text-xs mb-0">Exploration</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">
+          Choose difficulty and track the route
+        </h2>
+        <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
+          Start or continue the active hero's exploration with DB-backed difficulty, Trial availability and runtime state.
+        </p>
       </div>
-      <span class="tag-badge tag-badge--info">{{ page.remainingTrialsLabel() }}</span>
+
+      <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
+        <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+          <span class="color-muted small-caps uppercase text-xs">Difficulty</span>
+          <strong class="color-heading text-md">
+            @if (page.selectedDifficulty(); as difficulty) {
+              {{ difficulty.label }}
+            } @else if (page.isLoading()) {
+              Loading
+            } @else {
+              Not selected
+            }
+          </strong>
+        </div>
+        @if (page.state(); as state) {
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Route state</span>
+            <strong class="color-text text-md">
+              @if (state.activeChallenge) {
+                Challenge active
+              } @else if (state.activeStep) {
+                Step in progress
+              } @else if (state.hasExploration) {
+                Ready to move
+              } @else {
+                Not started
+              }
+            </strong>
+          </div>
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Trials today</span>
+            <strong class="color-heading text-md">{{ page.remainingTrialsLabel() }}</strong>
+          </div>
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Effect</span>
+            @if (page.activeEffectDisplay(); as effect) {
+              <strong class="color-text text-md">{{ effect.title }}</strong>
+            } @else {
+              <strong class="color-text text-md">None active</strong>
+            }
+          </div>
+        } @else {
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Route state</span>
+            <strong class="color-text text-md">
+              @if (page.isLoading()) {
+                Loading
+              } @else {
+                Select difficulty
+              }
+            </strong>
+          </div>
+        }
+      </aside>
     </div>
   </section>
 
@@ -69,14 +126,13 @@
               </div>
             }
 
-            <button
-              pButton
+            <p-button
               type="button"
               label="Select"
               severity="secondary"
               [disabled]="page.isLoading() || page.isStarting()"
-              (click)="page.selectDifficulty(difficulty.key)"
-            ></button>
+              (onClick)="page.selectDifficulty(difficulty.key)"
+            />
           </div>
         </article>
       } @empty {
