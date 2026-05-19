@@ -18,12 +18,12 @@
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
             <span class="color-muted small-caps uppercase text-xs">Armory capacity</span>
             <strong class="color-heading text-md">
-              {{ visibility.visibleItemCount }} / {{ visibility.visibilityLimit }}
+              {{ visibility.visibilityLimit }}
             </strong>
           </div>
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
             <span class="color-muted small-caps uppercase text-xs">Total items</span>
-            <strong class="color-heading text-md">{{ visibility.totalOwnedItemCount }}</strong>
+            <strong class="color-heading text-md">{{ storedArmoryItems().length }}</strong>
           </div>
         } @else {
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">

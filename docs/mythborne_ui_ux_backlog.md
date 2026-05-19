@@ -4768,6 +4768,8 @@ Capacity semantics for equipped vs stored inventory were implemented after UI-IT
 - copy added:
 - no logic change confirmation:
 
+**Status:** Accepted/completed on 2026-05-19. The Armory summary card was reduced to the accepted scope: `Hidden by capacity` and explanatory capacity copy were removed, `Armory capacity` shows only the visibility limit, and `Total items` uses the stored inventory item count from the existing visible/stored Armory item path so equipped items are excluded. `Equipped items` and `Saved loadouts` remain unchanged. No visibility/capacity logic, filters, stands, pagination, DB/RPC contracts, generated types or specs were changed. Manual smoke was user-side accepted for the header values.
+
 ---
 
 ## UI-ITEMS-19 — Large visible list safe display
