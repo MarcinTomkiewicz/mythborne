@@ -2973,6 +2973,18 @@ Required Codex report:
 - components intentionally not touched:
 - local SCSS added: none / explain:
 
+## UI-CORE-CARD-SELECTED-1 — Global selected / featured card glow
+
+**Status:** Accepted/completed on 2026-05-19. The global `.mg-card--selected` pattern in
+`src/scss/base/_surface.scss` now provides the reusable selected/featured card treatment for production surfaces. The
+implementation adapts the accepted Exploration prototype selected difficulty card direction into Mythsworn tokens rather
+than copying prototype `mb-*` classes or raw values: a modest warm border, subtle top radial wash, warm linear surface
+overlay and restrained inner highlight. `.mg-game-shell .mg-card--selected` is tuned for game-shell surfaces, with
+`/game/exploration` Difficulty cards as the first consumer through `[class.mg-card--selected]="selected"`. No page-local
+SCSS, Exploration template/data/component refactor, DB/RPC/schema/generated changes or unrelated UI changes were added.
+Verification passed with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings, and static greps.
+Manual visual smoke remains user-side for selected vs unselected Difficulty cards at desktop width.
+
 ---
 
 # 11. UI-ACCOUNT / UI-ONBOARDING — Account entry and hero creation
