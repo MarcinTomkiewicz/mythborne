@@ -1,19 +1,13 @@
+import { ExplorationActiveEffectDisplay } from '../../../core/interfaces/exploration/active-effect-display.interface';
 import { HeroExplorationStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 import { humanizeKey } from '../../../core/utils/normalize-text';
-
-export interface ExplorationActiveEffectDisplay {
-  title: string;
-  summary: string;
-  warning: string | null;
-  facts: Array<{ label: string; value: string }>;
-}
 
 export function explorationCurrentNodeLabel(
   state: HeroExplorationStateReadModel | null,
 ): string {
   const node = state?.currentNode;
-  return node?.label ?? node?.id ?? 'No current node';
+  return node?.label ?? 'Current node unavailable';
 }
 
 export function explorationActiveStepLabel(

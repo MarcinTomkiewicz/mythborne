@@ -27,17 +27,7 @@
         @if (page.state(); as state) {
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
             <span class="color-muted small-caps uppercase text-xs">Route state</span>
-            <strong class="color-text text-md">
-              @if (state.activeChallenge) {
-                Challenge active
-              } @else if (state.activeStep) {
-                Step in progress
-              } @else if (state.hasExploration) {
-                Ready to move
-              } @else {
-                Not started
-              }
-            </strong>
+            <strong class="color-text text-md">{{ page.runtimeStatusLabel() }}</strong>
           </div>
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
             <span class="color-muted small-caps uppercase text-xs">Trials today</span>
@@ -54,13 +44,7 @@
         } @else {
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
             <span class="color-muted small-caps uppercase text-xs">Route state</span>
-            <strong class="color-text text-md">
-              @if (page.isLoading()) {
-                Loading
-              } @else {
-                Select difficulty
-              }
-            </strong>
+            <strong class="color-text text-md">{{ page.runtimeStatusLabel() }}</strong>
           </div>
         }
       </aside>
@@ -72,6 +56,47 @@
   }
   @if (feedback.successMessage(); as message) {
     <p-message severity="success">{{ message }}</p-message>
+  }
+
+  @if (page.state(); as state) {
+    @if (state.hasExploration && state.exploration) {
+      <section class="mg-card p-lg w-100">
+        <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+          <div class="flex-col gap-xs">
+            <p class="small-caps color-muted text-xs mb-0">Current exploration</p>
+            <h3 class="color-heading mb-0">Current route details</h3>
+            <p class="muted-text mb-0">{{ page.runtimeStatusDetail() }}</p>
+          </div>
+        </div>
+
+        <div class="mg-grid-auto-fit gap-sm">
+          @if (state.currentNode?.label) {
+            <div class="mg-data-row">
+              <span class="mg-data-row__label">Current node</span>
+              <strong class="mg-data-row__value">{{ state.currentNode?.label }}</strong>
+            </div>
+          }
+          @if (state.activeStep) {
+            <div class="mg-data-row">
+              <span class="mg-data-row__label">Movement step</span>
+              <strong class="mg-data-row__value">{{ page.runtimeStatusLabel() }}</strong>
+            </div>
+          }
+          @if (state.activeChallenge) {
+            <div class="mg-data-row">
+              <span class="mg-data-row__label">Challenge</span>
+              <strong class="mg-data-row__value">{{ page.challengeTitle() }}</strong>
+            </div>
+          }
+          @if (page.activeEffectDisplay(); as effect) {
+            <div class="mg-data-row">
+              <span class="mg-data-row__label">Effect</span>
+              <strong class="mg-data-row__value">{{ effect.title }}</strong>
+            </div>
+          }
+        </div>
+      </section>
+    }
   }
 
   <section class="mg-card p-lg w-100">
@@ -141,5 +166,9 @@
     </div>
   </section>
 
-  <app-exploration-status-section></app-exploration-status-section>
+  @if (page.state(); as state) {
+    @if (state.hasExploration && state.exploration) {
+      <app-exploration-status-section></app-exploration-status-section>
+    }
+  }
 </div>

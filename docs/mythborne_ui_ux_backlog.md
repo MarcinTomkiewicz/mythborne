@@ -5045,6 +5045,19 @@ Make the current Exploration runtime status readable as a compact card under/nea
 - diagnostics gating:
 - local SCSS added:
 
+**Status:** Accepted/completed on 2026-05-19. The `/game/exploration` no-exploration flow now goes from the header/top
+summary directly to Difficulty without an extra status card. Header `Route state` uses the shared page
+`runtimeStatusLabel()` display source, and the active-only compact current-route details surface is gated by
+`state.hasExploration && state.exploration`, so it appears only when there is real current exploration runtime state to
+summarize. Difficulty remains in the header summary to avoid duplicate rows. Raw node ids are no longer used as a
+player-facing fallback; missing current node labels use neutral copy instead. `ExplorationActiveEffectDisplay` was moved
+from the helper file into `core/interfaces`. The lower legacy `ExplorationStatusSection` remains after Difficulty as the
+runtime surface for timer, directions, result/reward/report and diagnostics content; it is not the top compact status
+card. Verification passed with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings, and static
+greps. User-side manual smoke remains pending for no-exploration, existing-exploration duplication, no raw node id, and
+no duplicated start action outside the difficulty/start flow. Follow-ups: clean raw-ish active step/challenge labels and
+the broad `ExplorationPageState` facade in later runtime tasks / UI-EXPLORATION-14.
+
 
 ## UI-EXPLORATION-3 — Active exploration step inline panel
 

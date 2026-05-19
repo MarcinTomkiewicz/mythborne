@@ -89,6 +89,66 @@ export class ExplorationPageState {
   readonly activeChallengeLabel = this.overview.activeChallengeLabel;
   readonly activeEffectLabel = this.overview.activeEffectLabel;
   readonly activeEffectDisplay = this.overview.activeEffectDisplay;
+  readonly runtimeStatusLabel = computed(() => {
+    const state = this.state();
+
+    if (this.isLoading()) {
+      return 'Loading';
+    }
+
+    if (!this.selectedDifficultyKey()) {
+      return 'Select difficulty';
+    }
+
+    if (!state) {
+      return 'Status unavailable';
+    }
+
+    if (state.activeChallenge) {
+      return 'Challenge active';
+    }
+
+    if (state.activeStep) {
+      return this.canCheckResult() ? 'Step ready' : 'Step in progress';
+    }
+
+    if (state.hasExploration) {
+      return 'Ready to move';
+    }
+
+    return 'Ready to start';
+  });
+  readonly runtimeStatusDetail = computed(() => {
+    const state = this.state();
+
+    if (this.isLoading()) {
+      return 'Loading the hero exploration read model.';
+    }
+
+    if (!this.selectedDifficultyKey()) {
+      return 'Choose an active difficulty to load exploration status.';
+    }
+
+    if (!state) {
+      return 'Exploration status is not available for the selected difficulty.';
+    }
+
+    if (state.activeChallenge) {
+      return 'An active challenge is waiting for resolution.';
+    }
+
+    if (state.activeStep) {
+      return this.canCheckResult()
+        ? 'The active movement step can be checked now.'
+        : 'A movement step is currently in progress.';
+    }
+
+    if (state.hasExploration) {
+      return 'Choose an available direction to continue.';
+    }
+
+    return 'No exploration is active yet. Start from the selected difficulty card when ready.';
+  });
   readonly canShowSelectionDiagnostics = computed(() => {
     const server = this.activeServer.selectedServer();
     const access = this.activeServer.access();
