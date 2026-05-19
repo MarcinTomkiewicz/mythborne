@@ -177,15 +177,26 @@
 
     <div class="mg-grid-auto-fit gap-md">
       @for (difficulty of page.difficulties(); track difficulty.key) {
-        <article class="mg-card p-md">
+        @let isSelected = page.selectedDifficultyKey() === difficulty.key;
+        @let previewRows = page.previewRows(difficulty.key);
+
+        <article
+          class="mg-card p-md h-100"
+          [class.border-secondary]="isSelected"
+          [class.shadow-premium]="isSelected"
+        >
           <div class="flex-col gap-sm">
             <div class="flex-row-between-start gap-sm">
               <div class="flex-col gap-xs">
                 <strong>{{ difficulty.label }}</strong>
                 <span class="muted-text">{{ difficulty.description }}</span>
               </div>
-              @if (page.selectedDifficultyKey() === difficulty.key) {
+              @if (isSelected) {
                 <span class="tag-badge tag-badge--info">Selected</span>
+              } @else if (difficulty.isActive) {
+                <span class="tag-badge tag-badge--success">Available</span>
+              } @else {
+                <span class="tag-badge tag-badge--warn">Unavailable</span>
               }
             </div>
 
@@ -205,9 +216,9 @@
               </span>
             </div>
 
-            @if (page.previewRows(difficulty.key).length) {
+            @if (previewRows.length) {
               <div class="flex-col gap-xs">
-                @for (preview of page.previewRows(difficulty.key); track preview.projectedStepNumber) {
+                @for (preview of previewRows; track preview.projectedStepNumber) {
                   <span class="muted-text">
                     Step {{ preview.projectedStepNumber }}:
                     {{ preview.trialOpportunityChance }}% trial chance
@@ -218,9 +229,9 @@
 
             <p-button
               type="button"
-              label="Select"
+              [label]="isSelected ? 'Selected' : 'Select'"
               severity="secondary"
-              [disabled]="page.isLoading() || page.isStarting()"
+              [disabled]="page.isLoading() || page.isStarting() || isSelected || !difficulty.isActive"
               (onClick)="page.selectDifficulty(difficulty.key)"
             />
           </div>

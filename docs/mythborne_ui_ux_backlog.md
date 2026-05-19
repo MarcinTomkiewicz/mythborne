@@ -5187,6 +5187,18 @@ Build the difficulty card shell and selected-state behavior only, without adding
 - checked but not reused:
 - local SCSS added:
 
+**Status:** Accepted/completed on 2026-05-19. The Difficulty section now keeps the shell/selected-state work scoped to
+`exploration-page.html`: each card derives `isSelected` from `page.selectedDifficultyKey() === difficulty.key`, selected
+cards use existing production `border-secondary` and `shadow-premium` classes plus a `Selected` badge, and selected or
+unavailable cards have disabled selection actions. Availability badges are driven only by the current
+`difficulty.isActive` read-model field, so unavailable/locked nuance remains limited to data that exists today.
+Repeated `page.previewRows(difficulty.key)` calls were replaced by local `@let previewRows`; the preview rows themselves
+remain the legacy/simple display and are deferred to UI-EXPLORATION-5. No start CTA, stat detail, timer, directions,
+results, rewards, DB/RPC/schema/generated types, specs or local SCSS were changed. Verification passed with
+`npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings, and static greps. Manual smoke remains
+user-side pending for difficulty list render, selection change, selected visual distinction and selected/unavailable
+disabled action behavior.
+
 
 ## UI-EXPLORATION-5 — Difficulty card DB-backed preview values
 
