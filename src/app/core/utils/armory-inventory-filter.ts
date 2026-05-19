@@ -1,4 +1,7 @@
-import { ARMORY_RING_SLOT_FILTER_VALUE } from '../constants/armory-inventory-filter.const';
+import {
+  ARMORY_ALL_STANDS_FILTER_VALUE,
+  ARMORY_RING_SLOT_FILTER_VALUE,
+} from '../constants/armory-inventory-filter.const';
 import { classifyItemDisplay } from '../domain/equipment/equipment-preview.mapper';
 import { EQUIPMENT_PREVIEW_SLOT_KEYS } from '../domain/equipment/equipment-preview-icons.config';
 import {
@@ -32,6 +35,18 @@ export function armorySlotFilterOptions(
   ];
 }
 
+export function armoryStandFilterOptions(
+  shelves: readonly ArmoryShelfReadModel[],
+): Array<SelectOption<string>> {
+  return [
+    { label: 'All stands', value: ARMORY_ALL_STANDS_FILTER_VALUE },
+    ...shelves.map((shelf) => ({
+      label: armoryStandFilterLabel(shelf),
+      value: String(shelf.position),
+    })),
+  ];
+}
+
 export function filterArmoryItems(
   items: readonly ArmoryItemSummary[],
   filters: ArmoryInventoryFilters,
@@ -43,6 +58,7 @@ export function filterArmoryItems(
         .some((token) => normalizeSearchText(token).includes(filters.searchTerm))
     )
     && matchesArmorySlotFilter(item, filters.slotKey)
+    && matchesArmoryStandFilter(item, filters.standKey)
     && (filters.availability === 'all' || item.lifecycleStatus === filters.availability),
   );
 }
@@ -50,11 +66,20 @@ export function filterArmoryItems(
 export function filteredArmoryShelves(
   shelves: readonly ArmoryShelfReadModel[],
   filteredItems: readonly ArmoryItemSummary[],
+  selectedStandKey = ARMORY_ALL_STANDS_FILTER_VALUE,
 ): ArmoryShelfReadModel[] {
-  return projectArmoryShelvesByItemIds(
+  const projectedShelves = projectArmoryShelvesByItemIds(
     shelves,
     new Set(filteredItems.map((item) => item.itemId)),
-  ).filter((shelf) => shelf.visibleItems.length > 0);
+  );
+
+  if (selectedStandKey !== ARMORY_ALL_STANDS_FILTER_VALUE) {
+    return projectedShelves.filter((shelf) =>
+      String(shelf.position) === selectedStandKey,
+    );
+  }
+
+  return projectedShelves.filter((shelf) => shelf.visibleItems.length > 0);
 }
 
 export function armoryItemMetadata(
@@ -82,6 +107,26 @@ export function matchesArmorySlotFilter(
   }
 
   return armoryItemSlotKeys(item).has(slotFilter);
+}
+
+function matchesArmoryStandFilter(
+  item: ArmoryItemSummary,
+  standFilter: string,
+): boolean {
+  return standFilter === ARMORY_ALL_STANDS_FILTER_VALUE
+    || String(item.shelfPosition) === standFilter;
+}
+
+function armoryStandFilterLabel(shelf: ArmoryShelfReadModel): string {
+  if (shelf.isUnsortedDropArea) {
+    return 'Unsorted';
+  }
+
+  const defaultLabel = `Shelf ${shelf.position}`;
+
+  return shelf.name && shelf.name !== defaultLabel
+    ? `${shelf.name} · Stand ${shelf.position}`
+    : `Stand ${shelf.position}`;
 }
 
 function armoryItemSearchTokens(item: ArmoryItemSummary): string[] {

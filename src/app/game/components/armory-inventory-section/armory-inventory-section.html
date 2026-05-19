@@ -31,10 +31,15 @@
       optionValue="value"
       ariaLabel="Filter visible armory items by availability"
     />
+    <p-select
+      class="min-w-200 w-100-sm"
+      [formControl]="standFilterControl"
+      [options]="standOptions()"
+      optionLabel="label"
+      optionValue="value"
+      ariaLabel="Filter visible armory items by stand"
+    />
     @if (hasFilters()) {
-      <span class="tag-badge tag-badge--info">
-        {{ filteredItems().length }} matching item{{ filteredItems().length === 1 ? '' : 's' }}
-      </span>
       <p-button
         type="button"
         severity="secondary"
@@ -66,7 +71,7 @@
     </p>
   }
 
-  @if (hasFilters() && filteredItems().length === 0) {
+  @if (hasFilters() && visibleShelves().length === 0) {
     <div class="mg-card p-md flex-row-start-center gap-md w-100 mb-sm">
       <span class="mg-card p-sm flex-row-center-center flex-none">
         <i class="pi pi-maze color-muted text-xl" aria-hidden="true"></i>
@@ -126,7 +131,7 @@
             </span>
             @if (!shelf.isUnsortedDropArea && shelf.isPersisted) {
               @if (renameStandForm.controls[shelf.position]; as renameControl) {
-                <p-inplace styleClass="mg-form">
+                <p-inplace class="mg-form">
                   <ng-template #display>
                     <span class="muted-text">Rename stand</span>
                   </ng-template>

@@ -7,5 +7,6 @@ export type ArmoryInventoryAvailabilityFilterValue =
 export interface ArmoryInventoryFilters {
   searchTerm: string;
   slotKey: string;
+  standKey: string;
   availability: ArmoryInventoryAvailabilityFilterValue;
 }

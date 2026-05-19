@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-19 — UI-ITEMS-14 Armory search/filter accepted
+Updated: 2026-05-19 — UI-ITEMS-17 Armory stand filter accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -4724,6 +4724,8 @@ Add a simple stand filter after item search/status filters are stable.
 - stand data source:
 - filter options:
 - empty result behavior:
+
+**Status:** Accepted/completed on 2026-05-19. The Armory Inventory filter bar now includes a stand dropdown backed by current shelf/read-model data, preserving search, slot and availability filters in the same wide control row. Selecting an empty stand renders that stand in its normal empty-stand state without the global maze/no-match banner; global no-result state now keys off rendered shelf state (`visibleShelves().length === 0`). The duplicated filter-bar `X matching item(s)` badge was removed, while Clear still resets text, slot, availability and stand filters. User-side smoke accepted `Pierścień`, empty current data for trade/auction availability, combined filter behavior and bulk toolbar preservation. Follow-ups remain non-blocking: bonus search needs list-facing DB/RPC/read-model support; `ArmoryInventorySection` can be reduced further on a later Armory touch; filter controls may move into a `FormGroup` if the bar grows; PrimeNG wrapper styling can be revisited in a future vendor-wrapper cleanup.
 
 ---
 

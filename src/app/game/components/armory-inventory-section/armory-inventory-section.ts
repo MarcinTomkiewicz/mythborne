@@ -19,6 +19,7 @@ import {
 } from '../../../core/constants/armory-inventory-filter.const';
 import {
   armorySlotFilterOptions,
+  armoryStandFilterOptions,
   filterArmoryItems,
   filteredArmoryShelves,
   armoryItemMetadata,
@@ -70,6 +71,7 @@ export class ArmoryInventorySection {
   readonly itemLifecycleStatusLabel = itemLifecycleStatusLabel;
   readonly searchControl = new FormControl<string>('', { nonNullable: true });
   readonly slotFilterControl = new FormControl<string>('all', { nonNullable: true });
+  readonly standFilterControl = new FormControl<string>('all', { nonNullable: true });
   readonly availabilityFilterControl =
     new FormControl<ArmoryInventoryAvailabilityFilterValue>('all', {
       nonNullable: true,
@@ -81,15 +83,20 @@ export class ArmoryInventorySection {
   private readonly slotFilterValue = toSignal(this.slotFilterControl.valueChanges, {
     initialValue: this.slotFilterControl.value,
   });
+  private readonly standFilterValue = toSignal(this.standFilterControl.valueChanges, {
+    initialValue: this.standFilterControl.value,
+  });
   private readonly availabilityFilterValue = toSignal(
     this.availabilityFilterControl.valueChanges,
     { initialValue: this.availabilityFilterControl.value },
   );
   readonly slotOptions = computed(() => armorySlotFilterOptions(this.equipmentSlots()));
+  readonly standOptions = computed(() => armoryStandFilterOptions(this.shelves()));
   readonly availabilityOptions = ARMORY_AVAILABILITY_FILTER_OPTIONS;
   readonly hasFilters = computed(() =>
     this.searchTerm().length > 0
     || this.slotFilterValue() !== 'all'
+    || this.standFilterValue() !== 'all'
     || this.availabilityFilterValue() !== 'all',
   );
   readonly filteredItems = computed(() =>
@@ -98,13 +105,18 @@ export class ArmoryInventorySection {
       {
         searchTerm: this.searchTerm(),
         slotKey: this.slotFilterValue(),
+        standKey: this.standFilterValue(),
         availability: this.availabilityFilterValue(),
       },
     ),
   );
   readonly visibleShelves = computed(() =>
     this.hasFilters()
-      ? filteredArmoryShelves(this.shelves(), this.filteredItems())
+      ? filteredArmoryShelves(
+        this.shelves(),
+        this.filteredItems(),
+        this.standFilterValue(),
+      )
       : this.shelves(),
   );
   readonly selectedBulkItems = computed(() => {
@@ -143,6 +155,7 @@ export class ArmoryInventorySection {
   clearFilters(): void {
     this.searchControl.setValue('');
     this.slotFilterControl.setValue('all');
+    this.standFilterControl.setValue('all');
     this.availabilityFilterControl.setValue('all');
   }
 
