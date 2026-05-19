@@ -8,7 +8,8 @@ Zanim zaczniesz review, sprawdź aktualne źródła projektu dostępne w rozmowi
 
 - `AGENTS.md`;
 - `docs/AGENTS.md`;
-- `mythborne_codex_review_standards.md`;
+- `mythborne_codex_review_standards.md`
+- `mythborne_codex_ui_review_standards.md`;
 - `docs/mythborne_codex_review_standards.md`;
 - aktualny backlog/task, którego dotyczy review;
 - `current-decisions.md`, `project-context.md`, `database-current.md`, dump/generated types, jeśli review dotyczy DB/RPC/schema;

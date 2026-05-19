@@ -119,7 +119,7 @@ Po implementacji posprzątaj dotknięte pliki:
 - usuń defensywne/transitional wrappers/classes;
 - usuń stare warianty/patterny, które task zastępuje.
 
-Nie bój się ciąć. Produkcyjny diff ma być możliwie mały.
+Nie bój się usuwać niepotrzebnych i/lub niedziałających fragmentów kodu. Produkcyjny diff ma być możliwie mały.
 
 ## Po review / needs-fix
 

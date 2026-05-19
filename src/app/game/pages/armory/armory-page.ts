@@ -1,55 +1,40 @@
 import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
-import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import {
   ArmoryItemSummary,
-  ArmoryShelfReadModel,
   EquippedItemSummary,
-  ItemLifecycleStatus,
 } from '../../../core/domain/item/item-equipment.model';
 import { BulkVendorScrapHeroItemsResult } from '../../../core/domain/item/item-lifecycle.model';
-import { ButtonModule } from 'primeng/button';
-import { InplaceModule } from 'primeng/inplace';
-import { InputTextModule } from 'primeng/inputtext';
+import { RenameArmoryShelfInput } from '../../../core/interfaces/item/armory-actions.interface';
 import {
-  ARMORY_PLAYER_SHELF_POSITIONS,
-  ARMORY_UNSORTED_SHELF_POSITION,
-} from '../../../core/constants/armory-shelves.const';
-import { humanizeKey } from '../../../core/utils/normalize-text';
-import {
-  armoryItemIconClass,
-  classifyItemDisplay,
-  equippedItemIconClass,
   mapEquipmentPreviewRows,
 } from '../../../core/domain/equipment/equipment-preview.mapper';
 import { EquipmentPreviewSlotRow } from '../../../core/domain/equipment/equipment-preview.model';
+import {
+  completeArmoryShelfDisplay,
+  storedArmoryItems,
+  storedArmoryShelves,
+} from '../../../core/utils/armory-shelf-display';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
 import { ToastService } from '../../../core/services/ui/toast';
 import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-preview';
-import { ArmoryBulkActionsToolbar } from '../../components/armory-bulk-actions-toolbar/armory-bulk-actions-toolbar';
-import { ArmoryItemDetailPopover } from '../../components/armory-item-detail-popover/armory-item-detail-popover';
+import { ArmoryInventorySection } from '../../components/armory-inventory-section/armory-inventory-section';
 import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
 import {
   ArmoryGuildItemUsageState,
-  ArmoryGuildItemUsage,
 } from './armory-guild-item-usage.state';
 
 @Component({
   selector: 'app-armory-page',
   standalone: true,
   imports: [
-    ReactiveFormsModule,
-    ButtonModule,
     ConfirmDialogModule,
-    InplaceModule,
-    InputTextModule,
     EquipmentPreview,
-    ArmoryBulkActionsToolbar,
-    ArmoryItemDetailPopover,
+    ArmoryInventorySection,
     LoadoutPresetManagement,
   ],
   providers: [
@@ -103,45 +88,16 @@ export class ArmoryPage implements OnInit {
       }
       : null;
   });
-  readonly selectedBulkItemIds = signal<string[]>([]);
   readonly selectedPaperdollItemIds = signal<string[]>([]);
   readonly savedLoadoutCount = computed(() =>
     this.loadoutPresets.presets()
       .filter((preset) => preset.savedAt !== null)
       .length,
   );
-  readonly renameStandForm = new FormRecord<FormControl<string>>({});
-  readonly selectedBulkItems = computed(() => {
-    const selectedIds = this.selectedBulkItemIds();
-    const itemsById = new Map(
-      this.storedArmoryItems().map((item) => [item.itemId, item]),
-    );
-
-    return selectedIds.flatMap((itemId) => {
-      const item = itemsById.get(itemId);
-      return item ? [item] : [];
-    }).filter((item) => this.canUsePrivateItemActions(item));
-  });
-  readonly selectedBulkSellableItems = computed(() =>
-    this.selectedBulkItems().filter((item) => this.canUseLifecycleActions(item)),
-  );
-  readonly selectedBulkSellSummary = computed(() => {
-    const items = this.selectedBulkSellableItems();
-
-    return {
-      count: items.length,
-      drachmaValue: items.reduce(
-        (total, item) => total + (item.drachmaValue ?? 0),
-        0,
-      ),
-    };
-  });
-  private readonly syncArmorySelection = effect(() =>
-    this.pruneBulkSelection(this.storedArmoryItems()),
-  );
-  private readonly syncRenameStandForms = effect(() =>
-    this.syncStandRenameControls(this.displayShelves()),
-  );
+  readonly guildItemUsageForInventory = (item: ArmoryItemSummary) =>
+    this.guildItemUsageState.usageForItem(item);
+  readonly canUsePrivateItemActionsForInventory = (item: ArmoryItemSummary) =>
+    this.guildItemUsageState.canUsePrivateItemActions(item);
   private readonly syncPaperdollSelection = effect(() =>
     this.prunePaperdollSelection(this.equipment.slots()),
   );
@@ -202,86 +158,8 @@ export class ArmoryPage implements OnInit {
     this.guildItemUsageState.load();
   }
 
-  itemStatusLabel(item: EquippedItemSummary): string {
-    return this.lifecycleStatusLabel(item.lifecycleStatus);
-  }
-
-  itemStatusClass(item: EquippedItemSummary): string {
-    return this.lifecycleStatusClass(item.lifecycleStatus);
-  }
-
-  equippedItemIconClass(item: EquippedItemSummary): string {
-    return equippedItemIconClass(item);
-  }
-
-  armoryItemStatusLabel(item: ArmoryItemSummary): string {
-    return this.lifecycleStatusLabel(item.lifecycleStatus);
-  }
-
-  armoryItemStatusClass(item: ArmoryItemSummary): string {
-    return this.lifecycleStatusClass(item.lifecycleStatus);
-  }
-
-  armoryItemIconClass(item: ArmoryItemSummary): string {
-    return armoryItemIconClass(item);
-  }
-
-  shelfLabel(shelf: ArmoryShelfReadModel): string {
-    return shelf.isUnsortedDropArea
-      ? shelf.name || 'Unsorted'
-      : shelf.name;
-  }
-
-  renameShelf(shelf: ArmoryShelfReadModel, newName: string): void {
-    if (shelf.isUnsortedDropArea) {
-      return;
-    }
-
-    this.armory.renameShelf({
-      shelfPosition: shelf.position,
-      newName,
-    });
-  }
-
-  renameStandControl(shelf: ArmoryShelfReadModel): FormControl<string> {
-    this.ensureRenameStandControl(shelf);
-
-    return this.renameStandForm.controls[renameStandControlKey(shelf)];
-  }
-
-  renameStandActionIsCancel(control: FormControl<string>): boolean {
-    return control.pristine || control.value.trim().length === 0;
-  }
-
-  renameStandActionIcon(control: FormControl<string>): string {
-    return this.renameStandActionIsCancel(control)
-      ? 'pi pi-interdiction'
-      : 'pi pi-scroll-quill';
-  }
-
-  renameStandActionSeverity(control: FormControl<string>): 'danger' | 'secondary' {
-    return this.renameStandActionIsCancel(control) ? 'danger' : 'secondary';
-  }
-
-  renameStandActionLabel(control: FormControl<string>): string {
-    return this.renameStandActionIsCancel(control) ? 'Cancel' : 'Rename stand';
-  }
-
-  handleRenameStandInplaceAction(
-    shelf: ArmoryShelfReadModel,
-    control: FormControl<string>,
-    closeCallback: (event?: Event) => void,
-    event: Event,
-  ): void {
-    if (this.renameStandActionIsCancel(control)) {
-      this.resetRenameStandControl(shelf, control);
-      closeCallback(event);
-      return;
-    }
-
-    this.renameShelf(shelf, control.value.trim());
-    control.markAsPristine();
-    closeCallback(event);
+  renameShelf(input: RenameArmoryShelfInput): void {
+    this.armory.renameShelf(input);
   }
 
   equipItem(item: ArmoryItemSummary): void {
@@ -294,8 +172,8 @@ export class ArmoryPage implements OnInit {
     }, () => this.refreshArmoryAndDerivedStats());
   }
 
-  bulkEquipSelectedItems(): void {
-    const items = this.selectedBulkItems().map((item) => ({
+  bulkEquipSelectedItems(selectedItems: readonly ArmoryItemSummary[]): void {
+    const items = selectedItems.map((item) => ({
       itemId: item.itemId,
     }));
 
@@ -306,13 +184,18 @@ export class ArmoryPage implements OnInit {
     this.equipment.bulkEquipItems({
       items,
     }, () => {
-      this.clearBulkSelection();
       this.refreshArmoryAndDerivedStats();
     });
   }
 
-  confirmBulkVendorScrapSelectedItems(): void {
-    const summary = this.selectedBulkSellSummary();
+  confirmBulkVendorScrapSelectedItems(items: readonly ArmoryItemSummary[]): void {
+    const summary = {
+      count: items.length,
+      drachmaValue: items.reduce(
+        (total, item) => total + (item.drachmaValue ?? 0),
+        0,
+      ),
+    };
 
     if (!summary.count) {
       return;
@@ -327,19 +210,18 @@ export class ArmoryPage implements OnInit {
       rejectIcon: 'pi pi-times',
       acceptButtonStyleClass: 'p-button-success',
       rejectButtonStyleClass: 'p-button-danger',
-      accept: () => this.bulkVendorScrapSelectedItems(),
+      accept: () => this.bulkVendorScrapSelectedItems(items),
     });
   }
 
-  private bulkVendorScrapSelectedItems(): void {
-    const items = this.selectedBulkSellableItems();
-
+  private bulkVendorScrapSelectedItems(
+    items: readonly ArmoryItemSummary[],
+  ): void {
     if (!items.length) {
       return;
     }
 
     this.armory.bulkVendorScrapItems(items.map((item) => item.itemId), (result) => {
-      this.clearBulkSelection();
       this.showBulkVendorScrapToast(result);
       this.refreshEquipmentAndDerivedStats();
     });
@@ -381,12 +263,6 @@ export class ArmoryPage implements OnInit {
     this.bulkUnequipPaperdollItems(items);
   }
 
-  unequipSlot(slotKey: string): void {
-    this.equipment.unequipSlot({
-      slotKey,
-    }, () => this.refreshArmoryAndDerivedStats());
-  }
-
   vendorScrapItem(item: ArmoryItemSummary): void {
     if (!this.canUsePrivateItemActions(item)) {
       return;
@@ -405,94 +281,16 @@ export class ArmoryPage implements OnInit {
     );
   }
 
-  canUseLifecycleActions(item: ArmoryItemSummary): boolean {
-    return item.lifecycleStatus === 'active'
-      && this.canUsePrivateItemActions(item);
-  }
-
-  canBulkVendorScrapSelectedItems(): boolean {
-    return this.selectedBulkSellSummary().count > 0;
-  }
-
   canUsePrivateItemActions(item: ArmoryItemSummary): boolean {
     return this.guildItemUsageState.canUsePrivateItemActions(item);
   }
 
-  guildItemUsage(item: ArmoryItemSummary): ArmoryGuildItemUsage {
-    return this.guildItemUsageState.usageForItem(item);
-  }
-
-  isBulkItemSelected(item: ArmoryItemSummary): boolean {
-    return this.selectedBulkItemIds().includes(item.itemId);
-  }
-
-  toggleBulkItemSelection(item: ArmoryItemSummary): void {
-    if (!this.canUsePrivateItemActions(item)) {
-      return;
-    }
-
-    this.setBulkItemSelected(item, !this.isBulkItemSelected(item));
-  }
-
-  setBulkItemSelected(item: ArmoryItemSummary, selected: boolean): void {
-    const currentIds = this.selectedBulkItemIds();
-
-    if (selected) {
-      this.selectedBulkItemIds.set(
-        currentIds.includes(item.itemId)
-          ? currentIds
-          : [...currentIds, item.itemId],
-      );
-      return;
-    }
-
-    this.selectedBulkItemIds.set(
-      currentIds.filter((itemId) => itemId !== item.itemId),
-    );
-  }
-
-  armoryItemMetadata(item: ArmoryItemSummary): string {
-    const display = classifyItemDisplay({
-      baseTypeKey: item.baseTypeKey,
-      handUsageKey: item.handUsageKey,
-      primarySlotKey: item.primarySlotKey,
-      allowedSlotKeys: item.allowedSlotKeys,
-    });
-    const metadata = [display.kindLabel, display.slotLabel]
-      .filter(Boolean)
-      .join(' · ');
-
-    return metadata || item.baseName || 'Item';
-  }
-
-  private readonly equippedItemIds = computed(() =>
-    new Set(this.equipment.slots().map((item) => item.itemId)),
-  );
-  private readonly storedArmoryItems = computed(() => {
-    const equippedItemIds = this.equippedItemIds();
-
-    return this.armory.visibleItems()
-      .filter((item) => !equippedItemIds.has(item.itemId));
+  readonly storedArmoryItems = computed(() => {
+    return storedArmoryItems(this.armory.visibleItems(), this.equipment.slots());
   });
   private readonly storedArmoryShelves = computed(() => {
-    const equippedItemIds = this.equippedItemIds();
-
-    return this.armory.shelves().map((shelf) => ({
-      ...shelf,
-      visibleItems: shelf.visibleItems
-        .filter((item) => !equippedItemIds.has(item.itemId)),
-    }));
+    return storedArmoryShelves(this.armory.shelves(), this.equipment.slots());
   });
-
-  private lifecycleStatusLabel(status: ItemLifecycleStatus): string {
-    return humanizeKey(status, 'Status');
-  }
-
-  private lifecycleStatusClass(status: ItemLifecycleStatus): string {
-    return status === 'active'
-      ? 'tag-badge tag-badge--info'
-      : 'tag-badge tag-badge--muted';
-  }
 
   private refreshArmoryAndDerivedStats(): void {
     this.armory.refresh();
@@ -527,10 +325,6 @@ export class ArmoryPage implements OnInit {
     );
   }
 
-  private clearBulkSelection(): void {
-    this.selectedBulkItemIds.set([]);
-  }
-
   private bulkUnequipPaperdollItems(
     items: readonly { itemId: string; slotKey: string }[],
   ): void {
@@ -558,93 +352,4 @@ export class ArmoryPage implements OnInit {
     }
   }
 
-  private pruneBulkSelection(items: readonly ArmoryItemSummary[]): void {
-    const visibleItemIds = new Set(items.map((item) => item.itemId));
-    const selectedIds = this.selectedBulkItemIds();
-    const visibleSelectedIds = selectedIds.filter((itemId) =>
-      visibleItemIds.has(itemId),
-    );
-
-    if (visibleSelectedIds.length !== selectedIds.length) {
-      this.selectedBulkItemIds.set(visibleSelectedIds);
-    }
-  }
-
-  private syncStandRenameControls(shelves: readonly ArmoryShelfReadModel[]): void {
-    const editableShelfKeys = new Set(
-      shelves
-        .filter((shelf) => shelf.isPersisted && !shelf.isUnsortedDropArea)
-        .map(renameStandControlKey),
-    );
-
-    for (const shelf of shelves) {
-      if (shelf.isPersisted && !shelf.isUnsortedDropArea) {
-        this.ensureRenameStandControl(shelf);
-      }
-    }
-
-    for (const key of Object.keys(this.renameStandForm.controls)) {
-      if (!editableShelfKeys.has(key)) {
-        this.renameStandForm.removeControl(key, { emitEvent: false });
-      }
-    }
-  }
-
-  private ensureRenameStandControl(shelf: ArmoryShelfReadModel): void {
-    const key = renameStandControlKey(shelf);
-    const control = this.renameStandForm.controls[key];
-
-    if (control) {
-      if (control.pristine && control.value !== shelf.name) {
-        control.setValue(shelf.name, { emitEvent: false });
-        control.markAsPristine();
-      }
-
-      return;
-    }
-
-    this.renameStandForm.addControl(
-      key,
-      new FormControl<string>(shelf.name, { nonNullable: true }),
-      { emitEvent: false },
-    );
-  }
-
-  private resetRenameStandControl(
-    shelf: ArmoryShelfReadModel,
-    control: FormControl<string>,
-  ): void {
-    control.setValue(shelf.name, { emitEvent: false });
-    control.markAsPristine();
-  }
-
-}
-
-function renameStandControlKey(shelf: Pick<ArmoryShelfReadModel, 'position'>): string {
-  return String(shelf.position);
-}
-
-function completeArmoryShelfDisplay(
-  shelves: readonly ArmoryShelfReadModel[],
-): ArmoryShelfReadModel[] {
-  const heroId = shelves[0]?.heroId ?? '';
-  const shelvesByPosition = new Map(
-    shelves.map((shelf) => [shelf.position, shelf]),
-  );
-  const shelfAt = (position: number): ArmoryShelfReadModel =>
-    shelvesByPosition.get(position) ?? {
-      shelfId: null,
-      heroId,
-      position,
-      name: position === 0 ? 'Unsorted' : `Shelf ${position}`,
-      updatedAt: null,
-      isPersisted: false,
-      isUnsortedDropArea: position === 0,
-      visibleItems: [],
-    };
-
-  return [
-    ...ARMORY_PLAYER_SHELF_POSITIONS.map(shelfAt),
-    shelfAt(ARMORY_UNSORTED_SHELF_POSITION),
-  ];
 }

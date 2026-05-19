@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-16 — Armory standy visual cleanup accepted
+Updated: 2026-05-19 — UI-ITEMS-14 Armory search/filter accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -4561,6 +4561,8 @@ Reduce visual noise of per-item actions inside visible item cards while preservi
 - handlers preserved:
 - manual smoke pending:
 
+**Status:** Rejected/superseded on 2026-05-19 after concept change. Per-item action layout cleanup is not pursued as a separate task; continue with the simplified Armory search pass in UI-ITEMS-14.
+
 ---
 
 ## UI-ITEMS-14 — Basic Armory search only
@@ -4602,6 +4604,8 @@ Add a simple search input for visible armory items after the visual layout is st
 - search fields used:
 - filtering location:
 - empty result behavior:
+
+**Status:** Accepted/completed on 2026-05-19 as the current Armory search/filter pass. The Inventory panel now has a wide production-styled filter bar with text search over visible card text (item name plus compact type/slot metadata), one player-facing `Pierścień` slot option that covers both ring slots, a slot dropdown that preserves off-hand/shield matching for `Druga ręka`, and an availability dropdown with player-facing labels (`Available`, `Offered in trade`, `Listed on auction`). Clear resets text, slot and availability filters; no-match uses the accepted maze empty state; search highlights exact normalized visible matches without `Matched ...` chips or hidden/system tokens such as `none`. The implementation keeps top and bottom bulk toolbars, selection is not cleared merely by emitting bulk actions, and bonus search is explicitly deferred until `get_hero_armory_items` / `ArmoryItemSummary` expose list-facing DB/RPC-backed bonus labels/targets/search tokens. Manual smoke was user-side accepted for the current scope. Follow-up: at the next larger Armory touch, continue reducing `ArmoryInventorySection` and separating inventory state/rendering where it provides real cleanup value.
 
 ---
 

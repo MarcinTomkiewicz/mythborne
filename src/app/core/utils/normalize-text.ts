@@ -19,6 +19,12 @@ export function normalizeKeyText(value: unknown): string {
   return trimToLower(value).replace(/[\s-]+/g, '_');
 }
 
+export function normalizeSearchText(value: unknown): string {
+  return trimToLower(value)
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
 export function requiredTrimmedText(
   value: unknown,
   field: string,

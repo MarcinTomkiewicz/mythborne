@@ -5,24 +5,13 @@ import {
   GuildArmoryReadModel,
 } from '../../../core/domain/guild/guild-armory.model';
 import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.model';
+import {
+  ArmoryGuildItemUsage,
+} from '../../../core/interfaces/item/armory-guild-item-usage.interface';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { PlayerGuildArmory } from '../../../core/services/guild/player-guild-armory';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { getErrorMessage } from '../../../core/utils/error-message';
-
-export type ArmoryGuildItemUsageKey =
-  | 'owned_private'
-  | 'deposited_in_guild_armory'
-  | 'borrowed_from_guild_armory'
-  | 'borrowed_by_guild_member'
-  | 'unknown';
-
-export interface ArmoryGuildItemUsage {
-  key: ArmoryGuildItemUsageKey;
-  label: string;
-  detail: string | null;
-  privateActionsAllowed: boolean;
-}
 
 @Injectable()
 export class ArmoryGuildItemUsageState {

@@ -1,43 +1,54 @@
-:where(.mg-form, form, .mg-card form) {
-  .p-inputtext {
-    background: var(--mg-form-bg);
-    color: var(--mg-form-text);
-    border: 1px solid var(--mg-form-border);
-  }
+@use "../abstracts/variables" as v;
 
-  .p-inputtext::placeholder {
-    color: var(--mg-form-placeholder);
-    opacity: 1;
-  }
+.p-inputtext {
+  min-height: 2.95rem;
+  border: 1px solid color-mix(in srgb, v.$color-secondary 24%, v.$color-form-border);
+  border-radius: v.$radius-lg;
+  background: color-mix(in srgb, v.$color-bg 54%, v.$color-form-bg);
+  color: v.$color-form-text;
+  box-shadow: inset 0 1px color-mix(in srgb, v.$color-white 3.5%, transparent);
+  transition:
+    background-color v.$transition-fast,
+    border-color v.$transition-fast,
+    box-shadow v.$transition-fast;
+}
 
-  .p-inputtext:hover {
-    background: var(--mg-form-bg-hover);
-    border-color: var(--mg-form-border-hover);
-  }
+input.p-inputtext[type="search"] {
+  border-radius: v.$radius-pill;
+}
 
-  .p-inputtext:focus,
-  .p-inputtext:focus-visible {
-    outline: none;
-    background: var(--mg-form-bg-focus);
-    border-color: var(--mg-form-border-focus);
-    box-shadow: 0 0 0 3px var(--mg-form-ring);
-  }
+.p-inputtext::placeholder {
+  color: v.$color-form-placeholder;
+  opacity: 1;
+}
 
-  .p-inputtext.p-invalid,
-  .p-inputtext.ng-invalid.ng-dirty,
-  .p-inputtext.ng-invalid.ng-touched {
-    border-color: var(--mg-form-error);
-  }
+.p-inputtext:not(:disabled):not(.p-disabled):hover {
+  background: v.$color-form-bg-hover;
+  border-color: color-mix(in srgb, v.$color-secondary 54%, v.$color-form-border-hover);
+}
 
-  .p-inputtext.p-invalid:focus,
-  .p-inputtext.p-invalid:focus-visible {
-    box-shadow: 0 0 0 3px var(--mg-form-error-ring);
-  }
+.p-inputtext:focus,
+.p-inputtext:focus-visible {
+  outline: none;
+  background: v.$color-form-bg-focus;
+  border-color: color-mix(in srgb, v.$color-secondary 72%, v.$color-form-border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, v.$color-secondary 16%, transparent);
+}
 
-  .p-inputtext:disabled,
-  .p-inputtext.p-disabled {
-    background: var(--mg-form-disabled-bg) !important;
-    color: var(--mg-form-disabled-text) !important;
-    border-color: var(--mg-form-border) !important;
-  }
+.p-inputtext.p-invalid,
+.p-inputtext.ng-invalid.ng-dirty,
+.p-inputtext.ng-invalid.ng-touched {
+  border-color: v.$color-form-error;
+}
+
+.p-inputtext.p-invalid:focus,
+.p-inputtext.p-invalid:focus-visible {
+  box-shadow: 0 0 0 3px var(--mg-form-error-ring);
+}
+
+.p-inputtext:disabled,
+.p-inputtext.p-disabled {
+  background: v.$color-form-disabled-bg !important;
+  color: v.$color-form-disabled-text !important;
+  border-color: v.$color-form-border !important;
 }
