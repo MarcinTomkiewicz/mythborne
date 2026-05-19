@@ -4,6 +4,7 @@ import { MessageModule } from 'primeng/message';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationLiveCombat } from '../../../core/services/combat/exploration-live-combat';
+import { GameBar } from '../../../shared/game-bar/game-bar';
 import { ExplorationLiveCombatState } from './exploration-live-combat.state';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -17,7 +18,7 @@ import { ExplorationStartState } from './exploration-start.state';
 @Component({
   selector: 'app-exploration-page',
   standalone: true,
-  imports: [ButtonModule, MessageModule, ExplorationStatusSection],
+  imports: [ButtonModule, MessageModule, GameBar, ExplorationStatusSection],
   providers: [
     ExplorationFeedbackState,
     ExplorationLiveCombat,

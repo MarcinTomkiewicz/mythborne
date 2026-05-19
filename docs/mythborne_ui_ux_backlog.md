@@ -5115,6 +5115,20 @@ Show active exploration step/progress inline when a step is running or ready to 
 - stale guard approach:
 - local SCSS added:
 
+**Status:** Accepted/completed on 2026-05-19. The active-step inline panel is now owned by `/game/exploration`
+composition in `exploration-page.html`, gated directly by `page.activeStep()`, and rendered after the header/feedback
+messages before Difficulty. It uses existing `ExplorationStepState` display signals for backend-owned timestamp progress,
+readiness and remaining-time labels, keeps `Check result` visible only while `page.canCheckResult()` or resolving state
+applies, and preserves loading/disabled behavior during resolve. `GameBar type="xp"` is accepted as a temporary wrapper
+limitation because the shared component currently exposes only `hp | xp`. The lower legacy `ExplorationStatusSection`
+no longer contains the duplicate `Movement step` / active-step timer block or the stale no-exploration `Start
+exploration` branch, and its repeated `page.state()` guards were cleaned up through a local `@let state = page.state()`
+while one-off nullable blocks remain scoped locally. No DB/RPC/schema/generated types, specs, local SCSS, native `<button pButton>`, `ngModel`,
+`FormsModule`, direct exploration writes or `localStorage` were introduced. Verification passed with `npx tsc --noEmit`,
+`npm run build` with known budget/CommonJS warnings, and static greps. Manual smoke remains data-blocked until a real
+active-step scenario exists. Follow-ups: clean remaining legacy raw-ish runtime/status chips in later
+UI-EXPLORATION-14/runtime cleanup and add a neutral shared progress `GameBar` type if needed.
+
 
 ## UI-EXPLORATION-4 — Difficulty card shell and selected state
 
