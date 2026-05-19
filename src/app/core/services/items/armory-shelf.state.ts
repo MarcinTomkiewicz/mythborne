@@ -105,6 +105,7 @@ export class ArmoryShelfState {
   moveItemToShelf(input: MoveArmoryItemToShelfInput): void {
     this.runMutation({
       operation: () => this.armory.moveItemToShelf(input),
+      successMessage: 'Item moved.',
       failureMessage: 'Armory shelf action failed.',
     });
   }

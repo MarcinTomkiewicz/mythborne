@@ -41,10 +41,22 @@ export function armoryStandFilterOptions(
   return [
     { label: 'All stands', value: ARMORY_ALL_STANDS_FILTER_VALUE },
     ...shelves.map((shelf) => ({
-      label: armoryStandFilterLabel(shelf),
+      label: armoryStandSelectLabel(shelf),
       value: String(shelf.position),
     })),
   ];
+}
+
+export function armoryStandSelectLabel(shelf: ArmoryShelfReadModel): string {
+  if (shelf.isUnsortedDropArea) {
+    return 'Unsorted';
+  }
+
+  const defaultLabel = `Shelf ${shelf.position}`;
+
+  return shelf.name && shelf.name !== defaultLabel
+    ? `${shelf.name} · Stand ${shelf.position}`
+    : `Stand ${shelf.position}`;
 }
 
 export function filterArmoryItems(
@@ -115,18 +127,6 @@ function matchesArmoryStandFilter(
 ): boolean {
   return standFilter === ARMORY_ALL_STANDS_FILTER_VALUE
     || String(item.shelfPosition) === standFilter;
-}
-
-function armoryStandFilterLabel(shelf: ArmoryShelfReadModel): string {
-  if (shelf.isUnsortedDropArea) {
-    return 'Unsorted';
-  }
-
-  const defaultLabel = `Shelf ${shelf.position}`;
-
-  return shelf.name && shelf.name !== defaultLabel
-    ? `${shelf.name} · Stand ${shelf.position}`
-    : `Stand ${shelf.position}`;
 }
 
 function armoryItemSearchTokens(item: ArmoryItemSummary): string[] {

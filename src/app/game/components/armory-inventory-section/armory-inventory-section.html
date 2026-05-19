@@ -52,9 +52,12 @@
       [selectedCount]="selectedBulkItems().length"
       [drachmaValue]="selectedBulkSellSummary().drachmaValue"
       [canSell]="canBulkVendorScrapSelectedItems()"
+      [canMove]="selectedMoveCandidate() !== null"
+      [moveDestinationOptions]="selectedMoveDestinationOptions()"
       [isActionBusy]="isActionBusy()"
       (equipSelected)="emitBulkEquipSelectedItems()"
       (sellSelected)="emitBulkSellSelectedItems()"
+      (moveSelected)="emitMoveSelectedItem($event)"
     />
   </div>
 
@@ -172,8 +175,7 @@
               >
                 <article
                   class="mg-card p-sm flex-col gap-xs w-100 min-w-0 cursor-pointer transition-colors"
-                  [class.border-secondary]="isBulkItemSelected(item)"
-                  [class.shadow-gold-glow]="isBulkItemSelected(item)"
+                  [class.mg-card--selected]="isBulkItemSelected(item)"
                   role="button"
                   tabindex="0"
                   [attr.aria-pressed]="isBulkItemSelected(item)"
@@ -278,9 +280,12 @@
       [selectedCount]="selectedBulkItems().length"
       [drachmaValue]="selectedBulkSellSummary().drachmaValue"
       [canSell]="canBulkVendorScrapSelectedItems()"
+      [canMove]="selectedMoveCandidate() !== null"
+      [moveDestinationOptions]="selectedMoveDestinationOptions()"
       [isActionBusy]="isActionBusy()"
       (equipSelected)="emitBulkEquipSelectedItems()"
       (sellSelected)="emitBulkSellSelectedItems()"
+      (moveSelected)="emitMoveSelectedItem($event)"
     />
   </div>
 </section>

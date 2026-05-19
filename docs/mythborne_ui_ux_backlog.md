@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-19 — UI-ITEMS-17 Armory stand filter accepted
+Updated: 2026-05-19 — UI-ITEMS-MOVE-1 Armory move action accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -3953,6 +3953,8 @@ Cel: armory, equipment preview, stands/sorting, item capacity and shared item po
 - UI-ITEMS-3 — Item popover shared display
 - UI-ITEMS-4 — Equipment/paperdoll preview reuse
 - UI-ITEMS-5 — Armory item list filtering and visibility
+- UI-ITEMS-MOVE-1 — Armory item move action + selected-card cleanup
+- UI-ITEMS-MOVE-2 — Armory drag-and-drop move between stands
 
 ## UI-ITEMS-1 — Armory overview and capacity
 
@@ -4869,6 +4871,72 @@ Do a final small visual consistency pass after UI-ITEMS-5–19, without adding n
 - known follow-ups:
 
 **Status:** Accepted/completed on 2026-05-19. Final Armory visual consolidation stayed intentionally small: the obsolete nested Inventory heading wrapper was removed, the Inventory heading keeps the existing `mg-section__title` rhythm and spacing, and the pass confirmed no `NgClass`/`ngClass`, `className`, `ngModel`, `FormsModule`, `button pButton`, prototype `mb-*`, debug/TODO/temporary copy, hidden-capacity copy or `Matched` chip in the touched Armory paths. No TS logic, filters, actions, DB/RPC/schema/generated types, specs, SCSS or unrelated docs were changed. Manual smoke remains minimal/user-side for Armory desktop rhythm, filter bar layout, item popover sanity and bulk toolbar sanity.
+
+---
+
+## UI-ITEMS-MOVE-1 — Armory item move action + selected-card cleanup
+
+**Goal:**  
+Add an explicit non-drag action for moving a stored Armory item between stands/shelves while cleaning local selected-card styling to use the global selected-card treatment.
+
+**Scope:**
+- selected-items toolbar action, beside `Equip selected` and `Sell selected`;
+- canonical `move_hero_armory_item_to_shelf` path through existing Armory service/state wrappers;
+- stored items only;
+- one eligible selected item only unless a canonical bulk move path exists;
+- destination selector sourced from current shelf/read-model data;
+- current stand omitted from destination options;
+- global `.mg-card--selected` for selected item cards.
+
+**Out of scope:**
+- drag-and-drop;
+- uncontrolled multi-RPC bulk move loops;
+- shelf creation/deletion;
+- DB/RPC/schema/generated type edits;
+- local Armory SCSS.
+
+**Acceptance criteria:**
+- selecting one eligible stored item enables a toolbar `Move selected` workflow;
+- selecting a valid destination enables the button immediately;
+- move uses `ArmoryShelfState.moveItemToShelf(...)` / `PlayerArmory.moveItemToShelf(...)` / `move_hero_armory_item_to_shelf`;
+- current stand is not offered as destination;
+- ineligible/guild/locked items cannot be moved through private action UI;
+- no per-card move selector or CDK drag/drop remains;
+- selected item styling uses global `.mg-card--selected`;
+- build/tsc/static greps pass.
+
+**Verification/smoke:**
+- select one eligible stored item, choose destination, move succeeds and refreshed item appears under destination stand;
+- two selected items keep move disabled because no canonical bulk move path exists;
+- current stand omitted from destination options;
+- selected-card visual remains acceptable.
+
+**Status:** Accepted/completed on 2026-05-19. `Move selected` now lives in the reusable selected-items toolbar, beside `Equip selected` and `Sell selected`, and uses the canonical single-item Armory shelf move path (`ArmoryShelfState.moveItemToShelf(...)` -> `PlayerArmory.moveItemToShelf(...)` -> `move_hero_armory_item_to_shelf`). Because no canonical bulk move path exists, move is intentionally limited to exactly one eligible selected stored item; no uncontrolled loop of single-item RPCs was added. Destination options come from the current shelf read model and omit the selected item's current stand. The stale disabled state was fixed by bridging `moveTargetControl.valueChanges` through `toSignal(...)`, so selecting a destination enables `Move selected` immediately. Per-card move selectors and CDK drag/drop are not part of this task. Selected item cards now use global `.mg-card--selected`. User-side smoke confirmed the move path works. No local SCSS, direct DB writes, DB/RPC/schema/generated edits or specs were added.
+
+---
+
+## UI-ITEMS-MOVE-2 — Armory drag-and-drop move between stands
+
+**Goal:**  
+Add drag-and-drop move for stored Armory items between stands/shelves as a separate follow-up after the normal selected-toolbar move action.
+
+**Scope:**
+- reuse the canonical move service/state path from UI-ITEMS-MOVE-1;
+- check existing project drag/drop pattern first;
+- if no project pattern exists, use the smallest standard Angular-supported approach and report it;
+- same-stand drop must not call the RPC;
+- blocked/private/guild/locked items must not be draggable;
+- keep the toolbar move action as accessibility/fallback path.
+
+**Out of scope:**
+- reordering items within one stand unless backend explicitly supports it;
+- bulk drag;
+- shelf creation/deletion;
+- mobile-perfect drag UX beyond fallback action;
+- DB/RPC/schema/generated edits;
+- local Armory SCSS unless a missing global pattern is explicitly accepted.
+
+**Status:** Follow-up / not implemented in UI-ITEMS-MOVE-1. Drag-and-drop was explicitly removed from the accepted move-action slice and remains a separate later task.
 
 ---
 

@@ -6,7 +6,10 @@ import {
   EquippedItemSummary,
 } from '../../../core/domain/item/item-equipment.model';
 import { BulkVendorScrapHeroItemsResult } from '../../../core/domain/item/item-lifecycle.model';
-import { RenameArmoryShelfInput } from '../../../core/interfaces/item/armory-actions.interface';
+import {
+  MoveArmoryItemToShelfInput,
+  RenameArmoryShelfInput,
+} from '../../../core/interfaces/item/armory-actions.interface';
 import {
   mapEquipmentPreviewRows,
 } from '../../../core/domain/equipment/equipment-preview.mapper';
@@ -150,6 +153,13 @@ export class ArmoryPage implements OnInit {
       this.toast.show('error', 'Armory action failed', error);
     }
   });
+  private readonly armoryActionMessageToast = effect(() => {
+    const message = this.armory.actionMessage();
+
+    if (message) {
+      this.toast.show('success', 'Armory updated', message);
+    }
+  });
 
   ngOnInit(): void {
     this.page.loadData();
@@ -160,6 +170,10 @@ export class ArmoryPage implements OnInit {
 
   renameShelf(input: RenameArmoryShelfInput): void {
     this.armory.renameShelf(input);
+  }
+
+  moveItem(input: MoveArmoryItemToShelfInput): void {
+    this.armory.moveItemToShelf(input);
   }
 
   equipItem(item: ArmoryItemSummary): void {
