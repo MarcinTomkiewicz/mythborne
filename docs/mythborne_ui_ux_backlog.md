@@ -4809,6 +4809,8 @@ Prevent large visible item lists from making Armory unusable, using existing pro
 - files changed:
 - large-list smoke:
 
+**Status:** Deferred / potentially cancelled on 2026-05-19 after the accepted UI-ITEMS-14, UI-ITEMS-17 and UI-ITEMS-18 Armory passes. Current user smoke considers the visible Inventory usable enough for this UI slice, so large-list pagination/scroll work should not be added speculatively. Reopen only if representative large-list testing shows the Armory becomes hard to use, and then follow UI-CORE-14 rather than adding custom local pagination.
+
 ---
 
 ## UI-ITEMS-20 — Armory final visual consolidation checkpoint
@@ -4853,6 +4855,8 @@ Do a final small visual consistency pass after UI-ITEMS-5–19, without adding n
 - static greps:
 - manual smoke pending/done:
 - known follow-ups:
+
+**Status:** Accepted/completed on 2026-05-19. Final Armory visual consolidation stayed intentionally small: the obsolete nested Inventory heading wrapper was removed, the Inventory heading keeps the existing `mg-section__title` rhythm and spacing, and the pass confirmed no `NgClass`/`ngClass`, `className`, `ngModel`, `FormsModule`, `button pButton`, prototype `mb-*`, debug/TODO/temporary copy, hidden-capacity copy or `Matched` chip in the touched Armory paths. No TS logic, filters, actions, DB/RPC/schema/generated types, specs, SCSS or unrelated docs were changed. Manual smoke remains minimal/user-side for Armory desktop rhythm, filter bar layout, item popover sanity and bulk toolbar sanity.
 
 ---
 
