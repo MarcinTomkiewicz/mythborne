@@ -166,7 +166,81 @@ describe('ExplorationPageState', () => {
     expect(activeHero.requireActiveHero).toHaveBeenCalled();
   });
 
-  it('renders the live combat loadout boundary from the PvE surface', () => {
+  it('renders start exploration on the selected difficulty and starts through the canonical workflow', () => {
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const startButton = findButton(fixture.nativeElement, 'Start exploration');
+
+    expect(startButton).not.toBeNull();
+
+    startButton?.click();
+
+    expect(explorations.startOrGetHeroExploration).toHaveBeenCalledWith({
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+    });
+  });
+
+  it('selects an available non-selected difficulty from the whole card surface', () => {
+    explorations.getHeroExplorationDifficultyCardPreviews.and.returnValue(
+      of([difficultyCardPreview('easy'), difficultyCardPreview('hard')]),
+    );
+    explorations.getHeroExplorationState.and.returnValue(of(noExplorationState('easy')));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const hardCard = (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLElement>('[aria-label="Select HARD difficulty"]');
+
+    expect(hardCard).not.toBeNull();
+
+    hardCard?.click();
+
+    expect(fixture.componentInstance.page.selectedDifficultyKey()).toBe('hard');
+    expect(explorations.getHeroExplorationState).toHaveBeenCalledWith({
+      heroId: 'hero-1',
+      difficultyKey: 'hard',
+    });
+  });
+
+  it('shows selected difficulty auto-result in the entry summary without status badges', () => {
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).toContain('Approx. auto result');
+    expect(text).toContain('57%');
+    expect(text).not.toContain('Available');
+    expect(text).not.toContain('Unavailable');
+    expect(text).not.toContain('Selected');
+  });
+
+  it('shows continue action instead of start when exploration already exists', () => {
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).toContain('Continue adventure');
+    expect(text).not.toContain('Start exploration');
+  });
+
+  it('does not render the runtime combat board on the difficulty entry screen', () => {
     explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
       'easy',
       false,
@@ -182,8 +256,9 @@ describe('ExplorationPageState', () => {
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('Live loadout is resolved by DB for each combat action');
-    expect(text).toContain('Angular does not filter equipment by item lifecycle status.');
+    expect(text).not.toContain('Live loadout is resolved by DB for each combat action');
+    expect(text).not.toContain('Angular does not filter equipment by item lifecycle status.');
+    expect(text).toContain('Continue adventure');
   });
 
   it('does not assume hero id matches auth user id when starting exploration', () => {
@@ -1839,6 +1914,12 @@ function difficultyCardPreview(key: string): HeroExplorationDifficultyCardPrevie
     rewardItemCountDisplay: '2-3 items',
     statDetails: [],
   };
+}
+
+function findButton(element: Element, label: string): HTMLButtonElement | null {
+  return Array.from(element.querySelectorAll('button')).find((button) =>
+    button.textContent?.includes(label),
+  ) ?? null;
 }
 
 function noExplorationState(difficultyKey: string): HeroExplorationStateReadModel {

@@ -1,6 +1,7 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { HeroExplorationDifficultyCardPreview } from '../../../core/domain/exploration/exploration-preview.model';
+import { HeroExplorationStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { ExplorationChanceMetricRow } from './exploration-chance-metric-row';
 
 @Component({
@@ -14,5 +15,69 @@ export class ExplorationDifficultyPreviewCard {
   readonly difficulty = input.required<HeroExplorationDifficultyCardPreview>();
   readonly isSelected = input.required<boolean>();
   readonly isBusy = input(false);
+  readonly isStarting = input(false);
+  readonly explorationState = input<HeroExplorationStateReadModel | null>(null);
   readonly selectDifficulty = output<string>();
+  readonly selectedDifficultyAction = output<void>();
+
+  readonly canSelectCard = computed(() =>
+    !this.isSelected()
+    && this.difficulty().isAvailable
+    && !this.isBusy(),
+  );
+
+  readonly actionLabel = computed(() => {
+    const preview = this.difficulty();
+
+    if (!preview.isAvailable) {
+      return 'Unavailable';
+    }
+
+    const state = this.explorationState();
+
+    if (!state) {
+      return this.isBusy() ? 'Loading status' : 'Status unavailable';
+    }
+
+    if (!state.hasExploration) {
+      return 'Start exploration';
+    }
+
+    return 'Continue adventure';
+  });
+
+  readonly actionDisabled = computed(() => {
+    const preview = this.difficulty();
+
+    if (!preview.isAvailable) {
+      return true;
+    }
+
+    const state = this.explorationState();
+
+    return this.isBusy() || !state;
+  });
+
+  selectCard(): void {
+    if (this.canSelectCard()) {
+      this.selectDifficulty.emit(this.difficulty().difficultyKey);
+    }
+  }
+
+  selectCardFromKeyboard(event: Event): void {
+    if (!this.canSelectCard()) {
+      return;
+    }
+
+    event.preventDefault();
+    this.selectCard();
+  }
+
+  handleSelectedDifficultyAction(): void {
+    if (this.actionDisabled()) {
+      return;
+    }
+
+    this.selectedDifficultyAction.emit();
+  }
 }

@@ -15,7 +15,10 @@
         [difficulty]="difficulty"
         [isSelected]="selectedDifficultyKey() === difficulty.difficultyKey"
         [isBusy]="isBusy()"
+        [isStarting]="isStarting()"
+        [explorationState]="explorationState()"
         (selectDifficulty)="selectDifficulty.emit($event)"
+        (selectedDifficultyAction)="selectedDifficultyAction.emit()"
       />
     } @empty {
       <p class="muted-text mb-0">No difficulty previews are available.</p>

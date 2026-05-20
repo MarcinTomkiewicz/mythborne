@@ -5481,6 +5481,8 @@ Wire and present the start/continue action for the selected difficulty card only
 - local SCSS added:
 
 
+**Status:** Accepted/completed on 2026-05-20 as the Difficulty entry-screen CTA pass. Non-selected available Difficulty cards are whole-card selectable with keyboard selection preserved, selected state uses the global `.mg-card--selected` treatment, status badges were removed, and only the selected card renders the stable bottom-aligned `Start exploration` / `Continue adventure` CTA through the existing `ExplorationStartState.startSelectedDifficulty()` / `HeroExplorations.startOrGetHeroExploration(...)` workflow. The top summary now shows Difficulty, Approx. auto result, Trials today and Effect; Approx. auto result comes from the selected difficulty preview read model, not local chance math. The separate current-route/status card is not rendered on this entry screen, existing exploration state uses `Continue adventure`, and loading/start feedback uses the existing `app-loading-overlay`. No runtime direction/result screen, local SCSS, DB/RPC/schema/generated edits or direct table writes were added. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused Exploration spec run was blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`.
+
 ## UI-EXPLORATION-7 — Trial detail by stat section shell
 
 **Goal:**  

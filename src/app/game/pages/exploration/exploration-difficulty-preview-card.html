@@ -1,20 +1,24 @@
 @let preview = difficulty();
 @let selected = isSelected();
+@let selectable = canSelectCard();
 
-<article class="mg-card p-md w-100 h-100" [class.mg-card--selected]="selected">
+<article
+  class="mg-card p-md w-100 h-100"
+  [class.mg-card--selected]="selected"
+  [class.cursor-pointer]="selectable"
+  [attr.role]="selectable ? 'button' : null"
+  [attr.tabindex]="selectable ? '0' : null"
+  [attr.aria-label]="selectable ? 'Select ' + preview.difficultyLabel + ' difficulty' : null"
+  (click)="selectCard()"
+  (keydown.enter)="selectCardFromKeyboard($event)"
+  (keydown.space)="selectCardFromKeyboard($event)"
+>
   <div class="flex-col gap-sm w-100 h-100">
     <div class="flex-row-between-start gap-sm">
       <div class="flex-col gap-xs w-100">
         <strong>{{ preview.difficultyLabel }}</strong>
         <span class="muted-text">{{ preview.difficultyDescription }}</span>
       </div>
-      @if (selected) {
-        <span class="tag-badge tag-badge--info">Selected</span>
-      } @else if (preview.isAvailable) {
-        <span class="tag-badge tag-badge--success">Available</span>
-      } @else {
-        <span class="tag-badge tag-badge--warn">Unavailable</span>
-      }
     </div>
 
     @if (preview.difficultyHelperText) {
@@ -55,12 +59,20 @@
       </div>
     }
 
-    <p-button
-      type="button"
-      [label]="selected ? 'Selected' : 'Select'"
-      severity="secondary"
-      [disabled]="isBusy() || selected || !preview.isAvailable"
-      (onClick)="selectDifficulty.emit(preview.difficultyKey)"
-    />
+    <div class="flex-1"></div>
+
+    <div class="flex-row-start-center min-h-lines-3">
+      @if (selected) {
+        <p-button
+          type="button"
+          [label]="actionLabel()"
+          severity="secondary"
+          [loading]="isStarting()"
+          [disabled]="actionDisabled()"
+          (click)="$event.stopPropagation()"
+          (onClick)="handleSelectedDifficultyAction()"
+        />
+      }
+    </div>
   </div>
 </article>

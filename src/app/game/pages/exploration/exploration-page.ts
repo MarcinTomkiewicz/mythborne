@@ -12,9 +12,9 @@ import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
 import { ExplorationRewardState } from './exploration-reward.state';
-import { ExplorationStatusSection } from './exploration-status-section';
 import { ExplorationStepState } from './exploration-step.state';
 import { ExplorationStartState } from './exploration-start.state';
+import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 
 @Component({
   selector: 'app-exploration-page',
@@ -24,7 +24,7 @@ import { ExplorationStartState } from './exploration-start.state';
     MessageModule,
     GameBar,
     ExplorationDifficultyPreviewSection,
-    ExplorationStatusSection,
+    LoadingOverlay,
   ],
   providers: [
     ExplorationFeedbackState,
