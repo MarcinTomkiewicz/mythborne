@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-19 — UI-ITEMS-MOVE-1 Armory move action accepted
+Updated: 2026-05-19 — UI-ITEMS-MOVE-2 Armory drag-and-drop accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -4936,7 +4936,7 @@ Add drag-and-drop move for stored Armory items between stands/shelves as a separ
 - DB/RPC/schema/generated edits;
 - local Armory SCSS unless a missing global pattern is explicitly accepted.
 
-**Status:** Follow-up / not implemented in UI-ITEMS-MOVE-1. Drag-and-drop was explicitly removed from the accepted move-action slice and remains a separate later task.
+**Status:** Accepted/completed on 2026-05-19 after user-side smoke. Stored Armory item cards can now be dragged by grabbing the card surface and dropped onto another rendered stand/shelf, including empty stands, through Angular CDK drag/drop and the existing canonical move path (`ArmoryShelfState.moveItemToShelf(...)` -> `PlayerArmory.moveItemToShelf(...)` -> `move_hero_armory_item_to_shelf`). Same-stand drops return before mutation. Drag eligibility reuses the same active/private-action lifecycle rules as move/equip/sell, so guild/locked/non-active/private-action-blocked items are not draggable. The selected-toolbar `Move selected` fallback remains unchanged. Item selection, popover behavior, filters, selected-card styling and stand rendering were preserved. No local Armory SCSS, direct DB writes, DB/RPC/schema/generated edits, bulk drag or reorder behavior were added. Verification passed with `npx tsc --noEmit`, `npm run build` with existing warnings and static greps; focused Armory specs remain blocked by pre-existing stale spec compile errors unrelated to this task.
 
 ---
 

@@ -1,3 +1,4 @@
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
@@ -46,6 +47,7 @@ import { SelectOption } from '../../../core/types/select-option.types';
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    DragDropModule,
     ButtonModule,
     InplaceModule,
     InputTextModule,
@@ -280,6 +282,24 @@ export class ArmoryInventorySection {
       && this.moveDestinationOptions(item).length > 0;
   }
 
+  canDragItem(item: ArmoryItemSummary): boolean {
+    return !this.isActionBusy() && this.canMoveItem(item);
+  }
+
+  handleItemDrop(
+    event: CdkDragDrop<ArmoryShelfReadModel, ArmoryShelfReadModel, ArmoryItemSummary>,
+  ): void {
+    const item = event.item.data;
+    const targetShelfPosition = event.container.data.position;
+    const sourceShelfPosition = event.previousContainer.data.position;
+
+    if (sourceShelfPosition === targetShelfPosition) {
+      return;
+    }
+
+    this.emitMoveItem(item, targetShelfPosition);
+  }
+
   moveDestinationOptions(
     item: ArmoryItemSummary,
   ): Array<SelectOption<number>> {
@@ -296,7 +316,8 @@ export class ArmoryInventorySection {
     targetShelfPosition: number,
   ): void {
     if (
-      targetShelfPosition === item.shelfPosition
+      this.isActionBusy()
+      || targetShelfPosition === item.shelfPosition
       || !this.canMoveItem(item)
       || !this.moveDestinationOptions(item)
         .some((option) => option.value === targetShelfPosition)

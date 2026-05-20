@@ -84,9 +84,16 @@
     </div>
   }
 
-  <div class="flex-col gap-sm">
+  <div class="flex-col gap-sm" cdkDropListGroup>
     @for (shelf of visibleShelves(); track shelf.position) {
-      <section class="mg-card p-md flex-col gap-md w-100">
+      <section
+        class="mg-card p-md flex-col gap-md w-100"
+        cdkDropList
+        [cdkDropListData]="shelf"
+        [cdkDropListDisabled]="isActionBusy()"
+        [cdkDropListSortingDisabled]="true"
+        (cdkDropListDropped)="handleItemDrop($event)"
+      >
         <div class="flex-row-between-start flex-col-sm gap-md border-bottom pb-sm w-100">
           <div class="flex-row-start-center gap-md min-w-0">
             <div class="mg-card flex-row-center-center flex-none square-9 radius-circle">
@@ -175,6 +182,10 @@
               >
                 <article
                   class="mg-card p-sm flex-col gap-xs w-100 min-w-0 cursor-pointer transition-colors"
+                  cdkDrag
+                  [cdkDragData]="item"
+                  [cdkDragDisabled]="!canDragItem(item)"
+                  [class.cursor-grab]="canDragItem(item)"
                   [class.mg-card--selected]="isBulkItemSelected(item)"
                   role="button"
                   tabindex="0"
@@ -229,7 +240,12 @@
                     </div>
                   }
 
-                  <div class="flex-row-start-center flex-wrap gap-xs border-top pt-xs" (click)="$event.stopPropagation()">
+                  <div
+                    class="flex-row-start-center flex-wrap gap-xs border-top pt-xs"
+                    (click)="$event.stopPropagation()"
+                    (mousedown)="$event.stopPropagation()"
+                    (touchstart)="$event.stopPropagation()"
+                  >
                     @if (usage.privateActionsAllowed) {
                       <p-button
                         type="button"
