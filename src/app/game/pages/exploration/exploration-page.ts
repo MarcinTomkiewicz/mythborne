@@ -1,11 +1,10 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationLiveCombat } from '../../../core/services/combat/exploration-live-combat';
-import { GameBar } from '../../../shared/game-bar/game-bar';
 import { ExplorationDifficultyPreviewSection } from './exploration-difficulty-preview-section';
+import { ExplorationStatusSection } from './exploration-status-section';
 import { ExplorationLiveCombatState } from './exploration-live-combat.state';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -20,10 +19,9 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
   selector: 'app-exploration-page',
   standalone: true,
   imports: [
-    ButtonModule,
     MessageModule,
-    GameBar,
     ExplorationDifficultyPreviewSection,
+    ExplorationStatusSection,
     LoadingOverlay,
   ],
   providers: [

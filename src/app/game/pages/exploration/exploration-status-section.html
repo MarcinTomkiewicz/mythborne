@@ -1,152 +1,111 @@
+@let state = page.state();
+
 <section class="mg-card p-lg w-100">
-  @let state = page.state();
-
-  <div class="flex-row-between-center flex-col-sm gap-md mb-md">
-    <div class="flex-col gap-xs">
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Current status</h3>
-      <p class="muted-text mb-0">Runtime state is loaded from the exploration RPC.</p>
-    </div>
-    @if (state) {
-      <span class="tag-badge tag-badge--info">{{ state.difficultyKey }}</span>
-    }
-  </div>
-
-  @if (state) {
-    <div class="flex-col gap-md">
-      @if (state.hasExploration && state.exploration) {
-        <div class="mg-grid-auto-fit gap-sm">
-          <span class="tag-badge tag-badge--muted">Status: {{ state.exploration.status }}</span>
-          <span class="tag-badge tag-badge--muted">District: {{ state.exploration.districtCode }}</span>
-          <span class="tag-badge tag-badge--muted">Dry steps: {{ state.exploration.trialDryStepCount }}</span>
-          <span class="tag-badge tag-badge--muted">Date: {{ state.explorationDate }}</span>
-        </div>
-
-        <div class="mg-grid-auto-fit gap-sm">
-          <article class="mg-card p-md">
-            <strong>Current node</strong>
-            <p class="muted-text mb-0">{{ page.currentNodeLabel() }}</p>
-          </article>
-          <article class="mg-card p-md">
-            <strong>Challenge</strong>
-            <p class="muted-text mb-0">{{ page.activeChallengeLabel() }}</p>
-          </article>
-          <article class="mg-card p-md">
-            <strong>Effect</strong>
-            @if (page.activeEffectDisplay(); as effect) {
-              <div class="flex-col gap-xs">
-                <p class="mb-0">{{ effect.title }}</p>
-                <p class="muted-text mb-0">{{ effect.summary }}</p>
-                @if (effect.warning) {
-                  <span class="tag-badge tag-badge--warn">{{ effect.warning }}</span>
-                }
-                <div class="flex-row-start-center flex-wrap gap-xs">
-                  @for (fact of effect.facts; track fact.label) {
-                    <span class="tag-badge tag-badge--muted">
-                      {{ fact.label }}: {{ fact.value }}
-                    </span>
-                  }
-                </div>
-              </div>
-            } @else {
-              <p class="muted-text mb-0">{{ page.activeEffectLabel() }}</p>
-            }
-          </article>
-        </div>
-
-        @if (page.currentStepResult(); as result) {
-          <div class="mg-card p-md">
-            <div class="flex-col gap-sm">
-              <div class="flex-row-between-center flex-col-sm gap-sm">
-                <div class="flex-col gap-xs">
-                  <strong>{{ page.stepResultTitle() }}</strong>
-                  <span class="muted-text">{{ page.stepResultDescription() }}</span>
-                </div>
-                <span class="tag-badge tag-badge--info">{{ result.outcomeKind }}</span>
-              </div>
-
-              @if (page.stepResultFlavor(); as flavor) {
-                <p class="muted-text mb-0">{{ flavor }}</p>
-              }
-
-              <div class="flex-row-start-center flex-wrap gap-xs">
-                <span class="tag-badge tag-badge--muted">Status: {{ result.status }}</span>
-                <span class="tag-badge tag-badge--muted">Node: {{ result.currentNodeId ?? 'N/D' }}</span>
-                <span class="tag-badge tag-badge--muted">Trials left: {{ result.remainingTrials }}</span>
-                <span class="tag-badge tag-badge--muted">Dry steps: {{ result.trialDryStepCount }}</span>
-              </div>
-
-              @if (page.canShowSelectionDiagnostics()) {
-                <details class="mg-card p-md w-100">
-                  <summary class="muted-text">Step result backend shape</summary>
-                  <div class="flex-col gap-xs mt-sm">
-                    @for (diagnostic of page.stepBackendDiagnostics(); track diagnostic.label) {
-                      <div class="flex-row-between-start flex-col-sm gap-sm">
-                        <strong>{{ diagnostic.label }}</strong>
-                        <span class="muted-text">{{ diagnostic.value }}</span>
-                      </div>
-                    }
-                  </div>
-                </details>
-              }
-            </div>
-          </div>
+  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
+    <div class="flex-col gap-xs min-w-0">
+      <p class="small-caps color-muted text-xs mb-0">Exploration runtime</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        @if (page.activeStep()) {
+          Movement in progress
+        } @else if (page.activeChallenge()) {
+          Challenge active
+        } @else if (page.currentStepResult()) {
+          Step resolved
+        } @else {
+          Runtime ready
         }
+      </h3>
+      <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
+        Current Exploration state is loaded for the selected difficulty.
+      </p>
+    </div>
 
-        <app-exploration-selection-diagnostics-card></app-exploration-selection-diagnostics-card>
-        <app-exploration-challenge-result-card></app-exploration-challenge-result-card>
-        <app-exploration-reward-card></app-exploration-reward-card>
-
-        <app-exploration-challenge-panel></app-exploration-challenge-panel>
-
-        <div class="flex-col gap-sm">
-          <div class="flex-row-between-center flex-col-sm gap-sm">
-            <div class="flex-col gap-xs">
-              <h4 class="mg-section__title mg-section__title--xs mb-0">Directions</h4>
-              <p class="muted-text mb-0">
-                Every movement step costs time, including the first step.
-              </p>
-            </div>
-            @if (page.movementBlockReason(); as reason) {
-              <span class="tag-badge tag-badge--muted">{{ reason }}</span>
-            }
-          </div>
-
-          <div class="mg-grid-auto-fit gap-sm">
-            @for (edge of page.edges(); track edge.id) {
-              <article class="mg-card p-md">
-                <div class="flex-col gap-sm">
-                  <div class="flex-row-between-start gap-sm">
-                    <div class="flex-col gap-xs">
-                      <strong>{{ page.directionLabel(edge) }}</strong>
-                      <span class="muted-text">
-                        {{ edge.directionKey }} - {{ page.edgeStatusLabel(edge) }}
-                      </span>
-                    </div>
-                    <span class="tag-badge tag-badge--muted">Order {{ edge.sortOrder }}</span>
-                  </div>
-
-                  @if (edge.toNodeId) {
-                    <span class="muted-text">Known node: {{ edge.toNodeId }}</span>
-                  } @else {
-                    <span class="muted-text">Destination is undiscovered.</span>
-                  }
-
-                  <p-button
-                    type="button"
-                    label="Go"
-                    [disabled]="!page.canChooseDirection(edge)"
-                    (onClick)="page.chooseDirection(edge)"
-                  />
-                </div>
-              </article>
-            } @empty {
-              <p class="muted-text mb-0">No directions are available from this node.</p>
-            }
-          </div>
-        </div>
+    <div class="flex-row-start-center flex-wrap gap-xs">
+      @if (page.selectedDifficulty(); as difficulty) {
+        <span class="tag-badge tag-badge--info">{{ difficulty.difficultyLabel }}</span>
+      }
+      <span class="tag-badge tag-badge--muted">{{ page.runtimeStatusLabel() }}</span>
+      @if (
+        page.runtimeScreenRequested()
+        && !page.activeStep()
+        && !page.activeChallenge()
+        && !page.currentStepResult()
+        && !page.currentChallengeResult()
+      ) {
+        <p-button
+          type="button"
+          severity="secondary"
+          size="small"
+          label="Difficulty"
+          ariaLabel="Return to difficulty selection"
+          (onClick)="page.showDifficultyEntry()"
+        />
       }
     </div>
+  </div>
+
+  @if (state?.hasExploration && state?.exploration) {
+    <div class="mg-grid-auto-fit gap-sm mb-lg">
+      <div class="mg-data-row">
+        <span class="mg-data-row__label">Current node</span>
+        <strong class="mg-data-row__value">{{ page.currentNodeLabel() }}</strong>
+      </div>
+      <div class="mg-data-row">
+        <span class="mg-data-row__label">Trials today</span>
+        <strong class="mg-data-row__value">{{ page.remainingTrialsLabel() }}</strong>
+      </div>
+      <div class="mg-data-row">
+        <span class="mg-data-row__label">Effect</span>
+        @if (page.activeEffectDisplay(); as effect) {
+          <strong class="mg-data-row__value">{{ effect.title }}</strong>
+        } @else {
+          <strong class="mg-data-row__value">None active</strong>
+        }
+      </div>
+    </div>
+
+    <div class="mg-grid-auto-fit gap-sm">
+      <article class="mg-card p-md flex-col gap-xs">
+        <p class="small-caps color-muted text-xs mb-0">Pending step</p>
+        @if (page.activeStep()) {
+          <strong class="color-heading">{{ page.runtimeStatusLabel() }}</strong>
+          <span class="color-muted text-sm">A movement step is active for this exploration.</span>
+        } @else {
+          <strong class="color-text">No pending step</strong>
+          <span class="color-muted text-sm">No movement step is currently waiting for resolution.</span>
+        }
+      </article>
+
+      <article class="mg-card p-md flex-col gap-xs">
+        <p class="small-caps color-muted text-xs mb-0">Result / reward</p>
+        @if (page.currentStepResult() || page.currentChallengeResult() || page.reward()) {
+          <strong class="color-heading">Recent outcome loaded</strong>
+          <span class="color-muted text-sm">A resolved outcome exists for the current exploration context.</span>
+        } @else {
+          <strong class="color-text">No resolved result</strong>
+          <span class="color-muted text-sm">No result or reward is loaded for the current state.</span>
+        }
+      </article>
+
+      <article class="mg-card p-md flex-col gap-xs">
+        <p class="small-caps color-muted text-xs mb-0">Runtime state</p>
+        @if (page.activeChallenge()) {
+          <strong class="color-heading">Challenge needs handling</strong>
+          <span class="color-muted text-sm">A challenge is active in the current exploration.</span>
+        } @else if (page.movementBlockReason(); as reason) {
+          <strong class="color-text">{{ reason }}</strong>
+          <span class="color-muted text-sm">The current state is not ready for a new movement step.</span>
+        } @else {
+          <strong class="color-text">No pending state</strong>
+          <span class="color-muted text-sm">The exploration is loaded and waiting for the next runtime action.</span>
+        }
+      </article>
+    </div>
   } @else {
-    <p class="muted-text mb-0">Select an active difficulty to load exploration status.</p>
+    <div class="mg-card p-md w-100">
+      <p class="color-muted mb-0">
+        No active exploration is loaded for this difficulty. Return to Difficulty and start when ready.
+      </p>
+    </div>
   }
 </section>

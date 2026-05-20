@@ -240,7 +240,48 @@ describe('ExplorationPageState', () => {
     expect(text).not.toContain('Start exploration');
   });
 
-  it('does not render the runtime combat board on the difficulty entry screen', () => {
+  it('continues an existing exploration into the runtime screen without difficulty cards as primary content', () => {
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    findButton(fixture.nativeElement, 'Continue adventure')?.click();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).toContain('Exploration runtime');
+    expect(text).toContain('Runtime ready');
+    expect(text).toContain('Direction board implementation is deferred.');
+    expect(text).not.toContain('Active tiers come from the database configuration.');
+  });
+
+  it('moves active step state out of the difficulty entry screen into runtime', () => {
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
+      'easy',
+      true,
+      false,
+      { startedAt: '2026-05-01T10:00:00.000Z', resolvesAt: '2026-05-01T10:05:00.000Z' },
+    )));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).toContain('Exploration runtime');
+    expect(text).toContain('Pending step');
+    expect(text).toContain('Pending movement screen follows in UI-EXPLORATION-8.');
+    expect(text).not.toContain('Step progress');
+    expect(text).not.toContain('Active tiers come from the database configuration.');
+  });
+
+  it('does not render the difficulty entry screen for active combat runtime state', () => {
     explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
       'easy',
       false,
@@ -256,9 +297,8 @@ describe('ExplorationPageState', () => {
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).not.toContain('Live loadout is resolved by DB for each combat action');
-    expect(text).not.toContain('Angular does not filter equipment by item lifecycle status.');
-    expect(text).toContain('Continue adventure');
+    expect(text).not.toContain('Active tiers come from the database configuration.');
+    expect(text).toContain('Exploration runtime');
   });
 
   it('does not assume hero id matches auth user id when starting exploration', () => {

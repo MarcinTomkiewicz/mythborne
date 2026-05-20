@@ -1,4 +1,4 @@
-import { Injectable, computed, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { GameServerKind } from '../../../core/enums/active-server.enum';
 import { ExplorationStepSelectionDiagnosticReadModel } from '../../../core/domain/exploration/exploration-readiness.model';
 import { HeroExplorationEdgeReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
@@ -162,17 +162,35 @@ export class ExplorationPageState {
       ? this.currentStepResult()?.selectionDiagnostic ?? null
       : null,
   );
+  readonly runtimeScreenRequested = signal(false);
+  readonly shouldShowRuntimeScreen = computed(() => {
+    const state = this.state();
+
+    return (
+      this.runtimeScreenRequested()
+      || Boolean(state?.activeStep)
+      || Boolean(state?.activeChallenge)
+      || Boolean(this.currentStepResult())
+      || Boolean(this.currentChallengeResult())
+      || Boolean(this.reward())
+    );
+  });
 
   loadData(): void {
     this.overview.loadData();
   }
 
   selectDifficulty(difficultyKey: string): void {
+    this.runtimeScreenRequested.set(false);
     this.overview.selectDifficulty(difficultyKey);
   }
 
   startSelectedDifficulty(): void {
-    this.start.startSelectedDifficulty();
+    this.start.startSelectedDifficulty(() => this.runtimeScreenRequested.set(true));
+  }
+
+  showDifficultyEntry(): void {
+    this.runtimeScreenRequested.set(false);
   }
 
   checkStepResult(): void {

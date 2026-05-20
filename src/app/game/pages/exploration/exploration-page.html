@@ -59,88 +59,21 @@
     <p-message severity="success">{{ message }}</p-message>
   }
 
-  @if (page.activeStep(); as step) {
-    <section class="mg-card p-lg w-100">
-      <div class="flex-row-between-center flex-col-sm gap-md mb-md">
-        <div class="flex-col gap-xs">
-          <p class="small-caps color-muted text-xs mb-0">Active movement step</p>
-          <h3 class="color-heading mb-0">
-            @if (page.canCheckResult()) {
-              Ready to check
-            } @else {
-              Step in progress
-            }
-          </h3>
-          <p class="mb-0">{{ page.activeStepStatusLabel() }}</p>
-        </div>
-        <span
-          class="tag-badge"
-          [class.tag-badge--success]="page.canCheckResult()"
-          [class.tag-badge--info]="!page.canCheckResult()"
-        >
-          {{ page.activeStepRemainingLabel() }}
-        </span>
-      </div>
-
-      <app-game-bar
-        label="Step progress"
-        [value]="page.activeStepProgressPercent()"
-        [max]="100"
-        type="xp"
-        [compact]="true"
-      />
-
-      <div class="mg-grid-auto-fit gap-sm mt-md">
-        <div class="mg-data-row">
-          <span class="mg-data-row__label">Step state</span>
-          <strong class="mg-data-row__value">
-            @if (page.canCheckResult()) {
-              Ready
-            } @else {
-              In progress
-            }
-          </strong>
-        </div>
-        <div class="mg-data-row">
-          <span class="mg-data-row__label">Remaining</span>
-          <strong class="mg-data-row__value">{{ page.activeStepRemainingLabel() }}</strong>
-        </div>
-        <div class="mg-data-row">
-          <span class="mg-data-row__label">Progress</span>
-          <strong class="mg-data-row__value">{{ page.activeStepProgressPercent() }}%</strong>
-        </div>
-      </div>
-
-      <div class="flex-row-start-center flex-wrap gap-xs mt-md">
-        <span class="tag-badge tag-badge--muted">Started: {{ step.startedAt }}</span>
-        <span class="tag-badge tag-badge--muted">Ready: {{ step.resolvesAt }}</span>
-      </div>
-
-      @if (page.canCheckResult() || page.isResolvingStep()) {
-        <div class="mt-md">
-          <p-button
-            type="button"
-            label="Check result"
-            [loading]="page.isResolvingStep()"
-            [disabled]="page.isResolvingStep()"
-            (onClick)="page.checkStepResult()"
-          />
-        </div>
-      }
-    </section>
+  @if (page.shouldShowRuntimeScreen()) {
+    <app-exploration-status-section />
+  } @else {
+    <app-exploration-difficulty-preview-section
+      [difficulties]="page.difficultyCardPreviews()"
+      [selectedDifficulty]="page.selectedDifficultyCardPreview()"
+      [selectedDifficultyKey]="page.selectedDifficultyKey()"
+      [isBusy]="page.isLoading() || page.isStarting()"
+      [isStarting]="page.isStarting()"
+      [isLoading]="page.isLoading()"
+      [explorationState]="page.state()"
+      (selectDifficulty)="page.selectDifficulty($event)"
+      (selectedDifficultyAction)="page.startSelectedDifficulty()"
+    />
   }
-
-  <app-exploration-difficulty-preview-section
-    [difficulties]="page.difficultyCardPreviews()"
-    [selectedDifficulty]="page.selectedDifficultyCardPreview()"
-    [selectedDifficultyKey]="page.selectedDifficultyKey()"
-    [isBusy]="page.isLoading() || page.isStarting()"
-    [isStarting]="page.isStarting()"
-    [isLoading]="page.isLoading()"
-    [explorationState]="page.state()"
-    (selectDifficulty)="page.selectDifficulty($event)"
-    (selectedDifficultyAction)="page.startSelectedDifficulty()"
-  />
 
 </div>
 

@@ -16,7 +16,7 @@ export class ExplorationStartState {
 
   readonly isStarting = signal(false);
 
-  startSelectedDifficulty(): void {
+  startSelectedDifficulty(onReady?: () => void): void {
     const context = this.overview.currentContext();
 
     if (!context) {
@@ -47,6 +47,7 @@ export class ExplorationStartState {
 
           this.overview.setStateFromWorkflow(state);
           this.feedback.setSuccess('Exploration is ready.');
+          onReady?.();
         },
         error: (error: unknown) => {
           if (!this.isCurrentAction(token, context.heroId, context.difficultyKey)) {
