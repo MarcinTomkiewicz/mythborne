@@ -6,7 +6,9 @@ import {
   EquippedItemSummary,
 } from '../../../core/domain/item/item-equipment.model';
 import { BulkVendorScrapHeroItemsResult } from '../../../core/domain/item/item-lifecycle.model';
+import { BulkMoveArmoryItemsToShelfResult } from '../../../core/domain/item/armory-actions.model';
 import {
+  BulkMoveArmoryItemsToShelfInput,
   MoveArmoryItemToShelfInput,
   RenameArmoryShelfInput,
 } from '../../../core/interfaces/item/armory-actions.interface';
@@ -19,6 +21,7 @@ import {
   storedArmoryItems,
   storedArmoryShelves,
 } from '../../../core/utils/armory-shelf-display';
+import { armoryBulkMoveToastMessage } from '../../../core/utils/armory-bulk-move-feedback';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
@@ -174,6 +177,12 @@ export class ArmoryPage implements OnInit {
 
   moveItem(input: MoveArmoryItemToShelfInput): void {
     this.armory.moveItemToShelf(input);
+  }
+
+  bulkMoveItems(input: BulkMoveArmoryItemsToShelfInput): void {
+    this.armory.bulkMoveItemsToShelf(input, (result) => {
+      this.showBulkMoveToast(result);
+    });
   }
 
   equipItem(item: ArmoryItemSummary): void {
@@ -337,6 +346,12 @@ export class ArmoryPage implements OnInit {
       partial ? 'Bulk sell partially applied' : 'Items sold to vendor',
       `${result.soldCount} sold for ${result.totalDrachmaAmount} drachma.`,
     );
+  }
+
+  private showBulkMoveToast(result: BulkMoveArmoryItemsToShelfResult): void {
+    const message = armoryBulkMoveToastMessage(result);
+
+    this.toast.show(message.severity, message.summary, message.detail);
   }
 
   private bulkUnequipPaperdollItems(

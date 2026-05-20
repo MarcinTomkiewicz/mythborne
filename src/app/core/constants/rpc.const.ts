@@ -107,6 +107,8 @@ export const RPC = {
   check_hero_meets_item_requirements: 'check_hero_meets_item_requirements',
   rename_hero_armory_shelf: 'rename_hero_armory_shelf',
   move_hero_armory_item_to_shelf: 'move_hero_armory_item_to_shelf',
+  bulk_move_hero_armory_items_to_shelf:
+    'bulk_move_hero_armory_items_to_shelf',
   get_hero_equipment_runtime_slots: 'get_hero_equipment_runtime_slots',
   get_hero_equipment_runtime_bonus_rows: 'get_hero_equipment_runtime_bonus_rows',
   get_hero_equipment_runtime_bonus_totals:

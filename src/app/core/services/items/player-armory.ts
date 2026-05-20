@@ -5,6 +5,7 @@ import {
   ArmoryItemDetailReadModel,
   HeroArmoryReadModel,
 } from '../../domain/item/item-equipment.model';
+import { BulkMoveArmoryItemsToShelfResult } from '../../domain/item/armory-actions.model';
 import {
   GetHeroArmoryItemDetailRpcArgs,
   GetHeroArmoryItemDetailRpcRow,
@@ -16,13 +17,17 @@ import {
   GetHeroItemRequirementStatusRpcRow,
   MoveHeroArmoryItemToShelfRpcArgs,
   MoveHeroArmoryItemToShelfRpcRow,
+  BulkMoveHeroArmoryItemsToShelfRpcArgs,
+  BulkMoveHeroArmoryItemsToShelfRpcRow,
   RenameHeroArmoryShelfRpcArgs,
   RenameHeroArmoryShelfRpcRow,
 } from '../../types/item-equipment-rpc.types';
 import {
+  BulkMoveArmoryItemsToShelfInput,
   MoveArmoryItemToShelfInput,
   RenameArmoryShelfInput,
 } from '../../interfaces/item/armory-actions.interface';
+import { Json } from '../../types/database.types';
 import {
   movableArmoryShelfPosition,
   playerArmoryShelfPosition,
@@ -30,7 +35,8 @@ import {
 import { mapHeroArmoryReadModel } from '../../utils/item-equipment-mappers';
 import { mapArmoryItemDetail } from '../../utils/item-detail-mappers';
 import { mapItemRequirementPreview } from '../../utils/item-requirement-mappers';
-import { requiredTrimmedText } from '../../utils/normalize-text';
+import { mapBulkMoveArmoryItemsToShelfResult } from '../../utils/armory-actions-mappers';
+import { requiredTrimmedText, trimToNull } from '../../utils/normalize-text';
 import {
   assertSuccessfulRpcRow,
   firstRpcRow,
@@ -141,6 +147,55 @@ export class PlayerArmory {
     );
   }
 
+  bulkMoveItemsToShelf(
+    input: BulkMoveArmoryItemsToShelfInput,
+  ): Observable<{
+    result: BulkMoveArmoryItemsToShelfResult;
+    readModel: HeroArmoryReadModel;
+  }> {
+    const items = input.items.map((item, index) => ({
+      itemId: requiredArmoryText(item.itemId, `items[${index}].itemId`),
+    }));
+    const targetShelfPosition =
+      movableArmoryShelfPosition(input.targetShelfPosition);
+    const requestId = nullableArmoryText(input.requestId);
+
+    if (!items.length) {
+      throw new Error('items are required for bulk armory shelf move.');
+    }
+
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: BulkMoveHeroArmoryItemsToShelfRpcArgs = {
+          p_hero_id: context.heroId,
+          p_items_json: items as unknown as Json,
+          p_target_shelf_position: targetShelfPosition,
+        };
+        if (requestId) {
+          args.p_request_id = requestId;
+        }
+
+        return this.backend
+          .rpc<BulkMoveHeroArmoryItemsToShelfRpcRow[]>(
+            RPC.bulk_move_hero_armory_items_to_shelf,
+            args,
+          )
+          .pipe(
+            switchMap((rows) => {
+              const result = mapBulkMoveArmoryItemsToShelfResult(
+                firstRpcRow(rows, RPC.bulk_move_hero_armory_items_to_shelf),
+              );
+
+              return forkJoin({
+                result: of(result),
+                readModel: this.getArmoryForHero(context.heroId),
+              });
+            }),
+          );
+      }),
+    );
+  }
+
   private getArmoryForHero(heroId: string): Observable<HeroArmoryReadModel> {
     return forkJoin({
       visibility: this.getVisibility(heroId),
@@ -202,4 +257,8 @@ export class PlayerArmory {
 
 function requiredArmoryText(value: string | null | undefined, field: string): string {
   return requiredTrimmedText(value, field, 'armory RPC');
+}
+
+function nullableArmoryText(value: string | null | undefined): string | null {
+  return trimToNull(value);
 }

@@ -49,6 +49,11 @@ export type MoveHeroArmoryItemToShelfRpcArgs =
 export type MoveHeroArmoryItemToShelfRpcRow =
   Database['public']['Functions']['move_hero_armory_item_to_shelf']['Returns'][number];
 
+export type BulkMoveHeroArmoryItemsToShelfRpcArgs =
+  Database['public']['Functions']['bulk_move_hero_armory_items_to_shelf']['Args'];
+export type BulkMoveHeroArmoryItemsToShelfRpcRow =
+  Database['public']['Functions']['bulk_move_hero_armory_items_to_shelf']['Returns'][number];
+
 export type EquipHeroItemRpcArgs =
   Database['public']['Functions']['equip_hero_item']['Args'];
 export type EquipHeroItemRpcRow =

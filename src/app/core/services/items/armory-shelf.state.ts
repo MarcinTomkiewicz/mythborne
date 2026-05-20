@@ -1,12 +1,14 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { EMPTY, Observable, switchMap, tap } from 'rxjs';
+import { EMPTY, map, Observable, switchMap, tap } from 'rxjs';
 import {
   BulkVendorScrapHeroItemsResult,
   VendorScrapHeroItemResult,
 } from '../../domain/item/item-lifecycle.model';
+import { BulkMoveArmoryItemsToShelfResult } from '../../domain/item/armory-actions.model';
 import { HeroArmoryReadModel } from '../../domain/item/item-equipment.model';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
 import {
+  BulkMoveArmoryItemsToShelfInput,
   MoveArmoryItemToShelfInput,
   RenameArmoryShelfInput,
 } from '../../interfaces/item/armory-actions.interface';
@@ -107,6 +109,29 @@ export class ArmoryShelfState {
       operation: () => this.armory.moveItemToShelf(input),
       successMessage: 'Item moved.',
       failureMessage: 'Armory shelf action failed.',
+    });
+  }
+
+  bulkMoveItemsToShelf(
+    input: BulkMoveArmoryItemsToShelfInput,
+    afterResponse?: (result: BulkMoveArmoryItemsToShelfResult) => void,
+  ): void {
+    let bulkMoveSucceeded = false;
+    this.runMutation({
+      failureMessage: 'Armory shelf action failed.',
+      committedRefreshFailureMessage:
+        'Armory refresh failed after moving selected items.',
+      hasCommitted: () => bulkMoveSucceeded,
+      operation: (_requestId, _requestContextKey, acceptsCurrentContext) =>
+        this.armory.bulkMoveItemsToShelf(input).pipe(
+          tap(({ result }) => {
+            bulkMoveSucceeded = result.movedCount > 0 || result.skippedCount > 0;
+            if (acceptsCurrentContext()) {
+              afterResponse?.(result);
+            }
+          }),
+          map(({ readModel }) => readModel),
+        ),
     });
   }
 
