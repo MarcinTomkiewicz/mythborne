@@ -427,6 +427,42 @@ describe('ExplorationPageState', () => {
     }
   });
 
+  it('renders checked step result as the runtime outcome screen', () => {
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
+      'easy',
+      true,
+      false,
+      pastStepTiming(),
+    )));
+    explorations.resolveHeroExplorationStep.and.returnValue(
+      of(stepResolutionWorkflow('easy', {
+        outcomeKind: 'encounter',
+        encounterDefinitionId: 'encounter-2',
+        selectedDefinition: selectedEncounter(
+          'encounter-2',
+          'minor_resource_find',
+          ENCOUNTER_KIND.resource,
+        ),
+      })),
+    );
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    fixture.componentInstance.page.checkStepResult();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).toContain('Exploration runtime');
+    expect(text).toContain('Step resolved');
+    expect(text).toContain('Step report');
+    expect(text).toContain('Resource Encounter resolved');
+    expect(text).toContain('Reward / report');
+    expect(text).toContain('Ready for next path');
+    expect(text).not.toContain('Sandbox selection diagnostics');
+    expect(text).not.toContain('Raw selection debug payload');
+  });
+
   it('shows selection diagnostics only for sandbox-access context', () => {
     page.loadData();
     page.startSelectedDifficulty();
@@ -455,7 +491,7 @@ describe('ExplorationPageState', () => {
       .toContain('incomplete_selected_definition');
   });
 
-  it('keeps sandbox selection diagnostics out of the default runtime shell', () => {
+  it('renders sandbox selection diagnostics only in gated result context', () => {
     selectedServer.set({ kind: 'sandbox', canUseAsSandbox: true });
     serverAccess.set({ canAccessSandbox: true });
     explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
@@ -480,8 +516,9 @@ describe('ExplorationPageState', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('Exploration runtime');
-    expect(text).not.toContain('Sandbox selection diagnostics');
-    expect(text).not.toContain('Raw selection debug payload');
+    expect(text).toContain('Step report');
+    expect(text).toContain('Sandbox selection diagnostics');
+    expect(text).toContain('Raw selection debug payload');
   });
 
   it('hides stale resolved step results after exploration context changes', () => {

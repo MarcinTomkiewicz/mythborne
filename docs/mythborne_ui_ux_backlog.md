@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-20 — UI-EXPLORATION-8 pending movement step accepted
+Updated: 2026-05-20 — UI-EXPLORATION-9 step result surface accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -5621,6 +5621,8 @@ Render the backend-owned pending movement step as the main runtime screen while 
 
 
 ## UI-EXPLORATION-9 — Step result screen and outcome summary
+
+**Status:** Accepted/completed on 2026-05-20 as the resolved step result runtime surface. After checking a movement step, `/game/exploration` now shows a scoped `Step report` using the existing step resolution workflow state plus `exploration-step-result-ui` title/description/flavor helpers, with short handoff cards for challenge, reward/report and next action. Nothing, Trial and Encounter outcomes remain distinct through existing backend/read-model-backed result fields and labels; sandbox selection diagnostics are rendered only through the existing gated diagnostics component. This task did not implement the direction choice board, full reward UI, full challenge panel, DB/RPC/schema/generated-type changes, local SCSS, fake result text or local result recomputation. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused Exploration spec command remains blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`.
 
 **Goal:**  
 After checking a movement step, show a clear step outcome/result screen before the player chooses the next direction or enters a challenge.

@@ -137,6 +137,83 @@
           </div>
         }
       </article>
+    } @else if (page.currentStepResult(); as result) {
+      <article class="mg-card p-lg w-100">
+        <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+          <div class="flex-col gap-xs min-w-0">
+            <p class="small-caps color-muted text-xs mb-0">Step report</p>
+            <h4 class="color-heading mb-0">{{ page.stepResultTitle() }}</h4>
+            <p class="mb-0">{{ page.stepResultDescription() }}</p>
+          </div>
+          <span class="tag-badge tag-badge--info">
+            {{ stepOutcomeLabel(result.outcomeKind) }}
+          </span>
+        </div>
+
+        @if (page.stepResultFlavor(); as flavor) {
+          <p class="color-muted mb-md">{{ flavor }}</p>
+        }
+
+        <div class="mg-grid-auto-fit gap-sm">
+          <div class="mg-data-row">
+            <span class="mg-data-row__label">Result</span>
+            <strong class="mg-data-row__value">{{ stepOutcomeLabel(result.outcomeKind) }}</strong>
+          </div>
+          <div class="mg-data-row">
+            <span class="mg-data-row__label">Trials today</span>
+            <strong class="mg-data-row__value">{{ result.remainingTrials }}</strong>
+          </div>
+          <div class="mg-data-row">
+            <span class="mg-data-row__label">Dry steps</span>
+            <strong class="mg-data-row__value">{{ result.trialDryStepCount }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <div class="mg-grid-auto-fit gap-sm mt-md">
+        <article class="mg-card p-md flex-col gap-xs">
+          <p class="small-caps color-muted text-xs mb-0">Challenge</p>
+          @if (page.activeChallenge()) {
+            <strong class="color-heading">Challenge pending</strong>
+            <span class="color-muted text-sm">Resolve the active challenge before exploration continues.</span>
+          } @else {
+            <strong class="color-text">No active challenge</strong>
+            <span class="color-muted text-sm">This step result does not require an immediate challenge action.</span>
+          }
+        </article>
+
+        <article class="mg-card p-md flex-col gap-xs">
+          <p class="small-caps color-muted text-xs mb-0">Reward / report</p>
+          @if (page.isLoadingReward()) {
+            <strong class="color-heading">Reward loading</strong>
+            <span class="color-muted text-sm">Reward details are loading.</span>
+          } @else if (page.rewardDisplay(); as reward) {
+            <strong class="color-heading">{{ reward.title }}</strong>
+            <span class="color-muted text-sm">{{ reward.summary }}</span>
+          } @else if (page.rewardUnavailableMessage(); as message) {
+            <strong class="color-text">No reward details loaded</strong>
+            <span class="color-muted text-sm">{{ message }}</span>
+          } @else {
+            <strong class="color-text">No reward loaded</strong>
+            <span class="color-muted text-sm">No reward or report detail is loaded for this step result.</span>
+          }
+        </article>
+
+        <article class="mg-card p-md flex-col gap-xs">
+          <p class="small-caps color-muted text-xs mb-0">Next action</p>
+          @if (page.activeChallenge()) {
+            <strong class="color-heading">Handle challenge</strong>
+            <span class="color-muted text-sm">Resolve the active challenge to continue.</span>
+          } @else {
+            <strong class="color-text">Ready for next path</strong>
+            <span class="color-muted text-sm">Continue from the current exploration state.</span>
+          }
+        </article>
+      </div>
+
+      <div class="mt-md">
+        <app-exploration-selection-diagnostics-card />
+      </div>
     } @else {
       <div class="mg-grid-auto-fit gap-sm">
         <article class="mg-card p-md flex-col gap-xs">
