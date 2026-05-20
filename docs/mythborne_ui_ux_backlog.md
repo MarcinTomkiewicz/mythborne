@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-20 — UI-ITEMS-MOVE-4 Armory bulk drag accepted
+Updated: 2026-05-20 — UI-EXPLORATION-8 pending movement step accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -5553,6 +5553,8 @@ Separate the difficulty entry screen from the active Exploration runtime screen 
 **Status:** Accepted/completed on 2026-05-20 as the entry/runtime boundary split. `/game/exploration` now keeps the UI-EXPLORATION-6 Difficulty entry screen as the entry surface and switches to a distinct runtime shell when Start/Continue succeeds or when the read model has active runtime state. Runtime mode is driven by the existing `get_hero_exploration_state` read model through current page state, with a small `runtimeScreenRequested` UI state only for the local entry/runtime presentation. The runtime shell is intentionally minimal and player-facing: selected difficulty/status context, current node, Trials today, active effect and neutral state slots for pending step, result/reward and runtime state. It does not render the pending timer/check-result UI, direction board, step result card, reward card, challenge panel or diagnostics; those remain scoped to later UI-EXPLORATION runtime tasks. No DB/RPC/schema/generated edits, route changes, local SCSS, direct writes or runtime workflow changes were added. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused Exploration spec command remains blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`.
 
 ## UI-EXPLORATION-8 — Pending movement step screen
+
+**Status:** Accepted/completed on 2026-05-20 as the pending movement step runtime screen. When the existing exploration read model exposes an active movement step, `/game/exploration` now keeps the Difficulty entry cards out of the primary content and renders the pending step as the main runtime surface. Progress, remaining time, ready state and the `Check result` action are driven by existing `ExplorationStepState` display/readiness values over backend-owned `startedAt` / `resolvesAt`; the runtime header and pending card agree on `Result ready` when the step can be checked. Raw ISO timestamps are no longer shown as player-facing badges, no fake timer authority was added, and no direction board, step result, reward/report, challenge UI, DB/RPC/schema/generated-type change, local SCSS or workflow change was introduced. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused Exploration spec command remains blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`.
 
 **Goal:**  
 Render the backend-owned pending movement step as the main runtime screen while a step is running or ready to resolve.

@@ -255,11 +255,11 @@ describe('ExplorationPageState', () => {
 
     expect(text).toContain('Exploration runtime');
     expect(text).toContain('Runtime ready');
-    expect(text).toContain('Direction board implementation is deferred.');
+    expect(text).toContain('No pending state');
     expect(text).not.toContain('Active tiers come from the database configuration.');
   });
 
-  it('moves active step state out of the difficulty entry screen into runtime', () => {
+  it('renders active pending step as the runtime screen with backend-owned progress', () => {
     explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
       'easy',
       true,
@@ -276,9 +276,33 @@ describe('ExplorationPageState', () => {
 
     expect(text).toContain('Exploration runtime');
     expect(text).toContain('Pending step');
-    expect(text).toContain('Pending movement screen follows in UI-EXPLORATION-8.');
-    expect(text).not.toContain('Step progress');
+    expect(text).toContain('Step progress');
+    expect(text).toContain('Remaining');
+    expect(text).toContain('Progress');
+    expect(text).toContain('Movement in progress');
+    expect(text).not.toContain('Check result');
     expect(text).not.toContain('Active tiers come from the database configuration.');
+  });
+
+  it('shows the check-result action only when the pending step is ready', () => {
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
+      'easy',
+      true,
+      false,
+      pastStepTiming(),
+    )));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).toContain('Exploration runtime');
+    expect(text).toContain('Result ready');
+    expect(text).toContain('Ready');
+    expect(text).toContain('Check result');
   });
 
   it('does not render the difficulty entry screen for active combat runtime state', () => {
@@ -431,7 +455,7 @@ describe('ExplorationPageState', () => {
       .toContain('incomplete_selected_definition');
   });
 
-  it('renders collapsed sandbox selection diagnostics on the exploration route', () => {
+  it('keeps sandbox selection diagnostics out of the default runtime shell', () => {
     selectedServer.set({ kind: 'sandbox', canUseAsSandbox: true });
     serverAccess.set({ canAccessSandbox: true });
     explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState(
@@ -455,10 +479,9 @@ describe('ExplorationPageState', () => {
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('Sandbox selection diagnostics');
-    expect(text).toContain('Resource Encounter');
-    expect(text).toContain('minor_resource_find');
-    expect(text).toContain('Raw selection debug payload');
+    expect(text).toContain('Exploration runtime');
+    expect(text).not.toContain('Sandbox selection diagnostics');
+    expect(text).not.toContain('Raw selection debug payload');
   });
 
   it('hides stale resolved step results after exploration context changes', () => {
