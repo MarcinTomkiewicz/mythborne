@@ -32,7 +32,7 @@
   padding-top: 1.35rem;
 }
 
-.mg-card--selected {
+@mixin selected-card {
   border-color: color-mix(in srgb, v.$color-secondary 46%, transparent);
   background:
     radial-gradient(
@@ -52,7 +52,7 @@
     v.$shadow-soft;
 }
 
-.mg-game-shell .mg-card--selected {
+@mixin game-shell-selected-card {
   border-color: color-mix(in srgb, v.$color-progress-gold-end 38%, transparent);
   background:
     radial-gradient(
@@ -71,6 +71,20 @@
     inset 0 0 1.25rem color-mix(in srgb, v.$color-progress-gold-end 9%, transparent),
     0 0 0 1px color-mix(in srgb, v.$color-progress-gold-end 14%, transparent),
     v.$shadow-premium;
+}
+
+.mg-card--selected,
+.mg-card.mg-card--selected:hover,
+.mg-card.mg-card--selected:focus-visible,
+.mg-card.mg-card--selected:focus-within {
+  @include selected-card;
+}
+
+.mg-game-shell .mg-card--selected,
+.mg-game-shell .mg-card.mg-card--selected:hover,
+.mg-game-shell .mg-card.mg-card--selected:focus-visible,
+.mg-game-shell .mg-card.mg-card--selected:focus-within {
+  @include game-shell-selected-card;
 }
 
 .card-legend {

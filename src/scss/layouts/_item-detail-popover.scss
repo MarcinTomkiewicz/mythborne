@@ -13,9 +13,9 @@
     transform v.$transition-fast;
 }
 
-.mg-item-popover-trigger:hover > .mg-card,
-.mg-item-popover-trigger:focus-visible > .mg-card,
-.mg-item-popover-trigger:focus-within > .mg-card {
+.mg-item-popover-trigger:hover > .mg-card:not(.mg-card--selected),
+.mg-item-popover-trigger:focus-visible > .mg-card:not(.mg-card--selected),
+.mg-item-popover-trigger:focus-within > .mg-card:not(.mg-card--selected) {
   border-color: color-mix(in srgb, v.$color-secondary 46%, transparent);
   background:
     linear-gradient(

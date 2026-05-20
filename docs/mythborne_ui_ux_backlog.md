@@ -2975,15 +2975,17 @@ Required Codex report:
 
 ## UI-CORE-CARD-SELECTED-1 — Global selected / featured card glow
 
-**Status:** Accepted/completed on 2026-05-19. The global `.mg-card--selected` pattern in
+**Status:** Accepted/completed on 2026-05-20 after Armory and Exploration selected-card smoke. The global `.mg-card--selected` pattern in
 `src/scss/base/_surface.scss` now provides the reusable selected/featured card treatment for production surfaces. The
 implementation adapts the accepted Exploration prototype selected difficulty card direction into Mythsworn tokens rather
 than copying prototype `mb-*` classes or raw values: a modest warm border, subtle top radial wash, warm linear surface
 overlay and restrained inner highlight. `.mg-game-shell .mg-card--selected` is tuned for game-shell surfaces, with
-`/game/exploration` Difficulty cards as the first consumer through `[class.mg-card--selected]="selected"`. No page-local
-SCSS, Exploration template/data/component refactor, DB/RPC/schema/generated changes or unrelated UI changes were added.
-Verification passed with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings, and static greps.
-Manual visual smoke remains user-side for selected vs unselected Difficulty cards at desktop width.
+`/game/exploration` Difficulty cards as the first consumer through `[class.mg-card--selected]="selected"` and Armory
+Inventory item cards as the second consumer through `[class.mg-card--selected]="isBulkItemSelected(item)"`. The selected
+state now explicitly wins over card hover/focus/focus-within variants, and item popover trigger hover/focus styles apply
+only to non-selected cards so selected ownership remains global in `_surface.scss`. No page-local SCSS, selection logic,
+move/drag/drop/loadout behavior, DB/RPC/schema/generated changes or unrelated UI changes were added. Verification passed
+with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings, and static greps.
 
 ---
 
