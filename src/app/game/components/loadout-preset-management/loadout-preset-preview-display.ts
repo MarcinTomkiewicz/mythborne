@@ -1,6 +1,9 @@
 import {
+  EquipmentPreviewIconClass,
+  equipmentPreviewIconClassForSlot,
+} from '../../../core/domain/equipment/equipment-preview-icons.config';
+import {
   EquipmentSlot,
-  LoadoutPreset,
   LoadoutPresetPreview,
   LoadoutPresetSlotItem,
 } from '../../../core/domain/item/item-equipment.model';
@@ -12,9 +15,8 @@ export interface LoadoutPresetPreviewRow {
   item: LoadoutPresetSlotItem | null;
 }
 
-export interface LoadoutPresetUpdateSuggestion {
-  key: string;
-  preset: LoadoutPreset;
+export interface LoadoutPresetPreviewItemRow extends LoadoutPresetPreviewRow {
+  item: LoadoutPresetSlotItem;
 }
 
 export function buildLoadoutPresetPreviewRows(
@@ -44,27 +46,6 @@ export function buildLoadoutPresetPreviewRows(
       }));
 }
 
-export function loadoutPresetUpdateSuggestion(
-  preview: LoadoutPresetPreview | null,
-  rows: readonly LoadoutPresetPreviewRow[],
-  currentItemIdForSlot: (slotKey: string) => string | null,
-  canCompare: boolean,
-  dismissedKey: string | null,
-): LoadoutPresetUpdateSuggestion | null {
-  if (!preview || !canCompare) {
-    return null;
-  }
-
-  const key = loadoutPresetSuggestionKey(preview.preset);
-  if (dismissedKey === key) {
-    return null;
-  }
-
-  return previewDiffersFromCurrentLoadout(rows, currentItemIdForSlot)
-    ? { key, preset: preview.preset }
-    : null;
-}
-
 export function previewStatusLabel(item: LoadoutPresetSlotItem | null): string {
   if (!item) {
     return 'Empty slot';
@@ -84,33 +65,24 @@ export function previewStatusLabel(item: LoadoutPresetSlotItem | null): string {
   }
 }
 
-export function previewStatusClass(item: LoadoutPresetSlotItem | null): string {
-  if (!item) {
-    return 'tag-badge tag-badge--muted';
-  }
-
-  return item.previewStatus === 'available'
-    ? 'tag-badge tag-badge--success'
-    : 'tag-badge tag-badge--warn';
-}
-
 export function previewItemName(item: LoadoutPresetSlotItem): string {
   return item.currentItemName
     ?? item.savedItemNameSnapshot
     ?? item.savedItemId;
 }
 
-function loadoutPresetSuggestionKey(preset: LoadoutPreset): string {
-  return `${preset.presetId}:${preset.updatedAt}`;
+export function isLoadoutPresetPreviewItemRow(
+  row: LoadoutPresetPreviewRow,
+): row is LoadoutPresetPreviewItemRow {
+  return row.item !== null;
 }
 
-function previewDiffersFromCurrentLoadout(
-  rows: readonly LoadoutPresetPreviewRow[],
-  currentItemIdForSlot: (slotKey: string) => string | null,
-): boolean {
-  return rows.some((row) =>
-    currentItemIdForSlot(row.slotKey) !== (row.item?.savedItemId ?? null),
-  );
+export function previewSlotFallbackIconClass(
+  row: Pick<LoadoutPresetPreviewRow, 'slotKey'>,
+): EquipmentPreviewIconClass {
+  // The preset preview read model does not expose item type/base/hand metadata.
+  // Use the target slot icon as the explicit fallback until the RPC exposes item classification.
+  return equipmentPreviewIconClassForSlot(row.slotKey);
 }
 
 function humanizeKey(value: string): string {

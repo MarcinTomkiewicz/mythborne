@@ -1335,7 +1335,7 @@ class FakeToastService {
 @Component({
   selector: 'app-loadout-preset-management',
   standalone: true,
-  template: '<section>Loadout presets</section>',
+  template: '<section>Saved presets</section>',
 })
 class MockLoadoutPresetManagement {}
 

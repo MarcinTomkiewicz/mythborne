@@ -4993,6 +4993,28 @@ Extend Armory drag-and-drop so dragging one selected eligible item moves the who
 
 ---
 
+## UI-ITEMS-PRESETS-1 — Compact Armory saved presets panel
+
+**Goal:**
+Replace the noisy Armory loadout preset management surface with a compact `Saved presets` panel that keeps canonical preset RPC/service behavior intact.
+
+**Scope:**
+- show the panel in the left Armory column below Equipment Preview;
+- keep five compact horizontal preset rows with inline rename plus `Save preset`, `Apply` and `Clear`;
+- open saved preset preview from the preset name hover/focus instead of a dedicated Preview button;
+- keep preview content compact and item-focused, using available saved item rows and explicit slot-icon fallback where the read model lacks item classification fields;
+- preserve current save, apply, clear, rename and preview service/RPC paths.
+
+**Out of scope:**
+- preset RPC contracts, generated types, DB/RPC changes;
+- equipment equip/unequip flow;
+- Armory move/drag/drop and inventory layout;
+- selected-card styling.
+
+**Status:** Accepted/completed on 2026-05-20 after user-side review. The Armory left column now keeps Equipment Preview first and renders a compact `Saved presets` panel below it, while the Armory header owns the saved preset count. Preset rows use stable full-width layout containment, truncated names, inline `p-inplace` rename, `Save preset`, saved-only `Apply`, and saved-only danger `Clear` with the accepted icon. Saved preset preview opens from the preset name hover/focus using the existing popover visual language, shows saved item rows once with name, slot label and unavailable status only when needed, and separates rendered item rows without adding local SCSS. Preview icons use an explicitly named `previewSlotFallbackIconClass(...)` because the current preset preview read model does not expose item classification fields needed for true item-type icons. No preset RPC, DB/generated type, move/drag/drop, inventory or Equipment Preview behavior changes were added. Verification passed with `npx tsc --noEmit` and `npm run build` with existing warnings; focused preset specs remain covered by the task changes but broader focused Armory specs are still blocked by pre-existing stale spec compile errors unrelated to this task.
+
+---
+
 # 14. UI-EXPLORATION — Exploration flow
 
 Execution rule for all UI-EXPLORATION tasks:

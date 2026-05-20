@@ -36,7 +36,7 @@
           <strong class="color-heading text-md">{{ equipment.slots().length }}</strong>
         </div>
         <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-          <span class="color-muted small-caps uppercase text-xs">Saved loadouts</span>
+          <span class="color-muted small-caps uppercase text-xs">Saved presets</span>
           <strong class="color-heading text-md">
             @if (loadoutPresets.isLoading()) {
               Loading
@@ -49,7 +49,7 @@
     </div>
   </section>
 
-  <div class="grid-1-2-balanced gap-lg">
+  <div class="grid-1-2-balanced gap-lg w-100">
     <section class="flex-col gap-md min-w-0">
       <app-equipment-preview
         class="d-block w-100"
