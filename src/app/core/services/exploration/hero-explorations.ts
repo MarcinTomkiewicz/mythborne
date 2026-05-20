@@ -160,8 +160,8 @@ export class HeroExplorations {
     heroId: string;
     difficultyKey: string;
     explorationId: string;
-    edgeId: string;
-    stepKind?: string | null;
+    edgeId: string | null;
+    stepKind: string;
   }): Observable<HeroExplorationStateReadModel> {
     return this.backend
       .rpc<StartHeroExplorationStepRpcRow[]>(

@@ -6,10 +6,10 @@
     background: v.$color-danger;
     color: v.$color-white;
     border-bottom-color: color-mix(in srgb, v.$color-danger 55%, v.$color-border);
-    padding: 0.5rem 1rem;
+    padding: 0.45rem 0.8rem;
     
     .p-dialog-title {
-      font-size: #{map.get(v.$font-sizes, "md")};
+      font-size: #{map.get(v.$font-sizes, "sm")};
       color: inherit;
     }
 
@@ -37,19 +37,23 @@
   }
 
   .p-dialog-content {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    padding: 0.7rem 0.8rem 0;
   }
 
   .p-confirmdialog-message {
     color: v.$color-text;
+    font-size: #{map.get(v.$font-sizes, "sm")};
     line-height: 1.5;
   }
 
   .p-dialog-footer {
-    padding: 1rem;
+    justify-content: flex-end;
+    margin-top: 0.55rem;
+    padding: 0.55rem 0 0;
+    border-top-color: color-mix(in srgb, v.$color-border 70%, transparent);
+
     .p-button {
-      min-width: 2rem;
+      min-width: 0;
     }
   }
 }

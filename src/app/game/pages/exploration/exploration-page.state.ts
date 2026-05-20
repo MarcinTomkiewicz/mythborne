@@ -1,7 +1,9 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { GameServerKind } from '../../../core/enums/active-server.enum';
 import { ExplorationStepSelectionDiagnosticReadModel } from '../../../core/domain/exploration/exploration-readiness.model';
-import { HeroExplorationEdgeReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
+import {
+  HeroExplorationMovementOptionReadModel,
+} from '../../../core/domain/exploration/exploration-runtime.model';
 import { ActiveServer } from '../../../core/services/server/active-server';
 import { humanizeKey } from '../../../core/utils/normalize-text';
 import { ExplorationChallengeState } from './exploration-challenge.state';
@@ -37,7 +39,7 @@ export class ExplorationPageState {
   readonly isResolvingStep = this.step.isResolving;
   readonly isCompletingChallenge = this.challenge.isCompleting;
   readonly isStarting = this.start.isStarting;
-  readonly edges = this.movement.edges;
+  readonly movementOptions = this.movement.movementOptions;
   readonly activeStep = this.step.activeStep;
   readonly activeChallenge = this.challenge.activeChallenge;
   readonly isCombatChallenge = this.challenge.isCombatChallenge;
@@ -115,10 +117,21 @@ export class ExplorationPageState {
     }
 
     if (state.hasExploration) {
-      return 'Ready to move';
+      return this.movementBlockReason() ? 'Action blocked' : 'Ready to move';
     }
 
     return 'Ready to start';
+  });
+  readonly canShowDirectionBoard = computed(() => {
+    const state = this.state();
+
+    return Boolean(
+      state?.hasExploration
+      && state.exploration
+      && !state.activeStep
+      && !state.activeChallenge
+      && this.movementBlockReason() === null,
+    );
   });
   readonly runtimeStatusDetail = computed(() => {
     const state = this.state();
@@ -146,7 +159,8 @@ export class ExplorationPageState {
     }
 
     if (state.hasExploration) {
-      return 'Choose an available direction to continue.';
+      return this.movementBlockReason()
+        ?? 'Choose an available direction to continue.';
     }
 
     return 'No exploration is active yet. Start from the selected difficulty card when ready.';
@@ -213,20 +227,20 @@ export class ExplorationPageState {
     this.challenge.submitCombatStrike();
   }
 
-  chooseDirection(edge: HeroExplorationEdgeReadModel): void {
-    this.movement.chooseDirection(edge);
+  chooseMovementOption(option: HeroExplorationMovementOptionReadModel): void {
+    this.movement.chooseMovementOption(option);
   }
 
-  canChooseDirection(edge: HeroExplorationEdgeReadModel): boolean {
-    return this.movement.canChooseDirection(edge);
+  canChooseMovementOption(option: HeroExplorationMovementOptionReadModel): boolean {
+    return this.movement.canChooseMovementOption(option);
   }
 
-  directionLabel(edge: HeroExplorationEdgeReadModel): string {
-    return this.movement.directionLabel(edge);
+  movementOptionLabel(option: HeroExplorationMovementOptionReadModel): string {
+    return this.movement.movementOptionLabel(option);
   }
 
-  edgeStatusLabel(edge: HeroExplorationEdgeReadModel): string {
-    return this.movement.edgeStatusLabel(edge);
+  movementOptionStatusLabel(option: HeroExplorationMovementOptionReadModel): string {
+    return this.movement.movementOptionStatusLabel(option);
   }
 
   diagnosticOutcomeLabel(

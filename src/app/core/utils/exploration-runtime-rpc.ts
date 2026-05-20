@@ -24,6 +24,11 @@ import { jsonRecord, read } from './json-read';
 import { mapExplorationStepSelectionDiagnosticJson } from './exploration-readiness-mappers';
 import { trimText, trimToNull } from './normalize-text';
 
+type StartHeroExplorationStepRpcArgsWithNullableEdge =
+  Omit<StartHeroExplorationStepRpcArgs, 'p_edge_id'> & {
+    p_edge_id?: string | null;
+  };
+
 export function toGetHeroExplorationStateRpcArgs(input: {
   heroId: string | null | undefined;
   difficultyKey: string | null | undefined;
@@ -63,16 +68,18 @@ export function toStartOrGetHeroExplorationRpcArgs(input: {
 export function toStartHeroExplorationStepRpcArgs(input: {
   explorationId: string | null | undefined;
   edgeId: string | null | undefined;
-  stepKind?: string | null;
-}): StartHeroExplorationStepRpcArgs {
-  const args: StartHeroExplorationStepRpcArgs = {
+  stepKind: string | null | undefined;
+}): StartHeroExplorationStepRpcArgsWithNullableEdge {
+  const args: StartHeroExplorationStepRpcArgsWithNullableEdge = {
     p_exploration_id: requiredText(input.explorationId, 'explorationId'),
-    p_edge_id: requiredText(input.edgeId, 'edgeId'),
+    p_step_kind: requiredText(input.stepKind, 'stepKind'),
   };
-  const stepKind = trimText(input.stepKind);
+  const edgeId = trimToNull(input.edgeId);
 
-  if (stepKind) {
-    args.p_step_kind = stepKind;
+  if (input.edgeId === null) {
+    args.p_edge_id = null;
+  } else if (edgeId) {
+    args.p_edge_id = edgeId;
   }
 
   return args;

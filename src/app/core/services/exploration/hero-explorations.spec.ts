@@ -3,7 +3,10 @@ import { firstValueFrom, of } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import { Row } from '../../types/supabase.types';
-import { mapResolveHeroExplorationStepResult } from '../../utils/exploration-runtime-rpc';
+import {
+  mapResolveHeroExplorationStepResult,
+  toStartHeroExplorationStepRpcArgs,
+} from '../../utils/exploration-runtime-rpc';
 import { Backend } from '../backend/backend';
 import { HeroExplorations } from './hero-explorations';
 
@@ -152,12 +155,14 @@ describe('HeroExplorations', () => {
         difficultyKey: 'easy',
         explorationId: 'exploration-1',
         edgeId: 'edge-1',
+        stepKind: 'edge',
       }),
     );
 
     expect(backend.rpc).toHaveBeenCalledWith(RPC.start_hero_exploration_step, {
       p_exploration_id: 'exploration-1',
       p_edge_id: 'edge-1',
+      p_step_kind: 'edge',
     });
     expect(backend.rpc).toHaveBeenCalledWith(RPC.get_hero_exploration_state, {
       p_hero_id: 'hero-1',
@@ -194,6 +199,41 @@ describe('HeroExplorations', () => {
     expect(backend.create).not.toHaveBeenCalled();
     expect(backend.update).not.toHaveBeenCalled();
     expect(backend.delete).not.toHaveBeenCalled();
+  });
+
+  it('starts backtrack steps through RPC before refreshing the canonical state', async () => {
+    await firstValueFrom(
+      service.startHeroExplorationStep({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        explorationId: 'exploration-1',
+        edgeId: null,
+        stepKind: 'backtrack',
+      }),
+    );
+
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.start_hero_exploration_step, {
+      p_exploration_id: 'exploration-1',
+      p_edge_id: null,
+      p_step_kind: 'backtrack',
+    });
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.get_hero_exploration_state, {
+      p_hero_id: 'hero-1',
+      p_difficulty_key: 'easy',
+    });
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+  });
+
+  it('requires step kind when building movement step RPC args', () => {
+    expect(() =>
+      toStartHeroExplorationStepRpcArgs({
+        explorationId: 'exploration-1',
+        edgeId: 'edge-1',
+        stepKind: '',
+      }),
+    ).toThrowError(/stepKind/);
   });
 
   it('maps step resolution to canonical outcomes and preserves selection diagnostics', () => {

@@ -1,7 +1,9 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
-import { HeroExplorationEdgeReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
+import {
+  HeroExplorationMovementOptionReadModel,
+} from '../../../core/domain/exploration/exploration-runtime.model';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
@@ -16,26 +18,33 @@ export class ExplorationMovementState {
   private readonly movementToken = new RequestToken();
 
   readonly isMoving = signal(false);
-  readonly edges = computed(() => this.overview.state()?.edges ?? []);
+  readonly movementOptions = computed(() => this.overview.state()?.movementOptions ?? []);
   readonly movementBlockReason = computed(() => this.resolveMovementBlockReason());
 
-  canChooseDirection(edge: HeroExplorationEdgeReadModel): boolean {
-    return !this.isMoving() && edge.isAvailable && this.movementBlockReason() === null;
+  canChooseMovementOption(option: HeroExplorationMovementOptionReadModel): boolean {
+    return (
+      !this.isMoving()
+      && option.isAvailable
+      && this.movementBlockReason() === null
+      && this.movementOptionValidationError(option) === null
+    );
   }
 
-  edgeStatusLabel(edge: HeroExplorationEdgeReadModel): string {
-    if (!edge.isAvailable) {
+  movementOptionStatusLabel(option: HeroExplorationMovementOptionReadModel): string {
+    if (!option.isAvailable) {
       return 'Unavailable';
     }
 
-    return edge.toNodeId ? 'Known path' : 'Undiscovered branch';
+    return option.isBacktrack || option.stepKind === 'backtrack'
+      ? 'Backtrack'
+      : 'Available path';
   }
 
-  directionLabel(edge: HeroExplorationEdgeReadModel): string {
-    return edge.label || edge.directionKey;
+  movementOptionLabel(option: HeroExplorationMovementOptionReadModel): string {
+    return option.label || option.directionKey || option.stepKind;
   }
 
-  chooseDirection(edge: HeroExplorationEdgeReadModel): void {
+  chooseMovementOption(option: HeroExplorationMovementOptionReadModel): void {
     const context = this.overview.currentContext();
     const state = this.overview.state();
     const exploration = state?.exploration;
@@ -49,8 +58,13 @@ export class ExplorationMovementState {
 
     const blockReason = this.movementBlockReason();
 
-    if (blockReason || !edge.isAvailable || edge.explorationId !== exploration.id) {
-      this.feedback.setError(null, blockReason ?? 'Direction is not available.');
+    const validationError = this.movementOptionValidationError(option);
+
+    if (blockReason || !option.isAvailable || validationError) {
+      this.feedback.setError(
+        null,
+        blockReason ?? validationError ?? 'Movement option is not available.',
+      );
       return;
     }
 
@@ -62,7 +76,8 @@ export class ExplorationMovementState {
         heroId: context.heroId,
         difficultyKey: context.difficultyKey,
         explorationId: exploration.id,
-        edgeId: edge.id,
+        edgeId: option.edgeId,
+        stepKind: option.stepKind,
       })
       .pipe(
         finalize(() => {
@@ -106,11 +121,7 @@ export class ExplorationMovementState {
       return 'Wait for the active movement step to resolve.';
     }
 
-    if (state.remainingTrials <= 0) {
-      return 'No trial attempts remain today.';
-    }
-
-    if (!state.edges.some((edge) => edge.isAvailable)) {
+    if (!state.movementOptions.some((option) => option.isAvailable)) {
       return 'No available directions.';
     }
 
@@ -128,5 +139,34 @@ export class ExplorationMovementState {
       this.overview.isCurrentContext(heroId, difficultyKey) &&
       this.overview.state()?.exploration?.id === explorationId
     );
+  }
+
+  private movementOptionValidationError(
+    option: HeroExplorationMovementOptionReadModel,
+  ): string | null {
+    const stepKind = option.stepKind.trim();
+    const isBacktrack = option.isBacktrack || stepKind === 'backtrack';
+
+    if (!stepKind) {
+      return 'Movement option is missing its movement kind.';
+    }
+
+    if (isBacktrack) {
+      if (stepKind !== 'backtrack') {
+        return 'Backtrack option is missing its movement kind.';
+      }
+
+      if (option.edgeId !== null) {
+        return 'Backtrack option must not include a route edge.';
+      }
+
+      return null;
+    }
+
+    if (!option.edgeId) {
+      return 'Direction option is missing its route edge.';
+    }
+
+    return null;
   }
 }

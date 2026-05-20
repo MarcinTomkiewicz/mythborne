@@ -6,6 +6,7 @@ import {
   HeroExplorationEdgeReadModel,
   HeroExplorationEffectReadModel,
   HeroExplorationNodeReadModel,
+  HeroExplorationMovementOptionReadModel,
   HeroExplorationReadModel,
   HeroExplorationStateReadModel,
   HeroExplorationStepReadModel,
@@ -42,6 +43,10 @@ export function mapHeroExplorationStateJson(value: Json): HeroExplorationStateRe
     exploration: mapJsonObject(read(record, 'exploration'), mapHeroExplorationJson),
     currentNode: mapJsonObject(read(record, 'currentNode', 'current_node'), mapHeroExplorationNodeJson),
     edges: mapJsonArray(read(record, 'edges'), mapHeroExplorationEdgeJson),
+    movementOptions: mapJsonArray(
+      read(record, 'movementOptions', 'movement_options'),
+      mapHeroExplorationMovementOptionJson,
+    ),
     activeStep: mapJsonObject(read(record, 'activeStep', 'active_step'), mapHeroExplorationStepJson),
     activeChallenge: mapJsonObject(
       read(record, 'activeChallenge', 'active_challenge'),
@@ -162,6 +167,30 @@ function mapHeroExplorationEdgeJson(row: JsonRecord): HeroExplorationEdgeReadMod
     metadataJson: jsonValue(read(row, 'metadataJson', 'metadata_json')),
     createdAt: text(read(row, 'createdAt', 'created_at')),
     updatedAt: text(read(row, 'updatedAt', 'updated_at')),
+  };
+}
+
+function mapHeroExplorationMovementOptionJson(
+  row: JsonRecord,
+): HeroExplorationMovementOptionReadModel {
+  const edgeId = optionalText(read(row, 'edgeId', 'edge_id'));
+  const directionKey = optionalText(read(row, 'directionKey', 'direction_key'));
+  const stepKind = text(read(row, 'stepKind', 'step_kind'));
+
+  return {
+    optionKind: optionalText(read(row, 'optionKind', 'option_kind')),
+    actionKey: optionalText(read(row, 'actionKey', 'action_key')),
+    stepKind,
+    edgeId,
+    directionKey,
+    label: text(read(row, 'label')) || directionKey || stepKind,
+    sortOrder: optionalNumber(read(row, 'sortOrder', 'sort_order')),
+    toNodeId: optionalText(read(row, 'toNodeId', 'to_node_id')),
+    isKnownPath: optionalBoolean(read(row, 'isKnownPath', 'is_known_path')),
+    isBacktrack: booleanValue(read(row, 'isBacktrack', 'is_backtrack')) || stepKind === 'backtrack',
+    isAvailable: optionalBoolean(read(row, 'isAvailable', 'is_available')) ?? true,
+    startRpc: jsonValue(read(row, 'startRpc', 'start_rpc')),
+    metadataJson: jsonValue(read(row, 'metadataJson', 'metadata_json')),
   };
 }
 

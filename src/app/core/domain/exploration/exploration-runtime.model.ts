@@ -70,6 +70,22 @@ export interface HeroExplorationEdgeReadModel {
   updatedAt: string;
 }
 
+export interface HeroExplorationMovementOptionReadModel {
+  optionKind: string | null;
+  actionKey: string | null;
+  stepKind: string;
+  edgeId: string | null;
+  directionKey: string | null;
+  label: string;
+  sortOrder: number | null;
+  toNodeId: string | null;
+  isKnownPath: boolean | null;
+  isBacktrack: boolean;
+  isAvailable: boolean;
+  startRpc: Json;
+  metadataJson: Json;
+}
+
 export interface HeroExplorationStepReadModel {
   id: string;
   serverId: string;
@@ -273,6 +289,7 @@ export interface HeroExplorationStateReadModel {
   exploration: HeroExplorationReadModel | null;
   currentNode: HeroExplorationNodeReadModel | null;
   edges: HeroExplorationEdgeReadModel[];
+  movementOptions: HeroExplorationMovementOptionReadModel[];
   activeStep: HeroExplorationStepReadModel | null;
   activeChallenge: HeroExplorationChallengeAttemptReadModel | null;
   activeEffect: HeroExplorationEffectReadModel | null;

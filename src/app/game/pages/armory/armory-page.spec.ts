@@ -44,9 +44,9 @@ describe('ArmoryPage', () => {
   let armory: FakeArmoryShelfState;
   let loadoutPresets: FakeHeroLoadoutPresetsState;
   let guildItemUsage: FakeArmoryGuildItemUsageState;
-  let confirmationService: ConfirmationService;
-  let lastConfirmation: Confirmation | null;
   let toast: FakeToastService;
+  let confirmationService: jasmine.SpyObj<ConfirmationService>;
+  let lastConfirmation: Confirmation | null;
 
   beforeEach(async () => {
     page = new FakeArmoryPageFacade();
@@ -54,8 +54,17 @@ describe('ArmoryPage', () => {
     armory = new FakeArmoryShelfState();
     loadoutPresets = new FakeHeroLoadoutPresetsState();
     guildItemUsage = new FakeArmoryGuildItemUsageState();
-    lastConfirmation = null;
     toast = new FakeToastService();
+    lastConfirmation = null;
+    confirmationService = jasmine.createSpyObj<ConfirmationService>(
+      'ConfirmationService',
+      ['confirm'],
+    );
+    confirmationService.confirm.and.callFake((confirmation: Confirmation) => {
+      lastConfirmation = confirmation;
+
+      return confirmationService;
+    });
 
     await TestBed.configureTestingModule({
       imports: [ArmoryPage],
@@ -81,19 +90,14 @@ describe('ArmoryPage', () => {
             { provide: ArmoryShelfState, useValue: armory },
             { provide: HeroLoadoutPresetsState, useValue: loadoutPresets },
             { provide: ArmoryGuildItemUsageState, useValue: guildItemUsage },
-            ConfirmationService,
             { provide: ToastService, useValue: toast },
+            { provide: ConfirmationService, useValue: confirmationService },
           ],
         },
       })
       .compileComponents();
 
     fixture = TestBed.createComponent(ArmoryPage);
-    confirmationService = fixture.debugElement.injector.get(ConfirmationService);
-    spyOn(confirmationService, 'confirm').and.callFake((confirmation) => {
-      lastConfirmation = confirmation;
-      return confirmationService;
-    });
     fixture.detectChanges();
     toast.show.calls.reset();
   });
@@ -923,12 +927,21 @@ describe('ArmoryPage', () => {
     inventorySection(fixture).toggleBulkItemSelection(first);
     inventorySection(fixture).toggleBulkItemSelection(locked);
     inventorySection(fixture).emitBulkSellSelectedItems();
+    fixture.detectChanges();
 
     expect(armory.bulkVendorScrapItems).not.toHaveBeenCalled();
-    expect(confirmationService.confirm).toHaveBeenCalled();
-    expect(lastConfirmation?.message).toBe(
-      'Sell to vendor <strong class="color-heading">1 items</strong> for <strong class="color-heading">20 drachmas</strong>?',
-    );
+    expect(confirmationService.confirm).toHaveBeenCalledWith(jasmine.objectContaining({
+      header: 'Sell selected items',
+      acceptLabel: 'Sell selected',
+      rejectLabel: 'Cancel',
+      acceptIcon: 'pi pi-sold',
+      rejectIcon: 'pi pi-times',
+      acceptButtonStyleClass: 'p-button-success',
+      rejectButtonStyleClass: 'p-button-danger',
+    }));
+    expect(lastConfirmation?.message).toContain('Sell to vendor');
+    expect(lastConfirmation?.message).toContain('1 items');
+    expect(lastConfirmation?.message).toContain('20 drachmas');
 
     lastConfirmation?.accept?.();
 

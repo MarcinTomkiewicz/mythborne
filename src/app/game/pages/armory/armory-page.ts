@@ -52,7 +52,6 @@ import {
     ArmoryShelfState,
     HeroLoadoutPresetsState,
     ArmoryGuildItemUsageState,
-    ConfirmationService,
   ],
   templateUrl: './armory-page.html',
   host: { class: 'd-block w-100' },

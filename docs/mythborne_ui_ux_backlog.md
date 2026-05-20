@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-20 — UI-EXPLORATION-9 step result surface accepted
+Updated: 2026-05-20 — UI-EXPLORATION-10 movement-option integration functionally accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -5754,6 +5754,8 @@ Render backend-provided direction choices as the main continuation action after 
 - blocked/disabled source:
 - reused components:
 - local SCSS added:
+
+**Status:** Functionally accepted on 2026-05-20 for movement-option integration. The direction board now renders backend-owned `get_hero_exploration_state(...).movementOptions[]` rather than legacy `edges()` and starts movement through the canonical `start_hero_exploration_step(...)` path. Edge options require `edgeId` plus non-empty `stepKind`; backtrack requires `edgeId: null` and `stepKind: 'backtrack'`; active step/challenge state blocks movement through the existing runtime state. The board remains option-driven, does not fabricate directions, and does not add reward/challenge/combat/trial UI. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused Exploration spec command remains blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`. Manual smoke remains required for 1/2/3 edge options, optional backtrack, and active step/challenge blocking. Visual direction-board prototype polish is explicitly deferred as a separate follow-up task.
 
 
 ## UI-EXPLORATION-11 — Challenge handoff shell

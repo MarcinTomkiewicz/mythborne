@@ -14,7 +14,7 @@ import {
   withEventReplay,
 } from '@angular/platform-browser';
 import { providePrimeNG } from 'primeng/config';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { MgPrimePreset } from './primeng/mg-primeng.preset';
 import { Auth } from './core/services/auth/auth';
 
@@ -26,6 +26,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideClientHydration(withEventReplay()),
     provideAnimations(),
+    ConfirmationService,
     MessageService,
     providePrimeNG({
       theme: {

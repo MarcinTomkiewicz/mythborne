@@ -1,0 +1,133 @@
+@let layout = boardLayout();
+
+<article class="exploration-direction-stage mg-card p-lg w-100 flex-col gap-lg">
+  <div class="flex-row-between-start flex-col-sm gap-md">
+    <div class="flex-col gap-xs min-w-0">
+      <p class="small-caps color-muted text-xs mb-0">Directions</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Choose the next path</h3>
+      <p class="color-muted text-sm mb-0">
+        Choose one of the generated paths to begin the next movement step.
+      </p>
+    </div>
+    @if (page.selectedDifficulty(); as difficulty) {
+      <span class="color-muted text-sm flex-none">{{ difficulty.difficultyLabel }}</span>
+    }
+  </div>
+
+  <div class="exploration-direction-stage__hud flex-row-start-center flex-wrap gap-xs">
+    <span>Node <strong>{{ page.currentNodeLabel() }}</strong></span>
+    <span>Trials <strong>{{ page.remainingTrialsLabel() }}</strong></span>
+    @if (page.activeEffectDisplay(); as effect) {
+      <span>Effect <strong>{{ effect.title }}</strong></span>
+    } @else {
+      <span>Effect <strong>None active</strong></span>
+    }
+  </div>
+
+  @if (movementOptions().length) {
+    <section class="exploration-direction-oracle flex-col gap-md w-100" aria-label="Exploration direction board">
+      @if (layout.forward.length) {
+        <div class="exploration-direction-oracle__forward flex-col gap-sm w-100">
+          @for (option of layout.forward; track option.edgeId ?? option.stepKind + '-' + $index) {
+            <app-exploration-direction-gate
+              class="d-block w-100 max-w-350"
+              [option]="option"
+              slot="forward"
+              [label]="page.movementOptionLabel(option)"
+              [statusLabel]="page.movementOptionStatusLabel(option)"
+              [isBusy]="page.isMoving()"
+              [isDisabled]="!page.canChooseMovementOption(option)"
+              (chooseMovementOption)="page.chooseMovementOption($event)"
+            />
+          }
+        </div>
+      }
+
+      <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100 grid-items-stretch">
+        <div class="flex-col gap-sm min-w-0">
+          @for (option of layout.left; track option.edgeId ?? option.stepKind + '-' + $index) {
+            <app-exploration-direction-gate
+              [option]="option"
+              slot="left"
+              [label]="page.movementOptionLabel(option)"
+              [statusLabel]="page.movementOptionStatusLabel(option)"
+              [isBusy]="page.isMoving()"
+              [isDisabled]="!page.canChooseMovementOption(option)"
+              (chooseMovementOption)="page.chooseMovementOption($event)"
+            />
+          }
+        </div>
+
+        <article class="exploration-direction-oracle__core mg-card p-lg flex-col-center-center gap-sm h-100 text-center">
+          <span class="mg-card p-md flex-row-center-center flex-none square-9 radius-circle">
+            <i class="pi pi-compass color-heading text-xxl" aria-hidden="true"></i>
+          </span>
+          <strong class="color-heading text-lg">Direction board</strong>
+          <span class="color-muted text-sm">
+            Select a generated direction to begin the next movement step.
+          </span>
+          <span class="color-secondary text-sm">
+            {{ layout.openPathCount }} paths open
+            @if (layout.hasBackPath) {
+              - Back available
+            }
+          </span>
+        </article>
+
+        <div class="flex-col gap-sm min-w-0">
+          @for (option of layout.right; track option.edgeId ?? option.stepKind + '-' + $index) {
+            <app-exploration-direction-gate
+              [option]="option"
+              slot="right"
+              [label]="page.movementOptionLabel(option)"
+              [statusLabel]="page.movementOptionStatusLabel(option)"
+              [isBusy]="page.isMoving()"
+              [isDisabled]="!page.canChooseMovementOption(option)"
+              (chooseMovementOption)="page.chooseMovementOption($event)"
+            />
+          }
+        </div>
+      </div>
+
+      @if (layout.back.length) {
+        <div class="exploration-direction-oracle__back flex-col gap-sm w-100">
+          @for (option of layout.back; track option.edgeId ?? option.stepKind + '-' + $index) {
+            <app-exploration-direction-gate
+              class="d-block w-100 max-w-350"
+              [option]="option"
+              slot="back"
+              [label]="page.movementOptionLabel(option)"
+              [statusLabel]="page.movementOptionStatusLabel(option)"
+              [isBusy]="page.isMoving()"
+              [isDisabled]="!page.canChooseMovementOption(option)"
+              (chooseMovementOption)="page.chooseMovementOption($event)"
+            />
+          }
+        </div>
+      }
+
+      @if (layout.unsupported.length) {
+        <div class="mg-grid-auto-fit gap-md w-100">
+          @for (option of layout.unsupported; track option.edgeId ?? option.stepKind + '-' + $index) {
+            <app-exploration-direction-gate
+              [option]="option"
+              slot="unknown"
+              [label]="page.movementOptionLabel(option)"
+              [statusLabel]="page.movementOptionStatusLabel(option)"
+              [isBusy]="page.isMoving()"
+              [isDisabled]="!page.canChooseMovementOption(option)"
+              (chooseMovementOption)="page.chooseMovementOption($event)"
+            />
+          }
+        </div>
+      }
+    </section>
+  } @else {
+    <div class="mg-card p-md flex-col gap-xs w-100">
+      <strong class="color-text">No directions are available</strong>
+      <span class="color-muted text-sm">
+        The current exploration state has no available generated paths.
+      </span>
+    </div>
+  }
+</article>

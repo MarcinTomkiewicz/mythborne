@@ -254,9 +254,61 @@ describe('ExplorationPageState', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
     expect(text).toContain('Exploration runtime');
-    expect(text).toContain('Runtime ready');
-    expect(text).toContain('No pending state');
+    expect(text).toContain('Choose the next path');
+    expect(text).toContain('Directions');
+    expect(text).toContain('Direction board');
+    expect(text).toContain('North road');
+    expect(text).toContain('Available path');
     expect(text).not.toContain('Active tiers come from the database configuration.');
+  });
+
+  it('starts the next movement step from the runtime direction board', () => {
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    findButton(fixture.nativeElement, 'Continue adventure')?.click();
+    fixture.detectChanges();
+
+    const chooseButton = findButton(fixture.nativeElement, 'Choose path');
+
+    expect(chooseButton).not.toBeNull();
+
+    chooseButton?.click();
+
+    expect(explorations.startHeroExplorationStep).toHaveBeenCalledWith({
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+      explorationId: 'exploration-1',
+      edgeId: 'edge-1',
+      stepKind: 'edge',
+    });
+  });
+
+  it('shows a no-choice state when the runtime read model has no directions', () => {
+    explorations.getHeroExplorationState.and.returnValue(of({
+      ...activeExplorationState('easy'),
+      edges: [],
+      movementOptions: [],
+    }));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    findButton(fixture.nativeElement, 'Continue adventure')?.click();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).toContain('Directions');
+    expect(text).toContain('No available directions.');
+    expect(text).toContain('No directions are available');
+    expect(findButton(fixture.nativeElement, 'Choose path')).toBeNull();
   });
 
   it('renders active pending step as the runtime screen with backend-owned progress', () => {
@@ -340,15 +392,16 @@ describe('ExplorationPageState', () => {
   it('starts movement through RPC for the selected DB edge', () => {
     page.loadData();
     page.startSelectedDifficulty();
-    const edge = page.edges()[0];
+    const option = page.movementOptions()[0];
 
-    page.chooseDirection(edge);
+    page.chooseMovementOption(option);
 
     expect(explorations.startHeroExplorationStep).toHaveBeenCalledOnceWith({
       heroId: 'hero-1',
       difficultyKey: 'easy',
       explorationId: 'exploration-1',
       edgeId: 'edge-1',
+      stepKind: 'edge',
     });
     expect(feedback.successMessage()).toBe('Movement step started.');
     expect(page.activeStepLabel()).toContain('movement - pending');
@@ -360,12 +413,12 @@ describe('ExplorationPageState', () => {
     page.overview.setStateFromWorkflow(activeExplorationState('easy', true));
 
     expect(page.movementBlockReason()).toBe('Wait for the active movement step to resolve.');
-    expect(page.canChooseDirection(page.edges()[0])).toBeFalse();
+    expect(page.canChooseMovementOption(page.movementOptions()[0])).toBeFalse();
 
     page.overview.setStateFromWorkflow(activeExplorationState('easy', false, true));
 
     expect(page.movementBlockReason()).toBe('Resolve the active challenge before moving.');
-    expect(page.canChooseDirection(page.edges()[0])).toBeFalse();
+    expect(page.canChooseMovementOption(page.movementOptions()[0])).toBeFalse();
   });
 
   it('describes resolved step outcomes from RPC snapshots', () => {
@@ -1179,7 +1232,9 @@ describe('ExplorationPageState', () => {
 
     expect((fixture.nativeElement as HTMLElement).textContent ?? '').toContain('70 EXP');
 
-    fixture.componentInstance.page.chooseDirection(fixture.componentInstance.page.edges()[0]);
+    fixture.componentInstance.page.chooseMovementOption(
+      fixture.componentInstance.page.movementOptions()[0],
+    );
     fixture.detectChanges();
     await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
@@ -1211,7 +1266,7 @@ describe('ExplorationPageState', () => {
     expect(page.completedCombatLiveState()).not.toBeNull();
 
     page.overview.setStateFromWorkflow(activeExplorationState('easy'));
-    page.chooseDirection(page.edges()[0]);
+    page.chooseMovementOption(page.movementOptions()[0]);
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(page.completedCombatLiveState()).toBeNull();
@@ -2030,6 +2085,7 @@ function noExplorationState(difficultyKey: string): HeroExplorationStateReadMode
     remainingTrials: 2,
     exploration: null,
     edges: [],
+    movementOptions: [],
     activeStep: null,
   } as unknown as HeroExplorationStateReadModel;
 }
@@ -2069,6 +2125,25 @@ function activeExplorationState(
         sortOrder: 10,
         isAvailable: true,
       } as HeroExplorationStateReadModel['edges'][number],
+    ],
+    movementOptions: [
+      {
+        optionKind: 'edge',
+        actionKey: 'move',
+        stepKind: 'edge',
+        edgeId: 'edge-1',
+        directionKey: 'north',
+        label: 'North road',
+        sortOrder: 10,
+        toNodeId: 'node-2',
+        isKnownPath: true,
+        isBacktrack: false,
+        isAvailable: true,
+        startRpc: {
+          rpc: 'start_hero_exploration_step',
+        },
+        metadataJson: {},
+      },
     ],
     activeStep: withActiveStep
       ? {

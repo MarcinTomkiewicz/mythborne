@@ -1,5 +1,8 @@
 @let state = page.state();
 
+@if (state?.hasExploration && state?.exploration && page.canShowDirectionBoard() && !page.currentStepResult()) {
+  <app-exploration-direction-board class="d-block w-100" />
+} @else {
 <section class="mg-card p-lg w-100">
   <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
     <div class="flex-col gap-xs min-w-0">
@@ -13,10 +16,10 @@
           }
         } @else if (page.activeChallenge()) {
           Challenge active
-        } @else if (page.currentStepResult()) {
-          Step resolved
+        } @else if (page.canShowDirectionBoard()) {
+          Choose the next path
         } @else {
-          Runtime ready
+          Exploration status
         }
       </h3>
       <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
@@ -170,6 +173,10 @@
         </div>
       </article>
 
+      @if (!page.activeChallenge()) {
+        <app-exploration-direction-board class="d-block w-100 mt-md" />
+      }
+
       <div class="mg-grid-auto-fit gap-sm mt-md">
         <article class="mg-card p-md flex-col gap-xs">
           <p class="small-caps color-muted text-xs mb-0">Challenge</p>
@@ -215,38 +222,34 @@
         <app-exploration-selection-diagnostics-card />
       </div>
     } @else {
-      <div class="mg-grid-auto-fit gap-sm">
-        <article class="mg-card p-md flex-col gap-xs">
-          <p class="small-caps color-muted text-xs mb-0">Pending step</p>
-          <strong class="color-text">No pending step</strong>
-          <span class="color-muted text-sm">No movement step is currently waiting for resolution.</span>
-        </article>
+      @if (!page.activeChallenge()) {
+        <app-exploration-direction-board class="d-block w-100" />
+      } @else {
+        <div class="mg-grid-auto-fit gap-sm">
+          <article class="mg-card p-md flex-col gap-xs">
+            <p class="small-caps color-muted text-xs mb-0">Pending step</p>
+            <strong class="color-text">No pending step</strong>
+            <span class="color-muted text-sm">No movement step is currently waiting for resolution.</span>
+          </article>
 
-        <article class="mg-card p-md flex-col gap-xs">
-          <p class="small-caps color-muted text-xs mb-0">Result / reward</p>
-          @if (page.currentStepResult() || page.currentChallengeResult() || page.reward()) {
-            <strong class="color-heading">Recent outcome loaded</strong>
-            <span class="color-muted text-sm">A resolved outcome exists for the current exploration context.</span>
-          } @else {
-            <strong class="color-text">No resolved result</strong>
-            <span class="color-muted text-sm">No result or reward is loaded for the current state.</span>
-          }
-        </article>
+          <article class="mg-card p-md flex-col gap-xs">
+            <p class="small-caps color-muted text-xs mb-0">Result / reward</p>
+            @if (page.currentStepResult() || page.currentChallengeResult() || page.reward()) {
+              <strong class="color-heading">Recent outcome loaded</strong>
+              <span class="color-muted text-sm">A resolved outcome exists for the current exploration context.</span>
+            } @else {
+              <strong class="color-text">No resolved result</strong>
+              <span class="color-muted text-sm">No result or reward is loaded for the current state.</span>
+            }
+          </article>
 
-        <article class="mg-card p-md flex-col gap-xs">
-          <p class="small-caps color-muted text-xs mb-0">Runtime state</p>
-          @if (page.activeChallenge()) {
+          <article class="mg-card p-md flex-col gap-xs">
+            <p class="small-caps color-muted text-xs mb-0">Runtime state</p>
             <strong class="color-heading">Challenge needs handling</strong>
             <span class="color-muted text-sm">A challenge is active in the current exploration.</span>
-          } @else if (page.movementBlockReason(); as reason) {
-            <strong class="color-text">{{ reason }}</strong>
-            <span class="color-muted text-sm">The current state is not ready for a new movement step.</span>
-          } @else {
-            <strong class="color-text">No pending state</strong>
-            <span class="color-muted text-sm">The exploration is loaded and waiting for the next runtime action.</span>
-          }
-        </article>
-      </div>
+          </article>
+        </div>
+      }
     }
   } @else {
     <div class="mg-card p-md w-100">
@@ -256,3 +259,4 @@
     </div>
   }
 </section>
+}

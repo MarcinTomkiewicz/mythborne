@@ -1,0 +1,32 @@
+@let currentOption = option();
+
+<article
+  class="exploration-direction-gate mg-card p-md flex-col gap-sm h-100"
+  [class.opacity-55]="!currentOption.isAvailable"
+>
+  <div class="flex-row-start-center gap-sm min-w-0">
+    <span class="exploration-direction-gate__icon mg-card p-sm flex-row-center-center flex-none">
+      <i [class]="iconClass()" aria-hidden="true"></i>
+    </span>
+    <div class="flex-col gap-xs min-w-0">
+      <strong class="color-text">{{ label() }}</strong>
+      <span class="color-muted text-sm">{{ statusLabel() }}</span>
+    </div>
+  </div>
+
+  <div class="flex-1"></div>
+
+  <div class="flex-row-end-center flex-wrap gap-xs">
+    @if (!currentOption.isAvailable) {
+      <span class="tag-badge tag-badge--muted">Unavailable</span>
+    }
+    <p-button
+      type="button"
+      size="small"
+      label="Choose"
+      [loading]="isBusy()"
+      [disabled]="isDisabled()"
+      (onClick)="choose()"
+    />
+  </div>
+</article>
