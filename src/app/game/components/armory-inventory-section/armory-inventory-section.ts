@@ -1,5 +1,13 @@
-import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { Component, computed, effect, input, output, signal } from '@angular/core';
+import { CdkDrag, CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
+import {
+  Component,
+  HostListener,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -34,6 +42,7 @@ import { ArmoryBulkActionsToolbar } from '../armory-bulk-actions-toolbar/armory-
 import { ArmoryGuildItemUsage } from '../../../core/interfaces/item/armory-guild-item-usage.interface';
 import { normalizeSearchText } from '../../../core/utils/normalize-text';
 import { ArmoryItemDetailPopover } from '../armory-item-detail-popover/armory-item-detail-popover';
+import { ArmoryItemDragPreview } from '../armory-item-drag-preview/armory-item-drag-preview';
 import { armoryItemIconClass } from '../../../core/domain/equipment/equipment-preview.mapper';
 import {
   itemLifecycleStatusBadgeClass,
@@ -54,6 +63,7 @@ import { SelectOption } from '../../../core/types/select-option.types';
     InputTextModule,
     SelectModule,
     ArmoryBulkActionsToolbar,
+    ArmoryItemDragPreview,
     ArmoryItemDetailPopover,
   ],
   templateUrl: './armory-inventory-section.html',
@@ -75,6 +85,12 @@ export class ArmoryInventorySection {
   readonly bulkEquipSelected = output<readonly ArmoryItemSummary[]>();
   readonly bulkSellSelected = output<readonly ArmoryItemSummary[]>();
   readonly selectedBulkItemIds = signal<string[]>([]);
+  private readonly activeDrag = signal<{
+    rootItemId: string;
+    itemIds: readonly string[];
+  } | null>(null);
+  private activeDragRef: CdkDrag<ArmoryItemSummary> | null = null;
+  private dragCancelPending = false;
   readonly armoryItemIconClass = armoryItemIconClass;
   readonly armoryItemMetadata = armoryItemMetadata;
   readonly itemLifecycleStatusBadgeClass = itemLifecycleStatusBadgeClass;
@@ -211,22 +227,10 @@ export class ArmoryInventorySection {
   }
 
   emitMoveSelectedItem(targetShelfPosition: number): void {
-    const items = this.selectedMovableItems()
-      .filter((item) => item.shelfPosition !== targetShelfPosition);
-
-    if (
-      this.isActionBusy()
-      || !items.length
-      || !this.selectedMoveDestinationOptions()
-        .some((option) => option.value === targetShelfPosition)
-    ) {
-      return;
-    }
-
-    this.bulkMoveItems.emit({
-      items: items.map((item) => ({ itemId: item.itemId })),
+    this.emitBulkMoveItemsToShelf(
+      this.selectedMovableItems(),
       targetShelfPosition,
-    });
+    );
   }
 
   shelfLabel(shelf: ArmoryShelfReadModel): string {
@@ -293,12 +297,87 @@ export class ArmoryInventorySection {
     return !this.isActionBusy() && this.canMoveItem(item);
   }
 
+  @HostListener('document:keydown', ['$event'])
+  cancelActiveDrag(event: KeyboardEvent): void {
+    if (event.key !== 'Escape' || !this.activeDrag()) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragCancelPending = true;
+    const activeDragRef = this.activeDragRef;
+
+    this.activeDragRef = null;
+    this.activeDrag.set(null);
+    activeDragRef?.reset();
+    this.releaseCanceledDragSession();
+  }
+
+  startItemDrag(
+    item: ArmoryItemSummary,
+    drag: CdkDrag<ArmoryItemSummary>,
+  ): void {
+    const items = this.resolveDragItems(item);
+
+    this.dragCancelPending = false;
+    this.activeDragRef = drag;
+    this.activeDrag.set({
+      rootItemId: item.itemId,
+      itemIds: items.map((dragItem) => dragItem.itemId),
+    });
+  }
+
+  endItemDrag(): void {
+    this.activeDragRef = null;
+    this.activeDrag.set(null);
+  }
+
+  dragPreviewItems(item: ArmoryItemSummary): readonly ArmoryItemSummary[] {
+    const activeDrag = this.activeDrag();
+
+    if (activeDrag?.rootItemId === item.itemId) {
+      const itemsById = new Map(
+        this.filteredItems().map((filteredItem) => [filteredItem.itemId, filteredItem]),
+      );
+      const activeItems = activeDrag.itemIds.flatMap((itemId) => {
+        const activeItem = itemsById.get(itemId);
+
+        return activeItem ? [activeItem] : [];
+      });
+
+      return activeItems.length ? activeItems : [item];
+    }
+
+    return this.resolveDragItems(item);
+  }
+
+  isHiddenByActiveDrag(item: ArmoryItemSummary): boolean {
+    const activeDrag = this.activeDrag();
+
+    return Boolean(
+      activeDrag
+      && activeDrag.rootItemId !== item.itemId
+      && activeDrag.itemIds.includes(item.itemId),
+    );
+  }
+
   handleItemDrop(
     event: CdkDragDrop<ArmoryShelfReadModel, ArmoryShelfReadModel, ArmoryItemSummary>,
   ): void {
+    if (this.dragCancelPending) {
+      this.dragCancelPending = false;
+      return;
+    }
+
     const item = event.item.data;
     const targetShelfPosition = event.container.data.position;
     const sourceShelfPosition = event.previousContainer.data.position;
+
+    if (this.isBulkItemSelected(item)) {
+      this.emitMoveDraggedSelection(item, targetShelfPosition);
+      return;
+    }
 
     if (sourceShelfPosition === targetShelfPosition) {
       return;
@@ -349,6 +428,65 @@ export class ArmoryInventorySection {
       itemId: item.itemId,
       targetShelfPosition,
     });
+  }
+
+  private emitMoveDraggedSelection(
+    draggedItem: ArmoryItemSummary,
+    targetShelfPosition: number,
+  ): void {
+    const selectedItems = this.selectedMovableItems();
+    const draggedItemIsMovable = selectedItems.some((item) =>
+      item.itemId === draggedItem.itemId,
+    );
+
+    if (!draggedItemIsMovable) {
+      return;
+    }
+
+    this.emitBulkMoveItemsToShelf(selectedItems, targetShelfPosition);
+  }
+
+  private emitBulkMoveItemsToShelf(
+    selectedItems: readonly ArmoryItemSummary[],
+    targetShelfPosition: number,
+  ): void {
+    const items = selectedItems.filter((item) =>
+      item.shelfPosition !== targetShelfPosition,
+    );
+
+    if (
+      this.isActionBusy()
+      || !items.length
+      || !this.bulkMoveDestinationOptions(selectedItems)
+        .some((option) => option.value === targetShelfPosition)
+    ) {
+      return;
+    }
+
+    this.bulkMoveItems.emit({
+      items: items.map((item) => ({ itemId: item.itemId })),
+      targetShelfPosition,
+    });
+  }
+
+  private resolveDragItems(item: ArmoryItemSummary): readonly ArmoryItemSummary[] {
+    return this.isBulkItemSelected(item)
+      ? this.selectedMovableItems()
+      : [item];
+  }
+
+  private releaseCanceledDragSession(): void {
+    if (typeof PointerEvent === 'function') {
+      document.dispatchEvent(new PointerEvent('pointerup', {
+        bubbles: true,
+        cancelable: true,
+      }));
+    }
+
+    document.dispatchEvent(new MouseEvent('mouseup', {
+      bubbles: true,
+      cancelable: true,
+    }));
   }
 
   private pruneBulkSelection(items: readonly ArmoryItemSummary[]): void {

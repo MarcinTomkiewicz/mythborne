@@ -1,0 +1,86 @@
+@if (!isGroup()) {
+  <article
+    class="mg-drag-stack-preview mg-drag-stack-preview--single"
+    [class.mg-drag-stack-preview--placeholder]="placeholder()"
+  >
+    <div class="mg-drag-stack-preview__card mg-card p-sm flex-col gap-xs shadow-premium">
+      <div class="flex-row-start-center gap-sm min-w-0">
+        <span class="mg-card p-sm flex-row-center-center flex-none">
+          <i
+            class="color-heading text-xl {{ armoryItemIconClass(item()) }}"
+            aria-hidden="true"
+          ></i>
+        </span>
+        <div class="flex-col gap-xs min-w-0">
+          <strong class="color-text text-sm">{{ item().name }}</strong>
+        </div>
+      </div>
+      <span class="color-muted text-xs">{{ subtitle() }}</span>
+      @if (item().drachmaValue !== null) {
+        <strong class="color-heading text-xs">{{ item().drachmaValue }} drachma</strong>
+      }
+    </div>
+  </article>
+} @else if (!isSummary()) {
+  <article
+    class="mg-drag-stack-preview mg-drag-stack-preview--group"
+    [class.mg-drag-stack-preview--placeholder]="placeholder()"
+  >
+    <div class="mg-drag-stack-preview__cascade">
+      @for (stackItem of visibleStackItems(); track stackItem.itemId; let index = $index) {
+        <div
+          class="mg-drag-stack-preview__mini-card mg-card p-sm flex-col gap-xs shadow-premium"
+          [style.--mg-drag-stack-index]="index"
+        >
+          @if (index === 0) {
+            <span class="color-heading text-xs font-bold">{{ title() }}</span>
+          }
+          <div class="flex-row-start-center gap-sm min-w-0">
+            <span class="mg-card p-sm flex-row-center-center flex-none">
+              <i
+                class="color-heading text-lg {{ armoryItemIconClass(stackItem) }}"
+                aria-hidden="true"
+              ></i>
+            </span>
+            <div class="flex-col gap-xs min-w-0">
+              <strong class="color-text text-sm text-truncate">{{ stackItem.name }}</strong>
+              <span class="color-muted text-xs text-truncate">
+                {{ armoryItemMetadata(stackItem) }}
+              </span>
+            </div>
+          </div>
+          @if (stackItem.drachmaValue !== null) {
+            <strong class="color-heading text-xs">{{ stackItem.drachmaValue }} drachma</strong>
+          }
+        </div>
+      }
+    </div>
+  </article>
+} @else {
+  <article
+    class="mg-drag-stack-preview mg-drag-stack-preview--summary"
+    [class.mg-drag-stack-preview--placeholder]="placeholder()"
+  >
+    <div class="mg-drag-stack-preview__card mg-card p-sm flex-col gap-xs shadow-premium">
+      <div class="flex-row-start-center gap-sm min-w-0">
+        <span class="mg-card p-sm flex-row-center-center flex-none">
+          <i class="pi pi-chest color-heading text-xl" aria-hidden="true"></i>
+        </span>
+        <strong class="color-text text-sm">{{ title() }}</strong>
+      </div>
+
+      <div class="mg-drag-stack-preview__items flex-col gap-xs border-top pt-xs">
+        @for (stackItem of visibleStackItems(); track stackItem.itemId) {
+          <div class="mg-drag-stack-preview__item mg-card p-xs flex-row-start-center gap-xs min-w-0">
+            <i
+              class="color-muted text-sm {{ armoryItemIconClass(stackItem) }}"
+              aria-hidden="true"
+            ></i>
+            <span class="color-muted text-xs text-truncate">{{ stackItem.name }}</span>
+          </div>
+        }
+        <span class="color-muted text-xs">+{{ overflowCount() }} more</span>
+      </div>
+    </div>
+  </article>
+}

@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-20 — UI-ITEMS-MOVE-3 Armory bulk move accepted
+Updated: 2026-05-20 — UI-ITEMS-MOVE-4 Armory bulk drag accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -3956,6 +3956,7 @@ Cel: armory, equipment preview, stands/sorting, item capacity and shared item po
 - UI-ITEMS-MOVE-1 — Armory item move action + selected-card cleanup
 - UI-ITEMS-MOVE-2 — Armory drag-and-drop move between stands
 - UI-ITEMS-MOVE-3 — Armory bulk move selected items to stand
+- UI-ITEMS-MOVE-4 — Armory bulk drag-and-drop selected items
 
 ## UI-ITEMS-1 — Armory overview and capacity
 
@@ -4877,7 +4878,7 @@ Do a final small visual consistency pass after UI-ITEMS-5–19, without adding n
 
 ## UI-ITEMS-MOVE-1 — Armory item move action + selected-card cleanup
 
-**Goal:**  
+**Goal:**
 Add an explicit non-drag action for moving a stored Armory item between stands/shelves while cleaning local selected-card styling to use the global selected-card treatment.
 
 **Scope:**
@@ -4962,6 +4963,31 @@ Replace the selected-toolbar one-item move limitation with canonical multi-item 
 - broader Armory page or preset cleanup.
 
 **Status:** Accepted/completed on 2026-05-20 after user-side smoke. The selected-items toolbar now moves multiple eligible stored items from one or many stands through the canonical bulk RPC path (`ArmoryShelfState.bulkMoveItemsToShelf(...)` -> `PlayerArmory.bulkMoveItemsToShelf(...)` -> `bulk_move_hero_armory_items_to_shelf`). The frontend does not loop the old single-item `moveItemToShelf(...)` RPC for toolbar bulk move. Mapper logic lives in `core/utils/armory-actions-mappers.ts`, bulk move feedback formatting lives in `core/utils/armory-bulk-move-feedback.ts`, and the public result model exposes mapped `resultJournal` without raw `resultJournalJson`. Toast copy is player-facing, clean success reads like `You moved 2 items to Shelf 10.`, skipped/no-op outcomes are not fatal, and failed rows can surface short journal detail. Existing DnD single-item move remains preserved. No local SCSS, direct DB writes, DB/RPC/schema/generated edits or specs were added. Verification passed with `npx tsc --noEmit`, `npm run build` with existing warnings and static greps.
+
+---
+
+## UI-ITEMS-MOVE-4 — Armory bulk drag-and-drop selected items
+
+**Goal:**
+Extend Armory drag-and-drop so dragging one selected eligible item moves the whole selected eligible group to a target stand through the canonical bulk move RPC, while unselected item drag keeps the existing single-item move path.
+
+**Scope:**
+- selected-item drag resolves the current selected movable group and emits the accepted bulk move output/path;
+- unselected item drag continues through `move_hero_armory_item_to_shelf`;
+- same-stand group drops no-op when nothing meaningful would move;
+- empty stands remain valid drop targets;
+- compact custom CDK drag preview/placeholder communicates single-item vs selected-group drag;
+- active group drag hides moved selected items from source positions during drag;
+- Escape cancels the active CDK drag UI and guards against a follow-up drop mutation.
+
+**Out of scope:**
+- move RPC, DB/RPC/schema/generated edits;
+- direct DB writes;
+- toolbar bulk move changes;
+- loadout preset UI changes;
+- local Armory SCSS.
+
+**Status:** Accepted/completed on 2026-05-20 after user-side smoke and final cleanup. Dragging an unselected eligible stored item still uses the canonical single-item move path, while dragging a selected eligible item moves the selected movable group through `ArmoryShelfState.bulkMoveItemsToShelf(...)` / `PlayerArmory.bulkMoveItemsToShelf(...)` / `bulk_move_hero_armory_items_to_shelf` without looping `moveItemToShelf(...)`. Same-stand group drops no-op when all moved items are already on target, empty stands work as valid targets, ineligible/guild/locked/non-active/private-action-blocked items are excluded by the existing eligibility guards, and toolbar `Move selected` remains preserved. Custom `cdkDragPreview` / `cdkDragPlaceholder` use a reusable `ArmoryItemDragPreview` component plus global reusable drag-drop styles under `src/scss/components`, with compact single-card and group stack/summary visuals; no local Armory SCSS was added. Active selected-group drag hides moved items from source positions, Escape cancels drag UI and prevents a later drop mutation. The accepted cleanup also refreshes equipment plus Armory state after equip/unequip/bulk equip/bulk unequip, moves equipment action toast formatting to `core/utils/equipment-action-feedback.ts`, and fixes Armory page spacing by keeping the route content wrapper as the first layout-affecting element with `app-loading-overlay` rendered after it. Verification passed with `npx tsc --noEmit` and `npm run build` with existing warnings; focused Armory specs remain blocked by pre-existing stale spec compile errors unrelated to this task.
 
 ---
 

@@ -1,7 +1,7 @@
-<div class="flex-col gap-xl min-w-0">
-  <p-confirmdialog styleClass="mg-dialog mg-dialog--danger" />
-
+<div class="flex-col gap-lg min-w-0">
+  
   <section class="mg-card p-lg w-100">
+    <p-confirmdialog styleClass="mg-dialog mg-dialog--danger" />
     <div class="grid-2-1 gap-lg grid-items-center">
       <div class="flex-col gap-xs min-w-0">
         <p class="small-caps color-muted text-xs mb-0">Armory</p>
@@ -90,3 +90,8 @@
     />
   </div>
 </div>
+
+<app-loading-overlay
+  [visible]="equipment.isMutating() || armory.isMutating()"
+  label="Updating armory…"
+/>

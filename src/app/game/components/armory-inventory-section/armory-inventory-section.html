@@ -171,18 +171,20 @@
         @if (shelf.visibleItems.length) {
           <div class="mg-grid-auto-fill-compact gap-sm w-100">
             @for (item of shelf.visibleItems; track item.itemId) {
-              @let usage = guildItemUsage()(item);
-              <app-armory-item-detail-popover
-                class="d-block w-100"
-                [item]="item"
-                [guildContextLabel]="usage.label"
-                [guildContextDetail]="usage.detail"
-                [buttonTrigger]="false"
-                [triggerFullWidth]="true"
-              >
+              @if (!isHiddenByActiveDrag(item)) {
+                @let usage = guildItemUsage()(item);
+                <app-armory-item-detail-popover
+                  class="d-block w-100"
+                  [item]="item"
+                  [guildContextLabel]="usage.label"
+                  [guildContextDetail]="usage.detail"
+                  [buttonTrigger]="false"
+                  [triggerFullWidth]="true"
+                >
                 <article
                   class="mg-card p-sm flex-col gap-xs w-100 min-w-0 cursor-pointer transition-colors"
                   cdkDrag
+                  #itemDrag="cdkDrag"
                   [cdkDragData]="item"
                   [cdkDragDisabled]="!canDragItem(item)"
                   [class.cursor-grab]="canDragItem(item)"
@@ -190,91 +192,109 @@
                   role="button"
                   tabindex="0"
                   [attr.aria-pressed]="isBulkItemSelected(item)"
-                  (click)="toggleBulkItemSelection(item)"
-                  (keydown.enter)="toggleBulkItemSelection(item)"
-                  (keydown.space)="toggleBulkItemSelection(item); $event.preventDefault()"
-                >
-                  <div class="flex-row-start-center gap-sm min-w-0">
-                    <span class="mg-card p-sm flex-row-center-center flex-none">
-                      <i
-                        class="color-text text-xl {{ armoryItemIconClass(item) }}"
-                        [class.color-heading]="isBulkItemSelected(item)"
-                        aria-hidden="true"
-                      ></i>
-                    </span>
-                    <div class="flex-col gap-xs min-w-0">
-                      <strong class="color-text text-sm">
-                        @for (part of highlightedText(item.name); track $index) {
-                          <span [class.color-heading]="part.isMatch">{{ part.text }}</span>
-                        }
-                      </strong>
-                    </div>
-                  </div>
-
-                  <span class="color-muted text-xs">
-                    @for (part of highlightedText(armoryItemMetadata(item)); track $index) {
-                      <span [class.color-heading]="part.isMatch">{{ part.text }}</span>
-                    }
-                  </span>
-
-                  @if (item.drachmaValue !== null) {
-                    <strong class="color-heading text-xs">{{ item.drachmaValue }} drachma</strong>
-                  }
-
-                  @if (item.lifecycleStatus !== 'active' || usage.key !== 'owned_private') {
-                    <div class="flex-row-start-center flex-wrap gap-xs">
-                      @if (item.lifecycleStatus !== 'active') {
-                        <span [class]="itemLifecycleStatusBadgeClass(item.lifecycleStatus)">
-                          {{ itemLifecycleStatusLabel(item.lifecycleStatus) }}
-                        </span>
-                      }
-                      @if (usage.key !== 'owned_private') {
-                        <span
-                          class="tag-badge"
-                          [class.tag-badge--warn]="usage.key === 'deposited_in_guild_armory' || usage.key === 'borrowed_by_guild_member' || usage.key === 'unknown'"
-                          [class.tag-badge--success]="usage.key === 'borrowed_from_guild_armory'"
-                        >
-                          {{ usage.label }}
-                        </span>
-                      }
-                    </div>
-                  }
-
-                  <div
-                    class="flex-row-start-center flex-wrap gap-xs border-top pt-xs"
-                    (click)="$event.stopPropagation()"
-                    (mousedown)="$event.stopPropagation()"
-                    (touchstart)="$event.stopPropagation()"
+                  (cdkDragStarted)="startItemDrag(item, itemDrag)"
+                  (cdkDragEnded)="endItemDrag()"
+                    (click)="toggleBulkItemSelection(item)"
+                    (keydown.enter)="toggleBulkItemSelection(item)"
+                    (keydown.space)="toggleBulkItemSelection(item); $event.preventDefault()"
                   >
-                    @if (usage.privateActionsAllowed) {
-                      <p-button
-                        type="button"
-                        severity="secondary"
-                        size="small"
-                        label="Equip"
-                        [disabled]="isActionBusy()"
-                        (onClick)="equipItem.emit(item)"
-                      />
-                    }
-                    @if (canUseLifecycleActions(item)) {
-                      <p-button
-                        type="button"
-                        severity="secondary"
-                        size="small"
-                        label="Sell to vendor"
-                        [disabled]="isActionBusy()"
-                        (onClick)="sellItem.emit(item)"
-                      />
-                    }
-                  </div>
+                    <div class="flex-row-start-center gap-sm min-w-0">
+                      <span class="mg-card p-sm flex-row-center-center flex-none">
+                        <i
+                          class="color-text text-xl {{ armoryItemIconClass(item) }}"
+                          [class.color-heading]="isBulkItemSelected(item)"
+                          aria-hidden="true"
+                        ></i>
+                      </span>
+                      <div class="flex-col gap-xs min-w-0">
+                        <strong class="color-text text-sm">
+                          @for (part of highlightedText(item.name); track $index) {
+                            <span [class.color-heading]="part.isMatch">{{ part.text }}</span>
+                          }
+                        </strong>
+                      </div>
+                    </div>
 
-                  @if (item.lifecycleStatus !== 'active') {
-                    <span class="warn-text text-xs">
-                      Owned item reserved by market state.
+                    <span class="color-muted text-xs">
+                      @for (part of highlightedText(armoryItemMetadata(item)); track $index) {
+                        <span [class.color-heading]="part.isMatch">{{ part.text }}</span>
+                      }
                     </span>
-                  }
-                </article>
-              </app-armory-item-detail-popover>
+
+                    @if (item.drachmaValue !== null) {
+                      <strong class="color-heading text-xs">{{ item.drachmaValue }} drachma</strong>
+                    }
+
+                    @if (item.lifecycleStatus !== 'active' || usage.key !== 'owned_private') {
+                      <div class="flex-row-start-center flex-wrap gap-xs">
+                        @if (item.lifecycleStatus !== 'active') {
+                          <span [class]="itemLifecycleStatusBadgeClass(item.lifecycleStatus)">
+                            {{ itemLifecycleStatusLabel(item.lifecycleStatus) }}
+                          </span>
+                        }
+                        @if (usage.key !== 'owned_private') {
+                          <span
+                            class="tag-badge"
+                            [class.tag-badge--warn]="usage.key === 'deposited_in_guild_armory' || usage.key === 'borrowed_by_guild_member' || usage.key === 'unknown'"
+                            [class.tag-badge--success]="usage.key === 'borrowed_from_guild_armory'"
+                          >
+                            {{ usage.label }}
+                          </span>
+                        }
+                      </div>
+                    }
+
+                    <div
+                      class="flex-row-start-center flex-wrap gap-xs border-top pt-xs"
+                      (click)="$event.stopPropagation()"
+                      (mousedown)="$event.stopPropagation()"
+                      (touchstart)="$event.stopPropagation()"
+                    >
+                      @if (usage.privateActionsAllowed) {
+                        <p-button
+                          type="button"
+                          severity="secondary"
+                          size="small"
+                          label="Equip"
+                          [disabled]="isActionBusy()"
+                          (onClick)="equipItem.emit(item)"
+                        />
+                      }
+                      @if (canUseLifecycleActions(item)) {
+                        <p-button
+                          type="button"
+                          severity="secondary"
+                          size="small"
+                          label="Sell to vendor"
+                          [disabled]="isActionBusy()"
+                          (onClick)="sellItem.emit(item)"
+                        />
+                      }
+                    </div>
+
+                    @if (item.lifecycleStatus !== 'active') {
+                      <span class="warn-text text-xs">
+                        Owned item reserved by market state.
+                      </span>
+                    }
+
+                    <ng-template cdkDragPreview>
+                      <app-armory-item-drag-preview
+                        [item]="item"
+                        [items]="dragPreviewItems(item)"
+                      />
+                    </ng-template>
+
+                    <ng-template cdkDragPlaceholder>
+                      <app-armory-item-drag-preview
+                        [item]="item"
+                        [items]="dragPreviewItems(item)"
+                        [placeholder]="true"
+                      />
+                    </ng-template>
+                  </article>
+                </app-armory-item-detail-popover>
+              }
             }
           </div>
         } @else {

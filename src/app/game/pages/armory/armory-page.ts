@@ -22,12 +22,14 @@ import {
   storedArmoryShelves,
 } from '../../../core/utils/armory-shelf-display';
 import { armoryBulkMoveToastMessage } from '../../../core/utils/armory-bulk-move-feedback';
+import { equipmentActionToastMessage } from '../../../core/utils/equipment-action-feedback';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
 import { ToastService } from '../../../core/services/ui/toast';
 import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-preview';
+import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { ArmoryInventorySection } from '../../components/armory-inventory-section/armory-inventory-section';
 import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
 import {
@@ -40,6 +42,7 @@ import {
   imports: [
     ConfirmDialogModule,
     EquipmentPreview,
+    LoadingOverlay,
     ArmoryInventorySection,
     LoadoutPresetManagement,
   ],
@@ -120,34 +123,11 @@ export class ArmoryPage implements OnInit {
       return;
     }
 
-    const failedCount = journal.failed.length;
-    const skippedCount = journal.skipped.length;
-    const changedCount =
-      journal.equipped.length + journal.shifted.length + journal.unequipped.length;
+    const message = equipmentActionToastMessage(journal);
 
-    if (!journal.success || failedCount > 0) {
-      this.toast.show(
-        'error',
-        'Equipment action failed',
-        `${failedCount || 1} failed, ${skippedCount} skipped.`,
-      );
-      return;
+    if (message) {
+      this.toast.show(message.severity, message.summary, message.detail);
     }
-
-    if (skippedCount > 0) {
-      this.toast.show(
-        'warn',
-        'Equipment action partially applied',
-        `${changedCount} changed, ${skippedCount} skipped.`,
-      );
-      return;
-    }
-
-    this.toast.show(
-      'success',
-      'Equipment updated',
-      `${changedCount} item${changedCount === 1 ? '' : 's'} changed.`,
-    );
   });
   private readonly armoryActionErrorToast = effect(() => {
     const error = this.armory.actionError();
@@ -192,7 +172,7 @@ export class ArmoryPage implements OnInit {
 
     this.equipment.equipItem({
       itemId: item.itemId,
-    }, () => this.refreshArmoryAndDerivedStats());
+    }, () => this.refreshEquipmentArmoryAndDerivedStats());
   }
 
   bulkEquipSelectedItems(selectedItems: readonly ArmoryItemSummary[]): void {
@@ -207,7 +187,7 @@ export class ArmoryPage implements OnInit {
     this.equipment.bulkEquipItems({
       items,
     }, () => {
-      this.refreshArmoryAndDerivedStats();
+      this.refreshEquipmentArmoryAndDerivedStats();
     });
   }
 
@@ -315,7 +295,8 @@ export class ArmoryPage implements OnInit {
     return storedArmoryShelves(this.armory.shelves(), this.equipment.slots());
   });
 
-  private refreshArmoryAndDerivedStats(): void {
+  private refreshEquipmentArmoryAndDerivedStats(): void {
+    this.equipment.refresh();
     this.armory.refresh();
     this.guildItemUsageState.load();
     this.page.loadData();
@@ -365,7 +346,7 @@ export class ArmoryPage implements OnInit {
       items,
     }, () => {
       this.selectedPaperdollItemIds.set([]);
-      this.refreshArmoryAndDerivedStats();
+      this.refreshEquipmentArmoryAndDerivedStats();
     });
   }
 

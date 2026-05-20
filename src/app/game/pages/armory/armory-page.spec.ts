@@ -26,7 +26,6 @@ import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loado
 import { ToastService } from '../../../core/services/ui/toast';
 import { ArmoryBulkActionsToolbar } from '../../components/armory-bulk-actions-toolbar/armory-bulk-actions-toolbar';
 import { ArmoryInventorySection } from '../../components/armory-inventory-section/armory-inventory-section';
-import { ArmoryInventoryShelfList } from '../../components/armory-inventory-shelf-list/armory-inventory-shelf-list';
 import { ArmoryPage } from './armory-page';
 import { ARMORY_RING_SLOT_FILTER_VALUE } from '../../../core/constants/armory-inventory-filter.const';
 import {
@@ -72,7 +71,6 @@ describe('ArmoryPage', () => {
             SelectModule,
             ArmoryBulkActionsToolbar,
             ArmoryInventorySection,
-            ArmoryInventoryShelfList,
             MockEquipmentPreview,
             MockArmoryItemDetailPopover,
             MockLoadoutPresetManagement,
@@ -85,17 +83,6 @@ describe('ArmoryPage', () => {
             { provide: ArmoryGuildItemUsageState, useValue: guildItemUsage },
             ConfirmationService,
             { provide: ToastService, useValue: toast },
-          ],
-        },
-      })
-      .overrideComponent(ArmoryInventoryShelfList, {
-        set: {
-          imports: [
-            ReactiveFormsModule,
-            ButtonModule,
-            InplaceModule,
-            InputTextModule,
-            MockArmoryItemDetailPopover,
           ],
         },
       })
@@ -824,7 +811,7 @@ describe('ArmoryPage', () => {
       .querySelector('p-select[aria-label="Equip item slot"]')).toBeNull();
   });
 
-  it('calls default equip without target slot and refreshes armory after response', () => {
+  it('calls default equip without target slot and refreshes equipment and armory after response', () => {
     const item = armoryItem({
       itemId: 'item-dagger',
       name: 'Demonic Dagger',
@@ -843,6 +830,7 @@ describe('ArmoryPage', () => {
     expect(equipment.equipItem).toHaveBeenCalledWith({
       itemId: 'item-dagger',
     }, jasmine.any(Function));
+    expect(equipment.refresh).toHaveBeenCalled();
     expect(armory.refresh).toHaveBeenCalled();
     expect(guildItemUsage.load).toHaveBeenCalledTimes(2);
     expect(page.loadData).toHaveBeenCalledTimes(2);
@@ -870,6 +858,7 @@ describe('ArmoryPage', () => {
         { itemId: 'item-first' },
       ],
     }, jasmine.any(Function));
+    expect(equipment.refresh).toHaveBeenCalled();
     expect(armory.refresh).toHaveBeenCalled();
     expect(page.loadData).toHaveBeenCalledTimes(2);
     expect(inventorySection(fixture).selectedBulkItems()).toEqual([]);
@@ -991,6 +980,7 @@ describe('ArmoryPage', () => {
       ],
     }, jasmine.any(Function));
     expect(equipment.unequipSlot).not.toHaveBeenCalled();
+    expect(equipment.refresh).toHaveBeenCalled();
     expect(armory.refresh).toHaveBeenCalled();
     expect(page.loadData).toHaveBeenCalledTimes(2);
     expect(fixture.componentInstance.selectedPaperdollItemIds()).toEqual([]);
@@ -1011,6 +1001,9 @@ describe('ArmoryPage', () => {
       ],
     }, jasmine.any(Function));
     expect(equipment.unequipSlot).not.toHaveBeenCalled();
+    expect(equipment.refresh).toHaveBeenCalled();
+    expect(armory.refresh).toHaveBeenCalled();
+    expect(page.loadData).toHaveBeenCalledTimes(2);
   });
 
   it('shows domain failure journal as toast feedback', () => {
@@ -1036,29 +1029,40 @@ describe('ArmoryPage', () => {
     expect(textContent(fixture)).not.toContain('Equipment result');
   });
 
-  it('shows unequip journal as toast feedback', () => {
+  it('shows unequip journal as player-facing toast feedback', () => {
     equipment.actionJournal.set(operationJournal({
-      unequipped: [{
-        action: 'unequipped',
-        itemId: 'locked-vest',
-        slotKey: 'armor',
-        reason: 'slot_cleared',
-        message: 'Unequipped.',
-        success: true,
-        detailsJson: null,
-      }],
+      unequipped: [
+        {
+          action: 'unequipped',
+          itemId: 'locked-vest',
+          slotKey: 'armor',
+          reason: 'slot_cleared',
+          message: 'Unequipped.',
+          success: true,
+          detailsJson: null,
+        },
+        {
+          action: 'unequipped',
+          itemId: 'locked-vest',
+          slotKey: 'back',
+          reason: 'slot_cleared',
+          message: 'Unequipped.',
+          success: true,
+          detailsJson: null,
+        },
+      ],
     }));
     fixture.detectChanges();
 
     expect(toast.show).toHaveBeenCalledWith(
       'success',
-      'Equipment updated',
-      '1 item changed.',
+      'Item unequipped',
+      '1 item unequipped.',
     );
     expect(textContent(fixture)).not.toContain('Equipment result');
   });
 
-  it('shows shifted journal as neutral toast feedback', () => {
+  it('does not show a player-facing toast for shifted-only journal rows', () => {
     equipment.actionJournal.set(operationJournal({
       shifted: [{
         action: 'shifted',
@@ -1072,11 +1076,7 @@ describe('ArmoryPage', () => {
     }));
     fixture.detectChanges();
 
-    expect(toast.show).toHaveBeenCalledWith(
-      'success',
-      'Equipment updated',
-      '1 item changed.',
-    );
+    expect(toast.show).not.toHaveBeenCalled();
     expect(textContent(fixture)).not.toContain('Already equipped:');
   });
 
