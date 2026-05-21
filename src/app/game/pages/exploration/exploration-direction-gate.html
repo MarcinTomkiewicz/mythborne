@@ -1,32 +1,28 @@
 @let currentOption = option();
 
 <article
-  class="exploration-direction-gate mg-card p-md flex-col gap-sm h-100"
-  [class.opacity-55]="!currentOption.isAvailable"
+  class="mg-card p-lg flex-row-start-center gap-md h-100 user-select-none shadow-premium transition-colors"
+  role="button"
+  [attr.tabindex]="canChoose() ? 0 : -1"
+  [attr.aria-disabled]="!canChoose()"
+  [class.cursor-pointer]="canChoose()"
+  [class.cursor-default]="!canChoose()"
+  [class.opacity-55]="isDisabled() || !currentOption.isAvailable"
+  (click)="choose($event)"
+  (keydown.enter)="choose($event)"
+  (keydown.space)="choose($event)"
 >
-  <div class="flex-row-start-center gap-sm min-w-0">
-    <span class="exploration-direction-gate__icon mg-card p-sm flex-row-center-center flex-none">
-      <i [class]="iconClass()" aria-hidden="true"></i>
-    </span>
-    <div class="flex-col gap-xs min-w-0">
-      <strong class="color-text">{{ label() }}</strong>
-      <span class="color-muted text-sm">{{ statusLabel() }}</span>
-    </div>
+  <span class="mg-card p-sm flex-row-center-center flex-none color-secondary square-9 shadow-premium">
+    <i [class]="iconClass()" aria-hidden="true"></i>
+  </span>
+
+  <div class="flex-col gap-xs min-w-0 w-100">
+    <strong class="color-heading text-lg">{{ label() }}</strong>
+    <span class="color-muted text-sm text-nowrap">{{ statusLabel() }}</span>
+    <span class="color-secondary text-sm font-semibold">{{ actionLabel() }}</span>
   </div>
 
-  <div class="flex-1"></div>
-
-  <div class="flex-row-end-center flex-wrap gap-xs">
-    @if (!currentOption.isAvailable) {
-      <span class="tag-badge tag-badge--muted">Unavailable</span>
-    }
-    <p-button
-      type="button"
-      size="small"
-      label="Choose"
-      [loading]="isBusy()"
-      [disabled]="isDisabled()"
-      (onClick)="choose()"
-    />
-  </div>
+  @if (isDisabled() || !currentOption.isAvailable) {
+    <span class="tag-badge tag-badge--warn flex-none">Unavailable</span>
+  }
 </article>

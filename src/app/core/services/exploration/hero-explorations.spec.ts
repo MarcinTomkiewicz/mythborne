@@ -5,6 +5,7 @@ import { TABLES } from '../../constants/tables.const';
 import { Row } from '../../types/supabase.types';
 import {
   mapResolveHeroExplorationStepResult,
+  toStartOrGetHeroExplorationAndStartInitialStepRpcArgs,
   toStartHeroExplorationStepRpcArgs,
 } from '../../utils/exploration-runtime-rpc';
 import { Backend } from '../backend/backend';
@@ -31,6 +32,24 @@ describe('HeroExplorations', () => {
           return of([pendingCombatEffectRow()]);
         case RPC.start_or_get_hero_exploration:
           return of([startRow()]);
+        case RPC.start_or_get_hero_exploration_and_start_initial_step:
+          return of(playerStateJson({
+            hasExploration: true,
+            exploration: {
+              id: 'exploration-1',
+              difficultyKey: 'easy',
+              status: 'active',
+              currentNodeId: 'node-1',
+              trialDryStepCount: 0,
+            },
+            activeStep: {
+              id: 'step-1',
+              stepKind: 'movement',
+              status: 'pending',
+              startedAt: '2026-05-01T10:00:00.000Z',
+              resolvesAt: '2026-05-01T10:05:00.000Z',
+            },
+          }));
         case RPC.start_hero_exploration_step:
           return of([startStepRow()]);
         case RPC.resolve_hero_exploration_step:
@@ -201,6 +220,33 @@ describe('HeroExplorations', () => {
     expect(backend.delete).not.toHaveBeenCalled();
   });
 
+  it('starts or gets exploration and initial step through the canonical initial workflow RPC', async () => {
+    const result = await firstValueFrom(
+      service.startOrGetHeroExplorationAndStartInitialStep({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        requestId: 'request-1',
+      }),
+    );
+
+    expect(result.activeStep?.id).toBe('step-1');
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.start_or_get_hero_exploration_and_start_initial_step,
+      {
+        p_hero_id: 'hero-1',
+        p_difficulty_key: 'easy',
+        p_request_id: 'request-1',
+      },
+    );
+    expect(backend.rpc).not.toHaveBeenCalledWith(
+      RPC.start_hero_exploration_step,
+      jasmine.anything(),
+    );
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+  });
+
   it('starts backtrack steps through RPC before refreshing the canonical state', async () => {
     await firstValueFrom(
       service.startHeroExplorationStep({
@@ -226,7 +272,7 @@ describe('HeroExplorations', () => {
     expect(backend.delete).not.toHaveBeenCalled();
   });
 
-  it('requires step kind when building movement step RPC args', () => {
+  it('requires step kind when building directed movement step RPC args', () => {
     expect(() =>
       toStartHeroExplorationStepRpcArgs({
         explorationId: 'exploration-1',
@@ -234,6 +280,28 @@ describe('HeroExplorations', () => {
         stepKind: '',
       }),
     ).toThrowError(/stepKind/);
+  });
+
+  it('requires request id when building initial start workflow RPC args', () => {
+    expect(() =>
+      toStartOrGetHeroExplorationAndStartInitialStepRpcArgs({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        requestId: '',
+      }),
+    ).toThrowError(/requestId/);
+  });
+
+  it('builds the initial start workflow RPC args without direction payload', () => {
+    expect(toStartOrGetHeroExplorationAndStartInitialStepRpcArgs({
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+      requestId: 'request-1',
+    })).toEqual({
+      p_hero_id: 'hero-1',
+      p_difficulty_key: 'easy',
+      p_request_id: 'request-1',
+    });
   });
 
   it('maps step resolution to canonical outcomes and preserves selection diagnostics', () => {
@@ -377,13 +445,14 @@ function difficultyRow(): Row<'exploration_difficulty_tiers'> {
   };
 }
 
-function playerStateJson() {
+function playerStateJson(patch: Record<string, unknown> = {}) {
   return {
     hasExploration: false,
     heroId: 'hero-1',
     difficultyKey: 'easy',
     explorationDate: '2026-05-01',
     remainingTrials: 2,
+    ...patch,
   };
 }
 

@@ -20,6 +20,10 @@ export type StartOrGetHeroExplorationRpcArgs =
   Rpc<'start_or_get_hero_exploration'>['Args'];
 export type StartOrGetHeroExplorationRpcRow =
   Rpc<'start_or_get_hero_exploration'>['Returns'][number];
+export type StartOrGetHeroExplorationAndStartInitialStepRpcArgs =
+  Rpc<'start_or_get_hero_exploration_and_start_initial_step'>['Args'];
+export type StartOrGetHeroExplorationAndStartInitialStepRpcResult =
+  Rpc<'start_or_get_hero_exploration_and_start_initial_step'>['Returns'];
 
 export type StartHeroExplorationStepRpcArgs =
   Rpc<'start_hero_exploration_step'>['Args'];

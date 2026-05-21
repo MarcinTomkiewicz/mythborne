@@ -24,6 +24,7 @@ import {
   GetHeroPendingCombatEffectStateRpcRow,
   PreviewTrialOpportunityCurveRpcRow,
   ResolveHeroExplorationStepRpcRow,
+  StartOrGetHeroExplorationAndStartInitialStepRpcResult,
   StartHeroExplorationStepRpcRow,
   StartOrGetHeroExplorationRpcRow,
 } from '../../types/exploration-runtime-rpc.types';
@@ -54,6 +55,7 @@ import {
   toGetHeroExplorationStateRpcArgs,
   toPreviewTrialOpportunityCurveRpcArgs,
   toResolveHeroExplorationStepRpcArgs,
+  toStartOrGetHeroExplorationAndStartInitialStepRpcArgs,
   toStartHeroExplorationStepRpcArgs,
   toStartOrGetHeroExplorationRpcArgs,
 } from '../../utils/exploration-runtime-rpc';
@@ -154,6 +156,19 @@ export class HeroExplorations {
           }),
         ),
       );
+  }
+
+  startOrGetHeroExplorationAndStartInitialStep(input: {
+    heroId: string;
+    difficultyKey: string;
+    requestId: string;
+  }): Observable<HeroExplorationStateReadModel> {
+    return this.backend
+      .rpc<StartOrGetHeroExplorationAndStartInitialStepRpcResult>(
+        RPC.start_or_get_hero_exploration_and_start_initial_step,
+        toStartOrGetHeroExplorationAndStartInitialStepRpcArgs(input),
+      )
+      .pipe(map(mapHeroExplorationStateJson));
   }
 
   startHeroExplorationStep(input: {

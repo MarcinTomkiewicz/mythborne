@@ -16,6 +16,7 @@ import {
   ResolveHeroExplorationStepRpcRow,
   StartHeroExplorationStepRpcArgs,
   StartHeroExplorationStepRpcRow,
+  StartOrGetHeroExplorationAndStartInitialStepRpcArgs,
   StartOrGetHeroExplorationRpcArgs,
   StartOrGetHeroExplorationRpcRow,
 } from '../types/exploration-runtime-rpc.types';
@@ -62,6 +63,18 @@ export function toStartOrGetHeroExplorationRpcArgs(input: {
   return {
     p_hero_id: requiredText(input.heroId, 'heroId'),
     p_difficulty_key: requiredText(input.difficultyKey, 'difficultyKey'),
+  };
+}
+
+export function toStartOrGetHeroExplorationAndStartInitialStepRpcArgs(input: {
+  heroId: string | null | undefined;
+  difficultyKey: string | null | undefined;
+  requestId: string | null | undefined;
+}): StartOrGetHeroExplorationAndStartInitialStepRpcArgs {
+  return {
+    p_hero_id: requiredText(input.heroId, 'heroId'),
+    p_difficulty_key: requiredText(input.difficultyKey, 'difficultyKey'),
+    p_request_id: requiredText(input.requestId, 'requestId'),
   };
 }
 

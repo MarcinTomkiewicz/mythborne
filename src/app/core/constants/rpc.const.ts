@@ -221,6 +221,8 @@ export const RPC = {
   simulate_trial_opportunity_runs: 'simulate_trial_opportunity_runs',
   start_hero_exploration_step: 'start_hero_exploration_step',
   start_or_get_hero_exploration: 'start_or_get_hero_exploration',
+  start_or_get_hero_exploration_and_start_initial_step:
+    'start_or_get_hero_exploration_and_start_initial_step',
   upsert_trial_definition: 'upsert_trial_definition',
   upsert_trial_combat_candidate: 'upsert_trial_combat_candidate',
   deactivate_trial_combat_candidate: 'deactivate_trial_combat_candidate',

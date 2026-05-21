@@ -1,5 +1,4 @@
-import { Component, input, output } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
+import { Component, computed, input, output } from '@angular/core';
 import {
   HeroExplorationMovementOptionReadModel,
 } from '../../../core/domain/exploration/exploration-runtime.model';
@@ -11,9 +10,10 @@ import {
 @Component({
   selector: 'app-exploration-direction-gate',
   standalone: true,
-  imports: [ButtonModule],
   templateUrl: './exploration-direction-gate.html',
-  host: { class: 'd-block w-100 h-100' },
+  host: {
+    class: 'd-block w-100',
+  },
 })
 export class ExplorationDirectionGate {
   readonly option = input.required<HeroExplorationMovementOptionReadModel>();
@@ -25,11 +25,25 @@ export class ExplorationDirectionGate {
   readonly chooseMovementOption = output<HeroExplorationMovementOptionReadModel>();
 
   readonly iconClass = () => explorationDirectionGateIconClass(this.slot());
+  readonly actionLabel = computed(() => {
+    if (this.isDisabled() || !this.option().isAvailable) {
+      return 'Unavailable';
+    }
 
-  choose(): void {
+    return this.slot() === 'back' ? 'Return' : 'Continue';
+  });
+
+  readonly canChoose = computed(() =>
+    !this.isBusy()
+    && !this.isDisabled()
+    && this.option().isAvailable,
+  );
+
+  choose(event?: Event): void {
+    event?.preventDefault();
     const option = this.option();
 
-    if (this.isBusy() || this.isDisabled() || !option.isAvailable) {
+    if (!this.canChoose()) {
       return;
     }
 

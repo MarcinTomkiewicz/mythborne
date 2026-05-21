@@ -12,6 +12,10 @@ import { ExplorationPageState } from './exploration-page.state';
   standalone: true,
   imports: [ExplorationDirectionGate],
   templateUrl: './exploration-direction-board.html',
+  styleUrl: './exploration-direction-board.scss',
+  host: {
+    class: 'd-block w-100',
+  },
 })
 export class ExplorationDirectionBoard {
   readonly page = inject(ExplorationPageState);

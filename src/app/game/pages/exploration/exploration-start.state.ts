@@ -17,6 +17,10 @@ export class ExplorationStartState {
   readonly isStarting = signal(false);
 
   startSelectedDifficulty(onReady?: () => void): void {
+    if (this.isStarting()) {
+      return;
+    }
+
     const context = this.overview.currentContext();
 
     if (!context) {
@@ -25,12 +29,16 @@ export class ExplorationStartState {
     }
 
     const token = this.actionToken.next();
+    const requestId = startExplorationRequestId(context.heroId, context.difficultyKey);
 
     this.isStarting.set(true);
     this.feedback.clear();
 
     this.explorations
-      .startOrGetHeroExploration(context)
+      .startOrGetHeroExplorationAndStartInitialStep({
+        ...context,
+        requestId,
+      })
       .pipe(
         finalize(() => {
           if (this.actionToken.isCurrent(token)) {
@@ -46,7 +54,6 @@ export class ExplorationStartState {
           }
 
           this.overview.setStateFromWorkflow(state);
-          this.feedback.setSuccess('Exploration is ready.');
           onReady?.();
         },
         error: (error: unknown) => {
@@ -65,4 +72,12 @@ export class ExplorationStartState {
       this.overview.isCurrentContext(heroId, difficultyKey)
     );
   }
+}
+
+function startExplorationRequestId(heroId: string, difficultyKey: string): string {
+  const randomId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  return `exploration-start:${heroId}:${difficultyKey}:${randomId}`;
 }

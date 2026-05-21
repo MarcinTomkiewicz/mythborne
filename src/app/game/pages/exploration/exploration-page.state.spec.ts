@@ -58,6 +58,7 @@ describe('ExplorationPageState', () => {
       'getActiveDifficultyTiers',
       'getHeroExplorationDifficultyCardPreviews',
       'getHeroExplorationState',
+      'startOrGetHeroExplorationAndStartInitialStep',
       'startHeroExplorationStep',
       'startOrGetHeroExploration',
       'previewTrialOpportunityCurve',
@@ -72,6 +73,9 @@ describe('ExplorationPageState', () => {
     );
     explorations.getHeroExplorationState.and.returnValue(of(noExplorationState('easy')));
     explorations.startHeroExplorationStep.and.returnValue(
+      of(activeExplorationState('easy', true)),
+    );
+    explorations.startOrGetHeroExplorationAndStartInitialStep.and.returnValue(
       of(activeExplorationState('easy', true)),
     );
     explorations.startOrGetHeroExploration.and.returnValue(of(activeExplorationState('easy')));
@@ -166,7 +170,7 @@ describe('ExplorationPageState', () => {
     expect(activeHero.requireActiveHero).toHaveBeenCalled();
   });
 
-  it('renders start exploration on the selected difficulty and starts through the canonical workflow', () => {
+  it('renders start exploration on the selected difficulty and starts through the initial-step workflow', () => {
     const fixture = TestBed.createComponent(ExplorationPage);
 
     fixture.detectChanges();
@@ -179,10 +183,30 @@ describe('ExplorationPageState', () => {
 
     startButton?.click();
 
-    expect(explorations.startOrGetHeroExploration).toHaveBeenCalledWith({
+    expect(explorations.startOrGetHeroExplorationAndStartInitialStep).toHaveBeenCalledWith({
       heroId: 'hero-1',
       difficultyKey: 'easy',
+      requestId: jasmine.stringMatching(/^exploration-start:hero-1:easy:/),
     });
+    expect(explorations.startOrGetHeroExploration).not.toHaveBeenCalled();
+    expect(explorations.startHeroExplorationStep).not.toHaveBeenCalled();
+  });
+
+  it('shows the pending movement screen after initial start instead of the direction board', () => {
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    findButton(fixture.nativeElement, 'Start exploration')?.click();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).toContain('Pending step');
+    expect(text).toContain('Movement in progress');
+    expect(text).not.toContain('Direction board');
   });
 
   it('selects an available non-selected difficulty from the whole card surface', () => {
@@ -242,6 +266,9 @@ describe('ExplorationPageState', () => {
 
   it('continues an existing exploration into the runtime screen without difficulty cards as primary content', () => {
     explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    explorations.startOrGetHeroExplorationAndStartInitialStep.and.returnValue(
+      of(activeExplorationState('easy')),
+    );
     const fixture = TestBed.createComponent(ExplorationPage);
 
     fixture.detectChanges();
@@ -254,8 +281,6 @@ describe('ExplorationPageState', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
     expect(text).toContain('Exploration runtime');
-    expect(text).toContain('Choose the next path');
-    expect(text).toContain('Directions');
     expect(text).toContain('Direction board');
     expect(text).toContain('North road');
     expect(text).toContain('Available path');
@@ -264,6 +289,9 @@ describe('ExplorationPageState', () => {
 
   it('starts the next movement step from the runtime direction board', () => {
     explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+    explorations.startOrGetHeroExplorationAndStartInitialStep.and.returnValue(
+      of(activeExplorationState('easy')),
+    );
     const fixture = TestBed.createComponent(ExplorationPage);
 
     fixture.detectChanges();
@@ -273,11 +301,11 @@ describe('ExplorationPageState', () => {
     findButton(fixture.nativeElement, 'Continue adventure')?.click();
     fixture.detectChanges();
 
-    const chooseButton = findButton(fixture.nativeElement, 'Choose path');
+    const chooseAction = findDirectionGate(fixture.nativeElement, 'North road');
 
-    expect(chooseButton).not.toBeNull();
+    expect(chooseAction).not.toBeNull();
 
-    chooseButton?.click();
+    chooseAction?.click();
 
     expect(explorations.startHeroExplorationStep).toHaveBeenCalledWith({
       heroId: 'hero-1',
@@ -289,11 +317,15 @@ describe('ExplorationPageState', () => {
   });
 
   it('shows a no-choice state when the runtime read model has no directions', () => {
-    explorations.getHeroExplorationState.and.returnValue(of({
+    const stateWithoutDirections = {
       ...activeExplorationState('easy'),
       edges: [],
       movementOptions: [],
-    }));
+    };
+    explorations.getHeroExplorationState.and.returnValue(of(stateWithoutDirections));
+    explorations.startOrGetHeroExplorationAndStartInitialStep.and.returnValue(
+      of(stateWithoutDirections),
+    );
     const fixture = TestBed.createComponent(ExplorationPage);
 
     fixture.detectChanges();
@@ -305,10 +337,9 @@ describe('ExplorationPageState', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-    expect(text).toContain('Directions');
     expect(text).toContain('No available directions.');
     expect(text).toContain('No directions are available');
-    expect(findButton(fixture.nativeElement, 'Choose path')).toBeNull();
+    expect(findDirectionGate(fixture.nativeElement, 'North road')).toBeNull();
   });
 
   it('renders active pending step as the runtime screen with backend-owned progress', () => {
@@ -381,17 +412,40 @@ describe('ExplorationPageState', () => {
     page.loadData();
     page.startSelectedDifficulty();
 
-    expect(explorations.startOrGetHeroExploration).toHaveBeenCalledWith({
+    expect(explorations.startOrGetHeroExplorationAndStartInitialStep).toHaveBeenCalledWith({
       heroId: 'hero-1',
       difficultyKey: 'easy',
+      requestId: jasmine.stringMatching(/^exploration-start:hero-1:easy:/),
     });
+    expect(explorations.startOrGetHeroExploration).not.toHaveBeenCalled();
+    expect(explorations.startHeroExplorationStep).not.toHaveBeenCalled();
     expect(page.state()?.hasExploration).toBeTrue();
-    expect(feedback.successMessage()).toBe('Exploration is ready.');
+    expect(feedback.successMessage()).toBeNull();
+  });
+
+  it('ignores a second start click while the initial workflow is pending', () => {
+    const startResponse = new Subject<HeroExplorationStateReadModel>();
+    explorations.startOrGetHeroExplorationAndStartInitialStep.and.returnValue(
+      startResponse.asObservable(),
+    );
+
+    page.loadData();
+    page.startSelectedDifficulty();
+    page.startSelectedDifficulty();
+
+    expect(explorations.startOrGetHeroExplorationAndStartInitialStep).toHaveBeenCalledTimes(1);
+    expect(page.isStarting()).toBeTrue();
+
+    startResponse.next(activeExplorationState('easy', true));
+    startResponse.complete();
+
+    expect(page.isStarting()).toBeFalse();
   });
 
   it('starts movement through RPC for the selected DB edge', () => {
     page.loadData();
     page.startSelectedDifficulty();
+    page.overview.setStateFromWorkflow(activeExplorationState('easy'));
     const option = page.movementOptions()[0];
 
     page.chooseMovementOption(option);
@@ -2074,6 +2128,12 @@ function difficultyCardPreview(key: string): HeroExplorationDifficultyCardPrevie
 function findButton(element: Element, label: string): HTMLButtonElement | null {
   return Array.from(element.querySelectorAll('button')).find((button) =>
     button.textContent?.includes(label),
+  ) ?? null;
+}
+
+function findDirectionGate(element: Element, label: string): HTMLElement | null {
+  return Array.from(element.querySelectorAll<HTMLElement>('[role="button"]')).find((action) =>
+    action.textContent?.includes(label),
   ) ?? null;
 }
 

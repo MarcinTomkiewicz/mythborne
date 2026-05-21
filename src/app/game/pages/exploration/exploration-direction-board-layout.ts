@@ -28,7 +28,11 @@ export function buildExplorationDirectionBoardLayout(
     right: [],
     back: [],
     unsupported: [],
-    openPathCount: options.filter((option) => option.isAvailable).length,
+    openPathCount: options.filter(
+      (option) => option.isAvailable
+        && !option.isBacktrack
+        && option.stepKind !== 'backtrack',
+    ).length,
     hasBackPath: false,
   };
 

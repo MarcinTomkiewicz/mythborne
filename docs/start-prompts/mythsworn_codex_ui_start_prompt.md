@@ -45,7 +45,7 @@ Prototyp NIE jest źródłem do kopiowania finalnego skinu 1:1.
 Aktualny dashboard / game shell jest production visual baseline. Adaptuj prototyp do obecnego stylu produkcyjnego:
 
 - istniejące `mg-*` karty, utilities, wrappers i shared components;
-- obecny dark blue/gold treatment;
+- obecny dark blue/color-heading treatment;
 - obecny rytm dashboardu: spacing, density, cards, buttons, badges, label/value rows;
 - obecny topbar/sidebar/game-shell style.
 

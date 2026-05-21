@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-20 — UI-EXPLORATION-10 movement-option integration functionally accepted
+Updated: 2026-05-21 — UI-EXPLORATION canonical initial movement flow accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -5757,6 +5757,185 @@ Render backend-provided direction choices as the main continuation action after 
 
 **Status:** Functionally accepted on 2026-05-20 for movement-option integration. The direction board now renders backend-owned `get_hero_exploration_state(...).movementOptions[]` rather than legacy `edges()` and starts movement through the canonical `start_hero_exploration_step(...)` path. Edge options require `edgeId` plus non-empty `stepKind`; backtrack requires `edgeId: null` and `stepKind: 'backtrack'`; active step/challenge state blocks movement through the existing runtime state. The board remains option-driven, does not fabricate directions, and does not add reward/challenge/combat/trial UI. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused Exploration spec command remains blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`. Manual smoke remains required for 1/2/3 edge options, optional backtrack, and active step/challenge blocking. Visual direction-board prototype polish is explicitly deferred as a separate follow-up task.
 
+**Follow-up status:** Accepted on 2026-05-21 for canonical initial movement flow. `Start exploration` now uses backend-owned `start_or_get_hero_exploration_and_start_initial_step(p_hero_id, p_difficulty_key, p_request_id)` instead of frontend movement inference; fresh explorations enter `activeStep`, the direction board stays hidden while an active step exists, and ready/resolved routes continue to render `movementOptions[]`. Directed edge movement still uses `edgeId + stepKind`, and backtrack remains the only `edgeId: null` movement path outside the initial-start RPC. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; focused Exploration specs remain blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`. Follow-up smoke remains required for double-click Start idempotency, existing active-step timer recovery and existing ready-route movement-option rendering.
+
+
+## UI-EXPLORATION-10-FOLLOW-UP — Direction board visual/prototype alignment
+
+**Goal:**  
+Bring the `/game/exploration` runtime direction board visually closer to the accepted Exploration Direction Board prototype, while preserving the already accepted `movementOptions[]` functional contract from UI-EXPLORATION-10.
+
+This is a visual/prototype-alignment task only. The direction board must stop looking like a plain grid of generic cards and become a clear gameplay surface: central board/core, generated direction gates around it, compact runtime HUD, and visually obvious primary continuation action.
+
+---
+
+### Sources to read first
+
+- `AGENTS.md`
+- `docs/ui-ux/README.md`
+- `docs/ui-ux/prototypes/mythsworn_exploration_direction_choice.html`
+- `docs/ui-ux/prototype-production-mapping.md`
+- `docs/ui-ux/global-scss-shared-inventory.md`
+- `docs/ui-ux/utility-class-audit.md`
+- `docs/ui-ux/shared-surface-patterns.md`
+- `docs/ui-ux/primeng-vendor-wrapper-lookup.md`
+
+Use the attached screenshot of the prototype as visual comparison.
+
+Prototype is visual reference only. Do not copy prototype CSS, `mb-*` classes, raw colors, raw gradients, raw dimensions, or mock content.
+
+---
+
+### Current state / starting point
+
+UI-EXPLORATION-10 functionally accepts the movement option contract:
+
+- direction board renders from `state.movementOptions[]`;
+- edge options use `edgeId + stepKind`;
+- backtrack uses `edgeId: null` and `stepKind: 'backtrack'`;
+- UI supports 1, 2, or 3 edge options plus optional backtrack;
+- no local generation of missing directions;
+- no direct DB reads/writes.
+
+This follow-up must preserve that.
+
+---
+
+### Prototype anchors to translate
+
+Inspect the prototype structure and translate these visual/product ideas into current Mythsworn production patterns:
+
+1. **Large gameplay stage**
+   - Prototype intent: `.mb-hero-stage` / cinematic gameplay board surface.
+   - Production translation: one strong board surface inside the current game shell, using `mg-card`, existing tokens/utilities, and only minimal global reusable SCSS if utilities cannot express the board.
+   - Do not copy the full prototype page shell/topbar/sidebar.
+
+2. **Compact exploration mini-HUD**
+   - Prototype intent: `.mb-exploration-minihud`.
+   - Production translation: a compact text/HUD strip for current node, trials, effect, difficulty/status.
+   - It should not look like random debug badges.
+   - Important values must remain readable and not be muted.
+
+3. **Central direction board**
+   - Prototype intent: `.mb-oracle-board` with central composition and visual relationship between choices.
+   - Production translation: central “Direction board” / current-step core that visually anchors the available movement options.
+   - It should be visually dominant enough to read as the main gameplay interaction, not a small nested card.
+
+4. **Generated direction gates**
+   - Prototype intent: `.mb-path-gate` cards around the board.
+   - Production translation: `ExplorationDirectionGate` remains a small component, but it should look like a route choice/gate, not a generic stat card.
+   - Forward/left/right/back positions should be visually meaningful:
+     - forward above/forward from core;
+     - left and right around the core;
+     - back below when present.
+   - Missing directions must not be fabricated. If DB does not provide a slot, do not create a fake path.
+   - If DB provides an unavailable option, show it as disabled/unavailable with visible reason/status, not opacity only.
+
+5. **Board summary**
+   - Prototype intent: central “N paths open · Back available”.
+   - Production translation: derive from actual `movementOptions[]`.
+   - Show open path count and back availability from real options only.
+   - Do not hardcode or infer fake options.
+
+6. **Generated choices, not map nodes**
+   - No invented route/location names.
+   - No labels like “Broken Colonnade”, “Sunken Courtyard”, “safe/risky/balanced”.
+   - Direction labels/status must come from `movementOptions[]` / read model.
+
+---
+
+### Scope
+
+Allowed files are limited to the direction board visual layer and narrowly necessary global style support:
+
+- `src/app/game/pages/exploration/exploration-direction-board.*`
+- `src/app/game/pages/exploration/exploration-direction-gate.*`
+- existing global SCSS/layout/style aggregators only if a small reusable board/stage pattern is truly needed
+
+If global SCSS is needed, it must be token-driven and placed in the appropriate global SCSS area, not component-scoped `styleUrl`.
+
+---
+
+### Out of scope
+
+- DB/RPC/schema changes
+- manual generated type edits
+- changing `movementOptions[]` contract
+- changing movement service/RPC logic
+- Armory
+- Trial/combat/challenge/reward implementation
+- pending-step timer behavior
+- full step report/reward redesign
+- status docs unless the task is accepted afterward
+
+---
+
+### UI/SCSS rules
+
+- No component-scoped SCSS for this board unless explicitly justified before implementation.
+- No `mb-*` classes.
+- No copied prototype raw colors, gradients, shadows, dimensions, or media queries.
+- Use existing `mg-card`, `mg-section__title`, grid/flex utilities, PrimeNG buttons and wrappers first.
+- If existing utilities are insufficient for the board geometry, add the smallest global reusable class set and explain why it is not duplicating existing utilities.
+- Do not create a new local card/badge/button system.
+- Do not use `NgTemplateOutlet`, `NgClass` / `ngClass`, `FormsModule`, `ngModel`, or native `<button pButton>`.
+- Use `<p-button />` where a PrimeNG button is needed.
+- Disabled/unavailable gates must have actual disabled/aria-disabled behavior plus visible text, not opacity alone.
+
+---
+
+### Functional preservation
+
+The visual pass must preserve:
+
+- board renders from `movementOptions[]`;
+- no fallback to `page.edges()`;
+- no local movement option generation;
+- no local randomization;
+- no assumption that exactly 3 directions exist;
+- backtrack rendered only if DB provides it;
+- unknown/unsupported direction keys still render in fallback rather than disappearing;
+- `chooseMovementOption(...)` guard stays intact;
+- `start_hero_exploration_step` payload semantics stay unchanged.
+
+---
+
+### Acceptance criteria
+
+- Direction board is visually close to the prototype structure:
+  - large gameplay surface;
+  - central board/core;
+  - direction gates arranged around the core;
+  - compact exploration HUD;
+  - path count/back availability shown from real options.
+- Board no longer looks like a plain generic card grid.
+- All backend-provided movement options remain visible or explicitly handled.
+- Missing directions are not fabricated.
+- Backtrack appears below/behind the core when present.
+- Unavailable options are visibly disabled and non-clickable.
+- No copied prototype CSS/classes/tokens.
+- No component-scoped SCSS unless explicitly justified and approved in report.
+- No DB/RPC/generated/manual type edits.
+- `npx tsc --noEmit`: pass.
+- `npm run build`: pass, existing warnings only.
+- Manual visual smoke: compare against attached prototype screenshot at desktop width.
+
+---
+
+### Required short report
+
+Return only:
+
+- files changed;
+- prototype anchors matched;
+- movement contract preserved: yes/no;
+- global SCSS added/changed: yes/no + exact file;
+- local/component SCSS added: yes/no;
+- copied from prototype: yes/no;
+- verification;
+- known remaining visual gaps, if any.
+
+Do not paste full files/code unless explicitly asked.
 
 ## UI-EXPLORATION-11 — Challenge handoff shell
 
