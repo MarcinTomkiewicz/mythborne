@@ -12,27 +12,18 @@ import {
   standalone: true,
   templateUrl: './exploration-direction-gate.html',
   host: {
-    class: 'd-block w-100',
+    class: 'd-block w-100 h-100',
   },
 })
 export class ExplorationDirectionGate {
   readonly option = input.required<HeroExplorationMovementOptionReadModel>();
   readonly slot = input.required<ExplorationDirectionGateSlot>();
   readonly label = input.required<string>();
-  readonly statusLabel = input.required<string>();
   readonly isBusy = input(false);
   readonly isDisabled = input(false);
   readonly chooseMovementOption = output<HeroExplorationMovementOptionReadModel>();
 
   readonly iconClass = () => explorationDirectionGateIconClass(this.slot());
-  readonly actionLabel = computed(() => {
-    if (this.isDisabled() || !this.option().isAvailable) {
-      return 'Unavailable';
-    }
-
-    return this.slot() === 'back' ? 'Return' : 'Continue';
-  });
-
   readonly canChoose = computed(() =>
     !this.isBusy()
     && !this.isDisabled()

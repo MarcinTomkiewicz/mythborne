@@ -11,6 +11,7 @@ import { ExplorationSelectionDiagnosticsCard } from './exploration-selection-dia
   standalone: true,
   imports: [ButtonModule, GameBar, ExplorationDirectionBoard, ExplorationSelectionDiagnosticsCard],
   templateUrl: './exploration-status-section.html',
+  host: { class: 'd-block w-100' },
 })
 export class ExplorationStatusSection {
   readonly page = inject(ExplorationPageState);

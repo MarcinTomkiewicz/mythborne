@@ -5767,6 +5767,8 @@ Bring the `/game/exploration` runtime direction board visually closer to the acc
 
 This is a visual/prototype-alignment task only. The direction board must stop looking like a plain grid of generic cards and become a clear gameplay surface: central board/core, generated direction gates around it, compact runtime HUD, and visually obvious primary continuation action.
 
+**Status:** Accepted/completed on 2026-05-21 as the direction board visual/composition pass. The runtime direction board now uses a centered gameplay board scene with fixed oracle geometry, inner frames, subtle directional rays, a Polish `Wybierz kierunek` core, full-card keyboard/clickable route gates, and a disabled visual Back placeholder when no real backtrack option exists. The functional UI-EXPLORATION-10 movement contract is preserved: rendered choices still come from backend-owned `movementOptions[]`, real backtrack remains `edgeId: null` plus `stepKind: 'backtrack'`, unsupported directions remain handled separately, and no direction is fabricated as a movement option. Styling ownership was cleaned up by removing local gate SCSS, using `mg-card` plus a shared `mg-card--interactive` surface variant, and keeping board-local SCSS limited to fixed board geometry/decorative rays. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps. User visual smoke is accepted enough for this pass; remaining hover/glow polish is deferred unless tester feedback or broader shared-card polish requires it.
+
 ---
 
 ### Sources to read first

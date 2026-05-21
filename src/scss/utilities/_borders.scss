@@ -12,6 +12,14 @@
   border-color: v.$color-secondary !important;
 }
 
+.border-dashed {
+  border-style: dashed !important;
+}
+
+.radius-lg {
+  border-radius: v.$radius-lg !important;
+}
+
 .radius-circle {
   border-radius: 50% !important;
 }

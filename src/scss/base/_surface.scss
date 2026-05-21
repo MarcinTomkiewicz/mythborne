@@ -87,6 +87,37 @@
   @include game-shell-selected-card;
 }
 
+.mg-card--interactive {
+  transition:
+    border-color v.$transition-fast,
+    box-shadow v.$transition-fast,
+    background v.$transition-fast,
+    transform v.$transition-fast;
+}
+
+.mg-card--interactive:not(.mg-card--selected):not([aria-disabled="true"]):hover,
+.mg-card--interactive:not(.mg-card--selected):not([aria-disabled="true"]):focus-visible {
+  border-color: color-mix(in srgb, v.$color-secondary 36%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, v.$color-secondary 12%, transparent),
+    v.$shadow-soft;
+  transform: translateY(-2px);
+}
+
+.mg-card--interactive[aria-disabled="true"] {
+  transform: none;
+}
+
+.mg-game-shell .mg-card--interactive:not(.mg-card--selected):not([aria-disabled="true"]):hover,
+.mg-game-shell .mg-card--interactive:not(.mg-card--selected):not([aria-disabled="true"]):focus-visible {
+  border-color: color-mix(in srgb, v.$color-progress-gold-end 34%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, v.$color-progress-gold-end 18%, transparent),
+    0 0 0 1px color-mix(in srgb, v.$color-progress-gold-end 12%, transparent),
+    0 0 1.15rem color-mix(in srgb, v.$color-progress-gold-end 8%, transparent),
+    v.$shadow-premium;
+}
+
 .card-legend {
   position: absolute;
   top: 0;
