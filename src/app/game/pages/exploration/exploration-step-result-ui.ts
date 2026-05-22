@@ -6,15 +6,15 @@ import {
 import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 
 const ENCOUNTER_KIND_LABEL: Record<string, string> = {
-  [ENCOUNTER_KIND.combat]: 'Combat ',
-  [ENCOUNTER_KIND.resource]: 'Resource ',
-  [ENCOUNTER_KIND.buff]: 'Buff ',
-  [ENCOUNTER_KIND.debuff]: 'Debuff ',
+  [ENCOUNTER_KIND.combat]: 'Bojowe ',
+  [ENCOUNTER_KIND.resource]: 'Zasobowe ',
+  [ENCOUNTER_KIND.buff]: 'Wzmacniające ',
+  [ENCOUNTER_KIND.debuff]: 'Osłabiające ',
 };
 
 const EFFECT_ENCOUNTER_LABEL: Record<string, string> = {
-  [ENCOUNTER_KIND.buff]: 'Buff Encounter',
-  [ENCOUNTER_KIND.debuff]: 'Debuff Encounter',
+  [ENCOUNTER_KIND.buff]: 'wzmacniające spotkanie',
+  [ENCOUNTER_KIND.debuff]: 'osłabiające spotkanie',
 };
 
 export function explorationStepResultTitle(
@@ -25,22 +25,22 @@ export function explorationStepResultTitle(
   }
 
   if (isTrialManifestationFailure(result)) {
-    return 'Trial manifestation failed';
+    return 'Próba się nie ujawniła';
   }
 
   if (result.outcomeKind === 'trial') {
     return result.challengeAttemptId
-      ? 'Trial manifested'
-      : 'Trial outcome missing challenge';
+      ? 'Próba ujawniona'
+      : 'Próba wymaga uzupełnienia akcji';
   }
 
   if (result.outcomeKind === 'encounter') {
-    return `${encounterKindPrefix(result)}Encounter ${
-      result.challengeAttemptId ? 'started' : 'resolved'
-    }`;
+    return result.challengeAttemptId
+      ? `${encounterKindPrefix(result)}spotkanie rozpoczęte`
+      : `${encounterKindPrefix(result)}spotkanie rozstrzygnięte`;
   }
 
-  return 'Nothing found';
+  return 'Bez zdarzenia';
 }
 
 export function explorationStepResultDescription(
@@ -52,22 +52,22 @@ export function explorationStepResultDescription(
   }
 
   if (isTrialManifestationFailure(result)) {
-    return 'A Trial opportunity appeared, but manifestation failed. DB did not grant a reward for this outcome.';
+    return 'Pojawiła się szansa na próbę, ale próba nie ujawniła się. To prawidłowy wynik bez nagrody.';
   }
 
   if (result.outcomeKind === 'trial') {
     return result.challengeAttemptId
-      ? 'A Trial challenge is active. Resolve it through the supported Trial action to continue exploration.'
-      : 'DB returned a Trial outcome without a challenge action. Refresh exploration state or report this runtime state.';
+      ? 'Aktywna próba czeka na rozstrzygnięcie przed dalszą eksploracją.'
+      : 'Próba zatrzymała wyprawę i czeka na dalsze rozstrzygnięcie.';
   }
 
   if (result.outcomeKind === 'encounter') {
     return result.challengeAttemptId
-      ? `A ${encounterKindPrefix(result)}Encounter requires resolution before exploration can continue.`
+      ? `${encounterKindPrefix(result)}spotkanie wymaga rozstrzygnięcia przed dalszą eksploracją.`
       : encounterOutcomeDescription(result, activeEffect);
   }
 
-  return 'Nothing was selected; this is the database fallback after Trial and Encounter selection.';
+  return 'Szlak nie ujawnił żadnego zdarzenia. Możesz kontynuować wyborem następnego kierunku.';
 }
 
 function encounterKindPrefix(
@@ -83,18 +83,18 @@ function encounterOutcomeDescription(
   const kind = encounterKind(result);
 
   if (kind === ENCOUNTER_KIND.resource) {
-    return 'A Resource Encounter resolved through the database reward flow.';
+    return 'Zasobowe spotkanie zostało rozstrzygnięte i może mieć nagrodę z wyniku eksploracji.';
   }
 
   if (kind === ENCOUNTER_KIND.buff || kind === ENCOUNTER_KIND.debuff) {
     const label = EFFECT_ENCOUNTER_LABEL[kind];
 
     return activeEffect
-      ? `A ${label} applied an exploration effect.`
-      : `A ${label} resolved; DB did not return an active effect row in the refreshed state.`;
+      ? `${label} nałożyło efekt eksploracji.`
+      : `${label} zostało rozstrzygnięte bez aktywnego efektu do pokazania.`;
   }
 
-  return 'An Encounter outcome was returned by the database runtime.';
+  return 'Spotkanie zostało rozstrzygnięte i wyprawa może ruszyć dalej.';
 }
 
 function encounterKind(result: HeroExplorationStepResolutionReadModel): string | null {

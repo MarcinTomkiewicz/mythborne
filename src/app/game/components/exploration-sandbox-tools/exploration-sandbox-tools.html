@@ -1,0 +1,31 @@
+@if (page.canShowSandboxTools()) {
+  <article class="mg-card p-md w-100 mb-lg flex-row-between-center flex-col-sm gap-md">
+    <div class="flex-col gap-xs min-w-0">
+      <p class="small-caps color-muted text-xs mb-0">Sandbox</p>
+      <strong class="color-heading">Narzędzia testowe eksploracji</strong>
+      <span class="color-muted text-sm">
+        Akcje działają przez sandboxowe RPC i są ukryte poza kontekstem testowym.
+      </span>
+    </div>
+    <div class="flex-row-start-center flex-wrap gap-xs">
+      <p-button
+        type="button"
+        size="small"
+        severity="secondary"
+        label="Skróć czas"
+        [loading]="page.isRunningSandboxTool()"
+        [disabled]="!page.canSkipSandboxStepTimer()"
+        (onClick)="page.skipSandboxStepTimer()"
+      />
+      <p-button
+        type="button"
+        size="small"
+        severity="secondary"
+        label="Dodaj triale"
+        [loading]="page.isRunningSandboxTool()"
+        [disabled]="!page.canAddSandboxTrials()"
+        (onClick)="page.addSandboxTrials()"
+      />
+    </div>
+  </article>
+}

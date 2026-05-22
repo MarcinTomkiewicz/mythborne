@@ -1,7 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { GameBar } from '../../../shared/game-bar/game-bar';
-import { ExplorationStepOutcomeKind } from '../../../core/domain/exploration/exploration-readiness.model';
+import { ExplorationSandboxTools } from '../../components/exploration-sandbox-tools/exploration-sandbox-tools';
+import { ExplorationStepHandoffCard } from '../../components/exploration-step-handoff-card/exploration-step-handoff-card';
+import { ExplorationChallengePanel } from './exploration-challenge-panel';
 import { ExplorationDirectionBoard } from './exploration-direction-board';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationSelectionDiagnosticsCard } from './exploration-selection-diagnostics-card';
@@ -9,7 +11,15 @@ import { ExplorationSelectionDiagnosticsCard } from './exploration-selection-dia
 @Component({
   selector: 'app-exploration-status-section',
   standalone: true,
-  imports: [ButtonModule, GameBar, ExplorationDirectionBoard, ExplorationSelectionDiagnosticsCard],
+  imports: [
+    ButtonModule,
+    GameBar,
+    ExplorationChallengePanel,
+    ExplorationDirectionBoard,
+    ExplorationSandboxTools,
+    ExplorationSelectionDiagnosticsCard,
+    ExplorationStepHandoffCard,
+  ],
   templateUrl: './exploration-status-section.html',
   host: { class: 'd-block w-100' },
 })
@@ -18,26 +28,13 @@ export class ExplorationStatusSection {
 
   formatStepTime(value: string | null): string {
     if (!value) {
-      return 'unknown';
+      return 'nieznany czas';
     }
 
     const date = new Date(value);
 
     return Number.isNaN(date.getTime())
-      ? 'unknown'
+      ? 'nieznany czas'
       : date.toLocaleString();
-  }
-
-  stepOutcomeLabel(outcomeKind: ExplorationStepOutcomeKind | string): string {
-    switch (outcomeKind) {
-      case 'nothing':
-        return 'Nothing';
-      case 'trial':
-        return 'Trial';
-      case 'encounter':
-        return 'Encounter';
-      default:
-        return 'Outcome';
-    }
   }
 }

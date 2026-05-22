@@ -2,49 +2,49 @@
   <section class="mg-card p-lg w-100">
     <div class="grid-2-1 gap-lg grid-items-center">
       <div class="flex-col gap-xs">
-        <p class="small-caps color-muted text-xs mb-0">Exploration</p>
+        <p class="small-caps color-muted text-xs mb-0">Eksploracja</p>
         <h2 class="mg-section__title mg-section__title--sm mb-0">
-          Choose difficulty and track the route
+          Wybierz trudność i prowadź wyprawę
         </h2>
         <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
-          Start or continue the active hero's exploration with DB-backed difficulty, Trial availability and runtime state.
+          Rozpocznij albo kontynuuj wyprawę aktywnego bohatera.
         </p>
       </div>
 
       <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
         <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-          <span class="color-muted small-caps uppercase text-xs">Difficulty</span>
+          <span class="color-muted small-caps uppercase text-xs">Trudność</span>
           <strong class="color-heading text-md">
             @if (page.selectedDifficulty(); as difficulty) {
               {{ difficulty.difficultyLabel }}
             } @else if (page.isLoading()) {
-              Loading
+              Ładowanie
             } @else {
-              Not selected
+              Nie wybrano
             }
           </strong>
         </div>
         <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-          <span class="color-muted small-caps uppercase text-xs">Approx. auto result</span>
+          <span class="color-muted small-caps uppercase text-xs">Szacowany wynik auto</span>
           <strong class="color-text text-md">
             @if (page.selectedDifficultyCardPreview(); as preview) {
               {{ preview.autoResultDisplay }}
             } @else {
-              Loading
+              Ładowanie
             }
           </strong>
         </div>
         @if (page.state(); as state) {
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Trials today</span>
+            <span class="color-muted small-caps uppercase text-xs">Próby dzisiaj</span>
             <strong class="color-heading text-md">{{ page.remainingTrialsLabel() }}</strong>
           </div>
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Effect</span>
+            <span class="color-muted small-caps uppercase text-xs">Efekt</span>
             @if (page.activeEffectDisplay(); as effect) {
               <strong class="color-text text-md">{{ effect.title }}</strong>
             } @else {
-              <strong class="color-text text-md">None active</strong>
+              <strong class="color-text text-md">Brak aktywnego</strong>
             }
           </div>
         }
@@ -79,5 +79,5 @@
 
 <app-loading-overlay
   [visible]="page.isLoading() || page.isStarting()"
-  [label]="page.isStarting() ? 'Starting exploration...' : 'Loading exploration...'"
+  [label]="page.isStarting() ? 'Rozpoczynanie eksploracji...' : 'Ładowanie eksploracji...'"
 />

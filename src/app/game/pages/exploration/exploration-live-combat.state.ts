@@ -107,6 +107,35 @@ export class ExplorationLiveCombatState {
       ? `Runda ${state.currentRoundNumber}, akcja ${state.currentActionIndex}`
       : 'Runda N/D';
   });
+  readonly combatPlayerActionStatusLabel = computed(() => {
+    if (this.isEnsuringCombatSession()) {
+      return 'Przygotowanie sesji walki.';
+    }
+
+    if (this.isSubmittingCombatAction()) {
+      return 'Rozstrzyganie akcji bohatera.';
+    }
+
+    const state = this.combatLiveState();
+
+    if (!state) {
+      return 'Sesja walki jest przygotowywana.';
+    }
+
+    if (state.statusKey === 'completed') {
+      return 'Walka została zakończona.';
+    }
+
+    if (!state.awaitingPlayerAction) {
+      return 'Walka rozstrzyga obecną turę. Poczekaj na kolejny moment działania.';
+    }
+
+    if (!this.combatTimingManifest()) {
+      return 'Walka czeka na kolejne okno akcji.';
+    }
+
+    return 'Możesz rozpocząć akcję bohatera.';
+  });
 
   constructor() {
     effect(() => {

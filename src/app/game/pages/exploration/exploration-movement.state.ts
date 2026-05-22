@@ -5,6 +5,7 @@ import {
   HeroExplorationMovementOptionReadModel,
 } from '../../../core/domain/exploration/exploration-runtime.model';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
+import { ToastService } from '../../../core/services/ui/toast';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -15,6 +16,7 @@ export class ExplorationMovementState {
   private readonly explorations = inject(HeroExplorations);
   private readonly feedback = inject(ExplorationFeedbackState);
   private readonly overview = inject(ExplorationOverviewState);
+  private readonly toast = inject(ToastService);
   private readonly movementToken = new RequestToken();
 
   readonly isMoving = signal(false);
@@ -94,7 +96,7 @@ export class ExplorationMovementState {
           }
 
           this.overview.setStateFromWorkflow(nextState);
-          this.feedback.setSuccess('Movement step started.');
+          this.toast.show('success', 'Eksploracja', 'Ruch został rozpoczęty.');
         },
         error: (error: unknown) => {
           if (!this.isCurrentMovement(token, context.heroId, context.difficultyKey, exploration.id)) {

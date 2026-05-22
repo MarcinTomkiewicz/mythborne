@@ -8,6 +8,7 @@ import { ExplorationPageState } from './exploration-page.state';
   standalone: true,
   imports: [ButtonModule, WalkingDeadMeter],
   templateUrl: './exploration-challenge-panel.html',
+  host: { class: 'd-block w-100' },
 })
 export class ExplorationChallengePanel {
   readonly page = inject(ExplorationPageState);

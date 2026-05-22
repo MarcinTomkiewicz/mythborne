@@ -1,0 +1,93 @@
+@if (view(); as view) {
+  <article class="mg-card p-lg w-100 flex-col gap-md">
+    <section class="mg-card p-md flex-row-start-center flex-col-sm gap-md">
+      <span class="mg-card p-sm flex-row-center-center flex-none square-11">
+        <i class="{{ view.iconClass }} text-xl" aria-hidden="true"></i>
+      </span>
+      <div class="flex-col gap-xs min-w-0 w-100">
+        <div class="flex-row-start-center flex-wrap gap-xs">
+          <p class="small-caps color-muted text-xs m-0">Wynik ruchu</p>
+          <span
+            class="tag-badge"
+            [class.tag-badge--success]="view.badgeTone === 'success'"
+            [class.tag-badge--info]="view.badgeTone === 'info'"
+            [class.tag-badge--warn]="view.badgeTone === 'warn'"
+            [class.tag-badge--muted]="view.badgeTone === 'muted'"
+          >
+            {{ view.badgeLabel }}
+          </span>
+        </div>
+        <h4 class="color-heading text-xl m-0">{{ view.title }}</h4>
+        <p class="color-text m-0">{{ view.description }}</p>
+      </div>
+    </section>
+
+    <section class="mg-card p-md flex-col gap-sm">
+      <div class="flex-col gap-xs">
+        <p class="small-caps color-muted text-xs m-0">Co się stało</p>
+        <strong class="color-heading">{{ view.narrativeTitle }}</strong>
+      </div>
+      @for (line of view.narrativeLines; track line) {
+        <p class="color-text m-0">{{ line }}</p>
+      }
+    </section>
+
+    <section class="mg-card p-md flex-col gap-xs">
+      <p class="small-caps color-muted text-xs m-0">Skutek</p>
+      <strong class="color-heading">{{ view.outcomeTitle }}</strong>
+      <span class="color-text text-sm">{{ view.outcomeDescription }}</span>
+    </section>
+
+    @if (
+      page.isLoadingReward()
+      || page.rewardDisplay()
+      || page.activeEffectDisplay()
+    ) {
+      <section class="mg-grid-auto-fit gap-sm">
+        @if (page.isLoadingReward()) {
+          <article class="mg-card p-md flex-col gap-xs">
+            <p class="small-caps color-muted text-xs m-0">Nagroda</p>
+            <strong class="color-heading">Sprawdzanie nagrody</strong>
+            <span class="color-muted text-sm">Trwa pobieranie szczegółów nagrody.</span>
+          </article>
+        } @else if (page.rewardDisplay(); as reward) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-row-between-center flex-col-sm gap-sm">
+              <div class="flex-col gap-xs min-w-0">
+                <p class="small-caps color-muted text-xs m-0">Nagroda</p>
+                <strong class="color-heading">{{ reward.title }}</strong>
+                <span class="color-text text-sm">{{ reward.summary }}</span>
+              </div>
+              <span class="tag-badge tag-badge--success">{{ reward.badge }}</span>
+            </div>
+
+            @if (reward.entries.length || reward.items.length) {
+              <div class="flex-row-start-center flex-wrap gap-xs">
+                @for (entry of reward.entries; track entry.id) {
+                  <span class="tag-badge tag-badge--golden">
+                    {{ page.rewardEntryLabel(entry) }}
+                  </span>
+                }
+                @for (item of reward.items; track item.id) {
+                  <span class="tag-badge tag-badge--info">
+                    {{ page.rewardItemLabel(item) }}
+                  </span>
+                }
+              </div>
+            }
+          </article>
+        }
+
+        @if (page.activeEffectDisplay(); as effect) {
+          <article class="mg-card p-md flex-col gap-sm">
+            <div class="flex-col gap-xs">
+              <p class="small-caps color-muted text-xs m-0">Efekt</p>
+              <strong class="color-heading">{{ effect.title }}</strong>
+              <span class="color-text text-sm">{{ effect.summary }}</span>
+            </div>
+          </article>
+        }
+      </section>
+    }
+  </article>
+}

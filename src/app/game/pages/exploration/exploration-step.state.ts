@@ -6,6 +6,7 @@ import {
   HeroExplorationStepResolutionReadModel,
 } from '../../../core/domain/exploration/exploration-runtime.model';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
+import { ToastService } from '../../../core/services/ui/toast';
 import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
@@ -21,6 +22,7 @@ export class ExplorationStepState {
   private readonly explorations = inject(HeroExplorations);
   private readonly feedback = inject(ExplorationFeedbackState);
   private readonly overview = inject(ExplorationOverviewState);
+  private readonly toast = inject(ToastService);
   private readonly resolveToken = new RequestToken();
 
   private intervalId: ReturnType<typeof setInterval> | null = null;
@@ -32,12 +34,21 @@ export class ExplorationStepState {
   readonly currentStepResult = computed(() => {
     const state = this.overview.state();
     const result = this.lastResolvedStep();
+    const activeChallenge = state?.activeChallenge ?? null;
 
-    return result &&
-      state?.exploration?.id === result.explorationId &&
-      !state.activeStep
-      ? result
-      : null;
+    if (
+      !result ||
+      state?.exploration?.id !== result.explorationId ||
+      state.activeStep
+    ) {
+      return null;
+    }
+
+    if (activeChallenge && result.challengeAttemptId !== activeChallenge.id) {
+      return null;
+    }
+
+    return result;
   });
   readonly activeStepProgressPercent = computed(() =>
     this.progressPercent(this.activeStep()),
@@ -52,12 +63,12 @@ export class ExplorationStepState {
     const step = this.activeStep();
 
     if (!step) {
-      return 'No active movement step.';
+      return 'Brak aktywnego ruchu.';
     }
 
     return this.isActiveStepReady()
-      ? 'Ready to check result.'
-      : `Resolving at ${step.resolvesAt}.`;
+      ? 'Wynik jest gotowy do sprawdzenia.'
+      : `Ruch zakończy się ${step.resolvesAt}.`;
   });
   readonly stepResultTitle = computed(() =>
     explorationStepResultTitle(this.currentStepResult()),
@@ -122,7 +133,7 @@ export class ExplorationStepState {
 
           this.lastResolvedStep.set(workflow.result);
           this.overview.setStateFromWorkflow(workflow.state);
-          this.feedback.setSuccess('Wynik ruchu został sprawdzony.');
+          this.toast.show('success', 'Eksploracja', 'Wynik ruchu został sprawdzony.');
         },
         error: (error: unknown) => {
           if (!this.isCurrentResolve(token, context.heroId, context.difficultyKey, step.id)) {
@@ -179,14 +190,14 @@ export class ExplorationStepState {
     const remainingMs = resolvesAt - this.now();
 
     if (remainingMs <= 0) {
-      return 'Ready now';
+      return 'Gotowe';
     }
 
     const totalSeconds = Math.ceil(remainingMs / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
 
-    return minutes > 0 ? `${minutes}m ${seconds}s remaining` : `${seconds}s remaining`;
+    return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
   }
 
   private resolvesAtMs(step: HeroExplorationStepReadModel | null): number | null {

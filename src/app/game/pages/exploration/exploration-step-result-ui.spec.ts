@@ -5,7 +5,7 @@ import {
 } from './exploration-step-result-ui';
 
 describe('exploration step result UI', () => {
-  it('renders trial manifestation failure separately from ordinary Nothing found', () => {
+  it('renders trial manifestation failure separately from ordinary no-event outcomes', () => {
     const result = stepResult({
       outcomeKind: 'nothing',
       rawOutcomeKind: 'trial_opportunity',
@@ -15,22 +15,22 @@ describe('exploration step result UI', () => {
       },
     });
 
-    expect(explorationStepResultTitle(result)).toBe('Trial manifestation failed');
+    expect(explorationStepResultTitle(result)).toBe('Próba się nie ujawniła');
     expect(explorationStepResultDescription(result, null)).toContain(
-      'Trial opportunity appeared, but manifestation failed',
+      'próba nie ujawniła się',
     );
   });
 
-  it('keeps ordinary Nothing found copy for normal nothing outcomes', () => {
+  it('keeps ordinary no-event copy for normal nothing outcomes', () => {
     const result = stepResult({
       outcomeKind: 'nothing',
       rawOutcomeKind: 'nothing',
       metadataJson: { nothing: true },
     });
 
-    expect(explorationStepResultTitle(result)).toBe('Nothing found');
+    expect(explorationStepResultTitle(result)).toBe('Bez zdarzenia');
     expect(explorationStepResultDescription(result, null)).toContain(
-      'Nothing was selected',
+      'Szlak nie ujawnił żadnego zdarzenia',
     );
   });
 });

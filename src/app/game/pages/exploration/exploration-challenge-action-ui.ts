@@ -44,14 +44,14 @@ export function explorationChallengeActionBlocker(
 
   if (mode === EXPLORATION_CHALLENGE_ACTION_MODE.immediateEncounter) {
     const kind = challenge.minigameKey
-      ? `${humanizeKey(challenge.minigameKey, 'Encounter')} Encounter`
-      : 'Non-combat Encounter';
+      ? `${humanizeKey(challenge.minigameKey, 'Spotkanie')} spotkanie`
+      : 'Spotkanie bez walki';
 
-    return `DB zwróciła aktywne wyzwanie typu ${kind}, ale ten typ powinien rozwiązać się przez wynik kroku, nagrodę albo efekt. Odśwież stan eksploracji albo zgłoś ten stan wykonania.`;
+    return `${kind} nie wymaga teraz osobnej akcji gracza w tym panelu.`;
   }
 
   if (mode === EXPLORATION_CHALLENGE_ACTION_MODE.missingRuntimeAction) {
-    return 'DB zwróciła aktywne wyzwanie bez obsługiwanej akcji próby albo spotkania bojowego.';
+    return 'Ten stan wyzwania nie ma teraz bezpiecznej akcji gracza w tym panelu.';
   }
 
   return null;

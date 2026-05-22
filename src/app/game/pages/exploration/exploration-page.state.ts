@@ -1,11 +1,17 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize, Observable } from 'rxjs';
 import { GameServerKind } from '../../../core/enums/active-server.enum';
 import { ExplorationStepSelectionDiagnosticReadModel } from '../../../core/domain/exploration/exploration-readiness.model';
+import { AddHeroRemainingActionsResult } from '../../../core/domain/exploration/exploration-debug.model';
 import {
   HeroExplorationMovementOptionReadModel,
 } from '../../../core/domain/exploration/exploration-runtime.model';
+import { HeroExplorationDebug } from '../../../core/services/exploration/hero-exploration-debug';
 import { ActiveServer } from '../../../core/services/server/active-server';
+import { ToastService } from '../../../core/services/ui/toast';
 import { humanizeKey } from '../../../core/utils/normalize-text';
+import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationMovementState } from './exploration-movement.state';
@@ -18,6 +24,10 @@ import { ExplorationStartState } from './exploration-start.state';
 @Injectable()
 export class ExplorationPageState {
   private readonly activeServer = inject(ActiveServer);
+  private readonly debug = inject(HeroExplorationDebug);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly toast = inject(ToastService);
+  private readonly sandboxActionToken = new RequestToken();
   readonly feedback = inject(ExplorationFeedbackState);
   readonly overview = inject(ExplorationOverviewState);
   readonly movement = inject(ExplorationMovementState);
@@ -38,6 +48,7 @@ export class ExplorationPageState {
   readonly isMoving = this.movement.isMoving;
   readonly isResolvingStep = this.step.isResolving;
   readonly isCompletingChallenge = this.challenge.isCompleting;
+  readonly isRunningSandboxTool = signal(false);
   readonly isStarting = this.start.isStarting;
   readonly movementOptions = this.movement.movementOptions;
   readonly activeStep = this.step.activeStep;
@@ -60,6 +71,7 @@ export class ExplorationPageState {
   readonly currentCombatActor = this.challenge.currentCombatActor;
   readonly combatStatusLabel = this.challenge.combatStatusLabel;
   readonly combatRoundLabel = this.challenge.combatRoundLabel;
+  readonly combatPlayerActionStatusLabel = this.challenge.combatPlayerActionStatusLabel;
   readonly walkingPosition = this.challenge.walkingPosition;
   readonly activeStepProgressPercent = this.step.activeStepProgressPercent;
   readonly activeStepRemainingLabel = this.step.activeStepRemainingLabel;
@@ -75,6 +87,7 @@ export class ExplorationPageState {
   readonly canShowAutoResolveAction = this.challenge.canShowAutoResolveAction;
   readonly challengeActionBlocker = this.challenge.challengeActionBlocker;
   readonly challengeFacts = this.challenge.challengeFacts;
+  readonly challengeStatusLabel = this.challenge.challengeStatusLabel;
   readonly challengeResultDescription = this.challenge.challengeResultDescription;
   readonly challengeResultTitle = this.challenge.challengeResultTitle;
   readonly challengeTitle = this.challenge.challengeTitle;
@@ -97,30 +110,30 @@ export class ExplorationPageState {
     const state = this.state();
 
     if (this.isLoading()) {
-      return 'Loading';
+      return 'Ładowanie';
     }
 
     if (!this.selectedDifficultyKey()) {
-      return 'Select difficulty';
+      return 'Wybierz trudność';
     }
 
     if (!state) {
-      return 'Status unavailable';
+      return 'Status niedostępny';
     }
 
     if (state.activeChallenge) {
-      return 'Challenge active';
+      return 'Wyzwanie aktywne';
     }
 
     if (state.activeStep) {
-      return this.canCheckResult() ? 'Step ready' : 'Step in progress';
+      return this.canCheckResult() ? 'Wynik gotowy' : 'Ruch w toku';
     }
 
     if (state.hasExploration) {
-      return this.movementBlockReason() ? 'Action blocked' : 'Ready to move';
+      return this.movementBlockReason() ? 'Akcja zablokowana' : 'Gotowe do ruchu';
     }
 
-    return 'Ready to start';
+    return 'Gotowe do startu';
   });
   readonly canShowDirectionBoard = computed(() => {
     const state = this.state();
@@ -137,33 +150,33 @@ export class ExplorationPageState {
     const state = this.state();
 
     if (this.isLoading()) {
-      return 'Loading the hero exploration read model.';
+      return 'Ładowanie stanu eksploracji bohatera.';
     }
 
     if (!this.selectedDifficultyKey()) {
-      return 'Choose an active difficulty to load exploration status.';
+      return 'Wybierz trudność, żeby załadować stan eksploracji.';
     }
 
     if (!state) {
-      return 'Exploration status is not available for the selected difficulty.';
+      return 'Stan eksploracji jest niedostępny dla wybranej trudności.';
     }
 
     if (state.activeChallenge) {
-      return 'An active challenge is waiting for resolution.';
+      return 'Aktywne wyzwanie czeka na rozstrzygnięcie.';
     }
 
     if (state.activeStep) {
       return this.canCheckResult()
-        ? 'The active movement step can be checked now.'
-        : 'A movement step is currently in progress.';
+        ? 'Możesz sprawdzić wynik aktywnego ruchu.'
+        : 'Ruch jest w toku.';
     }
 
     if (state.hasExploration) {
       return this.movementBlockReason()
-        ?? 'Choose an available direction to continue.';
+        ?? 'Wybierz dostępny kierunek, żeby kontynuować.';
     }
 
-    return 'No exploration is active yet. Start from the selected difficulty card when ready.';
+    return 'Eksploracja nie jest jeszcze aktywna. Rozpocznij ją z wybranej trudności.';
   });
   readonly canShowSelectionDiagnostics = computed(() => {
     const server = this.activeServer.selectedServer();
@@ -171,6 +184,22 @@ export class ExplorationPageState {
 
     return server?.kind === GameServerKind.Sandbox && access.canAccessSandbox;
   });
+  readonly canShowSandboxTools = this.canShowSelectionDiagnostics;
+  readonly canSkipSandboxStepTimer = computed(() =>
+    this.canShowSandboxTools()
+    && Boolean(this.activeStep())
+    && !this.isRunningSandboxTool(),
+  );
+  readonly canAddSandboxTrials = computed(() =>
+    this.canShowSandboxTools()
+    && Boolean(this.overview.currentContext())
+    && !this.isRunningSandboxTool(),
+  );
+  readonly canShowSandboxChallengeTools = computed(() =>
+    this.canShowSandboxTools()
+    && this.canShowManualResolveActions()
+    && Boolean(this.activeChallenge()),
+  );
   readonly stepSelectionDiagnostic = computed(() =>
     this.canShowSelectionDiagnostics()
       ? this.currentStepResult()?.selectionDiagnostic ?? null
@@ -217,6 +246,93 @@ export class ExplorationPageState {
 
   autoResolveChallenge(): void {
     this.challenge.autoResolve();
+  }
+
+  skipSandboxStepTimer(): void {
+    const scope = this.currentSandboxScope();
+    const step = this.activeStep();
+
+    if (!scope || !step || !this.canShowSandboxTools()) {
+      this.feedback.setError(null, 'Narzędzie sandbox jest niedostępne dla tego kontekstu.');
+      return;
+    }
+
+    this.runSandboxAction(
+      scope,
+      this.debug.skipStepTimer({
+        serverId: scope.serverId,
+        stepId: step.id,
+        reason: 'Sandbox runtime: skrócenie czasu aktywnego kroku eksploracji.',
+      }),
+      (result) => {
+        this.step.lastResolvedStep.set(result);
+        this.overview.refreshCurrentState();
+        this.toast.show('success', 'Sandbox', 'Czas aktywnego kroku został skrócony.');
+      },
+      'Nie udało się skrócić czasu aktywnego kroku.',
+    );
+  }
+
+  addSandboxTrials(): void {
+    const scope = this.currentSandboxScope();
+
+    if (!scope || !this.canShowSandboxTools()) {
+      this.feedback.setError(null, 'Narzędzie sandbox jest niedostępne dla tego kontekstu.');
+      return;
+    }
+
+    this.runSandboxAction(
+      scope,
+      this.debug.addRemainingActions({
+        serverId: scope.serverId,
+        heroId: scope.heroId,
+        actionKind: 'trial',
+        amount: 3,
+        reason: 'Sandbox runtime: dodanie prób Trial z ekranu eksploracji.',
+      }),
+      (result: AddHeroRemainingActionsResult) => {
+        this.overview.refreshCurrentState();
+        this.toast.show(
+          'success',
+          'Sandbox',
+          `Dodano próby Trial. Aktualnie dostępne: ${result.remainingCount}.`,
+        );
+      },
+      'Nie udało się dodać prób Trial.',
+    );
+  }
+
+  forceCompleteSandboxChallenge(success: boolean): void {
+    const scope = this.currentSandboxScope();
+    const challenge = this.activeChallenge();
+
+    if (!scope || !challenge || !this.canShowSandboxTools()) {
+      this.feedback.setError(null, 'Narzędzie sandbox jest niedostępne dla tego kontekstu.');
+      return;
+    }
+
+    this.runSandboxAction(
+      scope,
+      this.debug.forceCompleteChallengeAttempt({
+        serverId: scope.serverId,
+        challengeAttemptId: challenge.id,
+        success,
+        reason: 'Sandbox runtime: ręczne domknięcie próby z ekranu eksploracji.',
+      }),
+      (result) => {
+        if (this.activeChallenge()?.id !== challenge.id) {
+          return;
+        }
+
+        this.challenge.acceptSandboxCompletion(
+          result,
+          this.state()?.exploration?.id ?? null,
+        );
+        this.overview.refreshCurrentState();
+        this.toast.show('success', 'Sandbox', 'Próba została domknięta.');
+      },
+      'Nie udało się domknąć próby w sandboxie.',
+    );
   }
 
   startCombatChallenge(): void {
@@ -318,6 +434,68 @@ export class ExplorationPageState {
   participantHpLabel = this.challenge.participantHpLabel.bind(this.challenge);
   combatEventMetaLabel = this.challenge.eventMetaLabel.bind(this.challenge);
   timingManifestLabel = this.challenge.timingManifestLabel.bind(this.challenge);
+
+  private currentSandboxScope(): {
+    serverId: string;
+    heroId: string;
+    difficultyKey: string;
+  } | null {
+    const server = this.activeServer.selectedServer();
+    const context = this.overview.currentContext();
+
+    return server?.id && context
+      ? { serverId: server.id, ...context }
+      : null;
+  }
+
+  private runSandboxAction<T>(
+    scope: { serverId: string; heroId: string; difficultyKey: string },
+    action: Observable<T>,
+    onSuccess: (result: T) => void,
+    errorMessage: string,
+  ): void {
+    const token = this.sandboxActionToken.next();
+
+    this.isRunningSandboxTool.set(true);
+    this.feedback.clear();
+    action
+      .pipe(
+        finalize(() => {
+          if (this.isCurrentSandboxAction(token, scope)) {
+            this.isRunningSandboxTool.set(false);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (result) => {
+          if (!this.isCurrentSandboxAction(token, scope)) {
+            return;
+          }
+
+          onSuccess(result);
+        },
+        error: (error: unknown) => {
+          if (!this.isCurrentSandboxAction(token, scope)) {
+            return;
+          }
+
+          this.feedback.setError(error, errorMessage);
+        },
+      });
+  }
+
+  private isCurrentSandboxAction(
+    token: number,
+    scope: { serverId: string; heroId: string; difficultyKey: string },
+  ): boolean {
+    return (
+      this.sandboxActionToken.isCurrent(token) &&
+      this.canShowSandboxTools() &&
+      this.activeServer.selectedServer()?.id === scope.serverId &&
+      this.overview.isCurrentContext(scope.heroId, scope.difficultyKey)
+    );
+  }
 
   stepBackendDiagnostics(): Array<{ label: string; value: string }> {
     const result = this.currentStepResult();

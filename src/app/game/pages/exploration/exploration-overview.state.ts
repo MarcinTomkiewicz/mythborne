@@ -37,7 +37,7 @@ export class ExplorationOverviewState {
 
   readonly remainingTrialsLabel = computed(() => {
     const remaining = this.state()?.remainingTrials ?? 0;
-    return `${remaining} trial${remaining === 1 ? '' : 's'} available today`;
+    return `${remaining} ${remaining === 1 ? 'próba' : 'prób'} dostępnych dzisiaj`;
   });
   readonly currentNodeLabel = computed(() => explorationCurrentNodeLabel(this.state()));
   readonly activeStepLabel = computed(() => explorationActiveStepLabel(this.state()));
@@ -96,6 +96,10 @@ export class ExplorationOverviewState {
 
   setStateFromWorkflow(state: HeroExplorationStateReadModel): void {
     this.state.set(state);
+  }
+
+  refreshCurrentState(): void {
+    this.loadSelectedState();
   }
 
   isCurrentContext(heroId: string, difficultyKey: string): boolean {

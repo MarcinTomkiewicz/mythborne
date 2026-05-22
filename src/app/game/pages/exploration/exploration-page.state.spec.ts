@@ -17,9 +17,11 @@ import {
 import { RequiredActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { ExplorationLiveCombat } from '../../../core/services/combat/exploration-live-combat';
 import { HeroExplorationRewards } from '../../../core/services/exploration/hero-exploration-rewards';
+import { HeroExplorationDebug } from '../../../core/services/exploration/hero-exploration-debug';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveServer } from '../../../core/services/server/active-server';
+import { ToastService } from '../../../core/services/ui/toast';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationLiveCombatState } from './exploration-live-combat.state';
@@ -34,20 +36,28 @@ import { ExplorationStartState } from './exploration-start.state';
 
 describe('ExplorationPageState', () => {
   let activeHero: jasmine.SpyObj<ActiveHero>;
+  let debug: jasmine.SpyObj<HeroExplorationDebug>;
   let explorations: jasmine.SpyObj<HeroExplorations>;
   let liveCombat: jasmine.SpyObj<ExplorationLiveCombat>;
   let rewards: jasmine.SpyObj<HeroExplorationRewards>;
-  let selectedServer: ReturnType<typeof signal<{ kind: string; canUseAsSandbox: boolean } | null>>;
+  let toast: jasmine.SpyObj<ToastService>;
+  let selectedServer: ReturnType<typeof signal<{ id?: string; kind: string; canUseAsSandbox: boolean } | null>>;
   let serverAccess: ReturnType<typeof signal<{ canAccessSandbox: boolean }>>;
   let page: ExplorationPageState;
   let feedback: ExplorationFeedbackState;
 
   beforeEach(() => {
     activeHero = jasmine.createSpyObj<ActiveHero>('ActiveHero', ['requireActiveHero']);
+    debug = jasmine.createSpyObj<HeroExplorationDebug>('HeroExplorationDebug', [
+      'addRemainingActions',
+      'skipStepTimer',
+      'forceCompleteChallengeAttempt',
+    ]);
     rewards = jasmine.createSpyObj<HeroExplorationRewards>('HeroExplorationRewards', [
       'getChallengeReward',
       'getStepReward',
     ]);
+    toast = jasmine.createSpyObj<ToastService>('ToastService', ['show']);
     liveCombat = jasmine.createSpyObj<ExplorationLiveCombat>('ExplorationLiveCombat', [
       'ensureSession',
       'getState',
@@ -88,6 +98,18 @@ describe('ExplorationPageState', () => {
     explorations.autoResolveHeroExplorationChallengeAttempt.and.returnValue(
       of(challengeCompletionWorkflow('easy', { completionMode: 'auto' })),
     );
+    debug.addRemainingActions.and.returnValue(of({
+      serverId: 'server-1',
+      heroId: 'hero-1',
+      actionKind: 'trial',
+      actionDate: '2026-05-01',
+      remainingCount: 3,
+      counterId: 'counter-1',
+    }));
+    debug.skipStepTimer.and.returnValue(of(stepResolutionWorkflow('easy').result));
+    debug.forceCompleteChallengeAttempt.and.returnValue(
+      of(challengeCompletionWorkflow('easy').result),
+    );
     liveCombat.ensureSession.and.returnValue(of(combatLiveState()));
     liveCombat.getState.and.returnValue(of(combatLiveState()));
     liveCombat.submitPlayerAction.and.returnValue(of(combatLiveState({
@@ -107,7 +129,7 @@ describe('ExplorationPageState', () => {
     liveCombat.getResultDetail.and.returnValue(of(combatResultDetail()));
     rewards.getChallengeReward.and.returnValue(of(null));
     rewards.getStepReward.and.returnValue(of(null));
-    selectedServer = signal({ kind: 'standard', canUseAsSandbox: false });
+    selectedServer = signal({ id: 'server-1', kind: 'standard', canUseAsSandbox: false });
     serverAccess = signal({ canAccessSandbox: false });
 
     TestBed.configureTestingModule({
@@ -125,8 +147,10 @@ describe('ExplorationPageState', () => {
         ExplorationPageState,
         { provide: ActiveHero, useValue: activeHero },
         { provide: HeroExplorations, useValue: explorations },
+        { provide: HeroExplorationDebug, useValue: debug },
         { provide: ExplorationLiveCombat, useValue: liveCombat },
         { provide: HeroExplorationRewards, useValue: rewards },
+        { provide: ToastService, useValue: toast },
         {
           provide: ActiveServer,
           useValue: {
@@ -204,8 +228,8 @@ describe('ExplorationPageState', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-    expect(text).toContain('Pending step');
-    expect(text).toContain('Movement in progress');
+    expect(text).toContain('Aktywny ruch');
+    expect(text).toContain('Ruch w toku');
     expect(text).not.toContain('Direction board');
   });
 
@@ -280,7 +304,7 @@ describe('ExplorationPageState', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-    expect(text).toContain('Exploration runtime');
+    expect(text).toContain('Eksploracja');
     expect(text).toContain('Direction board');
     expect(text).toContain('North road');
     expect(text).toContain('Available path');
@@ -357,13 +381,13 @@ describe('ExplorationPageState', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-    expect(text).toContain('Exploration runtime');
-    expect(text).toContain('Pending step');
-    expect(text).toContain('Step progress');
-    expect(text).toContain('Remaining');
-    expect(text).toContain('Progress');
-    expect(text).toContain('Movement in progress');
-    expect(text).not.toContain('Check result');
+    expect(text).toContain('Eksploracja');
+    expect(text).toContain('Aktywny ruch');
+    expect(text).toContain('Postęp ruchu');
+    expect(text).toContain('Pozostało');
+    expect(text).toContain('Postęp');
+    expect(text).toContain('Ruch w toku');
+    expect(text).not.toContain('Sprawdź wynik');
     expect(text).not.toContain('Active tiers come from the database configuration.');
   });
 
@@ -382,10 +406,10 @@ describe('ExplorationPageState', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-    expect(text).toContain('Exploration runtime');
-    expect(text).toContain('Result ready');
-    expect(text).toContain('Ready');
-    expect(text).toContain('Check result');
+    expect(text).toContain('Eksploracja');
+    expect(text).toContain('Wynik gotowy');
+    expect(text).toContain('Gotowy');
+    expect(text).toContain('Sprawdź wynik');
   });
 
   it('does not render the difficulty entry screen for active combat runtime state', () => {
@@ -405,7 +429,7 @@ describe('ExplorationPageState', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).not.toContain('Active tiers come from the database configuration.');
-    expect(text).toContain('Exploration runtime');
+    expect(text).toContain('Eksploracja');
   });
 
   it('does not assume hero id matches auth user id when starting exploration', () => {
@@ -457,7 +481,12 @@ describe('ExplorationPageState', () => {
       edgeId: 'edge-1',
       stepKind: 'edge',
     });
-    expect(feedback.successMessage()).toBe('Movement step started.');
+    expect(feedback.successMessage()).toBeNull();
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Eksploracja',
+      'Ruch został rozpoczęty.',
+    );
     expect(page.activeStepLabel()).toContain('movement - pending');
   });
 
@@ -481,7 +510,7 @@ describe('ExplorationPageState', () => {
       string,
       string,
     ]> = [
-      [{ outcomeKind: 'nothing', currentNodeId: null, toNodeId: null }, 'Nothing found', 'database fallback'],
+      [{ outcomeKind: 'nothing', currentNodeId: null, toNodeId: null }, 'Bez zdarzenia', 'nie ujawnił żadnego zdarzenia'],
       [
         {
           outcomeKind: 'encounter',
@@ -489,8 +518,8 @@ describe('ExplorationPageState', () => {
           challengeAttemptId: 'challenge-1',
           selectedDefinition: selectedEncounter('encounter-1', 'light_combat', ENCOUNTER_KIND.combat),
         },
-        'Combat Encounter started',
-        'requires resolution',
+        'Bojowe spotkanie rozpoczęte',
+        'wymaga rozstrzygnięcia',
       ],
       [
         {
@@ -498,8 +527,8 @@ describe('ExplorationPageState', () => {
           encounterDefinitionId: 'encounter-2',
           selectedDefinition: selectedEncounter('encounter-2', 'minor_resource_find', ENCOUNTER_KIND.resource),
         },
-        'Resource Encounter resolved',
-        'database reward flow',
+        'Zasobowe spotkanie rozstrzygnięte',
+        'nagrodę',
       ],
       [
         {
@@ -507,10 +536,10 @@ describe('ExplorationPageState', () => {
           encounterDefinitionId: 'encounter-3',
           selectedDefinition: selectedEncounter('encounter-3', 'blessing', ENCOUNTER_KIND.buff),
         },
-        'Buff Encounter resolved',
-        'did not return an active effect',
+        'Wzmacniające spotkanie rozstrzygnięte',
+        'bez aktywnego efektu do pokazania',
       ],
-      [{ outcomeKind: 'trial', trialDefinitionId: 'trial-1', challengeAttemptId: 'challenge-1' }, 'Trial manifested', 'supported Trial action'],
+      [{ outcomeKind: 'trial', trialDefinitionId: 'trial-1', challengeAttemptId: 'challenge-1' }, 'Próba ujawniona', 'Aktywna próba'],
     ];
 
     page.loadData();
@@ -560,12 +589,17 @@ describe('ExplorationPageState', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-    expect(text).toContain('Exploration runtime');
-    expect(text).toContain('Step resolved');
-    expect(text).toContain('Step report');
-    expect(text).toContain('Resource Encounter resolved');
-    expect(text).toContain('Reward / report');
-    expect(text).toContain('Ready for next path');
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Eksploracja',
+      'Wynik ruchu został sprawdzony.',
+    );
+    expect(text).toContain('Eksploracja');
+    expect(text).toContain('Wynik ruchu');
+    expect(text).toContain('Zasobowe spotkanie rozstrzygnięte');
+    expect(text).toContain('Wybierz kierunek');
+    expect(text).not.toContain('Reward / report');
+    expect(text).not.toContain('Ready for next path');
     expect(text).not.toContain('Sandbox selection diagnostics');
     expect(text).not.toContain('Raw selection debug payload');
   });
@@ -622,10 +656,79 @@ describe('ExplorationPageState', () => {
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('Exploration runtime');
-    expect(text).toContain('Step report');
+    expect(text).toContain('Eksploracja');
+    expect(text).toContain('Wynik ruchu');
     expect(text).toContain('Sandbox selection diagnostics');
     expect(text).toContain('Raw selection debug payload');
+  });
+
+  it('runs sandbox step skip through the debug RPC and refreshes runtime state', () => {
+    selectedServer.set({ id: 'server-1', kind: 'sandbox', canUseAsSandbox: true });
+    serverAccess.set({ canAccessSandbox: true });
+    page.loadData();
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', true));
+    explorations.getHeroExplorationState.calls.reset();
+    explorations.getHeroExplorationState.and.returnValue(of(activeExplorationState('easy')));
+
+    page.skipSandboxStepTimer();
+
+    expect(debug.skipStepTimer).toHaveBeenCalledOnceWith({
+      serverId: 'server-1',
+      stepId: 'step-1',
+      reason: 'Sandbox runtime: skrócenie czasu aktywnego kroku eksploracji.',
+    });
+    expect(explorations.getHeroExplorationState).toHaveBeenCalledWith({
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+    });
+    expect(feedback.successMessage()).toBeNull();
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Sandbox',
+      'Czas aktywnego kroku został skrócony.',
+    );
+  });
+
+  it('runs sandbox trial restore through the debug RPC', () => {
+    selectedServer.set({ id: 'server-1', kind: 'sandbox', canUseAsSandbox: true });
+    serverAccess.set({ canAccessSandbox: true });
+    page.loadData();
+    explorations.getHeroExplorationState.calls.reset();
+
+    page.addSandboxTrials();
+
+    expect(debug.addRemainingActions).toHaveBeenCalledOnceWith({
+      serverId: 'server-1',
+      heroId: 'hero-1',
+      actionKind: 'trial',
+      amount: 3,
+      reason: 'Sandbox runtime: dodanie prób Trial z ekranu eksploracji.',
+    });
+    expect(explorations.getHeroExplorationState).toHaveBeenCalledWith({
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+    });
+  });
+
+  it('keeps sandbox challenge completion behind sandbox access', () => {
+    page.loadData();
+    page.overview.setStateFromWorkflow(activeExplorationState('easy', false, true));
+
+    page.forceCompleteSandboxChallenge(true);
+
+    expect(debug.forceCompleteChallengeAttempt).not.toHaveBeenCalled();
+
+    selectedServer.set({ id: 'server-1', kind: 'sandbox', canUseAsSandbox: true });
+    serverAccess.set({ canAccessSandbox: true });
+
+    page.forceCompleteSandboxChallenge(true);
+
+    expect(debug.forceCompleteChallengeAttempt).toHaveBeenCalledOnceWith({
+      serverId: 'server-1',
+      challengeAttemptId: 'challenge-1',
+      success: true,
+      reason: 'Sandbox runtime: ręczne domknięcie próby z ekranu eksploracji.',
+    });
   });
 
   it('hides stale resolved step results after exploration context changes', () => {
@@ -639,6 +742,65 @@ describe('ExplorationPageState', () => {
     page.overview.setStateFromWorkflow(activeExplorationState('hard', false, false, pastStepTiming(), 'exploration-2'));
 
     expect(page.currentStepResult()).toBeNull();
+  });
+
+  it('does not render a stale no-event step handoff while an active combat challenge exists', () => {
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    fixture.componentInstance.page.step.lastResolvedStep.set(
+      stepResolutionWorkflow('easy', {
+        outcomeKind: 'nothing',
+        rawOutcomeKind: 'nothing',
+        challengeAttemptId: null,
+      }).result,
+    );
+    fixture.componentInstance.page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', ENCOUNTER_KIND.combat),
+    );
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(fixture.componentInstance.page.currentStepResult()).toBeNull();
+    expect(text).not.toContain('Bez zdarzenia');
+    expect(text).toContain('Walka');
+  });
+
+  it('renders a matching step handoff together with its active challenge panel', () => {
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    fixture.componentInstance.page.step.lastResolvedStep.set(
+      stepResolutionWorkflow('easy', {
+        outcomeKind: 'encounter',
+        rawOutcomeKind: 'encounter',
+        encounterDefinitionId: 'encounter-combat',
+        challengeAttemptId: 'challenge-1',
+        selectedDefinition: selectedEncounter(
+          'encounter-combat',
+          'light_combat',
+          ENCOUNTER_KIND.combat,
+        ),
+      }).result,
+    );
+    fixture.componentInstance.page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', ENCOUNTER_KIND.combat),
+    );
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(fixture.componentInstance.page.currentStepResult()?.challengeAttemptId)
+      .toBe('challenge-1');
+    expect(text).toContain('Bojowe spotkanie rozpoczęte');
+    expect(text).toContain('Walka');
   });
 
   it('does not resolve movement steps before the DB ready time', () => {
@@ -675,7 +837,12 @@ describe('ExplorationPageState', () => {
     });
     expect(page.challengeResultTitle()).toBe('Challenge completed');
     expect(page.challengeResultDescription()).toContain('Manual completion succeeded');
-    expect(feedback.successMessage()).toBe('Wyzwanie zostało ukończone.');
+    expect(feedback.successMessage()).toBeNull();
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Eksploracja',
+      'Wyzwanie zostało ukończone.',
+    );
   });
 
   it('hides Trial auto-resolve when DB does not return an auto chance', () => {
@@ -703,14 +870,14 @@ describe('ExplorationPageState', () => {
     expect(page.canShowManualResolveActions()).toBeTrue();
     expect(page.canShowAutoResolveAction()).toBeFalse();
     expect(page.autoResolveExplanation()).toBe(
-      'DB nie zwróciła szansy automatycznego rozstrzygnięcia dla tej próby.',
+      'Automatyczne rozstrzygnięcie nie jest dostępne dla tej próby.',
     );
 
     page.autoResolveChallenge();
 
     expect(explorations.autoResolveHeroExplorationChallengeAttempt).not.toHaveBeenCalled();
     expect(feedback.error()).toBe(
-      'DB nie zwróciła szansy automatycznego rozstrzygnięcia dla tej próby.',
+      'Automatyczne rozstrzygnięcie nie jest dostępne dla tej próby.',
     );
   });
 
@@ -734,7 +901,7 @@ describe('ExplorationPageState', () => {
       },
     ));
 
-    expect(page.challengeTitle()).toBe('Encounter');
+    expect(page.challengeTitle()).toBe('Spotkanie');
     expect(page.canCompleteChallenge()).toBeFalse();
     expect(page.canShowManualResolveActions()).toBeFalse();
     expect(page.canShowAutoResolveAction()).toBeFalse();
@@ -743,7 +910,7 @@ describe('ExplorationPageState', () => {
     page.completeChallenge(true);
 
     expect(explorations.completeHeroExplorationChallengeAttempt).not.toHaveBeenCalled();
-    expect(feedback.error()).toContain('powinien rozwiązać się przez wynik kroku, nagrodę albo efekt');
+    expect(feedback.error()).toContain('nie wymaga teraz osobnej akcji gracza');
   });
 
   it('ensures live combat session and submits one DB player action per strike', () => {
@@ -805,6 +972,32 @@ describe('ExplorationPageState', () => {
       title: 'Hero attacks Opponent',
       badges: jasmine.arrayContaining(['Hit', 'Critical', 'Damage 18', 'HP 30 -> 12']),
     }));
+  });
+
+  it('shows neutral combat status without a manual action while live session is not awaiting player input', () => {
+    liveCombat.ensureSession.and.returnValue(of(combatLiveState({
+      statusKey: 'resolving',
+      statusLabel: 'Rozstrzyganie',
+      awaitingPlayerAction: false,
+      currentTimingManifest: null,
+    })));
+    const fixture = TestBed.createComponent(ExplorationPage);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    fixture.componentInstance.page.overview.setStateFromWorkflow(
+      activeExplorationState('easy', false, true, undefined, 'exploration-1', ENCOUNTER_KIND.combat),
+    );
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(fixture.componentInstance.page.canStartCombat()).toBeTrue();
+    expect(findButton(fixture.nativeElement, 'Rozpocznij akcję')).toBeNull();
+    expect(text).toContain('Walka rozstrzyga obecną turę');
+    expect(liveCombat.getState).not.toHaveBeenCalled();
   });
 
   it('routes a resolved Combat Encounter into live combat instead of a step reward read', () => {
@@ -903,7 +1096,12 @@ describe('ExplorationPageState', () => {
       heroId: 'hero-1',
       difficultyKey: 'easy',
     });
-    expect(feedback.successMessage()).toBe('Walka została zakończona przez DB.');
+    expect(feedback.successMessage()).toBeNull();
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Eksploracja',
+      'Walka została zakończona.',
+    );
   });
 
   it('renders exact completed Combat Encounter reward without using step reward', async () => {
@@ -1041,7 +1239,7 @@ describe('ExplorationPageState', () => {
     page.overview.setStateFromWorkflow(activeExplorationState('easy', false, true));
 
     expect(page.autoResolveExplanation()).toBe(
-      'Automatyczne rozstrzygnięcie używa szansy sukcesu zwróconej przez DB dla tego wyzwania: 35%.',
+      'Automatyczne rozstrzygnięcie użyje szansy sukcesu dla tego wyzwania: 35%.',
     );
     expect(page.challengeFacts().map((fact) => fact.label).filter((label) =>
       label.startsWith('Auto ') || label === 'Auto-resolve Luck',
@@ -1058,13 +1256,18 @@ describe('ExplorationPageState', () => {
       challengeAttemptId: 'challenge-1',
     });
     expect(page.currentChallengeResult()?.completionMode).toBe('auto');
-    expect(feedback.successMessage()).toBe('Wyzwanie zostało automatycznie rozstrzygnięte.');
+    expect(feedback.successMessage()).toBeNull();
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Eksploracja',
+      'Wyzwanie zostało automatycznie rozstrzygnięte.',
+    );
   });
 
   it('describes DB-applied Buff and Debuff Encounter effects from refreshed state', () => {
     const cases: Array<[typeof ENCOUNTER_KIND.buff | typeof ENCOUNTER_KIND.debuff, string]> = [
-      [ENCOUNTER_KIND.buff, 'Buff Encounter'],
-      [ENCOUNTER_KIND.debuff, 'Debuff Encounter'],
+      [ENCOUNTER_KIND.buff, 'Wzmacniające spotkanie rozstrzygnięte'],
+      [ENCOUNTER_KIND.debuff, 'Osłabiające spotkanie rozstrzygnięte'],
     ];
 
     page.loadData();
@@ -1088,12 +1291,12 @@ describe('ExplorationPageState', () => {
 
       page.checkStepResult();
 
-      expect(page.stepResultTitle()).toBe(`${title} resolved`);
-      expect(page.stepResultDescription()).toContain('applied an exploration effect');
+      expect(page.stepResultTitle()).toBe(title);
+      expect(page.stepResultDescription()).toContain('nałożyło efekt eksploracji');
       expect(page.activeEffectDisplay()).toEqual(jasmine.objectContaining({
-        title: `${encounterKind === ENCOUNTER_KIND.buff ? 'Buff' : 'Debuff'} effect active`,
-        summary: 'Szczegóły efektu są niedostępne w kanonicznym read modelu DB.',
-        warning: 'Brak szczegółów efektu w kanonicznym read modelu DB.',
+        title: `${encounterKind === ENCOUNTER_KIND.buff ? 'Wzmocnienie' : 'Osłabienie'} aktywne`,
+        summary: `${encounterKind === ENCOUNTER_KIND.buff ? 'Wzmocnienie' : 'Osłabienie'} jest aktywne w bieżącej eksploracji.`,
+        warning: null,
       }));
     }
   });
@@ -1138,9 +1341,9 @@ describe('ExplorationPageState', () => {
     );
 
     const autoResolveFact = page.challengeFacts()
-      .find((fact) => fact.label === 'Auto-resolve');
+      .find((fact) => fact.label === 'Rozstrzygnięcie');
 
-    expect(autoResolveFact?.value).toBe('Manual combat');
+    expect(autoResolveFact?.value).toBe('Walka ręczna');
     expect(page.autoResolveExplanation()).toBe(
       'Wyzwanie bojowe wymaga ręcznej walki.',
     );
@@ -1326,7 +1529,7 @@ describe('ExplorationPageState', () => {
     expect(page.completedCombatLiveState()).toBeNull();
   });
 
-  it('does not show the previous challenge reward for a Nothing found step result', async () => {
+  it('does not show the previous challenge reward for a no-event step result', async () => {
     rewards.getChallengeReward.and.returnValue(
       of(challengeReward({
         entries: [rewardEntry({ id: 'entry-xp', entryKind: 'experience', amount: 70 })],
@@ -1357,13 +1560,13 @@ describe('ExplorationPageState', () => {
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('Nothing found');
+    expect(text).toContain('Bez zdarzenia');
     expect(rewards.getStepReward).not.toHaveBeenCalled();
     expect(text).not.toContain('70 EXP');
     expect(fixture.componentInstance.page.reward()).toBeNull();
   });
 
-  it('clears the previous completed combat result for a Nothing found step result', () => {
+  it('clears the previous completed combat result for a no-event step result', () => {
     liveCombat.ensureSession.and.returnValue(of(combatLiveState({
       statusKey: 'completed',
       statusLabel: 'Completed',
@@ -1389,7 +1592,7 @@ describe('ExplorationPageState', () => {
     page.checkStepResult();
     TestBed.flushEffects();
 
-    expect(page.stepResultTitle()).toBe('Nothing found');
+    expect(page.stepResultTitle()).toBe('Bez zdarzenia');
     expect(page.completedCombatLiveState()).toBeNull();
   });
 
@@ -1426,7 +1629,7 @@ describe('ExplorationPageState', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(rewards.getStepReward).toHaveBeenCalledWith({ stepId: 'step-1' });
-    expect(text).toContain('Resource Encounter resolved');
+    expect(text).toContain('Zasobowe spotkanie rozstrzygnięte');
     expect(text).toContain('Szczegóły nagrody są niedostępne w kanonicznym read modelu DB.');
     expect(text).toContain('Reward RPC backend shape');
     expect(text).toContain('get_exploration_step_reward_read_model');
@@ -1509,7 +1712,7 @@ describe('ExplorationPageState', () => {
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('Resource Encounter resolved');
+    expect(text).toContain('Zasobowe spotkanie rozstrzygnięte');
     expect(rewards.getStepReward).toHaveBeenCalledWith({ stepId: 'step-1' });
     expect(text).toContain('Nagroda za Resource Encounter');
     expect(text).toContain('Status nagrody: Nagroda przyznana');

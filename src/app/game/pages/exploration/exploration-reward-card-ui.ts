@@ -64,7 +64,7 @@ export function rewardEntryLabel(entry: RewardGrantEntryReadModel): string {
 
 export function rewardEntryDetails(entry: RewardGrantEntryReadModel): string | null {
   if (entry.effectDefinitionId) {
-    return 'Effect details unavailable from DB read model.';
+    return 'Szczegóły efektu są niedostępne w read modelu.';
   }
 
   if (entry.resourceType) {
