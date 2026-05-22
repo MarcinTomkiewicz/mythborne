@@ -7,13 +7,17 @@ import {
 } from '../../../core/domain/exploration/exploration-runtime.model';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ToastService } from '../../../core/services/ui/toast';
-import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
+import { jsonRecord, read } from '../../../core/utils/json-read';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import {
-  explorationStepResultDescription,
+  explorationStepEncounterKind,
+  explorationStepReportFallbackLines,
+  explorationStepReportNarrativeLines,
+  explorationStepResultHasEffectContext,
   explorationStepResultTitle,
+  explorationStepResultTypeLabel,
 } from './exploration-step-result-ui';
 
 @Injectable()
@@ -73,13 +77,31 @@ export class ExplorationStepState {
   readonly stepResultTitle = computed(() =>
     explorationStepResultTitle(this.currentStepResult()),
   );
-  readonly stepResultDescription = computed(() =>
-    explorationStepResultDescription(
-      this.currentStepResult(),
-      this.overview.state()?.activeEffect ?? null,
-    ),
+  readonly stepResultTypeLabel = computed(() =>
+    explorationStepResultTypeLabel(this.currentStepResult()),
   );
-  readonly stepResultFlavor = computed(() => this.resultFlavor(this.currentStepResult()));
+  readonly stepResultEncounterKind = computed(() =>
+    explorationStepEncounterKind(this.currentStepResult()),
+  );
+  readonly stepReportTitle = computed(() =>
+    this.reportTitle(this.currentStepResult()),
+  );
+  readonly stepReportNarrativeLines = computed(() =>
+    explorationStepReportNarrativeLines(this.currentStepResult()),
+  );
+  readonly stepReportFallbackLines = computed(() =>
+    explorationStepReportFallbackLines(this.currentStepResult()),
+  );
+  readonly isCurrentStepEffectReport = computed(() =>
+    explorationStepResultHasEffectContext(this.currentStepResult()),
+  );
+  readonly isCurrentStepNothing = computed(() =>
+    this.currentStepResult()?.outcomeKind === 'nothing' &&
+    !this.isCurrentStepTrialNoManifest(),
+  );
+  readonly isCurrentStepTrialNoManifest = computed(() =>
+    this.isTrialManifestationFailure(this.currentStepResult()),
+  );
 
   constructor() {
     effect(() => {
@@ -151,19 +173,37 @@ export class ExplorationStepState {
     return resolvesAt !== null && this.now() >= resolvesAt;
   }
 
-  private resultFlavor(result: HeroExplorationStepResolutionReadModel | null): string | null {
-    const metadata = jsonRecord(result?.metadataJson);
+  private isTrialManifestationFailure(
+    result: HeroExplorationStepResolutionReadModel | null,
+  ): boolean {
+    if (!result || result.outcomeKind !== 'nothing') {
+      return false;
+    }
 
-    return optionalText(
-      read(
-        metadata,
-        'flavorText',
-        'flavor_text',
-        'description',
-        'descriptionText',
-        'description_text',
-      ),
+    const metadata = jsonRecord(result.metadataJson);
+
+    return (
+      (
+        result.rawOutcomeKind === 'trial_opportunity' ||
+        read(metadata, 'rawOutcomeKind', 'raw_outcome_kind') === 'trial_opportunity'
+      ) &&
+      read(metadata, 'trialManifested', 'trial_manifested') === false
     );
+  }
+
+  private reportTitle(result: HeroExplorationStepResolutionReadModel | null): string {
+    const title = this.stepResultTitle();
+    const typeLabel = this.stepResultTypeLabel();
+
+    if (result?.outcomeKind !== 'encounter') {
+      return title;
+    }
+
+    if (!typeLabel || title.includes(typeLabel)) {
+      return title;
+    }
+
+    return `${title}: ${typeLabel}`;
   }
 
   private progressPercent(step: HeroExplorationStepReadModel | null): number {

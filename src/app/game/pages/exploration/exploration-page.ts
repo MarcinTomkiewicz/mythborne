@@ -1,5 +1,4 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { MessageModule } from 'primeng/message';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationLiveCombat } from '../../../core/services/combat/exploration-live-combat';
@@ -19,7 +18,6 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
   selector: 'app-exploration-page',
   standalone: true,
   imports: [
-    MessageModule,
     ExplorationDifficultyPreviewSection,
     ExplorationStatusSection,
     LoadingOverlay,
@@ -40,7 +38,6 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
   templateUrl: './exploration-page.html',
 })
 export class ExplorationPage implements OnInit {
-  readonly feedback = inject(ExplorationFeedbackState);
   readonly page = inject(ExplorationPageState);
 
   ngOnInit(): void {

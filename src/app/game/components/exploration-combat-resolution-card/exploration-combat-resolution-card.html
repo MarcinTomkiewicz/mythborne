@@ -1,0 +1,47 @@
+<section class="mg-card p-lg flex-col gap-md">
+  <div class="flex-col gap-xs min-w-0">
+    <p class="small-caps color-muted text-xs mb-0">{{ combatResolutionLabel() }}</p>
+    @if (challenge.canShowCombatStartAction()) {
+      <strong class="color-heading">Walka czeka na decyzję</strong>
+      <span class="color-text text-sm">Wybierz ręczne rozstrzygnięcie, żeby rozpocząć starcie.</span>
+    } @else if (challenge.combatLiveState()) {
+      <strong class="color-heading">{{ challenge.combatStatusLabel() }}</strong>
+      <span class="color-text text-sm">{{ challenge.combatRoundLabel() }}</span>
+    } @else {
+      <strong class="color-heading">Walka czeka na decyzję</strong>
+      <span class="color-text text-sm">Wybierz ręczne rozstrzygnięcie, żeby rozpocząć starcie.</span>
+    }
+  </div>
+
+  @if (challenge.isCombatRunning()) {
+    <app-walking-dead-meter
+      [position]="challenge.walkingPosition()"
+      [zoneStart]="challenge.combatHitWindow().start"
+      [zoneEnd]="challenge.combatHitWindow().end"
+      [zoneWidth]="challenge.combatHitWindow().width"
+      [speed]="challenge.combatWalkingSpeed()"
+      [statusLabel]="challenge.combatStatusLabel()"
+      [disabled]="!challenge.canSubmitCombatStrike()"
+      (strike)="challenge.submitCombatStrike()"
+    />
+  } @else if (challenge.canShowCombatStartAction()) {
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button
+        type="button"
+        label="Rozpocznij walkę ręcznie"
+        [loading]="challenge.isEnsuringCombatSession() || challenge.isRecoveringCombatState()"
+        [disabled]="!challenge.canStartCombat()"
+        (onClick)="challenge.startCombat()"
+      />
+    </div>
+  } @else if (challenge.canShowCombatTimingAction()) {
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button
+        type="button"
+        label="Rozpocznij akcję"
+        [disabled]="!challenge.canStartCombat()"
+        (onClick)="challenge.startCombat()"
+      />
+    </div>
+  }
+</section>

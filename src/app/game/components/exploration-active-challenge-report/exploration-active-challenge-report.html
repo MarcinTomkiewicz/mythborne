@@ -1,0 +1,18 @@
+@if (challenge.activeChallenge()) {
+  <app-exploration-outcome-report-layout
+    label="Aktywne wyzwanie"
+    [statusLabel]="challenge.challengeStatusLabel()"
+    [title]="challenge.challengeTitle()"
+    description="Wyprawa czeka na Twoją akcję, zanim będzie można ruszyć dalej."
+    iconClass="pi pi-bolt"
+  >
+    <app-exploration-challenge-details-card reportNarrative />
+    @if (challenge.isCombatChallenge()) {
+      <app-exploration-combat-resolution-card reportNextStep />
+    }
+    @if (challenge.canShowAutoResolveAction() || !challenge.isCombatChallenge()) {
+      <app-exploration-challenge-auto-resolution-card reportNextStep />
+    }
+    <app-exploration-challenge-pending-reward-card reportReward />
+  </app-exploration-outcome-report-layout>
+}

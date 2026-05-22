@@ -37,16 +37,19 @@ export class ExplorationLiveCombatState {
   private readonly sessionToken = new RequestToken();
   private readonly actionToken = new RequestToken();
   private readonly detailToken = new RequestToken();
+  private readonly recoveryToken = new RequestToken();
   private walkingTimer: number | null = null;
   private ensuredChallengeId: string | null = null;
 
   readonly isEnsuringCombatSession = signal(false);
+  readonly isRecoveringCombatState = signal(false);
   readonly isSubmittingCombatAction = signal(false);
   readonly isCombatRunning = signal(false);
   readonly walkingPosition = signal(0);
   readonly walkingDirection = signal<1 | -1>(1);
   readonly combatLiveState = signal<CombatLiveStateReadModel | null>(null);
   readonly combatResultDetail = signal<CombatResultDetailReadModel | null>(null);
+  readonly completedCombatChallenge = signal<HeroExplorationChallengeAttemptReadModel | null>(null);
   readonly activeChallenge = computed(() => this.overview.state()?.activeChallenge ?? null);
   readonly isCombatChallenge = computed(() =>
     this.activeChallenge()?.minigameKey === ENCOUNTER_KIND.combat,
@@ -58,9 +61,35 @@ export class ExplorationLiveCombatState {
     Boolean(this.activeChallenge()) &&
     this.isCombatChallenge() &&
     !this.isEnsuringCombatSession() &&
+    !this.isRecoveringCombatState() &&
     !this.isSubmittingCombatAction() &&
     !this.isCombatRunning(),
   );
+  readonly canShowCombatStartAction = computed(() => {
+    if (!this.canStartCombat()) {
+      return false;
+    }
+
+    const state = this.combatLiveState();
+
+    return (
+      !state ||
+      (
+        state.statusKey !== 'completed' &&
+        (!state.awaitingPlayerAction || !this.combatTimingManifest())
+      )
+    );
+  });
+  readonly canShowCombatTimingAction = computed(() => {
+    const state = this.combatLiveState();
+
+    return (
+      this.canStartCombat() &&
+      state?.statusKey !== 'completed' &&
+      state?.awaitingPlayerAction === true &&
+      this.combatTimingManifest() !== null
+    );
+  });
   readonly canSubmitCombatStrike = computed(() =>
     Boolean(this.activeChallenge()) &&
     this.isCombatChallenge() &&
@@ -173,7 +202,7 @@ export class ExplorationLiveCombatState {
         return;
       }
 
-      this.ensureCombatSession(context, challenge);
+      this.ensureCombatSession(context, challenge, false);
     });
 
     this.destroyRef.onDestroy(() => this.stopCombatTiming());
@@ -198,7 +227,7 @@ export class ExplorationLiveCombatState {
     const state = this.combatLiveState();
 
     if (!state) {
-      this.ensureCombatSession(context, challenge);
+      this.ensureCombatSession(context, challenge, true);
       return;
     }
 
@@ -208,12 +237,12 @@ export class ExplorationLiveCombatState {
     }
 
     if (!state.awaitingPlayerAction) {
-      this.feedback.setError(null, 'Sesja walki nie czeka na akcję gracza.');
+      this.ensureCombatSession(context, challenge, true);
       return;
     }
 
     if (!this.combatTimingManifest()) {
-      this.feedback.setError(null, 'DB nie zwróciła manifestu timingu dla aktualnej akcji.');
+      this.ensureCombatSession(context, challenge, true);
       return;
     }
 
@@ -251,7 +280,7 @@ export class ExplorationLiveCombatState {
     }
 
     if (!this.canSubmitCombatStrike()) {
-      this.feedback.setError(null, 'DB odrzuciła akcję gracza: brak aktywnego manifestu timingu.');
+      this.feedback.setError(null, 'Nie udało się wykonać akcji gracza: brak aktywnego okna timingu.');
       return;
     }
 
@@ -296,7 +325,7 @@ export class ExplorationLiveCombatState {
             return;
           }
 
-          this.feedback.setError(error, 'DB odrzuciła akcję gracza.');
+          this.feedback.setError(error, 'Nie udało się wykonać akcji gracza.');
         },
       });
   }
@@ -308,6 +337,7 @@ export class ExplorationLiveCombatState {
   private ensureCombatSession(
     context: { heroId: string; difficultyKey: string },
     challenge: HeroExplorationChallengeAttemptReadModel,
+    startWhenReady: boolean,
   ): void {
     const token = this.sessionToken.next();
 
@@ -335,24 +365,244 @@ export class ExplorationLiveCombatState {
 
           this.setCombatLiveState(state, false);
 
-          if (state.statusKey === 'completed' && state.finalCombatResultId) {
-            this.rewardState.preferCompletedChallengeReward(
-              this.overview.state()?.exploration?.id ?? null,
-              challenge.id,
-            );
-            this.loadCombatResultDetail(state.finalCombatResultId, state.sessionId);
-            this.refreshExplorationState(context.heroId, context.difficultyKey, challenge.id);
-          }
+          this.handleEnsuredCombatSession(
+            context.heroId,
+            context.difficultyKey,
+            challenge.id,
+            state,
+            startWhenReady,
+          );
         },
         error: (error: unknown) => {
           if (!this.isCurrentCombatChallenge(token, context.heroId, context.difficultyKey, challenge.id)) {
             return;
           }
 
+          this.logCombatRpcError('ensure_exploration_combat_session', {
+            p_challenge_attempt_id: challenge.id,
+            p_request_id: this.combatRequestId(challenge.id, 'ensure'),
+          }, error);
           this.ensuredChallengeId = null;
           this.feedback.setError(error, 'Nie udało się rozpocząć sesji walki.');
         },
       });
+  }
+
+  private handleEnsuredCombatSession(
+    heroId: string,
+    difficultyKey: string,
+    challengeAttemptId: string,
+    state: CombatLiveStateReadModel,
+    startWhenReady: boolean,
+  ): void {
+    if (this.handleCompletedCombatState(heroId, difficultyKey, challengeAttemptId, state)) {
+      return;
+    }
+
+    if (startWhenReady && state.awaitingPlayerAction && this.combatTimingManifest()) {
+      this.startPlayerCombatTiming();
+      return;
+    }
+
+    if (startWhenReady) {
+      this.logNonActionableCombatState('ensureSession', challengeAttemptId, state);
+      this.recoverCombatState(heroId, difficultyKey, challengeAttemptId, state);
+    }
+  }
+
+  private recoverCombatState(
+    heroId: string,
+    difficultyKey: string,
+    challengeAttemptId: string,
+    state: CombatLiveStateReadModel,
+  ): void {
+    const token = this.recoveryToken.next();
+
+    this.isRecoveringCombatState.set(true);
+    this.liveCombat
+      .getState({
+        sessionId: state.sessionId,
+        sinceEventIndex: state.eventCount,
+      })
+      .pipe(
+        finalize(() => {
+          if (this.recoveryToken.isCurrent(token)) {
+            this.isRecoveringCombatState.set(false);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (nextState) => {
+          if (!this.isCurrentCombatRecovery(
+            token,
+            heroId,
+            difficultyKey,
+            challengeAttemptId,
+            state.sessionId,
+          )) {
+            return;
+          }
+
+          this.setCombatLiveState(nextState, true);
+
+          if (this.handleCompletedCombatState(heroId, difficultyKey, challengeAttemptId, nextState)) {
+            return;
+          }
+
+          if (nextState.awaitingPlayerAction && this.combatTimingManifest()) {
+            this.startPlayerCombatTiming();
+            return;
+          }
+
+          this.logNonActionableCombatState('getState recovery', challengeAttemptId, nextState);
+          this.feedback.setError(null, 'Nie udało się przygotować akcji walki.');
+        },
+        error: (error: unknown) => {
+          if (!this.isCurrentCombatRecovery(
+            token,
+            heroId,
+            difficultyKey,
+            challengeAttemptId,
+            state.sessionId,
+          )) {
+            return;
+          }
+
+          this.logCombatRpcError('get_combat_live_state', {
+            p_session_id: state.sessionId,
+            p_since_event_index: state.eventCount,
+          }, error);
+          this.feedback.setError(error, 'Nie udało się odczytać stanu walki.');
+        },
+      });
+  }
+
+  private logNonActionableCombatState(
+    source: 'ensureSession' | 'getState recovery',
+    challengeAttemptId: string,
+    state: CombatLiveStateReadModel,
+  ): void {
+    if (!this.canLogDiagnostics()) {
+      return;
+    }
+
+    console.warn('[Exploration live combat] Non-actionable combat state', {
+      source,
+      challengeAttemptId,
+      sessionId: state.sessionId,
+      sourceEntityId: state.sourceEntityId,
+      statusKey: state.statusKey,
+      statusLabel: state.statusLabel,
+      awaitingPlayerAction: state.awaitingPlayerAction,
+      finalCombatResultId: state.finalCombatResultId,
+      eventCount: state.eventCount,
+      currentRoundNumber: state.currentRoundNumber,
+      currentActionIndex: state.currentActionIndex,
+      currentTimingManifest: state.currentTimingManifest,
+      combatTimingManifest: this.combatTimingManifest(),
+      canShowCombatStartAction: this.canShowCombatStartAction(),
+      canShowCombatTimingAction: this.canShowCombatTimingAction(),
+      isCombatRunning: this.isCombatRunning(),
+      canStartCombat: this.canStartCombat(),
+      canSubmitCombatStrike: this.canSubmitCombatStrike(),
+      settledBranchFlags: this.settledCombatBranchFlags(state),
+      rawJson: state.rawJson,
+    });
+  }
+
+  private logCombatRpcError(
+    rpc: 'ensure_exploration_combat_session' | 'get_combat_live_state',
+    args: Record<string, unknown>,
+    error: unknown,
+  ): void {
+    if (!this.canLogDiagnostics()) {
+      return;
+    }
+
+    console.error('[Exploration live combat] RPC error', {
+      rpc,
+      args,
+      error: this.safeRpcError(error),
+    });
+  }
+
+  private safeRpcError(error: unknown): {
+    message: string | null;
+    code: string | null;
+    details: string | null;
+    hint: string | null;
+  } {
+    if (!error || typeof error !== 'object') {
+      return {
+        message: typeof error === 'string' ? error : null,
+        code: null,
+        details: null,
+        hint: null,
+      };
+    }
+
+    const record = error as Record<string, unknown>;
+
+    return {
+      message: typeof record['message'] === 'string' ? record['message'] : null,
+      code: typeof record['code'] === 'string' ? record['code'] : null,
+      details: typeof record['details'] === 'string' ? record['details'] : null,
+      hint: typeof record['hint'] === 'string' ? record['hint'] : null,
+    };
+  }
+
+  private settledCombatBranchFlags(state: CombatLiveStateReadModel): {
+    canShowCombatStartAction: boolean;
+    canShowCombatTimingAction: boolean;
+    isCombatRunning: boolean;
+    canStartCombat: boolean;
+    canSubmitCombatStrike: boolean;
+  } {
+    const canStartCombat =
+      Boolean(this.activeChallenge()) &&
+      this.isCombatChallenge() &&
+      !this.isSubmittingCombatAction() &&
+      !this.isCombatRunning();
+    const hasManifest = state.currentTimingManifest !== null;
+
+    return {
+      canShowCombatStartAction: canStartCombat &&
+        state.statusKey !== 'completed' &&
+        (!state.awaitingPlayerAction || !hasManifest),
+      canShowCombatTimingAction: canStartCombat &&
+        state.statusKey !== 'completed' &&
+        state.awaitingPlayerAction === true &&
+        hasManifest,
+      isCombatRunning: this.isCombatRunning(),
+      canStartCombat,
+      canSubmitCombatStrike: Boolean(this.activeChallenge()) &&
+        this.isCombatChallenge() &&
+        this.isCombatRunning() &&
+        !this.isSubmittingCombatAction() &&
+        state.awaitingPlayerAction === true &&
+        hasManifest,
+    };
+  }
+
+  private handleCompletedCombatState(
+    heroId: string,
+    difficultyKey: string,
+    challengeAttemptId: string,
+    state: CombatLiveStateReadModel,
+  ): boolean {
+    if (state.statusKey !== 'completed' || !state.finalCombatResultId) {
+      return false;
+    }
+
+    this.captureCompletedCombatChallenge(challengeAttemptId);
+    this.rewardState.preferCompletedChallengeReward(
+      this.overview.state()?.exploration?.id ?? null,
+      challengeAttemptId,
+    );
+    this.loadCombatResultDetail(state.finalCombatResultId, state.sessionId);
+    this.refreshExplorationState(heroId, difficultyKey, challengeAttemptId);
+    return true;
   }
 
   private setCombatLiveState(state: CombatLiveStateReadModel, mergeEvents: boolean): void {
@@ -367,27 +617,16 @@ export class ExplorationLiveCombatState {
     challengeAttemptId: string,
     state: CombatLiveStateReadModel,
   ): void {
-    if (state.statusKey === 'completed') {
-      this.feedback.setSuccess('Walka została zakończona przez DB.');
-      this.rewardState.preferCompletedChallengeReward(
-        this.overview.state()?.exploration?.id ?? null,
-        challengeAttemptId,
-      );
-
-      if (state.finalCombatResultId) {
-        this.loadCombatResultDetail(state.finalCombatResultId, state.sessionId);
-      }
-
-      this.refreshExplorationState(heroId, difficultyKey, challengeAttemptId);
+    if (this.handleCompletedCombatState(heroId, difficultyKey, challengeAttemptId, state)) {
       return;
     }
 
     if (state.awaitingPlayerAction) {
-      this.walkingPosition.set(0);
-      this.walkingDirection.set(1);
-      this.isCombatRunning.set(true);
-      this.startCombatTiming();
+      this.startPlayerCombatTiming();
+      return;
     }
+
+    this.recoverCombatState(heroId, difficultyKey, challengeAttemptId, state);
   }
 
   private refreshExplorationState(
@@ -446,6 +685,27 @@ export class ExplorationLiveCombatState {
       });
   }
 
+  private captureCompletedCombatChallenge(challengeAttemptId: string): void {
+    const challenge = this.activeChallenge();
+
+    if (challenge?.id === challengeAttemptId) {
+      this.completedCombatChallenge.set(challenge);
+      return;
+    }
+
+    if (this.completedCombatChallenge()?.id === challengeAttemptId) {
+      return;
+    }
+
+    if (this.canLogDiagnostics()) {
+      console.warn('[Exploration live combat] Completed combat source challenge gap', {
+        challengeAttemptId,
+        activeChallengeId: challenge?.id ?? null,
+        completedCombatSourceEntityId: this.completedCombatLiveState()?.sourceEntityId ?? null,
+      });
+    }
+  }
+
   private isCurrentCombatChallenge(
     token: number,
     heroId: string,
@@ -474,8 +734,27 @@ export class ExplorationLiveCombatState {
     );
   }
 
+  private isCurrentCombatRecovery(
+    token: number,
+    heroId: string,
+    difficultyKey: string,
+    challengeAttemptId: string,
+    sessionId: string,
+  ): boolean {
+    return (
+      this.recoveryToken.isCurrent(token) &&
+      this.overview.isCurrentContext(heroId, difficultyKey) &&
+      this.activeChallenge()?.id === challengeAttemptId &&
+      this.combatLiveState()?.sessionId === sessionId
+    );
+  }
+
   private combatRequestId(challengeAttemptId: string, scope = 'action'): string {
     return explorationCombatRequestId(challengeAttemptId, scope);
+  }
+
+  private canLogDiagnostics(): boolean {
+    return typeof ngDevMode !== 'undefined' && Boolean(ngDevMode);
   }
 
   private startCombatTiming(): void {
@@ -492,6 +771,13 @@ export class ExplorationLiveCombatState {
     }, 16);
   }
 
+  private startPlayerCombatTiming(): void {
+    this.walkingPosition.set(0);
+    this.walkingDirection.set(1);
+    this.isCombatRunning.set(true);
+    this.startCombatTiming();
+  }
+
   private stopCombatTiming(): void {
     if (this.walkingTimer !== null) {
       window.clearInterval(this.walkingTimer);
@@ -503,8 +789,10 @@ export class ExplorationLiveCombatState {
     this.ensuredChallengeId = null;
     this.stopCombatTiming();
     this.isCombatRunning.set(false);
+    this.isRecoveringCombatState.set(false);
     this.combatLiveState.set(null);
     this.combatResultDetail.set(null);
+    this.completedCombatChallenge.set(null);
     this.walkingPosition.set(0);
     this.walkingDirection.set(1);
   }

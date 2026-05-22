@@ -1,7 +1,8 @@
+import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import { HeroExplorationStepResolutionReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import {
-  explorationStepResultDescription,
   explorationStepResultTitle,
+  explorationStepResultTypeLabel,
 } from './exploration-step-result-ui';
 
 describe('exploration step result UI', () => {
@@ -15,13 +16,10 @@ describe('exploration step result UI', () => {
       },
     });
 
-    expect(explorationStepResultTitle(result)).toBe('Próba się nie ujawniła');
-    expect(explorationStepResultDescription(result, null)).toContain(
-      'próba nie ujawniła się',
-    );
+    expect(explorationStepResultTitle(result)).toBe('Próba nie przybrała kształtu');
   });
 
-  it('keeps ordinary no-event copy for normal nothing outcomes', () => {
+  it('keeps ordinary no-event title for normal nothing outcomes', () => {
     const result = stepResult({
       outcomeKind: 'nothing',
       rawOutcomeKind: 'nothing',
@@ -29,9 +27,35 @@ describe('exploration step result UI', () => {
     });
 
     expect(explorationStepResultTitle(result)).toBe('Bez zdarzenia');
-    expect(explorationStepResultDescription(result, null)).toContain(
-      'Szlak nie ujawnił żadnego zdarzenia',
-    );
+  });
+
+  it('uses encounter kind from the selected read model definition', () => {
+    const result = stepResult({
+      outcomeKind: 'encounter',
+      selectedDefinition: {
+        definitionId: 'encounter-1',
+        definitionKind: 'encounter',
+        definitionKey: 'resource-cache',
+        encounterKind: ENCOUNTER_KIND.resource,
+        isReady: true,
+        readinessReasons: [],
+      },
+    });
+
+    expect(explorationStepResultTitle(result)).toBe('Spotkanie rozstrzygnięte');
+    expect(explorationStepResultTypeLabel(result)).toBe('Zasoby');
+  });
+
+  it('uses encounter kind exposed in result metadata when selection diagnostics are absent', () => {
+    const result = stepResult({
+      outcomeKind: 'encounter',
+      encounterDefinitionId: 'encounter-1',
+      selectedDefinition: null,
+      metadataJson: { encounterKind: ENCOUNTER_KIND.resource },
+    });
+
+    expect(explorationStepResultTitle(result)).toBe('Spotkanie rozstrzygnięte');
+    expect(explorationStepResultTypeLabel(result)).toBe('Zasoby');
   });
 });
 

@@ -1,0 +1,160 @@
+@if (challenge.completedCombatLiveState()) {
+  <app-exploration-outcome-report-layout
+    label="Raport eksploracji"
+    statusLabel=""
+    [title]="reportTitle()"
+    description=""
+    iconClass="pi pi-shield"
+  >
+    <section reportNarrative class="mg-card p-lg flex-col gap-sm w-100">
+      <p class="small-caps color-muted text-xs m-0">Co się stało</p>
+      @for (line of narrativeLines(); track line) {
+        <p class="color-text text-md lh-16 m-0">{{ line }}</p>
+      }
+    </section>
+
+    <section reportNextStep class="mg-card p-lg flex-col gap-md w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs min-w-0">
+          <p class="small-caps color-muted text-xs m-0">Wynik walki</p>
+          <strong class="color-heading">{{ outcomeLabel() }}</strong>
+          <span class="color-text text-sm">
+            Zwycięzca: <strong class="color-heading">{{ winnerLabel() }}</strong>
+          </span>
+        </div>
+
+        @if (combatResultDetail(); as detail) {
+          <div class="flex-col gap-xs text-right text-left-sm">
+            <span class="small-caps color-muted text-xs">Tury</span>
+            <strong class="color-heading">{{ detail.turnsCompleted }}</strong>
+          </div>
+        }
+      </div>
+
+      @if (participantRows().length) {
+        <div class="mg-grid-auto-fit gap-sm">
+          @for (participant of participantRows(); track participant.id) {
+            <div class="mg-data-row">
+              <span class="mg-data-row__label">{{ participant.side }}</span>
+              <strong class="mg-data-row__value">{{ participant.name }}</strong>
+              <span class="color-text text-sm">HP {{ participant.hp }} · {{ participant.status }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      @if (timelineRows().length) {
+        <div class="flex-col gap-sm">
+          <p class="small-caps color-muted text-xs m-0">Przebieg starcia</p>
+          @for (row of timelineRows(); track row.id) {
+            <div class="mg-card p-sm flex-col gap-xs">
+              <div class="flex-row-between-center flex-col-sm gap-xs">
+                <strong class="color-heading">{{ row.title }}</strong>
+                <span class="small-caps color-muted text-xs">{{ row.meta }}</span>
+              </div>
+              @if (row.badges.length) {
+                <p class="color-text text-sm m-0">
+                  @for (badge of row.badges; track badge) {
+                    {{ eventBadgeLabel(badge) }}@if (!$last) {, }
+                  }
+                </p>
+              }
+              @for (detail of row.details; track detail) {
+                <p class="color-text text-sm m-0">{{ detail }}</p>
+              }
+            </div>
+          }
+        </div>
+      } @else if (attackRows().length) {
+        <div class="flex-col gap-sm">
+          <p class="small-caps color-muted text-xs m-0">Przebieg starcia</p>
+          @for (row of attackRows(); track row.id) {
+            <div class="mg-card p-sm flex-col gap-xs">
+              <strong class="color-heading">{{ row.title }}</strong>
+              @if (row.details.length) {
+                <p class="color-text text-sm m-0">
+                  @for (detail of row.details; track detail) {
+                    {{ detail }}@if (!$last) {, }
+                  }
+                </p>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="color-text m-0">
+          Szczegółowy przebieg walki nie jest dostępny w bieżącym odczycie raportu.
+        </p>
+      }
+
+    </section>
+
+    @if (
+      rewardState.isLoadingReward()
+      || rewardState.rewardDisplay()
+      || rewardState.rewardUnavailableMessage()
+    ) {
+      <section reportReward class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs m-0">{{ rewardHeading() }}</p>
+
+        @if (rewardState.isLoadingReward()) {
+          <strong class="color-heading">Sprawdzanie nagrody</strong>
+          <p class="color-text m-0">Trwa pobieranie szczegółów nagrody.</p>
+        } @else if (reportRewardDisplay(); as reward) {
+          @if (reward.entries.length || reward.items.length) {
+            <p class="color-text text-md lh-16 m-0">{{ rewardIntro() }}</p>
+            <p class="color-text text-md lh-16 m-0">
+              @for (entry of reward.entries; track entry.id) {
+                @if (rewardState.entryAmount(entry) !== null) {
+                  <strong class="color-heading">{{ rewardState.entryAmount(entry) }}</strong>
+                  {{ rewardState.entryName(entry) }}
+                } @else {
+                  {{ rewardState.entryName(entry) }}
+                }@if (!$last || reward.items.length) {, }
+              }
+              @for (item of reward.items; track item.id) {
+                <app-item-detail-popover
+                  [itemId]="item.id"
+                  [fallbackName]="item.name"
+                  [statusLabel]="item.status"
+                  [drachmaValue]="item.drachmaValue"
+                  [detailLines]="[rewardState.itemDetails(item)]"
+                  contextKind="reward_item"
+                  contextLabel="Przedmiot z nagrody"
+                  contextSourceLabel="Nagroda eksploracji"
+                  triggerLabel="Szczegóły"
+                  [buttonTrigger]="false"
+                >
+                  <strong class="color-heading">{{ rewardState.itemLabel(item) }}</strong>
+                </app-item-detail-popover>@if (!$last) {, }
+              }
+              .
+            </p>
+          } @else if (reward.emptyMessage) {
+            <p class="color-text text-md lh-16 m-0">{{ reward.emptyMessage }}</p>
+          }
+        } @else if (rewardState.rewardUnavailableMessage(); as message) {
+          <p class="color-text text-md lh-16 m-0">{{ message }}</p>
+        }
+      </section>
+    }
+
+    <section reportEffect class="mg-card p-lg flex-col gap-sm w-100">
+      <p class="small-caps color-muted text-xs m-0">Raport</p>
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <a [routerLink]="directReportLink()" class="color-heading text-sm">
+          {{ directReportLabel() }}
+        </a>
+        @if (hasPublicReportLink()) {
+          <p-button
+            type="button"
+            label="Kopiuj link do raportu"
+            severity="secondary"
+            [text]="true"
+            (onClick)="copyPublicReportLink()"
+          />
+        }
+      </div>
+    </section>
+  </app-exploration-outcome-report-layout>
+}

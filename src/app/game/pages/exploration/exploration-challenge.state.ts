@@ -8,6 +8,7 @@ import {
 import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ToastService } from '../../../core/services/ui/toast';
+import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 import { humanizeKey } from '../../../core/utils/normalize-text';
 import { RequestToken } from '../../../core/utils/request-token';
 import {
@@ -43,12 +44,15 @@ export class ExplorationChallengeState {
   readonly activeChallenge = computed(() => this.overview.state()?.activeChallenge ?? null);
   readonly isCombatChallenge = this.liveCombatState.isCombatChallenge;
   readonly isEnsuringCombatSession = this.liveCombatState.isEnsuringCombatSession;
+  readonly isRecoveringCombatState = this.liveCombatState.isRecoveringCombatState;
   readonly isSubmittingCombatAction = this.liveCombatState.isSubmittingCombatAction;
   readonly isCombatRunning = this.liveCombatState.isCombatRunning;
   readonly walkingPosition = this.liveCombatState.walkingPosition;
   readonly combatLiveState = this.liveCombatState.combatLiveState;
   readonly combatResultDetail = this.liveCombatState.combatResultDetail;
   readonly canStartCombat = this.liveCombatState.canStartCombat;
+  readonly canShowCombatStartAction = this.liveCombatState.canShowCombatStartAction;
+  readonly canShowCombatTimingAction = this.liveCombatState.canShowCombatTimingAction;
   readonly combatTimingManifest = this.liveCombatState.combatTimingManifest;
   readonly canSubmitCombatStrike = this.liveCombatState.canSubmitCombatStrike;
   readonly combatHitWindow = this.liveCombatState.combatHitWindow;
@@ -57,6 +61,7 @@ export class ExplorationChallengeState {
   readonly combatEvents = this.liveCombatState.combatEvents;
   readonly combatTimelineRows = this.liveCombatState.combatTimelineRows;
   readonly completedCombatLiveState = this.liveCombatState.completedCombatLiveState;
+  readonly completedCombatChallenge = this.liveCombatState.completedCombatChallenge;
   readonly currentCombatActor = this.liveCombatState.currentCombatActor;
   readonly combatStatusLabel = this.liveCombatState.combatStatusLabel;
   readonly combatRoundLabel = this.liveCombatState.combatRoundLabel;
@@ -80,7 +85,7 @@ export class ExplorationChallengeState {
   readonly challengeStatusLabel = computed(() => {
     const challenge = this.activeChallenge();
 
-    return challenge ? humanizeKey(challenge.status, 'Status') : 'Status';
+    return challenge ? this.challengeStatusLabelText(challenge) : 'Status';
   });
   readonly challengeFacts = computed(() => this.facts(this.activeChallenge()));
   readonly challengeActionMode = computed(() =>
@@ -93,7 +98,7 @@ export class ExplorationChallengeState {
     this.challengeActionMode() === EXPLORATION_CHALLENGE_ACTION_MODE.manualTrial,
   );
   readonly canShowAutoResolveAction = computed(() =>
-    this.canShowManualResolveActions() && hasChallengeAutoResolveChance(this.activeChallenge()),
+    this.canUseAutoResolve(this.activeChallenge()),
   );
   readonly autoResolveExplanation = computed(() =>
     this.autoResolveText(this.activeChallenge()),
@@ -104,7 +109,9 @@ export class ExplorationChallengeState {
     this.challengeActionMode() === EXPLORATION_CHALLENGE_ACTION_MODE.manualTrial,
   );
   readonly canAutoResolveChallenge = computed(() =>
-    this.canCompleteChallenge() && hasChallengeAutoResolveChance(this.activeChallenge()),
+    Boolean(this.activeChallenge()) &&
+    !this.isCompleting() &&
+    this.canUseAutoResolve(this.activeChallenge()),
   );
   readonly challengeResultTitle = computed(() => {
     const result = this.currentChallengeResult();
@@ -152,7 +159,7 @@ export class ExplorationChallengeState {
       return;
     }
 
-    if (challenge.minigameKey === ENCOUNTER_KIND.combat) {
+    if (challenge.minigameKey === ENCOUNTER_KIND.combat && !this.canUseAutoResolve(challenge)) {
       this.feedback.setError(
         null,
         'Wyzwanie bojowe wymaga ręcznej walki i nie może zostać automatycznie rozstrzygnięte z tej akcji.',
@@ -161,19 +168,13 @@ export class ExplorationChallengeState {
     }
 
     if (
-      explorationChallengeActionMode(challenge) !==
-      EXPLORATION_CHALLENGE_ACTION_MODE.manualTrial
+      !this.canUseAutoResolve(challenge)
     ) {
       this.feedback.setError(
         null,
         explorationChallengeActionBlocker(challenge)
           ?? 'Ten stan wyzwania nie ma teraz bezpiecznej akcji automatycznego rozstrzygnięcia.',
       );
-      return;
-    }
-
-    if (!hasChallengeAutoResolveChance(challenge)) {
-      this.feedback.setError(null, 'Automatyczne rozstrzygnięcie nie jest dostępne dla tej próby.');
       return;
     }
 
@@ -328,7 +329,17 @@ export class ExplorationChallengeState {
     }
 
     if (challenge.minigameKey === ENCOUNTER_KIND.combat) {
-      return 'Walka';
+      if (challenge.trialDefinitionId) {
+        return challenge.testedStatKey
+          ? `Próba ujawniona: Walka (${this.statLabel(challenge.testedStatKey)})`
+          : 'Próba bojowa rozpoczęta';
+      }
+
+      if (challenge.encounterDefinitionId) {
+        return 'Spotkanie rozpoczęte: Zasadzka';
+      }
+
+      return 'Walka rozpoczęta';
     }
 
     return this.challengeKindLabel(challenge);
@@ -340,17 +351,17 @@ export class ExplorationChallengeState {
     }
 
     const facts: ChallengeFact[] = [
-      { label: 'Typ', value: this.challengeKindLabel(challenge) },
-      { label: 'Status', value: humanizeKey(challenge.status, 'Status') },
+      { label: 'Rodzaj', value: this.challengeKindLabel(challenge) },
+      { label: 'Stan', value: this.challengeStatusLabelText(challenge) },
     ];
 
     if (challenge.testedStatKey) {
-      facts.push({ label: 'Cecha', value: humanizeKey(challenge.testedStatKey, 'Cecha') });
+      facts.push({ label: 'Cecha', value: this.statLabel(challenge.testedStatKey) });
     }
 
     facts.push({
-      label: 'Manifestacja',
-      value: this.chanceRollLabel(challenge.manifestationChance, challenge.manifestationRoll),
+      label: 'Szansa ujawnienia',
+      value: this.chanceLabel(challenge.manifestationChance),
     });
 
     if (challenge.minigameKey === ENCOUNTER_KIND.combat || hasChallengeAutoResolveChance(challenge)) {
@@ -363,14 +374,11 @@ export class ExplorationChallengeState {
   private autoResolveText(
     challenge: HeroExplorationChallengeAttemptReadModel | null,
   ): string {
-    if (challenge?.minigameKey === ENCOUNTER_KIND.combat) {
+    if (challenge?.minigameKey === ENCOUNTER_KIND.combat && !this.canUseAutoResolve(challenge)) {
       return 'Wyzwanie bojowe wymaga ręcznej walki.';
     }
 
-    if (
-      explorationChallengeActionMode(challenge) !==
-      EXPLORATION_CHALLENGE_ACTION_MODE.manualTrial
-    ) {
+    if (!this.canUseAutoResolve(challenge)) {
       return explorationChallengeActionBlocker(challenge)
         ?? 'Ten stan wyzwania nie ma teraz bezpiecznej akcji automatycznego rozstrzygnięcia.';
     }
@@ -382,16 +390,13 @@ export class ExplorationChallengeState {
     const chance = challenge?.autoResolve?.chance ?? challenge?.autoResolveChance;
     const chanceLabel = chance === null || chance === undefined
       ? 'dostępną szansę'
-      : `${chance}%`;
+      : this.chanceLabel(chance);
 
     return `Automatyczne rozstrzygnięcie użyje szansy sukcesu dla tego wyzwania: ${chanceLabel}.`;
   }
 
-  private chanceRollLabel(chance: number | null, roll: number | null): string {
-    const chanceLabel = chance === null ? 'N/D' : `${chance}%`;
-    const rollLabel = roll === null ? 'roll N/D' : `roll ${roll}`;
-
-    return `${chanceLabel} (${rollLabel})`;
+  private chanceLabel(chance: number | null): string {
+    return chance === null ? 'Nieznana' : `około ${Math.round(chance)}%`;
   }
 
   private autoResolveFactLabel(
@@ -401,10 +406,73 @@ export class ExplorationChallengeState {
       return 'Walka ręczna';
     }
 
-    return this.chanceRollLabel(
-      challenge.autoResolve?.chance ?? challenge.autoResolveChance,
-      challenge.autoResolve?.roll ?? challenge.autoResolveRoll,
-    );
+    return this.chanceLabel(challenge.autoResolve?.chance ?? challenge.autoResolveChance);
+  }
+
+  private challengeStatusText(status: string): string {
+    switch (status) {
+      case 'pending':
+      case 'awaiting_resolution':
+      case 'active':
+      case 'in_progress':
+        return 'Oczekuje na rozstrzygnięcie';
+      case 'completed':
+        return 'Rozstrzygnięte';
+      case 'failed':
+        return 'Nieudane';
+      default:
+        return humanizeKey(status, 'Status');
+    }
+  }
+
+  private challengeStatusLabelText(
+    challenge: HeroExplorationChallengeAttemptReadModel,
+  ): string {
+    const metadata = jsonRecord(challenge.metadataJson);
+    const details = jsonRecord(challenge.detailsJson);
+    const label = optionalText(read(
+      details,
+      'statusLabel',
+      'status_label',
+      'playerStatusLabel',
+      'player_status_label',
+    )) ?? optionalText(read(
+      metadata,
+      'statusLabel',
+      'status_label',
+      'playerStatusLabel',
+      'player_status_label',
+    ));
+
+    return this.polishChallengeStatus(label) ?? this.challengeStatusText(challenge.status);
+  }
+
+  private polishChallengeStatus(label: string | null): string | null {
+    if (!label) {
+      return null;
+    }
+
+    switch (label.trim().toLowerCase()) {
+      case 'awaiting resolution':
+      case 'awaiting_resolution':
+      case 'pending':
+      case 'active':
+      case 'in progress':
+      case 'in_progress':
+        return 'Oczekuje na rozstrzygnięcie';
+      case 'completed':
+        return 'Rozstrzygnięte';
+      case 'failed':
+        return 'Nieudane';
+      default:
+        return label;
+    }
+  }
+
+  private canUseAutoResolve(
+    challenge: HeroExplorationChallengeAttemptReadModel | null,
+  ): boolean {
+    return Boolean(challenge?.trialDefinitionId) && hasChallengeAutoResolveChance(challenge);
   }
 
   private challengeKindLabel(
@@ -421,4 +489,20 @@ export class ExplorationChallengeState {
     return humanizeKey(challenge.challengeKind, 'Wyzwanie');
   }
 
+  private statLabel(statKey: string): string {
+    switch (statKey) {
+      case 'strength':
+        return 'Siła';
+      case 'agility':
+        return 'Zręczność';
+      case 'endurance':
+        return 'Wytrzymałość';
+      case 'intelligence':
+        return 'Inteligencja';
+      case 'luck':
+        return 'Szczęście';
+      default:
+        return humanizeKey(statKey, 'Cecha');
+    }
+  }
 }

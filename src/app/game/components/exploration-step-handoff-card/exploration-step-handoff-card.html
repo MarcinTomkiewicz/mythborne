@@ -1,93 +1,102 @@
-@if (view(); as view) {
-  <article class="mg-card p-lg w-100 flex-col gap-md">
-    <section class="mg-card p-md flex-row-start-center flex-col-sm gap-md">
-      <span class="mg-card p-sm flex-row-center-center flex-none square-11">
-        <i class="{{ view.iconClass }} text-xl" aria-hidden="true"></i>
-      </span>
-      <div class="flex-col gap-xs min-w-0 w-100">
-        <div class="flex-row-start-center flex-wrap gap-xs">
-          <p class="small-caps color-muted text-xs m-0">Wynik ruchu</p>
-          <span
-            class="tag-badge"
-            [class.tag-badge--success]="view.badgeTone === 'success'"
-            [class.tag-badge--info]="view.badgeTone === 'info'"
-            [class.tag-badge--warn]="view.badgeTone === 'warn'"
-            [class.tag-badge--muted]="view.badgeTone === 'muted'"
-          >
-            {{ view.badgeLabel }}
-          </span>
-        </div>
-        <h4 class="color-heading text-xl m-0">{{ view.title }}</h4>
-        <p class="color-text m-0">{{ view.description }}</p>
-      </div>
-    </section>
-
-    <section class="mg-card p-md flex-col gap-sm">
-      <div class="flex-col gap-xs">
+@if (step.currentStepResult(); as result) {
+  <app-exploration-outcome-report-layout
+    label="Raport eksploracji"
+    statusLabel=""
+    [title]="step.stepReportTitle()"
+    description=""
+    iconClass="pi pi-compass"
+  >
+    @if (step.stepReportNarrativeLines().length) {
+      <section reportNarrative class="mg-card p-lg flex-col gap-sm w-100">
         <p class="small-caps color-muted text-xs m-0">Co się stało</p>
-        <strong class="color-heading">{{ view.narrativeTitle }}</strong>
-      </div>
-      @for (line of view.narrativeLines; track line) {
-        <p class="color-text m-0">{{ line }}</p>
-      }
-    </section>
-
-    <section class="mg-card p-md flex-col gap-xs">
-      <p class="small-caps color-muted text-xs m-0">Skutek</p>
-      <strong class="color-heading">{{ view.outcomeTitle }}</strong>
-      <span class="color-text text-sm">{{ view.outcomeDescription }}</span>
-    </section>
-
-    @if (
-      page.isLoadingReward()
-      || page.rewardDisplay()
-      || page.activeEffectDisplay()
-    ) {
-      <section class="mg-grid-auto-fit gap-sm">
-        @if (page.isLoadingReward()) {
-          <article class="mg-card p-md flex-col gap-xs">
-            <p class="small-caps color-muted text-xs m-0">Nagroda</p>
-            <strong class="color-heading">Sprawdzanie nagrody</strong>
-            <span class="color-muted text-sm">Trwa pobieranie szczegółów nagrody.</span>
-          </article>
-        } @else if (page.rewardDisplay(); as reward) {
-          <article class="mg-card p-md flex-col gap-sm">
-            <div class="flex-row-between-center flex-col-sm gap-sm">
-              <div class="flex-col gap-xs min-w-0">
-                <p class="small-caps color-muted text-xs m-0">Nagroda</p>
-                <strong class="color-heading">{{ reward.title }}</strong>
-                <span class="color-text text-sm">{{ reward.summary }}</span>
-              </div>
-              <span class="tag-badge tag-badge--success">{{ reward.badge }}</span>
-            </div>
-
-            @if (reward.entries.length || reward.items.length) {
-              <div class="flex-row-start-center flex-wrap gap-xs">
-                @for (entry of reward.entries; track entry.id) {
-                  <span class="tag-badge tag-badge--golden">
-                    {{ page.rewardEntryLabel(entry) }}
-                  </span>
-                }
-                @for (item of reward.items; track item.id) {
-                  <span class="tag-badge tag-badge--info">
-                    {{ page.rewardItemLabel(item) }}
-                  </span>
-                }
-              </div>
-            }
-          </article>
+        @for (line of step.stepReportNarrativeLines(); track line) {
+          <p class="color-text text-md lh-16 m-0">{{ line }}</p>
         }
-
-        @if (page.activeEffectDisplay(); as effect) {
-          <article class="mg-card p-md flex-col gap-sm">
-            <div class="flex-col gap-xs">
-              <p class="small-caps color-muted text-xs m-0">Efekt</p>
-              <strong class="color-heading">{{ effect.title }}</strong>
-              <span class="color-text text-sm">{{ effect.summary }}</span>
-            </div>
-          </article>
+      </section>
+    } @else if (activeEffectForCurrentReport(); as effect) {
+      <section reportNarrative class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs m-0">Co się stało</p>
+        <p class="color-text text-md lh-16 m-0">
+          <strong class="color-heading">{{ effect.title }}</strong>
+          @if (effect.summary) {
+            <span>: {{ effect.summary }}</span>
+          }
+        </p>
+      </section>
+    } @else if (step.stepReportFallbackLines().length) {
+      <section reportNarrative class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs m-0">Co się stało</p>
+        @for (line of step.stepReportFallbackLines(); track line) {
+          <p class="color-text text-md lh-16 m-0">{{ line }}</p>
         }
       </section>
     }
-  </article>
+
+    @if (
+      rewardState.isLoadingReward()
+      || rewardState.rewardDisplay()
+      || rewardState.rewardUnavailableMessage()
+    ) {
+      <section reportReward class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs m-0">{{ rewardTitle() }}</p>
+
+        @if (rewardState.isLoadingReward()) {
+          <strong class="color-heading">Sprawdzanie nagrody</strong>
+          <p class="color-text m-0">Trwa pobieranie szczegółów nagrody.</p>
+        } @else if (rewardState.rewardDisplay(); as reward) {
+          @if (reward.entries.length || reward.items.length) {
+            <p class="color-text text-md lh-16 m-0">
+              {{ rewardIntro() }}
+              @for (entry of reward.entries; track entry.id) {
+                @if (rewardState.entryAmount(entry) !== null) {
+                  <strong class="color-heading">{{ rewardState.entryAmount(entry) }}</strong>
+                  {{ rewardState.entryName(entry) }}
+                } @else {
+                  {{ rewardState.entryName(entry) }}
+                }@if (!$last || reward.items.length) {, }
+              }
+              @for (item of reward.items; track item.id) {
+                <app-item-detail-popover
+                  [itemId]="item.id"
+                  [fallbackName]="item.name"
+                  [statusLabel]="item.status"
+                  [drachmaValue]="item.drachmaValue"
+                  [detailLines]="[rewardState.itemDetails(item)]"
+                  contextKind="reward_item"
+                  contextLabel="Przedmiot z nagrody"
+                  contextSourceLabel="Nagroda eksploracji"
+                  triggerLabel="Szczegóły"
+                  [buttonTrigger]="false"
+                >
+                  <strong class="color-heading">{{ rewardState.itemLabel(item) }}</strong>
+                </app-item-detail-popover>@if (!$last) {, }
+              }.
+            </p>
+          } @else if (reward.emptyMessage) {
+            <p class="color-text text-md lh-16 m-0">{{ reward.emptyMessage }}</p>
+          }
+        } @else if (rewardState.rewardUnavailableMessage(); as message) {
+          <p class="color-text text-md lh-16 m-0">{{ message }}</p>
+        }
+      </section>
+    }
+
+    <section reportEffect class="mg-card p-lg flex-col gap-sm w-100">
+      <p class="small-caps color-muted text-xs m-0">Raport</p>
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <a [routerLink]="directReportLink()" class="color-heading text-sm">
+          {{ directReportLabel() }}
+        </a>
+        @if (hasPublicReportLink()) {
+          <p-button
+            type="button"
+            label="Kopiuj link do raportu"
+            severity="secondary"
+            [text]="true"
+            (onClick)="copyPublicReportLink()"
+          />
+        }
+      </div>
+    </section>
+  </app-exploration-outcome-report-layout>
 }

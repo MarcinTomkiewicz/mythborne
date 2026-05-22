@@ -28,10 +28,10 @@
             <app-exploration-direction-gate
               [option]="option"
               slot="forward"
-              [label]="page.movementOptionLabel(option)"
-              [isBusy]="page.isMoving()"
-              [isDisabled]="!page.canChooseMovementOption(option)"
-              (chooseMovementOption)="page.chooseMovementOption($event)"
+              [label]="movement.movementOptionLabel(option)"
+              [isBusy]="movement.isMoving()"
+              [isDisabled]="!movement.canChooseMovementOption(option)"
+              (chooseMovementOption)="movement.chooseMovementOption($event)"
             />
           }
         </div>
@@ -43,10 +43,10 @@
             <app-exploration-direction-gate
               [option]="option"
               slot="left"
-              [label]="page.movementOptionLabel(option)"
-              [isBusy]="page.isMoving()"
-              [isDisabled]="!page.canChooseMovementOption(option)"
-              (chooseMovementOption)="page.chooseMovementOption($event)"
+              [label]="movement.movementOptionLabel(option)"
+              [isBusy]="movement.isMoving()"
+              [isDisabled]="!movement.canChooseMovementOption(option)"
+              (chooseMovementOption)="movement.chooseMovementOption($event)"
             />
           }
         </div>
@@ -68,10 +68,10 @@
             <app-exploration-direction-gate
               [option]="option"
               slot="right"
-              [label]="page.movementOptionLabel(option)"
-              [isBusy]="page.isMoving()"
-              [isDisabled]="!page.canChooseMovementOption(option)"
-              (chooseMovementOption)="page.chooseMovementOption($event)"
+              [label]="movement.movementOptionLabel(option)"
+              [isBusy]="movement.isMoving()"
+              [isDisabled]="!movement.canChooseMovementOption(option)"
+              (chooseMovementOption)="movement.chooseMovementOption($event)"
             />
           }
         </div>
@@ -83,10 +83,10 @@
             <app-exploration-direction-gate
               [option]="option"
               slot="back"
-              [label]="page.movementOptionLabel(option)"
-              [isBusy]="page.isMoving()"
-              [isDisabled]="!page.canChooseMovementOption(option)"
-              (chooseMovementOption)="page.chooseMovementOption($event)"
+              [label]="movement.movementOptionLabel(option)"
+              [isBusy]="movement.isMoving()"
+              [isDisabled]="!movement.canChooseMovementOption(option)"
+              (chooseMovementOption)="movement.chooseMovementOption($event)"
             />
           }
         } @else {
@@ -111,10 +111,10 @@
           <app-exploration-direction-gate
             [option]="option"
             slot="unknown"
-            [label]="page.movementOptionLabel(option)"
-            [isBusy]="page.isMoving()"
-            [isDisabled]="!page.canChooseMovementOption(option)"
-            (chooseMovementOption)="page.chooseMovementOption($event)"
+            [label]="movement.movementOptionLabel(option)"
+            [isBusy]="movement.isMoving()"
+            [isDisabled]="!movement.canChooseMovementOption(option)"
+            (chooseMovementOption)="movement.chooseMovementOption($event)"
           />
         }
       </div>

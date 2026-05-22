@@ -15,8 +15,10 @@ import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import {
   rewardDisplay,
+  rewardEntryAmount,
   rewardEntryDetails,
   rewardEntryLabel,
+  rewardEntryName,
   rewardItemDetails,
   rewardItemLabel,
 } from './exploration-reward-card-ui';
@@ -53,7 +55,7 @@ export class ExplorationRewardState {
   );
   readonly rewardUnavailableMessage = computed(() =>
     this.currentSource() && !this.isLoadingReward() && !this.reward()
-      ? 'Szczegóły nagrody są niedostępne w kanonicznym read modelu DB.'
+      ? 'Szczegóły nagrody nie są teraz dostępne.'
       : null,
   );
 
@@ -86,6 +88,14 @@ export class ExplorationRewardState {
 
   entryDetails(entry: RewardGrantEntryReadModel): string | null {
     return rewardEntryDetails(entry);
+  }
+
+  entryAmount(entry: RewardGrantEntryReadModel): number | null {
+    return rewardEntryAmount(entry);
+  }
+
+  entryName(entry: RewardGrantEntryReadModel): string {
+    return rewardEntryName(entry);
   }
 
   itemLabel(item: ItemReadModel): string {

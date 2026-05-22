@@ -1,0 +1,24 @@
+<article class="flex-col gap-lg w-100">
+  <section class="mg-card mg-card--selected p-lg flex-row-start-center flex-col-sm gap-lg w-100">
+    <span class="mg-card p-sm flex-row-center-center flex-none square-11" aria-hidden="true">
+      <i class="{{ iconClass() }} text-xxl" aria-hidden="true"></i>
+    </span>
+    <div class="flex-col gap-sm min-w-0 w-100">
+      <div class="flex-row-start-center flex-wrap gap-xs">
+        <p class="small-caps color-muted text-xs m-0">{{ label() }}</p>
+        @if (statusLabel()) {
+          <span class="small-caps color-muted text-xs">{{ statusLabel() }}</span>
+        }
+      </div>
+      <h3 class="color-heading m-0">{{ title() }}</h3>
+      @if (description()) {
+        <p class="color-text m-0">{{ description() }}</p>
+      }
+    </div>
+  </section>
+
+  <ng-content select="[reportNarrative]" />
+  <ng-content select="[reportNextStep]" />
+  <ng-content select="[reportReward]" />
+  <ng-content select="[reportEffect]" />
+</article>

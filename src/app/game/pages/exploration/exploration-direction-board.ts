@@ -5,7 +5,7 @@ import {
 import {
   ExplorationDirectionGate,
 } from './exploration-direction-gate';
-import { ExplorationPageState } from './exploration-page.state';
+import { ExplorationMovementState } from './exploration-movement.state';
 
 @Component({
   selector: 'app-exploration-direction-board',
@@ -18,8 +18,8 @@ import { ExplorationPageState } from './exploration-page.state';
   },
 })
 export class ExplorationDirectionBoard {
-  readonly page = inject(ExplorationPageState);
-  readonly movementOptions = computed(() => this.page.movementOptions());
+  readonly movement = inject(ExplorationMovementState);
+  readonly movementOptions = computed(() => this.movement.movementOptions());
   readonly boardLayout = computed(() =>
     buildExplorationDirectionBoardLayout(this.movementOptions()),
   );

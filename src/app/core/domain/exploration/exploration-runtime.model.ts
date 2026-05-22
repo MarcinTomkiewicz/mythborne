@@ -184,6 +184,11 @@ export interface HeroExplorationEffectReadModel {
   explorationId: string;
   effectDefinitionId: string;
   effectKind: string;
+  effectLabel?: string | null;
+  effectKindLabel?: string | null;
+  effectTargetLabel?: string | null;
+  valueDisplay?: string | null;
+  playerSummary?: string | null;
   sourceKind: string;
   sourceId: string | null;
   isActive: boolean;

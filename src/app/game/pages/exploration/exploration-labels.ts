@@ -44,7 +44,7 @@ export function explorationActiveEffectLabel(
     return 'Brak aktywnego efektu eksploracji.';
   }
 
-  return `${display.title}. ${display.summary}`;
+  return display.summary ? `${display.title}. ${display.summary}` : display.title;
 }
 
 export function explorationActiveEffectDisplay(
@@ -58,7 +58,7 @@ export function explorationActiveEffectDisplay(
 
   const status = effect.isActive ? 'aktywne' : 'nieaktywne';
   const metadata = jsonRecord(effect.metadataJson);
-  const dbLabel = optionalText(read(
+  const dbLabel = effect.effectLabel ?? optionalText(read(
     metadata,
     'effectLabel',
     'effect_label',
@@ -66,7 +66,7 @@ export function explorationActiveEffectDisplay(
     'title',
     'name',
   ));
-  const dbSummary = optionalText(read(
+  const dbSummary = effect.playerSummary ?? optionalText(read(
     metadata,
     'playerSummary',
     'player_summary',
@@ -75,17 +75,28 @@ export function explorationActiveEffectDisplay(
     'helperText',
     'helper_text',
   ));
-  const kindLabel = optionalText(read(metadata, 'effectKindLabel', 'effect_kind_label'))
+  const kindLabel = effect.effectKindLabel
+    ?? optionalText(read(metadata, 'effectKindLabel', 'effect_kind_label'))
     ?? effectKindLabel(effect.effectKind);
-  const targetLabel = optionalText(read(metadata, 'effectTargetLabel', 'effect_target_label'));
-  const valueDisplay = optionalText(read(metadata, 'valueDisplay', 'value_display'));
+  const targetLabel = effect.effectTargetLabel
+    ?? optionalText(read(metadata, 'effectTargetLabel', 'effect_target_label', 'targetLabel', 'target_label'));
+  const valueDisplay = effect.valueDisplay
+    ?? optionalText(read(metadata, 'displayValue', 'display_value', 'valueDisplay', 'value_display'));
+  const concreteTitle = valueDisplay
+    ?? dbSummary
+    ?? (targetLabel && dbLabel ? `${dbLabel} ${targetLabel}` : null);
+  const summary = concreteTitle && valueDisplay
+    ? usablePlayerSummary(dbSummary, dbLabel, valueDisplay)
+    : dbSummary;
   const fallbackSummary = targetLabel && valueDisplay
     ? `${targetLabel}: ${valueDisplay}.`
     : `${kindLabel} jest ${status} w bieżącej eksploracji.`;
 
   return {
-    title: dbLabel ?? `${kindLabel} ${status}`,
-    summary: dbSummary ?? fallbackSummary,
+    title: concreteTitle ?? dbLabel ?? `${kindLabel} ${status}`,
+    summary: concreteTitle
+      ? summary ?? ''
+      : summary ?? fallbackSummary,
     warning: null,
     facts: [
       { label: 'Typ', value: kindLabel },
@@ -94,6 +105,18 @@ export function explorationActiveEffectDisplay(
       { label: 'Nałożono', value: effect.appliedAt },
     ],
   };
+}
+
+function usablePlayerSummary(
+  summary: string | null,
+  label: string | null,
+  valueDisplay: string,
+): string | null {
+  if (!summary || summary === label || summary === valueDisplay) {
+    return null;
+  }
+
+  return summary;
 }
 
 function effectKindLabel(effectKind: string): string {

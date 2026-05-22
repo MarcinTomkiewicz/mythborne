@@ -1,157 +1,154 @@
-@let state = page.state();
+@let state = overview.state();
 
-<section class="mg-card p-lg w-100">
-  <div class="flex-row-between-center flex-col-sm gap-md mb-lg">
-    <div class="flex-col gap-xs min-w-0">
-      <p class="small-caps color-muted text-xs mb-0">Eksploracja</p>
-      <h3 class="mg-section__title mg-section__title--xs mb-0">
-        @if (page.activeStep()) {
-          @if (page.canCheckResult()) {
-            Wynik gotowy
-          } @else {
-            Ruch w toku
-          }
-        } @else if (page.currentStepResult()) {
-          Wynik ruchu
-        } @else if (page.activeChallenge()) {
-          Aktywne wyzwanie
-        } @else if (page.canShowDirectionBoard()) {
-          Wybierz dalszą ścieżkę
-        } @else {
-          Stan eksploracji
-        }
-      </h3>
-      <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
-        Aktualny stan wyprawy dla wybranego poziomu trudności.
-      </p>
-    </div>
-
-    <div class="flex-row-start-center flex-wrap gap-xs">
-      @if (page.selectedDifficulty(); as difficulty) {
-        <span class="tag-badge tag-badge--info">{{ difficulty.difficultyLabel }}</span>
-      }
-      <span class="tag-badge tag-badge--muted">{{ page.runtimeStatusLabel() }}</span>
-      @if (
-        page.runtimeScreenRequested()
-        && !page.activeStep()
-        && !page.activeChallenge()
-        && !page.currentStepResult()
-        && !page.currentChallengeResult()
-      ) {
-        <p-button
-          type="button"
-          severity="secondary"
-          size="small"
-          label="Trudność"
-          ariaLabel="Wróć do wyboru trudności"
-          (onClick)="page.showDifficultyEntry()"
-        />
-      }
-    </div>
-  </div>
-
-  @if (state?.hasExploration && state?.exploration) {
+@if (
+  state?.hasExploration
+  && state?.exploration
+  && (
+    step.currentStepResult()
+    || challenge.activeChallenge()
+    || challenge.completedCombatLiveState()
+  )
+) {
+  <section class="flex-col gap-lg w-100">
     <app-exploration-sandbox-tools />
 
-    @if (page.activeStep(); as step) {
-      <article class="mg-card p-lg w-100">
-        <div class="flex-row-between-center flex-col-sm gap-md mb-md">
-          <div class="flex-col gap-xs min-w-0">
-            <p class="small-caps color-muted text-xs mb-0">Aktywny ruch</p>
-            <h4 class="color-heading mb-0">
-              @if (page.canCheckResult()) {
-                Wynik gotowy
-              } @else {
-                Ruch w toku
-              }
-            </h4>
-            <p class="mb-0">{{ page.activeStepStatusLabel() }}</p>
-          </div>
-          <span
-            class="tag-badge"
-            [class.tag-badge--success]="page.canCheckResult()"
-            [class.tag-badge--info]="!page.canCheckResult()"
-          >
-            {{ page.activeStepRemainingLabel() }}
+    @if (challenge.completedCombatLiveState()) {
+      <app-exploration-combat-result-report />
+    } @else if (challenge.activeChallenge()) {
+      <app-exploration-active-challenge-report />
+    } @else if (step.currentStepResult()) {
+      <app-exploration-step-handoff-card />
+    }
+
+    @if (!challenge.activeChallenge() && canShowDirectionBoard()) {
+      <app-exploration-direction-board class="d-block w-100" />
+    }
+
+    @if (canShowSandboxChallengeTools()) {
+      <article class="mg-card p-md flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs min-w-0">
+          <p class="small-caps color-muted text-xs mb-0">Sandbox</p>
+          <strong class="color-heading">Domknij próbę testowo</strong>
+          <span class="color-muted text-sm">
+            Widoczne tylko w sandboxie; używa narzędzia testowego do domknięcia próby.
           </span>
         </div>
-
-        <app-game-bar
-          label="Postęp ruchu"
-          [value]="page.activeStepProgressPercent()"
-          [max]="100"
-          type="xp"
-          [compact]="true"
-        />
-
-        <div class="mg-grid-auto-fit gap-sm mt-md">
-          <div class="mg-data-row">
-            <span class="mg-data-row__label">Stan</span>
-            <strong class="mg-data-row__value">
-              @if (page.canCheckResult()) {
-                Gotowy
-              } @else {
-                W toku
-              }
-            </strong>
-          </div>
-          <div class="mg-data-row">
-            <span class="mg-data-row__label">Pozostało</span>
-            <strong class="mg-data-row__value">{{ page.activeStepRemainingLabel() }}</strong>
-          </div>
-          <div class="mg-data-row">
-            <span class="mg-data-row__label">Postęp</span>
-            <strong class="mg-data-row__value">{{ page.activeStepProgressPercent() }}%</strong>
-          </div>
+        <div class="flex-row-start-center flex-wrap gap-xs">
+          <p-button
+            type="button"
+            severity="success"
+            label="Sandbox: sukces"
+            [loading]="page.isRunningSandboxTool()"
+            [disabled]="page.isRunningSandboxTool() || !canShowSandboxChallengeTools()"
+            (onClick)="page.forceCompleteSandboxChallenge(true)"
+          />
+          <p-button
+            type="button"
+            severity="danger"
+            label="Sandbox: porażka"
+            [loading]="page.isRunningSandboxTool()"
+            [disabled]="page.isRunningSandboxTool() || !canShowSandboxChallengeTools()"
+            (onClick)="page.forceCompleteSandboxChallenge(false)"
+          />
         </div>
-
-        <div class="flex-row-start-center flex-wrap gap-xs mt-md">
-          <span class="tag-badge tag-badge--muted">Start: {{ formatStepTime(step.startedAt) }}</span>
-          <span class="tag-badge tag-badge--muted">Gotowe: {{ formatStepTime(step.resolvesAt) }}</span>
-        </div>
-
-        @if (page.canCheckResult() || page.isResolvingStep()) {
-          <div class="mt-md">
-            <p-button
-              type="button"
-              label="Sprawdź wynik"
-              [loading]="page.isResolvingStep()"
-              [disabled]="page.isResolvingStep()"
-              (onClick)="page.checkStepResult()"
-            />
-          </div>
-        }
       </article>
-    } @else if (page.currentStepResult()) {
-      <app-exploration-step-handoff-card />
+    }
 
-      @if (page.activeChallenge()) {
-        <app-exploration-challenge-panel class="d-block w-100 mt-md" />
-      } @else if (page.canShowDirectionBoard()) {
-        <app-exploration-direction-board class="d-block w-100 mt-md" />
-      }
+    @if (canShowSelectionDiagnostics()) {
+      <app-exploration-selection-diagnostics-card />
+    }
+  </section>
+} @else {
+  <section class="flex-col gap-lg w-100">
+    <app-exploration-sandbox-tools />
 
-      @if (page.canShowSelectionDiagnostics()) {
-        <div class="mt-md">
-          <app-exploration-selection-diagnostics-card />
+    @if (state?.hasExploration && state?.exploration) {
+      @if (step.activeStep(); as activeStep) {
+        <article class="mg-card mg-card--selected p-lg w-100">
+          <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+            <div class="flex-row-start-center flex-col-sm gap-md min-w-0">
+              <span class="mg-card p-sm flex-row-center-center flex-none square-11" aria-hidden="true">
+                <i class="pi pi-map-marker text-xl" aria-hidden="true"></i>
+              </span>
+              <div class="flex-col gap-xs min-w-0">
+                <p class="small-caps color-muted text-xs mb-0">Aktywny ruch</p>
+                <h4 class="color-heading mb-0">
+                  @if (step.canCheckResult()) {
+                    Wynik gotowy
+                  } @else {
+                    Ruch w toku
+                  }
+                </h4>
+                <p class="mb-0">{{ step.activeStepStatusLabel() }}</p>
+              </div>
+            </div>
+            <span class="small-caps color-muted text-xs">{{ step.activeStepRemainingLabel() }}</span>
+          </div>
+
+          <app-game-bar
+            label="Postęp ruchu"
+            [value]="step.activeStepProgressPercent()"
+            [max]="100"
+            type="xp"
+            [compact]="true"
+          />
+
+          <div class="mg-grid-auto-fit gap-sm mt-md">
+            <div class="mg-data-row">
+              <span class="mg-data-row__label">Stan</span>
+              <strong class="mg-data-row__value">
+                @if (step.canCheckResult()) {
+                  Gotowy
+                } @else {
+                  W toku
+                }
+              </strong>
+            </div>
+            <div class="mg-data-row">
+              <span class="mg-data-row__label">Pozostało</span>
+              <strong class="mg-data-row__value">{{ step.activeStepRemainingLabel() }}</strong>
+            </div>
+            <div class="mg-data-row">
+              <span class="mg-data-row__label">Postęp</span>
+              <strong class="mg-data-row__value">{{ step.activeStepProgressPercent() }}%</strong>
+            </div>
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-xs mt-md">
+            <span class="small-caps color-muted text-xs">Start: {{ formatStepTime(activeStep.startedAt) }}</span>
+            <span class="small-caps color-muted text-xs">Gotowe: {{ formatStepTime(activeStep.resolvesAt) }}</span>
+          </div>
+
+          @if (step.canCheckResult() || step.isResolving()) {
+            <div class="mt-md">
+              <p-button
+                type="button"
+                label="Sprawdź wynik"
+                [loading]="step.isResolving()"
+                [disabled]="step.isResolving()"
+                (onClick)="step.checkResult()"
+              />
+            </div>
+          }
+        </article>
+      } @else if (canShowDirectionBoard()) {
+        <header class="flex-col gap-xs w-100">
+          <h3 class="color-heading mb-0">Wybierz dalszą ścieżkę</h3>
+        </header>
+        <app-exploration-direction-board class="d-block w-100" />
+      } @else {
+        <div class="mg-card p-md w-100">
+          <p class="color-muted mb-0">
+            Eksploracja nie ma teraz dostępnej akcji w tym widoku.
+          </p>
         </div>
       }
-    } @else if (page.activeChallenge()) {
-      <app-exploration-challenge-panel class="d-block w-100" />
-    } @else if (page.canShowDirectionBoard()) {
-      <app-exploration-direction-board class="d-block w-100" />
     } @else {
       <div class="mg-card p-md w-100">
         <p class="color-muted mb-0">
-          Eksploracja nie ma teraz dostępnej akcji w tym widoku.
+          Brak aktywnej eksploracji dla tej trudności. Wróć do wyboru trudności i rozpocznij wyprawę.
         </p>
       </div>
     }
-  } @else {
-    <div class="mg-card p-md w-100">
-      <p class="color-muted mb-0">
-        Brak aktywnej eksploracji dla tej trudności. Wróć do wyboru trudności i rozpocznij wyprawę.
-      </p>
-    </div>
-  }
-</section>
+  </section>
+}

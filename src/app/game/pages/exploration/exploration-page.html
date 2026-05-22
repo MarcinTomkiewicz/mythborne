@@ -15,9 +15,9 @@
         <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
           <span class="color-muted small-caps uppercase text-xs">Trudność</span>
           <strong class="color-heading text-md">
-            @if (page.selectedDifficulty(); as difficulty) {
+            @if (page.overview.selectedDifficulty(); as difficulty) {
               {{ difficulty.difficultyLabel }}
-            } @else if (page.isLoading()) {
+            } @else if (page.overview.isLoading()) {
               Ładowanie
             } @else {
               Nie wybrano
@@ -34,14 +34,14 @@
             }
           </strong>
         </div>
-        @if (page.state(); as state) {
+        @if (page.overview.state(); as state) {
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
             <span class="color-muted small-caps uppercase text-xs">Próby dzisiaj</span>
-            <strong class="color-heading text-md">{{ page.remainingTrialsLabel() }}</strong>
+            <strong class="color-heading text-md">{{ page.overview.remainingTrialsLabel() }}</strong>
           </div>
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
             <span class="color-muted small-caps uppercase text-xs">Efekt</span>
-            @if (page.activeEffectDisplay(); as effect) {
+            @if (page.overview.activeEffectDisplay(); as effect) {
               <strong class="color-text text-md">{{ effect.title }}</strong>
             } @else {
               <strong class="color-text text-md">Brak aktywnego</strong>
@@ -52,24 +52,17 @@
     </div>
   </section>
 
-  @if (feedback.error(); as message) {
-    <p-message severity="error">{{ message }}</p-message>
-  }
-  @if (feedback.successMessage(); as message) {
-    <p-message severity="success">{{ message }}</p-message>
-  }
-
   @if (page.shouldShowRuntimeScreen()) {
     <app-exploration-status-section />
   } @else {
     <app-exploration-difficulty-preview-section
-      [difficulties]="page.difficultyCardPreviews()"
+      [difficulties]="page.preview.difficultyCardPreviews()"
       [selectedDifficulty]="page.selectedDifficultyCardPreview()"
-      [selectedDifficultyKey]="page.selectedDifficultyKey()"
-      [isBusy]="page.isLoading() || page.isStarting()"
-      [isStarting]="page.isStarting()"
-      [isLoading]="page.isLoading()"
-      [explorationState]="page.state()"
+      [selectedDifficultyKey]="page.overview.selectedDifficultyKey()"
+      [isBusy]="page.overview.isLoading() || page.start.isStarting()"
+      [isStarting]="page.start.isStarting()"
+      [isLoading]="page.overview.isLoading()"
+      [explorationState]="page.overview.state()"
       (selectDifficulty)="page.selectDifficulty($event)"
       (selectedDifficultyAction)="page.startSelectedDifficulty()"
     />
@@ -78,6 +71,6 @@
 </div>
 
 <app-loading-overlay
-  [visible]="page.isLoading() || page.isStarting()"
-  [label]="page.isStarting() ? 'Rozpoczynanie eksploracji...' : 'Ładowanie eksploracji...'"
+  [visible]="page.overview.isLoading() || page.start.isStarting()"
+  [label]="page.start.isStarting() ? 'Rozpoczynanie eksploracji...' : 'Ładowanie eksploracji...'"
 />
