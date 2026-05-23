@@ -169,6 +169,8 @@ export const RPC = {
   apply_hero_loadout_preset: 'apply_hero_loadout_preset',
   recover_scrapped_item: 'recover_scrapped_item',
   add_hero_remaining_actions: 'add_hero_remaining_actions',
+  auto_resolve_exploration_combat_challenge_attempt:
+    'auto_resolve_exploration_combat_challenge_attempt',
   auto_resolve_hero_exploration_challenge_attempt:
     'auto_resolve_hero_exploration_challenge_attempt',
   complete_hero_exploration_challenge_attempt:

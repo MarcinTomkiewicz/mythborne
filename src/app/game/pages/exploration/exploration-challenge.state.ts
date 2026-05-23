@@ -22,6 +22,7 @@ import {
   ChallengeFact,
 } from './exploration-challenge.model';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
+import { explorationCombatRequestId } from './exploration-live-combat-labels';
 import { ExplorationLiveCombatState } from './exploration-live-combat.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationRewardState } from './exploration-reward.state';
@@ -41,6 +42,7 @@ export class ExplorationChallengeState {
   private readonly lastCompletion = signal<ChallengeCompletionSnapshot | null>(null);
 
   readonly isCompleting = signal(false);
+  readonly isAutoResolvingCombat = signal(false);
   readonly activeChallenge = computed(() => this.overview.state()?.activeChallenge ?? null);
   readonly isCombatChallenge = this.liveCombatState.isCombatChallenge;
   readonly isEnsuringCombatSession = this.liveCombatState.isEnsuringCombatSession;
@@ -100,6 +102,9 @@ export class ExplorationChallengeState {
   readonly canShowAutoResolveAction = computed(() =>
     this.canUseAutoResolve(this.activeChallenge()),
   );
+  readonly canShowCombatAutoResolveAction = computed(() =>
+    this.isExplorationCombatAutoResolvable(this.activeChallenge()),
+  );
   readonly autoResolveExplanation = computed(() =>
     this.autoResolveText(this.activeChallenge()),
   );
@@ -111,7 +116,17 @@ export class ExplorationChallengeState {
   readonly canAutoResolveChallenge = computed(() =>
     Boolean(this.activeChallenge()) &&
     !this.isCompleting() &&
+    !this.isAutoResolvingCombat() &&
     this.canUseAutoResolve(this.activeChallenge()),
+  );
+  readonly canAutoResolveCombatChallenge = computed(() =>
+    this.canShowCombatAutoResolveAction() &&
+    !this.isAutoResolvingCombat() &&
+    !this.isCompleting() &&
+    !this.isEnsuringCombatSession() &&
+    !this.isRecoveringCombatState() &&
+    !this.isSubmittingCombatAction() &&
+    !this.isCombatRunning(),
   );
   readonly challengeResultTitle = computed(() => {
     const result = this.currentChallengeResult();
@@ -219,6 +234,74 @@ export class ExplorationChallengeState {
           }
 
           this.feedback.setError(error, 'Nie udało się automatycznie rozstrzygnąć wyzwania.');
+        },
+      });
+  }
+
+  autoResolveCombat(): void {
+    const context = this.overview.currentContext();
+    const challenge = this.activeChallenge();
+
+    this.feedback.clear();
+
+    if (!context || !challenge) {
+      this.feedback.setError(null, 'Brak aktywnej walki do automatycznego rozstrzygnięcia.');
+      return;
+    }
+
+    if (!this.isExplorationCombatAutoResolvable(challenge)) {
+      this.feedback.setError(null, 'Ta akcja dotyczy tylko walk eksploracji.');
+      return;
+    }
+
+    if (!this.canAutoResolveCombatChallenge()) {
+      this.feedback.setError(null, 'Walka ma już aktywną akcję lub nie może teraz zostać automatycznie rozstrzygnięta.');
+      return;
+    }
+
+    const token = this.completionToken.next();
+
+    this.isAutoResolvingCombat.set(true);
+    this.explorations
+      .autoResolveExplorationCombatChallengeAttempt({
+        heroId: context.heroId,
+        difficultyKey: context.difficultyKey,
+        challengeAttemptId: challenge.id,
+        requestId: explorationCombatRequestId(challenge.id, 'auto-resolve'),
+      })
+      .pipe(
+        finalize(() => {
+          if (this.completionToken.isCurrent(token)) {
+            this.isAutoResolvingCombat.set(false);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (workflow) => {
+          if (!this.isCurrentCompletion(token, context.heroId, context.difficultyKey, challenge.id)) {
+            return;
+          }
+
+          this.setCompletion(workflow.result, workflow.state.exploration?.id ?? null);
+          this.rewardState.preferCompletedChallengeReward(
+            workflow.state.exploration?.id ?? null,
+            workflow.result.challengeAttemptId,
+          );
+          this.liveCombatState.acceptAutoResolvedCombatCompletion(challenge, workflow.result);
+          this.overview.setStateFromWorkflow(workflow.state);
+          this.toast.show(
+            'success',
+            'Eksploracja',
+            'Walka została automatycznie rozstrzygnięta.',
+          );
+        },
+        error: (error: unknown) => {
+          if (!this.isCurrentCompletion(token, context.heroId, context.difficultyKey, challenge.id)) {
+            return;
+          }
+
+          this.feedback.setError(error, 'Nie udało się automatycznie rozstrzygnąć walki.');
         },
       });
   }
@@ -472,7 +555,23 @@ export class ExplorationChallengeState {
   private canUseAutoResolve(
     challenge: HeroExplorationChallengeAttemptReadModel | null,
   ): boolean {
-    return Boolean(challenge?.trialDefinitionId) && hasChallengeAutoResolveChance(challenge);
+    return Boolean(challenge?.trialDefinitionId) &&
+      challenge?.minigameKey !== ENCOUNTER_KIND.combat &&
+      hasChallengeAutoResolveChance(challenge);
+  }
+
+  private isExplorationCombatAutoResolvable(
+    challenge: HeroExplorationChallengeAttemptReadModel | null,
+  ): boolean {
+    if (challenge?.minigameKey !== ENCOUNTER_KIND.combat) {
+      return false;
+    }
+
+    if (challenge.challengeKind === 'trial') {
+      return Boolean(challenge.trialDefinitionId);
+    }
+
+    return Boolean(challenge.encounterDefinitionId);
   }
 
   private challengeKindLabel(

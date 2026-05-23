@@ -17,6 +17,7 @@ import {
 import { FilterOperator } from '../../enums/filter-operators';
 import { Row } from '../../types/supabase.types';
 import {
+  AutoResolveExplorationCombatChallengeAttemptRpcRow,
   AutoResolveHeroExplorationChallengeAttemptRpcRow,
   CompleteHeroExplorationChallengeAttemptRpcRow,
   GetHeroExplorationDifficultyCardPreviewsRpcRow,
@@ -40,15 +41,18 @@ import {
 } from '../../utils/exploration-runtime-mappers';
 import {
   explorationChallengeCompletionWorkflowResult,
+  firstAutoResolveExplorationCombatChallengeAttemptRow,
   firstResolveHeroExplorationStepRow,
   firstAutoResolveHeroExplorationChallengeAttemptRow,
   firstCompleteHeroExplorationChallengeAttemptRow,
   firstStartHeroExplorationStepRow,
   firstStartOrGetHeroExplorationRow,
   explorationStepResolutionWorkflowResult,
+  mapAutoResolveExplorationCombatChallengeResult,
   mapAutoResolveHeroExplorationChallengeResult,
   mapCompleteHeroExplorationChallengeResult,
   mapResolveHeroExplorationStepResult,
+  toAutoResolveExplorationCombatChallengeAttemptRpcArgs,
   toAutoResolveHeroExplorationChallengeAttemptRpcArgs,
   toCompleteHeroExplorationChallengeAttemptRpcArgs,
   toGetHeroExplorationDifficultyCardPreviewsRpcArgs,
@@ -276,6 +280,35 @@ export class HeroExplorations {
             map((state) =>
               explorationChallengeCompletionWorkflowResult(
                 mapAutoResolveHeroExplorationChallengeResult(row),
+                state,
+              ),
+            ),
+          ),
+        ),
+      );
+  }
+
+  autoResolveExplorationCombatChallengeAttempt(input: {
+    heroId: string;
+    difficultyKey: string;
+    challengeAttemptId: string;
+    requestId: string;
+  }): Observable<HeroExplorationChallengeCompletionWorkflowResult> {
+    return this.backend
+      .rpc<AutoResolveExplorationCombatChallengeAttemptRpcRow[]>(
+        RPC.auto_resolve_exploration_combat_challenge_attempt,
+        toAutoResolveExplorationCombatChallengeAttemptRpcArgs(input),
+      )
+      .pipe(
+        map(firstAutoResolveExplorationCombatChallengeAttemptRow),
+        switchMap((row) =>
+          this.getHeroExplorationState({
+            heroId: input.heroId,
+            difficultyKey: input.difficultyKey,
+          }).pipe(
+            map((state) =>
+              explorationChallengeCompletionWorkflowResult(
+                mapAutoResolveExplorationCombatChallengeResult(row),
                 state,
               ),
             ),

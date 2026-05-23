@@ -56,6 +56,8 @@ describe('HeroExplorations', () => {
           return of([resolveStepRow()]);
         case RPC.complete_hero_exploration_challenge_attempt:
           return of([completeChallengeRow()]);
+        case RPC.auto_resolve_exploration_combat_challenge_attempt:
+          return of([autoResolveCombatChallengeRow()]);
         case RPC.auto_resolve_hero_exploration_challenge_attempt:
           return of([autoResolveChallengeRow()]);
         case RPC.preview_trial_opportunity_curve:
@@ -410,6 +412,41 @@ describe('HeroExplorations', () => {
     expect(backend.delete).not.toHaveBeenCalled();
   });
 
+  it('auto-resolves combat challenge attempts through the dedicated combat RPC before refreshing state', async () => {
+    const workflow = await firstValueFrom(
+      service.autoResolveExplorationCombatChallengeAttempt({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        challengeAttemptId: 'challenge-1',
+        requestId: 'request-1',
+      }),
+    );
+
+    expect(workflow.result).toEqual(
+      jasmine.objectContaining({
+        challengeAttemptId: 'challenge-1',
+        completionMode: 'auto_resolve',
+        combatResultId: 'combat-result-1',
+        combatSessionId: 'combat-session-1',
+        gameReportId: 'report-1',
+      }),
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.auto_resolve_exploration_combat_challenge_attempt,
+      {
+        p_challenge_attempt_id: 'challenge-1',
+        p_request_id: 'request-1',
+      },
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.get_hero_exploration_state, {
+      p_hero_id: 'hero-1',
+      p_difficulty_key: 'easy',
+    });
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+  });
+
   it('loads trial opportunity curve as read-only preview data', async () => {
     const result = await firstValueFrom(
       service.previewTrialOpportunityCurve({
@@ -537,6 +574,26 @@ function trialOpportunityPreviewRow() {
     trial_opportunity_step_cap: 3,
     is_guaranteed_by_step_cap: false,
     explanation: 'Preview only.',
+  };
+}
+
+function autoResolveCombatChallengeRow() {
+  return {
+    attacks_created: 3,
+    challenge_attempt_id: 'challenge-1',
+    challenge_status: 'completed',
+    combat_result_id: 'combat-result-1',
+    combat_session_id: 'combat-session-1',
+    completion_mode: 'auto_resolve',
+    exploration_status: 'active',
+    final_event_count: 5,
+    game_report_id: 'report-1',
+    outcome: 'initiator_victory',
+    participant_stats_created: 2,
+    participants_created: 2,
+    remaining_trials: 1,
+    reward_grant_id: 'reward-1',
+    success: true,
   };
 }
 

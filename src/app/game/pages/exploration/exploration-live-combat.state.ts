@@ -7,7 +7,10 @@ import {
   CombatTimingInput,
 } from '../../../core/domain/combat/combat-live.model';
 import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
-import { HeroExplorationChallengeAttemptReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
+import {
+  HeroExplorationChallengeAttemptReadModel,
+  HeroExplorationChallengeCompletionReadModel,
+} from '../../../core/domain/exploration/exploration-runtime.model';
 import { ExplorationLiveCombat } from '../../../core/services/combat/exploration-live-combat';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { advanceWalkingDeadTimingFrame } from '../../../core/utils/combat-walking-dead';
@@ -333,6 +336,46 @@ export class ExplorationLiveCombatState {
   readonly participantHpLabel = participantHpLabel;
   readonly eventMetaLabel = combatEventMetaLabel;
   readonly timingManifestLabel = combatTimingManifestLabel;
+
+  acceptAutoResolvedCombatCompletion(
+    challenge: HeroExplorationChallengeAttemptReadModel,
+    result: HeroExplorationChallengeCompletionReadModel,
+  ): void {
+    if (!result.combatResultId) {
+      return;
+    }
+
+    const sessionId = result.combatSessionId ?? `auto:${result.combatResultId}`;
+
+    this.ensuredChallengeId = challenge.id;
+    this.stopCombatTiming();
+    this.isCombatRunning.set(false);
+    this.isEnsuringCombatSession.set(false);
+    this.isRecoveringCombatState.set(false);
+    this.isSubmittingCombatAction.set(false);
+    this.completedCombatChallenge.set(challenge);
+    this.combatLiveState.set({
+      sessionId,
+      serverId: challenge.serverId,
+      sourceType: 'exploration',
+      sourceEntityType: 'challenge_attempt',
+      sourceEntityId: challenge.id,
+      statusKey: 'completed',
+      statusLabel: 'Walka została zakończona.',
+      currentRoundNumber: 0,
+      currentActionIndex: 0,
+      currentActorParticipantId: null,
+      awaitingPlayerAction: false,
+      currentTimingManifest: null,
+      participants: [],
+      events: [],
+      finalCombatResultId: result.combatResultId,
+      eventCount: result.finalEventCount ?? 0,
+      updatedAt: challenge.completedAt ?? challenge.updatedAt,
+      rawJson: {},
+    });
+    this.loadCombatResultDetail(result.combatResultId, sessionId);
+  }
 
   private ensureCombatSession(
     context: { heroId: string; difficultyKey: string },

@@ -335,11 +335,14 @@ export interface HeroExplorationChallengeCompletionReadModel {
   autoResolveChance: number | null;
   autoResolveRoll: number | null;
   combatResultId?: string | null;
+  combatSessionId?: string | null;
   combatOutcome?: string | null;
+  gameReportId?: string | null;
   turnsCompleted?: number | null;
   participantsCreated?: number | null;
   participantStatsCreated?: number | null;
   attacksCreated?: number | null;
+  finalEventCount?: number | null;
 }
 
 export interface HeroExplorationChallengeCompletionWorkflowResult {

@@ -44,4 +44,17 @@
       />
     </div>
   }
+
+  @if (!challenge.isCombatRunning() && challenge.canShowCombatAutoResolveAction()) {
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button
+        type="button"
+        severity="secondary"
+        label="Rozstrzygnij automatycznie"
+        [loading]="challenge.isAutoResolvingCombat()"
+        [disabled]="!challenge.canAutoResolveCombatChallenge()"
+        (onClick)="challenge.autoResolveCombat()"
+      />
+    </div>
+  }
 </section>
