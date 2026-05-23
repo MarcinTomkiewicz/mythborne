@@ -40,6 +40,7 @@ export class ExplorationPageState {
   );
   readonly isRunningSandboxTool = signal(false);
   readonly isUpdatingActiveStepTimer = signal(false);
+  readonly difficultyEntryRequested = signal(false);
   readonly runtimeScreenRequested = signal(false);
 
   readonly canShowSelectionDiagnostics = computed(() => {
@@ -67,6 +68,14 @@ export class ExplorationPageState {
   readonly shouldShowRuntimeScreen = computed(() => {
     const state = this.overview.state();
 
+    if (
+      this.difficultyEntryRequested()
+      && !state?.activeStep
+      && !state?.activeChallenge
+    ) {
+      return false;
+    }
+
     return (
       this.runtimeScreenRequested()
       || Boolean(state?.activeStep)
@@ -82,15 +91,24 @@ export class ExplorationPageState {
   }
 
   selectDifficulty(difficultyKey: string): void {
+    this.difficultyEntryRequested.set(false);
     this.runtimeScreenRequested.set(false);
     this.overview.selectDifficulty(difficultyKey);
   }
 
   startSelectedDifficulty(): void {
+    this.difficultyEntryRequested.set(false);
     this.start.startSelectedDifficulty(() => this.runtimeScreenRequested.set(true));
   }
 
   showDifficultyEntry(): void {
+    const state = this.overview.state();
+
+    if (state?.activeStep || state?.activeChallenge) {
+      return;
+    }
+
+    this.difficultyEntryRequested.set(true);
     this.runtimeScreenRequested.set(false);
   }
 

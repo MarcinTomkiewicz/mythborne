@@ -20,10 +20,6 @@
       <app-exploration-step-handoff-card />
     }
 
-    @if (!challenge.activeChallenge() && canShowDirectionBoard()) {
-      <app-exploration-direction-board class="d-block w-100" />
-    }
-
     @if (canShowSandboxChallengeTools()) {
       <article class="mg-card p-md flex-row-between-center flex-col-sm gap-md">
         <div class="flex-col gap-xs min-w-0">
@@ -77,12 +73,7 @@
           decorativeLabel="CZAS"
           (primaryAction)="step.checkResult()"
         />
-      } @else if (canShowDirectionBoard()) {
-        <header class="flex-col gap-xs w-100">
-          <h3 class="color-heading m-0">Wybierz dalszą ścieżkę</h3>
-        </header>
-        <app-exploration-direction-board class="d-block w-100" />
-      } @else {
+      } @else if (!canShowDirectionBoard()) {
         <div class="mg-card p-md w-100">
           <p class="color-muted m-0">
             Eksploracja nie ma teraz dostępnej akcji w tym widoku.
@@ -96,5 +87,28 @@
         </p>
       </div>
     }
+  }
+
+  @if (canShowDirectionBoard()) {
+    <div class="flex-col gap-md w-100">
+      @if (shouldShowDirectionBoardHeader()) {
+        <header class="flex-col gap-xs w-100">
+          <h3 class="color-heading m-0">Wybierz dalszą ścieżkę</h3>
+        </header>
+      }
+      <app-exploration-direction-board class="d-block w-100" />
+      @if (canShowDifficultyEntryAction()) {
+        <footer class="mg-card p-sm flex-row-end-center w-100">
+          <p-button
+            type="button"
+            label="Zmień poziom trudności"
+            severity="secondary"
+            size="small"
+            [outlined]="true"
+            (onClick)="page.showDifficultyEntry()"
+          />
+        </footer>
+      }
+    </div>
   }
 </section>

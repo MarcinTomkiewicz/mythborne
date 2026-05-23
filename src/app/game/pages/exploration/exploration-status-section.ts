@@ -49,6 +49,17 @@ export class ExplorationStatusSection {
       && this.movement.movementBlockReason() === null,
     );
   });
+  readonly canShowDifficultyEntryAction = computed(() =>
+    this.canShowDirectionBoard()
+    && !this.movement.isMoving()
+    && !this.step.activeStep()
+    && !this.challenge.activeChallenge(),
+  );
+  readonly shouldShowDirectionBoardHeader = computed(() =>
+    !this.step.currentStepResult()
+    && !this.challenge.currentChallengeResult()
+    && !this.challenge.completedCombatLiveState(),
+  );
   readonly canShowSelectionDiagnostics = computed(() => {
     const server = this.activeServer.selectedServer();
     const access = this.activeServer.access();
