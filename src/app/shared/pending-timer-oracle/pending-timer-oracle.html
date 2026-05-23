@@ -1,0 +1,63 @@
+<article class="pending-timer-oracle-stage mg-card w-100 p-lg position-relative overflow-hidden">
+  @let timerDisplay = displayTimer();
+
+  @if (decorativeLabel()) {
+    <span
+      class="pending-timer-oracle__decor position-absolute position-center pointer-events-none"
+      aria-hidden="true"
+    >
+      <span class="pending-timer-oracle__decor-label d-block text-hero font-display font-extrabold text-nowrap">
+        {{ decorativeLabel() }}
+      </span>
+    </span>
+  }
+
+  <div class="pending-timer-oracle-stage__content position-relative z-1 flex-col-center-center mx-auto">
+    <section
+      class="pending-timer-oracle max-w-full position-relative flex-row-center-center"
+      [attr.aria-label]="timerAriaLabel()"
+    >
+      <div
+        class="pending-timer-oracle__ring position-absolute position-center w-100 h-100 radius-pill"
+        role="progressbar"
+        [attr.aria-label]="progressAriaLabel()"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-valuenow]="timerDisplay.progressPercent"
+        [style.--pending-timer-progress]="timerDisplay.progressPercent + '%'"
+      ></div>
+      <div class="pending-timer-oracle__segments position-absolute position-center w-100 h-100 radius-pill pointer-events-none"></div>
+
+      <div class="pending-timer-oracle__card mg-card w-60 max-w-full p-lg flex-col-center-center gap-sm text-center position-relative z-1">
+        @if (isReady() || isResolving()) {
+          <span class="small-caps color-muted text-xs">{{ readyLabel() }}</span>
+          <strong class="color-heading text-xxl">
+            {{ readyTitle() }}
+          </strong>
+          <p class="color-text text-sm m-0">
+            {{ readyHelperText() }}
+          </p>
+          <p-button
+            type="button"
+            [label]="primaryActionLabel()"
+            [loading]="isResolving()"
+            [disabled]="isResolving()"
+            (onClick)="onPrimaryAction()"
+          />
+        } @else {
+          <span class="small-caps color-muted text-xs">{{ pendingLabel() }}</span>
+          <strong class="pending-timer-oracle__value color-heading font-display lh-1">
+            {{ timerDisplay.countdownLabel }}
+          </strong>
+          <p class="color-text text-sm m-0">
+            @if (timerDisplay.isCoherent) {
+              {{ pendingHelperText() }}
+            } @else {
+              {{ pendingNeutralHelperText() }}
+            }
+          </p>
+        }
+      </div>
+    </section>
+  </div>
+</article>

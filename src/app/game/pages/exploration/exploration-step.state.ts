@@ -7,7 +7,9 @@ import {
 } from '../../../core/domain/exploration/exploration-runtime.model';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ToastService } from '../../../core/services/ui/toast';
+import type { PendingTimerDisplay } from '../../../core/types/pending-timer.types';
 import { jsonRecord, read } from '../../../core/utils/json-read';
+import { pendingTimerDisplay, pendingTimerHasElapsed } from '../../../core/utils/pending-timer';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -54,25 +56,17 @@ export class ExplorationStepState {
 
     return result;
   });
-  readonly activeStepProgressPercent = computed(() =>
-    this.progressPercent(this.activeStep()),
+  readonly activeStepTimerDisplay = computed(() =>
+    this.activeStepTimerDisplayFor(this.activeStep(), this.now()),
   );
-  readonly activeStepRemainingLabel = computed(() =>
-    this.remainingLabel(this.activeStep()),
-  );
-  readonly canCheckResult = computed(() =>
-    Boolean(this.activeStep()) && this.isActiveStepReady() && !this.isResolving(),
-  );
-  readonly activeStepStatusLabel = computed(() => {
+  readonly canCheckActiveStepResult = computed(() => {
     const step = this.activeStep();
 
-    if (!step) {
-      return 'Brak aktywnego ruchu.';
-    }
-
-    return this.isActiveStepReady()
-      ? 'Wynik jest gotowy do sprawdzenia.'
-      : `Ruch zakończy się ${step.resolvesAt}.`;
+    return Boolean(
+      step &&
+      this.isActiveStepWorkflowReady(step, this.now()) &&
+      !this.isResolving(),
+    );
   });
   readonly stepResultTitle = computed(() =>
     explorationStepResultTitle(this.currentStepResult()),
@@ -125,7 +119,7 @@ export class ExplorationStepState {
       return;
     }
 
-    if (!this.isActiveStepReady()) {
+    if (!this.isActiveStepWorkflowReady(step, this.now())) {
       this.feedback.setError(null, 'Krok ruchu nie jest jeszcze gotowy.');
       return;
     }
@@ -167,12 +161,6 @@ export class ExplorationStepState {
       });
   }
 
-  private isActiveStepReady(): boolean {
-    const resolvesAt = this.resolvesAtMs(this.activeStep());
-
-    return resolvesAt !== null && this.now() >= resolvesAt;
-  }
-
   private isTrialManifestationFailure(
     result: HeroExplorationStepResolutionReadModel | null,
   ): boolean {
@@ -206,55 +194,32 @@ export class ExplorationStepState {
     return `${title}: ${typeLabel}`;
   }
 
-  private progressPercent(step: HeroExplorationStepReadModel | null): number {
-    const startedAt = this.timeMs(step?.startedAt);
-    const resolvesAt = this.resolvesAtMs(step);
-
-    if (startedAt === null || resolvesAt === null || resolvesAt <= startedAt) {
-      return this.isActiveStepReady() ? 100 : 0;
-    }
-
-    const elapsed = this.now() - startedAt;
-    const duration = resolvesAt - startedAt;
-
-    return Math.max(0, Math.min(100, Math.round((elapsed / duration) * 100)));
+  private activeStepTimerDisplayFor(
+    step: HeroExplorationStepReadModel | null,
+    nowMs: number,
+  ): PendingTimerDisplay {
+    return pendingTimerDisplay({
+      subjectId: step?.id ?? null,
+      startedAt: step?.startedAt,
+      resolvesAt: step?.resolvesAt,
+      nowMs,
+      isLoading: this.overview.isLoading(),
+    });
   }
 
-  private remainingLabel(step: HeroExplorationStepReadModel | null): string {
-    const resolvesAt = this.resolvesAtMs(step);
-
-    if (resolvesAt === null) {
-      return '-';
-    }
-
-    const remainingMs = resolvesAt - this.now();
-
-    if (remainingMs <= 0) {
-      return 'Gotowe';
-    }
-
-    const totalSeconds = Math.ceil(remainingMs / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-
-    return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
-  }
-
-  private resolvesAtMs(step: HeroExplorationStepReadModel | null): number | null {
-    return this.timeMs(step?.resolvesAt);
-  }
-
-  private timeMs(value: string | null | undefined): number | null {
-    if (!value) {
-      return null;
-    }
-
-    const parsed = Date.parse(value);
-
-    return Number.isFinite(parsed) ? parsed : null;
+  private isActiveStepWorkflowReady(
+    step: HeroExplorationStepReadModel,
+    nowMs: number,
+  ): boolean {
+    return pendingTimerHasElapsed({
+      resolvesAt: step.resolvesAt,
+      nowMs,
+    });
   }
 
   private startClock(): void {
+    this.now.set(Date.now());
+
     if (this.intervalId) {
       return;
     }

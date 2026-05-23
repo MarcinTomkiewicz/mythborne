@@ -92,6 +92,10 @@ $color-progress-gold-start: var(--mg-color-progress-gold-start, var(--mg-color-s
 $color-progress-gold-end: var(--mg-color-progress-gold-end, var(--mg-color-secondary));
 $color-progress-gold-glow: var(--mg-color-progress-gold-glow, transparent);
 $color-progress-danger: var(--mg-color-progress-danger, var(--mg-color-danger));
+$color-oracle-gold-soft: var(--mg-color-oracle-gold-soft, color-mix(in srgb, var(--mg-color-progress-gold-end, var(--mg-color-secondary)) 10%, transparent));
+$color-oracle-gold-line: var(--mg-color-oracle-gold-line, color-mix(in srgb, var(--mg-color-progress-gold-end, var(--mg-color-secondary)) 22%, transparent));
+$color-oracle-gold-fill: var(--mg-color-oracle-gold-fill, color-mix(in srgb, var(--mg-color-progress-gold-end, var(--mg-color-secondary)) 72%, var(--mg-color-progress-gold-start, var(--mg-color-secondary))));
+$color-oracle-glass: var(--mg-color-oracle-glass, color-mix(in srgb, var(--mg-color-shell-surface, var(--mg-color-bg-surface)) 82%, transparent));
 
 $heading-color: var(--mg-heading-color);
 $heading-style: var(--mg-heading-style);

@@ -39,6 +39,7 @@ export class ExplorationPageState {
     this.preview.difficultyCardPreview(this.overview.selectedDifficultyKey()),
   );
   readonly isRunningSandboxTool = signal(false);
+  readonly isUpdatingActiveStepTimer = signal(false);
   readonly runtimeScreenRequested = signal(false);
 
   readonly canShowSelectionDiagnostics = computed(() => {
@@ -102,6 +103,7 @@ export class ExplorationPageState {
       return;
     }
 
+    this.isUpdatingActiveStepTimer.set(true);
     this.runSandboxAction(
       scope,
       this.debug.skipStepTimer({
@@ -112,9 +114,12 @@ export class ExplorationPageState {
       (result) => {
         this.step.lastResolvedStep.set(result);
         this.overview.refreshCurrentState();
+        this.isUpdatingActiveStepTimer.set(false);
         this.toast.show('success', 'Sandbox', 'Czas aktywnego kroku został skrócony.');
       },
       'Nie udało się skrócić czasu aktywnego kroku.',
+      () => this.isUpdatingActiveStepTimer.set(false),
+      () => this.isUpdatingActiveStepTimer.set(false),
     );
   }
 
@@ -280,6 +285,8 @@ export class ExplorationPageState {
     action: Observable<T>,
     onSuccess: (result: T) => void,
     errorMessage: string,
+    onError?: () => void,
+    onFinalize?: () => void,
   ): void {
     const token = this.sandboxActionToken.next();
 
@@ -288,6 +295,10 @@ export class ExplorationPageState {
     action
       .pipe(
         finalize(() => {
+          if (this.sandboxActionToken.isCurrent(token)) {
+            onFinalize?.();
+          }
+
           if (this.isCurrentSandboxAction(token, scope)) {
             this.isRunningSandboxTool.set(false);
           }
@@ -307,6 +318,7 @@ export class ExplorationPageState {
             return;
           }
 
+          onError?.();
           this.feedback.setError(error, errorMessage);
         },
       });

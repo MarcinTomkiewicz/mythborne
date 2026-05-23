@@ -2,7 +2,6 @@ import { Component, computed, inject } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { GameServerKind } from '../../../core/enums/active-server.enum';
 import { ActiveServer } from '../../../core/services/server/active-server';
-import { GameBar } from '../../../shared/game-bar/game-bar';
 import { ExplorationActiveChallengeReport } from '../../components/exploration-active-challenge-report/exploration-active-challenge-report';
 import { ExplorationCombatResultReport } from '../../components/exploration-combat-result-report/exploration-combat-result-report';
 import { ExplorationSandboxTools } from '../../components/exploration-sandbox-tools/exploration-sandbox-tools';
@@ -14,19 +13,20 @@ import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationSelectionDiagnosticsCard } from './exploration-selection-diagnostics-card';
 import { ExplorationStepState } from './exploration-step.state';
+import { PendingTimerOracle } from '../../../shared/pending-timer-oracle/pending-timer-oracle';
 
 @Component({
   selector: 'app-exploration-status-section',
   standalone: true,
   imports: [
     ButtonModule,
-    GameBar,
     ExplorationActiveChallengeReport,
     ExplorationCombatResultReport,
     ExplorationDirectionBoard,
     ExplorationSandboxTools,
     ExplorationSelectionDiagnosticsCard,
     ExplorationStepHandoffCard,
+    PendingTimerOracle,
   ],
   templateUrl: './exploration-status-section.html',
   host: { class: 'd-block w-100' },
@@ -60,16 +60,4 @@ export class ExplorationStatusSection {
     && this.challenge.canShowManualResolveActions()
     && Boolean(this.challenge.activeChallenge()),
   );
-
-  formatStepTime(value: string | null): string {
-    if (!value) {
-      return 'nieznany czas';
-    }
-
-    const date = new Date(value);
-
-    return Number.isNaN(date.getTime())
-      ? 'nieznany czas'
-      : date.toLocaleString();
-  }
 }

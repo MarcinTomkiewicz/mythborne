@@ -1,0 +1,68 @@
+@use "abstracts/mixins" as m;
+@use "abstracts/variables" as v;
+
+.pending-timer-oracle-stage {
+  min-height: 780px;
+  border-color: v.$color-oracle-gold-line;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 38%, v.$color-oracle-gold-soft, transparent 18rem),
+    radial-gradient(circle at 54% 58%, color-mix(in srgb, v.$color-info 16%, transparent), transparent 26rem),
+    linear-gradient(145deg, v.$color-shell-surface, v.$color-shell-surface-elevated, v.$color-shell-bg);
+}
+
+.pending-timer-oracle-stage__content {
+  max-width: 900px;
+  min-height: 728px;
+}
+
+.pending-timer-oracle__decor-label {
+  transform: rotate(-8deg) scale(3);
+  color: v.$color-oracle-gold-soft;
+  letter-spacing: 0.18em;
+}
+
+.pending-timer-oracle {
+  width: 544px;
+  aspect-ratio: 1;
+}
+
+.pending-timer-oracle__ring {
+  border: 1px solid color-mix(in srgb, v.$color-progress-gold-end 28%, transparent);
+  background:
+    radial-gradient(circle, transparent 0 58%, v.$color-oracle-glass 59% 65%, transparent 66%),
+    conic-gradient(from -90deg, v.$color-oracle-gold-fill 0 var(--pending-timer-progress, 0%), color-mix(in srgb, v.$color-black 34%, transparent) var(--pending-timer-progress, 0%) 100%);
+  box-shadow:
+    0 0 4rem v.$color-oracle-gold-soft,
+    inset 0 0 0 0.85rem color-mix(in srgb, v.$color-black 22%, transparent);
+}
+
+.pending-timer-oracle__segments {
+  border: 1px solid color-mix(in srgb, v.$color-progress-gold-end 18%, transparent);
+  background:
+    repeating-conic-gradient(from 0deg, color-mix(in srgb, v.$color-progress-gold-end 16%, transparent) 0deg 2deg, transparent 2deg 15deg),
+    radial-gradient(circle, v.$color-oracle-glass 0 52%, transparent 53% 66%, v.$color-oracle-gold-soft 67% 68%, transparent 69%);
+}
+
+.pending-timer-oracle__card {
+  max-width: 320px;
+  min-height: 240px;
+  border-color: color-mix(in srgb, v.$color-progress-gold-end 34%, transparent);
+  background:
+    radial-gradient(circle at 50% 0, v.$color-oracle-gold-soft, transparent 9rem),
+    linear-gradient(180deg, v.$color-shell-surface-elevated, color-mix(in srgb, v.$color-shell-surface 94%, v.$color-black));
+  box-shadow:
+    0 1.2rem 2.8rem color-mix(in srgb, v.$color-black 36%, transparent),
+    inset 0 1px color-mix(in srgb, v.$color-white 6%, transparent);
+}
+
+.pending-timer-oracle__value {
+  font-size: clamp(3.4rem, 12vw, 5rem);
+}
+
+@include m.down("sm") {
+  .pending-timer-oracle-stage,
+  .pending-timer-oracle-stage__content {
+    min-height: auto;
+  }
+}

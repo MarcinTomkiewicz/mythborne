@@ -22,6 +22,10 @@ $font-weights: (
   "black": 900,
 );
 
+$font-families: (
+  "display": v.$font-family-display,
+);
+
 $text-transforms: (
   "uppercase": uppercase,
 );
@@ -43,6 +47,16 @@ $text-transforms: (
 @each $name, $value in $font-weights {
   .font-#{$name} {
     font-weight: $value !important;
+  }
+}
+
+/* =========================================================
+   FONT FAMILY
+   ========================================================= */
+
+@each $name, $value in $font-families {
+  .font-#{$name} {
+    font-family: $value !important;
   }
 }
 

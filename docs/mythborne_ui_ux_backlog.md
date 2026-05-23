@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-22 — UI-EXPLORATION-11 accepted
+Updated: 2026-05-23 — UI-EXPLORATION-12 Time Oracle follow-up accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -6069,6 +6069,8 @@ Show rewards, drops and report handoff after step/challenge resolution where dur
 - item popover reuse:
 - missing-data limitations:
 - local SCSS added:
+
+**Follow-up status:** Accepted on 2026-05-23. The pending active exploration step now uses the shared `PendingTimerOracle` Time Oracle surface in the production exploration runtime shell instead of the old plain progress card. The surface keeps the outer exploration card full-width, centers the circular oracle, uses one coherent timer/progress display model from `core/utils/pending-timer`, shows a central ready state with the only `Sprawdź wynik` CTA, and keeps direction/result/report surfaces hidden while a step is pending. The shared oracle is presentational and receives labels, timer display, updating/resolving state and primary action input; exploration state keeps workflow readiness separate from UI display readiness. Cleanup removed the wrapper `ExplorationPendingStepOracle`, obsolete timer aliases/suspend APIs, footer action panel leftovers and one-off local/global SCSS utilities. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps. Manual smoke remains user-side pending for representative pending/ready steps, including Hard duration and sandbox `Skróć czas`.
 
 
 ## UI-EXPLORATION-13 — Runtime composition cleanup and legacy section removal
