@@ -30,20 +30,20 @@ export class ExplorationDifficultyPreviewCard {
     const preview = this.difficulty();
 
     if (!preview.isAvailable) {
-      return 'Unavailable';
+      return 'Niedostępne';
     }
 
     const state = this.explorationState();
 
     if (!state) {
-      return this.isBusy() ? 'Loading status' : 'Status unavailable';
+      return this.isBusy() ? 'Ładowanie statusu' : 'Status niedostępny';
     }
 
     if (!state.hasExploration) {
-      return 'Start exploration';
+      return 'Rozpocznij eksplorację';
     }
 
-    return 'Continue adventure';
+    return 'Kontynuuj wyprawę';
   });
 
   readonly actionDisabled = computed(() => {

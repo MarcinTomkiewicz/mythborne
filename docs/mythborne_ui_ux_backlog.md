@@ -6237,6 +6237,8 @@ Perform the final Exploration UI control pass after UI-EXPLORATION-7–13 to ens
 - local SCSS remaining:
 - manual smoke pending:
 
+**Status:** Accepted/completed on 2026-05-23 as the Exploration final player-facing copy/control pass. The pass cleaned the accepted `/game/exploration` entry/runtime flow without changing DB/RPC/generated contracts, runtime authority, timer, challenge, reward, report or combat logic. Difficulty entry, selected Difficulty action labels, card aria-labels, Trial detail preview labels and start/movement feedback are now Polish player-facing copy, while sandbox diagnostics remain explicitly gated and technical by design. No local SCSS, new components, new helpers or new specs were added. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and scoped static greps for banned Angular/prototype patterns plus remaining English player-facing copy; manual smoke remains user-side pending for the full Exploration matrix.
+
 ---
 
 # 15. UI-TRIALS — Trial minigame prototypes and renderer boundary
@@ -6962,339 +6964,829 @@ Dopisać zaakceptowany kierunek Spirituality Trial jako hold-to-charge ritual co
 
 ---
 
-# 16. UI-COMBAT — Future combat screen
+# 16. UI-COMBAT — Combat screen, Walking Dead, combat report
 
-Cel: osobny future combat screen dla Walking Dead, combatants, combat log, attack source labels i outcome/report handoff. Combat UI jest źródłowo neutralny: Trial, Encounter, PvP, Sandbox/Admin Test mogą używać tego samego combat result presentation. Target selection i combat result/report są osobnymi ekranami.
+## Cel epica
+
+Zbudować wspólny ekran walki i raportu walki dla:
+
+- Exploration Encounter / zasadzki;
+- Trial Combat;
+- PvP Attack;
+- Sandbox/Admin Test.
+
+Combat UI jest źródłowo neutralny. Target selection, wybór PvP celu, wybór trudności eksploracji i archiwum raportów są osobnymi powierzchniami.
+
+Ekran aktywnej walki ma bazować konstrukcyjnie na prototypie `mythborne_combat_minigame_prototype.html`:
+
+- maksymalna szerokość ok. `1180px`;
+- panel walczącego po lewej;
+- panel przeciwnika/obrońcy po prawej;
+- centralny panel akcji z Walking Dead;
+- health bary obu stron;
+- combat log pod spodem na pełną szerokość;
+- auto-resolve jako jawna akcja, bez zastępowania manualnego flow.
+
+Completed combat report ma bazować konstrukcyjnie na prototypach:
+
+- `mythborne_combat_report_attacker_victory_prototype.html`;
+- `mythborne_combat_report_defender_victy_prototype.html` / defender victory variant.
+
+Raport walki ma pokazywać:
+
+- header raportu;
+- outcome banner;
+- finalne HP obu stron;
+- statystyki/snapshoty walczących;
+- pełny combat log/timeline z backendu;
+- nagrody/straty tam, gdzie backend je zwraca;
+- przejście do trwałego raportu i kopiowanie linku publicznego, jeśli raport go udostępnia.
+
+---
+
+## Globalne zasady techniczne
+
+### DB/RPC authority
+
+Angular nie liczy:
+
+- zwycięzcy;
+- trafień;
+- uników;
+- krytyków;
+- obrażeń;
+- leczenia;
+- kolejności ataków;
+- liczby tur;
+- nagród;
+- strat;
+- timeline walki.
+
+Angular renderuje wyłącznie backendowy live state, snapshot, read model albo report sections.
+
+### Generated types
+
+Codex nie regeneruje Supabase generated types i nie edytuje `database.types.ts`.
+
+Jeżeli nowy RPC albo wymagane pola nie istnieją w generated types, task jest zablokowany do momentu, aż użytkownik dostarczy zregenerowane typy.
+
+### Manual combat flow
+
+Manual combat flow zostaje osobny od auto-resolve.
+
+Dla Exploration combat obecny accepted manual flow używa:
+
+- `ensure_exploration_combat_session(...)`;
+- `get_combat_live_state(...)`;
+- `submit_combat_player_action(...)`;
+- `get_combat_result_detail(...)`.
+
+Nie używać `advance_combat_live_to_next_player_action(...)` z Angulara jako player flow.
+
+### Exploration combat auto-resolve
+
+Nowy RPC:
+
+```ts
+auto_resolve_exploration_combat_challenge_attempt(p_challenge_attempt_id, p_request_id)
+```
+
+Zakres:
+
+- Exploration combat encounters / ambushes;
+- Trial combat attempts, gdy `challenge_kind = trial` i `minigame_key = combat`;
+- nie dla non-combat Trials;
+- nie dla PvP;
+- nie dla PvP spy.
+
+Zachowanie:
+
+- backend używa canonical live combat runtime;
+- backend auto-resolve’uje akcje gracza;
+- backend przepycha NPC actions przez live progressor;
+- backend finalizuje przez `finalize_exploration_combat_session(...)`;
+- backend kończy challenge z `completion_mode = auto`;
+- response może zawierać `combat_result_id`, `reward_grant_id`, `game_report_id`, outcome/success/status i event counts.
+
+Frontend:
+
+- używa RPC tylko dla jawnej akcji auto-resolve / skip manual combat / timeout-style combat auto path;
+- nie liczy wyniku w Angularze;
+- po sukcesie renderuje wynik przez istniejący report/reward/combat result flow.
+
+### PvP attack auto-resolve
+
+Nowy RPC:
+
+```ts
+auto_resolve_pvp_attack_action(p_pvp_action_id uuid, p_request_id text default null)
+```
+
+Zakres:
+
+- tylko explicit PvP attack auto-resolve / skip manual PvP combat;
+- tylko arrived PvP attack actions;
+- tylko owner atakującego bohatera;
+- nie dla Exploration combat;
+- nie dla PvP spy actions.
+
+Frontend:
+
+- czeka na user-provided generated Supabase types;
+- nie regeneruje typów;
+- nie liczy combat outcome ani timeline w Angularze;
+- po sukcesie renderuje backendowy report/timeline z atakami, trafieniami, missami, evasion, critami, obrażeniami i efektami rund;
+- manual PvP combat flow zostaje osobny.
+
+### Report/timeline contract
+
+Backend powinien dostarczać player-facing pola dla logu i raportu, np.:
+
+- `title`;
+- `summary`;
+- `outcomeLabel`;
+- `narrativeLines`;
+- `eventLabel`;
+- `detailText`;
+- `displayText`;
+- `damageDisplay`;
+- `attackSourceLabel`;
+- `actorDisplayName`;
+- `targetDisplayName`;
+- `roundLabel`;
+- `turnLabel`;
+- `eventKind` / `presentationKind`;
+- `publicToken` / public report URL, jeśli raport jest shareable.
+
+Angular ma renderować te pola, a nie tłumaczyć raw enumy i nie budować narracji lokalnie.
+
+---
 
 ## UI-COMBAT task index
 
+- UI-COMBAT-0 — Contract preflight and source boundary
 - UI-COMBAT-1 — Combat screen shell
-- UI-COMBAT-2 — Combatants panels and health bars
-- UI-COMBAT-3 — Walking Dead timing component
-- UI-COMBAT-4 — Combat log and attack source labels
-- UI-COMBAT-5 — Combat result display and report handoff
-- UI-COMBAT-6 — Combat privacy and snapshot boundary
+- UI-COMBAT-2 — Combatant panels and health bars
+- UI-COMBAT-3 — Walking Dead timing panel
+- UI-COMBAT-4 — Active combat log
+- UI-COMBAT-5 — Completed combat report layout
+- UI-COMBAT-6 — Combat timeline row renderer
+- UI-COMBAT-7 — Rewards, losses and report actions
+- UI-COMBAT-8 — Exploration combat auto-resolve integration
+- UI-COMBAT-9 — PvP attack auto-resolve integration
+- UI-COMBAT-10 — Privacy and snapshot boundary
+- UI-COMBAT-11 — Polish labels and backend copy contract
+- UI-COMBAT-12 — Cleanup pass and shared UI extraction
 
-## UI-COMBAT-1 — Combat screen shell
+---
 
-**Goal:**  
-Zdefiniować/zbudować combat screen shell jako osobny ekran po rozpoczęciu walki, niezależny od PvP target selection.
+# UI-COMBAT-0 — Contract preflight and source boundary
 
-**Scope:**
-- route/page target proposal or existing combat route,
-- combat source label: trial/encounter/pvp/sandbox/admin_test,
-- initiator/defender side labels,
-- combatants area,
-- Walking Dead timing slot,
-- combat log slot,
-- outcome/report handoff slot,
+## Goal
+
+Potwierdzić, jakie frontend-safe pola istnieją dla active combat, completed combat i report sections, zanim UI zacznie renderować nowe powierzchnie.
+
+## Scope
+
+- sprawdzić aktualne generated types dostarczone przez użytkownika;
+- wypisać dostępne RPC/read modele dla active combat i completed combat;
+- rozdzielić live combat state od durable combat result/report snapshot;
+- potwierdzić dostępność pól dla:
+  - combat source;
+  - participant side;
+  - player/enemy/opponent/hero kind;
+  - current/final HP;
+  - base stats;
+  - combat stats;
+  - attack source labels;
+  - Walking Dead timing manifest;
+  - combat log/timeline;
+  - public/internal report links;
+  - rewards/losses.
+
+## Out of scope
+
+- regenerowanie typów;
+- DB migration;
+- lokalne fallbackowe modele danych w Angularze;
+- fake data.
+
+## Data rules
+
+- completed combat preferuje durable snapshot/report section;
+- live combat używa live state/session read model;
+- PvP defender private equipment nie może być rekonstruowany z aktualnego stanu gracza;
+- opponent/generated equipment musi pochodzić ze snapshotu albo player-safe labela.
+
+## Acceptance
+
+- znany jest source danych dla active combat i completed report;
+- brak edycji `database.types.ts`;
+- brak lokalnego combat outcome/timeline resolvera;
+- jeżeli wymagany contract nie istnieje, task zatrzymuje się jako blocker.
+
+---
+
+# UI-COMBAT-1 — Combat screen shell
+
+## Goal
+
+Zbudować source-neutral combat screen shell dla aktywnej walki, niezależny od PvP target selection i niezależny od Exploration direction board.
+
+## Scope
+
+- route albo embedded runtime surface dla active combat;
+- page/surface width ok. `1180px`;
+- combat source label:
+  - Exploration Encounter;
+  - Trial Combat;
+  - PvP Attack;
+  - Sandbox/Admin Test;
+- header z tytułem aktywnej walki;
+- meta badges: source, resolution mode, turn/round;
+- trzyczęściowy layout:
+  - left combatant panel;
+  - center timing/action panel;
+  - right combatant panel;
+- combat log pod spodem;
 - loading/error/no combat state.
 
-**Out of scope:**
-- PvP target selection,
-- target eligibility,
-- combat engine implementation,
-- reward persistence,
-- live recomputation of completed results.
+## Out of scope
 
-**Data/source rules:**
-- combat data from combat result/session/read model where available,
-- source type from DB-backed combat source type dictionary/read model,
-- participant sides use initiator/defender semantics, not hero/opponent assumptions,
-- completed combat should prefer durable snapshot.
+- PvP target selection;
+- target eligibility;
+- backend combat engine;
+- reward persistence;
+- completed report archive.
 
-**UI/SCSS rules:**
-- use global page/card/timeline/progress patterns,
-- no local heavy decorative arena unless accepted,
-- combat screen must remain readable and not overdecorated,
-- labels from dictionaries/metadata where available.
+## UI rules
 
-**Dependencies/blockers:**
-- if no active combat/session read model exists, keep task as prototype/shell and report backend dependency,
-- if combat result snapshot exists only after completion, live combat UI may be future blocker.
+- layout zgodny konstrukcyjnie z Combat Minigame Prototype;
+- nie kopiować CSS prototypu 1:1;
+- użyć istniejącego game shell/page container/card utilities;
+- jeśli trzeba dodać lokalny SCSS, tylko dla unikalnej geometrii combat screen;
+- nie tworzyć oddzielnych stylistycznych systemów kart/statystyk, jeśli istnieją globalne utilities.
 
-**Acceptance criteria:**
-- combat screen is separate from PvP target selection,
-- source/side labels visible,
-- shell supports combatants/timer/log/result slots,
-- no fake live combat data,
-- build passes if implemented.
+## Acceptance
 
-**Verification/smoke:**
-- route smoke if route exists,
-- loading/no combat state smoke,
-- completed result smoke if data exists,
-- build/tsc.
+- combat screen nie jest target selection;
+- source/side labels są widoczne;
+- shell obsługuje sloty dla combatants, Walking Dead, combat log i result handoff;
+- brak fake live data;
+- `tsc` i build przechodzą.
 
-**Required Codex report:**
-- combat data source:
-- source/side dictionary source:
-- missing live data blockers:
-- local SCSS added:
+---
 
-## UI-COMBAT-2 — Combatants panels and health bars
+# UI-COMBAT-2 — Combatant panels and health bars
 
-**Goal:**  
-Pokazać combatants in a clear two-side layout, with health bars and allowed snapshot data.
+## Goal
 
-**Scope:**
-- initiator panel,
-- defender panel,
-- participant kind: hero/opponent,
-- name/label,
-- health/current HP,
-- key visible stats if allowed,
-- status/effects if available,
-- attack source/equipment summary only where allowed by snapshot/privacy.
+Pokazać obie strony walki w czytelnym układzie z health barami i snapshotowymi statystykami.
 
-**Out of scope:**
-- full private equipment reveal,
-- live derived stat recompute,
-- equip/unequip,
+## Scope
+
+- left combatant panel;
+- right combatant panel;
+- role/side:
+  - attacker / defender;
+  - initiator / target;
+  - player / enemy;
+  - hero / opponent;
+- display name;
+- level/kind label;
+- current HP dla active combat;
+- final HP dla completed report;
+- health bar;
+- base stats, jeśli backend udostępnia;
+- combat stats, jeśli backend udostępnia;
+- item/weapon/attack source label, jeśli snapshot policy pozwala.
+
+## Out of scope
+
+- pełny reveal prywatnego equipmentu defendera w PvP;
+- live recompute statystyk;
+- equip/unequip;
 - admin opponent editor.
 
-**Data/source rules:**
-- combatants from combat participant snapshot/read model,
-- defender private equipment not exposed unless snapshot/report policy allows,
-- opponent equipment is blueprint/generated fight snapshot, not real player item,
-- health values from combat snapshot/session state.
+## Data rules
 
-**UI/SCSS rules:**
-- health bars use shared progress pattern,
-- two panels balanced visually,
-- important HP/status not muted,
-- icons via custom registry/placeholders.
+- HP i stats pochodzą z combat state/snapshot/report, nie z lokalnej rekonstrukcji;
+- opponent equipment label to snapshot/generator label, nie realny item gracza;
+- PvP defender equipment jest ukryte, chyba że backend explicit pozwala przez report-safe snapshot.
 
-**Dependencies/blockers:**
-- missing HP/current state -> show static participant summary and report blocker,
-- missing privacy policy fields -> omit sensitive details.
+## UI rules
 
-**Acceptance criteria:**
-- initiator/defender both visible,
-- HP bars readable,
-- participant kind clear,
-- privacy boundaries preserved,
-- build passes.
+- health bars widoczne zarówno w active minigame, jak i completed report;
+- ważne HP/statusy nie mogą być muted;
+- base stats i combat stats mają być skanowalne;
+- panele lewy/prawy mają być wizualnie zbalansowane;
+- placeholder glyph/avatar jest dozwolony, jeżeli brak assetu.
 
-**Verification/smoke:**
-- hero vs opponent smoke,
-- hero vs hero smoke if PvP data exists,
-- low HP/defeated state smoke,
-- build/tsc.
+## Acceptance
 
-**Required Codex report:**
-- participant data source:
-- privacy fields omitted:
-- progress pattern reused:
-- local SCSS added:
+- obie strony walki są widoczne;
+- HP bar pokazuje aktualny albo finalny stan;
+- role i side labels są jasne;
+- nie ma prywatnego wycieku equipmentu;
+- `tsc` i build przechodzą.
 
-## UI-COMBAT-3 — Walking Dead timing component
+---
 
-**Goal:**  
-Zaprojektować Walking Dead timing component for the actual combat screen, not target selection.
+# UI-COMBAT-3 — Walking Dead timing panel
 
-**Scope:**
-- timing bar/track,
-- current actor/next action indication where backend supports it,
-- turn/round or timing explanation,
-- paused/completed/loading states,
-- integration slot in combat screen.
+## Goal
 
-**Out of scope:**
-- combat timing engine,
-- target selection timing,
-- arbitrary animation without backend state,
-- live polling architecture unless current project supports it.
+Zbudować właściwy Walking Dead timing panel dla aktywnej walki.
 
-**Data/source rules:**
-- timing state from combat session/read model if live combat exists,
-- if only final snapshots exist, component remains future/prototype or shows timeline from snapshot,
-- do not generate local fake timing for production.
+## Scope
 
-**UI/SCSS rules:**
-- use global progress/timer patterns where possible,
-- motion restrained and accessible,
-- no constant distracting animation unless useful.
+- timing lane / track;
+- hit zone;
+- moving indicator;
+- current actor/next action label;
+- turn/round/action index;
+- hit chance / timing helper, jeśli backend udostępnia;
+- button/interaction submitujący timing;
+- loading/resolving state;
+- completed/no manifest state.
 
-**Dependencies/blockers:**
-- missing live combat timing model -> blocker/future note,
-- missing timer pattern -> UI-CORE/shell dependency.
+## Out of scope
 
-**Acceptance criteria:**
-- component is clearly located on combat screen only,
-- supports loading/completed/no-live-state,
-- does not fake backend timing,
-- build passes if implemented.
+- lokalny combat timing engine;
+- fake timing dla produkcji;
+- target selection timing;
+- polling architecture, jeśli projekt jej nie wspiera.
 
-**Verification/smoke:**
-- static/completed state smoke,
-- live timing smoke if backend exists,
-- reduced-motion/accessibility consideration,
-- build/tsc.
+## Data rules
 
-**Required Codex report:**
-- timing data source:
-- live support yes/no:
-- animation choices:
-- local SCSS added:
+- timing manifest pochodzi z `get_combat_live_state(...)` albo source-specific live combat state;
+- timing submit idzie przez `submit_combat_player_action(...)` albo zatwierdzony source-specific player action RPC;
+- Angular wysyła timing input, nie wynik ataku;
+- jeśli manifestu brak, UI nie udaje dostępnej akcji.
 
-## UI-COMBAT-4 — Combat log and attack source labels
+## UI rules
 
-**Goal:**  
-Pokazać combat log/timeline z czytelnymi attack source labels i bez wycieku private equipment.
+- centralny panel ma odpowiadać Combat Minigame Prototype;
+- w trakcie walki gracze klikają timing/Walking Dead action, nie finalny wynik;
+- auto-resolve jest osobną akcją obok, nie zamiennikiem Walking Dead;
+- motion ma być czytelny i możliwy do ograniczenia.
 
-**Scope:**
-- ordered combat log rows,
-- turn/sequence index,
-- actor side/name,
-- attack/source label,
-- damage/heal/effect summary,
-- miss/crit/block if data exists,
-- attack source kind labels: natural, unarmed, player_item, opponent_manual, opponent_generated where available.
+## Acceptance
 
-**Out of scope:**
-- generating combat log from scratch,
-- live recomputation,
-- exposing full defender equipment if not in snapshot,
-- raw JSON log display.
+- Walking Dead pojawia się tylko, gdy backend mówi, że player action jest oczekiwana;
+- submit wysyła tylko timing input;
+- brak lokalnego damage/outcome;
+- loading/resolving state nie pozwala na double submit;
+- `tsc` i build przechodzą.
 
-**Data/source rules:**
-- log from combat result attacks/snapshot/read model,
-- attack source dictionaries from DB-backed combat explainability dictionaries,
-- item references only when snapshot/report policy allows,
-- opponent generated/manual equipment labels should not pretend to be player inventory.
+---
 
-**UI/SCSS rules:**
-- use timeline/list row pattern,
-- source labels as badges/chips,
-- important outcomes not muted,
-- technical keys secondary.
+# UI-COMBAT-4 — Active combat log
 
-**Dependencies/blockers:**
-- missing combat attack rows -> show summary only and report data gap,
-- missing dictionaries -> report metadata dependency or fallback safely.
+## Goal
 
-**Acceptance criteria:**
-- combat log rows readable,
-- attack source labels meaningful,
-- no raw JSON player-facing,
-- privacy preserved,
-- build passes.
+Pokazać live/readable combat log pod aktywną walką, używając backendowych eventów.
 
-**Verification/smoke:**
-- log render smoke with sample/snapshot data,
-- source kind variety smoke if available,
-- empty log smoke,
-- build/tsc.
+## Scope
 
-**Required Codex report:**
-- combat log source:
-- dictionary/metadata source:
-- privacy omissions:
-- local SCSS added:
+- combat log na pełną szerokość pod panelami walki;
+- ordered event rows;
+- turn/round labels;
+- actor name/side;
+- attack source label;
+- hit/miss/evasion/crit/damage/heal/effect display;
+- player-facing `eventLabel`, `detailText`, `displayText`, `damageDisplay`.
 
-## UI-COMBAT-5 — Combat result display and report handoff
+## Out of scope
 
-**Goal:**  
-Pokazać wynik walki i przejście do durable report, bez mieszania live combat screen z report archive.
+- generowanie logu z raw statów;
+- tłumaczenie raw enumów na lokalne teksty;
+- rekonstrukcja timeline z ataków po stronie Angulara.
 
-**Scope:**
-- outcome banner: initiator victory, defender victory, draw,
-- rewards/resource/item summary if allowed and available,
-- participant final HP/status,
-- action: Open report,
-- action: Return to source context where available,
-- share/report action only where report supports it.
+## Data rules
 
-**Out of scope:**
-- reward granting logic,
-- report producer backend,
-- public share route,
-- live recomputation of rewards.
+- log pochodzi z backendowego live state/report section;
+- backend odpowiada za kolejność i teksty;
+- technical/debug eventy nie są player-facing;
+- jeśli event nie ma player-facing text, UI ma fail closed albo pokazać bezpieczny krótki fallback.
 
-**Data/source rules:**
-- outcome from combat result snapshot,
-- rewards from reward/result/report read model if available,
-- report handoff through game_reports/source mapping where implemented,
-- no fake reward summary if backend missing.
+## UI rules
 
-**UI/SCSS rules:**
-- outcome as prominent but readable banner/card,
-- status badges for victory/defeat/draw,
-- item popovers via UI-CORE-6,
-- report button clear.
+- active combat log może używać bardziej kompaktowego układu niż completed report;
+- ważne eventy nie mogą być muted;
+- crit powinien mieć danger/red emphasis;
+- miss/evade powinny mieć info/blue emphasis;
+- normal damage może być gold/heading emphasis.
 
-**Dependencies/blockers:**
-- missing report link -> show result only and report dependency,
-- missing reward snapshot -> omit reward summary and report gap.
+## Acceptance
 
-**Acceptance criteria:**
-- result state visible,
-- report handoff clear if available,
-- no fake rewards,
-- no privacy leak,
-- build passes.
+- aktywny combat log pokazuje backendowe eventy;
+- brak technicznych manifest/debug tekstów;
+- brak local translation engine;
+- `tsc` i build przechodzą.
 
-**Verification/smoke:**
-- victory/defeat/draw visual smoke if data available,
-- report link smoke,
-- missing report state smoke,
-- build/tsc.
+---
 
-**Required Codex report:**
-- outcome source:
-- reward/report source:
-- omitted rewards/reports:
-- local SCSS added:
+# UI-COMBAT-5 — Completed combat report layout
 
-## UI-COMBAT-6 — Combat privacy and snapshot boundary
+## Goal
 
-**Goal:**  
+Zbudować completed combat report zgodny konstrukcyjnie z attacker victory / defender victory prototypes.
+
+## Scope
+
+- report header;
+- outcome banner;
+- meta row:
+  - source;
+  - time;
+  - resolution mode;
+  - turn count;
+  - outcome;
+- final combatant panels;
+- final HP bars;
+- combat timeline/log;
+- rewards/losses;
+- actions/report handoff.
+
+## Out of scope
+
+- durable report backend generation;
+- reward grant logic;
+- public share route backend;
+- live recompute completed results.
+
+## Data rules
+
+- completed report używa combat result snapshot/report sections;
+- final HP nie pochodzi z aktualnego hero state;
+- outcome label pochodzi z backendu;
+- viewer-relative outcome color może zależeć od backendowego viewer result field;
+- backend dostarcza player-facing title/outcome/narrative.
+
+## UI rules
+
+- maksymalna szerokość ok. `1180px`;
+- completed report nie pokazuje Walking Dead;
+- report pokazuje zapisany combat log/timeline;
+- outcome banner:
+  - viewer win = green/success;
+  - viewer loss = red/danger;
+  - draw = neutral/warning;
+- layout ma być czytelny, nie rozciągnięty bez kontroli na ultrawide.
+
+## Acceptance
+
+- victory/defeat/draw mają czytelny outcome state;
+- combatants i final HP są widoczne;
+- report timeline jest widoczny;
+- brak lokalnego outcome resolvera;
+- `tsc` i build przechodzą.
+
+---
+
+# UI-COMBAT-6 — Combat timeline row renderer
+
+## Goal
+
+Ujednolicić renderowanie timeline rows dla active log i completed report.
+
+## Scope
+
+- shared/composable row renderer dla:
+  - hit;
+  - miss;
+  - evade;
+  - crit;
+  - damage;
+  - heal;
+  - round effect;
+  - start/ready event;
+  - completion event;
+- actor label;
+- source/weapon label;
+- detail text;
+- result badge/value;
+- row presentation kind.
+
+## Out of scope
+
+- budowanie tekstów eventu w Angularze;
+- lokalna klasyfikacja combat eventów na podstawie raw enumów, jeśli backend nie dostarcza presentation kind;
+- debug/admin raw JSON.
+
+## Data rules
+
+- preferować backendowe `presentationKind`, `eventLabel`, `detailText`, `damageDisplay`;
+- attack source label z backendu ma być wyróżnione, np. heading/gold;
+- nazwa broni/itemu ma pochodzić ze snapshotu/report-safe labela;
+- nie otwierać item popoverów dla prywatnego PvP equipmentu, chyba że backend pozwala.
+
+## UI rules
+
+- normal damage: gold/heading result;
+- miss/evade: info/blue result;
+- crit: red/danger row or result emphasis;
+- healing/round effects: distinct but readable;
+- source labels nie mogą być małymi technicznymi kluczami;
+- log ma grupować turę/rundę tam, gdzie backend udostępnia grouping.
+
+## Acceptance
+
+- row renderer nie zawiera local combat logic;
+- renderer obsługuje typowe presentation kinds;
+- brak raw JSON i debug eventów w player-facing UI;
+- `tsc` i build przechodzą.
+
+---
+
+# UI-COMBAT-7 — Rewards, losses and report actions
+
+## Goal
+
+Pokazać nagrody, straty i akcje raportowe w source-specific sposób.
+
+## Scope
+
+- reward/loss summary dla completed combat report;
+- PvP attack:
+  - attacker win rewards/seized resources, jeśli backend zwraca;
+  - attacker loss costs/losses, jeśli backend zwraca;
+- Trial combat:
+  - używa Trial reward/result flow;
+  - nie miesza Trial reward z PvP reward copy;
+- Exploration encounter combat:
+  - używa exploration reward/report handoff;
+- actions:
+  - open full report;
+  - copy public report link, jeśli token/url istnieje;
+  - return to source context:
+    - Exploration;
+    - Vicinity/PvP;
+    - Reports.
+
+## Out of scope
+
+- reward persistence;
+- fake rewards;
+- local reward grant logic;
+- external share backend.
+
+## Data rules
+
+- reward/loss values pochodzą z backendu;
+- public report link tylko z backendowego tokena/url;
+- jeśli public token nie istnieje, akcja kopiowania jest ukryta;
+- internal `/game/reports/{id}` nie jest public share linkiem.
+
+## UI rules
+
+- nagrody są pod combat timeline, nie przed główną treścią walki;
+- wartości liczbowe wyróżnione kolorem heading/gold;
+- etykiety zasobów normalnym tekstem;
+- item names mogą używać istniejącego item popoveru, jeśli policy pozwala.
+
+## Acceptance
+
+- PvP rewards/losses nie są renderowane lokalnie, tylko z backendu;
+- Trial rewards nie pokazują PvP copy;
+- public copy action pojawia się tylko gdy istnieje public token/url;
+- `tsc` i build przechodzą.
+
+---
+
+# UI-COMBAT-8 — Exploration combat auto-resolve integration
+
+## Goal
+
+Dodać jawne auto-resolve dla Exploration combat bez ruszania manualnego Walking Dead flow.
+
+## Scope
+
+- użyć:
+  ```ts
+  auto_resolve_exploration_combat_challenge_attempt(p_challenge_attempt_id, p_request_id)
+  ```
+- dodać akcję:
+  - `Rozstrzygnij automatycznie`;
+  - dostępna dla combat encounter / zasadzki;
+  - dostępna dla Trial combat;
+  - niedostępna dla non-combat Trial;
+  - niedostępna dla PvP;
+- request-id/stale guard;
+- loading/disabled state;
+- toast/error handling;
+- refresh existing report/reward/combat result flow po sukcesie.
+
+## Out of scope
+
+- DB/RPC changes;
+- generated types regeneration;
+- manual combat changes;
+- PvP auto-resolve;
+- local combat resolution.
+
+## Data rules
+
+- jeżeli RPC nie istnieje w generated types, Codex czeka na typy od użytkownika;
+- response fields mogą pomóc w report handoff, ale nie służą do lokalnego rozstrzygania;
+- combat report/timeline renderuje backendowe fields.
+
+## Acceptance
+
+- auto-resolve działa dla zasadzki/combat encounter;
+- auto-resolve działa dla Trial combat;
+- non-combat Trial nie pokazuje tej akcji;
+- manual Walking Dead działa bez zmian;
+- completed report pokazuje combat timeline z backendu;
+- `tsc` i build przechodzą.
+
+---
+
+# UI-COMBAT-9 — PvP attack auto-resolve integration
+
+## Goal
+
+Dodać jawne auto-resolve dla arrived PvP attack action przez zatwierdzony RPC.
+
+## Scope
+
+- użyć:
+  ```ts
+  auto_resolve_pvp_attack_action(p_pvp_action_id, p_request_id)
+  ```
+- akcja dla arrived PvP attack only;
+- tylko attacking hero owner;
+- request-id/stale guard;
+- loading/disabled state;
+- toast/error handling;
+- po sukcesie render durable PvP combat report.
+
+## Out of scope
+
+- Exploration combat;
+- PvP spy actions;
+- PvP target selection;
+- manual PvP combat flow;
+- local combat outcome/timeline.
+
+## Data rules
+
+- czekać na user-provided generated types;
+- nie regenerować typów;
+- backend tworzy live combat session, combat result, PvP attack result i game report;
+- frontend renderuje report/timeline z backendu.
+
+## UI rules
+
+- auto-resolve nie może ukrywać reportu;
+- report musi pokazywać timeline/ciosy:
+  - hits;
+  - misses;
+  - evasion;
+  - crits;
+  - damage;
+  - healing/round effects where present;
+- completed PvP report bazuje na attacker/defender victory prototypes.
+
+## Acceptance
+
+- action widoczna tylko dla arrived PvP attack, gdzie user jest ownerem atakującego;
+- action nie pojawia się dla spy;
+- action nie pojawia się dla Exploration;
+- po sukcesie pokazuje PvP combat report;
+- timeline count/event rows pochodzą z backendu;
+- `tsc` i build przechodzą.
+
+---
+
+# UI-COMBAT-10 — Privacy and snapshot boundary
+
+## Goal
+
 Utrwalić zasady prywatności i snapshotów dla combat UI, szczególnie PvP.
 
-**Scope:**
-- document/display rules for hero vs opponent combat,
-- allowed fields for defender/player equipment,
-- source labels vs full item details,
-- completed result snapshot vs live state,
-- admin/sandbox exceptions if any.
+## Scope
 
-**Out of scope:**
-- RLS/RPC policy changes,
-- changing snapshot schema,
-- defender equipment reveal,
+- participant snapshot vs current hero state;
+- allowed fields for defender/player equipment;
+- attack source labels vs full item details;
+- completed result snapshot vs live state;
+- sandbox/admin exceptions, jeśli istnieją.
+
+## Out of scope
+
+- RLS/RPC policy changes;
+- schema migrations;
+- defender equipment reveal;
 - admin debug payload UI.
 
-**Data/source rules:**
-- combat result snapshots are durable source for completed reports,
-- live player state should not be used to reconstruct historical combat,
-- defender private equipment not exposed unless snapshot/report policy allows,
-- admin_test/sandbox may have different debug permissions but must be explicit.
+## Data rules
 
-**UI/SCSS rules:**
-- technical/debug data not player-facing,
-- privacy omissions should fail closed,
-- helper copy concise if a field is hidden.
+- completed reports używają durable snapshotów;
+- live player state nie rekonstruuje historycznej walki;
+- defender private equipment nie jest pokazany, jeśli snapshot/report policy nie pozwala;
+- opponent generated/manual equipment label nie udaje player inventory;
+- fail closed przy braku privacy metadata.
 
-**Dependencies/blockers:**
-- unclear snapshot/privacy policy -> decision dependency,
-- missing allowed labels -> metadata dependency.
+## Acceptance
 
-**Acceptance criteria:**
-- privacy rules documented for combat UI,
-- player-facing combat/report screens fail closed,
-- admin/sandbox exceptions explicit,
-- build passes if code changed.
+- PvP report nie ujawnia prywatnego equipmentu defendera bez backendowego safe labela;
+- item popover tylko dla dozwolonych itemów/snapshotów;
+- technical/debug fields nie trafiają do player-facing UI;
+- `tsc` i build przechodzą.
 
-**Verification/smoke:**
-- review checklist item added,
-- no private equipment shown in PvP smoke if data available.
+---
 
-**Required Codex report:**
-- privacy policy source:
-- fields intentionally omitted:
-- snapshot vs live source:
-- open decisions:
+# UI-COMBAT-11 — Polish labels and backend copy contract
+
+## Goal
+
+Usunąć lokalne tłumaczenie raw combat enumów i oprzeć player-facing copy na backendowych polach.
+
+## Scope
+
+- stat labels;
+- outcome labels;
+- event labels;
+- source labels;
+- damage display;
+- miss/evade/crit labels;
+- turn/round labels;
+- report title/summary/narrative lines.
+
+## Out of scope
+
+- DB content seed localization;
+- local translation engine;
+- hardcoded long narrative in Angular.
+
+## Data rules
+
+- backend dostarcza player-facing labels/copy;
+- Angular może mieć krótki bezpieczny fallback tylko dla brakującego pola;
+- fallback nie może być technicznym raw keyem, jeżeli to jest player-facing surface;
+- brak pełnej treści z backendu jest data/content follow-up, nie powód do lokalnego content engine.
+
+## UI rules
+
+- polski player-facing copy domyślnie;
+- nie mieszać `EXP` z polskim UI — używać `punkty doświadczenia`, jeśli backend nie poda display labela;
+- nie pokazywać debug tekstów typu generated manifest;
+- nie pokazywać raw `Awaiting Resolution`, `Initiator Victory`, `Cunning`, itd., jeśli backend ma display labels.
+
+## Acceptance
+
+- active combat i completed report nie pokazują raw enumów, jeśli istnieją display fields;
+- timeline row używa backend labels;
+- brak lokalnej mapy tłumaczeń jako głównego źródła prawdy;
+- `tsc` i build przechodzą.
+
+---
+
+# UI-COMBAT-12 — Cleanup pass and shared UI extraction
+
+## Goal
+
+Po osiągnięciu funkcjonalnego i wizualnego celu wykonać cleanup pass HTML/SCSS/TS dla combat UI.
+
+## Scope
+
+- usunąć duplikaty template markup;
+- wyciągnąć powtarzalne card/log/stat/progress patterns do shared components albo global utilities;
+- ograniczyć lokalny SCSS do unikalnej geometrii;
+- upewnić się, że komponenty są cienkie;
+- przenieść typy do `core/types`;
+- przenieść interfejsy do `core/interfaces`;
+- przenieść helpery do `core/utils`;
+- przenieść config/lookup maps do `core/configs` albo `core/constants`, jeśli są rzeczywiście potrzebne.
+
+## Out of scope
+
+- zmiana DB/RPC;
+- rewrites unrelated combat systems;
+- status docs przed zaakceptowaniem kodu.
+
+## Review focus
+
+- DRY;
+- KISS;
+- SoC/SRP;
+- brak lokalnych typów/interfejsów w mapperach/componentach;
+- brak lokalnych enum translation engines;
+- brak `NgClass` dla prostych class bindings;
+- brak `CommonModule`/`FormsModule`/`ngModel`, jeśli nie są potrzebne;
+- brak `button pButton`;
+- brak inline operational messages tam, gdzie powinny być toasty;
+- brak generated types edits.
+
+## Acceptance
+
+- no duplicate timeline row renderers unless justified;
+- no duplicate combatant stat panel markup unless extracted or deliberately scoped;
+- no local fake combat logic;
+- no stale helpers/specs;
+- `tsc` i build przechodzą.
 
 ---
 

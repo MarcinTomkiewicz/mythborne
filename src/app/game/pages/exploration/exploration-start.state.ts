@@ -24,7 +24,7 @@ export class ExplorationStartState {
     const context = this.overview.currentContext();
 
     if (!context) {
-      this.feedback.setError(null, 'Select a difficulty before starting exploration.');
+      this.feedback.setError(null, 'Wybierz poziom trudności przed rozpoczęciem eksploracji.');
       return;
     }
 
@@ -61,7 +61,7 @@ export class ExplorationStartState {
             return;
           }
 
-          this.feedback.setError(error, 'Failed to start exploration.');
+          this.feedback.setError(error, 'Nie udało się rozpocząć eksploracji.');
         },
       });
   }

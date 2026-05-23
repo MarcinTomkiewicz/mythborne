@@ -34,12 +34,12 @@ export class ExplorationMovementState {
 
   movementOptionStatusLabel(option: HeroExplorationMovementOptionReadModel): string {
     if (!option.isAvailable) {
-      return 'Unavailable';
+      return 'Niedostępna';
     }
 
     return option.isBacktrack || option.stepKind === 'backtrack'
-      ? 'Backtrack'
-      : 'Available path';
+      ? 'Powrót'
+      : 'Dostępna ścieżka';
   }
 
   movementOptionLabel(option: HeroExplorationMovementOptionReadModel): string {
@@ -54,7 +54,7 @@ export class ExplorationMovementState {
     this.feedback.clear();
 
     if (!context || !state?.hasExploration || !exploration) {
-      this.feedback.setError(null, 'Start exploration before choosing a direction.');
+      this.feedback.setError(null, 'Rozpocznij eksplorację przed wyborem kierunku.');
       return;
     }
 
@@ -65,7 +65,7 @@ export class ExplorationMovementState {
     if (blockReason || !option.isAvailable || validationError) {
       this.feedback.setError(
         null,
-        blockReason ?? validationError ?? 'Movement option is not available.',
+        blockReason ?? validationError ?? 'Ten kierunek jest niedostępny.',
       );
       return;
     }
@@ -103,7 +103,7 @@ export class ExplorationMovementState {
             return;
           }
 
-          this.feedback.setError(error, 'Failed to start movement step.');
+          this.feedback.setError(error, 'Nie udało się rozpocząć kroku eksploracji.');
         },
       });
   }
@@ -112,19 +112,19 @@ export class ExplorationMovementState {
     const state = this.overview.state();
 
     if (!state?.hasExploration || !state.exploration) {
-      return 'Start exploration before choosing a direction.';
+      return 'Rozpocznij eksplorację przed wyborem kierunku.';
     }
 
     if (state.activeChallenge) {
-      return 'Resolve the active challenge before moving.';
+      return 'Rozstrzygnij aktywne wyzwanie przed dalszym ruchem.';
     }
 
     if (state.activeStep) {
-      return 'Wait for the active movement step to resolve.';
+      return 'Poczekaj na rozstrzygnięcie bieżącego kroku.';
     }
 
     if (!state.movementOptions.some((option) => option.isAvailable)) {
-      return 'No available directions.';
+      return 'Brak dostępnych kierunków.';
     }
 
     return null;
@@ -150,23 +150,23 @@ export class ExplorationMovementState {
     const isBacktrack = option.isBacktrack || stepKind === 'backtrack';
 
     if (!stepKind) {
-      return 'Movement option is missing its movement kind.';
+      return 'Ten kierunek nie ma poprawnego rodzaju ruchu.';
     }
 
     if (isBacktrack) {
       if (stepKind !== 'backtrack') {
-        return 'Backtrack option is missing its movement kind.';
+        return 'Ścieżka powrotu nie ma poprawnego rodzaju ruchu.';
       }
 
       if (option.edgeId !== null) {
-        return 'Backtrack option must not include a route edge.';
+        return 'Ścieżka powrotu ma niepoprawne dane trasy.';
       }
 
       return null;
     }
 
     if (!option.edgeId) {
-      return 'Direction option is missing its route edge.';
+      return 'Ten kierunek nie ma poprawnego połączenia trasy.';
     }
 
     return null;

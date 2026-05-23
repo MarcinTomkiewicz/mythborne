@@ -4,10 +4,10 @@
   <div class="flex-row-between-center flex-col-sm gap-sm">
     <div class="flex-col gap-xs">
       <h4 class="mg-section__title mg-section__title--xs mb-0">
-        Trial detail by stat
+        Szczegóły prób według cechy
       </h4>
       <p class="muted-text mb-0">
-        DB-provided manifestation and auto-result preview for the selected difficulty.
+        Podgląd manifestacji i automatycznego wyniku dla wybranego poziomu trudności.
       </p>
     </div>
     <span class="tag-badge tag-badge--info">
@@ -25,12 +25,12 @@
 
           <div class="flex-col gap-sm w-100">
             <app-exploration-chance-metric-row
-              label="Manifestation"
+              label="Manifestacja"
               [display]="row.manifestationDisplay"
               [value]="row.manifestationChance"
             />
             <app-exploration-chance-metric-row
-              label="Auto result"
+              label="Wynik auto"
               [display]="row.autoResultDisplay"
               [value]="row.autoResultSuccessChance"
             />
@@ -39,7 +39,7 @@
       </article>
     } @empty {
       <p class="muted-text mb-0">
-        Trial detail is unavailable for the selected difficulty.
+        Szczegóły prób są niedostępne dla wybranego poziomu trudności.
       </p>
     }
   </div>

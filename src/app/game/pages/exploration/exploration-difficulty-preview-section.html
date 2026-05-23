@@ -1,11 +1,11 @@
 <section class="mg-card p-lg w-100">
   <div class="flex-row-between-center flex-col-sm gap-md mb-md">
     <div class="flex-col gap-xs">
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Difficulty</h3>
-      <p class="muted-text mb-0">Active tiers come from the database configuration.</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Poziom trudności</h3>
+      <p class="muted-text mb-0">Wybierz wariant wyprawy dla aktywnego bohatera.</p>
     </div>
     @if (isLoading()) {
-      <span class="tag-badge tag-badge--muted">Loading</span>
+      <span class="tag-badge tag-badge--muted">Ładowanie</span>
     }
   </div>
 
@@ -21,7 +21,7 @@
         (selectedDifficultyAction)="selectedDifficultyAction.emit()"
       />
     } @empty {
-      <p class="muted-text mb-0">No difficulty previews are available.</p>
+      <p class="muted-text mb-0">Brak dostępnych podglądów trudności.</p>
     }
   </div>
 
