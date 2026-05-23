@@ -2,7 +2,10 @@ import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { CombatDisplayDictionaries } from '../../domain/combat/combat-dictionary.model';
-import { CombatAttackEvent } from '../../domain/combat/combat.model';
+import {
+  COMBAT_PARTICIPANT_KIND,
+  COMBAT_SIDE,
+} from '../../domain/combat/combat.model';
 import {
   CombatBalanceRules,
   CombatRoundEntry,
@@ -29,9 +32,10 @@ import {
 } from '../../utils/combat-walking-dead';
 import {
   combatSandboxOutcomeLabel,
+  combatSandboxParticipantKindLabel,
   combatSandboxSourceTypeLabel,
+  combatSandboxSideLabel,
   combatSandboxWinnerSideLabel,
-  withCombatSandboxAttackSourceKindLabels,
 } from '../../utils/combat-sandbox-display';
 import { getErrorMessage } from '../../utils/error-message';
 import { CombatBalanceService } from './combat-balance';
@@ -76,7 +80,6 @@ export class CombatPageFacade {
   readonly heroCurrentHealth = signal(0);
   readonly enemyCurrentHealth = signal(0);
   readonly logEntries = signal<CombatRoundEntry[]>([]);
-  readonly attacks = signal<readonly CombatAttackEvent[]>([]);
   readonly walkingPosition = signal(0);
   readonly walkingDirection = signal<1 | -1>(1);
   readonly turnLimit = signal<number | null>(null);
@@ -133,6 +136,21 @@ export class CombatPageFacade {
   readonly winnerSideLabel = computed(() =>
     combatSandboxWinnerSideLabel(this.result(), this.combatDictionaries())
   );
+  readonly healthLabel = computed(() =>
+    this.result() ? 'Zdrowie końcowe' : 'Zdrowie'
+  );
+  readonly outcomeBadgeClass = computed(() => {
+    switch (this.result()?.outcome) {
+      case 'victory':
+        return 'tag-badge tag-badge--success';
+      case 'defeat':
+        return 'tag-badge tag-badge--danger';
+      case 'draw':
+        return 'tag-badge tag-badge--warn';
+      default:
+        return 'tag-badge tag-badge--muted';
+    }
+  });
 
   constructor() {
     this.destroyRef.onDestroy(() => this.stopWalkingDead());
@@ -205,17 +223,9 @@ export class CombatPageFacade {
         finalize(() => this.isResolving.set(false)),
       )
       .subscribe({
-        next: ({ result, logEntries, attacks, heroHealth, enemyHealth, turnsPlayed, turnLimit }) => {
+        next: ({ result, logEntries, heroHealth, enemyHealth, turnsPlayed, turnLimit }) => {
           this.turnLimit.set(turnLimit);
-          this.attacks.update((entries) => [...entries, ...attacks]);
-          this.logEntries.update((entries) => [
-            ...entries,
-            ...withCombatSandboxAttackSourceKindLabels(
-              logEntries,
-              attacks,
-              this.combatDictionaries(),
-            ),
-          ]);
+          this.logEntries.update((entries) => [...entries, ...logEntries]);
           this.heroCurrentHealth.set(heroHealth);
           this.enemyCurrentHealth.set(enemyHealth);
           this.streak.set(logEntries[0]?.result === 'miss' ? 0 : this.streak() + 1);
@@ -262,6 +272,22 @@ export class CombatPageFacade {
     );
   }
 
+  combatantSideLabel(combatant: CombatantSnapshot): string {
+    const side = combatant.key === this.hero()?.key
+      ? COMBAT_SIDE.initiator
+      : COMBAT_SIDE.defender;
+
+    return combatSandboxSideLabel(side, this.combatDictionaries());
+  }
+
+  combatantKindLabel(combatant: CombatantSnapshot): string {
+    const kind = combatant.key === this.hero()?.key
+      ? COMBAT_PARTICIPANT_KIND.hero
+      : COMBAT_PARTICIPANT_KIND.opponent;
+
+    return combatSandboxParticipantKindLabel(kind, this.combatDictionaries());
+  }
+
   maxHealth(combatant: CombatantSnapshot | null): number {
     return combatant?.derived.health ?? 0;
   }
@@ -286,7 +312,6 @@ export class CombatPageFacade {
     this.turn.set(1);
     this.streak.set(0);
     this.logEntries.set([]);
-    this.attacks.set([]);
     this.walkingPosition.set(0);
     this.walkingDirection.set(1);
     this.heroCurrentHealth.set(this.hero()?.derived.health ?? 0);

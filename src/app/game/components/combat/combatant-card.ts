@@ -12,6 +12,9 @@ import { StatCard } from '../../../shared/stat-card/stat-card';
 })
 export class CombatantCard {
   readonly title = input.required<string>();
+  readonly sideLabel = input.required<string>();
+  readonly kindLabel = input.required<string>();
+  readonly healthLabel = input('Zdrowie');
   readonly combatant = input.required<CombatantSnapshot>();
   readonly currentHealth = input.required<number>();
   readonly maxHealth = input.required<number>();

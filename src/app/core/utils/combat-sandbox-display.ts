@@ -1,26 +1,28 @@
 import { CombatDisplayDictionaries } from '../domain/combat/combat-dictionary.model';
 import {
+  CombatParticipantKind,
   COMBAT_OUTCOME,
+  CombatSide,
   COMBAT_SIDE,
   COMBAT_SOURCE_TYPE,
-  CombatAttackEvent,
 } from '../domain/combat/combat.model';
-import {
-  CombatRoundEntry,
-  SandboxCombatResult,
-} from '../domain/combat/combat-sandbox.model';
+import { SandboxCombatResult } from '../domain/combat/combat-sandbox.model';
 
 export function combatSandboxOutcomeLabel(
   sandboxResult: SandboxCombatResult | null,
   dictionaries: CombatDisplayDictionaries | null,
 ): string | null {
-  const outcome = sandboxResult ? canonicalOutcomeKey(sandboxResult.outcome) : null;
-
-  if (!outcome) {
+  if (!sandboxResult) {
     return null;
   }
 
-  return dictionaryLabel(dictionaries?.outcomes ?? [], outcome, sandboxResult?.outcome ?? outcome);
+  const outcome = canonicalOutcomeKey(sandboxResult.outcome);
+
+  return dictionaryLabel(
+    dictionaries?.outcomes ?? [],
+    outcome,
+    sandboxOutcomeFallbackLabel(sandboxResult.outcome),
+  );
 }
 
 export function combatSandboxSourceTypeLabel(
@@ -29,7 +31,7 @@ export function combatSandboxSourceTypeLabel(
   return dictionaryLabel(
     dictionaries?.sourceTypes ?? [],
     COMBAT_SOURCE_TYPE.sandbox,
-    COMBAT_SOURCE_TYPE.sandbox,
+    'Sandbox',
   );
 }
 
@@ -48,24 +50,40 @@ export function combatSandboxWinnerSideLabel(
     return null;
   }
 
-  return dictionaryLabel(dictionaries?.sides ?? [], winnerSide, winnerSide);
+  return dictionaryLabel(dictionaries?.sides ?? [], winnerSide, sideFallbackLabel(winnerSide));
 }
 
-export function withCombatSandboxAttackSourceKindLabels(
-  entries: CombatRoundEntry[],
-  attacks: readonly CombatAttackEvent[],
+export function combatSandboxSideLabel(
+  side: CombatSide,
   dictionaries: CombatDisplayDictionaries | null,
-): CombatRoundEntry[] {
-  const attackSourceKinds = dictionaries?.attackSourceKinds ?? [];
+): string {
+  return dictionaryLabel(dictionaries?.sides ?? [], side, sideFallbackLabel(side));
+}
 
-  return entries.map((entry, index) => ({
-      ...entry,
-      attackSourceKindLabel: dictionaryLabel(
-        attackSourceKinds,
-        attacks[index]?.source.kind ?? '',
-        attacks[index]?.source.kind ?? 'Attack',
-      ),
-    }));
+export function combatSandboxParticipantKindLabel(
+  kind: CombatParticipantKind,
+  dictionaries: CombatDisplayDictionaries | null,
+): string {
+  return dictionaryLabel(dictionaries?.participantKinds ?? [], kind, participantKindFallbackLabel(kind));
+}
+
+function sandboxOutcomeFallbackLabel(outcome: SandboxCombatResult['outcome']): string {
+  switch (outcome) {
+    case 'victory':
+      return 'Zwycięstwo';
+    case 'defeat':
+      return 'Porażka';
+    case 'draw':
+      return 'Remis';
+  }
+}
+
+function sideFallbackLabel(side: CombatSide): string {
+  return side === COMBAT_SIDE.initiator ? 'Inicjator' : 'Obrońca';
+}
+
+function participantKindFallbackLabel(kind: CombatParticipantKind): string {
+  return kind === 'hero' ? 'Bohater' : 'Przeciwnik';
 }
 
 function canonicalOutcomeKey(outcome: SandboxCombatResult['outcome']): string {

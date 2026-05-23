@@ -7292,6 +7292,8 @@ Pokazać obie strony walki w czytelnym układzie z health barami i snapshotowymi
 - nie ma prywatnego wycieku equipmentu;
 - `tsc` i build przechodzą.
 
+**Status:** Accepted/completed on 2026-05-23 as the combatant panel and health-bar pass for `/game/combat`. The active shell now uses the accepted prototype structure with left combatant, center action/Walking Dead card and right combatant; the Walking Dead meter/start control lives in the center action card rather than below the combatants. `CombatantCard` keeps `GameBar` for current/final HP and shared `app-stat-card` for base/combat stats, with dictionary-backed side/kind labels and clear level/name display. Player/tester-facing combat shell copy is Polish, important errors are no longer muted, outcome badges use semantic result tone, and attack-source log labeling remains deferred to the combat log/report task instead of using unstable index matching. No generated types, DB/RPC flow, production combat runtime or sandbox resolver logic were included in this accepted scope. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and `git diff --check`; the focused combat spec remains blocked by unrelated item-generation fixture type errors.
+
 ---
 
 # UI-COMBAT-3 — Walking Dead timing panel

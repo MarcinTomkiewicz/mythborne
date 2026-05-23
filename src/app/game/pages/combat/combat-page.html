@@ -1,55 +1,54 @@
 <app-loading-overlay
   [visible]="page.isLoading() && !page.loadError()"
-  label="Loading combat..."
-  description="Loading the current hero, combat formulas and a demo opponent."
+  label="Ładowanie walki..."
+  description="Przygotowujemy bohatera, zasady walki i przeciwnika testowego."
 />
 
 @if (page.loadError()) {
   <section class="mg-card flex-col gap-sm p-lg w-100">
-    <p class="card-legend mb-0">Error</p>
-    <p class="mb-0 muted-text">{{ page.loadError() }}</p>
+    <p class="card-legend mb-0">Błąd</p>
+    <strong class="heading-color">{{ page.loadError() }}</strong>
   </section>
 } @else if (page.hero(); as hero) {
   <div class="flex-col gap-xl w-100">
     <section class="mg-card p-lg w-100">
       <div class="flex-row-between-center flex-col-sm gap-md">
         <div class="flex-col gap-xs">
-          <p class="card-legend mb-0">Combat</p>
-          <h2 class="mg-section__title mg-section__title--sm mb-0">Training Duel</h2>
+          <p class="card-legend mb-0">Walka</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">Pojedynek testowy</h2>
           <p class="muted-text mb-0">
-            Sandbox caller for the reusable combat core. Stop Walking Dead to seed the first player timing input; the core resolver completes the duel.
+            Powierzchnia sandboxowa dla wspólnego układu walki.
           </p>
           <p class="muted-text mb-0">
-            This test surface uses the currently loaded hero runtime snapshot. Production
-            live combat resolves loadout and timing manifests through DB/RPC per action.
+            Zatrzymaj Walking Dead w zielonej strefie, aby rozegrać akcję bohatera.
           </p>
         </div>
 
         <div class="flex-row-start-center flex-wrap gap-sm">
-          <span class="tag-badge tag-badge--muted">Turn {{ page.turnLabel() }}</span>
-          <span class="tag-badge tag-badge--muted">DB turn limit</span>
+          <span class="tag-badge tag-badge--muted">Tura {{ page.turnLabel() }}</span>
+          @if (page.turnLimit(); as turnLimit) {
+            <span class="tag-badge tag-badge--muted">Limit tur {{ turnLimit }}</span>
+          }
           @if (page.origin()?.name) {
             <span class="tag-badge tag-badge--muted">{{ page.origin()?.name }}</span>
           }
-          <p-button
-            [label]="page.result() ? 'Fight again' : 'Start fight'"
-            [disabled]="!page.canStartFight()"
-            (onClick)="page.startFight()"
-          />
         </div>
       </div>
     </section>
 
     @if (page.battleError()) {
       <section class="mg-card flex-col gap-sm p-lg w-100">
-        <p class="card-legend mb-0">Battle error</p>
-        <p class="mb-0 muted-text">{{ page.battleError() }}</p>
+        <p class="card-legend mb-0">Błąd walki</p>
+        <strong class="heading-color">{{ page.battleError() }}</strong>
       </section>
     }
 
-    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-xl w-100">
+    <div class="mg-grid grid-cols-3 grid-cols-1-lg gap-xl w-100 grid-items-stretch">
       <app-combatant-card
-        title="Hero"
+        title="Walczący"
+        [sideLabel]="page.combatantSideLabel(hero)"
+        [kindLabel]="page.combatantKindLabel(hero)"
+        [healthLabel]="page.healthLabel()"
         [combatant]="hero"
         [currentHealth]="page.currentHealth(hero)"
         [maxHealth]="page.maxHealth(hero)"
@@ -57,9 +56,56 @@
         [combatStats]="page.combatStatEntries(hero)"
       />
 
+      <section class="mg-card p-lg flex-col-between-center gap-lg w-100 h-100 text-center">
+        <div class="flex-col-center-center gap-xs">
+          <p class="card-legend mb-0">Akcja</p>
+          <h3 class="mg-section__title mg-section__title--xs mb-0">Walking Dead</h3>
+          @if (page.result()) {
+            <p class="muted-text mb-0">
+              Walka została zakończona. Wynik i przebieg są widoczne poniżej.
+            </p>
+          } @else if (page.phase() === 'player_turn') {
+            <p class="muted-text mb-0">
+              Zatrzymaj wskaźnik w zielonej strefie, aby rozegrać akcję bohatera.
+            </p>
+          } @else {
+            <p class="muted-text mb-0">
+              Rozpocznij walkę, aby uruchomić okno akcji.
+            </p>
+          }
+        </div>
+
+        @if (!page.result() && page.phase() === 'player_turn') {
+          <app-walking-dead-meter
+            [position]="page.walkingPosition()"
+            [zoneStart]="page.playerHitWindow().start"
+            [zoneEnd]="page.playerHitWindow().end"
+            [zoneWidth]="page.playerHitWindow().width"
+            [speed]="page.walkingSpeed()"
+            [streak]="page.streak()"
+            [disabled]="!page.canStrike()"
+            (strike)="page.strike()"
+          />
+        } @else {
+          <div class="p-md w-100 flex-col-center-center gap-sm">
+            <span class="tag-badge tag-badge--muted">
+              {{ page.result() ? 'Wynik gotowy' : 'Oczekiwanie' }}
+            </span>
+            <p-button
+              [label]="page.result() ? 'Walcz ponownie' : 'Rozpocznij walkę'"
+              [disabled]="!page.canStartFight()"
+              (onClick)="page.startFight()"
+            />
+          </div>
+        }
+      </section>
+
       @if (page.enemy(); as enemy) {
         <app-combatant-card
-          title="Opponent"
+          title="Obrońca"
+          [sideLabel]="page.combatantSideLabel(enemy)"
+          [kindLabel]="page.combatantKindLabel(enemy)"
+          [healthLabel]="page.healthLabel()"
           [combatant]="enemy"
           [currentHealth]="page.currentHealth(enemy)"
           [maxHealth]="page.maxHealth(enemy)"
@@ -69,38 +115,25 @@
       }
     </div>
 
-    @if (!page.result() && page.phase() === 'player_turn') {
-      <app-walking-dead-meter
-        [position]="page.walkingPosition()"
-        [zoneStart]="page.playerHitWindow().start"
-        [zoneEnd]="page.playerHitWindow().end"
-        [zoneWidth]="page.playerHitWindow().width"
-        [speed]="page.walkingSpeed()"
-        [streak]="page.streak()"
-        [disabled]="!page.canStrike()"
-        (strike)="page.strike()"
-      />
-    }
-
     <section class="mg-card p-lg w-100">
       <div class="flex-col gap-md">
         <div class="flex-row-between-center flex-col-sm gap-md">
           <div class="flex-col gap-xs">
-            <p class="card-legend mb-0">Battle Log</p>
-            <h3 class="mg-section__title mg-section__title--xs mb-0">Result</h3>
+            <p class="card-legend mb-0">Przebieg walki</p>
+            <h3 class="mg-section__title mg-section__title--xs mb-0">Wynik</h3>
           </div>
 
           @if (page.result()) {
             <div class="flex-row-start-center flex-wrap gap-sm">
-              <span class="tag-badge tag-badge--warn">{{ page.outcomeLabel() }}</span>
+              <span [class]="page.outcomeBadgeClass()">{{ page.outcomeLabel() }}</span>
               @if (page.sourceTypeLabel()) {
-                <span class="tag-badge tag-badge--muted">Source: {{ page.sourceTypeLabel() }}</span>
+                <span class="tag-badge tag-badge--muted">Źródło: {{ page.sourceTypeLabel() }}</span>
               }
               @if (page.winnerLabel()) {
-                <span class="tag-badge tag-badge--muted">Winner: {{ page.winnerLabel() }}</span>
+                <span class="tag-badge tag-badge--muted">Zwycięzca: {{ page.winnerLabel() }}</span>
               }
               @if (page.winnerSideLabel()) {
-                <span class="tag-badge tag-badge--muted">Side: {{ page.winnerSideLabel() }}</span>
+                <span class="tag-badge tag-badge--muted">Strona: {{ page.winnerSideLabel() }}</span>
               }
             </div>
           }
@@ -109,21 +142,21 @@
         @if (page.result(); as result) {
           <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
             <div class="mg-card flex-col gap-xs p-md">
-              <span class="muted-text">Turns played</span>
+              <span class="muted-text">Rozegrane tury</span>
               <strong class="heading-color">{{ result.turnsPlayed }}</strong>
             </div>
             <div class="mg-card flex-col gap-xs p-md">
-              <span class="muted-text">Hero remaining health</span>
+              <span class="muted-text">Zdrowie walczącego</span>
               <strong class="heading-color">{{ result.heroRemainingHealth }}</strong>
             </div>
             <div class="mg-card flex-col gap-xs p-md">
-              <span class="muted-text">Opponent remaining health</span>
+              <span class="muted-text">Zdrowie obrońcy</span>
               <strong class="heading-color">{{ result.enemyRemainingHealth }}</strong>
             </div>
           </div>
         } @else {
           <p class="mb-0 muted-text">
-            Start the duel and stop Walking Dead inside the green zone to send a timing sample into the combat core.
+            Rozpocznij walkę i zatrzymaj Walking Dead w zielonej strefie.
           </p>
         }
 
@@ -131,32 +164,23 @@
           @for (entry of page.logEntries(); track page.trackLogEntry($index, entry)) {
             <div class="mg-card flex-col gap-xs p-md">
               <strong class="heading-color">
-                Turn {{ entry.turn }}: {{ entry.attackerName }} -> {{ entry.defenderName }}
+                Tura {{ entry.turn }}: {{ entry.attackerName }} -> {{ entry.defenderName }}
               </strong>
-              @if (entry.attackSourceLabel) {
-                <span class="muted-text">
-                  Source:
-                  @if (entry.attackSourceKindLabel) {
-                    <span>{{ entry.attackSourceKindLabel }} - </span>
-                  }
-                  <span>{{ entry.attackSourceLabel }}</span>
-                </span>
-              }
 
               @switch (entry.result) {
                 @case ('miss') {
                   <span class="muted-text">
-                    {{ entry.displayText ?? 'Miss. The indicator stayed outside the green zone.' }}
+                    Pudło. Wskaźnik zatrzymał się poza zieloną strefą.
                   </span>
                 }
                 @case ('evaded') {
                   <span class="muted-text">
-                    {{ entry.displayText ?? 'Timing hit succeeded, but the defender evaded the strike.' }}
+                    Atak trafił w okno, ale obrońca uniknął ciosu.
                   </span>
                 }
                 @default {
                   <span class="muted-text">
-                    {{ entry.displayText ?? ('Final damage ' + entry.damage + '. ' + entry.defenderName + ' health: ' + entry.defenderHealthAfter + '.') }}
+                    Obrażenia końcowe: {{ entry.damage }}. Zdrowie celu: {{ entry.defenderHealthAfter }}.
                   </span>
                 }
               }

@@ -126,7 +126,7 @@ export class CombatSandboxStepResolverService {
     const normalized = Math.floor(Number(value));
 
     if (!Number.isFinite(normalized) || normalized <= 0) {
-      throw new Error('Combat turn limit configuration must be a positive number.');
+      throw new Error('Limit tur walki musi być dodatnią liczbą.');
     }
 
     return normalized;
