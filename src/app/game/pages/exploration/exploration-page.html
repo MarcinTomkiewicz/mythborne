@@ -53,7 +53,11 @@
   </section>
 
   @if (page.shouldShowRuntimeScreen()) {
-    <app-exploration-status-section />
+    <section class="flex-col gap-lg w-100">
+      <app-exploration-runtime-diagnostics-section />
+      <app-exploration-runtime-primary-surface />
+      <app-exploration-runtime-direction-section />
+    </section>
   } @else {
     <app-exploration-difficulty-preview-section
       [difficulties]="page.preview.difficultyCardPreviews()"

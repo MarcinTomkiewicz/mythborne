@@ -6147,6 +6147,8 @@ Remove remaining legacy Exploration runtime duplication after the pending/result
 - static greps:
 - local SCSS remaining:
 
+**Status:** Accepted/completed on 2026-05-23 as the runtime composition cleanup. The legacy catch-all `ExplorationStatusSection` was removed and `/game/exploration` runtime now composes focused blocks directly: `ExplorationRuntimePrimarySurface` for pending/result/challenge/combat handoff, `ExplorationRuntimeDirectionSection` for the direction board plus difficulty-return footer, and `ExplorationRuntimeDiagnosticsSection` for sandbox tools and gated diagnostics. Direction-board availability, the optional board header and the difficulty-return action now live in `ExplorationPageState`, so runtime components consume one shared state owner instead of duplicating local conditions. Diagnostics remain sandbox-gated, no DB/RPC/generated-type changes or local SCSS were added, and the pending timer, challenge, report, reward and combat flows were not changed. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; manual smoke remains user-side pending for the full runtime matrix.
+
 
 ## UI-EXPLORATION-14 — Exploration UI final control pass
 

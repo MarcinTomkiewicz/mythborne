@@ -3,7 +3,9 @@ import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationLiveCombat } from '../../../core/services/combat/exploration-live-combat';
 import { ExplorationDifficultyPreviewSection } from './exploration-difficulty-preview-section';
-import { ExplorationStatusSection } from './exploration-status-section';
+import { ExplorationRuntimeDiagnosticsSection } from './exploration-runtime-diagnostics-section';
+import { ExplorationRuntimeDirectionSection } from './exploration-runtime-direction-section';
+import { ExplorationRuntimePrimarySurface } from './exploration-runtime-primary-surface';
 import { ExplorationLiveCombatState } from './exploration-live-combat.state';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -19,7 +21,9 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
   standalone: true,
   imports: [
     ExplorationDifficultyPreviewSection,
-    ExplorationStatusSection,
+    ExplorationRuntimeDiagnosticsSection,
+    ExplorationRuntimeDirectionSection,
+    ExplorationRuntimePrimarySurface,
     LoadingOverlay,
   ],
   providers: [

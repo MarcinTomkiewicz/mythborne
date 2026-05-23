@@ -60,6 +60,28 @@ export class ExplorationPageState {
     && Boolean(this.overview.currentContext())
     && !this.isRunningSandboxTool(),
   );
+  readonly canShowDirectionBoard = computed(() => {
+    const state = this.overview.state();
+
+    return Boolean(
+      state?.hasExploration
+      && state.exploration
+      && !state.activeStep
+      && !state.activeChallenge
+      && this.movement.movementBlockReason() === null,
+    );
+  });
+  readonly canShowDifficultyEntryAction = computed(() =>
+    this.canShowDirectionBoard()
+    && !this.movement.isMoving()
+    && !this.step.activeStep()
+    && !this.challenge.activeChallenge(),
+  );
+  readonly shouldShowDirectionBoardHeader = computed(() =>
+    !this.step.currentStepResult()
+    && !this.challenge.currentChallengeResult()
+    && !this.challenge.completedCombatLiveState(),
+  );
   readonly stepSelectionDiagnostic = computed(() =>
     this.canShowSelectionDiagnostics()
       ? this.step.currentStepResult()?.selectionDiagnostic ?? null

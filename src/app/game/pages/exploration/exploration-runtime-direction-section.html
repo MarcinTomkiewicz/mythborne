@@ -1,0 +1,22 @@
+@if (page.canShowDirectionBoard()) {
+  <div class="flex-col gap-md w-100">
+    @if (page.shouldShowDirectionBoardHeader()) {
+      <header class="flex-col gap-xs w-100">
+        <h3 class="color-heading m-0">Wybierz dalszą ścieżkę</h3>
+      </header>
+    }
+    <app-exploration-direction-board class="d-block w-100" />
+    @if (page.canShowDifficultyEntryAction()) {
+      <footer class="mg-card p-sm flex-row-end-center w-100">
+        <p-button
+          type="button"
+          label="Zmień poziom trudności"
+          severity="secondary"
+          size="small"
+          [outlined]="true"
+          (onClick)="page.showDifficultyEntry()"
+        />
+      </footer>
+    }
+  </div>
+}
