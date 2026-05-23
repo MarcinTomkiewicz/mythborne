@@ -4,13 +4,7 @@ import {
   HeroDashboardStatTone,
   HeroDashboardRuntimeStatsReadModel,
 } from '../../domain/hero/hero-dashboard-runtime-stats.model';
-
-export interface DashboardBaseStatRow {
-  key: string;
-  label: string;
-  value: string;
-  valueClass: string;
-}
+import type { StatCardRow } from '../../types/stat-card.types';
 
 export interface DashboardStatValuePart {
   text: string;
@@ -32,7 +26,7 @@ export interface DashboardHealthSource {
 
 export function mapDashboardBaseStatRows(
   runtime: HeroDashboardRuntimeStatsReadModel | null,
-): DashboardBaseStatRow[] {
+): StatCardRow[] {
   return runtime?.displayStats.heroStats.map((row) => ({
     key: row.statKey,
     label: row.label,

@@ -4,6 +4,7 @@ import { CombatPageLoadedData } from '../../domain/combat/combat-page-loader.mod
 import { Origin, OriginBonus } from '../../domain/origin/origin.model';
 import { Hero } from '../hero/hero';
 import { HeroDerivedStats } from '../hero/hero-derived-stats';
+import { HeroDashboardRuntimeStats } from '../hero/hero-dashboard-runtime-stats';
 import { EquipmentBonusesService } from '../items/equipment-bonuses';
 import { Origins } from '../origins/origins';
 import { StatsService } from '../stats/stats';
@@ -16,6 +17,7 @@ import { HeroCombatantResolver } from './hero-combatant-resolver';
 export class CombatPageLoaderService {
   private readonly heroService = inject(Hero);
   private readonly heroDerivedStats = inject(HeroDerivedStats);
+  private readonly heroRuntimeStats = inject(HeroDashboardRuntimeStats);
   private readonly equipmentBonuses = inject(EquipmentBonusesService);
   private readonly originsService = inject(Origins);
   private readonly statsService = inject(StatsService);
@@ -44,9 +46,10 @@ export class CombatPageLoaderService {
           switchMap(({ origin, bonuses }) =>
             forkJoin({
               derivedStats: this.heroDerivedStats.resolveActiveHeroDerivedStats('combat'),
+              runtimeStats: this.heroRuntimeStats.getRuntimeStats(hero.id),
               equipmentBonuses: this.equipmentBonuses.getEquipmentBonusesForHero(hero.id),
             }).pipe(
-              map(({ derivedStats, equipmentBonuses }) => {
+              map(({ derivedStats, runtimeStats, equipmentBonuses }) => {
                 const heroSnapshot = this.heroCombatantResolver.resolveHeroCombatant({
                   name: hero.name,
                   level: hero.level ?? 1,
@@ -55,16 +58,18 @@ export class CombatPageLoaderService {
                   equipmentBonuses,
                   originBonuses: bonuses,
                 });
+                const enemySnapshot = this.demoFactory.createOpponent(heroSnapshot.level);
 
                 return {
                   heroId: hero.id,
                   origin,
                   originBonuses: bonuses,
                   statsDefinitions,
+                  runtimeStats,
                   rules,
                   dictionaries,
                   hero: heroSnapshot,
-                  enemy: this.demoFactory.createOpponent(heroSnapshot.level),
+                  enemy: enemySnapshot,
                 };
               }),
             ),

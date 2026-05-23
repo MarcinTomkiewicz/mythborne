@@ -9,9 +9,19 @@ import {
   CombatantSnapshot,
   SandboxCombatResult,
 } from '../../domain/combat/combat-sandbox.model';
+import {
+  HeroDashboardRuntimeStatsReadModel,
+} from '../../domain/hero/hero-dashboard-runtime-stats.model';
+import { DerivedStatKey } from '../../enums/derived-stat.enum';
 import { OriginBonus, Origin } from '../../domain/origin/origin.model';
 import { mapBaseStatSnapshots } from '../../domain/stats/base-stat.mapper';
 import { IStat } from '../../interfaces/i-stats/i-stats';
+import type { StatCardRow } from '../../types/stat-card.types';
+import {
+  mapDashboardBaseStatRows,
+  mapDashboardDerivedStatRows,
+} from '../hero/dashboard-page.mappers';
+import type { DashboardDerivedStatRow } from '../hero/dashboard-page.mappers';
 import {
   advanceWalkingDeadTimingFrame,
   toWalkingDeadSpeed,
@@ -29,6 +39,14 @@ import { CombatPageLoaderService } from './combat-page-loader';
 import { CombatSandboxCallerService } from './combat-sandbox-caller';
 
 type CombatPhase = 'idle' | 'player_turn' | 'finished';
+const COMBAT_DERIVED_STAT_ORDER = [
+  [DerivedStatKey.Defense],
+  [DerivedStatKey.CriticalChance],
+  [DerivedStatKey.CriticalDamage],
+  ['evasion_chance', DerivedStatKey.EvasionChance, 'evasion'],
+  ['attack_count'],
+  [DerivedStatKey.Luck],
+] as const;
 
 @Injectable()
 export class CombatPageFacade {
@@ -50,6 +68,7 @@ export class CombatPageFacade {
   readonly origin = signal<Origin | null>(null);
   readonly originBonuses = signal<OriginBonus[]>([]);
   readonly statsDefinitions = signal<IStat[]>([]);
+  readonly runtimeStats = signal<HeroDashboardRuntimeStatsReadModel | null>(null);
   readonly rules = signal<CombatBalanceRules | null>(null);
   readonly phase = signal<CombatPhase>('idle');
   readonly turn = signal(1);
@@ -134,6 +153,7 @@ export class CombatPageFacade {
           this.origin.set(data.origin);
           this.originBonuses.set(data.originBonuses);
           this.statsDefinitions.set(data.statsDefinitions);
+          this.runtimeStats.set(data.runtimeStats);
           this.rules.set(data.rules);
           this.combatDictionaries.set(data.dictionaries);
           this.hero.set(data.hero);
@@ -141,7 +161,7 @@ export class CombatPageFacade {
           this.resetCombatState();
         },
         error: (error: unknown) => {
-          this.loadError.set(getErrorMessage(error, 'Failed to load combat data.'));
+          this.loadError.set(getErrorMessage(error, 'Nie udało się załadować danych walki.'));
         },
       });
   }
@@ -212,18 +232,34 @@ export class CombatPageFacade {
           this.startWalkingDead();
         },
         error: (error: unknown) => {
-          this.battleError.set(getErrorMessage(error, 'Failed to resolve combat.'));
+          this.battleError.set(getErrorMessage(error, 'Nie udało się rozstrzygnąć walki.'));
           this.phase.set('idle');
         },
       });
   }
 
-  baseStatEntries(combatant: CombatantSnapshot): Array<{ key: string; label: string; value: number }> {
+  baseStatEntries(combatant: CombatantSnapshot): StatCardRow[] {
+    if (combatant.key === this.hero()?.key) {
+      return mapDashboardBaseStatRows(this.runtimeStats());
+    }
+
     return mapBaseStatSnapshots(this.statsDefinitions(), combatant.baseStats).map((stat) => ({
       key: stat.key,
       label: stat.label,
-      value: stat.currentValue,
+      value: `${stat.currentValue}`,
+      valueClass: 'color-heading text-md',
     }));
+  }
+
+  combatStatEntries(combatant: CombatantSnapshot): StatCardRow[] {
+    if (combatant.key !== this.hero()?.key) {
+      return [];
+    }
+
+    return selectCombatStatRows(
+      mapDashboardDerivedStatRows(this.runtimeStats()),
+      COMBAT_DERIVED_STAT_ORDER,
+    );
   }
 
   maxHealth(combatant: CombatantSnapshot | null): number {
@@ -281,4 +317,22 @@ export class CombatPageFacade {
     }
   }
 
+}
+
+function selectCombatStatRows(
+  rows: readonly DashboardDerivedStatRow[],
+  orderedKeys: readonly (readonly string[])[],
+): StatCardRow[] {
+  return orderedKeys.flatMap((keys) => {
+    const row = rows.find((entry) => keys.includes(entry.key));
+
+    return row
+      ? [{
+          key: row.key,
+          label: row.label,
+          value: row.value ?? '',
+          valueClass: row.valueClass,
+        }]
+      : [];
+  });
 }

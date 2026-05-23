@@ -1,50 +1,29 @@
-<section class="mg-card flex-col gap-md p-lg w-100">
+<section class="mg-card flex-col gap-md p-lg w-100 h-100">
   <div class="flex-row-between-center gap-md">
     <div class="flex-col gap-xs">
       <p class="card-legend mb-0">{{ title() }}</p>
       <h3 class="mg-section__title mg-section__title--xs mb-0">{{ combatant().name }}</h3>
     </div>
-    <span class="tag-badge tag-badge--muted">Level {{ combatant().level }}</span>
+    <span class="tag-badge tag-badge--muted">Poziom {{ combatant().level }}</span>
   </div>
 
-  <div class="mg-card flex-col gap-xs p-md">
-    <div class="flex-row-between-center gap-sm">
-      <span class="muted-text">Health</span>
-      <strong class="heading-color">{{ currentHealth() }} / {{ maxHealth() }}</strong>
-    </div>
+  <app-game-bar
+    label="Zdrowie"
+    type="hp"
+    [value]="currentHealth()"
+    [max]="maxHealth()"
+    [compact]="true"
+  />
 
-    <progress
-      class="combatant-card__health-bar w-100 border-0 overflow-hidden"
-      [value]="currentHealth()"
-      [max]="maxHealth() || 1"
-    ></progress>
-  </div>
+  <app-stat-card
+    title="Cechy bazowe"
+    [rows]="baseStats()"
+  />
 
-  <div class="mg-grid grid-cols-3 grid-cols-2-sm grid-cols-1-xs gap-md w-100">
-    @for (stat of baseStats(); track stat.key) {
-      <div class="mg-card flex-col gap-xs p-md">
-        <span class="muted-text">{{ stat.label }}</span>
-        <strong class="heading-color">{{ stat.value }}</strong>
-      </div>
-    }
-  </div>
-
-  <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
-    <div class="mg-card flex-col gap-xs p-md">
-      <span class="muted-text">DEF</span>
-      <strong class="heading-color">{{ combatant().derived.def }}</strong>
-    </div>
-    <div class="mg-card flex-col gap-xs p-md">
-      <span class="muted-text">Luck</span>
-      <strong class="heading-color">{{ combatant().derived.luck }}</strong>
-    </div>
-    <div class="mg-card flex-col gap-xs p-md">
-      <span class="muted-text">Damage</span>
-      <strong class="heading-color">{{ combatant().derived.minDmg }} - {{ combatant().derived.maxDmg }}</strong>
-    </div>
-    <div class="mg-card flex-col gap-xs p-md">
-      <span class="muted-text">Critical / Evasion</span>
-      <strong class="heading-color">{{ combatant().derived.critical }}% / {{ combatant().derived.evasion }}%</strong>
-    </div>
-  </div>
+  @if (combatStats().length > 0) {
+    <app-stat-card
+      title="Cechy bojowe"
+      [rows]="combatStats()"
+    />
+  }
 </section>

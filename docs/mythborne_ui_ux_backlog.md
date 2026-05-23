@@ -7235,6 +7235,8 @@ Zbudować source-neutral combat screen shell dla aktywnej walki, niezależny od 
 - brak fake live data;
 - `tsc` i build przechodzą.
 
+**Status:** Accepted/completed on 2026-05-23 as the initial source-neutral `/game/combat` shell. The screen remains separate from PvP target selection and Exploration direction flow, renders combat source/turn/result context, wraps the central Walking Dead action slot in the combat shell, and keeps the current sandbox caller as the only active test surface. Combatants now use a compact card with shared dashboard-extracted stat cards for base and combat display rows; hero base/combat rows reuse the dashboard runtime display model, and combat derived rows are selected from existing read-model rows in the accepted order including `evasion_chance` / `EvasionChance` / `evasion`. No DB/RPC flow, generated types, local stat label maps, local combat stat models, Angular-side attack-count calculation or `advance_combat_live_to_next_player_action(...)` player flow was added. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused combat spec run remains blocked by unrelated existing item-generation fixture type errors.
+
 ---
 
 # UI-COMBAT-2 — Combatant panels and health bars

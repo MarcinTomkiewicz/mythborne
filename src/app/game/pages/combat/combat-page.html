@@ -54,6 +54,7 @@
         [currentHealth]="page.currentHealth(hero)"
         [maxHealth]="page.maxHealth(hero)"
         [baseStats]="page.baseStatEntries(hero)"
+        [combatStats]="page.combatStatEntries(hero)"
       />
 
       @if (page.enemy(); as enemy) {
@@ -63,6 +64,7 @@
           [currentHealth]="page.currentHealth(enemy)"
           [maxHealth]="page.maxHealth(enemy)"
           [baseStats]="page.baseStatEntries(enemy)"
+          [combatStats]="page.combatStatEntries(enemy)"
         />
       }
     </div>

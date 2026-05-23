@@ -66,8 +66,12 @@ class FakeCombatPageFacade {
     return combatant.derived.health;
   }
 
-  baseStatEntries(): Array<{ key: string; label: string; value: number }> {
-    return [{ key: 'strength', label: 'Strength', value: 10 }];
+  baseStatEntries(): Array<{ key: string; label: string; value: string; valueClass: string }> {
+    return [{ key: 'strength', label: 'Strength', value: '10', valueClass: 'color-heading text-md' }];
+  }
+
+  combatStatEntries(): Array<{ key: string; label: string; value: string; valueClass: string }> {
+    return [];
   }
 
   outcomeLabel(): string {

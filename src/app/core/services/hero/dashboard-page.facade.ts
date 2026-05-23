@@ -22,12 +22,12 @@ import { HeroExplorations } from '../exploration/hero-explorations';
 import { ActiveHero } from './active-hero';
 import { RequestToken } from '../../utils/request-token';
 import {
-  DashboardBaseStatRow,
   DashboardDerivedStatRow,
   mapDashboardBaseStatRows,
   mapDashboardDerivedStatRows,
   mapDashboardHealthDisplay,
 } from './dashboard-page.mappers';
+import type { StatCardRow } from '../../types/stat-card.types';
 import { mapEquipmentPreviewRows } from '../../domain/equipment/equipment-preview.mapper';
 import { mapDashboardPersistentStateRows } from './dashboard-persistent-state.mapper';
 import { EquipmentPreviewSlotRow } from '../../domain/equipment/equipment-preview.model';
@@ -143,7 +143,7 @@ export class DashboardPageFacade {
     })
   );
 
-  baseStatRows = computed<DashboardBaseStatRow[]>(() =>
+  baseStatRows = computed<StatCardRow[]>(() =>
     mapDashboardBaseStatRows(this.runtimeStats())
   );
 

@@ -41,4 +41,5 @@ export class CombatDemoFactoryService {
       bonuses: emptyCombatBonusSnapshot(),
     };
   }
+
 }

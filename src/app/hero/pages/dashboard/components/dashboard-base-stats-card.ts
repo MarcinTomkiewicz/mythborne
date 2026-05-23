@@ -1,9 +1,11 @@
 import { Component, input } from '@angular/core';
 import { DashboardPageFacade } from '../../../../core/services/hero/dashboard-page.facade';
+import { StatCard } from '../../../../shared/stat-card/stat-card';
 
 @Component({
   selector: 'app-dashboard-base-stats-card',
   standalone: true,
+  imports: [StatCard],
   host: { class: 'd-block w-100 h-100' },
   templateUrl: './dashboard-base-stats-card.html',
 })
