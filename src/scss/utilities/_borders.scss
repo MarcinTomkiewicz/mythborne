@@ -15,6 +15,10 @@ $radius-values: (
   border-bottom: 1px solid v.$color-border !important;
 }
 
+.border-top {
+  border-top: 1px solid v.$color-border !important;
+}
+
 .border-secondary {
   border-color: v.$color-secondary !important;
 }

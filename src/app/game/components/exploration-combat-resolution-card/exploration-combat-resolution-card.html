@@ -2,9 +2,14 @@
 @let opponent = opponentParticipant();
 @let manifest = challenge.combatTimingManifest();
 @let state = challenge.combatLiveState();
+@let timelineRows = challenge.combatTimelineRows();
+@let heroBaseRows = heroBaseStatRows();
+@let heroCombatRows = heroCombatStatRows();
+@let opponentBaseRows = opponentBaseStatRows();
+@let opponentCombatRows = opponentCombatStatRows();
 
-<article class="combat-minigame flex-col gap-lg w-100">
-  <header class="combat-minigame__header flex-col gap-sm w-100">
+<article class="mg-container flex-col gap-lg w-100">
+  <header class="flex-col gap-sm w-100 border-bottom pb-sm">
     <p class="small-caps color-muted text-xs mb-0">{{ combatResolutionLabel() }}</p>
     <h2 class="mg-section__title mg-section__title--sm mb-0">{{ challenge.challengeTitle() }}</h2>
     <div class="flex-row-start-center flex-wrap gap-xs">
@@ -18,8 +23,8 @@
     </div>
   </header>
 
-  <section class="combat-minigame__shell w-100" aria-label="Ręczna walka">
-    <article class="combat-minigame__combatant mg-card p-lg flex-col gap-md">
+  <section class="flex-row-start-stretch gap-md w-100" aria-label="Ręczna walka">
+    <article class="mg-card p-md flex-col gap-md w-100 max-w-350 flex-shrink-0">
       <div class="flex-row-between-start gap-md">
         <div class="flex-col gap-xs min-w-0">
           <p class="small-caps color-muted text-xs mb-0">{{ participantKindLabel(hero) }}</p>
@@ -29,8 +34,8 @@
         <span class="tag-badge tag-badge--success">Gracz</span>
       </div>
 
-      <div class="combat-minigame__figure flex-row-center-center">
-        <span class="combat-minigame__glyph">{{ initials(hero) }}</span>
+      <div class="mg-card h-px-200 flex-row-center-center radius-md">
+        <span class="mg-card w-px-100 h-px-150 flex-row-center-center radius-lg shadow-soft color-heading text-xxl font-display">{{ initials(hero) }}</span>
       </div>
 
       <div class="flex-col gap-md">
@@ -41,15 +46,25 @@
           [max]="hpMax(hero)"
         />
 
-        <div class="combat-minigame__state flex-col gap-xs text-center">
-          <strong class="color-heading">Statystyki walki niedostępne</strong>
-          <span class="color-text text-sm">Szczegółowe statystyki uczestnika nie są dostępne w tej akcji.</span>
-        </div>
+        @if (heroBaseRows.length) {
+          <app-stat-card title="Cechy" [rows]="heroBaseRows" [compact]="true" />
+        }
+
+        @if (heroCombatRows.length) {
+          <app-stat-card class="stat-card--derived" title="Statystyki walki" [rows]="heroCombatRows" [compact]="true" />
+        }
+
+        @if (!heroBaseRows.length && !heroCombatRows.length) {
+          <div class="mg-card flex-col gap-xs text-center radius-md p-md">
+            <strong class="color-heading">Brak statystyk uczestnika</strong>
+            <span class="color-text text-sm">Stan walki nie zawiera wierszy statystyk dla tej strony.</span>
+          </div>
+        }
       </div>
     </article>
 
-    <section class="combat-minigame__center mg-card p-lg flex-col gap-lg">
-      <div class="combat-minigame__turn flex-col gap-sm text-center">
+    <section class="mg-card p-lg flex-col gap-lg flex-1 min-w-0">
+      <div class="mg-card flex-col gap-sm text-center radius-md p-md">
         <span class="small-caps color-muted text-xs">{{ challenge.combatRoundLabel() }}</span>
         <h3 class="color-heading text-xl mb-0">{{ currentActionTitle() }}</h3>
         <p class="color-text text-sm mb-0">{{ currentActionHelper() }}</p>
@@ -96,19 +111,19 @@
           />
         </div>
       } @else if (state?.statusKey === 'completed') {
-        <div class="combat-minigame__state flex-col gap-xs text-center">
+        <div class="mg-card flex-col gap-xs text-center radius-md p-md">
           <strong class="color-heading">Walka zakończona</strong>
           <span class="color-text text-sm">Raport walki jest gotowy do odczytu.</span>
         </div>
       } @else {
-        <div class="combat-minigame__state flex-col gap-xs text-center">
+        <div class="mg-card flex-col gap-xs text-center radius-md p-md">
           <strong class="color-heading">Brak okna timingu</strong>
           <span class="color-text text-sm">Akcja Walking Dead pojawi się, gdy stan walki zwróci manifest gracza.</span>
         </div>
       }
 
       @if (!challenge.isCombatRunning() && challenge.canShowCombatAutoResolveAction()) {
-        <div class="combat-minigame__auto flex-col gap-xs text-center">
+        <div class="flex-col gap-xs text-center border-top pt-sm">
           <p-button
             type="button"
             severity="secondary"
@@ -122,7 +137,7 @@
       }
     </section>
 
-    <article class="combat-minigame__combatant combat-minigame__combatant--enemy mg-card p-lg flex-col gap-md">
+    <article class="mg-card p-md flex-col gap-md w-100 max-w-350 flex-shrink-0">
       <div class="flex-row-between-start gap-md">
         <div class="flex-col gap-xs min-w-0">
           <p class="small-caps color-muted text-xs mb-0">{{ participantKindLabel(opponent) }}</p>
@@ -132,8 +147,8 @@
         <span class="tag-badge tag-badge--danger">Wróg</span>
       </div>
 
-      <div class="combat-minigame__figure combat-minigame__figure--enemy flex-row-center-center">
-        <span class="combat-minigame__glyph combat-minigame__glyph--enemy">{{ initials(opponent) }}</span>
+      <div class="mg-card h-px-200 flex-row-center-center radius-md">
+        <span class="mg-card w-px-100 h-px-150 flex-row-center-center radius-lg shadow-soft error-text text-xxl font-display">{{ initials(opponent) }}</span>
       </div>
 
       <div class="flex-col gap-md">
@@ -144,11 +159,46 @@
           [max]="hpMax(opponent)"
         />
 
-        <div class="combat-minigame__state flex-col gap-xs text-center">
-          <strong class="color-heading">Statystyki walki niedostępne</strong>
-          <span class="color-text text-sm">Szczegółowe statystyki uczestnika nie są dostępne w tej akcji.</span>
-        </div>
+        @if (opponentBaseRows.length) {
+          <app-stat-card title="Cechy" [rows]="opponentBaseRows" [compact]="true" />
+        }
+
+        @if (opponentCombatRows.length) {
+          <app-stat-card class="stat-card--derived" title="Statystyki walki" [rows]="opponentCombatRows" [compact]="true" />
+        }
+
+        @if (!opponentBaseRows.length && !opponentCombatRows.length) {
+          <div class="mg-card flex-col gap-xs text-center radius-md p-md">
+            <strong class="color-heading">Brak statystyk uczestnika</strong>
+            <span class="color-text text-sm">Stan walki nie zawiera wierszy statystyk dla tej strony.</span>
+          </div>
+        }
       </div>
     </article>
   </section>
+
+  @if (timelineRows.length) {
+    <section class="mg-card p-md flex-col gap-sm w-100" aria-label="Przebieg starcia">
+      <div class="flex-row-between-center flex-col-sm gap-xs">
+        <p class="small-caps color-muted text-xs m-0">Przebieg starcia</p>
+        <span class="color-muted text-xs">{{ timelineRows.length }} zdarzeń</span>
+      </div>
+
+      <div class="flex-col gap-xs">
+        @for (row of timelineRows; track row.id) {
+          <div class="mg-data-row">
+            <span class="mg-data-row__label">{{ row.meta }}</span>
+            <strong class="mg-data-row__value">{{ row.title }}</strong>
+            @if (row.details.length) {
+              <span class="color-text text-sm">
+                @for (detail of row.details; track detail) {
+                  {{ detail }}@if (!$last) {, }
+                }
+              </span>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  }
 </article>

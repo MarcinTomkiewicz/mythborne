@@ -1,4 +1,5 @@
 import { Json } from '../../types/database.types';
+import type { StatTone } from '../../utils/stat-tone-class';
 
 export interface CombatLiveStateReadModel {
   sessionId: string;
@@ -68,9 +69,24 @@ export interface CombatLiveParticipantReadModel {
   statusLabel: string | null;
   currentHp: number | null;
   maxHp: number | null;
+  baseStatRows: CombatLiveParticipantStatRow[];
+  combatStatRows: CombatLiveParticipantStatRow[];
   heroId: string | null;
   opponentDefinitionId: string | null;
   rawJson: Json;
+}
+
+export interface CombatLiveParticipantStatRow {
+  key: string;
+  label: string;
+  value: string | number;
+  displayValue: string;
+  sortOrder: number;
+  kind: string;
+  tone: StatTone;
+  colorableFinalValue: boolean;
+  maxValue: number | null;
+  unit: string | null;
 }
 
 export interface CombatLiveEventReadModel {

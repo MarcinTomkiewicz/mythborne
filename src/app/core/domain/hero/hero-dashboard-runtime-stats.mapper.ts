@@ -16,8 +16,13 @@ import {
   HeroDashboardDisplayStatRow,
   HeroDashboardDisplayStats,
   HeroDashboardRuntimeStatsReadModel,
-  HeroDashboardStatTone,
 } from './hero-dashboard-runtime-stats.model';
+import {
+  displayScalar,
+  displayText,
+  sortBySortOrder,
+} from '../../utils/stat-row-display';
+import { statTone } from '../../utils/stat-tone-class';
 
 export function mapHeroDashboardRuntimeStats(
   row: GetHeroDashboardRuntimeStatsRpcRow,
@@ -38,15 +43,15 @@ export function mapHeroDashboardRuntimeStats(
 
 function mapDisplayStats(value: Json): HeroDashboardDisplayStats {
   return mapJsonObject(value, (record) => ({
-    heroStats: sortDisplayRows(mapJsonArray(
+    heroStats: sortBySortOrder(mapJsonArray(
       read(record, 'heroStats', 'hero_stats'),
       mapDisplayStatRow,
     )),
-    derivedStats: sortDisplayRows(mapJsonArray(
+    derivedStats: sortBySortOrder(mapJsonArray(
       read(record, 'derivedStats', 'derived_stats'),
       mapDisplayStatRow,
     )),
-    damageRows: sortDisplayRows(mapJsonArray(
+    damageRows: sortBySortOrder(mapJsonArray(
       read(record, 'damageRows', 'damage_rows'),
       mapDisplayDamageRow,
     )),
@@ -123,10 +128,6 @@ function mapDisplayDamageRow(row: JsonRecord): HeroDashboardDisplayDamageRow {
   };
 }
 
-function sortDisplayRows<T extends { sortOrder: number }>(rows: T[]): T[] {
-  return rows.slice().sort((first, second) => first.sortOrder - second.sortOrder);
-}
-
 function damageValue(value: Json | undefined): HeroDashboardDisplayDamageValue {
   const scalar = displayScalar(value);
 
@@ -158,16 +159,4 @@ function damageValue(value: Json | undefined): HeroDashboardDisplayDamageValue {
       'final_max_damage',
     ))),
   };
-}
-
-function displayScalar(value: Json | undefined): string | number | null {
-  return typeof value === 'string' || typeof value === 'number' ? value : null;
-}
-
-function displayText(value: string | number | null): string {
-  return value === null ? '' : `${value}`;
-}
-
-function statTone(value: Json | undefined): HeroDashboardStatTone {
-  return value === 'positive' || value === 'negative' ? value : 'neutral';
 }

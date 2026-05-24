@@ -1,4 +1,6 @@
-export type HeroDashboardStatTone = 'neutral' | 'positive' | 'negative';
+import type { StatTone } from '../../utils/stat-tone-class';
+
+export type HeroDashboardStatTone = StatTone;
 
 export interface HeroDashboardDisplayStatRow {
   statKey: string;

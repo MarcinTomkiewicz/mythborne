@@ -5,6 +5,10 @@ import {
   HeroDashboardRuntimeStatsReadModel,
 } from '../../domain/hero/hero-dashboard-runtime-stats.model';
 import type { StatCardRow } from '../../types/stat-card.types';
+import {
+  colorableToneTextClass,
+  toneTextClass,
+} from '../../utils/stat-tone-class';
 
 export interface DashboardStatValuePart {
   text: string;
@@ -31,7 +35,7 @@ export function mapDashboardBaseStatRows(
     key: row.statKey,
     label: row.label,
     value: row.displayValue,
-    valueClass: statValueClass(row, 'text-lg'),
+    valueClass: colorableToneTextClass(row.tone, row.colorableFinalValue, 'text-lg'),
   })) ?? [];
 }
 
@@ -88,7 +92,7 @@ function derivedStatRow(row: HeroDashboardDisplayStatRow): DashboardDerivedStatR
     key: row.statKey,
     label: row.label,
     value: row.displayValue || null,
-    valueClass: statValueClass(row, 'text-md'),
+    valueClass: colorableToneTextClass(row.tone, row.colorableFinalValue, 'text-md'),
     parts: valueParts(
       row.displayValue,
       row.colorableFinalValue ? row.tone : 'neutral',
@@ -113,7 +117,7 @@ function damageParts(row: HeroDashboardDisplayDamageRow): DashboardStatValuePart
       row.finalDamage.min,
       row.colorableFinalValue ? row.minTone : 'neutral',
     ),
-    { text: '-', className: toneClass('neutral', 'text-md') },
+    { text: '-', className: toneTextClass('neutral', 'text-md') },
     ...valueParts(
       row.finalDamage.max,
       row.colorableFinalValue ? row.maxTone : 'neutral',
@@ -125,28 +129,5 @@ function valueParts(
   value: string,
   tone: HeroDashboardStatTone,
 ): DashboardStatValuePart[] {
-  return value ? [{ text: value, className: toneClass(tone, 'text-md') }] : [];
-}
-
-function statValueClass(
-  row: HeroDashboardDisplayStatRow,
-  textSizeClass: string,
-): string {
-  return toneClass(
-    row.colorableFinalValue ? row.tone : 'neutral',
-    textSizeClass,
-  );
-}
-
-function toneClass(
-  tone: HeroDashboardStatTone,
-  textSizeClass: string,
-): string {
-  const colorClass = tone === 'positive'
-    ? 'success-text'
-    : tone === 'negative'
-      ? 'error-text'
-      : 'color-heading';
-
-  return `${colorClass} ${textSizeClass}`;
+  return value ? [{ text: value, className: toneTextClass(tone, 'text-md') }] : [];
 }

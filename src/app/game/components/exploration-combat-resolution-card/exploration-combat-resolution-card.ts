@@ -4,16 +4,20 @@ import {
   CombatLiveParticipantReadModel,
   CombatTimingManifestReadModel,
 } from '../../../core/domain/combat/combat-live.model';
+import {
+  mapCombatParticipantBaseStatCardRows,
+  mapCombatParticipantStatCardRows,
+} from '../../../core/utils/combat-participant-stat-card.mapper';
 import { GameBar } from '../../../shared/game-bar/game-bar';
+import { StatCard } from '../../../shared/stat-card/stat-card';
 import { WalkingDeadMeter } from '../combat/walking-dead-meter';
 import { ExplorationChallengeState } from '../../pages/exploration/exploration-challenge.state';
 
 @Component({
   selector: 'app-exploration-combat-resolution-card',
   standalone: true,
-  imports: [ButtonModule, GameBar, WalkingDeadMeter],
+  imports: [ButtonModule, GameBar, StatCard, WalkingDeadMeter],
   templateUrl: './exploration-combat-resolution-card.html',
-  styleUrl: './exploration-combat-resolution-card.scss',
   host: { class: 'd-block w-100' },
 })
 export class ExplorationCombatResolutionCard {
@@ -68,6 +72,18 @@ export class ExplorationCombatResolutionCard {
   readonly timingHelper = computed(() =>
     this.timingManifestHelper(this.challenge.combatTimingManifest()),
   );
+  readonly heroBaseStatRows = computed(() =>
+    mapCombatParticipantBaseStatCardRows(this.heroParticipant()?.baseStatRows ?? []),
+  );
+  readonly heroCombatStatRows = computed(() =>
+    mapCombatParticipantStatCardRows(this.heroParticipant()?.combatStatRows ?? []),
+  );
+  readonly opponentBaseStatRows = computed(() =>
+    mapCombatParticipantBaseStatCardRows(this.opponentParticipant()?.baseStatRows ?? []),
+  );
+  readonly opponentCombatStatRows = computed(() =>
+    mapCombatParticipantStatCardRows(this.opponentParticipant()?.combatStatRows ?? []),
+  );
 
   hpValue(participant: CombatLiveParticipantReadModel | null): number {
     return participant?.currentHp ?? 0;
@@ -75,10 +91,6 @@ export class ExplorationCombatResolutionCard {
 
   hpMax(participant: CombatLiveParticipantReadModel | null): number {
     return participant?.maxHp ?? 0;
-  }
-
-  hpLabel(participant: CombatLiveParticipantReadModel | null): string {
-    return participant ? this.challenge.participantHpLabel(participant) : 'N/D';
   }
 
   participantKindLabel(participant: CombatLiveParticipantReadModel | null): string {
