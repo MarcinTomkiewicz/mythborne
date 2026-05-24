@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-23 — UI-EXPLORATION-12 follow-ups accepted
+Updated: 2026-05-24 — UI-COMBAT-3 accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -7235,7 +7235,7 @@ Zbudować source-neutral combat screen shell dla aktywnej walki, niezależny od 
 - brak fake live data;
 - `tsc` i build przechodzą.
 
-**Status:** Accepted/completed on 2026-05-23 as the initial source-neutral `/game/combat` shell. The screen remains separate from PvP target selection and Exploration direction flow, renders combat source/turn/result context, wraps the central Walking Dead action slot in the combat shell, and keeps the current sandbox caller as the only active test surface. Combatants now use a compact card with shared dashboard-extracted stat cards for base and combat display rows; hero base/combat rows reuse the dashboard runtime display model, and combat derived rows are selected from existing read-model rows in the accepted order including `evasion_chance` / `EvasionChance` / `evasion`. No DB/RPC flow, generated types, local stat label maps, local combat stat models, Angular-side attack-count calculation or `advance_combat_live_to_next_player_action(...)` player flow was added. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused combat spec run remains blocked by unrelated existing item-generation fixture type errors.
+**Status:** Accepted/completed on 2026-05-23 as the initial source-neutral `/game/combat` shell, then superseded by UI-COMBAT-3 on 2026-05-24. The prototype shell proved the combat source/turn/result context, central Walking Dead action slot and compact combatant card direction, but the sandbox caller is no longer an active product surface. The accepted layout now lives on the real Exploration/Trial live combat surface. No DB/RPC flow, generated types, local stat label maps, local combat stat models, Angular-side attack-count calculation or `advance_combat_live_to_next_player_action(...)` player flow was added in UI-COMBAT-1. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused combat spec run was blocked by unrelated existing item-generation fixture type errors.
 
 ---
 
@@ -7292,7 +7292,7 @@ Pokazać obie strony walki w czytelnym układzie z health barami i snapshotowymi
 - nie ma prywatnego wycieku equipmentu;
 - `tsc` i build przechodzą.
 
-**Status:** Accepted/completed on 2026-05-23 as the combatant panel and health-bar pass for `/game/combat`. The active shell now uses the accepted prototype structure with left combatant, center action/Walking Dead card and right combatant; the Walking Dead meter/start control lives in the center action card rather than below the combatants. `CombatantCard` keeps `GameBar` for current/final HP and shared `app-stat-card` for base/combat stats, with dictionary-backed side/kind labels and clear level/name display. Player/tester-facing combat shell copy is Polish, important errors are no longer muted, outcome badges use semantic result tone, and attack-source log labeling remains deferred to the combat log/report task instead of using unstable index matching. No generated types, DB/RPC flow, production combat runtime or sandbox resolver logic were included in this accepted scope. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and `git diff --check`; the focused combat spec remains blocked by unrelated item-generation fixture type errors.
+**Status:** Accepted/completed on 2026-05-23 as the combatant panel and health-bar pass for `/game/combat`, then superseded by UI-COMBAT-3 on 2026-05-24. The accepted prototype structure with left combatant, center action/Walking Dead card and right combatant is now applied to the real Exploration/Trial live combat surface instead of the sandbox page. `GameBar` HP display remains part of the live combat surface; participant stat cards remain a later read-model follow-up because live participant stat rows are not exposed. No generated types, DB/RPC flow, production combat runtime or sandbox resolver logic were included in UI-COMBAT-2. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and `git diff --check`; the focused combat spec was blocked by unrelated item-generation fixture type errors.
 
 ---
 
@@ -7342,6 +7342,8 @@ Zbudować właściwy Walking Dead timing panel dla aktywnej walki.
 - brak lokalnego damage/outcome;
 - loading/resolving state nie pozwala na double submit;
 - `tsc` i build przechodzą.
+
+**Status:** Accepted/completed on 2026-05-24. The temporary sandbox `/game/combat` product surface and sandbox-only combat page/harness/resolver code were removed, with `/game/combat` redirecting to the hero dashboard. The target combat UI now lives on the real Exploration/Trial live combat surface and follows the Combat Minigame Prototype structure: left participant, central Walking Dead action, right opponent, live HP bars, completed/no-manifest states and a separate auto-resolve action. Walking Dead keeps the existing live timing flow and submits only timing input through the approved live combat path; Angular does not calculate hit, damage, HP, outcome, reward or report data. The meter visual cleanup uses shared timing SCSS mixins, radius/opacity utilities and reduced-motion handling. Participant stat cards remain a separate read-model follow-up because live combat participant stat rows are not exposed.
 
 ---
 

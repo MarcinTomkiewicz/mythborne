@@ -656,11 +656,6 @@ export const COMBAT_BALANCE_PAGE_LINKS: readonly AdminTagLink[] = [
     routerLink: '/admin/exploration-trials',
     accessPolicy: 'selectedServerManagement',
   },
-  {
-    label: 'Combat test surface',
-    routerLink: '/game/combat',
-    accessPolicy: 'playerGameplay',
-  },
 ];
 
 export const NOTIFICATION_DIAGNOSTICS_PAGE_LINKS: readonly AdminTagLink[] = [

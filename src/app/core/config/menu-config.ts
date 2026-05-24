@@ -12,14 +12,13 @@ export const MENU_LOGGED_IN_GROUPS: MenuGroup[] = [
       { title: 'Dashboard', url: '/hero/dashboard', icon: 'pi pi-helmet' },
       { title: 'Attributes', url: '/hero/attributes', icon: 'pi pi-skills' },
       { title: 'Exploration', url: '/game/exploration', icon: 'pi pi-hydra' },
-      { title: 'Combat', url: '/game/combat', icon: 'pi pi-shield-bash' },
       { title: 'Armory', url: '/game/armory', icon: 'pi pi-chest' },
+      { title: 'Mansion', url: '/game/mansion', icon: 'pi pi-capitol' },
     ],
   },
   {
     title: 'World',
     items: [
-      { title: 'Mansion', url: '/game/mansion', icon: 'pi pi-capitol' },
       { title: 'Vicinity', url: '/game/vicinity', icon: 'pi pi-trail' },
       { title: 'Guild', url: '/game/guild', icon: 'pi pi-overlord' },
       { title: 'Reports', url: '/game/reports', icon: 'pi pi-tied-scroll' },

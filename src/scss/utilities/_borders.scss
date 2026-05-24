@@ -1,5 +1,12 @@
 @use "../abstracts/variables" as v;
 
+$radius-values: (
+  "sm": v.$radius-sm,
+  "md": v.$radius-md,
+  "lg": v.$radius-lg,
+  "pill": v.$radius-pill,
+);
+
 .border-0 {
   border: 0 !important;
 }
@@ -16,14 +23,12 @@
   border-style: dashed !important;
 }
 
-.radius-lg {
-  border-radius: v.$radius-lg !important;
-}
-
 .radius-circle {
   border-radius: 50% !important;
 }
 
-.radius-pill {
-  border-radius: v.$radius-pill !important;
+@each $name, $value in $radius-values {
+  .radius-#{$name} {
+    border-radius: $value !important;
+  }
 }

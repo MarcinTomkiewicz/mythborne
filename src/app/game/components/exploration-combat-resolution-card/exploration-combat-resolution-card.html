@@ -1,60 +1,154 @@
-<section class="mg-card p-lg flex-col gap-md">
-  <div class="flex-col gap-xs min-w-0">
+@let hero = heroParticipant();
+@let opponent = opponentParticipant();
+@let manifest = challenge.combatTimingManifest();
+@let state = challenge.combatLiveState();
+
+<article class="combat-minigame flex-col gap-lg w-100">
+  <header class="combat-minigame__header flex-col gap-sm w-100">
     <p class="small-caps color-muted text-xs mb-0">{{ combatResolutionLabel() }}</p>
-    @if (challenge.canShowCombatStartAction()) {
-      <strong class="color-heading">Walka czeka na decyzję</strong>
-      <span class="color-text text-sm">Wybierz ręczne rozstrzygnięcie, żeby rozpocząć starcie.</span>
-    } @else if (challenge.combatLiveState()) {
-      <strong class="color-heading">{{ challenge.combatStatusLabel() }}</strong>
-      <span class="color-text text-sm">{{ challenge.combatRoundLabel() }}</span>
-    } @else {
-      <strong class="color-heading">Walka czeka na decyzję</strong>
-      <span class="color-text text-sm">Wybierz ręczne rozstrzygnięcie, żeby rozpocząć starcie.</span>
-    }
-  </div>
+    <h2 class="mg-section__title mg-section__title--sm mb-0">{{ challenge.challengeTitle() }}</h2>
+    <div class="flex-row-start-center flex-wrap gap-xs">
+      <span class="tag-badge tag-badge--gold">Walka ręczna</span>
+      @if (state) {
+        <span class="tag-badge tag-badge--muted">{{ challenge.combatStatusLabel() }}</span>
+        <span class="tag-badge tag-badge--muted">{{ challenge.combatRoundLabel() }}</span>
+      } @else {
+        <span class="tag-badge tag-badge--muted">Oczekuje na sesję</span>
+      }
+    </div>
+  </header>
 
-  @if (challenge.isCombatRunning()) {
-    <app-walking-dead-meter
-      [position]="challenge.walkingPosition()"
-      [zoneStart]="challenge.combatHitWindow().start"
-      [zoneEnd]="challenge.combatHitWindow().end"
-      [zoneWidth]="challenge.combatHitWindow().width"
-      [speed]="challenge.combatWalkingSpeed()"
-      [statusLabel]="challenge.combatStatusLabel()"
-      [disabled]="!challenge.canSubmitCombatStrike()"
-      (strike)="challenge.submitCombatStrike()"
-    />
-  } @else if (challenge.canShowCombatStartAction()) {
-    <div class="flex-row-start-center flex-wrap gap-sm">
-      <p-button
-        type="button"
-        label="Rozpocznij walkę ręcznie"
-        [loading]="challenge.isEnsuringCombatSession() || challenge.isRecoveringCombatState()"
-        [disabled]="!challenge.canStartCombat()"
-        (onClick)="challenge.startCombat()"
-      />
-    </div>
-  } @else if (challenge.canShowCombatTimingAction()) {
-    <div class="flex-row-start-center flex-wrap gap-sm">
-      <p-button
-        type="button"
-        label="Rozpocznij akcję"
-        [disabled]="!challenge.canStartCombat()"
-        (onClick)="challenge.startCombat()"
-      />
-    </div>
-  }
+  <section class="combat-minigame__shell w-100" aria-label="Ręczna walka">
+    <article class="combat-minigame__combatant mg-card p-lg flex-col gap-md">
+      <div class="flex-row-between-start gap-md">
+        <div class="flex-col gap-xs min-w-0">
+          <p class="small-caps color-muted text-xs mb-0">{{ participantKindLabel(hero) }}</p>
+          <h3 class="color-heading text-xl mb-0">{{ hero?.displayName ?? 'Bohater' }}</h3>
+          <span class="color-muted text-sm">{{ participantMeta(hero) }}</span>
+        </div>
+        <span class="tag-badge tag-badge--success">Gracz</span>
+      </div>
 
-  @if (!challenge.isCombatRunning() && challenge.canShowCombatAutoResolveAction()) {
-    <div class="flex-row-start-center flex-wrap gap-sm">
-      <p-button
-        type="button"
-        severity="secondary"
-        label="Rozstrzygnij automatycznie"
-        [loading]="challenge.isAutoResolvingCombat()"
-        [disabled]="!challenge.canAutoResolveCombatChallenge()"
-        (onClick)="challenge.autoResolveCombat()"
-      />
-    </div>
-  }
-</section>
+      <div class="combat-minigame__figure flex-row-center-center">
+        <span class="combat-minigame__glyph">{{ initials(hero) }}</span>
+      </div>
+
+      <div class="flex-col gap-md">
+        <app-game-bar
+          label="Zdrowie"
+          type="hp"
+          [value]="hpValue(hero)"
+          [max]="hpMax(hero)"
+        />
+
+        <div class="combat-minigame__state flex-col gap-xs text-center">
+          <strong class="color-heading">Statystyki walki niedostępne</strong>
+          <span class="color-text text-sm">Szczegółowe statystyki uczestnika nie są dostępne w tej akcji.</span>
+        </div>
+      </div>
+    </article>
+
+    <section class="combat-minigame__center mg-card p-lg flex-col gap-lg">
+      <div class="combat-minigame__turn flex-col gap-sm text-center">
+        <span class="small-caps color-muted text-xs">{{ challenge.combatRoundLabel() }}</span>
+        <h3 class="color-heading text-xl mb-0">{{ currentActionTitle() }}</h3>
+        <p class="color-text text-sm mb-0">{{ currentActionHelper() }}</p>
+        @if (timingHelper(); as helper) {
+          <span class="color-muted text-sm">{{ helper }}</span>
+        }
+      </div>
+
+      @if (challenge.isCombatRunning() && manifest) {
+        <app-walking-dead-meter
+          [position]="challenge.walkingPosition()"
+          [zoneStart]="challenge.combatHitWindow().start"
+          [zoneEnd]="challenge.combatHitWindow().end"
+          [disabled]="!challenge.canSubmitCombatStrike()"
+          (strike)="challenge.submitCombatStrike()"
+        />
+
+        <div class="flex-row-center-center flex-wrap gap-sm">
+          <p-button
+            type="button"
+            label="Zatrzymaj wskaźnik"
+            [loading]="challenge.isSubmittingCombatAction()"
+            [disabled]="!challenge.canSubmitCombatStrike()"
+            (onClick)="challenge.submitCombatStrike()"
+          />
+        </div>
+      } @else if (challenge.canShowCombatStartAction()) {
+        <div class="flex-row-center-center flex-wrap gap-sm">
+          <p-button
+            type="button"
+            label="Rozpocznij walkę ręcznie"
+            [loading]="challenge.isEnsuringCombatSession() || challenge.isRecoveringCombatState()"
+            [disabled]="!challenge.canStartCombat()"
+            (onClick)="challenge.startCombat()"
+          />
+        </div>
+      } @else if (challenge.canShowCombatTimingAction()) {
+        <div class="flex-row-center-center flex-wrap gap-sm">
+          <p-button
+            type="button"
+            label="Rozpocznij akcję"
+            [disabled]="!challenge.canStartCombat()"
+            (onClick)="challenge.startCombat()"
+          />
+        </div>
+      } @else if (state?.statusKey === 'completed') {
+        <div class="combat-minigame__state flex-col gap-xs text-center">
+          <strong class="color-heading">Walka zakończona</strong>
+          <span class="color-text text-sm">Raport walki jest gotowy do odczytu.</span>
+        </div>
+      } @else {
+        <div class="combat-minigame__state flex-col gap-xs text-center">
+          <strong class="color-heading">Brak okna timingu</strong>
+          <span class="color-text text-sm">Akcja Walking Dead pojawi się, gdy stan walki zwróci manifest gracza.</span>
+        </div>
+      }
+
+      @if (!challenge.isCombatRunning() && challenge.canShowCombatAutoResolveAction()) {
+        <div class="combat-minigame__auto flex-col gap-xs text-center">
+          <p-button
+            type="button"
+            severity="secondary"
+            label="Rozstrzygnij automatycznie"
+            [loading]="challenge.isAutoResolvingCombat()"
+            [disabled]="!challenge.canAutoResolveCombatChallenge()"
+            (onClick)="challenge.autoResolveCombat()"
+          />
+          <span class="color-muted text-sm">Automatyczne rozstrzygnięcie jest osobną akcją.</span>
+        </div>
+      }
+    </section>
+
+    <article class="combat-minigame__combatant combat-minigame__combatant--enemy mg-card p-lg flex-col gap-md">
+      <div class="flex-row-between-start gap-md">
+        <div class="flex-col gap-xs min-w-0">
+          <p class="small-caps color-muted text-xs mb-0">{{ participantKindLabel(opponent) }}</p>
+          <h3 class="color-heading text-xl mb-0">{{ opponent?.displayName ?? 'Przeciwnik' }}</h3>
+          <span class="color-muted text-sm">{{ participantMeta(opponent) }}</span>
+        </div>
+        <span class="tag-badge tag-badge--danger">Wróg</span>
+      </div>
+
+      <div class="combat-minigame__figure combat-minigame__figure--enemy flex-row-center-center">
+        <span class="combat-minigame__glyph combat-minigame__glyph--enemy">{{ initials(opponent) }}</span>
+      </div>
+
+      <div class="flex-col gap-md">
+        <app-game-bar
+          label="Zdrowie"
+          type="hp"
+          [value]="hpValue(opponent)"
+          [max]="hpMax(opponent)"
+        />
+
+        <div class="combat-minigame__state flex-col gap-xs text-center">
+          <strong class="color-heading">Statystyki walki niedostępne</strong>
+          <span class="color-text text-sm">Szczegółowe statystyki uczestnika nie są dostępne w tej akcji.</span>
+        </div>
+      </div>
+    </article>
+  </section>
+</article>

@@ -1,0 +1,102 @@
+@use "abstracts/variables" as v;
+
+.combat-minigame__header {
+  border-bottom: 1px solid color-mix(in srgb, v.$color-progress-gold-end 18%, transparent);
+  padding-bottom: 0.75rem;
+}
+
+.combat-minigame__shell {
+  display: grid;
+  grid-template-columns: minmax(15rem, 0.95fr) minmax(20rem, 1.2fr) minmax(15rem, 0.95fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.combat-minigame__combatant {
+  min-height: 30rem;
+}
+
+.combat-minigame__center {
+  min-height: 30rem;
+}
+
+.combat-minigame__turn,
+.combat-minigame__state {
+  border: 1px solid color-mix(in srgb, v.$color-progress-gold-end 16%, transparent);
+  border-radius: v.$radius-md;
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, v.$color-progress-gold-end 10%, transparent),
+      transparent 70%
+    ),
+    color-mix(in srgb, v.$color-shell-surface 72%, v.$color-black);
+  padding: 1rem;
+}
+
+.combat-minigame__figure {
+  min-height: 13rem;
+  border: 1px solid color-mix(in srgb, v.$color-progress-gold-end 14%, transparent);
+  border-radius: v.$radius-md;
+  background:
+    radial-gradient(
+      circle at center,
+      color-mix(in srgb, v.$color-progress-gold-end 12%, transparent),
+      transparent 8rem
+    ),
+    color-mix(in srgb, v.$color-shell-surface 58%, v.$color-black);
+}
+
+.combat-minigame__figure--enemy {
+  border-color: color-mix(in srgb, v.$color-danger 22%, transparent);
+  background:
+    radial-gradient(
+      circle at center,
+      color-mix(in srgb, v.$color-danger 16%, transparent),
+      transparent 8rem
+    ),
+    color-mix(in srgb, v.$color-shell-surface 58%, v.$color-black);
+}
+
+.combat-minigame__glyph {
+  width: 7rem;
+  height: 9rem;
+  border: 1px solid color-mix(in srgb, v.$color-progress-gold-end 22%, transparent);
+  border-radius: 2.25rem 2.25rem v.$radius-md v.$radius-md;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, v.$color-progress-gold-end 20%, transparent),
+    color-mix(in srgb, v.$color-info 12%, transparent)
+  );
+  box-shadow: 0 1rem 2rem color-mix(in srgb, v.$color-black 28%, transparent);
+  color: v.$color-progress-gold-end;
+  display: grid;
+  font-size: 2.6rem;
+  place-items: center;
+}
+
+.combat-minigame__glyph--enemy {
+  border-color: color-mix(in srgb, v.$color-danger 26%, transparent);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, v.$color-danger 20%, transparent),
+    color-mix(in srgb, v.$color-info 8%, transparent)
+  );
+  color: color-mix(in srgb, v.$color-white 34%, v.$color-danger);
+}
+
+.combat-minigame__auto {
+  border-top: 1px solid color-mix(in srgb, v.$color-progress-gold-end 12%, transparent);
+  padding-top: 0.75rem;
+}
+
+@media (max-width: 1220px) {
+  .combat-minigame__shell {
+    grid-template-columns: 1fr;
+  }
+
+  .combat-minigame__combatant,
+  .combat-minigame__center {
+    min-height: auto;
+  }
+}
