@@ -1,11 +1,13 @@
 import { CombatTimingInput } from '../domain/combat/combat-live.model';
 import {
-  EnsureExplorationCombatSessionRpcArgs,
-  EnsureExplorationCombatSessionRpcRow,
+  GetCombatResolutionPreviewRpcArgs,
+  GetCombatResolutionPreviewRpcRow,
   GetCombatLiveStateRpcArgs,
   GetCombatLiveStateRpcRow,
   GetCombatResultDetailRpcArgs,
   GetCombatResultDetailRpcRow,
+  StartManualCombatSessionRpcArgs,
+  StartManualCombatSessionRpcRow,
   SubmitCombatPlayerActionRpcArgs,
   SubmitCombatPlayerActionRpcRow,
 } from '../types/combat-live-rpc.types';
@@ -19,20 +21,26 @@ import {
 } from './number';
 
 export type LiveStateRpcRow =
-  | EnsureExplorationCombatSessionRpcRow
+  | StartManualCombatSessionRpcRow
   | GetCombatLiveStateRpcRow
   | SubmitCombatPlayerActionRpcRow;
 
 const LIVE_COMBAT_WORKFLOW_CONTEXT = 'live combat workflow';
 
-export function toEnsureExplorationCombatSessionRpcArgs(input: {
-  challengeAttemptId: string | null | undefined;
+export function toStartManualCombatSessionRpcArgs(input: {
+  sourceEntityType: string | null | undefined;
+  sourceEntityId: string | null | undefined;
   requestId?: string | null;
-}): EnsureExplorationCombatSessionRpcArgs {
-  const args: EnsureExplorationCombatSessionRpcArgs = {
-    p_challenge_attempt_id: requiredTrimmedText(
-      input.challengeAttemptId,
-      'challengeAttemptId',
+}): StartManualCombatSessionRpcArgs {
+  const args: StartManualCombatSessionRpcArgs = {
+    p_source_entity_type: requiredTrimmedText(
+      input.sourceEntityType,
+      'sourceEntityType',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+    p_source_entity_id: requiredTrimmedText(
+      input.sourceEntityId,
+      'sourceEntityId',
       LIVE_COMBAT_WORKFLOW_CONTEXT,
     ),
   };
@@ -40,6 +48,32 @@ export function toEnsureExplorationCombatSessionRpcArgs(input: {
 
   if (requestId) {
     args.p_request_id = requestId;
+  }
+
+  return args;
+}
+
+export function toGetCombatResolutionPreviewRpcArgs(input: {
+  sourceEntityType: string | null | undefined;
+  sourceEntityId: string | null | undefined;
+  localeKey?: string | null;
+}): GetCombatResolutionPreviewRpcArgs {
+  const args: GetCombatResolutionPreviewRpcArgs = {
+    p_source_entity_type: requiredTrimmedText(
+      input.sourceEntityType,
+      'sourceEntityType',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+    p_source_entity_id: requiredTrimmedText(
+      input.sourceEntityId,
+      'sourceEntityId',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+  };
+  const localeKey = trimToNull(input.localeKey);
+
+  if (localeKey) {
+    args.p_locale_key = localeKey;
   }
 
   return args;
@@ -118,6 +152,18 @@ export function firstCombatResultDetailRow(
 
   if (!row) {
     throw new Error('DB nie zwróciła szczegółów wyniku walki.');
+  }
+
+  return row;
+}
+
+export function firstCombatResolutionPreviewRow(
+  rows: readonly GetCombatResolutionPreviewRpcRow[],
+): GetCombatResolutionPreviewRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error('DB nie zwróciła podglądu walki.');
   }
 
   return row;

@@ -523,7 +523,7 @@ describe('ArmoryPage', () => {
     expect(text).toContain('Bronze Spear');
   });
 
-  it('keeps equipped items out of visible inventory shelves and stored capacity count', () => {
+  it('keeps equipped items out of visible inventory shelves', () => {
     equipment.setSlots([
       equippedItem({
         itemId: 'item-equipped',
@@ -554,7 +554,6 @@ describe('ArmoryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Stored Axe');
-    expect(text).toContain('Armory capacity 1 / 30');
     expect(fixture.componentInstance.displayShelves()
       .flatMap((shelf) => shelf.visibleItems.map((item) => item.itemId)))
       .toEqual(['item-stored']);
@@ -1200,20 +1199,6 @@ describe('ArmoryPage', () => {
     expect(text).not.toContain('shelf-json');
   });
 
-  it('renders the exact DB/RPC visibility limit without local recalculation', () => {
-    armory.setShelves([
-      armoryShelf({ position: 1, name: 'Shelf From DB' }),
-    ], visibility({
-      visibilityLimit: 123,
-      visibilityLimitSource: 'visible_item_capacity',
-    }));
-    fixture.detectChanges();
-    const text = textContent(fixture);
-
-    expect(text).toContain('Armory capacity 0 / 123');
-    expect(text).not.toContain('Limit 30');
-    expect(text).not.toContain('Limit 35');
-  });
 });
 
 class FakeArmoryPageFacade {

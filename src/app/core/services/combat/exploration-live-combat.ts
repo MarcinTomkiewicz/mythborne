@@ -1,25 +1,30 @@
 import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
   CombatLiveStateReadModel,
+  CombatResolutionPreviewReadModel,
   CombatResultDetailReadModel,
   CombatTimingInput,
 } from '../../domain/combat/combat-live.model';
 import {
-  EnsureExplorationCombatSessionRpcRow,
+  GetCombatResolutionPreviewRpcRow,
   GetCombatLiveStateRpcRow,
   GetCombatResultDetailRpcRow,
+  StartManualCombatSessionRpcRow,
   SubmitCombatPlayerActionRpcRow,
 } from '../../types/combat-live-rpc.types';
 import {
+  firstCombatResolutionPreviewRow,
   firstCombatLiveStateRow,
   firstCombatResultDetailRow,
+  mapCombatResolutionPreview,
   mapCombatLiveState,
   mapCombatResultDetail,
-  toEnsureExplorationCombatSessionRpcArgs,
+  toGetCombatResolutionPreviewRpcArgs,
   toGetCombatLiveStateRpcArgs,
   toGetCombatResultDetailRpcArgs,
+  toStartManualCombatSessionRpcArgs,
   toSubmitCombatPlayerActionRpcArgs,
 } from '../../utils/combat-live-mappers';
 import { Backend } from '../backend/backend';
@@ -28,18 +33,47 @@ import { Backend } from '../backend/backend';
 export class ExplorationLiveCombat {
   private readonly backend = inject(Backend);
 
-  ensureSession(input: {
+  getResolutionPreview(input: {
+    challengeAttemptId: string;
+    localeKey?: string | null;
+  }): Observable<CombatResolutionPreviewReadModel> {
+    return this.backend
+      .rpc<GetCombatResolutionPreviewRpcRow[]>(
+        RPC.get_combat_resolution_preview,
+        toGetCombatResolutionPreviewRpcArgs({
+          sourceEntityType: 'exploration_challenge_attempt',
+          sourceEntityId: input.challengeAttemptId,
+          localeKey: input.localeKey ?? 'pl',
+        }),
+      )
+      .pipe(
+        map(firstCombatResolutionPreviewRow),
+        map(mapCombatResolutionPreview),
+      );
+  }
+
+  startManualSession(input: {
     challengeAttemptId: string;
     requestId?: string | null;
   }): Observable<CombatLiveStateReadModel> {
     return this.backend
-      .rpc<EnsureExplorationCombatSessionRpcRow[]>(
-        RPC.ensure_exploration_combat_session,
-        toEnsureExplorationCombatSessionRpcArgs(input),
+      .rpc<StartManualCombatSessionRpcRow[]>(
+        RPC.start_manual_combat_session,
+        toStartManualCombatSessionRpcArgs({
+          sourceEntityType: 'exploration_challenge_attempt',
+          sourceEntityId: input.challengeAttemptId,
+          requestId: input.requestId,
+        }),
       )
       .pipe(
         map(firstCombatLiveStateRow),
         map(mapCombatLiveState),
+        switchMap((state) =>
+          this.getState({
+            sessionId: state.sessionId,
+            sinceEventIndex: null,
+          }),
+        ),
       );
   }
 

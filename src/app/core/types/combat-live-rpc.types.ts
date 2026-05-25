@@ -3,10 +3,15 @@ import { Database } from './database.types';
 type Rpc<T extends keyof Database['public']['Functions']> =
   Database['public']['Functions'][T];
 
-export type EnsureExplorationCombatSessionRpcArgs =
-  Rpc<'ensure_exploration_combat_session'>['Args'];
-export type EnsureExplorationCombatSessionRpcRow =
-  Rpc<'ensure_exploration_combat_session'>['Returns'][number];
+export type StartManualCombatSessionRpcArgs =
+  Rpc<'start_manual_combat_session'>['Args'];
+export type StartManualCombatSessionRpcRow =
+  Rpc<'start_manual_combat_session'>['Returns'][number];
+
+export type GetCombatResolutionPreviewRpcArgs =
+  Rpc<'get_combat_resolution_preview'>['Args'];
+export type GetCombatResolutionPreviewRpcRow =
+  Rpc<'get_combat_resolution_preview'>['Returns'][number];
 
 export type GetCombatLiveStateRpcArgs =
   Rpc<'get_combat_live_state'>['Args'];

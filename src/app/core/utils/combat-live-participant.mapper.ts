@@ -38,6 +38,9 @@ export function mapParticipant(record: JsonRecord): CombatLiveParticipantReadMod
 
   return {
     participantId,
+    previewParticipantKey: participantId,
+    participantKey: participantId,
+    participantKind: trimToNull(optionalText(read(record, 'participantKind', 'participant_kind', 'kind'))),
     side: trimToNull(optionalText(read(record, 'side', 'participantSide', 'participant_side'))),
     displayName,
     statusKey: trimToNull(optionalText(read(record, 'statusKey', 'status_key', 'status'))),
@@ -64,7 +67,7 @@ export function mapParticipant(record: JsonRecord): CombatLiveParticipantReadMod
   };
 }
 
-function mapParticipantStatRows(value: Json | undefined): CombatLiveParticipantStatRow[] {
+export function mapParticipantStatRows(value: Json | undefined): CombatLiveParticipantStatRow[] {
   return sortBySortOrder(
     mapJsonArray(value, mapParticipantStatRow)
       .filter((row): row is CombatLiveParticipantStatRow => row !== null),

@@ -7351,45 +7351,110 @@ Zbudować właściwy Walking Dead timing panel dla aktywnej walki.
 
 ## Goal
 
-Pokazać live/readable combat log pod aktywną walką, używając backendowych eventów.
+Pokazać aktywny, player-facing combat log pod trwającą walką, używając backendowych eventów live combat state.
+
+Log ma uzupełniać aktualny combat surface: panele uczestników i Walking Dead zostają na górze, a przebieg walki zaczyna się pod statystykami/panelami przeciwników, na pełnej szerokości combat surface.
 
 ## Scope
 
-- combat log na pełną szerokość pod panelami walki;
-- ordered event rows;
-- turn/round labels;
-- actor name/side;
-- attack source label;
-- hit/miss/evasion/crit/damage/heal/effect display;
-- player-facing `eventLabel`, `detailText`, `displayText`, `damageDisplay`.
+- combat log na pełną szerokość pod trzema panelami walki;
+- ordered event rows z backendowego live state;
+- grupowanie lub etykiety tury/rundy/akcji, jeśli backend je dostarcza;
+- actor name / side / participant label z backendowego eventu albo live participant lookup;
+- attack source label, jeśli backend dostarcza player-facing label;
+- player-facing event text:
+  - `eventLabel`,
+  - `detailText`,
+  - `displayText`,
+  - `damageDisplay`,
+  - albo ich zatwierdzone odpowiedniki z live combat event/read modelu;
+- wizualne wyróżnienie typów wyniku:
+  - crit/danger/red emphasis;
+  - miss/evade/info-blue emphasis;
+  - normal damage/gold-heading emphasis;
+  - heal/success emphasis, jeśli backend taki event zwraca;
+- empty/no-events state, jeśli walka jeszcze nie ma eventów;
+- completed/live state compatible rendering, jeśli ten sam event list pozostaje widoczny po zakończeniu walki.
 
 ## Out of scope
 
-- generowanie logu z raw statów;
-- tłumaczenie raw enumów na lokalne teksty;
-- rekonstrukcja timeline z ataków po stronie Angulara.
+- completed combat report screen;
+- outcome banner;
+- rewards;
+- report handoff;
+- reconstructing timeline from attacks in Angular;
+- generating log text from raw stats;
+- translating raw enum keys in Angular;
+- parsing raw JSON/snapshot JSON;
+- local combat result/damage/crit/evasion calculation;
+- changing combat flow, timing flow, Walking Dead, auto-resolve, or DB/RPC.
 
 ## Data rules
 
-- log pochodzi z backendowego live state/report section;
-- backend odpowiada za kolejność i teksty;
+- log pochodzi z backendowego live combat state / report-safe event read modelu;
+- backend odpowiada za kolejność eventów i player-facing teksty;
+- Angular może tylko renderować gotowe pola i ewentualnie wybrać bezpieczny fallback;
 - technical/debug eventy nie są player-facing;
-- jeśli event nie ma player-facing text, UI ma fail closed albo pokazać bezpieczny krótki fallback.
+- jeśli event nie ma player-facing text, UI ma fail closed:
+  - pominąć szczegóły techniczne,
+  - albo pokazać krótki bezpieczny fallback typu „Zdarzenie walki”;
+- attack source label pochodzi z backendu/dictionary/read modelu;
+- Angular nie pokazuje defender private equipment, jeśli backend nie wystawia dozwolonego snapshot labela;
+- opponent generated/manual equipment labels nie mogą udawać player inventory.
 
 ## UI rules
 
-- active combat log może używać bardziej kompaktowego układu niż completed report;
-- ważne eventy nie mogą być muted;
-- crit powinien mieć danger/red emphasis;
+- log zaczyna się pod całym combat minigame row, nie w środkowej karcie;
+- używać istniejących `mg-card`, `mg-data-row`, badge/tag/text utilities i istniejących list/timeline patterns;
+- nie kopiować lokalnego CSS z prototypu;
+- dopasować wizualnie do prototypu combat report log:
+  - małe grupy/wiersze,
+  - aktor wyraźny,
+  - opis czytelny,
+  - wynik po prawej lub jako mocny value;
+- ważne eventy nie mogą być `muted-text`;
+- normal damage może być gold/heading emphasis;
 - miss/evade powinny mieć info/blue emphasis;
-- normal damage może być gold/heading emphasis.
+- crit powinien mieć danger/red emphasis;
+- active combat log może być bardziej kompaktowy niż completed report log.
 
 ## Acceptance
 
-- aktywny combat log pokazuje backendowe eventy;
-- brak technicznych manifest/debug tekstów;
-- brak local translation engine;
+- aktywny combat log pokazuje backendowe eventy pod panelami walki;
+- kolejność eventów jest backendowa, bez lokalnej rekonstrukcji;
+- event rows są player-facing i czytelne;
+- attack source labels są pokazane tylko, jeśli backend je bezpiecznie wystawia;
+- brak technicznych manifest/debug/raw JSON tekstów;
+- brak Angular-side enum translation engine;
+- brak zmian w WalkingDead/timing/submit/auto-resolve/RPC/generated types;
 - `tsc` i build przechodzą.
+
+## Verification
+
+- `npx tsc --noEmit`;
+- `npm run build`;
+- `git diff --check`;
+- static grep:
+  - no `rawJson` / `snapshot_json` parsing in combat log UI;
+  - no local damage/crit/evasion calculation;
+  - no technical debug copy in touched templates;
+- user-side smoke:
+  - active combat with no events;
+  - active combat with damage event;
+  - miss/evade event if available;
+  - crit event if available;
+  - completed combat state if active surface remains visible.
+
+## Required Codex report
+
+- combat log data source:
+- event fields rendered:
+- fallback behavior for missing player-facing text:
+- attack source label source:
+- privacy omissions:
+- local SCSS added:
+
+**Status:** Accepted/completed on 2026-05-25 as the UI-COMBAT-4 frontend slice. The active combat log now renders under the combat panels as a player-facing live event log with actor/body/result columns, utility/template-based row structure, miss/evade outcomes kept in the result column with info emphasis, hit/crit/heal result tone paths driven by existing utility classes, and attack source emphasized as a safe text segment. The accepted cleanup leaves no local `combat-log__*` SCSS and did not change generated types, DB/RPC, Walking Dead, Manual/Auto or preview flow in the final UI cleanup. Follow-ups remain outside this accepted slice: user-side visual/manual smoke may tune small preferences later; backend/Migrator owns combat resolver/read-model issues such as successful hit events with `0 obrażeń` and runtime stat discrepancies between dashboard, preview and combat; a future shared combat/report log row pattern may be extracted if this structure repeats.
 
 ---
 

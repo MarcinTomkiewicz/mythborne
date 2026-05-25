@@ -78,10 +78,10 @@ export type AutoResolveHeroExplorationChallengeAttemptRpcArgs =
   Rpc<'auto_resolve_hero_exploration_challenge_attempt'>['Args'];
 export type AutoResolveHeroExplorationChallengeAttemptRpcRow =
   Rpc<'auto_resolve_hero_exploration_challenge_attempt'>['Returns'][number];
-export type AutoResolveExplorationCombatChallengeAttemptRpcArgs =
-  Rpc<'auto_resolve_exploration_combat_challenge_attempt'>['Args'];
-export type AutoResolveExplorationCombatChallengeAttemptRpcRow =
-  Rpc<'auto_resolve_exploration_combat_challenge_attempt'>['Returns'][number];
+export type AutoResolveCombatSessionRpcArgs =
+  Rpc<'auto_resolve_combat_session'>['Args'];
+export type AutoResolveCombatSessionRpcRow =
+  Rpc<'auto_resolve_combat_session'>['Returns'][number];
 
 export type PreviewTrialOpportunityCurveRpcArgs =
   Rpc<'preview_trial_opportunity_curve'>['Args'];

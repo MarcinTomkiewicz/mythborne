@@ -7,8 +7,8 @@ import {
 import {
   AutoResolveHeroExplorationChallengeAttemptRpcArgs,
   AutoResolveHeroExplorationChallengeAttemptRpcRow,
-  AutoResolveExplorationCombatChallengeAttemptRpcArgs,
-  AutoResolveExplorationCombatChallengeAttemptRpcRow,
+  AutoResolveCombatSessionRpcArgs,
+  AutoResolveCombatSessionRpcRow,
   CompleteHeroExplorationChallengeAttemptRpcArgs,
   CompleteHeroExplorationChallengeAttemptRpcRow,
   GetHeroExplorationDifficultyCardPreviewsRpcArgs,
@@ -167,15 +167,14 @@ export function toAutoResolveHeroExplorationChallengeAttemptRpcArgs(input: {
   return args;
 }
 
-export function toAutoResolveExplorationCombatChallengeAttemptRpcArgs(input: {
-  challengeAttemptId: string | null | undefined;
+export function toAutoResolveCombatSessionRpcArgs(input: {
+  sourceEntityType: string | null | undefined;
+  sourceEntityId: string | null | undefined;
   requestId: string | null | undefined;
-}): AutoResolveExplorationCombatChallengeAttemptRpcArgs {
+}): AutoResolveCombatSessionRpcArgs {
   return {
-    p_challenge_attempt_id: requiredText(
-      input.challengeAttemptId,
-      'challengeAttemptId',
-    ),
+    p_source_entity_type: requiredText(input.sourceEntityType, 'sourceEntityType'),
+    p_source_entity_id: requiredText(input.sourceEntityId, 'sourceEntityId'),
     p_request_id: requiredText(input.requestId, 'requestId'),
   };
 }
@@ -266,14 +265,14 @@ export function firstAutoResolveHeroExplorationChallengeAttemptRow(
   return row;
 }
 
-export function firstAutoResolveExplorationCombatChallengeAttemptRow(
-  rows: readonly AutoResolveExplorationCombatChallengeAttemptRpcRow[],
-): AutoResolveExplorationCombatChallengeAttemptRpcRow {
+export function firstAutoResolveCombatSessionRow(
+  rows: readonly AutoResolveCombatSessionRpcRow[],
+): AutoResolveCombatSessionRpcRow {
   const row = rows[0];
 
   if (!row) {
     throw new Error(
-      'auto_resolve_exploration_combat_challenge_attempt returned no result row.',
+      'auto_resolve_combat_session returned no result row.',
     );
   }
 
@@ -339,12 +338,12 @@ export function mapAutoResolveHeroExplorationChallengeResult(
   };
 }
 
-export function mapAutoResolveExplorationCombatChallengeResult(
-  row: AutoResolveExplorationCombatChallengeAttemptRpcRow,
+export function mapAutoResolveCombatSessionChallengeResult(
+  row: AutoResolveCombatSessionRpcRow,
 ): HeroExplorationChallengeCompletionReadModel {
   return {
-    challengeAttemptId: row.challenge_attempt_id,
-    status: row.challenge_status,
+    challengeAttemptId: row.source_entity_id,
+    status: row.status,
     success: row.success,
     completionMode: row.completion_mode,
     rewardGrantId: row.reward_grant_id,

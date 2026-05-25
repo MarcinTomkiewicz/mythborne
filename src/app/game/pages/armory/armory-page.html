@@ -4,42 +4,51 @@
     <p-confirmdialog styleClass="mg-dialog mg-dialog--danger" />
     <div class="grid-2-1 gap-lg grid-items-center">
       <div class="flex-col gap-xs min-w-0">
-        <p class="small-caps color-muted text-xs mb-0">Armory</p>
+        <p class="small-caps color-muted text-xs mb-0">Zbrojownia</p>
         <h2 class="mg-section__title mg-section__title--sm mb-0">
-          Equipment and stored items
+          Wyposażenie i przechowywane przedmioty
         </h2>
         <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
-          Manage the active loadout and the inventory currently visible from estate capacity.
+          Zarządzaj aktywnym wyposażeniem i przedmiotami widocznymi dzięki pojemności posiadłości.
         </p>
       </div>
 
       <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
         @if (storedArmoryVisibility(); as visibility) {
+          @let storedCount = storedItemCount();
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Armory capacity</span>
-            <strong class="color-heading text-md">
-              {{ visibility.visibilityLimit }}
-            </strong>
+            <span class="color-muted small-caps uppercase text-xs">Pojemność zbrojowni</span>
+            <strong class="color-heading text-md">{{ visibility.visibilityLimit }}</strong>
           </div>
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Total items</span>
-            <strong class="color-heading text-md">{{ storedArmoryItems().length }}</strong>
+            <span class="color-muted small-caps uppercase text-xs">Wszystkie przedmioty</span>
+            <strong
+              class="text-md"
+              [class.color-heading]="storedCount !== null && storedCount <= visibility.visibilityLimit"
+              [class.error-text]="storedCount !== null && storedCount > visibility.visibilityLimit"
+            >
+              {{ storedCount }}
+            </strong>
           </div>
         } @else {
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Armory capacity</span>
-            <strong class="color-heading text-md">Loading</strong>
+            <span class="color-muted small-caps uppercase text-xs">Pojemność zbrojowni</span>
+            <strong class="color-heading text-md">-</strong>
+          </div>
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Wszystkie przedmioty</span>
+            <strong class="color-heading text-md">-</strong>
           </div>
         }
         <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-          <span class="color-muted small-caps uppercase text-xs">Equipped items</span>
-          <strong class="color-heading text-md">{{ equipment.slots().length }}</strong>
+          <span class="color-muted small-caps uppercase text-xs">Założone przedmioty</span>
+          <strong class="color-heading text-md">{{ equippedItemCount() }}</strong>
         </div>
         <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-          <span class="color-muted small-caps uppercase text-xs">Saved presets</span>
+          <span class="color-muted small-caps uppercase text-xs">Zapisane zestawy</span>
           <strong class="color-heading text-md">
             @if (loadoutPresets.isLoading()) {
-              Loading
+              -
             } @else {
               {{ savedLoadoutCount() }}
             }
@@ -93,5 +102,5 @@
 
 <app-loading-overlay
   [visible]="equipment.isMutating() || armory.isMutating()"
-  label="Updating armory…"
+  label="Aktualizowanie zbrojowni..."
 />

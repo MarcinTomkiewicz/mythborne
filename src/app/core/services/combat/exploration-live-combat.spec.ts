@@ -16,7 +16,7 @@ describe('ExplorationLiveCombat', () => {
     backend = jasmine.createSpyObj<Backend>('Backend', ['rpc']);
     backend.rpc.and.callFake(((functionName: string) => {
       switch (functionName) {
-        case RPC.ensure_exploration_combat_session:
+        case RPC.start_manual_combat_session:
         case RPC.get_combat_live_state:
         case RPC.submit_combat_player_action:
           return of([liveStateRow()]);
@@ -36,9 +36,9 @@ describe('ExplorationLiveCombat', () => {
     service = TestBed.inject(ExplorationLiveCombat);
   });
 
-  it('ensures exploration combat session through canonical RPC', async () => {
+  it('starts manual exploration combat through generic canonical RPC', async () => {
     const state = await firstValueFrom(
-      service.ensureSession({
+      service.startManualSession({
         challengeAttemptId: 'challenge-1',
         requestId: 'request-1',
       }),
@@ -46,9 +46,10 @@ describe('ExplorationLiveCombat', () => {
 
     expect(state.sessionId).toBe('session-1');
     expect(backend.rpc).toHaveBeenCalledOnceWith(
-      RPC.ensure_exploration_combat_session,
+      RPC.start_manual_combat_session,
       {
-        p_challenge_attempt_id: 'challenge-1',
+        p_source_entity_type: 'exploration_challenge_attempt',
+        p_source_entity_id: 'challenge-1',
         p_request_id: 'request-1',
       },
     );

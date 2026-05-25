@@ -17,7 +17,7 @@ import {
 import { FilterOperator } from '../../enums/filter-operators';
 import { Row } from '../../types/supabase.types';
 import {
-  AutoResolveExplorationCombatChallengeAttemptRpcRow,
+  AutoResolveCombatSessionRpcRow,
   AutoResolveHeroExplorationChallengeAttemptRpcRow,
   CompleteHeroExplorationChallengeAttemptRpcRow,
   GetHeroExplorationDifficultyCardPreviewsRpcRow,
@@ -41,18 +41,18 @@ import {
 } from '../../utils/exploration-runtime-mappers';
 import {
   explorationChallengeCompletionWorkflowResult,
-  firstAutoResolveExplorationCombatChallengeAttemptRow,
+  firstAutoResolveCombatSessionRow,
   firstResolveHeroExplorationStepRow,
   firstAutoResolveHeroExplorationChallengeAttemptRow,
   firstCompleteHeroExplorationChallengeAttemptRow,
   firstStartHeroExplorationStepRow,
   firstStartOrGetHeroExplorationRow,
   explorationStepResolutionWorkflowResult,
-  mapAutoResolveExplorationCombatChallengeResult,
+  mapAutoResolveCombatSessionChallengeResult,
   mapAutoResolveHeroExplorationChallengeResult,
   mapCompleteHeroExplorationChallengeResult,
   mapResolveHeroExplorationStepResult,
-  toAutoResolveExplorationCombatChallengeAttemptRpcArgs,
+  toAutoResolveCombatSessionRpcArgs,
   toAutoResolveHeroExplorationChallengeAttemptRpcArgs,
   toCompleteHeroExplorationChallengeAttemptRpcArgs,
   toGetHeroExplorationDifficultyCardPreviewsRpcArgs,
@@ -295,12 +295,16 @@ export class HeroExplorations {
     requestId: string;
   }): Observable<HeroExplorationChallengeCompletionWorkflowResult> {
     return this.backend
-      .rpc<AutoResolveExplorationCombatChallengeAttemptRpcRow[]>(
-        RPC.auto_resolve_exploration_combat_challenge_attempt,
-        toAutoResolveExplorationCombatChallengeAttemptRpcArgs(input),
+      .rpc<AutoResolveCombatSessionRpcRow[]>(
+        RPC.auto_resolve_combat_session,
+        toAutoResolveCombatSessionRpcArgs({
+          sourceEntityType: 'exploration_challenge_attempt',
+          sourceEntityId: input.challengeAttemptId,
+          requestId: input.requestId,
+        }),
       )
       .pipe(
-        map(firstAutoResolveExplorationCombatChallengeAttemptRow),
+        map(firstAutoResolveCombatSessionRow),
         switchMap((row) =>
           this.getHeroExplorationState({
             heroId: input.heroId,
@@ -308,7 +312,7 @@ export class HeroExplorations {
           }).pipe(
             map((state) =>
               explorationChallengeCompletionWorkflowResult(
-                mapAutoResolveExplorationCombatChallengeResult(row),
+                mapAutoResolveCombatSessionChallengeResult(row),
                 state,
               ),
             ),

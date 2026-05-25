@@ -22,6 +22,20 @@ export interface CombatLiveStateReadModel {
   rawJson: Json;
 }
 
+export interface CombatResolutionPreviewReadModel {
+  previewStatus: string;
+  decisionRequired: boolean;
+  canStartManual: boolean;
+  canAutoResolve: boolean;
+  combatSessionId: string | null;
+  sourceType: string;
+  sourceEntityType: string;
+  sourceEntityId: string;
+  participants: CombatLiveParticipantReadModel[];
+  updatedAt: string;
+  rawJson: Json;
+}
+
 export interface CombatTimingManifestReadModel {
   manifestId: string;
   actorParticipantId: string;
@@ -62,7 +76,10 @@ export interface CombatLuckRngReadModel {
 }
 
 export interface CombatLiveParticipantReadModel {
-  participantId: string;
+  participantId: string | null;
+  previewParticipantKey?: string;
+  participantKey?: string | null;
+  participantKind?: string | null;
   side: string | null;
   displayName: string;
   statusKey: string | null;
@@ -93,10 +110,23 @@ export interface CombatLiveEventReadModel {
   eventIndex: number;
   eventKind: string;
   label: string;
+  eventLabel: string | null;
+  detailText: string | null;
+  displayText: string | null;
+  damageDisplay: string | null;
+  attackSourceLabel: string | null;
+  presentationKind: string | null;
+  timingHit: boolean | null;
+  evaded: boolean | null;
+  critical: boolean | null;
+  actorDisplayName: string | null;
+  targetDisplayName: string | null;
   actorParticipantId: string | null;
   targetParticipantId: string | null;
   roundNumber: number | null;
   actionIndex: number | null;
+  roundLabel: string | null;
+  turnLabel: string | null;
   happenedAt: string | null;
   details: string[];
   rawJson: Json;

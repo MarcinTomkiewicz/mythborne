@@ -56,7 +56,7 @@ describe('HeroExplorations', () => {
           return of([resolveStepRow()]);
         case RPC.complete_hero_exploration_challenge_attempt:
           return of([completeChallengeRow()]);
-        case RPC.auto_resolve_exploration_combat_challenge_attempt:
+        case RPC.auto_resolve_combat_session:
           return of([autoResolveCombatChallengeRow()]);
         case RPC.auto_resolve_hero_exploration_challenge_attempt:
           return of([autoResolveChallengeRow()]);
@@ -412,7 +412,7 @@ describe('HeroExplorations', () => {
     expect(backend.delete).not.toHaveBeenCalled();
   });
 
-  it('auto-resolves combat challenge attempts through the dedicated combat RPC before refreshing state', async () => {
+  it('auto-resolves combat challenge attempts through the generic combat RPC before refreshing state', async () => {
     const workflow = await firstValueFrom(
       service.autoResolveExplorationCombatChallengeAttempt({
         heroId: 'hero-1',
@@ -432,9 +432,10 @@ describe('HeroExplorations', () => {
       }),
     );
     expect(backend.rpc).toHaveBeenCalledWith(
-      RPC.auto_resolve_exploration_combat_challenge_attempt,
+      RPC.auto_resolve_combat_session,
       {
-        p_challenge_attempt_id: 'challenge-1',
+        p_source_entity_type: 'exploration_challenge_attempt',
+        p_source_entity_id: 'challenge-1',
         p_request_id: 'request-1',
       },
     );
@@ -580,8 +581,6 @@ function trialOpportunityPreviewRow() {
 function autoResolveCombatChallengeRow() {
   return {
     attacks_created: 3,
-    challenge_attempt_id: 'challenge-1',
-    challenge_status: 'completed',
     combat_result_id: 'combat-result-1',
     combat_session_id: 'combat-session-1',
     completion_mode: 'auto_resolve',
@@ -592,7 +591,15 @@ function autoResolveCombatChallengeRow() {
     participant_stats_created: 2,
     participants_created: 2,
     remaining_trials: 1,
+    report_attacks_count: 3,
     reward_grant_id: 'reward-1',
+    runtime_activity_id: 'runtime-1',
+    source_entity_id: 'challenge-1',
+    source_entity_type: 'exploration_challenge_attempt',
+    source_result_id: 'challenge-1',
+    source_result_kind: 'challenge_attempt',
+    source_type: 'trial',
+    status: 'completed',
     success: true,
   };
 }

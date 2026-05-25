@@ -12,6 +12,9 @@ import { GameBar } from '../../../shared/game-bar/game-bar';
 import { StatCard } from '../../../shared/stat-card/stat-card';
 import { WalkingDeadMeter } from '../combat/walking-dead-meter';
 import { ExplorationChallengeState } from '../../pages/exploration/exploration-challenge.state';
+import {
+  combatActiveLogGroups,
+} from '../../pages/exploration/exploration-live-combat-labels';
 
 @Component({
   selector: 'app-exploration-combat-resolution-card',
@@ -38,16 +41,35 @@ export class ExplorationCombatResolutionCard {
 
     return this.challenge.combatParticipants().find((participant) => participant.opponentDefinitionId) ??
       this.challenge.combatParticipants().find((participant) => participant.side === 'defender') ??
-      this.challenge.combatParticipants().find((participant) => participant.participantId !== hero?.participantId) ??
+      this.challenge.combatParticipants().find((participant) =>
+        this.participantUiKey(participant) !== (hero ? this.participantUiKey(hero) : null),
+      ) ??
       null;
   });
+  readonly isDecisionPreview = computed(() =>
+    !this.challenge.combatLiveState() &&
+    this.challenge.combatResolutionPreview()?.previewStatus === 'decision_preview',
+  );
+  readonly actionContextLabel = computed(() =>
+    this.isDecisionPreview()
+      ? 'Decyzja przed walką'
+      : this.challenge.combatRoundLabel(),
+  );
   readonly currentActionTitle = computed(() => {
+    if (this.isDecisionPreview()) {
+      return 'Wybierz sposób rozstrzygnięcia';
+    }
+
     const manifest = this.challenge.combatTimingManifest();
     const actor = this.challenge.currentCombatActor()?.displayName ?? this.heroParticipant()?.displayName;
 
     return manifest?.label ?? (actor ? `${actor} przygotowuje akcję.` : 'Przygotuj akcję Walking Dead.');
   });
   readonly currentActionHelper = computed(() => {
+    if (this.isDecisionPreview()) {
+      return 'Rozpocznij walkę ręcznie albo rozstrzygnij ją automatycznie.';
+    }
+
     const state = this.challenge.combatLiveState();
     const manifest = this.challenge.combatTimingManifest();
 
@@ -70,7 +92,9 @@ export class ExplorationCombatResolutionCard {
     return 'Kliknij tor albo przycisk akcji, gdy wskaźnik przechodzi przez zieloną strefę.';
   });
   readonly timingHelper = computed(() =>
-    this.timingManifestHelper(this.challenge.combatTimingManifest()),
+    this.isDecisionPreview()
+      ? null
+      : this.timingManifestHelper(this.challenge.combatTimingManifest()),
   );
   readonly heroBaseStatRows = computed(() =>
     mapCombatParticipantBaseStatCardRows(this.heroParticipant()?.baseStatRows ?? []),
@@ -84,28 +108,42 @@ export class ExplorationCombatResolutionCard {
   readonly opponentCombatStatRows = computed(() =>
     mapCombatParticipantStatCardRows(this.opponentParticipant()?.combatStatRows ?? []),
   );
+  readonly combatLogGroups = computed(() =>
+    combatActiveLogGroups(this.challenge.combatEvents(), this.challenge.combatParticipants()),
+  );
 
-  hpValue(participant: CombatLiveParticipantReadModel | null): number {
-    return participant?.currentHp ?? 0;
+  hasHp(participant: CombatLiveParticipantReadModel): boolean {
+    return participant.currentHp !== null && participant.maxHp !== null;
   }
 
-  hpMax(participant: CombatLiveParticipantReadModel | null): number {
-    return participant?.maxHp ?? 0;
+  hpValue(participant: CombatLiveParticipantReadModel): number {
+    return participant.currentHp ?? 0;
   }
 
-  participantKindLabel(participant: CombatLiveParticipantReadModel | null): string {
-    if (!participant) {
-      return 'Uczestnik';
+  hpMax(participant: CombatLiveParticipantReadModel): number {
+    return participant.maxHp ?? 0;
+  }
+
+  participantKindLabel(participant: CombatLiveParticipantReadModel): string {
+    switch (participant.participantKind?.trim().toLowerCase()) {
+      case 'hero':
+      case 'player':
+        return 'Bohater';
+      case 'opponent':
+      case 'enemy':
+        return 'Przeciwnik';
+      default:
+        break;
     }
 
-    return participant.heroId ? 'Bohater' : 'Przeciwnik';
-  }
-
-  participantMeta(participant: CombatLiveParticipantReadModel | null): string {
-    if (!participant) {
-      return 'Oczekiwanie na stan walki';
+    if (participant.heroId || participant.side === 'initiator') {
+      return 'Bohater';
     }
 
+    return 'Przeciwnik';
+  }
+
+  participantMeta(participant: CombatLiveParticipantReadModel): string {
     return [
       this.participantKindLabel(participant),
       this.sideLabel(participant),
@@ -124,14 +162,21 @@ export class ExplorationCombatResolutionCard {
     }
   }
 
-  initials(participant: CombatLiveParticipantReadModel | null): string {
-    const name = participant?.displayName ?? '?';
+  initials(participant: CombatLiveParticipantReadModel): string {
+    const name = participant.displayName;
     const parts = name.trim().split(/\s+/).filter(Boolean);
     const initials = parts.length > 1
       ? `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`
       : name.slice(0, 2);
 
     return initials.toUpperCase();
+  }
+
+  private participantUiKey(participant: CombatLiveParticipantReadModel): string | null {
+    return participant.previewParticipantKey ??
+      participant.participantKey ??
+      participant.side ??
+      participant.participantId;
   }
 
   private timingManifestHelper(manifest: CombatTimingManifestReadModel | null): string | null {

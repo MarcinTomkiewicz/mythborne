@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import {
   CombatLiveStateReadModel,
+  CombatResolutionPreviewReadModel,
   CombatResultDetailReadModel,
   CombatTimingInput,
 } from '../../../core/domain/combat/combat-live.model';
@@ -16,6 +17,7 @@ import { HeroExplorations } from '../../../core/services/exploration/hero-explor
 import { advanceWalkingDeadTimingFrame } from '../../../core/utils/combat-walking-dead';
 import { mergeCombatLiveEvents } from '../../../core/utils/combat-live-mappers';
 import { RequestToken } from '../../../core/utils/request-token';
+import { environment } from '../../../../environments/environment';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import {
   combatEventMetaLabel,
@@ -38,19 +40,24 @@ export class ExplorationLiveCombatState {
   private readonly rewardState = inject(ExplorationRewardState);
   private readonly step = inject(ExplorationStepState);
   private readonly sessionToken = new RequestToken();
+  private readonly previewToken = new RequestToken();
   private readonly actionToken = new RequestToken();
   private readonly detailToken = new RequestToken();
   private readonly recoveryToken = new RequestToken();
   private walkingTimer: number | null = null;
   private ensuredChallengeId: string | null = null;
+  private previewChallengeId: string | null = null;
 
   readonly isEnsuringCombatSession = signal(false);
+  readonly isLoadingCombatPreview = signal(false);
+  readonly combatResolutionPreviewFailed = signal(false);
   readonly isRecoveringCombatState = signal(false);
   readonly isSubmittingCombatAction = signal(false);
   readonly isCombatRunning = signal(false);
   readonly walkingPosition = signal(0);
   readonly walkingDirection = signal<1 | -1>(1);
   readonly combatLiveState = signal<CombatLiveStateReadModel | null>(null);
+  readonly combatResolutionPreview = signal<CombatResolutionPreviewReadModel | null>(null);
   readonly combatResultDetail = signal<CombatResultDetailReadModel | null>(null);
   readonly completedCombatChallenge = signal<HeroExplorationChallengeAttemptReadModel | null>(null);
   readonly activeChallenge = computed(() => this.overview.state()?.activeChallenge ?? null);
@@ -63,7 +70,12 @@ export class ExplorationLiveCombatState {
   readonly canStartCombat = computed(() =>
     Boolean(this.activeChallenge()) &&
     this.isCombatChallenge() &&
+    (
+      this.combatLiveState() !== null ||
+      this.combatResolutionPreview()?.canStartManual === true
+    ) &&
     !this.isEnsuringCombatSession() &&
+    !this.isLoadingCombatPreview() &&
     !this.isRecoveringCombatState() &&
     !this.isSubmittingCombatAction() &&
     !this.isCombatRunning(),
@@ -111,10 +123,14 @@ export class ExplorationLiveCombatState {
     };
   });
   readonly combatWalkingSpeed = computed(() => this.combatTimingManifest()?.speed ?? 0);
-  readonly combatParticipants = computed(() => this.combatLiveState()?.participants ?? []);
+  readonly combatParticipants = computed(() =>
+    this.combatLiveState()?.participants ??
+    this.combatResolutionPreview()?.participants ??
+    [],
+  );
   readonly combatEvents = computed(() => this.combatLiveState()?.events ?? []);
   readonly combatTimelineRows = computed(() =>
-    combatTimelineRows(this.combatEvents(), this.combatParticipants()),
+    combatTimelineRows(this.combatEvents()),
   );
   readonly completedCombatLiveState = computed(() => {
     const state = this.combatLiveState();
@@ -201,11 +217,19 @@ export class ExplorationLiveCombatState {
         return;
       }
 
-      if (this.ensuredChallengeId === challenge.id) {
-        return;
+      if (this.combatResolutionPreview()?.sourceEntityId !== challenge.id) {
+        this.combatResolutionPreview.set(null);
+        this.combatResolutionPreviewFailed.set(false);
       }
 
-      this.ensureCombatSession(context, challenge, false);
+      if (
+        !this.combatLiveState() &&
+        !this.combatResolutionPreview() &&
+        this.previewChallengeId !== challenge.id &&
+        !this.isLoadingCombatPreview()
+      ) {
+        this.loadCombatResolutionPreview(context, challenge);
+      }
     });
 
     this.destroyRef.onDestroy(() => this.stopCombatTiming());
@@ -230,7 +254,7 @@ export class ExplorationLiveCombatState {
     const state = this.combatLiveState();
 
     if (!state) {
-      this.ensureCombatSession(context, challenge, true);
+      this.startManualCombatSession(context, challenge);
       return;
     }
 
@@ -240,12 +264,12 @@ export class ExplorationLiveCombatState {
     }
 
     if (!state.awaitingPlayerAction) {
-      this.ensureCombatSession(context, challenge, true);
+      this.recoverCombatState(context.heroId, context.difficultyKey, challenge.id, state);
       return;
     }
 
     if (!this.combatTimingManifest()) {
-      this.ensureCombatSession(context, challenge, true);
+      this.recoverCombatState(context.heroId, context.difficultyKey, challenge.id, state);
       return;
     }
 
@@ -377,20 +401,20 @@ export class ExplorationLiveCombatState {
     this.loadCombatResultDetail(result.combatResultId, sessionId);
   }
 
-  private ensureCombatSession(
+  private startManualCombatSession(
     context: { heroId: string; difficultyKey: string },
     challenge: HeroExplorationChallengeAttemptReadModel,
-    startWhenReady: boolean,
   ): void {
     const token = this.sessionToken.next();
+    const requestId = this.combatRequestId(challenge.id, 'manual-start');
 
     this.feedback.clear();
     this.ensuredChallengeId = challenge.id;
     this.isEnsuringCombatSession.set(true);
     this.liveCombat
-      .ensureSession({
+      .startManualSession({
         challengeAttemptId: challenge.id,
-        requestId: this.combatRequestId(challenge.id, 'ensure'),
+        requestId,
       })
       .pipe(
         finalize(() => {
@@ -408,12 +432,11 @@ export class ExplorationLiveCombatState {
 
           this.setCombatLiveState(state, false);
 
-          this.handleEnsuredCombatSession(
+          this.handleStartedManualCombatSession(
             context.heroId,
             context.difficultyKey,
             challenge.id,
             state,
-            startWhenReady,
           );
         },
         error: (error: unknown) => {
@@ -421,9 +444,10 @@ export class ExplorationLiveCombatState {
             return;
           }
 
-          this.logCombatRpcError('ensure_exploration_combat_session', {
-            p_challenge_attempt_id: challenge.id,
-            p_request_id: this.combatRequestId(challenge.id, 'ensure'),
+          this.logCombatRpcError('start_manual_combat_session', {
+            p_source_entity_type: 'exploration_challenge_attempt',
+            p_source_entity_id: challenge.id,
+            p_request_id: requestId,
           }, error);
           this.ensuredChallengeId = null;
           this.feedback.setError(error, 'Nie udało się rozpocząć sesji walki.');
@@ -431,26 +455,71 @@ export class ExplorationLiveCombatState {
       });
   }
 
-  private handleEnsuredCombatSession(
+  private loadCombatResolutionPreview(
+    context: { heroId: string; difficultyKey: string },
+    challenge: HeroExplorationChallengeAttemptReadModel,
+  ): void {
+    const token = this.previewToken.next();
+
+    this.previewChallengeId = challenge.id;
+    this.combatResolutionPreviewFailed.set(false);
+    this.isLoadingCombatPreview.set(true);
+    this.liveCombat
+      .getResolutionPreview({
+        challengeAttemptId: challenge.id,
+        localeKey: 'pl',
+      })
+      .pipe(
+        finalize(() => {
+          if (this.previewToken.isCurrent(token)) {
+            this.isLoadingCombatPreview.set(false);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (preview) => {
+          if (!this.isCurrentCombatPreview(token, context.heroId, context.difficultyKey, challenge.id)) {
+            return;
+          }
+
+          this.combatResolutionPreview.set(preview);
+          this.combatResolutionPreviewFailed.set(false);
+        },
+        error: (error: unknown) => {
+          if (!this.isCurrentCombatPreview(token, context.heroId, context.difficultyKey, challenge.id)) {
+            return;
+          }
+
+          this.combatResolutionPreviewFailed.set(true);
+          this.logCombatRpcError('get_combat_resolution_preview', {
+            projectUrl: environment.supabaseUrl,
+            p_source_entity_type: 'exploration_challenge_attempt',
+            p_source_entity_id: challenge.id,
+            p_locale_key: 'pl',
+          }, error);
+          this.feedback.setError(error, 'Nie udało się odczytać podglądu walki.');
+        },
+      });
+  }
+
+  private handleStartedManualCombatSession(
     heroId: string,
     difficultyKey: string,
     challengeAttemptId: string,
     state: CombatLiveStateReadModel,
-    startWhenReady: boolean,
   ): void {
     if (this.handleCompletedCombatState(heroId, difficultyKey, challengeAttemptId, state)) {
       return;
     }
 
-    if (startWhenReady && state.awaitingPlayerAction && this.combatTimingManifest()) {
+    if (state.awaitingPlayerAction && this.combatTimingManifest()) {
       this.startPlayerCombatTiming();
       return;
     }
 
-    if (startWhenReady) {
-      this.logNonActionableCombatState('ensureSession', challengeAttemptId, state);
-      this.recoverCombatState(heroId, difficultyKey, challengeAttemptId, state);
-    }
+    this.logNonActionableCombatState('startManualSession', challengeAttemptId, state);
+    this.recoverCombatState(heroId, difficultyKey, challengeAttemptId, state);
   }
 
   private recoverCombatState(
@@ -522,7 +591,7 @@ export class ExplorationLiveCombatState {
   }
 
   private logNonActionableCombatState(
-    source: 'ensureSession' | 'getState recovery',
+    source: 'startManualSession' | 'getState recovery',
     challengeAttemptId: string,
     state: CombatLiveStateReadModel,
   ): void {
@@ -555,7 +624,7 @@ export class ExplorationLiveCombatState {
   }
 
   private logCombatRpcError(
-    rpc: 'ensure_exploration_combat_session' | 'get_combat_live_state',
+    rpc: 'get_combat_resolution_preview' | 'start_manual_combat_session' | 'get_combat_live_state',
     args: Record<string, unknown>,
     error: unknown,
   ): void {
@@ -575,6 +644,8 @@ export class ExplorationLiveCombatState {
     code: string | null;
     details: string | null;
     hint: string | null;
+    status: number | null;
+    statusText: string | null;
   } {
     if (!error || typeof error !== 'object') {
       return {
@@ -582,6 +653,8 @@ export class ExplorationLiveCombatState {
         code: null,
         details: null,
         hint: null,
+        status: null,
+        statusText: null,
       };
     }
 
@@ -592,6 +665,8 @@ export class ExplorationLiveCombatState {
       code: typeof record['code'] === 'string' ? record['code'] : null,
       details: typeof record['details'] === 'string' ? record['details'] : null,
       hint: typeof record['hint'] === 'string' ? record['hint'] : null,
+      status: typeof record['status'] === 'number' ? record['status'] : null,
+      statusText: typeof record['statusText'] === 'string' ? record['statusText'] : null,
     };
   }
 
@@ -762,6 +837,20 @@ export class ExplorationLiveCombatState {
     );
   }
 
+  private isCurrentCombatPreview(
+    token: number,
+    heroId: string,
+    difficultyKey: string,
+    challengeAttemptId: string,
+  ): boolean {
+    return (
+      this.previewToken.isCurrent(token) &&
+      this.overview.isCurrentContext(heroId, difficultyKey) &&
+      this.activeChallenge()?.id === challengeAttemptId &&
+      !this.combatLiveState()
+    );
+  }
+
   private isCurrentCombatAction(
     token: number,
     heroId: string,
@@ -830,10 +919,14 @@ export class ExplorationLiveCombatState {
 
   private resetCombatSession(): void {
     this.ensuredChallengeId = null;
+    this.previewChallengeId = null;
     this.stopCombatTiming();
     this.isCombatRunning.set(false);
+    this.isLoadingCombatPreview.set(false);
+    this.combatResolutionPreviewFailed.set(false);
     this.isRecoveringCombatState.set(false);
     this.combatLiveState.set(null);
+    this.combatResolutionPreview.set(null);
     this.combatResultDetail.set(null);
     this.completedCombatChallenge.set(null);
     this.walkingPosition.set(0);

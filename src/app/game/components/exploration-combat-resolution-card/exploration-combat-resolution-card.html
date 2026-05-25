@@ -1,19 +1,19 @@
 @let hero = heroParticipant();
 @let opponent = opponentParticipant();
-@let manifest = challenge.combatTimingManifest();
+@let timing = challenge.combatTimingManifest();
 @let state = challenge.combatLiveState();
-@let timelineRows = challenge.combatTimelineRows();
 @let heroBaseRows = heroBaseStatRows();
 @let heroCombatRows = heroCombatStatRows();
 @let opponentBaseRows = opponentBaseStatRows();
 @let opponentCombatRows = opponentCombatStatRows();
+@let combatGroups = combatLogGroups();
 
 <article class="mg-container flex-col gap-lg w-100">
   <header class="flex-col gap-sm w-100 border-bottom pb-sm">
     <p class="small-caps color-muted text-xs mb-0">{{ combatResolutionLabel() }}</p>
     <h2 class="mg-section__title mg-section__title--sm mb-0">{{ challenge.challengeTitle() }}</h2>
     <div class="flex-row-start-center flex-wrap gap-xs">
-      <span class="tag-badge tag-badge--gold">Walka ręczna</span>
+      <span class="tag-badge tag-badge--golden">Walka ręczna</span>
       @if (state) {
         <span class="tag-badge tag-badge--muted">{{ challenge.combatStatusLabel() }}</span>
         <span class="tag-badge tag-badge--muted">{{ challenge.combatRoundLabel() }}</span>
@@ -24,27 +24,30 @@
   </header>
 
   <section class="flex-row-start-stretch gap-md w-100" aria-label="Ręczna walka">
+    @if (hero; as heroParticipant) {
     <article class="mg-card p-md flex-col gap-md w-100 max-w-350 flex-shrink-0">
       <div class="flex-row-between-start gap-md">
         <div class="flex-col gap-xs min-w-0">
-          <p class="small-caps color-muted text-xs mb-0">{{ participantKindLabel(hero) }}</p>
-          <h3 class="color-heading text-xl mb-0">{{ hero?.displayName ?? 'Bohater' }}</h3>
-          <span class="color-muted text-sm">{{ participantMeta(hero) }}</span>
+          <p class="small-caps color-muted text-xs mb-0">{{ participantKindLabel(heroParticipant) }}</p>
+          <h3 class="color-heading text-xl mb-0">{{ heroParticipant.displayName }}</h3>
+          <span class="color-muted text-sm">{{ participantMeta(heroParticipant) }}</span>
         </div>
         <span class="tag-badge tag-badge--success">Gracz</span>
       </div>
 
       <div class="mg-card h-px-200 flex-row-center-center radius-md">
-        <span class="mg-card w-px-100 h-px-150 flex-row-center-center radius-lg shadow-soft color-heading text-xxl font-display">{{ initials(hero) }}</span>
+        <span class="mg-card w-px-100 h-px-150 flex-row-center-center radius-lg shadow-soft color-heading text-xxl font-display">{{ initials(heroParticipant) }}</span>
       </div>
 
       <div class="flex-col gap-md">
-        <app-game-bar
-          label="Zdrowie"
-          type="hp"
-          [value]="hpValue(hero)"
-          [max]="hpMax(hero)"
-        />
+        @if (hasHp(heroParticipant)) {
+          <app-game-bar
+            label="Zdrowie"
+            type="hp"
+            [value]="hpValue(heroParticipant)"
+            [max]="hpMax(heroParticipant)"
+          />
+        }
 
         @if (heroBaseRows.length) {
           <app-stat-card title="Cechy" [rows]="heroBaseRows" [compact]="true" />
@@ -57,15 +60,28 @@
         @if (!heroBaseRows.length && !heroCombatRows.length) {
           <div class="mg-card flex-col gap-xs text-center radius-md p-md">
             <strong class="color-heading">Brak statystyk uczestnika</strong>
-            <span class="color-text text-sm">Stan walki nie zawiera wierszy statystyk dla tej strony.</span>
+            <span class="color-text text-sm">Podgląd walki nie zawiera wierszy statystyk dla tej strony.</span>
           </div>
         }
       </div>
     </article>
+    } @else {
+      <article class="mg-card p-md flex-col gap-md w-100 max-w-350 flex-shrink-0">
+        <div class="mg-card flex-col gap-xs text-center radius-md p-md">
+          @if (challenge.combatResolutionPreviewFailed()) {
+            <strong class="color-heading">Nie udało się odczytać bohatera</strong>
+            <span class="color-text text-sm">Podgląd walki nie jest teraz dostępny.</span>
+          } @else {
+            <strong class="color-heading">Ładowanie uczestnika</strong>
+            <span class="color-text text-sm">Podgląd walki pobiera dane bohatera.</span>
+          }
+        </div>
+      </article>
+    }
 
     <section class="mg-card p-lg flex-col gap-lg flex-1 min-w-0">
       <div class="mg-card flex-col gap-sm text-center radius-md p-md">
-        <span class="small-caps color-muted text-xs">{{ challenge.combatRoundLabel() }}</span>
+        <span class="small-caps color-muted text-xs">{{ actionContextLabel() }}</span>
         <h3 class="color-heading text-xl mb-0">{{ currentActionTitle() }}</h3>
         <p class="color-text text-sm mb-0">{{ currentActionHelper() }}</p>
         @if (timingHelper(); as helper) {
@@ -73,7 +89,17 @@
         }
       </div>
 
-      @if (challenge.isCombatRunning() && manifest) {
+      @if (challenge.isLoadingCombatPreview()) {
+        <div class="mg-card flex-col gap-xs text-center radius-md p-md">
+          <strong class="color-heading">Ładowanie podglądu walki</strong>
+          <span class="color-text text-sm">Uczestnicy i statystyki zostaną pobrane przed decyzją Manual/Auto.</span>
+        </div>
+      } @else if (challenge.combatResolutionPreviewFailed()) {
+        <div class="mg-card flex-col gap-xs text-center radius-md p-md">
+          <strong class="color-heading">Nie udało się odczytać podglądu walki</strong>
+          <span class="color-text text-sm">Spróbuj odświeżyć widok po potwierdzeniu stanu serwera gry.</span>
+        </div>
+      } @else if (challenge.isCombatRunning() && timing) {
         <app-walking-dead-meter
           [position]="challenge.walkingPosition()"
           [zoneStart]="challenge.combatHitWindow().start"
@@ -118,7 +144,7 @@
       } @else {
         <div class="mg-card flex-col gap-xs text-center radius-md p-md">
           <strong class="color-heading">Brak okna timingu</strong>
-          <span class="color-text text-sm">Akcja Walking Dead pojawi się, gdy stan walki zwróci manifest gracza.</span>
+          <span class="color-text text-sm">Akcja Walking Dead pojawi się, gdy stan walki udostępni okno akcji gracza.</span>
         </div>
       }
 
@@ -137,27 +163,30 @@
       }
     </section>
 
+    @if (opponent; as opponentParticipant) {
     <article class="mg-card p-md flex-col gap-md w-100 max-w-350 flex-shrink-0">
       <div class="flex-row-between-start gap-md">
         <div class="flex-col gap-xs min-w-0">
-          <p class="small-caps color-muted text-xs mb-0">{{ participantKindLabel(opponent) }}</p>
-          <h3 class="color-heading text-xl mb-0">{{ opponent?.displayName ?? 'Przeciwnik' }}</h3>
-          <span class="color-muted text-sm">{{ participantMeta(opponent) }}</span>
+          <p class="small-caps color-muted text-xs mb-0">{{ participantKindLabel(opponentParticipant) }}</p>
+          <h3 class="color-heading text-xl mb-0">{{ opponentParticipant.displayName }}</h3>
+          <span class="color-muted text-sm">{{ participantMeta(opponentParticipant) }}</span>
         </div>
         <span class="tag-badge tag-badge--danger">Wróg</span>
       </div>
 
       <div class="mg-card h-px-200 flex-row-center-center radius-md">
-        <span class="mg-card w-px-100 h-px-150 flex-row-center-center radius-lg shadow-soft error-text text-xxl font-display">{{ initials(opponent) }}</span>
+        <span class="mg-card w-px-100 h-px-150 flex-row-center-center radius-lg shadow-soft error-text text-xxl font-display">{{ initials(opponentParticipant) }}</span>
       </div>
 
       <div class="flex-col gap-md">
-        <app-game-bar
-          label="Zdrowie"
-          type="hp"
-          [value]="hpValue(opponent)"
-          [max]="hpMax(opponent)"
-        />
+        @if (hasHp(opponentParticipant)) {
+          <app-game-bar
+            label="Zdrowie"
+            type="hp"
+            [value]="hpValue(opponentParticipant)"
+            [max]="hpMax(opponentParticipant)"
+          />
+        }
 
         @if (opponentBaseRows.length) {
           <app-stat-card title="Cechy" [rows]="opponentBaseRows" [compact]="true" />
@@ -170,35 +199,71 @@
         @if (!opponentBaseRows.length && !opponentCombatRows.length) {
           <div class="mg-card flex-col gap-xs text-center radius-md p-md">
             <strong class="color-heading">Brak statystyk uczestnika</strong>
-            <span class="color-text text-sm">Stan walki nie zawiera wierszy statystyk dla tej strony.</span>
+            <span class="color-text text-sm">Podgląd walki nie zawiera wierszy statystyk dla tej strony.</span>
           </div>
         }
       </div>
     </article>
+    } @else {
+      <article class="mg-card p-md flex-col gap-md w-100 max-w-350 flex-shrink-0">
+        <div class="mg-card flex-col gap-xs text-center radius-md p-md">
+          @if (challenge.combatResolutionPreviewFailed()) {
+            <strong class="color-heading">Nie udało się odczytać przeciwnika</strong>
+            <span class="color-text text-sm">Podgląd walki nie jest teraz dostępny.</span>
+          } @else {
+            <strong class="color-heading">Ładowanie uczestnika</strong>
+            <span class="color-text text-sm">Podgląd walki pobiera dane przeciwnika.</span>
+          }
+        </div>
+      </article>
+    }
   </section>
 
-  @if (timelineRows.length) {
-    <section class="mg-card p-md flex-col gap-sm w-100" aria-label="Przebieg starcia">
-      <div class="flex-row-between-center flex-col-sm gap-xs">
-        <p class="small-caps color-muted text-xs m-0">Przebieg starcia</p>
-        <span class="color-muted text-xs">{{ timelineRows.length }} zdarzeń</span>
-      </div>
+  @if (state) {
+    <section class="mg-card combat-log p-md flex-col gap-md w-100" aria-label="Przebieg starcia">
+      <p class="small-caps color-muted text-xs m-0">Przebieg starcia</p>
 
-      <div class="flex-col gap-xs">
-        @for (row of timelineRows; track row.id) {
-          <div class="mg-data-row">
-            <span class="mg-data-row__label">{{ row.meta }}</span>
-            <strong class="mg-data-row__value">{{ row.title }}</strong>
-            @if (row.details.length) {
-              <span class="color-text text-sm">
-                @for (detail of row.details; track detail) {
-                  {{ detail }}@if (!$last) {, }
-                }
-              </span>
-            }
-          </div>
-        }
-      </div>
+      @if (combatGroups.length) {
+        <div class="mg-grid gap-sm w-100 mx-auto">
+          @for (group of combatGroups; track group.id) {
+            <section class="mg-card shadow-none mg-grid gap-sm p-sm radius-lg" [attr.aria-label]="group.label">
+              <div class="flex-row-between-center gap-md color-muted text-xs small-caps uppercase">{{ group.label }}</div>
+
+              @for (row of group.rows; track row.id) {
+                <article class="mg-card flex-row-start-center flex-col-start-start-sm gap-sm p-sm radius-md w-100">
+                  <strong class="color-heading font-extrabold w-px-100 w-100-sm flex-shrink-0 text-md">{{ row.actorLabel }}</strong>
+
+                  <div class="flex-1 min-w-0 w-100-sm">
+                    <p class="color-muted text-md lh-14 m-0">
+                      {{ row.bodyPrefix }}@if (row.attackSourceLabel) {<span class="color-heading font-black">{{ row.attackSourceLabel }}</span>}{{ row.bodySuffix }}
+                    </p>
+
+                    @for (detail of row.detailLines; track detail) {
+                      <span class="color-muted text-md lh-14">{{ detail }}</span>
+                    }
+                  </div>
+
+                  @if (row.resultLabel) {
+                    <div
+                      class="font-black text-right text-left-sm text-nowrap w-px-100 w-100-sm flex-shrink-0"
+                      [class.color-secondary]="row.tone === 'golden' || row.tone === 'muted'"
+                      [class.info-text]="row.tone === 'info'"
+                      [class.error-text]="row.tone === 'danger'"
+                      [class.success-text]="row.tone === 'success'"
+                    >
+                      {{ row.resultLabel }}
+                    </div>
+                  }
+                </article>
+              }
+            </section>
+          }
+        </div>
+      } @else {
+        <div class="mg-card shadow-none mg-grid gap-sm p-sm radius-lg">
+          <strong class="color-heading">Przebieg starcia pojawi się po pierwszej akcji.</strong>
+        </div>
+      }
     </section>
   }
 </article>

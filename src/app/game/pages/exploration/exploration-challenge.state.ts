@@ -46,11 +46,14 @@ export class ExplorationChallengeState {
   readonly activeChallenge = computed(() => this.overview.state()?.activeChallenge ?? null);
   readonly isCombatChallenge = this.liveCombatState.isCombatChallenge;
   readonly isEnsuringCombatSession = this.liveCombatState.isEnsuringCombatSession;
+  readonly isLoadingCombatPreview = this.liveCombatState.isLoadingCombatPreview;
+  readonly combatResolutionPreviewFailed = this.liveCombatState.combatResolutionPreviewFailed;
   readonly isRecoveringCombatState = this.liveCombatState.isRecoveringCombatState;
   readonly isSubmittingCombatAction = this.liveCombatState.isSubmittingCombatAction;
   readonly isCombatRunning = this.liveCombatState.isCombatRunning;
   readonly walkingPosition = this.liveCombatState.walkingPosition;
   readonly combatLiveState = this.liveCombatState.combatLiveState;
+  readonly combatResolutionPreview = this.liveCombatState.combatResolutionPreview;
   readonly combatResultDetail = this.liveCombatState.combatResultDetail;
   readonly canStartCombat = this.liveCombatState.canStartCombat;
   readonly canShowCombatStartAction = this.liveCombatState.canShowCombatStartAction;
@@ -103,7 +106,9 @@ export class ExplorationChallengeState {
     this.canUseAutoResolve(this.activeChallenge()),
   );
   readonly canShowCombatAutoResolveAction = computed(() =>
-    this.isExplorationCombatAutoResolvable(this.activeChallenge()),
+    this.isExplorationCombatAutoResolvable(this.activeChallenge()) &&
+    !this.combatLiveState() &&
+    this.combatResolutionPreview()?.canAutoResolve === true,
   );
   readonly autoResolveExplanation = computed(() =>
     this.autoResolveText(this.activeChallenge()),
@@ -124,6 +129,7 @@ export class ExplorationChallengeState {
     !this.isAutoResolvingCombat() &&
     !this.isCompleting() &&
     !this.isEnsuringCombatSession() &&
+    !this.isLoadingCombatPreview() &&
     !this.isRecoveringCombatState() &&
     !this.isSubmittingCombatAction() &&
     !this.isCombatRunning(),

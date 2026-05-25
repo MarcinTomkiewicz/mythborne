@@ -86,14 +86,15 @@ export class ArmoryPage implements OnInit {
       return right.position - left.position;
     }),
   );
-  readonly storedArmoryVisibility = computed(() => {
-    const visibility = this.armory.visibility();
+  readonly storedArmoryVisibility = computed(() => this.armory.visibility());
+  readonly equippedItemCount = computed(() =>
+    this.equipment.slots().filter((item) => Boolean(item.itemId)).length,
+  );
+  readonly storedItemCount = computed(() => {
+    const visibility = this.storedArmoryVisibility();
 
     return visibility
-      ? {
-        ...visibility,
-        visibleItemCount: this.storedArmoryItems().length,
-      }
+      ? visibility.totalOwnedItemCount - this.equippedItemCount()
       : null;
   });
   readonly selectedPaperdollItemIds = signal<string[]>([]);

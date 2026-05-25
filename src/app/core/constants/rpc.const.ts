@@ -47,7 +47,9 @@ export const RPC = {
   get_start_flow_origin_options: 'get_start_flow_origin_options',
   create_hero_start_flow: 'create_hero_start_flow',
   get_combat_turn_limit: 'get_combat_turn_limit',
-  ensure_exploration_combat_session: 'ensure_exploration_combat_session',
+  get_combat_resolution_preview: 'get_combat_resolution_preview',
+  start_manual_combat_session: 'start_manual_combat_session',
+  auto_resolve_combat_session: 'auto_resolve_combat_session',
   get_combat_live_state: 'get_combat_live_state',
   submit_combat_player_action: 'submit_combat_player_action',
   get_combat_result_detail: 'get_combat_result_detail',
@@ -169,8 +171,6 @@ export const RPC = {
   apply_hero_loadout_preset: 'apply_hero_loadout_preset',
   recover_scrapped_item: 'recover_scrapped_item',
   add_hero_remaining_actions: 'add_hero_remaining_actions',
-  auto_resolve_exploration_combat_challenge_attempt:
-    'auto_resolve_exploration_combat_challenge_attempt',
   auto_resolve_hero_exploration_challenge_attempt:
     'auto_resolve_hero_exploration_challenge_attempt',
   complete_hero_exploration_challenge_attempt:
