@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-26 — UI-BACKGROUNDS-1 accepted
+Updated: 2026-05-26 — UI-COMBAT-7 public-link fix accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -7630,7 +7630,7 @@ Pokazać nagrody, straty i akcje raportowe w source-specific sposób.
 - public copy action pojawia się tylko gdy istnieje public token/url;
 - `tsc` i build przechodzą.
 
-**Status:** Accepted/completed on 2026-05-26 as the UI-COMBAT-7 frontend/UI slice. Completed combat reports keep rewards below the shared combat timeline and before report actions, use the existing exploration reward handoff/display path, and do not render local PvP reward/loss data. Report actions now keep the internal full-report action separate from the public copy/share action; the copy action is always represented, copies only a backend-provided public path/token, and shows a safe disabled warning state when the public link is missing. The misleading same-route return action was removed because it did not change exploration state. Follow-ups outside this accepted frontend slice: backend/read-model must expose public report path/token for completed combat reports when every resolution should be shareable, and should expose a direct full report id/path when `Otwórz pełny raport` is expected instead of falling back to report center.
+**Status:** Accepted/completed on 2026-05-26 as the UI-COMBAT-7 frontend/UI slice, including the final completed-combat public-link fix. Completed combat reports keep rewards below the shared combat timeline and before report actions, use the existing exploration reward handoff/display path, and do not render local PvP reward/loss data. Report actions keep the internal full-report action separate from the public copy/share action; completed combat now uses the challenge completion `gameReportId` for `Otwórz pełny raport`, loads the private report detail through `GameReports.getActiveHeroReportDetail(reportId)` when needed, and maps `PrivateGameReportDetail.publicToken` to `/report/{publicToken}` for copying. The copy action remains visible, is enabled when a backend public path/token is available, and fails closed as a disabled warning state when no token/path is exposed. The misleading same-route return action was removed because it did not change exploration state. Follow-ups outside this accepted frontend slice: visual polish for the report action section, and backend/read-model completion of missing auto-resolve participant `baseStatRows` / `combatStatRows` if still present.
 
 ---
 

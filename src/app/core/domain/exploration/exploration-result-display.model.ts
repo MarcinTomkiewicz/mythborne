@@ -18,6 +18,7 @@ export interface ExplorationRewardTextViewModel {
 }
 
 export interface ExplorationReportActionsViewModel {
+  directReportId: string | null;
   directReportLink: string;
   directReportLabel: string;
   publicReportPath: string | null;

@@ -67,13 +67,19 @@ export function mapExplorationRewardText(input: {
   };
 }
 
-export function mapExplorationReportActions(
-  rawJson: Json | undefined,
-): ExplorationReportActionsViewModel {
-  const directReportLink = explorationDirectReportLink(rawJson);
-  const publicReportPath = explorationPublicReportPath(rawJson);
+export function mapExplorationReportActions(input: {
+  rawJson: Json | undefined;
+  directReportId?: string | null;
+  publicReportPathFromDetail?: string | null;
+}): ExplorationReportActionsViewModel {
+  const directReportId = input.directReportId ?? explorationDirectReportId(input.rawJson);
+  const directReportLink = directReportId ? `/game/reports/${directReportId}` : '/game/reports';
+  const publicReportPath = explorationPublicReportPath(input.rawJson)
+    ?? input.publicReportPathFromDetail
+    ?? null;
 
   return {
+    directReportId,
     directReportLink,
     directReportLabel: explorationDirectReportLabel(directReportLink),
     publicReportPath,
@@ -145,10 +151,8 @@ export function explorationResultOutcomeTitle(input: {
   });
 }
 
-export function explorationDirectReportLink(rawJson: Json | undefined): string {
-  const reportId = combatReportDirectReportId(rawJson);
-
-  return reportId ? `/game/reports/${reportId}` : '/game/reports';
+export function explorationDirectReportId(rawJson: Json | undefined): string | null {
+  return combatReportDirectReportId(rawJson);
 }
 
 export function explorationDirectReportLabel(link: string): string {

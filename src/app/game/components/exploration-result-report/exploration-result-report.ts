@@ -1,6 +1,8 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { GameReports } from '../../../core/services/reports/game-reports';
 import { ToastService } from '../../../core/services/ui/toast';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveHeroPortraitState } from '../../../core/services/hero/active-hero-portrait.state';
@@ -12,12 +14,15 @@ import {
 } from '../../../core/utils/combat-report-display.mapper';
 import { mapCompletedCombatStageView } from '../../../core/utils/combat-stage-display.mapper';
 import {
+  explorationDirectReportId,
+  explorationPublicReportPath,
   explorationReportRewardDisplay,
   explorationResultSourceKind,
   mapExplorationOutcomeView,
   mapExplorationReportActions,
   mapExplorationRewardText,
 } from '../../../core/utils/exploration-result-display.mapper';
+import { RequestToken } from '../../../core/utils/request-token';
 import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
 import { ExplorationChallengeState } from '../../pages/exploration/exploration-challenge.state';
 import { ExplorationRewardState } from '../../pages/exploration/exploration-reward.state';
@@ -39,11 +44,15 @@ import { ExplorationOutcomeReportLayout } from '../exploration-outcome-report-la
   host: { class: 'd-block w-100' },
 })
 export class ExplorationResultReport {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly reports = inject(GameReports);
   readonly challenge = inject(ExplorationChallengeState);
   readonly rewardState = inject(ExplorationRewardState);
   private readonly toast = inject(ToastService);
   private readonly activeHero = inject(ActiveHero);
   private readonly activeHeroPortrait = inject(ActiveHeroPortraitState);
+  private readonly reportDetailToken = new RequestToken();
+  private readonly publicReportPathFromDetail = signal<string | null>(null);
   readonly combatResultDetail = computed(() => this.challenge.combatResultDetail());
   readonly completedChallenge = computed(() => this.challenge.completedCombatChallenge());
   readonly reportSourceKind = computed(() =>
@@ -95,8 +104,19 @@ export class ExplorationResultReport {
       },
     });
   });
+  readonly directReportId = computed(() =>
+    this.challenge.currentChallengeResult()?.gameReportId ??
+      explorationDirectReportId(this.combatResultDetail()?.rawJson),
+  );
+  readonly payloadPublicReportPath = computed(() =>
+    explorationPublicReportPath(this.combatResultDetail()?.rawJson),
+  );
   readonly reportActions = computed(() =>
-    mapExplorationReportActions(this.combatResultDetail()?.rawJson),
+    mapExplorationReportActions({
+      rawJson: this.combatResultDetail()?.rawJson,
+      directReportId: this.directReportId(),
+      publicReportPathFromDetail: this.publicReportPathFromDetail(),
+    }),
   );
   readonly reportRewardDisplay = computed(() =>
     explorationReportRewardDisplay(this.rewardState.rewardDisplay()),
@@ -108,6 +128,22 @@ export class ExplorationResultReport {
       sourceKind: this.reportSourceKind(),
     }),
   );
+
+  constructor() {
+    effect(() => {
+      const reportId = this.directReportId();
+      const payloadPath = this.payloadPublicReportPath();
+
+      this.reportDetailToken.next();
+      this.publicReportPathFromDetail.set(null);
+
+      if (!reportId || payloadPath) {
+        return;
+      }
+
+      this.loadPublicReportPathFromDetail(reportId);
+    });
+  }
 
   copyPublicReportLink(): void {
     const link = this.reportActions().publicReportPath;
@@ -125,5 +161,31 @@ export class ExplorationResultReport {
           ? 'Link do raportu został skopiowany.'
           : 'Nie udało się skopiować linku do raportu.',
       ));
+  }
+
+  private loadPublicReportPathFromDetail(reportId: string): void {
+    const token = this.reportDetailToken.next();
+
+    this.reports
+      .getActiveHeroReportDetail(reportId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (report) => {
+          if (!this.reportDetailToken.isCurrent(token) || this.directReportId() !== reportId) {
+            return;
+          }
+
+          this.publicReportPathFromDetail.set(
+            report.publicToken ? `/report/${report.publicToken}` : null,
+          );
+        },
+        error: () => {
+          if (!this.reportDetailToken.isCurrent(token) || this.directReportId() !== reportId) {
+            return;
+          }
+
+          this.publicReportPathFromDetail.set(null);
+        },
+      });
   }
 }
