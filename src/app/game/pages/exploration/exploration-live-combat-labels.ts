@@ -1,8 +1,14 @@
 import {
+  CombatDisplayLogGroup,
+  CombatDisplayLogRow,
+  CombatDisplayValueTone,
+} from '../../../core/domain/combat/combat-display.model';
+import {
   CombatLiveEventReadModel,
   CombatLiveParticipantReadModel,
   CombatTimingManifestReadModel,
 } from '../../../core/domain/combat/combat-live.model';
+import { formatCombatLogResultLabel } from '../../../core/utils/combat-log-display-text';
 
 export interface CombatTimelineRow {
   id: string;
@@ -12,24 +18,9 @@ export interface CombatTimelineRow {
   details: string[];
 }
 
-export type CombatLogTone = 'danger' | 'golden' | 'info' | 'success' | 'muted';
-
-export interface CombatActiveLogGroup {
-  id: string;
-  label: string;
-  rows: CombatActiveLogRow[];
-}
-
-export interface CombatActiveLogRow {
-  id: string;
-  actorLabel: string;
-  bodyPrefix: string;
-  attackSourceLabel: string | null;
-  bodySuffix: string;
-  detailLines: string[];
-  resultLabel: string | null;
-  tone: CombatLogTone;
-}
+export type CombatLogTone = CombatDisplayValueTone;
+export type CombatActiveLogGroup = CombatDisplayLogGroup;
+export type CombatActiveLogRow = CombatDisplayLogRow;
 
 type CombatLogOutcome =
   'critical' | 'lethal' | 'damage' | 'miss' | 'evade' | 'heal' | 'effect' | 'danger' | 'unknown';
@@ -508,12 +499,6 @@ function combatResultLabel(damageDisplay: string | null, outcome: CombatLogOutco
   }
 
   return null;
-}
-
-function formatCombatLogResultLabel(value: string): string {
-  return value.replace(/\d+\.\d+/g, (match) =>
-    match.replace(/0+$/, '').replace(/\.$/, ''),
-  );
 }
 
 function uniquePlayerFacingText(

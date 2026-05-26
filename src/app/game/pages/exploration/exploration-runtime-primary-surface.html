@@ -2,7 +2,7 @@
 
 @if (state?.hasExploration && state?.exploration) {
   @if (challenge.completedCombatLiveState()) {
-    <app-exploration-combat-result-report />
+    <app-exploration-result-report />
   } @else if (challenge.activeChallenge()) {
     <app-exploration-active-challenge-report />
   } @else if (step.currentStepResult()) {

@@ -1,0 +1,40 @@
+@let model = stage();
+
+<article class="mg-container flex-col gap-lg w-100">
+  @if (model.header; as header) {
+    <header class="flex-col gap-sm w-100 border-bottom pb-sm">
+      <p class="small-caps color-muted text-xs mb-0">{{ header.label }}</p>
+      <h2 class="mg-section__title mg-section__title--sm mb-0">{{ header.title }}</h2>
+      <div class="flex-row-start-center flex-wrap gap-xs">
+        <span class="tag-badge tag-badge--golden">{{ header.modeBadgeLabel }}</span>
+        @if (header.statusLabel) {
+          <span class="tag-badge tag-badge--muted">{{ header.statusLabel }}</span>
+        }
+        @if (header.roundLabel) {
+          <span class="tag-badge tag-badge--muted">{{ header.roundLabel }}</span>
+        }
+        @if (!header.statusLabel && !header.roundLabel) {
+          <span class="tag-badge tag-badge--muted">{{ header.waitingLabel }}</span>
+        }
+      </div>
+    </header>
+  }
+
+  <app-combat-surface
+    [ariaLabel]="model.ariaLabel"
+    [leftParticipant]="model.leftParticipant"
+    [rightParticipant]="model.rightParticipant"
+    [centerPanel]="model.centerPanel"
+    [logGroups]="model.log.groups"
+    [showLog]="model.log.show"
+    [logTitle]="model.log.title"
+    [logSubtitle]="model.log.subtitle"
+    [logEmptyText]="model.log.emptyText"
+    [leftEmptyTitle]="model.emptyParticipants.leftTitle"
+    [leftEmptyText]="model.emptyParticipants.leftText"
+    [rightEmptyTitle]="model.emptyParticipants.rightTitle"
+    [rightEmptyText]="model.emptyParticipants.rightText"
+    (centerAction)="action.emit($event)"
+    (timingStrike)="timingStrike.emit()"
+  />
+</article>

@@ -7514,6 +7514,8 @@ Zbudować completed combat report zgodny konstrukcyjnie z attacker victory / def
 - brak lokalnego outcome resolvera;
 - `tsc` i build przechodzą.
 
+**Status:** Accepted/completed on 2026-05-26 as the UI-COMBAT-5 frontend/UI slice. Active and completed combat now use the shared combat stage/surface presentation path, completed participant cards keep visible base/combat stat rows, and the completed report keeps the accepted actor/body/result combat log structure with source emphasis and no local `combat-log__*` SCSS. Exploration code is now a thin adapter around shared combat presentation, while the exploration result wrapper owns outcome/reward/actions. JSON report text extraction no longer exposes generic combat-report `...keys` APIs and uses the shared `json-display-text` utility; generated types, DB/RPC, specs and status docs were not touched during the final code cleanup before acceptance. Follow-ups outside this accepted slice: add a shared outcome surface tone pattern for success/danger/warning result banners if the UI system gains one; make combat participant display models image-ready with hero origin images and a PvE fallback such as `public/images/warrior.png`; apply the same combat/report pattern in Reports Center; backend/Migrator owns combat stat drift and incorrect `0 obrażeń` semantics.
+
 ---
 
 # UI-COMBAT-6 — Combat timeline row renderer

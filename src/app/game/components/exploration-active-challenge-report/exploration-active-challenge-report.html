@@ -1,6 +1,10 @@
 @if (challenge.activeChallenge()) {
   @if (challenge.isCombatChallenge()) {
-    <app-exploration-combat-resolution-card />
+    <app-combat-stage
+      [stage]="combatStage()"
+      (action)="handleCombatStageAction($event)"
+      (timingStrike)="submitCombatStrike()"
+    />
   } @else {
     <app-exploration-outcome-report-layout
       label="Aktywne wyzwanie"

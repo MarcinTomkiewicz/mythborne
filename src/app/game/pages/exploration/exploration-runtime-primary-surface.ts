@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ExplorationActiveChallengeReport } from '../../components/exploration-active-challenge-report/exploration-active-challenge-report';
-import { ExplorationCombatResultReport } from '../../components/exploration-combat-result-report/exploration-combat-result-report';
+import { ExplorationResultReport } from '../../components/exploration-result-report/exploration-result-report';
 import { ExplorationStepHandoffCard } from '../../components/exploration-step-handoff-card/exploration-step-handoff-card';
 import { PendingTimerOracle } from '../../../shared/pending-timer-oracle/pending-timer-oracle';
 import { ExplorationChallengeState } from './exploration-challenge.state';
@@ -13,7 +13,7 @@ import { ExplorationStepState } from './exploration-step.state';
   standalone: true,
   imports: [
     ExplorationActiveChallengeReport,
-    ExplorationCombatResultReport,
+    ExplorationResultReport,
     ExplorationStepHandoffCard,
     PendingTimerOracle,
   ],

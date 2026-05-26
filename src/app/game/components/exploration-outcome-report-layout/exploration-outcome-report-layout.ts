@@ -1,4 +1,5 @@
 import { Component, input } from '@angular/core';
+import { ExplorationResultOutcomeTone } from '../../../core/domain/exploration/exploration-result-display.model';
 
 @Component({
   selector: 'app-exploration-outcome-report-layout',
@@ -12,4 +13,5 @@ export class ExplorationOutcomeReportLayout {
   readonly title = input.required<string>();
   readonly description = input.required<string>();
   readonly iconClass = input('pi pi-compass');
+  readonly titleTone = input<ExplorationResultOutcomeTone | null>(null);
 }

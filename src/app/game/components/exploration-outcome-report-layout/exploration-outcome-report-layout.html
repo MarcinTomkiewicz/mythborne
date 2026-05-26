@@ -10,7 +10,15 @@
           <span class="small-caps color-muted text-xs">{{ statusLabel() }}</span>
         }
       </div>
-      <h3 class="color-heading m-0">{{ title() }}</h3>
+      <h3
+        class="m-0"
+        [class.success-text]="titleTone() === 'success'"
+        [class.error-text]="titleTone() === 'danger'"
+        [class.warn-text]="titleTone() === 'warning'"
+        [class.color-heading]="titleTone() === null || titleTone() === 'neutral'"
+      >
+        {{ title() }}
+      </h3>
       @if (description()) {
         <p class="color-text m-0">{{ description() }}</p>
       }
