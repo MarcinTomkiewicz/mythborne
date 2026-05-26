@@ -36,6 +36,22 @@
   background: inherit;
 }
 
+.mg-game-shell__main--route-background {
+  background-color: v.$color-shell-bg;
+  background-image:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-bg 30%, transparent),
+      color-mix(in srgb, v.$color-shell-bg 30%, transparent)
+    ),
+    var(--mg-route-background-image),
+    v.$bg-gradient;
+  background-attachment: fixed, fixed, scroll;
+  background-position: center, center, top center;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: cover, cover, 100% 100%;
+}
+
 .mg-game-shell__main > .mg-container {
   max-width: v.$shell-container-max-width;
 }

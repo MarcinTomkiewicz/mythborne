@@ -9,7 +9,11 @@
         <app-game-sidebar></app-game-sidebar>
       </aside>
 
-      <main class="mg-game-shell__main flex-1 min-w-0 w-100">
+      <main
+        class="mg-game-shell__main flex-1 min-w-0 w-100"
+        [class.mg-game-shell__main--route-background]="routeBackgroundImage() !== null"
+        [style.--mg-route-background-image]="routeBackgroundImage()"
+      >
         <div
           class="p-md w-100"
           [class.max-w-none]="isWideContent()"

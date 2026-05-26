@@ -9,6 +9,15 @@ import { GameTopbar } from '../game-topbar/game-topbar';
 import { MembershipBlockedNotice } from '../membership-blocked-notice/membership-blocked-notice';
 import { StaffGameplayBlockedNotice } from '../staff-gameplay-blocked-notice/staff-gameplay-blocked-notice';
 
+const ROUTE_BACKGROUNDS: ReadonlyArray<readonly [pathPrefix: string, image: string]> = [
+  ['/hero/dashboard', "url('/images/backgrounds/main-background.png')"],
+  ['/hero/attributes', "url('/images/backgrounds/attributes-background.png')"],
+  ['/game/exploration', "url('/images/backgrounds/exploration-background.png')"],
+  ['/game/armory', "url('/images/backgrounds/armory-background.png')"],
+  ['/game/mansion', "url('/images/backgrounds/mansion-background.png')"],
+  ['/game/vicinity', "url('/images/backgrounds/vicinity-background.png')"],
+];
+
 @Component({
   selector: 'app-shell',
   imports: [
@@ -40,6 +49,11 @@ export class AppShell {
       url.startsWith('/hero/dashboard') ||
       url.startsWith('/hero/attributes')
     );
+  });
+  readonly routeBackgroundImage = computed(() => {
+    const path = this.currentUrl().split(/[?#]/, 1)[0];
+
+    return ROUTE_BACKGROUNDS.find(([prefix]) => path.startsWith(prefix))?.[1] ?? null;
   });
   readonly activeServerAccess = this.activeServer.access;
   readonly isGameplayRoute = computed(

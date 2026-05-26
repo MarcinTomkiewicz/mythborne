@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-26 — UI-COMBAT-7 accepted
+Updated: 2026-05-26 — UI-BACKGROUNDS-1 accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -10126,6 +10126,12 @@ Rules:
 - PvP read-only pages should be grouped as readiness/diagnostics, not separate top-level dashboard cards;
 - Scrapped item recovery belongs under Moderation & Anti-abuse;
 - governed balance/config changes should use active balance draft flow when the DB/RPC path exists.
+
+# UI-BACKGROUNDS-1 — Route backgrounds for main game screens
+
+**Status:** Accepted/completed on 2026-05-26. Main game route backgrounds now use the shared app shell/main content mechanism instead of per-page background SCSS. `AppShell` maps `/hero/dashboard`, `/hero/attributes`, `/game/exploration`, `/game/armory`, `/game/mansion` and `/game/vicinity*` to existing assets in `public/images/backgrounds/`, binds the image through `--mg-route-background-image`, and the shared `.mg-game-shell__main--route-background` layer in `base/_game-shell.scss` renders the centered cover background only inside the central main area. Sidebar/topbar remain outside the background target, DB/RPC/generated types were not touched, and no page-local background hacks were added. Follow-up outside this task: later UI polish may add a shared `mg-card`/surface opacity or transparency variant for route-background contexts.
+
+---
 
 # 22. UI-OPEN — Open questions
 
