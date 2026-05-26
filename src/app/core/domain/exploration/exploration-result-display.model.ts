@@ -21,5 +21,7 @@ export interface ExplorationReportActionsViewModel {
   directReportLink: string;
   directReportLabel: string;
   publicReportPath: string | null;
-  hasPublicReportLink: boolean;
+  publicReportCopyLabel: string;
+  publicReportCopyDisabled: boolean;
+  publicReportUnavailableMessage: string | null;
 }

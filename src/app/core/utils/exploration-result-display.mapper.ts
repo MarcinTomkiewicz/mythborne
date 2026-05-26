@@ -77,7 +77,13 @@ export function mapExplorationReportActions(
     directReportLink,
     directReportLabel: explorationDirectReportLabel(directReportLink),
     publicReportPath,
-    hasPublicReportLink: publicReportPath !== null,
+    publicReportCopyLabel: publicReportPath
+      ? 'Kopiuj link do raportu'
+      : 'Link publiczny niedostępny',
+    publicReportCopyDisabled: publicReportPath === null,
+    publicReportUnavailableMessage: publicReportPath === null
+      ? 'Publiczny link raportu nie jest dostępny w bieżącym odczycie raportu.'
+      : null,
   };
 }
 

@@ -77,16 +77,18 @@
         <a [routerLink]="reportActions().directReportLink" class="color-heading text-sm">
           {{ reportActions().directReportLabel }}
         </a>
-        @if (reportActions().hasPublicReportLink) {
-          <p-button
-            type="button"
-            label="Kopiuj link do raportu"
-            severity="secondary"
-            [text]="true"
-            (onClick)="copyPublicReportLink()"
-          />
-        }
+        <p-button
+          type="button"
+          [label]="reportActions().publicReportCopyLabel"
+          severity="secondary"
+          [text]="true"
+          [disabled]="reportActions().publicReportCopyDisabled"
+          (onClick)="copyPublicReportLink()"
+        />
       </div>
+      @if (reportActions().publicReportUnavailableMessage; as message) {
+        <p class="warn-text text-sm m-0">{{ message }}</p>
+      }
     </section>
   </app-exploration-outcome-report-layout>
 }
