@@ -1,0 +1,29 @@
+@let item = row();
+
+<article class="mg-card flex-row-start-center flex-col-start-start-sm gap-sm p-sm radius-md w-100">
+  <strong class="color-heading font-extrabold w-px-100 w-100-sm flex-shrink-0 text-md">
+    {{ item.actorLabel }}
+  </strong>
+
+  <div class="flex-1 min-w-0 w-100-sm">
+    <p class="color-muted text-md lh-14 m-0">
+      {{ item.bodyPrefix }}@if (item.attackSourceLabel) {<span class="color-heading font-black">{{ item.attackSourceLabel }}</span>}{{ item.bodySuffix }}
+    </p>
+
+    @for (detail of item.detailLines; track detail) {
+      <span class="color-muted text-md lh-14 d-block">{{ detail }}</span>
+    }
+  </div>
+
+  @if (item.resultLabel) {
+    <div
+      class="font-black text-right text-left-sm text-nowrap w-px-100 w-100-sm flex-shrink-0"
+      [class.color-secondary]="item.tone === 'golden' || item.tone === 'muted'"
+      [class.info-text]="item.tone === 'info'"
+      [class.error-text]="item.tone === 'danger'"
+      [class.success-text]="item.tone === 'success'"
+    >
+      {{ item.resultLabel }}
+    </div>
+  }
+</article>

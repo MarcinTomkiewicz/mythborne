@@ -13,33 +13,7 @@
           <div class="flex-row-between-center gap-md color-muted text-xs small-caps uppercase">{{ group.label }}</div>
 
           @for (row of group.rows; track row.id) {
-            <article class="mg-card flex-row-start-center flex-col-start-start-sm gap-sm p-sm radius-md w-100">
-              <strong class="color-heading font-extrabold w-px-100 w-100-sm flex-shrink-0 text-md">
-                {{ row.actorLabel }}
-              </strong>
-
-              <div class="flex-1 min-w-0 w-100-sm">
-                <p class="color-muted text-md lh-14 m-0">
-                  {{ row.bodyPrefix }}@if (row.attackSourceLabel) {<span class="color-heading font-black">{{ row.attackSourceLabel }}</span>}{{ row.bodySuffix }}
-                </p>
-
-                @for (detail of row.detailLines; track detail) {
-                  <span class="color-muted text-md lh-14 d-block">{{ detail }}</span>
-                }
-              </div>
-
-              @if (row.resultLabel) {
-                <div
-                  class="font-black text-right text-left-sm text-nowrap w-px-100 w-100-sm flex-shrink-0"
-                  [class.color-secondary]="row.tone === 'golden' || row.tone === 'muted'"
-                  [class.info-text]="row.tone === 'info'"
-                  [class.error-text]="row.tone === 'danger'"
-                  [class.success-text]="row.tone === 'success'"
-                >
-                  {{ row.resultLabel }}
-                </div>
-              }
-            </article>
+            <app-combat-log-row [row]="row" />
           }
         </section>
       }

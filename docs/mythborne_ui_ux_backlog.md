@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-26 — UI-COMBAT-5 follow-up accepted
+Updated: 2026-05-26 — UI-COMBAT-6 accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -7572,6 +7572,8 @@ Ujednolicić renderowanie timeline rows dla active log i completed report.
 - renderer obsługuje typowe presentation kinds;
 - brak raw JSON i debug eventów w player-facing UI;
 - `tsc` i build przechodzą.
+
+**Status:** Accepted/completed on 2026-05-26 as the UI-COMBAT-6 frontend/UI slice. `CombatLogRow` is now a narrow presentational renderer for `CombatDisplayLogRow`, while `CombatLogPanel` keeps ownership of combat log groups/rounds and delegates only individual rows. Active and completed combat keep the accepted actor/body/result row structure, source emphasis, utility-driven tones and no local combat-log SCSS. No mapper, DB/RPC, generated types, Walking Dead, participant card or report-flow changes were made for this slice. The unrelated focused spec fixture failure in item-generation specs does not block this accepted task.
 
 ---
 
