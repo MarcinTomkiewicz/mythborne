@@ -87,6 +87,83 @@
   @include game-shell-selected-card;
 }
 
+@mixin semantic-card($color, $surface) {
+  border-color: color-mix(in srgb, #{$color} 44%, transparent);
+  background:
+    radial-gradient(
+      circle at top,
+      color-mix(in srgb, #{$color} 12%, transparent),
+      transparent 10rem
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #{$surface} 90%, #{$color}),
+      #{$surface}
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #{$color} 22%, transparent),
+    inset 0 0 1.15rem color-mix(in srgb, #{$color} 8%, transparent),
+    0 0 0 1px color-mix(in srgb, #{$color} 14%, transparent),
+    v.$shadow-soft;
+}
+
+.mg-card--success,
+.mg-card.mg-card--success:hover,
+.mg-card.mg-card--success:focus-visible,
+.mg-card.mg-card--success:focus-within {
+  @include semantic-card(v.$color-success, v.$color-bg-surface);
+}
+
+.mg-card--danger,
+.mg-card.mg-card--danger:hover,
+.mg-card.mg-card--danger:focus-visible,
+.mg-card.mg-card--danger:focus-within {
+  @include semantic-card(v.$color-danger, v.$color-bg-surface);
+}
+
+.mg-card--warning,
+.mg-card.mg-card--warning:hover,
+.mg-card.mg-card--warning:focus-visible,
+.mg-card.mg-card--warning:focus-within {
+  @include semantic-card(v.$color-warn, v.$color-bg-surface);
+}
+
+.mg-game-shell .mg-card--success,
+.mg-game-shell .mg-card.mg-card--success:hover,
+.mg-game-shell .mg-card.mg-card--success:focus-visible,
+.mg-game-shell .mg-card.mg-card--success:focus-within {
+  @include semantic-card(v.$color-success, v.$color-shell-surface);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, v.$color-success 22%, transparent),
+    inset 0 0 1.15rem color-mix(in srgb, v.$color-success 8%, transparent),
+    0 0 0 1px color-mix(in srgb, v.$color-success 14%, transparent),
+    v.$shadow-premium;
+}
+
+.mg-game-shell .mg-card--danger,
+.mg-game-shell .mg-card.mg-card--danger:hover,
+.mg-game-shell .mg-card.mg-card--danger:focus-visible,
+.mg-game-shell .mg-card.mg-card--danger:focus-within {
+  @include semantic-card(v.$color-danger, v.$color-shell-surface);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, v.$color-danger 22%, transparent),
+    inset 0 0 1.15rem color-mix(in srgb, v.$color-danger 8%, transparent),
+    0 0 0 1px color-mix(in srgb, v.$color-danger 14%, transparent),
+    v.$shadow-premium;
+}
+
+.mg-game-shell .mg-card--warning,
+.mg-game-shell .mg-card.mg-card--warning:hover,
+.mg-game-shell .mg-card.mg-card--warning:focus-visible,
+.mg-game-shell .mg-card.mg-card--warning:focus-within {
+  @include semantic-card(v.$color-warn, v.$color-shell-surface);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, v.$color-warn 22%, transparent),
+    inset 0 0 1.15rem color-mix(in srgb, v.$color-warn 8%, transparent),
+    0 0 0 1px color-mix(in srgb, v.$color-warn 14%, transparent),
+    v.$shadow-premium;
+}
+
 .mg-card--interactive {
   transition:
     border-color v.$transition-fast,

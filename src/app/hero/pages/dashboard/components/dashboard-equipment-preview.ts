@@ -1,5 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { DashboardPageFacade } from '../../../../core/services/hero/dashboard-page.facade';
+import { originPaperdollImageUrl } from '../../../../core/utils/origin-mappers';
 import { EquipmentPreview } from '../../../../shared/equipment-preview/equipment-preview';
 
 @Component({
@@ -13,10 +14,6 @@ export class DashboardEquipmentPreview {
   readonly page = input.required<DashboardPageFacade>();
   readonly compact = input(false);
   readonly paperdollImageUrl = computed(() => {
-    const originKey = this.page().origin()?.key;
-
-    return originKey
-      ? `/images/paperdolls/${originKey.toLowerCase()}.png`
-      : '/images/warrior.png';
+    return originPaperdollImageUrl(this.page().origin()?.key) ?? '/images/warrior.png';
   });
 }

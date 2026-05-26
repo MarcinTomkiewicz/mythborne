@@ -11,9 +11,19 @@ export function mapOrigin(row: Row<'origin'>): Origin {
     key: row.key,
     name: row.name,
     description: row.description ?? null,
-    imageUrl: `/images/origins/${row.key.toLowerCase()}.png`,
+    imageUrl: originImageUrl(row.key),
     createdAt: row.created_at ?? null,
   };
+}
+
+export function originImageUrl(originKey: string): string {
+  return `/images/origins/${originKey.toLowerCase()}.png`;
+}
+
+export function originPaperdollImageUrl(originKey: string | null | undefined): string | null {
+  return originKey
+    ? `/images/paperdolls/${originKey.toLowerCase()}.png`
+    : null;
 }
 
 export function mapOriginBonus(row: CanonicalEntityBonusWithTemplateRow): OriginBonus {

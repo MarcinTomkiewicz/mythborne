@@ -22,6 +22,8 @@ export function mapLiveCombatStageView(input: CombatLiveStageViewInput): CombatS
           participant: pair.left,
           badgeLabel: 'Gracz',
           badgeTone: 'success',
+          activeHeroId: input.activeHeroId ?? null,
+          activeHeroPortraitSrc: input.activeHeroPortraitSrc ?? null,
         })
       : null,
     rightParticipant: pair.right
@@ -29,6 +31,8 @@ export function mapLiveCombatStageView(input: CombatLiveStageViewInput): CombatS
           participant: pair.right,
           badgeLabel: 'Wróg',
           badgeTone: 'danger',
+          activeHeroId: input.activeHeroId ?? null,
+          activeHeroPortraitSrc: input.activeHeroPortraitSrc ?? null,
         })
       : null,
     centerPanel: mapLiveCombatCenterPanel({

@@ -1,5 +1,10 @@
 <article class="flex-col gap-lg w-100">
-  <section class="mg-card mg-card--selected p-lg flex-row-start-center flex-col-sm gap-lg w-100">
+  <section
+    class="mg-card mg-card--selected p-lg flex-row-start-center flex-col-sm gap-lg w-100"
+    [class.mg-card--success]="titleTone() === 'success'"
+    [class.mg-card--danger]="titleTone() === 'danger'"
+    [class.mg-card--warning]="titleTone() === 'warning'"
+  >
     <span class="mg-card p-sm flex-row-center-center flex-none square-11" aria-hidden="true">
       <i class="{{ iconClass() }} text-xxl" aria-hidden="true"></i>
     </span>

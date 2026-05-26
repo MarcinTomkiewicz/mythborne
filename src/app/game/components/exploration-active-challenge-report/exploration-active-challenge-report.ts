@@ -4,6 +4,8 @@ import { ExplorationChallengeAutoResolutionCard } from '../exploration-challenge
 import { ExplorationChallengeDetailsCard } from '../exploration-challenge-details-card/exploration-challenge-details-card';
 import { ExplorationChallengePendingRewardCard } from '../exploration-challenge-pending-reward-card/exploration-challenge-pending-reward-card';
 import { CombatStage } from '../combat/combat-stage';
+import { ActiveHero } from '../../../core/services/hero/active-hero';
+import { ActiveHeroPortraitState } from '../../../core/services/hero/active-hero-portrait.state';
 import { ExplorationChallengeState } from '../../pages/exploration/exploration-challenge.state';
 import { combatActiveLogGroups } from '../../pages/exploration/exploration-live-combat-labels';
 import { mapLiveCombatStageView } from '../../../core/utils/combat-stage-display.mapper';
@@ -23,6 +25,8 @@ import { mapLiveCombatStageView } from '../../../core/utils/combat-stage-display
 })
 export class ExplorationActiveChallengeReport {
   readonly challenge = inject(ExplorationChallengeState);
+  private readonly activeHero = inject(ActiveHero);
+  private readonly activeHeroPortrait = inject(ActiveHeroPortraitState);
   readonly combatStageLabel = computed(() =>
     this.challenge.activeChallenge()?.trialDefinitionId
       ? 'Próba bojowa'
@@ -43,6 +47,8 @@ export class ExplorationActiveChallengeReport {
       },
       ariaLabel: 'Ręczna walka',
       participants: this.challenge.combatParticipants(),
+      activeHeroId: this.activeHero.state()?.heroId ?? null,
+      activeHeroPortraitSrc: this.activeHeroPortrait.portraitSrc(),
       log: {
         groups: this.combatLogGroups(),
         show: this.challenge.combatLiveState() !== null,

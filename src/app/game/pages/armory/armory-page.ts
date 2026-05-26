@@ -21,6 +21,7 @@ import {
   storedArmoryItems,
   storedArmoryShelves,
 } from '../../../core/utils/armory-shelf-display';
+import { originPaperdollImageUrl } from '../../../core/utils/origin-mappers';
 import { armoryBulkMoveToastMessage } from '../../../core/utils/armory-bulk-move-feedback';
 import { equipmentActionToastMessage } from '../../../core/utils/equipment-action-feedback';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
@@ -71,11 +72,7 @@ export class ArmoryPage implements OnInit {
     ),
   );
   readonly paperdollImageUrl = computed(() => {
-    const originKey = this.page.origin()?.key;
-
-    return originKey
-      ? `/images/paperdolls/${originKey.toLowerCase()}.png`
-      : '/images/warrior.png';
+    return originPaperdollImageUrl(this.page.origin()?.key) ?? '/images/warrior.png';
   });
   readonly displayShelves = computed(() =>
     completeArmoryShelfDisplay(this.storedArmoryShelves()).sort((left, right) => {

@@ -10,32 +10,46 @@
           class="text-sm"
           [class.color-muted]="row.avatarTone !== 'danger'"
           [class.error-text]="row.avatarTone === 'danger'"
+          [class.success-text]="row.avatarTone === 'success'"
         >
           {{ row.metaLabel }}
         </span>
       }
     </div>
 
-    <span
-      class="tag-badge"
-      [class.tag-badge--success]="row.badgeTone === 'success'"
-      [class.tag-badge--danger]="row.badgeTone === 'danger'"
-      [class.tag-badge--warn]="row.badgeTone === 'warn'"
-      [class.tag-badge--golden]="row.badgeTone === 'golden'"
-      [class.tag-badge--muted]="row.badgeTone === 'muted'"
-    >
-      {{ row.badgeLabel }}
-    </span>
+    @if (row.badgeLabel) {
+      <span
+        class="tag-badge"
+        [class.tag-badge--success]="row.badgeTone === 'success'"
+        [class.tag-badge--danger]="row.badgeTone === 'danger'"
+        [class.tag-badge--warn]="row.badgeTone === 'warn'"
+        [class.tag-badge--golden]="row.badgeTone === 'golden'"
+        [class.tag-badge--muted]="row.badgeTone === 'muted'"
+      >
+        {{ row.badgeLabel }}
+      </span>
+    }
   </div>
 
-  <div class="mg-card h-px-200 flex-row-center-center radius-md">
-    <span
-      class="mg-card w-px-100 h-px-150 flex-row-center-center radius-lg shadow-soft text-xxl font-display"
-      [class.color-heading]="row.avatarTone !== 'danger'"
-      [class.error-text]="row.avatarTone === 'danger'"
-    >
-      {{ initials(row.displayName) }}
-    </span>
+  <div
+    class="h-px-200 flex-row-center-center radius-md overflow-hidden"
+    [class.color-heading]="row.avatarTone === 'heading'"
+    [class.error-text]="row.avatarTone === 'danger'"
+    [class.success-text]="row.avatarTone === 'success'"
+  >
+    @if (row.portrait; as portrait) {
+      <img
+        class="w-100 h-100 object-fit-cover"
+        [src]="portrait.src"
+        [alt]="portrait.alt"
+        loading="lazy"
+        draggable="false"
+      />
+    } @else {
+      <span class="text-xxl font-display">
+        {{ initials(row.displayName) }}
+      </span>
+    }
   </div>
 
   <div class="flex-col gap-md">

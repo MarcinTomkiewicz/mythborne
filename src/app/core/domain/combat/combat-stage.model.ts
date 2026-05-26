@@ -79,6 +79,8 @@ export interface CombatLiveStageViewInput extends Omit<
   header: CombatStageHeaderViewModel;
   ariaLabel: string;
   participants: readonly CombatLiveParticipantReadModel[];
+  activeHeroId?: string | null;
+  activeHeroPortraitSrc?: string | null;
   log: {
     show: boolean;
     title: string;

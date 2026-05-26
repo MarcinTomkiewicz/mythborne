@@ -9,6 +9,10 @@ import {
   mapCombatParticipantBaseStatCardRows,
   mapCombatParticipantStatCardRows,
 } from './combat-participant-stat-card.mapper';
+import {
+  combatParticipantPortraitFromJson,
+  combatParticipantPortraitFromReadModel,
+} from './combat-participant-portrait.mapper';
 import { humanizeKey } from './normalize-text';
 import { jsonRecord, optionalNumber, optionalText, read } from './json-read';
 import { combatReportParticipantsJson } from './combat-report-text.mapper';
@@ -17,6 +21,8 @@ export function mapCombatReportParticipants(input: {
   participantsJson: Json | undefined;
   winnerSide: string | null;
   loserSide: string | null;
+  activeHeroId?: string | null;
+  activeHeroPortraitSrc?: string | null;
 }): CombatDisplayParticipant[] {
   if (!Array.isArray(input.participantsJson)) {
     return [];
@@ -67,19 +73,36 @@ export function mapCombatReportParticipants(input: {
     const id = optionalText(read(record, 'participantId', 'participant_id', 'id'))
       ?? side
       ?? `${index}`;
+    const heroId = optionalText(read(record, 'heroId', 'hero_id'));
     const isWinner = Boolean(side && side === input.winnerSide);
     const isLoser = Boolean(side && side === input.loserSide);
+    const participantKind = optionalText(read(record, 'participantKind', 'participant_kind', 'kind'));
+    const opponentDefinitionId = optionalText(read(
+      record,
+      'opponentDefinitionId',
+      'opponent_definition_id',
+    ));
     const baseStatRows = statRowsFromJson(read(record, 'baseStatRows', 'base_stat_rows'));
     const combatStatRows = statRowsFromJson(read(record, 'combatStatRows', 'combat_stat_rows'));
+    const resultLabel = participantResultLabel(isWinner, isLoser);
 
     return [{
       id,
       displayName: name,
       kindLabel: side ? combatSideLabel(side) : 'Strona N/D',
-      metaLabel: statusLabel,
-      badgeLabel: isWinner ? 'Zwycięzca' : isLoser ? 'Pokonany' : 'Uczestnik',
-      badgeTone: isWinner ? 'success' : isLoser ? 'danger' : 'muted',
-      avatarTone: isLoser ? 'danger' : 'heading',
+      metaLabel: resultLabel ?? statusLabel,
+      badgeLabel: null,
+      badgeTone: 'muted',
+      avatarTone: isWinner ? 'success' : isLoser ? 'danger' : 'heading',
+      portrait: combatParticipantPortraitFromJson({
+        record,
+        displayName: name,
+        participantKind,
+        heroId,
+        opponentDefinitionId,
+        activeHeroId: input.activeHeroId ?? null,
+        activeHeroPortraitSrc: input.activeHeroPortraitSrc ?? null,
+      }),
       hpCurrent,
       hpMax,
       baseStatRows,
@@ -93,6 +116,8 @@ export function mapCombatReportParticipants(input: {
 export function mapCompletedCombatParticipants(input: {
   detail: CombatResultDetailReadModel | null;
   liveParticipants: readonly CombatLiveParticipantReadModel[];
+  activeHeroId?: string | null;
+  activeHeroPortraitSrc?: string | null;
 }): CombatDisplayParticipant[] {
   const detailRows = mapCombatReportParticipants({
     participantsJson: combatReportParticipantsJson({
@@ -101,16 +126,24 @@ export function mapCompletedCombatParticipants(input: {
     }),
     winnerSide: input.detail?.winnerSide ?? null,
     loserSide: input.detail?.loserSide ?? null,
+    activeHeroId: input.activeHeroId ?? null,
+    activeHeroPortraitSrc: input.activeHeroPortraitSrc ?? null,
   });
 
   if (detailRows.length) {
     return detailRows.map((participant) =>
-      withLiveStatFallback(participant, input.liveParticipants),
+      withLiveStatFallback(participant, input.liveParticipants, {
+        activeHeroId: input.activeHeroId ?? null,
+        activeHeroPortraitSrc: input.activeHeroPortraitSrc ?? null,
+      }),
     );
   }
 
   return input.liveParticipants.map((participant, index) =>
-    liveParticipantReportCard(participant, index, input.detail),
+    liveParticipantReportCard(participant, index, input.detail, {
+      activeHeroId: input.activeHeroId ?? null,
+      activeHeroPortraitSrc: input.activeHeroPortraitSrc ?? null,
+    }),
   );
 }
 
@@ -145,9 +178,14 @@ function liveParticipantReportCard(
   participant: CombatLiveParticipantReadModel,
   index: number,
   detail: CombatResultDetailReadModel | null,
+  portraitContext: {
+    activeHeroId: string | null;
+    activeHeroPortraitSrc: string | null;
+  },
 ): CombatDisplayParticipant {
   const isWinner = Boolean(participant.side && participant.side === detail?.winnerSide);
   const isLoser = Boolean(participant.side && participant.side === detail?.loserSide);
+  const resultLabel = participantResultLabel(isWinner, isLoser);
 
   return {
     id: participant.participantId ??
@@ -157,10 +195,11 @@ function liveParticipantReportCard(
       `${index}`,
     displayName: participant.displayName,
     kindLabel: participant.side ? combatSideLabel(participant.side) : 'Strona N/D',
-    metaLabel: participant.statusLabel ?? participant.statusKey ?? 'Po walce',
-    badgeLabel: isWinner ? 'Zwycięzca' : isLoser ? 'Pokonany' : 'Uczestnik',
-    badgeTone: isWinner ? 'success' : isLoser ? 'danger' : 'muted',
-    avatarTone: isLoser ? 'danger' : 'heading',
+    metaLabel: resultLabel ?? participant.statusLabel ?? participant.statusKey ?? 'Po walce',
+    badgeLabel: null,
+    badgeTone: 'muted',
+    avatarTone: isWinner ? 'success' : isLoser ? 'danger' : 'heading',
+    portrait: combatParticipantPortraitFromReadModel(participant, portraitContext),
     hpCurrent: participant.currentHp,
     hpMax: participant.maxHp,
     baseStatRows: mapCombatParticipantBaseStatCardRows(participant.baseStatRows ?? []),
@@ -177,6 +216,10 @@ function finalParticipantStatus(hpCurrent: number | null): string {
 function withLiveStatFallback(
   participant: CombatDisplayParticipant,
   liveParticipants: readonly CombatLiveParticipantReadModel[],
+  portraitContext: {
+    activeHeroId: string | null;
+    activeHeroPortraitSrc: string | null;
+  },
 ): CombatDisplayParticipant {
   if (participant.baseStatRows.length && participant.combatStatRows.length) {
     return participant;
@@ -192,6 +235,8 @@ function withLiveStatFallback(
 
   return {
     ...participant,
+    portrait: participant.portrait ??
+      (live ? combatParticipantPortraitFromReadModel(live, portraitContext) : null),
     baseStatRows,
     combatStatRows,
     emptyStatsMessage: emptyStatsMessage(baseStatRows, combatStatRows),
@@ -216,7 +261,12 @@ function statRowsFromJson(value: Json | undefined): StatCardRow[] {
   return value.flatMap((entry, index) => {
     const record = jsonRecord(entry);
     const label = optionalText(read(record, 'label', 'name'));
-    const rawValue = read(record, 'displayValue', 'display_value', 'value');
+    const rawValue = read(
+      record,
+      'displayValue',
+      'display_value',
+      'value',
+    );
     const displayValue = optionalText(rawValue) ??
       (typeof rawValue === 'number' ? String(rawValue) : null);
 
@@ -240,4 +290,12 @@ function emptyStatsMessage(
   return baseRows.length || combatRows.length
     ? null
     : 'Raport walki nie zawiera wierszy statystyk dla tej strony.';
+}
+
+function participantResultLabel(isWinner: boolean, isLoser: boolean): string | null {
+  return isWinner
+    ? 'Zwycięzca'
+    : isLoser
+      ? 'Pokonany'
+      : null;
 }

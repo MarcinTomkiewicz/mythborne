@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-24 — UI-COMBAT-1/2 participant stat panels accepted
+Updated: 2026-05-26 — UI-COMBAT-5 follow-up accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -7514,7 +7514,9 @@ Zbudować completed combat report zgodny konstrukcyjnie z attacker victory / def
 - brak lokalnego outcome resolvera;
 - `tsc` i build przechodzą.
 
-**Status:** Accepted/completed on 2026-05-26 as the UI-COMBAT-5 frontend/UI slice. Active and completed combat now use the shared combat stage/surface presentation path, completed participant cards keep visible base/combat stat rows, and the completed report keeps the accepted actor/body/result combat log structure with source emphasis and no local `combat-log__*` SCSS. Exploration code is now a thin adapter around shared combat presentation, while the exploration result wrapper owns outcome/reward/actions. JSON report text extraction no longer exposes generic combat-report `...keys` APIs and uses the shared `json-display-text` utility; generated types, DB/RPC, specs and status docs were not touched during the final code cleanup before acceptance. Follow-ups outside this accepted slice: add a shared outcome surface tone pattern for success/danger/warning result banners if the UI system gains one; make combat participant display models image-ready with hero origin images and a PvE fallback such as `public/images/warrior.png`; apply the same combat/report pattern in Reports Center; backend/Migrator owns combat stat drift and incorrect `0 obrażeń` semantics.
+**Status:** Accepted/completed on 2026-05-26 as the UI-COMBAT-5 frontend/UI slice. Active and completed combat now use the shared combat stage/surface presentation path, completed participant cards keep visible base/combat stat rows when the backend read model exposes them, and the completed report keeps the accepted actor/body/result combat log structure with source emphasis and no local `combat-log__*` SCSS. Exploration code is now a thin adapter around shared combat presentation, while the exploration result wrapper owns outcome/reward/actions. JSON report text extraction no longer exposes generic combat-report `...keys` APIs and uses the shared `json-display-text` utility; generated types, DB/RPC, specs and status docs were not touched during the final code cleanup before acceptance.
+
+**UI-COMBAT-5-FOLLOW-UP status:** Accepted on 2026-05-26 in the frontend/UI scope. The outcome banner now uses global `mg-card--success`, `mg-card--danger` and `mg-card--warning` surface variants driven by `ExplorationOutcomeReportLayout.titleTone`; combat participant display models are portrait-ready; PvE opponent portrait fallback is limited to real opponent/NPC identity and uses `/images/warrior.png`; active hero portraits use explicit portrait/profile data or the shared origin paperdoll helper through active hero state; generic combat mapping does not guess paperdoll paths; completed reports fail closed instead of reconstructing raw combat stat rows locally. Follow-ups outside this accepted task: Migrator/read-model must expose `baseStatRows` and `combatStatRows` for auto-resolved combat report participants; portrait centering/framing can be polished later if needed; Reports Center should reuse the shared combat/report pattern in its own task.
 
 ---
 

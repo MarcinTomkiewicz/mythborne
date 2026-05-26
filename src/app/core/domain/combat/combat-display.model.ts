@@ -5,14 +5,20 @@ export type CombatDisplayBadgeTone = 'success' | 'danger' | 'warn' | 'muted' | '
 export type CombatSurfaceCenterState =
   'decision' | 'loading' | 'error' | 'live_manual' | 'timing_ready' | 'completed' | 'idle';
 
+export interface CombatDisplayPortrait {
+  src: string;
+  alt: string;
+}
+
 export interface CombatDisplayParticipant {
   id: string;
   displayName: string;
   kindLabel: string;
   metaLabel: string | null;
-  badgeLabel: string;
+  badgeLabel: string | null;
   badgeTone: CombatDisplayBadgeTone;
-  avatarTone: 'heading' | 'danger';
+  avatarTone: 'heading' | 'danger' | 'success';
+  portrait: CombatDisplayPortrait | null;
   hpCurrent: number | null;
   hpMax: number | null;
   baseStatRows: readonly StatCardRow[];

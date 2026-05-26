@@ -7,6 +7,7 @@ import {
   mapCombatParticipantBaseStatCardRows,
   mapCombatParticipantStatCardRows,
 } from './combat-participant-stat-card.mapper';
+import { combatParticipantPortraitFromReadModel } from './combat-participant-portrait.mapper';
 
 export function combatLiveParticipantPair(
   participants: readonly CombatLiveParticipantReadModel[],
@@ -32,6 +33,8 @@ export function combatLiveParticipantCard(input: {
   participant: CombatLiveParticipantReadModel;
   badgeLabel: string;
   badgeTone: Extract<CombatDisplayBadgeTone, 'success' | 'danger'>;
+  activeHeroId?: string | null;
+  activeHeroPortraitSrc?: string | null;
 }): CombatDisplayParticipant {
   return {
     id: participantUiKey(input.participant) ?? input.participant.displayName,
@@ -41,6 +44,10 @@ export function combatLiveParticipantCard(input: {
     badgeLabel: input.badgeLabel,
     badgeTone: input.badgeTone,
     avatarTone: input.badgeTone === 'danger' ? 'danger' : 'heading',
+    portrait: combatParticipantPortraitFromReadModel(input.participant, {
+      activeHeroId: input.activeHeroId ?? null,
+      activeHeroPortraitSrc: input.activeHeroPortraitSrc ?? null,
+    }),
     hpCurrent: input.participant.currentHp,
     hpMax: input.participant.maxHp,
     baseStatRows: mapCombatParticipantBaseStatCardRows(input.participant.baseStatRows ?? []),

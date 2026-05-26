@@ -2,6 +2,8 @@ import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { ToastService } from '../../../core/services/ui/toast';
+import { ActiveHero } from '../../../core/services/hero/active-hero';
+import { ActiveHeroPortraitState } from '../../../core/services/hero/active-hero-portrait.state';
 import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/browser-clipboard';
 import {
   combatParticipantPair,
@@ -40,6 +42,8 @@ export class ExplorationResultReport {
   readonly challenge = inject(ExplorationChallengeState);
   readonly rewardState = inject(ExplorationRewardState);
   private readonly toast = inject(ToastService);
+  private readonly activeHero = inject(ActiveHero);
+  private readonly activeHeroPortrait = inject(ActiveHeroPortraitState);
   readonly combatResultDetail = computed(() => this.challenge.combatResultDetail());
   readonly completedChallenge = computed(() => this.challenge.completedCombatChallenge());
   readonly reportSourceKind = computed(() =>
@@ -56,6 +60,8 @@ export class ExplorationResultReport {
     mapCompletedCombatParticipants({
       detail: this.combatResultDetail(),
       liveParticipants: this.challenge.combatParticipants(),
+      activeHeroId: this.activeHero.state()?.heroId ?? null,
+      activeHeroPortraitSrc: this.activeHeroPortrait.portraitSrc(),
     }),
   );
   readonly combatParticipantPair = computed(() => combatParticipantPair(this.participantRows()));
