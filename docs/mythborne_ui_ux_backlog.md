@@ -7684,192 +7684,67 @@ Dodać jawne auto-resolve dla Exploration combat bez ruszania manualnego Walking
 
 ---
 
-# UI-COMBAT-9 — PvP attack auto-resolve integration
+# UI-COMBAT-9 — Final combat UI polish and closure
 
 ## Goal
 
-Dodać jawne auto-resolve dla arrived PvP attack action przez zatwierdzony RPC.
+Domknąć obecny Combat UI po UI-COMBAT-8 jako mały polish pass, bez rozpoczynania PvP, bez refaktoru architektury i bez nowych funkcjonalności.
+
+Combat zasadniczo działa i wygląda poprawnie. Ten task ma poprawić tylko widoczne drobiazgi UI, jeśli realnie występują, oraz usunąć z backlogu błędne wrażenie, że kolejnym krokiem jest PvP auto-resolve.
 
 ## Scope
 
-- użyć:
-  ```ts
-  auto_resolve_pvp_attack_action(p_pvp_action_id, p_request_id)
-  ```
-- akcja dla arrived PvP attack only;
-- tylko attacking hero owner;
-- request-id/stale guard;
-- loading/disabled state;
-- toast/error handling;
-- po sukcesie render durable PvP combat report.
+- przejrzeć istniejący active/completed combat UI po UI-COMBAT-8;
+- poprawić wyłącznie drobne widoczne problemy UI/copy/layout, jeśli są oczywiste:
+  - spacing/gap;
+  - mylący label;
+  - widoczny raw/debug tekst;
+  - niewłaściwe `muted-text` na ważnej wartości;
+  - drobny alignment w report/action area;
+- usunąć albo przepisać backlogowe `UI-COMBAT-9–12`, żeby nie wymuszały PvP autoresolve ani refaktoru;
+- dopisać, że PvP auto-resolve/report flow wraca dopiero w osobnym UI-PVP / PvP combat epiku;
+- po akceptacji zsynchronizować status docs/backlog zgodnie ze standardowym workflow.
 
 ## Out of scope
 
-- Exploration combat;
-- PvP spy actions;
-- PvP target selection;
-- manual PvP combat flow;
-- local combat outcome/timeline.
+- PvP auto-resolve;
+- `auto_resolve_pvp_attack_action(...)`;
+- PvP report flow;
+- PvP spy/attack UI;
+- manual PvP combat;
+- shared UI extraction;
+- przenoszenie typów/interfejsów/helperów;
+- przebudowa mapperów;
+- refaktor `CombatHost`, `CombatSurface`, `CombatLogPanel`, `CombatLogRow`;
+- DB/RPC changes;
+- generated types;
+- nowe specs;
+- lokalny combat resolver, timeline parser albo translation engine.
 
-## Data rules
+## Rules
 
-- czekać na user-provided generated types;
-- nie regenerować typów;
-- backend tworzy live combat session, combat result, PvP attack result i game report;
-- frontend renderuje report/timeline z backendu.
-
-## UI rules
-
-- auto-resolve nie może ukrywać reportu;
-- report musi pokazywać timeline/ciosy:
-  - hits;
-  - misses;
-  - evasion;
-  - crits;
-  - damage;
-  - healing/round effects where present;
-- completed PvP report bazuje na attacker/defender victory prototypes.
+- To jest UI polish, nie refaktor.
+- TS można ruszyć tylko wtedy, gdy jest to minimalny binding konieczny do poprawienia widocznego UI.
+- Nie wolno zmieniać flow manual/auto combat.
+- Nie wolno zmieniać ścieżek RPC/service/state.
+- Nie wolno tworzyć nowych shared komponentów tylko dlatego, że coś można by kiedyś wydzielić.
+- Jeśli nie ma realnych widocznych problemów UI, task może być documentation/status-only.
 
 ## Acceptance
 
-- action widoczna tylko dla arrived PvP attack, gdzie user jest ownerem atakującego;
-- action nie pojawia się dla spy;
-- action nie pojawia się dla Exploration;
-- po sukcesie pokazuje PvP combat report;
-- timeline count/event rows pochodzą z backendu;
-- `tsc` i build przechodzą.
+- Combat UI nadal działa jak po zaakceptowanym UI-COMBAT-8;
+- brak nowego PvP scope;
+- brak architektonicznego refaktoru;
+- brak generated types edits;
+- brak nowych lokalnych fallbacków;
+- widoczne drobne UI/copy problemy, jeśli występowały, są poprawione;
+- backlog/status jasno mówi, że dalsze PvP prace są poza obecnym Combat UI epikiem;
+- jeśli kod był zmieniany:
+  - `npx tsc --noEmit`;
+  - `npm run build`;
+  - `git diff --check`.
 
----
-
-# UI-COMBAT-10 — Privacy and snapshot boundary
-
-## Goal
-
-Utrwalić zasady prywatności i snapshotów dla combat UI, szczególnie PvP.
-
-## Scope
-
-- participant snapshot vs current hero state;
-- allowed fields for defender/player equipment;
-- attack source labels vs full item details;
-- completed result snapshot vs live state;
-- sandbox/admin exceptions, jeśli istnieją.
-
-## Out of scope
-
-- RLS/RPC policy changes;
-- schema migrations;
-- defender equipment reveal;
-- admin debug payload UI.
-
-## Data rules
-
-- completed reports używają durable snapshotów;
-- live player state nie rekonstruuje historycznej walki;
-- defender private equipment nie jest pokazany, jeśli snapshot/report policy nie pozwala;
-- opponent generated/manual equipment label nie udaje player inventory;
-- fail closed przy braku privacy metadata.
-
-## Acceptance
-
-- PvP report nie ujawnia prywatnego equipmentu defendera bez backendowego safe labela;
-- item popover tylko dla dozwolonych itemów/snapshotów;
-- technical/debug fields nie trafiają do player-facing UI;
-- `tsc` i build przechodzą.
-
----
-
-# UI-COMBAT-11 — Polish labels and backend copy contract
-
-## Goal
-
-Usunąć lokalne tłumaczenie raw combat enumów i oprzeć player-facing copy na backendowych polach.
-
-## Scope
-
-- stat labels;
-- outcome labels;
-- event labels;
-- source labels;
-- damage display;
-- miss/evade/crit labels;
-- turn/round labels;
-- report title/summary/narrative lines.
-
-## Out of scope
-
-- DB content seed localization;
-- local translation engine;
-- hardcoded long narrative in Angular.
-
-## Data rules
-
-- backend dostarcza player-facing labels/copy;
-- Angular może mieć krótki bezpieczny fallback tylko dla brakującego pola;
-- fallback nie może być technicznym raw keyem, jeżeli to jest player-facing surface;
-- brak pełnej treści z backendu jest data/content follow-up, nie powód do lokalnego content engine.
-
-## UI rules
-
-- polski player-facing copy domyślnie;
-- nie mieszać `EXP` z polskim UI — używać `punkty doświadczenia`, jeśli backend nie poda display labela;
-- nie pokazywać debug tekstów typu generated manifest;
-- nie pokazywać raw `Awaiting Resolution`, `Initiator Victory`, `Cunning`, itd., jeśli backend ma display labels.
-
-## Acceptance
-
-- active combat i completed report nie pokazują raw enumów, jeśli istnieją display fields;
-- timeline row używa backend labels;
-- brak lokalnej mapy tłumaczeń jako głównego źródła prawdy;
-- `tsc` i build przechodzą.
-
----
-
-# UI-COMBAT-12 — Cleanup pass and shared UI extraction
-
-## Goal
-
-Po osiągnięciu funkcjonalnego i wizualnego celu wykonać cleanup pass HTML/SCSS/TS dla combat UI.
-
-## Scope
-
-- usunąć duplikaty template markup;
-- wyciągnąć powtarzalne card/log/stat/progress patterns do shared components albo global utilities;
-- ograniczyć lokalny SCSS do unikalnej geometrii;
-- upewnić się, że komponenty są cienkie;
-- przenieść typy do `core/types`;
-- przenieść interfejsy do `core/interfaces`;
-- przenieść helpery do `core/utils`;
-- przenieść config/lookup maps do `core/configs` albo `core/constants`, jeśli są rzeczywiście potrzebne.
-
-## Out of scope
-
-- zmiana DB/RPC;
-- rewrites unrelated combat systems;
-- status docs przed zaakceptowaniem kodu.
-
-## Review focus
-
-- DRY;
-- KISS;
-- SoC/SRP;
-- brak lokalnych typów/interfejsów w mapperach/componentach;
-- brak lokalnych enum translation engines;
-- brak `NgClass` dla prostych class bindings;
-- brak `CommonModule`/`FormsModule`/`ngModel`, jeśli nie są potrzebne;
-- brak `button pButton`;
-- brak inline operational messages tam, gdzie powinny być toasty;
-- brak generated types edits.
-
-## Acceptance
-
-- no duplicate timeline row renderers unless justified;
-- no duplicate combatant stat panel markup unless extracted or deliberately scoped;
-- no local fake combat logic;
-- no stale helpers/specs;
-- `tsc` i build przechodzą.
-
----
+  ---
 
 # 17. UI-REPORTS — Reports and Notifications
 

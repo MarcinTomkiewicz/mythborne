@@ -35,7 +35,7 @@ export function mapLiveCombatStageView(input: CombatLiveStageViewInput): CombatS
     leftParticipant: pair.left
       ? combatLiveParticipantCard({
           participant: pair.left,
-          badgeLabel: 'Gracz',
+          badgeLabel: '',
           badgeTone: 'success',
           activeHeroId: input.activeHeroId ?? null,
           activeHeroPortraitSrc: input.activeHeroPortraitSrc ?? null,
@@ -44,7 +44,7 @@ export function mapLiveCombatStageView(input: CombatLiveStageViewInput): CombatS
     rightParticipant: pair.right
       ? combatLiveParticipantCard({
           participant: pair.right,
-          badgeLabel: 'Wróg',
+          badgeLabel: '',
           badgeTone: 'danger',
           activeHeroId: input.activeHeroId ?? null,
           activeHeroPortraitSrc: input.activeHeroPortraitSrc ?? null,
@@ -93,7 +93,7 @@ export function mapCombatSessionStageView(input: {
       label: input.contextLabel,
       title: input.contextTitle,
       modeBadgeLabel: state ? 'Ręcznie' : 'Decyzja',
-      statusLabel: state?.statusLabel ?? preview?.previewStatus ?? null,
+      statusLabel: state?.statusLabel ?? previewStatusLabel(preview?.previewStatus ?? null),
       roundLabel: state ? `Runda ${state.currentRoundNumber}` : null,
       waitingLabel: state?.awaitingPlayerAction ? 'Czeka na akcję gracza' : 'Stan walki',
     },
@@ -143,7 +143,7 @@ export function mapCombatSessionStageView(input: {
       show: true,
       title: state ? 'Przebieg walki' : 'Przebieg',
       subtitle: null,
-      emptyText: 'Przebieg starcia pojawi się po rozpoczęciu minigierki.',
+      emptyText: 'Przebieg walki pojawi się po rozpoczęciu walki.',
       groups: state
         ? mapLiveCombatEventLogGroups(state.events, state.participants)
         : [],
@@ -176,6 +176,14 @@ function currentActorName(state: CombatLiveStateReadModel | null): string | null
     ? state.participants.find((participant) =>
         participant.participantId === state.currentActorParticipantId)?.displayName ?? null
     : null;
+}
+
+function previewStatusLabel(status: string | null): string | null {
+  if (status === 'decision_preview') {
+    return 'Wybór trybu walki';
+  }
+
+  return status;
 }
 
 function mapLiveCombatEventLogGroups(

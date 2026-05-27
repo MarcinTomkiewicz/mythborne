@@ -77,22 +77,7 @@ function participantKindLabel(participant: CombatLiveParticipantReadModel): stri
 }
 
 function participantMeta(participant: CombatLiveParticipantReadModel): string {
-  return [
-    participantKindLabel(participant),
-    sideLabel(participant),
-    participant.statusLabel ?? null,
-  ].filter(Boolean).join(' · ');
-}
-
-function sideLabel(participant: CombatLiveParticipantReadModel): string {
-  switch (participant.side) {
-    case 'initiator':
-      return 'Atakujący';
-    case 'defender':
-      return 'Obrońca';
-    default:
-      return participant.side ?? 'Strona';
-  }
+  return participant.statusLabel ?? '';
 }
 
 function participantUiKey(participant: CombatLiveParticipantReadModel): string | null {

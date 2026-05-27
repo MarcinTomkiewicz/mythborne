@@ -1,24 +1,6 @@
 @if (currentChallengeResult() || minigameReportPointer()) {
-  @if (isMissingMinigameReport()) {
-    <section class="mg-card p-lg flex-col gap-sm w-100">
-      <p class="small-caps color-muted text-xs m-0">Raport wyzwania</p>
-      <p class="color-text text-md lh-16 m-0">
-        Raport minigierki nie jest jeszcze dostępny.
-      </p>
-    </section>
-  } @else if (isMinigameReportLoading()) {
-    <section class="mg-card p-lg flex-col gap-sm w-100">
-      <p class="small-caps color-muted text-xs m-0">Raport wyzwania</p>
-      <p class="color-text text-md lh-16 m-0">Ładowanie raportu minigierki...</p>
-    </section>
-  } @else if (minigameReportUnavailable()) {
-    <section class="mg-card p-lg flex-col gap-sm w-100">
-      <p class="small-caps color-muted text-xs m-0">Raport wyzwania</p>
-      <p class="warn-text text-md lh-16 m-0">Nie udało się odczytać raportu minigierki.</p>
-    </section>
-  } @else {
   <app-exploration-outcome-report-layout
-    label="Raport wyzwania"
+    label="Raport walki"
     statusLabel=""
     [title]="outcome().title"
     [titleTone]="outcome().tone"
@@ -33,12 +15,26 @@
       </section>
     }
 
-    <section reportNextStep class="mg-card p-lg flex-col gap-sm w-100">
-      <p class="small-caps color-muted text-xs m-0">Minigierka</p>
-      <p class="color-text text-md lh-16 m-0">
-        Raport minigierki został odczytany z backendu.
-      </p>
-    </section>
+    @if (combatStage(); as stage) {
+      <app-combat-stage reportNextStep [stage]="stage" />
+    } @else if (isMissingMinigameReport()) {
+      <section reportNextStep class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs m-0">Raport walki</p>
+        <p class="color-text text-md lh-16 m-0">
+          Raport walki nie jest jeszcze dostępny.
+        </p>
+      </section>
+    } @else if (isMinigameReportLoading()) {
+      <section reportNextStep class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs m-0">Raport walki</p>
+        <p class="color-text text-md lh-16 m-0">Ładowanie raportu walki...</p>
+      </section>
+    } @else if (minigameReportUnavailable()) {
+      <section reportNextStep class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs m-0">Raport walki</p>
+        <p class="warn-text text-md lh-16 m-0">{{ minigameReportUnavailableMessage() }}</p>
+      </section>
+    }
 
     @if (
       rewardState.isLoadingReward()
@@ -110,5 +106,4 @@
       }
     </section>
   </app-exploration-outcome-report-layout>
-  }
 }

@@ -42,6 +42,7 @@ export interface HeroExplorationDifficultyCardPreview {
   trialOpportunityIsGuaranteedByStepCap: boolean;
   manifestationDisplay: string;
   manifestationChance: number;
+  autoResultPolicy: string;
   autoResultDisplay: string;
   autoResultSuccessChance: number;
   rewardItemCountDisplay: string;

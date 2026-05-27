@@ -300,7 +300,17 @@ export class CombatHostState {
   }
 
   private completeManualCombatIfNeeded(state: CombatLiveStateReadModel): void {
-    if (state.statusKey !== 'completed' || !state.finalCombatResultId) {
+    const sourceRef = this.sourceRef();
+
+    if (
+      state.statusKey !== 'completed' ||
+      !state.finalCombatResultId ||
+      !sourceRef ||
+      !this.sameSourceRef(sourceRef, {
+        sourceEntityType: state.sourceEntityType,
+        sourceEntityId: state.sourceEntityId,
+      })
+    ) {
       return;
     }
 
@@ -313,8 +323,8 @@ export class CombatHostState {
   }
 
   private sameSourceRef(
-    current: MinigameSourceRef | null,
-    next: MinigameSourceRef,
+    current: { sourceEntityType: string; sourceEntityId: string } | null,
+    next: { sourceEntityType: string; sourceEntityId: string },
   ): boolean {
     return current?.sourceEntityType === next.sourceEntityType &&
       current.sourceEntityId === next.sourceEntityId;

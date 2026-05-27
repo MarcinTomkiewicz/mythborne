@@ -2,8 +2,10 @@ import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
+import { createRequestId } from '../../../core/utils/request-id';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
+import { ExplorationMinigameHandoffState } from './exploration-minigame-handoff.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 
 @Injectable()
@@ -11,6 +13,7 @@ export class ExplorationStartState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly explorations = inject(HeroExplorations);
   private readonly feedback = inject(ExplorationFeedbackState);
+  private readonly minigameHandoff = inject(ExplorationMinigameHandoffState);
   private readonly overview = inject(ExplorationOverviewState);
   private readonly actionToken = new RequestToken();
 
@@ -29,7 +32,9 @@ export class ExplorationStartState {
     }
 
     const token = this.actionToken.next();
-    const requestId = startExplorationRequestId(context.heroId, context.difficultyKey);
+    const requestId = createRequestId(
+      `exploration-start:${context.heroId}:${context.difficultyKey}`,
+    );
 
     this.isStarting.set(true);
     this.feedback.clear();
@@ -53,6 +58,7 @@ export class ExplorationStartState {
             return;
           }
 
+          this.minigameHandoff.clearMinigameReportPointer();
           this.overview.setStateFromWorkflow(state);
           onReady?.();
         },
@@ -72,12 +78,4 @@ export class ExplorationStartState {
       this.overview.isCurrentContext(heroId, difficultyKey)
     );
   }
-}
-
-function startExplorationRequestId(heroId: string, difficultyKey: string): string {
-  const randomId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-  return `exploration-start:${heroId}:${difficultyKey}:${randomId}`;
 }

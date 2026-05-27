@@ -13,6 +13,7 @@ import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ChallengeCompletionSnapshot } from './exploration-challenge.model';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
+import { ExplorationMinigameHandoffState } from './exploration-minigame-handoff.state';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
@@ -29,6 +30,7 @@ export class ExplorationPageState {
   private readonly sandboxActionToken = new RequestToken();
 
   readonly feedback = inject(ExplorationFeedbackState);
+  readonly minigameHandoff = inject(ExplorationMinigameHandoffState);
   readonly overview = inject(ExplorationOverviewState);
   readonly movement = inject(ExplorationMovementState);
   readonly preview = inject(ExplorationPreviewState);
@@ -129,6 +131,7 @@ export class ExplorationPageState {
       || Boolean(state?.activeChallenge)
       || Boolean(this.step.currentStepResult())
       || Boolean(this.sandboxChallengeResult())
+      || Boolean(this.minigameHandoff.currentMinigameReportPointer())
       || Boolean(this.rewardState.reward())
     );
   });

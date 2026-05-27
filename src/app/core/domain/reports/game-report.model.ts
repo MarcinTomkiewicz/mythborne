@@ -192,7 +192,7 @@ export interface CreatedCombatGameReport {
   serverId: string;
   participantsCreated: number;
   accessRowsCreated: number;
-  auditLogId: string;
+  auditLogId: string | null;
 }
 
 export interface AttachRewardDropItemToReportInput {

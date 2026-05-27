@@ -15,9 +15,10 @@ import {
   gameReportPublicPath,
   gameReportPublicToken,
   gameReportRewardHeadingText,
-  gameReportRewardIntroText,
   gameReportSummaryText,
 } from './game-report-text.mapper';
+import { jsonRecord, optionalText, read } from './json-read';
+import { normalizeKeyText } from './normalize-text';
 
 export function explorationResultSourceKind(
   source: ExplorationResultSourceInput | null,
@@ -39,6 +40,7 @@ export function mapExplorationOutcomeView(input: {
 }): ExplorationOutcomeViewModel {
   const tone = explorationResultOutcomeTone({
     rawJson: input.rawJson,
+    sourceKind: input.sourceKind,
   });
 
   return {
@@ -103,22 +105,18 @@ export function explorationResultNarrativeLines(rawJson: Json | undefined): stri
 
 export function explorationResultOutcomeTone(input: {
   rawJson: Json | undefined;
+  sourceKind: ExplorationResultSourceKind;
 }): ExplorationResultOutcomeTone {
-  const backendTone = gameReportOutcomeToneText(input.rawJson)?.toLowerCase();
+  const backendTone = semanticOutcomeTone(
+    gameReportOutcomeToneText(input.rawJson),
+    input.sourceKind,
+  );
 
-  if (backendTone?.includes('win') || backendTone?.includes('success')) {
-    return 'success';
+  if (backendTone) {
+    return backendTone;
   }
 
-  if (backendTone?.includes('loss') || backendTone?.includes('danger')) {
-    return 'danger';
-  }
-
-  if (backendTone?.includes('draw') || backendTone?.includes('warn')) {
-    return 'warning';
-  }
-
-  return 'neutral';
+  return combatOutcomeTone(input.rawJson, input.sourceKind) ?? 'neutral';
 }
 
 export function explorationResultOutcomeTitle(input: {
@@ -156,7 +154,7 @@ export function explorationRewardHeading(input: {
     reportRawJson: input.reportRawJson,
   }) ??
     (
-      input.sourceKind === 'trial'
+      input.sourceKind !== 'encounter'
         ? 'Nagroda'
         : 'Zysk wyprawy'
     );
@@ -167,11 +165,8 @@ export function explorationRewardIntro(input: {
   reportRawJson: Json | undefined;
   sourceKind: ExplorationResultSourceKind;
 }): string {
-  return gameReportRewardIntroText({
-    rewardRawJson: input.rewardRawJson,
-    reportRawJson: input.reportRawJson,
-  }) ?? (
-    input.sourceKind === 'trial'
+  return (
+    input.sourceKind !== 'encounter'
       ? 'Nagroda:'
       : 'Zysk wyprawy:'
   );
@@ -196,26 +191,112 @@ export function explorationOutcomeBannerLabel(input: {
   sourceKind: ExplorationResultSourceKind;
 }): string {
   if (input.tone === 'success') {
-    return input.sourceKind === 'trial'
-      ? 'Próba rozstrzygnięta'
-      : 'Wyprawa zakończona zwycięstwem';
+    return input.sourceKind === 'encounter'
+      ? 'Walka zakończona zwycięstwem'
+      : 'Próba zakończona sukcesem';
   }
 
   if (input.tone === 'danger') {
-    return input.sourceKind === 'trial'
-      ? 'Próba nieudana'
-      : 'Wyprawa zakończona porażką';
+    return input.sourceKind === 'encounter'
+      ? 'Walka zakończona porażką'
+      : 'Próba nieudana';
   }
 
   if (input.tone === 'warning') {
-    return 'Wynik nierozstrzygnięty';
+    return input.sourceKind === 'encounter'
+      ? 'Walka nierozstrzygnięta'
+      : 'Próba nierozstrzygnięta';
   }
 
-  return 'Wynik wyzwania';
+  return input.sourceKind === 'encounter'
+    ? 'Wynik walki'
+    : 'Wynik próby';
 }
 
 function publicReportPathFromToken(rawJson: Json | undefined): string | null {
   const token = gameReportPublicToken(rawJson);
 
   return token ? `/report/${token}` : null;
+}
+
+function semanticOutcomeTone(
+  value: string | null,
+  sourceKind: ExplorationResultSourceKind,
+): ExplorationResultOutcomeTone | null {
+  switch (normalizeKeyText(value)) {
+    case 'success':
+    case 'victory':
+    case 'win':
+    case 'hero_victory':
+    case 'hero_win':
+      return 'success';
+    case 'danger':
+    case 'defeat':
+    case 'loss':
+    case 'hero_defeat':
+    case 'hero_loss':
+      return 'danger';
+    case 'warning':
+      return 'warning';
+    case 'draw':
+    case 'tie':
+    case 'stalemate':
+      return sourceKind === 'encounter' ? 'warning' : 'danger';
+    case 'neutral':
+      return 'neutral';
+    default:
+      return null;
+  }
+}
+
+function combatOutcomeTone(
+  rawJson: Json | undefined,
+  sourceKind: ExplorationResultSourceKind,
+): ExplorationResultOutcomeTone | null {
+  const raw = jsonRecord(rawJson);
+  const section = jsonRecord(read(
+    raw,
+    'combatSection',
+    'combat_section',
+    'combatSectionJson',
+    'combat_section_json',
+  ));
+  const participants = read(section, 'participants');
+  const winnerSide = normalizeKeyText(optionalText(read(section, 'winnerSide', 'winner_side')));
+  const loserSide = normalizeKeyText(optionalText(read(section, 'loserSide', 'loser_side')));
+  let heroSide = '';
+
+  if (Array.isArray(participants)) {
+    for (const participant of participants) {
+      const record = jsonRecord(participant);
+      const kind = normalizeKeyText(optionalText(read(record, 'participantKind', 'participant_kind', 'kind')));
+      const side = normalizeKeyText(optionalText(read(record, 'side')));
+
+      if (kind === 'hero' && side) {
+        heroSide = side;
+        break;
+      }
+    }
+  }
+
+  if (heroSide && winnerSide && heroSide === winnerSide) {
+    return 'success';
+  }
+
+  if (heroSide && loserSide && heroSide === loserSide) {
+    return 'danger';
+  }
+
+  if (winnerSide || loserSide) {
+    return null;
+  }
+
+  switch (normalizeKeyText(optionalText(read(section, 'outcome', 'outcome_key')))) {
+    case 'draw':
+    case 'tie':
+    case 'stalemate':
+      return sourceKind === 'encounter' ? 'warning' : 'danger';
+    default:
+      return null;
+  }
 }

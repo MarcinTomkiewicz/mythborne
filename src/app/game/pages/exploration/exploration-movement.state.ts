@@ -8,6 +8,7 @@ import { HeroExplorations } from '../../../core/services/exploration/hero-explor
 import { ToastService } from '../../../core/services/ui/toast';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
+import { ExplorationMinigameHandoffState } from './exploration-minigame-handoff.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class ExplorationMovementState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly explorations = inject(HeroExplorations);
   private readonly feedback = inject(ExplorationFeedbackState);
+  private readonly minigameHandoff = inject(ExplorationMinigameHandoffState);
   private readonly overview = inject(ExplorationOverviewState);
   private readonly toast = inject(ToastService);
   private readonly movementToken = new RequestToken();
@@ -95,6 +97,7 @@ export class ExplorationMovementState {
             return;
           }
 
+          this.minigameHandoff.clearMinigameReportPointer();
           this.overview.setStateFromWorkflow(nextState);
           this.toast.show('success', 'Eksploracja', 'Ruch został rozpoczęty.');
         },

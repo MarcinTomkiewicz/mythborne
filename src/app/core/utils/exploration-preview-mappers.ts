@@ -63,6 +63,7 @@ export function mapHeroExplorationDifficultyCardPreview(
       row.trial_opportunity_is_guaranteed_by_step_cap,
     manifestationDisplay: row.manifestation_display,
     manifestationChance: row.manifestation_chance,
+    autoResultPolicy: row.auto_result_policy,
     autoResultDisplay: row.auto_result_display,
     autoResultSuccessChance: row.auto_result_success_chance,
     rewardItemCountDisplay: requiredTextValue(
@@ -100,42 +101,43 @@ export function mapTrialManifestationChancePreview(
 function mapStatDetails(cardJson: Json): HeroExplorationDifficultyStatDetail[] {
   const rows = mapJsonArray(
     readPath(cardJson, 'trialDetailByStat', 'rows'),
-    (item) => ({
-      statKey: requiredTextField(item, 'statKey', 'stat_key'),
-      statLabel: requiredTextField(item, 'statLabel', 'stat_label'),
-      manifestationDisplay: requiredTextField(
+    (item) => {
+      const autoResultValue = read(
         item,
-        'manifestationDisplay',
-        'manifestation_display',
-      ),
-      manifestationChance: requiredNumberField(
-        read(
-          item,
-          'manifestationChance',
-          'manifestation_chance',
-          'manifestationPercent',
-          'manifestation_percent',
-        ),
-        'manifestationChance',
-      ),
-      autoResultDisplay: requiredTextField(
-        item,
-        'autoResultDisplay',
-        'auto_result_display',
-      ),
-      autoResultSuccessChance: requiredNumberField(
-        read(
-          item,
-          'autoResultSuccessChance',
-          'auto_result_success_chance',
-          'autoResultChance',
-          'auto_result_chance',
-          'autoResultPercent',
-          'auto_result_percent',
-        ),
         'autoResultSuccessChance',
-      ),
-    }),
+        'auto_result_success_chance',
+        'autoResultChance',
+        'auto_result_chance',
+        'autoResultPercent',
+        'auto_result_percent',
+      );
+
+      return {
+        statKey: requiredTextField(item, 'statKey', 'stat_key'),
+        statLabel: requiredTextField(item, 'statLabel', 'stat_label'),
+        manifestationDisplay: requiredTextField(
+          item,
+          'manifestationDisplay',
+          'manifestation_display',
+        ),
+        manifestationChance: requiredNumberField(
+          read(
+            item,
+            'manifestationChance',
+            'manifestation_chance',
+            'manifestationPercent',
+            'manifestation_percent',
+          ),
+          'manifestationChance',
+        ),
+        autoResultDisplay: requiredTextField(
+          item,
+          'autoResultDisplay',
+          'auto_result_display',
+        ),
+        autoResultSuccessChance: requiredNumberField(autoResultValue, 'autoResultSuccessChance'),
+      };
+    },
   );
 
   if (rows.length !== 9) {

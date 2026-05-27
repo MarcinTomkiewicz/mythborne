@@ -13,7 +13,7 @@ export class MinigameHost {
   readonly minigameKey = input.required<string>();
   readonly sourceRef = input.required<MinigameSourceRef>();
   readonly contextTitle = input.required<string>();
-  readonly contextLabel = input('Minigierka');
+  readonly contextLabel = input('Wyzwanie');
   readonly completed = output<MinigameCompletionEvent>();
   readonly isCombatMinigame = computed(() => this.minigameKey() === MINIGAME_KEY.combat);
 }
