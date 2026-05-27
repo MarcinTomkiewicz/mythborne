@@ -7074,29 +7074,17 @@ Frontend:
 - nie liczy wyniku w Angularze;
 - po sukcesie renderuje wynik przez istniejący report/reward/combat result flow.
 
-### PvP attack auto-resolve
+### PvP combat follow-up boundary
 
-Nowy RPC:
+PvP auto-resolve/report flow is not part of the current UI-COMBAT closure.
 
-```ts
-auto_resolve_pvp_attack_action(p_pvp_action_id uuid, p_request_id text default null)
-```
+It returns only in a separate UI-PVP / PvP combat epic after the frontend-safe
+PvP contracts, generated types, privacy rules and report surface are explicitly
+scoped.
 
-Zakres:
-
-- tylko explicit PvP attack auto-resolve / skip manual PvP combat;
-- tylko arrived PvP attack actions;
-- tylko owner atakującego bohatera;
-- nie dla Exploration combat;
-- nie dla PvP spy actions.
-
-Frontend:
-
-- czeka na user-provided generated Supabase types;
-- nie regeneruje typów;
-- nie liczy combat outcome ani timeline w Angularze;
-- po sukcesie renderuje backendowy report/timeline z atakami, trafieniami, missami, evasion, critami, obrażeniami i efektami rund;
-- manual PvP combat flow zostaje osobny.
+Until then Combat UI tasks must not call `auto_resolve_pvp_attack_action(...)`,
+start a PvP report flow, infer PvP combat outcomes/timelines in Angular, or
+reveal private defender snapshots without a dedicated backend contract.
 
 ### Report/timeline contract
 
@@ -7133,10 +7121,12 @@ Angular ma renderować te pola, a nie tłumaczyć raw enumy i nie budować narra
 - UI-COMBAT-6 — Combat timeline row renderer
 - UI-COMBAT-7 — Rewards, losses and report actions
 - UI-COMBAT-8 — Exploration combat auto-resolve integration
-- UI-COMBAT-9 — PvP attack auto-resolve integration
-- UI-COMBAT-10 — Privacy and snapshot boundary
-- UI-COMBAT-11 — Polish labels and backend copy contract
-- UI-COMBAT-12 — Cleanup pass and shared UI extraction
+- UI-COMBAT-9 — Final combat UI polish and closure
+
+Deferred outside this Combat UI index: PvP attack auto-resolve/report flow,
+PvP privacy/snapshot policy expansion, broader backend copy contracts and shared
+UI extraction. Those return only as separate UI-PVP / PvP combat or targeted
+cleanup tasks.
 
 ---
 
