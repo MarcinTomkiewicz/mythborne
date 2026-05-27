@@ -1,6 +1,12 @@
-import { CombatResultDetailReadModel } from '../domain/combat/combat-live.model';
+import {
+  CombatAutoResolveResultReadModel,
+  CombatResultDetailReadModel,
+} from '../domain/combat/combat-live.model';
 import { Json } from '../types/database.types';
-import { GetCombatResultDetailRpcRow } from '../types/combat-live-rpc.types';
+import {
+  AutoResolveCombatSessionRpcRow,
+  GetCombatResultDetailRpcRow,
+} from '../types/combat-live-rpc.types';
 
 export function mapCombatResultDetail(
   row: GetCombatResultDetailRpcRow,
@@ -16,5 +22,16 @@ export function mapCombatResultDetail(
     participants: row.participants_json,
     attacks: row.attacks_json,
     rawJson: row as unknown as Json,
+  };
+}
+
+export function mapCombatAutoResolveResult(
+  row: AutoResolveCombatSessionRpcRow,
+): CombatAutoResolveResultReadModel {
+  return {
+    sourceEntityId: row.source_entity_id,
+    combatResultId: row.combat_result_id,
+    sourceResultId: row.source_result_id ?? null,
+    gameReportId: row.game_report_id ?? null,
   };
 }

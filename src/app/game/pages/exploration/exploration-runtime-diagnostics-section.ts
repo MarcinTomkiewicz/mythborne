@@ -28,15 +28,13 @@ export class ExplorationRuntimeDiagnosticsSection {
   });
   readonly canShowSandboxChallengeTools = computed(() =>
     this.canShowSelectionDiagnostics()
-    && this.challenge.canShowManualResolveActions()
-    && Boolean(this.challenge.activeChallenge()),
+    && this.page.canShowSandboxChallengeCompletionTools(),
   );
   readonly canShowResolvedDiagnostics = computed(() =>
     Boolean(
       this.step.currentStepResult()
-      || this.challenge.currentChallengeResult()
+      || this.page.sandboxChallengeResult()
       || this.challenge.activeChallenge()
-      || this.challenge.completedCombatLiveState()
     ),
   );
   readonly canShowDiagnosticsSection = computed(() =>

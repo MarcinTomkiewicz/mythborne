@@ -1,7 +1,7 @@
 @let state = overview.state();
 
 @if (state?.hasExploration && state?.exploration) {
-  @if (challenge.completedCombatLiveState()) {
+  @if (page.sandboxChallengeResult() || minigameHandoff.currentMinigameReportPointer()) {
     <app-exploration-result-report />
   } @else if (challenge.activeChallenge()) {
     <app-exploration-active-challenge-report />

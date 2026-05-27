@@ -2,33 +2,22 @@ import { Component, DestroyRef, computed, effect, inject, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { PrivateGameReportDetail } from '../../../core/domain/reports/game-report.model';
 import { GameReports } from '../../../core/services/reports/game-reports';
 import { ToastService } from '../../../core/services/ui/toast';
-import { ActiveHero } from '../../../core/services/hero/active-hero';
-import { ActiveHeroPortraitState } from '../../../core/services/hero/active-hero-portrait.state';
 import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/browser-clipboard';
 import {
-  combatParticipantPair,
-  mapCompletedCombatLogGroups,
-  mapCompletedCombatParticipants,
-} from '../../../core/utils/combat-report-display.mapper';
-import { mapCompletedCombatStageView } from '../../../core/utils/combat-stage-display.mapper';
-import {
-  explorationDirectReportId,
-  explorationPublicReportPath,
   explorationReportRewardDisplay,
-  explorationResultSourceKind,
   mapExplorationOutcomeView,
   mapExplorationReportActions,
   mapExplorationRewardText,
 } from '../../../core/utils/exploration-result-display.mapper';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
-import { ExplorationChallengeState } from '../../pages/exploration/exploration-challenge.state';
+import { ExplorationMinigameHandoffState } from '../../pages/exploration/exploration-minigame-handoff.state';
 import { ExplorationRewardState } from '../../pages/exploration/exploration-reward.state';
-import { combatActiveLogGroups } from '../../pages/exploration/exploration-live-combat-labels';
-import { CombatStage } from '../combat/combat-stage';
 import { ExplorationOutcomeReportLayout } from '../exploration-outcome-report-layout/exploration-outcome-report-layout';
+import { ExplorationPageState } from '../../pages/exploration/exploration-page.state';
 
 @Component({
   selector: 'app-exploration-result-report',
@@ -38,7 +27,6 @@ import { ExplorationOutcomeReportLayout } from '../exploration-outcome-report-la
     ButtonModule,
     ExplorationOutcomeReportLayout,
     ItemDetailPopover,
-    CombatStage,
   ],
   templateUrl: './exploration-result-report.html',
   host: { class: 'd-block w-100' },
@@ -46,74 +34,52 @@ import { ExplorationOutcomeReportLayout } from '../exploration-outcome-report-la
 export class ExplorationResultReport {
   private readonly destroyRef = inject(DestroyRef);
   private readonly reports = inject(GameReports);
-  readonly challenge = inject(ExplorationChallengeState);
+  private readonly minigameHandoff = inject(ExplorationMinigameHandoffState);
+  private readonly page = inject(ExplorationPageState);
   readonly rewardState = inject(ExplorationRewardState);
   private readonly toast = inject(ToastService);
-  private readonly activeHero = inject(ActiveHero);
-  private readonly activeHeroPortrait = inject(ActiveHeroPortraitState);
   private readonly reportDetailToken = new RequestToken();
+  readonly reportDetail = signal<PrivateGameReportDetail | null>(null);
+  readonly isLoadingReportDetail = signal(false);
+  readonly reportDetailError = signal(false);
   private readonly publicReportPathFromDetail = signal<string | null>(null);
-  readonly combatResultDetail = computed(() => this.challenge.combatResultDetail());
-  readonly completedChallenge = computed(() => this.challenge.completedCombatChallenge());
-  readonly reportSourceKind = computed(() =>
-    explorationResultSourceKind(this.completedChallenge()),
+
+  readonly currentChallengeResult = computed(() => this.page.sandboxChallengeResult());
+  readonly minigameReportPointer = computed(() =>
+    this.currentChallengeResult() ? null : this.minigameHandoff.currentMinigameReportPointer(),
+  );
+  readonly isMissingMinigameReport = computed(() =>
+    Boolean(this.minigameReportPointer() && !this.minigameReportPointer()?.reportId),
+  );
+  readonly isMinigameReportLoading = computed(() =>
+    Boolean(this.minigameReportPointer()?.reportId) &&
+    (
+      this.isLoadingReportDetail() ||
+      (!this.reportDetail() && !this.reportDetailError())
+    ),
+  );
+  readonly minigameReportUnavailable = computed(() =>
+    Boolean(this.minigameReportPointer()?.reportId) &&
+    !this.isLoadingReportDetail() &&
+    this.reportDetailError(),
+  );
+  readonly reportRawJson = computed(() =>
+    this.minigameReportPointer() ? this.reportDetail()?.rawJson : undefined,
   );
   readonly outcome = computed(() =>
     mapExplorationOutcomeView({
-      detail: this.combatResultDetail(),
-      rawJson: this.combatResultDetail()?.rawJson,
-      sourceKind: this.reportSourceKind(),
+      rawJson: this.reportRawJson(),
+      sourceKind: 'unknown',
     }),
   );
-  readonly participantRows = computed(() =>
-    mapCompletedCombatParticipants({
-      detail: this.combatResultDetail(),
-      liveParticipants: this.challenge.combatParticipants(),
-      activeHeroId: this.activeHero.state()?.heroId ?? null,
-      activeHeroPortraitSrc: this.activeHeroPortrait.portraitSrc(),
-    }),
-  );
-  readonly combatParticipantPair = computed(() => combatParticipantPair(this.participantRows()));
-  readonly combatLogGroups = computed(() =>
-    mapCompletedCombatLogGroups({
-      detail: this.combatResultDetail(),
-      liveEvents: this.challenge.combatEvents(),
-      liveParticipants: this.challenge.combatParticipants(),
-      displayParticipants: this.participantRows(),
-      liveEventMapper: combatActiveLogGroups,
-    }),
-  );
-  readonly combatStage = computed(() => {
-    const pair = this.combatParticipantPair();
-
-    return mapCompletedCombatStageView({
-      ariaLabel: 'Raport walki',
-      leftParticipant: pair.left,
-      rightParticipant: pair.right,
-      log: {
-        groups: this.combatLogGroups(),
-        title: 'Przebieg starcia',
-        subtitle: 'Zapis walki',
-        emptyText: 'Szczegółowy przebieg walki nie jest dostępny w bieżącym odczycie raportu.',
-      },
-      emptyParticipants: {
-        leftTitle: 'Brak danych bohatera',
-        leftText: 'Raport nie zawiera finalnych danych bohatera.',
-        rightTitle: 'Brak danych przeciwnika',
-        rightText: 'Raport nie zawiera finalnych danych przeciwnika.',
-      },
-    });
-  });
   readonly directReportId = computed(() =>
-    this.challenge.currentChallengeResult()?.gameReportId ??
-      explorationDirectReportId(this.combatResultDetail()?.rawJson),
-  );
-  readonly payloadPublicReportPath = computed(() =>
-    explorationPublicReportPath(this.combatResultDetail()?.rawJson),
+    this.currentChallengeResult()?.gameReportId ??
+    this.minigameReportPointer()?.reportId ??
+    null,
   );
   readonly reportActions = computed(() =>
     mapExplorationReportActions({
-      rawJson: this.combatResultDetail()?.rawJson,
+      rawJson: this.reportRawJson(),
       directReportId: this.directReportId(),
       publicReportPathFromDetail: this.publicReportPathFromDetail(),
     }),
@@ -124,24 +90,26 @@ export class ExplorationResultReport {
   readonly rewardText = computed(() =>
     mapExplorationRewardText({
       rewardRawJson: this.rewardState.reward()?.rawJson,
-      combatRawJson: this.combatResultDetail()?.rawJson,
-      sourceKind: this.reportSourceKind(),
+      reportRawJson: this.reportRawJson(),
+      sourceKind: 'unknown',
     }),
   );
 
   constructor() {
     effect(() => {
       const reportId = this.directReportId();
-      const payloadPath = this.payloadPublicReportPath();
 
       this.reportDetailToken.next();
+      this.reportDetail.set(null);
+      this.reportDetailError.set(false);
       this.publicReportPathFromDetail.set(null);
 
-      if (!reportId || payloadPath) {
+      if (!reportId) {
+        this.isLoadingReportDetail.set(false);
         return;
       }
 
-      this.loadPublicReportPathFromDetail(reportId);
+      this.loadReportDetail(reportId);
     });
   }
 
@@ -163,29 +131,44 @@ export class ExplorationResultReport {
       ));
   }
 
-  private loadPublicReportPathFromDetail(reportId: string): void {
+  private loadReportDetail(reportId: string): void {
     const token = this.reportDetailToken.next();
 
+    this.isLoadingReportDetail.set(true);
     this.reports
       .getActiveHeroReportDetail(reportId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (report) => {
-          if (!this.reportDetailToken.isCurrent(token) || this.directReportId() !== reportId) {
+          if (!this.isCurrentReportDetailRequest(token, reportId)) {
             return;
           }
 
+          this.reportDetail.set(report);
           this.publicReportPathFromDetail.set(
             report.publicToken ? `/report/${report.publicToken}` : null,
           );
+          this.isLoadingReportDetail.set(false);
         },
         error: () => {
-          if (!this.reportDetailToken.isCurrent(token) || this.directReportId() !== reportId) {
+          if (!this.isCurrentReportDetailRequest(token, reportId)) {
             return;
           }
 
+          this.reportDetailError.set(true);
           this.publicReportPathFromDetail.set(null);
+          this.isLoadingReportDetail.set(false);
         },
       });
+  }
+
+  private isCurrentReportDetailRequest(token: number, reportId: string): boolean {
+    if (!this.reportDetailToken.isCurrent(token) || this.directReportId() !== reportId) {
+      return false;
+    }
+
+    const pointer = this.minigameReportPointer();
+
+    return pointer ? pointer.reportId === reportId : true;
   }
 }

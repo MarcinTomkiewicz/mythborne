@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, Observable } from 'rxjs';
+import { HeroExplorationChallengeCompletionReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { ExplorationStepSelectionDiagnosticReadModel } from '../../../core/domain/exploration/exploration-readiness.model';
 import { AddHeroRemainingActionsResult } from '../../../core/domain/exploration/exploration-debug.model';
 import { GameServerKind } from '../../../core/enums/active-server.enum';
@@ -10,6 +11,7 @@ import { ToastService } from '../../../core/services/ui/toast';
 import { humanizeKey } from '../../../core/utils/normalize-text';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationChallengeState } from './exploration-challenge.state';
+import { ChallengeCompletionSnapshot } from './exploration-challenge.model';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -42,6 +44,7 @@ export class ExplorationPageState {
   readonly isUpdatingActiveStepTimer = signal(false);
   readonly difficultyEntryRequested = signal(false);
   readonly runtimeScreenRequested = signal(false);
+  private readonly sandboxCompletion = signal<ChallengeCompletionSnapshot | null>(null);
 
   readonly canShowSelectionDiagnostics = computed(() => {
     const server = this.activeServer.selectedServer();
@@ -79,9 +82,31 @@ export class ExplorationPageState {
   );
   readonly shouldShowDirectionBoardHeader = computed(() =>
     !this.step.currentStepResult()
-    && !this.challenge.currentChallengeResult()
-    && !this.challenge.completedCombatLiveState(),
+    && !this.sandboxChallengeResult(),
   );
+  readonly canShowSandboxChallengeCompletionTools = computed(() => {
+    const challenge = this.challenge.activeChallenge();
+
+    return this.canShowSandboxTools()
+      && Boolean(challenge?.trialDefinitionId && !challenge.minigameKey)
+      && Boolean(challenge);
+  });
+  readonly sandboxChallengeResult = computed(() => {
+    const state = this.overview.state();
+    const completion = this.sandboxCompletion();
+    const stepResult = this.step.currentStepResult();
+    const isCompletionStep = !stepResult ||
+      stepResult.challengeAttemptId === completion?.result.challengeAttemptId;
+
+    return completion &&
+      this.canShowSandboxTools() &&
+      state?.exploration?.id === completion.explorationId &&
+      !state.activeStep &&
+      !state.activeChallenge
+      && isCompletionStep
+      ? completion.result
+      : null;
+  });
   readonly stepSelectionDiagnostic = computed(() =>
     this.canShowSelectionDiagnostics()
       ? this.step.currentStepResult()?.selectionDiagnostic ?? null
@@ -103,7 +128,7 @@ export class ExplorationPageState {
       || Boolean(state?.activeStep)
       || Boolean(state?.activeChallenge)
       || Boolean(this.step.currentStepResult())
-      || Boolean(this.challenge.currentChallengeResult())
+      || Boolean(this.sandboxChallengeResult())
       || Boolean(this.rewardState.reward())
     );
   });
@@ -214,7 +239,7 @@ export class ExplorationPageState {
           return;
         }
 
-        this.challenge.acceptSandboxCompletion(
+        this.acceptSandboxCompletion(
           result,
           this.overview.state()?.exploration?.id ?? null,
         );
@@ -318,6 +343,17 @@ export class ExplorationPageState {
     return server?.id && context
       ? { serverId: server.id, ...context }
       : null;
+  }
+
+  private acceptSandboxCompletion(
+    result: HeroExplorationChallengeCompletionReadModel,
+    explorationId: string | null,
+  ): void {
+    this.sandboxCompletion.set({ result, explorationId });
+    this.rewardState.preferCompletedChallengeReward(
+      explorationId,
+      result.challengeAttemptId,
+    );
   }
 
   private runSandboxAction<T>(

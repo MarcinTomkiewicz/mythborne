@@ -1,6 +1,24 @@
-@if (challenge.completedCombatLiveState()) {
+@if (currentChallengeResult() || minigameReportPointer()) {
+  @if (isMissingMinigameReport()) {
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <p class="small-caps color-muted text-xs m-0">Raport wyzwania</p>
+      <p class="color-text text-md lh-16 m-0">
+        Raport minigierki nie jest jeszcze dostępny.
+      </p>
+    </section>
+  } @else if (isMinigameReportLoading()) {
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <p class="small-caps color-muted text-xs m-0">Raport wyzwania</p>
+      <p class="color-text text-md lh-16 m-0">Ładowanie raportu minigierki...</p>
+    </section>
+  } @else if (minigameReportUnavailable()) {
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <p class="small-caps color-muted text-xs m-0">Raport wyzwania</p>
+      <p class="warn-text text-md lh-16 m-0">Nie udało się odczytać raportu minigierki.</p>
+    </section>
+  } @else {
   <app-exploration-outcome-report-layout
-    label="Raport walki"
+    label="Raport wyzwania"
     statusLabel=""
     [title]="outcome().title"
     [titleTone]="outcome().tone"
@@ -15,10 +33,11 @@
       </section>
     }
 
-    <section reportNextStep class="flex-col gap-lg w-100">
-      <app-combat-stage
-        [stage]="combatStage()"
-      />
+    <section reportNextStep class="mg-card p-lg flex-col gap-sm w-100">
+      <p class="small-caps color-muted text-xs m-0">Minigierka</p>
+      <p class="color-text text-md lh-16 m-0">
+        Raport minigierki został odczytany z backendu.
+      </p>
     </section>
 
     @if (
@@ -91,4 +110,5 @@
       }
     </section>
   </app-exploration-outcome-report-layout>
+  }
 }

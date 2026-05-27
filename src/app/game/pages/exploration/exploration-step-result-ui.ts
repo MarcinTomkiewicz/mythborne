@@ -4,7 +4,6 @@ import { Json } from '../../../core/types/database.types';
 import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 
 const ENCOUNTER_KIND_LABEL: Record<string, string> = {
-  [ENCOUNTER_KIND.combat]: 'Zasadzka',
   [ENCOUNTER_KIND.resource]: 'Zasoby',
   [ENCOUNTER_KIND.buff]: 'Wzmocnienie',
   [ENCOUNTER_KIND.debuff]: 'Osłabienie',

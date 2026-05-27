@@ -1,4 +1,3 @@
-import { CombatResultDetailReadModel } from '../domain/combat/combat-live.model';
 import {
   ExplorationOutcomeViewModel,
   ExplorationReportActionsViewModel,
@@ -9,16 +8,16 @@ import {
 } from '../domain/exploration/exploration-result-display.model';
 import { Json } from '../types/database.types';
 import {
-  combatReportDirectReportId,
-  combatReportNarrativeLines,
-  combatReportOutcomeTitle,
-  combatReportOutcomeToneText,
-  combatReportPublicPath,
-  combatReportPublicToken,
-  combatReportSummaryText,
-  combatRewardHeadingText,
-  combatRewardIntroText,
-} from './combat-report-text.mapper';
+  gameReportDirectReportId,
+  gameReportNarrativeLines,
+  gameReportOutcomeTitle,
+  gameReportOutcomeToneText,
+  gameReportPublicPath,
+  gameReportPublicToken,
+  gameReportRewardHeadingText,
+  gameReportRewardIntroText,
+  gameReportSummaryText,
+} from './game-report-text.mapper';
 
 export function explorationResultSourceKind(
   source: ExplorationResultSourceInput | null,
@@ -35,18 +34,15 @@ export function explorationResultSourceKind(
 }
 
 export function mapExplorationOutcomeView(input: {
-  detail: CombatResultDetailReadModel | null;
   rawJson: Json | undefined;
   sourceKind: ExplorationResultSourceKind;
 }): ExplorationOutcomeViewModel {
   const tone = explorationResultOutcomeTone({
-    detail: input.detail,
     rawJson: input.rawJson,
   });
 
   return {
     title: explorationResultOutcomeTitle({
-      detail: input.detail,
       rawJson: input.rawJson,
       tone,
       sourceKind: input.sourceKind,
@@ -58,7 +54,7 @@ export function mapExplorationOutcomeView(input: {
 
 export function mapExplorationRewardText(input: {
   rewardRawJson: Json | undefined;
-  combatRawJson: Json | undefined;
+  reportRawJson: Json | undefined;
   sourceKind: ExplorationResultSourceKind;
 }): ExplorationRewardTextViewModel {
   return {
@@ -94,22 +90,21 @@ export function mapExplorationReportActions(input: {
 }
 
 export function explorationResultNarrativeLines(rawJson: Json | undefined): string[] {
-  const lines = combatReportNarrativeLines(rawJson);
+  const lines = gameReportNarrativeLines(rawJson);
 
   if (lines.length) {
     return lines;
   }
 
-  const fallbackLine = combatReportSummaryText(rawJson);
+  const fallbackLine = gameReportSummaryText(rawJson);
 
   return fallbackLine ? [fallbackLine] : [];
 }
 
 export function explorationResultOutcomeTone(input: {
-  detail: CombatResultDetailReadModel | null;
   rawJson: Json | undefined;
 }): ExplorationResultOutcomeTone {
-  const backendTone = combatReportOutcomeToneText(input.rawJson)?.toLowerCase();
+  const backendTone = gameReportOutcomeToneText(input.rawJson)?.toLowerCase();
 
   if (backendTone?.includes('win') || backendTone?.includes('success')) {
     return 'success';
@@ -123,36 +118,22 @@ export function explorationResultOutcomeTone(input: {
     return 'warning';
   }
 
-  if (input.detail?.outcome === 'draw') {
-    return 'warning';
-  }
-
-  if (input.detail?.winnerSide === 'initiator') {
-    return 'success';
-  }
-
-  if (input.detail?.winnerSide === 'defender') {
-    return 'danger';
-  }
-
   return 'neutral';
 }
 
 export function explorationResultOutcomeTitle(input: {
-  detail: CombatResultDetailReadModel | null;
   rawJson: Json | undefined;
   sourceKind: ExplorationResultSourceKind;
   tone: ExplorationResultOutcomeTone;
 }): string {
-  return combatReportOutcomeTitle(input.rawJson) ?? explorationOutcomeBannerLabel({
-    outcome: input.detail?.outcome ?? null,
+  return gameReportOutcomeTitle(input.rawJson) ?? explorationOutcomeBannerLabel({
     tone: input.tone,
     sourceKind: input.sourceKind,
   });
 }
 
 export function explorationDirectReportId(rawJson: Json | undefined): string | null {
-  return combatReportDirectReportId(rawJson);
+  return gameReportDirectReportId(rawJson);
 }
 
 export function explorationDirectReportLabel(link: string): string {
@@ -162,15 +143,18 @@ export function explorationDirectReportLabel(link: string): string {
 }
 
 export function explorationPublicReportPath(rawJson: Json | undefined): string | null {
-  return combatReportPublicPath(rawJson) ?? publicReportPathFromToken(rawJson);
+  return gameReportPublicPath(rawJson) ?? publicReportPathFromToken(rawJson);
 }
 
 export function explorationRewardHeading(input: {
   rewardRawJson: Json | undefined;
-  combatRawJson: Json | undefined;
+  reportRawJson: Json | undefined;
   sourceKind: ExplorationResultSourceKind;
 }): string {
-  return combatRewardHeadingText(input) ??
+  return gameReportRewardHeadingText({
+    rewardRawJson: input.rewardRawJson,
+    reportRawJson: input.reportRawJson,
+  }) ??
     (
       input.sourceKind === 'trial'
         ? 'Nagroda'
@@ -180,10 +164,13 @@ export function explorationRewardHeading(input: {
 
 export function explorationRewardIntro(input: {
   rewardRawJson: Json | undefined;
-  combatRawJson: Json | undefined;
+  reportRawJson: Json | undefined;
   sourceKind: ExplorationResultSourceKind;
 }): string {
-  return combatRewardIntroText(input) ?? (
+  return gameReportRewardIntroText({
+    rewardRawJson: input.rewardRawJson,
+    reportRawJson: input.reportRawJson,
+  }) ?? (
     input.sourceKind === 'trial'
       ? 'Nagroda:'
       : 'Zysk wyprawy:'
@@ -205,14 +192,9 @@ export function explorationReportRewardDisplay<
 }
 
 export function explorationOutcomeBannerLabel(input: {
-  outcome: string | null;
   tone: ExplorationResultOutcomeTone;
   sourceKind: ExplorationResultSourceKind;
 }): string {
-  if (input.outcome === 'draw') {
-    return 'Walka zakończona remisem';
-  }
-
   if (input.tone === 'success') {
     return input.sourceKind === 'trial'
       ? 'Próba rozstrzygnięta'
@@ -225,11 +207,15 @@ export function explorationOutcomeBannerLabel(input: {
       : 'Wyprawa zakończona porażką';
   }
 
-  return 'Wynik wyprawy';
+  if (input.tone === 'warning') {
+    return 'Wynik nierozstrzygnięty';
+  }
+
+  return 'Wynik wyzwania';
 }
 
 function publicReportPathFromToken(rawJson: Json | undefined): string | null {
-  const token = combatReportPublicToken(rawJson);
+  const token = gameReportPublicToken(rawJson);
 
   return token ? `/report/${token}` : null;
 }

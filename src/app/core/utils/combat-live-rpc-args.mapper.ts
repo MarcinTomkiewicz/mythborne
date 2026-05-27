@@ -7,9 +7,10 @@ import {
   GetCombatResultDetailRpcArgs,
   GetCombatResultDetailRpcRow,
   StartManualCombatSessionRpcArgs,
-  StartManualCombatSessionRpcRow,
   SubmitCombatPlayerActionRpcArgs,
-  SubmitCombatPlayerActionRpcRow,
+  AutoResolveCombatSessionRpcArgs,
+  AutoResolveCombatSessionRpcRow,
+  LiveStateRpcRow,
 } from '../types/combat-live-rpc.types';
 import {
   requiredTrimmedText,
@@ -19,11 +20,6 @@ import {
   clampPercent,
   optionalNonNegativeInteger,
 } from './number';
-
-export type LiveStateRpcRow =
-  | StartManualCombatSessionRpcRow
-  | GetCombatLiveStateRpcRow
-  | SubmitCombatPlayerActionRpcRow;
 
 const LIVE_COMBAT_WORKFLOW_CONTEXT = 'live combat workflow';
 
@@ -121,6 +117,30 @@ export function toSubmitCombatPlayerActionRpcArgs(input: {
   };
 }
 
+export function toAutoResolveCombatSessionRpcArgs(input: {
+  sourceEntityType: string | null | undefined;
+  sourceEntityId: string | null | undefined;
+  requestId: string | null | undefined;
+}): AutoResolveCombatSessionRpcArgs {
+  return {
+    p_source_entity_type: requiredTrimmedText(
+      input.sourceEntityType,
+      'sourceEntityType',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+    p_source_entity_id: requiredTrimmedText(
+      input.sourceEntityId,
+      'sourceEntityId',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+    p_request_id: requiredTrimmedText(
+      input.requestId,
+      'requestId',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+  };
+}
+
 export function toGetCombatResultDetailRpcArgs(input: {
   combatResultId: string | null | undefined;
 }): GetCombatResultDetailRpcArgs {
@@ -152,6 +172,18 @@ export function firstCombatResultDetailRow(
 
   if (!row) {
     throw new Error('DB nie zwróciła szczegółów wyniku walki.');
+  }
+
+  return row;
+}
+
+export function firstAutoResolveCombatSessionRow(
+  rows: readonly AutoResolveCombatSessionRpcRow[],
+): AutoResolveCombatSessionRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error('DB nie zwróciła automatycznego wyniku walki.');
   }
 
   return row;

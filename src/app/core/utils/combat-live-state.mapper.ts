@@ -4,10 +4,10 @@ import {
   CombatLiveStateReadModel,
 } from '../domain/combat/combat-live.model';
 import { Json } from '../types/database.types';
+import { LiveStateRpcRow } from '../types/combat-live-rpc.types';
 import { mapJsonArray } from './json-read';
 import { mapEvent } from './combat-live-event.mapper';
 import { mapParticipant } from './combat-live-participant.mapper';
-import { LiveStateRpcRow } from './combat-live-rpc-args.mapper';
 import { mapTimingManifest } from './combat-timing-manifest.mapper';
 
 export function mapCombatLiveState(row: LiveStateRpcRow): CombatLiveStateReadModel {

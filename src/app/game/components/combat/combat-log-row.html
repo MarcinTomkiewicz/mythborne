@@ -1,6 +1,10 @@
 @let item = row();
 
-<article class="mg-card flex-row-start-center flex-col-start-start-sm gap-sm p-sm radius-md w-100">
+<article
+  class="mg-card flex-row-start-center flex-col-start-start-sm gap-sm p-sm radius-md w-100"
+  [class.mg-card--danger]="item.tone === 'danger'"
+  [class.mg-card--success]="item.tone === 'success'"
+>
   <strong class="color-heading font-extrabold w-px-100 w-100-sm flex-shrink-0 text-md">
     {{ item.actorLabel }}
   </strong>

@@ -1,13 +1,12 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
-import { ExplorationLiveCombat } from '../../../core/services/combat/exploration-live-combat';
 import { ExplorationDifficultyPreviewSection } from './exploration-difficulty-preview-section';
 import { ExplorationRuntimeDiagnosticsSection } from './exploration-runtime-diagnostics-section';
 import { ExplorationRuntimeDirectionSection } from './exploration-runtime-direction-section';
 import { ExplorationRuntimePrimarySurface } from './exploration-runtime-primary-surface';
-import { ExplorationLiveCombatState } from './exploration-live-combat.state';
 import { ExplorationMovementState } from './exploration-movement.state';
+import { ExplorationMinigameHandoffState } from './exploration-minigame-handoff.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
@@ -28,11 +27,10 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
   ],
   providers: [
     ExplorationFeedbackState,
-    ExplorationLiveCombat,
-    ExplorationLiveCombatState,
     ExplorationPreviewState,
     ExplorationOverviewState,
     ExplorationMovementState,
+    ExplorationMinigameHandoffState,
     ExplorationStepState,
     ExplorationChallengeState,
     ExplorationRewardState,

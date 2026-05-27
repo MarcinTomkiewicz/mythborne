@@ -1,4 +1,5 @@
 import { Json } from '../../types/database.types';
+import type { CombatDisplayValueTone } from './combat-display.model';
 import type { StatTone } from '../../utils/stat-tone-class';
 
 export interface CombatLiveStateReadModel {
@@ -110,12 +111,19 @@ export interface CombatLiveEventReadModel {
   eventIndex: number;
   eventKind: string;
   label: string;
+  actionText: string | null;
+  actionSegments: CombatLogActionSegmentReadModel[];
+  resultRows: CombatLogResultRowReadModel[];
+  secondaryLogRows: CombatLogSecondaryRowReadModel[];
   eventLabel: string | null;
   detailText: string | null;
   displayText: string | null;
   damageDisplay: string | null;
+  resultDisplay: string | null;
+  healingDisplay: string | null;
   attackSourceLabel: string | null;
   presentationKind: string | null;
+  tone: CombatDisplayValueTone | null;
   timingHit: boolean | null;
   evaded: boolean | null;
   critical: boolean | null;
@@ -143,6 +151,42 @@ export interface CombatResultDetailReadModel {
   participants: Json;
   attacks: Json;
   rawJson: Json;
+}
+
+export interface CombatLogActionSegmentReadModel {
+  kind: string | null;
+  text: string;
+  tone: CombatDisplayValueTone | null;
+}
+
+export interface CombatLogResultRowReadModel {
+  text: string;
+  tone: CombatDisplayValueTone | null;
+}
+
+export interface CombatLogSecondaryRowReadModel {
+  id: string | null;
+  actorDisplayName: string | null;
+  actionText: string | null;
+  actionSegments: CombatLogActionSegmentReadModel[];
+  resultRows: CombatLogResultRowReadModel[];
+  eventLabel: string | null;
+  detailText: string | null;
+  displayText: string | null;
+  damageDisplay: string | null;
+  resultDisplay: string | null;
+  healingDisplay: string | null;
+  attackSourceLabel: string | null;
+  presentationKind: string | null;
+  tone: CombatDisplayValueTone | null;
+  details: string[];
+}
+
+export interface CombatAutoResolveResultReadModel {
+  sourceEntityId: string;
+  combatResultId: string;
+  sourceResultId: string | null;
+  gameReportId: string | null;
 }
 
 export interface CombatTimingInput {

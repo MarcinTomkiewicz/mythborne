@@ -7680,6 +7680,8 @@ Dodać jawne auto-resolve dla Exploration combat bez ruszania manualnego Walking
 - completed report pokazuje combat timeline z backendu;
 - `tsc` i build przechodzą.
 
+**Status:** Accepted/completed on 2026-05-27 as the UI-COMBAT-8 visual combat/minigame integration slice. Exploration now routes combat challenges through the generic `MinigameHost` boundary, while the combat-owned `CombatHost` / `CombatHostState` owns preview, manual start, timing submit, auto-resolve, stale guards and Walking Dead timer lifecycle through `CombatSessions` and existing combat mappers. Active combat keeps the accepted `CombatStage` / `CombatSurface` / `CombatLogPanel` / `CombatLogRow` presentation path, the old `CombatDisplayLogRow` actor/body/result contract, hero portrait mapping and backend-structured live event mapping into that old row shape without a new renderer or local combat-log parser. Auto-resolve uses the generic combat session RPC service path and mapped read models; Angular does not calculate hit, damage, crit, evasion, healing, outcome, reward or report data locally. `combat-report-log.mapper.ts` is not the active live combat mapper. Follow-up outside this accepted commit: manual combat completion currently hands off `reportId: null`, so Exploration may show `Raport minigierki nie jest jeszcze dostępny` until the report handoff contract is completed.
+
 ---
 
 # UI-COMBAT-9 — PvP attack auto-resolve integration

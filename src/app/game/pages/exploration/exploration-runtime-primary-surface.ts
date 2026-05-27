@@ -4,6 +4,7 @@ import { ExplorationResultReport } from '../../components/exploration-result-rep
 import { ExplorationStepHandoffCard } from '../../components/exploration-step-handoff-card/exploration-step-handoff-card';
 import { PendingTimerOracle } from '../../../shared/pending-timer-oracle/pending-timer-oracle';
 import { ExplorationChallengeState } from './exploration-challenge.state';
+import { ExplorationMinigameHandoffState } from './exploration-minigame-handoff.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationStepState } from './exploration-step.state';
@@ -22,6 +23,7 @@ import { ExplorationStepState } from './exploration-step.state';
 })
 export class ExplorationRuntimePrimarySurface {
   readonly challenge = inject(ExplorationChallengeState);
+  readonly minigameHandoff = inject(ExplorationMinigameHandoffState);
   readonly overview = inject(ExplorationOverviewState);
   readonly page = inject(ExplorationPageState);
   readonly step = inject(ExplorationStepState);

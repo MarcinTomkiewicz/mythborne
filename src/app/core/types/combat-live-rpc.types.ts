@@ -23,6 +23,16 @@ export type SubmitCombatPlayerActionRpcArgs =
 export type SubmitCombatPlayerActionRpcRow =
   Rpc<'submit_combat_player_action'>['Returns'][number];
 
+export type LiveStateRpcRow =
+  | StartManualCombatSessionRpcRow
+  | GetCombatLiveStateRpcRow
+  | SubmitCombatPlayerActionRpcRow;
+
+export type AutoResolveCombatSessionRpcArgs =
+  Rpc<'auto_resolve_combat_session'>['Args'];
+export type AutoResolveCombatSessionRpcRow =
+  Rpc<'auto_resolve_combat_session'>['Returns'][number];
+
 export type GetCombatResultDetailRpcArgs =
   Rpc<'get_combat_result_detail'>['Args'];
 export type GetCombatResultDetailRpcRow =
