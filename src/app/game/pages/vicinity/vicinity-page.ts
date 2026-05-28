@@ -1,10 +1,12 @@
 import { Component, OnInit, computed, inject } from '@angular/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { VicinityActivePvpActionPanel } from '../../components/vicinity/active-pvp-action-panel/vicinity-active-pvp-action-panel';
 import { VicinityAddressList } from '../../components/vicinity/address-list/vicinity-address-list';
 import { VicinityPagination } from '../../components/vicinity/pagination/vicinity-pagination';
 import { VicinitySelectedTargetPanel } from '../../components/vicinity/selected-target-panel/vicinity-selected-target-panel';
 import { VicinityToolbar } from '../../components/vicinity/toolbar/vicinity-toolbar';
+import { VicinityActivePvpActionState } from '../../features/vicinity/state/vicinity-active-pvp-action.state';
 import { VicinityHeaderSummaryState } from '../../features/vicinity/state/vicinity-header-summary.state';
 import { VicinityPageState } from '../../features/vicinity/state/vicinity-page.state';
 import { VicinityPvpActionsState } from '../../features/vicinity/state/vicinity-pvp-actions.state';
@@ -13,7 +15,6 @@ import { VicinityRangeState } from '../../features/vicinity/state/vicinity-range
 import { VicinityRelocationState } from '../../features/vicinity/state/vicinity-relocation.state';
 import { VicinityRowsState } from '../../features/vicinity/state/vicinity-rows.state';
 import { VicinitySearchState } from '../../features/vicinity/state/vicinity-search.state';
-import { VicinityTargetCandidatesState } from '../../features/vicinity/state/vicinity-target-candidates.state';
 import { VicinityTargetSearchState } from '../../features/vicinity/state/vicinity-target-search.state';
 import { VicinityVisibleTargetOverlayState } from '../../features/vicinity/state/vicinity-visible-target-overlay.state';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
@@ -28,6 +29,7 @@ import { EstateRelocationRunner } from '../../workflows/estate-relocation/estate
   imports: [
     ConfirmDialogModule,
     LoadingOverlay,
+    VicinityActivePvpActionPanel,
     VicinityAddressList,
     VicinityPagination,
     VicinitySelectedTargetPanel,
@@ -35,6 +37,7 @@ import { EstateRelocationRunner } from '../../workflows/estate-relocation/estate
   ],
   providers: [
     VicinityPageState,
+    VicinityActivePvpActionState,
     VicinityHeaderSummaryState,
     VicinityRangeState,
     VicinityRelocationState,
@@ -45,7 +48,6 @@ import { EstateRelocationRunner } from '../../workflows/estate-relocation/estate
     VicinityTargetSearchState,
     VicinityVisibleTargetOverlayState,
     EstateRelocationRunner,
-    VicinityTargetCandidatesState,
   ],
   templateUrl: './vicinity-page.html',
 })
@@ -53,24 +55,29 @@ export class VicinityPage implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
 
   readonly page = inject(VicinityPageState);
+  readonly activePvpAction = inject(VicinityActivePvpActionState);
+  readonly actions = inject(VicinityPvpActionsState);
   readonly metadata = inject(VicinityPvpMetadataState);
-  readonly pvpTargets = inject(VicinityTargetCandidatesState);
   readonly rowsState = inject(VicinityRowsState);
   readonly search = inject(VicinitySearchState);
+  readonly targetSearch = inject(VicinityTargetSearchState);
+  readonly targetOverlay = inject(VicinityVisibleTargetOverlayState);
   readonly isScreenLoading = computed(() =>
     this.page.error() === null
     && (
       this.page.isLoading()
+      || this.activePvpAction.isLoading()
       || this.page.isDailyAttackLoading()
       || this.page.isEstateRuntimeLoading()
-      || this.pvpTargets.isVisibleOverlayLoading()
-      || !this.pvpTargets.visibleOverlayLoaded()
+      || this.targetOverlay.isLoading()
+      || !this.targetOverlay.loaded()
       || !this.metadata.loaded()
     ),
   );
 
   ngOnInit(): void {
     this.page.loadData();
+    this.activePvpAction.load();
     this.page.loadDailyAttackState();
     this.page.loadEstateRuntimeState();
     this.metadata.load();

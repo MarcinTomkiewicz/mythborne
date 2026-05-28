@@ -6,13 +6,13 @@ import {
   parseVicinityAddressSearch,
 } from '../utils/vicinity-search';
 import { VicinityPageState } from './vicinity-page.state';
-import { VicinityTargetCandidatesState } from './vicinity-target-candidates.state';
+import { VicinityTargetSearchState } from './vicinity-target-search.state';
 
 @Injectable()
 export class VicinitySearchState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly page = inject(VicinityPageState);
-  private readonly pvpTargets = inject(VicinityTargetCandidatesState);
+  private readonly targetSearch = inject(VicinityTargetSearchState);
 
   readonly selectedDistrictControl = new FormControl<string | null>(null);
   readonly pvpSearchControl = new FormControl<string>('', { nonNullable: true });
@@ -33,7 +33,7 @@ export class VicinitySearchState {
     const search = normalizeVicinitySearch(this.pvpSearchControl.value);
     const addressSearch = parseVicinityAddressSearch(search);
 
-    this.pvpTargets.setSearch(search);
+    this.targetSearch.setSearch(search);
 
     if (!search) {
       this.feedback.set(null);
@@ -45,7 +45,7 @@ export class VicinitySearchState {
       return;
     }
 
-    this.pvpTargets.loadCandidates((candidates) => {
+    this.targetSearch.load((candidates) => {
       if (normalizeVicinitySearch(this.pvpSearchControl.value) !== search) {
         return;
       }
@@ -62,7 +62,7 @@ export class VicinitySearchState {
         districtCode: target.targetAddress.districtCode,
         addressNumber: target.targetAddress.addressNumber,
       });
-      this.pvpTargets.setDistrictCode(target.targetAddress.districtCode);
+      this.targetSearch.setDistrictCode(target.targetAddress.districtCode);
     });
   }
 
@@ -75,7 +75,7 @@ export class VicinitySearchState {
     }
 
     this.feedback.set(null);
-    this.pvpTargets.setDistrictCode(addressSearch.districtCode);
+    this.targetSearch.setDistrictCode(addressSearch.districtCode);
   }
 
   private bindControlsToState(): void {
@@ -85,7 +85,7 @@ export class VicinitySearchState {
         if (value) {
           this.feedback.set(null);
           this.page.setSelectedDistrictCode(value);
-          this.pvpTargets.setDistrictCode(value);
+          this.targetSearch.setDistrictCode(value);
         }
       });
   }
@@ -102,13 +102,13 @@ export class VicinitySearchState {
       const selectedDistrictCode = this.page.selectedDistrictCode();
       this.syncControl(this.selectedDistrictControl, selectedDistrictCode);
 
-      if (selectedDistrictCode && this.pvpTargets.districtCode() !== selectedDistrictCode) {
+      if (selectedDistrictCode && this.targetSearch.districtCode() !== selectedDistrictCode) {
         queueMicrotask(() => {
           if (
             this.page.selectedDistrictCode() === selectedDistrictCode
-            && this.pvpTargets.districtCode() !== selectedDistrictCode
+            && this.targetSearch.districtCode() !== selectedDistrictCode
           ) {
-            this.pvpTargets.setDistrictCode(selectedDistrictCode);
+            this.targetSearch.setDistrictCode(selectedDistrictCode);
           }
         });
       }

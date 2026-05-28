@@ -41,7 +41,7 @@ export function pendingTimerDisplay(
     progressPercent,
     remainingLabel: remainingMs <= 0
       ? 'Gotowe'
-      : formatRemainingDuration(remainingSeconds),
+      : formatPendingDurationLabel(remainingSeconds),
     countdownLabel: formatCountdownDuration(remainingSeconds),
     durationSeconds: Math.round(durationMs / 1000),
     remainingSeconds,
@@ -88,11 +88,25 @@ function pendingTimerTiming(
   return { startedAtMs, resolvesAtMs };
 }
 
-function formatRemainingDuration(totalSeconds: number): string {
+export function formatPendingDurationLabel(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
 
   return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+}
+
+export function formatTimeOfDayLabel(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, 8);
+  }
+
+  return [
+    date.getHours(),
+    date.getMinutes(),
+    date.getSeconds(),
+  ].map((part) => String(part).padStart(2, '0')).join(':');
 }
 
 function formatCountdownDuration(totalSeconds: number): string {

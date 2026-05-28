@@ -1,13 +1,15 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { PvpTargetCandidate } from '../../../../core/domain/pvp/pvp.model';
-import { ActiveHeroState } from '../../../../core/interfaces/hero/active-hero.interface';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
 import {
   PendingPvpAction,
   PvpStartActionKind,
 } from '../../../../core/types/vicinity.types';
+import { activeHeroContextKey } from '../../../../core/utils/request-token';
 import { getErrorMessage } from '../../../../core/utils/error-message';
+import { formatPendingDurationLabel } from '../../../../core/utils/pending-timer';
+import { createRequestId } from '../../../../core/utils/request-id';
 
 @Injectable()
 export class VicinityPvpActionsState {
@@ -33,16 +35,16 @@ export class VicinityPvpActionsState {
   start(input: {
     candidate: PvpTargetCandidate;
     actionKind: PvpStartActionKind;
-    refreshTargets: () => void;
+    refreshAfterStart: () => void;
   }): void {
-    const { candidate, actionKind, refreshTargets } = input;
+    const { candidate, actionKind, refreshAfterStart } = input;
 
     if (!this.canStart(candidate, actionKind)) {
       return;
     }
 
     const requestId = ++this.requestId;
-    const requestContextKey = toContextKey(this.activeHero.state());
+    const requestContextKey = activeHeroContextKey(this.activeHero.state());
     const targetHeroId = candidate.targetHeroId;
 
     this.error.set(null);
@@ -58,7 +60,7 @@ export class VicinityPvpActionsState {
     this.playerPvp.startAction({
       actionKind,
       targetHeroId,
-      requestId: pvpActionRequestId(actionKind, targetHeroId),
+      requestId: createRequestId(`pvp-${actionKind}:${targetHeroId}`),
     }).subscribe({
       next: (result) => {
         if (!this.isCurrentAction(requestId, requestContextKey)) {
@@ -66,8 +68,13 @@ export class VicinityPvpActionsState {
           return;
         }
 
-        this.success.set(actionSuccessMessage(actionKind, result.travelTimeSeconds));
-        refreshTargets();
+        const travelTimeLabel = formatPendingDurationLabel(result.travelTimeSeconds);
+        this.success.set(
+          actionKind === 'attack'
+            ? `Atak rozpoczęty. Dotarcie za ${travelTimeLabel}.`
+            : `Szpiegowanie rozpoczęte. Dotarcie za ${travelTimeLabel}.`,
+        );
+        refreshAfterStart();
         this.clearPendingAction(actionKind, targetHeroId);
       },
       error: (error: unknown) => {
@@ -76,7 +83,12 @@ export class VicinityPvpActionsState {
           return;
         }
 
-        this.error.set(getErrorMessage(error, actionErrorMessage(actionKind)));
+        this.error.set(getErrorMessage(
+          error,
+          actionKind === 'attack'
+            ? 'Nie udało się rozpocząć ataku.'
+            : 'Nie udało się rozpocząć szpiegowania.',
+        ));
         this.clearPendingAction(actionKind, targetHeroId);
       },
     });
@@ -97,7 +109,7 @@ export class VicinityPvpActionsState {
   }
 
   private currentContextKey(): string | null {
-    return toContextKey(this.activeHero.state());
+    return activeHeroContextKey(this.activeHero.state());
   }
 
   private isCurrentAction(requestId: number, contextKey: string): boolean {
@@ -128,45 +140,4 @@ export class VicinityPvpActionsState {
       ? this.pendingAttackTargetIds
       : this.pendingSpyTargetIds;
   }
-}
-
-function toContextKey(state: Pick<ActiveHeroState, 'serverId' | 'heroId'> | null): string | null {
-  return state?.heroId && state.serverId
-    ? `${state.serverId}:${state.heroId}`
-    : null;
-}
-
-function pvpActionRequestId(actionKind: PvpStartActionKind, targetHeroId: string): string {
-  const randomId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-  return `pvp-${actionKind}:${targetHeroId}:${randomId}`;
-}
-
-function actionSuccessMessage(actionKind: PvpStartActionKind, travelTimeSeconds: number): string {
-  const travelTimeLabel = durationLabel(travelTimeSeconds);
-
-  return actionKind === 'attack'
-    ? `Atak rozpoczęty. Dotarcie za ${travelTimeLabel}.`
-    : `Szpiegowanie rozpoczęte. Dotarcie za ${travelTimeLabel}.`;
-}
-
-function actionErrorMessage(actionKind: PvpStartActionKind): string {
-  return actionKind === 'attack'
-    ? 'Nie udało się rozpocząć ataku.'
-    : 'Nie udało się rozpocząć szpiegowania.';
-}
-
-function durationLabel(seconds: number): string {
-  if (seconds < 60) {
-    return `${seconds}s`;
-  }
-
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-
-  return remainingSeconds > 0
-    ? `${minutes}m ${remainingSeconds}s`
-    : `${minutes}m`;
 }

@@ -1,22 +1,41 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { effect, inject, Injectable, signal } from '@angular/core';
 import { PvpTargetCandidate } from '../../../../core/domain/pvp/pvp.model';
-import { ActiveHeroState } from '../../../../core/interfaces/hero/active-hero.interface';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
 import { PvpVisibleAddressTargetOverlayInput } from '../../../../core/types/vicinity.types';
+import { activeHeroContextKey } from '../../../../core/utils/request-token';
 import { getErrorMessage } from '../../../../core/utils/error-message';
+import { RequestToken } from '../../../../core/utils/request-token';
+import { VicinityRangeState } from './vicinity-range.state';
 
 @Injectable()
 export class VicinityVisibleTargetOverlayState {
   private readonly activeHero = inject(ActiveHero);
   private readonly playerPvp = inject(PlayerPvp);
-  private requestId = 0;
+  private readonly range = inject(VicinityRangeState);
+  private readonly requests = new RequestToken();
   private lastInput: PvpVisibleAddressTargetOverlayInput | null = null;
 
   readonly isLoading = signal(false);
   readonly loaded = signal(false);
   readonly error = signal<string | null>(null);
   readonly targets = signal<PvpTargetCandidate[]>([]);
+
+  constructor() {
+    effect(() => {
+      const range = this.range.vicinityRange();
+
+      if (!range) {
+        return;
+      }
+
+      this.load({
+        districtCode: range.district.districtCode,
+        fromAddressNumber: range.fromAddressNumber,
+        toAddressNumber: range.toAddressNumber,
+      });
+    });
+  }
 
   load(input: PvpVisibleAddressTargetOverlayInput): void {
     this.lastInput = input;
@@ -35,8 +54,8 @@ export class VicinityVisibleTargetOverlayState {
     input: PvpVisibleAddressTargetOverlayInput,
     resetLoaded: boolean,
   ): void {
-    const requestId = ++this.requestId;
-    const requestContextKey = toContextKey(this.activeHero.state());
+    const requestToken = this.requests.next();
+    const requestContextKey = activeHeroContextKey(this.activeHero.state());
 
     this.isLoading.set(true);
     this.error.set(null);
@@ -55,7 +74,10 @@ export class VicinityVisibleTargetOverlayState {
 
     this.playerPvp.getVisibleAddressTargetOverlay(input).subscribe({
       next: (targets) => {
-        if (requestId !== this.requestId || requestContextKey !== toContextKey(this.activeHero.state())) {
+        if (
+          !this.requests.isCurrent(requestToken)
+          || requestContextKey !== activeHeroContextKey(this.activeHero.state())
+        ) {
           return;
         }
 
@@ -64,7 +86,10 @@ export class VicinityVisibleTargetOverlayState {
         this.loaded.set(true);
       },
       error: (error: unknown) => {
-        if (requestId !== this.requestId || requestContextKey !== toContextKey(this.activeHero.state())) {
+        if (
+          !this.requests.isCurrent(requestToken)
+          || requestContextKey !== activeHeroContextKey(this.activeHero.state())
+        ) {
           return;
         }
 
@@ -75,10 +100,4 @@ export class VicinityVisibleTargetOverlayState {
       },
     });
   }
-}
-
-function toContextKey(state: Pick<ActiveHeroState, 'serverId' | 'heroId'> | null): string | null {
-  return state?.heroId && state.serverId
-    ? `${state.serverId}:${state.heroId}`
-    : null;
 }

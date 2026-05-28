@@ -5,6 +5,10 @@ import {
   PvpEligibilityDisplay,
   pvpEligibilityDisplay,
 } from '../../../../core/utils/pvp-eligibility-display';
+import {
+  formatPendingDurationLabel,
+  formatTimeOfDayLabel,
+} from '../../../../core/utils/pending-timer';
 import { toVicinityRowActions } from '../../../../core/utils/vicinity-row-actions.mapper';
 import {
   VicinityAddressRow,
@@ -42,8 +46,8 @@ export function toVicinityListRow(
   const isProtected = !!targetCandidate?.underProtection;
   const metricDisplays = {
     level: targetCandidate ? String(targetCandidate.targetLevel) : '-',
-    attackTravel: durationLabel(targetCandidate?.attackEligibility.travelTimeSeconds),
-    spyTravel: durationLabel(targetCandidate?.spyEligibility.travelTimeSeconds),
+    attackTravel: travelTimeDisplay(targetCandidate?.attackEligibility.travelTimeSeconds),
+    spyTravel: travelTimeDisplay(targetCandidate?.spyEligibility.travelTimeSeconds),
   };
   const listRow: VicinityListRow = {
     key: vicinityAddressKey(row.districtCode, row.addressNumber),
@@ -102,21 +106,12 @@ function rowDetailLabel(row: VicinityListRow): string {
   return '';
 }
 
-function durationLabel(seconds: number | null | undefined): string {
+function travelTimeDisplay(seconds: number | null | undefined): string {
   if (typeof seconds !== 'number') {
     return '-';
   }
 
-  if (seconds < 60) {
-    return `${seconds}s`;
-  }
-
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-
-  return remainingSeconds > 0
-    ? `${minutes}m ${remainingSeconds}s`
-    : `${minutes}m`;
+  return formatPendingDurationLabel(seconds);
 }
 
 function playerSafeReason(
@@ -138,11 +133,7 @@ function protectionLabel(row: VicinityListRow): string | null {
     return null;
   }
 
-  return `do ${expiresAtDate.toLocaleTimeString('pl-PL', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })}`;
+  return `do ${formatTimeOfDayLabel(expiresAt)}`;
 }
 
 function isSameGuildCandidate(candidate: PvpTargetCandidate | null): boolean {

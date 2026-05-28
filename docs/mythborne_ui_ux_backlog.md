@@ -9015,7 +9015,7 @@ Cel: PvP target selection przez Vicinity/Ranking, z jasną granicą względem w�
 
 - UI-PVP-1 / formerly UI-39 — PvP Vicinity target selection screen
 - UI-PVP-2 / formerly UI-40 — Selected target side panel
-- UI-PVP-3 / formerly UI-41 — Vicinity pagination and search
+- UI-PVP-3 / formerly UI-41 — PvP travel timer / active PvP action state
 - UI-PVP-4 / formerly UI-42 — PvP action start boundaries
 - UI-PVP-5 / formerly UI-43 — PvP Ranking entry point
 - UI-PVP-6 / formerly UI-44 — PvP combat screen boundary note
@@ -9155,19 +9155,23 @@ Status:
 
 * `UI-PVP-1` — accepted/completed: `/game/vicinity` target selection.
 * `UI-PVP-2` — accepted/completed: selected target side panel.
+* `UI-PVP-3` — accepted/completed: active PvP travel/timer panel.
 * Tych tasków nie przepisywać ani nie otwierać ponownie bez konkretnego blockera.
 
 Cel dalszych tasków:
 
-* podpiąć rozpoczęte akcje PvP do runtime/travel timerów;
 * podpiąć istniejący moduł combat do PvP;
 * zapewnić auto/manual resolution tak jak w istniejącym combat flow;
+* dopiąć PvP combat handoff / auto-manual boundary po zakończeniu timera;
 * nie odtwarzać osobnych PvP result screens usuniętych w cleanupie;
 * ranking traktować jako osobny follow-up/epic po domknięciu podstawowego PvP combat flow.
 
 ---
 
 ## UI-PVP-3 — PvP travel timer / active PvP action state
+
+**Status:**
+Accepted/completed on 2026-05-28. `/game/vicinity` now renders an active PvP travel/timer panel when `get_active_pvp_action_offer(p_hero_id)` returns active/travel/manual-relevant attack or spy state. The panel reuses `PendingTimerOracle` and `pendingTimerDisplay(...)`, shows backend/read-model action, phase, target, address and arrival facts, keeps remaining time in the oracle only, and uses safe handoff copy for attack combat and spy report/result flows outside target selection. No direct `pvp_actions` reads, `metadata_json` parsing, local timer engine, combat log/preview, result screen or spy-result detail was added. Cleanup removed stale PvP result/runtime mapper/service methods and the old `VicinityTargetCandidatesState` facade; active overlay/search/action states now own the production paths. Verification passed with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings and `git diff --check`; user-side smoke remains pending. Timer-expiry resolve/combat handoff moves to UI-PVP-4.
 
 **Goal**
 

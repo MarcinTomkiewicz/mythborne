@@ -9,20 +9,24 @@ import {
   toVicinityListRow,
   vicinityAddressKey,
 } from '../utils/vicinity-list-row';
+import { VicinityActivePvpActionState } from './vicinity-active-pvp-action.state';
 import { VicinityPageState } from './vicinity-page.state';
+import { VicinityPvpActionsState } from './vicinity-pvp-actions.state';
 import { VicinityPvpMetadataState } from './vicinity-pvp-metadata.state';
-import { VicinityTargetCandidatesState } from './vicinity-target-candidates.state';
+import { VicinityVisibleTargetOverlayState } from './vicinity-visible-target-overlay.state';
 
 @Injectable()
 export class VicinityRowsState {
   private readonly metadata = inject(VicinityPvpMetadataState);
   private readonly page = inject(VicinityPageState);
-  private readonly pvpTargets = inject(VicinityTargetCandidatesState);
+  private readonly activePvpAction = inject(VicinityActivePvpActionState);
+  private readonly actions = inject(VicinityPvpActionsState);
+  private readonly overlay = inject(VicinityVisibleTargetOverlayState);
 
   readonly selectedRowKey = signal<string | null>(null);
   readonly rows = computed(() => {
     const candidatesByAddress = new Map(
-      this.pvpTargets.visibleTargets().map((candidate) => [
+      this.overlay.targets().map((candidate) => [
         vicinityAddressKey(
           candidate.targetAddress.districtCode,
           candidate.targetAddress.addressNumber,
@@ -78,7 +82,14 @@ export class VicinityRowsState {
       return;
     }
 
-    this.pvpTargets.startAction(candidate, pvpActionKind);
+    this.actions.start({
+      candidate,
+      actionKind: pvpActionKind,
+      refreshAfterStart: () => {
+        this.activePvpAction.load();
+        this.overlay.refresh();
+      },
+    });
   }
 
   private withActionState(row: VicinityListRow): VicinityListRow {
@@ -109,9 +120,12 @@ export class VicinityRowsState {
     }
 
     const pending = pvpActionKind === 'attack'
-      ? this.pvpTargets.isAttackPending(candidate.targetHeroId)
-      : this.pvpTargets.isSpyPending(candidate.targetHeroId);
-    const disabled = action.disabled || !this.pvpTargets.canStart(candidate, pvpActionKind);
+      ? this.actions.isAttackPending(candidate.targetHeroId)
+      : this.actions.isSpyPending(candidate.targetHeroId);
+    const disabled = action.disabled
+      || this.activePvpAction.isLoading()
+      || this.activePvpAction.hasBlockingAction()
+      || !this.actions.canStart(candidate, pvpActionKind);
 
     return {
       ...action,

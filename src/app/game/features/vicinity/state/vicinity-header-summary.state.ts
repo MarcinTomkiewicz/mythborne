@@ -1,11 +1,11 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { VICINITY_HEADER_SUMMARY_ROWS } from '../../../../core/configs/vicinity.config';
 import { HeroPvpDailyAttackState } from '../../../../core/domain/pvp/pvp.model';
-import { ActiveHeroState } from '../../../../core/interfaces/hero/active-hero.interface';
 import { BuildingJobs } from '../../../../core/services/buildings/building-jobs';
 import type { HeroEstateRuntimeStateReadModel } from '../../../../core/services/buildings/building-jobs-read-model';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
+import { activeHeroContextKey } from '../../../../core/utils/request-token';
 import { getErrorMessage } from '../../../../core/utils/error-message';
 import { VicinityRangeState } from './vicinity-range.state';
 import { activeProtectionLabel } from '../utils/vicinity-runtime-summary-labels';
@@ -66,7 +66,7 @@ export class VicinityHeaderSummaryState {
 
   loadDailyAttackState(): void {
     const requestId = ++this.dailyAttackRequestId;
-    const requestContextKey = toContextKey(this.activeHero.state());
+    const requestContextKey = activeHeroContextKey(this.activeHero.state());
 
     this.isDailyAttackLoading.set(true);
     this.dailyAttackError.set(null);
@@ -82,7 +82,7 @@ export class VicinityHeaderSummaryState {
       next: (state) => {
         if (
           requestId !== this.dailyAttackRequestId
-          || requestContextKey !== toContextKey(this.activeHero.state())
+          || requestContextKey !== activeHeroContextKey(this.activeHero.state())
         ) {
           return;
         }
@@ -93,7 +93,7 @@ export class VicinityHeaderSummaryState {
       error: (error: unknown) => {
         if (
           requestId !== this.dailyAttackRequestId
-          || requestContextKey !== toContextKey(this.activeHero.state())
+          || requestContextKey !== activeHeroContextKey(this.activeHero.state())
         ) {
           return;
         }
@@ -110,7 +110,7 @@ export class VicinityHeaderSummaryState {
   loadEstateRuntimeState(): void {
     const requestId = ++this.estateRuntimeRequestId;
     const activeHeroState = this.activeHero.state();
-    const requestContextKey = toContextKey(activeHeroState);
+    const requestContextKey = activeHeroContextKey(activeHeroState);
     const heroId = activeHeroState?.heroId ?? null;
 
     this.isEstateRuntimeLoading.set(true);
@@ -127,7 +127,7 @@ export class VicinityHeaderSummaryState {
       next: (state) => {
         if (
           requestId !== this.estateRuntimeRequestId
-          || requestContextKey !== toContextKey(this.activeHero.state())
+          || requestContextKey !== activeHeroContextKey(this.activeHero.state())
         ) {
           return;
         }
@@ -138,7 +138,7 @@ export class VicinityHeaderSummaryState {
       error: (error: unknown) => {
         if (
           requestId !== this.estateRuntimeRequestId
-          || requestContextKey !== toContextKey(this.activeHero.state())
+          || requestContextKey !== activeHeroContextKey(this.activeHero.state())
         ) {
           return;
         }
@@ -151,10 +151,4 @@ export class VicinityHeaderSummaryState {
       },
     });
   }
-}
-
-function toContextKey(state: Pick<ActiveHeroState, 'serverId' | 'heroId'> | null): string | null {
-  return state?.heroId && state.serverId
-    ? `${state.serverId}:${state.heroId}`
-    : null;
 }

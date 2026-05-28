@@ -84,6 +84,7 @@ export const RPC = {
   get_my_notification_unread_count: 'get_my_notification_unread_count',
   get_my_notifications: 'get_my_notifications',
   get_hero_active_runtime_activity: 'get_hero_active_runtime_activity',
+  get_active_pvp_action_offer: 'get_active_pvp_action_offer',
   inspect_pvp_foundation_integration_state:
     'inspect_pvp_foundation_integration_state',
   get_hero_pvp_daily_attack_state: 'get_hero_pvp_daily_attack_state',
