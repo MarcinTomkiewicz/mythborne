@@ -9,7 +9,7 @@ import { CombatHostState } from './combat-host.state';
   imports: [CombatStage],
   providers: [CombatHostState],
   template: `
-    <section class="mg-card p-lg flex-col gap-sm w-100">
+    <section class="flex-col gap-sm w-100">
       @if (flow.previewErrorMessage(); as message) {
         <p class="warn-text text-md lh-16 m-0">{{ message }}</p>
       } @else {
