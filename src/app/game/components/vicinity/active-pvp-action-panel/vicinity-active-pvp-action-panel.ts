@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { ActivePvpActionOffer } from '../../../../core/domain/pvp/pvp.model';
 import type { PendingTimerDisplay } from '../../../../core/types/pending-timer.types';
 import { PendingTimerOracle } from '../../../../shared/pending-timer-oracle/pending-timer-oracle';
@@ -17,4 +17,6 @@ export class VicinityActivePvpActionPanel {
   readonly helperText = input('');
   readonly pendingHelperText = input('');
   readonly isLoading = input(false);
+  readonly isTimerReady = input(false);
+  readonly refresh = output<void>();
 }

@@ -4,6 +4,7 @@ export const MINIGAME_KEY = {
 
 export const MINIGAME_SOURCE_ENTITY_TYPE = {
   explorationChallengeAttempt: 'exploration_challenge_attempt',
+  pvpAction: 'pvp_action',
 } as const;
 
 export type MinigameKey = typeof MINIGAME_KEY[keyof typeof MINIGAME_KEY];

@@ -1,21 +1,29 @@
-import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import { ActivePvpActionOffer } from '../../../../core/domain/pvp/pvp.model';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
-import { activeHeroContextKey } from '../../../../core/utils/request-token';
+import {
+  activeHeroContextKey,
+  RequestToken,
+} from '../../../../core/utils/request-token';
 import { getErrorMessage } from '../../../../core/utils/error-message';
 import {
   formatTimeOfDayLabel,
   pendingTimerDisplay,
+  pendingTimerHasElapsed,
 } from '../../../../core/utils/pending-timer';
+
+const ELAPSED_REFRESH_INTERVAL_MS = 5000;
 
 @Injectable()
 export class VicinityActivePvpActionState {
   private readonly activeHero = inject(ActiveHero);
   private readonly destroyRef = inject(DestroyRef);
   private readonly playerPvp = inject(PlayerPvp);
-  private requestId = 0;
+  private readonly requests = new RequestToken();
   private readonly nowMs = signal(Date.now());
+  private elapsedRefreshKey: string | null = null;
+  private lastElapsedRefreshMs = 0;
 
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
@@ -30,7 +38,7 @@ export class VicinityActivePvpActionState {
   );
   readonly timer = computed(() => {
     const offer = this.visibleOffer();
-    const resolvesAt = offer ? timerResolvesAt(offer) : null;
+    const resolvesAt = offer ? travelResolvesAt(offer) : null;
 
     return pendingTimerDisplay({
       subjectId: offer?.runtimeActivityId ?? offer?.pvpActionId ?? null,
@@ -38,6 +46,14 @@ export class VicinityActivePvpActionState {
       resolvesAt,
       nowMs: this.nowMs(),
       isLoading: this.isLoading(),
+    });
+  });
+  readonly isTimerReady = computed(() => {
+    const offer = this.visibleOffer();
+
+    return !!offer && pendingTimerHasElapsed({
+      resolvesAt: travelResolvesAt(offer),
+      nowMs: this.nowMs(),
     });
   });
   readonly factRows = computed(() => {
@@ -69,7 +85,7 @@ export class VicinityActivePvpActionState {
 
     if (offer.actionKind === 'attack') {
       return offer.isManualWindow
-        ? 'Atak dotarł do celu. Dalsza obsługa walki odbywa się poza listą celów.'
+        ? 'Atak dotarł do celu. Decyzję manual/auto podejmiesz w module walki.'
         : 'Po dotarciu walka otworzy się albo będzie kontynuowana poza wyborem celów.';
     }
 
@@ -92,10 +108,38 @@ export class VicinityActivePvpActionState {
   constructor() {
     const intervalId = setInterval(() => this.nowMs.set(Date.now()), 1000);
     this.destroyRef.onDestroy(() => clearInterval(intervalId));
+
+    effect(() => {
+      const offer = this.visibleOffer();
+      const nowMs = this.nowMs();
+      const refreshAt = offer ? elapsedRefreshAt(offer) : null;
+
+      if (
+        !offer
+        || !refreshAt
+        || !pendingTimerHasElapsed({ resolvesAt: refreshAt, nowMs })
+        || this.isLoading()
+      ) {
+        return;
+      }
+
+      const refreshKey = `${offer.pvpActionId}:${offer.phase}:${refreshAt}`;
+
+      if (
+        this.elapsedRefreshKey === refreshKey &&
+        nowMs - this.lastElapsedRefreshMs < ELAPSED_REFRESH_INTERVAL_MS
+      ) {
+        return;
+      }
+
+      this.elapsedRefreshKey = refreshKey;
+      this.lastElapsedRefreshMs = nowMs;
+      queueMicrotask(() => this.load());
+    });
   }
 
   load(): void {
-    const requestId = ++this.requestId;
+    const requestId = this.requests.next();
     const requestContextKey = activeHeroContextKey(this.activeHero.state());
 
     this.isLoading.set(true);
@@ -111,7 +155,7 @@ export class VicinityActivePvpActionState {
     this.playerPvp.getActivePvpActionOffer().subscribe({
       next: (offer) => {
         if (
-          requestId !== this.requestId
+          !this.requests.isCurrent(requestId)
           || requestContextKey !== activeHeroContextKey(this.activeHero.state())
         ) {
           return;
@@ -122,7 +166,7 @@ export class VicinityActivePvpActionState {
       },
       error: (error: unknown) => {
         if (
-          requestId !== this.requestId
+          !this.requests.isCurrent(requestId)
           || requestContextKey !== activeHeroContextKey(this.activeHero.state())
         ) {
           return;
@@ -145,12 +189,24 @@ function shouldShowOffer(offer: ActivePvpActionOffer): boolean {
     );
 }
 
-function timerResolvesAt(offer: ActivePvpActionOffer): string | null {
-  if (offer.isManualWindow) {
-    return offer.expiresAt ?? offer.manualDeadlineAt;
+function travelResolvesAt(offer: ActivePvpActionOffer): string | null {
+  return offer.arrivesAt ?? offer.availableAt;
+}
+
+function manualDeadlineResolvesAt(offer: ActivePvpActionOffer): string | null {
+  return offer.manualDeadlineAt ?? offer.expiresAt;
+}
+
+function elapsedRefreshAt(offer: ActivePvpActionOffer): string | null {
+  if (offer.isTravelPhase) {
+    return travelResolvesAt(offer);
   }
 
-  return offer.arrivesAt ?? offer.availableAt;
+  if (offer.isManualWindow) {
+    return manualDeadlineResolvesAt(offer);
+  }
+
+  return null;
 }
 
 function arrivalTimeDisplay(offer: ActivePvpActionOffer): string | null {

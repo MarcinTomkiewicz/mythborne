@@ -1,0 +1,52 @@
+<div class="flex-col gap-lg min-w-0">
+  <section class="mg-card p-lg w-100">
+    <div class="flex-row-between-start flex-wrap gap-md w-100">
+      <div class="flex-col gap-xs">
+        <p class="color-muted small-caps uppercase text-xs mb-0">Combat</p>
+        <h2 class="color-heading text-xl mb-0">{{ contextTitle() }}</h2>
+        <p class="muted-text mb-0">
+          Rozstrzygnięcie walki korzysta z istniejącego modułu combat i danych backendu.
+        </p>
+      </div>
+      <p-button
+        label="Wróć do okolicy"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        routerLink="/game/vicinity"
+      />
+    </div>
+  </section>
+
+  @if (sourceRef(); as source) {
+    <app-minigame-host
+      [minigameKey]="minigameKey"
+      [sourceRef]="source"
+      [contextTitle]="contextTitle()"
+      contextLabel="PvP"
+      (completed)="acceptCompletion($event)"
+    />
+
+    @if (completion(); as completed) {
+      <section class="mg-card mg-card--success p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs mb-0">Walka zakończona</p>
+        <p class="color-text text-md mb-0">
+          Wynik walki został zapisany przez backend. Dalsza obsługa raportu pozostaje w przepływie raportów.
+        </p>
+        @if (completed.reportId) {
+          <p-button
+            label="Otwórz raport"
+            icon="pi pi-file"
+            [routerLink]="['/game/reports', completed.reportId]"
+          />
+        }
+      </section>
+    }
+  } @else {
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <p class="small-caps color-muted text-xs mb-0">Brak aktywnej walki</p>
+      <p class="warn-text mb-0">
+        Nie udało się rozpoznać źródła walki. Wróć do okolicy i otwórz walkę z aktywnej akcji PvP.
+      </p>
+    </section>
+  }
+</div>

@@ -9016,9 +9016,10 @@ Cel: PvP target selection przez Vicinity/Ranking, z jasną granicą względem w�
 - UI-PVP-1 / formerly UI-39 — PvP Vicinity target selection screen
 - UI-PVP-2 / formerly UI-40 — Selected target side panel
 - UI-PVP-3 / formerly UI-41 — PvP travel timer / active PvP action state
-- UI-PVP-4 / formerly UI-42 — PvP action start boundaries
-- UI-PVP-5 / formerly UI-43 — PvP Ranking entry point
-- UI-PVP-6 / formerly UI-44 — PvP combat screen boundary note
+- UI-PVP-4 — PvP combat handoff preflight
+- UI-PVP-5 — Existing combat module integration for PvP attacks
+- UI-PVP-6 — PvP combat result/report handoff
+- UI-PVP-7 — PvP spy timer and report handoff
 
 ## UI-PVP-1 / formerly UI-39 — PvP Vicinity target selection screen
 
@@ -9156,13 +9157,15 @@ Status:
 * `UI-PVP-1` — accepted/completed: `/game/vicinity` target selection.
 * `UI-PVP-2` — accepted/completed: selected target side panel.
 * `UI-PVP-3` — accepted/completed: active PvP travel/timer panel.
+* `UI-PVP-4` — accepted/completed: PvP combat handoff contract preflight.
+* `UI-PVP-5` — accepted/completed: PvP attack handoff through existing `/game/combat`.
 * Tych tasków nie przepisywać ani nie otwierać ponownie bez konkretnego blockera.
 
 Cel dalszych tasków:
 
-* podpiąć istniejący moduł combat do PvP;
-* zapewnić auto/manual resolution tak jak w istniejącym combat flow;
-* dopiąć PvP combat handoff / auto-manual boundary po zakończeniu timera;
+* dopiąć PvP combat result/report handoff bez przywracania osobnych PvP result screens;
+* dopiąć spy report/result flow poza Vicinity i poza combat attack screen;
+* wyrównać duży wrapper Combat stage/surface do zaakceptowanej globalnej półprzezroczystej logiki kart;
 * nie odtwarzać osobnych PvP result screens usuniętych w cleanupie;
 * ranking traktować jako osobny follow-up/epic po domknięciu podstawowego PvP combat flow.
 
@@ -9171,7 +9174,7 @@ Cel dalszych tasków:
 ## UI-PVP-3 — PvP travel timer / active PvP action state
 
 **Status:**
-Accepted/completed on 2026-05-28. `/game/vicinity` now renders an active PvP travel/timer panel when `get_active_pvp_action_offer(p_hero_id)` returns active/travel/manual-relevant attack or spy state. The panel reuses `PendingTimerOracle` and `pendingTimerDisplay(...)`, shows backend/read-model action, phase, target, address and arrival facts, keeps remaining time in the oracle only, and uses safe handoff copy for attack combat and spy report/result flows outside target selection. No direct `pvp_actions` reads, `metadata_json` parsing, local timer engine, combat log/preview, result screen or spy-result detail was added. Cleanup removed stale PvP result/runtime mapper/service methods and the old `VicinityTargetCandidatesState` facade; active overlay/search/action states now own the production paths. Verification passed with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings and `git diff --check`; user-side smoke remains pending. Timer-expiry resolve/combat handoff moves to UI-PVP-4.
+Accepted/completed on 2026-05-28. `/game/vicinity` now renders an active PvP travel/timer panel when `get_active_pvp_action_offer(p_hero_id)` returns active/travel/manual-relevant attack or spy state. The panel reuses `PendingTimerOracle` and `pendingTimerDisplay(...)`, shows backend/read-model action, phase, target, address and arrival facts, keeps remaining time in the oracle only, and uses safe handoff copy for attack combat and spy report/result flows outside target selection. No direct `pvp_actions` reads, `metadata_json` parsing, local timer engine, combat log/preview, result screen or spy-result detail was added. Cleanup removed stale PvP result/runtime mapper/service methods and the old `VicinityTargetCandidatesState` facade; active overlay/search/action states now own the production paths. Verification passed with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings and `git diff --check`; user-side smoke remains pending. Attack timer-expiry combat handoff is covered by UI-PVP-5; spy/result/report handling remains separate.
 
 **Goal**
 
@@ -9248,6 +9251,9 @@ Po rozpoczęciu akcji PvP pokazać graczowi aktywny stan podróży/dojścia dla 
 
 ## UI-PVP-4 — PvP combat handoff preflight
 
+**Status:**
+Accepted/completed on 2026-05-28 as a static contract preflight. Generated types expose the PvP/combat bridge used by UI-PVP-5: `get_active_pvp_action_offer(p_hero_id)` returns `pvp_action_id`, combat/session/result references and manual-window state; the existing combat workflow accepts source entity inputs through `get_combat_resolution_preview`, `start_manual_combat_session` and `auto_resolve_combat_session`; generated types also expose `ensure_pvp_combat_session` and `finalize_pvp_combat_session`. The frontend entrypoint is the existing `MinigameHost` / `CombatHost` path with source `{ sourceEntityType: 'pvp_action', sourceEntityId: pvpActionId }`. No local combat engine, direct `pvp_actions` reads or `metadata_json` fallback are needed.
+
 **Goal**
 
 Sprawdzić i przygotować kontrakt między PvP action/travel completion a istniejącym modułem combat. Ten task ma ustalić, czy backend/frontend mają komplet danych do uruchomienia combat screen dla PvP attack.
@@ -9312,6 +9318,9 @@ Sprawdzić i przygotować kontrakt między PvP action/travel completion a istnie
 ---
 
 ## UI-PVP-5 — Existing combat module integration for PvP attacks
+
+**Status:**
+Accepted/completed on 2026-05-28. PvP attack manual-window handoff now uses `/game/combat?sourceEntityType=pvp_action&sourceEntityId=<pvpActionId>` through the existing `CombatPage` / `MinigameHost` / `CombatHost` / `CombatSessions` path, without a separate PvP combat page or restored `pvp-attack-result-*` screens. `/game/vicinity` keeps only the travel `PendingTimerOracle` and backend refresh from `get_active_pvp_action_offer(p_hero_id)`; when the backend returns `attack + isManualWindow + !isResolved`, Vicinity redirects directly to Combat and does not render an intermediate `Walka gotowa` / `Przejdź do walki` panel. `/game/combat` owns the decision state, shows participants, renders `Walcz ręcznie` and `Rozstrzygnij auto` in one row, and shows a compact full-width `Okno decyzji` deadline from the matched active PvP offer (`manualDeadlineAt ?? expiresAt`). Spy does not redirect to combat, direct `pvp_actions` reads and `metadata_json` parsing are avoided, and DB/generated types/specs/result-report flow were not changed. Follow-up: align the large Combat stage/surface wrapper with the accepted global transparent surface treatment, in a separate pass and without feature-local SCSS.
 
 **Goal**
 

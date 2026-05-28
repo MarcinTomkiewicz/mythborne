@@ -47,6 +47,8 @@
       [helperText]="activePvpAction.helperText()"
       [pendingHelperText]="activePvpAction.pendingHelperText()"
       [isLoading]="activePvpAction.isLoading()"
+      [isTimerReady]="activePvpAction.isTimerReady()"
+      (refresh)="activePvpAction.load()"
     />
     @if (activePvpAction.error()) {
       <p class="warn-text mb-0">{{ activePvpAction.error() }}</p>

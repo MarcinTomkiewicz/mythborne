@@ -63,6 +63,13 @@ export interface CombatSurfaceTimingMeter {
   actionLoading: boolean;
 }
 
+export interface CombatSurfaceDecisionDeadline {
+  label: string;
+  countdownLabel: string;
+  progressPercent: number;
+  isUpdating: boolean;
+}
+
 export interface CombatSurfaceCenterPanel {
   state: CombatSurfaceCenterState;
   contextLabel: string;
@@ -73,4 +80,5 @@ export interface CombatSurfaceCenterPanel {
   secondaryAction?: CombatSurfaceAction | null;
   footerAction?: CombatSurfaceAction | null;
   meter?: CombatSurfaceTimingMeter | null;
+  decisionDeadline?: CombatSurfaceDecisionDeadline | null;
 }

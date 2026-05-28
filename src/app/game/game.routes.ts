@@ -22,8 +22,8 @@ export const gameRoutes: Routes = [
   },
   {
     path: 'combat',
-    redirectTo: '/hero/dashboard',
-    pathMatch: 'full',
+    loadComponent: () =>
+      import('./pages/combat/combat-page').then((m) => m.CombatPage),
   },
   {
     path: 'armory',

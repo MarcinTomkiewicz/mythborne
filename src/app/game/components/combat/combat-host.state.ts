@@ -2,18 +2,36 @@ import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angul
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, finalize } from 'rxjs';
 import {
+  ActivePvpActionOffer,
+} from '../../../core/domain/pvp/pvp.model';
+import {
+  CombatSurfaceDecisionDeadline,
+} from '../../../core/domain/combat/combat-display.model';
+import {
   CombatLiveStateReadModel,
   CombatResolutionPreviewReadModel,
 } from '../../../core/domain/combat/combat-live.model';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveHeroPortraitState } from '../../../core/services/hero/active-hero-portrait.state';
 import { CombatSessions } from '../../../core/services/combat/combat-sessions';
+import { PlayerPvp } from '../../../core/services/pvp/player-pvp';
 import { mergeCombatLiveEvents } from '../../../core/utils/combat-live-mappers';
 import { mapCombatSessionStageView } from '../../../core/utils/combat-stage-display.mapper';
 import { advanceWalkingDeadTimingFrame } from '../../../core/utils/combat-walking-dead';
+import {
+  pendingTimerDisplay,
+  pendingTimerHasElapsed,
+} from '../../../core/utils/pending-timer';
 import { createRequestId } from '../../../core/utils/request-id';
 import { RequestToken } from '../../../core/utils/request-token';
-import { MINIGAME_KEY, MinigameCompletionEvent, MinigameSourceRef } from '../minigame-host/minigame-host.model';
+import {
+  MINIGAME_KEY,
+  MINIGAME_SOURCE_ENTITY_TYPE,
+  MinigameCompletionEvent,
+  MinigameSourceRef,
+} from '../minigame-host/minigame-host.model';
+
+const PVP_DECISION_DEADLINE_REFRESH_INTERVAL_MS = 5000;
 
 @Injectable()
 export class CombatHostState {
@@ -21,19 +39,26 @@ export class CombatHostState {
   private readonly activeHeroPortrait = inject(ActiveHeroPortraitState);
   private readonly combatSessions = inject(CombatSessions);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly playerPvp = inject(PlayerPvp);
   private readonly previewToken = new RequestToken();
   private readonly manualStartToken = new RequestToken();
   private readonly autoResolveToken = new RequestToken();
   private readonly submitActionToken = new RequestToken();
+  private readonly pvpActionOfferToken = new RequestToken();
   private readonly sourceRef = signal<MinigameSourceRef | null>(null);
   private readonly contextTitle = signal('');
   private readonly contextLabel = signal('Walka');
+  private readonly nowMs = signal(Date.now());
   private walkingTimer: number | null = null;
   private walkingManifestId: string | null = null;
   private walkingTimerSpeed: number | null = null;
+  private pvpDecisionDeadlineRefreshKey: string | null = null;
+  private lastPvpDecisionDeadlineRefreshMs = 0;
 
   private readonly preview = signal<CombatResolutionPreviewReadModel | null>(null);
   private readonly liveState = signal<CombatLiveStateReadModel | null>(null);
+  private readonly pvpActionOffer = signal<ActivePvpActionOffer | null>(null);
+  private readonly isLoadingPvpActionOffer = signal(false);
   private readonly isLoadingPreview = signal(false);
   private readonly isPreparingSession = signal(false);
   private readonly isAutoResolving = signal(false);
@@ -56,11 +81,55 @@ export class CombatHostState {
     isSubmittingAction: this.isSubmittingAction(),
     walkingPosition: this.walkingPosition(),
     canSubmitStrike: this.canSubmitStrike(),
+    decisionDeadline: this.decisionDeadline(),
     activeHeroId: this.activeHero.state()?.heroId ?? null,
     activeHeroPortraitSrc: this.activeHeroPortrait.portraitSrc(),
   }));
+  private readonly decisionDeadline = computed<CombatSurfaceDecisionDeadline | null>(() => {
+    const sourceRef = this.sourceRef();
+    const offer = this.pvpActionOffer();
+
+    if (
+      !sourceRef ||
+      sourceRef.sourceEntityType !== MINIGAME_SOURCE_ENTITY_TYPE.pvpAction ||
+      !offer ||
+      offer.pvpActionId !== sourceRef.sourceEntityId ||
+      offer.actionKind !== 'attack' ||
+      !offer.isManualWindow ||
+      offer.isResolved ||
+      this.liveState() ||
+      this.completion() ||
+      this.isPreparingSession() ||
+      this.isAutoResolving()
+    ) {
+      return null;
+    }
+
+    const resolvesAt = pvpDecisionDeadlineAt(offer);
+
+    if (!resolvesAt) {
+      return null;
+    }
+
+    const timer = pendingTimerDisplay({
+      subjectId: offer.pvpActionId,
+      startedAt: pvpDecisionStartedAt(offer),
+      resolvesAt,
+      nowMs: this.nowMs(),
+      isLoading: this.isLoadingPvpActionOffer(),
+    });
+
+    return {
+      label: 'Okno decyzji',
+      countdownLabel: timer.countdownLabel,
+      progressPercent: timer.isCoherent ? Math.max(0, 100 - timer.progressPercent) : 0,
+      isUpdating: this.isLoadingPvpActionOffer() || timer.isReady,
+    };
+  });
 
   constructor() {
+    const decisionTimer = setInterval(() => this.nowMs.set(Date.now()), 1000);
+
     effect(() => {
       const state = this.liveState();
       const manifest = state?.currentTimingManifest ?? null;
@@ -79,7 +148,45 @@ export class CombatHostState {
       this.startCombatTiming(manifest.manifestId, manifest.speed);
     });
 
-    this.destroyRef.onDestroy(() => this.stopCombatTiming());
+    effect(() => {
+      const sourceRef = this.sourceRef();
+      const offer = this.pvpActionOffer();
+      const nowMs = this.nowMs();
+      const resolvesAt = offer ? pvpDecisionDeadlineAt(offer) : null;
+
+      if (
+        !sourceRef ||
+        sourceRef.sourceEntityType !== MINIGAME_SOURCE_ENTITY_TYPE.pvpAction ||
+        !offer ||
+        offer.pvpActionId !== sourceRef.sourceEntityId ||
+        offer.actionKind !== 'attack' ||
+        !offer.isManualWindow ||
+        offer.isResolved ||
+        !resolvesAt ||
+        !pendingTimerHasElapsed({ resolvesAt, nowMs }) ||
+        this.isLoadingPvpActionOffer()
+      ) {
+        return;
+      }
+
+      const refreshKey = `${offer.pvpActionId}:${resolvesAt}`;
+
+      if (
+        this.pvpDecisionDeadlineRefreshKey === refreshKey &&
+        nowMs - this.lastPvpDecisionDeadlineRefreshMs < PVP_DECISION_DEADLINE_REFRESH_INTERVAL_MS
+      ) {
+        return;
+      }
+
+      this.pvpDecisionDeadlineRefreshKey = refreshKey;
+      this.lastPvpDecisionDeadlineRefreshMs = nowMs;
+      queueMicrotask(() => this.loadPvpActionOffer(sourceRef));
+    });
+
+    this.destroyRef.onDestroy(() => {
+      clearInterval(decisionTimer);
+      this.stopCombatTiming();
+    });
   }
 
   setContext(input: { sourceRef: MinigameSourceRef; contextTitle: string; contextLabel: string }): void {
@@ -149,6 +256,9 @@ export class CombatHostState {
     this.submitActionToken.next();
     this.preview.set(null);
     this.liveState.set(null);
+    this.pvpActionOffer.set(null);
+    this.pvpDecisionDeadlineRefreshKey = null;
+    this.lastPvpDecisionDeadlineRefreshMs = 0;
     this.previewErrorMessage.set(null);
     this.actionErrorMessage.set(null);
     this.completion.set(null);
@@ -159,6 +269,7 @@ export class CombatHostState {
     this.walkingDirection.set(1);
     this.stopCombatTiming();
     this.isLoadingPreview.set(true);
+    this.loadPvpActionOffer(sourceRef);
 
     this.runSourceRequest({
       requestToken: this.previewToken,
@@ -172,6 +283,53 @@ export class CombatHostState {
       onError: () => this.previewErrorMessage.set('Nie udało się odczytać podglądu walki.'),
       onFinalize: () => this.isLoadingPreview.set(false),
     });
+  }
+
+  private loadPvpActionOffer(sourceRef: MinigameSourceRef): void {
+    if (sourceRef.sourceEntityType !== MINIGAME_SOURCE_ENTITY_TYPE.pvpAction) {
+      this.pvpActionOfferToken.next();
+      this.pvpActionOffer.set(null);
+      this.isLoadingPvpActionOffer.set(false);
+      return;
+    }
+
+    const token = this.pvpActionOfferToken.next();
+    this.isLoadingPvpActionOffer.set(true);
+
+    this.playerPvp.getActivePvpActionOffer()
+      .pipe(
+        finalize(() => {
+          if (
+            this.pvpActionOfferToken.isCurrent(token) &&
+            this.sameSourceRef(this.sourceRef(), sourceRef)
+          ) {
+            this.isLoadingPvpActionOffer.set(false);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (offer) => {
+          if (
+            !this.pvpActionOfferToken.isCurrent(token) ||
+            !this.sameSourceRef(this.sourceRef(), sourceRef)
+          ) {
+            return;
+          }
+
+          this.pvpActionOffer.set(
+            offer?.pvpActionId === sourceRef.sourceEntityId ? offer : null,
+          );
+        },
+        error: () => {
+          if (
+            this.pvpActionOfferToken.isCurrent(token) &&
+            this.sameSourceRef(this.sourceRef(), sourceRef)
+          ) {
+            this.pvpActionOffer.set(null);
+          }
+        },
+      });
   }
 
   startManualCombat(): void {
@@ -364,4 +522,12 @@ export class CombatHostState {
     this.walkingManifestId = null;
     this.walkingTimerSpeed = null;
   }
+}
+
+function pvpDecisionDeadlineAt(offer: ActivePvpActionOffer): string | null {
+  return offer.manualDeadlineAt ?? offer.expiresAt;
+}
+
+function pvpDecisionStartedAt(offer: ActivePvpActionOffer): string {
+  return offer.arrivesAt ?? offer.availableAt ?? offer.startedAt;
 }

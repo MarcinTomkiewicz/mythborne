@@ -1,4 +1,5 @@
-import { Component, OnInit, computed, inject } from '@angular/core';
+import { Component, OnInit, computed, effect, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { VicinityActivePvpActionPanel } from '../../components/vicinity/active-pvp-action-panel/vicinity-active-pvp-action-panel';
@@ -53,6 +54,8 @@ import { EstateRelocationRunner } from '../../workflows/estate-relocation/estate
 })
 export class VicinityPage implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly router = inject(Router);
+  private navigatedPvpActionId: string | null = null;
 
   readonly page = inject(VicinityPageState);
   readonly activePvpAction = inject(VicinityActivePvpActionState);
@@ -74,6 +77,33 @@ export class VicinityPage implements OnInit {
       || !this.metadata.loaded()
     ),
   );
+
+  constructor() {
+    effect(() => {
+      const offer = this.activePvpAction.visibleOffer();
+
+      if (
+        !offer
+        || offer.actionKind !== 'attack'
+        || !offer.isManualWindow
+        || offer.isResolved
+        || !offer.pvpActionId
+        || this.navigatedPvpActionId === offer.pvpActionId
+      ) {
+        return;
+      }
+
+      this.navigatedPvpActionId = offer.pvpActionId;
+      queueMicrotask(() => {
+        void this.router.navigate(['/game/combat'], {
+          queryParams: {
+            sourceEntityType: 'pvp_action',
+            sourceEntityId: offer.pvpActionId,
+          },
+        });
+      });
+    });
+  }
 
   ngOnInit(): void {
     this.page.loadData();

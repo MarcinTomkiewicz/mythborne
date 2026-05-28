@@ -41,6 +41,24 @@
             />
           </div>
         } @else {
+          @if (panel.decisionDeadline; as deadline) {
+            <div class="mg-card p-md flex-col gap-xs text-center w-100">
+              <div class="flex-row-between-center gap-sm w-100">
+                <span class="small-caps color-muted text-xs">{{ deadline.label }}</span>
+                <strong class="color-heading text-md">{{ deadline.countdownLabel }}</strong>
+              </div>
+              <progress
+                class="w-100"
+                max="100"
+                [value]="deadline.progressPercent"
+                aria-label="Pozostały czas okna decyzji walki"
+              ></progress>
+              @if (deadline.isUpdating) {
+                <span class="color-muted text-xs">Aktualizujemy stan okna decyzji.</span>
+              }
+            </div>
+          }
+
           @if (panel.primaryAction || panel.secondaryAction) {
             <div class="flex-row-center-center flex-wrap gap-sm">
               @if (panel.primaryAction; as action) {

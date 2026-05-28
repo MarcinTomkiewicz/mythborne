@@ -50,6 +50,8 @@ export function mapLiveCombatCenterPanel(
   }
 
   if (input.actions.canShowStartAction) {
+    const secondaryAction = autoResolveButton(input);
+
     return {
       state: 'decision',
       contextLabel: actionContextLabel(input),
@@ -58,11 +60,12 @@ export function mapLiveCombatCenterPanel(
       detailText: timingManifestHelper(timing),
       primaryAction: {
         id: 'start-combat',
-        label: 'Rozpocznij walkę ręcznie',
+        label: 'Walcz ręcznie',
         loading: input.loading.isPreparingSession || input.loading.isRecoveringState,
         disabled: !input.actions.canStartAction,
       },
-      footerAction,
+      secondaryAction,
+      decisionDeadline: input.decisionDeadline,
     };
   }
 
@@ -115,7 +118,7 @@ function currentActionTitle(input: CombatLiveCenterPanelInput): string {
 
 function currentActionHelper(input: CombatLiveCenterPanelInput): string {
   if (isDecisionPreview(input)) {
-    return 'Rozpocznij walkę ręcznie albo rozstrzygnij ją automatycznie.';
+    return 'Wybierz ręczną walkę albo auto rozstrzygnięcie.';
   }
 
   if (input.loading.isSubmittingAction) {
@@ -148,11 +151,10 @@ function autoResolveButton(input: CombatLiveCenterPanelInput): CombatSurfaceActi
 
   return {
     id: 'auto-resolve',
-    label: 'Rozstrzygnij automatycznie',
+    label: 'Rozstrzygnij auto',
     severity: 'secondary',
     loading: input.actions.isAutoResolving,
     disabled: !input.actions.canAutoResolveAction,
-    helperText: 'Automatyczne rozstrzygnięcie jest osobną akcją.',
   };
 }
 

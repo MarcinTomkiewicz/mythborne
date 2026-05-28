@@ -1,6 +1,7 @@
 import {
   CombatDisplayLogGroup,
   CombatDisplayLogRow,
+  CombatSurfaceDecisionDeadline,
   CombatDisplayValueTone,
 } from '../domain/combat/combat-display.model';
 import {
@@ -78,6 +79,7 @@ export function mapCombatSessionStageView(input: {
   isSubmittingAction: boolean;
   walkingPosition: number;
   canSubmitStrike: boolean;
+  decisionDeadline?: CombatSurfaceDecisionDeadline | null;
   activeHeroId?: string | null;
   activeHeroPortraitSrc?: string | null;
 }): CombatStageViewModel | null {
@@ -139,6 +141,7 @@ export function mapCombatSessionStageView(input: {
         !input.isAutoResolving,
       isAutoResolving: input.isAutoResolving,
     },
+    decisionDeadline: input.decisionDeadline ?? null,
     log: {
       show: true,
       title: state ? 'Przebieg walki' : 'Przebieg',

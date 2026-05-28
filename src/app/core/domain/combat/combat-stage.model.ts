@@ -1,6 +1,7 @@
 import {
   CombatDisplayLogGroup,
   CombatDisplayParticipant,
+  CombatSurfaceDecisionDeadline,
   CombatSurfaceCenterPanel,
 } from './combat-display.model';
 import {
@@ -70,6 +71,7 @@ export interface CombatLiveCenterPanelInput {
     canAutoResolveAction: boolean;
     isAutoResolving: boolean;
   };
+  decisionDeadline: CombatSurfaceDecisionDeadline | null;
 }
 
 export interface CombatLiveStageViewInput extends Omit<
