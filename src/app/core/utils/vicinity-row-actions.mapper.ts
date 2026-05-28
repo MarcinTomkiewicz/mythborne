@@ -18,6 +18,7 @@ export function toVicinityRowActions(
       severity: config.severity,
       disabled,
       primary: config.primaryWhenAvailable && !disabled,
+      pending: false,
     };
   });
 }

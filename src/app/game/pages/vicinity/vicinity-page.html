@@ -24,22 +24,12 @@
         </div>
 
         <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium" aria-label="Podsumowanie okolicy PvP">
-          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Dzienna liczba ataków</span>
-            <strong class="color-heading text-md">{{ page.dailyAttackLabel() }}</strong>
-          </div>
-          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Twój adres</span>
-            <strong class="color-heading text-md">{{ page.currentAddressLabel() }}</strong>
-          </div>
-          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Ochrona przed atakiem</span>
-            <strong class="color-heading text-md">{{ page.attackProtectionLabel() }}</strong>
-          </div>
-          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Ochrona przed oblężeniem</span>
-            <strong class="color-heading text-md">{{ page.siegeProtectionLabel() }}</strong>
-          </div>
+          @for (row of page.headerSummaryRows(); track row.label) {
+            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+              <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>
+              <strong class="color-heading text-md">{{ row.value }}</strong>
+            </div>
+          }
         </aside>
       </div>
       @if (page.dailyAttackError()) {
@@ -52,275 +42,47 @@
 
     <section class="grid-3-1 gap-lg w-100">
       <section class="mg-card flex-col gap-md p-lg min-w-0 w-100">
-        <div class="flex-row-between-start flex-wrap gap-md">
-          <div class="flex-col gap-xs">
-            <h2 class="color-heading text-lg mb-0">Okolica</h2>
-            <p class="muted-text mb-0">
-              Adresy w pobliżu twojej posiadłości. Puste działki i zajęte cele są na jednej liście.
-            </p>
-          </div>
-        </div>
+        <app-vicinity-toolbar
+          [selectedDistrictControl]="search.selectedDistrictControl"
+          [searchControl]="search.pvpSearchControl"
+          [districtOptions]="search.districtOptions()"
+          [searchFeedback]="search.feedback()"
+          [isSearching]="pvpTargets.isLoading()"
+          [isMyVicinityDisabled]="page.isLoading() || page.isRelocating() || !page.currentAddress()"
+          (search)="search.applySearch()"
+          (focusCurrentAddress)="page.focusCurrentAddress()"
+        />
 
-        <div class="flex-row-end-end flex-wrap gap-md w-100">
-          <div class="flex-row-end-end flex-wrap gap-md" aria-label="Filtry okolicy">
-            <div class="flex-col gap-xs min-w-200">
-              <span class="color-muted small-caps uppercase text-xs">Dzielnica</span>
-              <p-select
-                styleClass="w-100"
-                [formControl]="selectedDistrictControl"
-                [options]="districtOptions()"
-                optionLabel="label"
-                optionValue="value"
-              />
-            </div>
+        <app-vicinity-address-list
+          [rows]="rowsState.rows()"
+          [selectedRow]="rowsState.selectedRow()"
+          [pvpError]="pvpTargets.error()"
+          [actionError]="pvpTargets.actionError()"
+          [actionSuccess]="pvpTargets.actionSuccess()"
+          [metadataError]="metadata.error()"
+          (selectRow)="rowsState.selectRow($event)"
+          (startAction)="rowsState.startRowAction($event.row, $event.actionKind)"
+        />
 
-            <label class="flex-col gap-xs min-w-300">
-              <span class="color-muted small-caps uppercase text-xs">Szukaj bohatera lub adresu</span>
-              <input
-                pInputText
-                type="search"
-                class="w-100"
-                [formControl]="pvpSearchControl"
-                placeholder="Szukaj bohatera lub adresu"
-                autocomplete="off"
-                (keydown.enter)="applySearch()"
-              />
-              @if (searchFeedback()) {
-                <span class="error-text text-xs">{{ searchFeedback() }}</span>
-              }
-            </label>
-
-            <p-button
-              label="Szukaj"
-              severity="secondary"
-              [loading]="pvpTargets.isLoading()"
-              (onClick)="applySearch()"
-            />
-            <p-button
-              label="Moja okolica"
-              severity="secondary"
-              [disabled]="page.isLoading() || page.isRelocating() || !page.currentAddress()"
-              (onClick)="page.focusCurrentAddress()"
-            />
-          </div>
-        </div>
-
-        @if (pvpTargets.error()) {
-          <p class="error-text mb-0">{{ pvpTargets.error() }}</p>
-        }
-        @if (pvpTargets.actionError()) {
-          <p class="error-text mb-0">{{ pvpTargets.actionError() }}</p>
-        }
-        @if (pvpTargets.actionSuccess()) {
-          <p class="success-text mb-0">{{ pvpTargets.actionSuccess() }}</p>
-        }
-        @if (pvpTargetingMetadataError()) {
-          <p class="warn-text mb-0">{{ pvpTargetingMetadataError() }}</p>
-        }
-
-        <div class="flex-col gap-xs w-100" role="table" aria-label="Okoliczne posiadłości">
-          <div class="grid-data-list-row gap-sm grid-items-center color-muted small-caps uppercase text-xs px-sm py-xs w-100" role="row">
-            <span>Adres</span>
-            <span>Bohater</span>
-            <span>Poziom</span>
-            <span>Atak</span>
-            <span>Szpieguj</span>
-            <span>Akcje</span>
-          </div>
-
-          @for (row of rows(); track row.key) {
-            <div
-              class="mg-card mg-card--interactive grid-data-list-row gap-sm grid-items-center p-sm w-100 cursor-pointer"
-              [class.mg-card--selected]="selectedRow()?.key === row.key"
-              [class.mg-card--success]="row.kind === 'self'"
-              [class.mg-card--danger]="row.candidate?.underProtection"
-              role="row"
-              tabindex="0"
-              (click)="selectRow(row)"
-              (keydown.enter)="selectRow(row)"
-              (keydown.space)="selectRow(row)"
-            >
-              <span class="color-heading flex-row-start-center text-center">{{ row.addressLabel }}</span>
-              <span class="flex-col gap-xs">
-                @if (row.occupantLabel) {
-                  <span>{{ row.occupantLabel }}</span>
-                }
-                @if (rowDetailLabel(row)) {
-                  <span class="muted-text text-xs">{{ rowDetailLabel(row) }}</span>
-                }
-              </span>
-              <span class="flex-row-start-center text-center">{{ levelLabel(row) }}</span>
-              <span class="flex-row-start-center text-center">{{ durationLabel(row.candidate?.attackEligibility?.travelTimeSeconds) }}</span>
-              <span class="flex-row-start-center text-center">{{ durationLabel(row.candidate?.spyEligibility?.travelTimeSeconds) }}</span>
-              <span class="flex-row-start-center text-center">
-                <span class="flex-row-start-center flex-wrap gap-sm">
-                  @if (row.candidate?.underProtection) {
-                    <span class="tag-badge tag-badge--danger square-9" aria-label="Cel chroniony">
-                      <i class="pi pi-shield"></i>
-                    </span>
-                  } @else if (row.statusLabel) {
-                    <span class="color-muted text-xs">{{ row.statusLabel }}</span>
-                  }
-                  @for (action of row.actions; track action.kind) {
-                    <p-button
-                      [icon]="action.icon"
-                      size="small"
-                      [outlined]="!isRowActionPrimary(row, action)"
-                      [severity]="action.severity"
-                      styleClass="mg-compact-icon-button square-9"
-                      [ariaLabel]="action.label"
-                      [disabled]="isRowActionDisabled(row, action)"
-                      (onClick)="startRowAction(row, action.kind); $event.stopPropagation()"
-                    />
-                  }
-                </span>
-              </span>
-            </div>
-          } @empty {
-            <p class="muted-text mb-0">Brak adresów w bieżącym zakresie.</p>
-          }
-        </div>
-
-        <div class="flex-row-between-center flex-wrap gap-md mt-md w-100" aria-label="Paginacja okolicy">
-          <strong>{{ page.addressPageLabel() }}</strong>
-          <div class="flex-row-end-center flex-wrap gap-sm">
-            <span class="muted-text text-sm px-sm py-xs">{{ page.addressRangeSummary() }}</span>
-            <span class="flex-row-start-center px-sm py-xs">
-              <p-select
-                styleClass="min-w-160"
-                [options]="page.addressPageOptions()"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Strona"
-                (onChange)="page.changeAddressPage({ first: $event.value })"
-              />
-            </span>
-            <p-paginator
-              [first]="page.addressPaginatorFirst()"
-              [rows]="20"
-              [totalRecords]="page.addressPaginatorTotal()"
-              (onPageChange)="page.changeAddressPage($event)"
-            />
-          </div>
-        </div>
+        <app-vicinity-pagination
+          [pageLabel]="page.addressPageLabel()"
+          [rangeSummary]="page.addressRangeSummary()"
+          [pageOptions]="page.addressPageOptions()"
+          [first]="page.addressPaginatorFirst()"
+          [totalRecords]="page.addressPaginatorTotal()"
+          (pageChange)="page.changeAddressPage($event)"
+        />
       </section>
 
-    <aside class="flex-col gap-md min-w-0 w-100">
-      <section class="mg-card flex-col gap-md p-lg w-100">
-        <div class="flex-col gap-xs">
-          <h2 class="color-heading text-lg mb-0">Wybrany cel</h2>
-          <p class="muted-text mb-0">Dostępne akcje dla wskazanej posiadłości.</p>
-        </div>
-
-        @if (selectedRow(); as selected) {
-          <div class="flex-col gap-sm w-100">
-            @if (selected.occupantLabel) {
-              <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-                <span class="color-muted small-caps uppercase text-xs">Cel</span>
-                <strong class="text-md text-right">{{ selected.occupantLabel }}</strong>
-              </div>
-            } @else if (selected.statusLabel) {
-              <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-                <span class="color-muted small-caps uppercase text-xs">Cel</span>
-                <strong class="text-md text-right">{{ selected.statusLabel }}</strong>
-              </div>
-            }
-            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-              <span class="color-muted small-caps uppercase text-xs">Adres</span>
-              <strong class="text-md text-right">{{ selected.addressLabel }}</strong>
-            </div>
-            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-              <span class="color-muted small-caps uppercase text-xs">Czas ataku</span>
-              <strong class="text-md text-right">{{ durationLabel(selected.candidate?.attackEligibility?.travelTimeSeconds) }}</strong>
-            </div>
-            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-              <span class="color-muted small-caps uppercase text-xs">Czas szpiegowania</span>
-              <strong class="text-md text-right">{{ durationLabel(selected.candidate?.spyEligibility?.travelTimeSeconds) }}</strong>
-            </div>
-            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-              <span class="color-muted small-caps uppercase text-xs">Oblężenie</span>
-              <strong class="text-md text-right">Niezaimplementowane</strong>
-            </div>
-            @if (protectionLabel(selected); as protection) {
-              <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-                <span class="color-muted small-caps uppercase text-xs">Ochrona</span>
-                <strong class="text-md text-right">{{ protection }}</strong>
-              </div>
-            }
-          </div>
-
-          @if (selected.kind === 'occupied' && (playerSafeReason(selected.attackDisplay) || playerSafeReason(selected.spyDisplay))) {
-            <div class="flex-col gap-xs warn-text">
-              @if (playerSafeReason(selected.attackDisplay); as attackReason) {
-                <p class="mb-0">
-                  <strong>Atak:</strong>
-                  {{ attackReason.reasonLabel }}
-                  @if (attackReason.reasonDetail) {
-                    <span> - {{ attackReason.reasonDetail }}</span>
-                  }
-                </p>
-              }
-              @if (playerSafeReason(selected.spyDisplay); as spyReason) {
-                <p class="mb-0">
-                  <strong>Szpieg:</strong>
-                  {{ spyReason.reasonLabel }}
-                  @if (spyReason.reasonDetail) {
-                    <span> - {{ spyReason.reasonDetail }}</span>
-                  }
-                </p>
-              }
-            </div>
-          }
-
-          @if (selected.kind === 'empty') {
-            <div class="flex-row-start-center flex-wrap gap-sm">
-              <p-button
-                label="Przeprowadź się"
-                severity="danger"
-                [disabled]="!page.selectedTarget() || page.isRelocating()"
-                [loading]="page.isRelocating()"
-                (onClick)="confirmRelocation()"
-              />
-            </div>
-          } @else if (selected.actions.length > 0) {
-            <div class="flex-row-start-center flex-wrap gap-sm">
-              @for (action of selected.actions; track action.kind) {
-                <p-button
-                  [icon]="action.icon"
-                  [label]="action.label"
-                  [severity]="action.severity"
-                  [disabled]="isRowActionDisabled(selected, action)"
-                  [loading]="isRowActionPending(selected, action)"
-                  (onClick)="startRowAction(selected, action.kind)"
-                />
-              }
-            </div>
-          } @else if (selected.kind === 'occupied') {
-            <p class="muted-text mb-0">
-              Brak dostępnych akcji PvP dla tego adresu.
-            </p>
-          } @else {
-            <p class="muted-text mb-0">
-              To jest twoja posiadłość. Nie jest celem PvP i nie ma akcji ataku ani szpiega.
-            </p>
-          }
-
-          @if (page.relocationError()) {
-            <p class="error-text mb-0">{{ page.relocationError() }}</p>
-          }
-          @if (page.relocationSuccess()) {
-            <p class="success-text mb-0">{{ page.relocationSuccess() }}</p>
-          }
-        } @else {
-          <p class="muted-text mb-0">Wybierz adres z listy, aby zobaczyć dostępne akcje.</p>
-        }
-      </section>
-
-      <p class="mg-card p-md muted-text mb-0 w-100">
-        Atak rozpoczyna dojście do celu. Szpiegowanie działa osobną akcją, a wyniki pojawią się
-        w raportach po zakończeniu.
-      </p>
-    </aside>
+      <app-vicinity-selected-target-panel
+        [selected]="rowsState.selectedRow()"
+        [hasSelectedTarget]="!!page.selectedTarget()"
+        [isRelocating]="page.isRelocating()"
+        [relocationError]="page.relocationError()"
+        [relocationSuccess]="page.relocationSuccess()"
+        (confirmRelocation)="confirmRelocation()"
+        (startAction)="rowsState.startRowAction($event.row, $event.actionKind)"
+      />
   </section>
   </div>
 }

@@ -6559,7 +6559,7 @@ PvP Foundation is not:
 - Spy result is readable and player-safe.
 - Target hero does not get implied access or notification.
 
-**Implementation note:** R14 accepted on 2026-05-07. Added `/game/vicinity/spy-results/:spyResultId` as a guarded player-facing spy result detail page, with the private dynamic route configured as SSR `RenderMode.Server` instead of prerender. The page consumes `PvpSpyResultState` / `PlayerPvp.getMySpyResult(...)` only, uses route-param stale guards, shows player-facing unavailable/access-denied copy, and displays target summary plus safe base stats, resources, equipment, estate and buildings through `pvpSpyResultDisplay(...)`. It does not render raw snapshot JSON, active exploration/PvP runtime state, staff/admin internals, anti-abuse internals, target notification/write flow, direct PvP table access/write or Angular gameplay authority. Follow-up before broader snapshot display: prefer DB-backed display rows or explicit per-section allowlist contracts over the current conservative denylist for generic primitive rows; remove unused `ButtonModule` at next touch; consider invalid-date fallback and shared label helper reuse if needed.
+**Implementation note:** R14 was accepted on 2026-05-07, then superseded/removed on 2026-05-28 by the accepted UI-PVP-1 cleanup. The provisional `/game/vicinity/spy-results/:spyResultId` screen/state/display helpers, route and orphaned specs were removed because PvP result/report flow is outside the accepted Vicinity target-selection scope. Future spy result display must return as a separate Reports/PvP/combat task with fresh route, privacy, snapshot-display and smoke scope.
 
 ---
 
@@ -6611,7 +6611,7 @@ PvP Foundation is not:
 - PvP attack result is understandable after the fact.
 - Display matches DB result context.
 
-**Implementation note:** R16 accepted on 2026-05-07. Added `/game/vicinity/attack-results/:attackResultId` under the guarded game shell and SSR `RenderMode.Server`. The page reads through `PvpAttackResultState`, displays only mapped outcome, role, resource, XP and future-prestige rows, avoids raw JSON and notification context display, keeps access-denied copy player-facing, and leaves report linking/integration for R17.
+**Implementation note:** R16 was accepted on 2026-05-07, then superseded/removed on 2026-05-28 by the accepted UI-PVP-1 cleanup. The provisional `/game/vicinity/attack-results/:attackResultId` screen/state/display helpers, route and orphaned specs were removed because PvP result/report flow is outside the accepted Vicinity target-selection scope. Future attack result display must return as a separate Reports/PvP/combat task with fresh route, privacy, report-linking and smoke scope.
 
 ---
 
@@ -6656,7 +6656,7 @@ PvP Foundation is not:
 - No incoming attack notification behavior is introduced.
 - No target spy notification behavior is introduced.
 
-**Implementation note:** R18 accepted on 2026-05-07. Player notification action route policy now allows `/game/vicinity/attack-results/:id` only for `pvp.attack_result.attacker` / `pvp.attack_result.defender` with matching `sourceEntity: pvp_attack_result/:id`, and `/game/vicinity/spy-results/:id` only for `pvp.spy_result.ready` with matching `sourceEntity: pvp_spy_result/:id`. Static menu routes remain unchanged; no incoming attack/target spy behavior, direct notification writes or direct PvP reads were added.
+**Implementation note:** R18 was accepted on 2026-05-07, then superseded/removed on 2026-05-28 by the accepted UI-PVP-1 cleanup. Notification deep links to the provisional `/game/vicinity/attack-results/:id` and `/game/vicinity/spy-results/:id` routes were removed with those screens. PvP notification actions for combat/result/report flow must return only when the result/report routes are reintroduced under a separate accepted Reports/PvP/combat task.
 
 ---
 

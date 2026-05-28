@@ -18,24 +18,6 @@ describe('game routes', () => {
     expect(gameRoutes.some((route) => route.path === 'neighborhood')).toBeFalse();
   });
 
-  it('exposes the PvP spy result detail route under vicinity', () => {
-    const route = gameRoutes.find((item) =>
-      item.path === 'vicinity/spy-results/:spyResultId',
-    );
-
-    expect(route).toBeDefined();
-    expect(route?.loadComponent).toEqual(jasmine.any(Function));
-  });
-
-  it('exposes the PvP attack result detail route under vicinity', () => {
-    const route = gameRoutes.find((item) =>
-      item.path === 'vicinity/attack-results/:attackResultId',
-    );
-
-    expect(route).toBeDefined();
-    expect(route?.loadComponent).toEqual(jasmine.any(Function));
-  });
-
   it('exposes the guild page under the guarded game shell', () => {
     const gameShellRoute = routes
       .flatMap((route) => route.children ?? [])

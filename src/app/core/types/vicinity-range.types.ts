@@ -34,11 +34,6 @@ export interface VicinityBrowserSelectionSnapshot {
   focusAddressNumber: number;
 }
 
-export interface VicinityRelocationSnapshot {
-  districtCode: string;
-  addressNumber: number;
-}
-
 export interface VicinityAddressSearch {
   districtCode: string;
   addressNumber: number;

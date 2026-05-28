@@ -18,6 +18,7 @@ export interface VicinityRowAction {
   severity: 'danger' | 'secondary';
   disabled: boolean;
   primary: boolean;
+  pending: boolean;
 }
 
 export interface PendingPvpAction {

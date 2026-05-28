@@ -1,0 +1,52 @@
+<div class="flex-row-between-start flex-wrap gap-md">
+  <div class="flex-col gap-xs">
+    <h2 class="color-heading text-lg mb-0">Okolica</h2>
+    <p class="muted-text mb-0">
+      Adresy w pobliżu twojej posiadłości. Puste działki i zajęte cele są na jednej liście.
+    </p>
+  </div>
+</div>
+
+<div class="flex-row-end-end flex-wrap gap-md w-100">
+  <div class="flex-row-end-end flex-wrap gap-md" aria-label="Filtry okolicy">
+    <div class="flex-col gap-xs min-w-200">
+      <span class="color-muted small-caps uppercase text-xs">Dzielnica</span>
+      <p-select
+        styleClass="w-100"
+        [formControl]="selectedDistrictControl()"
+        [options]="districtOptions()"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </div>
+
+    <label class="flex-col gap-xs min-w-300">
+      <span class="color-muted small-caps uppercase text-xs">Szukaj bohatera lub adresu</span>
+      <input
+        pInputText
+        type="search"
+        class="w-100"
+        [formControl]="searchControl()"
+        placeholder="Szukaj bohatera lub adresu"
+        autocomplete="off"
+        (keydown.enter)="search.emit()"
+      />
+      @if (searchFeedback()) {
+        <span class="error-text text-xs">{{ searchFeedback() }}</span>
+      }
+    </label>
+
+    <p-button
+      label="Szukaj"
+      severity="secondary"
+      [loading]="isSearching()"
+      (onClick)="search.emit()"
+    />
+    <p-button
+      label="Moja okolica"
+      severity="secondary"
+      [disabled]="isMyVicinityDisabled()"
+      (onClick)="focusCurrentAddress.emit()"
+    />
+  </div>
+</div>

@@ -1,0 +1,63 @@
+@for (feedback of feedbackRows(); track feedback.message) {
+  <p [class]="feedback.className">{{ feedback.message }}</p>
+}
+
+<div class="flex-col gap-xs w-100" role="table" aria-label="Okoliczne posiadłości">
+  <div class="grid-data-list-row gap-sm grid-items-center color-muted small-caps uppercase text-xs px-sm py-xs w-100" role="row">
+    @for (label of columnLabels; track label) {
+      <span>{{ label }}</span>
+    }
+  </div>
+
+  @for (row of rows(); track row.key) {
+    <div
+      class="mg-card mg-card--interactive grid-data-list-row gap-sm grid-items-center p-sm w-100 cursor-pointer"
+      [class.mg-card--selected]="selectedRow()?.key === row.key"
+      [class.mg-card--success]="row.kind === 'self'"
+      [class.mg-card--danger]="row.isDangerState"
+      role="row"
+      tabindex="0"
+      (click)="selectRow.emit(row)"
+      (keydown.enter)="selectRow.emit(row)"
+      (keydown.space)="selectRow.emit(row)"
+    >
+      <span class="color-heading flex-row-start-center text-center">{{ row.addressLabel }}</span>
+      <span class="flex-col gap-xs">
+        @if (row.occupantLabel) {
+          <span>{{ row.occupantLabel }}</span>
+        }
+        @if (row.detailLabel) {
+          <span class="muted-text text-xs">{{ row.detailLabel }}</span>
+        }
+      </span>
+      @for (metric of row.metricCells; track metric.key) {
+        <span class="flex-row-start-center text-center">{{ metric.value }}</span>
+      }
+      <span class="flex-row-start-center text-center">
+        <span class="flex-row-start-center flex-wrap gap-sm">
+          @if (row.statusIndicatorIcon) {
+            <span class="tag-badge tag-badge--danger square-9" [attr.aria-label]="row.statusIndicatorAriaLabel">
+              <i [class]="row.statusIndicatorIcon"></i>
+            </span>
+          } @else if (row.statusLabel) {
+            <span class="color-muted text-xs">{{ row.statusLabel }}</span>
+          }
+          @for (action of row.actions; track action.kind) {
+            <p-button
+              [icon]="action.icon"
+              size="small"
+              [outlined]="!action.primary"
+              [severity]="action.severity"
+              styleClass="mg-compact-icon-button square-9"
+              [ariaLabel]="action.label"
+              [disabled]="action.disabled"
+              (onClick)="startAction.emit({ row, actionKind: action.kind }); $event.stopPropagation()"
+            />
+          }
+        </span>
+      </span>
+    </div>
+  } @empty {
+    <p class="muted-text mb-0">Brak adresów w bieżącym zakresie.</p>
+  }
+</div>

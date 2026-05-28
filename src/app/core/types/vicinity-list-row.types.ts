@@ -15,5 +15,19 @@ export interface VicinityListRow {
   attackDisplay: PvpEligibilityDisplay | null;
   spyDisplay: PvpEligibilityDisplay | null;
   statusLabel: string | null;
+  statusIndicatorIcon: string | null;
+  statusIndicatorAriaLabel: string | null;
+  isDangerState: boolean;
+  detailLabel: string;
+  levelDisplay: string;
+  attackTravelDisplay: string;
+  spyTravelDisplay: string;
+  metricCells: readonly {
+    key: string;
+    value: string;
+  }[];
+  protectionDisplay: string | null;
+  playerSafeAttackReason: PvpEligibilityDisplay | null;
+  playerSafeSpyReason: PvpEligibilityDisplay | null;
   actions: VicinityRowAction[];
 }
