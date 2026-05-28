@@ -4,7 +4,7 @@
 .mg-card {
   border-radius: v.$radius-lg;
   border: 1px solid v.$color-border;
-  background: v.$color-bg-surface;
+  background: color-mix(in srgb, v.$color-bg-surface 60%, transparent);
   box-shadow: v.$shadow-soft;
   padding: 1rem;
   text-decoration: none;
@@ -20,11 +20,22 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, v.$color-shell-surface-elevated 74%, transparent),
-      color-mix(in srgb, v.$color-shell-surface 90%, transparent)
+      color-mix(in srgb, v.$color-shell-surface-elevated 50%, transparent),
+      color-mix(in srgb, v.$color-shell-surface 60%, transparent)
+    );
+  box-shadow: v.$shadow-premium;
+}
+
+.mg-game-shell .mg-card.shadow-premium,
+.mg-game-shell .mg-card:has(> .grid-2-1),
+.mg-game-shell .mg-card:has(> .flex-row-start-start .image__preview--circle) {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-surface-elevated 72%, transparent),
+      color-mix(in srgb, v.$color-shell-surface 80%, transparent)
     ),
     v.$color-shell-surface;
-  box-shadow: v.$shadow-premium;
 }
 
 .mg-card--legend {
