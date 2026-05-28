@@ -53,7 +53,7 @@ export const gameRoutes: Routes = [
   {
     path: 'vicinity',
     loadComponent: () =>
-      import('./pages/vicinity/estate-vicinity-page').then((m) => m.EstateVicinityPage),
+      import('./pages/vicinity/vicinity-page').then((m) => m.VicinityPage),
   },
   {
     path: 'reports',

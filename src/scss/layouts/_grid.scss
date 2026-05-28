@@ -77,6 +77,10 @@ $grid-common-patterns: (
     columns: minmax(0, 2fr) minmax(0, 1fr),
     collapse-bp: "md"
   ),
+  "3-1": (
+    columns: minmax(0, 3fr) minmax(0, 1fr),
+    collapse-bp: "md"
+  ),
   "1-2": (
     columns: minmax(0, 1fr) minmax(0, 2fr),
     collapse-bp: "md"
@@ -89,6 +93,10 @@ $grid-common-patterns: (
   "1-1": (
     columns: repeat(2, minmax(0, 1fr)),
     collapse-bp: "sm"
+  ),
+  "data-list-row": (
+    columns: 6.5rem minmax(8rem, 1fr) 4rem 5.75rem 5.75rem 13rem,
+    collapse-bp: "md"
   )
 );
 

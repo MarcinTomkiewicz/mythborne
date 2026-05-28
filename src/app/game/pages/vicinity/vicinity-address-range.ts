@@ -1,49 +1,34 @@
 import {
   CurrentEstateAddressReadModel,
   EmptyEstateAddressOption,
-  EstateAddressIdentity,
   EstateDistrictCapacityReadModel,
   OccupiedEstateAddressReadModel,
 } from '../../../core/domain/estate/estate-address.model';
+import {
+  VicinityAddressRange,
+  VicinityAddressRow,
+} from '../../../core/types/vicinity.types';
+import { VICINITY_ADDRESS_PAGE_SIZE } from '../../../core/configs/vicinity.config';
 import { formatEstateAddressLabel } from '../../../core/utils/estate-address';
-
-export const VICINITY_ADDRESS_RADIUS = 10;
-
-export type VicinityAddressRowKind = 'self' | 'occupied' | 'empty';
-
-export interface VicinityAddressRow extends EstateAddressIdentity {
-  kind: VicinityAddressRowKind;
-  isSelectable: boolean;
-  occupantLabel: string;
-}
-
-export interface VicinityAddressRange {
-  district: EstateDistrictCapacityReadModel;
-  centerAddressNumber: number;
-  fromAddressNumber: number;
-  toAddressNumber: number;
-  rangeLabel: string;
-  rows: VicinityAddressRow[];
-}
 
 export function buildVicinityAddressRange(input: {
   currentAddress: CurrentEstateAddressReadModel;
   district: EstateDistrictCapacityReadModel;
   occupiedAddresses: readonly OccupiedEstateAddressReadModel[];
-  radius?: number;
-  centerAddressNumber?: number;
+  pageSize?: number;
+  focusAddressNumber?: number;
 }): VicinityAddressRange {
-  const radius = normalizeRadius(input.radius ?? VICINITY_ADDRESS_RADIUS);
+  const pageSize = normalizePageSize(input.pageSize ?? VICINITY_ADDRESS_PAGE_SIZE);
 
-  const centerAddressNumber = normalizeCenterAddressNumber(
-    input.centerAddressNumber ?? input.currentAddress.addressNumber,
+  const focusAddressNumber = normalizeFocusAddressNumber(
+    input.focusAddressNumber ?? input.currentAddress.addressNumber,
     input.district,
   );
-  const fromAddressNumber = Math.max(1, centerAddressNumber - radius);
-  const toAddressNumber = Math.min(
-    input.district.addressCapacity,
-    centerAddressNumber + radius,
-  );
+  const { fromAddressNumber, toAddressNumber } = calculateVicinityAddressBounds({
+    focusAddressNumber,
+    addressCapacity: input.district.addressCapacity,
+    pageSize,
+  });
   const occupiedByNumber = new Map(
     input.occupiedAddresses.map((address) => [address.addressNumber, address]),
   );
@@ -69,7 +54,7 @@ export function buildVicinityAddressRange(input: {
 
   return {
     district: input.district,
-    centerAddressNumber,
+    focusAddressNumber,
     fromAddressNumber,
     toAddressNumber,
     rangeLabel: `${formatEstateAddressLabel(
@@ -100,7 +85,7 @@ function toSelfRow(address: CurrentEstateAddressReadModel): VicinityAddressRow {
     addressLabel: address.addressLabel,
     kind: 'self',
     isSelectable: false,
-    occupantLabel: 'Your estate',
+    occupantLabel: '',
   };
 }
 
@@ -111,7 +96,7 @@ function toOccupiedRow(address: OccupiedEstateAddressReadModel): VicinityAddress
     addressLabel: address.addressLabel,
     kind: 'occupied',
     isSelectable: false,
-    occupantLabel: 'Occupied estate',
+    occupantLabel: '',
   };
 }
 
@@ -125,11 +110,11 @@ function toEmptyRow(
     addressLabel: formatEstateAddressLabel(district.districtCode, addressNumber),
     kind: 'empty',
     isSelectable: true,
-    occupantLabel: 'Empty plot',
+    occupantLabel: 'Pusta działka',
   };
 }
 
-function normalizeCenterAddressNumber(
+function normalizeFocusAddressNumber(
   value: number,
   district: EstateDistrictCapacityReadModel,
 ): number {
@@ -140,9 +125,28 @@ function normalizeCenterAddressNumber(
   return Math.min(value, district.addressCapacity);
 }
 
-function normalizeRadius(value: number): number {
-  if (!Number.isInteger(value) || value < 0) {
-    throw new Error('Vicinity address radius must be a non-negative integer.');
+export function calculateVicinityAddressBounds(input: {
+  focusAddressNumber: number;
+  addressCapacity: number;
+  pageSize?: number;
+}): { fromAddressNumber: number; toAddressNumber: number } {
+  const pageSize = normalizePageSize(input.pageSize ?? VICINITY_ADDRESS_PAGE_SIZE);
+  const halfBeforeCenter = Math.floor((pageSize - 1) / 2);
+  const maxFromAddressNumber = Math.max(1, input.addressCapacity - pageSize + 1);
+  const fromAddressNumber = Math.min(
+    Math.max(1, input.focusAddressNumber - halfBeforeCenter),
+    maxFromAddressNumber,
+  );
+
+  return {
+    fromAddressNumber,
+    toAddressNumber: Math.min(input.addressCapacity, fromAddressNumber + pageSize - 1),
+  };
+}
+
+function normalizePageSize(value: number): number {
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error('Vicinity page size must be a positive integer.');
   }
 
   return value;

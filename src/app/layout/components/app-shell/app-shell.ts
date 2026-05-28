@@ -16,6 +16,10 @@ const ROUTE_BACKGROUNDS: ReadonlyArray<readonly [pathPrefix: string, image: stri
   ['/game/armory', "url('/images/backgrounds/armory-background.png')"],
   ['/game/mansion', "url('/images/backgrounds/mansion-background.png')"],
   ['/game/vicinity', "url('/images/backgrounds/vicinity-background.png')"],
+  ['/game/guild', "url('/images/backgrounds/guild-background.png')"],
+  ['/game/trade', "url('/images/backgrounds/trade-background.png')"],
+  ['/game/auction', "url('/images/backgrounds/auction-background.png')"],
+  ['/game/reports', "url('/images/backgrounds/reports-background.png')"],
 ];
 
 @Component({

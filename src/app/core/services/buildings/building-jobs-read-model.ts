@@ -25,6 +25,13 @@ export interface HeroEstateRuntimeStateReadModel {
   estateRank: number;
   settledAsOf: string;
   settledCompletedCount: number;
+  attackProtectionActive: boolean;
+  attackProtectionExpiresAt: string | null;
+  attackProtectionSourceEntityId: string | null;
+  attackProtectionSourceEntityType: string | null;
+  siegeProtectionActive: boolean;
+  siegeProtectionExpiresAt: string | null;
+  siegeProtectionSource: string | null;
   resourceBalances: MansionResourceBalance[];
   estateBuildings: EstateBuildingRow[];
   activeJob: EstateBuildingJobRow | null;
@@ -86,6 +93,13 @@ export function firstHeroEstateRuntimeStateRow(
     estateRank: row.estate_rank,
     settledAsOf: row.settled_as_of,
     settledCompletedCount: row.settled_completed_count,
+    attackProtectionActive: row.attack_protection_active,
+    attackProtectionExpiresAt: row.attack_protection_expires_at ?? null,
+    attackProtectionSourceEntityId: row.attack_protection_source_entity_id ?? null,
+    attackProtectionSourceEntityType: row.attack_protection_source_entity_type ?? null,
+    siegeProtectionActive: row.siege_protection_active,
+    siegeProtectionExpiresAt: row.siege_protection_expires_at ?? null,
+    siegeProtectionSource: row.siege_protection_source ?? null,
     resourceBalances: parseResourceBalancesJson(row.resources_json),
     estateBuildings: parseEstateBuildingsJson(row.buildings_json, row.estate_id),
     activeJob: parseOptionalEstateBuildingJobJson(row.active_job_json, row.estate_id),

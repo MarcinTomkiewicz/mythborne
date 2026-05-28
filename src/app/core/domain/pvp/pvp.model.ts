@@ -42,12 +42,31 @@ export interface PvpTargetCandidate {
   targetHeroId: string;
   targetDisplayName: string;
   targetLevel: number;
+  targetGuildId?: string | null;
+  targetGuildName?: string | null;
+  targetGuildTag?: string | null;
+  targetGuildDisplayLabel?: string | null;
   targetAddress: PvpTargetAddressSummary;
   distanceScore: number;
   underProtection: boolean;
   protectionExpiresAt: string | null;
   attackEligibility: PvpAttackEligibility;
   spyEligibility: PvpActionEligibility;
+}
+
+export interface HeroPvpDailyAttackState {
+  heroId: string;
+  serverId: string;
+  actionDate: string;
+  actionKind: string;
+  usedDailyAttacks: number;
+  remainingDailyAttacks: number;
+  dailyAttackLimit: number;
+  extraDailyAttacks: number;
+  canStartAttack: boolean;
+  attackerHasBlockingActivity: boolean;
+  counterExists: boolean;
+  generatedAt: string;
 }
 
 export interface PvpActionEligibility {

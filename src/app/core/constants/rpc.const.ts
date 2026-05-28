@@ -86,7 +86,10 @@ export const RPC = {
   get_hero_active_runtime_activity: 'get_hero_active_runtime_activity',
   inspect_pvp_foundation_integration_state:
     'inspect_pvp_foundation_integration_state',
+  get_hero_pvp_daily_attack_state: 'get_hero_pvp_daily_attack_state',
   get_pvp_target_candidates: 'get_pvp_target_candidates',
+  get_pvp_visible_address_target_overlay:
+    'get_pvp_visible_address_target_overlay',
   get_my_pvp_spy_result: 'get_my_pvp_spy_result',
   get_my_pvp_attack_result: 'get_my_pvp_attack_result',
   start_pvp_action: 'start_pvp_action',

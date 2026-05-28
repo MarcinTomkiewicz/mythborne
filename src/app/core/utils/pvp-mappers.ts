@@ -2,6 +2,7 @@ import {
   AdminPvpAttackResult,
   AdminPvpRuntimeActivitySummary,
   AdminPvpSpyResult,
+  HeroPvpDailyAttackState,
   PvpActionKindEntry,
   PvpActionStartResult,
   PvpActionStatusEntry,
@@ -13,9 +14,11 @@ import {
 } from '../domain/pvp/pvp.model';
 import { Json } from '../types/database.types';
 import {
+  GetHeroPvpDailyAttackStateRpcRow,
   GetMyPvpAttackResultRpcRow,
   GetMyPvpSpyResultRpcRow,
   GetPvpTargetCandidatesRpcRow,
+  GetPvpVisibleAddressTargetOverlayRpcRow,
   PvpActionKindKey,
   PvpActionKindRow,
   PvpActionRow,
@@ -75,10 +78,28 @@ export function mapPvpAttackOutcomeKind(
 export function mapPvpTargetCandidate(
   row: GetPvpTargetCandidatesRpcRow,
 ): PvpTargetCandidate {
+  return mapPvpTargetCandidateBase(row);
+}
+
+export function mapPvpVisibleAddressTargetOverlay(
+  row: GetPvpVisibleAddressTargetOverlayRpcRow,
+): PvpTargetCandidate {
+  return mapPvpTargetCandidateBase(row);
+}
+
+function mapPvpTargetCandidateBase(
+  row: GetPvpTargetCandidatesRpcRow | GetPvpVisibleAddressTargetOverlayRpcRow,
+): PvpTargetCandidate {
   return {
     targetHeroId: requiredText(row.target_hero_id, 'targetHeroId'),
     targetDisplayName: requiredText(row.target_display_name, 'targetDisplayName'),
     targetLevel: row.target_level,
+    targetGuildId: 'target_guild_id' in row ? nullableText(row.target_guild_id) : null,
+    targetGuildName: 'target_guild_name' in row ? nullableText(row.target_guild_name) : null,
+    targetGuildTag: 'target_guild_tag' in row ? nullableText(row.target_guild_tag) : null,
+    targetGuildDisplayLabel: 'target_guild_display_label' in row
+      ? nullableText(row.target_guild_display_label)
+      : null,
     targetAddress: {
       estateId: requiredText(row.target_estate_id, 'targetEstateId'),
       districtCode: requiredText(row.target_district_code, 'targetDistrictCode'),
@@ -102,6 +123,25 @@ export function mapPvpTargetCandidate(
       blockReason: nullableText(row.spy_block_reason),
       travelTimeSeconds: row.spy_travel_time_seconds,
     },
+  };
+}
+
+export function mapHeroPvpDailyAttackState(
+  row: GetHeroPvpDailyAttackStateRpcRow,
+): HeroPvpDailyAttackState {
+  return {
+    heroId: requiredText(row.hero_id, 'heroId'),
+    serverId: requiredText(row.server_id, 'serverId'),
+    actionDate: requiredText(row.action_date, 'actionDate'),
+    actionKind: requiredText(row.action_kind, 'actionKind'),
+    usedDailyAttacks: row.used_daily_attacks,
+    remainingDailyAttacks: row.remaining_daily_attacks,
+    dailyAttackLimit: row.daily_attack_limit,
+    extraDailyAttacks: row.extra_daily_attacks,
+    canStartAttack: row.can_start_attack,
+    attackerHasBlockingActivity: row.attacker_has_blocking_activity,
+    counterExists: row.counter_exists,
+    generatedAt: requiredText(row.generated_at, 'generatedAt'),
   };
 }
 

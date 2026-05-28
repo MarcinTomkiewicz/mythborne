@@ -1,50 +1,44 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { forkJoin } from 'rxjs';
 import {
-  HeroActiveRuntimeActivity,
   PvpActionStartResult,
   PvpTargetCandidate,
 } from '../../../core/domain/pvp/pvp.model';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
+import { VICINITY_TARGET_LIMIT } from '../../../core/configs/vicinity.config';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../core/services/pvp/player-pvp';
+import {
+  PendingPvpAction,
+  PvpStartActionKind,
+  PvpVisibleAddressTargetOverlayInput,
+} from '../../../core/types/vicinity.types';
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { trimText, trimToNull } from '../../../core/utils/normalize-text';
-import {
-  pvpRuntimeActivityDisplay,
-} from '../../../core/utils/pvp-runtime-activity-display';
-
-const DEFAULT_TARGET_LIMIT = 20;
-type PvpStartActionKind = 'attack' | 'spy';
-
-interface PendingPvpAction {
-  actionKind: PvpStartActionKind;
-  targetHeroId: string;
-}
 
 @Injectable()
 export class VicinityTargetCandidatesState {
   private readonly activeHero = inject(ActiveHero);
   private readonly playerPvp = inject(PlayerPvp);
   private loadRequestId = 0;
-  private runtimeActivityRequestId = 0;
+  private overlayRequestId = 0;
   private actionRequestId = 0;
+  private lastOverlayInput: PvpVisibleAddressTargetOverlayInput | null = null;
 
   readonly isLoading = signal(false);
-  readonly isLoadingRuntimeActivity = signal(false);
+  readonly isVisibleOverlayLoading = signal(false);
+  readonly visibleOverlayLoaded = signal(false);
   readonly error = signal<string | null>(null);
-  readonly runtimeActivityError = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
   readonly actionSuccess = signal<string | null>(null);
   readonly lastStartedAction = signal<PvpActionStartResult | null>(null);
-  readonly activeRuntimeActivity = signal<HeroActiveRuntimeActivity | null>(null);
   readonly candidates = signal<PvpTargetCandidate[]>([]);
+  readonly visibleTargets = signal<PvpTargetCandidate[]>([]);
   readonly pendingAction = signal<PendingPvpAction | null>(null);
   readonly pendingAttackTargetIds = signal<ReadonlySet<string>>(new Set<string>());
   readonly pendingSpyTargetIds = signal<ReadonlySet<string>>(new Set<string>());
   readonly districtCode = signal<string | null>(null);
   readonly search = signal('');
-  readonly limit = signal(DEFAULT_TARGET_LIMIT);
+  readonly limit = signal(VICINITY_TARGET_LIMIT);
   readonly offset = signal(0);
   readonly hasCandidates = computed(() => this.candidates().length > 0);
   readonly isEmpty = computed(
@@ -55,9 +49,6 @@ export class VicinityTargetCandidatesState {
     () => this.candidates().length === this.limit() && !this.isLoading(),
   );
   readonly isStartingAction = computed(() => this.pendingAction() !== null);
-  readonly activePvpRuntimeActivity = computed(() =>
-    pvpRuntimeActivityDisplay(this.activeRuntimeActivity()),
-  );
 
   isSpyPending(targetHeroId: string): boolean {
     return this.pendingSpyTargetIds().has(targetHeroId);
@@ -91,7 +82,7 @@ export class VicinityTargetCandidatesState {
     this.startAction(candidate, 'spy');
   }
 
-  loadCandidates(): void {
+  loadCandidates(onLoaded?: (candidates: readonly PvpTargetCandidate[]) => void): void {
     const requestId = ++this.loadRequestId;
     const requestContextKey = this.currentContextKey();
 
@@ -100,7 +91,7 @@ export class VicinityTargetCandidatesState {
 
     if (!requestContextKey) {
       this.candidates.set([]);
-      this.error.set('No active hero for PvP target search.');
+      this.error.set('Brak aktywnego bohatera do wyszukiwania celów PvP.');
       this.isLoading.set(false);
       return;
     }
@@ -122,8 +113,9 @@ export class VicinityTargetCandidatesState {
           return;
         }
 
-        this.candidates.set(candidates);
         this.isLoading.set(false);
+        this.candidates.set(candidates);
+        onLoaded?.(candidates);
       },
       error: (error: unknown) => {
         if (requestId !== this.loadRequestId) {
@@ -137,57 +129,66 @@ export class VicinityTargetCandidatesState {
         }
 
         this.candidates.set([]);
-        this.error.set(getErrorMessage(error, 'Failed to load PvP targets.'));
+        this.error.set(getErrorMessage(error, 'Nie udało się wczytać celów PvP.'));
         this.isLoading.set(false);
       },
     });
   }
 
-  loadActiveRuntimeActivity(): void {
-    const requestId = ++this.runtimeActivityRequestId;
+  loadVisibleAddressTargetOverlay(input: PvpVisibleAddressTargetOverlayInput): void {
+    const requestId = ++this.overlayRequestId;
     const requestContextKey = this.currentContextKey();
 
-    this.isLoadingRuntimeActivity.set(true);
-    this.runtimeActivityError.set(null);
+    this.lastOverlayInput = input;
+    this.isLoading.set(true);
+    this.isVisibleOverlayLoading.set(true);
+    this.visibleOverlayLoaded.set(false);
+    this.error.set(null);
 
     if (!requestContextKey) {
-      this.activeRuntimeActivity.set(null);
-      this.runtimeActivityError.set('No active hero for PvP runtime activity.');
-      this.isLoadingRuntimeActivity.set(false);
+      this.visibleTargets.set([]);
+      this.error.set('Brak aktywnego bohatera do wczytania celów PvP.');
+      this.isLoading.set(false);
+      this.isVisibleOverlayLoading.set(false);
+      this.visibleOverlayLoaded.set(true);
       return;
     }
 
-    this.playerPvp.getActiveRuntimeActivity().subscribe({
-      next: (activity) => {
-        if (requestId !== this.runtimeActivityRequestId) {
+    this.playerPvp.getVisibleAddressTargetOverlay(input).subscribe({
+      next: (targets) => {
+        if (requestId !== this.overlayRequestId) {
           return;
         }
 
         if (requestContextKey !== this.currentContextKey()) {
-          this.activeRuntimeActivity.set(null);
-          this.isLoadingRuntimeActivity.set(false);
+          this.visibleTargets.set([]);
+          this.isLoading.set(false);
+          this.isVisibleOverlayLoading.set(false);
           return;
         }
 
-        this.activeRuntimeActivity.set(activity);
-        this.isLoadingRuntimeActivity.set(false);
+        this.visibleTargets.set(targets);
+        this.isLoading.set(false);
+        this.isVisibleOverlayLoading.set(false);
+        this.visibleOverlayLoaded.set(true);
       },
       error: (error: unknown) => {
-        if (requestId !== this.runtimeActivityRequestId) {
+        if (requestId !== this.overlayRequestId) {
           return;
         }
 
         if (requestContextKey !== this.currentContextKey()) {
-          this.activeRuntimeActivity.set(null);
-          this.isLoadingRuntimeActivity.set(false);
+          this.visibleTargets.set([]);
+          this.isLoading.set(false);
+          this.isVisibleOverlayLoading.set(false);
           return;
         }
 
-        this.activeRuntimeActivity.set(null);
-        this.runtimeActivityError.set(
-          getErrorMessage(error, 'Failed to load PvP runtime activity.'),
-        );
-        this.isLoadingRuntimeActivity.set(false);
+        this.visibleTargets.set([]);
+        this.error.set(getErrorMessage(error, 'Nie udało się wczytać celów PvP w widocznym zakresie.'));
+        this.isLoading.set(false);
+        this.isVisibleOverlayLoading.set(false);
+        this.visibleOverlayLoaded.set(true);
       },
     });
   }
@@ -209,7 +210,7 @@ export class VicinityTargetCandidatesState {
     this.lastStartedAction.set(null);
 
     if (!requestContextKey) {
-      this.actionError.set(`No active hero for PvP ${actionKind} action.`);
+      this.actionError.set(`Brak aktywnego bohatera dla akcji PvP: ${actionLabel(actionKind)}.`);
       return;
     }
 
@@ -227,7 +228,7 @@ export class VicinityTargetCandidatesState {
         }
 
         this.actionSuccess.set(
-          `${actionLabel(actionKind)} travel started. Arrival in ${durationLabel(result.travelTimeSeconds)}.`,
+          `${actionLabel(actionKind)} rozpoczęty. Dotarcie za ${durationLabel(result.travelTimeSeconds)}.`,
         );
         this.lastStartedAction.set(result);
         this.refreshAfterActionStart(requestId, requestContextKey, actionKind, targetHeroId);
@@ -239,29 +240,29 @@ export class VicinityTargetCandidatesState {
         }
 
         this.actionError.set(
-          getErrorMessage(error, `Failed to start ${actionKind} action.`),
+          getErrorMessage(error, `Nie udało się rozpocząć akcji: ${actionLabel(actionKind)}.`),
         );
         this.clearPendingAction(actionKind, targetHeroId);
       },
     });
   }
 
-  setDistrictCode(value: string | null): void {
+  setDistrictCode(
+    value: string | null,
+  ): void {
     this.districtCode.set(trimToNull(value));
     this.offset.set(0);
-    this.loadCandidates();
   }
 
   setSearch(value: string | null): void {
     this.search.set(trimText(value) ?? '');
     this.offset.set(0);
-    this.loadCandidates();
   }
 
   setPageSize(value: number): void {
     const nextLimit = Number.isInteger(value) && value > 0
       ? value
-      : DEFAULT_TARGET_LIMIT;
+      : VICINITY_TARGET_LIMIT;
 
     this.limit.set(nextLimit);
     this.offset.set(0);
@@ -304,23 +305,21 @@ export class VicinityTargetCandidatesState {
     actionKind: PvpStartActionKind,
     targetHeroId: string,
   ): void {
-    forkJoin({
-      activity: this.playerPvp.getActiveRuntimeActivity(),
-      candidates: this.playerPvp.getTargetCandidates({
-        districtCode: this.districtCode(),
-        limit: this.limit(),
-        offset: this.offset(),
-        search: trimText(this.search()),
-      }),
-    }).subscribe({
-      next: ({ activity, candidates }) => {
+    const overlayInput = this.lastOverlayInput;
+
+    if (!overlayInput) {
+      this.clearPendingAction(actionKind, targetHeroId);
+      return;
+    }
+
+    this.playerPvp.getVisibleAddressTargetOverlay(overlayInput).subscribe({
+      next: (candidates) => {
         if (!this.isCurrentAction(requestId, contextKey)) {
           this.clearPendingAction(actionKind, targetHeroId);
           return;
         }
 
-        this.activeRuntimeActivity.set(activity);
-        this.candidates.set(candidates);
+        this.visibleTargets.set(candidates);
         this.clearPendingAction(actionKind, targetHeroId);
       },
       error: (error: unknown) => {
@@ -330,7 +329,7 @@ export class VicinityTargetCandidatesState {
         }
 
         this.actionError.set(
-          getErrorMessage(error, 'PvP action started, but runtime activity or target refresh failed.'),
+          getErrorMessage(error, 'Akcja PvP została rozpoczęta, ale odświeżenie stanu lub listy celów się nie powiodło.'),
         );
         this.clearPendingAction(actionKind, targetHeroId);
       },
@@ -378,7 +377,7 @@ function pvpActionRequestId(actionKind: PvpStartActionKind, targetHeroId: string
 }
 
 function actionLabel(actionKind: PvpStartActionKind): string {
-  return actionKind === 'attack' ? 'Attack' : 'Spy';
+  return actionKind === 'attack' ? 'Atak' : 'Szpieg';
 }
 
 function durationLabel(seconds: number): string {

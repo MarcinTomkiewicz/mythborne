@@ -1,14 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, map, Observable, switchMap } from 'rxjs';
+import { VICINITY_ADDRESS_PAGE_SIZE } from '../../../core/configs/vicinity.config';
 import { EstateAddresses } from '../../../core/services/estate/estate-addresses';
 import {
   buildVicinityAddressRange,
-  VICINITY_ADDRESS_RADIUS,
+  calculateVicinityAddressBounds,
 } from './vicinity-address-range';
-import {
-  findVicinityDistrict,
-  VicinityBrowserRangeResult,
-} from './vicinity-state-guards';
+import type { VicinityBrowserRangeResult } from '../../../core/types/vicinity.types';
+import { findVicinityDistrict } from './vicinity-state-guards';
 
 @Injectable({ providedIn: 'root' })
 export class VicinityBrowserRangeLoader {
@@ -16,7 +15,7 @@ export class VicinityBrowserRangeLoader {
 
   load(options: {
     selectedDistrictCode: string | null;
-    centerAddressNumber: number;
+    focusAddressNumber: number;
     useExistingSelection?: boolean;
   }): Observable<VicinityBrowserRangeResult> {
     return forkJoin({
@@ -32,19 +31,18 @@ export class VicinityBrowserRangeLoader {
           ? options.selectedDistrictCode
           : options.selectedDistrictCode ?? currentAddress.districtCode;
         const district = findVicinityDistrict(districts, selectedDistrictCode);
-        const centerAddressNumber = options.useExistingSelection
-          ? options.centerAddressNumber
+        const focusAddressNumber = options.useExistingSelection
+          ? options.focusAddressNumber
           : currentAddress.districtCode === district.districtCode
-            ? currentAddress.addressNumber
+            ? toAddressPageFocusAddressNumber(
+                currentAddress.addressNumber,
+                district.addressCapacity,
+              )
             : 1;
-        const fromAddressNumber = Math.max(
-          1,
-          centerAddressNumber - VICINITY_ADDRESS_RADIUS,
-        );
-        const toAddressNumber = Math.min(
-          district.addressCapacity,
-          centerAddressNumber + VICINITY_ADDRESS_RADIUS,
-        );
+        const { fromAddressNumber, toAddressNumber } = calculateVicinityAddressBounds({
+          focusAddressNumber,
+          addressCapacity: district.addressCapacity,
+        });
 
         return this.estateAddresses.getOccupiedAddressesForAddressNumberRange({
           serverId: currentAddress.serverId,
@@ -56,16 +54,33 @@ export class VicinityBrowserRangeLoader {
             currentAddress,
             districts: [...districts],
             selectedDistrictCode: district.districtCode,
-            centerAddressNumber,
+            focusAddressNumber,
             range: buildVicinityAddressRange({
               currentAddress,
               district,
               occupiedAddresses,
-              centerAddressNumber,
+              focusAddressNumber,
             }),
           })),
         );
       }),
     );
   }
+}
+
+function toAddressPageFocusAddressNumber(
+  addressNumber: number,
+  addressCapacity: number,
+): number {
+  const rawPageStart =
+    Math.floor((addressNumber - 1) / VICINITY_ADDRESS_PAGE_SIZE)
+    * VICINITY_ADDRESS_PAGE_SIZE
+    + 1;
+  const maxPageStart = Math.max(1, addressCapacity - VICINITY_ADDRESS_PAGE_SIZE + 1);
+  const pageStart = Math.min(Math.max(1, rawPageStart), maxPageStart);
+
+  return Math.min(
+    addressCapacity,
+    pageStart + Math.floor((VICINITY_ADDRESS_PAGE_SIZE - 1) / 2),
+  );
 }

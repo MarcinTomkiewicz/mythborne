@@ -3,6 +3,7 @@ import { map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
   HeroActiveRuntimeActivity,
+  HeroPvpDailyAttackState,
   PvpActionStartResult,
   PvpAttackResult,
   PvpSpyResult,
@@ -15,18 +16,25 @@ import {
   GetMyPvpSpyResultRpcRow,
   GetHeroActiveRuntimeActivityRpcArgs,
   GetHeroActiveRuntimeActivityRpcRow,
+  GetHeroPvpDailyAttackStateRpcArgs,
+  GetHeroPvpDailyAttackStateRpcRow,
   GetPvpTargetCandidatesRpcArgs,
   GetPvpTargetCandidatesRpcRow,
+  GetPvpVisibleAddressTargetOverlayRpcArgs,
+  GetPvpVisibleAddressTargetOverlayRpcRow,
   PvpActionKindKey,
   StartPvpActionRpcArgs,
   StartPvpActionRpcRow,
 } from '../../types/pvp-rpc.types';
+import { PvpVisibleAddressTargetOverlayInput } from '../../types/vicinity.types';
 import { trimText } from '../../utils/normalize-text';
 import {
   mapPvpActionStartResult,
   mapPvpAttackResult,
+  mapHeroPvpDailyAttackState,
   mapPvpSpyResult,
   mapPvpTargetCandidate,
+  mapPvpVisibleAddressTargetOverlay,
 } from '../../utils/pvp-mappers';
 import { mapHeroActiveRuntimeActivity } from '../../utils/runtime-activity-mappers';
 import { Backend } from '../backend/backend';
@@ -72,6 +80,53 @@ export class PlayerPvp {
         );
       }),
       map((rows) => rows.map(mapPvpTargetCandidate)),
+    );
+  }
+
+  getDailyAttackState(): Observable<HeroPvpDailyAttackState> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: GetHeroPvpDailyAttackStateRpcArgs = {
+          p_hero_id: context.heroId,
+        };
+
+        return this.backend.rpc<GetHeroPvpDailyAttackStateRpcRow[]>(
+          RPC.get_hero_pvp_daily_attack_state,
+          args,
+        );
+      }),
+      map((rows) =>
+        mapHeroPvpDailyAttackState(
+          requiredSingleRow(rows, 'get_hero_pvp_daily_attack_state'),
+        ),
+      ),
+    );
+  }
+
+  getVisibleAddressTargetOverlay(
+    input: PvpVisibleAddressTargetOverlayInput,
+  ): Observable<PvpTargetCandidate[]> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: GetPvpVisibleAddressTargetOverlayRpcArgs = {
+          p_attacker_hero_id: context.heroId,
+          p_district_code: requiredText(input.districtCode, 'districtCode'),
+          p_from_address_number: requiredPositiveInteger(
+            input.fromAddressNumber,
+            'fromAddressNumber',
+          ),
+          p_to_address_number: requiredPositiveInteger(
+            input.toAddressNumber,
+            'toAddressNumber',
+          ),
+        };
+
+        return this.backend.rpc<GetPvpVisibleAddressTargetOverlayRpcRow[]>(
+          RPC.get_pvp_visible_address_target_overlay,
+          args,
+        );
+      }),
+      map((rows) => rows.map(mapPvpVisibleAddressTargetOverlay)),
     );
   }
 
@@ -179,6 +234,14 @@ function requiredText(value: string | null | undefined, field: string): string {
   }
 
   return normalized;
+}
+
+function requiredPositiveInteger(value: number, field: string): number {
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`${field} must be a positive integer for PvP RPC.`);
+  }
+
+  return value;
 }
 
 function nullableArgument(value: string | null | undefined): string | undefined {

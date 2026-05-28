@@ -9022,6 +9022,9 @@ Cel: PvP target selection przez Vicinity/Ranking, z jasną granicą względem w�
 
 ## UI-PVP-1 / formerly UI-39 — PvP Vicinity target selection screen
 
+**Status:**
+Accepted on 2026-05-28 after user-side review, pending final user-side smoke. `/game/vicinity` now renders one cohesive PvP Vicinity target-selection screen with header summary, daily attacks from RPC, own-estate attack/siege protection from `get_hero_estate_runtime_state(...)`, district/search/page controls, 20-address paginated vicinity rows, generated empty slots, visible target overlay RPC data, selected target side panel, `Szpieguj` / `Atak` / disabled `Oblężenie` actions, protected danger/shield state, self success state, `Moja okolica`, and relocation confirmation for empty addresses. Combat/result/report/ranking flow remains outside UI-PVP-1.
+
 **Goal:**  
 Zbudować PvP target selection screen oparty o Vicinity, gdzie gracz wybiera cel ataku/szpiegowania/oblężenia z listy posiadłości w okolicy.
 

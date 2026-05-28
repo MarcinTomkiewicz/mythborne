@@ -1,30 +1,18 @@
 import { inject, Injectable } from '@angular/core';
-import { map, Observable, switchMap } from 'rxjs';
-import {
-  EmptyEstateAddressOption,
-} from '../../../core/domain/estate/estate-address.model';
+import { map, switchMap } from 'rxjs';
+import type { EmptyEstateAddressOption } from '../../../core/domain/estate/estate-address.model';
 import { EstateRelocation } from '../../../core/services/estate/estate-relocation';
 import { getErrorMessage } from '../../../core/utils/error-message';
-import { VicinityBrowserRangeResult } from './vicinity-state-guards';
+import type {
+  VicinityBrowserRangeResult,
+  VicinityRelocationRunnerInput,
+  VicinityRelocationSnapshot,
+} from '../../../core/types/vicinity.types';
 import {
   createRelocationSnapshot,
   matchesRelocationSnapshot,
-  VicinityRelocationSnapshot,
 } from './vicinity-state-guards';
 import { VicinityRelocationFeedback } from './vicinity-relocation-feedback';
-
-export interface VicinityRelocationRunnerInput {
-  target: EmptyEstateAddressOption | null;
-  destructiveConfirmed: boolean;
-  currentTarget: () => EmptyEstateAddressOption | null;
-  loadBrowserRange: () => Observable<VicinityBrowserRangeResult>;
-  applyBrowserRangeResult: (result: VicinityBrowserRangeResult) => void;
-  setIsRelocating: (value: boolean) => void;
-  setRelocationError: (value: string | null) => void;
-  setRelocationSuccess: (value: string | null) => void;
-  setSelectedTarget: (value: EmptyEstateAddressOption | null) => void;
-  setDestructiveConfirmed: (value: boolean) => void;
-}
 
 @Injectable()
 export class VicinityRelocationRunner {

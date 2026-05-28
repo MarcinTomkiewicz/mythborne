@@ -9,6 +9,7 @@ export interface PvpEligibilityDisplay {
   reasonLabel: string | null;
   reasonDetail: string | null;
   rawReasonKey: string | null;
+  isPlayerSafeReason: boolean;
 }
 
 export type PvpEligibilityActionKind = 'attack' | 'spy';
@@ -27,26 +28,31 @@ const METADATA_REASON_KEY_PREFIXES = [
 ] as const;
 
 const FALLBACK_REASON_LABELS: Record<string, string> = {
-  action_unavailable: 'Action unavailable',
-  action_kind_inactive: 'Action unavailable',
-  action_kind_unavailable: 'Action unavailable',
-  active_target_protection: 'Target protected',
-  attacker_blocking_activity: 'Attacker busy',
-  attacker_busy: 'Attacker busy',
-  attacker_has_active_activity: 'Attacker busy',
-  attacker_has_blocking_activity: 'Attacker busy',
-  below_level_range: 'Target below level range',
-  pvp_action_unavailable: 'Action unavailable',
-  target_above_attack_level_range: 'Target above level range',
-  target_above_level_range: 'Target above level range',
-  target_below_attack_level_range: 'Target below level range',
-  target_below_level_range: 'Target below level range',
-  target_level_above_range: 'Target above level range',
-  target_level_below_range: 'Target below level range',
-  target_protected: 'Target protected',
-  target_too_high: 'Target above level range',
-  target_too_low: 'Target below level range',
-  target_under_protection: 'Target protected',
+  action_unavailable: 'Akcja niedostępna',
+  action_kind_inactive: 'Akcja niedostępna',
+  action_kind_unavailable: 'Akcja niedostępna',
+  active_target_protection: 'Cel chroniony',
+  attacker_blocking_activity: 'Bohater jest zajęty',
+  attacker_busy: 'Bohater jest zajęty',
+  attacker_has_active_activity: 'Bohater jest zajęty',
+  attacker_has_blocking_activity: 'Bohater jest zajęty',
+  below_level_range: 'Cel poniżej zakresu poziomu',
+  pvp_action_unavailable: 'Akcja niedostępna',
+  same_guild: 'Cel z twojej gildii',
+  target_above_attack_level_range: 'Cel powyżej zakresu poziomu',
+  target_above_level_range: 'Cel powyżej zakresu poziomu',
+  target_below_attack_level_range: 'Cel poniżej zakresu poziomu',
+  target_below_level_range: 'Cel poniżej zakresu poziomu',
+  target_level_above_range: 'Cel powyżej zakresu poziomu',
+  target_level_below_range: 'Cel poniżej zakresu poziomu',
+  target_protected: 'Cel chroniony',
+  target_too_high: 'Cel powyżej zakresu poziomu',
+  target_too_low: 'Cel poniżej zakresu poziomu',
+  target_guild_member: 'Cel z twojej gildii',
+  target_in_same_guild: 'Cel z twojej gildii',
+  target_is_guild_member: 'Cel z twojej gildii',
+  target_under_protection: 'Cel chroniony',
+  target_same_guild: 'Cel z twojej gildii',
 };
 
 export function pvpEligibilityDisplay(
@@ -54,10 +60,11 @@ export function pvpEligibilityDisplay(
 ): PvpEligibilityDisplay {
   if (context.eligibility.canStart) {
     return {
-      statusLabel: 'Available',
+      statusLabel: 'dostępny',
       reasonLabel: null,
       reasonDetail: null,
       rawReasonKey: null,
+      isPlayerSafeReason: false,
     };
   }
 
@@ -66,23 +73,26 @@ export function pvpEligibilityDisplay(
 
   if (!reasonKey) {
     return {
-      statusLabel: 'Unavailable',
-      reasonLabel: 'Action unavailable',
+      statusLabel: 'niedostępny',
+      reasonLabel: 'Akcja niedostępna',
       reasonDetail: null,
       rawReasonKey: null,
+      isPlayerSafeReason: false,
     };
   }
 
   const metadata = findReasonMetadata(context.metadataEntries, reasonKey);
+  const isPlayerSafeReason = isPlayerSafeEligibilityReason(reasonKey, metadata);
 
   return {
-    statusLabel: 'Unavailable',
-    reasonLabel: metadata?.label ?? FALLBACK_REASON_LABELS[reasonKey] ?? 'Action unavailable',
+    statusLabel: 'niedostępny',
+    reasonLabel: metadata?.label ?? FALLBACK_REASON_LABELS[reasonKey] ?? 'Akcja niedostępna',
     reasonDetail: metadata?.description
       ?? metadata?.helperText
       ?? metadata?.impactSummary
       ?? fallbackReasonDetail(context, reasonKey),
     rawReasonKey: reasonKey,
+    isPlayerSafeReason,
   };
 }
 
@@ -104,23 +114,27 @@ function fallbackReasonDetail(
   reasonKey: string,
 ): string | null {
   if (isAttackerBusyReason(reasonKey)) {
-    return 'Your hero already has a blocking runtime activity.';
+    return 'Twój bohater ma już aktywną czynność blokującą kolejną akcję.';
   }
 
   if (isTargetProtectedReason(reasonKey)) {
-    return 'The target is currently protected from incoming attacks.';
+    return 'Cel jest obecnie chroniony przed atakami.';
   }
 
   if (isTargetBelowRangeReason(reasonKey) && isAttackEligibility(context.eligibility)) {
-    return `Target level ${context.targetLevel} is below your attack range ${context.eligibility.minTargetLevel}-${context.eligibility.maxTargetLevel}.`;
+    return `Poziom celu ${context.targetLevel} jest poniżej twojego zakresu ataku ${context.eligibility.minTargetLevel}-${context.eligibility.maxTargetLevel}.`;
   }
 
   if (isTargetAboveRangeReason(reasonKey) && isAttackEligibility(context.eligibility)) {
-    return `Target level ${context.targetLevel} is above your attack range ${context.eligibility.minTargetLevel}-${context.eligibility.maxTargetLevel}.`;
+    return `Poziom celu ${context.targetLevel} jest powyżej twojego zakresu ataku ${context.eligibility.minTargetLevel}-${context.eligibility.maxTargetLevel}.`;
+  }
+
+  if (isSameGuildReason(reasonKey)) {
+    return 'Nie możesz rozpocząć tej akcji przeciwko członkowi swojej gildii.';
   }
 
   if (isActionUnavailableReason(reasonKey)) {
-    return `${actionLabel(context.actionKind)} is not available for this target.`;
+    return `${actionLabel(context.actionKind)} jest niedostępny dla tego celu.`;
   }
 
   return null;
@@ -197,6 +211,25 @@ function isTargetAboveRangeReason(reasonKey: string): boolean {
     || reasonKey === 'target_too_high';
 }
 
+function isSameGuildReason(reasonKey: string): boolean {
+  return reasonKey === 'same_guild'
+    || reasonKey === 'target_same_guild'
+    || reasonKey === 'target_in_same_guild'
+    || reasonKey === 'target_guild_member'
+    || reasonKey === 'target_is_guild_member';
+}
+
+function isPlayerSafeEligibilityReason(
+  reasonKey: string,
+  metadata: UiMetadataEntryReadModel | null,
+): boolean {
+  return metadata !== null
+    || isTargetProtectedReason(reasonKey)
+    || isTargetBelowRangeReason(reasonKey)
+    || isTargetAboveRangeReason(reasonKey)
+    || isSameGuildReason(reasonKey);
+}
+
 function actionLabel(actionKind: PvpEligibilityActionKind): string {
-  return actionKind === 'attack' ? 'Attack' : 'Spy';
+  return actionKind === 'attack' ? 'Atak' : 'Szpieg';
 }
