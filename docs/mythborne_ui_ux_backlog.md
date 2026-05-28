@@ -9091,6 +9091,9 @@ Zbudować PvP target selection screen oparty o Vicinity, gdzie gracz wybiera cel
 
 ## UI-PVP-2 / formerly UI-40 — Selected target side panel
 
+**Status:**
+Accepted/completed on 2026-05-28 as part of the accepted UI-PVP-1 implementation and placement cleanup. The selected target side panel now lives in `src/app/game/components/vicinity/selected-target-panel`, consumes the current row view model, renders target/address/attack time/spy time/siege/protection fact rows, shows backend-derived action availability through prepared action view models, supports relocation confirmation for empty addresses, and avoids defender-private equipment/snapshot data. No extra UI/code pass was needed for UI-PVP-2.
+
 **Goal:**  
 Dodać compact selected target side panel pokazujący najważniejsze dane i dostępne akcje dla wybranego celu.
 
@@ -9146,203 +9149,461 @@ Dodać compact selected target side panel pokazujący najważniejsze dane i dost
 - private data avoided:
 - local SCSS added:
 
-## UI-PVP-3 / formerly UI-41 — Vicinity pagination and search
+# Aftermath
 
-**Goal:**  
-Dodać pagination/search/filtering dla Vicinity target list bez tworzenia fake sortowania przeciwników.
+Status:
 
-**Scope:**
-- search by hero/address if backend/read model supports it,
-- pagination with current range, e.g. showing 1–20,
-- optional “attackable only” filter if supported,
-- ranking tab remains separate entry point,
-- stable selected target behavior across pages.
+* `UI-PVP-1` — accepted/completed: `/game/vicinity` target selection.
+* `UI-PVP-2` — accepted/completed: selected target side panel.
+* Tych tasków nie przepisywać ani nie otwierać ponownie bez konkretnego blockera.
 
-**Out of scope:**
-- arbitrary strength sorting,
-- frontend-calculated match range,
-- enemy recommendations,
-- full ranking UI.
+Cel dalszych tasków:
 
-**Data/source rules:**
-- pagination and search should use backend/read model where available,
-- if only client-side list exists, do not imply server-side search,
-- availability filters only if backend supports them,
-- no frontend guessing attack range/match range.
-
-**UI/SCSS rules:**
-- use PrimeNG paginator/global pagination pattern,
-- search input through vendor input wrapper,
-- no local custom paginator unless justified by UI-CORE-14.
-
-**Dependencies/blockers:**
-- missing server-side pagination/search -> report service dependency,
-- missing filter support -> omit filter or mark disabled per convention.
-
-**Acceptance criteria:**
-- page controls visible and fit table/list width,
-- search/filter does not imply unsupported backend behavior,
-- selected target updates safely when page changes,
-- build passes.
-
-**Verification/smoke:**
-- pagination smoke,
-- search smoke if backend supports it,
-- selected target page-change smoke,
-- build/tsc.
-
-**Required Codex report:**
-- pagination source:
-- search/filter support:
-- paginator pattern reused:
-- local SCSS added:
-
-## UI-PVP-4 / formerly UI-42 — PvP action start boundaries
-
-**Goal:**  
-Ustalić i/lub podpiąć action start boundaries dla Attack, Spy i Lay siege bez implementowania samego combat/spy/siege result screen.
-
-**Scope:**
-- action handlers for available row/selected target actions,
-- pre-action confirmation if needed,
-- call canonical PvP/spy/siege start RPC/service where available,
-- show travel timer/state if backend returns one and UI pattern exists,
-- success/error feedback,
-- refresh action availability after start.
-
-**Out of scope:**
-- combat screen,
-- Walking Dead,
-- spy result details,
-- siege configuration details,
-- direct writes to combat/pvp/report tables.
-
-**Data/source rules:**
-- use canonical backend RPC/service for each action,
-- frontend is not authority for eligibility,
-- backend error wins and must be shown cleanly,
-- no direct persistent mutations,
-- active hero/server context required.
-
-**UI/SCSS rules:**
-- confirmation/dialog/toast through vendor wrappers,
-- action-needed/error text not muted,
-- no local timer styling unless global pattern missing and justified.
-
-**Dependencies/blockers:**
-- missing attack/spy/siege RPC -> leave action disabled/pending and report blocker,
-- missing travel timer read model -> show success and report persistent state dependency.
-
-**Acceptance criteria:**
-- unavailable actions cannot start,
-- available actions call canonical path if implemented,
-- errors/blocked states clear,
-- target selection remains separate from combat,
-- build passes.
-
-**Verification/smoke:**
-- action click smoke if backend available,
-- blocked action smoke,
-- success feedback smoke,
-- build/tsc.
-
-**Required Codex report:**
-- action RPCs/services used:
-- backend blockers:
-- refresh paths:
-- local SCSS added:
-
-## UI-PVP-5 / formerly UI-43 — PvP Ranking entry point
-
-**Goal:**  
-Dodać Ranking jako drugi target source / entry point obok Vicinity, bez pełnego projektowania rankingu, jeśli nie jest jeszcze gotowy.
-
-**Scope:**
-- Ranking tab/route entry,
-- placeholder/disabled state only if route/data missing and project convention allows it,
-- if ranking read model exists: list entries with same action availability rules as Vicinity,
-- clear separation between ranking list and vicinity list.
-
-**Out of scope:**
-- full ranking algorithm,
-- leaderboards polish,
-- opponent sorting hacks,
-- duplicate eligibility logic.
-
-**Data/source rules:**
-- ranking list from backend/read model,
-- action eligibility still from backend flags,
-- no frontend match range guessing.
-
-**UI/SCSS rules:**
-- reuse target list/action patterns from Vicinity,
-- no separate local ranking card system,
-- pending/empty state uses shared empty state pattern.
-
-**Dependencies/blockers:**
-- if ranking read model missing, report dependency and keep entry pending/omitted per project convention.
-
-**Acceptance criteria:**
-- ranking entry exists only if useful and not misleading,
-- no fake working ranking,
-- action rules consistent with Vicinity,
-- build passes if implemented.
-
-**Verification/smoke:**
-- tab/route smoke,
-- pending state smoke if no data,
-- build/tsc.
-
-**Required Codex report:**
-- ranking source:
-- omitted/pending reason:
-- reused target patterns:
-- local SCSS added:
-
-## UI-PVP-6 / formerly UI-44 — PvP combat screen boundary note
-
-**Goal:**  
-Utrwalić granicę: target selection kończy się na rozpoczęciu akcji, a właściwy combat screen jest osobnym widokiem/taskiem.
-
-**Scope:**
-- add code comments/docs/task notes where useful,
-- ensure PvP target screen does not include combat timing/log/result,
-- route/action handoff points to future combat/travel/report flow,
-- align with UI-COMBAT future tasks.
-
-**Out of scope:**
-- combat screen implementation,
-- combat engine/RPC changes,
-- reports generation,
-- Walking Dead.
-
-**Data/source rules:**
-- combat result/report data belongs to combat/report read models,
-- target selection should not read defender private equipment beyond allowed eligibility/display fields.
-
-**UI/SCSS rules:**
-- no combat-specific widgets on target selection,
-- helper copy should be concise and player-facing.
-
-**Dependencies/blockers:**
-- if current UI mixes combat preview into target selection, report cleanup scope.
-
-**Acceptance criteria:**
-- boundary documented,
-- target selection UI remains clean,
-- future combat screen has clear next task,
-- build passes if code changed.
-
-**Verification/smoke:**
-- visual scan/no combat widgets,
-- route smoke if code changed.
-
-**Required Codex report:**
-- combat-related elements removed/avoided:
-- future dependencies:
-- not added intentionally:
+* podpiąć rozpoczęte akcje PvP do runtime/travel timerów;
+* podpiąć istniejący moduł combat do PvP;
+* zapewnić auto/manual resolution tak jak w istniejącym combat flow;
+* nie odtwarzać osobnych PvP result screens usuniętych w cleanupie;
+* ranking traktować jako osobny follow-up/epic po domknięciu podstawowego PvP combat flow.
 
 ---
+
+## UI-PVP-3 — PvP travel timer / active PvP action state
+
+**Goal**
+
+Po rozpoczęciu akcji PvP pokazać graczowi aktywny stan podróży/dojścia dla PvP attack/spy, wykorzystując istniejący wzorzec timerów/runtime state, obecnie używany m.in. przy Exploration.
+
+**Scope**
+
+* podpiąć timer dla aktywnej akcji PvP po kliknięciu `Atak` albo `Szpieguj`;
+* użyć backendowego runtime/read-modelu jako źródła prawdy;
+* pokazać:
+
+  * rodzaj akcji: attack/spy;
+  * cel/adres;
+  * status;
+  * czas dotarcia / remaining time;
+  * co stanie się po dotarciu;
+* blokować niepoprawne powtórne starty akcji, jeśli backend zwraca aktywną blokującą czynność;
+* odświeżać stan Vicinity po starcie/ukończeniu akcji;
+* zachować target selection jako listę celów, nie jako combat screen.
+
+**Out of scope**
+
+* implementacja combat screen;
+* rozstrzygnięcie walki;
+* spy result detail screen;
+* ranking;
+* direct writes do PvP/combat/report tables;
+* lokalne liczenie wyniku albo czasu jako authority.
+
+**Data/source rules**
+
+* timer/status pochodzi z backendowego read modelu/RPC;
+* frontend może formatować czas, ale nie jest źródłem prawdy;
+* jeśli brakuje read modelu dla aktywnej PvP action, zgłosić DB/RPC blocker;
+* nie używać localStorage ani lokalnych fallbacków do utrwalania timera;
+* nie zakładać `hero.id === auth.uid()`.
+
+**Reuse requirements**
+
+* sprawdzić i wykorzystać istniejący timer/runtime pattern z Exploration;
+* sprawdzić istniejące active runtime activity/read-model helpers;
+* nie kopiować lokalnego timera do Vicinity, jeśli istnieje wspólny pattern;
+* jeżeli istniejący timer jest zbyt Exploration-specific, wyciąć najmniejszy reusable helper bez przebudowy całego modułu.
+
+**Acceptance criteria**
+
+* po starcie ataku/szpiegowania gracz widzi aktywny timer;
+* timer znika/zmienia stan po zakończeniu;
+* UI nie pozwala startować akcji sprzecznych z backendowym active state;
+* brak combat UI na ekranie Vicinity;
+* build/tsc przechodzą.
+
+**Verification**
+
+* start attack smoke;
+* start spy smoke;
+* active timer visible smoke;
+* blocked/active action smoke;
+* refresh after completion smoke if backend supports it;
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`.
+
+**Required Codex report**
+
+* timer/read-model source:
+* reused timer/runtime pattern:
+* missing backend blockers:
+* refresh path:
+* local SCSS added:
+* files removed/left untouched:
+
+---
+
+## UI-PVP-4 — PvP combat handoff preflight
+
+**Goal**
+
+Sprawdzić i przygotować kontrakt między PvP action/travel completion a istniejącym modułem combat. Ten task ma ustalić, czy backend/frontend mają komplet danych do uruchomienia combat screen dla PvP attack.
+
+**Scope**
+
+* sprawdzić, jaki backendowy stan powstaje po dotarciu ataku PvP;
+* sprawdzić, czy istnieje combat session/result/read model dla PvP;
+* sprawdzić, czy combat module może dostać:
+
+  * source kind / source id;
+  * attacker hero;
+  * defender hero;
+  * player perspective;
+  * combat state/session id;
+  * auto/manual availability;
+* sprawdzić, czy istnieją bezpieczne dane dla obu stron combat screen;
+* przygotować mały handoff do UI-COMBAT/PvP integration, jeśli czegoś brakuje.
+
+**Out of scope**
+
+* implementacja nowego combat UI;
+* implementacja ranking;
+* implementacja result/report screens;
+* direct DB writes;
+* lokalny fake combat session.
+
+**Data/source rules**
+
+* backend jest authority dla tego, kto walczy, z kim, kiedy i w jakim stanie;
+* Angular nie konstruuje attacker/defender combatantów lokalnie;
+* nie czytać prywatnych defender equipment/stat danych poza player-safe combat read modelem;
+* auto/manual options muszą pochodzić z backend/RPC/read modelu albo istniejącego combat module contract.
+
+**Acceptance criteria**
+
+* wiadomo, który existing combat module entrypoint ma obsłużyć PvP;
+* wiadomo, które RPC/read modele są gotowe;
+* brakujące kontrakty są opisane jako DB/RPC blocker, a nie obchodzone w Angularze;
+* nie powstaje nowy lokalny combat engine;
+* build/tsc tylko jeśli kod był zmieniany.
+
+**Verification**
+
+* static contract check;
+* grep existing combat module entrypoints;
+* DB/RPC generated types check;
+* no fake local combat construction;
+* `npx tsc --noEmit` if code changed;
+* `npm run build` if code changed;
+* `git diff --check`.
+
+**Required Codex report**
+
+* combat handoff source:
+* existing combat module entrypoint:
+* attacker/defender source:
+* auto/manual source:
+* blockers:
+* no-local-fallback proof:
+
+---
+
+## UI-PVP-5 — Existing combat module integration for PvP attacks
+
+**Goal**
+
+Podpiąć PvP attack do istniejącego combat module tak, żeby po dotarciu ataku gracz przechodził do właściwego combat screen i dostawał ten sam typ wyboru co w innych walkach: auto-resolve albo manual resolve, jeśli backend to umożliwia.
+
+**Scope**
+
+* rozszerzyć istniejący combat route/service/state o PvP attack source;
+* użyć istniejących combat components/layout/log/result handoff patterns;
+* załadować attacker/defender z backendowego combat read modelu;
+* pokazać auto/manual action options zgodnie z backendowym stanem;
+* obsłużyć loading/error/stale state;
+* po rozstrzygnięciu przejść do istniejącego report/result handoff pattern.
+
+**Out of scope**
+
+* nowy osobny PvP combat screen od zera;
+* nowy combat engine;
+* lokalne liczenie walki;
+* PvP ranking;
+* spy result detail;
+* siege setup;
+* frontendowe generowanie combat logu;
+* direct writes do combat/PvP/report tables.
+
+**Data/source rules**
+
+* combat state/session pochodzi z backend/RPC/read modelu;
+* attacker/defender snapshots pochodzą z backendowego combat contractu;
+* manual/auto availability pochodzi z backendu;
+* auto-resolve/manual-resolve idą przez canonical combat workflow;
+* nie rekonstruować timeline/statów w Angularze;
+* nie zakładać `hero.id === auth.uid()`.
+
+**Reuse requirements**
+
+* użyć istniejącego combat module, nie tworzyć `pvp-combat-page` jako kopii;
+* sprawdzić existing encounter/trial combat integration;
+* użyć istniejących combat mappers/types/services tam, gdzie mają rozszerzalny source kind;
+* usunąć albo odrzucić stare usunięte `pvp-attack-result-*` podejście.
+
+**Acceptance criteria**
+
+* PvP attack po dotarciu otwiera istniejący combat flow;
+* gracz widzi attacker/defender combat context;
+* auto/manual options działają lub są jawnie zablokowane przez backend blocker;
+* brak combat preview/log/result na Vicinity target selection;
+* nie ma osobnego lokalnego PvP combat UI copy-paste;
+* build/tsc przechodzą.
+
+**Verification**
+
+* PvP attack arrived smoke;
+* combat screen route smoke;
+* auto resolve smoke if backend available;
+* manual entry smoke if backend available;
+* stale/missing combat state smoke;
+* no duplicated combat components grep;
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`.
+
+**Required Codex report**
+
+* existing combat module files reused:
+* source kind / route used:
+* auto/manual RPCs used:
+* blockers:
+* removed/avoided duplicate PvP combat UI:
+* local SCSS added:
+
+---
+
+## UI-PVP-6 — PvP combat result/report handoff
+
+**Goal**
+
+Po rozstrzygnięciu PvP combat wynik ma trafiać do istniejącego report/result workflow, bez przywracania osobnych `pvp-attack-result-*` ekranów usuniętych w cleanupie.
+
+**Scope**
+
+* podpiąć zakończenie PvP combat do player-safe report/result reference;
+* po auto/manual resolve pokazać krótki state:
+
+  * resolving;
+  * completed;
+  * report available;
+  * error/missing report;
+* użyć istniejących Reports / Report Detail patterns;
+* upewnić się, że notification/action route prowadzi do dozwolonego istniejącego route;
+* pokazać bezpieczne informacje o wyniku, jeśli combat module/report read model je zwraca.
+
+**Out of scope**
+
+* osobny `pvp-attack-result-page`;
+* osobny `pvp-spy-result-page`;
+* pełne projektowanie raportu PvP od nowa;
+* loot/item transfer UI;
+* frontendowe tworzenie raportów;
+* direct writes do reports/combat/PvP tables.
+
+**Data/source rules**
+
+* report/result reference pochodzi z backendu;
+* frontend nie tworzy raportu;
+* report detail czyta player-safe report read model;
+* nie ujawniać defender-private data;
+* jeżeli report handoff nie istnieje, zgłosić DB/RPC blocker.
+
+**Acceptance criteria**
+
+* po zakończeniu PvP combat gracz ma jasny next step do raportu/wyniku;
+* usunięte PvP result screens nie wracają;
+* routing/notification policy nie prowadzi do martwych tras;
+* build/tsc przechodzą.
+
+**Verification**
+
+* auto/manual completion smoke;
+* report link smoke;
+* notification/action route smoke if relevant;
+* no `pvp-attack-result-page` / `pvp-spy-result-page` revival grep;
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`.
+
+**Required Codex report**
+
+* report/result source:
+* reused report components/routes:
+* notification route policy changes:
+* private data avoided:
+* deleted routes not restored proof:
+
+---
+
+## UI-PVP-7 — PvP spy timer and report handoff
+
+**Goal**
+
+Dopiąć spy flow po stronie UI: `Szpieguj` startuje backendową akcję, pokazuje travel timer/active state, a po zakończeniu prowadzi do istniejącego report/result workflow, bez osobnego usuniętego `pvp-spy-result-page`.
+
+**Scope**
+
+* wykorzystać timer/active PvP action pattern z UI-PVP-3;
+* obsłużyć zakończenie spy action;
+* pokazać report/result available state;
+* podpiąć notification/action route do istniejącego report detail, jeśli backend zwraca report reference;
+* odświeżyć Vicinity action availability po starcie/zakończeniu spy.
+
+**Out of scope**
+
+* osobny spy result screen;
+* frontendowe odsłanianie prywatnych danych defendera;
+* lokalne generowanie spy result;
+* ranking;
+* combat screen.
+
+**Data/source rules**
+
+* spy action start przez canonical PvP workflow;
+* active spy state z backendowego read modelu;
+* spy result/report z backendowego report/result read modelu;
+* frontend nie czyta prywatnych tabel szpiegowania;
+* brak result report reference = DB/RPC blocker albo disabled follow-up state.
+
+**Acceptance criteria**
+
+* `Szpieguj` startuje właściwą akcję;
+* timer pokazuje aktywną spy action;
+* po zakończeniu gracz ma report/result handoff;
+* nie wracają usunięte `pvp-spy-result-*` files/routes;
+* build/tsc przechodzą.
+
+**Verification**
+
+* spy start smoke;
+* spy timer smoke;
+* spy completion/report smoke if backend available;
+* no dead route restore grep;
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`.
+
+**Required Codex report**
+
+* spy action RPC/service:
+* timer source:
+* report source:
+* reused report pattern:
+* blockers:
+* deleted spy result route not restored proof:
+
+---
+
+# UI-PVP-RANKING — PvP Ranking follow-up epic
+
+Ranking jest osobnym follow-upem po podstawowym PvP combat flow. Nie mieszać go z timer/combat integration.
+
+## UI-PVP-RANKING-1 — Ranking read-model preflight
+
+**Goal**
+
+Sprawdzić, czy istnieje backend/read model dla PvP ranking listy graczy, zanim powstanie UI rankingu.
+
+**Scope**
+
+* sprawdzić dostępne RPC/read modele;
+* sprawdzić pola:
+
+  * hero display name;
+  * level;
+  * prestige/rank if supported;
+  * address;
+  * guild label/tag;
+  * attack/spy eligibility or target action overlay;
+* sprawdzić paginację;
+* sprawdzić filter `attackable only`, jeśli backend go wspiera.
+
+**Out of scope**
+
+* implementacja UI rankingu;
+* frontendowe sortowanie „po sile”;
+* lokalne liczenie attackable;
+* direct table reads.
+
+**Acceptance criteria**
+
+* wiadomo, czy ranking UI ma backend source;
+* braki zgłoszone jako DB/RPC blocker;
+* nie ma frontendowego fake rankingu.
+
+---
+
+## UI-PVP-RANKING-2 — Ranking list UI
+
+**Goal**
+
+Dodać Ranking jako drugi target source obok Vicinity, z paginowaną listą graczy i akcjami zgodnymi z backendową eligibility.
+
+**Scope**
+
+* Ranking entry/tab/route w PvP area;
+* lista rankingowa:
+
+  * hero;
+  * level;
+  * guild;
+  * address;
+  * rank/prestige if backend gives it;
+  * action availability;
+* paginacja;
+* opcjonalny filter `Tylko możliwi do ataku`, jeśli backend go wspiera;
+* selected target panel może reuse’ować Vicinity target panel pattern, jeśli dane są zgodne.
+
+**Out of scope**
+
+* nowy ranking algorithm;
+* frontend-calculated attack range;
+* combat UI;
+* spy/combat result screens;
+* direct writes.
+
+**Data/source rules**
+
+* ranking from backend/read model;
+* action availability from backend;
+* `attackable only` only if backend supports it;
+* no frontend guessing of eligibility.
+
+**Acceptance criteria**
+
+* ranking nie jest fake/placeholderem, jeśli wygląda na aktywny;
+* filter attackable only działa tylko z backend support;
+* action handling consistent with Vicinity;
+* no duplicate local card/table system;
+* build/tsc pass.
+
+**Verification**
+
+* ranking route smoke;
+* pagination smoke;
+* filter smoke if implemented;
+* action availability smoke;
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`.
+
+**Required Codex report**
+
+* ranking source:
+* pagination source:
+* attackable filter source:
+* reused Vicinity/target patterns:
+* local SCSS added:
+
 
 # 21. UI-ADMIN — Admin IA, governance and admin workspaces
 
