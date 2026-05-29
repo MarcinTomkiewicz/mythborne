@@ -85,8 +85,8 @@ export class VicinityRowsState {
     this.actions.start({
       candidate,
       actionKind: pvpActionKind,
-      refreshAfterStart: () => {
-        this.activePvpAction.load();
+      refreshAfterStart: (result) => {
+        this.activePvpAction.loadAfterStart(result);
         this.overlay.refresh();
       },
     });

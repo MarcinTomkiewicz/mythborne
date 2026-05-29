@@ -24,10 +24,15 @@ export function parseGameReportCombatSectionJson(
   }
 
   const record = requiredJsonRecord(value, 'combat_section_json');
+  const outcome = optionalJsonString(readJsonField(record, 'outcome'));
+
+  if (!outcome) {
+    return null;
+  }
 
   return {
     sourceType: optionalJsonString(readJsonField(record, 'sourceType')),
-    outcome: requiredJsonString(readJsonField(record, 'outcome'), 'outcome'),
+    outcome,
     winnerSide: optionalJsonString(readJsonField(record, 'winnerSide')),
     loserSide: optionalJsonString(readJsonField(record, 'loserSide')),
     turnsCompleted: optionalJsonNumber(readJsonField(record, 'turnsCompleted')),

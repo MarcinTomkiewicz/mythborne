@@ -95,6 +95,8 @@ export const RPC = {
   get_my_pvp_spy_result: 'get_my_pvp_spy_result',
   get_my_pvp_attack_result: 'get_my_pvp_attack_result',
   start_pvp_action: 'start_pvp_action',
+  settle_due_pvp_spy_action: 'settle_due_pvp_spy_action',
+  create_pvp_spy_game_report: 'create_pvp_spy_game_report',
   get_my_staff_notification_unread_count: 'get_my_staff_notification_unread_count',
   get_my_staff_notifications: 'get_my_staff_notifications',
   get_admin_notification_db_owned_producer_diagnostics:

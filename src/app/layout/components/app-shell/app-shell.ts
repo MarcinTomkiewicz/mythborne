@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 import { ActiveServer } from '../../../core/services/server/active-server';
 import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-policy';
+import { RouteBackgroundOverride } from '../../services/route-background-override';
 import { GameSidebar } from '../game-sidebar/game-sidebar';
 import { GameTopbar } from '../game-topbar/game-topbar';
 import { MembershipBlockedNotice } from '../membership-blocked-notice/membership-blocked-notice';
@@ -37,6 +38,7 @@ const ROUTE_BACKGROUNDS: ReadonlyArray<readonly [pathPrefix: string, image: stri
 export class AppShell {
   private readonly router = inject(Router);
   private readonly activeServer = inject(ActiveServer);
+  private readonly routeBackgroundOverride = inject(RouteBackgroundOverride);
 
   readonly currentUrl = toSignal(
     this.router.events.pipe(
@@ -56,6 +58,12 @@ export class AppShell {
     );
   });
   readonly routeBackgroundImage = computed(() => {
+    const override = this.routeBackgroundOverride.image();
+
+    if (override) {
+      return override;
+    }
+
     const path = this.currentUrl().split(/[?#]/, 1)[0];
 
     return ROUTE_BACKGROUNDS.find(([prefix]) => path.startsWith(prefix))?.[1] ?? null;

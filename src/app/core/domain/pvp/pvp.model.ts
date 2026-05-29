@@ -98,6 +98,22 @@ export interface PvpActionStartResult {
   targetProtectionSeconds: number | null;
 }
 
+export interface PvpSpySettlementResult {
+  pvpActionId: string;
+  pvpSpyResultId: string | null;
+  runtimeActivityId: string | null;
+  status: string;
+  settledAsOf: string;
+}
+
+export interface PvpSpyGameReportResult {
+  gameReportId: string;
+  pvpSpyResultId: string;
+  createdNewReport: boolean;
+  participantsCreated: number;
+  accessRowsTouched: number;
+}
+
 export interface ActivePvpActionOffer {
   pvpActionId: string;
   runtimeActivityId: string | null;

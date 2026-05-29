@@ -149,13 +149,13 @@
   </section>
 }
 
-<section class="mg-card flex-col gap-md p-lg w-100">
-  <div class="flex-col gap-xs">
-    <p class="card-legend mb-0">{{ combatSectionTitle() }}</p>
-    <p class="muted-text mb-0">{{ combatSectionText() }}</p>
-  </div>
+@if (report().combatSection; as combat) {
+  <section class="mg-card flex-col gap-md p-lg w-100">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">{{ combatSectionTitle() }}</p>
+      <p class="muted-text mb-0">{{ combatSectionText() }}</p>
+    </div>
 
-  @if (report().combatSection; as combat) {
     <div class="flex-row-start-center flex-wrap gap-sm">
       @if (combat.sourceType) {
         <span class="tag-badge tag-badge--muted">{{ combat.sourceType }}</span>
@@ -270,5 +270,5 @@
         </div>
       }
     </div>
-  }
-</section>
+  </section>
+}

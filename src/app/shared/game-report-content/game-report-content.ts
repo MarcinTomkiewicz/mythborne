@@ -95,6 +95,7 @@ export class GameReportContent {
     return [
       report.trialSection,
       report.encounterSection,
+      report.spySection,
       report.effectSection,
       report.rewardSection,
     ].filter((section): section is GameReportContextSection => section != null);

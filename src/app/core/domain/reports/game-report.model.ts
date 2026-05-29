@@ -133,7 +133,7 @@ export interface GameReportRelatedReport {
 }
 
 export interface GameReportContextSection {
-  sectionKind: 'trial' | 'encounter' | 'reward' | 'effect';
+  sectionKind: 'trial' | 'encounter' | 'spy' | 'reward' | 'effect';
   title: string;
   summary: string | null;
   badge: string | null;
@@ -225,6 +225,7 @@ export interface PrivateGameReportDetail extends Omit<
   itemReferences: GameReportItemReference[];
   trialSection: GameReportContextSection | null;
   encounterSection: GameReportContextSection | null;
+  spySection: GameReportContextSection | null;
   rewardSection: GameReportContextSection | null;
   effectSection: GameReportContextSection | null;
   combatSection: GameReportCombatSection | null;
@@ -247,6 +248,7 @@ export interface PublicGameReport {
   itemReferences: PublicGameReportItemReference[];
   trialSection: GameReportContextSection | null;
   encounterSection: GameReportContextSection | null;
+  spySection: GameReportContextSection | null;
   rewardSection: GameReportContextSection | null;
   effectSection: GameReportContextSection | null;
   combatSection: GameReportCombatSection | null;

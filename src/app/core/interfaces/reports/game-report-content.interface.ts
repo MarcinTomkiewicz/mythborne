@@ -13,6 +13,7 @@ export interface GameReportContentReadModel {
   itemReferences: Array<GameReportItemReference | PublicGameReportItemReference>;
   trialSection: GameReportContextSection | null;
   encounterSection: GameReportContextSection | null;
+  spySection: GameReportContextSection | null;
   rewardSection: GameReportContextSection | null;
   effectSection: GameReportContextSection | null;
   combatSection: GameReportCombatSection | null;

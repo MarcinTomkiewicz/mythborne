@@ -1,5 +1,8 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { PvpTargetCandidate } from '../../../../core/domain/pvp/pvp.model';
+import {
+  PvpActionStartResult,
+  PvpTargetCandidate,
+} from '../../../../core/domain/pvp/pvp.model';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
 import {
@@ -35,7 +38,7 @@ export class VicinityPvpActionsState {
   start(input: {
     candidate: PvpTargetCandidate;
     actionKind: PvpStartActionKind;
-    refreshAfterStart: () => void;
+    refreshAfterStart: (result: PvpActionStartResult) => void;
   }): void {
     const { candidate, actionKind, refreshAfterStart } = input;
 
@@ -74,7 +77,7 @@ export class VicinityPvpActionsState {
             ? `Atak rozpoczęty. Dotarcie za ${travelTimeLabel}.`
             : `Szpiegowanie rozpoczęte. Dotarcie za ${travelTimeLabel}.`,
         );
-        refreshAfterStart();
+        refreshAfterStart(result);
         this.clearPendingAction(actionKind, targetHeroId);
       },
       error: (error: unknown) => {

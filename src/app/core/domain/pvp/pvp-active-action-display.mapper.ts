@@ -12,7 +12,8 @@ export interface PvpActiveActionTiming {
 }
 
 export function shouldShowActivePvpOffer(offer: ActivePvpActionOffer): boolean {
-  return offer.isTravelPhase ||
+  return isPvpSpyActivePhase(offer) ||
+    offer.isTravelPhase ||
     offer.isManualWindow ||
     offer.isBlockingRuntimeActivity;
 }
@@ -29,6 +30,13 @@ export function pvpActiveActionTiming(offer: ActivePvpActionOffer): PvpActiveAct
     return {
       startedAt: offer.phaseStartedAt ?? offer.startedAt,
       resolvesAt: offer.phaseEndsAt ?? offer.arrivesAt,
+    };
+  }
+
+  if (isPvpSpyActivePhase(offer)) {
+    return {
+      startedAt: offer.phaseStartedAt ?? offer.startedAt,
+      resolvesAt: offer.phaseEndsAt ?? offer.arrivesAt ?? offer.availableAt,
     };
   }
 
@@ -78,10 +86,10 @@ export function pvpActiveActionFactRows(offer: ActivePvpActionOffer): PvpActiveA
     ]);
   }
 
-  if (offer.isTravelPhase) {
+  if (offer.isTravelPhase || isPvpSpyActivePhase(offer)) {
     return presentFactRows([
       ...baseRows,
-      { label: 'Dotarcie', value: timeDisplay(offer.phaseEndsAt ?? offer.arrivesAt) },
+      { label: 'Dotarcie', value: timeDisplay(offer.phaseEndsAt ?? offer.arrivesAt ?? offer.availableAt) },
     ]);
   }
 
@@ -143,6 +151,12 @@ export function pvpActiveActionErrorMessage(error: unknown, fallback: string): s
 
 export function isPvpReturnRuntimePhase(offer: ActivePvpActionOffer): boolean {
   return offer.phase === 'returning';
+}
+
+function isPvpSpyActivePhase(offer: ActivePvpActionOffer): boolean {
+  return offer.actionKind === 'spy' &&
+    !offer.isResolved &&
+    Boolean(offer.phaseEndsAt ?? offer.arrivesAt ?? offer.availableAt);
 }
 
 function returnAvailabilityAt(offer: ActivePvpActionOffer): string | null {

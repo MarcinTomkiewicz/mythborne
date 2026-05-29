@@ -1,7 +1,8 @@
-import { Component, OnInit, computed, effect, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { RouteBackgroundOverride } from '../../../layout/services/route-background-override';
 import { VicinityActivePvpActionPanel } from '../../components/vicinity/active-pvp-action-panel/vicinity-active-pvp-action-panel';
 import { VicinityAddressList } from '../../components/vicinity/address-list/vicinity-address-list';
 import { VicinityPagination } from '../../components/vicinity/pagination/vicinity-pagination';
@@ -16,10 +17,14 @@ import { VicinityRangeState } from '../../features/vicinity/state/vicinity-range
 import { VicinityRelocationState } from '../../features/vicinity/state/vicinity-relocation.state';
 import { VicinityRowsState } from '../../features/vicinity/state/vicinity-rows.state';
 import { VicinitySearchState } from '../../features/vicinity/state/vicinity-search.state';
+import { VicinitySpyReportState } from '../../features/vicinity/state/vicinity-spy-report.state';
 import { VicinityTargetSearchState } from '../../features/vicinity/state/vicinity-target-search.state';
 import { VicinityVisibleTargetOverlayState } from '../../features/vicinity/state/vicinity-visible-target-overlay.state';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { EstateRelocationRunner } from '../../workflows/estate-relocation/estate-relocation-runner';
+
+const SPY_BACKGROUND_SOURCE = 'vicinity-spy';
+const SPY_BACKGROUND_IMAGE = "url('/images/backgrounds/spy-background.png')";
 
 @Component({
   selector: 'app-vicinity-page',
@@ -46,6 +51,7 @@ import { EstateRelocationRunner } from '../../workflows/estate-relocation/estate
     VicinityPvpActionsState,
     VicinityPvpMetadataState,
     VicinitySearchState,
+    VicinitySpyReportState,
     VicinityTargetSearchState,
     VicinityVisibleTargetOverlayState,
     EstateRelocationRunner,
@@ -54,8 +60,11 @@ import { EstateRelocationRunner } from '../../workflows/estate-relocation/estate
 })
 export class VicinityPage implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private readonly routeBackgroundOverride = inject(RouteBackgroundOverride);
   private navigatedPvpActionId: string | null = null;
+  private navigatedSpyReportId: string | null = null;
 
   readonly page = inject(VicinityPageState);
   readonly activePvpAction = inject(VicinityActivePvpActionState);
@@ -63,6 +72,7 @@ export class VicinityPage implements OnInit {
   readonly metadata = inject(VicinityPvpMetadataState);
   readonly rowsState = inject(VicinityRowsState);
   readonly search = inject(VicinitySearchState);
+  readonly spyReport = inject(VicinitySpyReportState);
   readonly targetSearch = inject(VicinityTargetSearchState);
   readonly targetOverlay = inject(VicinityVisibleTargetOverlayState);
   readonly isScreenLoading = computed(() =>
@@ -102,6 +112,34 @@ export class VicinityPage implements OnInit {
           },
         });
       });
+    });
+
+    effect(() => {
+      const reportId = this.spyReport.reportId();
+
+      if (!reportId || this.navigatedSpyReportId === reportId) {
+        return;
+      }
+
+      this.navigatedSpyReportId = reportId;
+      queueMicrotask(() => {
+        void this.router.navigate(['/game/reports', reportId]);
+      });
+    });
+
+    effect(() => {
+      const offer = this.activePvpAction.visibleOffer();
+
+      if (offer?.actionKind === 'spy' || this.spyReport.isPreparingReport()) {
+        this.routeBackgroundOverride.set(SPY_BACKGROUND_SOURCE, SPY_BACKGROUND_IMAGE);
+        return;
+      }
+
+      this.routeBackgroundOverride.clear(SPY_BACKGROUND_SOURCE);
+    });
+
+    this.destroyRef.onDestroy(() => {
+      this.routeBackgroundOverride.clear(SPY_BACKGROUND_SOURCE);
     });
   }
 

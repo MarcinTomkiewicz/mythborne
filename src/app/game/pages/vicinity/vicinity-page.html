@@ -53,6 +53,15 @@
     @if (activePvpAction.error()) {
       <p class="warn-text mb-0">{{ activePvpAction.error() }}</p>
     }
+    @if (spyReport.isPreparingReport()) {
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs mb-0">Raport szpiegowania</p>
+        <p class="color-text mb-0">Przygotowujemy raport z zakończonego szpiegowania...</p>
+      </section>
+    }
+    @if (spyReport.error()) {
+      <p class="warn-text mb-0">{{ spyReport.error() }}</p>
+    }
 
     @if (!activePvpAction.hasBlockingAction()) {
       <section class="grid-3-1 gap-lg w-100">

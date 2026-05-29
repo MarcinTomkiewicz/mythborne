@@ -1,5 +1,9 @@
 import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
-import { ActivePvpActionOffer } from '../../../../core/domain/pvp/pvp.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  ActivePvpActionOffer,
+  PvpActionStartResult,
+} from '../../../../core/domain/pvp/pvp.model';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
 import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
@@ -17,6 +21,7 @@ import {
   pvpActiveActionTiming,
   shouldShowActivePvpOffer,
 } from '../../../../core/domain/pvp/pvp-active-action-display.mapper';
+import { VicinitySpyReportState } from './vicinity-spy-report.state';
 
 const ELAPSED_REFRESH_INTERVAL_MS = 5000;
 
@@ -25,10 +30,12 @@ export class VicinityActivePvpActionState {
   private readonly activeHero = inject(ActiveHero);
   private readonly destroyRef = inject(DestroyRef);
   private readonly playerPvp = inject(PlayerPvp);
+  private readonly spyReport = inject(VicinitySpyReportState);
   private readonly requests = new RequestToken();
   private readonly nowMs = signal(Date.now());
   private elapsedRefreshKey: string | null = null;
   private lastElapsedRefreshMs = 0;
+  private activeContextKey: string | null = null;
 
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
@@ -118,11 +125,28 @@ export class VicinityActivePvpActionState {
 
       this.elapsedRefreshKey = refreshKey;
       this.lastElapsedRefreshMs = nowMs;
-      queueMicrotask(() => this.load());
+      queueMicrotask(() => {
+        if (offer.actionKind === 'spy') {
+          this.spyReport.prepare(offer);
+          return;
+        }
+
+        this.load();
+      });
     });
   }
 
   load(): void {
+    this.loadActiveOffer();
+  }
+
+  loadAfterStart(result: PvpActionStartResult): void {
+    this.loadActiveOffer(result.actionKind === 'spy'
+      ? { actionKind: result.actionKind, pvpActionId: result.pvpActionId }
+      : undefined);
+  }
+
+  private loadActiveOffer(expected?: { actionKind: 'spy'; pvpActionId: string }): void {
     const requestId = this.requests.next();
     const requestContextKey = activeHeroContextKey(this.activeHero.state());
 
@@ -130,39 +154,74 @@ export class VicinityActivePvpActionState {
     this.error.set(null);
 
     if (!requestContextKey) {
-      this.offer.set(null);
+      this.activeContextKey = null;
+      this.spyReport.clear();
+      this.setOffer(null);
       this.error.set('Brak aktywnego bohatera do wczytania aktywnej akcji PvP.');
       this.isLoading.set(false);
       return;
     }
 
-    this.playerPvp.getActivePvpActionOffer().subscribe({
-      next: (offer) => {
-        if (
-          !this.requests.isCurrent(requestId)
-          || requestContextKey !== activeHeroContextKey(this.activeHero.state())
-        ) {
-          return;
-        }
+    if (this.activeContextKey !== requestContextKey) {
+      this.activeContextKey = requestContextKey;
+      this.spyReport.clear();
+    }
 
-        this.offer.set(offer);
-        this.isLoading.set(false);
-      },
-      error: (error: unknown) => {
-        if (
-          !this.requests.isCurrent(requestId)
-          || requestContextKey !== activeHeroContextKey(this.activeHero.state())
-        ) {
-          return;
-        }
+    this.playerPvp.getActivePvpActionOffer()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (offer) => {
+          if (
+            !this.requests.isCurrent(requestId)
+            || requestContextKey !== activeHeroContextKey(this.activeHero.state())
+          ) {
+            return;
+          }
 
-        this.offer.set(null);
-        this.error.set(pvpActiveActionErrorMessage(
-          error,
-          'Nie udało się wczytać aktywnego stanu PvP.',
-        ));
-        this.isLoading.set(false);
-      },
-    });
+          if (
+            expected &&
+            (!offer || offer.pvpActionId !== expected.pvpActionId || offer.actionKind !== expected.actionKind)
+          ) {
+            this.setOffer(offer);
+            this.error.set(
+              `Backend nie zwrócił aktywnego stanu rozpoczętego szpiegowania (${expected.pvpActionId}).`,
+            );
+            this.isLoading.set(false);
+            return;
+          }
+
+          if (offer?.actionKind === 'spy' && offer.phase === 'returning') {
+            this.setOffer(null);
+            this.error.set(
+              `DB/RPC blocker: get_active_pvp_action_offer zwrócił fazę powrotu dla szpiegowania (${offer.pvpActionId}).`,
+            );
+            this.isLoading.set(false);
+            return;
+          }
+
+          this.setOffer(offer);
+          this.isLoading.set(false);
+        },
+        error: (error: unknown) => {
+          if (
+            !this.requests.isCurrent(requestId)
+            || requestContextKey !== activeHeroContextKey(this.activeHero.state())
+          ) {
+            return;
+          }
+
+          this.setOffer(null);
+          this.error.set(pvpActiveActionErrorMessage(
+            error,
+            'Nie udało się wczytać aktywnego stanu PvP.',
+          ));
+          this.isLoading.set(false);
+        },
+      });
+  }
+
+  private setOffer(offer: ActivePvpActionOffer | null): void {
+    this.spyReport.clearIfActionChanged(offer?.pvpActionId ?? null);
+    this.offer.set(offer);
   }
 }

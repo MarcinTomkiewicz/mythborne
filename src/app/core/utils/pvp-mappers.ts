@@ -4,9 +4,12 @@ import {
   PvpActionKindEntry,
   PvpActionStartResult,
   PvpActionStatusEntry,
+  PvpSpyGameReportResult,
+  PvpSpySettlementResult,
   PvpTargetCandidate,
 } from '../domain/pvp/pvp.model';
 import {
+  CreatePvpSpyGameReportRpcRow,
   GetActivePvpActionOfferRpcRow,
   GetHeroPvpDailyAttackStateRpcRow,
   GetPvpTargetCandidatesRpcRow,
@@ -15,6 +18,7 @@ import {
   PvpActionKindRow,
   PvpActionStatusKey,
   PvpActionStatusRow,
+  SettleDuePvpSpyActionRpcRow,
   StartPvpActionRpcRow,
 } from '../types/pvp-rpc.types';
 import { optionalInteger } from './number';
@@ -146,6 +150,30 @@ export function mapPvpActionStartResult(
   };
 }
 
+export function mapPvpSpySettlementResult(
+  row: SettleDuePvpSpyActionRpcRow,
+): PvpSpySettlementResult {
+  return {
+    pvpActionId: requiredTrimmedText(row.pvp_action_id, 'pvpActionId', 'PvP spy settlement'),
+    pvpSpyResultId: trimToNull(row.pvp_spy_result_id),
+    runtimeActivityId: trimToNull(row.runtime_activity_id),
+    status: requiredTrimmedText(row.status, 'status', 'PvP spy settlement'),
+    settledAsOf: requiredTrimmedText(row.settled_as_of, 'settledAsOf', 'PvP spy settlement'),
+  };
+}
+
+export function mapPvpSpyGameReportResult(
+  row: CreatePvpSpyGameReportRpcRow,
+): PvpSpyGameReportResult {
+  return {
+    gameReportId: requiredTrimmedText(row.game_report_id, 'gameReportId', 'PvP spy report'),
+    pvpSpyResultId: requiredTrimmedText(row.pvp_spy_result_id, 'pvpSpyResultId', 'PvP spy report'),
+    createdNewReport: row.created_new_report,
+    participantsCreated: row.participants_created,
+    accessRowsTouched: row.access_rows_touched,
+  };
+}
+
 export function mapActivePvpActionOffer(
   row: GetActivePvpActionOfferRpcRow,
 ): ActivePvpActionOffer {
@@ -164,11 +192,19 @@ export function mapActivePvpActionOffer(
     defenderHeroId: trimToNull(row.defender_hero_id),
     defenderName: trimToNull(row.defender_name),
     targetHeroId: trimToNull(row.defender_hero_id),
-    targetHeroDisplayName: trimToNull(row.defender_name),
-    targetAddressLabel: null,
-    targetDistrictCode: null,
-    targetAddressNumber: null,
-    attackerAddressLabel: null,
+    targetHeroDisplayName: trimToNull(row.target_name) ?? trimToNull(row.defender_name),
+    targetAddressLabel: pvpAddressLabel({
+      districtCode: trimToNull(row.target_district_code),
+      address: trimToNull(row.target_address),
+      addressNumber: optionalInteger(row.target_address_number),
+    }),
+    targetDistrictCode: trimToNull(row.target_district_code),
+    targetAddressNumber: optionalInteger(row.target_address_number),
+    attackerAddressLabel: pvpAddressLabel({
+      districtCode: optionalRowText(row, 'attacker_district_code'),
+      address: optionalRowText(row, 'attacker_address'),
+      addressNumber: optionalRowInteger(row, 'attacker_address_number'),
+    }),
     startedAt: requiredTrimmedText(row.started_at, 'startedAt', 'PvP read model'),
     arrivesAt: trimToNull(row.arrives_at),
     availableAt: trimToNull(row.available_at),
@@ -190,11 +226,39 @@ export function mapActivePvpActionOffer(
     viewerRole: trimToNull(row.viewer_role),
     viewerIsAttacker: row.viewer_role === 'attacker',
     viewerIsTarget: row.viewer_role === 'defender',
-    pvpSpyResultId: null,
+    pvpSpyResultId: optionalRowText(row, 'pvp_spy_result_id'),
     pvpAttackResultId: trimToNull(row.pvp_attack_result_id),
     combatLiveSessionId: trimToNull(row.combat_live_session_id),
     combatResultId: trimToNull(row.combat_result_id),
   };
+}
+
+function pvpAddressLabel(input: {
+  districtCode: string | null;
+  address: string | null;
+  addressNumber: number | null;
+}): string | null {
+  if (input.address) {
+    return input.address;
+  }
+
+  if (input.districtCode && input.addressNumber !== null) {
+    return `${input.districtCode}-${input.addressNumber}`;
+  }
+
+  return null;
+}
+
+function optionalRowText(row: object, key: string): string | null {
+  return key in row
+    ? trimToNull((row as Record<string, unknown>)[key])
+    : null;
+}
+
+function optionalRowInteger(row: object, key: string): number | null {
+  return key in row
+    ? optionalInteger((row as Record<string, unknown>)[key])
+    : null;
 }
 
 function pvpActionKindDisplayLabel(actionKind: string): string {

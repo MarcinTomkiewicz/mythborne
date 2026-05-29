@@ -31,3 +31,13 @@ export type StartPvpActionRpcArgs =
   Database['public']['Functions']['start_pvp_action']['Args'];
 export type StartPvpActionRpcRow =
   Database['public']['Functions']['start_pvp_action']['Returns'][number];
+
+export type SettleDuePvpSpyActionRpcArgs =
+  Database['public']['Functions']['settle_due_pvp_spy_action']['Args'];
+export type SettleDuePvpSpyActionRpcRow =
+  Database['public']['Functions']['settle_due_pvp_spy_action']['Returns'][number];
+
+export type CreatePvpSpyGameReportRpcArgs =
+  Database['public']['Functions']['create_pvp_spy_game_report']['Args'];
+export type CreatePvpSpyGameReportRpcRow =
+  Database['public']['Functions']['create_pvp_spy_game_report']['Returns'][number];

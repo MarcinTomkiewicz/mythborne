@@ -5,9 +5,13 @@ import {
   ActivePvpActionOffer,
   HeroPvpDailyAttackState,
   PvpActionStartResult,
+  PvpSpyGameReportResult,
+  PvpSpySettlementResult,
   PvpTargetCandidate,
 } from '../../domain/pvp/pvp.model';
 import {
+  CreatePvpSpyGameReportRpcArgs,
+  CreatePvpSpyGameReportRpcRow,
   GetActivePvpActionOfferRpcArgs,
   GetActivePvpActionOfferRpcRow,
   GetHeroPvpDailyAttackStateRpcArgs,
@@ -17,6 +21,8 @@ import {
   GetPvpVisibleAddressTargetOverlayRpcArgs,
   GetPvpVisibleAddressTargetOverlayRpcRow,
   PvpActionKindKey,
+  SettleDuePvpSpyActionRpcArgs,
+  SettleDuePvpSpyActionRpcRow,
   StartPvpActionRpcArgs,
   StartPvpActionRpcRow,
 } from '../../types/pvp-rpc.types';
@@ -27,6 +33,8 @@ import {
   mapActivePvpActionOffer,
   mapPvpActionStartResult,
   mapHeroPvpDailyAttackState,
+  mapPvpSpyGameReportResult,
+  mapPvpSpySettlementResult,
   mapPvpTargetCandidate,
   mapPvpVisibleAddressTargetOverlay,
 } from '../../utils/pvp-mappers';
@@ -47,6 +55,16 @@ export interface StartPvpActionInput {
   actionKind: PvpActionKindKey;
   targetHeroId: string;
   reason?: string | null;
+  requestId?: string | null;
+}
+
+export interface SettleDuePvpSpyActionInput {
+  pvpActionId: string;
+  requestId?: string | null;
+}
+
+export interface CreatePvpSpyGameReportInput {
+  pvpSpyResultId: string;
   requestId?: string | null;
 }
 
@@ -149,6 +167,50 @@ export class PlayerPvp {
       }),
       map((rows) =>
         mapPvpActionStartResult(firstRpcRow(rows, 'start_pvp_action')),
+      ),
+    );
+  }
+
+  settleDueSpyAction(input: SettleDuePvpSpyActionInput): Observable<PvpSpySettlementResult> {
+    const pvpActionId = requiredTrimmedText(input.pvpActionId, 'pvpActionId', 'PvP RPC');
+    const requestId = trimToNull(input.requestId) ?? undefined;
+
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap(() => {
+        const args: SettleDuePvpSpyActionRpcArgs = {
+          p_pvp_action_id: pvpActionId,
+          p_request_id: requestId,
+        };
+
+        return this.backend.rpc<SettleDuePvpSpyActionRpcRow[]>(
+          RPC.settle_due_pvp_spy_action,
+          args,
+        );
+      }),
+      map((rows) =>
+        mapPvpSpySettlementResult(firstRpcRow(rows, 'settle_due_pvp_spy_action')),
+      ),
+    );
+  }
+
+  createSpyGameReport(input: CreatePvpSpyGameReportInput): Observable<PvpSpyGameReportResult> {
+    const pvpSpyResultId = requiredTrimmedText(input.pvpSpyResultId, 'pvpSpyResultId', 'PvP RPC');
+    const requestId = trimToNull(input.requestId) ?? undefined;
+
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap(() => {
+        const args: CreatePvpSpyGameReportRpcArgs = {
+          p_pvp_spy_result_id: pvpSpyResultId,
+          p_request_id: requestId,
+        };
+
+        return this.backend.rpc<CreatePvpSpyGameReportRpcRow[]>(
+          RPC.create_pvp_spy_game_report,
+          args,
+        );
+      }),
+      map((rows) =>
+        mapPvpSpyGameReportResult(firstRpcRow(rows, 'create_pvp_spy_game_report')),
       ),
     );
   }
