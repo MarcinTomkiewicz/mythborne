@@ -6,7 +6,7 @@
     <a routerLink="/public" class="tag-badge tag-badge--muted">Home</a>
   </header>
 
-  <main class="mg-container py-lg w-100">
+  <main class="py-lg w-100" [class.mg-container]="!page.isSpyReport()">
     <app-loading-overlay
       [visible]="page.isLoading() && !page.isNotFound()"
       label="Loading report..."
@@ -24,6 +24,21 @@
       </section>
     } @else if (page.report(); as report) {
       <div class="flex-col gap-xl w-100">
+        @if (page.isSpyReport()) {
+          <app-pvp-spy-report [report]="report" />
+
+          <section class="mg-card p-lg flex-col gap-md w-100">
+            <p class="small-caps color-muted text-xs m-0">Akcje raportu</p>
+            <div class="flex-row-start-center flex-wrap gap-sm">
+              <p-button
+                label="Strona publiczna"
+                icon="pi pi-arrow-left"
+                severity="secondary"
+                routerLink="/public"
+              />
+            </div>
+          </section>
+        } @else {
         <section class="mg-card p-lg w-100">
           <div class="flex-row-between-center flex-col-sm gap-md">
             <div class="flex-col gap-xs">
@@ -64,6 +79,7 @@
           [combatSectionTitle]="page.uiMetadata.sectionTitle(page.uiMetadata.section.combatSection)"
           [combatSectionText]="page.uiMetadata.sectionText(page.uiMetadata.section.combatSection)"
         />
+        }
       </div>
     }
   </main>

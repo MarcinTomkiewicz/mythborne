@@ -25,8 +25,10 @@ export class EquipmentPreview {
   readonly isUnavailable = input(false);
   readonly error = input<string | null>(null);
   readonly armoryLink = input('/game/armory');
+  readonly showActions = input(true);
   readonly compact = input(false);
   readonly showSlotLabels = input(true);
+  readonly emptyLabel = input('No equipment slots returned.');
   readonly paperdollImageUrl = input('/images/warrior.png');
   readonly selectedItemIds = input<readonly string[]>([]);
   readonly selectionActionDisabled = input(false);

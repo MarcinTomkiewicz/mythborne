@@ -3,8 +3,9 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { PrivateGameReportDetail } from '../../../core/domain/reports/game-report.model';
 import { RouteBackgroundOverride } from '../../../layout/services/route-background-override';
-import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { GameReportContent } from '../../../shared/game-report-content/game-report-content';
+import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { PvpSpyReport } from '../../../shared/pvp-spy-report/pvp-spy-report';
 import { ReportDetailPageState } from './report-detail-page.state';
 
 const SPY_REPORT_BACKGROUND_SOURCE = 'report-spy';
@@ -13,9 +14,10 @@ const SPY_REPORT_BACKGROUND_IMAGE = "url('/images/backgrounds/spy-background.png
 @Component({
   selector: 'app-report-detail-page',
   standalone: true,
-  imports: [ButtonModule, GameReportContent, LoadingOverlay, RouterLink],
+  imports: [ButtonModule, GameReportContent, LoadingOverlay, PvpSpyReport, RouterLink],
   providers: [ReportDetailPageState],
   templateUrl: './report-detail-page.html',
+  host: { class: 'd-block w-100' },
 })
 export class ReportDetailPage implements OnInit {
   readonly page = inject(ReportDetailPageState);

@@ -6,14 +6,14 @@ import {
   PrivateGameReportDetail,
 } from '../../../../core/domain/reports/game-report.model';
 import { ItemDetailPopover } from '../../../../shared/item-detail-popover/item-detail-popover';
-import { ExplorationOutcomeReportLayout } from '../../exploration-outcome-report-layout/exploration-outcome-report-layout';
+import { OutcomeReportLayout } from '../../../../shared/outcome-report-layout/outcome-report-layout';
 import { ReportHandoffActions } from '../../report-handoff-actions/report-handoff-actions';
 
 @Component({
   selector: 'app-vicinity-spy-report-result',
   standalone: true,
   imports: [
-    ExplorationOutcomeReportLayout,
+    OutcomeReportLayout,
     ItemDetailPopover,
     ReportHandoffActions,
   ],

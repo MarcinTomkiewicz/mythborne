@@ -1,4 +1,7 @@
 import {
+  EquipmentPreviewSlotRow,
+} from '../equipment/equipment-preview.model';
+import {
   GameReportAccessRole,
   GameReportItemSourceKind,
   GameReportSourceEntityType,
@@ -111,6 +114,11 @@ export interface GameReportContextualReadiness {
 export interface GameReportSectionFact {
   label: string;
   value: string;
+  valueClass?: string;
+}
+
+export interface GameReportSpyBuildingDisplay extends GameReportSectionFact {
+  districtCode: string;
 }
 
 export interface GameReportSectionItem {
@@ -139,6 +147,18 @@ export interface GameReportContextSection {
   badge: string | null;
   facts: GameReportSectionFact[];
   items: GameReportSectionItem[];
+  spyDisplay: GameReportSpyDisplay | null;
+}
+
+export interface GameReportSpyDisplay {
+  outcomeKey: string | null;
+  outcomeLabel: string | null;
+  playerSummary: string | null;
+  viewerRole: string | null;
+  equipment: EquipmentPreviewSlotRow[];
+  baseStats: GameReportSectionFact[];
+  buildings: GameReportSpyBuildingDisplay[];
+  resources: GameReportSectionFact[];
 }
 
 export interface PrivateGameReportListItem {

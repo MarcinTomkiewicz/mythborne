@@ -1,20 +1,22 @@
 @if (step.currentStepResult(); as result) {
-  <app-exploration-outcome-report-layout
-    label="Raport eksploracji"
-    statusLabel=""
-    [title]="step.stepReportTitle()"
-    description=""
-    iconClass="pi pi-compass"
-  >
+  <div class="flex-col gap-lg w-100">
+    <app-outcome-report-layout
+      label="Raport eksploracji"
+      statusLabel=""
+      [title]="step.stepReportTitle()"
+      description=""
+      iconClass="pi pi-compass"
+    />
+
     @if (step.stepReportNarrativeLines().length) {
-      <section reportNarrative class="mg-card p-lg flex-col gap-sm w-100">
+      <section class="mg-card p-lg flex-col gap-sm w-100">
         <p class="small-caps color-muted text-xs m-0">Co się stało</p>
         @for (line of step.stepReportNarrativeLines(); track line) {
           <p class="color-text text-md lh-16 m-0">{{ line }}</p>
         }
       </section>
     } @else if (activeEffectForCurrentReport(); as effect) {
-      <section reportNarrative class="mg-card p-lg flex-col gap-sm w-100">
+      <section class="mg-card p-lg flex-col gap-sm w-100">
         <p class="small-caps color-muted text-xs m-0">Co się stało</p>
         <p class="color-text text-md lh-16 m-0">
           <strong class="color-heading">{{ effect.title }}</strong>
@@ -24,7 +26,7 @@
         </p>
       </section>
     } @else if (step.stepReportFallbackLines().length) {
-      <section reportNarrative class="mg-card p-lg flex-col gap-sm w-100">
+      <section class="mg-card p-lg flex-col gap-sm w-100">
         <p class="small-caps color-muted text-xs m-0">Co się stało</p>
         @for (line of step.stepReportFallbackLines(); track line) {
           <p class="color-text text-md lh-16 m-0">{{ line }}</p>
@@ -37,7 +39,7 @@
       || rewardState.rewardDisplay()
       || rewardState.rewardUnavailableMessage()
     ) {
-      <section reportReward class="mg-card p-lg flex-col gap-sm w-100">
+      <section class="mg-card p-lg flex-col gap-sm w-100">
         <p class="small-caps color-muted text-xs m-0">{{ rewardTitle() }}</p>
 
         @if (rewardState.isLoadingReward()) {
@@ -81,7 +83,7 @@
       </section>
     }
 
-    <section reportEffect class="mg-card p-lg flex-col gap-sm w-100">
+    <section class="mg-card p-lg flex-col gap-sm w-100">
       <p class="small-caps color-muted text-xs m-0">Raport</p>
       <div class="flex-row-start-center flex-wrap gap-sm">
         <a [routerLink]="directReportLink()" class="color-heading text-sm">
@@ -98,5 +100,5 @@
         }
       </div>
     </section>
-  </app-exploration-outcome-report-layout>
+  </div>
 }

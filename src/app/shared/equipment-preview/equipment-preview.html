@@ -14,7 +14,8 @@
       </h3>
     </div>
 
-    <div class="flex-row-start-center flex-wrap gap-sm">
+    @if (showActions()) {
+      <div class="flex-row-start-center flex-wrap gap-sm">
       @if (isLoading()) {
         <span class="tag-badge tag-badge--muted">Loading</span>
       } @else if (isUnavailable() || error()) {
@@ -43,7 +44,8 @@
           Open Armory
         </a>
       }
-    </div>
+      </div>
+    }
   </div>
 
   @if (error(); as equipmentError) {
@@ -51,7 +53,7 @@
   }
 
   @if (rows().length === 0 && !isLoading()) {
-    <p class="color-muted mb-0">No equipment slots returned.</p>
+    <p class="color-muted mb-0">{{ emptyLabel() }}</p>
   } @else {
     <div class="equipment-preview">
       <div

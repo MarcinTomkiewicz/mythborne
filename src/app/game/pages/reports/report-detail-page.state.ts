@@ -35,6 +35,14 @@ export class ReportDetailPageState {
 
     return server?.kind === GameServerKind.Sandbox && access.canAccessSandbox;
   });
+  readonly isSpyReport = computed(() => {
+    const report = this.report();
+
+    return Boolean(report && (
+      report.reportTypeKey === 'pvp_spy' ||
+      report.spySection?.spyDisplay != null
+    ));
+  });
 
   loadData(reportId: string): void {
     const requestId = ++this.loadRequestId;

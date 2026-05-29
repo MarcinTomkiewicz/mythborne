@@ -12,4 +12,5 @@ export class StatCard {
   readonly title = input.required<string>();
   readonly rows = input.required<readonly StatCardRow[]>();
   readonly compact = input(false);
+  readonly titleClass = input<string | null>(null);
 }

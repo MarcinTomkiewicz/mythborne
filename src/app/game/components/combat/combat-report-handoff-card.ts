@@ -19,7 +19,7 @@ import {
 import { RequestToken } from '../../../core/utils/request-token';
 import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
 import { CombatStage } from '../combat/combat-stage';
-import { ExplorationOutcomeReportLayout } from '../exploration-outcome-report-layout/exploration-outcome-report-layout';
+import { OutcomeReportLayout } from '../../../shared/outcome-report-layout/outcome-report-layout';
 import { MinigameCompletionEvent } from '../minigame-host/minigame-host.model';
 import { ReportHandoffActions } from '../report-handoff-actions/report-handoff-actions';
 
@@ -28,54 +28,54 @@ import { ReportHandoffActions } from '../report-handoff-actions/report-handoff-a
   standalone: true,
   imports: [
     CombatStage,
-    ExplorationOutcomeReportLayout,
+    OutcomeReportLayout,
     ItemDetailPopover,
     ReportHandoffActions,
   ],
   template: `
     @if (completion(); as completed) {
-      <app-exploration-outcome-report-layout
-        label="Raport walki"
-        statusLabel=""
-        [title]="reportTitle()"
-        [titleTone]="outcome().tone"
-        description=""
-        iconClass="pi pi-shield"
-      >
+      <div class="flex-col gap-lg w-100">
+        <app-outcome-report-layout
+          label="Raport walki"
+          statusLabel=""
+          [title]="reportTitle()"
+          [titleTone]="outcome().tone"
+          description=""
+          iconClass="pi pi-shield"
+        />
         @if (outcome().narrativeLines.length) {
-          <section reportNarrative class="mg-card p-lg flex-col gap-md w-100">
+<section class="mg-card p-lg flex-col gap-md w-100">
             @for (line of outcome().narrativeLines; track line) {
               <p class="color-text text-md lh-16 m-0">{{ line }}</p>
             }
           </section>
-        } @else if (reportSummary(); as summary) {
-          <section reportNarrative class="mg-card p-lg flex-col gap-md w-100">
+} @else if (reportSummary(); as summary) {
+<section class="mg-card p-lg flex-col gap-md w-100">
             <p class="color-text text-md lh-16 m-0">{{ summary }}</p>
           </section>
-        }
+}
 
         @if (combatStage(); as stage) {
-          <app-combat-stage reportNextStep [stage]="stage" />
-        } @else if (isLoadingReportDetail()) {
-          <section reportNextStep class="mg-card p-lg flex-col gap-sm w-100">
+<app-combat-stage [stage]="stage" />
+} @else if (isLoadingReportDetail()) {
+<section class="mg-card p-lg flex-col gap-sm w-100">
             <p class="small-caps color-muted text-xs m-0">Raport walki</p>
             <p class="color-text text-md lh-16 m-0">Ładowanie raportu walki...</p>
           </section>
-        } @else if (reportDetailError()) {
-          <section reportNextStep class="mg-card p-lg flex-col gap-sm w-100">
+} @else if (reportDetailError()) {
+<section class="mg-card p-lg flex-col gap-sm w-100">
             <p class="small-caps color-muted text-xs m-0">Raport walki</p>
             <p class="warn-text text-md lh-16 m-0">Nie udało się odczytać raportu walki.</p>
           </section>
-        } @else if (!completed.reportId) {
-          <section reportNextStep class="mg-card p-lg flex-col gap-sm w-100">
+} @else if (!completed.reportId) {
+<section class="mg-card p-lg flex-col gap-sm w-100">
             <p class="small-caps color-muted text-xs m-0">Raport walki</p>
             <p class="warn-text text-md lh-16 m-0">
               Wynik jest zapisany, ale backend nie zwrócił odnośnika do raportu.
             </p>
           </section>
-        }
-
-        <section reportReward class="mg-card p-lg flex-col gap-sm w-100">
+}
+<section class="mg-card p-lg flex-col gap-sm w-100">
           <p class="small-caps color-muted text-xs m-0">Zdobycze</p>
 
           @if (isLoadingReportDetail()) {
@@ -126,14 +126,12 @@ import { ReportHandoffActions } from '../report-handoff-actions/report-handoff-a
             <p class="color-text text-md lh-16 m-0">Raport nie zawiera zdobyczy.</p>
           }
         </section>
-
-        <app-report-handoff-actions
-          reportEffect
+<app-report-handoff-actions
           [actions]="reportActions()"
           directReportLabel="Otwórz raport"
           publicReportCopyLabel="Kopiuj link publiczny"
         />
-      </app-exploration-outcome-report-layout>
+</div>
     }
   `,
   host: { class: 'd-block w-100' },

@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { ExplorationOutcomeReportLayout } from '../exploration-outcome-report-layout/exploration-outcome-report-layout';
+import { OutcomeReportLayout } from '../../../shared/outcome-report-layout/outcome-report-layout';
 import { ExplorationChallengeDetailsCard } from '../exploration-challenge-details-card/exploration-challenge-details-card';
 import { ExplorationChallengePendingRewardCard } from '../exploration-challenge-pending-reward-card/exploration-challenge-pending-reward-card';
 import { MinigameHost } from '../minigame-host/minigame-host';
@@ -17,7 +17,7 @@ import { ExplorationMinigameHandoffState } from '../../pages/exploration/explora
   imports: [
     ExplorationChallengeDetailsCard,
     ExplorationChallengePendingRewardCard,
-    ExplorationOutcomeReportLayout,
+    OutcomeReportLayout,
     MinigameHost,
   ],
   templateUrl: './exploration-active-challenge-report.html',

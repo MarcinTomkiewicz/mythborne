@@ -6,7 +6,7 @@ import { GameReports } from '../../../core/services/reports/game-reports';
 import { ToastService } from '../../../core/services/ui/toast';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
-import { ExplorationOutcomeReportLayout } from '../exploration-outcome-report-layout/exploration-outcome-report-layout';
+import { OutcomeReportLayout } from '../../../shared/outcome-report-layout/outcome-report-layout';
 import { ExplorationOverviewState } from '../../pages/exploration/exploration-overview.state';
 import { ExplorationRewardState } from '../../pages/exploration/exploration-reward.state';
 import { ExplorationStepState } from '../../pages/exploration/exploration-step.state';
@@ -22,7 +22,12 @@ import {
 @Component({
   selector: 'app-exploration-step-handoff-card',
   standalone: true,
-  imports: [RouterLink, ButtonModule, ExplorationOutcomeReportLayout, ItemDetailPopover],
+  imports: [
+    RouterLink,
+    ButtonModule,
+    OutcomeReportLayout,
+    ItemDetailPopover,
+  ],
   templateUrl: './exploration-step-handoff-card.html',
   host: { class: 'd-block w-100' },
 })

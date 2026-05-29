@@ -18,7 +18,7 @@ import { RequestToken } from '../../../core/utils/request-token';
 import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
 import { ExplorationMinigameHandoffState } from '../../pages/exploration/exploration-minigame-handoff.state';
 import { ExplorationRewardState } from '../../pages/exploration/exploration-reward.state';
-import { ExplorationOutcomeReportLayout } from '../exploration-outcome-report-layout/exploration-outcome-report-layout';
+import { OutcomeReportLayout } from '../../../shared/outcome-report-layout/outcome-report-layout';
 import { ExplorationPageState } from '../../pages/exploration/exploration-page.state';
 import { CombatStage } from '../combat/combat-stage';
 import { ReportHandoffActions } from '../report-handoff-actions/report-handoff-actions';
@@ -28,7 +28,7 @@ import { ReportHandoffActions } from '../report-handoff-actions/report-handoff-a
   standalone: true,
   imports: [
     CombatStage,
-    ExplorationOutcomeReportLayout,
+    OutcomeReportLayout,
     ItemDetailPopover,
     ReportHandoffActions,
   ],

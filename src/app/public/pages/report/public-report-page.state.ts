@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { catchError, forkJoin, of } from 'rxjs';
 import { UiMetadataEntryReadModel } from '../../../core/domain/admin-ui-metadata.model';
 import { PublicGameReport } from '../../../core/domain/reports/game-report.model';
@@ -17,6 +17,14 @@ export class PublicReportPageState {
   readonly uiMetadata = new PublicReportUiMetadata(() => this.uiMetadataEntries());
   readonly isLoading = signal(true);
   readonly isNotFound = signal(false);
+  readonly isSpyReport = computed(() => {
+    const report = this.report();
+
+    return Boolean(report && (
+      report.reportTypeKey === 'pvp_spy' ||
+      report.spySection?.spyDisplay != null
+    ));
+  });
 
   loadData(publicToken: string): void {
     const requestId = ++this.loadRequestId;

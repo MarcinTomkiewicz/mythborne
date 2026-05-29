@@ -1,235 +1,299 @@
-Cześć. Pracujemy nad projektem Mythsworn.
+# Mythsworn — Codex UI starter
 
-Najpierw przeczytaj i zastosuj `AGENTS.md` oraz `docs/mythborne_codex_review_standards.md`, jeśli istnieją. Dla tasków UI przeczytaj też `docs/ui-ux/README.md`, właściwy fragment `mythborne_ui_ux_backlog.md`, task-relevant UI-CORE / UI-SHELL docs oraz podany prototyp/handoff UI. Jeśli któryś wymagany plik nie istnieje, odnotuj to w raporcie końcowym, ale nie zatrzymuj pracy, chyba że brak pliku realnie blokuje task.
+Pracujemy nad projektem **Mythsworn**.
 
-Twoim zadaniem jest implementować dokładnie wskazany task UI/UX w istniejącym repozytorium Angular/PrimeNG. Pracuj małymi, kontrolowanymi zmianami.
+Twoim zadaniem jest wykonać dokładnie wskazany task UI/UX w istniejącym repozytorium Angular/PrimeNG.
 
-## Zasady główne
+Nie projektujesz od nowa całej strony. Nie improwizujesz layoutu. Nie tworzysz lokalnego design systemu. Masz dopasować konkretny ekran/fragment do istniejącego stylu Mythsworn i zaakceptowanych prototypów.
 
-- realizuj tylko bieżący task;
-- nie projektuj od nowa całego ekranu;
-- nie improwizuj layoutu;
-- nie rób unrelated refactorów;
-- nie przebudowuj data layer, jeśli task jest wizualny/layoutowy;
-- jeśli review mówi „zrób tylko X”, zrób tylko X;
-- jeśli brakuje danych, metadata, shared patternu, prototypu albo innego źródła prawdy, zgłoś blocker/gap zamiast wymyślać zamiennik;
-- nie maskuj problemów fallbackami;
-- nie dodawaj helperów, services, mappers, modeli, typów, komponentów ani klas CSS, jeśli istniejący kod/pattern da się sensownie użyć albo rozszerzyć;
-- nie wklejaj w raporcie pełnych plików ani długich fragmentów kodu, chyba że użytkownik wyraźnie o to poprosi.
+## Przed edycją
 
-## Preflight przed edycją
+Przeczytaj, jeśli są dostępne i istotne dla taska:
 
-Przed edycją sprawdź dla siebie:
+* `AGENTS.md`;
+* `mythborne_codex_review_standards.md`;
+* `mythsworn_codex_ui_review_standards.md`;
+* `docs/ui-ux/README.md`;
+* właściwy fragment `mythborne_ui_ux_backlog.md`;
+* task-relevant UI-CORE / UI-SHELL docs;
+* podany prototyp albo handoff UI.
 
-- `git status --short`;
-- właściwe dokumenty i task;
-- prototyp/handoff i jego UX/visual anchors;
-- aktualny template, SCSS, utilities, wrappers i shared UI patterns;
-- istniejące wzorce do reuse;
-- czy jest blocker.
+Zrób dla siebie preflight:
 
-Nie zatrzymuj się po preflight, jeśli nie ma blockera albo nieoczekiwanego dirty tree. Wynik preflightu uwzględnij dopiero w raporcie końcowym.
+* `git status --short`;
+* sprawdź aktualny template/SCSS/TS;
+* sprawdź istniejące utilities, wrappers i shared components;
+* sprawdź accepted prototype / visual anchors;
+* sprawdź, czy jest blocker.
 
-## Prototype contract + production visual baseline
+Nie zatrzymuj się po preflight, jeśli nie ma blockera albo nieoczekiwanego dirty tree.
 
-Accepted prototype is not loose inspiration.
+## Zakres
 
-Prototyp jest źródłem odniesienia dla:
+Realizuj tylko bieżący task.
 
-- struktury ekranu;
-- hierarchii informacji;
-- flow użytkownika;
-- relacji między panelami;
-- wymaganych stanów, CTA i ograniczeń.
+Nie rób:
 
-Prototyp NIE jest źródłem do kopiowania finalnego skinu 1:1.
+* unrelated refactorów;
+* przebudowy data layer przy tasku wizualnym;
+* nowych helperów/services/mappers/models/types/components bez potrzeby;
+* nowych klas SCSS, jeśli wystarczą utilities albo istniejący pattern;
+* fallbacków maskujących brak danych/kontraktu;
+* zmian w `.spec.ts`, jeśli task jest tylko wizualny;
+* status docs bez wyraźnej prośby użytkownika.
 
-Aktualny dashboard / game shell jest production visual baseline. Adaptuj prototyp do obecnego stylu produkcyjnego:
+Jeśli review mówi „zrób tylko X”, zrób tylko X.
 
-- istniejące `mg-*` karty, utilities, wrappers i shared components;
-- obecny dark blue/color-heading treatment;
-- obecny rytm dashboardu: spacing, density, cards, buttons, badges, label/value rows;
-- obecny topbar/sidebar/game-shell style.
+## Prototype / visual anchors
 
-Nie kopiuj prototype shell/topbar/sidebar, klas `mb-*`, raw CSS, prototype gradients ani osobnego visual language. Zachowaj UX/flow prototypu, ale wizualnie dopasuj do dashboard/game-shell baseline.
+Accepted prototype jest kontraktem UX/visual anchors, nie luźną inspiracją.
 
-## CSS / SCSS discipline
+Z prototypu zachowuj:
 
-SCSS powinien definiować głównie reusable skin/state/variant styling albo wąską, realną geometrię konkretnego komponentu. Nie używaj SCSS do odtwarzania layout utilities.
+* strukturę ekranu;
+* hierarchię informacji;
+* relacje między panelami;
+* flow;
+* wymagane CTA/stany/blokady;
+* charakter danego surface.
 
-Nie dodawaj w SCSS layout rules typu `display`, `flex`, `grid`, `gap`, `margin`, `padding`, `width`, `height`, alignment, position albo overflow, jeśli da się to wyrazić istniejącymi global utilities w HTML.
+Nie kopiuj:
 
-Zanim dodasz spacing/layout w SCSS, sprawdź utilities:
+* prototype shell/topbar/sidebar;
+* klas `mb-*`;
+* raw CSS;
+* raw gradientów;
+* palette values;
+* osobnego visual language prototypu.
 
-- `flex-*`;
-- `grid-*`;
-- `gap-*`;
-- `p-*`;
-- `m-*`;
-- `w-*`;
-- `h-*`;
-- `min-w-*`;
-- `overflow-*`;
-- `position-*`;
-- `z-*`;
-- `radius-*`;
-- `square-*`;
-- `border-*`;
-- `bg-*`.
+Aktualny dashboard/game shell jest production visual baseline. Dopasuj ekran do istniejącego stylu:
 
-Nie dodawaj defensywnych class stacks „na wszelki wypadek”. Każda klasa w HTML musi mieć realny cel.
+* `mg-card`;
+* `mg-container`;
+* utilities;
+* existing wrappers;
+* dark blue / `color-heading` treatment;
+* obecny rytm spacingu, density, cards, buttons, badges i label/value rows.
 
-Nie twórz lokalnego surface/card/gate/button skinu, jeśli wystarczy `mg-card`, istniejące utility albo istniejący global pattern. Jeśli potrzeba powtarzalnego złotego borderu/glow/hoveru, potraktuj to jako shared/global pattern gap, nie jako feature-local styl dla jednego komponentu.
+## SCSS / utilities
 
-## Text and visual hierarchy
+Nie używaj SCSS do odtwarzania layout utilities.
+
+Nie dodawaj w SCSS reguł typu:
+
+* `display`;
+* `flex`;
+* `grid`;
+* `gap`;
+* `margin`;
+* `padding`;
+* `width`;
+* `height`;
+* alignment;
+* position;
+* overflow;
+
+jeśli da się to wyrazić istniejącymi global utilities w HTML.
+
+Przed dodaniem layout/spacing w SCSS sprawdź:
+
+* `flex-*`;
+* `grid-*`;
+* `gap-*`;
+* `p-*`;
+* `m-*`;
+* `w-*`;
+* `h-*`;
+* `min-w-*`;
+* `overflow-*`;
+* `position-*`;
+* `z-*`;
+* `radius-*`;
+* `square-*`;
+* `border-*`;
+* `bg-*`.
+
+SCSS może zostać tylko tam, gdzie daje realny reusable skin/state/variant albo geometrię, której nie ma w utilities.
+
+Nie twórz lokalnego surface/card/button/badge/gate skinu, jeśli wystarczy istniejący global pattern.
+
+## HTML / TS boundaries
+
+Dla tasków stricte UI/layoutowych preferuj HTML + istniejące utilities.
+
+TS zmieniaj tylko, jeśli task wymaga danych, stanu, interakcji albo istniejące API uniemożliwia poprawny UI.
+
+Nie dodawaj inputów/variantów tylko po to, żeby nie usunąć starego złego zachowania.
+
+Typy/interfejsy nie mogą lądować w komponencie, jeśli są reusable. Użyj `core/types`, `core/interfaces`, domain model albo istniejącego mappera.
+
+## Text hierarchy
 
 Player-facing copy ma być po polsku, chyba że użytkownik wyraźnie każe inaczej.
 
-`muted-text` stosuj tylko dla labeli, helper text, timestamps i drugorzędnej metadata. Ważne wartości, statusy, outcomes, warnings, blockers, reasons i selected states nie mogą być `muted-text`.
+Nie pokazuj playerowi technicznych tekstów typu:
 
-Dla małych i średnich sekcyjnych nagłówków preferuj `color-heading`, nie ciężki złoty `mg-section__title`. `mg-section__title` stosuj ostrożnie, głównie dla głównych tytułów ekranów albo naprawdę ważnych hero headings.
+* `backend`;
+* `RPC`;
+* `read model`;
+* `workflow`;
+* `contract gap`.
 
-Dla labeli, nazw cech, statystyk, krótkich metadanych i row labels używaj istniejących `small-caps`, `uppercase`, `text-xs`, `color-muted`, jeśli pasuje to do dashboardowego label/value rhythm.
+`muted-text` / `color-muted` tylko dla labeli, helperów, timestampów i drugorzędnej metadata.
 
-Player-facing UI nie może zawierać technicznych tekstów typu `backend`, `read model`, `RPC`, `workflow backendu`, `contract gap`, chyba że ekran jest admin/debug.
+Nie wyciszaj:
 
-## Reuse
+* ważnych wartości;
+* statusów;
+* outcome’ów;
+* nazw bohaterów;
+* nazw itemów;
+* rang Prestige;
+* błędów;
+* blockerów;
+* powodów zablokowania;
+* selected states.
 
-Reuse oznacza realne użycie istniejących UI/patternów i logiki:
+Dla małych/średnich nagłówków preferuj `color-heading`.
+`mg-section__title` tylko dla ważnych tytułów, nie dla każdego drobnego bloku.
 
-- utilities;
-- wrappers;
-- shared components;
-- documented classes;
-- theme tokens;
-- methods/helpers/mappers;
-- validators/factories/form configs;
-- services/RPC helpers;
-- state patterns.
-
-Samo użycie komponentu/klasy, która naturalnie należy do edytowanej strony, nie jest wystarczającym dowodem reuse.
-
-Przed dodaniem nowego patternu sprawdź minimum:
-
-- `src/scss/base`;
-- `src/scss/utilities`;
-- `src/scss/layouts`;
-- `src/scss/themes`;
-- PrimeNG wrappers;
-- shared components;
-- layout/topbar/sidebar/game-shell patterns;
-- relevant UI docs/prototype mapping.
-
-## HTML / SCSS / TS boundaries
-
-Dla tasków stricte UI/layoutowych:
-
-- preferuj zmiany w HTML/SCSS;
-- nie ruszaj TS, jeśli nie trzeba;
-- nie dopisuj speców, jeśli nie zmieniasz logiki/state/service i nie istnieje bezpośrednio relevant spec;
-- nie przebudowuj component API, jeśli problem jest wizualny;
-- nie twórz nowych inputów/variantów tylko po to, żeby zachować stare zachowanie.
-
-TS zmieniaj tylko, jeśli task naprawdę wymaga danych, stanu, interakcji albo istniejące API uniemożliwia poprawne odwzorowanie prototypu.
-
-Typy/interfejsy mają iść do `core/interfaces` / `core/types`; reusable constants do `core/constants`; player-facing copy docelowo do i18n/copy layer, a dopóki go nie ma — minimalnie i blisko miejsca użycia.
-
-## Cleanup
+## Cleanup jest częścią taska
 
 Po implementacji posprzątaj dotknięte pliki:
 
-- usuń martwy HTML;
-- usuń nieużywane importy;
-- usuń zbędne klasy;
-- usuń lokalny SCSS zastąpiony przez utilities;
-- usuń obsolete fallbacki;
-- usuń defensywne/transitional wrappers/classes;
-- usuń stare warianty/patterny, które task zastępuje.
+* usuń martwy HTML;
+* usuń nieużywane importy;
+* usuń zbędne klasy;
+* usuń lokalny SCSS zastąpiony utilities;
+* usuń obsolete fallbacki;
+* usuń defensive wrappers/classes;
+* usuń stare warianty/patterny, które task zastępuje.
 
-Nie zostawiaj cleanupu „na następny touch”. Jeśli problem jest w dotkniętym kodzie i mieści się w zakresie taska/review, popraw go teraz.
+Nie zostawiaj starego UI flow obok nowego, jeśli nowe flow je zastępuje.
 
-Produkcja ma mieć możliwie mały, czysty diff. Jeśli cleanup zwiększa kod zamiast go redukować, wyjaśnij dlaczego.
+Nie dokładaj wrappera nad złym patternem. Usuń zły pattern, jeśli task go zastępuje.
 
-## Po review / needs-fix
+## Reuse
 
-Jeśli dostajesz review comment, `NEEDS FIX` albo `BLOCKER`:
+Reuse oznacza realne użycie istniejących klocków:
 
-1. wróć do oryginalnego taska, scope i acceptance;
-2. nie traktuj review jako osobnego mini-zadania oderwanego od taska;
-3. poprawiaj task, nie tylko ostatni komentarz;
-4. jeśli review ogranicza zakres, nie ruszaj nic poza wskazanym zakresem;
-5. jeśli review mówi `spec files touched: no`, nie ruszaj `.spec.ts`;
-6. jeśli brakuje danych/patternu, zgłoś gap/blocker zamiast dorabiać fallback.
+* utilities;
+* wrappers;
+* shared components;
+* documented classes;
+* theme tokens;
+* existing methods/helpers/mappers;
+* validators/factories/form configs;
+* services/RPC helpers;
+* state/workflow patterns.
 
-## Tests and manual smoke
+Samo użycie komponentu/klasy naturalnie należącej do edytowanej strony nie jest dowodem reuse.
 
-Po implementacji uruchom weryfikację zgodną z `AGENTS.md`, review standards i zakresem taska.
+Przed dodaniem nowego patternu sprawdź:
 
-Nie dopisuj dużych testów dla prostych zmian wizualnych. Focused specs są potrzebne głównie wtedy, gdy:
+* `src/scss/base`;
+* `src/scss/utilities`;
+* `src/scss/layouts`;
+* `src/scss/themes`;
+* PrimeNG wrappers;
+* shared components;
+* layout/topbar/sidebar/game-shell patterns;
+* relevant UI docs/prototype mapping.
 
-- istnieją bezpośrednio relevant specs;
-- zmieniłeś TS/state/service;
-- task dotyczy warunkowego renderowania lub interakcji.
+## Specy i testy
+
+Nie dopisuj speców dla prostych zmian wizualnych.
+
+Nie ruszaj `.spec.ts`, jeśli review albo task mówi, że spec files mają zostać nietknięte.
+
+Focused specs tylko wtedy, gdy:
+
+* zmieniłeś TS/state/service;
+* istnieje bezpośrednio relevant spec;
+* task dotyczy warunkowego renderowania albo interakcji;
+* test sprawdza realne zachowanie, nie mock zgodny z mockiem.
 
 Nie pisz self-fulfilling specs.
 
-Nie uruchamiaj dev servera, web preview ani browser/manual smoke. Manual smoke wykonuje użytkownik/reviewer. W raporcie wpisz `Manual smoke: user-side`.
+Preferowana weryfikacja:
 
-Przejście testów, `tsc`, builda i static grepów nie oznacza automatycznie, że task został wykonany. Dla tasków UI/player-facing nie raportuj zachowania jako `pass`, jeśli nie zostało faktycznie potwierdzone manual smoke przez użytkownika/reviewera. Wpisz: `Manual smoke: user-side pending`.
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`;
+* static grep, jeśli pasuje do taska.
 
-## Status docs
+Nie uruchamiaj browser/manual smoke, jeśli nie masz realnej sesji i danych. Wpisz `Manual smoke: user-side`.
 
-Nie aktualizuj status docs, chyba że użytkownik osobno o to poprosi albo potwierdzi wykonanie taska.
+## Blocker
 
-## Final report
+Zatrzymaj się i zgłoś blocker, jeśli:
 
-Raport końcowy maksymalnie 15–20 linijek.
+* brakuje obowiązkowego prototypu/guidance;
+* brakuje danych/metadata/read modelu potrzebnych do UI;
+* task wymaga missing DB/RPC/generated type;
+* trzeba by direct-write’ować gameplay/workflow tables;
+* dirty tree ma nieoczekiwane zmiany;
+* weryfikacja failuje przez bieżącą zmianę.
+
+Nie wymyślaj obejścia.
+
+Blocker ma być krótki:
+
+* co blokuje;
+* gdzie;
+* czego brakuje;
+* co jest potrzebne od użytkownika/Migratora/designu;
+* czy coś zostało zmienione przed blockerem.
+
+## Raport końcowy
+
+Raport maksymalnie 15–20 linijek.
 
 Używaj tylko tych sekcji:
 
-- `AGENTS/Review Standards: applied`
-- `Preflight`
-- `Prototype/UI anchors`
-- `Changed`
-- `Not changed`
-- `Cleanup`
-- `Verification`
-- `Static checks`
-- `Reuse/patterns`
-- `Manual smoke`
-- `Blockers/risks`
-- `Status docs`
+```md
+AGENTS/Review Standards: applied
 
-Nie dodawaj nowych sekcji raportu tylko dlatego, że review comment o coś prosił. Jeśli review wymaga potwierdzenia czegoś konkretnego, umieść to krótko w jednej z powyższych sekcji.
+Preflight:
+- dirty tree:
+- sources checked:
+- blocker: yes/no
 
-W `Prototype/UI anchors` napisz krótko:
+Prototype/UI anchors:
+- matched:
+- not matched:
+- gap:
 
-- `matched:` najważniejsze anchors zachowane;
-- `not matched:` tylko jeśli coś świadomie nie zostało zachowane i dlaczego;
-- `gap:` jeśli brakuje produkcyjnego patternu albo danych.
+Changed:
+- ...
 
-W `Reuse/patterns` napisz krótko:
+Removed / cleanup:
+- ...
 
-- `reused:` konkretne utilities/classes/wrappers/components/patterns/metody użyte ponownie;
-- `checked but not reused:` konkretne rzeczy sprawdzone i powód odrzucenia;
-- `new:` nowe klasy/components/SCSS/helpery i dlaczego istniejący wzorzec nie wystarczył.
+Not changed:
+- ...
 
-W `Cleanup` napisz krótko:
+Reuse/patterns:
+- reused:
+- checked but not reused:
+- new:
 
-- co usunięto;
-- co zastąpiono utilities/patternem;
-- co zostało lokalnie i dlaczego.
+Verification:
+- ...
 
-Jeśli task był poprawiany po review, dodaj w `Preflight` albo `Cleanup`:
+Manual smoke:
+- user-side / N/A
 
-- `Returned to original task context before fixes: yes`
+Blockers/risks:
+- ...
 
-Jeśli review ograniczało zakres poprawki, dodaj:
+Status docs:
+- touched / not touched
+```
 
-- `Scope restriction respected: yes`
+Nie pisz epopei. Nie streszczaj historii projektu. Nie wklejaj pełnych plików ani długich fragmentów kodu.
 
-Nie używaj `pass` przy player-visible acceptance, jeśli potwierdzeniem są tylko testy/build. Wpisz wtedy: `implemented, manual smoke pending`.
+Jeśli task był poprawiany po review, dodaj krótko:
 
-Nie wklejaj pełnych plików ani długich fragmentów kodu do raportu. Raport ma być raportem, nie diffem.
-
-Jeśli jesteś zablokowany, napisz krótko: co blokuje, czego brakuje i jaki pattern/plik/kontrakt jest potrzebny.
+* `Returned to original task context before fixes: yes`
+* `Scope restriction respected: yes`

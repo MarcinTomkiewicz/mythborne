@@ -1,0 +1,92 @@
+<div class="flex-col gap-lg w-100">
+  <app-outcome-report-layout
+    label="Raport szpiegowania"
+    statusLabel=""
+    [title]="outcomeTitle()"
+    [description]="outcomeSummary()"
+    [titleTone]="outcomeTone()"
+    iconClass="pi pi-eye"
+  />
+
+  @if (spyDisplay(); as spy) {
+    @if (canShowIntel()) {
+      <div class="grid-2-1 gap-lg w-100 grid-items-start">
+        <app-equipment-preview
+          [rows]="spy.equipment"
+          title="Wyposażenie celu"
+          emptyLabel="Nie ujawniono wyposażonych przedmiotów."
+          [compact]="true"
+          [showActions]="false"
+        />
+
+        <section class="mg-card p-lg w-100 h-100">
+          <div class="grid-2-1 gap-lg w-100 grid-items-start">
+            @if (spy.baseStats.length) {
+              <app-stat-card
+                title="Statystyki celu"
+                [rows]="baseStatRows()"
+                [compact]="true"
+                [titleClass]="sectionTitleClass"
+              />
+            }
+
+            @if (spy.resources.length) {
+              <section class="flex-col gap-xs w-100 h-100">
+                <h3 class="mg-section__title mg-section__title--xs mb-0">Zasoby</h3>
+
+                <div class="flex-col gap-xs w-100">
+                  @for (resource of resourceRows(); track resource.key) {
+                    <article class="stat-card-compact__tile mg-card flex-col-between-start p-xs radius-sm min-w-0 w-100">
+                      <span class="d-block color-muted text-xs small-caps uppercase lh-11">
+                        {{ resource.label }}
+                      </span>
+                      <strong [class]="'d-block text-sm lh-12 ' + resource.valueClass">
+                        {{ resource.value }}
+                      </strong>
+                    </article>
+                  }
+                </div>
+              </section>
+            }
+          </div>
+        </section>
+      </div>
+
+      @if (spy.buildings.length) {
+        <section class="mg-card flex-col gap-md p-lg w-100">
+          <div class="flex-col gap-xs">
+            <h3 class="mg-section__title mg-section__title--xs mb-0">Budynki celu</h3>
+            <p class="color-text m-0">Ujawnione poziomy budynków w posiadłości celu.</p>
+          </div>
+
+          <div class="mg-grid grid-cols-5 grid-cols-2-md grid-cols-1-sm gap-lg w-100">
+            @for (column of buildingColumns(); track $index) {
+              <div class="flex-col gap-sm min-w-0">
+                @for (building of column; track building.label) {
+                  <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+                    <span class="color-muted small-caps uppercase text-xs">{{ building.label }}</span>
+                    <strong class="color-heading text-md text-right">{{ building.value }}</strong>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
+    } @else if (isMissingSuccessfulIntel()) {
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs m-0">Dane wywiadowcze</p>
+        <p class="warn-text m-0">
+          Raport nie zawiera ujawnionych danych celu wymaganych dla udanego szpiegowania.
+        </p>
+      </section>
+    }
+  } @else {
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <p class="small-caps color-muted text-xs m-0">Raport szpiegowania</p>
+      <p class="warn-text m-0">
+        Raport szpiegowania nie zawiera wymaganej sekcji danych gracza.
+      </p>
+    </section>
+  }
+</div>

@@ -10,21 +10,25 @@
       />
     }
   } @else {
-    <app-exploration-outcome-report-layout
-      label="Aktywne wyzwanie"
-      [statusLabel]="challenge.challengeStatusLabel()"
-      [title]="challenge.challengeTitle()"
-      description="Wyprawa czeka na Twoją akcję, zanim będzie można ruszyć dalej."
-      iconClass="pi pi-bolt"
-    >
-      <app-exploration-challenge-details-card reportNarrative />
-      <section reportNextStep class="mg-card p-lg flex-col gap-sm w-100">
+    <div class="flex-col gap-lg w-100">
+      <app-outcome-report-layout
+        label="Aktywne wyzwanie"
+        [statusLabel]="challenge.challengeStatusLabel()"
+        [title]="challenge.challengeTitle()"
+        description="Wyprawa czeka na Twoją akcję, zanim będzie można ruszyć dalej."
+        iconClass="pi pi-bolt"
+      />
+
+      <app-exploration-challenge-details-card />
+
+      <section class="mg-card p-lg flex-col gap-sm w-100">
         <p class="small-caps color-muted text-xs m-0">Akcja niedostępna</p>
         <p class="color-text text-md lh-16 m-0">
           To wyzwanie nie ma teraz dostępnej akcji w tym panelu.
         </p>
       </section>
-      <app-exploration-challenge-pending-reward-card reportReward />
-    </app-exploration-outcome-report-layout>
+
+      <app-exploration-challenge-pending-reward-card />
+    </div>
   }
 }
