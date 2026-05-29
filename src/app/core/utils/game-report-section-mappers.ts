@@ -98,14 +98,24 @@ function parseItems(value: Json | undefined): GameReportSectionItem[] {
   }
 
   return requiredJsonArray(value, 'section items')
-    .map((entry) => {
+    .map((entry): GameReportSectionItem | null => {
       const record = requiredJsonRecord(entry, 'section item');
+      const entryKind = firstText(record, 'entryKind', 'entry_kind', 'kind', 'rewardEntryKind', 'reward_entry_kind');
       const resourceType = firstText(record, 'resourceType', 'resource_type');
       const amount = firstNumber(record, 'amount', 'resourceAmount', 'resource_amount');
-      const rawLabel = firstText(record, 'label', 'title', 'name');
+      const rawLabel = firstText(
+        record,
+        'label',
+        'title',
+        'name',
+        'entryLabel',
+        'entry_label',
+        'displayName',
+        'display_name',
+      );
       const label = resourceType && isGenericResourceLabel(rawLabel)
         ? resourceTypeLabel(resourceType)
-        : rawLabel;
+        : rawLabel ?? entryKindLabel(entryKind, resourceType);
 
       if (!label) {
         return null;
@@ -115,8 +125,11 @@ function parseItems(value: Json | undefined): GameReportSectionItem[] {
         label,
         value: resourceType && amount !== null
           ? signedAmountLabel(amount)
-          : firstPrimitiveText(record, 'value', 'amount', 'statusLabel', 'summary'),
+          : firstPrimitiveText(record, 'value', 'amount', 'amountLabel', 'amount_label', 'statusLabel', 'summary'),
         details: parseStringArray(readJsonField(record, 'details')),
+        ...(entryKind ? { entryKind } : {}),
+        ...(resourceType ? { resourceType } : {}),
+        ...(amount !== null ? { amount } : {}),
       };
     })
     .filter((item): item is GameReportSectionItem => item !== null);
@@ -139,6 +152,27 @@ function firstNumber(
 
 function isGenericResourceLabel(label: string | null): boolean {
   return !label || ['resource', 'resources', 'zasob', 'zasoby'].includes(label.toLowerCase());
+}
+
+function entryKindLabel(entryKind: string | null, resourceType: string | null): string | null {
+  switch (normalizeKey(entryKind)) {
+    case 'experience':
+      return 'Experience';
+    case 'character_points':
+    case 'hero_points':
+      return 'Character Points';
+    case 'resource':
+      return resourceType ? resourceTypeLabel(resourceType) : 'Resource';
+    case 'item_generation':
+    case 'generated_item':
+      return 'Przedmiot';
+    default:
+      return null;
+  }
+}
+
+function normalizeKey(value: string | null): string {
+  return String(value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
 }
 
 function parseStringArray(value: Json | undefined): string[] {

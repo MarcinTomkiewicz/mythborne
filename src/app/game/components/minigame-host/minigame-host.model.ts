@@ -21,4 +21,5 @@ export interface MinigameCompletionEvent {
   sourceEntityId: string;
   resultId?: string | null;
   reportId?: string | null;
+  rewardGrantId?: string | null;
 }

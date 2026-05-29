@@ -9455,6 +9455,8 @@ Po rozstrzygnięciu PvP combat wynik ma trafiać do istniejącego report/result 
 * private data avoided:
 * deleted routes not restored proof:
 
+**Status:** Accepted/completed on 2026-05-29. PvP combat completion now keeps the existing Combat/Minigame flow and finalizes through backend `game_report_id`, then renders an Exploration-style report result handoff on `/game/combat` with `Otwórz raport`, `Kopiuj link publiczny` and compact `Zdobycze`. The reward display uses only safe `get_hero_game_report_detail(...).reward_section_json` / `item_references_json`, shows XP, PvP resource transfers and item references, highlights visible reward values, and keeps Character Points out of player-facing PvP combat rewards. Active return-to-estate state stays separate through `get_active_pvp_action_offer(p_hero_id)`, uses backend return timing fields, and hides normal Vicinity target selection while a blocking PvP action/return is active. Notification report routing uses explicit route predicates/allowlist. No direct `pvp_actions`, combat/report/reward table reads, `metadata_json` / resource-outcome parsing or old `pvp-attack-result-*` / `pvp-spy-result-*` screens were added. Verification passed with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings, `git diff --check` with line-ending warnings and scoped static greps; final manual smoke is user-side.
+
 ---
 
 ## UI-PVP-7 — PvP spy timer and report handoff

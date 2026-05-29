@@ -10,8 +10,8 @@
         <span class="tag-badge tag-badge--warn">{{ active.actionKindLabel }}</span>
       </div>
 
-      <div class="grid-2-1 gap-lg w-100 grid-items-center">
-        @if (active.isTravelPhase) {
+      <div class="grid-3-1 gap-lg w-100 grid-items-center">
+        @if (active.isTravelPhase || (active.isBlockingRuntimeActivity && !active.isManualWindow)) {
           <app-pending-timer-oracle
             [timer]="timer()"
             [isReady]="isTimerReady()"
@@ -23,20 +23,20 @@
             [pendingHelperText]="pendingHelperText()"
             pendingNeutralHelperText="Aktualizujemy stan aktywnej akcji PvP."
             readyLabel="Akcja gotowa"
-            readyTitle="Dotarcie zakończone"
-            readyHelperText="Dalsza obsługa odbywa się poza listą celów."
+            [readyTitle]="active.isResolved ? 'Powrót dostępny' : 'Dotarcie zakończone'"
+            [readyHelperText]="active.isResolved ? 'Odśwież stan, aby sprawdzić dostępność bohatera.' : 'Dalsza obsługa odbywa się poza listą celów.'"
             primaryActionLabel="Odśwież"
             decorativeLabel="PvP"
             (primaryAction)="refresh.emit()"
           />
         } @else {
-          <div class="mg-card p-lg flex-col gap-sm w-100">
+          <div class="p-lg flex-col gap-sm w-100">
             <span class="color-muted small-caps uppercase text-xs">{{ active.phaseLabel }}</span>
             <p class="muted-text mb-0">{{ helperText() }}</p>
           </div>
         }
 
-        <aside class="mg-card p-lg flex-col gap-sm w-100" aria-label="Szczegóły aktywnej akcji PvP">
+        <aside class="p-lg flex-col gap-sm w-100" aria-label="Szczegóły aktywnej akcji PvP">
           @for (row of factRows(); track row.label) {
             <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
               <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>

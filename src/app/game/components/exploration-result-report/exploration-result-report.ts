@@ -1,15 +1,11 @@
 import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
 import type { ExplorationResultSourceKind } from '../../../core/domain/exploration/exploration-result-display.model';
 import { PrivateGameReportDetail } from '../../../core/domain/reports/game-report.model';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveHeroPortraitState } from '../../../core/services/hero/active-hero-portrait.state';
 import { GameReports } from '../../../core/services/reports/game-reports';
-import { ToastService } from '../../../core/services/ui/toast';
 import { Json } from '../../../core/types/database.types';
-import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/browser-clipboard';
 import { mapCompletedCombatReportStageView } from '../../../core/utils/combat-report-display.mapper';
 import {
   explorationResultSourceKind,
@@ -25,16 +21,16 @@ import { ExplorationRewardState } from '../../pages/exploration/exploration-rewa
 import { ExplorationOutcomeReportLayout } from '../exploration-outcome-report-layout/exploration-outcome-report-layout';
 import { ExplorationPageState } from '../../pages/exploration/exploration-page.state';
 import { CombatStage } from '../combat/combat-stage';
+import { ReportHandoffActions } from '../report-handoff-actions/report-handoff-actions';
 
 @Component({
   selector: 'app-exploration-result-report',
   standalone: true,
   imports: [
-    RouterLink,
-    ButtonModule,
     CombatStage,
     ExplorationOutcomeReportLayout,
     ItemDetailPopover,
+    ReportHandoffActions,
   ],
   templateUrl: './exploration-result-report.html',
   host: { class: 'd-block w-100' },
@@ -47,7 +43,6 @@ export class ExplorationResultReport {
   private readonly minigameHandoff = inject(ExplorationMinigameHandoffState);
   private readonly page = inject(ExplorationPageState);
   readonly rewardState = inject(ExplorationRewardState);
-  private readonly toast = inject(ToastService);
   private readonly reportDetailToken = new RequestToken();
   readonly reportDetail = signal<PrivateGameReportDetail | null>(null);
   readonly isLoadingReportDetail = signal(false);
@@ -162,24 +157,6 @@ export class ExplorationResultReport {
 
       this.loadReportDetail(reportId);
     });
-  }
-
-  copyPublicReportLink(): void {
-    const link = this.reportActions().publicReportPath;
-
-    if (!link) {
-      this.toast.show('error', 'Raport', 'Nie udało się skopiować linku do raportu.');
-      return;
-    }
-
-    void copyTextToClipboard(absoluteBrowserUrl(link))
-      .then((copied) => this.toast.show(
-        copied ? 'success' : 'error',
-        'Raport',
-        copied
-          ? 'Link do raportu został skopiowany.'
-          : 'Nie udało się skopiować linku do raportu.',
-      ));
   }
 
   private loadReportDetail(reportId: string): void {

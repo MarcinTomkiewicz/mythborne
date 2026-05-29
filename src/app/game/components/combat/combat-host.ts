@@ -1,4 +1,5 @@
 import { Component, effect, inject, input, output } from '@angular/core';
+import { CombatSurfaceDecisionDeadline } from '../../../core/domain/combat/combat-display.model';
 import { MinigameCompletionEvent, MinigameSourceRef } from '../minigame-host/minigame-host.model';
 import { CombatStage } from './combat-stage';
 import { CombatHostState } from './combat-host.state';
@@ -23,6 +24,20 @@ import { CombatHostState } from './combat-host.state';
             (timingStrike)="flow.submitCombatStrike()"
           />
         }
+        @if (flow.isFinalizingResult()) {
+          <section class="mg-card p-md flex-col gap-xs w-100">
+            <p class="small-caps color-muted text-xs mb-0">Zapisywanie wyniku</p>
+            <p class="color-text text-md lh-16 mb-0">
+              Wynik walki jest utrwalany. Za chwilę pojawi się przejście do raportu.
+            </p>
+          </section>
+        }
+        @if (flow.finalizeErrorMessage(); as message) {
+          <section class="mg-card p-md flex-col gap-xs w-100">
+            <p class="small-caps color-muted text-xs mb-0">Raport niedostępny</p>
+            <p class="warn-text text-md lh-16 mb-0">{{ message }}</p>
+          </section>
+        }
       }
     </section>
   `,
@@ -33,6 +48,7 @@ export class CombatHost {
   readonly sourceRef = input.required<MinigameSourceRef>();
   readonly contextTitle = input.required<string>();
   readonly contextLabel = input('Walka');
+  readonly decisionDeadline = input<CombatSurfaceDecisionDeadline | null>(null);
   readonly completed = output<MinigameCompletionEvent>();
 
   constructor() {
@@ -42,6 +58,10 @@ export class CombatHost {
         contextTitle: this.contextTitle(),
         contextLabel: this.contextLabel(),
       });
+    });
+
+    effect(() => {
+      this.flow.setDecisionDeadline(this.decisionDeadline());
     });
 
     effect(() => {

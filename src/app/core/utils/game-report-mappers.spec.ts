@@ -328,16 +328,22 @@ describe('game report mappers', () => {
         label: 'Materials',
         value: '+12',
         details: [],
+        resourceType: 'materials',
+        amount: 12,
       },
       {
         label: 'Workforce',
         value: '+3',
         details: [],
+        resourceType: 'workforce',
+        amount: 3,
       },
       {
         label: 'Drachma',
         value: '+20',
         details: [],
+        resourceType: 'drachma',
+        amount: 20,
       },
       {
         label: 'Experience',

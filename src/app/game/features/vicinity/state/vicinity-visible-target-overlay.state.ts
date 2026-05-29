@@ -3,7 +3,7 @@ import { PvpTargetCandidate } from '../../../../core/domain/pvp/pvp.model';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
 import { PvpVisibleAddressTargetOverlayInput } from '../../../../core/types/vicinity.types';
-import { activeHeroContextKey } from '../../../../core/utils/request-token';
+import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import { getErrorMessage } from '../../../../core/utils/error-message';
 import { RequestToken } from '../../../../core/utils/request-token';
 import { VicinityRangeState } from './vicinity-range.state';

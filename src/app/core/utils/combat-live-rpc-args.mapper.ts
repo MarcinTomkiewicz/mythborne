@@ -10,6 +10,8 @@ import {
   SubmitCombatPlayerActionRpcArgs,
   AutoResolveCombatSessionRpcArgs,
   AutoResolveCombatSessionRpcRow,
+  FinalizeCombatSourceResultRpcArgs,
+  FinalizeCombatSourceResultRpcRow,
   LiveStateRpcRow,
 } from '../types/combat-live-rpc.types';
 import {
@@ -141,6 +143,32 @@ export function toAutoResolveCombatSessionRpcArgs(input: {
   };
 }
 
+export function toFinalizeCombatSourceResultRpcArgs(input: {
+  sessionId: string | null | undefined;
+  requestId: string | null | undefined;
+  resolutionMode?: string | null | undefined;
+}): FinalizeCombatSourceResultRpcArgs {
+  const args: FinalizeCombatSourceResultRpcArgs = {
+    p_session_id: requiredTrimmedText(
+      input.sessionId,
+      'sessionId',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+    p_request_id: requiredTrimmedText(
+      input.requestId,
+      'requestId',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+  };
+  const resolutionMode = trimToNull(input.resolutionMode);
+
+  if (resolutionMode) {
+    args.p_resolution_mode = resolutionMode;
+  }
+
+  return args;
+}
+
 export function toGetCombatResultDetailRpcArgs(input: {
   combatResultId: string | null | undefined;
 }): GetCombatResultDetailRpcArgs {
@@ -184,6 +212,18 @@ export function firstAutoResolveCombatSessionRow(
 
   if (!row) {
     throw new Error('DB nie zwróciła automatycznego wyniku walki.');
+  }
+
+  return row;
+}
+
+export function firstFinalizeCombatSourceResultRow(
+  rows: readonly FinalizeCombatSourceResultRpcRow[],
+): FinalizeCombatSourceResultRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error('DB nie zwróciła finalnego wyniku walki.');
   }
 
   return row;

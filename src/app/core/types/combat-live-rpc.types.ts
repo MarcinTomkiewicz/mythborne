@@ -33,6 +33,11 @@ export type AutoResolveCombatSessionRpcArgs =
 export type AutoResolveCombatSessionRpcRow =
   Rpc<'auto_resolve_combat_session'>['Returns'][number];
 
+export type FinalizeCombatSourceResultRpcArgs =
+  Rpc<'finalize_combat_source_result'>['Args'];
+export type FinalizeCombatSourceResultRpcRow =
+  Rpc<'finalize_combat_source_result'>['Returns'][number];
+
 export type GetCombatResultDetailRpcArgs =
   Rpc<'get_combat_result_detail'>['Args'];
 export type GetCombatResultDetailRpcRow =

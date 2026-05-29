@@ -117,6 +117,9 @@ export interface GameReportSectionItem {
   label: string;
   value: string | null;
   details: string[];
+  entryKind?: string | null;
+  resourceType?: string | null;
+  amount?: number | null;
 }
 
 export interface GameReportRelatedReport {

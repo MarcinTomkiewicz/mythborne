@@ -1,10 +1,13 @@
 import {
   mapCombatLiveState,
+  mapCombatAutoResolveResult,
   mapCombatResultDetail,
   mergeCombatLiveEvents,
+  toFinalizeCombatSourceResultRpcArgs,
   toSubmitCombatPlayerActionRpcArgs,
 } from './combat-live-mappers';
 import {
+  FinalizeCombatSourceResultRpcRow,
   GetCombatLiveStateRpcRow,
   GetCombatResultDetailRpcRow,
 } from '../types/combat-live-rpc.types';
@@ -56,6 +59,20 @@ describe('combat live mappers', () => {
     expect(JSON.stringify(args)).not.toContain('damage');
     expect(JSON.stringify(args)).not.toContain('outcome');
     expect(JSON.stringify(args)).not.toContain('reward');
+  });
+
+  it('maps manual combat finalization to the canonical source-result RPC args', () => {
+    const args = toFinalizeCombatSourceResultRpcArgs({
+      sessionId: 'session-1',
+      requestId: 'request-1',
+      resolutionMode: 'manual',
+    });
+
+    expect(args).toEqual({
+      p_session_id: 'session-1',
+      p_request_id: 'request-1',
+      p_resolution_mode: 'manual',
+    });
   });
 
   it('maps DB participant healthCurrent and healthMax fields', () => {
@@ -246,6 +263,18 @@ describe('combat live mappers', () => {
     expect(detail.participants as unknown).toEqual([]);
     expect(detail.attacks as unknown).toEqual([]);
   });
+
+  it('maps finalized combat source result with report handoff reference', () => {
+    const result = mapCombatAutoResolveResult(finalizeCombatSourceResultRow());
+
+    expect(result).toEqual({
+      sourceEntityId: 'pvp-action-1',
+      combatResultId: 'combat-result-1',
+      sourceResultId: 'pvp-attack-result-1',
+      gameReportId: 'report-1',
+      rewardGrantId: 'reward-grant-1',
+    });
+  });
 });
 
 function liveStateRow(
@@ -347,6 +376,36 @@ function resultDetailRow(
     started_at: '2026-05-06T10:00:00.000Z',
     turns_completed: 2,
     winner_side: 'initiator',
+    ...patch,
+  };
+}
+
+function finalizeCombatSourceResultRow(
+  patch: Partial<FinalizeCombatSourceResultRpcRow> = {},
+): FinalizeCombatSourceResultRpcRow {
+  return {
+    attacks_created: 2,
+    combat_result_id: 'combat-result-1',
+    combat_session_id: 'session-1',
+    completion_mode: 'manual',
+    exploration_status: 'unchanged',
+    final_event_count: 4,
+    game_report_id: 'report-1',
+    outcome: 'initiator_victory',
+    outcome_key: 'initiator_victory',
+    participant_stats_created: 2,
+    participants_created: 2,
+    remaining_trials: 0,
+    report_attacks_count: 2,
+    reward_grant_id: 'reward-grant-1',
+    runtime_activity_id: 'runtime-1',
+    source_entity_id: 'pvp-action-1',
+    source_entity_type: 'pvp_action',
+    source_result_id: 'pvp-attack-result-1',
+    source_result_kind: 'pvp_attack',
+    source_type: 'pvp',
+    status: 'completed',
+    success: true,
     ...patch,
   };
 }

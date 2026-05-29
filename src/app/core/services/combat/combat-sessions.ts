@@ -8,6 +8,7 @@ import {
 } from '../../domain/combat/combat-live.model';
 import {
   AutoResolveCombatSessionRpcRow,
+  FinalizeCombatSourceResultRpcRow,
   GetCombatResolutionPreviewRpcRow,
   StartManualCombatSessionRpcRow,
   SubmitCombatPlayerActionRpcRow,
@@ -16,10 +17,12 @@ import {
   firstAutoResolveCombatSessionRow,
   firstCombatLiveStateRow,
   firstCombatResolutionPreviewRow,
+  firstFinalizeCombatSourceResultRow,
   mapCombatAutoResolveResult,
   mapCombatLiveState,
   mapCombatResolutionPreview,
   toAutoResolveCombatSessionRpcArgs,
+  toFinalizeCombatSourceResultRpcArgs,
   toGetCombatResolutionPreviewRpcArgs,
   toStartManualCombatSessionRpcArgs,
   toSubmitCombatPlayerActionRpcArgs,
@@ -73,6 +76,23 @@ export class CombatSessions {
       )
       .pipe(
         map(firstAutoResolveCombatSessionRow),
+        map(mapCombatAutoResolveResult),
+      );
+  }
+
+  finalizeCombatSourceResult(input: { combatSessionId: string; requestId: string; resolutionMode?: string | null }):
+    Observable<CombatAutoResolveResultReadModel> {
+    return this.backend
+      .rpc<FinalizeCombatSourceResultRpcRow[]>(
+        RPC.finalize_combat_source_result,
+        toFinalizeCombatSourceResultRpcArgs({
+          sessionId: input.combatSessionId,
+          requestId: input.requestId,
+          resolutionMode: input.resolutionMode,
+        }),
+      )
+      .pipe(
+        map(firstFinalizeCombatSourceResultRow),
         map(mapCombatAutoResolveResult),
       );
   }

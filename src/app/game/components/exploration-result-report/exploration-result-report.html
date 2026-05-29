@@ -86,24 +86,6 @@
       </section>
     }
 
-    <section reportEffect class="mg-card p-lg flex-col gap-sm w-100">
-      <p class="small-caps color-muted text-xs m-0">Akcje raportu</p>
-      <div class="flex-row-start-center flex-wrap gap-sm">
-        <a [routerLink]="reportActions().directReportLink" class="color-heading text-sm">
-          {{ reportActions().directReportLabel }}
-        </a>
-        <p-button
-          type="button"
-          [label]="reportActions().publicReportCopyLabel"
-          severity="secondary"
-          [text]="true"
-          [disabled]="reportActions().publicReportCopyDisabled"
-          (onClick)="copyPublicReportLink()"
-        />
-      </div>
-      @if (reportActions().publicReportUnavailableMessage; as message) {
-        <p class="warn-text text-sm m-0">{{ message }}</p>
-      }
-    </section>
+    <app-report-handoff-actions reportEffect [actions]="reportActions()" />
   </app-exploration-outcome-report-layout>
 }

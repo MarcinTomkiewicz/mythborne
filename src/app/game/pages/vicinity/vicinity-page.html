@@ -54,49 +54,51 @@
       <p class="warn-text mb-0">{{ activePvpAction.error() }}</p>
     }
 
-    <section class="grid-3-1 gap-lg w-100">
-      <section class="mg-card flex-col gap-md p-lg min-w-0 w-100">
-        <app-vicinity-toolbar
-          [selectedDistrictControl]="search.selectedDistrictControl"
-          [searchControl]="search.pvpSearchControl"
-          [districtOptions]="search.districtOptions()"
-          [searchFeedback]="search.feedback()"
-          [isSearching]="targetOverlay.isLoading() || targetSearch.isLoading()"
-          [isMyVicinityDisabled]="page.isLoading() || page.isRelocating() || !page.currentAddress()"
-          (search)="search.applySearch()"
-          (focusCurrentAddress)="page.focusCurrentAddress()"
-        />
+    @if (!activePvpAction.hasBlockingAction()) {
+      <section class="grid-3-1 gap-lg w-100">
+        <section class="mg-card flex-col gap-md p-lg min-w-0 w-100">
+          <app-vicinity-toolbar
+            [selectedDistrictControl]="search.selectedDistrictControl"
+            [searchControl]="search.pvpSearchControl"
+            [districtOptions]="search.districtOptions()"
+            [searchFeedback]="search.feedback()"
+            [isSearching]="targetOverlay.isLoading() || targetSearch.isLoading()"
+            [isMyVicinityDisabled]="page.isLoading() || page.isRelocating() || !page.currentAddress()"
+            (search)="search.applySearch()"
+            (focusCurrentAddress)="page.focusCurrentAddress()"
+          />
 
-        <app-vicinity-address-list
-          [rows]="rowsState.rows()"
-          [selectedRow]="rowsState.selectedRow()"
-          [pvpError]="targetOverlay.error() ?? targetSearch.error()"
-          [actionError]="actions.error()"
-          [actionSuccess]="actions.success()"
-          [metadataError]="metadata.error()"
-          (selectRow)="rowsState.selectRow($event)"
+          <app-vicinity-address-list
+            [rows]="rowsState.rows()"
+            [selectedRow]="rowsState.selectedRow()"
+            [pvpError]="targetOverlay.error() ?? targetSearch.error()"
+            [actionError]="actions.error()"
+            [actionSuccess]="actions.success()"
+            [metadataError]="metadata.error()"
+            (selectRow)="rowsState.selectRow($event)"
+            (startAction)="rowsState.startRowAction($event.row, $event.actionKind)"
+          />
+
+          <app-vicinity-pagination
+            [pageLabel]="page.addressPageLabel()"
+            [rangeSummary]="page.addressRangeSummary()"
+            [pageOptions]="page.addressPageOptions()"
+            [first]="page.addressPaginatorFirst()"
+            [totalRecords]="page.addressPaginatorTotal()"
+            (pageChange)="page.changeAddressPage($event)"
+          />
+        </section>
+
+        <app-vicinity-selected-target-panel
+          [selected]="rowsState.selectedRow()"
+          [hasSelectedTarget]="!!page.selectedTarget()"
+          [isRelocating]="page.isRelocating()"
+          [relocationError]="page.relocationError()"
+          [relocationSuccess]="page.relocationSuccess()"
+          (confirmRelocation)="confirmRelocation()"
           (startAction)="rowsState.startRowAction($event.row, $event.actionKind)"
         />
-
-        <app-vicinity-pagination
-          [pageLabel]="page.addressPageLabel()"
-          [rangeSummary]="page.addressRangeSummary()"
-          [pageOptions]="page.addressPageOptions()"
-          [first]="page.addressPaginatorFirst()"
-          [totalRecords]="page.addressPaginatorTotal()"
-          (pageChange)="page.changeAddressPage($event)"
-        />
       </section>
-
-      <app-vicinity-selected-target-panel
-        [selected]="rowsState.selectedRow()"
-        [hasSelectedTarget]="!!page.selectedTarget()"
-        [isRelocating]="page.isRelocating()"
-        [relocationError]="page.relocationError()"
-        [relocationSuccess]="page.relocationSuccess()"
-        (confirmRelocation)="confirmRelocation()"
-        (startAction)="rowsState.startRowAction($event.row, $event.actionKind)"
-      />
-  </section>
+    }
   </div>
 }

@@ -5,6 +5,7 @@ import {
 import { Json } from '../types/database.types';
 import {
   AutoResolveCombatSessionRpcRow,
+  FinalizeCombatSourceResultRpcRow,
   GetCombatResultDetailRpcRow,
 } from '../types/combat-live-rpc.types';
 
@@ -26,12 +27,13 @@ export function mapCombatResultDetail(
 }
 
 export function mapCombatAutoResolveResult(
-  row: AutoResolveCombatSessionRpcRow,
+  row: AutoResolveCombatSessionRpcRow | FinalizeCombatSourceResultRpcRow,
 ): CombatAutoResolveResultReadModel {
   return {
     sourceEntityId: row.source_entity_id,
     combatResultId: row.combat_result_id,
     sourceResultId: row.source_result_id ?? null,
     gameReportId: row.game_report_id ?? null,
+    rewardGrantId: row.reward_grant_id ?? null,
   };
 }

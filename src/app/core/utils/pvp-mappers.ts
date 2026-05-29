@@ -154,26 +154,30 @@ export function mapActivePvpActionOffer(
     runtimeActivityId: trimToNull(row.runtime_activity_id),
     serverId: requiredTrimmedText(row.server_id, 'serverId', 'PvP read model'),
     actionKind: requiredTrimmedText(row.action_kind, 'actionKind', 'PvP read model') as PvpActionKindKey,
-    actionKindLabel: requiredTrimmedText(row.action_kind_label, 'actionKindLabel', 'PvP read model'),
+    actionKindLabel: pvpActionKindDisplayLabel(row.action_kind),
     phase: requiredTrimmedText(row.phase, 'phase', 'PvP read model'),
     phaseLabel: requiredTrimmedText(row.phase_label, 'phaseLabel', 'PvP read model'),
     statusLabel: requiredTrimmedText(row.status_label, 'statusLabel', 'PvP read model'),
     rawStatus: trimToNull(row.raw_status),
-    targetHeroId: requiredTrimmedText(row.target_hero_id, 'targetHeroId', 'PvP read model'),
-    targetHeroDisplayName: requiredTrimmedText(
-      row.target_hero_display_name,
-      'targetHeroDisplayName',
-      'PvP read model',
-    ),
-    targetAddressLabel: requiredTrimmedText(row.target_address_label, 'targetAddressLabel', 'PvP read model'),
-    targetDistrictCode: requiredTrimmedText(row.target_district_code, 'targetDistrictCode', 'PvP read model'),
-    targetAddressNumber: row.target_address_number,
-    attackerAddressLabel: requiredTrimmedText(row.attacker_address_label, 'attackerAddressLabel', 'PvP read model'),
+    attackerHeroId: trimToNull(row.attacker_hero_id),
+    attackerName: trimToNull(row.attacker_name),
+    defenderHeroId: trimToNull(row.defender_hero_id),
+    defenderName: trimToNull(row.defender_name),
+    targetHeroId: trimToNull(row.defender_hero_id),
+    targetHeroDisplayName: trimToNull(row.defender_name),
+    targetAddressLabel: null,
+    targetDistrictCode: null,
+    targetAddressNumber: null,
+    attackerAddressLabel: null,
     startedAt: requiredTrimmedText(row.started_at, 'startedAt', 'PvP read model'),
     arrivesAt: trimToNull(row.arrives_at),
     availableAt: trimToNull(row.available_at),
     expiresAt: trimToNull(row.expires_at),
     resolvedAt: trimToNull(row.resolved_at),
+    phaseStartedAt: trimToNull(row.phase_started_at),
+    phaseEndsAt: trimToNull(row.phase_ends_at),
+    returnStartedAt: trimToNull(row.return_started_at),
+    returnAvailableAt: trimToNull(row.return_available_at),
     manualDeadlineAt: trimToNull(row.manual_deadline_at),
     remainingSeconds: optionalInteger(row.remaining_seconds),
     secondsUntilArrival: optionalInteger(row.seconds_until_arrival),
@@ -183,9 +187,24 @@ export function mapActivePvpActionOffer(
     isTravelPhase: row.is_travel_phase,
     isManualWindow: row.is_manual_window,
     isResolved: row.is_resolved,
-    pvpSpyResultId: trimToNull(row.pvp_spy_result_id),
+    viewerRole: trimToNull(row.viewer_role),
+    viewerIsAttacker: row.viewer_role === 'attacker',
+    viewerIsTarget: row.viewer_role === 'defender',
+    pvpSpyResultId: null,
     pvpAttackResultId: trimToNull(row.pvp_attack_result_id),
     combatLiveSessionId: trimToNull(row.combat_live_session_id),
     combatResultId: trimToNull(row.combat_result_id),
   };
+}
+
+function pvpActionKindDisplayLabel(actionKind: string): string {
+  if (actionKind === 'attack') {
+    return 'Atak';
+  }
+
+  if (actionKind === 'spy') {
+    return 'Szpiegowanie';
+  }
+
+  return requiredTrimmedText(actionKind, 'actionKind', 'PvP read model');
 }

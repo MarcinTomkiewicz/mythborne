@@ -187,6 +187,7 @@ export interface CombatAutoResolveResultReadModel {
   combatResultId: string;
   sourceResultId: string | null;
   gameReportId: string | null;
+  rewardGrantId: string | null;
 }
 
 export interface CombatTimingInput {

@@ -1,16 +1,19 @@
 import { Injectable } from '@angular/core';
-import { MENU_LOGGED_IN } from '../../../core/config/menu-config';
 import { PlayerNotificationListItem } from '../../../core/domain/notifications/notification.model';
 
-const ALLOWED_PLAYER_ACTION_ROUTES = new Set(
-  MENU_LOGGED_IN
-    .map((item) => typeof item['url'] === 'string' ? item['url'] : null)
-    .filter((url): url is string =>
-      url !== null &&
-      url.startsWith('/game/') &&
-      url !== '/game/reports',
-    ),
-);
+const ALLOWED_PLAYER_ACTION_ROUTE_PATHS = new Set([
+  '/hero/dashboard',
+  '/hero/attributes',
+  '/game/exploration',
+  '/game/combat',
+  '/game/armory',
+  '/game/mansion',
+  '/game/vicinity',
+  '/game/guild',
+  '/game/trade',
+  '/game/auction',
+]);
+const REPORT_DETAIL_ROUTE = /^\/game\/reports\/[^/?#]+$/;
 
 @Injectable()
 export class NotificationActionRoutePolicy {
@@ -22,7 +25,7 @@ export class NotificationActionRoutePolicy {
     }
 
     const path = url.split(/[?#]/, 1)[0];
-    if (ALLOWED_PLAYER_ACTION_ROUTES.has(path)) {
+    if (ALLOWED_PLAYER_ACTION_ROUTE_PATHS.has(path) || REPORT_DETAIL_ROUTE.test(path)) {
       return url;
     }
 

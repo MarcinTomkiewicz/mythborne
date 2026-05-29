@@ -9,12 +9,18 @@ describe('NotificationActionRoutePolicy', () => {
       .toBe('/game/mansion?tab=buildings');
   });
 
-  it('blocks non-player, reports and unknown action routes', () => {
+  it('allows private report detail action routes for report notifications', () => {
+    expect(policy.actionRoute(notification('/game/reports/report-1?from=notification')))
+      .toBe('/game/reports/report-1?from=notification');
+  });
+
+  it('blocks non-player, report list and unknown action routes', () => {
     expect(policy.actionRoute(notification('ViewState'))).toBeNull();
     expect(policy.actionRoute(notification('/admin/users'))).toBeNull();
     expect(policy.actionRoute(notification('/report/public-token'))).toBeNull();
     expect(policy.actionRoute(notification('/game/reports'))).toBeNull();
     expect(policy.actionRoute(notification('/game/missing'))).toBeNull();
+    expect(policy.actionRoute(notification('https://example.com/game/reports/report-1'))).toBeNull();
   });
 });
 

@@ -2,16 +2,21 @@ import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angul
 import { ActivePvpActionOffer } from '../../../../core/domain/pvp/pvp.model';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
+import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
+import { RequestToken } from '../../../../core/utils/request-token';
 import {
-  activeHeroContextKey,
-  RequestToken,
-} from '../../../../core/utils/request-token';
-import { getErrorMessage } from '../../../../core/utils/error-message';
-import {
-  formatTimeOfDayLabel,
   pendingTimerDisplay,
   pendingTimerHasElapsed,
 } from '../../../../core/utils/pending-timer';
+import {
+  pvpActiveActionErrorMessage,
+  pvpActiveActionFactRows,
+  pvpActiveActionHelperText,
+  pvpActiveActionPendingHelperText,
+  pvpActiveActionRefreshAt,
+  pvpActiveActionTiming,
+  shouldShowActivePvpOffer,
+} from '../../../../core/domain/pvp/pvp-active-action-display.mapper';
 
 const ELAPSED_REFRESH_INTERVAL_MS = 5000;
 
@@ -31,19 +36,19 @@ export class VicinityActivePvpActionState {
   readonly visibleOffer = computed(() => {
     const offer = this.offer();
 
-    return offer && shouldShowOffer(offer) ? offer : null;
+    return offer && shouldShowActivePvpOffer(offer) ? offer : null;
   });
   readonly hasBlockingAction = computed(
     () => !!this.visibleOffer()?.isBlockingRuntimeActivity,
   );
   readonly timer = computed(() => {
     const offer = this.visibleOffer();
-    const resolvesAt = offer ? travelResolvesAt(offer) : null;
+    const timing = offer ? pvpActiveActionTiming(offer) : null;
 
     return pendingTimerDisplay({
       subjectId: offer?.runtimeActivityId ?? offer?.pvpActionId ?? null,
-      startedAt: offer?.startedAt,
-      resolvesAt,
+      startedAt: timing?.startedAt,
+      resolvesAt: timing?.resolvesAt,
       nowMs: this.nowMs(),
       isLoading: this.isLoading(),
     });
@@ -52,7 +57,7 @@ export class VicinityActivePvpActionState {
     const offer = this.visibleOffer();
 
     return !!offer && pendingTimerHasElapsed({
-      resolvesAt: travelResolvesAt(offer),
+      resolvesAt: pvpActiveActionTiming(offer).resolvesAt,
       nowMs: this.nowMs(),
     });
   });
@@ -63,18 +68,7 @@ export class VicinityActivePvpActionState {
       return [];
     }
 
-    const rows: { label: string; value: string | null }[] = [
-      { label: 'Akcja', value: offer.actionKindLabel },
-      { label: 'Stan', value: offer.phaseLabel },
-      { label: 'Cel', value: offer.targetHeroDisplayName },
-      { label: 'Adres celu', value: offer.targetAddressLabel },
-      { label: 'Twój adres', value: offer.attackerAddressLabel },
-      { label: 'Dotarcie', value: arrivalTimeDisplay(offer) },
-    ];
-
-    return rows.filter(
-      (row): row is { label: string; value: string } => row.value !== null,
-    );
+    return pvpActiveActionFactRows(offer);
   });
   readonly helperText = computed(() => {
     const offer = this.visibleOffer();
@@ -83,15 +77,7 @@ export class VicinityActivePvpActionState {
       return '';
     }
 
-    if (offer.actionKind === 'attack') {
-      return offer.isManualWindow
-        ? 'Atak dotarł do celu. Decyzję manual/auto podejmiesz w module walki.'
-        : 'Po dotarciu walka otworzy się albo będzie kontynuowana poza wyborem celów.';
-    }
-
-    return offer.isManualWindow
-      ? 'Szpiegowanie dotarło do celu. Wynik należy do przepływu raportów/wyników poza tym ekranem.'
-      : 'Po zakończeniu szpiegowania wynik będzie obsługiwany w przepływie raportów/wyników.';
+    return pvpActiveActionHelperText(offer);
   });
   readonly pendingHelperText = computed(() => {
     const offer = this.visibleOffer();
@@ -100,9 +86,7 @@ export class VicinityActivePvpActionState {
       return '';
     }
 
-    return offer.actionKind === 'attack'
-      ? 'Atak jest w drodze do wskazanej posiadłości.'
-      : 'Szpieg jest w drodze do wskazanej posiadłości.';
+    return pvpActiveActionPendingHelperText(offer);
   });
 
   constructor() {
@@ -112,7 +96,7 @@ export class VicinityActivePvpActionState {
     effect(() => {
       const offer = this.visibleOffer();
       const nowMs = this.nowMs();
-      const refreshAt = offer ? elapsedRefreshAt(offer) : null;
+      const refreshAt = offer ? pvpActiveActionRefreshAt(offer) : null;
 
       if (
         !offer
@@ -173,48 +157,12 @@ export class VicinityActivePvpActionState {
         }
 
         this.offer.set(null);
-        this.error.set(getErrorMessage(error, 'Nie udało się wczytać aktywnej akcji PvP.'));
+        this.error.set(pvpActiveActionErrorMessage(
+          error,
+          'Nie udało się wczytać aktywnego stanu PvP.',
+        ));
         this.isLoading.set(false);
       },
     });
   }
-}
-
-function shouldShowOffer(offer: ActivePvpActionOffer): boolean {
-  return !offer.isResolved
-    && (
-      offer.isTravelPhase
-      || offer.isManualWindow
-      || offer.isBlockingRuntimeActivity
-    );
-}
-
-function travelResolvesAt(offer: ActivePvpActionOffer): string | null {
-  return offer.arrivesAt ?? offer.availableAt;
-}
-
-function manualDeadlineResolvesAt(offer: ActivePvpActionOffer): string | null {
-  return offer.manualDeadlineAt ?? offer.expiresAt;
-}
-
-function elapsedRefreshAt(offer: ActivePvpActionOffer): string | null {
-  if (offer.isTravelPhase) {
-    return travelResolvesAt(offer);
-  }
-
-  if (offer.isManualWindow) {
-    return manualDeadlineResolvesAt(offer);
-  }
-
-  return null;
-}
-
-function arrivalTimeDisplay(offer: ActivePvpActionOffer): string | null {
-  const value = offer.arrivesAt ?? offer.availableAt;
-
-  if (!value) {
-    return null;
-  }
-
-  return formatTimeOfDayLabel(value);
 }

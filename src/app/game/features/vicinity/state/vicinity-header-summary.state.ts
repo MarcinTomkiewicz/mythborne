@@ -5,7 +5,7 @@ import { BuildingJobs } from '../../../../core/services/buildings/building-jobs'
 import type { HeroEstateRuntimeStateReadModel } from '../../../../core/services/buildings/building-jobs-read-model';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
-import { activeHeroContextKey } from '../../../../core/utils/request-token';
+import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import { getErrorMessage } from '../../../../core/utils/error-message';
 import { VicinityRangeState } from './vicinity-range.state';
 import { activeProtectionLabel } from '../utils/vicinity-runtime-summary-labels';

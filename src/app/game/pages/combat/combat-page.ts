@@ -1,8 +1,10 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
+import { CombatReportHandoffCard } from '../../components/combat/combat-report-handoff-card';
+import { VicinityActivePvpActionPanel } from '../../components/vicinity/active-pvp-action-panel/vicinity-active-pvp-action-panel';
 import { MinigameHost } from '../../components/minigame-host/minigame-host';
 import {
   MINIGAME_KEY,
@@ -11,20 +13,25 @@ import {
   MinigameSourceRef,
 } from '../../components/minigame-host/minigame-host.model';
 import { trimToNull } from '../../../core/utils/normalize-text';
+import { CombatPvpActionState } from './combat-pvp-action.state';
 
 @Component({
   selector: 'app-combat-page',
   standalone: true,
   imports: [
     ButtonModule,
+    CombatReportHandoffCard,
     MinigameHost,
     RouterLink,
+    VicinityActivePvpActionPanel,
   ],
+  providers: [CombatPvpActionState],
   templateUrl: './combat-page.html',
   host: { class: 'd-contents min-w-0' },
 })
 export class CombatPage {
   private readonly route = inject(ActivatedRoute);
+  readonly pvpAction = inject(CombatPvpActionState);
   private readonly query = toSignal(
     this.route.queryParamMap.pipe(
       map((params) => ({
@@ -53,7 +60,18 @@ export class CombatPage {
       : 'Walka',
   );
 
+  constructor() {
+    effect(() => {
+      this.pvpAction.setSourceRef(this.sourceRef());
+    });
+  }
+
   acceptCompletion(event: MinigameCompletionEvent): void {
     this.completion.set(event);
+    this.pvpAction.acceptCompletion(event);
+  }
+
+  refreshActivePvpOffer(): void {
+    this.pvpAction.refresh();
   }
 }

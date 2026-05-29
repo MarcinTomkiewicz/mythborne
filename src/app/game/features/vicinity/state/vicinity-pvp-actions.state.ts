@@ -6,7 +6,7 @@ import {
   PendingPvpAction,
   PvpStartActionKind,
 } from '../../../../core/types/vicinity.types';
-import { activeHeroContextKey } from '../../../../core/utils/request-token';
+import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import { getErrorMessage } from '../../../../core/utils/error-message';
 import { formatPendingDurationLabel } from '../../../../core/utils/pending-timer';
 import { createRequestId } from '../../../../core/utils/request-id';

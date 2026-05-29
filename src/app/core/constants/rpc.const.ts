@@ -50,6 +50,7 @@ export const RPC = {
   get_combat_resolution_preview: 'get_combat_resolution_preview',
   start_manual_combat_session: 'start_manual_combat_session',
   auto_resolve_combat_session: 'auto_resolve_combat_session',
+  finalize_combat_source_result: 'finalize_combat_source_result',
   get_combat_live_state: 'get_combat_live_state',
   submit_combat_player_action: 'submit_combat_player_action',
   get_combat_result_detail: 'get_combat_result_detail',
