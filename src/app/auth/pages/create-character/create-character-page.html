@@ -51,6 +51,33 @@
 
         <div class="grid-2-1 grid-items-start gap-xl w-100">
           <article class="flex-col gap-lg w-100">
+            <form [formGroup]="page.heroForm" class="mg-card mg-form p-md flex-col gap-md w-100">
+              <div class="flex-col gap-xs">
+                <h2 class="color-heading text-lg m-0">
+                  Imię bohatera
+                </h2>
+                <p class="m-0 color-muted">
+                  Imię musi być unikalne na wybranym serwerze. Gra sprawdzi je podczas tworzenia bohatera.
+                </p>
+              </div>
+
+              <div class="max-w-500 w-100">
+                <app-form-fields [form]="page.heroForm" [fields]="heroFields" />
+              </div>
+            </form>
+
+            <app-step-origin
+              [selectedOrigin]="page.selectedOrigin()"
+              [serverAvailability]="page.selectedServerAvailability()"
+              [heroName]="page.heroForm.controls.characterName.value"
+              [showBack]="false"
+              [nextLabel]="'Stwórz bohatera'"
+              [submitDisabled]="page.heroForm.invalid"
+              (next)="page.onOriginNext($event)"
+            />
+          </article>
+
+          <aside class="flex-col-start-stretch gap-md w-100" aria-label="Zasady pochodzenia">
             @if (page.selectedServerAvailability(); as availability) {
               <section class="mg-card p-md flex-col gap-sm w-100" aria-label="Wybrany świat">
                 <div class="flex-col gap-xs">
@@ -69,31 +96,6 @@
               </section>
             }
 
-            <form [formGroup]="page.heroForm" class="mg-card mg-form p-md flex-col gap-md w-100">
-              <div class="flex-col gap-xs">
-                <h2 class="color-heading text-lg m-0">
-                  Imię bohatera
-                </h2>
-                <p class="m-0 color-muted">
-                  Imię musi być unikalne na wybranym serwerze. Gra sprawdzi je podczas tworzenia bohatera.
-                </p>
-              </div>
-
-              <app-form-fields [form]="page.heroForm" [fields]="heroFields" />
-            </form>
-
-            <app-step-origin
-              [selectedOrigin]="page.selectedOrigin()"
-              [serverAvailability]="page.selectedServerAvailability()"
-              [heroName]="page.heroForm.controls.characterName.value"
-              [showBack]="false"
-              [nextLabel]="'Stwórz bohatera'"
-              [submitDisabled]="page.heroForm.invalid"
-              (next)="page.onOriginNext($event)"
-            />
-          </article>
-
-          <aside class="flex-col-start-stretch gap-md w-100" aria-label="Zasady pochodzenia">
             <section class="mg-card p-lg flex-col gap-sm w-100">
               <h4 class="color-heading m-0">Pochodzenie bohatera</h4>
               <p class="m-0 color-muted">
