@@ -26,6 +26,7 @@ export interface SidebarNavItem {
   readonly kind: SidebarNavItemKind;
   readonly label?: string;
   readonly route?: string;
+  readonly activeRoute?: string;
   readonly iconClass?: string | null;
   readonly iconText?: string | null;
   readonly badgeLabel?: string | null;

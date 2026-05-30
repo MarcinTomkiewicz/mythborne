@@ -11308,6 +11308,8 @@ Dodać albo uporządkować prawdziwy panel zakładania konta, osobny od tworzeni
 
 ## UI-ENTRY-22-10 — Auth Entry Route Semantics And Link Audit
 
+**Status:** Accepted on 2026-05-30 with pending user smoke. Public/account/auth entry routes and links now keep clear semantics: `/login` redirects to `/auth/login`, `/register` redirects to `/auth/register`, footer and landing registration links point to real account registration, and `Stwórz bohatera` remains routed through `/auth/server-entry` so server/start-flow eligibility is not bypassed. Shared `ShellSidebarContent` supports `activeRoute`, allowing the account-entry sidebar to click `Stwórz bohatera` through `/auth/server-entry` while highlighting it only on `/auth/create-character`; `Wejdź do gry` highlights on `/auth/server-entry`. Public report return links point to `/` instead of `/public`. No DB/RPC, guards, generated types, status-flow, route eligibility semantics or notification icon changes were made. Manual smoke remains user-side.
+
 **Goal:**
 Upewnić się, że wszystkie public/account/auth linki znaczą to, co mówią, i nie mieszają logowania, rejestracji, server entry oraz hero creation.
 

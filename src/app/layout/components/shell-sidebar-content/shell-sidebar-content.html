@@ -38,8 +38,7 @@
             <a
               class="mg-shell-nav-item"
               [routerLink]="item.route"
-              routerLinkActive="is-active"
-              [routerLinkActiveOptions]="{ exact: item.exact ?? true }"
+              [class.is-active]="isNavItemActive(item)"
             >
               @if (item.iconClass) {
                 <i [class]="item.iconClass + ' mg-shell-nav-item__icon'" aria-hidden="true"></i>
