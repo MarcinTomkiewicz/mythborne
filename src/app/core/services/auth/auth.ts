@@ -49,17 +49,15 @@ export class Auth {
         );
 
     return authSource$.pipe(
-      switchMap(({ error, user }) => {
+      map(({ error, user }) => {
         if (error || !user) {
           this.authState.setUser(null);
           this.activeHero.clear();
-          return of(void 0);
+          return;
         }
 
         this.authState.setUser(user);
-
-        return this.loadActiveHeroForAuth();
-      })
+      }),
     );
   }
 
@@ -164,7 +162,7 @@ export class Auth {
         const user = data.user;
         this.authState.setUser(user);
 
-        return this.loadActiveHeroForAuth().pipe(map(() => user));
+        return of(user);
       })
     );
   }
@@ -181,9 +179,5 @@ export class Auth {
       }),
       map(() => void 0),
     );
-  }
-
-  private loadActiveHeroForAuth(): Observable<void> {
-    return this.activeHero.loadActiveHero().pipe(map(() => void 0));
   }
 }

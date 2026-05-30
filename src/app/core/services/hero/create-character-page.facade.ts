@@ -9,6 +9,7 @@ import { CreateCharacterFormFactory } from '../../factories/forms/create-charact
 import { trimText } from '../../utils/normalize-text';
 import { Auth } from '../auth/auth';
 import { AuthState } from '../auth/auth-state';
+import { ActiveHero } from './active-hero';
 import { ActiveServer } from '../server/active-server';
 import { StartFlow } from '../start-flow/start-flow';
 import { CreateHero } from './create-hero';
@@ -42,6 +43,7 @@ export class CreateCharacterPageFacade {
   private readonly auth = inject(Auth);
   private readonly authState = inject(AuthState);
   private readonly activeServer = inject(ActiveServer);
+  private readonly activeHero = inject(ActiveHero);
   private readonly createHero = inject(CreateHero);
   private readonly destroyRef = inject(DestroyRef);
   private readonly formFactory = inject(CreateCharacterFormFactory);
@@ -428,6 +430,9 @@ export class CreateCharacterPageFacade {
           }
 
           this.activeServer.loadAccessibleServersFromStartFlowAvailability(availability);
+          if (!this.activeServer.selectedServer()) {
+            this.activeHero.clear();
+          }
           this.serverAvailability.set(availability);
           this.serverAvailabilityError.set(null);
           this.isServerAvailabilityLoading.set(false);

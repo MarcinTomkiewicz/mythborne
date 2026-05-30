@@ -1,12 +1,13 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { forkJoin, map, of, switchMap } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import {
   StartFlowEntryDecision,
   AccountEntryHeroContext,
   StartFlowHeroOption,
   StartFlowServerAvailability,
+  isStartFlowDashboardEntryAction,
 } from '../../domain/start-flow/start-flow.model';
 import { SelectedGameServer } from '../../interfaces/server/active-server.interface';
 import { ActiveHero } from '../hero/active-hero';
@@ -86,22 +87,16 @@ export class StartFlowEntryState {
       availability: this.startFlow.getServerAvailability(),
       heroContexts: this.startFlow.getAccountEntryHeroContexts(),
     })
-      .pipe(
-        switchMap(({ availability, heroContexts }) => {
-          this.activeServer.loadAccessibleServersFromStartFlowAvailability(availability);
-
-          const activeHeroLoad = this.activeServer.selectedServer()
-            ? this.activeHero.loadActiveHero()
-            : of(null);
-
-          return activeHeroLoad.pipe(map(() => ({ availability, heroContexts })));
-        }),
-      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ availability, heroContexts }) => {
           if (token !== this.loadToken) {
             return;
+          }
+
+          this.activeServer.loadAccessibleServersFromStartFlowAvailability(availability);
+          if (!this.activeServer.selectedServer()) {
+            this.activeHero.clear();
           }
 
           this.availability.set(availability);
@@ -137,31 +132,7 @@ export class StartFlowEntryState {
     this.isTransitioning.set(true);
     this.blocker.set(null);
     this.activeHero.clear();
-
-    this.activeHero
-      .loadActiveHero()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          if (token !== this.transitionToken) {
-            return;
-          }
-
-          this.isTransitioning.set(false);
-        },
-        error: (error: unknown) => {
-          if (token !== this.transitionToken) {
-            return;
-          }
-
-          this.blocker.set(
-            error instanceof Error
-              ? error.message
-              : 'Failed to load active hero for the selected server.',
-          );
-          this.isTransitioning.set(false);
-        },
-      });
+    this.isTransitioning.set(false);
   }
 
   enterSelectedServer(): void {
@@ -239,34 +210,7 @@ export class StartFlowEntryState {
     this.isTransitioning.set(true);
     this.blocker.set(null);
     this.activeHero.clear();
-
-    this.activeHero
-      .loadActiveHero()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          if (
-            token !== this.transitionToken ||
-            this.activeServer.selectedServer()?.id !== serverId
-          ) {
-            return;
-          }
-
-          this.selectHeroForCurrentServer(serverId, heroId, token);
-        },
-        error: (error: unknown) => {
-          if (token !== this.transitionToken) {
-            return;
-          }
-
-          this.blocker.set(
-            error instanceof Error
-              ? error.message
-              : 'Failed to load active hero for the selected server.',
-          );
-          this.isTransitioning.set(false);
-        },
-      });
+    this.selectHeroForCurrentServer(serverId, heroId, token);
   }
 
   serverAvailability(server: SelectedGameServer): StartFlowServerAvailability | null {
@@ -293,7 +237,7 @@ export class StartFlowEntryState {
 
     return decision.action === 'hero_selection' ||
       decision.action === 'dashboard' ||
-      isDashboardEntryAction(availability.nextAction) ||
+      isStartFlowDashboardEntryAction(availability.nextAction) ||
       this.canUseSelectedHeroSelection();
   }
 
@@ -302,7 +246,7 @@ export class StartFlowEntryState {
       return false;
     }
 
-    return isDashboardEntryAction(availability.nextAction) ||
+    return isStartFlowDashboardEntryAction(availability.nextAction) ||
       availability.nextAction === 'hero_selection' ||
       availability.nextAction === 'sandbox_hero_selection';
   }
@@ -311,7 +255,7 @@ export class StartFlowEntryState {
     return this.accountEntryHeroContexts().some((context) =>
       context.serverId === serverId &&
       context.heroId === heroId &&
-      context.routeNextAction === 'hero_dashboard',
+      isStartFlowDashboardEntryAction(context.routeNextAction),
     );
   }
 
@@ -340,19 +284,19 @@ export class StartFlowEntryState {
     this.isTransitioning.set(true);
     this.blocker.set(null);
 
-    this.activeHero
-      .selectHero(heroId)
+    this.startFlow
+      .selectAccountEntryActiveHeroContext(serverId, heroId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (state) => {
+        next: (context) => {
           if (
             token !== this.transitionToken ||
-            state.serverId !== serverId ||
             this.activeServer.selectedServer()?.id !== serverId
           ) {
             return;
           }
 
+          this.activeHero.applyAccountEntryActiveHeroContext(context);
           this.isTransitioning.set(false);
           void this.router.navigateByUrl('/hero/dashboard');
         },
@@ -410,6 +354,7 @@ export function resolveStartFlowEntryDecision(
     case 'dashboard':
     case 'game_shell':
     case 'enter_game':
+    case 'hero_dashboard':
       if (activeHeroId && availability.canEnterGame && !availability.blockReason) {
         return {
           action: 'dashboard',
@@ -461,10 +406,4 @@ export function resolveStartFlowEntryDecision(
       availability.blockReason ||
       'This server is not available for character creation.',
   };
-}
-
-function isDashboardEntryAction(action: string): boolean {
-  return action === 'dashboard' ||
-    action === 'game_shell' ||
-    action === 'enter_game';
 }

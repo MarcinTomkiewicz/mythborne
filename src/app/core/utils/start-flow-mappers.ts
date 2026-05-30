@@ -1,4 +1,6 @@
 import {
+  AccountEntryActiveHeroContext,
+  AccountEntryActiveHeroContextRow,
   AccountEntryHeroContext,
   AccountEntryHeroContextRow,
   StartFlowCreateHeroRow,
@@ -92,6 +94,18 @@ export function mapAccountEntryHeroContext(
       row.route_next_action,
       'routeNextAction',
     ),
+  };
+}
+
+export function mapAccountEntryActiveHeroContext(
+  row: AccountEntryActiveHeroContextRow,
+): AccountEntryActiveHeroContext {
+  return {
+    ...mapAccountEntryHeroContext(row),
+    activeHeroJson: row.active_hero_json,
+    heroContextJson: row.hero_context_json,
+    serverContextJson: row.server_context_json,
+    accessJson: row.access_json,
   };
 }
 

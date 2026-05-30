@@ -1,4 +1,7 @@
-import { StartFlowServerAvailability } from '../../domain/start-flow/start-flow.model';
+import {
+  StartFlowServerAvailability,
+  isStartFlowDashboardEntryAction,
+} from '../../domain/start-flow/start-flow.model';
 import {
   CREATE_CHARACTER_AVAILABILITY_MISSING,
   CREATE_CHARACTER_CREATION_AVAILABLE,
@@ -18,8 +21,6 @@ import {
   CreateCharacterServerOption,
 } from '../../interfaces/hero/create-character-server-options.interface';
 import { AccountEntrySummaryRow } from '../../interfaces/account-entry-summary-row.interface';
-
-const EXISTING_HERO_ENTRY_ACTIONS = new Set(['dashboard', 'game_shell', 'enter_game']);
 
 export function mapCreateCharacterServerOptions(
   availability: StartFlowServerAvailability[],
@@ -255,5 +256,5 @@ function hasExistingStandardHero(availability: StartFlowServerAvailability): boo
 }
 
 function isExistingHeroEntryAction(nextAction: string): boolean {
-  return EXISTING_HERO_ENTRY_ACTIONS.has(nextAction);
+  return isStartFlowDashboardEntryAction(nextAction);
 }

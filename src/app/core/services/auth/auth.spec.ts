@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom, of } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { AuthState } from './auth-state';
 import { Auth } from './auth';
 import { Backend } from '../backend/backend';
@@ -18,7 +18,6 @@ describe('Auth', () => {
       'clear',
       'loadActiveHero',
     ]);
-    activeHero.loadActiveHero.and.returnValue(of(null));
 
     TestBed.configureTestingModule({
       providers: [
@@ -55,7 +54,7 @@ describe('Auth', () => {
     expect(service).toBeTruthy();
   });
 
-  it('shares in-flight initialization so guards wait for restored auth and hero state', async () => {
+  it('shares in-flight initialization without loading hero rows during auth restore', async () => {
     const user = { id: 'user-1', email: 'hero@example.com' };
     let resolveSession: (value: unknown) => void = () => undefined;
     getSession.and.returnValue(new Promise((resolve) => {
@@ -74,6 +73,6 @@ describe('Auth', () => {
 
     await Promise.all([firstInitialize, secondInitialize]);
 
-    expect(activeHero.loadActiveHero).toHaveBeenCalledTimes(1);
+    expect(activeHero.loadActiveHero).not.toHaveBeenCalled();
   });
 });

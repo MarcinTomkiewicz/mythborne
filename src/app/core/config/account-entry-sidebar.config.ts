@@ -33,8 +33,7 @@ export const ACCOUNT_ENTRY_SIDEBAR_NAV_GROUPS: readonly SidebarNavGroup[] = [
       {
         kind: 'link',
         label: 'Stwórz bohatera',
-        route: '/auth/server-entry',
-        activeRoute: '/auth/create-character',
+        route: '/auth/create-character',
         iconClass: 'pi pi-laurels',
       },
     ],

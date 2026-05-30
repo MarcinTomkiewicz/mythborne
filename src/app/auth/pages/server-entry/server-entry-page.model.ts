@@ -1,6 +1,7 @@
 import {
   AccountEntryHeroContext,
   StartFlowServerAvailability,
+  isStartFlowDashboardEntryAction,
 } from '../../../core/domain/start-flow/start-flow.model';
 
 export interface ServerEntryHeroContextOption {
@@ -34,7 +35,7 @@ export function mapServerEntryHeroContextOptions(
   );
 
   return heroContexts.flatMap((context) => {
-    if (context.routeNextAction !== 'hero_dashboard') {
+    if (!isStartFlowDashboardEntryAction(context.routeNextAction)) {
       return [];
     }
 
@@ -57,7 +58,7 @@ export function mapServerEntryHeroContextOptions(
       heroLevel: context.heroLevel,
       addressLabel: context.addressLabel ?? context.address,
       heroContextLabel: heroContextLabel(entry, context.heroId, activeHeroId),
-      nextRouteLabel: context.routeNextAction === 'hero_dashboard'
+      nextRouteLabel: isStartFlowDashboardEntryAction(context.routeNextAction)
         ? 'Panel bohatera'
         : null,
       isActive: activeHeroId === context.heroId,

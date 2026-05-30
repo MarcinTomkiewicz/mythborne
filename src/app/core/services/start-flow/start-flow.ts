@@ -2,8 +2,11 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
+  AccountEntryActiveHeroContext,
+  AccountEntryActiveHeroContextRow,
   AccountEntryHeroContext,
   AccountEntryHeroContextRow,
+  SelectAccountEntryActiveHeroContextArgs,
   StartFlowCreateHeroArgs,
   StartFlowCreateHeroRow,
   StartFlowHeroCreationInput,
@@ -14,6 +17,7 @@ import {
   StartFlowServerAvailabilityRow,
 } from '../../domain/start-flow/start-flow.model';
 import {
+  mapAccountEntryActiveHeroContext,
   mapAccountEntryHeroContext,
   mapStartFlowHeroCreationResult,
   mapStartFlowOriginOption,
@@ -44,6 +48,33 @@ export class StartFlow {
         args,
       )
       .pipe(map((rows) => rows.map(mapAccountEntryHeroContext)));
+  }
+
+  selectAccountEntryActiveHeroContext(
+    serverId: string,
+    heroId: string,
+  ): Observable<AccountEntryActiveHeroContext> {
+    const args: SelectAccountEntryActiveHeroContextArgs = {
+      p_server_id: serverId,
+      p_hero_id: heroId,
+    };
+
+    return this.backend
+      .rpc<AccountEntryActiveHeroContextRow[]>(
+        RPC.select_account_entry_active_hero_context,
+        args,
+      )
+      .pipe(
+        map((rows) => {
+          const row = rows[0];
+
+          if (!row) {
+            throw new Error('Hero entry did not return an active hero context.');
+          }
+
+          return mapAccountEntryActiveHeroContext(row);
+        }),
+      );
   }
 
   getOriginOptions(): Observable<StartFlowOriginOption[]> {

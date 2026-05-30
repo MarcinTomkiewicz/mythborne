@@ -2,6 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { map, Observable, of, switchMap, tap, throwError } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
 import { mapHero } from '../../domain/hero/hero.mapper';
+import { AccountEntryActiveHeroContext } from '../../domain/start-flow/start-flow.model';
 import { HeroOrderColumn } from '../../enums/active-hero.enum';
 import { FilterOperator } from '../../enums/filter-operators';
 import {
@@ -9,6 +10,8 @@ import {
   RequiredActiveHeroState,
 } from '../../interfaces/hero/active-hero.interface';
 import { Row } from '../../types/supabase.types';
+import { IHero } from '../../types/hero.types';
+import { jsonRecord, optionalNumber, optionalText, read } from '../../utils/json-read';
 import { AuthState } from '../auth/auth-state';
 import { Backend } from '../backend/backend';
 import { Platform } from '../platform/platform';
@@ -152,6 +155,77 @@ export class ActiveHero {
     this._error.set(null);
     this._isLoading.set(false);
     this.authState.setHero(null);
+  }
+
+  applyAccountEntryActiveHeroContext(
+    context: AccountEntryActiveHeroContext,
+  ): ActiveHeroState {
+    const userId = this.authState.user()?.id ?? null;
+
+    if (!userId) {
+      throw new Error('No authenticated user for account-entry hero selection.');
+    }
+
+    const server = this.activeServer.selectedServer();
+
+    if (!server || server.id !== context.serverId) {
+      throw new Error('Selected server does not match account-entry hero context.');
+    }
+
+    const activeHero = jsonRecord(context.activeHeroJson);
+    const hero: IHero = {
+      id: context.heroId,
+      userId: optionalText(read(activeHero, 'userId', 'user_id')) ?? userId,
+      serverId: context.serverId,
+      name: optionalText(read(activeHero, 'name', 'heroName', 'hero_name')) ?? context.heroName,
+      level: optionalNumber(read(activeHero, 'level', 'heroLevel', 'hero_level')) ?? context.heroLevel,
+      rank: optionalNumber(read(activeHero, 'rank')) ?? 1,
+      experience: optionalNumber(read(activeHero, 'experience')) ?? 0,
+      totalExperienceEarned:
+        optionalNumber(read(activeHero, 'totalExperienceEarned', 'total_experience_earned')) ?? 0,
+      characterPoints:
+        optionalNumber(read(activeHero, 'characterPoints', 'character_points')) ?? 0,
+      totalCharacterPointsEarned:
+        optionalNumber(
+          read(activeHero, 'totalCharacterPointsEarned', 'total_character_points_earned'),
+        ) ?? 0,
+      originId: optionalText(read(activeHero, 'originId', 'origin_id')),
+      estateId: optionalText(read(activeHero, 'estateId', 'estate_id')) ?? context.estateId,
+      profilePicture: optionalText(read(activeHero, 'profilePicture', 'profile_picture')),
+      createdAt: optionalText(read(activeHero, 'createdAt', 'created_at')) ?? context.createdAt,
+    };
+    const heroRow = {
+      id: hero.id,
+      user_id: hero.userId,
+      server_id: hero.serverId,
+      name: hero.name,
+      level: hero.level,
+      rank: hero.rank,
+      experience: hero.experience,
+      total_experience_earned: hero.totalExperienceEarned,
+      character_points: hero.characterPoints,
+      total_character_points_earned: hero.totalCharacterPointsEarned,
+      origin_id: hero.originId,
+      estate_id: hero.estateId,
+      profile_picture: hero.profilePicture,
+      created_at: hero.createdAt,
+    } as Row<'hero'>;
+    const state: ActiveHeroState = {
+      userId,
+      serverId: context.serverId,
+      heroId: context.heroId,
+      server,
+      hero,
+      heroRow,
+    };
+
+    this._state.set(state);
+    this.authState.setHero(hero);
+    this.persistSelectedHero(userId, context.serverId, context.heroId);
+    this._error.set(null);
+    this._isLoading.set(false);
+
+    return state;
   }
 
   private resolveSelectedServerId(): Observable<string | null> {

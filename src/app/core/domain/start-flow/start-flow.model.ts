@@ -13,6 +13,10 @@ export type StartFlowOriginOptionRow =
   RpcRow<'get_start_flow_origin_options'>;
 export type AccountEntryHeroContextRow =
   RpcRow<'get_account_entry_hero_contexts'>;
+export type AccountEntryActiveHeroContextRow =
+  RpcRow<'select_account_entry_active_hero_context'>;
+export type SelectAccountEntryActiveHeroContextArgs =
+  Database['public']['Functions']['select_account_entry_active_hero_context']['Args'];
 export type StartFlowCreateHeroArgs =
   Database['public']['Functions']['create_hero_start_flow']['Args'];
 export type StartFlowCreateHeroRow = RpcRow<'create_hero_start_flow'>;
@@ -106,6 +110,31 @@ export interface AccountEntryHeroContext {
   addressLabel: string | null;
   createdAt: string | null;
   routeNextAction: string;
+}
+
+export interface AccountEntryActiveHeroContext extends AccountEntryHeroContext {
+  activeHeroJson: Json;
+  heroContextJson: Json;
+  serverContextJson: Json;
+  accessJson: Json;
+}
+
+export const START_FLOW_DASHBOARD_ENTRY_ACTIONS = [
+  'dashboard',
+  'game_shell',
+  'enter_game',
+  'hero_dashboard',
+] as const;
+
+export type StartFlowDashboardEntryAction =
+  typeof START_FLOW_DASHBOARD_ENTRY_ACTIONS[number];
+
+export function isStartFlowDashboardEntryAction(
+  action: string,
+): action is StartFlowDashboardEntryAction {
+  return START_FLOW_DASHBOARD_ENTRY_ACTIONS.includes(
+    action as StartFlowDashboardEntryAction,
+  );
 }
 
 export type StartFlowEntryRouteAction =
