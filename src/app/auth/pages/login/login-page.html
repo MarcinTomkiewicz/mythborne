@@ -29,20 +29,22 @@
         </div>
       </section>
     } @else {
-      <section class="mg-card flex-col gap-md w-100">
-        <app-login-form
-          [submitting]="page.isSubmitting()"
-          [errorMessage]="page.errorMessage()"
-          (login)="handleLogin($event)"
-        />
+      <section class="mg-card flex-col-center-center gap-md w-100">
+        <div class="flex-col gap-md w-100 max-w-350">
+          <app-login-form
+            [submitting]="page.isSubmitting()"
+            [errorMessage]="page.errorMessage()"
+            (login)="handleLogin($event)"
+          />
 
-        <div class="flex-row-center-center flex-wrap gap-sm">
-          <a routerLink="/" class="text-sm font-bold">Wróć na start</a>
-        </div>
+          <div class="flex-row-center-center flex-wrap gap-sm">
+            <a routerLink="/" class="text-sm font-bold">Wróć na start</a>
+          </div>
 
-        <div class="flex-row-center-center flex-wrap gap-xs">
-          <span class="color-muted text-sm">Nie masz konta?</span>
-          <a routerLink="/register" class="text-sm font-bold">Załóż konto</a>
+          <div class="flex-row-center-center flex-wrap gap-xs">
+            <span class="color-muted text-sm">Nie masz konta?</span>
+            <a routerLink="/auth/register" class="text-sm font-bold">Załóż konto</a>
+          </div>
         </div>
       </section>
     }

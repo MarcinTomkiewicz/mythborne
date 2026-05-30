@@ -28,7 +28,7 @@
         <div [class]="fieldClass(field)">
           <span class="muted-text">{{ field.label }}</span>
           <p-select
-            [styleClass]="widthClass()"
+            [class]="widthClass()"
             [formControlName]="field.controlName"
             [options]="fieldOptions(field)"
             optionLabel="label"
@@ -44,8 +44,29 @@
             [formControlName]="field.controlName"
             [dateFormat]="field.dateFormat ?? 'yy-mm-dd'"
             [showIcon]="field.showIcon ?? true"
-            [styleClass]="widthClass()"
+            [class]="widthClass()"
           />
+        </label>
+      }
+
+      @case (fieldType.Password) {
+        <label [class]="fieldClass(field)">
+          <span class="muted-text">{{ field.label }}</span>
+          <p-password
+            [formControlName]="field.controlName"
+            [inputStyleClass]="widthClass()"
+            [class]="widthClass()"
+            [toggleMask]="true"
+            [feedback]="field.passwordFeedback ?? false"
+            [autocomplete]="field.autocomplete ?? 'off'"
+          >
+            <ng-template #showicon let-class="class">
+              <i [class]="class + ' pi pi-horus'" aria-hidden="true"></i>
+            </ng-template>
+            <ng-template #hideicon let-class="class">
+              <i [class]="class + ' pi pi-closed-eye'" aria-hidden="true"></i>
+            </ng-template>
+          </p-password>
         </label>
       }
 

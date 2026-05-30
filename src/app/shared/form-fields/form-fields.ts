@@ -3,6 +3,7 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
 import { SelectModule } from 'primeng/select';
 import { FormFieldType } from '../../core/enums/form-field-type';
 import {
@@ -18,6 +19,7 @@ import {
     CheckboxModule,
     DatePickerModule,
     InputTextModule,
+    PasswordModule,
     SelectModule,
   ],
   templateUrl: './form-fields.html',
@@ -30,7 +32,7 @@ export class FormFields {
   readonly fieldType = FormFieldType;
 
   fieldClass(field: FormFieldConfig, baseClass = 'flex-col gap-sm'): string {
-    return field.className ? `${baseClass} ${field.className}` : baseClass;
+    return [baseClass, this.widthClass(), field.className].filter(Boolean).join(' ');
   }
 
   fieldOptions(field: FormFieldConfig): FormSelectOption[] {

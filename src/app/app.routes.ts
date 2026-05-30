@@ -49,7 +49,7 @@ const appShellRoutes: Routes = [
   },
   {
     path: 'register',
-    redirectTo: 'auth/create-character',
+    redirectTo: 'auth/register',
     pathMatch: 'full'
   },
   {

@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { from, map, Observable, of, shareReplay, switchMap, take, tap } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
 import { IUserData } from '../../interfaces/i-user-data/i-user-data';
+import { AccountRegistrationResult } from '../../interfaces/auth/account-registration-result.interface';
 import { Insert } from '../../types/supabase.types';
 import { Platform } from '../platform/platform';
 import { SupabaseClientService } from '../supabase/supabase-client';
@@ -96,6 +97,36 @@ export class Auth {
           })
         );
       })
+    );
+  }
+
+  registerAccount(email: string, password: string): Observable<AccountRegistrationResult> {
+    return from(this.supabase.auth.signUp({ email, password })).pipe(
+      switchMap(({ data, error }) => {
+        if (error || !data.user) {
+          throw error ?? new Error('User not created');
+        }
+
+        this.activeHero.clear();
+
+        if (!data.session) {
+          return of({
+            userId: data.user.id,
+            email: data.user.email ?? email,
+            isSignedIn: false,
+            requiresEmailConfirmation: true,
+          });
+        }
+
+        this.authState.setUser(data.user);
+
+        return of({
+          userId: data.user.id,
+          email: data.user.email ?? email,
+          isSignedIn: true,
+          requiresEmailConfirmation: false,
+        });
+      }),
     );
   }
 

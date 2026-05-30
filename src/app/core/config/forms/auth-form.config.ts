@@ -10,11 +10,33 @@ export const LOGIN_FIELDS: readonly FormFieldConfig[] = [
     autocomplete: 'email',
   },
   {
-    type: FormFieldType.Text,
+    type: FormFieldType.Password,
     controlName: 'password',
     label: 'Hasło',
-    inputType: 'password',
     autocomplete: 'current-password',
+  },
+];
+
+export const ACCOUNT_REGISTRATION_FIELDS: readonly FormFieldConfig[] = [
+  {
+    type: FormFieldType.Text,
+    controlName: 'email',
+    label: 'Email',
+    inputType: 'email',
+    autocomplete: 'email',
+  },
+  {
+    type: FormFieldType.Password,
+    controlName: 'password',
+    label: 'Hasło',
+    autocomplete: 'new-password',
+    passwordFeedback: true,
+  },
+  {
+    type: FormFieldType.Password,
+    controlName: 'confirmPassword',
+    label: 'Powtórz hasło',
+    autocomplete: 'new-password',
   },
 ];
 
@@ -27,10 +49,9 @@ export const CREATE_CHARACTER_ACCOUNT_FIELDS: readonly FormFieldConfig[] = [
     autocomplete: 'email',
   },
   {
-    type: FormFieldType.Text,
+    type: FormFieldType.Password,
     controlName: 'password',
     label: 'Password',
-    inputType: 'password',
     autocomplete: 'new-password',
   },
 ];

@@ -9,6 +9,7 @@ import { FormFields } from '../../../shared/form-fields/form-fields';
   standalone: true,
   imports: [ReactiveFormsModule, ButtonModule, FormFields],
   templateUrl: './login-form.html',
+  host: { class: 'd-block w-100' },
 })
 export class LoginForm {
   showHeader = input<boolean>(true);

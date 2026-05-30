@@ -14,6 +14,8 @@ describe('authRoutes', () => {
       .toBeResolvedTo(AccountEntryLayout);
     expect(accountLayoutRoute?.children?.some((route) => route.path === 'login'))
       .toBeTrue();
+    expect(accountLayoutRoute?.children?.some((route) => route.path === 'register'))
+      .toBeTrue();
     expect(accountLayoutRoute?.children?.some((route) => route.path === 'server-entry'))
       .toBeTrue();
     expect(accountLayoutRoute?.children?.some((route) => route.path === 'create-character'))
@@ -30,5 +32,11 @@ describe('authRoutes', () => {
     const topLevelLogin = authRoutes.find((route) => route.path === 'login');
 
     expect(topLevelLogin).toBeUndefined();
+  });
+
+  it('does not expose register as a top-level auth page outside the account layout', () => {
+    const topLevelRegister = authRoutes.find((route) => route.path === 'register');
+
+    expect(topLevelRegister).toBeUndefined();
   });
 });

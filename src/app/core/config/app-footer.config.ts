@@ -15,7 +15,7 @@ export const APP_FOOTER_LINKS = [
   {
     key: 'register',
     label: 'Załóż konto',
-    route: '/register',
+    route: '/auth/register',
   },
   {
     key: 'server-entry',

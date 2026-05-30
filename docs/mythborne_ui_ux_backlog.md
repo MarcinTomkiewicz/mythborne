@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-30 — UI-ENTRY-22-8 login panel polish accepted
+Updated: 2026-05-30 — UI-ENTRY-22-9 account registration panel accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -11203,6 +11203,8 @@ Doprowadzić panel logowania do konta do spójnego, działającego i czytelnego 
 ---
 
 ## UI-ENTRY-22-9 — Account Registration Panel / Create Account Flow
+
+Status: accepted 2026-05-30 — pending user smoke.
 
 **Goal:**
 Dodać albo uporządkować prawdziwy panel zakładania konta, osobny od tworzenia bohatera.

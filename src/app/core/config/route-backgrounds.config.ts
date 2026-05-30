@@ -18,6 +18,11 @@ export const ROUTE_BACKGROUNDS: readonly RouteBackgroundConfig[] = [
     exact: true,
   },
   {
+    path: '/auth/register',
+    image: ENTRY_BACKGROUND_IMAGE,
+    exact: true,
+  },
+  {
     path: '/auth/server-entry',
     image: ENTRY_BACKGROUND_IMAGE,
     exact: true,
