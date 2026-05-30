@@ -6,12 +6,9 @@ import {
   UrlTree,
 } from '@angular/router';
 import { catchError, map, from, of, switchMap } from 'rxjs';
-import { StartFlowServerAvailability } from '../domain/start-flow/start-flow.model';
 import { AuthState } from '../services/auth/auth-state';
 import { Auth } from '../services/auth/auth';
 import { ActiveHero } from '../services/hero/active-hero';
-import { ActiveServer } from '../services/server/active-server';
-import { StartFlow } from '../services/start-flow/start-flow';
 
 function resolveOnboardedHeroRedirect(
   authState: AuthState,
@@ -52,33 +49,8 @@ export const requireOnboardedHeroGuard: CanActivateChildFn = () => {
 
 export const createCharacterEntryGuard: CanActivateFn = () => {
   const auth = inject(Auth);
-  const authState = inject(AuthState);
-  const activeServer = inject(ActiveServer);
-  const router = inject(Router);
-  const startFlow = inject(StartFlow);
 
-  return from(auth.initialize()).pipe(
-    switchMap(() => {
-      if (!authState.user() || !authState.hero()) {
-        return of(true);
-      }
-
-      return activeServer.loadAccessibleServers().pipe(
-        switchMap(() => startFlow.getServerAvailability()),
-        map((availability) => {
-          const selectedServerId = activeServer.selectedServer()?.id ?? null;
-          const selectedAvailability = selectedServerId
-            ? availability.find((entry) => entry.serverId === selectedServerId) ?? null
-            : null;
-
-          return selectedAvailability && canEnterHeroCreation(selectedAvailability)
-            ? true
-            : router.parseUrl('/auth/server-entry');
-        }),
-        catchError(() => of(router.parseUrl('/auth/server-entry'))),
-      );
-    }),
-  );
+  return from(auth.initialize()).pipe(map(() => true));
 };
 
 export const serverEntryGuard: CanActivateFn = () => {
@@ -132,9 +104,3 @@ export const authEntryGuard: CanActivateFn = () => {
     })
   );
 };
-
-function canEnterHeroCreation(
-  availability: StartFlowServerAvailability,
-): boolean {
-  return availability.canCreateHero && !availability.blockReason;
-}

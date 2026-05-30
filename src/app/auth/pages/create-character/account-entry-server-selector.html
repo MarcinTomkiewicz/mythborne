@@ -27,11 +27,20 @@
             optionLabel="label"
             optionValue="id"
             ariaLabel="Świat do stworzenia bohatera"
-            placeholder="Wybierz świat"
+            [placeholder]="emptyMessage() ? 'Brak dostępnych serwerów' : 'Wybierz świat'"
+            [emptyMessage]="emptyMessage() ?? 'Brak dostępnych serwerów'"
+            [disabled]="!!emptyMessage()"
             appendTo="body"
           />
         </form>
       </div>
+
+      @if (emptyMessage()) {
+        <section class="mg-card flex-col gap-sm p-lg w-100" aria-label="Brak serwerów">
+          <h4 class="color-heading font-display text-lg m-0">Brak dostępnych serwerów</h4>
+          <p class="color-muted text-sm lh-15 m-0">{{ emptyMessage() }}</p>
+        </section>
+      }
 
       @if (details(); as details) {
         <section class="mg-card flex-col gap-md p-lg w-100" aria-label="Szczegóły świata">

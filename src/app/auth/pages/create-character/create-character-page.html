@@ -25,16 +25,14 @@
           label="Wczytywanie światów..."
           description="Sprawdzamy dostępne światy i możliwość stworzenia bohatera."
         />
-      } @else if (page.creationServerOptions().length === 0 && !page.serverAvailabilityError()) {
-        <div class="mg-card flex-col gap-sm w-100">
-          <p class="m-0 color-heading">Brak świata dostępnego dla tego konta.</p>
-          <p class="m-0 color-muted">Wróć do wejścia do gry albo spróbuj ponownie później.</p>
-        </div>
       } @else {
         <app-account-entry-server-selector
           [form]="serverForm"
           [options]="page.creationServerOptions()"
           [details]="page.selectedServerDetails()"
+          [emptyMessage]="page.creationServerOptions().length === 0 && !page.serverAvailabilityError()
+            ? 'Nie ma teraz żadnego świata dostępnego do stworzenia bohatera. Spróbuj ponownie później albo skontaktuj się z obsługą gry.'
+            : null"
           (continue)="page.continueToHeroCreation()"
         />
       }
@@ -72,7 +70,7 @@
               [heroName]="page.heroForm.controls.characterName.value"
               [showBack]="false"
               [nextLabel]="'Stwórz bohatera'"
-              [submitDisabled]="page.heroForm.invalid"
+              [submitDisabled]="page.heroForm.invalid || !page.canSubmitHeroCreation()"
               (next)="page.onOriginNext($event)"
             />
           </article>

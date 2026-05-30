@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { finalize, forkJoin, Observable, of, switchMap } from 'rxjs';
+import { finalize, Observable, of, switchMap } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { Origin } from '../../domain/origin/origin.model';
 import { StartFlowServerAvailability } from '../../domain/start-flow/start-flow.model';
@@ -85,6 +85,10 @@ export class CreateCharacterPageFacade {
       this.selectedServerAvailability(),
       this.selectedCreationGate(),
     ),
+  );
+  readonly canSubmitHeroCreation = computed(() =>
+    !this.hasExistingAccount() ||
+    (!!this.activeServer.selectedServer() && this.selectedCreationGate().canCreate),
   );
 
   get accountForm() {
@@ -268,6 +272,13 @@ export class CreateCharacterPageFacade {
       }
     }
 
+    if (!this.canSubmitHeroCreation()) {
+      const message = 'Wybierz dostępny świat przed stworzeniem bohatera.';
+      this.errorMessage.set(message);
+      this.showToast('warn', 'Brak świata', message);
+      return;
+    }
+
     if (this.heroForm.invalid) {
       this.heroForm.markAllAsTouched();
       this.errorMessage.set('Podaj poprawną nazwę bohatera przed stworzeniem postaci.');
@@ -408,17 +419,15 @@ export class CreateCharacterPageFacade {
     this.serverAvailabilityError.set(null);
     this.isServerAvailabilityLoading.set(true);
 
-    forkJoin({
-      servers: this.activeServer.loadAccessibleServers(),
-      availability: this.startFlow.getServerAvailability(),
-    })
+    this.startFlow.getServerAvailability()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ availability }) => {
+        next: (availability) => {
           if (token !== this.availabilityLoadToken) {
             return;
           }
 
+          this.activeServer.loadAccessibleServersFromStartFlowAvailability(availability);
           this.serverAvailability.set(availability);
           this.serverAvailabilityError.set(null);
           this.isServerAvailabilityLoading.set(false);

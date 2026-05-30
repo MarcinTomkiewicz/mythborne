@@ -42,8 +42,12 @@ export class ActiveHero {
     this._error.set(null);
 
     return this.resolveSelectedServerId().pipe(
-      switchMap((serverId) =>
-        this.loadHeroRows(userId, serverId).pipe(
+      switchMap((serverId) => {
+        if (!serverId) {
+          return of(null);
+        }
+
+        return this.loadHeroRows(userId, serverId).pipe(
           map((heroRows) =>
             this.resolveState(
               userId,
@@ -51,8 +55,8 @@ export class ActiveHero {
               this.readStoredSelectedHeroId(userId, serverId),
             ),
           ),
-        ),
-      ),
+        );
+      }),
       tap({
         next: (state) => {
           this._state.set(state);
@@ -82,7 +86,11 @@ export class ActiveHero {
     this._error.set(null);
 
     return this.resolveSelectedServerId().pipe(
-      switchMap((serverId) => this.loadHeroRows(userId, serverId)),
+      switchMap((serverId) =>
+        serverId
+          ? this.loadHeroRows(userId, serverId)
+          : throwError(() => new Error('No selected server for hero selection.')),
+      ),
       map((heroRows) => {
         const heroRow = heroRows.find((row) => row.id === heroId) ?? null;
 
@@ -146,24 +154,8 @@ export class ActiveHero {
     this.authState.setHero(null);
   }
 
-  private resolveSelectedServerId(): Observable<string> {
-    const selectedServerId = this.activeServer.selectedServer()?.id ?? null;
-
-    if (selectedServerId) {
-      return of(selectedServerId);
-    }
-
-    return this.activeServer.loadAccessibleServers().pipe(
-      map(() => {
-        const serverId = this.activeServer.selectedServer()?.id ?? null;
-
-        if (!serverId) {
-          throw new Error('No accessible game server is configured.');
-        }
-
-        return serverId;
-      }),
-    );
+  private resolveSelectedServerId(): Observable<string | null> {
+    return of(this.activeServer.selectedServer()?.id ?? null);
   }
 
   private loadHeroRows(

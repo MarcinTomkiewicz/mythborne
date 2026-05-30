@@ -44,12 +44,13 @@ export class CreateHero {
       return of(selectedServerId);
     }
 
-    return this.activeServer.loadAccessibleServers().pipe(
-      map(() => {
+    return this.startFlow.getServerAvailability().pipe(
+      map((availability) => {
+        this.activeServer.loadAccessibleServersFromStartFlowAvailability(availability);
         const serverId = this.activeServer.selectedServer()?.id ?? null;
 
         if (!serverId) {
-          throw new Error('No accessible game server is configured for hero creation.');
+          throw new Error('Nie ma teraz świata dostępnego do stworzenia bohatera.');
         }
 
         return serverId;

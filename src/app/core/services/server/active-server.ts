@@ -8,6 +8,7 @@ import {
   GLOBAL_ROLE_PRIORITY,
   GlobalRoleKey,
 } from '../../enums/active-server.enum';
+import { StartFlowServerAvailability } from '../../domain/start-flow/start-flow.model';
 import {
   SelectedGameServer,
   ServerAccessState,
@@ -17,6 +18,7 @@ import { Row } from '../../types/supabase.types';
 import {
   emptyServerAccessState,
   resolveActiveServerState,
+  resolveActiveServerStateFromStartFlowAvailability,
   toAccessState,
 } from '../../utils/active-server';
 import { AuthState } from '../auth/auth-state';
@@ -78,6 +80,29 @@ export class ActiveServer {
       }),
       map(({ selectedServers }) => selectedServers),
     );
+  }
+
+  loadAccessibleServersFromStartFlowAvailability(
+    availability: StartFlowServerAvailability[],
+  ): SelectedGameServer[] {
+    const userId = this.authState.user()?.id ?? null;
+    const { selectedServers, selectedServer, access } =
+      resolveActiveServerStateFromStartFlowAvailability(
+        availability,
+        userId,
+        this._access().globalRoleKey,
+        this._selectedServer(),
+        this.readStoredSelectedServerId(userId),
+      );
+
+    this._servers.set(selectedServers);
+    this._selectedServer.set(selectedServer);
+    this._access.set(access);
+    this.persistSelectedServer(userId, selectedServer?.id ?? null);
+    this._isLoading.set(false);
+    this._error.set(null);
+
+    return selectedServers;
   }
 
   selectServer(serverId: string): boolean {

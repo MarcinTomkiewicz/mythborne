@@ -1,30 +1,37 @@
 <section class="flex-col gap-lg w-100">
   @if (state.error()) {
     <div class="mg-card border-danger bg-danger-soft flex-col gap-xs w-100">
-      <p class="mb-0 text-danger">{{ state.error() }}</p>
+      <p class="m-0 text-danger">{{ state.error() }}</p>
     </div>
   }
 
   @if (state.blocker()) {
     <div class="mg-card flex-col gap-xs w-100">
-      <p class="status-text-warning mb-0">{{ state.blocker() }}</p>
+      <p class="status-text-warning m-0">{{ state.blocker() }}</p>
     </div>
   }
 
   @if (state.isLoading()) {
-    <div class="mg-card flex-col gap-xs w-100">
-      <p class="mb-0 heading-color">Wczytywanie dostępnych serwerów...</p>
-    </div>
-  } @else if (!state.error() && state.visibleAvailability().length === 0) {
-    <div class="mg-card flex-col gap-xs w-100">
-      <p class="mb-0 heading-color">Brak dostępnych serwerów dla tego konta.</p>
-    </div>
+    <app-loading-overlay
+      [visible]="true"
+      label="Wczytywanie dostępnych serwerów..."
+      description="Sprawdzamy światy i bohaterów dostępnych dla tego konta."
+    />
   } @else {
     <section class="flex-col gap-md w-100">
-      @if (!hasPlayableHeroContext()) {
+      @if (state.visibleAvailability().length === 0) {
+        <app-account-entry-hero-selector
+          [form]="heroContextForm"
+          [options]="[]"
+          [selectedContext]="null"
+          emptyMessage="Nie ma teraz żadnego świata dostępnego dla tego konta. Spróbuj ponownie później albo skontaktuj się z obsługą gry."
+          [isTransitioning]="state.isTransitioning()"
+          (enter)="enterSelectedHeroContext()"
+        />
+      } @else if (!hasPlayableHeroContext()) {
         <div class="mg-card flex-col gap-sm">
-          <p class="mb-0 heading-color">Nie masz jeszcze bohatera gotowego do gry.</p>
-          <p class="mb-0 muted-text">Stwórz bohatera na dostępnym świecie, aby wejść do gry.</p>
+          <p class="m-0 color-heading">Nie masz jeszcze bohatera gotowego do gry.</p>
+          <p class="m-0 color-muted">Stwórz bohatera na dostępnym świecie, aby wejść do gry.</p>
           <p-button
             type="button"
             label="Stwórz bohatera"

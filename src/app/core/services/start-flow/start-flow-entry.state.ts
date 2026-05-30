@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, map, of, switchMap } from 'rxjs';
 import {
   StartFlowEntryDecision,
   AccountEntryHeroContext,
@@ -83,11 +83,20 @@ export class StartFlowEntryState {
     this.blocker.set(null);
 
     forkJoin({
-      servers: this.activeServer.loadAccessibleServers(),
       availability: this.startFlow.getServerAvailability(),
       heroContexts: this.startFlow.getAccountEntryHeroContexts(),
-      activeHero: this.activeHero.loadActiveHero(),
     })
+      .pipe(
+        switchMap(({ availability, heroContexts }) => {
+          this.activeServer.loadAccessibleServersFromStartFlowAvailability(availability);
+
+          const activeHeroLoad = this.activeServer.selectedServer()
+            ? this.activeHero.loadActiveHero()
+            : of(null);
+
+          return activeHeroLoad.pipe(map(() => ({ availability, heroContexts })));
+        }),
+      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ availability, heroContexts }) => {

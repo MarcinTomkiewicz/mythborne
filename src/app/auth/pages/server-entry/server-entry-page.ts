@@ -4,6 +4,7 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { StartFlowEntryState } from '../../../core/services/start-flow/start-flow-entry.state';
+import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { AccountEntryHeroSelector } from './account-entry-hero-selector';
 import {
   mapServerEntryHeroContextOptions,
@@ -16,7 +17,7 @@ import {
   host: {
     class: 'd-block w-100',
   },
-  imports: [AccountEntryHeroSelector, ButtonModule, RouterLink],
+  imports: [AccountEntryHeroSelector, ButtonModule, LoadingOverlay, RouterLink],
   providers: [StartFlowEntryState],
   templateUrl: './server-entry-page.html',
 })

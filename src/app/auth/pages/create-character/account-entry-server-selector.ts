@@ -23,5 +23,6 @@ export class AccountEntryServerSelector {
   }>>();
   readonly options = input.required<CreateCharacterServerOption[]>();
   readonly details = input<CreateCharacterServerDetails | null>(null);
+  readonly emptyMessage = input<string | null>(null);
   readonly continue = output<void>();
 }

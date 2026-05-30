@@ -21,6 +21,7 @@ export class AccountEntryHeroSelector {
   >();
   readonly options = input.required<ServerEntryHeroContextOption[]>();
   readonly selectedContext = input<ServerEntryHeroContextOption | null>(null);
+  readonly emptyMessage = input<string | null>(null);
   readonly isTransitioning = input(false);
   readonly enter = output<void>();
 }

@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-30 — UI-PERF-ENTRY-1 initial bundle optimization accepted
+Updated: 2026-05-30 — UI-ENTRY no-server entry/create-character handling accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -11309,6 +11309,8 @@ Dodać albo uporządkować prawdziwy panel zakładania konta, osobny od tworzeni
 ## UI-ENTRY-22-10 — Auth Entry Route Semantics And Link Audit
 
 **Status:** Accepted on 2026-05-30 with pending user smoke. Public/account/auth entry routes and links now keep clear semantics: `/login` redirects to `/auth/login`, `/register` redirects to `/auth/register`, footer and landing registration links point to real account registration, and `Stwórz bohatera` remains routed through `/auth/server-entry` so server/start-flow eligibility is not bypassed. Shared `ShellSidebarContent` supports `activeRoute`, allowing the account-entry sidebar to click `Stwórz bohatera` through `/auth/server-entry` while highlighting it only on `/auth/create-character`; `Wejdź do gry` highlights on `/auth/server-entry`. Public report return links point to `/` instead of `/public`. No DB/RPC, guards, generated types, status-flow, route eligibility semantics or notification icon changes were made. Manual smoke remains user-side.
+
+**No-server follow-up:** Accepted on 2026-05-30 with pending user smoke. `/auth/server-entry` and `/auth/create-character` now treat no visible/available servers as a normal empty state: the existing account-entry selector surfaces render disabled selects with `Brak dostępnych serwerów` and clear player-facing messages. Server-entry loading uses the shared `LoadingOverlay`, touched legacy utilities were replaced with current `m-0`, `color-heading` and `color-muted`, and create-character submit is blocked by `canSubmitHeroCreation()` before `CreateHero.createHero()` when no selected/creatable server exists. Auth active-hero bootstrap resolves no selected server as normal `null` state instead of exception-driven string handling. No direct table reads, RLS grants, DB/RPC changes, generated type changes or route redirects were added.
 
 **Goal:**
 Upewnić się, że wszystkie public/account/auth linki znaczą to, co mówią, i nie mieszają logowania, rejestracji, server entry oraz hero creation.
