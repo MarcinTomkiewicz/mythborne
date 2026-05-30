@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-30 — UI-ENTRY-22-2B global footer foundation accepted
+Updated: 2026-05-30 — UI-ENTRY-22-3 entry background and account-entry surface cleanup accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -10736,6 +10736,8 @@ Dodać spójny `Entry background` dla account entry, server selection i hero cre
 * route smoke:
 * verification:
 
+**Status:** Accepted on 2026-05-30 as the shared entry background and account-entry surface cleanup pass. `/auth/server-entry` and `/auth/create-character` keep the shared `ENTRY_BACKGROUND_IMAGE` route-background mapping through `src/app/core/config/route-backgrounds.config.ts`, remain under `AccountEntryLayout`, and use existing transparent `mg-card`, `mg-data-row`, grid/flex/gap/text utilities over the route background. The local `_account-entry.scss` file and all `mg-account-entry-*` selectors were removed instead of preserving a parallel local card/layout system. Decorative process chips were removed, technical entry copy was cleaned, and only real current status/availability badges remain. No DB/RPC, guards, generated types, route behavior, start-flow or mobile/responsive behavior changed. Manual smoke remains user-side.
+
 ---
 
 ## UI-ENTRY-22-4 — Account Entry Shell Consolidation And Navigation Reuse
@@ -11106,6 +11108,280 @@ Sprawdzić minimalną czytelność, responsywność i dostępność dla root lan
 * data-blocked states:
 * issues found:
 * verification:
+
+---
+
+## UI-ENTRY-22-8 — Login Panel Polish / Account Login Flow
+
+**Goal:**
+Doprowadzić panel logowania do konta do spójnego, działającego i czytelnego stanu w ramach account/entry shell.
+
+**Scope:**
+
+* Sprawdzić aktualne `authRoutes`, istniejący `/auth/login`, serwisy auth/session oraz account-entry layout.
+* Użyć istniejącego `AccountEntryLayout` i wspólnego `Entry background`.
+* Uporządkować ekran logowania:
+
+  * brand/header zgodny z account entry;
+  * formularz email/login + password;
+  * primary action `Zaloguj`;
+  * link do `Załóż konto`, jeśli realna route rejestracji istnieje po UI-ENTRY-22-9;
+  * link powrotu do `/` albo `Start`, jeśli pasuje do istniejących route’ów.
+* Logowanie ma używać istniejącego auth/service patternu.
+* Komponent strony ma zostać cienki; state/form handling ma używać istniejących auth/core/shared wzorców.
+* Po udanym logowaniu użytkownik powinien trafić do bezpiecznej ścieżki entry, domyślnie `/auth/server-entry`, chyba że obecny auth flow ma już canonical return URL.
+* Jeśli użytkownik jest już zalogowany, ekran logowania nie powinien udawać, że nadal trzeba się logować; powinien umożliwić przejście do account/server entry.
+
+**Out of scope:**
+
+* Rejestracja konta.
+* Reset hasła, jeśli nie ma istniejącego flow.
+* Server selection rewrite.
+* Hero creation rewrite.
+* DB/RPC gameplay changes.
+* Generated types.
+* Mobile/responsive polish.
+* Status docs.
+
+**Rules:**
+
+* Nie używać `ngModel`.
+* Nie dodawać direct DB writes.
+* Nie tworzyć fake auth backendu ani mock loginu.
+* Nie mieszać logowania z tworzeniem bohatera.
+* Configi, interfejsy, typy, serwisy, utils, validators i inne shared/structural artefakty mają iść do właściwych katalogów `src/app/core/...`.
+* Jeśli potrzebny typ/interfejs/config/helper już istnieje, reuse przed dodaniem nowego.
+* Jeśli istniejący auth service jest niewystarczający, zgłosić konkretny blocker albo dodać minimalny core service zgodnie z istniejącą konwencją.
+
+**Acceptance criteria:**
+
+* `/auth/login` renderuje spójny panel logowania w account/entry shell.
+* Formularz logowania działa przez istniejący/canonical auth service.
+* Błędy logowania są widoczne i zrozumiałe.
+* Loading/submitting state nie pozwala na podwójne wysłanie.
+* Udane logowanie prowadzi do `/auth/server-entry` albo istniejącego canonical return URL.
+* Brak direct DB writes.
+* Brak zmian DB/RPC/generated/status docs.
+* Brak mobile/responsive scope.
+
+**Verification:**
+
+* `npx tsc --noEmit`.
+* `npm run build`.
+* `git diff --check`.
+* Static greps:
+
+  * no `ngModel`;
+  * no changed-file `mb-*`;
+  * no direct writes;
+  * no generated types touched.
+* Manual smoke:
+
+  * `/auth/login`;
+  * błędne dane logowania;
+  * poprawne dane logowania, jeśli user może bezpiecznie testować;
+  * już-zalogowany user na `/auth/login`.
+
+**Required Codex report:**
+
+* auth routes checked:
+* auth service/state reused:
+* form pattern reused:
+* core folders checked:
+* new core artifacts added:
+* checked but not reused:
+* login success route:
+* verification:
+* manual smoke / not run reason:
+
+---
+
+## UI-ENTRY-22-9 — Account Registration Panel / Create Account Flow
+
+**Goal:**
+Dodać albo uporządkować prawdziwy panel zakładania konta, osobny od tworzenia bohatera.
+
+**Scope:**
+
+* Sprawdzić aktualne `authRoutes`, `/register` alias, `/auth/create-character` i istniejące auth/account services.
+* Rozdzielić semantykę:
+
+  * `Załóż konto` = utworzenie konta użytkownika;
+  * `Stwórz bohatera` = start-flow po zalogowaniu, wybór serwera/origin/hero creation.
+* Jeśli nie istnieje realny route rejestracji, dodać route `/auth/register` zgodnie z istniejącym auth module pattern.
+* Zaktualizować `/register`, aby prowadził do realnego panelu rejestracji, nie do `/auth/create-character`, jeśli realny panel rejestracji zostanie dodany.
+* Panel rejestracji powinien zawierać minimum:
+
+  * email;
+  * password;
+  * confirm password, jeśli zgodne z istniejącym form pattern;
+  * primary action `Załóż konto`;
+  * link `Masz konto? Zaloguj`;
+  * jasny komunikat po sukcesie.
+* Rejestracja ma używać istniejącego auth/service patternu.
+* Po sukcesie:
+
+  * jeśli auth wymaga email confirmation, pokazać komunikat i bezpieczną ścieżkę do loginu;
+  * jeśli user zostaje zalogowany automatycznie, przejść do `/auth/server-entry`.
+* Footer link `Załóż konto` ma prowadzić do realnej rejestracji po wykonaniu taska.
+* Landing CTA `Stwórz bohatera` nadal nie powinno omijać server/start-flow eligibility.
+
+**Out of scope:**
+
+* Hero creation workflow.
+* Origin carousel changes.
+* Server entry rewrite.
+* Password reset.
+* Email confirmation backend setup.
+* DB/RPC gameplay changes.
+* Generated types.
+* Mobile/responsive polish.
+* Status docs.
+
+**Rules:**
+
+* Nie traktować `/auth/create-character` jako rejestracji konta.
+* Nie direct-write’ować `hero`, `hero_stats`, `estates`, `character_point_ledger` ani żadnych gameplay/onboarding tables.
+* Nie tworzyć mock registration.
+* Nie dodawać fake links do nieistniejących route’ów.
+* Configi, interfejsy, typy, serwisy, validators i helpers mają iść do właściwych katalogów `src/app/core/...`.
+* Reuse istniejących auth/core/shared/form patterns przed dodaniem nowych.
+
+**Acceptance criteria:**
+
+* Istnieje jasna route/panel zakładania konta.
+* `/register` nie udaje już hero creation, jeśli realna rejestracja została dodana.
+* `Załóż konto` w footerze prowadzi do realnego account registration.
+* Login/register mają wzajemne linki.
+* Account registration nie tworzy bohatera.
+* Po założeniu konta user ma jasny następny krok.
+* Brak direct DB writes do gameplay/onboarding tables.
+* Brak zmian generated types/status docs.
+
+**Verification:**
+
+* `npx tsc --noEmit`.
+* `npm run build`.
+* `git diff --check`.
+* Static greps:
+
+  * no `ngModel`;
+  * no changed-file `mb-*`;
+  * no direct gameplay table writes;
+  * no generated types touched.
+* Manual smoke:
+
+  * `/auth/register`;
+  * `/register`;
+  * validation errors;
+  * account creation only if user can safely test;
+  * link to login;
+  * successful post-register route/message.
+
+**Required Codex report:**
+
+* auth routes checked:
+* `/register` before/after:
+* auth service/state reused:
+* form pattern reused:
+* core folders checked:
+* new core artifacts added:
+* checked but not reused:
+* post-register behavior:
+* direct-write grep:
+* verification:
+* manual smoke / not run reason:
+
+---
+
+## UI-ENTRY-22-10 — Auth Entry Route Semantics And Link Audit
+
+**Goal:**
+Upewnić się, że wszystkie public/account/auth linki znaczą to, co mówią, i nie mieszają logowania, rejestracji, server entry oraz hero creation.
+
+**Scope:**
+
+* Sprawdzić linki i redirecty w:
+
+  * `/`;
+  * footer;
+  * `AccountEntryLayout`;
+  * `/auth/login`;
+  * `/auth/register`;
+  * `/register`;
+  * `/auth/server-entry`;
+  * `/auth/create-character`;
+  * ewentualne `/login`.
+* Uporządkować etykiety i route’y:
+
+  * `Start` → `/`;
+  * `Zaloguj` → `/auth/login`;
+  * `Załóż konto` → real registration route;
+  * `Wejdź do gry` → account/server entry flow albo login, zgodnie z istniejącą auth guard/flow decyzją;
+  * `Stwórz bohatera` → `/auth/server-entry`, nie bezpośrednio omijać server eligibility.
+* Sprawdzić, czy `/register` i `/login` aliasy są spójne i nie prowadzą do mylących ekranów.
+* Sprawdzić, czy zalogowany użytkownik na login/register ma jasny dalszy krok.
+* Sprawdzić, czy niezalogowany użytkownik na server-entry/create-character nie trafia w martwy stan.
+
+**Out of scope:**
+
+* Visual redesign.
+* Mobile/responsive.
+* DB/RPC gameplay changes.
+* Generated types.
+* Password reset.
+* Hero creation internals.
+* Status docs, chyba że user osobno każe po akceptacji.
+
+**Rules:**
+
+* Nie tworzyć nowych route’ów, jeśli istniejące da się poprawnie zmapować.
+* Nie tworzyć fake links.
+* Nie zmieniać start-flow semantics.
+* Nie zmieniać hero creation RPC/path.
+* Nie direct-write’ować gameplay tables.
+* Configi/interfejsy/typy/helpers/guards/services w `core`.
+
+**Acceptance criteria:**
+
+* Public/footer/auth/account links mają jasną semantykę.
+* `Załóż konto` nie prowadzi do create-character.
+* `Stwórz bohatera` nadal przechodzi przez server/start-flow eligibility.
+* Brak redirect loop.
+* Brak dead-end dla logged-in / logged-out podstawowych ścieżek.
+* Brak niepowiązanych refactorów.
+
+**Verification:**
+
+* `npx tsc --noEmit`.
+* `npm run build`.
+* `git diff --check`.
+* Static greps for touched files:
+
+  * no `mb-*`;
+  * no direct writes;
+  * no generated types touched.
+* Manual smoke:
+
+  * `/`;
+  * `/login`;
+  * `/register`;
+  * `/auth/login`;
+  * `/auth/register`;
+  * `/auth/server-entry`;
+  * `/auth/create-character`;
+  * logged-in and logged-out where user can safely test.
+
+**Required Codex report:**
+
+* routes checked:
+* link map before/after:
+* redirects changed:
+* existing guards respected:
+* route semantics:
+* dead-end/loop check:
+* verification:
+* manual smoke / not run reason:
 
 ---
 

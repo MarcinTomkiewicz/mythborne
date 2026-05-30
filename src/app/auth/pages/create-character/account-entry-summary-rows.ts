@@ -4,18 +4,21 @@ import { CreateCharacterSummaryRow } from '../../../core/interfaces/hero/create-
 @Component({
   selector: 'app-account-entry-summary-rows',
   standalone: true,
+  host: {
+    class: 'd-block w-100',
+  },
   template: `
-    <div class="mg-account-entry-summary">
+    <div class="flex-col gap-sm w-100">
       @for (row of rows(); track row.label) {
         <div
-          class="mg-account-entry-summary__row"
-          [class.mg-account-entry-summary__row--primary]="row.primary"
-          [class.mg-account-entry-summary__row--danger]="row.tone === 'danger'"
+          class="mg-data-row w-100"
+          [class.mg-card--selected]="row.primary"
+          [class.mg-card--danger]="row.tone === 'danger'"
         >
-          <span class="mg-account-entry-summary__label">{{ row.label }}</span>
+          <span class="mg-data-row__label">{{ row.label }}</span>
           @if (row.multiline) {
             <span
-              class="mg-account-entry-summary__value"
+              class="mg-data-row__value"
               [class.heading-color]="row.primary"
               [class.text-danger]="row.tone === 'danger'"
             >
@@ -23,7 +26,7 @@ import { CreateCharacterSummaryRow } from '../../../core/interfaces/hero/create-
             </span>
           } @else {
             <strong
-              class="mg-account-entry-summary__value"
+              class="mg-data-row__value"
               [class.heading-color]="row.primary"
               [class.text-danger]="row.tone === 'danger'"
             >

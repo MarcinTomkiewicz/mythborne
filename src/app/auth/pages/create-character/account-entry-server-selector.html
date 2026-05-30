@@ -1,28 +1,23 @@
-<section class="mg-account-entry-stage" aria-label="Wybór świata do stworzenia bohatera">
-  <header class="mg-account-entry-stage__header">
-    <p class="mg-account-entry-stage__kicker">Tworzenie bohatera</p>
-    <h3 class="mg-account-entry-stage__title">Wybierz świat do stworzenia bohatera</h3>
-    <p class="mg-account-entry-stage__copy">
-      Wybierz świat, na którym chcesz rozpocząć nową postać. Lista pokazuje tylko światy zwrócone przez konfigurację wejścia i tworzenia bohatera.
+<section class="flex-col gap-md min-h-full p-md w-100" aria-label="Wybór świata do stworzenia bohatera">
+  <header class="flex-col gap-xs w-100">
+    <p class="color-secondary text-xs font-extrabold uppercase m-0">Tworzenie bohatera</p>
+    <h3 class="mg-section__title m-0">Wybierz świat do stworzenia bohatera</h3>
+    <p class="color-muted lh-16 m-0">
+      Wybierz świat, na którym chcesz rozpocząć nową postać. Dalej nadasz jej imię, wybierzesz pochodzenie i rozpoczniesz grę tam, gdzie jest to dostępne.
     </p>
-    <div class="flex-row-start-center flex-wrap gap-sm mt-sm">
-      <span class="tag-badge tag-badge--muted">Serwer</span>
-      <span class="tag-badge tag-badge--muted">Dostępność tworzenia</span>
-      <span class="tag-badge tag-badge--muted">Tworzenie bohatera</span>
-    </div>
   </header>
 
-  <div class="mg-account-entry-stage__layout">
-    <article class="mg-account-entry-panel">
-      <div>
-        <h4 class="mg-account-entry-panel__title">Wybierz świat</h4>
-        <p class="mg-account-entry-panel__copy">
+  <div class="grid-2-1 grid-items-stretch gap-md w-100">
+    <article class="mg-card flex-col gap-md p-lg w-100">
+      <div class="flex-col gap-xs">
+        <h4 class="color-heading font-display text-lg m-0">Wybierz świat</h4>
+        <p class="color-muted text-sm lh-15 m-0">
           Po wybraniu świata sprawdzisz dostępność tworzenia i przejdziesz do osobnego etapu tworzenia bohatera.
         </p>
       </div>
 
-      <div class="mg-account-entry-select-block">
-        <span class="mg-account-entry-select-block__label">Serwer</span>
+      <div class="flex-col gap-sm max-w-500 w-100">
+        <span class="color-muted text-xs font-extrabold uppercase">Serwer</span>
         <form [formGroup]="form()" class="w-100">
           <p-select
             class="w-100"
@@ -38,11 +33,11 @@
       </div>
 
       @if (details(); as details) {
-        <section class="mg-account-entry-detail" aria-label="Szczegóły świata">
-          <div class="mg-account-entry-detail__header">
-            <div>
-              <h4 class="mg-account-entry-detail__title">{{ details.title }}</h4>
-              <p class="mg-account-entry-detail__copy">{{ details.description }}</p>
+        <section class="mg-card flex-col gap-md p-lg w-100" aria-label="Szczegóły świata">
+          <div class="flex-col gap-md w-100">
+            <div class="flex-col gap-xs w-100">
+              <h4 class="color-heading font-display text-lg m-0">{{ details.title }}</h4>
+              <p class="color-muted lh-15 m-0">{{ details.description }}</p>
               <div class="flex-row-start-center flex-wrap gap-sm mt-sm">
                 @for (badge of details.badges; track badge.label) {
                   <span
@@ -64,19 +59,19 @@
     </article>
 
     @if (details(); as details) {
-      <aside class="flex-col gap-md" aria-label="Zasady tworzenia">
-        <section class="mg-account-entry-side-card">
-          <h4 class="mg-account-entry-side-card__title">Następny ekran</h4>
-          <p class="mg-account-entry-side-card__copy">
+      <aside class="flex-col gap-md w-100" aria-label="Zasady tworzenia">
+        <section class="mg-card flex-col gap-sm p-lg w-100">
+          <h4 class="color-heading font-display text-lg m-0">Następny ekran</h4>
+          <p class="color-muted text-sm lh-15 m-0">
             Po potwierdzeniu wyboru przejdziesz do etapu nazwy, pochodzenia i utworzenia bohatera.
           </p>
           <app-account-entry-summary-rows [rows]="details.sideRows" />
         </section>
 
-        <section class="mg-account-entry-side-card">
-          <h4 class="mg-account-entry-side-card__title">Zasada tworzenia</h4>
-          <p class="mg-account-entry-side-card__copy">
-            Tworzenie nowej postaci opiera się na dostępności zwróconej przez backend. Istniejący bohater może nadal prowadzić do wejścia do gry.
+        <section class="mg-card flex-col gap-sm p-lg w-100">
+          <h4 class="color-heading font-display text-lg m-0">Zasada tworzenia</h4>
+          <p class="color-muted text-sm lh-15 m-0">
+            Nowego bohatera możesz stworzyć tylko na świecie, który ma dostępne miejsca startowe i pozwala rozpocząć grę.
           </p>
         </section>
       </aside>
@@ -84,17 +79,20 @@
   </div>
 
   @if (details(); as details) {
-    <footer class="mg-account-entry-stage__footer">
-      <div>
-        <strong class="mg-account-entry-stage__footer-title">{{ details.footerTitle }}</strong>
-        <p class="mg-account-entry-stage__footer-copy">{{ details.footerCopy }}</p>
-      </div>
-      <p-button
-        type="button"
-        [label]="details.ctaLabel"
-        [disabled]="!details.canContinue"
-        (onClick)="continue.emit()"
-      />
-    </footer>
+    <div class="grid-2-1 grid-items-stretch gap-md w-100">
+      <footer class="mg-card flex-row-between-center flex-wrap gap-md p-lg w-100">
+        <div class="flex-col gap-xs">
+          <strong class="color-heading font-extrabold">{{ details.footerTitle }}</strong>
+          <p class="color-muted text-sm m-0">{{ details.footerCopy }}</p>
+        </div>
+        <p-button
+          type="button"
+          [label]="details.ctaLabel"
+          [disabled]="!details.canContinue"
+          (onClick)="continue.emit()"
+        />
+      </footer>
+      <div aria-hidden="true"></div>
+    </div>
   }
 </section>

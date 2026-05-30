@@ -1,28 +1,23 @@
-<section class="mg-account-entry-stage" aria-label="Wybór bohatera">
-  <header class="mg-account-entry-stage__header">
-    <p class="mg-account-entry-stage__kicker">Wejście do świata</p>
-    <h3 class="mg-account-entry-stage__title">Wybierz bohatera</h3>
-    <p class="mg-account-entry-stage__copy">
-      Wybierz bohatera i świat, na którym chcesz teraz grać. Po wejściu aplikacja przełączy aktywny serwer i bohatera, a potem otworzy panel bohatera.
+<section class="flex-col gap-md min-h-full p-md w-100" aria-label="Wybór bohatera">
+  <header class="flex-col gap-xs w-100">
+    <p class="color-secondary text-xs font-extrabold uppercase m-0">Wejście do świata</p>
+    <h3 class="mg-section__title m-0">Wybierz bohatera</h3>
+    <p class="color-muted lh-16 m-0">
+      Wybierz bohatera i świat, na którym chcesz teraz grać. Po potwierdzeniu wrócisz do panelu wybranej postaci.
     </p>
-    <div class="flex-row-start-center flex-wrap gap-sm mt-sm">
-      <span class="tag-badge tag-badge--muted">Istniejący bohaterowie</span>
-      <span class="tag-badge tag-badge--muted">Serwer + bohater</span>
-      <span class="tag-badge tag-badge--muted">Panel bohatera</span>
-    </div>
   </header>
 
-  <div class="mg-account-entry-stage__layout">
-    <article class="mg-account-entry-panel">
-      <div>
-        <h4 class="mg-account-entry-panel__title">Wybierz bohatera</h4>
-        <p class="mg-account-entry-panel__copy">
+  <div class="grid-2-1 grid-items-stretch gap-md w-100">
+    <article class="mg-card flex-col gap-md p-lg w-100">
+      <div class="flex-col gap-xs">
+        <h4 class="color-heading font-display text-lg m-0">Wybierz bohatera</h4>
+        <p class="color-muted text-sm lh-15 m-0">
           Lista zawiera tylko światy i bohaterów dostępnych dla tego konta.
         </p>
       </div>
 
-      <div class="mg-account-entry-select-block">
-        <span class="mg-account-entry-select-block__label">Serwer / bohater</span>
+      <div class="flex-col gap-sm max-w-500 w-100">
+        <span class="color-muted text-xs font-extrabold uppercase">Serwer / bohater</span>
         <form [formGroup]="form()" class="w-100">
           <p-select
             class="w-100"
@@ -38,13 +33,13 @@
       </div>
 
       @if (selectedContext(); as context) {
-        <section class="mg-account-entry-detail" aria-label="Podgląd bohatera">
-          <div class="mg-account-entry-detail__header">
-            <div>
-              <h4 class="mg-account-entry-detail__title">
+        <section class="mg-card flex-col gap-md p-lg w-100" aria-label="Podgląd bohatera">
+          <div class="flex-col gap-md w-100">
+            <div class="flex-col gap-xs w-100">
+              <h4 class="color-heading font-display text-lg m-0">
                 {{ context.heroName }} na świecie {{ context.serverName }}
               </h4>
-              <p class="mg-account-entry-detail__copy">{{ context.description }}</p>
+              <p class="color-muted lh-15 m-0">{{ context.description }}</p>
               <div class="flex-row-start-center flex-wrap gap-sm mt-sm">
                 @if (context.isDefault) {
                   <span class="tag-badge tag-badge--muted">Domyślny bohater</span>
@@ -59,22 +54,22 @@
             </div>
           </div>
 
-          <div class="mg-account-entry-summary">
-            <div class="mg-account-entry-summary__row">
-              <span class="mg-account-entry-summary__label">Serwer</span>
-              <strong class="mg-account-entry-summary__value">{{ context.serverName }}</strong>
+          <div class="flex-col gap-sm w-100">
+            <div class="mg-data-row w-100">
+              <span class="mg-data-row__label">Serwer</span>
+              <strong class="mg-data-row__value">{{ context.serverName }}</strong>
             </div>
-            <div class="mg-account-entry-summary__row">
-              <span class="mg-account-entry-summary__label">Bohater</span>
-              <strong class="mg-account-entry-summary__value">{{ context.heroName }}</strong>
+            <div class="mg-data-row w-100">
+              <span class="mg-data-row__label">Bohater</span>
+              <strong class="mg-data-row__value">{{ context.heroName }}</strong>
             </div>
-            <div class="mg-account-entry-summary__row">
-              <span class="mg-account-entry-summary__label">Poziom</span>
-              <strong class="mg-account-entry-summary__value">{{ context.heroLevel }}</strong>
+            <div class="mg-data-row w-100">
+              <span class="mg-data-row__label">Poziom</span>
+              <strong class="mg-data-row__value">{{ context.heroLevel }}</strong>
             </div>
-            <div class="mg-account-entry-summary__row">
-              <span class="mg-account-entry-summary__label">Adres</span>
-              <strong class="mg-account-entry-summary__value">{{ context.addressLabel }}</strong>
+            <div class="mg-data-row w-100">
+              <span class="mg-data-row__label">Adres</span>
+              <strong class="mg-data-row__value">{{ context.addressLabel }}</strong>
             </div>
           </div>
         </section>
@@ -82,26 +77,26 @@
     </article>
 
     @if (selectedContext(); as context) {
-      <aside class="flex-col gap-md" aria-label="Informacje o wybranym bohaterze">
-        <section class="mg-account-entry-side-card">
-          <h4 class="mg-account-entry-side-card__title">Wybrany bohater</h4>
-          <p class="mg-account-entry-side-card__copy">
+      <aside class="flex-col gap-md w-100" aria-label="Informacje o wybranym bohaterze">
+        <section class="mg-card flex-col gap-sm p-lg w-100">
+          <h4 class="color-heading font-display text-lg m-0">Wybrany bohater</h4>
+          <p class="color-muted text-sm lh-15 m-0">
             Wejście do gry użyje wskazanego świata i bohatera jako aktywnego wyboru.
           </p>
           @if (context.nextRouteLabel) {
-            <div class="mg-account-entry-summary">
-              <div class="mg-account-entry-summary__row">
-                <span class="mg-account-entry-summary__label">Następny ekran</span>
-                <strong class="mg-account-entry-summary__value">{{ context.nextRouteLabel }}</strong>
+            <div class="flex-col gap-sm w-100">
+              <div class="mg-data-row w-100">
+                <span class="mg-data-row__label">Następny ekran</span>
+                <strong class="mg-data-row__value">{{ context.nextRouteLabel }}</strong>
               </div>
             </div>
           }
         </section>
 
-        <section class="mg-account-entry-side-card">
-          <h4 class="mg-account-entry-side-card__title">Zasada wejścia</h4>
-          <p class="mg-account-entry-side-card__copy">
-            To nie jest tworzenie bohatera. Lista pokazuje wyłącznie gotowe postacie zwrócone przez konfigurację wejścia do gry.
+        <section class="mg-card flex-col gap-sm p-lg w-100">
+          <h4 class="color-heading font-display text-lg m-0">Zasada wejścia</h4>
+          <p class="color-muted text-sm lh-15 m-0">
+            Wybierz gotowego bohatera i wróć do świata, w którym chcesz kontynuować grę.
           </p>
           @if (context.availability.isSandbox && context.availability.userHeroCount > 1) {
             <span class="tag-badge tag-badge--muted">Postacie na tym sandboxie</span>
@@ -112,19 +107,22 @@
   </div>
 
   @if (selectedContext(); as context) {
-    <footer class="mg-account-entry-stage__footer">
-      <div>
-        <strong class="mg-account-entry-stage__footer-title">Wejdź do panelu bohatera</strong>
-        <p class="mg-account-entry-stage__footer-copy">
-          Aktywny bohater zostanie ustawiony na: {{ context.heroName }} / {{ context.serverName }}.
-        </p>
-      </div>
-      <p-button
-        type="button"
-        label="Wejdź do gry"
-        [disabled]="isTransitioning()"
-        (onClick)="enter.emit()"
-      />
-    </footer>
+    <div class="grid-2-1 grid-items-stretch gap-md w-100">
+      <footer class="mg-card flex-row-between-center flex-wrap gap-md p-lg w-100">
+        <div class="flex-col gap-xs">
+          <strong class="color-heading font-extrabold">Wejdź do panelu bohatera</strong>
+          <p class="color-muted text-sm m-0">
+            Aktywny bohater zostanie ustawiony na: {{ context.heroName }} / {{ context.serverName }}.
+          </p>
+        </div>
+        <p-button
+          type="button"
+          label="Wejdź do gry"
+          [disabled]="isTransitioning()"
+          (onClick)="enter.emit()"
+        />
+      </footer>
+      <div aria-hidden="true"></div>
+    </div>
   }
 </section>

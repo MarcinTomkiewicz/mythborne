@@ -4,6 +4,8 @@ export interface RouteBackgroundConfig {
   readonly exact?: boolean;
 }
 
+const ENTRY_BACKGROUND_IMAGE = "url('/images/backgrounds/entry-background.png')";
+
 export const ROUTE_BACKGROUNDS: readonly RouteBackgroundConfig[] = [
   {
     path: '/',
@@ -12,17 +14,17 @@ export const ROUTE_BACKGROUNDS: readonly RouteBackgroundConfig[] = [
   },
   {
     path: '/auth/login',
-    image: "url('/images/backgrounds/entry-background.png')",
+    image: ENTRY_BACKGROUND_IMAGE,
     exact: true,
   },
   {
     path: '/auth/server-entry',
-    image: "url('/images/backgrounds/entry-background.png')",
+    image: ENTRY_BACKGROUND_IMAGE,
     exact: true,
   },
   {
     path: '/auth/create-character',
-    image: "url('/images/backgrounds/entry-background.png')",
+    image: ENTRY_BACKGROUND_IMAGE,
     exact: true,
   },
   { path: '/hero/dashboard', image: "url('/images/backgrounds/main-background.png')" },
