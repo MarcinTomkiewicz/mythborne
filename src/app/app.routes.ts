@@ -13,8 +13,9 @@ import { publicRoutes } from './public/public.routes';
 const appShellRoutes: Routes = [
   {
     path: '',
-    redirectTo: '/auth/server-entry',
-    pathMatch: 'full'
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./public/pages/home/home').then((m) => m.PublicHomePage),
   },
   {
     path: 'public',

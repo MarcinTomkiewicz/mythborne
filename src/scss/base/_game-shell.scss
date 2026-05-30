@@ -37,6 +37,7 @@
 }
 
 .mg-game-shell__main--route-background {
+  min-height: 100dvh;
   background-color: v.$color-shell-bg;
   background-image:
     linear-gradient(

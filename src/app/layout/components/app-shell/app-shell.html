@@ -30,5 +30,11 @@
     </div>
   </div>
 } @else {
-  <router-outlet></router-outlet>
+  <main
+    class="mg-game-shell__main"
+    [class.mg-game-shell__main--route-background]="routeBackgroundImage() !== null"
+    [style.--mg-route-background-image]="routeBackgroundImage()"
+  >
+    <router-outlet></router-outlet>
+  </main>
 }

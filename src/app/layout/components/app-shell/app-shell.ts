@@ -2,27 +2,14 @@ import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
+import { resolveRouteBackgroundImage } from '../../../core/config/route-backgrounds.config';
 import { ActiveServer } from '../../../core/services/server/active-server';
+import { RouteBackgroundOverride } from '../../../core/services/ui/route-background-override';
 import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-policy';
-import { RouteBackgroundOverride } from '../../services/route-background-override';
 import { GameSidebar } from '../game-sidebar/game-sidebar';
 import { GameTopbar } from '../game-topbar/game-topbar';
 import { MembershipBlockedNotice } from '../membership-blocked-notice/membership-blocked-notice';
 import { StaffGameplayBlockedNotice } from '../staff-gameplay-blocked-notice/staff-gameplay-blocked-notice';
-
-const ROUTE_BACKGROUNDS: ReadonlyArray<readonly [pathPrefix: string, image: string]> = [
-  ['/hero/dashboard', "url('/images/backgrounds/main-background.png')"],
-  ['/hero/attributes', "url('/images/backgrounds/attributes-background.png')"],
-  ['/game/exploration', "url('/images/backgrounds/exploration-background.png')"],
-  ['/game/armory', "url('/images/backgrounds/armory-background.png')"],
-  ['/game/mansion', "url('/images/backgrounds/mansion-background.png')"],
-  ['/game/vicinity', "url('/images/backgrounds/vicinity-background.png')"],
-  ['/game/guild', "url('/images/backgrounds/guild-background.png')"],
-  ['/game/trade', "url('/images/backgrounds/trade-background.png')"],
-  ['/game/auction', "url('/images/backgrounds/auction-background.png')"],
-  ['/game/reports', "url('/images/backgrounds/reports-background.png')"],
-  ['/game/combat', "url('/images/backgrounds/combat-background.png')"],
-];
 
 @Component({
   selector: 'app-shell',
@@ -64,9 +51,7 @@ export class AppShell {
       return override;
     }
 
-    const path = this.currentUrl().split(/[?#]/, 1)[0];
-
-    return ROUTE_BACKGROUNDS.find(([prefix]) => path.startsWith(prefix))?.[1] ?? null;
+    return resolveRouteBackgroundImage(this.currentUrl());
   });
   readonly activeServerAccess = this.activeServer.access;
   readonly isGameplayRoute = computed(

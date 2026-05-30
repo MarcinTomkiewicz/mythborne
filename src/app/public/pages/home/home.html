@@ -1,28 +1,70 @@
-<section class="mg-card mg-card--legend flex-col gap-md">
-  <p class="mg-section__eyebrow mb-0">Public</p>
-  <h2 class="mg-section__title mb-0">Mythsworn</h2>
-  <p class="mb-0">
-    Publiczna warstwa projektu będzie zbierała informacje o świecie gry, zasadach,
-    instrukcjach i materiałach dla nowych graczy.
-  </p>
-  <div class="mg-grid mg-grid--2 gap-md">
-    <article class="mg-card flex-col gap-sm">
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Założenia z dokumentów</h3>
-      <p class="mb-0">
-        Gra łączy rozwój bohatera, polowania, ekwipunek, budynki, PVP, surowce
-        i handel w jednej gospodarce osadzonej w świecie inspirowanym antyczną Grecją.
-      </p>
-    </article>
-    <article class="mg-card flex-col gap-sm">
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Docelowy podział</h3>
-      <p class="mb-0">
-        `public` dla treści otwartych, `auth` dla wejścia do systemu, `hero`
-        dla postaci gracza, `game` dla mechanik rozgrywki i `admin` dla zarządzania.
-      </p>
-    </article>
-  </div>
-  <div class="flex-row-start-center gap-sm">
-    <a routerLink="/auth/create-character" class="mg-button-secondary">Create character</a>
-    <a routerLink="/hero/dashboard" class="mg-button-ghost">Go to hero dashboard</a>
-  </div>
+<section class="mg-container flex-col gap-xl py-lg">
+  <header class="flex-row-between-center flex-col-sm gap-md">
+    <a routerLink="/" class="flex-row-start-center gap-sm" aria-label="Mythsworn">
+      <span class="mg-brand-mark-fallback" aria-hidden="true">M</span>
+      <strong class="color-heading text-lg">Mythsworn</strong>
+    </a>
+
+    <nav class="flex-row-end-center flex-wrap gap-sm" aria-label="Wejście do konta">
+      <p-button
+        label="Zaloguj"
+        icon="pi pi-sign-in"
+        severity="secondary"
+        routerLink="/auth/login"
+      />
+      <p-button
+        label="Kontynuuj"
+        icon="pi pi-arrow-right"
+        routerLink="/auth/server-entry"
+      />
+    </nav>
+  </header>
+
+  <main class="grid-2-1 flex-1">
+    <section class="flex-col-center-start gap-lg">
+      <div class="flex-col gap-md">
+        <span class="tag-badge tag-badge--golden align-self-start">Publiczny świat Mythsworn</span>
+        <h1 class="mg-section__title m-0">Mythsworn</h1>
+        <p class="m-0 text-lg color-heading">
+          Wejdź do świata herosów, posiadłości, wypraw i rywalizacji prowadzonych przez wybrany serwer.
+        </p>
+        <p class="m-0">
+          Zaloguj się, wybierz dostępny świat i przejdź do istniejącego bohatera albo stwórz nowego tam,
+          gdzie serwer pozwala na rozpoczęcie gry.
+        </p>
+      </div>
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <p-button
+          label="Wejdź do gry"
+          icon="pi pi-play"
+          routerLink="/auth/login"
+        />
+        <p-button
+          label="Stwórz bohatera"
+          icon="pi pi-user-plus"
+          severity="secondary"
+          routerLink="/auth/server-entry"
+        />
+      </div>
+    </section>
+
+    <aside class="flex-col-center-stretch gap-md" aria-label="Start gry">
+      <section class="mg-card flex-col gap-sm">
+        <h2 class="mg-section__title mg-section__title--xs m-0">Dla nowych graczy</h2>
+        <p class="m-0">
+          Tworzenie bohatera korzysta z istniejącego flow wyboru serwera, pochodzenia i dalszego przejścia
+          do przydziału atrybutów.
+        </p>
+      </section>
+
+      <section class="mg-card flex-col gap-sm">
+        <h2 class="mg-section__title mg-section__title--xs m-0">Dla powracających</h2>
+        <p class="m-0">
+          Kontynuacja prowadzi do wejścia konta, gdzie wybierasz dostępny kontekst bohatera przed przejściem
+          do panelu gry.
+        </p>
+      </section>
+    </aside>
+  </main>
 </section>

@@ -2,7 +2,7 @@ import { Component, DestroyRef, OnInit, effect, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { PrivateGameReportDetail } from '../../../core/domain/reports/game-report.model';
-import { RouteBackgroundOverride } from '../../../layout/services/route-background-override';
+import { RouteBackgroundOverride } from '../../../core/services/ui/route-background-override';
 import { GameReportContent } from '../../../shared/game-report-content/game-report-content';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { PvpSpyReport } from '../../../shared/pvp-spy-report/pvp-spy-report';

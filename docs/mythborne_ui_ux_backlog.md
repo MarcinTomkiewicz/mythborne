@@ -10281,7 +10281,889 @@ Rules:
 
 ---
 
-# 22. UI-OPEN — Open questions
+# 22. UI-ENTRY — Public Landing, Account Entry and Hero Creation Entry Point
+
+Cel: domknąć pierwszy kontakt gracza z aplikacją Mythsworn: publiczny landing page pod `/`, account/public shell dla zalogowanego użytkownika przed wejściem do gry, spójne tła `Landing background` i `Entry background`, oraz bezpieczne przejście do istniejących flowów wyboru serwera, wyboru/utworzenia bohatera i dashboard/game shell.
+
+Epic 22 nie przepisuje start-flow od zera. Ma wykorzystać istniejące moduły wyboru serwera, account entry, hero creation, origin carousel, selected server → active hero context oraz istniejące layout/shell/shared UI patterns. Jeśli obecny kod już ma część tych elementów, task ma je uporządkować, skonsolidować i domknąć root entry point, a nie tworzyć równoległą architekturę.
+
+## Epic rules
+
+* Root route `/` ma otwierać publiczny landing page Mythsworn.
+* Landing page jest publicznym entry pointem do całej aplikacji, nie ekranem gry.
+* Account/server/hero entry po zalogowaniu działa przed wejściem w konkretny game shell.
+* Account/public shell nie może udawać aktywnego hero contextu, dopóki server+hero nie zostaną wybrane.
+* Wybór serwera, wybór istniejącego hero i tworzenie nowego hero muszą używać istniejących start-flow/read-model/service/state paths.
+* Hero creation musi używać canonical DB/RPC/domain workflow, nie direct table writes.
+* Nie zakładać `hero.id === auth.uid()`.
+* Standardowy gracz ma maksymalnie jednego hero na standard serverze.
+* Sandbox/test servers mogą mieć multi-hero selector dla uprawnionych staff/testerów.
+* Stat Allocation jest pierwszym domyślnym ekranem po utworzeniu hero, ale nie jest account-onboarding wizard step.
+* Later entry z istniejącym hero prowadzi do dashboard/game shell, nie z powrotem do Stat Allocation.
+* `Landing background` dotyczy publicznego landing page.
+* `Entry background` dotyczy account entry / server selection / hero creation przed wejściem do game shell.
+* Nie kopiować prototype CSS, `mb-*`, raw gradientów, raw palette values ani canvas JS.
+* Nie tworzyć lokalnego pseudo-design-systemu dla jednego ekranu.
+* Nie aktualizować status docs ani backlog task statusów bez potwierdzenia użytkownika.
+
+### Route discovery rule
+
+Route names in this epic are examples based on the expected app flow. Before changing routing, Codex must inspect the current Angular route configuration and use the actual existing routes/components/shells.
+
+Do not create duplicate routes just to match task wording.
+
+If the current app uses different paths than `/auth/server-entry`, `/auth/create-character`, or `/hero/dashboard`, Codex must:
+
+* report the actual route/component names found;
+* map each existing route to the intended Epic 22 responsibility;
+* reuse or minimally adjust the existing route structure;
+* only add a new route when no existing route/component owns that responsibility;
+* avoid breaking existing auth guards, selected-server flow, active-hero flow, or post-hero-creation routing.
+
+The acceptance criterion is correct entry flow behavior, not matching the example path names literally.
+
+---
+
+## UI-ENTRY-22-1 — Entry Point / Shell / Background Production Mapping
+
+**Goal:**
+Zmapować istniejące route’y, shelle, backgroundi i start-flow przed implementacją root landing page oraz entry background.
+
+**Scope:**
+
+* Sprawdzić aktualny routing dla:
+
+  * `/`;
+  * login/register routes;
+  * `/auth/server-entry`;
+  * `/auth/create-character`;
+  * dashboard/game shell entry;
+  * existing account/public shell route/layout.
+* Sprawdzić istniejące layout/shell komponenty:
+
+  * public/account shell;
+  * game shell;
+  * sidebar/topbar/shared layout components;
+  * existing background/surface utilities;
+  * existing global SCSS/tokens/patterns.
+* Zmapować, które części powinny należeć do:
+
+  * public landing page;
+  * account/public shell;
+  * server entry section;
+  * hero creation section;
+  * game shell.
+* Zdefiniować produkcyjne użycie dwóch backgroundów:
+
+  * `Landing background` for `/`;
+  * `Entry background` for `/auth/server-entry` and `/auth/create-character`.
+* Sprawdzić, czy zaakceptowane background assets istnieją w repo.
+* Jeśli assetów nie ma, zgłosić missing asset/pattern follow-up zamiast dodawać placeholder image albo hardcoded URL.
+* Ustalić, czy root `/` ma zawsze pokazywać landing page, czy istniejący auth guard wymusza redirect; jeśli obecny router ma inną logikę, zgłosić konflikt i zaproponować minimalną zmianę.
+
+**Out of scope:**
+
+* Angular implementation.
+* Redesign game shell.
+* Rewrite auth/start-flow services.
+* Creating new DB/RPC contracts.
+* Creating or generating image assets.
+* Copying prototype CSS/JS.
+
+**Data/source rules:**
+
+* Account/user identity from existing auth/account context.
+* Server availability from existing start-flow server availability read model/service.
+* Existing hero contexts from existing account entry / active hero context read model/service.
+* Hero creation availability from DB/RPC/read model, not Angular guesses.
+* District A free/capacity must remain DB/read-model-owned.
+* Missing data contract is a blocker/follow-up, not a frontend fallback.
+
+**UI/SCSS rules:**
+
+* README-first UI preflight.
+* Use existing global shell/layout/surface/background utilities first.
+* If a shared background wrapper/pattern is missing, report it as missing production pattern.
+* No local one-off gradients/colors if token/global pattern exists.
+* No copied prototype CSS/classes.
+* Important values/statuses must not be `muted-text`.
+
+**Acceptance criteria:**
+
+* Clear map of current routes and target route ownership exists.
+* Public landing vs account entry vs game shell boundaries are separated.
+* `Landing background` and `Entry background` production strategy is defined.
+* Existing components/services to reuse are listed.
+* Missing assets/patterns/contracts are listed.
+* No production code is changed.
+
+**Verification/smoke:**
+
+* Documentation-only: no build.
+
+**Required Codex report:**
+
+* routes inspected:
+* shell/layout components inspected:
+* existing background/pattern utilities found:
+* reused / checked but not reused / new needed:
+* landing vs entry vs game shell boundary:
+* landing background source:
+* entry background source:
+* missing assets/patterns:
+* DB/RPC/read model blockers:
+* implementation go/no-go for UI-ENTRY-22-2:
+
+---
+
+## UI-ENTRY-22-2 — Public Root Landing Page Implementation
+
+**Status:** Accepted on 2026-05-30 with visual follow-up. `/` now renders the public Mythsworn landing baseline instead of redirecting to `/auth/server-entry`, while `/auth/server-entry` and `/auth/create-character` remain under `AccountEntryLayout`. Landing and entry backgrounds use the existing `AppShell` route-background mechanism with config in `src/app/core/config/route-backgrounds.config.ts` and override service in `src/app/core/services/ui/route-background-override.ts`; the parallel public-entry background SCSS was removed. The `Stwórz bohatera` CTA stays on `/auth/server-entry` so it does not bypass server/start-flow eligibility. No DB/RPC, guards, generated types, start-flow behavior or mobile/responsive work changed. Next pass: `UI-ENTRY-22-2A` desktop visual polish only.
+
+**Goal:**
+Implementować publiczny landing page Mythsworn pod `/` jako pierwszy ekran aplikacji po wpisaniu adresu gry.
+
+**Scope:**
+
+* Dodać lub dostosować route `/`, tak aby renderował publiczny landing page.
+* Landing page powinien zawierać:
+
+  * Mythsworn brand/title;
+  * krótki player-facing pitch gry;
+  * główne CTA do wejścia w account/auth flow;
+  * secondary CTA do logowania/rejestracji, jeśli obecny auth flow rozdziela te akcje;
+  * link/CTA do kontynuowania do account entry, jeśli użytkownik jest już zalogowany;
+  * `Landing background`.
+* Landing page ma używać `src/app/public` route/page ownership, chyba że aktualny router ma już równoważny public area.
+* Route/page ma być cienki; reusable UI pieces mogą trafić do `public/components` albo shared/layout tylko jeśli faktycznie reusable.
+* Nie pokazywać game sidebar/topbar na publicznym landing page.
+* Nie udawać aktywnego hero, server statusu, rankingów, zasobów ani gameplay runtime.
+
+**Out of scope:**
+
+* Full marketing site.
+* Blog/news/lore section.
+* Account settings.
+* Auth service rewrite.
+* Server selection implementation.
+* Hero creation implementation.
+* Game shell redesign.
+* Asset generation.
+* DB/RPC changes.
+* Status docs update.
+
+**Data/source rules:**
+
+* Public landing może być mostly static copy.
+* Jeśli pokazuje jakiekolwiek server availability, online/server status, hero data albo account data, musi pochodzić z istniejącego read modelu; inaczej nie pokazuj.
+* CTA routing must respect existing auth guards and account entry routes.
+* Do not create fake runtime counters.
+
+**UI/SCSS rules:**
+
+* Use `Landing background` from UI-ENTRY-22-1 mapping.
+* Use existing global typography/surface/button/layout utilities first.
+* Local SCSS only for unavoidable landing-specific composition/background overlay after utility lookup.
+* No copied prototype gradients/palette values.
+* No `mb-*`.
+* Landing title, CTA and key claims must not be muted.
+* Reduced motion must be respected if any animated background or decorative effect is used.
+
+**Dependencies/blockers:**
+
+* UI-ENTRY-22-1 not done or not accepted.
+* Missing root route decision.
+* Missing accepted landing background asset if the task requires an image asset.
+* Existing router/auth guard conflicts that cannot be safely changed in this slice.
+
+**Acceptance criteria:**
+
+* Visiting `/` renders the Mythsworn public landing page.
+* Landing page does not render game shell navigation.
+* Primary CTA reaches existing auth/account entry flow.
+* Authenticated user has a clear way to continue to account entry / enter game flow.
+* No fake server/hero/gameplay data is displayed.
+* No direct DB writes.
+* Route/page stays thin and uses existing patterns.
+
+**Verification/smoke:**
+
+* `npx tsc --noEmit`.
+* `npm run build`.
+* Static greps:
+
+  * no `mb-*`;
+  * no direct table writes from public landing code;
+  * no copied prototype raw CSS markers if applicable.
+* Manual route smoke:
+
+  * `/` unauthenticated;
+  * `/` authenticated if test session exists;
+  * CTA to login/account entry.
+
+**Required Codex report:**
+
+* UI-ENTRY-22-1 accepted: yes/no:
+* route changed:
+* landing background source:
+* reused:
+* checked but not reused:
+* new component/state/helper added:
+* local SCSS added:
+* visual anchors matched/not matched:
+* muted-text audit:
+* copied from prototype: yes/no:
+* verification:
+* manual smoke:
+
+---
+
+## UI-ENTRY-22-2A — Public Landing Visual Polish
+
+**Goal:**
+Dopolerować publiczny landing page `/` na desktopie, bez zmiany start-flow, router guards, DB/RPC i account entry logic.
+
+**Scope:**
+
+* Użyć istniejącego logo Mythsworn z projektu zamiast fallbackowego `M + Mythsworn`, jeżeli asset jest dostępny.
+* Fallback `M` może zostać tylko jako fallback, nie primary landing brand.
+* Dodać subtitle `Throne of Hellas` przy głównym brand/title.
+* Usunąć badge `Publiczny świat Mythsworn`.
+* Lepiej rozplanować top actions `Zaloguj` i `Kontynuuj`, tak żeby nie wyglądały jak przypadkowo doklejone do logo.
+* Zachować obecny ogólny kierunek: lewa hero-copy część bez dużej karty, background jako główna oprawa, prawe krótkie karty informacyjne.
+* Zachować CTA:
+
+  * `Wejdź do gry` → istniejący auth/account entry flow;
+  * `Stwórz bohatera` → `/auth/server-entry`, żeby nie omijać server/start-flow eligibility.
+* Przygotować miejsce pod docelowe copy od użytkownika, ale nie wymyślać rozbudowanego marketingowego tekstu.
+* Można zachować obecne krótkie copy jako placeholder do czasu dostarczenia finalnego tekstu przez użytkownika.
+
+**Out of scope:**
+
+* Mobile/responsive polish.
+* Full marketing page.
+* Login/auth rewrite.
+* Server selection rewrite.
+* Hero creation rewrite.
+* DB/RPC changes.
+* Generated types.
+* Status docs.
+* New image generation.
+* Initial bundle optimization.
+
+**UI/SCSS rules:**
+
+* Use existing global layout/surface/button/text utilities first.
+* No page-local SCSS unless absolutely unavoidable and reported.
+* No new local card/button/badge/logo system.
+* No copied prototype CSS, no `mb-*`, no raw palette/gradient values.
+* Important title/subtitle/CTA text must not be muted.
+* If a logo/brand pattern already exists, reuse it.
+
+**Acceptance criteria:**
+
+* `/` still renders the public landing.
+* Existing background still works through route background config.
+* Landing uses existing Mythsworn logo/brand asset where available.
+* `Throne of Hellas` is visible as subtitle.
+* `Publiczny świat Mythsworn` badge is removed.
+* Top actions are visually intentional.
+* CTA routing remains unchanged and goes through the safe account/start-flow path.
+* No DB/RPC/generated/status-doc changes.
+
+**Verification:**
+
+* `npx tsc --noEmit`.
+* `npm run build`.
+* `git diff --check`.
+* Static greps:
+
+  * no changed-file `mb-*`;
+  * no direct writes;
+  * no page-local background CSS;
+  * no generated types touched.
+* Manual smoke:
+
+  * `/` authenticated;
+  * `Wejdź do gry`;
+  * `Stwórz bohatera`;
+  * login route only if user can safely test it.
+
+**Required Codex report:**
+
+* logo/brand source reused:
+* copy changed:
+* top action layout changed:
+* reused utilities/patterns:
+* checked but not reused:
+* local SCSS added:
+* CTA routing:
+* verification:
+* manual smoke / not run reason:
+
+---
+
+## UI-ENTRY-22-3 — Entry Background Pattern For Account Entry And Hero Creation
+
+**Goal:**
+Dodać spójny `Entry background` dla account entry, server selection i hero creation flow bez przepisywania start-flow i bez lokalnego CSS systemu.
+
+**Scope:**
+
+* Zastosować `Entry background` do istniejącego account/public shell albo wrappera używanego przez:
+
+  * `/auth/server-entry`;
+  * `/auth/create-character`;
+  * create-new-hero / join-new-world sections, jeśli istnieją jako child routes/sections.
+* Background ma być wspólną warstwą account-entry, a nie stylem duplikowanym w każdej stronie.
+* Zachować istniejące account shell menu/topbar/sidebar, jeśli już istnieją.
+* Zachować istniejące server selection, existing-hero selector i hero creation components/services.
+* Upewnić się, że background nie wchodzi do game shell/dashboard.
+* Upewnić się, że content cards, selects, forms i origin carousel pozostają czytelne na backgroundzie.
+
+**Out of scope:**
+
+* Public landing page.
+* Game shell background.
+* Hero creation redesign.
+* Origin carousel redesign.
+* Auth/start-flow service rewrite.
+* New DB/RPC.
+* Asset generation.
+* Full mobile redesign.
+
+**Data/source rules:**
+
+* No data changes.
+* Do not change hero creation mutation path.
+* Do not change server availability semantics.
+* Do not introduce client-side fallback for missing server/full/creation eligibility states.
+
+**UI/SCSS rules:**
+
+* Use shared/global background wrapper if available.
+* If no shared pattern exists, add the smallest reusable account-entry background class/pattern after documenting utility lookup.
+* New class cannot duplicate existing spacing/flex/grid utilities.
+* No raw prototype colors/gradients copied.
+* Use tokens/global variables.
+* Preserve contrast for forms, CTA, server status and blocked/full server messages.
+* Important values/statuses/hero names/server names/origin names are not muted.
+
+**Dependencies/blockers:**
+
+* UI-ENTRY-22-1 mapping not done.
+* Missing accepted entry background asset if image asset is required.
+* Account entry routes do not share a common shell/wrapper.
+
+**Acceptance criteria:**
+
+* `/auth/server-entry` and `/auth/create-character` visually share the same `Entry background`.
+* Background lives at shell/wrapper level, not duplicated in each page.
+* Existing account entry and hero creation functionality remains intact.
+* Game shell/dashboard does not receive the entry background.
+* No local per-page visual system is added.
+* No direct DB writes or start-flow rewrites.
+
+**Verification/smoke:**
+
+* `npx tsc --noEmit`.
+* `npm run build`.
+* Static greps:
+
+  * no `mb-*`;
+  * no direct writes in touched auth/entry files;
+  * no `ngModel` / `FormsModule` introduced;
+  * no important values with `muted-text`.
+* Manual visual smoke:
+
+  * `/auth/server-entry`;
+  * `/auth/create-character`;
+  * one blocked/full server state if data exists;
+  * one origin carousel state if data exists.
+
+**Required Codex report:**
+
+* entry shell/wrapper used:
+* entry background source:
+* reused:
+* checked but not reused:
+* new class/pattern added:
+* local SCSS added:
+* visual anchors matched/not matched:
+* muted-text audit:
+* route smoke:
+* verification:
+
+---
+
+## UI-ENTRY-22-4 — Account Entry Shell Consolidation And Navigation Reuse
+
+**Goal:**
+Upewnić się, że account entry, server selection i hero creation działają w jednym account/public shellu przed wejściem do game shell, z wykorzystaniem istniejącego bocznego menu/górnego paska/shella spoza gry.
+
+**Scope:**
+
+* Sprawdzić obecne account/public shell components and routes.
+* Jeśli `/auth/server-entry` albo `/auth/create-character` obchodzą shell lub duplikują shell chrome, przenieść je pod istniejący account shell route/layout.
+* Account shell navigation should include, if current product flow supports it:
+
+  * `Enter the game`;
+  * `Create new hero` / `Join new world`;
+  * account-related action such as sign out, if already available.
+* Shell must show account context, selected server context and active hero context distinctly.
+* Shell must not show in-game navigation as if hero were already active.
+* Existing hero entry should route to dashboard/game shell.
+* New hero entry should route to server eligibility / hero creation.
+* Keep route/page components thin; state/read-model logic stays in existing core/service/state layer.
+
+**Out of scope:**
+
+* Public landing page content.
+* Hero creation mutation changes.
+* Origin carousel redesign.
+* Dashboard/game shell redesign.
+* Account settings implementation.
+* Notifications implementation unless already present.
+* DB/RPC changes.
+* Status docs update.
+
+**Data/source rules:**
+
+* Account identity from auth/account context.
+* Existing hero contexts from existing account entry / active hero read model.
+* Server availability and creation eligibility from existing start-flow service/read model.
+* Sandbox/test multi-hero privileges from existing access/membership/staff layer.
+* No frontend inference of sandbox privileges.
+* No `hero.id === auth.uid()`.
+
+**UI/SCSS rules:**
+
+* Use existing account/public shell layout and nav patterns.
+* If a sidebar/topbar/nav item pattern is missing, report missing shared/layout pattern instead of adding a one-screen system.
+* Do not copy game shell nav into account shell if it implies active hero gameplay.
+* No copied prototype CSS/classes.
+* Use semantic badges/status patterns for server state and blocked/full states.
+* Important values not muted.
+
+**Dependencies/blockers:**
+
+* Missing account/public shell route boundary.
+* Missing account/server/hero read model.
+* Missing selected server / active hero context setter/reloader.
+* Existing routes cannot be nested safely without breaking guards.
+
+**Acceptance criteria:**
+
+* Account entry routes render under account/public shell.
+* Game shell nav is not visible before active hero context.
+* `Enter the game` and `Create new hero` / `Join new world` are separate flows.
+* Existing hero flow routes to dashboard/game shell.
+* New hero flow routes to server eligibility / hero creation.
+* Sandbox/test multi-hero selector remains explicit and DB-backed where available.
+* Stale async context switch responses do not overwrite current selection.
+
+**Verification/smoke:**
+
+* `npx tsc --noEmit`.
+* Focused specs if shell routing/state logic changes.
+* `npm run build`.
+* Static greps:
+
+  * no `hero.id === auth.uid()`;
+  * no direct writes;
+  * no `mb-*`;
+  * no `ngModel`/`FormsModule` introduced.
+* Manual smoke:
+
+  * authenticated account with existing standard hero;
+  * account with eligible server and no hero;
+  * sandbox/test multi-hero where data exists;
+  * route change between account sections without stale selected context.
+
+**Required Codex report:**
+
+* routes consolidated:
+* shell components reused:
+* reused:
+* checked but not reused:
+* new component/state/helper added:
+* stale guards:
+* local SCSS added:
+* muted-text audit:
+* DB/RPC blockers:
+* verification:
+* manual smoke:
+
+---
+
+## UI-ENTRY-22-5 — Hero Creation Entry Polish Without Workflow Rewrite
+
+**Goal:**
+Dopasować istniejący hero creation flow do nowego Entry background/account shell bez zmiany canonical hero creation DB/RPC workflow.
+
+**Scope:**
+
+* Ensure hero creation is entered from account shell / create-new-hero path.
+* Preserve existing flow:
+
+  * server eligibility;
+  * hero name;
+  * origin selection;
+  * origin bonus/lore presentation;
+  * create hero action;
+  * post-create route to stat allocation.
+* Ensure server eligibility state is visible before creation:
+
+  * eligible server;
+  * full/blocked server;
+  * standard server with existing hero;
+  * sandbox/test creation when backend allows.
+* Ensure hero creation components use `Entry background` through shell/wrapper, not local duplicated background.
+* Ensure origin names, bonuses and descriptions come from existing DB/read-model/content path or accepted asset-key convention.
+* Keep forms as Reactive Forms if touched.
+
+**Out of scope:**
+
+* New hero creation RPC.
+* Direct hero/origin/estate/resource/CP writes.
+* Origin content seeding.
+* Origin artwork generation.
+* Stat allocation redesign.
+* Game shell/dashboard changes.
+* Public landing implementation.
+
+**Data/source rules:**
+
+* Use existing start-flow integration layer.
+* Hero creation mutation must remain canonical DB/RPC workflow.
+* Do not introduce direct writes to `hero`, `hero_stats`, `estates`, `hero_resources`, `character_point_ledger`, origin or bonus tables.
+* District A capacity/free slots from DB/read model.
+* Player does not choose or preview exact starting estate address.
+* Missing origin content/artwork should be reported as content/admin follow-up, not hardcoded permanently.
+
+**UI/SCSS rules:**
+
+* Use account shell + Entry background from UI-ENTRY-22-3.
+* Use existing origin carousel and shared card/badge/button/form patterns.
+* No local badge/card/button system.
+* No copied prototype CSS/classes.
+* Hero name, origin name, server name, blocked reason and CTA are not muted.
+* Blocked/full server status uses semantic status pattern, not muted text.
+
+**Dependencies/blockers:**
+
+* Missing start-flow integration layer.
+* Missing generated types for required start-flow RPCs.
+* Missing server eligibility read model.
+* Missing origin options read model.
+* Missing shared account shell/background wrapper if UI-ENTRY-22-3 not done.
+
+**Acceptance criteria:**
+
+* Create-new-hero path visually belongs to account entry, not game shell.
+* Existing server eligibility/blocked states remain correct.
+* Hero creation uses canonical RPC/domain workflow.
+* Existing origin carousel/content path is reused.
+* Post-create route remains Stat Allocation.
+* Later existing-hero entry still routes to dashboard/game shell.
+* No new fallback hero creation path is added.
+
+**Verification/smoke:**
+
+* `npx tsc --noEmit`.
+* Focused specs if touched.
+* `npm run build`.
+* Static greps:
+
+  * no direct writes to hero/estate/CP/onboarding workflow tables;
+  * no `hero.id === auth.uid()`;
+  * no hardcoded origin bonus runtime source;
+  * no `ngModel`/`FormsModule`;
+  * no `mb-*`.
+* Manual smoke:
+
+  * eligible standard server create hero path;
+  * full/blocked server state if data exists;
+  * existing hero on standard server blocked from duplicate create;
+  * sandbox/test create-new-hero if data exists;
+  * post-create route to Stat Allocation if real creation smoke is available.
+
+**Required Codex report:**
+
+* start-flow services/read models used:
+* routes touched:
+* reused:
+* checked but not reused:
+* new component/state/helper added:
+* DB/RPC blockers:
+* direct-write grep:
+* forms check:
+* muted-text audit:
+* verification:
+* manual smoke / data-blocked reason:
+
+---
+
+## UI-ENTRY-22-6 — Root-To-Account Entry CTA And Auth-Aware Navigation
+
+**Goal:**
+Uspójnić przejście z publicznego landing page do istniejącego auth/account entry flow bez tworzenia równoległych ścieżek logowania albo wyboru bohatera.
+
+**Scope:**
+
+* Landing CTA behavior:
+
+  * unauthenticated user goes to existing login/register/auth route;
+  * authenticated user can continue to account entry / server-entry;
+  * if current auth guard already redirects differently, align minimally and report.
+* Ensure public landing does not eagerly select server or hero.
+* Ensure account entry performs selected server → active hero resolution, not landing.
+* Ensure logout/sign-in/sign-up links use existing auth paths.
+* If existing login route returns to `/` after login, redirect/continue behavior should be clear and not loop.
+
+**Out of scope:**
+
+* Auth provider rewrite.
+* Account settings.
+* New session persistence logic.
+* Server selection redesign.
+* Hero creation redesign.
+* DB/RPC changes.
+* Game shell changes.
+
+**Data/source rules:**
+
+* Landing may inspect auth state only enough to choose CTA label/target.
+* Landing must not load hero-owned data.
+* Account entry remains responsible for server/hero context.
+* No direct DB writes.
+
+**UI/SCSS rules:**
+
+* CTA labels describe real action:
+
+  * `Enter the game` / `Wejdź do gry`;
+  * `Create hero` / `Stwórz bohatera`;
+  * `Log in` / `Zaloguj`;
+  * `Create account` / `Załóż konto`.
+* Do not label account entry as a mandatory onboarding wizard.
+* Important CTA text not muted.
+* Use existing button/link patterns.
+
+**Dependencies/blockers:**
+
+* Existing auth route names unclear.
+* Existing guards cause redirect loop.
+* Missing account entry route.
+
+**Acceptance criteria:**
+
+* `/` primary CTA works for unauthenticated users.
+* Authenticated user can continue from `/` to account entry without losing session.
+* Landing does not create or select active hero.
+* No duplicate auth workflow is added.
+* No redirect loop is introduced.
+
+**Verification/smoke:**
+
+* `npx tsc --noEmit`.
+* `npm run build`.
+* Route smoke:
+
+  * `/` unauthenticated → CTA to login/register;
+  * `/` authenticated → CTA to account entry;
+  * login success returns to a valid entry/account/game path according to existing app behavior.
+* Static grep:
+
+  * no hero-owned service calls from public landing;
+  * no direct writes.
+
+**Required Codex report:**
+
+* auth routes checked:
+* CTA routing:
+* guard behavior:
+* reused:
+* checked but not reused:
+* new logic added:
+* stale/redirect guard:
+* verification:
+* manual smoke:
+
+---
+
+## UI-ENTRY-22-7 — Entry Flow Responsive And Accessibility Smoke
+
+**Goal:**
+Sprawdzić minimalną czytelność, responsywność i dostępność dla root landing, account entry, server selection i hero creation after Epic 22 implementation.
+
+**Scope:**
+
+* Smoke/check states:
+
+  * public landing `/`;
+  * account entry shell;
+  * server selection / existing hero entry;
+  * create-new-hero server eligibility;
+  * hero creation origin carousel.
+* Check desktop/tablet/mobile basic layout.
+* Check keyboard focus visibility for CTA, nav, selects, carousel controls and create action.
+* Check reduced motion if landing/entry backgrounds include animation.
+* Check contrast/readability over Landing background and Entry background.
+* Check that blocked/full server reasons and validation errors are visible.
+* Check that important values are not muted.
+
+**Out of scope:**
+
+* Full mobile redesign.
+* Lighthouse/performance optimization.
+* Screen reader copy rewrite.
+* New specs unless a real accessibility bug requires code.
+* DB/RPC changes.
+
+**Data/source rules:**
+
+* Use representative real states if available.
+* If data is unavailable, mark smoke `data-blocked`; do not seed fake data in Angular.
+* Do not claim full manual smoke without real session/data.
+
+**UI/SCSS rules:**
+
+* No strobe/rapid flashing.
+* Motion decorative effects must degrade under reduced motion.
+* Important CTA/status/value text must pass practical readability.
+* Semantic statuses should use existing badges/chips/patterns.
+
+**Acceptance criteria:**
+
+* Landing and entry pages remain usable on desktop and narrow viewport.
+* Keyboard path reaches primary actions.
+* Backgrounds do not make content unreadable.
+* No obvious focus trap or route dead-end.
+* Manual smoke report clearly distinguishes checked vs data-blocked states.
+
+**Verification/smoke:**
+
+* `npx tsc --noEmit` if code changed.
+* `npm run build` if code changed.
+* Manual smoke checklist with viewport notes.
+* Static greps if code changed:
+
+  * no `mb-*`;
+  * no `ngModel`/`FormsModule`;
+  * no direct writes;
+  * no important values muted.
+
+**Required Codex report:**
+
+* states smoked:
+* viewport checks:
+* keyboard/focus checks:
+* reduced-motion notes:
+* contrast/readability notes:
+* data-blocked states:
+* issues found:
+* verification:
+
+---
+
+## UI-PERF-ENTRY-1 — Root Landing And Initial Bundle Optimization Pass
+
+**Goal:**
+Zmniejszyć koszt startowy aplikacji i upewnić się, że publiczny landing `/` nie ładuje niepotrzebnie game/admin shelli, topbara, sidebara, gameplay notices ani ciężkich PrimeNG modułów.
+
+**Scope:**
+
+* Uruchomić build i spisać aktualne initial chunk / budget warnings.
+* Sprawdzić lazy boundaries:
+
+  * `main.ts`;
+  * root `app.routes`;
+  * `AppShell`;
+  * public routes;
+  * auth/account entry routes;
+  * hero/game/admin route shells.
+* Sprawdzić, co realnie ładuje się dla `/`:
+
+  * `AppShell`;
+  * `PublicHomePage`;
+  * game sidebar/topbar;
+  * notifications/staff bell;
+  * admin/game route modules;
+  * PrimeNG modules.
+* Upewnić się, że root `App` / root route shell pozostaje cienki.
+* Route/layout-heavy UI ma zostać za lazy route boundaries.
+* Public landing ma ładować tylko minimalne UI potrzebne do landingu.
+* Jeżeli `AppShell` eager-importuje game-only chrome, rozdzielić boundary tak, aby public/auth entry nie ładowały game-only topbar/sidebar.
+* Jeżeli landing używa ciężkiego PrimeNG modułu tylko dla prostego CTA, ocenić i zastosować najlżejszą zgodną z projektem opcję.
+* Przenieść route-background mapping do configu, jeśli nie zostało to zrobione w UI-ENTRY-22-2.
+* Nie zmieniać DB/RPC, start-flow semantics ani hero creation workflow.
+
+**Out of scope:**
+
+* Visual redesign landingu.
+* Game shell redesign.
+* Admin IA redesign.
+* Hero creation rewrite.
+* DB/RPC changes.
+* Generated types.
+* Replacing PrimeNG globally.
+* Broad refactor unrelated to initial bundle.
+
+**Rules:**
+
+* Start from `AGENTS.md`, `ui-ux-notes.md`, UI-CORE docs and current route files.
+* Do not introduce duplicate shells.
+* Do not hide game shell with CSS while still eagerly importing it for `/`.
+* Do not move gameplay logic into public landing.
+* Do not break auth guards, selected-server flow, active-hero flow or post-hero-creation routing.
+* Prefer deleting eager imports and splitting lazy boundaries over adding wrappers.
+* If an optimization is too risky, document it as follow-up instead of doing a broad refactor.
+
+**Acceptance criteria:**
+
+* Build output before/after is reported.
+* `/` landing does not eagerly load game/admin route-heavy UI unless there is a documented unavoidable reason.
+* Public/auth entry and game shell boundaries are explicit.
+* No public landing regression.
+* No auth/server-entry/hero-entry regression.
+* Initial bundle is reduced or the remaining blockers are listed with exact files/imports.
+* Route background config is centralized if touched.
+* No status docs update unless user explicitly asks.
+
+**Verification:**
+
+* `npx tsc --noEmit`.
+* `npm run build`.
+* Build/budget output included in report.
+* Static import review for root/AppShell/public landing.
+* Manual smoke:
+
+  * `/` unauthenticated;
+  * `/` authenticated;
+  * `/auth/login`;
+  * `/auth/server-entry`;
+  * existing hero entry to dashboard;
+  * create hero route still guarded by start-flow eligibility.
+
+**Required Codex report:**
+
+* build before:
+* build after:
+* initial bundle/budget change:
+* root imports checked:
+* AppShell imports checked:
+* route lazy boundaries checked:
+* heavy modules removed/deferred:
+* reused:
+* checked but not reused:
+* risky optimizations deferred:
+* verification:
+* manual smoke:
+
+---
+
+# 23. UI-OPEN — Open questions
 
 - Exact Game Icons mapping.
 - Mobile layout strategy for dense tables and admin screens.

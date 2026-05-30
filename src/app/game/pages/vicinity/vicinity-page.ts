@@ -2,7 +2,7 @@ import { Component, DestroyRef, OnInit, computed, effect, inject } from '@angula
 import { Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { RouteBackgroundOverride } from '../../../layout/services/route-background-override';
+import { RouteBackgroundOverride } from '../../../core/services/ui/route-background-override';
 import { VicinityActivePvpActionPanel } from '../../components/vicinity/active-pvp-action-panel/vicinity-active-pvp-action-panel';
 import { VicinityAddressList } from '../../components/vicinity/address-list/vicinity-address-list';
 import { VicinityPagination } from '../../components/vicinity/pagination/vicinity-pagination';
