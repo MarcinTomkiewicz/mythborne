@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-30 — UI-ENTRY-22-7 responsive accessibility smoke accepted
+Updated: 2026-05-30 — UI-PERF-ENTRY-1 initial bundle optimization accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -11400,6 +11400,8 @@ Upewnić się, że wszystkie public/account/auth linki znaczą to, co mówią, i
 ---
 
 ## UI-PERF-ENTRY-1 — Root Landing And Initial Bundle Optimization Pass
+
+**Status:** Accepted on 2026-05-30 with pending user smoke. Initial browser bundle dropped from 1.09 MB / 231.99 kB estimated transfer to 706.85 kB / 139.50 kB, reducing the budget overage from +541.68 kB to +156.84 kB. The pass split the lightweight public/auth `AppShell` from the lazy game/admin `GameShell`, lazy-loaded route modules and guard implementations, deferred Angular animations and the global toast host, and removed the root Auth/Supabase app initializer so `/` renders without loading Supabase. Auth initialization now stays in auth-required guards/routes/services; `/` falls back to guest CTAs until auth is initialized. Remaining initial pressure is `src/scss/main.scss`, Angular core/router, and the full Aura `MgPrimePreset` / `providePrimeNG` path. No DB/RPC, generated types, gameplay workflow or route eligibility semantics changed. Manual smoke remains user-side.
 
 **Goal:**
 Zmniejszyć koszt startowy aplikacji i upewnić się, że publiczny landing `/` nie ładuje niepotrzebnie game/admin shelli, topbara, sidebara, gameplay notices ani ciężkich PrimeNG modułów.

@@ -3,30 +3,16 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 import { resolveRouteBackgroundImage } from '../../../core/config/route-backgrounds.config';
-import { ActiveServer } from '../../../core/services/server/active-server';
 import { RouteBackgroundOverride } from '../../../core/services/ui/route-background-override';
-import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-policy';
 import { AppFooter } from '../app-footer/app-footer';
-import { GameSidebar } from '../game-sidebar/game-sidebar';
-import { GameTopbar } from '../game-topbar/game-topbar';
-import { MembershipBlockedNotice } from '../membership-blocked-notice/membership-blocked-notice';
-import { StaffGameplayBlockedNotice } from '../staff-gameplay-blocked-notice/staff-gameplay-blocked-notice';
 
 @Component({
   selector: 'app-shell',
-  imports: [
-    RouterOutlet,
-    GameSidebar,
-    GameTopbar,
-    AppFooter,
-    MembershipBlockedNotice,
-    StaffGameplayBlockedNotice,
-  ],
+  imports: [RouterOutlet, AppFooter],
   templateUrl: './app-shell.html',
 })
 export class AppShell {
   private readonly router = inject(Router);
-  private readonly activeServer = inject(ActiveServer);
   private readonly routeBackgroundOverride = inject(RouteBackgroundOverride);
 
   readonly currentUrl = toSignal(
@@ -37,15 +23,6 @@ export class AppShell {
     ),
     { initialValue: this.router.url },
   );
-  readonly isWideContent = computed(() => {
-    const url = this.currentUrl();
-
-    return (
-      url.startsWith('/admin') ||
-      url.startsWith('/hero/dashboard') ||
-      url.startsWith('/hero/attributes')
-    );
-  });
   readonly routeBackgroundImage = computed(() => {
     const override = this.routeBackgroundOverride.image();
 
@@ -55,30 +32,4 @@ export class AppShell {
 
     return resolveRouteBackgroundImage(this.currentUrl());
   });
-  readonly activeServerAccess = this.activeServer.access;
-  readonly isGameplayRoute = computed(
-    () =>
-      this.currentUrl().startsWith('/hero') ||
-      this.currentUrl().startsWith('/game'),
-  );
-  readonly shouldShowShellChrome = computed(() => {
-    const url = this.currentUrl();
-
-    return this.isGameplayRoute() || url.startsWith('/admin');
-  });
-  readonly isGameplayBlocked = computed(
-    () => this.isGameplayRoute() && this.activeServerAccess().isMembershipBlocked,
-  );
-  readonly staffAccessPolicy = computed(() =>
-    resolveStaffAccessPolicy({
-      access: this.activeServer.access(),
-      selectedServer: this.activeServer.selectedServer(),
-    }),
-  );
-  readonly isStaffGameplayBlocked = computed(
-    () => this.isGameplayRoute() && this.staffAccessPolicy().isStaffGameplayBlocked,
-  );
-  readonly shouldShowHeroTopbarContent = computed(
-    () => !this.isStaffGameplayBlocked(),
-  );
 }
