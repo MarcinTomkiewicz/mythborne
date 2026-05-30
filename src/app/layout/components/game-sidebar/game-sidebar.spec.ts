@@ -81,7 +81,7 @@ describe('GameSidebar', () => {
   });
 
   it('shows gameplay links for normal logged-in players', () => {
-    const urls = component.menuItems().map((item) => item.url);
+    const urls = navItems(component).map((item) => item.route);
 
     expect(urls).toContain('/hero/dashboard');
     expect(urls).toContain('/game/guild');
@@ -92,7 +92,7 @@ describe('GameSidebar', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Athens');
-    expect(text).toContain('Live');
+    expect(text).toContain('Aktywny');
     expect(text).toContain('Zeugitai');
     expect(backend.rpc).toHaveBeenCalledWith(
       'get_hero_prestige_public_summary',
@@ -111,7 +111,7 @@ describe('GameSidebar', () => {
     const text = textContent(fixture);
 
     expect(component.prestigeSummary()).toBeNull();
-    expect(text).toContain('Prestige unavailable');
+    expect(text).toContain('Prestiż niedostępny');
     expect(text).not.toContain('Zeugitai');
   });
 
@@ -135,7 +135,7 @@ describe('GameSidebar', () => {
 
     expect(component.prestigeSummary()).toBeNull();
     expect(text).toContain('Sparta');
-    expect(text).toContain('Prestige unavailable');
+    expect(text).toContain('Prestiż niedostępny');
     expect(text).not.toContain('Zeugitai');
   });
 
@@ -144,26 +144,26 @@ describe('GameSidebar', () => {
   });
 
   it('shows the vicinity navigation entry without introducing neighborhood labels', () => {
-    const items = component.menuItems();
+    const items = navItems(component);
 
     expect(items).toEqual(jasmine.arrayContaining([
       jasmine.objectContaining({
-        title: 'Vicinity',
-        url: '/game/vicinity',
+        label: 'Okolica',
+        route: '/game/vicinity',
       }),
     ]));
     expect(items).toEqual(jasmine.arrayContaining([
       jasmine.objectContaining({
-        title: 'Mansion',
-        url: '/game/mansion',
+        label: 'Posiadłość',
+        route: '/game/mansion',
       }),
     ]));
-    expect(items.some((item) => item.title === 'Neighborhood')).toBeFalse();
-    expect(items.some((item) => item.url === '/game/neighborhood')).toBeFalse();
+    expect(items.some((item) => item.label === 'Neighborhood')).toBeFalse();
+    expect(items.some((item) => item.route === '/game/neighborhood')).toBeFalse();
   });
 
   it('hides the admin link for normal logged-in players', () => {
-    const urls = component.menuItems().map((item) => item.url);
+    const urls = navItems(component).map((item) => item.route);
 
     expect(urls).not.toContain('/admin');
   });
@@ -176,7 +176,7 @@ describe('GameSidebar', () => {
       }),
     );
 
-    const urls = component.menuItems().map((item) => item.url);
+    const urls = navItems(component).map((item) => item.route);
 
     expect(urls).toContain('/admin');
   });
@@ -190,7 +190,7 @@ describe('GameSidebar', () => {
     );
     selectedServer.set(createServer({ staffRole: ServerStaffRole.Moderator }));
 
-    const urls = component.menuItems().map((item) => item.url);
+    const urls = navItems(component).map((item) => item.route);
 
     expect(urls).not.toContain('/hero/dashboard');
     expect(urls).not.toContain('/game/guild');
@@ -202,6 +202,10 @@ describe('GameSidebar', () => {
 
 function textContent(fixture: ComponentFixture<GameSidebar>): string {
   return (fixture.nativeElement as HTMLElement).textContent ?? '';
+}
+
+function navItems(component: GameSidebar) {
+  return component.menuGroups().flatMap((group) => group.items);
 }
 
 function createAccess(

@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-30 — UI-ENTRY-22-3 entry background and account-entry surface cleanup accepted
+Updated: 2026-05-30 — UI-ENTRY-22-4 account-entry shell/sidebar reuse cleanup accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -10837,6 +10837,8 @@ Upewnić się, że account entry, server selection i hero creation działają w 
 * DB/RPC blockers:
 * verification:
 * manual smoke:
+
+**Status:** Accepted on 2026-05-30 as the account-entry shell/sidebar reuse cleanup pass. `GameSidebar` and `AccountEntryLayout` now render shared context/nav/sidebar chrome through `src/app/layout/components/shell-sidebar-content`, with project-owned sidebar interfaces in `src/app/core/interfaces/layout/sidebar.interface.ts`. Game navigation uses `SidebarNavGroup` config from `src/app/core/config/menu-config.ts` with Polish labels and no PrimeNG `MenuItem` coupling; account-entry navigation and context row labels live in `src/app/core/config/account-entry-sidebar.config.ts`. Account entry keeps only account/server/hero context data, while game sidebar keeps active-hero/prestige runtime data. Placeholder account actions remain disabled with `wkrótce` badges. No DB/RPC, guards, generated types, route behavior, dashboard counters, status-flow or mobile/responsive behavior changed. Manual smoke remains user-side.
 
 ---
 

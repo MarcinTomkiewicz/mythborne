@@ -1,13 +1,13 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { RouterLink, RouterLinkActive } from '@angular/router';
 import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
-import {
-  MENU_LOGGED_IN_GROUPS,
-  type MenuGroup,
-} from '../../../core/config/menu-config';
+import { MENU_LOGGED_IN_GROUPS } from '../../../core/config/menu-config';
 import { RPC } from '../../../core/constants/rpc.const';
+import {
+  SidebarContextAction,
+  SidebarContextRow,
+  SidebarNavGroup,
+} from '../../../core/interfaces/layout/sidebar.interface';
 import {
   GetHeroPrestigePublicSummaryRpcArgs,
   GetHeroPrestigePublicSummaryRpcRow,
@@ -16,13 +16,12 @@ import { AuthState } from '../../../core/services/auth/auth-state';
 import { Backend } from '../../../core/services/backend/backend';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveServer } from '../../../core/services/server/active-server';
-import { humanizeKey } from '../../../core/utils/normalize-text';
 import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-policy';
-import { SessionLogoutButton } from '../../../shared/session-logout-button/session-logout-button';
+import { ShellSidebarContent } from '../shell-sidebar-content/shell-sidebar-content';
 
 @Component({
   selector: 'app-game-sidebar',
-  imports: [CommonModule, RouterLink, RouterLinkActive, SessionLogoutButton],
+  imports: [ShellSidebarContent],
   templateUrl: './game-sidebar.html',
 })
 export class GameSidebar implements OnInit {
@@ -38,31 +37,58 @@ export class GameSidebar implements OnInit {
   readonly selectedServer = this.activeServer.selectedServer;
   readonly prestigeSummary = signal<GetHeroPrestigePublicSummaryRpcRow | null>(null);
   readonly serverStatusLabel = computed(() =>
-    humanizeKey(this.selectedServer()?.status ?? 'server_unavailable'),
+    this.selectedServer()?.status === 'live' ? 'Aktywny' : 'Niedostępny',
   );
-  readonly serverStatusClass = computed(() =>
-    this.selectedServer()?.status === 'live'
-      ? 'tag-badge tag-badge--success'
-      : 'tag-badge tag-badge--warn',
-  );
+  readonly contextRows = computed<SidebarContextRow[]>(() => {
+    const hero = this.hero();
+    const server = this.selectedServer();
+    const prestige = this.prestigeSummary();
+
+    return [
+      {
+        label: 'Bohater',
+        value: hero?.name ?? 'Brak aktywnego bohatera',
+        badgeLabel: hero ? `Poziom ${hero.level || 1}` : 'Brak bohatera',
+        badgeTone: hero ? 'golden' : 'warn',
+      },
+      {
+        label: 'Wybrany serwer',
+        value: server?.name ?? 'Nie wybrano serwera',
+        badgeLabel: this.serverStatusLabel(),
+        badgeTone: server?.status === 'live' ? 'success' : 'warn',
+      },
+      {
+        label: 'Prestiż',
+        value: prestige?.player_label ?? 'Prestiż niedostępny',
+        badgeLabel: prestige?.rank_number ? `Ranga ${prestige.rank_number}` : null,
+        badgeTone: 'golden',
+      },
+    ];
+  });
+  readonly contextActions: readonly SidebarContextAction[] = [
+    {
+      label: 'Zmień serwer / postać',
+      route: '/auth/server-entry',
+    },
+  ];
   readonly staffAccessPolicy = computed(() =>
     resolveStaffAccessPolicy({
       access: this.activeServer.access(),
       selectedServer: this.activeServer.selectedServer(),
     }),
   );
-  readonly menuGroups = computed<MenuGroup[]>(() => {
+  readonly menuGroups = computed<SidebarNavGroup[]>(() => {
     const policy = this.staffAccessPolicy();
 
     return MENU_LOGGED_IN_GROUPS
       .map((group) => ({
-        ...group,
+        title: group.title,
         items: group.items.filter((item) => {
-          if (isAdminMenuUrl(item.url)) {
+          if (isAdminMenuUrl(item.route)) {
             return policy.canAccessAdminShell;
           }
 
-          if (policy.isStaffGameplayBlocked && isGameplayMenuUrl(item.url)) {
+          if (policy.isStaffGameplayBlocked && isGameplayMenuUrl(item.route)) {
             return false;
           }
 
@@ -71,9 +97,6 @@ export class GameSidebar implements OnInit {
       }))
       .filter((group) => group.items.length > 0);
   });
-  readonly menuItems = computed(() =>
-    this.menuGroups().flatMap((group) => group.items),
-  );
 
   ngOnInit(): void {
     combineLatest([

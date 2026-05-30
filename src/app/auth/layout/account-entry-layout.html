@@ -21,63 +21,12 @@
 
   <div class="flex-row-start-stretch flex-1 w-100">
     <aside class="mg-game-shell__sidebar flex-none w-px-250">
-      <div class="flex-col gap-md min-h-full w-100 py-md px-sm">
-        <section class="mg-context-card w-100" aria-label="Dane konta">
-          <div class="mg-context-card__section">
-            <span class="mg-context-card__label">Zalogowano jako</span>
-            <div class="mg-context-card__value-row">
-              <strong class="mg-context-card__value">{{ accountLabel() }}</strong>
-            </div>
-          </div>
-
-          <div class="mg-context-card__section mg-context-card__section--separated">
-            <span class="mg-context-card__label">Wybrany serwer</span>
-            <div class="mg-context-card__value-row">
-              <strong class="mg-context-card__value">
-                {{ selectedServerName() ?? 'Nie wybrano serwera' }}
-              </strong>
-            </div>
-          </div>
-
-          <div class="mg-context-card__section mg-context-card__section--separated">
-            <span class="mg-context-card__label">Bohater do wejścia</span>
-            <div class="mg-context-card__value-row">
-              <strong class="mg-context-card__value">
-                {{ activeHeroName() ?? 'Nie wybrano bohatera' }}
-              </strong>
-            </div>
-          </div>
-        </section>
-
-        <nav class="flex-col gap-md w-100" aria-label="Nawigacja konta">
-          <section class="flex-col gap-xs w-100" aria-label="Wejście">
-            <span class="muted-text text-xs font-bold">Wejście</span>
-            <a class="mg-shell-nav-item" routerLink="/auth/server-entry" routerLinkActive="is-active">
-              <span class="mg-shell-nav-item__icon" aria-hidden="true">WG</span>
-              <span class="mg-shell-nav-item__label">Wejdź do gry</span>
-            </a>
-            <a class="mg-shell-nav-item" routerLink="/auth/create-character" routerLinkActive="is-active">
-              <span class="mg-shell-nav-item__icon" aria-hidden="true">SB</span>
-              <span class="mg-shell-nav-item__label">Stwórz bohatera</span>
-            </a>
-          </section>
-
-          <section class="flex-col gap-xs w-100" aria-label="Konto">
-            <span class="muted-text text-xs font-bold">Konto</span>
-            <button type="button" class="mg-shell-nav-item" disabled>
-              <span class="mg-shell-nav-item__icon" aria-hidden="true">UK</span>
-              <span class="mg-shell-nav-item__label">Ustawienia konta</span>
-              <span class="tag-badge tag-badge--muted">wkrótce</span>
-            </button>
-            <button type="button" class="mg-shell-nav-item" disabled>
-              <span class="mg-shell-nav-item__icon" aria-hidden="true">PW</span>
-              <span class="mg-shell-nav-item__label">Powiadomienia</span>
-              <span class="tag-badge tag-badge--muted">wkrótce</span>
-            </button>
-            <app-session-logout-button />
-          </section>
-        </nav>
-      </div>
+      <app-shell-sidebar-content
+        contextAriaLabel="Dane konta"
+        navAriaLabel="Nawigacja konta"
+        [contextRows]="contextRows()"
+        [navGroups]="navGroups"
+      />
     </aside>
 
     <main class="mg-game-shell__main flex-1 min-w-0 w-100">

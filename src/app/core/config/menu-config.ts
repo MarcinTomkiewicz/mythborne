@@ -1,44 +1,30 @@
-import { MenuItem } from 'primeng/api';
+import { SidebarNavGroup } from '../interfaces/layout/sidebar.interface';
 
-export interface MenuGroup {
-  title: string;
-  items: MenuItem[];
-}
-
-export const MENU_LOGGED_IN_GROUPS: MenuGroup[] = [
+export const MENU_LOGGED_IN_GROUPS: readonly SidebarNavGroup[] = [
   {
-    title: 'Hero',
+    title: 'Bohater',
     items: [
-      { title: 'Dashboard', url: '/hero/dashboard', icon: 'pi pi-helmet' },
-      { title: 'Attributes', url: '/hero/attributes', icon: 'pi pi-skills' },
-      { title: 'Exploration', url: '/game/exploration', icon: 'pi pi-hydra' },
-      { title: 'Armory', url: '/game/armory', icon: 'pi pi-chest' },
-      { title: 'Mansion', url: '/game/mansion', icon: 'pi pi-capitol' },
+      { kind: 'link', label: 'Panel', route: '/hero/dashboard', iconClass: 'pi pi-helmet' },
+      { kind: 'link', label: 'Atrybuty', route: '/hero/attributes', iconClass: 'pi pi-skills' },
+      { kind: 'link', label: 'Eksploracja', route: '/game/exploration', iconClass: 'pi pi-hydra' },
+      { kind: 'link', label: 'Zbrojownia', route: '/game/armory', iconClass: 'pi pi-chest' },
+      { kind: 'link', label: 'Posiadłość', route: '/game/mansion', iconClass: 'pi pi-capitol' },
     ],
   },
   {
-    title: 'World',
+    title: 'Świat',
     items: [
-      { title: 'Vicinity', url: '/game/vicinity', icon: 'pi pi-trail' },
-      { title: 'Guild', url: '/game/guild', icon: 'pi pi-overlord' },
-      { title: 'Reports', url: '/game/reports', icon: 'pi pi-tied-scroll' },
-      { title: 'Trade', url: '/game/trade', icon: 'pi pi-trade' },
-      { title: 'Auctions', url: '/game/auction', icon: 'pi pi-shop-bag' },
+      { kind: 'link', label: 'Okolica', route: '/game/vicinity', iconClass: 'pi pi-trail' },
+      { kind: 'link', label: 'Gildia', route: '/game/guild', iconClass: 'pi pi-overlord' },
+      { kind: 'link', label: 'Raporty', route: '/game/reports', iconClass: 'pi pi-tied-scroll' },
+      { kind: 'link', label: 'Handel', route: '/game/trade', iconClass: 'pi pi-trade' },
+      { kind: 'link', label: 'Aukcje', route: '/game/auction', iconClass: 'pi pi-shop-bag' },
     ],
   },
   {
-    title: 'Operations',
+    title: 'Operacje',
     items: [
-      { title: 'Admin', url: '/admin', icon: 'pi pi-d20' },
+      { kind: 'link', label: 'Administracja', route: '/admin', iconClass: 'pi pi-d20' },
     ],
   },
-];
-
-export const MENU_LOGGED_IN: MenuItem[] = MENU_LOGGED_IN_GROUPS.flatMap(
-  (group) => group.items,
-);
-
-export const MENU_GUEST: MenuItem[] = [
-  { title: 'About the game', url: '/public', icon: '/assets/icons/info.svg' },
-  { title: 'Register', url: '/auth/create-character', icon: '/assets/icons/user-plus.svg' }
 ];
