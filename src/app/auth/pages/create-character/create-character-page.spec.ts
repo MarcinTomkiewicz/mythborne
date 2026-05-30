@@ -57,7 +57,7 @@ describe('CreateCharacterPage', () => {
     const fixture = createFixture(true, {
       details: details({
         canContinue: false,
-        disabledReason: 'Brak wolnych posiadłości startowych w District A.',
+        disabledReason: 'Brak wolnych posiadłości startowych w Dzielnicy A.',
         badges: [{ label: 'Brak wolnych miejsc', tone: 'danger' }],
         summaryRows: [
           {
@@ -68,7 +68,7 @@ describe('CreateCharacterPage', () => {
           },
           {
             label: 'Powód',
-            value: 'Brak wolnych posiadłości startowych w District A.',
+            value: 'Brak wolnych posiadłości startowych w Dzielnicy A.',
             tone: 'danger',
             multiline: true,
           },
@@ -81,7 +81,7 @@ describe('CreateCharacterPage', () => {
     const text = textContent(fixture);
     const cta = findContinueButton(fixture);
     expect(text).toContain('0 / 5000 wolnych posiadłości startowych');
-    expect(text).toContain('Brak wolnych posiadłości startowych w District A.');
+    expect(text).toContain('Brak wolnych posiadłości startowych w Dzielnicy A.');
     expect(cta?.componentInstance.disabled).toBeTrue();
   });
 

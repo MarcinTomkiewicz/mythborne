@@ -10,14 +10,14 @@ import {
   CREATE_CHARACTER_NO_FREE_SLOTS,
   DISTRICT_A_FULL_BLOCKER,
   STANDARD_SINGLE_HERO_BLOCKER,
-} from '../../constants/hero/create-character-server-options.constants';
+} from '../../config/create-character-server-options.config';
 import {
   CreateCharacterCreationGate,
   CreateCharacterServerBadge,
   CreateCharacterServerDetails,
   CreateCharacterServerOption,
-  CreateCharacterSummaryRow,
 } from '../../interfaces/hero/create-character-server-options.interface';
+import { AccountEntrySummaryRow } from '../../interfaces/account-entry-summary-row.interface';
 
 const EXISTING_HERO_ENTRY_ACTIONS = new Set(['dashboard', 'game_shell', 'enter_game']);
 
@@ -174,7 +174,7 @@ function serverBadges(
   ];
 }
 
-function sideRows(availability: StartFlowServerAvailability): CreateCharacterSummaryRow[] {
+function sideRows(availability: StartFlowServerAvailability): AccountEntrySummaryRow[] {
   return [
     { label: 'Następny krok', value: 'Tworzenie bohatera' },
     { label: 'Domyślne wejście', value: entryRouteDecisionLabel(availability) },
@@ -186,7 +186,7 @@ function sideRows(availability: StartFlowServerAvailability): CreateCharacterSum
 function mainSummaryRows(
   availability: StartFlowServerAvailability,
   gateState: CreateCharacterCreationGate,
-): CreateCharacterSummaryRow[] {
+): AccountEntrySummaryRow[] {
   return [
     ...districtCapacityRows(availability),
     creationRow(availability, gateState),
@@ -197,7 +197,7 @@ function mainSummaryRows(
 
 function districtCapacityRows(
   availability: StartFlowServerAvailability,
-): CreateCharacterSummaryRow[] {
+): AccountEntrySummaryRow[] {
   if (!hasUsableDistrictCapacity(availability)) {
     return [];
   }
@@ -213,7 +213,7 @@ function districtCapacityRows(
 function creationRow(
   availability: StartFlowServerAvailability,
   gateState: CreateCharacterCreationGate,
-): CreateCharacterSummaryRow {
+): AccountEntrySummaryRow {
   const full = hasUsableDistrictCapacity(availability) && isDistrictAFull(availability);
 
   return {
@@ -225,7 +225,7 @@ function creationRow(
   };
 }
 
-function blockerRows(gateState: CreateCharacterCreationGate): CreateCharacterSummaryRow[] {
+function blockerRows(gateState: CreateCharacterCreationGate): AccountEntrySummaryRow[] {
   return gateState.blocker
     ? [{
         label: 'Powód',

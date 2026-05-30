@@ -55,6 +55,7 @@ export class CreateCharacterPageFacade {
   readonly existingAccountCreateStage = signal<ExistingAccountCreateStage>('server_select');
   readonly selectedOrigin = signal<Origin | null>(null);
   readonly isSubmitting = signal(false);
+  readonly isServerAvailabilityLoading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly serverAvailability = signal<StartFlowServerAvailability[]>([]);
   readonly serverAvailabilityError = signal<string | null>(null);
@@ -120,6 +121,7 @@ export class CreateCharacterPageFacade {
         this.availabilityLoadToken++;
         this.serverAvailability.set([]);
         this.serverAvailabilityError.set(null);
+        this.isServerAvailabilityLoading.set(false);
         return;
       }
 
@@ -404,6 +406,7 @@ export class CreateCharacterPageFacade {
 
     this.serverAvailability.set([]);
     this.serverAvailabilityError.set(null);
+    this.isServerAvailabilityLoading.set(true);
 
     forkJoin({
       servers: this.activeServer.loadAccessibleServers(),
@@ -418,6 +421,7 @@ export class CreateCharacterPageFacade {
 
           this.serverAvailability.set(availability);
           this.serverAvailabilityError.set(null);
+          this.isServerAvailabilityLoading.set(false);
         },
         error: (error: unknown) => {
           if (token !== this.availabilityLoadToken) {
@@ -430,6 +434,7 @@ export class CreateCharacterPageFacade {
               ? error.message
               : 'Nie udało się wczytać dostępności serwerów dla tworzenia bohatera.',
           );
+          this.isServerAvailabilityLoading.set(false);
         },
       });
   }

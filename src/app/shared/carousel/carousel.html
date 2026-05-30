@@ -25,11 +25,11 @@
     </div>
 
     <article class="origin-info">
-      <h2 class="color-heading text-lg mb-sm">
+      <h2 class="color-heading text-lg m-0">
         {{ origins()[index()]?.name }}
       </h2>
 
-      <p class="origin-info__description mb-0">
+      <p class="origin-info__description m-0">
         {{ origins()[index()]?.description }}
       </p>
 
@@ -50,7 +50,7 @@
             }
           </div>
         } @else {
-          <p class="mb-0 muted-text">Brak opisu bonusów w konfiguracji pochodzenia.</p>
+          <p class="m-0 color-muted">Brak opisu bonusów dla tego pochodzenia.</p>
         }
       </div>
     </article>

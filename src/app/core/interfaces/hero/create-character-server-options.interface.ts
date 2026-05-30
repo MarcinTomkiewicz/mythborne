@@ -1,17 +1,10 @@
 import { StartFlowServerAvailability } from '../../domain/start-flow/start-flow.model';
+import { AccountEntrySummaryRow } from '../account-entry-summary-row.interface';
 
 export interface CreateCharacterServerOption {
   id: string;
   label: string;
   availability: StartFlowServerAvailability;
-}
-
-export interface CreateCharacterSummaryRow {
-  label: string;
-  value: string;
-  tone?: 'default' | 'danger';
-  multiline?: boolean;
-  primary?: boolean;
 }
 
 export interface CreateCharacterServerBadge {
@@ -30,8 +23,8 @@ export interface CreateCharacterServerDetails {
   title: string;
   description: string;
   badges: CreateCharacterServerBadge[];
-  summaryRows: CreateCharacterSummaryRow[];
-  sideRows: CreateCharacterSummaryRow[];
+  summaryRows: AccountEntrySummaryRow[];
+  sideRows: AccountEntrySummaryRow[];
   footerTitle: string;
   footerCopy: string;
   ctaLabel: string;

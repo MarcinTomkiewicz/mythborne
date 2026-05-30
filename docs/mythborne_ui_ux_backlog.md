@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-30 — UI-ENTRY-22-4 account-entry shell/sidebar reuse cleanup accepted
+Updated: 2026-05-30 — UI-ENTRY-22-5 hero-creation entry polish accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -10843,6 +10843,8 @@ Upewnić się, że account entry, server selection i hero creation działają w 
 ---
 
 ## UI-ENTRY-22-5 — Hero Creation Entry Polish Without Workflow Rewrite
+
+**Status:** Accepted on 2026-05-30 with pending user smoke. Hero creation entry keeps the account-entry shell/background and canonical create-hero workflow while polishing the existing server eligibility, hero-name, origin carousel and summary surfaces. Create-character display/config constants now live in `src/app/core/config/create-character-server-options.config.ts`; reusable summary row contracts live in `src/app/core/interfaces/account-entry-summary-row.interface.ts` and origin summary row key contracts in `src/app/core/interfaces/hero/create-character-origin-summary.interface.ts`. `AccountEntrySummaryRows` uses the shared `AccountEntrySummaryRow` type, and `StepOrigin` maps configured row keys to dynamic values while `CREATE_CHARACTER_STARTING_CHARACTER_POINTS = 1000` drives the displayed `Punkty postaci` row. Blocking async states use shared `LoadingOverlay` for origin options and server availability so empty states do not render before required data loads. No DB/RPC, guards, generated types, routes, route backgrounds, layout rewrite, Carousel SCSS or mobile/responsive behavior changed. Manual smoke remains user-side.
 
 **Goal:**
 Dopasować istniejący hero creation flow do nowego Entry background/account shell bez zmiany canonical hero creation DB/RPC workflow.

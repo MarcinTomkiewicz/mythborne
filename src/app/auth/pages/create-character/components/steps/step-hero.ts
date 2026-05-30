@@ -11,8 +11,8 @@ import { FormFields } from '../../../../../shared/form-fields/form-fields';
   imports: [ReactiveFormsModule, ButtonModule, FormFields],
   template: `
     <div [formGroup]="form()" class="mg-form flex-col gap-md w-100">
-      <h2 class="mg-section__title mg-section__title--xs mb-sm">Nazwij bohatera</h2>
-      <p class="mb-0 muted-text">
+      <h2 class="mg-section__title mg-section__title--xs m-0">Nazwij bohatera</h2>
+      <p class="m-0 color-muted">
         Nazwa musi być unikalna na wybranym serwerze. Sprawdzimy ją podczas tworzenia bohatera.
       </p>
 

@@ -32,7 +32,7 @@ describe('create-character server options', () => {
       isSandbox: false,
       isStaffContext: false,
       canCreateHero: false,
-      blockReason: 'Brak wolnych posiadłości startowych w District A.',
+      blockReason: 'Brak wolnych posiadłości startowych w Dzielnicy A.',
       isDistrictAFull: true,
       districtACapacity: 5000,
       districtAFree: 0,
@@ -42,7 +42,7 @@ describe('create-character server options', () => {
     const details = mapCreateCharacterServerDetails(entry, gate);
 
     expect(gate.canCreate).toBeFalse();
-    expect(gate.blocker).toBe('Brak wolnych posiadłości startowych w District A.');
+    expect(gate.blocker).toBe('Brak wolnych posiadłości startowych w Dzielnicy A.');
     expect(details?.summaryRows).toContain(jasmine.objectContaining({
       label: 'Dzielnica A',
       value: '0 / 5000 wolnych posiadłości startowych',
@@ -67,7 +67,7 @@ describe('create-character server options', () => {
     const gate = resolveCreateCharacterCreationGate(entry);
 
     expect(gate.canCreate).toBeFalse();
-    expect(gate.blocker).toBe('Brak wolnych posiadłości startowych w District A.');
+    expect(gate.blocker).toBe('Brak wolnych posiadłości startowych w Dzielnicy A.');
   });
 
   it('blocks standard existing-hero entry actions without depending on display labels', () => {

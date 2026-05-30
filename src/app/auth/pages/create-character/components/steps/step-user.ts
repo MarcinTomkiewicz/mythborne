@@ -14,7 +14,7 @@ import { FormFields } from '../../../../../shared/form-fields/form-fields';
   imports: [ReactiveFormsModule, ButtonModule, FormFields],
   template: `
     <div [formGroup]="form()" class="mg-form flex-col gap-md">
-      <h2 class="mg-section__title mg-section__title--xs mb-sm">Opowiedz o sobie</h2>
+      <h2 class="mg-section__title mg-section__title--xs m-0">Opowiedz o sobie</h2>
 
       <app-form-fields [form]="form()" [fields]="mainFields" />
 

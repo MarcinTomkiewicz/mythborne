@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { CreateCharacterSummaryRow } from '../../../core/interfaces/hero/create-character-server-options.interface';
+import { AccountEntrySummaryRow } from '../../../core/interfaces/account-entry-summary-row.interface';
 
 @Component({
   selector: 'app-account-entry-summary-rows',
@@ -19,7 +19,7 @@ import { CreateCharacterSummaryRow } from '../../../core/interfaces/hero/create-
           @if (row.multiline) {
             <span
               class="mg-data-row__value"
-              [class.heading-color]="row.primary"
+              [class.color-heading]="row.primary"
               [class.text-danger]="row.tone === 'danger'"
             >
               {{ row.value }}
@@ -27,7 +27,7 @@ import { CreateCharacterSummaryRow } from '../../../core/interfaces/hero/create-
           } @else {
             <strong
               class="mg-data-row__value"
-              [class.heading-color]="row.primary"
+              [class.color-heading]="row.primary"
               [class.text-danger]="row.tone === 'danger'"
             >
               {{ row.value }}
@@ -39,5 +39,5 @@ import { CreateCharacterSummaryRow } from '../../../core/interfaces/hero/create-
   `,
 })
 export class AccountEntrySummaryRows {
-  readonly rows = input.required<CreateCharacterSummaryRow[]>();
+  readonly rows = input.required<AccountEntrySummaryRow[]>();
 }

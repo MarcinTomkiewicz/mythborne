@@ -12,11 +12,11 @@ import { FormFields } from '../../../../../shared/form-fields/form-fields';
   imports: [ReactiveFormsModule, InputTextModule, ButtonModule, FormFields],
   template: `
     <div [formGroup]="form()" class="mg-form flex-col gap-md w-100">
-      <h2 class="mg-section__title mg-section__title--xs mb-sm">Utwórz konto</h2>
+      <h2 class="mg-section__title mg-section__title--xs m-0">Utwórz konto</h2>
 
       @if (isExistingAccount()) {
         <div class="mg-card bg-surface-secondary border-default flex-col gap-sm w-100">
-          <p class="mb-0 text-sm text-muted">Jesteś już zalogowany.</p>
+          <p class="m-0 text-sm color-muted">Jesteś już zalogowany.</p>
           <div class="flex-col gap-xs">
             <label for="existingEmail">Email konta</label>
             <input id="existingEmail" type="email" [value]="existingEmail()" readonly pInputText />

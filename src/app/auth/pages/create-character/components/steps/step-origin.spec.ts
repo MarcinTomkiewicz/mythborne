@@ -45,10 +45,10 @@ describe('StepOrigin', () => {
 
     const fixture = createComponent();
 
-    expect(textContent(fixture)).toContain('Pochodzenie jest wybierane raz');
-    expect(textContent(fixture)).toContain('Nazwy, opisy i bonusy pochodzą z konfiguracji świata');
+    expect(textContent(fixture)).toContain('Pochodzenie wybierasz raz');
+    expect(textContent(fixture)).toContain('Nazwy, opisy i bonusy są częścią zasad wybranego świata');
     expect(textContent(fixture)).toContain('Podsumowanie tworzenia');
-    expect(textContent(fixture)).toContain('Przydzielane po utworzeniu');
+    expect(textContent(fixture)).toContain('1000');
   });
 
   function createComponent(): ComponentFixture<StepOrigin> {
