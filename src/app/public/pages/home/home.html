@@ -1,70 +1,56 @@
-<section class="mg-container flex-col gap-xl py-lg">
-  <header class="flex-row-between-center flex-col-sm gap-md">
-    <a routerLink="/" class="flex-row-start-center gap-sm" aria-label="Mythsworn">
-      <span class="mg-brand-mark-fallback" aria-hidden="true">M</span>
-      <strong class="color-heading text-lg">Mythsworn</strong>
-    </a>
-
-    <nav class="flex-row-end-center flex-wrap gap-sm" aria-label="Wejście do konta">
-      <p-button
-        label="Zaloguj"
-        icon="pi pi-sign-in"
-        severity="secondary"
-        routerLink="/auth/login"
-      />
-      <p-button
-        label="Kontynuuj"
-        icon="pi pi-arrow-right"
-        routerLink="/auth/server-entry"
-      />
-    </nav>
-  </header>
-
-  <main class="grid-2-1 flex-1">
-    <section class="flex-col-center-start gap-lg">
-      <div class="flex-col gap-md">
-        <span class="tag-badge tag-badge--golden align-self-start">Publiczny świat Mythsworn</span>
-        <h1 class="mg-section__title m-0">Mythsworn</h1>
-        <p class="m-0 text-lg color-heading">
-          Wejdź do świata herosów, posiadłości, wypraw i rywalizacji prowadzonych przez wybrany serwer.
-        </p>
-        <p class="m-0">
-          Zaloguj się, wybierz dostępny świat i przejdź do istniejącego bohatera albo stwórz nowego tam,
-          gdzie serwer pozwala na rozpoczęcie gry.
-        </p>
-      </div>
-
-      <div class="flex-row-start-center flex-wrap gap-sm">
-        <p-button
-          label="Wejdź do gry"
-          icon="pi pi-play"
-          routerLink="/auth/login"
+<section class="mg-section mg-section--full grid-items-start py-lg">
+  <div class="mg-container flex-col gap-xl min-h-full w-100">
+    <header class="flex-row-center-center w-100 py-sm">
+      <a routerLink="/" class="flex-row-center-center w-100" aria-label="Mythsworn">
+        <img
+          src="/images/banner.png"
+          alt="Mythsworn"
+          class="mg-brand-banner w-70 max-w-full h-auto object-fit-contain"
         />
-        <p-button
-          label="Stwórz bohatera"
-          icon="pi pi-user-plus"
-          severity="secondary"
-          routerLink="/auth/server-entry"
-        />
-      </div>
-    </section>
+      </a>
+    </header>
 
-    <aside class="flex-col-center-stretch gap-md" aria-label="Start gry">
-      <section class="mg-card flex-col gap-sm">
-        <h2 class="mg-section__title mg-section__title--xs m-0">Dla nowych graczy</h2>
-        <p class="m-0">
-          Tworzenie bohatera korzysta z istniejącego flow wyboru serwera, pochodzenia i dalszego przejścia
-          do przydziału atrybutów.
-        </p>
+    <main class="grid-2-1 grid-items-start flex-1 gap-xl">
+      <section class="flex-col-between-start gap-lg">
+        <div class="flex-col gap-md">
+          <h1 class="mg-section__title m-0">Mythsworn: Throne of Hellas</h1>
+
+          @for (block of loreBlocks; track block.key) {
+            @if (block.closing) {
+              <p class="m-0 text-xl color-heading font-display">{{ block.text }}</p>
+            } @else if (block.prominent) {
+              <p class="m-0 text-lg color-heading font-bold">{{ block.text }}</p>
+            } @else {
+              <p class="m-0 text-md">{{ block.text }}</p>
+            }
+          }
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <p-button
+            label="Wejdź do gry"
+            icon="pi pi-play"
+            routerLink="/auth/login"
+          />
+          <p-button
+            label="Stwórz bohatera"
+            icon="pi pi-user-plus"
+            severity="secondary"
+            routerLink="/auth/server-entry"
+          />
+        </div>
       </section>
 
-      <section class="mg-card flex-col gap-sm">
-        <h2 class="mg-section__title mg-section__title--xs m-0">Dla powracających</h2>
-        <p class="m-0">
-          Kontynuacja prowadzi do wejścia konta, gdzie wybierasz dostępny kontekst bohatera przed przejściem
-          do panelu gry.
-        </p>
-      </section>
-    </aside>
-  </main>
+      <aside class="flex-col-start-stretch gap-md" aria-label="Start gry">
+        @for (card of infoCards; track card.key) {
+          <section class="mg-card flex-col gap-sm">
+            <h2 class="mg-section__title mg-section__title--xs m-0">{{ card.title }}</h2>
+            <p class="m-0">{{ card.body }}</p>
+          </section>
+        }
+      </aside>
+    </main>
+
+    <div class="h-px-100 flex-none" aria-hidden="true"></div>
+  </div>
 </section>

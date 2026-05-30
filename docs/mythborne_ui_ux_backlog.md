@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-29 — UI-PVP-7 spy report polish accepted
+Updated: 2026-05-30 — UI-ENTRY-22-2A public landing visual polish accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -10600,6 +10600,46 @@ Dopolerować publiczny landing page `/` na desktopie, bez zmiany start-flow, rou
 * CTA routing:
 * verification:
 * manual smoke / not run reason:
+
+**Status:** Accepted on 2026-05-30 as the desktop public landing visual polish baseline. `/` keeps the centered Mythsworn banner using `public/images/banner.png` with the shared `mg-brand-banner` mask extracted from the existing game topbar banner treatment, top nav actions were removed from the banner area, and the main content stays top-aligned with left lore copy, primary CTAs and right info cards. Full user-provided homepage copy now lives in `src/app/core/config/home-page-content.config.ts`, with `HomePageLoreBlock` / `HomePageInfoCard` interfaces in `src/app/core/interfaces/home-page-content.interface.ts`, stable `key` tracking in the template and no page-local SCSS. CTA routing remains `Wejdź do gry` -> `/auth/login` and `Stwórz bohatera` -> `/auth/server-entry`; no DB/RPC, guards, generated types, route background config, mobile/responsive behavior or start-flow behavior changed. Manual smoke remains user-side.
+
+---
+
+UI-ENTRY-22-2B — Global Footer Foundation
+
+Goal: add a reusable Mythsworn footer foundation visible where appropriate across the public/account/game shell experience.
+
+Scope:
+
+* Inspect current `AppShell`, `AccountEntryLayout`, public landing, game shell and route containment.
+* Decide footer ownership: shared shell/footer component, not page-local landing footer.
+* Add a minimal reusable footer component/pattern using existing global utilities and `mg-*` surfaces.
+* Footer should support public landing now and be reusable for the wider app later.
+* Keep content minimal: project name, subtitle, current year/copyright-style line, and placeholder links only if existing routes exist.
+
+Out of scope:
+
+* mobile/responsive polish;
+* legal/privacy pages unless routes already exist;
+* DB/RPC/generated types;
+* auth/start-flow changes;
+* initial bundle optimization beyond avoiding unnecessary eager imports;
+* redesign of landing/game/account shells.
+
+Rules:
+
+* All config/interfaces/types/services go under `src/app/core` in the correct subfolder.
+* Shared footer component must not be placed page-locally under `public/pages/home`.
+* Reuse existing layout/surface/text utilities first.
+* No local SCSS unless a narrow shell/footer structural gap is reported.
+* No fake routes/links.
+
+Verification:
+
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`;
+* static greps: no `mb-*`, no direct writes, no generated types touched, no page-local footer config.
 
 ---
 

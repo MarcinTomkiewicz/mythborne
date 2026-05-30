@@ -1,0 +1,5 @@
+/* Extracted from the existing game topbar banner mask. */
+.mg-brand-banner {
+  mask-image: linear-gradient(90deg, transparent 0, black 12%, black 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, black 12%, black 88%, transparent 100%);
+}
