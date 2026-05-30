@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-30 — UI-ENTRY-22-2A public landing visual polish accepted
+Updated: 2026-05-30 — UI-ENTRY-22-2B global footer foundation accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -10605,7 +10605,7 @@ Dopolerować publiczny landing page `/` na desktopie, bez zmiany start-flow, rou
 
 ---
 
-UI-ENTRY-22-2B — Global Footer Foundation
+## UI-ENTRY-22-2B — Global Footer Foundation
 
 Goal: add a reusable Mythsworn footer foundation visible where appropriate across the public/account/game shell experience.
 
@@ -10640,6 +10640,8 @@ Verification:
 * `npm run build`;
 * `git diff --check`;
 * static greps: no `mb-*`, no direct writes, no generated types touched, no page-local footer config.
+
+**Status:** Accepted on 2026-05-30 as the reusable footer foundation for public/account entry surfaces. `AppFooter` lives under `src/app/layout/components/app-footer`, reads minimal content/link config from `src/app/core/config/app-footer.config.ts`, and is rendered by `AppShell` only for non-game/non-admin shell routes so accepted game/admin shell containment remains unchanged. Footer content stays minimal with `Mythsworn`, `Throne of Hellas`, current year, and real links only: `/`, `/auth/login`, `/register` and `/auth/server-entry`; `/register` is the existing alias to `/auth/create-character`. Footer nav uses normal global anchor/text utilities, not `tag-badge`, and no page-local footer config or SCSS was added. No DB/RPC, guards, generated types, route behavior, status-flow or mobile/responsive behavior changed. Manual smoke remains user-side.
 
 ---
 

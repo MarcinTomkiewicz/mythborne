@@ -6,6 +6,7 @@ import { resolveRouteBackgroundImage } from '../../../core/config/route-backgrou
 import { ActiveServer } from '../../../core/services/server/active-server';
 import { RouteBackgroundOverride } from '../../../core/services/ui/route-background-override';
 import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-policy';
+import { AppFooter } from '../app-footer/app-footer';
 import { GameSidebar } from '../game-sidebar/game-sidebar';
 import { GameTopbar } from '../game-topbar/game-topbar';
 import { MembershipBlockedNotice } from '../membership-blocked-notice/membership-blocked-notice';
@@ -17,6 +18,7 @@ import { StaffGameplayBlockedNotice } from '../staff-gameplay-blocked-notice/sta
     RouterOutlet,
     GameSidebar,
     GameTopbar,
+    AppFooter,
     MembershipBlockedNotice,
     StaffGameplayBlockedNotice,
   ],
