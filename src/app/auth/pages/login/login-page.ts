@@ -1,20 +1,23 @@
-import { Component, inject, viewChild } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
 import { LoginPageFacade } from '../../../core/services/auth/login-page.facade';
 import { LoginForm } from '../../components/login-form/login-form';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [LoginForm],
+  host: {
+    class: 'd-block w-100 min-h-full',
+  },
+  imports: [ButtonModule, LoginForm, RouterLink],
   providers: [LoginPageFacade],
   templateUrl: './login-page.html',
-  styleUrl: './login-page.scss',
 })
 export class LoginPage {
-  private readonly page = inject(LoginPageFacade);
-  private readonly form = viewChild(LoginForm);
+  readonly page = inject(LoginPageFacade);
 
   handleLogin({ email, password }: { email: string; password: string }) {
-    this.page.login({ email, password }, (message) => this.form()?.setError(message));
+    this.page.login({ email, password });
   }
 }

@@ -12,16 +12,16 @@ export const authRoutes: Routes = [
     pathMatch: 'full',
   },
   {
-    path: 'login',
-    canActivate: [authEntryGuard],
-    loadComponent: () =>
-      import('./pages/login/login-page').then((m) => m.LoginPage)
-  },
-  {
     path: '',
     loadComponent: () =>
       import('./layout/account-entry-layout').then((m) => m.AccountEntryLayout),
     children: [
+      {
+        path: 'login',
+        canActivate: [authEntryGuard],
+        loadComponent: () =>
+          import('./pages/login/login-page').then((m) => m.LoginPage),
+      },
       {
         path: 'server-entry',
         canActivate: [serverEntryGuard],

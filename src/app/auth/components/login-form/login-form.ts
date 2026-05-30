@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { LOGIN_FIELDS } from '../../../core/config/forms/auth-form.config';
@@ -8,15 +7,14 @@ import { FormFields } from '../../../shared/form-fields/form-fields';
 @Component({
   selector: 'app-login-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ButtonModule, FormFields],
+  imports: [ReactiveFormsModule, ButtonModule, FormFields],
   templateUrl: './login-form.html',
-  styleUrl: './login-form.scss',
 })
 export class LoginForm {
-  layout = input<'vertical' | 'horizontal'>('vertical');
   showHeader = input<boolean>(true);
+  submitting = input(false);
+  errorMessage = input<string | null>(null);
   readonly login = output<{ email: string; password: string }>();
-  readonly errorMessage = signal<string | null>(null);
 
   private readonly fb = new FormBuilder();
   readonly form = this.fb.group({
@@ -24,20 +22,17 @@ export class LoginForm {
     password: ['', Validators.required],
   });
 
-  readonly isHorizontal = computed(() => this.layout() === 'horizontal');
   readonly fields = LOGIN_FIELDS;
 
-  setError(message: string | null) {
-    this.errorMessage.set(message);
-  }
-
   submit() {
+    if (this.submitting()) {
+      return;
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-
-    this.errorMessage.set(null);
 
     const { email, password } = this.form.value;
     this.login.emit({ email: email!, password: password! });

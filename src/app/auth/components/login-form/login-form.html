@@ -1,18 +1,22 @@
 <form
   [formGroup]="form"
-  class="mg-form w-100"
-  [ngClass]="isHorizontal() ? 'flex-row-start-end gap-md' : 'flex-col gap-md'"
+  class="mg-form flex-col gap-md w-100"
   (ngSubmit)="submit()"
 >
   @if (showHeader()) {
-    <h2 class="mg-section__title mg-section__title--xs mb-sm">Log in</h2>
+    <h2 class="mg-section__title mg-section__title--xs m-0">Logowanie</h2>
   }
 
   <app-form-fields [form]="form" [fields]="fields" />
 
   @if (errorMessage()) {
-    <p class="error-text mb-0">{{ errorMessage() }}</p>
+    <p class="m-0 text-danger">{{ errorMessage() }}</p>
   }
 
-  <p-button type="submit" label="Log in" [disabled]="form.invalid"></p-button>
+  <p-button
+    type="submit"
+    [label]="submitting() ? 'Logowanie...' : 'Zaloguj'"
+    icon="pi pi-sign-in"
+    [disabled]="form.invalid || submitting()"
+  />
 </form>

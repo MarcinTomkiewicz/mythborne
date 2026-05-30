@@ -12,7 +12,7 @@ export const LOGIN_FIELDS: readonly FormFieldConfig[] = [
   {
     type: FormFieldType.Text,
     controlName: 'password',
-    label: 'Password',
+    label: 'Hasło',
     inputType: 'password',
     autocomplete: 'current-password',
   },

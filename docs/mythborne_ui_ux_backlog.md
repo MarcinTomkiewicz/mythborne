@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-30 — UI-ENTRY-22-5 hero-creation entry polish accepted
+Updated: 2026-05-30 — UI-ENTRY-22-8 login panel polish accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -11116,6 +11116,8 @@ Sprawdzić minimalną czytelność, responsywność i dostępność dla root lan
 ---
 
 ## UI-ENTRY-22-8 — Login Panel Polish / Account Login Flow
+
+**Status:** Accepted on 2026-05-30 with follow-up. `/auth/login` now renders inside the existing `AccountEntryLayout` and shared entry background, uses the existing `Auth.login` / `AuthState` / `authEntryGuard` flow, and redirects successful login to `/auth/server-entry`. The login surface is a compact centered account-entry card using existing utilities and `LoginForm` / `FormFields` / `LOGIN_FIELDS`, with Polish labels, visible login error, disabled submitting state and no page-local SCSS. The page includes `Wróć na start` and `Nie masz konta? Załóż konto`, with registration routed through the existing `/register` alias to `/auth/create-character`. Guest account-entry sidebar no longer renders logout. No DB/RPC, generated types, route-background config, route semantics beyond moving login under account layout, mobile/responsive scope or status-flow code changed. Manual smoke remains user-side for `/auth/login`, invalid login, valid login and registration link.
 
 **Goal:**
 Doprowadzić panel logowania do konta do spójnego, działającego i czytelnego stanu w ramach account/entry shell.

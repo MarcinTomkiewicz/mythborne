@@ -12,6 +12,8 @@ describe('authRoutes', () => {
     expect(accountLayoutRoute).toBeTruthy();
     await expectAsync(accountLayoutRoute?.loadComponent?.() as Promise<unknown>)
       .toBeResolvedTo(AccountEntryLayout);
+    expect(accountLayoutRoute?.children?.some((route) => route.path === 'login'))
+      .toBeTrue();
     expect(accountLayoutRoute?.children?.some((route) => route.path === 'server-entry'))
       .toBeTrue();
     expect(accountLayoutRoute?.children?.some((route) => route.path === 'create-character'))
@@ -22,5 +24,11 @@ describe('authRoutes', () => {
     const topLevelServerEntry = authRoutes.find((route) => route.path === 'server-entry');
 
     expect(topLevelServerEntry).toBeUndefined();
+  });
+
+  it('does not expose login as a top-level auth page outside the account layout', () => {
+    const topLevelLogin = authRoutes.find((route) => route.path === 'login');
+
+    expect(topLevelLogin).toBeUndefined();
   });
 });

@@ -7,6 +7,7 @@ import {
 import {
   AccountEntrySidebarContextKey,
   SidebarContextRow,
+  SidebarNavGroup,
 } from '../../core/interfaces/layout/sidebar.interface';
 import { AuthState } from '../../core/services/auth/auth-state';
 import { ActiveHero } from '../../core/services/hero/active-hero';
@@ -28,7 +29,7 @@ export class AccountEntryLayout {
   private readonly authState = inject(AuthState);
 
   readonly accountLabel = computed(
-    () => this.authState.user()?.email ?? 'Zalogowane konto',
+    () => this.authState.user()?.email ?? 'Gość',
   );
   readonly selectedServerName = computed(
     () => this.activeServer.selectedServer()?.name ?? null,
@@ -42,7 +43,12 @@ export class AccountEntryLayout {
       value: this.contextValue(row.key),
     })),
   );
-  readonly navGroups = ACCOUNT_ENTRY_SIDEBAR_NAV_GROUPS;
+  readonly navGroups = computed<SidebarNavGroup[]>(() =>
+    ACCOUNT_ENTRY_SIDEBAR_NAV_GROUPS.map((group) => ({
+      ...group,
+      items: group.items.filter((item) => item.kind !== 'logout' || !!this.authState.user()),
+    })),
+  );
 
   private contextValue(key: AccountEntrySidebarContextKey): string {
     switch (key) {
