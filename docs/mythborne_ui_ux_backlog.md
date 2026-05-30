@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-30 — UI-ENTRY-22-6 auth-aware landing CTA accepted
+Updated: 2026-05-30 — UI-ENTRY-22-7 responsive accessibility smoke accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -11043,6 +11043,8 @@ Uspójnić przejście z publicznego landing page do istniejącego auth/account e
 ---
 
 ## UI-ENTRY-22-7 — Entry Flow Responsive And Accessibility Smoke
+
+Status: accepted 2026-05-30 — pending user smoke.
 
 **Goal:**
 Sprawdzić minimalną czytelność, responsywność i dostępność dla root landing, account entry, server selection i hero creation after Epic 22 implementation.
