@@ -1,7 +1,4 @@
-import {
-  StartFlowServerAvailability,
-  isStartFlowDashboardEntryAction,
-} from '../../domain/start-flow/start-flow.model';
+import { StartFlowServerAvailability } from '../../domain/start-flow/start-flow.model';
 import {
   CREATE_CHARACTER_AVAILABILITY_MISSING,
   CREATE_CHARACTER_CREATION_AVAILABLE,
@@ -11,8 +8,6 @@ import {
   CREATE_CHARACTER_ENTRY_ROUTE_CONTRACT_GAP,
   CREATE_CHARACTER_MISSING_BLOCKER,
   CREATE_CHARACTER_NO_FREE_SLOTS,
-  DISTRICT_A_FULL_BLOCKER,
-  STANDARD_SINGLE_HERO_BLOCKER,
 } from '../../config/create-character-server-options.config';
 import {
   CreateCharacterCreationGate,
@@ -21,6 +16,7 @@ import {
   CreateCharacterServerOption,
 } from '../../interfaces/hero/create-character-server-options.interface';
 import { AccountEntrySummaryRow } from '../../interfaces/account-entry-summary-row.interface';
+import { jsonRecord, optionalText, read } from '../../utils/json-read';
 
 export function mapCreateCharacterServerOptions(
   availability: StartFlowServerAvailability[],
@@ -83,19 +79,7 @@ export function canCreateHeroOnServer(
 export function creationBlockerForAvailability(
   availability: StartFlowServerAvailability,
 ): string | null {
-  if (availability.blockReason) {
-    return availability.blockReason;
-  }
-
-  if (hasUsableDistrictCapacity(availability) && isDistrictAFull(availability)) {
-    return DISTRICT_A_FULL_BLOCKER;
-  }
-
-  if (availability.isStandard && hasExistingStandardHero(availability)) {
-    return STANDARD_SINGLE_HERO_BLOCKER;
-  }
-
-  return availability.canCreateHero ? null : CREATE_CHARACTER_MISSING_BLOCKER;
+  return availability.canCreateHero ? null : dbCreateBlockReason(availability);
 }
 
 export function creationEligibilityReason(availability: StartFlowServerAvailability): string {
@@ -107,7 +91,7 @@ function optionStatus(availability: StartFlowServerAvailability): string {
     return 'tworzenie dostępne';
   }
 
-  if (availability.blockReason || isDistrictAFull(availability)) {
+  if (dbCreateBlockReason(availability)) {
     return 'tworzenie zablokowane';
   }
 
@@ -138,7 +122,7 @@ export function creationEligibilityLabel(
   availability: StartFlowServerAvailability,
   gateState = resolveCreateCharacterCreationGate(availability, null, false),
 ): string {
-  if (hasUsableDistrictCapacity(availability) && isDistrictAFull(availability)) {
+  if (!availability.canCreateHero && hasUsableDistrictCapacity(availability) && isDistrictAFull(availability)) {
     return CREATE_CHARACTER_NO_FREE_SLOTS;
   }
 
@@ -215,7 +199,9 @@ function creationRow(
   availability: StartFlowServerAvailability,
   gateState: CreateCharacterCreationGate,
 ): AccountEntrySummaryRow {
-  const full = hasUsableDistrictCapacity(availability) && isDistrictAFull(availability);
+  const full = !availability.canCreateHero &&
+    hasUsableDistrictCapacity(availability) &&
+    isDistrictAFull(availability);
 
   return {
     label: 'Tworzenie',
@@ -248,13 +234,10 @@ function hasUsableDistrictCapacity(availability: StartFlowServerAvailability): b
     availability.districtACapacity > 0;
 }
 
-function hasExistingStandardHero(availability: StartFlowServerAvailability): boolean {
-  return availability.userHeroCount > 0 ||
-    !!availability.defaultHeroId ||
-    !!availability.defaultHeroName ||
-    (availability.canEnterGame && isExistingHeroEntryAction(availability.nextAction));
-}
+function dbCreateBlockReason(availability: StartFlowServerAvailability): string {
+  const eligibility = jsonRecord(availability.eligibilityJson);
 
-function isExistingHeroEntryAction(nextAction: string): boolean {
-  return isStartFlowDashboardEntryAction(nextAction);
+  return availability.blockReason ||
+    optionalText(read(eligibility, 'createBlockReason', 'create_block_reason')) ||
+    CREATE_CHARACTER_MISSING_BLOCKER;
 }

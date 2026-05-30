@@ -26,7 +26,7 @@ describe('create-character server options', () => {
     }));
   });
 
-  it('blocks standard full District A capacity and returns the exact reason', () => {
+  it('uses DB block reason when DB marks creation unavailable', () => {
     const entry = availability({
       isStandard: true,
       isSandbox: false,
@@ -51,7 +51,22 @@ describe('create-character server options', () => {
     }));
   });
 
-  it('blocks inconsistent standard payload with no free District A slots', () => {
+  it('uses eligibility JSON create block reason when DB block_reason is empty', () => {
+    const entry = availability({
+      canCreateHero: false,
+      blockReason: null,
+      eligibilityJson: {
+        createBlockReason: 'Tworzenie jest zablokowane przez politykę świata.',
+      },
+    });
+
+    const gate = resolveCreateCharacterCreationGate(entry);
+
+    expect(gate.canCreate).toBeFalse();
+    expect(gate.blocker).toBe('Tworzenie jest zablokowane przez politykę świata.');
+  });
+
+  it('allows creation when DB marks creation available even if capacity metadata looks full', () => {
     const entry = availability({
       isStandard: true,
       isSandbox: false,
@@ -66,11 +81,11 @@ describe('create-character server options', () => {
 
     const gate = resolveCreateCharacterCreationGate(entry);
 
-    expect(gate.canCreate).toBeFalse();
-    expect(gate.blocker).toBe('Brak wolnych posiadłości startowych w Dzielnicy A.');
+    expect(gate.canCreate).toBeTrue();
+    expect(gate.blocker).toBeNull();
   });
 
-  it('blocks standard existing-hero entry actions without depending on display labels', () => {
+  it('allows creation when DB marks creation available regardless of entry route action', () => {
     const entryActions = ['dashboard', 'game_shell', 'enter_game'];
 
     for (const nextAction of entryActions) {
@@ -81,9 +96,8 @@ describe('create-character server options', () => {
         canCreateHero: true,
         canEnterGame: true,
         nextAction,
-        userHeroCount: 0,
-        defaultHeroId: null,
-        defaultHeroName: null,
+        userHeroCount: 1,
+        defaultHeroName: 'Ariadne',
         districtACapacity: 5000,
         districtAFree: 4615,
         districtAOccupied: 385,
@@ -91,37 +105,27 @@ describe('create-character server options', () => {
 
       const gate = resolveCreateCharacterCreationGate(entry);
 
-      expect(gate.canCreate).toBeFalse();
-      expect(gate.blocker).toBe(
-        'Na świecie standardowym możesz mieć tylko jednego bohatera. Wejdź do gry istniejącym bohaterem.',
-      );
+      expect(gate.canCreate).toBeTrue();
+      expect(gate.blocker).toBeNull();
     }
   });
 
-  it('blocks standard existing-hero state when backend marks creation unavailable without a blocker', () => {
+  it('uses generic unavailable copy when DB marks creation unavailable without a blocker', () => {
     const entry = availability({
-      isStandard: true,
-      isSandbox: false,
-      isStaffContext: false,
       canCreateHero: false,
       canEnterGame: true,
       nextAction: 'dashboard',
       userHeroCount: 1,
       defaultHeroName: 'Ariadne',
-      districtACapacity: 5000,
-      districtAFree: 4615,
-      districtAOccupied: 385,
     });
 
     const gate = resolveCreateCharacterCreationGate(entry);
 
     expect(gate.canCreate).toBeFalse();
-    expect(gate.blocker).toBe(
-      'Na świecie standardowym możesz mieć tylko jednego bohatera. Wejdź do gry istniejącym bohaterem.',
-    );
+    expect(gate.blocker).toBe('Tworzenie bohatera jest teraz niedostępne na tym świecie.');
   });
 
-  it('allows sandbox creation when DB allows it even if entry route points to an existing hero', () => {
+  it('keeps existing-hero route labels separate from creation eligibility', () => {
     const entry = availability({
       canCreateHero: true,
       canEnterGame: true,
@@ -140,21 +144,6 @@ describe('create-character server options', () => {
       label: 'Twój bohater',
       value: 'Vlad',
     }));
-  });
-
-  it('uses backend blocker for sandbox when DB blocks creation', () => {
-    const entry = availability({
-      canCreateHero: false,
-      blockReason: 'Sandbox creation is blocked by backend.',
-      nextAction: 'enter_game',
-      userHeroCount: 1,
-      defaultHeroName: 'Vlad',
-    });
-
-    const gate = resolveCreateCharacterCreationGate(entry);
-
-    expect(gate.canCreate).toBeFalse();
-    expect(gate.blocker).toBe('Sandbox creation is blocked by backend.');
   });
 });
 

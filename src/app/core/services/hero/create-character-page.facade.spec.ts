@@ -164,7 +164,7 @@ describe('CreateCharacterPageFacade', () => {
 
     expect(auth.register).not.toHaveBeenCalled();
     expect(auth.saveUserData).not.toHaveBeenCalled();
-    expect(createHero.createHero).toHaveBeenCalledOnceWith('Sandbox Hero', 'origin-1');
+    expect(createHero.createHero).toHaveBeenCalledOnceWith('Sandbox Hero', 'origin-1', 'server-1');
     expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/attributes');
   });
 
@@ -206,7 +206,7 @@ describe('CreateCharacterPageFacade', () => {
     facade.onOriginNext(origin());
 
     expect(facade.form.controls.originId.value).toBe('origin-1');
-    expect(createHero.createHero).toHaveBeenCalledOnceWith('Sandbox Hero', 'origin-1');
+    expect(createHero.createHero).toHaveBeenCalledOnceWith('Sandbox Hero', 'origin-1', 'server-1');
     expect(auth.saveUserData).not.toHaveBeenCalled();
     expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/attributes');
   });
@@ -317,25 +317,29 @@ describe('CreateCharacterPageFacade', () => {
     }));
   });
 
-  it('blocks creation when DB availability returns a blocker even if canCreateHero is true', () => {
+  it('allows creation when DB availability allows it even if a stale blocker string is present', () => {
+    createHero.createHero.and.returnValue(of(heroCreationResult({
+      routeNextAction: 'stat_allocation',
+    })));
     facade.serverAvailability.set([{
       serverId: 'server-1',
       canCreateHero: true,
       nextAction: 'create_hero',
       blockReason: 'Sandbox creation is temporarily blocked.',
     } as StartFlowServerAvailability]);
+    openExistingAccountCreationStage(facade);
+    fillValidCreationForm(facade);
 
-    facade.continueToHeroCreation();
+    facade.submit();
 
-    expect(createHero.createHero).not.toHaveBeenCalled();
-    expect(facade.errorMessage()).toBe('Sandbox creation is temporarily blocked.');
-    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
-      severity: 'error',
-      summary: 'Tworzenie bohatera zablokowane',
-    }));
+    expect(createHero.createHero).toHaveBeenCalledOnceWith('Hero Name', 'origin-1', 'server-1');
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/attributes');
   });
 
-  it('blocks creation for a full standard server even if canCreateHero is inconsistent', () => {
+  it('allows creation for full-looking capacity metadata when DB allows creation', () => {
+    createHero.createHero.and.returnValue(of(heroCreationResult({
+      routeNextAction: 'stat_allocation',
+    })));
     facade.serverAvailability.set([availability({
       canCreateHero: true,
       canEnterGame: true,
@@ -348,18 +352,19 @@ describe('CreateCharacterPageFacade', () => {
       districtAFree: 0,
       districtAOccupied: 5000,
     })]);
+    openExistingAccountCreationStage(facade);
+    fillValidCreationForm(facade);
 
-    facade.continueToHeroCreation();
+    facade.submit();
 
-    expect(createHero.createHero).not.toHaveBeenCalled();
-    expect(facade.errorMessage()).toBe('Brak wolnych posiadłości startowych w District A.');
-    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
-      severity: 'error',
-      summary: 'Tworzenie bohatera zablokowane',
-    }));
+    expect(createHero.createHero).toHaveBeenCalledOnceWith('Hero Name', 'origin-1', 'server-1');
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/attributes');
   });
 
-  it('blocks creation for a standard server with an existing hero even if canCreateHero is inconsistent', () => {
+  it('allows creation for existing-hero metadata when DB allows creation', () => {
+    createHero.createHero.and.returnValue(of(heroCreationResult({
+      routeNextAction: 'stat_allocation',
+    })));
     facade.serverAvailability.set([availability({
       canCreateHero: true,
       canEnterGame: true,
@@ -373,17 +378,13 @@ describe('CreateCharacterPageFacade', () => {
       districtAFree: 4615,
       districtAOccupied: 385,
     })]);
+    openExistingAccountCreationStage(facade);
+    fillValidCreationForm(facade);
 
-    facade.continueToHeroCreation();
+    facade.submit();
 
-    expect(createHero.createHero).not.toHaveBeenCalled();
-    expect(facade.errorMessage()).toBe(
-      'Na świecie standardowym możesz mieć tylko jednego bohatera. Wejdź do gry istniejącym bohaterem.',
-    );
-    expect(messageService.add).toHaveBeenCalledWith(jasmine.objectContaining({
-      severity: 'error',
-      summary: 'Tworzenie bohatera zablokowane',
-    }));
+    expect(createHero.createHero).toHaveBeenCalledOnceWith('Hero Name', 'origin-1', 'server-1');
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/attributes');
   });
 
   it('allows sandbox staff creation when start-flow entry action is existing hero dashboard and DB allows creation', () => {
@@ -402,7 +403,7 @@ describe('CreateCharacterPageFacade', () => {
 
     facade.submit();
 
-    expect(createHero.createHero).toHaveBeenCalledOnceWith('Hero Name', 'origin-1');
+    expect(createHero.createHero).toHaveBeenCalledOnceWith('Hero Name', 'origin-1', 'server-1');
     expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/attributes');
   });
 
@@ -421,7 +422,7 @@ describe('CreateCharacterPageFacade', () => {
 
     facade.submit();
 
-    expect(createHero.createHero).toHaveBeenCalledOnceWith('Hero Name', 'origin-1');
+    expect(createHero.createHero).toHaveBeenCalledOnceWith('Hero Name', 'origin-1', 'server-1');
     expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/attributes');
   });
 
@@ -441,7 +442,7 @@ describe('CreateCharacterPageFacade', () => {
 
     facade.submit();
 
-    expect(createHero.createHero).toHaveBeenCalledOnceWith('Hero Name', 'origin-1');
+    expect(createHero.createHero).toHaveBeenCalledOnceWith('Hero Name', 'origin-1', 'server-1');
     expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/hero/attributes');
   });
 

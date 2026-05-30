@@ -2,7 +2,10 @@ import { inject, Injectable, signal } from '@angular/core';
 import { map, Observable, of, switchMap, tap, throwError } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
 import { mapHero } from '../../domain/hero/hero.mapper';
-import { AccountEntryActiveHeroContext } from '../../domain/start-flow/start-flow.model';
+import {
+  AccountEntryActiveHeroContext,
+  StartFlowHeroCreationResult,
+} from '../../domain/start-flow/start-flow.model';
 import { HeroOrderColumn } from '../../enums/active-hero.enum';
 import { FilterOperator } from '../../enums/filter-operators';
 import {
@@ -222,6 +225,71 @@ export class ActiveHero {
     this._state.set(state);
     this.authState.setHero(hero);
     this.persistSelectedHero(userId, context.serverId, context.heroId);
+    this._error.set(null);
+    this._isLoading.set(false);
+
+    return state;
+  }
+
+  applyStartFlowHeroCreationResult(
+    result: StartFlowHeroCreationResult,
+  ): ActiveHeroState {
+    const userId = this.authState.user()?.id ?? null;
+
+    if (!userId) {
+      throw new Error('No authenticated user for created hero selection.');
+    }
+
+    const server = this.activeServer.selectedServer();
+
+    if (!server || server.id !== result.serverId) {
+      throw new Error('Selected server does not match created hero result.');
+    }
+
+    const hero: IHero = {
+      id: result.heroId,
+      userId,
+      serverId: result.serverId,
+      name: result.heroName,
+      level: 1,
+      rank: result.prestigeRankNumber,
+      experience: 0,
+      totalExperienceEarned: 0,
+      characterPoints: result.characterPointsBalance,
+      totalCharacterPointsEarned: result.characterPointsBalance,
+      originId: result.originId,
+      estateId: result.estateId,
+      profilePicture: null,
+      createdAt: null,
+    };
+    const heroRow = {
+      id: hero.id,
+      user_id: hero.userId,
+      server_id: hero.serverId,
+      name: hero.name,
+      level: hero.level,
+      rank: hero.rank,
+      experience: hero.experience,
+      total_experience_earned: hero.totalExperienceEarned,
+      character_points: hero.characterPoints,
+      total_character_points_earned: hero.totalCharacterPointsEarned,
+      origin_id: hero.originId,
+      estate_id: hero.estateId,
+      profile_picture: hero.profilePicture,
+      created_at: hero.createdAt,
+    } as Row<'hero'>;
+    const state: ActiveHeroState = {
+      userId,
+      serverId: result.serverId,
+      heroId: result.heroId,
+      server,
+      hero,
+      heroRow,
+    };
+
+    this._state.set(state);
+    this.authState.setHero(hero);
+    this.persistSelectedHero(userId, result.serverId, result.heroId);
     this._error.set(null);
     this._isLoading.set(false);
 

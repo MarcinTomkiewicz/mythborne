@@ -33,7 +33,7 @@ export type ExistingAccountCreateStage = 'server_select' | 'hero_creation';
 
 interface HeroCreationSubmitContext {
   token: number;
-  serverId: string | null;
+  serverId: string;
   originId: string;
   heroName: string;
 }
@@ -89,8 +89,7 @@ export class CreateCharacterPageFacade {
     ),
   );
   readonly canSubmitHeroCreation = computed(() =>
-    !this.hasExistingAccount() ||
-    (!!this.activeServer.selectedServer() && this.selectedCreationGate().canCreate),
+    !!this.selectedServerAvailability() && this.selectedCreationGate().canCreate,
   );
 
   get accountForm() {
@@ -319,9 +318,18 @@ export class CreateCharacterPageFacade {
   private startHeroCreation(): void {
     const hero = this.heroForm.getRawValue();
     const originId = this.form.controls.originId.getRawValue();
+    const selectedAvailability = this.selectedServerAvailability();
+
+    if (!selectedAvailability) {
+      const message = 'Wybierz dostępny świat przed stworzeniem bohatera.';
+      this.errorMessage.set(message);
+      this.showToast('warn', 'Brak świata', message);
+      return;
+    }
+
     const submitContext: HeroCreationSubmitContext = {
       token: ++this.heroCreationSubmitToken,
-      serverId: this.activeServer.selectedServer()?.id ?? null,
+      serverId: selectedAvailability.serverId,
       originId,
       heroName: trimText(hero.characterName),
     };
@@ -351,7 +359,11 @@ export class CreateCharacterPageFacade {
     accountReady$
       .pipe(
         switchMap(() =>
-          this.createHero.createHero(submitContext.heroName, submitContext.originId)
+          this.createHero.createHero(
+            submitContext.heroName,
+            submitContext.originId,
+            submitContext.serverId,
+          )
         ),
         finalize(() => {
           if (this.isActiveHeroCreationSubmit(submitContext)) {
@@ -409,7 +421,7 @@ export class CreateCharacterPageFacade {
 
   private isActiveHeroCreationSubmit(context: HeroCreationSubmitContext): boolean {
     return this.heroCreationSubmitToken === context.token &&
-      this.activeServer.selectedServer()?.id === context.serverId &&
+      this.selectedServerAvailability()?.serverId === context.serverId &&
       this.form.controls.originId.getRawValue() === context.originId &&
       trimText(this.heroForm.getRawValue().characterName) === context.heroName;
   }
