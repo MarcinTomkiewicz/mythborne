@@ -1,8 +1,9 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { NgOptimizedImage, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { ItemDetailPopover } from '../item-detail-popover/item-detail-popover';
+import { SUPABASE_ASSET_IMAGE_DIMENSIONS } from '../../core/config/storage-assets.config';
 import {
   EQUIPMENT_PREVIEW_GROUPS,
   EquipmentPreviewRegion,
@@ -13,7 +14,7 @@ import { EquipmentPreviewSlotRow } from '../../core/domain/equipment/equipment-p
 @Component({
   selector: 'app-equipment-preview',
   standalone: true,
-  imports: [ButtonModule, NgTemplateOutlet, RouterLink, ItemDetailPopover],
+  imports: [ButtonModule, NgOptimizedImage, NgTemplateOutlet, RouterLink, ItemDetailPopover],
   host: { class: 'd-block w-100' },
   templateUrl: './equipment-preview.html',
 })
@@ -30,6 +31,7 @@ export class EquipmentPreview {
   readonly showSlotLabels = input(true);
   readonly emptyLabel = input('No equipment slots returned.');
   readonly paperdollImageUrl = input('/images/warrior.png');
+  readonly paperdollDimensions = SUPABASE_ASSET_IMAGE_DIMENSIONS.paperdoll;
   readonly selectedItemIds = input<readonly string[]>([]);
   readonly selectionActionDisabled = input(false);
   readonly equippedItemToggle = output<EquipmentPreviewSlotRow>();

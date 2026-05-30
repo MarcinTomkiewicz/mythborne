@@ -19,7 +19,15 @@
           [class.hidden]="!isVisible(i)"
           [attr.aria-hidden]="i === index() ? null : 'true'"
         >
-          <img [src]="origin.imageUrl" [alt]="origin.name" />
+          @if (origin.imageUrl; as imageUrl) {
+            <span class="carousel-image__slot">
+              <img
+                [ngSrc]="imageUrl"
+                [alt]="origin.name"
+                fill
+              />
+            </span>
+          }
         </figure>
       }
     </div>

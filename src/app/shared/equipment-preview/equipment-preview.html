@@ -95,9 +95,11 @@
 
         <div class="equipment-preview__figure mg-card flex-row-center-center">
           <img
-            [src]="paperdollImageUrl()"
+            [ngSrc]="paperdollImageUrl()"
             alt="Equipment paperdoll preview"
             class="equipment-preview__figure-image"
+            [width]="paperdollDimensions.width"
+            [height]="paperdollDimensions.height"
           />
         </div>
       </div>

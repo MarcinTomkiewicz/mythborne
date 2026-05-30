@@ -11316,6 +11316,8 @@ Dodać albo uporządkować prawdziwy panel zakładania konta, osobny od tworzeni
 
 **Warning-cleanup follow-up:** Accepted on 2026-05-30 with pending user smoke. Root `@defer` was removed to avoid `NG0751` in dev/HMR, and `GlobalToast` is hosted explicitly in both `AppShell` and `GameShell` so public/auth and game/admin shells keep global toast coverage. Account-entry select disabled states now use reactive `FormControl.disable/enable` instead of `[disabled]` on `formControlName` controls, and the create-character account step wraps shared password fields in a real `<form>`. The only accepted remaining auth-entry/create-character console warning is the banner image `NG0913`, deferred to a later asset/storage follow-up. No DB/RPC, generated types, route semantics, RLS/grants or direct table reads changed.
 
+**Storage asset follow-up:** Accepted on 2026-05-30 with pending browser smoke. Large route backgrounds, origin artwork, paperdolls and district-A building images now resolve through centralized Supabase Storage helpers in `src/app/core/config/storage-assets.config.ts`, deriving public/transformed URLs from `environment.supabaseUrl` and the public `assets` bucket. Small critical local assets such as banner/logo/favicon/icons remain local. Origin carousel images use `NgOptimizedImage` fill mode inside the layout-defined `.carousel-image__slot` with `object-fit: contain`; central image dimension metadata remains only for non-fill paperdoll and building preview/card images. No DB/RPC, generated types, route semantics, auth flow or bucket policy changes were added.
+
 **Goal:**
 Upewnić się, że wszystkie public/account/auth linki znaczą to, co mówią, i nie mieszają logowania, rejestracji, server entry oraz hero creation.
 

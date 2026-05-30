@@ -1,15 +1,26 @@
+import {
+  SUPABASE_ASSET_IMAGE_TRANSFORMS,
+  supabaseStorageCssImageUrl,
+} from './storage-assets.config';
+
 export interface RouteBackgroundConfig {
   readonly path: string;
   readonly image: string;
   readonly exact?: boolean;
 }
 
-const ENTRY_BACKGROUND_IMAGE = "url('/images/backgrounds/entry-background.png')";
+const backgroundImage = (fileName: string): string =>
+  supabaseStorageCssImageUrl(
+    `backgrounds/${fileName}`,
+    SUPABASE_ASSET_IMAGE_TRANSFORMS.background,
+  );
+
+const ENTRY_BACKGROUND_IMAGE = backgroundImage('entry-background.png');
 
 export const ROUTE_BACKGROUNDS: readonly RouteBackgroundConfig[] = [
   {
     path: '/',
-    image: "url('/images/backgrounds/landing-background.png')",
+    image: backgroundImage('landing-background.png'),
     exact: true,
   },
   {
@@ -32,17 +43,17 @@ export const ROUTE_BACKGROUNDS: readonly RouteBackgroundConfig[] = [
     image: ENTRY_BACKGROUND_IMAGE,
     exact: true,
   },
-  { path: '/hero/dashboard', image: "url('/images/backgrounds/main-background.png')" },
-  { path: '/hero/attributes', image: "url('/images/backgrounds/attributes-background.png')" },
-  { path: '/game/exploration', image: "url('/images/backgrounds/exploration-background.png')" },
-  { path: '/game/armory', image: "url('/images/backgrounds/armory-background.png')" },
-  { path: '/game/mansion', image: "url('/images/backgrounds/mansion-background.png')" },
-  { path: '/game/vicinity', image: "url('/images/backgrounds/vicinity-background.png')" },
-  { path: '/game/guild', image: "url('/images/backgrounds/guild-background.png')" },
-  { path: '/game/trade', image: "url('/images/backgrounds/trade-background.png')" },
-  { path: '/game/auction', image: "url('/images/backgrounds/auction-background.png')" },
-  { path: '/game/reports', image: "url('/images/backgrounds/reports-background.png')" },
-  { path: '/game/combat', image: "url('/images/backgrounds/combat-background.png')" },
+  { path: '/hero/dashboard', image: backgroundImage('main-background.png') },
+  { path: '/hero/attributes', image: backgroundImage('attributes-background.png') },
+  { path: '/game/exploration', image: backgroundImage('exploration-background.png') },
+  { path: '/game/armory', image: backgroundImage('armory-background.png') },
+  { path: '/game/mansion', image: backgroundImage('mansion-background.png') },
+  { path: '/game/vicinity', image: backgroundImage('vicinity-background.png') },
+  { path: '/game/guild', image: backgroundImage('guild-background.png') },
+  { path: '/game/trade', image: backgroundImage('trade-background.png') },
+  { path: '/game/auction', image: backgroundImage('auction-background.png') },
+  { path: '/game/reports', image: backgroundImage('reports-background.png') },
+  { path: '/game/combat', image: backgroundImage('combat-background.png') },
 ];
 
 export function resolveRouteBackgroundImage(url: string): string | null {

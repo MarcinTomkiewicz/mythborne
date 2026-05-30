@@ -100,9 +100,11 @@
         <div class="flex-row-start-center flex-col-sm gap-lg align-items-center">
           <span class="image__preview image__preview--square w-px-200 w-100-sm">
             <img
-              [src]="page.imagePreviewPath()"
+              [ngSrc]="page.imagePreviewPath()"
               [alt]="page.editorValue().name || 'Building preview'"
               class="image__preview-image"
+              [width]="buildingImageDimensions.width"
+              [height]="buildingImageDimensions.height"
               (error)="page.handleImageError($event)"
             />
           </span>

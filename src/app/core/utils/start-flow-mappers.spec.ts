@@ -104,8 +104,9 @@ describe('start flow mappers', () => {
       key: 'nomad',
       name: 'Nomad',
       bonusSummaryText: '+5 Dexterity',
-      imageUrl: '/images/origins/nomad.png',
     }));
+    expect(result.imageUrl).toContain('/storage/v1/render/image/public/assets/origins/nomad.png');
+    expect(result.imageUrl).toContain('width=800&quality=80');
     expect(JSON.stringify(result.bonusesJson)).toBe('[{"label":"+5 Dexterity"}]');
   });
 

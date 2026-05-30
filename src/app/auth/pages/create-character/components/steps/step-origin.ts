@@ -93,6 +93,7 @@ import { AccountEntrySummaryRows } from '../../account-entry-summary-rows';
       <p class="m-0 text-danger">Brak dostępnych pochodzeń dla tworzenia bohatera.</p>
     }
   `,
+  host: { class: 'd-block w-100' },
 })
 export class StepOrigin implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

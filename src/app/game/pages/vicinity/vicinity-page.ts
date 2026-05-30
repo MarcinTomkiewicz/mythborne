@@ -3,6 +3,10 @@ import { Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { RouteBackgroundOverride } from '../../../core/services/ui/route-background-override';
+import {
+  SUPABASE_ASSET_IMAGE_TRANSFORMS,
+  supabaseStorageCssImageUrl,
+} from '../../../core/config/storage-assets.config';
 import { VicinityActivePvpActionPanel } from '../../components/vicinity/active-pvp-action-panel/vicinity-active-pvp-action-panel';
 import { VicinityAddressList } from '../../components/vicinity/address-list/vicinity-address-list';
 import { VicinityPagination } from '../../components/vicinity/pagination/vicinity-pagination';
@@ -24,7 +28,10 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
 import { EstateRelocationRunner } from '../../workflows/estate-relocation/estate-relocation-runner';
 
 const SPY_BACKGROUND_SOURCE = 'vicinity-spy';
-const SPY_BACKGROUND_IMAGE = "url('/images/backgrounds/spy-background.png')";
+const SPY_BACKGROUND_IMAGE = supabaseStorageCssImageUrl(
+  'backgrounds/spy-background.png',
+  SUPABASE_ASSET_IMAGE_TRANSFORMS.background,
+);
 
 @Component({
   selector: 'app-vicinity-page',

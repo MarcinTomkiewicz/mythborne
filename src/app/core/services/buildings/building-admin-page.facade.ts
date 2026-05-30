@@ -6,6 +6,10 @@ import {
   EditableBuilding,
   BuildingAdminData,
 } from '../../domain/building/building.model';
+import {
+  SUPABASE_ASSET_IMAGE_TRANSFORMS,
+  storageBackedImageUrl,
+} from '../../config/storage-assets.config';
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
 import { BuildingAdminFormFactory } from '../../factories/forms/building-admin-form.factory';
 import { BuildingEditorForm } from '../../types/forms/building-admin-form.types';
@@ -106,11 +110,13 @@ export class BuildingsPageFacade {
   );
   readonly imagePreviewPath = computed(() => {
     const value = this.editorValue();
-    return (
-      resolveBuildingImagePath(value.key, value.districtCode) ||
-      trimText(value.imagePath) ||
-      '/assets/icons/capitol.svg'
-    );
+    const resolvedImage = resolveBuildingImagePath(value.key, value.districtCode);
+
+    return resolvedImage ||
+      storageBackedImageUrl(
+        trimText(value.imagePath) || '/assets/icons/capitol.svg',
+        SUPABASE_ASSET_IMAGE_TRANSFORMS.buildingCard,
+      );
   });
 
   readonly preview = computed(() => {

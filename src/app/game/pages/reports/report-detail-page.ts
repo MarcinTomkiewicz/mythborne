@@ -2,6 +2,10 @@ import { Component, DestroyRef, OnInit, effect, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { PrivateGameReportDetail } from '../../../core/domain/reports/game-report.model';
+import {
+  SUPABASE_ASSET_IMAGE_TRANSFORMS,
+  supabaseStorageCssImageUrl,
+} from '../../../core/config/storage-assets.config';
 import { RouteBackgroundOverride } from '../../../core/services/ui/route-background-override';
 import { GameReportContent } from '../../../shared/game-report-content/game-report-content';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
@@ -9,7 +13,10 @@ import { PvpSpyReport } from '../../../shared/pvp-spy-report/pvp-spy-report';
 import { ReportDetailPageState } from './report-detail-page.state';
 
 const SPY_REPORT_BACKGROUND_SOURCE = 'report-spy';
-const SPY_REPORT_BACKGROUND_IMAGE = "url('/images/backgrounds/spy-background.png')";
+const SPY_REPORT_BACKGROUND_IMAGE = supabaseStorageCssImageUrl(
+  'backgrounds/spy-background.png',
+  SUPABASE_ASSET_IMAGE_TRANSFORMS.background,
+);
 
 @Component({
   selector: 'app-report-detail-page',

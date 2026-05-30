@@ -242,9 +242,11 @@
           <div class="flex-row-start-center flex-col-sm gap-md">
             <span class="image__preview image__preview--square w-px-200 w-100-sm">
               <img
-                [src]="building.imagePath"
+                [ngSrc]="building.imagePath || '/assets/icons/capitol.svg'"
                 [alt]="building.name"
                 class="image__preview-image"
+                [width]="buildingImageDimensions.width"
+                [height]="buildingImageDimensions.height"
                 (error)="page.handleImageError($event)"
               />
             </span>

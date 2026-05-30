@@ -1,4 +1,8 @@
 import {
+  SUPABASE_ASSET_IMAGE_TRANSFORMS,
+  supabaseStorageImageUrl,
+} from '../config/storage-assets.config';
+import {
   AccountEntryActiveHeroContext,
   AccountEntryActiveHeroContextRow,
   AccountEntryHeroContext,
@@ -137,7 +141,10 @@ export function mapStartFlowOriginOption(
     key: row.origin_key,
     name: row.origin_label,
     description: row.origin_description || null,
-    imageUrl: `/images/origins/${row.origin_key.toLowerCase()}.png`,
+    imageUrl: supabaseStorageImageUrl(
+      `origins/${row.origin_key.toLowerCase()}.png`,
+      SUPABASE_ASSET_IMAGE_TRANSFORMS.originCard,
+    ),
     createdAt: null,
     originId: row.origin_id,
     originKey: row.origin_key,

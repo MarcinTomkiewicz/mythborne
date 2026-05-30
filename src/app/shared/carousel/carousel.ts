@@ -6,13 +6,15 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { Origin, OriginBonus } from '../../core/domain/origin/origin.model';
 
 @Component({
   selector: 'app-carousel',
-  imports: [],
+  imports: [NgOptimizedImage],
   templateUrl: './carousel.html',
   styleUrl: './carousel.scss',
+  host: { class: 'd-block w-100' },
 })
 export class Carousel {
   origins = input.required<Origin[]>();

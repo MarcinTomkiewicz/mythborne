@@ -1,3 +1,7 @@
+import {
+  SUPABASE_ASSET_IMAGE_TRANSFORMS,
+  supabaseStorageImageUrl,
+} from '../config/storage-assets.config';
 import { Origin, OriginBonus } from '../domain/origin/origin.model';
 import { CanonicalEntityBonusWithTemplateRow } from '../types/bonus-governance.types';
 import { Row } from '../types/supabase.types';
@@ -17,12 +21,18 @@ export function mapOrigin(row: Row<'origin'>): Origin {
 }
 
 export function originImageUrl(originKey: string): string {
-  return `/images/origins/${originKey.toLowerCase()}.png`;
+  return supabaseStorageImageUrl(
+    `origins/${originKey.toLowerCase()}.png`,
+    SUPABASE_ASSET_IMAGE_TRANSFORMS.originCard,
+  );
 }
 
 export function originPaperdollImageUrl(originKey: string | null | undefined): string | null {
   return originKey
-    ? `/images/paperdolls/${originKey.toLowerCase()}.png`
+    ? supabaseStorageImageUrl(
+        `paperdolls/${originKey.toLowerCase()}.png`,
+        SUPABASE_ASSET_IMAGE_TRANSFORMS.paperdoll,
+      )
     : null;
 }
 

@@ -37,11 +37,16 @@
   transition: transform 0.55s ease, opacity 0.55s ease;
 
   img {
-    width: min(22rem, 72%);
-    height: min(23rem, 82%);
     object-fit: contain;
     filter: drop-shadow(0 1.1rem 2rem rgba(0, 0, 0, 0.38));
   }
+}
+
+.carousel-image__slot {
+  position: relative;
+  display: block;
+  width: min(22rem, 72%);
+  height: min(23rem, 82%);
 }
 
 .carousel-image.center {
