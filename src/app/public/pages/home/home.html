@@ -28,15 +28,15 @@
 
         <div class="flex-row-start-center flex-wrap gap-sm">
           <p-button
-            label="Wejdź do gry"
-            icon="pi pi-play"
-            routerLink="/auth/login"
+            [label]="primaryCta().label"
+            [icon]="primaryCta().icon"
+            [routerLink]="primaryCta().route"
           />
           <p-button
-            label="Stwórz bohatera"
-            icon="pi pi-user-plus"
+            [label]="secondaryCta().label"
+            [icon]="secondaryCta().icon"
             severity="secondary"
-            routerLink="/auth/server-entry"
+            [routerLink]="secondaryCta().route"
           />
         </div>
       </section>

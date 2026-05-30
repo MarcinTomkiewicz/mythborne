@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-30 — UI-ENTRY-22-9 account registration panel accepted
+Updated: 2026-05-30 — UI-ENTRY-22-6 auth-aware landing CTA accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -10953,6 +10953,8 @@ Dopasować istniejący hero creation flow do nowego Entry background/account she
 ---
 
 ## UI-ENTRY-22-6 — Root-To-Account Entry CTA And Auth-Aware Navigation
+
+Status: accepted 2026-05-30 — pending user smoke.
 
 **Goal:**
 Uspójnić przejście z publicznego landing page do istniejącego auth/account entry flow bez tworzenia równoległych ścieżek logowania albo wyboru bohatera.
