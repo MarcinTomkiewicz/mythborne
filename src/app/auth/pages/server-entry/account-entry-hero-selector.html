@@ -29,7 +29,6 @@
             ariaLabel="Serwer i bohater"
             [placeholder]="emptyMessage() ? 'Brak dostępnych serwerów' : 'Wybierz serwer i bohatera'"
             [emptyMessage]="emptyMessage() ?? 'Brak dostępnych bohaterów'"
-            [disabled]="!!emptyMessage()"
             appendTo="body"
           />
         </form>

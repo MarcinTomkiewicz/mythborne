@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, effect, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
@@ -24,4 +24,17 @@ export class AccountEntryHeroSelector {
   readonly emptyMessage = input<string | null>(null);
   readonly isTransitioning = input(false);
   readonly enter = output<void>();
+
+  constructor() {
+    effect(() => {
+      const control = this.form().controls.selectedContextId;
+
+      if (this.emptyMessage()) {
+        control.disable({ emitEvent: false });
+        return;
+      }
+
+      control.enable({ emitEvent: false });
+    });
+  }
 }

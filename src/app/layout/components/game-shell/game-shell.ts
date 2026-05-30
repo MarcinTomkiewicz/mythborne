@@ -8,6 +8,7 @@ import { RouteBackgroundOverride } from '../../../core/services/ui/route-backgro
 import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-policy';
 import { GameSidebar } from '../game-sidebar/game-sidebar';
 import { GameTopbar } from '../game-topbar/game-topbar';
+import { GlobalToast } from '../global-toast/global-toast';
 import { MembershipBlockedNotice } from '../membership-blocked-notice/membership-blocked-notice';
 import { StaffGameplayBlockedNotice } from '../staff-gameplay-blocked-notice/staff-gameplay-blocked-notice';
 
@@ -17,6 +18,7 @@ import { StaffGameplayBlockedNotice } from '../staff-gameplay-blocked-notice/sta
     RouterOutlet,
     GameSidebar,
     GameTopbar,
+    GlobalToast,
     MembershipBlockedNotice,
     StaffGameplayBlockedNotice,
   ],

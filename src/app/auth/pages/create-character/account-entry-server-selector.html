@@ -29,7 +29,6 @@
             ariaLabel="Świat do stworzenia bohatera"
             [placeholder]="emptyMessage() ? 'Brak dostępnych serwerów' : 'Wybierz świat'"
             [emptyMessage]="emptyMessage() ?? 'Brak dostępnych serwerów'"
-            [disabled]="!!emptyMessage()"
             appendTo="body"
           />
         </form>

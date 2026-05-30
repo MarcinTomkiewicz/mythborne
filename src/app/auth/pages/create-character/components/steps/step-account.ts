@@ -11,7 +11,7 @@ import { FormFields } from '../../../../../shared/form-fields/form-fields';
   standalone: true,
   imports: [ReactiveFormsModule, InputTextModule, ButtonModule, FormFields],
   template: `
-    <div [formGroup]="form()" class="mg-form flex-col gap-md w-100">
+    <form [formGroup]="form()" class="mg-form flex-col gap-md w-100">
       <h2 class="mg-section__title mg-section__title--xs m-0">Utwórz konto</h2>
 
       @if (isExistingAccount()) {
@@ -27,7 +27,7 @@ import { FormFields } from '../../../../../shared/form-fields/form-fields';
       }
 
       <p-button type="button" label="Dalej" (onClick)="next.emit()"></p-button>
-    </div>
+    </form>
   `,
 })
 export class StepAccount {

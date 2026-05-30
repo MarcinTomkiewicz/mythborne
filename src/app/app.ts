@@ -1,10 +1,9 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { GlobalToast } from './layout/components/global-toast/global-toast';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, GlobalToast],
+  imports: [RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

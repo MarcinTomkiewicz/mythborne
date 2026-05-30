@@ -11314,6 +11314,8 @@ Dodać albo uporządkować prawdziwy panel zakładania konta, osobny od tworzeni
 
 **Auth-entry active-hero follow-up:** Accepted on 2026-05-30 with pending user smoke. Explicit `/auth/server-entry` hero entry uses canonical `select_account_entry_active_hero_context(p_server_id, p_hero_id)` and maps the returned active-hero/account-entry context into `ActiveHeroState`, so the explicit `Wejdź do gry` path no longer returns to `ActiveHero.selectHero()`, `loadHeroRows()` or direct `TABLES.hero` reads. `Auth.initializeAuthState()`, `login()` and the auth listener now set/clear only auth/session state and do not hydrate active hero. Protected-route refresh/restore remains a separate DB/RPC follow-up requiring a player-safe active-hero restore/read model; do not restore that path with direct `public.hero` reads.
 
+**Warning-cleanup follow-up:** Accepted on 2026-05-30 with pending user smoke. Root `@defer` was removed to avoid `NG0751` in dev/HMR, and `GlobalToast` is hosted explicitly in both `AppShell` and `GameShell` so public/auth and game/admin shells keep global toast coverage. Account-entry select disabled states now use reactive `FormControl.disable/enable` instead of `[disabled]` on `formControlName` controls, and the create-character account step wraps shared password fields in a real `<form>`. The only accepted remaining auth-entry/create-character console warning is the banner image `NG0913`, deferred to a later asset/storage follow-up. No DB/RPC, generated types, route semantics, RLS/grants or direct table reads changed.
+
 **Goal:**
 Upewnić się, że wszystkie public/account/auth linki znaczą to, co mówią, i nie mieszają logowania, rejestracji, server entry oraz hero creation.
 

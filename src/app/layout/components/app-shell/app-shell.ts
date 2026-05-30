@@ -5,10 +5,11 @@ import { filter, map, startWith } from 'rxjs';
 import { resolveRouteBackgroundImage } from '../../../core/config/route-backgrounds.config';
 import { RouteBackgroundOverride } from '../../../core/services/ui/route-background-override';
 import { AppFooter } from '../app-footer/app-footer';
+import { GlobalToast } from '../global-toast/global-toast';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, AppFooter],
+  imports: [RouterOutlet, AppFooter, GlobalToast],
   templateUrl: './app-shell.html',
 })
 export class AppShell {
