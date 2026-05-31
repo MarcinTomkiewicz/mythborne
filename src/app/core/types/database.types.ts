@@ -20334,6 +20334,59 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_player_armory_page_context: {
+        Args: { p_hero_id: string }
+        Returns: Json
+      }
+      get_player_attributes_page_context: {
+        Args: { p_hero_id: string }
+        Returns: Json
+      }
+      get_player_auction_page_context: {
+        Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      get_player_dashboard_page_context: {
+        Args: { p_hero_id: string }
+        Returns: Json
+      }
+      get_player_estate_page_context: {
+        Args: { p_hero_id: string }
+        Returns: Json
+      }
+      get_player_page_hero_guard: {
+        Args: { p_hero_id: string; p_operation?: string }
+        Returns: {
+          character_points: number
+          created_at: string | null
+          estate_id: string | null
+          experience: number | null
+          id: string
+          level: number | null
+          name: string
+          origin_id: string | null
+          profile_picture: string | null
+          rank: number | null
+          server_id: string
+          total_character_points_earned: number
+          total_experience_earned: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hero"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_player_trade_page_context: {
+        Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      get_player_vicinity_page_context: {
+        Args: { p_hero_id: string }
+        Returns: Json
+      }
       get_public_game_report_by_token: {
         Args: { p_public_token: string }
         Returns: {
@@ -20617,6 +20670,31 @@ export type Database = {
           is_district_a_full: boolean
           is_sandbox: boolean
           is_server_full: boolean
+          is_staff_context: boolean
+          is_standard: boolean
+          is_visible: boolean
+          membership_status: string
+          next_action: string
+          server_id: string
+          server_key: string
+          server_kind: string
+          server_name: string
+          server_status: string
+          user_hero_count: number
+        }[]
+      }
+      get_start_flow_server_create_eligibility: {
+        Args: { p_server_id: string; p_user_id: string }
+        Returns: {
+          block_reason: string
+          can_create_hero: boolean
+          can_enter_game: boolean
+          district_a_capacity: number
+          district_a_free: number
+          district_a_occupied: number
+          eligibility_json: Json
+          is_district_a_full: boolean
+          is_sandbox: boolean
           is_staff_context: boolean
           is_standard: boolean
           is_visible: boolean

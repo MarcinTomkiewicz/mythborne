@@ -10,6 +10,11 @@ import {
   toneTextClass,
 } from '../../utils/stat-tone-class';
 
+export interface DashboardHealthSource {
+  currentHealth: number;
+  maxHealth: number;
+}
+
 export interface DashboardStatValuePart {
   text: string;
   className: string;
@@ -21,11 +26,6 @@ export interface DashboardDerivedStatRow {
   value: string | null;
   valueClass: string;
   parts: DashboardStatValuePart[];
-}
-
-export interface DashboardHealthSource {
-  currentHealth: number;
-  maxHealth: number;
 }
 
 export function mapDashboardBaseStatRows(
@@ -78,7 +78,7 @@ function damageRow(row: HeroDashboardDisplayDamageRow): DashboardDerivedStatRow 
 
   return {
     key: `damage-${row.key}`,
-    label: row.label,
+    label: dashboardDamageLabel(row),
     value: value || row.displayValue || null,
     valueClass: 'text-md',
     parts: parts.length > 0
@@ -130,4 +130,12 @@ function valueParts(
   tone: HeroDashboardStatTone,
 ): DashboardStatValuePart[] {
   return value ? [{ text: value, className: toneTextClass(tone, 'text-md') }] : [];
+}
+
+function dashboardDamageLabel(row: HeroDashboardDisplayDamageRow): string {
+  const label = row.label.trim();
+
+  return label.toLowerCase() === 'unarmed'
+    ? 'Pięść'
+    : label;
 }

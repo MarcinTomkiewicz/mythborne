@@ -1,13 +1,9 @@
 <section class="mg-card p-lg w-100 h-100">
   <div class="flex-col gap-xs mb-md">
     <h3 class="mg-section__title mg-section__title--xs mb-0">
-      Derived Stats
+      Statystyki pochodne
     </h3>
   </div>
-
-  @if (page().runtimeStatsError(); as runtimeStatsError) {
-    <p class="warn-text mb-0">{{ runtimeStatsError }}</p>
-  }
 
   <div class="flex-col gap-sm mt-md">
     @for (row of page().derivedStatRows(); track row.key) {

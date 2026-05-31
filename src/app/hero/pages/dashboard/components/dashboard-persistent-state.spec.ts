@@ -15,15 +15,18 @@ describe('DashboardPersistentState', () => {
     fixture = TestBed.createComponent(DashboardPersistentState);
   });
 
-  it('renders row-value routes as plain anchors instead of badges', () => {
+  it('links display-ready world state rows through actionKey', () => {
     fixture.componentRef.setInput('page', page({
       persistentStateRows: [
         {
-          key: 'vicinity-view',
-          label: 'Vicinity view',
-          value: 'Open Vicinity',
-          route: '/game/vicinity',
-          isAttention: false,
+          key: 'vicinity',
+          label: 'Okolica',
+          value: 'open',
+          displayValue: 'Otwórz okolicę',
+          tone: 'info',
+          sortOrder: 20,
+          actionKey: 'open_vicinity',
+          source: 'dashboard',
         },
       ],
     }));
@@ -32,13 +35,9 @@ describe('DashboardPersistentState', () => {
 
     const host: HTMLElement = fixture.nativeElement;
     const link = host.querySelector<HTMLAnchorElement>('a');
-    const rejectedLinkClasses = ['inline' + '-link', 'text' + '-link'];
 
-    expect(link?.textContent?.trim()).toBe('Open Vicinity');
-    expect(link?.classList.contains('tag-badge')).toBeFalse();
-    expect(rejectedLinkClasses.every((className) =>
-      !link?.classList.contains(className)
-    )).toBeTrue();
+    expect(host.textContent).toContain('Otwórz okolicę');
+    expect(link?.getAttribute('href')).toBe('/game/vicinity');
   });
 });
 
@@ -49,9 +48,12 @@ function page(overrides: {
   persistentStateRows?: Array<{
     key: string;
     label: string;
-    value: string;
-    route: string | null;
-    isAttention: boolean;
+    value: unknown;
+    displayValue: string;
+    tone: 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'golden';
+    sortOrder: number;
+    actionKey?: 'open_vicinity' | 'open_estate' | 'open_exploration' | null;
+    source?: string;
   }>;
 } = {}): DashboardPageFacade {
   return {

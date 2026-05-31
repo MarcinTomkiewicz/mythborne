@@ -3,11 +3,13 @@
     <span
       class="image__preview image__preview--circle flex-none w-px-150 h-px-150"
     >
-      <img
-        [src]="page().origin()?.imageUrl || 'assets/avatars/hero-default.png'"
-        alt="Hero Avatar"
-        class="image__preview-image"
-      />
+      @if (page().origin(); as origin) {
+        <img
+          [src]="origin.imageUrl"
+          [alt]="origin.name"
+          class="image__preview-image"
+        />
+      }
     </span>
 
     <div class="flex-row-start-start gap-md w-100">
@@ -18,33 +20,26 @@
               {{ page().heroName() }}
             </h2>
             <span class="tag-badge tag-badge--warn small-caps"
-              >Level {{ page().level() }}</span
+              >Poziom {{ page().level() }}</span
             >
           </div>
         </div>
 
         <div class="flex-col gap-md w-100">
           <app-game-bar
-            label="Health"
+            label="Zdrowie"
             [value]="page().healthDisplay().currentHealth"
             [max]="page().healthDisplay().maxHealth"
             type="hp"
           />
 
-          @if (page().experienceToNextLevel() !== null) {
+          @if (page().experienceToNextLevel(); as experienceToNextLevel) {
             <app-game-bar
-              label="Experience"
+              label="Doświadczenie"
               [value]="page().experience()"
-              [max]="page().experienceToNextLevel() ?? 0"
+              [max]="experienceToNextLevel"
               type="xp"
             />
-          } @else {
-            <span class="tag-badge tag-badge--danger small-caps"
-              >Experience unavailable</span
-            >
-          }
-          @if (page().experienceError(); as experienceError) {
-            <p class="warn-text mb-0">{{ experienceError }}</p>
           }
         </div>
       </div>
@@ -52,26 +47,26 @@
       <div class="flex-col gap-sm flex-none min-w-250 min-w-auto-sm">
         @if (page().selectedServer(); as selectedServer) {
           <div class="flex-col gap-xs">
-            <span class="color-muted small-caps">Server</span>
+            <span class="color-muted small-caps">Serwer</span>
             <strong class="color-heading">{{ selectedServer.name }}</strong>
           </div>
         }
 
         <div class="flex-col gap-xs">
-          <span class="color-muted small-caps">Origin</span>
-          <strong class="color-heading">{{
-            page().origin()?.name ?? "Unknown"
-          }}</strong>
+          <span class="color-muted small-caps">Pochodzenie</span>
+          @if (page().origin(); as origin) {
+            <strong class="color-heading">{{ origin.name }}</strong>
+          }
         </div>
 
         <div class="flex-col gap-xs">
-          <span class="color-muted small-caps">Character Points</span>
+          <span class="color-muted small-caps">Punkty postaci</span>
           <strong class="color-heading">{{ page().characterPoints() }}</strong>
         </div>
 
         @if (page().estateAddress(); as estateAddress) {
           <div class="flex-col gap-xs">
-            <span class="color-muted small-caps">Address</span>
+            <span class="color-muted small-caps">Adres</span>
             <a routerLink="/game/vicinity">
               <strong>{{ estateAddress }}</strong>
             </a>

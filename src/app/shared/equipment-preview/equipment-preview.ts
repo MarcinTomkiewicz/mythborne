@@ -26,6 +26,7 @@ export class EquipmentPreview {
   readonly isUnavailable = input(false);
   readonly error = input<string | null>(null);
   readonly armoryLink = input('/game/armory');
+  readonly armoryLabel = input('Open Armory');
   readonly showActions = input(true);
   readonly compact = input(false);
   readonly showSlotLabels = input(true);

@@ -5,38 +5,38 @@
       aria-label="Hero status and resources"
     >
       <div class="flex-row-start-end flex-wrap gap-sm">
-        <div class="mg-chip mg-chip--health flex-row-center-center gap-sm">
-          <i class="pi pi-heart mg-chip__icon" aria-hidden="true"></i>
-          <span class="mg-chip__label small-caps">Health</span>
-          <strong class="mg-chip__value"
-            >{{ currentHealthValue() }} / {{ maxHealthValue() }}</strong
-          >
-        </div>
-        <div
-          class="mg-chip mg-chip--progress mg-chip--xp flex-col gap-xs min-w-250 w-100-xs"
-        >
-          <div class="flex-row-between-center gap-sm w-100">
-            <span class="mg-chip__label small-caps"
-              >Level {{ heroLevelValue() }}</span
-            >
-            <strong class="mg-chip__value small-caps">
-              XP {{ experienceValue() }}
-              @if (experienceToNextLevel() > 0) {
-                / {{ experienceToNextLevel() }}
-              }
+        @if (dashboardContext()) {
+          <div class="mg-chip mg-chip--health flex-row-center-center gap-sm">
+            <i class="pi pi-heart mg-chip__icon" aria-hidden="true"></i>
+            <span class="mg-chip__label small-caps">Zdrowie</span>
+            <strong class="mg-chip__value">
+              {{ currentHealthValue() }} / {{ maxHealthValue() }}
             </strong>
           </div>
-          @if (experienceToNextLevel() > 0) {
-            <app-game-bar
-              [value]="experienceValue()"
-              [max]="experienceToNextLevel()"
-              type="xp"
-              [compact]="true"
-              [showLabel]="false"
-              [showValue]="false"
-            />
-          }
-        </div>
+          <div
+            class="mg-chip mg-chip--progress mg-chip--xp flex-col gap-xs min-w-250 w-100-xs"
+          >
+            <div class="flex-row-between-center gap-sm w-100">
+              <span class="mg-chip__label small-caps">
+                Poziom {{ heroLevelValue() }}
+              </span>
+              <strong class="mg-chip__value small-caps">
+                Doświadczenie {{ experienceValue() }}
+                / {{ experienceToNextLevel() }}
+              </strong>
+            </div>
+            @if (hasExperienceContext() && experienceBarMax() > 0) {
+              <app-game-bar
+                [value]="experienceBarValue()"
+                [max]="experienceBarMax()"
+                type="xp"
+                [compact]="true"
+                [showLabel]="false"
+                [showValue]="false"
+              />
+            }
+          </div>
+        }
       </div>
       <div
         class="flex-row-center-center min-w-200"
@@ -56,40 +56,42 @@
           <app-staff-notification-bell />
         </div>
         <div class="flex-row-end-center gap-sm small-caps" aria-label="Resources">
-          @for (resource of resourceDisplay(); track resource.type) {
-            <span class="mg-resource-summary flex-row-center-center gap-sm">
-              @switch (resource.type) {
-                @case ("drachma") {
-                  <i
-                    class="pi pi-cash mg-resource-summary__icon"
-                    aria-hidden="true"
-                  ></i>
+          @if (isResourceContextComplete()) {
+            @for (resource of resourceDisplay(); track resource.type) {
+              <span class="mg-resource-summary flex-row-center-center gap-sm">
+                @switch (resource.type) {
+                  @case ("drachma") {
+                    <i
+                      class="pi pi-cash mg-resource-summary__icon"
+                      aria-hidden="true"
+                    ></i>
+                  }
+                  @case ("materials") {
+                    <i
+                      class="pi pi-marble mg-resource-summary__icon"
+                      aria-hidden="true"
+                    ></i>
+                  }
+                  @case ("workforce") {
+                    <i
+                      class="pi pi-workforce mg-resource-summary__icon"
+                      aria-hidden="true"
+                    ></i>
+                  }
                 }
-                @case ("materials") {
-                  <i
-                    class="pi pi-marble mg-resource-summary__icon"
-                    aria-hidden="true"
-                  ></i>
-                }
-                @case ("workforce") {
-                  <i
-                    class="pi pi-workforce mg-resource-summary__icon"
-                    aria-hidden="true"
-                  ></i>
-                }
-              }
-              <span class="mg-resource-summary__content flex-col-center-start">
-                <span class="mg-resource-summary__label font-sm">{{
-                  resource.label
-                }}</span>
-                <strong class="mg-resource-summary__value font-md font-black">{{
-                  resource.amount
-                }}</strong>
-                <small class="mg-resource-summary__rate font-xs font-light">
-                  +{{ resource.perHour }}/h</small
-                >
+                <span class="mg-resource-summary__content flex-col-center-start">
+                  <span class="mg-resource-summary__label font-sm">{{
+                    resource.label
+                  }}</span>
+                  <strong class="mg-resource-summary__value font-md font-black">{{
+                    resource.amount
+                  }}</strong>
+                  <small class="mg-resource-summary__rate font-xs font-light">
+                    +{{ resource.perHour }}/h</small
+                  >
+                </span>
               </span>
-            </span>
+            }
           }
         </div>
       </div>

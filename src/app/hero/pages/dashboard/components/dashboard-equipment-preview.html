@@ -1,11 +1,14 @@
 <app-equipment-preview
   [rows]="page().equipmentPreviewRows()"
+  title="Podgląd ekwipunku"
   [isArmory]="false"
   [isLoading]="page().isEquipmentLoading()"
   [isUnavailable]="page().equipmentStatus() === 'error'"
   [error]="page().equipmentError()"
   [compact]="compact()"
   [showSlotLabels]="!compact()"
+  emptyLabel="Brak slotów ekwipunku."
+  armoryLabel="Otwórz zbrojownię"
   [paperdollImageUrl]="paperdollImageUrl()"
   armoryLink="/game/armory"
 />

@@ -1,18 +1,31 @@
 <div class="flex-col gap-md w-100">
-  <div class="grid-1-1 gap-md w-100">
-    <div class="flex-col gap-sm w-100">
-      <app-dashboard-hero-banner [page]="page" />
-      <app-dashboard-next-steps [page]="page" />
+  <app-loading-overlay
+    [visible]="page.isPageLoading()"
+    label="Przygotowujemy bohatera..."
+    description="Przygotowujemy bohatera do podróży po świecie."
+  />
+
+  @if (page.pageError(); as pageError) {
+    <section class="mg-card border-danger bg-danger-soft flex-col gap-xs p-lg w-100">
+      <h2 class="color-heading text-lg m-0">Panel bohatera niedostępny</h2>
+      <p class="m-0 text-danger">{{ pageError }}</p>
+    </section>
+  } @else if (page.isPageReady()) {
+    <div class="grid-2-1 gap-md w-100">
+      <div class="flex-col gap-sm w-100">
+        <app-dashboard-hero-banner [page]="page" />
+        <app-dashboard-next-steps [page]="page" />
+      </div>
+
+      <app-stat-card title="Cechy" [rows]="page.baseStatRows()" />
     </div>
 
-    <app-dashboard-base-stats-card [page]="page" />
-  </div>
-
-  <div class="grid-1-1 gap-md w-100">
-    <app-dashboard-equipment-preview [page]="page" [compact]="true" />
-    <div class="flex-col gap-md w-100">
-      <app-dashboard-derived-stats-card [page]="page" />
-      <app-dashboard-persistent-state [page]="page" />
+    <div class="grid-2-1 gap-md w-100">
+      <app-dashboard-equipment-preview [page]="page" [compact]="true" />
+      <div class="flex-col gap-md w-100">
+        <app-dashboard-derived-stats-card [page]="page" />
+        <app-dashboard-persistent-state [page]="page" />
+      </div>
     </div>
-  </div>
+  }
 </div>

@@ -1,8 +1,8 @@
 # Mythsworn — Database Current
 
 Rewritten: 2026-05-11  
-Updated: 2026-05-15  
-Primary source: latest `mythborne_schema.sql` dump from 2026-05-11 plus the previous `database-current.md` and DB/RPC changes verified in the migrator conversation. The 2026-05-15 sync preserves this source file and adds the latest post-dump UI-HERO-2, account-entry, PvP/building-preview contracts verified in the Migrator conversation.
+Updated: 2026-05-31  
+Primary source: latest `mythsworn_schema.sql` dump from 2026-05-31 plus the previous `database-current.md` and DB/RPC changes verified in the Migrator conversation. The 2026-05-31 sync preserves the 2026-05-15 content and adds current player page-context RPCs, slim JSON payload contracts, origin bonus seed state, item requirement/family rebalance notes and no-grant restore policy. This file was additionally refreshed after the slim page-context payload pass: dashboard/vicinity now use lightweight estate summaries, estate progression previews are deferred, and per-building progression preview is loaded through an on-demand RPC.
 
 ## Purpose
 
@@ -101,13 +101,29 @@ Known regeneration-required contracts after the 2026-05-11 DB/RPC updates and la
   - `build_pvp_hero_combatant_snapshot_for_resolver(p_hero_id uuid, p_side combat_side)`;
   - `schedule_pvp_action_return_runtime_activity(...)`;
   - `complete_due_pvp_return_runtime_activities(...)`.
+- Player route/page-context RPCs added after the no-grants restore pass and subsequent slim-payload pass:
+  - `get_player_dashboard_page_context(p_hero_id uuid)`;
+  - `get_player_attributes_page_context(p_hero_id uuid)`;
+  - `get_player_armory_page_context(p_hero_id uuid)`;
+  - `get_player_estate_page_context(p_hero_id uuid)`;
+  - `get_player_vicinity_page_context(p_hero_id uuid)`;
+  - `get_player_trade_page_context(p_hero_id uuid, p_limit integer default 50, p_offset integer default 0)`;
+  - `get_player_auction_page_context(p_hero_id uuid, p_limit integer default 50, p_offset integer default 0)`;
+  - `get_hero_estate_summary_state(p_hero_id uuid)`;
+  - `get_player_estate_building_progression_preview_context(p_hero_id uuid, p_building_id uuid, p_from_level integer default 0, p_to_level integer default 10)`.
 
 No type regeneration is required for data-only seeds or same-signature function body fixes, including:
 
 - guild config key-contract clarification;
 - item fractional display/runtime rounding body fixes;
 - Epic W Trial/Encounter seed/readiness repair;
-- body-only static-grep cleanup in generated opponent equipment helpers.
+- body-only static-grep cleanup in generated opponent equipment helpers;
+- origin bonus rewrite data seed;
+- `dew_touched` display-form seed correction;
+- item-generation requirement/family/base requirement data-only rebalance;
+- `Triumfalny` / `Ceremonialny` / `Przepychu` requirement trim;
+- same-signature function body fixes for player page-context RPCs;
+- same-signature slim-payload fixes to existing page-context RPCs, such as replacing full dashboard/vicinity estate runtime with lightweight `estateSummary` and deferring estate progression previews.
 
 ---
 
@@ -1917,3 +1933,579 @@ For gameplay closure, later manual smoke should verify:
 - guild discovery/search and join request flow with at least two heroes on one server;
 - guild armory access lock state changes with leader/officer + member data;
 - Server Events player and admin surfaces after generated types are current.
+
+# 21. 2026-05-31 live DB sync addendum — page contexts, origin content and item requirements
+
+Status: **current operational addendum** based on the 2026-05-31 `mythsworn_schema.sql` dump plus verified live migration/verification output from the Migrator conversation.
+
+This section records the DB/RPC contracts added after the 2026-05-15 `database-current.md` sync. If this addendum conflicts with older sections above, prefer this addendum together with the current live dump/generated types.
+
+## 21.1. Restore-without-grants policy and player page read models
+
+The recent database restore intentionally did not copy broad table grants. Do **not** fix player-route `403 permission denied for table ...` errors by granting `authenticated` broad table `SELECT` access. The accepted direction is:
+
+- keep critical gameplay/economy/config tables closed as implementation details;
+- expose player-safe page data through `SECURITY DEFINER` RPC/read models;
+- use `can_read_hero(...)` / equivalent guards inside DB-owned RPCs;
+- have Angular consume RPC payloads and map them into existing domain/page state;
+- if a page context payload is missing a field, report a DB/RPC follow-up instead of reintroducing direct table reads.
+
+### Internal guard
+
+`get_player_page_hero_guard(p_hero_id uuid, p_operation text default 'player page context') returns hero`
+
+- Internal helper for the new player page-context RPCs.
+- Requires `auth.uid()`.
+- Loads the hero row and verifies `can_read_hero(p_hero_id)`.
+- Raises controlled permission/not-found errors.
+- Not a frontend contract.
+
+### Player page context RPC signatures
+
+These functions are frontend-visible and require `EXECUTE` for `authenticated`:
+
+- `get_player_dashboard_page_context(p_hero_id uuid) returns jsonb`;
+- `get_player_attributes_page_context(p_hero_id uuid) returns jsonb`;
+- `get_player_armory_page_context(p_hero_id uuid) returns jsonb`;
+- `get_player_estate_page_context(p_hero_id uuid) returns jsonb`;
+- `get_player_vicinity_page_context(p_hero_id uuid) returns jsonb`;
+- `get_player_trade_page_context(p_hero_id uuid, p_limit integer default 50, p_offset integer default 0) returns jsonb`;
+- `get_player_auction_page_context(p_hero_id uuid, p_limit integer default 50, p_offset integer default 0) returns jsonb`.
+
+All seven RPCs were verified to exist and have `authenticated` EXECUTE. The JSON return type means generated Supabase types will expose `Json`; frontend must use explicit page-context mapper contracts below.
+
+### Runtime/volatility and payload-size policy
+
+The player page-context family is a frontend read-model layer, but the PostgreSQL functions are `VOLATILE`, not `STABLE`, because nested canonical helpers may settle runtime state, ensure daily counters, or use locks. Frontend calls must use ordinary Supabase `.rpc(...)` POST calls. Do not call these RPCs with `{ get: true }`.
+
+Payload-size policy:
+
+- Dashboard and Vicinity must stay lightweight. They use `get_hero_estate_summary_state(...)`, not the full `get_hero_estate_runtime_state(...)`.
+- Estate page may use full `get_hero_estate_runtime_state(...)`, because it actually renders buildings/runtime data.
+- Estate page must not eagerly return all-building progression preview matrices. `buildingProgressionPreviews` is intentionally `[]` and `progressionPreviewsDeferred = true`.
+- Per-building progression preview must be requested on demand through `get_player_estate_building_progression_preview_context(...)`.
+- Missing payload fields are DB/RPC follow-ups. Angular must not reintroduce direct table reads or table grants.
+
+### Shared mapper aliases for frontend documentation
+
+Use generated table/function row types for nested payload rows where possible:
+
+```ts
+type JsonObject = Record<string, unknown>;
+
+type HeroRow = Database['public']['Tables']['hero']['Row'];
+type OriginRow = Database['public']['Tables']['origin']['Row'];
+type HeroStatRow = Database['public']['Tables']['hero_stats']['Row'];
+type StatRow = Database['public']['Tables']['stats']['Row'];
+type HeroResourceRow = Database['public']['Tables']['hero_resources']['Row'];
+type HeroDailyActionCounterRow = Database['public']['Tables']['hero_daily_action_counters']['Row'];
+type EstateDistrictAddressCapacityRow = Database['public']['Tables']['estate_district_address_capacities']['Row'];
+
+type PlayerTradeOfferRow = Database['public']['Tables']['player_trade_offers']['Row'];
+type PlayerTradeOfferItemRow = Database['public']['Tables']['player_trade_offer_items']['Row'];
+type PlayerTradeTransactionRow = Database['public']['Tables']['player_trade_transactions']['Row'];
+type PlayerTradeTransactionItemRow = Database['public']['Tables']['player_trade_transaction_items']['Row'];
+type PlayerAuctionListingRow = Database['public']['Tables']['player_auction_listings']['Row'];
+type PlayerAuctionBidRow = Database['public']['Tables']['player_auction_bids']['Row'];
+
+type StartFlowOriginOptionRow = Database['public']['Functions']['get_start_flow_origin_options']['Returns'][number];
+type HeroHealthStateRow = Database['public']['Functions']['get_hero_health_state']['Returns'][number];
+type HeroPrestigePublicSummaryRow = Database['public']['Functions']['get_hero_prestige_public_summary']['Returns'][number];
+type HeroRuntimeDerivedStatsRow = Database['public']['Functions']['get_hero_runtime_derived_stats']['Returns'][number];
+type HeroDashboardRuntimeStatsRow = Database['public']['Functions']['get_hero_dashboard_runtime_stats']['Returns'][number];
+type HeroEquipmentRuntimeSlotRow = Database['public']['Functions']['get_hero_equipment_runtime_slots']['Returns'][number];
+type HeroEstateRuntimeStateRow = Database['public']['Functions']['get_hero_estate_runtime_state']['Returns'][number];
+type HeroEstateSummaryStateRow = Database['public']['Functions']['get_hero_estate_summary_state']['Returns'][number];
+type HeroPendingCombatEffectStateRow = Database['public']['Functions']['get_hero_pending_combat_effect_state']['Returns'][number];
+type HeroArmoryVisibilityStateRow = Database['public']['Functions']['get_hero_armory_visibility_state']['Returns'][number];
+type HeroArmoryItemRow = Database['public']['Functions']['get_hero_armory_items']['Returns'][number];
+type HeroLoadoutPresetRow = Database['public']['Functions']['get_hero_loadout_presets']['Returns'][number];
+type BuildingProgressionPreviewRow = Database['public']['Functions']['get_building_progression_preview']['Returns'][number];
+```
+
+For JSON-returning page contexts, generated function return typing is `Json`; use the explicit contracts below at the mapper boundary.
+
+### Shared dashboard/estate display contracts
+
+```ts
+interface DashboardExperienceState {
+  level: number;
+  currentExperience: number;
+  experienceToNextLevel: number | null;
+  totalExperienceEarned: number;
+  experienceProgressPercent: number | null;
+  isAvailable: boolean;
+  unavailableReason: string | null;
+}
+
+interface DashboardWorldStateRow {
+  key:
+    | 'active_state'
+    | 'vicinity'
+    | 'active_job'
+    | 'trials_left'
+    | 'attacks_left'
+    | 'active_effect'
+    | 'prestige_rank';
+  label: string;
+  value: unknown;
+  displayValue: string;
+  tone: 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'golden';
+  sortOrder: number;
+  actionKey?: 'open_vicinity' | 'open_estate' | 'open_exploration' | null;
+  source?: string;
+}
+
+interface PlayerEstateSummaryState {
+  hero_id: string;
+  server_id: string;
+  estate_id: string;
+  district_code: string | null;
+  address_number: number | null;
+  address: string | null;
+  estate_rank: number;
+  settled_completed_count: number;
+  settled_as_of: string;
+  active_job_json: JsonObject | null;
+  attack_protection_active: boolean;
+  attack_protection_expires_at: string | null;
+  attack_protection_source_entity_type: string | null;
+  attack_protection_source_entity_id: string | null;
+  siege_protection_active: boolean;
+  siege_protection_expires_at: string | null;
+  siege_protection_source: string;
+}
+```
+
+### `get_hero_estate_summary_state(...)` contract
+
+Purpose: owner-safe lightweight estate summary. This helper reuses canonical settlement through `settle_hero_runtime_state(...)` but deliberately does **not** return `buildings_json`, `resources_json`, `recent_jobs_json` or building progression previews.
+
+```ts
+get_hero_estate_summary_state(p_hero_id: string): PlayerEstateSummaryState[]
+```
+
+Returned row fields:
+
+```ts
+interface PlayerEstateSummaryState {
+  hero_id: string;
+  server_id: string;
+  estate_id: string;
+  district_code: string | null;
+  address_number: number | null;
+  address: string | null;
+  estate_rank: number;
+  settled_completed_count: number;
+  settled_as_of: string;
+  active_job_json: JsonObject | null;
+  attack_protection_active: boolean;
+  attack_protection_expires_at: string | null;
+  attack_protection_source_entity_type: string | null;
+  attack_protection_source_entity_id: string | null;
+  siege_protection_active: boolean;
+  siege_protection_expires_at: string | null;
+  siege_protection_source: string;
+}
+```
+
+Notes:
+
+- Requires authenticated user and `can_read_hero(p_hero_id)`.
+- Calls normal gameplay guard.
+- Intended as lightweight support for dashboard/vicinity/header-style contexts.
+- Not a replacement for full estate page building runtime.
+
+### `get_player_dashboard_page_context(...)` JSON contract
+
+Purpose: player-safe bootstrap for `/hero/dashboard`; replaces direct reads of `origin`, `hero_stats`, `hero_resources`, `hero_daily_action_counters`, formula tables, equipment/runtime dictionaries and related page bootstrap tables.
+
+```ts
+interface PlayerDashboardPageContext {
+  hero: HeroRow;
+
+  experienceState: DashboardExperienceState;
+  worldStateRows: DashboardWorldStateRow[];
+
+  // Lightweight summary. This is not the full estate runtime.
+  estateSummary: PlayerEstateSummaryState | null;
+
+  // Compatibility alias for older mapper shape, but intentionally slim.
+  // Do not expect buildings_json/resources_json/recent_jobs_json here.
+  estateRuntimeState: PlayerEstateSummaryState | null;
+
+  origin: OriginRow | null;
+  originOptions: StartFlowOriginOptionRow[];
+
+  heroStats: HeroStatRow[];
+  statsDictionary: StatRow[];
+
+  heroResources: HeroResourceRow[];
+  dailyActionCounters: HeroDailyActionCounterRow[];
+
+  healthState: HeroHealthStateRow | null;
+  prestigeSummary: HeroPrestigePublicSummaryRow | null;
+
+  runtimeDerivedStats: HeroRuntimeDerivedStatsRow | null;
+  dashboardRuntimeStats: HeroDashboardRuntimeStatsRow | null;
+
+  equipmentSlots: HeroEquipmentRuntimeSlotRow[];
+  pendingCombatEffect: HeroPendingCombatEffectStateRow | null;
+}
+```
+
+Notes:
+
+- `hero` is always present or the RPC throws.
+- `experienceState` is the XP/progression display contract. There is no `experience.experienceToNextLevel` top-level object; use `experienceState.experienceToNextLevel`.
+- `worldStateRows` is display-ready and contains exactly: `active_state`, `vicinity`, `active_job`, `trials_left`, `attacks_left`, `active_effect`, `prestige_rank`.
+- There is no `hero_rank` world-state row.
+- `estateSummary`/`estateRuntimeState` are intentionally slim on dashboard.
+- `statsDictionary` is ordered by `stats."order"`, not `sort_order`.
+
+### `get_player_attributes_page_context(...)` JSON contract
+
+Purpose: player-safe bootstrap for `/hero/attributes`; replaces direct reads of `hero_stats`, `stats`, `balance_formula_*` and `entity_formula_assignments` for the attribute page.
+
+```ts
+interface PlayerAttributesPageContext {
+  hero: HeroRow;
+
+  attributeManifest: JsonObject;
+  availableCharacterPoints: number;
+
+  heroStats: HeroStatRow[];
+  statsDictionary: StatRow[];
+
+  runtimeDerivedStats: HeroRuntimeDerivedStatsRow | null;
+}
+```
+
+Notes:
+
+- `attributeManifest` is the raw JSON returned by `get_hero_attribute_allocation_preview_manifest(p_hero_id)`.
+- Stat allocation writes still use the existing canonical write RPC; this page-context RPC is read-only.
+
+### `get_player_armory_page_context(...)` JSON contract
+
+Purpose: player-safe bootstrap for `/game/armory`; replaces direct reads of `equipment_slot_definitions`, `hero_equipment`, `items` and item-generation dictionaries for armory page bootstrap.
+
+```ts
+interface PlayerArmoryPageContext {
+  hero: HeroRow;
+
+  visibilityState: HeroArmoryVisibilityStateRow | null;
+  items: HeroArmoryItemRow[];
+
+  equipmentSlots: HeroEquipmentRuntimeSlotRow[];
+  loadoutPresets: HeroLoadoutPresetRow[];
+
+  runtimeDerivedStats: HeroRuntimeDerivedStatsRow | null;
+}
+```
+
+Existing armory action RPCs remain the write paths for equip/unequip/move/loadout/vendor operations.
+
+### `get_player_estate_page_context(...)` JSON contract
+
+Purpose: player-safe bootstrap for `/game/estate`; replaces direct reads of `estates`, `buildings`, `entity_requirements` and formula tables for estate/building page bootstrap.
+
+```ts
+interface PlayerEstatePageContext {
+  hero: HeroRow;
+
+  // Full settled estate/building runtime; estate page is allowed to carry this.
+  estateRuntimeState: HeroEstateRuntimeStateRow | null;
+
+  // Intentionally empty/deferred after slim-payload pass.
+  buildingProgressionPreviews: [];
+  progressionPreviewsDeferred: true;
+  progressionPreviewRpc: 'get_player_estate_building_progression_preview_context';
+}
+```
+
+Notes:
+
+- `estateRuntimeState` remains the primary player-safe estate/building state and may include `buildings_json`, `resources_json`, active/recent job data, requirements, costs and bonus display rows.
+- `buildingProgressionPreviews` must stay empty on page bootstrap. Do not re-expand it to all buildings × many levels.
+- If the UI needs progression preview for a concrete building, call `get_player_estate_building_progression_preview_context(...)` on demand.
+- Durable building mutations remain RPC-owned, especially `start_estate_building_upgrade(...)`.
+
+### `get_player_estate_building_progression_preview_context(...)` JSON contract
+
+Purpose: on-demand player-safe preview/explainability for **one** building and a bounded level range. Prevents `/game/estate` bootstrap from shipping all building previews.
+
+```ts
+interface PlayerEstateBuildingProgressionPreviewContext {
+  heroId: string;
+  serverId: string;
+  estateSummary: PlayerEstateSummaryState;
+  building: {
+    buildingId: string;
+    buildingKey: string;
+    buildingName: string;
+    buildingDescription: string | null;
+    districtCode: string | null;
+    startingLevel: number | null;
+    maxLevel: number | null;
+    sortOrder: number | null;
+  };
+  fromLevel: number;
+  toLevel: number;
+  previews: BuildingProgressionPreviewRow[];
+}
+```
+
+RPC:
+
+```ts
+get_player_estate_building_progression_preview_context(
+  p_hero_id: string,
+  p_building_id: string,
+  p_from_level?: number,
+  p_to_level?: number
+): PlayerEstateBuildingProgressionPreviewContext
+```
+
+Notes:
+
+- Uses `get_player_page_hero_guard(...)` and `get_hero_estate_summary_state(...)`.
+- Reuses canonical `get_building_progression_preview(...)`.
+- `p_from_level` is clamped to `>= 0`.
+- `p_to_level` is clamped to at most `p_from_level + 25`.
+- Missing `p_building_id` or unknown building raises a controlled DB error.
+
+### `get_player_vicinity_page_context(...)` JSON contract
+
+Purpose: player-safe bootstrap for `/game/vicinity`; replaces direct reads of `estates` and `estate_district_address_capacities`.
+
+```ts
+interface PlayerVicinityOccupiedEstate {
+  estateId: string;
+  serverId: string;
+  heroId: string;
+  districtCode: string | null;
+  addressNumber: number | null;
+  estateRank: number;
+}
+
+interface PlayerVicinityCurrentEstate {
+  estateId: string;
+  serverId: string;
+  heroId: string;
+  districtCode: string | null;
+  addressNumber: number | null;
+  address: string | null;
+  estateRank: number;
+}
+
+interface PlayerVicinityPageContext {
+  hero: HeroRow;
+  currentEstate: PlayerVicinityCurrentEstate;
+  estateSummary: PlayerEstateSummaryState | null;
+
+  // Compatibility alias for older mapper shape, but intentionally slim.
+  // Do not expect buildings_json/resources_json/recent_jobs_json here.
+  estateRuntimeState: PlayerEstateSummaryState | null;
+
+  addressCapacities: EstateDistrictAddressCapacityRow[];
+  occupiedEstates: PlayerVicinityOccupiedEstate[];
+}
+```
+
+Notes:
+
+- `occupiedEstates.estateRank` maps from `estates.rank`.
+- `currentEstate` is the direct UI contract for the hero's current address.
+- `estateSummary` and `estateRuntimeState` are lightweight; they intentionally do not carry building/runtime payloads.
+- Relocation remains owned by `relocate_hero_estate_to_empty_address(...)`.
+
+### `get_player_trade_page_context(...)` JSON contract
+
+Purpose: player-safe bootstrap for `/game/trade`; replaces direct reads of `player_trade_offers`, `player_trade_offer_items`, `player_trade_transactions` and transaction items.
+
+```ts
+interface PlayerTradePageContext {
+  hero: HeroRow;
+
+  canUseTrade: boolean;
+  activeTradeSlotCount: number;
+  tradeSlotLimit: number;
+
+  offers: PlayerTradeOfferRow[];
+  offerItems: PlayerTradeOfferItemRow[];
+
+  transactions: PlayerTradeTransactionRow[];
+  transactionItems: PlayerTradeTransactionItemRow[];
+}
+```
+
+Notes:
+
+- `p_limit` is clamped DB-side to `1..100`; `p_offset` is clamped to `>= 0`.
+- `offers` includes only offers where the active hero is creator or target.
+- `offerItems` includes items only for the selected page of offers.
+- `transactions` includes only transactions involving the active hero.
+- `transactionItems` includes items only for the selected page of transactions.
+- Trade create/respond/cancel/completion writes remain on existing canonical trade action RPCs.
+
+### `get_player_auction_page_context(...)` JSON contract
+
+Purpose: player-safe bootstrap for `/game/auctions`; replaces direct reads of `player_auction_listings`, `player_auction_bids` and auction-related `player_trade_transactions`.
+
+```ts
+interface PlayerAuctionPageContext {
+  hero: HeroRow;
+
+  activeListings: PlayerAuctionListingRow[];
+  myListings: PlayerAuctionListingRow[];
+  myBids: PlayerAuctionBidRow[];
+
+  auctionTransactions: PlayerTradeTransactionRow[];
+}
+```
+
+Notes:
+
+- `p_limit` is clamped DB-side to `1..100`; `p_offset` is clamped to `>= 0`.
+- `activeListings` are active listings on the same server.
+- `myListings` are listings where `seller_hero_id = hero.id`.
+- `myBids` are bids where `bidder_hero_id = hero.id`.
+- `auctionTransactions` are auction-sale trade transactions involving the active hero.
+- Auction create/bid/buy-now/settlement writes remain on canonical auction/trade action RPCs.
+
+### Frontend mapping rule for JSON page contexts
+
+At the service boundary:
+
+```ts
+function asObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asArray<T = unknown>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+```
+
+Allowed fallback: default absent optional arrays to `[]` and nullable helper objects to `null` at the mapper boundary.
+
+Blocked fallback: direct-reading old tables if a field is missing. Missing required page data is a DB/RPC follow-up.
+
+### Verified payload-smoke snapshot after slim-payload pass
+
+Rollback smoke confirmed:
+
+- dashboard top-level keys include `experienceState`, `worldStateRows`, `estateSummary` and slim `estateRuntimeState` compatibility alias;
+- dashboard/vicinity `estateSummary` contains only address/rank/active-job/protection summary fields, not `buildings_json`, `resources_json` or `recent_jobs_json`;
+- `worldStateRows` keys are exactly `active_state`, `vicinity`, `active_job`, `trials_left`, `attacks_left`, `active_effect`, `prestige_rank`;
+- vicinity top-level keys include `currentEstate`, `estateSummary`, slim `estateRuntimeState`, `addressCapacities`, `occupiedEstates`;
+- estate top-level keys include `estateRuntimeState`, `buildingProgressionPreviews`, `progressionPreviewsDeferred`, `progressionPreviewRpc`;
+- estate `buildingProgressionPreviews` count is `0` and `progressionPreviewsDeferred = true`;
+- on-demand building preview returned a bounded preview for one building.
+
+## 21.2. Origin content and current bonus seed contract
+
+`get_start_flow_origin_options()` remains the canonical account-side origin read model. It returns origin content from `origin` plus canonical resolved bonuses from `entity_bonuses(entity_type = origin)`.
+
+Current verified origin bonuses:
+
+| Origin key | Display intent | Bonuses |
+|---|---|---|
+| `spartan` | Spartanin | `+10 Siła`, `+10 Wytrzymałość`, `+20 Obrona` |
+| `athenian` | Ateńczyk | `+5 Charyzma`, `+10 Mądrość`, `+10 Duchowość` |
+| `corinthian` | Koryntianin | `+10 Szczęście`, `+5 Spryt`, `+10 Mądrość` |
+| `cretan` | Kreteńczyk | `+10 Mądrość`, `+10 Wytrzymałość`, `+5 Zwinność` |
+
+Verification after the origin rewrite showed:
+
+- all 12 desired active origin bonus rows `OK`;
+- no unexpected active origin bonuses;
+- `START_FLOW_ORIGIN_OPTIONS_PREVIEW` displayed the expected `bonusSummaryText` values.
+
+Rules:
+
+- Frontend must not hardcode exact origin bonuses.
+- Artwork remains app-side transitional lookup by `origin_key` unless a later DB content/asset registry contract is added.
+- `origin_bonuses` remains legacy/transitional debt and is not the source of truth.
+- Origin display labels may still be English in `origin_label` depending on seed state; if Polish labels are required, handle as a separate DB/content seed pass.
+
+## 21.3. Item-generation requirements, family membership and effective requirement state
+
+The latest item-generation balance pass was data-only and does not require generated type regeneration. It used current canonical requirement structures:
+
+- `requirement_definitions`;
+- `entity_requirements`;
+- `item_requirement_aggregation_settings`;
+- `item_generation_affix_families`;
+- `item_generation_affix_family_members`;
+- item-generation base/affix/quality dictionaries.
+
+Current accepted principles:
+
+- Source requirements are designed around **normal** quality; item quality then scales final/effective requirements.
+- `additional_requirement_fraction = 0.5` remains accepted globally after the latest smoke; do not lower it broadly unless a future balancing decision says otherwise.
+- Standard and Luck-useful item combinations look healthy after the latest pass; do not perform broad cuts to standard/luck families.
+- High-DV/economic bait is intentional. Bait items may be expensive, stat-mismatched and not gameplay-optimal.
+- Outstanding standard/luck items reaching late-mid/endgame requirements can be acceptable when the bonus package justifies it.
+
+Recent verified requirement updates:
+
+- Standard family/tier source requirements were capped for normal progression families while preserving divine/special/elite/bait semantics.
+- Unassigned active affixes from the high-value/prestige/special review were attached to explicit families instead of leaving them unclassified.
+- Active generation affixes have at least one active source requirement.
+- Base item requirements were repaired so active bases have hero-level gates, and missing slot/theme requirements were added for ranged weapons, boots and pants where applicable.
+- `Triumfalny` / `Ceremonialny` / `Przepychu` prestige-bait source requirements were trimmed after preflight proved the old stack produced over-high effective requirements. The accepted trim targets top `Outstanding` combinations around level 60 rather than 90+ while preserving high DV bait semantics.
+
+Current important targeted affix requirement values after trim:
+
+| Kind | Key | Intent | Current active source requirements |
+|---|---|---|---|
+| prefix | `triumphal` | Triumfalny prestige weapon bait | `hero_level = 20`, `charisma = 24`, `spirituality = 7`, `strength = 12` |
+| prefix | `ceremonial_weapon` | Ceremonialny weapon bait | `hero_level = 20`, `charisma = 16`, `spirituality = 7`, `wisdom = 10` |
+| suffix | `opulence` | Przepychu high-Charisma bait | `hero_level = 20`, `charisma = 22`, `cunning = 8` |
+
+Current sampler/distribution interpretation:
+
+- `standard` and `luck_useful` should be left alone unless future representative smoke shows a concrete outlier.
+- `elite_bait_special` may still have a small overcap tail; that is not automatically a bug if the item is a super-bait/special with high DV and broad bonus package.
+- Future balancing should be family-/case-targeted, not global. Example: audit a concrete family pair such as `scholastic + ceremony` if it remains undesirable, instead of changing all requirements or the global aggregation setting.
+
+## 21.4. Polish item-name forms and `dew_touched`
+
+Current naming/composer rule:
+
+- Final player-facing item names should be produced by the canonical item-name composer, not by ad hoc SQL/debug concatenation of `quality_label + prefix.name + base.name + suffix.name`.
+- Prefix display must use `get_item_prefix_display_modifier(prefix_id, base_id, 'pl')` / equivalent canonical composer behavior so the form matches the base item's grammatical gender/number.
+- Suffixes generally remain invariant genitive phrases.
+
+`dew_touched` was corrected from the typo `Znroszony` to `Zroszony` with display forms:
+
+- masculine inanimate singular: `Zroszony`;
+- feminine singular: `Zroszona`;
+- neuter singular: `Zroszone`;
+- non-virile plural: `Zroszone`.
+
+Verified examples:
+
+- `Koszula` -> `Zroszona`;
+- `Kij` -> `Zroszony`;
+- `Sandały` -> `Zroszone`.
+
+No generated type regeneration is required for this data-only seed/form correction.
+
+## 21.5. Same-signature body fixes and no-regeneration changes
+
+No generated Supabase type regeneration is required for:
+
+- same-signature body fixes to page-context RPCs, including `stats."order"` ordering and `estates.rank` -> `estateRank` mapping;
+- origin bonus rewrite data seed;
+- `dew_touched` display-form seed correction;
+- item-generation requirement/family/base requirement data-only rebalance;
+- `Triumfalny` / `Ceremonialny` / `Przepychu` requirement trim.
+
+Generated types **are** required after adding the player page-context RPC signatures if Codex needs to call them through generated Supabase function typing. They are also required before Codex consumes the new `get_hero_estate_summary_state(...)` and `get_player_estate_building_progression_preview_context(...)` function signatures. Same-signature slim-payload body changes to existing page-context RPCs do not by themselves require regeneration.
+
+
