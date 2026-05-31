@@ -9,6 +9,7 @@ import {
 import { HeroExplorationStepResolutionReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { ItemReadModel } from '../../../core/domain/item/item.model';
 import { HeroExplorationRewards } from '../../../core/services/exploration/hero-exploration-rewards';
+import { PlayerDashboardShellState } from '../../../core/services/hero/player-dashboard-shell-state';
 import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
@@ -38,6 +39,7 @@ export class ExplorationRewardState {
   private readonly feedback = inject(ExplorationFeedbackState);
   private readonly overview = inject(ExplorationOverviewState);
   private readonly rewards = inject(HeroExplorationRewards);
+  private readonly dashboardShell = inject(PlayerDashboardShellState);
   private readonly step = inject(ExplorationStepState);
   private readonly loadToken = new RequestToken();
   private readonly currentSource = signal<RewardSource | null>(null);
@@ -175,6 +177,10 @@ export class ExplorationRewardState {
         next: (reward) => {
           if (this.isCurrentLoad(token, context.heroId, context.difficultyKey, source)) {
             this.reward.set(reward);
+
+            if (reward) {
+              this.dashboardShell.refreshActiveDashboardContext();
+            }
           }
         },
         error: (error: unknown) => {
