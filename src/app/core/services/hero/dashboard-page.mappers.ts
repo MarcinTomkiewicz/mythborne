@@ -9,6 +9,7 @@ import {
   colorableToneTextClass,
   toneTextClass,
 } from '../../utils/stat-tone-class';
+import { combatAttackSourceDisplayLabel } from '../../utils/combat-attack-labels';
 
 export interface DashboardHealthSource {
   currentHealth: number;
@@ -133,9 +134,5 @@ function valueParts(
 }
 
 function dashboardDamageLabel(row: HeroDashboardDisplayDamageRow): string {
-  const label = row.label.trim();
-
-  return label.toLowerCase() === 'unarmed'
-    ? 'Pięść'
-    : label;
+  return combatAttackSourceDisplayLabel(row.label);
 }

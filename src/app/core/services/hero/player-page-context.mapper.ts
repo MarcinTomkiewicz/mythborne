@@ -6,11 +6,17 @@ import {
 import { HeroDashboardRuntimeStatsReadModel } from '../../domain/hero/hero-dashboard-runtime-stats.model';
 import { mapHeroDashboardRuntimeStats } from '../../domain/hero/hero-dashboard-runtime-stats.mapper';
 import { Origin } from '../../domain/origin/origin.model';
+import {
+  mapAttributeAllocationModel,
+  mapAttributeAllocationPreviewManifest,
+} from '../../domain/progression/attribute-allocation-preview-manifest.mapper';
+import { mapBaseStatSnapshots } from '../../domain/stats/base-stat.mapper';
 import { CORE_RESOURCE_DISPLAY_DEFINITIONS } from '../../config/resource-display.config';
 import { Json } from '../../types/database.types';
 import { GetHeroDashboardRuntimeStatsRpcRow } from '../../types/hero-runtime-stats-rpc.types';
 import { GetHeroEquipmentRuntimeSlotsRpcRow } from '../../types/item-equipment-rpc.types';
 import { HeroResourceRow } from '../../types/resource-display.types';
+import { IStat } from '../../interfaces/i-stats/i-stats';
 import {
   JsonRecord,
   jsonRecord,
@@ -27,6 +33,7 @@ import {
   DashboardWorldStateTone,
 } from './dashboard-persistent-state.model';
 import {
+  PlayerAttributesPageContext,
   PlayerDashboardExperienceContext,
   PlayerDashboardPageContext,
 } from './player-page-context.model';
@@ -82,6 +89,75 @@ export function mapPlayerDashboardPageContext(value: Json): PlayerDashboardPageC
     equipmentPreviewRows: mapEquipmentPreviewRowsContext(root),
     persistentStateRows: mapPersistentStateRowsContext(root),
   };
+}
+
+export function mapPlayerAttributesPageContext(value: Json): PlayerAttributesPageContext {
+  const root = requireRecord(value, 'get_player_attributes_page_context');
+  const hero = requireRecord(read(root, 'hero'), 'attributes hero');
+  const heroId = requiredText(read(hero, 'id'), 'hero.id');
+  const serverId = requiredText(read(hero, 'serverId', 'server_id'), 'hero.server_id');
+  const heroStats = mapHeroStatValues(root);
+  const statsDictionary = mapStatsDictionary(root);
+  const attributeManifest = requireRecord(
+    requireValue(root, ['attributeManifest'], 'attributeManifest'),
+    'attributeManifest',
+  );
+
+  return {
+    heroId,
+    serverId,
+    heroName: requiredText(read(hero, 'name'), 'hero.name'),
+    heroLevel: requiredPositiveInteger(read(hero, 'level'), 'hero.level'),
+    availableCharacterPoints: requiredNonNegativeInteger(
+      read(root, 'availableCharacterPoints'),
+      'availableCharacterPoints',
+    ),
+    baseStats: mapBaseStatSnapshots(statsDictionary, heroStats),
+    draftStats: { ...heroStats },
+    previewManifest: mapAttributeAllocationPreviewManifest(attributeManifest),
+    allocationModel: mapAttributeAllocationModel(
+      requireValue(attributeManifest, ['allocationModel', 'allocation_model'], 'attributeManifest.allocationModel'),
+    ),
+    runtimeDerivedStats: nullableRecord(
+      requireValue(root, ['runtimeDerivedStats'], 'runtimeDerivedStats'),
+      'runtimeDerivedStats',
+    ),
+  };
+}
+
+function mapHeroStatValues(root: JsonRecord): Record<string, number> {
+  const rows = requireArray(
+    requireValue(root, ['heroStats'], 'heroStats'),
+    'heroStats',
+  );
+
+  if (!rows.length) {
+    throw new Error('Player attributes page context is missing heroStats rows.');
+  }
+
+  return Object.fromEntries(rows.map((row) => [
+    requiredText(read(row, 'statKey', 'stat_key'), 'heroStats.stat_key'),
+    requiredNonNegativeInteger(read(row, 'value'), 'heroStats.value'),
+  ]));
+}
+
+function mapStatsDictionary(root: JsonRecord): IStat[] {
+  const rows = requireArray(
+    requireValue(root, ['statsDictionary'], 'statsDictionary'),
+    'statsDictionary',
+  );
+
+  if (!rows.length) {
+    throw new Error('Player attributes page context is missing statsDictionary rows.');
+  }
+
+  return rows.map((row) => ({
+    id: requiredText(read(row, 'id'), 'statsDictionary.id'),
+    key: requiredText(read(row, 'key'), 'statsDictionary.key'),
+    label: requiredText(read(row, 'label'), 'statsDictionary.label'),
+    order: requiredNonNegativeInteger(read(row, 'order'), 'statsDictionary.order'),
+    description: optionalText(read(row, 'description')),
+  }));
 }
 
 function mapExperienceContext(root: JsonRecord): PlayerDashboardExperienceContext {

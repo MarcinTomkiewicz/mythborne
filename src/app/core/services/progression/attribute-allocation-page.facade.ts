@@ -1,329 +1,310 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, finalize, forkJoin, map, of } from 'rxjs';
+import { finalize } from 'rxjs';
+import { RPC } from '../../constants/rpc.const';
 import {
-  attributeAllocationPreviewManifestError,
-  isUsableAttributeAllocationPreviewManifest,
-} from '../../domain/progression/attribute-allocation-preview-manifest.mapper';
+  commonMaxAllocatedValue,
+  currentBaseStatValues,
+  initialDraftValues,
+  mapAttributePageStatRows,
+  resolveAttributePageContext,
+  totalDraftCostForModel,
+} from '../../domain/progression/attribute-allocation-model.helpers';
+import { isUsableAttributeAllocationPreviewManifest } from '../../domain/progression/attribute-allocation-preview-manifest.mapper';
 import { mapAttributeAllocationPreviewRows } from '../../domain/progression/attribute-allocation-preview.interpreter';
 import {
+  AttributeAllocationModel,
   AttributeAllocationPreviewManifest,
   AttributeAllocationPreviewRow,
 } from '../../domain/progression/attribute-allocation-preview-manifest.model';
-import { StatProgressionRules } from '../../domain/progression/stat-progression.model';
-import { mapBaseStatSnapshots } from '../../domain/stats/base-stat.mapper';
-import { BaseStatSnapshot } from '../../domain/stats/base-stat.model';
+import {
+  AttributePageLoadDiagnostic,
+  AttributePageStatRow,
+} from '../../interfaces/progression/attribute-allocation-page.interface';
 import { getErrorMessage } from '../../utils/error-message';
-import { nonNegativeInteger, positiveInteger } from '../../utils/number';
-import { Hero } from '../hero/hero';
-import { HeroDashboardRuntimeStats } from '../hero/hero-dashboard-runtime-stats';
-import { StatsService } from '../stats/stats';
+import { RequestToken } from '../../utils/request-token';
+import {
+  mapSaveStatAllocationResult,
+  toSaveStatAllocationRpcArgs,
+} from '../../utils/stat-allocation-rpc';
+import { SaveStatAllocationRpcRow } from '../../types/stat-allocation-rpc.types';
+import { ActiveHero } from '../hero/active-hero';
+import { PlayerPageContext } from '../hero/player-page-context';
+import { ActiveServer } from '../server/active-server';
+import { Backend } from '../backend/backend';
 import { ToastService } from '../ui/toast';
-import { StatProgressionService } from './stat-progression';
+
+const ATTRIBUTES_PAGE_BLOCKER_TEXT =
+  'Nie można teraz otworzyć ekranu atrybutów. Spróbuj ponownie później.';
 
 @Injectable()
 export class AttributeAllocationPageFacade {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly heroService = inject(Hero);
-  private readonly runtimeStatsService = inject(HeroDashboardRuntimeStats);
-  private readonly statsService = inject(StatsService);
-  private readonly statProgression = inject(StatProgressionService);
+  private readonly activeHero = inject(ActiveHero);
+  private readonly activeServer = inject(ActiveServer);
+  private readonly backend = inject(Backend);
+  private readonly playerPageContext = inject(PlayerPageContext);
   private readonly toast = inject(ToastService);
+  private readonly loadToken = new RequestToken();
 
   readonly isLoading = signal(true);
   readonly isSaving = signal(false);
-  readonly loadError = signal<string | null>(null);
+  readonly isPageReady = signal(false);
+  readonly pageBlocker = signal<string | null>(null);
+  readonly allocationUnavailableReason = signal<string | null>(null);
+  readonly loadDiagnostic = signal<AttributePageLoadDiagnostic | null>(null);
   readonly heroName = signal('');
   readonly heroLevel = signal(1);
-  readonly characterPoints = signal(0);
-  readonly draftStats = signal<Record<string, number>>({});
-  readonly progressionRules = signal<StatProgressionRules | null>(null);
+  readonly availableCharacterPoints = signal(0);
   readonly previewManifest = signal<AttributeAllocationPreviewManifest | null>(null);
-  readonly previewManifestError = signal<string | null>(null);
-  private readonly baseStats = signal<BaseStatSnapshot[]>([]);
+  readonly allocationModel = signal<AttributeAllocationModel | null>(null);
+  readonly draftValues = signal<Record<string, number>>({});
 
-  readonly tooltipFallback = 'Description for this stat is not configured yet. Tooltip is ready for admin-managed descriptions.';
+  readonly tooltipFallback = 'Opis tej statystyki nie jest jeszcze skonfigurowany.';
 
-  readonly capPreview = computed(() => {
-    const rules = this.progressionRules();
-    return rules
-      ? this.statProgression.evaluateStatCap(
-          this.heroLevel(),
-          rules.capFormula.expression,
-          rules.capTarget,
-        )
-      : { value: null, error: 'Stat progression rules are not loaded.' };
+  readonly statRows = computed<AttributePageStatRow[]>(() => {
+    return mapAttributePageStatRows(
+      this.allocationModel(),
+      this.draftValues(),
+      this.availableCharacterPoints(),
+    );
   });
 
-  readonly statCapSummaryError = computed(() => {
-    const cap = this.capPreview();
-    return cap.error ?? (cap.value === null
-      ? 'Stat level cap cannot be calculated because the active formula returned no value.'
-      : null);
-  });
-
-  readonly spentCharacterPoints = computed<number | null>(() => {
-    const expression = this.progressionRules()?.costFormula.expression;
-    if (!expression) {
-      return 0;
-    }
-
-    let total = 0;
-    for (const stat of this.baseStats()) {
-      const spent = this.getSpentPointsForStat(stat, expression);
-      if (spent === null) {
-        return null;
-      }
-      total += spent;
-    }
-    return total;
-  });
-
-  readonly remainingCharacterPoints = computed<number | null>(() =>
-    this.spentCharacterPoints() === null ? null : this.characterPoints() - this.spentCharacterPoints()!,
+  readonly hasPendingChanges = computed(() =>
+    this.statRows().some((row) => row.pendingLevels > 0),
   );
+  readonly commonStatCap = computed(() => commonMaxAllocatedValue(this.statRows()));
 
-  readonly characterPointSummaryError = computed(() => this.spentCharacterPoints() === null
-    ? 'Stat upgrade cost cannot be calculated because the active formula configuration is broken.'
-    : null);
+  readonly totalDraftCost = computed(() => {
+    const model = this.allocationModel();
+    return model ? totalDraftCostForModel(model, this.draftValues()) : null;
+  });
+
+  readonly remainingCharacterPoints = computed(() => {
+    const total = this.totalDraftCost();
+    return total === null ? null : this.availableCharacterPoints() - total;
+  });
+
+  readonly saveBlockerMessage = computed(() => {
+    const model = this.allocationModel();
+    const remaining = this.remainingCharacterPoints();
+
+    if (!model) {
+      return null;
+    }
+
+    if (!this.hasPendingChanges()) {
+      return model.initialDraftSummary.saveBlockerMessage ?? 'Brak niezapisanych zmian statystyk.';
+    }
+
+    if (this.totalDraftCost() === null) {
+      return 'Nie można teraz wyliczyć kosztu planu rozwoju.';
+    }
+
+    if (remaining !== null && remaining < 0) {
+      return model.saveEligibility.blockerMessage
+        ?? model.initialDraftSummary.saveBlockerMessage
+        ?? 'Za mało punktów postaci.';
+    }
+
+    return model.saveEligibility.blockerMessage
+      ?? model.initialDraftSummary.saveBlockerMessage;
+  });
+
+  readonly canSaveDraft = computed(() =>
+    this.hasPendingChanges()
+    && this.totalDraftCost() !== null
+    && (this.remainingCharacterPoints() ?? -1) >= 0,
+  );
 
   readonly derivedStatRows = computed<AttributeAllocationPreviewRow[]>(() => {
     const manifest = this.previewManifest();
     return isUsableAttributeAllocationPreviewManifest(manifest)
       ? mapAttributeAllocationPreviewRows(
           manifest,
-          this.currentBaseStatValues(),
-          this.draftBaseStatValues(),
+          currentBaseStatValues(this.allocationModel()),
+          this.draftValues(),
         )
       : [];
   });
 
   readonly derivedPreviewBadge = computed(() =>
-    this.derivedStatRows().length > 0 ? 'Allocation preview' : 'Current preview only',
+    this.derivedStatRows().length > 0 ? 'Podgląd zmian' : 'Tylko aktualny podgląd',
   );
 
   readonly derivedPreviewDescription = computed(() =>
     this.derivedStatRows().length > 0
-      ? 'Current values and unsaved stat changes are shown below where preview data is available.'
-      : 'Current values for allocation-related stats are not available for this hero yet.',
+      ? 'Aktualne wartości i niezapisane zmiany są pokazane tam, gdzie podgląd jest dostępny.'
+      : 'Aktualne wartości statystyk pochodnych nie są jeszcze dostępne dla tego bohatera.',
   );
-
-  readonly hasPendingChanges = computed(() =>
-    this.baseStats().some((stat) => stat.currentValue !== this.plannedValue(stat)),
-  );
-
-  readonly hasStatCapViolation = computed(() => {
-    const cap = this.currentStatCap();
-    return cap === null || this.baseStats().some((stat) => this.plannedValue(stat) > cap);
-  });
-
-  readonly canSaveDraft = computed(() => {
-    const remaining = this.remainingCharacterPoints();
-    return this.hasPendingChanges() && remaining !== null && remaining >= 0 && !this.hasStatCapViolation();
-  });
-
-  readonly statRows = computed(() => {
-    const rules = this.progressionRules();
-    if (!rules) {
-      return [];
-    }
-
-    const cap = this.currentStatCap();
-    const remaining = this.remainingCharacterPoints();
-    return this.baseStats().map((stat) => {
-      const plannedValue = this.plannedValue(stat);
-      const cost = this.statProgression.getNextLevelCost(
-        plannedValue,
-        rules.costFormula.expression,
-        { target: rules.costTarget },
-      );
-
-      return {
-        key: stat.key,
-        label: stat.label,
-        description: stat.description,
-        currentValue: stat.currentValue,
-        plannedValue,
-        pendingLevels: Math.max(0, plannedValue - stat.currentValue),
-        nextLevelCost: cost,
-        canIncrease: cap !== null && plannedValue < cap && cost !== null && remaining !== null && cost <= remaining,
-        canDecrease: plannedValue > stat.currentValue,
-      };
-    });
-  });
 
   incrementStat(statKey: string): void {
-    const row = this.statRows().find((entry) => entry.key === statKey);
+    const row = this.statRows().find((entry) => entry.statKey === statKey);
     if (row?.canIncrease) {
-      this.draftStats.update((stats) => ({ ...stats, [statKey]: row.plannedValue + 1 }));
+      this.draftValues.update((stats) => ({ ...stats, [statKey]: row.draftValue + 1 }));
     }
   }
 
   decrementStat(statKey: string): void {
-    const row = this.statRows().find((entry) => entry.key === statKey);
+    const row = this.statRows().find((entry) => entry.statKey === statKey);
     if (row?.canDecrease) {
-      this.draftStats.update((stats) => ({ ...stats, [statKey]: row.plannedValue - 1 }));
+      this.draftValues.update((stats) => ({ ...stats, [statKey]: row.draftValue - 1 }));
     }
   }
 
   resetDraft(): void {
-    this.draftStats.set(Object.fromEntries(
-      this.baseStats().map((stat) => [stat.key, stat.currentValue]),
-    ));
-    this.toast.show('info', 'Allocation reset', 'Unsaved stat changes were discarded.');
+    const model = this.allocationModel();
+    if (!model) {
+      return;
+    }
+
+    this.draftValues.set(initialDraftValues(model));
+    this.toast.show('info', 'Plan zresetowany', 'Niezapisane zmiany statystyk zostały odrzucone.');
   }
 
   saveDraft(): void {
+    const activeHero = this.activeHero.state();
     const remaining = this.remainingCharacterPoints();
-    if (!this.canSaveDraft() || remaining === null) {
-      this.showSaveBlockedMessage(remaining);
+
+    if (!activeHero?.heroId || !this.canSaveDraft() || remaining === null) {
+      this.toast.show(
+        'error',
+        'Zapis zablokowany',
+        this.saveBlockerMessage() ?? 'Nie można teraz zapisać rozwoju statystyk.',
+      );
       return;
     }
 
     this.isSaving.set(true);
-    this.heroService
-      .saveProgressionDraft(
-        { ...this.draftStats() },
-        remaining,
-        { previousCharacterPoints: this.characterPoints() },
+    this.backend
+      .rpc<SaveStatAllocationRpcRow[]>(
+        RPC.save_stat_allocation,
+        toSaveStatAllocationRpcArgs({
+          heroId: activeHero.heroId,
+          stats: { ...this.draftValues() },
+          previousCharacterPoints: this.availableCharacterPoints(),
+          nextCharacterPoints: remaining,
+        }),
       )
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isSaving.set(false)),
       )
       .subscribe({
-        next: (result) => {
-          this.baseStats.update((stats) => stats.map((stat) => ({
-            ...stat,
-            currentValue: nonNegativeInteger(result.stats[stat.key] ?? stat.currentValue),
-          })));
-          this.draftStats.set({ ...result.stats });
-          this.characterPoints.set(result.characterPointsAfter);
-          this.loadPreviewManifest();
-          this.toast.show('success', 'Attributes saved', 'Stat allocation was saved.');
+        next: (rows) => {
+          const row = Array.isArray(rows) ? rows[0] : null;
+
+          if (!row) {
+          this.toast.show('error', 'Zapis nieudany', 'Nie udało się zapisać rozwoju statystyk.');
+            return;
+          }
+
+          mapSaveStatAllocationResult(row);
+          this.toast.show('success', 'Statystyki zapisane', 'Rozwój statystyk został zapisany.');
+          this.loadData();
         },
         error: (error: unknown) => {
-          this.toast.show('error', 'Save failed', getErrorMessage(error, 'Failed to save attribute allocation.'));
+          this.toast.show(
+            'error',
+            'Zapis nieudany',
+            getErrorMessage(error, 'Nie udało się zapisać rozwoju statystyk.'),
+          );
         },
       });
   }
 
   loadData(): void {
-    this.isLoading.set(true);
-    this.loadError.set(null);
+    const contextResult = this.currentContext();
+    const context = contextResult.context;
+    const token = this.loadToken.next();
 
-    forkJoin({
-      hero: this.heroService.getHeroData(),
-      stats: this.heroService.getHeroStats(),
-      definitions: this.statsService.getStats(),
-      rules: this.statProgression.getRules(),
-      previewManifest: this.previewManifestResult(),
-    })
+    this.isLoading.set(true);
+    this.isPageReady.set(false);
+    this.pageBlocker.set(null);
+    this.allocationUnavailableReason.set(null);
+    this.loadDiagnostic.set(null);
+    this.clearPageState();
+
+    if (!context) {
+      this.isLoading.set(false);
+      this.reportLoadDiagnostic({
+        phase: 'context',
+        activeHeroHeroId: contextResult.activeHeroHeroId,
+        activeHeroServerId: contextResult.activeHeroServerId,
+        selectedServerId: contextResult.selectedServerId,
+        reasons: contextResult.reasons,
+      });
+      this.pageBlocker.set(ATTRIBUTES_PAGE_BLOCKER_TEXT);
+      return;
+    }
+
+    this.playerPageContext.getAttributesPageContext(context.heroId)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoading.set(false)),
       )
       .subscribe({
-        next: ({ hero, stats, definitions, rules, previewManifest }) => {
-          this.heroName.set(hero.name);
-          this.heroLevel.set(positiveInteger(hero.level ?? 1));
-          this.characterPoints.set(nonNegativeInteger(hero.character_points ?? 0));
-          this.baseStats.set(mapBaseStatSnapshots(definitions, stats));
-          this.draftStats.set({ ...stats });
-          this.progressionRules.set(rules);
-          this.previewManifest.set(previewManifest.manifest);
-          this.previewManifestError.set(
-            previewManifest.error
-              ?? attributeAllocationPreviewManifestError(previewManifest.manifest),
-          );
+        next: (pageContext) => {
+          if (
+            !this.loadToken.isCurrent(token)
+            || pageContext.heroId !== context.heroId
+            || pageContext.serverId !== context.serverId
+          ) {
+            this.reportLoadDiagnostic({
+              phase: 'stale_response',
+              requestHeroId: context.heroId,
+              requestServerId: context.serverId,
+              returnedHeroId: pageContext.heroId,
+              returnedServerId: pageContext.serverId,
+            });
+            return;
+          }
+
+          this.heroName.set(pageContext.heroName);
+          this.heroLevel.set(pageContext.heroLevel);
+          this.availableCharacterPoints.set(pageContext.availableCharacterPoints);
+          this.previewManifest.set(pageContext.previewManifest);
+          this.allocationModel.set(pageContext.allocationModel);
+          this.draftValues.set(initialDraftValues(pageContext.allocationModel));
+          this.loadDiagnostic.set(null);
+          this.isPageReady.set(true);
         },
         error: (error: unknown) => {
-          const message = getErrorMessage(error, 'Failed to load hero progression.');
-          this.loadError.set(message);
-          this.toast.show('error', 'Attribute screen unavailable', message);
+          if (!this.loadToken.isCurrent(token)) {
+            return;
+          }
+
+          const internalError = getErrorMessage(error, ATTRIBUTES_PAGE_BLOCKER_TEXT);
+          this.allocationUnavailableReason.set(internalError);
+          this.reportLoadDiagnostic({
+            phase: 'rpc_or_mapper_error',
+            requestHeroId: context.heroId,
+            requestServerId: context.serverId,
+            internalError,
+          });
+          this.pageBlocker.set(ATTRIBUTES_PAGE_BLOCKER_TEXT);
         },
       });
   }
 
-  private showSaveBlockedMessage(remaining: number | null): void {
-    const formulaError = this.statCapSummaryError() ?? this.characterPointSummaryError();
-    if (formulaError || remaining === null) {
-      this.toast.show('error', 'Formula error', formulaError ?? 'Stat upgrade cost cannot be calculated.');
-      return;
-    }
-
-    if (!this.hasPendingChanges()) {
-      this.toast.show('info', 'No allocation changes', 'Change at least one base stat before saving.');
-      return;
-    }
-
-    const capViolation = this.hasStatCapViolation();
-    this.toast.show(
-      'error',
-      capViolation ? 'Stat cap exceeded' : 'Not enough Character Points',
-      capViolation
-        ? 'One or more planned stats are above the current formula-driven cap.'
-        : 'Lower the draft allocation before saving.',
+  private currentContext() {
+    return resolveAttributePageContext(
+      this.activeHero.state(),
+      this.activeServer.selectedServer(),
     );
   }
 
-  private loadPreviewManifest(): void {
-    this.previewManifestError.set(null);
-    this.previewManifestResult()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ manifest, error }) => {
-        this.previewManifest.set(manifest);
-        this.previewManifestError.set(
-          error ?? attributeAllocationPreviewManifestError(manifest),
-        );
-      });
+  private reportLoadDiagnostic(diagnostic: AttributePageLoadDiagnostic): void {
+    this.loadDiagnostic.set(diagnostic);
   }
 
-  private previewManifestResult() {
-    return this.runtimeStatsService.getActiveHeroAttributeAllocationPreviewManifest().pipe(
-      map((manifest) => ({ manifest, error: null })),
-      catchError((error: unknown) =>
-        of({
-          manifest: null,
-          error: getErrorMessage(error, 'Derived preview could not be loaded.'),
-        }),
-      ),
-    );
+  private clearPageState(): void {
+    this.heroName.set('');
+    this.heroLevel.set(1);
+    this.availableCharacterPoints.set(0);
+    this.previewManifest.set(null);
+    this.allocationModel.set(null);
+    this.draftValues.set({});
   }
 
-  private currentStatCap(): number | null {
-    const cap = this.capPreview();
-    return cap.error || cap.value === null ? null : positiveInteger(cap.value);
-  }
-
-  private getSpentPointsForStat(stat: BaseStatSnapshot, expression: string): number | null {
-    let total = 0;
-    for (let level = stat.currentValue; level < this.plannedValue(stat); level += 1) {
-      const cost = this.statProgression.getNextLevelCost(
-        level,
-        expression,
-        { target: this.progressionRules()?.costTarget ?? undefined },
-      );
-      if (cost === null) {
-        return null;
-      }
-      total += cost;
-    }
-    return total;
-  }
-
-  private plannedValue(stat: BaseStatSnapshot): number {
-    return this.draftStats()[stat.key] ?? stat.currentValue;
-  }
-
-  private currentBaseStatValues(): Record<string, number> {
-    return Object.fromEntries(this.baseStats().map((stat) => [stat.key, stat.currentValue]));
-  }
-
-  private draftBaseStatValues(): Record<string, number> {
-    return {
-      ...this.currentBaseStatValues(),
-      ...this.draftStats(),
-    };
-  }
 }

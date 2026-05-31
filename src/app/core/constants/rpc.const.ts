@@ -47,6 +47,7 @@ export const RPC = {
   select_account_entry_active_hero_context:
     'select_account_entry_active_hero_context',
   get_player_dashboard_page_context: 'get_player_dashboard_page_context',
+  get_player_attributes_page_context: 'get_player_attributes_page_context',
   get_start_flow_origin_options: 'get_start_flow_origin_options',
   create_hero_start_flow: 'create_hero_start_flow',
   get_combat_turn_limit: 'get_combat_turn_limit',
