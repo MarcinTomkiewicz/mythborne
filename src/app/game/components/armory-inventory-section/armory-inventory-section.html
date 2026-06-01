@@ -105,6 +105,20 @@
                     <strong class="color-heading text-xs">{{ valueDisplay.displayValue }}</strong>
                   </div>
                 }
+
+                @if (canEquipItem(item)) {
+                  <div class="flex-row-start-center flex-wrap gap-xs border-top pt-xs">
+                    <p-button
+                      type="button"
+                      severity="secondary"
+                      size="small"
+                      icon="pi pi-equip"
+                      [label]="equipItemLabel()"
+                      [disabled]="actionDisabled()"
+                      (onClick)="equipItem.emit(item)"
+                    />
+                  </div>
+                }
               </article>
             }
           </div>

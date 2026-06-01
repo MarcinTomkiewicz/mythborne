@@ -98,6 +98,9 @@
         [searchCopy]="copy.search"
         [filtersCopy]="copy.filters"
         [inventoryCopy]="copy.inventory"
+        [equipItemLabel]="copy.actions.equipItem"
+        [actionDisabled]="inventoryActionDisabled()"
+        (equipItem)="equipInventoryItem($event)"
       />
     }
   </div>

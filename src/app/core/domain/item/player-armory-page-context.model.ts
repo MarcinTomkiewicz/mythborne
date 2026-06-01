@@ -48,6 +48,7 @@ export interface PlayerArmoryPageCopySummary {
 }
 
 export interface PlayerArmoryPageCopyActions {
+  equipItem: string;
   savePreset: string;
   renamePreset: string;
   unequipSelected: string;

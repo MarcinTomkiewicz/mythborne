@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -8,6 +8,7 @@ import {
   PlayerArmoryPageCopyFilters,
   PlayerArmoryPageCopyInventory,
   PlayerArmoryPageCopySearch,
+  PlayerArmoryItemReadModel,
   PlayerArmoryStorageSlotReadModel,
 } from '../../../core/domain/item/player-armory-page-context.model';
 import {
@@ -38,6 +39,9 @@ export class ArmoryInventorySection {
   readonly searchCopy = input.required<PlayerArmoryPageCopySearch>();
   readonly filtersCopy = input.required<PlayerArmoryPageCopyFilters>();
   readonly inventoryCopy = input.required<PlayerArmoryPageCopyInventory>();
+  readonly equipItemLabel = input.required<string>();
+  readonly actionDisabled = input(false);
+  readonly equipItem = output<PlayerArmoryItemReadModel>();
   readonly searchControl = new FormControl<string>('', { nonNullable: true });
   readonly slotFilterControl = new FormControl<string>(ARMORY_INVENTORY_ALL_FILTER_VALUE, {
     nonNullable: true,
@@ -99,6 +103,10 @@ export class ArmoryInventorySection {
 
   shelfTitle(shelf: PlayerArmoryStorageSlotReadModel): string {
     return armoryStorageSlotLabel(shelf);
+  }
+
+  canEquipItem(item: PlayerArmoryItemReadModel): boolean {
+    return item.lifecycleStatusKey !== 'scrapped';
   }
 
   clearFilters(): void {

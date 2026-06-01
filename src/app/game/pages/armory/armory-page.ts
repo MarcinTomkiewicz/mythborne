@@ -1,7 +1,10 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { equipmentPreviewIconClassForSlot } from '../../../core/domain/equipment/equipment-preview-icons.config';
 import { EquipmentPreviewSlotRow } from '../../../core/domain/equipment/equipment-preview.model';
-import { PlayerArmoryEquipmentSlotReadModel } from '../../../core/domain/item/player-armory-page-context.model';
+import {
+  PlayerArmoryEquipmentSlotReadModel,
+  PlayerArmoryItemReadModel,
+} from '../../../core/domain/item/player-armory-page-context.model';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { ArmoryInventorySection } from '../../components/armory-inventory-section/armory-inventory-section';
@@ -20,6 +23,9 @@ export class ArmoryPage implements OnInit {
   readonly page = inject(ArmoryPageFacade);
   readonly equipment = inject(CurrentEquipmentState);
   readonly selectedEquippedItemIds = signal<readonly string[]>([]);
+  readonly inventoryActionDisabled = computed(() =>
+    this.equipment.isMutating(),
+  );
   readonly equippedItemCount = computed(() =>
     this.page.equipmentSlots().filter((slot) => slot.hasItem).length,
   );
@@ -73,7 +79,23 @@ export class ArmoryPage implements OnInit {
     }, () => this.refreshAfterEquipmentMutation());
   }
 
+  equipInventoryItem(item: PlayerArmoryItemReadModel): void {
+    if (this.inventoryActionDisabled() || item.lifecycleStatusKey === 'scrapped') {
+      return;
+    }
+
+    this.equipment.equipItem(
+      { itemId: item.itemId },
+      () => this.refreshAfterInventoryMutation(),
+    );
+  }
+
   private refreshAfterEquipmentMutation(): void {
+    this.selectedEquippedItemIds.set([]);
+    this.page.loadData();
+  }
+
+  private refreshAfterInventoryMutation(): void {
     this.selectedEquippedItemIds.set([]);
     this.page.loadData();
   }

@@ -117,6 +117,7 @@ function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
     empty: requiredRecord(read(copyJson, 'empty'), 'copyJson.empty'),
     storage: requiredRecord(read(copyJson, 'storage'), 'copyJson.storage'),
     actions: {
+      equipItem: requiredText(read(actions, 'equipItem'), 'copyJson.actions.equipItem'),
       savePreset: requiredText(read(actions, 'savePreset'), 'copyJson.actions.savePreset'),
       renamePreset: requiredText(read(actions, 'renamePreset'), 'copyJson.actions.renamePreset'),
       unequipSelected: requiredText(
