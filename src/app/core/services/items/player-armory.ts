@@ -5,6 +5,7 @@ import {
   ArmoryItemDetailReadModel,
   HeroArmoryReadModel,
 } from '../../domain/item/item-equipment.model';
+import { PlayerArmoryPageContextReadModel } from '../../domain/item/player-armory-page-context.model';
 import { BulkMoveArmoryItemsToShelfResult } from '../../domain/item/armory-actions.model';
 import {
   GetHeroArmoryItemDetailRpcArgs,
@@ -27,7 +28,7 @@ import {
   MoveArmoryItemToShelfInput,
   RenameArmoryShelfInput,
 } from '../../interfaces/item/armory-actions.interface';
-import { Json } from '../../types/database.types';
+import { Database, Json } from '../../types/database.types';
 import {
   movableArmoryShelfPosition,
   playerArmoryShelfPosition,
@@ -36,6 +37,7 @@ import { mapHeroArmoryReadModel } from '../../utils/item-equipment-mappers';
 import { mapArmoryItemDetail } from '../../utils/item-detail-mappers';
 import { mapItemRequirementPreview } from '../../utils/item-requirement-mappers';
 import { mapBulkMoveArmoryItemsToShelfResult } from '../../utils/armory-actions-mappers';
+import { mapPlayerArmoryPageContext } from '../../utils/player-armory-page-context.mapper';
 import { requiredTrimmedText, trimToNull } from '../../utils/normalize-text';
 import {
   assertSuccessfulRpcRow,
@@ -52,6 +54,23 @@ export class PlayerArmory {
   getArmory(): Observable<HeroArmoryReadModel> {
     return this.activeHero.requireActiveHero().pipe(
       switchMap((context) => this.getArmoryForHero(context.heroId)),
+    );
+  }
+
+  getArmoryPageContext(): Observable<PlayerArmoryPageContextReadModel> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: Database['public']['Functions']['get_player_armory_page_context']['Args'] = {
+          p_hero_id: context.heroId,
+        };
+
+        return this.backend.rpc<
+          Database['public']['Functions']['get_player_armory_page_context']['Returns']
+        >(
+          RPC.get_player_armory_page_context,
+          args,
+        ).pipe(map(mapPlayerArmoryPageContext));
+      }),
     );
   }
 
