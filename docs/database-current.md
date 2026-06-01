@@ -2,7 +2,7 @@
 
 Rewritten: 2026-05-11  
 Updated: 2026-05-31  
-Primary source: latest `mythsworn_schema.sql` dump from 2026-05-31 plus the previous `database-current.md` and DB/RPC changes verified in the Migrator conversation. The 2026-05-31 sync preserves the 2026-05-15 content and adds current player page-context RPCs, slim JSON payload contracts, origin bonus seed state, item requirement/family rebalance notes and no-grant restore policy. This file was additionally refreshed after the slim page-context payload pass: dashboard/vicinity now use lightweight estate summaries, estate progression previews are deferred, and per-building progression preview is loaded through an on-demand RPC.
+Primary source: latest `mythsworn_schema.sql` dumps from 2026-05-31, including the later 07:18 dump, plus the previous `database-current.md` and DB/RPC changes verified in the Migrator conversation. The 2026-05-31 sync preserves the 2026-05-15 content and adds current player page-context RPCs, slim JSON payload contracts, origin bonus seed state, item requirement/family rebalance notes and no-grant restore policy. This file was additionally refreshed after the slim page-context payload pass and the later player-facing copy/read-model cleanup pass: dashboard/vicinity use lightweight estate summaries, estate progression previews are deferred, per-building progression preview is loaded on demand, Attributes/Armory/Estate page contexts expose sanitized DB-owned Polish label/copy contracts, Armory equipment preview slots are canonical camelCase JSON, and Vicinity exposes a v2 sanitized address-capacity/occupied-estate contract.
 
 ## Purpose
 
@@ -123,7 +123,8 @@ No type regeneration is required for data-only seeds or same-signature function 
 - item-generation requirement/family/base requirement data-only rebalance;
 - `Triumfalny` / `Ceremonialny` / `Przepychu` requirement trim;
 - same-signature function body fixes for player page-context RPCs;
-- same-signature slim-payload fixes to existing page-context RPCs, such as replacing full dashboard/vicinity estate runtime with lightweight `estateSummary` and deferring estate progression previews.
+- same-signature copy/sanitizer body fixes for existing JSON page-context RPCs, including Attributes derived-stat labels, Armory copy/storage/item-detail/equipment-slot labels, Estate sanitized building runtime payloads and Vicinity address-capacity/occupied-estate payload cleanup;
+- same-signature slim-payload fixes to existing page-context RPCs, such as replacing full dashboard/vicinity estate runtime with lightweight `estateSummary`, deferring estate progression previews, normalizing Armory equipment slots to camelCase and sanitizing Vicinity address-capacity/occupied-estate payloads.
 
 ---
 
@@ -434,9 +435,22 @@ Rules:
 
 `ui_metadata_entries` and related metadata read helpers provide DB-backed copy/labels/helper text for admin/runtime explanation surfaces. Admin/gameplay implementation should prefer DB metadata over hardcoded explanatory lists when metadata rows exist.
 
+## Generic localization/content text registry
+
+The 2026-05-31 schema also includes a generic localization foundation for DB-backed copy and label cleanup:
+
+- `locale_definitions` — dictionary of supported UI/content locales. Locale keys are BCP-47-like lowercase keys such as `pl`, `en` or `en-us`.
+- `localized_entity_texts` — generic table for localized entity fields such as `label`, `description`, `helper_text` and `admin_description`. It is keyed by `(entity_type, entity_key, field_key, locale_key)` and keeps `metadata_json`, source-locale metadata and active state.
+- `normalize_locale_key(p_locale_key text)` — normalizes requested locale keys; empty/null defaults to `pl`.
+- `get_localized_entity_text(p_entity_type, p_entity_key, p_field_key, p_locale_key default 'pl', p_fallback default null)` — generic localization resolver. Resolution order is requested locale, base locale, `pl`, `en`, fallback, then entity key.
+- `get_stat_label(p_stat_key, p_locale_key default 'pl', p_fallback_label default null)` — locale-aware stat label helper; new code should prefer it over language-specific wrappers.
+- `hero_stat_label_pl(...)` remains a compatibility wrapper over the locale-aware helper.
+
+Current grants/policies intentionally do not make the localization tables direct frontend dictionaries. Frontend should consume copy through canonical RPC/read-model payloads such as page contexts, `get_start_flow_origin_options(...)`, UI metadata RPCs or future dedicated copy contracts. Do not add table grants to `locale_definitions` or `localized_entity_texts` just to render labels in Angular.
+
 ---
 
-# 4. Stats, progression, Character Points and Luck
+# 4. Stats, progression, Character Points and Fatum/Fate
 
 ## Canonical base stats
 
@@ -454,7 +468,7 @@ Current canonical base stat keys:
 
 Do not use old concept-doc stat lists as implementation authority.
 
-Start-flow creation seeds exactly these canonical base stats at value `1`. `Luck` is a special/derived/runtime value and must not be inserted into `hero_stats`. Origin bonuses are displayed and resolved through the bonus model; they are not copied into base stat rows during creation.
+Start-flow creation seeds exactly these canonical base stats at value `1`. `luck` is a special/derived/runtime value and must not be inserted into `hero_stats`. Player-facing Polish copy must call this stat **Fatum**. Player-facing English copy should call it **Fate**, not Luck. Origin bonuses are displayed and resolved through the bonus model; they are not copied into base stat rows during creation.
 
 ## Stat allocation and progression
 
@@ -536,8 +550,32 @@ Manifest top-level payload:
 
 Supported local-preview stats in v2:
 
+Raw `get_hero_attribute_allocation_preview_manifest(...)` may still contain internal English labels in the schema body. The player page context sanitizes `attributeManifest.supportedDerivedStats[]` and `unsupportedDerivedStats[]` through DB-owned label helpers before Angular receives it.
+
+Current player-facing label contract from `get_player_attributes_page_context(...)`:
+
+| statKey | label |
+|---|---|
+| `health` | `Punkty życia` |
+| `defense` | `Obrona` |
+| `damage_rows` | `Obrażenia` |
+| `critical_chance` | `Szansa krytyczna` |
+| `critical_damage` | `Obrażenia krytyczne` |
+| `evasion_chance` | `Unik` |
+| `current_health` | `Aktualne punkty życia` |
+| `luck` | `Fatum` |
+| `attack_count` | `Liczba ataków` |
+
+Helper/sanitizer functions introduced for this label contract:
+
+- `player_derived_stat_label(p_stat_key text, p_locale_key text default 'pl', p_fallback_label text default null)`;
+- `sanitize_player_attribute_manifest_derived_entry_json(p_entry_json jsonb)`;
+- `sanitize_player_attribute_manifest_derived_array_json(p_entries_json jsonb)`;
+- `sanitize_player_attribute_manifest_json(p_manifest_json jsonb)`.
+
+Supported local-preview stats in the manifest:
+
 - `health`:
-  - label: `Health`;
   - value kind: `value`;
   - draft dependency: `endurance`;
   - descriptor kind: `linear_stat_scaled_sum_v1`;
@@ -563,7 +601,7 @@ Supported local-preview stats in v2:
 Unsupported/current-only in v2:
 
 - `current_health`: current Health is runtime state; show current value only.
-- `luck`: DB-owned runtime logic; show current snapshot only.
+- `luck`: DB-owned runtime logic; show current snapshot only; label as `Fatum` in Polish player UI and `Fate` in English player UI.
 - `attack_count`: DB attack plan/equipment projection; show current snapshot only.
 
 Descriptor whitelist in v2:
@@ -576,7 +614,7 @@ Descriptor whitelist in v2:
 
 Frontend/Codex contract for UI-HERO-2:
 
-- Regenerate Supabase types before consuming the RPC.
+- Regenerate Supabase types before consuming new/changed RPC signatures. Same-signature page-context label sanitizers do not require regeneration by themselves.
 - Do not use `eval`.
 - Do not parse display strings for math.
 - Do not call the preview RPC per plus/minus click.
@@ -589,11 +627,11 @@ Expected behavior from the v2 manifest:
 - `+1 Endurance` previews max Health increasing by `+5` before any DB-provided Health percent/multiplier context.
 - `+1 Strength` previews every DB-provided damage row by shifting min/max by the Strength delta, e.g. `35-51 -> 36-52`.
 
-## Luck foundation
+## Fatum / Fate foundation
 
-Luck is DB/RPC/formula-authoritative and affects opportunities, ranges and distributions rather than guaranteeing perfect outcomes.
+The technical/runtime key may still be `luck` for compatibility, but player-facing Polish copy is **Fatum** and player-facing English copy is **Fate**. Fatum/Fate is DB/RPC/formula-authoritative and affects opportunities, ranges and distributions rather than guaranteeing perfect outcomes.
 
-Core Luck helpers/RPCs:
+Core Fatum/Fate helpers/RPCs, many of which still contain `luck` in their technical name:
 
 - `get_hero_luck_breakdown(p_hero_id)`;
 - `get_hero_luck_value(p_hero_id)`;
@@ -603,14 +641,14 @@ Core Luck helpers/RPCs:
 - `get_hero_trial_power(p_hero_id, p_tested_stat_key)`;
 - `preview_luck_influence_and_trial_power(...)`.
 
-Luck-aware exploration/trial helpers:
+Fatum/Fate-aware exploration/trial helpers:
 
 - `get_trial_opportunity_chance(p_exploration_id)`;
 - `get_trial_manifestation_chance(p_exploration_id, p_trial_definition_id)`;
 - `get_challenge_auto_resolve_success_chance(p_challenge_attempt_id)`;
 - `get_non_trial_encounter_chance(p_exploration_id)`.
 
-Luck Lab registry/preview:
+Fatum/Fate Lab registry/preview:
 
 - `get_luck_lab_preview_contracts()`;
 - `preview_trial_opportunity_curve(...)`;
@@ -625,7 +663,7 @@ Luck Lab registry/preview:
 - `preview_reward_generated_item_distribution_luck(...)`;
 - `preview_combat_luck_formula_context(...)`.
 
-Frontend must consume DB/RPC Luck outputs and must not hardcode Luck curves, reward ranges, Trial modifiers, drop chances or combat RNG influence.
+Frontend must consume DB/RPC Fatum/Fate outputs and must not hardcode curves, reward ranges, Trial modifiers, drop chances or combat RNG influence. When mapping labels, use DB/RPC-provided label fields; do not translate `luck` locally as `Szczęście`.
 
 ---
 
@@ -786,14 +824,30 @@ Rules:
 - `building_district_level_caps` stores overrides; missing override falls back to `buildings.max_level`.
 - `buildings.district_code` is minimum district; a building is available in that district and higher districts.
 
-Current player-facing building runtime notes added after the 2026-05-15 Migrator work:
+Current player-facing building runtime notes added after the 2026-05-15 and 2026-05-31 Migrator work:
 
-- `get_hero_estate_runtime_state(p_hero_id)` returns player-facing `buildings_json` with `upgradePreviewJson`, `resourceCostsJson`, `requirementsJson` and `bonusesJson` contract data.
-- `upgradePreviewJson.contractVersion` is currently `estate_building_upgrade_preview_v2` where effective scoped bonus labels/values are exposed.
-- Hippokaion is a District A building for PvP travel-time reduction. It uses `pvp_travel_time_reduction_percent`, linear capped preview semantics, and the PvP travel resolver caps final reduction at 50% with minimum attack/spy travel floors.
+- `get_hero_estate_runtime_state(p_hero_id)` remains the full settled estate runtime builder. It may contain technical/explainability data internally.
+- `get_player_estate_page_context(p_hero_id)` is the canonical `/game/estate` bootstrap and returns a **sanitized** `estateRuntimeState` plus `copyJson`; Angular must not direct-read `buildings`, `entity_bonuses`, `entity_requirements`, formula tables, `estate_districts` or `building_district_level_caps`.
+- Embedded `upgradePreviewJson` rows in the sanitized page context keep player-safe fields only: `contractVersion`, current/target/next level, max state, `buildTimeSeconds`, canonical `resourceCostsJson`, canonical `requirementsJson` and sanitized `bonusesJson`.
+- `resourceCostsJson[]` uses the canonical label/value shape: `resourceType`, numeric `amount`, `displayLabel`, `displayValue`, `sortOrder`. It must not expose duplicate `cost`, formula/source fields or admin/debug explanation fields in the player page payload.
+- `requirementsJson[]` uses the canonical label/value shape: `requirementDefinitionKey`, target key where applicable, numeric `requiredValue`, `displayLabel`, `displayValue`, optional `displayUnit`, `context`, `sortOrder`, `entityRequirementId`.
+- `bonusesJson[]` in the player page context keeps player-safe `displayText`, `nextDisplayText`, `deltaDisplayText`, values, target label/description/helper and scope/target/type keys. Formula labels/expressions/sources and bonus template labels are removed from page payload.
+- Hippokaion is a District A building for attack travel-time reduction. It uses `pvp_travel_time_reduction_percent`, linear capped preview semantics, and the PvP travel resolver caps final reduction at 50% with minimum attack/spy travel floors. Current player-facing description: `Zaplecze jeździeckie i stajnie, które skracają czas dotarcia do posiadłości innych bohaterów podczas ataku.`
 - Resource buildings Agora/Farm/Lumber Mill remain production-focused and should be tuned through building costs, bonus values and requirements rather than frontend formulas.
 - Zbrojownia/Armory controls visible item capacity through the `visible_item_capacity` target. It should not be reinterpreted as generic item storage ownership.
 - Koszary/Forteca are role-scoped PvP Health buildings as described in the bonus section; they do not affect base/dashboard Health.
+
+Estate page-context copy/sanitizer helpers:
+
+- `get_player_estate_copy_json()`;
+- `sanitize_player_estate_bonus_json(jsonb)`;
+- `sanitize_player_estate_bonus_rows_json(jsonb)`;
+- `sanitize_player_estate_resource_json(jsonb)`;
+- `sanitize_player_estate_resources_json(jsonb)`;
+- `sanitize_player_estate_upgrade_preview_json(jsonb)`;
+- `sanitize_player_estate_building_json(jsonb)`;
+- `sanitize_player_estate_buildings_json(jsonb)`;
+- `sanitize_player_estate_runtime_state_json(jsonb)`.
 
 ---
 
@@ -836,11 +890,26 @@ Canonical armory/item read surfaces:
 
 Item detail display contract:
 
-- Player-facing Item stats show native/base Damage for weapons and Defense for armor/shields.
+- Player-facing item stats show native/base `Obrażenia` for weapons and `Obrona` for armor/shields.
 - Native/default/technical rows such as base attack count may be hidden or technical according to `item_generation_base_type_targets` display policy.
 - Modifier rows feed Bonuses.
 - `consumedModifierRows` identify modifiers folded into native final stats to prevent double-counting.
 - `itemType` and `equipTarget` are DB-owned fields in `bonuses_json`; Angular must not infer player-facing type/slot from `base_type_key`.
+- Player-facing item value must use structured copy: label `Wartość w drachmach`, value = numeric drachma value. Do not render `Value: ... drachma` or raw `drachma` as a unit.
+- Armory item/detail/runtime payloads are sanitized through DB helpers so common labels come from DB/RPC, not Angular maps: `Damage -> Obrażenia`, `Defense -> Obrona`, `Main hand -> Główna ręka`, `Off hand -> Druga ręka`, `Unarmed -> Bez broni`, `Origin -> Pochodzenie`, `Luck -> Fatum`.
+
+Armory label/value sanitizer helpers:
+
+- `player_armory_text_pl(p_value text, p_field_key text default null)`;
+- `player_armory_quality_label_pl(p_quality_key text)`;
+- `player_armory_slot_label_pl(p_slot_key text)`;
+- `player_armory_item_type_label_pl(p_base_type_key text)`;
+- `sanitize_player_armory_jsonb_labels(p_json jsonb)`;
+- `sanitize_player_armory_item_row_json(p_item_json jsonb)`;
+- `sanitize_player_armory_item_detail_bonuses_json(p_bonuses_json jsonb, p_drachma_value integer default null)`;
+- `sanitize_player_armory_equipment_slot_json(p_slot_json jsonb)` — normalizes `get_player_armory_page_context(...).equipmentSlots[]` to canonical camelCase (`slotKey`, `slotLabel`, `slotItemState`, etc.) while the raw slot helper may remain snake_case.
+
+`get_hero_armory_item_detail(...)` preserves the core path `get_hero_armory_item_detail_core(...)` -> `aggregate_item_detail_modifier_rows(...)`, then sanitizes the returned `bonuses_json`. `get_player_armory_page_context(...)` sanitizes item rows, normalizes equipment slots to camelCase and sanitizes `runtimeDerivedStats`.
 
 Ring rule:
 
@@ -2183,7 +2252,9 @@ interface PlayerAttributesPageContext {
 
 Notes:
 
-- `attributeManifest` is the raw JSON returned by `get_hero_attribute_allocation_preview_manifest(p_hero_id)`.
+- `attributeManifest` is the sanitized JSON returned by `sanitize_player_attribute_manifest_json(get_hero_attribute_allocation_preview_manifest(p_hero_id))`.
+- The raw manifest builder may still contain internal English labels; the player page context is the canonical frontend contract for labels.
+- Derived stat labels in `attributeManifest.supportedDerivedStats[]` / `unsupportedDerivedStats[]` are DB-owned Polish labels: `Punkty życia`, `Obrona`, `Obrażenia`, `Szansa krytyczna`, `Obrażenia krytyczne`, `Unik`, `Aktualne punkty życia`, `Fatum`, `Liczba ataków`.
 - Stat allocation writes still use the existing canonical write RPC; this page-context RPC is read-only.
 
 ### `get_player_armory_page_context(...)` JSON contract
@@ -2194,15 +2265,65 @@ Purpose: player-safe bootstrap for `/game/armory`; replaces direct reads of `equ
 interface PlayerArmoryPageContext {
   hero: HeroRow;
 
-  visibilityState: HeroArmoryVisibilityStateRow | null;
-  items: HeroArmoryItemRow[];
+  copyJson: JsonObject;
+  visibilityState: JsonObject | null; // sanitized, no source/debug shelf internals
 
-  equipmentSlots: HeroEquipmentRuntimeSlotRow[];
+  storageSlots: JsonObject[];
+  unsortedStorageSlot: JsonObject | null;
+
+  items: JsonObject[]; // sanitized item rows with valueDisplay/quality/type/slot labels
+  equipmentSlots: PlayerArmoryEquipmentSlot[]; // canonical camelCase equipment preview slots
   loadoutPresets: HeroLoadoutPresetRow[];
 
-  runtimeDerivedStats: HeroRuntimeDerivedStatsRow | null;
+  runtimeDerivedStats: JsonObject | null; // sanitized labels in attack/damage rows
 }
 ```
+
+Canonical `equipmentSlots[]` row shape:
+
+```ts
+interface PlayerArmoryEquipmentSlot {
+  heroId: string;
+  slotKey: string;          // e.g. main_hand, off_hand, helmet
+  slotLabel: string;        // e.g. Główna ręka, Druga ręka, Hełm
+  slotSortOrder: number;
+  slotItemState: 'empty' | string;
+  hasItem: boolean;
+  itemId?: string | null;
+  itemName?: string | null;
+  itemStatusKey?: string | null;
+  equipmentArea?: string | null;
+  equipmentSlotGroup?: string | null;
+  isRuntimeUsable?: boolean;
+  baseKey?: string | null;
+  baseName?: string | null;
+  baseTypeKey?: string | null;
+  generationBaseId?: string | null;
+  generationQualityKey?: string | null;
+  qualityLabel?: string | null;
+  qualityMultiplier?: number | null;
+  handUsage?: string | null;
+  prefixAffixId?: string | null;
+  prefixKey?: string | null;
+  prefixName?: string | null;
+  suffixAffixId?: string | null;
+  suffixKey?: string | null;
+  suffixName?: string | null;
+  equippedAt?: string | null;
+}
+```
+
+Armory page-context rules:
+
+- `copyJson` owns Zbrojownia section/action/filter/empty-state copy.
+- `storageSlots` is the canonical top-level contract for stands/stojaki; frontend must not read nonexistent `item_storage_slots`.
+- `unsortedStorageSlot` is the canonical non-stand bucket labelled `Nieprzypisane`.
+- `equipmentSlots` is the canonical equipment preview slot contract; frontend must not direct-read `equipment_slot_definitions`.
+- `equipmentSlots[]` are camelCase in the page context. Frontend must consume `slotKey`, `slotLabel`, `slotItemState`, `hasItem`, `itemId`, `itemName`; do not use `slot_key`, `slot_label`, `slot_item_state` from the page context.
+- Default loadout names are `Zestaw 1..N`, not `Preset N`.
+- Default shelf names are `Stojak 1..10`, not `Shelf N`.
+- `visibilityState` in the page context is sanitized and does not include `source_config_json`, `shelves_json`, `unsorted_json`, `visibility_order` or `visibility_limit_source`.
+- Item rows/details should use DB-provided labels/value fields, including `valueDisplay.displayLabel = 'Wartość w drachmach'`.
 
 Existing armory action RPCs remain the write paths for equip/unequip/move/loadout/vendor operations.
 
@@ -2212,23 +2333,23 @@ Purpose: player-safe bootstrap for `/game/estate`; replaces direct reads of `est
 
 ```ts
 interface PlayerEstatePageContext {
+  contractVersion: 'player_estate_page_context_v2';
   hero: HeroRow;
 
-  // Full settled estate/building runtime; estate page is allowed to carry this.
-  estateRuntimeState: HeroEstateRuntimeStateRow | null;
+  copyJson: JsonObject;
 
-  // Intentionally empty/deferred after slim-payload pass.
-  buildingProgressionPreviews: [];
-  progressionPreviewsDeferred: true;
-  progressionPreviewRpc: 'get_player_estate_building_progression_preview_context';
+  // Sanitized full settled estate/building runtime for the Estate page.
+  estateRuntimeState: JsonObject | null;
 }
 ```
 
 Notes:
 
-- `estateRuntimeState` remains the primary player-safe estate/building state and may include `buildings_json`, `resources_json`, active/recent job data, requirements, costs and bonus display rows.
-- `buildingProgressionPreviews` must stay empty on page bootstrap. Do not re-expand it to all buildings × many levels.
-- If the UI needs progression preview for a concrete building, call `get_player_estate_building_progression_preview_context(...)` on demand.
+- `estateRuntimeState` is sanitized for the player page and includes `buildings_json`, `resources_json`, active/recent job data, canonical requirements, canonical costs and sanitized bonus display rows.
+- `resourceCostsJson[]` should render `displayLabel` left and `displayValue` right; numeric `amount` remains available for logic.
+- `requirementsJson[]` should render `displayLabel` left and `displayValue` right, with optional `displayUnit` such as `poziom`.
+- `bonusesJson[]` should render `displayText`, `nextDisplayText` and `deltaDisplayText` where appropriate. It does not expose formula expressions/source/debug rows in the player page context.
+- Full all-building progression previews are no longer part of the page bootstrap contract. If the UI needs progression preview for a concrete building, call `get_player_estate_building_progression_preview_context(...)` on demand.
 - Durable building mutations remain RPC-owned, especially `start_estate_building_upgrade(...)`.
 
 ### `get_player_estate_building_progression_preview_context(...)` JSON contract
@@ -2280,13 +2401,31 @@ Notes:
 Purpose: player-safe bootstrap for `/game/vicinity`; replaces direct reads of `estates` and `estate_district_address_capacities`.
 
 ```ts
+interface PlayerVicinityAddressCapacity {
+  districtCode: string;       // e.g. A
+  displayLabel: string;       // e.g. Dzielnica A
+  addressCapacity: number;    // e.g. 5000
+  addressNumberStart: number; // normally 1
+  addressNumberEnd: number;   // same as addressCapacity for current policy
+  firstAddress: string;       // e.g. A-0001
+  lastAddress: string;        // e.g. A-5000
+  sortOrder: number;
+  isActive: boolean;
+}
+
 interface PlayerVicinityOccupiedEstate {
   estateId: string;
   serverId: string;
   heroId: string;
   districtCode: string | null;
+  districtLabel: string | null;
   addressNumber: number | null;
+  address: string | null;        // formatted through format_vicinity_address(...)
+  displayLabel: string | null;   // same formatted address, for direct rendering
   estateRank: number;
+  isCurrentHeroEstate: boolean;
+  occupancyStatusKey: 'current' | 'occupied' | string;
+  occupancyLabel: string;        // Twoja posiadłość / Zajęty
 }
 
 interface PlayerVicinityCurrentEstate {
@@ -2294,13 +2433,19 @@ interface PlayerVicinityCurrentEstate {
   serverId: string;
   heroId: string;
   districtCode: string | null;
+  districtLabel: string | null;
   addressNumber: number | null;
   address: string | null;
   estateRank: number;
+  occupancyStatusKey: 'current' | string;
+  occupancyLabel: string;
 }
 
 interface PlayerVicinityPageContext {
+  contractVersion: 'player_vicinity_page_context_v2';
   hero: HeroRow;
+  copyJson: JsonObject;
+
   currentEstate: PlayerVicinityCurrentEstate;
   estateSummary: PlayerEstateSummaryState | null;
 
@@ -2308,17 +2453,23 @@ interface PlayerVicinityPageContext {
   // Do not expect buildings_json/resources_json/recent_jobs_json here.
   estateRuntimeState: PlayerEstateSummaryState | null;
 
-  addressCapacities: EstateDistrictAddressCapacityRow[];
+  addressCapacities: PlayerVicinityAddressCapacity[];
   occupiedEstates: PlayerVicinityOccupiedEstate[];
 }
 ```
 
 Notes:
 
+- `get_player_vicinity_page_context(...)` returns `contractVersion = player_vicinity_page_context_v2` and DB-owned `copyJson`.
+- `addressCapacities[]` is sanitized/camelCase and contains no raw admin/debug fields such as `label`, `description`, `helper_text`, `admin_description`, `created_at`, `updated_at`, `district_code` or `address_capacity`.
+- Empty addresses are not database rows. Frontend generates address slots from `addressNumberStart..addressNumberEnd` for each capacity row and overlays `occupiedEstates[]` by `districtCode + addressNumber`.
+- `occupiedEstates[]` contains only occupied estate rows from DB and includes `occupancyStatusKey` / `occupancyLabel` plus formatted `address` / `displayLabel`.
 - `occupiedEstates.estateRank` maps from `estates.rank`.
 - `currentEstate` is the direct UI contract for the hero's current address.
 - `estateSummary` and `estateRuntimeState` are lightweight; they intentionally do not carry building/runtime payloads.
+- `format_vicinity_address(p_district_code text, p_address_number integer)` formats addresses such as `A-1055` and `E-0001`.
 - Relocation remains owned by `relocate_hero_estate_to_empty_address(...)`.
+- Frontend must not direct-read `estates`, `estate_districts` or `estate_district_address_capacities`.
 
 ### `get_player_trade_page_context(...)` JSON contract
 
@@ -2402,9 +2553,11 @@ Rollback smoke confirmed:
 - dashboard/vicinity `estateSummary` contains only address/rank/active-job/protection summary fields, not `buildings_json`, `resources_json` or `recent_jobs_json`;
 - `worldStateRows` keys are exactly `active_state`, `vicinity`, `active_job`, `trials_left`, `attacks_left`, `active_effect`, `prestige_rank`;
 - vicinity top-level keys include `currentEstate`, `estateSummary`, slim `estateRuntimeState`, `addressCapacities`, `occupiedEstates`;
-- estate top-level keys include `estateRuntimeState`, `buildingProgressionPreviews`, `progressionPreviewsDeferred`, `progressionPreviewRpc`;
-- estate `buildingProgressionPreviews` count is `0` and `progressionPreviewsDeferred = true`;
-- on-demand building preview returned a bounded preview for one building.
+- estate top-level keys after the late copy/sanitizer pass are `contractVersion`, `copyJson`, `estateRuntimeState`, `hero`;
+- estate `contractVersion = player_estate_page_context_v2`;
+- all-building progression previews are deferred out of page bootstrap; on-demand building preview returned a bounded preview for one building through `get_player_estate_building_progression_preview_context(...)`.
+- armory top-level keys include `copyJson`, `equipmentSlots`, `hero`, `items`, `loadoutPresets`, `runtimeDerivedStats`, `storageSlots`, `unsortedStorageSlot`, `visibilityState`;
+- attributes `attributeManifest` returned by page context is label-sanitized and includes Fatum instead of Luck/Szczęście.
 
 ## 21.2. Origin content and current bonus seed contract
 
@@ -2416,7 +2569,7 @@ Current verified origin bonuses:
 |---|---|---|
 | `spartan` | Spartanin | `+10 Siła`, `+10 Wytrzymałość`, `+20 Obrona` |
 | `athenian` | Ateńczyk | `+5 Charyzma`, `+10 Mądrość`, `+10 Duchowość` |
-| `corinthian` | Koryntianin | `+10 Szczęście`, `+5 Spryt`, `+10 Mądrość` |
+| `corinthian` | Koryntianin | `+10 Fatum`, `+5 Przebiegłość`, `+10 Mądrość` |
 | `cretan` | Kreteńczyk | `+10 Mądrość`, `+10 Wytrzymałość`, `+5 Zwinność` |
 
 Verification after the origin rewrite showed:
@@ -2501,6 +2654,9 @@ No generated type regeneration is required for this data-only seed/form correcti
 No generated Supabase type regeneration is required for:
 
 - same-signature body fixes to page-context RPCs, including `stats."order"` ordering and `estates.rank` -> `estateRank` mapping;
+- same-signature page-context copy/sanitizer body fixes for Attributes, Armory, Estate and Vicinity;
+- data-only copy fixes such as Hippokaion description and default `Stojak` / `Zestaw` names;
+- helper-only label/copy functions when frontend does not call them directly, including Armory/Estate/Attributes/Vicinity sanitizer and copy helpers;
 - origin bonus rewrite data seed;
 - `dew_touched` display-form seed correction;
 - item-generation requirement/family/base requirement data-only rebalance;
@@ -2509,3 +2665,63 @@ No generated Supabase type regeneration is required for:
 Generated types **are** required after adding the player page-context RPC signatures if Codex needs to call them through generated Supabase function typing. They are also required before Codex consumes the new `get_hero_estate_summary_state(...)` and `get_player_estate_building_progression_preview_context(...)` function signatures. Same-signature slim-payload body changes to existing page-context RPCs do not by themselves require regeneration.
 
 
+
+
+## 21.6. Late 2026-05-31 player-facing copy/read-model cleanup
+
+This subsection records the DB/RPC cleanup verified after the later 2026-05-31 dump and subsequent Migrator smoke outputs.
+
+### Generic localization registry
+
+The latest schema includes `locale_definitions`, `localized_entity_texts`, `normalize_locale_key(...)`, `get_localized_entity_text(...)` and locale-aware `get_stat_label(...)`. These are DB-side content/label infrastructure. Angular should not direct-read localization tables; consume labels through canonical read models/RPCs.
+
+### Attributes
+
+`get_player_attributes_page_context(...)` now wraps `get_hero_attribute_allocation_preview_manifest(...)` with `sanitize_player_attribute_manifest_json(...)`. Derived rows in `attributeManifest.supportedDerivedStats[]` and `unsupportedDerivedStats[]` use the player-facing labels listed in section 4, including `Fatum` for technical `luck`. Verification showed `englishLabelsRemaining = 0`, `hasFatum = true`, `hasSzczescie = false`, `hasMojibake = false`.
+
+### Armory / Zbrojownia
+
+`get_player_armory_page_context(...)` is the canonical `/game/armory` bootstrap. It returns DB-owned `copyJson`, `storageSlots`, `unsortedStorageSlot`, sanitized `items`, canonical camelCase `equipmentSlots`, sanitized `runtimeDerivedStats`, `loadoutPresets`, sanitized `visibilityState` and `hero`.
+
+Rules:
+
+- no direct read of `equipment_slot_definitions` from the player frontend;
+- no direct read of nonexistent `item_storage_slots`;
+- use `storageSlots` for stands/stojaki and `unsortedStorageSlot` for `Nieprzypisane`;
+- use `copyJson` for Armory page sections/actions/filters/empty states;
+- item value label is `Wartość w drachmach`;
+- common armory runtime labels are DB-sanitized (`Główna ręka`, `Druga ręka`, `Bez broni`, `Pochodzenie`, `Obrażenia`, `Fatum`, etc.);
+- `equipmentSlots[]` is canonical camelCase in the page context (`slotKey`, `slotLabel`, `slotItemState`, `hasItem`, `itemId`, `itemName`) and no longer exposes the snake_case slot keys there.
+
+`get_hero_armory_item_detail(...)` keeps the canonical core/aggregator path but sanitizes item detail `bonuses_json` and adds structured `valueDisplay`.
+
+### Estate / Posiadłość
+
+`get_player_estate_page_context(...)` now returns `contractVersion = player_estate_page_context_v2`, `copyJson`, sanitized `estateRuntimeState` and `hero`. It is the only player bootstrap path for `/game/estate`.
+
+Rules:
+
+- no direct reads of `buildings`, `entity_bonuses`, `entity_requirements`, `balance_formula_*`, `entity_formula_assignments`, `estate_districts` or `building_district_level_caps`;
+- costs and requirements use canonical structured label/value rows;
+- bonus rows expose player-safe display fields only;
+- formula/source/debug fields are not part of the page context;
+- detailed building progression preview remains on-demand via `get_player_estate_building_progression_preview_context(...)`.
+
+Hippokaion player-facing description is: `Zaplecze jeździeckie i stajnie, które skracają czas dotarcia do posiadłości innych bohaterów podczas ataku.`
+
+
+### Vicinity / Okolica
+
+`get_player_vicinity_page_context(...)` now returns `contractVersion = player_vicinity_page_context_v2`, DB-owned `copyJson`, `currentEstate`, slim `estateSummary` / `estateRuntimeState` alias, canonical `addressCapacities[]` and canonical `occupiedEstates[]`.
+
+Rules:
+
+- no direct reads of `estates`, `estate_districts` or `estate_district_address_capacities` from the player frontend;
+- DB returns only occupied estates in `occupiedEstates[]`;
+- frontend generates empty/free address rows from `addressCapacities[].addressNumberStart..addressNumberEnd` and overlays `occupiedEstates[]` by `districtCode + addressNumber`;
+- `addressCapacities[]` is sanitized/camelCase and player-safe: `districtCode`, `displayLabel`, `addressCapacity`, `addressNumberStart`, `addressNumberEnd`, `firstAddress`, `lastAddress`, `sortOrder`, `isActive`;
+- `occupiedEstates[]` exposes formatted `address`/`displayLabel`, `districtLabel`, `occupancyStatusKey`, `occupancyLabel` and `isCurrentHeroEstate`;
+- `format_vicinity_address(...)` is the DB helper for formatted addresses such as `A-1055` and `E-0001`;
+- `copyJson` owns Okolica labels, filters and empty-state copy.
+
+Verified late smoke showed 5 active capacity rows, 2 occupied estate rows in the sample, `capacityRowsWithRawFields = 0`, `badTextMatchCount = 0`, and direct table read grants remain intentionally absent.
