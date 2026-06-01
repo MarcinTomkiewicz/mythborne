@@ -1,59 +1,72 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Origin } from '../../domain/origin/origin.model';
-import { EquipmentSlot } from '../../domain/item/item-equipment.model';
-import { HeroDashboardRuntimeStats } from '../hero/hero-dashboard-runtime-stats';
-import { Hero } from '../hero/hero';
-import { Origins } from '../origins/origins';
-import { HeroEquipment } from './hero-equipment';
+import {
+  PlayerArmoryEquipmentSlotReadModel,
+  PlayerArmoryLoadoutPresetReadModel,
+  PlayerArmoryPageContextReadModel,
+  PlayerArmoryReadModel,
+} from '../../domain/item/player-armory-page-context.model';
+import { Json } from '../../types/database.types';
+import { JsonRecord } from '../../utils/json-read';
+import { getErrorMessage } from '../../utils/error-message';
+import { PlayerArmory } from './player-armory';
 
 @Injectable()
 export class ArmoryPageFacade {
-  private readonly runtimeStats = inject(HeroDashboardRuntimeStats);
-  private readonly equipment = inject(HeroEquipment);
-  private readonly hero = inject(Hero);
-  private readonly origins = inject(Origins);
+  private readonly armory = inject(PlayerArmory);
   private loadToken = 0;
 
+  readonly status = signal<'idle' | 'loading' | 'loaded' | 'error'>('idle');
+  readonly error = signal<string | null>(null);
+  readonly context = signal<PlayerArmoryPageContextReadModel | null>(null);
+  readonly readModel = signal<PlayerArmoryReadModel | null>(null);
+  readonly copyJson = signal<JsonRecord | null>(null);
+  readonly loadoutPresets = signal<PlayerArmoryLoadoutPresetReadModel[]>([]);
+  readonly runtimeDerivedStats = signal<Json | null>(null);
   readonly heroLuck = signal(0);
-  readonly equipmentSlots = signal<EquipmentSlot[]>([]);
+  readonly equipmentSlots = signal<PlayerArmoryEquipmentSlotReadModel[]>([]);
   readonly origin = signal<Origin | null>(null);
 
   loadData(): void {
     const token = ++this.loadToken;
 
+    this.status.set('loading');
+    this.error.set(null);
+    this.context.set(null);
+    this.readModel.set(null);
+    this.copyJson.set(null);
+    this.loadoutPresets.set([]);
+    this.runtimeDerivedStats.set(null);
+    this.equipmentSlots.set([]);
     this.origin.set(null);
 
-    this.runtimeStats.getActiveHeroRuntimeStats().subscribe((stats) => {
-      if (token !== this.loadToken) {
-        return;
-      }
-
-      this.heroLuck.set(stats.luck);
-    });
-    this.equipment.getEquipmentSlots().subscribe((slots) => {
-      if (token !== this.loadToken) {
-        return;
-      }
-
-      this.equipmentSlots.set(slots);
-    });
-    this.hero.getHeroData().subscribe((hero) => {
-      if (token !== this.loadToken) {
-        return;
-      }
-
-      if (!hero.origin_id) {
-        this.origin.set(null);
-        return;
-      }
-
-      this.origins.getOriginWithBonuses(hero.origin_id).subscribe(({ origin }) => {
+    this.armory.getArmoryPageContext().subscribe({
+      next: (context) => {
         if (token !== this.loadToken) {
           return;
         }
 
-        this.origin.set(origin);
-      });
+        this.context.set(context);
+        this.readModel.set(context.readModel);
+        this.copyJson.set(context.copyJson);
+        this.equipmentSlots.set(context.equipmentSlots);
+        this.loadoutPresets.set(context.loadoutPresets);
+        this.runtimeDerivedStats.set(context.runtimeDerivedStats);
+        this.status.set('loaded');
+      },
+      error: (error: unknown) => {
+        if (token !== this.loadToken) {
+          return;
+        }
+
+        this.context.set(null);
+        this.readModel.set(null);
+        this.copyJson.set(null);
+        this.loadoutPresets.set([]);
+        this.runtimeDerivedStats.set(null);
+        this.status.set('error');
+        this.error.set(getErrorMessage(error, 'Failed to load armory page context.'));
+      },
     });
   }
 }
