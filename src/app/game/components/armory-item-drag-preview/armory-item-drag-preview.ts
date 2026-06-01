@@ -1,7 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { armoryItemIconClass } from '../../../core/domain/equipment/equipment-preview.mapper';
 import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.model';
-import { armoryItemMetadata } from '../../../core/utils/armory-inventory-filter';
 
 @Component({
   selector: 'app-armory-item-drag-preview',
@@ -14,7 +13,6 @@ export class ArmoryItemDragPreview {
   readonly items = input<readonly ArmoryItemSummary[]>([]);
   readonly placeholder = input(false);
   readonly armoryItemIconClass = armoryItemIconClass;
-  readonly armoryItemMetadata = armoryItemMetadata;
 
   readonly previewItems = computed(() => {
     const items = this.items();
@@ -34,5 +32,5 @@ export class ArmoryItemDragPreview {
   readonly overflowCount = computed(() =>
     Math.max(this.previewItems().length - this.visibleStackItems().length, 0),
   );
-  readonly subtitle = computed(() => armoryItemMetadata(this.item()));
+  readonly subtitle = computed(() => '');
 }

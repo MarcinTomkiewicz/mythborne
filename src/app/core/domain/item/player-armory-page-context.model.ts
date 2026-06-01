@@ -1,6 +1,5 @@
 import { Json } from '../../types/database.types';
 import { JsonRecord } from '../../utils/json-read';
-import { ItemLifecycleStatus } from './item-equipment.model';
 
 export interface PlayerArmoryPageContextReadModel {
   heroId: string;
@@ -21,9 +20,9 @@ export interface PlayerArmoryPageCopyReadModel {
   storage: JsonRecord;
   actions: PlayerArmoryPageCopyActions;
   confirmations: PlayerArmoryPageCopyConfirmations;
-  filters: JsonRecord;
-  search: JsonRecord;
-  inventory: JsonRecord;
+  filters: PlayerArmoryPageCopyFilters;
+  search: PlayerArmoryPageCopySearch;
+  inventory: PlayerArmoryPageCopyInventory;
   loadoutPresets: PlayerArmoryPageCopyLoadoutPresets;
   itemDetail: JsonRecord;
   equipmentPreview: PlayerArmoryPageCopyEquipmentPreview;
@@ -57,6 +56,29 @@ export interface PlayerArmoryPageCopyActions {
 
 export interface PlayerArmoryPageCopyConfirmations {
   cancelLabel: string;
+}
+
+export interface PlayerArmoryPageCopyFilters {
+  allSlots: string;
+  allAvailability: string;
+  allStorageSlots: string;
+  storageSlotPlaceholder: string;
+  availabilityOptions: PlayerArmoryPageCopyAvailabilityOption[];
+}
+
+export interface PlayerArmoryPageCopyAvailabilityOption {
+  key: string;
+  label: string;
+  sortOrder: number;
+}
+
+export interface PlayerArmoryPageCopySearch {
+  placeholder: string;
+}
+
+export interface PlayerArmoryPageCopyInventory {
+  clearFiltersLabel: string;
+  noFilterResultsLabel: string;
 }
 
 export interface PlayerArmoryPageCopyLoadoutPresets {
@@ -113,7 +135,8 @@ export interface PlayerArmoryItemReadModel {
   ownerHeroId: string;
   serverId: string;
   name: string;
-  lifecycleStatus: ItemLifecycleStatus;
+  lifecycleStatusKey: string;
+  lifecycleStatusLabel: string;
   generationBaseId: string | null;
   generationQualityKey: string | null;
   prefixAffixId: string | null;

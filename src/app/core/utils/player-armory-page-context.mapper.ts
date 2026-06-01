@@ -2,6 +2,7 @@ import {
   PlayerArmoryEquipmentSlotReadModel,
   PlayerArmoryItemReadModel,
   PlayerArmoryItemValueDisplay,
+  PlayerArmoryPageCopyAvailabilityOption,
   PlayerArmoryLoadoutPresetReadModel,
   PlayerArmoryPageCopyReadModel,
   PlayerArmoryPageContextReadModel,
@@ -75,6 +76,9 @@ function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
     read(copyJson, 'confirmations'),
     'copyJson.confirmations',
   );
+  const filters = requiredRecord(read(copyJson, 'filters'), 'copyJson.filters');
+  const search = requiredRecord(read(copyJson, 'search'), 'copyJson.search');
+  const inventory = requiredRecord(read(copyJson, 'inventory'), 'copyJson.inventory');
   const loadoutPresets = requiredRecord(
     read(copyJson, 'loadoutPresets'),
     'copyJson.loadoutPresets',
@@ -127,9 +131,40 @@ function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
         'copyJson.confirmations.cancelLabel',
       ),
     },
-    filters: requiredRecord(read(copyJson, 'filters'), 'copyJson.filters'),
-    search: requiredRecord(read(copyJson, 'search'), 'copyJson.search'),
-    inventory: requiredRecord(read(copyJson, 'inventory'), 'copyJson.inventory'),
+    filters: {
+      allSlots: requiredText(read(filters, 'allSlots'), 'copyJson.filters.allSlots'),
+      allAvailability: requiredText(
+        read(filters, 'allAvailability'),
+        'copyJson.filters.allAvailability',
+      ),
+      allStorageSlots: requiredText(
+        read(filters, 'allStorageSlots'),
+        'copyJson.filters.allStorageSlots',
+      ),
+      storageSlotPlaceholder: requiredText(
+        read(filters, 'storageSlotPlaceholder'),
+        'copyJson.filters.storageSlotPlaceholder',
+      ),
+      availabilityOptions: mapAvailabilityOptions(
+        requiredArray(
+          read(filters, 'availabilityOptions'),
+          'copyJson.filters.availabilityOptions',
+        ),
+      ),
+    },
+    search: {
+      placeholder: requiredText(read(search, 'placeholder'), 'copyJson.search.placeholder'),
+    },
+    inventory: {
+      clearFiltersLabel: requiredText(
+        read(inventory, 'clearFiltersLabel'),
+        'copyJson.inventory.clearFiltersLabel',
+      ),
+      noFilterResultsLabel: requiredText(
+        read(inventory, 'noFilterResultsLabel'),
+        'copyJson.inventory.noFilterResultsLabel',
+      ),
+    },
     loadoutPresets: {
       renameLabel: requiredText(
         read(loadoutPresets, 'renameLabel'),
@@ -181,6 +216,19 @@ function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
       ),
     },
   };
+}
+
+function mapAvailabilityOptions(
+  rows: readonly JsonRecord[],
+): PlayerArmoryPageCopyAvailabilityOption[] {
+  return rows.map((row) => ({
+    key: requiredText(read(row, 'key'), 'copyJson.filters.availabilityOptions.key'),
+    label: requiredText(read(row, 'label'), 'copyJson.filters.availabilityOptions.label'),
+    sortOrder: requiredNonNegativeInteger(
+      read(row, 'sortOrder'),
+      'copyJson.filters.availabilityOptions.sortOrder',
+    ),
+  }));
 }
 
 function mapReadModel(
@@ -322,12 +370,21 @@ function mapArmoryPageItemRow(
     );
   }
 
+  const lifecycleStatusKey = requiredText(
+    read(row, 'lifecycleStatusKey'),
+    'items.lifecycleStatusKey',
+  );
+
   return {
     itemId: requiredText(read(row, 'item_id'), 'items.item_id'),
     ownerHeroId: requiredText(read(row, 'hero_id'), 'items.hero_id'),
     serverId: requiredText(read(row, 'server_id'), 'items.server_id'),
     name: itemName,
-    lifecycleStatus: requiredText(read(row, 'item_status'), 'items.item_status') as PlayerArmoryItemReadModel['lifecycleStatus'],
+    lifecycleStatusKey,
+    lifecycleStatusLabel: requiredText(
+      read(row, 'lifecycleStatusLabel'),
+      'items.lifecycleStatusLabel',
+    ),
     generationBaseId: optionalText(read(row, 'generation_base_id')),
     generationQualityKey: optionalText(read(row, 'generation_quality_key')),
     prefixAffixId: optionalText(read(row, 'prefix_affix_id')),

@@ -86,12 +86,14 @@
       }
     </section>
 
-    <section class="mg-card p-lg w-100 min-w-0">
-      @if (page.copyJson(); as copy) {
-        <h2 class="mg-section__title mg-section__title--sm mb-0">
-          {{ copy.sections.inventory }}
-        </h2>
-      }
-    </section>
+    @if (page.copyJson(); as copy) {
+      <app-armory-inventory-section
+        [title]="copy.sections.inventory"
+        [shelves]="page.readModel()?.shelves ?? []"
+        [searchCopy]="copy.search"
+        [filtersCopy]="copy.filters"
+        [inventoryCopy]="copy.inventory"
+      />
+    }
   </div>
 </div>

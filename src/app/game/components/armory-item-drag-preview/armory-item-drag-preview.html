@@ -15,7 +15,9 @@
           <strong class="color-text text-sm">{{ item().name }}</strong>
         </div>
       </div>
-      <span class="color-muted text-xs">{{ subtitle() }}</span>
+      @if (subtitle(); as itemSubtitle) {
+        <span class="color-muted text-xs">{{ itemSubtitle }}</span>
+      }
       @if (item().drachmaValue !== null) {
         <strong class="color-heading text-xs">{{ item().drachmaValue }} drachma</strong>
       }
@@ -44,9 +46,6 @@
             </span>
             <div class="flex-col gap-xs min-w-0">
               <strong class="color-text text-sm text-truncate">{{ stackItem.name }}</strong>
-              <span class="color-muted text-xs text-truncate">
-                {{ armoryItemMetadata(stackItem) }}
-              </span>
             </div>
           </div>
           @if (stackItem.drachmaValue !== null) {
