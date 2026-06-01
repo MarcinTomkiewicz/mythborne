@@ -9,40 +9,52 @@
     [class.mb-md]="!compact()"
   >
     <div class="flex-col gap-xs">
-      <h3 class="mg-section__title mg-section__title--xs mb-0">
-        {{ title() }}
-      </h3>
+      @if (title(); as heading) {
+        <h3 class="mg-section__title mg-section__title--xs mb-0">
+          {{ heading }}
+        </h3>
+      }
     </div>
 
     @if (showActions()) {
       <div class="flex-row-start-center flex-wrap gap-sm">
       @if (isLoading()) {
-        <span class="tag-badge tag-badge--muted">Loading</span>
+        @if (loadingLabel(); as label) {
+          <span class="tag-badge tag-badge--muted">{{ label }}</span>
+        }
       } @else if (isUnavailable() || error()) {
-        <span class="tag-badge tag-badge--warn">Unavailable</span>
+        @if (unavailableLabel(); as label) {
+          <span class="tag-badge tag-badge--warn">{{ label }}</span>
+        }
       }
 
       @if (isArmory()) {
-        <p-button
-          type="button"
-          severity="secondary"
-          size="small"
-          label="Unequip Selected"
-          [disabled]="selectionActionDisabled() || !hasSelectedEquippedItems()"
-          (onClick)="unequipSelected.emit()"
-        />
-        <p-button
-          type="button"
-          severity="secondary"
-          size="small"
-          label="Unequip All"
-          [disabled]="selectionActionDisabled() || !hasEquippedItems()"
-          (onClick)="unequipAll.emit()"
-        />
+        @if (unequipSelectedLabel(); as label) {
+          <p-button
+            type="button"
+            severity="secondary"
+            size="small"
+            [label]="label"
+            [disabled]="selectionActionDisabled() || !hasSelectedEquippedItems()"
+            (onClick)="unequipSelected.emit()"
+          />
+        }
+        @if (unequipAllLabel(); as label) {
+          <p-button
+            type="button"
+            severity="secondary"
+            size="small"
+            [label]="label"
+            [disabled]="selectionActionDisabled() || !hasEquippedItems()"
+            (onClick)="unequipAll.emit()"
+          />
+        }
       } @else {
-        <a [routerLink]="armoryLink()" class="tag-badge tag-badge--muted">
-          {{ armoryLabel() }}
-        </a>
+        @if (armoryLabel(); as label) {
+          <a [routerLink]="armoryLink()" class="tag-badge tag-badge--muted">
+            {{ label }}
+          </a>
+        }
       }
       </div>
     }
@@ -52,7 +64,7 @@
     <p class="warn-text mb-md">{{ equipmentError }}</p>
   }
 
-  @if (rows().length === 0 && !isLoading()) {
+  @if (rows().length === 0 && !isLoading() && emptyLabel()) {
     <p class="color-muted mb-0">{{ emptyLabel() }}</p>
   } @else {
     <div class="equipment-preview">
@@ -73,8 +85,6 @@
                   [kindLabel]="item.kindLabel"
                   [slotLabel]="item.slotLabel"
                   [iconClass]="slot.iconClass"
-                  contextKind="current"
-                  contextLabel="Current equipped item"
                   [buttonTrigger]="false"
                   [triggerFullWidth]="true"
                 >
@@ -96,7 +106,7 @@
         <div class="equipment-preview__figure mg-card flex-row-center-center">
           <img
             [ngSrc]="paperdollImageUrl()"
-            alt="Equipment paperdoll preview"
+            [alt]="title()"
             class="equipment-preview__figure-image"
             [width]="paperdollDimensions.width"
             [height]="paperdollDimensions.height"
@@ -117,8 +127,6 @@
                 [kindLabel]="item.kindLabel"
                 [slotLabel]="item.slotLabel"
                 [iconClass]="slot.iconClass"
-                contextKind="current"
-                contextLabel="Current equipped item"
                 [buttonTrigger]="false"
                 [triggerFullWidth]="true"
               >
@@ -147,7 +155,7 @@
     [class.flex-row-start-center]="!stretch"
     [class.bg-transparent]="!item"
     [class.equipment-preview__slot-card--selected]="isSelected(slot)"
-    [attr.aria-label]="item ? slot.label + ': ' + item.name : slot.label + ': empty slot'"
+    [attr.aria-label]="slotAriaLabel(slot, item)"
     [attr.aria-pressed]="isArmory() && item ? isSelected(slot) : null"
     (click)="toggleEquippedItem(slot)"
   >
@@ -171,15 +179,19 @@
           {{ item.name }}
         </strong>
       } @else {
-        <strong class="equipment-preview__item-name equipment-preview__item-name--empty color-heading text-sm">
-          Empty slot
-        </strong>
+        @if (emptySlotName(slot); as emptyName) {
+          <strong class="equipment-preview__item-name equipment-preview__item-name--empty color-heading text-sm">
+            {{ emptyName }}
+          </strong>
+        }
       }
 
       @if (item?.metadata && !compact()) {
         <span class="color-muted text-xs">{{ item.metadata }}</span>
       } @else if (!item && !compact()) {
-        <span class="color-muted text-xs">No item equipped</span>
+        @if (emptySlotDescription(slot); as emptyDescription) {
+          <span class="color-muted text-xs">{{ emptyDescription }}</span>
+        }
       }
     </span>
   </article>

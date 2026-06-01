@@ -16,4 +16,6 @@ export interface EquipmentPreviewSlotRow {
   sortOrder: number;
   iconClass: EquipmentPreviewIconClass;
   item: EquipmentPreviewItemDisplay | null;
+  emptyDisplayName?: string | null;
+  emptyDisplayDetail?: string | null;
 }

@@ -1,59 +1,64 @@
+@let copy = $any(page.copyJson());
+@let visibility = page.readModel()?.visibility;
+
 <div class="flex-col gap-lg min-w-0">
-  
   <section class="mg-card p-lg w-100">
-    <p-confirmdialog styleClass="mg-dialog mg-dialog--danger" />
     <div class="grid-2-1 gap-lg grid-items-center">
       <div class="flex-col gap-xs min-w-0">
-        <p class="small-caps color-muted text-xs mb-0">Zbrojownia</p>
-        <h2 class="mg-section__title mg-section__title--sm mb-0">
-          Wyposażenie i przechowywane przedmioty
-        </h2>
-        <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
-          Zarządzaj aktywnym wyposażeniem i przedmiotami widocznymi dzięki pojemności posiadłości.
-        </p>
+        @if (copy?.sections?.inventory; as inventoryTitle) {
+          <p class="small-caps color-muted text-xs mb-0">{{ inventoryTitle }}</p>
+        }
+        @if (copy?.page.title; as equipmentPreviewTitle) {
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            {{ equipmentPreviewTitle }}
+          </h2>
+        }
+
+        @if (page.status() === 'loading') {
+          @if (copy?.page?.loadingLabel; as loadingLabel) {
+            <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
+              {{ loadingLabel }}
+            </p>
+          }
+        }
+
+        @if (page.status() === 'error') {
+          @if (copy?.page?.errorTitle; as errorTitle) {
+            <p class="warn-text mb-0">{{ errorTitle }}</p>
+          }
+          @if (page.error(); as error) {
+            <p class="warn-text mb-0">{{ error }}</p>
+          }
+        }
       </div>
 
       <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
-        @if (storedArmoryVisibility(); as visibility) {
-          @let storedCount = storedItemCount();
-          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Pojemność zbrojowni</span>
-            <strong class="color-heading text-md">{{ visibility.visibilityLimit }}</strong>
-          </div>
-          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Wszystkie przedmioty</span>
-            <strong
-              class="text-md"
-              [class.color-heading]="storedCount !== null && storedCount <= visibility.visibilityLimit"
-              [class.error-text]="storedCount !== null && storedCount > visibility.visibilityLimit"
-            >
-              {{ storedCount }}
-            </strong>
-          </div>
-        } @else {
-          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Pojemność zbrojowni</span>
-            <strong class="color-heading text-md">-</strong>
-          </div>
-          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Wszystkie przedmioty</span>
-            <strong class="color-heading text-md">-</strong>
-          </div>
+        @if (visibility) {
+          @if (copy?.summary?.capacity; as capacityLabel) {
+            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+              <span class="color-muted small-caps uppercase text-xs">{{ capacityLabel }}</span>
+              <strong class="color-heading text-md">{{ visibility.visibilityLimit }}</strong>
+            </div>
+          }
+          @if (copy?.summary?.allItems; as allItemsLabel) {
+            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+              <span class="color-muted small-caps uppercase text-xs">{{ allItemsLabel }}</span>
+              <strong class="color-heading text-md">{{ visibility.totalOwnedItemCount }}</strong>
+            </div>
+          }
+          @if (copy?.summary?.equippedItems; as equippedItemsLabel) {
+            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+              <span class="color-muted small-caps uppercase text-xs">{{ equippedItemsLabel }}</span>
+              <strong class="color-heading text-md">{{ equippedItemCount() }}</strong>
+            </div>
+          }
+          @if (copy?.summary?.savedSets; as savedSetsLabel) {
+            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+              <span class="color-muted small-caps uppercase text-xs">{{ savedSetsLabel }}</span>
+              <strong class="color-heading text-md">{{ savedLoadoutCount() }}</strong>
+            </div>
+          }
         }
-        <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-          <span class="color-muted small-caps uppercase text-xs">Założone przedmioty</span>
-          <strong class="color-heading text-md">{{ equippedItemCount() }}</strong>
-        </div>
-        <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-          <span class="color-muted small-caps uppercase text-xs">Zapisane zestawy</span>
-          <strong class="color-heading text-md">
-            @if (loadoutPresets.isLoading()) {
-              -
-            } @else {
-              {{ savedLoadoutCount() }}
-            }
-          </strong>
-        </div>
       </aside>
     </div>
   </section>
@@ -62,44 +67,36 @@
     <section class="flex-col gap-md min-w-0">
       <app-equipment-preview
         [rows]="equipmentPreviewRows()"
+        [title]="copy?.equipmentPreview?.title"
+        [emptyLabel]="copy?.equipmentPreview?.emptyLabel"
+        [emptySlotLabel]="copy?.equipmentPreview?.emptySlotLabel"
+        [emptySlotDetail]="copy?.equipmentPreview?.emptySlotDetail"
+        [loadingLabel]="copy?.equipmentPreview?.loadingLabel"
+        [unavailableLabel]="copy?.equipmentPreview?.unavailableLabel"
+        [armoryLabel]="copy?.equipmentPreview?.armoryLabel"
+        [unequipSelectedLabel]="copy?.actions?.unequipSelected"
+        [unequipAllLabel]="copy?.actions?.unequipAll"
         [isArmory]="true"
-        [isLoading]="equipment.isLoading()"
-        [isUnavailable]="equipment.status() === 'error'"
-        [error]="equipment.error()"
+        [showActions]="false"
         [compact]="true"
         [showSlotLabels]="false"
-        [paperdollImageUrl]="paperdollImageUrl()"
-        [selectedItemIds]="selectedPaperdollItemIds()"
-        [selectionActionDisabled]="equipment.isMutating()"
-        (equippedItemToggle)="togglePaperdollItemSelection($event)"
-        (unequipSelected)="unequipSelectedPaperdollItems()"
-        (unequipAll)="unequipAllPaperdollItems()"
       />
 
-      <app-loadout-preset-management />
+      <div class="mg-card p-lg w-100">
+        @if (copy?.sections?.loadoutPresets; as loadoutPresetsTitle) {
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            {{ loadoutPresetsTitle }}
+          </h2>
+        }
+      </div>
     </section>
 
-    <app-armory-inventory-section
-      [shelves]="displayShelves()"
-      [items]="storedArmoryItems()"
-      [equipmentSlots]="page.equipmentSlots()"
-      [armoryError]="armory.error()"
-      [guildError]="guildItemUsageState.error()"
-      [isActionBusy]="equipment.isMutating() || armory.isMutating()"
-      [guildItemUsage]="guildItemUsageForInventory"
-      [canUsePrivateItemActions]="canUsePrivateItemActionsForInventory"
-      (equipItem)="equipItem($event)"
-      (sellItem)="vendorScrapItem($event)"
-      (moveItem)="moveItem($event)"
-      (bulkMoveItems)="bulkMoveItems($event)"
-      (renameShelf)="renameShelf($event)"
-      (bulkEquipSelected)="bulkEquipSelectedItems($event)"
-      (bulkSellSelected)="confirmBulkVendorScrapSelectedItems($event)"
-    />
+    <section class="mg-card p-lg w-100 min-w-0">
+      @if (copy?.sections?.inventory; as inventoryTitle) {
+        <h2 class="mg-section__title mg-section__title--sm mb-0">
+          {{ inventoryTitle }}
+        </h2>
+      }
+    </section>
   </div>
 </div>
-
-<app-loading-overlay
-  [visible]="equipment.isMutating() || armory.isMutating()"
-  label="Aktualizowanie zbrojowni..."
-/>

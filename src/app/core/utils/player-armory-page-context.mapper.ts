@@ -182,7 +182,9 @@ function mapStorageSlot(
     name: displayName,
     displayName,
     displayLabel: requiredText(read(row, 'displayLabel'), `${fieldPath}.displayLabel`),
-    displayValue: requiredText(read(row, 'displayValue'), `${fieldPath}.displayValue`),
+    displayValue: isUnsortedDropArea
+      ? optionalText(read(row, 'displayValue'))
+      : requiredText(read(row, 'displayValue'), `${fieldPath}.displayValue`),
     visibleItemCount: requiredNonNegativeInteger(
       read(row, 'visibleItemCount'),
       `${fieldPath}.visibleItemCount`,

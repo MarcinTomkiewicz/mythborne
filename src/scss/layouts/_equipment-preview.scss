@@ -347,9 +347,11 @@ $slot-card-height: 70px;
 
 .equipment-preview__figure-image {
   display: block;
-  width: 100%;
   height: 100%;
+  width: auto;
+  max-width: 100%;
   object-fit: contain;
+  object-position: center bottom;
 }
 
 .equipment-preview__slot-card {

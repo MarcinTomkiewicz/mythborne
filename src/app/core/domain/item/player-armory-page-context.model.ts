@@ -35,7 +35,7 @@ export interface PlayerArmoryStorageSlotReadModel {
   name: string;
   displayName: string;
   displayLabel: string;
-  displayValue: string;
+  displayValue: string | null;
   visibleItemCount: number;
   itemCount: number;
   sortOrder: number;
