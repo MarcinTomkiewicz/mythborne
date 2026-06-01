@@ -69,9 +69,14 @@
           [unequipSelectedLabel]="copy.actions.unequipSelected"
           [unequipAllLabel]="copy.actions.unequipAll"
           [isArmory]="true"
-          [showActions]="false"
+          [showActions]="true"
           [compact]="true"
           [showSlotLabels]="false"
+          [selectedItemIds]="selectedEquippedItemIds()"
+          [selectionActionDisabled]="equipment.isMutating()"
+          (equippedItemToggle)="toggleEquippedItemSelection($event)"
+          (unequipSelected)="unequipSelectedItems()"
+          (unequipAll)="unequipAllItems()"
         />
       }
 

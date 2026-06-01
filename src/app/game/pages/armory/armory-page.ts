@@ -1,8 +1,9 @@
-import { Component, OnInit, computed, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { equipmentPreviewIconClassForSlot } from '../../../core/domain/equipment/equipment-preview-icons.config';
 import { EquipmentPreviewSlotRow } from '../../../core/domain/equipment/equipment-preview.model';
 import { PlayerArmoryEquipmentSlotReadModel } from '../../../core/domain/item/player-armory-page-context.model';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
+import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { ArmoryInventorySection } from '../../components/armory-inventory-section/armory-inventory-section';
 import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
 import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-preview';
@@ -11,12 +12,14 @@ import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-pr
   selector: 'app-armory-page',
   standalone: true,
   imports: [EquipmentPreview, LoadoutPresetManagement, ArmoryInventorySection],
-  providers: [ArmoryPageFacade],
+  providers: [ArmoryPageFacade, CurrentEquipmentState],
   templateUrl: './armory-page.html',
   host: { class: 'd-block w-100' },
 })
 export class ArmoryPage implements OnInit {
   readonly page = inject(ArmoryPageFacade);
+  readonly equipment = inject(CurrentEquipmentState);
+  readonly selectedEquippedItemIds = signal<readonly string[]>([]);
   readonly equippedItemCount = computed(() =>
     this.page.equipmentSlots().filter((slot) => slot.hasItem).length,
   );
@@ -28,6 +31,50 @@ export class ArmoryPage implements OnInit {
   );
 
   ngOnInit(): void {
+    this.page.loadData();
+  }
+
+  toggleEquippedItemSelection(row: EquipmentPreviewSlotRow): void {
+    const itemId = row.item?.itemId;
+
+    if (!itemId) {
+      return;
+    }
+
+    this.selectedEquippedItemIds.update((selectedIds) =>
+      selectedIds.includes(itemId)
+        ? selectedIds.filter((selectedId) => selectedId !== itemId)
+        : [...selectedIds, itemId],
+    );
+  }
+
+  unequipSelectedItems(): void {
+    const selectedIds = this.selectedEquippedItemIds();
+
+    if (!selectedIds.length) {
+      return;
+    }
+
+    this.equipment.bulkUnequipItems({
+      items: selectedIds.map((itemId) => ({ itemId })),
+    }, () => this.refreshAfterEquipmentMutation());
+  }
+
+  unequipAllItems(): void {
+    const equippedItemIds = this.equipmentPreviewRows()
+      .flatMap((row) => row.item ? [row.item.itemId] : []);
+
+    if (!equippedItemIds.length) {
+      return;
+    }
+
+    this.equipment.bulkUnequipItems({
+      items: equippedItemIds.map((itemId) => ({ itemId })),
+    }, () => this.refreshAfterEquipmentMutation());
+  }
+
+  private refreshAfterEquipmentMutation(): void {
+    this.selectedEquippedItemIds.set([]);
     this.page.loadData();
   }
 }
