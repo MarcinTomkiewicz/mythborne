@@ -1,101 +1,19 @@
 <section class="mg-card p-lg w-100">
   <div class="flex-row-between-center flex-col-sm gap-md mb-md">
-    <h3 class="mg-section__title mg-section__title--xs mb-0">Saved presets</h3>
+    <h3 class="mg-section__title mg-section__title--xs mb-0">{{ title() }}</h3>
   </div>
-
-  @if (presets.error()) {
-    <p class="status-text-warning mb-md">{{ presets.error() }}</p>
-  }
-  @if (presets.actionError()) {
-    <p class="status-text-warning mb-md">{{ presets.actionError() }}</p>
-  }
-  @if (presets.actionMessage()) {
-    <p class="status-text-success mb-md">{{ presets.actionMessage() }}</p>
-  }
-  @if (presets.previewError()) {
-    <p class="status-text-warning mb-md">{{ presets.previewError() }}</p>
-  }
-
-  <p-popover
-    #presetPreview
-    styleClass="mg-item-popover-overlay"
-    (mouseenter)="keepPresetPreviewOpen()"
-    (mouseleave)="schedulePresetPreviewClose(presetPreview)"
-  >
-    <article class="mg-item-popover mg-card flex-col gap-sm p-md min-w-0 shadow-premium" aria-label="Preset preview">
-      @if (presets.isPreviewLoading()) {
-        <span class="color-muted text-sm">Loading preset preview...</span>
-      } @else if (presets.preview(); as preview) {
-        <header class="mg-item-popover__header gap-sm pb-sm">
-          <div class="mg-item-popover__icon flex-row-center-center color-secondary text-lg">
-            <i class="pi pi-chest text-xxl" aria-hidden="true"></i>
-          </div>
-          <div class="flex-col gap-xs min-w-0">
-            <strong class="heading-color text-lg">{{ presetDisplayName(preview.preset) }}</strong>
-            <span class="color-muted text-xs">Saved preset contents</span>
-          </div>
-        </header>
-
-        @if (previewItemRows().length) {
-          <section class="mg-item-popover__section flex-col gap-xs w-100 pb-sm">
-            @for (row of previewItemRows(); track row.slotKey) {
-              <div
-                class="mg-item-popover__row color-text text-sm gap-sm"
-                [class.border-bottom]="!$last"
-                [class.pb-xs]="!$last"
-              >
-                <span class="mg-item-popover__row-code flex-row-center-center">
-                  <i [class]="previewSlotFallbackIconClass(row)" aria-hidden="true"></i>
-                </span>
-                <span class="flex-col gap-xs min-w-0">
-                  <strong>{{ previewItemName(row.item) }}</strong>
-                  <span class="color-muted text-xs">{{ row.slotLabel }}</span>
-                  @if (row.item.previewStatus !== 'available') {
-                    @if (row.item.statusMessage) {
-                      <span class="warn-text text-xs">{{ row.item.statusMessage }}</span>
-                    } @else {
-                      <span class="warn-text text-xs">{{ previewStatusLabel(row.item) }}</span>
-                    }
-                  }
-                </span>
-              </div>
-            }
-          </section>
-        } @else {
-          <span class="mg-item-popover__empty color-muted text-sm">No saved items in this preset.</span>
-        }
-      } @else {
-        <span class="color-muted text-sm">Hover a saved preset to preview it.</span>
-      }
-    </article>
-  </p-popover>
 
   @if (presetRows().length) {
     <div class="flex-col gap-xs" [formGroup]="presetNameForm">
-      @for (preset of presetRows(); track preset.presetNumber) {
+      @for (preset of presetRows(); track preset.presetId) {
         <article class="mg-card p-sm flex-row-between-center flex-col-sm gap-sm w-100">
           <div class="flex-row-start-center gap-sm min-w-0 flex-1 w-100-sm">
-            @if (isPresetSaved(preset)) {
-              <strong
-                class="color-text text-sm cursor-pointer truncate-1 min-w-0"
-                role="button"
-                tabindex="0"
-                [attr.aria-label]="'Preview ' + presetDisplayName(preset)"
-                (mouseenter)="openPresetPreview($event, presetPreview, preset)"
-                (mouseleave)="schedulePresetPreviewClose(presetPreview)"
-                (focusin)="openPresetPreview($event, presetPreview, preset)"
-                (focusout)="schedulePresetPreviewClose(presetPreview)"
-              >
-                {{ presetDisplayName(preset) }}
-              </strong>
-            } @else {
-              <strong class="color-text text-sm truncate-1 min-w-0">{{ presetDisplayName(preset) }}</strong>
-            }
+            <strong class="color-text text-sm truncate-1 min-w-0">{{ preset.name }}</strong>
 
             @if (presetNameForm.controls[preset.controlName]; as presetNameControl) {
               <p-inplace class="mg-form flex-none">
                 <ng-template #display>
-                  <span class="color-muted text-xs">Rename</span>
+                  <span class="color-muted text-xs">{{ copy().renameLabel }}</span>
                 </ng-template>
                 <ng-template #content let-closeCallback="closeCallback">
                   <div class="flex-row-start-center flex-col-sm gap-xs min-w-0">
@@ -104,16 +22,15 @@
                       class="w-100"
                       type="text"
                       [formControlName]="preset.controlName"
-                      [attr.aria-label]="'Preset ' + preset.presetNumber + ' name'"
+                      [attr.aria-label]="copy().renameLabel"
                     />
                     <p-button
                       type="button"
-                      [severity]="renamePresetActionSeverity(presetNameControl)"
+                      [severity]="renamePresetActionSeverity(preset, presetNameControl)"
                       size="small"
-                      [outlined]="renamePresetActionIsCancel(presetNameControl)"
-                      [icon]="renamePresetActionIcon(presetNameControl)"
-                      [ariaLabel]="renamePresetActionLabel(presetNameControl)"
-                      [disabled]="presets.isMutating()"
+                      [icon]="renamePresetActionIcon(preset, presetNameControl)"
+                      [ariaLabel]="renamePresetActionLabel(preset, presetNameControl)"
+                      [disabled]="isMutating()"
                       (onClick)="handleRenamePresetInplaceAction(preset, presetNameControl, closeCallback, $event)"
                     />
                   </div>
@@ -123,12 +40,15 @@
           </div>
 
           <div class="flex-row-start-center flex-wrap gap-xs flex-none">
+            @if (preset.slotCount > 0) {
+              <span class="tag-badge tag-badge--info">{{ preset.slotCount }}</span>
+            }
             <p-button
               type="button"
               severity="secondary"
               size="small"
-              label="Save preset"
-              [disabled]="presets.isMutating()"
+              [label]="actionsCopy().savePreset"
+              [disabled]="isMutating()"
               (onClick)="saveCurrentLoadout(preset)"
             />
             @if (isPresetSaved(preset)) {
@@ -136,17 +56,17 @@
                 type="button"
                 severity="secondary"
                 size="small"
-                label="Apply"
-                [disabled]="presets.isMutating() || equipment.isMutating()"
+                [label]="copy().applyLabel"
+                [disabled]="isMutating()"
                 (onClick)="applyPreset(preset)"
               />
               <p-button
                 type="button"
                 severity="danger"
                 size="small"
-                label="Clear"
+                [label]="copy().clearLabel"
                 icon="pi pi-demolish"
-                [disabled]="presets.isMutating()"
+                [disabled]="isMutating()"
                 (onClick)="clearPreset(preset)"
               />
             }
@@ -154,9 +74,7 @@
         </article>
       }
     </div>
-  } @else if (presets.isLoading()) {
-    <p class="color-muted mb-0">Loading saved presets.</p>
-  } @else if (presets.status() !== 'error') {
-    <p class="color-muted mb-0">No saved presets returned by the current read model.</p>
+  } @else {
+    <p class="color-muted mb-0">{{ copy().emptyLabel }}</p>
   }
 </section>

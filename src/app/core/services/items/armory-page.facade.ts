@@ -3,11 +3,11 @@ import { Origin } from '../../domain/origin/origin.model';
 import {
   PlayerArmoryEquipmentSlotReadModel,
   PlayerArmoryLoadoutPresetReadModel,
+  PlayerArmoryPageCopyReadModel,
   PlayerArmoryPageContextReadModel,
   PlayerArmoryReadModel,
 } from '../../domain/item/player-armory-page-context.model';
 import { Json } from '../../types/database.types';
-import { JsonRecord } from '../../utils/json-read';
 import { getErrorMessage } from '../../utils/error-message';
 import { PlayerArmory } from './player-armory';
 
@@ -20,7 +20,7 @@ export class ArmoryPageFacade {
   readonly error = signal<string | null>(null);
   readonly context = signal<PlayerArmoryPageContextReadModel | null>(null);
   readonly readModel = signal<PlayerArmoryReadModel | null>(null);
-  readonly copyJson = signal<JsonRecord | null>(null);
+  readonly copyJson = signal<PlayerArmoryPageCopyReadModel | null>(null);
   readonly loadoutPresets = signal<PlayerArmoryLoadoutPresetReadModel[]>([]);
   readonly runtimeDerivedStats = signal<Json | null>(null);
   readonly heroLuck = signal(0);

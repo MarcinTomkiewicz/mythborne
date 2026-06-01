@@ -3,12 +3,13 @@ import { equipmentPreviewIconClassForSlot } from '../../../core/domain/equipment
 import { EquipmentPreviewSlotRow } from '../../../core/domain/equipment/equipment-preview.model';
 import { PlayerArmoryEquipmentSlotReadModel } from '../../../core/domain/item/player-armory-page-context.model';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
+import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
 import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-preview';
 
 @Component({
   selector: 'app-armory-page',
   standalone: true,
-  imports: [EquipmentPreview],
+  imports: [EquipmentPreview, LoadoutPresetManagement],
   providers: [ArmoryPageFacade],
   templateUrl: './armory-page.html',
   host: { class: 'd-block w-100' },

@@ -6,11 +6,75 @@ export interface PlayerArmoryPageContextReadModel {
   heroId: string;
   serverId: string;
   originKey: string | null;
-  copyJson: JsonRecord;
+  copyJson: PlayerArmoryPageCopyReadModel;
   readModel: PlayerArmoryReadModel;
   equipmentSlots: PlayerArmoryEquipmentSlotReadModel[];
   loadoutPresets: PlayerArmoryLoadoutPresetReadModel[];
   runtimeDerivedStats: Json | null;
+}
+
+export interface PlayerArmoryPageCopyReadModel {
+  page: PlayerArmoryPageCopyPage;
+  sections: PlayerArmoryPageCopySections;
+  summary: PlayerArmoryPageCopySummary;
+  empty: JsonRecord;
+  storage: JsonRecord;
+  actions: PlayerArmoryPageCopyActions;
+  confirmations: PlayerArmoryPageCopyConfirmations;
+  filters: JsonRecord;
+  search: JsonRecord;
+  inventory: JsonRecord;
+  loadoutPresets: PlayerArmoryPageCopyLoadoutPresets;
+  itemDetail: JsonRecord;
+  equipmentPreview: PlayerArmoryPageCopyEquipmentPreview;
+}
+
+export interface PlayerArmoryPageCopyPage {
+  title: string;
+  loadingLabel: string;
+  errorTitle: string;
+}
+
+export interface PlayerArmoryPageCopySections {
+  inventory: string;
+  equipmentPreview: string;
+  loadoutPresets: string;
+}
+
+export interface PlayerArmoryPageCopySummary {
+  capacity: string;
+  allItems: string;
+  equippedItems: string;
+  savedSets: string;
+}
+
+export interface PlayerArmoryPageCopyActions {
+  savePreset: string;
+  renamePreset: string;
+  unequipSelected: string;
+  unequipAll: string;
+}
+
+export interface PlayerArmoryPageCopyConfirmations {
+  cancelLabel: string;
+}
+
+export interface PlayerArmoryPageCopyLoadoutPresets {
+  renameLabel: string;
+  applyLabel: string;
+  clearLabel: string;
+  loadingLabel: string;
+  emptyLabel: string;
+}
+
+export interface PlayerArmoryPageCopyEquipmentPreview {
+  title: string;
+  emptyLabel: string;
+  emptySlotLabel: string;
+  emptySlotDetail: string;
+  loadingLabel: string;
+  unavailableLabel: string;
+  armoryLabel: string;
 }
 
 export interface PlayerArmoryReadModel {

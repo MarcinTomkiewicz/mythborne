@@ -3,6 +3,7 @@ import {
   PlayerArmoryItemReadModel,
   PlayerArmoryItemValueDisplay,
   PlayerArmoryLoadoutPresetReadModel,
+  PlayerArmoryPageCopyReadModel,
   PlayerArmoryPageContextReadModel,
   PlayerArmoryReadModel,
   PlayerArmoryStorageSlotReadModel,
@@ -20,22 +21,6 @@ import {
   requiredRecord,
   requiredText,
 } from './json-read';
-
-const REQUIRED_COPY_SECTIONS = [
-  'page',
-  'sections',
-  'summary',
-  'empty',
-  'storage',
-  'actions',
-  'confirmations',
-  'filters',
-  'search',
-  'inventory',
-  'loadoutPresets',
-  'itemDetail',
-  'equipmentPreview',
-] as const;
 
 export function mapPlayerArmoryPageContext(
   value: Json,
@@ -80,14 +65,122 @@ export function mapPlayerArmoryPageContext(
   };
 }
 
-function mapCopyJson(value: Json | undefined): JsonRecord {
+function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
   const copyJson = requiredRecord(value, 'copyJson');
+  const page = requiredRecord(read(copyJson, 'page'), 'copyJson.page');
+  const sections = requiredRecord(read(copyJson, 'sections'), 'copyJson.sections');
+  const summary = requiredRecord(read(copyJson, 'summary'), 'copyJson.summary');
+  const actions = requiredRecord(read(copyJson, 'actions'), 'copyJson.actions');
+  const confirmations = requiredRecord(
+    read(copyJson, 'confirmations'),
+    'copyJson.confirmations',
+  );
+  const loadoutPresets = requiredRecord(
+    read(copyJson, 'loadoutPresets'),
+    'copyJson.loadoutPresets',
+  );
+  const equipmentPreview = requiredRecord(
+    read(copyJson, 'equipmentPreview'),
+    'copyJson.equipmentPreview',
+  );
 
-  for (const section of REQUIRED_COPY_SECTIONS) {
-    requiredRecord(read(copyJson, section), `copyJson.${section}`);
-  }
-
-  return copyJson;
+  return {
+    page: {
+      title: requiredText(read(page, 'title'), 'copyJson.page.title'),
+      loadingLabel: requiredText(read(page, 'loadingLabel'), 'copyJson.page.loadingLabel'),
+      errorTitle: requiredText(read(page, 'errorTitle'), 'copyJson.page.errorTitle'),
+    },
+    sections: {
+      inventory: requiredText(read(sections, 'inventory'), 'copyJson.sections.inventory'),
+      equipmentPreview: requiredText(
+        read(sections, 'equipmentPreview'),
+        'copyJson.sections.equipmentPreview',
+      ),
+      loadoutPresets: requiredText(
+        read(sections, 'loadoutPresets'),
+        'copyJson.sections.loadoutPresets',
+      ),
+    },
+    summary: {
+      capacity: requiredText(read(summary, 'capacity'), 'copyJson.summary.capacity'),
+      allItems: requiredText(read(summary, 'allItems'), 'copyJson.summary.allItems'),
+      equippedItems: requiredText(
+        read(summary, 'equippedItems'),
+        'copyJson.summary.equippedItems',
+      ),
+      savedSets: requiredText(read(summary, 'savedSets'), 'copyJson.summary.savedSets'),
+    },
+    empty: requiredRecord(read(copyJson, 'empty'), 'copyJson.empty'),
+    storage: requiredRecord(read(copyJson, 'storage'), 'copyJson.storage'),
+    actions: {
+      savePreset: requiredText(read(actions, 'savePreset'), 'copyJson.actions.savePreset'),
+      renamePreset: requiredText(read(actions, 'renamePreset'), 'copyJson.actions.renamePreset'),
+      unequipSelected: requiredText(
+        read(actions, 'unequipSelected'),
+        'copyJson.actions.unequipSelected',
+      ),
+      unequipAll: requiredText(read(actions, 'unequipAll'), 'copyJson.actions.unequipAll'),
+    },
+    confirmations: {
+      cancelLabel: requiredText(
+        read(confirmations, 'cancelLabel'),
+        'copyJson.confirmations.cancelLabel',
+      ),
+    },
+    filters: requiredRecord(read(copyJson, 'filters'), 'copyJson.filters'),
+    search: requiredRecord(read(copyJson, 'search'), 'copyJson.search'),
+    inventory: requiredRecord(read(copyJson, 'inventory'), 'copyJson.inventory'),
+    loadoutPresets: {
+      renameLabel: requiredText(
+        read(loadoutPresets, 'renameLabel'),
+        'copyJson.loadoutPresets.renameLabel',
+      ),
+      applyLabel: requiredText(
+        read(loadoutPresets, 'applyLabel'),
+        'copyJson.loadoutPresets.applyLabel',
+      ),
+      clearLabel: requiredText(
+        read(loadoutPresets, 'clearLabel'),
+        'copyJson.loadoutPresets.clearLabel',
+      ),
+      loadingLabel: requiredText(
+        read(loadoutPresets, 'loadingLabel'),
+        'copyJson.loadoutPresets.loadingLabel',
+      ),
+      emptyLabel: requiredText(
+        read(loadoutPresets, 'emptyLabel'),
+        'copyJson.loadoutPresets.emptyLabel',
+      ),
+    },
+    itemDetail: requiredRecord(read(copyJson, 'itemDetail'), 'copyJson.itemDetail'),
+    equipmentPreview: {
+      title: requiredText(read(equipmentPreview, 'title'), 'copyJson.equipmentPreview.title'),
+      emptyLabel: requiredText(
+        read(equipmentPreview, 'emptyLabel'),
+        'copyJson.equipmentPreview.emptyLabel',
+      ),
+      emptySlotLabel: requiredText(
+        read(equipmentPreview, 'emptySlotLabel'),
+        'copyJson.equipmentPreview.emptySlotLabel',
+      ),
+      emptySlotDetail: requiredText(
+        read(equipmentPreview, 'emptySlotDetail'),
+        'copyJson.equipmentPreview.emptySlotDetail',
+      ),
+      loadingLabel: requiredText(
+        read(equipmentPreview, 'loadingLabel'),
+        'copyJson.equipmentPreview.loadingLabel',
+      ),
+      unavailableLabel: requiredText(
+        read(equipmentPreview, 'unavailableLabel'),
+        'copyJson.equipmentPreview.unavailableLabel',
+      ),
+      armoryLabel: requiredText(
+        read(equipmentPreview, 'armoryLabel'),
+        'copyJson.equipmentPreview.armoryLabel',
+      ),
+    },
+  };
 }
 
 function mapReadModel(
@@ -191,7 +284,9 @@ function mapStorageSlot(
     ),
     itemCount: requiredNonNegativeInteger(read(row, 'itemCount'), `${fieldPath}.itemCount`),
     sortOrder: requiredNonNegativeInteger(read(row, 'sortOrder'), `${fieldPath}.sortOrder`),
-    isPersisted: !isUnsortedDropArea,
+    isPersisted: isUnsortedDropArea
+      ? false
+      : requiredBoolean(read(row, 'existsInDb'), `${fieldPath}.existsInDb`),
     isUnsortedDropArea,
     visibleItems: [],
   };
