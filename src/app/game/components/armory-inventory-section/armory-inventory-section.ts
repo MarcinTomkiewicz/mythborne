@@ -40,8 +40,10 @@ export class ArmoryInventorySection {
   readonly filtersCopy = input.required<PlayerArmoryPageCopyFilters>();
   readonly inventoryCopy = input.required<PlayerArmoryPageCopyInventory>();
   readonly equipItemLabel = input.required<string>();
+  readonly sellItemLabel = input.required<string>();
   readonly actionDisabled = input(false);
   readonly equipItem = output<PlayerArmoryItemReadModel>();
+  readonly sellItem = output<PlayerArmoryItemReadModel>();
   readonly searchControl = new FormControl<string>('', { nonNullable: true });
   readonly slotFilterControl = new FormControl<string>(ARMORY_INVENTORY_ALL_FILTER_VALUE, {
     nonNullable: true,
@@ -107,6 +109,10 @@ export class ArmoryInventorySection {
 
   canEquipItem(item: PlayerArmoryItemReadModel): boolean {
     return item.lifecycleStatusKey !== 'scrapped';
+  }
+
+  canSellItem(item: PlayerArmoryItemReadModel): boolean {
+    return item.lifecycleStatusKey === 'active';
   }
 
   clearFilters(): void {

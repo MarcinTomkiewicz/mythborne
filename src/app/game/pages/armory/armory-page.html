@@ -1,5 +1,7 @@
 @let visibility = page.readModel()?.visibility;
 
+<p-confirmdialog styleClass="mg-dialog mg-dialog--danger" />
+
 <div class="flex-col gap-lg min-w-0">
   <section class="mg-card p-lg w-100">
     <div class="grid-2-1 gap-lg grid-items-center">
@@ -99,8 +101,10 @@
         [filtersCopy]="copy.filters"
         [inventoryCopy]="copy.inventory"
         [equipItemLabel]="copy.actions.equipItem"
+        [sellItemLabel]="copy.actions.sellItem"
         [actionDisabled]="inventoryActionDisabled()"
         (equipItem)="equipInventoryItem($event)"
+        (sellItem)="confirmSellInventoryItem($event)"
       />
     }
   </div>

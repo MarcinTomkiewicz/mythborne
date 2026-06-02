@@ -49,6 +49,7 @@ export interface PlayerArmoryPageCopySummary {
 
 export interface PlayerArmoryPageCopyActions {
   equipItem: string;
+  sellItem: string;
   savePreset: string;
   renamePreset: string;
   unequipSelected: string;
@@ -57,6 +58,9 @@ export interface PlayerArmoryPageCopyActions {
 
 export interface PlayerArmoryPageCopyConfirmations {
   cancelLabel: string;
+  confirmLabel: string;
+  sellItemTitle: string;
+  sellItemMessage: string;
 }
 
 export interface PlayerArmoryPageCopyFilters {

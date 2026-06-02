@@ -118,6 +118,7 @@ function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
     storage: requiredRecord(read(copyJson, 'storage'), 'copyJson.storage'),
     actions: {
       equipItem: requiredText(read(actions, 'equipItem'), 'copyJson.actions.equipItem'),
+      sellItem: requiredText(read(actions, 'sellItem'), 'copyJson.actions.sellItem'),
       savePreset: requiredText(read(actions, 'savePreset'), 'copyJson.actions.savePreset'),
       renamePreset: requiredText(read(actions, 'renamePreset'), 'copyJson.actions.renamePreset'),
       unequipSelected: requiredText(
@@ -130,6 +131,18 @@ function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
       cancelLabel: requiredText(
         read(confirmations, 'cancelLabel'),
         'copyJson.confirmations.cancelLabel',
+      ),
+      confirmLabel: requiredText(
+        read(confirmations, 'confirmLabel'),
+        'copyJson.confirmations.confirmLabel',
+      ),
+      sellItemTitle: requiredText(
+        read(confirmations, 'sellItemTitle'),
+        'copyJson.confirmations.sellItemTitle',
+      ),
+      sellItemMessage: requiredText(
+        read(confirmations, 'sellItemMessage'),
+        'copyJson.confirmations.sellItemMessage',
       ),
     },
     filters: {

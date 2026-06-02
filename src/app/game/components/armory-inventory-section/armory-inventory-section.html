@@ -106,17 +106,28 @@
                   </div>
                 }
 
-                @if (canEquipItem(item)) {
+                @if (canEquipItem(item) || canSellItem(item)) {
                   <div class="flex-row-start-center flex-wrap gap-xs border-top pt-xs">
-                    <p-button
-                      type="button"
-                      severity="secondary"
-                      size="small"
-                      icon="pi pi-equip"
-                      [label]="equipItemLabel()"
-                      [disabled]="actionDisabled()"
-                      (onClick)="equipItem.emit(item)"
-                    />
+                    @if (canEquipItem(item)) {
+                      <p-button
+                        type="button"
+                        severity="secondary"
+                        size="small"
+                        [label]="equipItemLabel()"
+                        [disabled]="actionDisabled()"
+                        (onClick)="equipItem.emit(item)"
+                      />
+                    }
+                    @if (canSellItem(item)) {
+                      <p-button
+                        type="button"
+                        severity="secondary"
+                        size="small"
+                        [label]="sellItemLabel()"
+                        [disabled]="actionDisabled()"
+                        (onClick)="sellItem.emit(item)"
+                      />
+                    }
                   </div>
                 }
               </article>

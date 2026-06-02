@@ -1,12 +1,16 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { equipmentPreviewIconClassForSlot } from '../../../core/domain/equipment/equipment-preview-icons.config';
 import { EquipmentPreviewSlotRow } from '../../../core/domain/equipment/equipment-preview.model';
 import {
   PlayerArmoryEquipmentSlotReadModel,
   PlayerArmoryItemReadModel,
+  PlayerArmoryPageContextReadModel,
 } from '../../../core/domain/item/player-armory-page-context.model';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
+import { ItemLifecycleService } from '../../../core/services/items/item-lifecycle';
 import { ArmoryInventorySection } from '../../components/armory-inventory-section/armory-inventory-section';
 import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
 import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-preview';
@@ -14,17 +18,26 @@ import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-pr
 @Component({
   selector: 'app-armory-page',
   standalone: true,
-  imports: [EquipmentPreview, LoadoutPresetManagement, ArmoryInventorySection],
+  imports: [
+    ConfirmDialogModule,
+    EquipmentPreview,
+    LoadoutPresetManagement,
+    ArmoryInventorySection,
+  ],
   providers: [ArmoryPageFacade, CurrentEquipmentState],
   templateUrl: './armory-page.html',
   host: { class: 'd-block w-100' },
 })
 export class ArmoryPage implements OnInit {
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly lifecycle = inject(ItemLifecycleService);
+  private inventoryActionToken = 0;
   readonly page = inject(ArmoryPageFacade);
   readonly equipment = inject(CurrentEquipmentState);
   readonly selectedEquippedItemIds = signal<readonly string[]>([]);
+  readonly isInventoryItemMutating = signal(false);
   readonly inventoryActionDisabled = computed(() =>
-    this.equipment.isMutating(),
+    this.equipment.isMutating() || this.isInventoryItemMutating(),
   );
   readonly equippedItemCount = computed(() =>
     this.page.equipmentSlots().filter((slot) => slot.hasItem).length,
@@ -90,6 +103,30 @@ export class ArmoryPage implements OnInit {
     );
   }
 
+  confirmSellInventoryItem(item: PlayerArmoryItemReadModel): void {
+    const copy = this.page.copyJson();
+
+    if (
+      this.inventoryActionDisabled()
+      || item.lifecycleStatusKey !== 'active'
+      || !copy
+    ) {
+      return;
+    }
+
+    this.confirmationService.confirm({
+      header: copy.confirmations.sellItemTitle,
+      message: copy.confirmations.sellItemMessage,
+      acceptLabel: copy.confirmations.confirmLabel,
+      rejectLabel: copy.confirmations.cancelLabel,
+      acceptIcon: 'pi pi-check',
+      rejectIcon: 'pi pi-times',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-secondary',
+      accept: () => this.sellInventoryItem(item),
+    });
+  }
+
   private refreshAfterEquipmentMutation(): void {
     this.selectedEquippedItemIds.set([]);
     this.page.loadData();
@@ -97,8 +134,64 @@ export class ArmoryPage implements OnInit {
 
   private refreshAfterInventoryMutation(): void {
     this.selectedEquippedItemIds.set([]);
+    this.isInventoryItemMutating.set(false);
     this.page.loadData();
   }
+
+  private sellInventoryItem(item: PlayerArmoryItemReadModel): void {
+    const context = this.page.context();
+
+    if (
+      this.inventoryActionDisabled()
+      || item.lifecycleStatusKey !== 'active'
+      || !context
+    ) {
+      return;
+    }
+
+    const token = ++this.inventoryActionToken;
+    const contextKey = `${context.serverId}:${context.heroId}`;
+
+    this.isInventoryItemMutating.set(true);
+    this.lifecycle.vendorScrapHeroItem({
+      actorHeroId: context.heroId,
+      itemId: item.itemId,
+    }).subscribe({
+      next: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        this.refreshAfterInventoryMutation();
+      },
+      error: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        this.isInventoryItemMutating.set(false);
+      },
+    });
+  }
+
+  private acceptsInventoryActionResponse(token: number, contextKey: string): boolean {
+    if (token !== this.inventoryActionToken) {
+      return false;
+    }
+
+    if (contextKey !== contextKeyFor(this.page.context())) {
+      this.isInventoryItemMutating.set(false);
+      return false;
+    }
+
+    return true;
+  }
+}
+
+function contextKeyFor(
+  context: Pick<PlayerArmoryPageContextReadModel, 'heroId' | 'serverId'> | null,
+): string | null {
+  return context ? `${context.serverId}:${context.heroId}` : null;
 }
 
 function mapArmoryPageEquipmentPreviewRows(
