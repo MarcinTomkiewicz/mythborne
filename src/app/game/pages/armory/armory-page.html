@@ -1,64 +1,50 @@
-@let visibility = page.readModel()?.visibility;
+<app-loading-overlay [visible]="isScreenLoading()" />
 
-<p-confirmdialog styleClass="mg-dialog mg-dialog--danger" />
+<app-structured-confirm-dialog
+  key="armory-sell-item"
+  styleClass="mg-dialog mg-dialog--danger"
+  [messageSegments]="sellItemConfirmationSegments()"
+  (hidden)="clearSellItemConfirmationMessage()"
+/>
 
-<div class="flex-col gap-lg min-w-0">
-  <section class="mg-card p-lg w-100">
-    <div class="grid-2-1 gap-lg grid-items-center">
-      <div class="flex-col gap-xs min-w-0">
-        @if (page.copyJson(); as copy) {
+@if (page.context(); as context) {
+  @let copy = context.copyJson;
+  @let readModel = context.readModel;
+  @let visibility = readModel.visibility;
+
+  <div class="flex-col gap-lg min-w-0">
+    <section class="mg-card p-lg w-100">
+      <div class="grid-2-1 gap-lg grid-items-center">
+        <div class="flex-col gap-xs min-w-0">
           <p class="small-caps color-muted text-xs mb-0">{{ copy.sections.inventory }}</p>
           <h2 class="mg-section__title mg-section__title--sm mb-0">
             {{ copy.page.title }}
           </h2>
-        }
+        </div>
 
-        @if (page.status() === 'loading') {
-          @if (page.copyJson(); as copy) {
-            <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
-              {{ copy.page.loadingLabel }}
-            </p>
-          }
-        }
-
-        @if (page.status() === 'error') {
-          @if (page.copyJson(); as copy) {
-            <p class="warn-text mb-0">{{ copy.page.errorTitle }}</p>
-          }
-          @if (page.error(); as error) {
-            <p class="warn-text mb-0">{{ error }}</p>
-          }
-        }
+        <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.capacity }}</span>
+            <strong class="color-heading text-md">{{ visibility.visibilityLimit }}</strong>
+          </div>
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.allItems }}</span>
+            <strong class="color-heading text-md">{{ visibility.totalOwnedItemCount }}</strong>
+          </div>
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.equippedItems }}</span>
+            <strong class="color-heading text-md">{{ equippedItemCount() }}</strong>
+          </div>
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.savedSets }}</span>
+            <strong class="color-heading text-md">{{ savedLoadoutCount() }}</strong>
+          </div>
+        </aside>
       </div>
+    </section>
 
-      <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
-        @if (visibility; as visibilityState) {
-          @if (page.copyJson(); as copy) {
-            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-              <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.capacity }}</span>
-              <strong class="color-heading text-md">{{ visibilityState.visibilityLimit }}</strong>
-            </div>
-            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-              <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.allItems }}</span>
-              <strong class="color-heading text-md">{{ visibilityState.totalOwnedItemCount }}</strong>
-            </div>
-            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-              <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.equippedItems }}</span>
-              <strong class="color-heading text-md">{{ equippedItemCount() }}</strong>
-            </div>
-            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-              <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.savedSets }}</span>
-              <strong class="color-heading text-md">{{ savedLoadoutCount() }}</strong>
-            </div>
-          }
-        }
-      </aside>
-    </div>
-  </section>
-
-  <div class="grid-1-2-balanced gap-lg w-100">
-    <section class="flex-col gap-md min-w-0">
-      @if (page.copyJson(); as copy) {
+    <div class="grid-1-2-balanced gap-lg w-100">
+      <section class="flex-col gap-md min-w-0">
         <app-equipment-preview
           [rows]="equipmentPreviewRows()"
           [title]="copy.equipmentPreview.title"
@@ -80,23 +66,19 @@
           (unequipSelected)="unequipSelectedItems()"
           (unequipAll)="unequipAllItems()"
         />
-      }
 
-      @if (page.copyJson(); as copy) {
         <app-loadout-preset-management
-          [presets]="page.loadoutPresets()"
+          [presets]="context.loadoutPresets"
           [title]="copy.sections.loadoutPresets"
           [copy]="copy.loadoutPresets"
           [actionsCopy]="copy.actions"
           [cancelLabel]="copy.confirmations.cancelLabel"
         />
-      }
-    </section>
+      </section>
 
-    @if (page.copyJson(); as copy) {
       <app-armory-inventory-section
         [title]="copy.sections.inventory"
-        [shelves]="page.readModel()?.shelves ?? []"
+        [shelves]="readModel.shelves"
         [searchCopy]="copy.search"
         [filtersCopy]="copy.filters"
         [inventoryCopy]="copy.inventory"
@@ -106,6 +88,10 @@
         (equipItem)="equipInventoryItem($event)"
         (sellItem)="confirmSellInventoryItem($event)"
       />
-    }
+    </div>
   </div>
-</div>
+} @else if (page.error(); as error) {
+  <section class="mg-card p-lg flex-col gap-sm w-100">
+    <p class="warn-text mb-0">{{ error }}</p>
+  </section>
+}

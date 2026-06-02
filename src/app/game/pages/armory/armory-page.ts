@@ -1,12 +1,12 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { equipmentPreviewIconClassForSlot } from '../../../core/domain/equipment/equipment-preview-icons.config';
 import { EquipmentPreviewSlotRow } from '../../../core/domain/equipment/equipment-preview.model';
 import {
   PlayerArmoryEquipmentSlotReadModel,
   PlayerArmoryItemReadModel,
   PlayerArmoryPageContextReadModel,
+  PlayerArmorySellItemMessageParts,
 } from '../../../core/domain/item/player-armory-page-context.model';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
@@ -14,12 +14,20 @@ import { ItemLifecycleService } from '../../../core/services/items/item-lifecycl
 import { ArmoryInventorySection } from '../../components/armory-inventory-section/armory-inventory-section';
 import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
 import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-preview';
+import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import {
+  StructuredConfirmDialog,
+  StructuredConfirmDialogSegment,
+} from '../../../shared/structured-confirm-dialog/structured-confirm-dialog';
+
+const ARMORY_SELL_ITEM_CONFIRMATION_KEY = 'armory-sell-item';
 
 @Component({
   selector: 'app-armory-page',
   standalone: true,
   imports: [
-    ConfirmDialogModule,
+    LoadingOverlay,
+    StructuredConfirmDialog,
     EquipmentPreview,
     LoadoutPresetManagement,
     ArmoryInventorySection,
@@ -36,6 +44,16 @@ export class ArmoryPage implements OnInit {
   readonly equipment = inject(CurrentEquipmentState);
   readonly selectedEquippedItemIds = signal<readonly string[]>([]);
   readonly isInventoryItemMutating = signal(false);
+  readonly sellItemConfirmationSegments =
+    signal<readonly StructuredConfirmDialogSegment[]>([]);
+  readonly isScreenLoading = computed(() =>
+    this.page.status() !== 'error'
+    && (
+      this.page.status() !== 'loaded'
+      || this.equipment.isMutating()
+      || this.isInventoryItemMutating()
+    ),
+  );
   readonly inventoryActionDisabled = computed(() =>
     this.equipment.isMutating() || this.isInventoryItemMutating(),
   );
@@ -104,19 +122,30 @@ export class ArmoryPage implements OnInit {
   }
 
   confirmSellInventoryItem(item: PlayerArmoryItemReadModel): void {
-    const copy = this.page.copyJson();
+    const copy = this.page.context()?.copyJson;
+    const valueDisplay = item.valueDisplay?.displayValue;
 
     if (
       this.inventoryActionDisabled()
       || item.lifecycleStatusKey !== 'active'
       || !copy
+      || !valueDisplay
     ) {
       return;
     }
 
+    const messageSegments = buildSellItemConfirmationSegments(
+      copy.confirmations.sellItemMessageParts,
+      copy.confirmations.sellItemHighlightFields,
+      item.name,
+      valueDisplay,
+    );
+
+    this.sellItemConfirmationSegments.set(messageSegments);
     this.confirmationService.confirm({
+      key: ARMORY_SELL_ITEM_CONFIRMATION_KEY,
       header: copy.confirmations.sellItemTitle,
-      message: copy.confirmations.sellItemMessage,
+      message: plainStructuredConfirmMessage(messageSegments),
       acceptLabel: copy.confirmations.confirmLabel,
       rejectLabel: copy.confirmations.cancelLabel,
       acceptIcon: 'pi pi-check',
@@ -124,7 +153,12 @@ export class ArmoryPage implements OnInit {
       acceptButtonStyleClass: 'p-button-danger',
       rejectButtonStyleClass: 'p-button-secondary',
       accept: () => this.sellInventoryItem(item),
+      reject: () => this.clearSellItemConfirmationMessage(),
     });
+  }
+
+  clearSellItemConfirmationMessage(): void {
+    this.sellItemConfirmationSegments.set([]);
   }
 
   private refreshAfterEquipmentMutation(): void {
@@ -186,6 +220,30 @@ export class ArmoryPage implements OnInit {
 
     return true;
   }
+}
+
+function buildSellItemConfirmationSegments(
+  parts: PlayerArmorySellItemMessageParts,
+  highlightFields: readonly string[],
+  itemName: string,
+  drachmaValue: string,
+): StructuredConfirmDialogSegment[] {
+  return [
+    { text: parts.prefix, highlighted: false },
+    { text: itemName, highlighted: highlightFields.includes(parts.itemNameToken) },
+    { text: parts.middle, highlighted: false },
+    {
+      text: drachmaValue,
+      highlighted: highlightFields.includes(parts.drachmaValueToken),
+    },
+    { text: parts.suffix, highlighted: false },
+  ];
+}
+
+function plainStructuredConfirmMessage(
+  segments: readonly StructuredConfirmDialogSegment[],
+): string {
+  return segments.map((segment) => segment.text).join('');
 }
 
 function contextKeyFor(

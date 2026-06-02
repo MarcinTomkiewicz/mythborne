@@ -7,6 +7,7 @@ import {
   PlayerArmoryPageCopyReadModel,
   PlayerArmoryPageContextReadModel,
   PlayerArmoryReadModel,
+  PlayerArmorySellItemMessageParts,
   PlayerArmoryStorageSlotReadModel,
 } from '../domain/item/player-armory-page-context.model';
 import { Json } from '../types/database.types';
@@ -72,218 +73,197 @@ export function mapPlayerArmoryPageContext(
 
 function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
   const copyJson = requiredRecord(value, 'copyJson');
-  const page = requiredRecord(read(copyJson, 'page'), 'copyJson.page');
-  const sections = requiredRecord(
-    read(copyJson, 'sections'),
-    'copyJson.sections',
-  );
-  const summary = requiredRecord(read(copyJson, 'summary'), 'copyJson.summary');
-  const actions = requiredRecord(read(copyJson, 'actions'), 'copyJson.actions');
-  const confirmations = requiredRecord(
-    read(copyJson, 'confirmations'),
-    'copyJson.confirmations',
-  );
-  const filters = requiredRecord(read(copyJson, 'filters'), 'copyJson.filters');
-  const search = requiredRecord(read(copyJson, 'search'), 'copyJson.search');
-  const inventory = requiredRecord(
-    read(copyJson, 'inventory'),
-    'copyJson.inventory',
-  );
-  const loadoutPresets = requiredRecord(
-    read(copyJson, 'loadoutPresets'),
-    'copyJson.loadoutPresets',
-  );
-  const equipmentPreview = requiredRecord(
-    read(copyJson, 'equipmentPreview'),
-    'copyJson.equipmentPreview',
-  );
 
   return {
-    page: {
-      title: requiredText(read(page, 'title'), 'copyJson.page.title'),
-      loadingLabel: requiredText(
-        read(page, 'loadingLabel'),
-        'copyJson.page.loadingLabel',
-      ),
-      errorTitle: requiredText(
-        read(page, 'errorTitle'),
-        'copyJson.page.errorTitle',
-      ),
-    },
-    sections: {
-      inventory: requiredText(
-        read(sections, 'inventory'),
-        'copyJson.sections.inventory',
-      ),
-      equipmentPreview: requiredText(
-        read(sections, 'equipmentPreview'),
-        'copyJson.sections.equipmentPreview',
-      ),
-      loadoutPresets: requiredText(
-        read(sections, 'loadoutPresets'),
-        'copyJson.sections.loadoutPresets',
-      ),
-    },
-    summary: {
-      capacity: requiredText(
-        read(summary, 'capacity'),
-        'copyJson.summary.capacity',
-      ),
-      allItems: requiredText(
-        read(summary, 'allItems'),
-        'copyJson.summary.allItems',
-      ),
-      equippedItems: requiredText(
-        read(summary, 'equippedItems'),
-        'copyJson.summary.equippedItems',
-      ),
-      savedSets: requiredText(
-        read(summary, 'savedSets'),
-        'copyJson.summary.savedSets',
-      ),
-    },
+    page: mapCopyPage(requiredRecord(read(copyJson, 'page'), 'copyJson.page')),
+    sections: mapCopySections(requiredRecord(read(copyJson, 'sections'), 'copyJson.sections')),
+    summary: mapCopySummary(requiredRecord(read(copyJson, 'summary'), 'copyJson.summary')),
     empty: requiredRecord(read(copyJson, 'empty'), 'copyJson.empty'),
     storage: requiredRecord(read(copyJson, 'storage'), 'copyJson.storage'),
-    actions: {
-      equipItem: requiredText(
-        read(actions, 'equipItem'),
-        'copyJson.actions.equipItem',
-      ),
-      sellItem: requiredText(
-        read(actions, 'sellItem'),
-        'copyJson.actions.sellItem',
-      ),
-      savePreset: requiredText(
-        read(actions, 'savePreset'),
-        'copyJson.actions.savePreset',
-      ),
-      renamePreset: requiredText(
-        read(actions, 'renamePreset'),
-        'copyJson.actions.renamePreset',
-      ),
-      unequipSelected: requiredText(
-        read(actions, 'unequipSelected'),
-        'copyJson.actions.unequipSelected',
-      ),
-      unequipAll: requiredText(
-        read(actions, 'unequipAll'),
-        'copyJson.actions.unequipAll',
-      ),
-    },
-    confirmations: {
-      cancelLabel: requiredText(
-        read(confirmations, 'cancelLabel'),
-        'copyJson.confirmations.cancelLabel',
-      ),
-      confirmLabel: requiredText(
-        read(confirmations, 'confirmLabel'),
-        'copyJson.confirmations.confirmLabel',
-      ),
-      sellItemTitle: requiredText(
-        read(confirmations, 'sellItemTitle'),
-        'copyJson.confirmations.sellItemTitle',
-      ),
-      sellItemMessage: requiredText(
-        read(confirmations, 'sellItemMessage'),
-        'copyJson.confirmations.sellItemMessage',
-      ),
-    },
-    filters: {
-      allSlots: requiredText(
-        read(filters, 'allSlots'),
-        'copyJson.filters.allSlots',
-      ),
-      allAvailability: requiredText(
-        read(filters, 'allAvailability'),
-        'copyJson.filters.allAvailability',
-      ),
-      allStorageSlots: requiredText(
-        read(filters, 'allStorageSlots'),
-        'copyJson.filters.allStorageSlots',
-      ),
-      storageSlotPlaceholder: requiredText(
-        read(filters, 'storageSlotPlaceholder'),
-        'copyJson.filters.storageSlotPlaceholder',
-      ),
-      availabilityOptions: mapAvailabilityOptions(
-        requiredArray(
-          read(filters, 'availabilityOptions'),
-          'copyJson.filters.availabilityOptions',
-        ),
-      ),
-    },
-    search: {
-      placeholder: requiredText(
-        read(search, 'placeholder'),
-        'copyJson.search.placeholder',
-      ),
-    },
-    inventory: {
-      clearFiltersLabel: requiredText(
-        read(inventory, 'clearFiltersLabel'),
-        'copyJson.inventory.clearFiltersLabel',
-      ),
-      noFilterResultsLabel: requiredText(
-        read(inventory, 'noFilterResultsLabel'),
-        'copyJson.inventory.noFilterResultsLabel',
-      ),
-    },
-    loadoutPresets: {
-      renameLabel: requiredText(
-        read(loadoutPresets, 'renameLabel'),
-        'copyJson.loadoutPresets.renameLabel',
-      ),
-      applyLabel: requiredText(
-        read(loadoutPresets, 'applyLabel'),
-        'copyJson.loadoutPresets.applyLabel',
-      ),
-      clearLabel: requiredText(
-        read(loadoutPresets, 'clearLabel'),
-        'copyJson.loadoutPresets.clearLabel',
-      ),
-      loadingLabel: requiredText(
-        read(loadoutPresets, 'loadingLabel'),
-        'copyJson.loadoutPresets.loadingLabel',
-      ),
-      emptyLabel: requiredText(
-        read(loadoutPresets, 'emptyLabel'),
-        'copyJson.loadoutPresets.emptyLabel',
-      ),
-    },
-    itemDetail: requiredRecord(
-      read(copyJson, 'itemDetail'),
-      'copyJson.itemDetail',
+    actions: mapCopyActions(requiredRecord(read(copyJson, 'actions'), 'copyJson.actions')),
+    confirmations: mapCopyConfirmations(
+      requiredRecord(read(copyJson, 'confirmations'), 'copyJson.confirmations'),
     ),
-    equipmentPreview: {
-      title: requiredText(
-        read(equipmentPreview, 'title'),
-        'copyJson.equipmentPreview.title',
+    filters: mapCopyFilters(requiredRecord(read(copyJson, 'filters'), 'copyJson.filters')),
+    search: mapCopySearch(requiredRecord(read(copyJson, 'search'), 'copyJson.search')),
+    inventory: mapCopyInventory(requiredRecord(read(copyJson, 'inventory'), 'copyJson.inventory')),
+    loadoutPresets: mapCopyLoadoutPresets(
+      requiredRecord(read(copyJson, 'loadoutPresets'), 'copyJson.loadoutPresets'),
+    ),
+    itemDetail: requiredRecord(read(copyJson, 'itemDetail'), 'copyJson.itemDetail'),
+    equipmentPreview: mapCopyEquipmentPreview(
+      requiredRecord(read(copyJson, 'equipmentPreview'), 'copyJson.equipmentPreview'),
+    ),
+  };
+}
+
+function mapCopyPage(page: JsonRecord): PlayerArmoryPageCopyReadModel['page'] {
+  return {
+    title: requiredText(read(page, 'title'), 'copyJson.page.title'),
+    loadingLabel: requiredText(read(page, 'loadingLabel'), 'copyJson.page.loadingLabel'),
+    errorTitle: requiredText(read(page, 'errorTitle'), 'copyJson.page.errorTitle'),
+  };
+}
+
+function mapCopySections(sections: JsonRecord): PlayerArmoryPageCopyReadModel['sections'] {
+  return {
+    inventory: requiredText(read(sections, 'inventory'), 'copyJson.sections.inventory'),
+    equipmentPreview: requiredText(
+      read(sections, 'equipmentPreview'),
+      'copyJson.sections.equipmentPreview',
+    ),
+    loadoutPresets: requiredText(
+      read(sections, 'loadoutPresets'),
+      'copyJson.sections.loadoutPresets',
+    ),
+  };
+}
+
+function mapCopySummary(summary: JsonRecord): PlayerArmoryPageCopyReadModel['summary'] {
+  return {
+    capacity: requiredText(read(summary, 'capacity'), 'copyJson.summary.capacity'),
+    allItems: requiredText(read(summary, 'allItems'), 'copyJson.summary.allItems'),
+    equippedItems: requiredText(
+      read(summary, 'equippedItems'),
+      'copyJson.summary.equippedItems',
+    ),
+    savedSets: requiredText(read(summary, 'savedSets'), 'copyJson.summary.savedSets'),
+  };
+}
+
+function mapCopyActions(actions: JsonRecord): PlayerArmoryPageCopyReadModel['actions'] {
+  return {
+    equipItem: requiredText(read(actions, 'equipItem'), 'copyJson.actions.equipItem'),
+    sellItem: requiredText(read(actions, 'sellItem'), 'copyJson.actions.sellItem'),
+    savePreset: requiredText(read(actions, 'savePreset'), 'copyJson.actions.savePreset'),
+    renamePreset: requiredText(read(actions, 'renamePreset'), 'copyJson.actions.renamePreset'),
+    unequipSelected: requiredText(read(actions, 'unequipSelected'), 'copyJson.actions.unequipSelected'),
+    unequipAll: requiredText(read(actions, 'unequipAll'), 'copyJson.actions.unequipAll'),
+  };
+}
+
+function mapCopyConfirmations(
+  confirmations: JsonRecord,
+): PlayerArmoryPageCopyReadModel['confirmations'] {
+  return {
+    cancelLabel: requiredText(read(confirmations, 'cancelLabel'), 'copyJson.confirmations.cancelLabel'),
+    confirmLabel: requiredText(read(confirmations, 'confirmLabel'), 'copyJson.confirmations.confirmLabel'),
+    sellItemTitle: requiredText(read(confirmations, 'sellItemTitle'), 'copyJson.confirmations.sellItemTitle'),
+    sellItemMessageParts: mapSellItemMessageParts(
+      requiredRecord(
+        read(confirmations, 'sellItemMessageParts'),
+        'copyJson.confirmations.sellItemMessageParts',
       ),
-      emptyLabel: requiredText(
-        read(equipmentPreview, 'emptyLabel'),
-        'copyJson.equipmentPreview.emptyLabel',
+    ),
+    sellItemHighlightFields: requiredTextArray(
+      read(confirmations, 'sellItemHighlightFields'),
+      'copyJson.confirmations.sellItemHighlightFields',
+    ),
+  };
+}
+
+function mapSellItemMessageParts(
+  parts: JsonRecord,
+): PlayerArmorySellItemMessageParts {
+  return {
+    prefix: requiredText(
+      read(parts, 'prefix'),
+      'copyJson.confirmations.sellItemMessageParts.prefix',
+    ),
+    itemNameToken: requiredText(
+      read(parts, 'itemNameToken'),
+      'copyJson.confirmations.sellItemMessageParts.itemNameToken',
+    ),
+    middle: requiredText(
+      read(parts, 'middle'),
+      'copyJson.confirmations.sellItemMessageParts.middle',
+    ),
+    drachmaValueToken: requiredText(
+      read(parts, 'drachmaValueToken'),
+      'copyJson.confirmations.sellItemMessageParts.drachmaValueToken',
+    ),
+    suffix: requiredText(
+      read(parts, 'suffix'),
+      'copyJson.confirmations.sellItemMessageParts.suffix',
+    ),
+  };
+}
+
+function mapCopyFilters(filters: JsonRecord): PlayerArmoryPageCopyReadModel['filters'] {
+  return {
+    allSlots: requiredText(read(filters, 'allSlots'), 'copyJson.filters.allSlots'),
+    allAvailability: requiredText(
+      read(filters, 'allAvailability'),
+      'copyJson.filters.allAvailability',
+    ),
+    allStorageSlots: requiredText(
+      read(filters, 'allStorageSlots'),
+      'copyJson.filters.allStorageSlots',
+    ),
+    storageSlotPlaceholder: requiredText(
+      read(filters, 'storageSlotPlaceholder'),
+      'copyJson.filters.storageSlotPlaceholder',
+    ),
+    availabilityOptions: mapAvailabilityOptions(
+      requiredArray(
+        read(filters, 'availabilityOptions'),
+        'copyJson.filters.availabilityOptions',
       ),
-      emptySlotLabel: requiredText(
-        read(equipmentPreview, 'emptySlotLabel'),
-        'copyJson.equipmentPreview.emptySlotLabel',
-      ),
-      emptySlotDetail: requiredText(
-        read(equipmentPreview, 'emptySlotDetail'),
-        'copyJson.equipmentPreview.emptySlotDetail',
-      ),
-      loadingLabel: requiredText(
-        read(equipmentPreview, 'loadingLabel'),
-        'copyJson.equipmentPreview.loadingLabel',
-      ),
-      unavailableLabel: requiredText(
-        read(equipmentPreview, 'unavailableLabel'),
-        'copyJson.equipmentPreview.unavailableLabel',
-      ),
-      armoryLabel: requiredText(
-        read(equipmentPreview, 'armoryLabel'),
-        'copyJson.equipmentPreview.armoryLabel',
-      ),
-    },
+    ),
+  };
+}
+
+function mapCopySearch(search: JsonRecord): PlayerArmoryPageCopyReadModel['search'] {
+  return {
+    placeholder: requiredText(read(search, 'placeholder'), 'copyJson.search.placeholder'),
+  };
+}
+
+function mapCopyInventory(inventory: JsonRecord): PlayerArmoryPageCopyReadModel['inventory'] {
+  return {
+    clearFiltersLabel: requiredText(
+      read(inventory, 'clearFiltersLabel'),
+      'copyJson.inventory.clearFiltersLabel',
+    ),
+    noFilterResultsLabel: requiredText(
+      read(inventory, 'noFilterResultsLabel'),
+      'copyJson.inventory.noFilterResultsLabel',
+    ),
+  };
+}
+
+function mapCopyLoadoutPresets(
+  loadoutPresets: JsonRecord,
+): PlayerArmoryPageCopyReadModel['loadoutPresets'] {
+  return {
+    renameLabel: requiredText(read(loadoutPresets, 'renameLabel'), 'copyJson.loadoutPresets.renameLabel'),
+    applyLabel: requiredText(read(loadoutPresets, 'applyLabel'), 'copyJson.loadoutPresets.applyLabel'),
+    clearLabel: requiredText(read(loadoutPresets, 'clearLabel'), 'copyJson.loadoutPresets.clearLabel'),
+    loadingLabel: requiredText(read(loadoutPresets, 'loadingLabel'), 'copyJson.loadoutPresets.loadingLabel'),
+    emptyLabel: requiredText(read(loadoutPresets, 'emptyLabel'), 'copyJson.loadoutPresets.emptyLabel'),
+  };
+}
+
+function mapCopyEquipmentPreview(
+  equipmentPreview: JsonRecord,
+): PlayerArmoryPageCopyReadModel['equipmentPreview'] {
+  return {
+    title: requiredText(read(equipmentPreview, 'title'), 'copyJson.equipmentPreview.title'),
+    emptyLabel: requiredText(read(equipmentPreview, 'emptyLabel'), 'copyJson.equipmentPreview.emptyLabel'),
+    emptySlotLabel: requiredText(
+      read(equipmentPreview, 'emptySlotLabel'),
+      'copyJson.equipmentPreview.emptySlotLabel',
+    ),
+    emptySlotDetail: requiredText(
+      read(equipmentPreview, 'emptySlotDetail'),
+      'copyJson.equipmentPreview.emptySlotDetail',
+    ),
+    loadingLabel: requiredText(
+      read(equipmentPreview, 'loadingLabel'),
+      'copyJson.equipmentPreview.loadingLabel',
+    ),
+    unavailableLabel: requiredText(read(equipmentPreview, 'unavailableLabel'), 'copyJson.equipmentPreview.unavailableLabel'),
+    armoryLabel: requiredText(read(equipmentPreview, 'armoryLabel'), 'copyJson.equipmentPreview.armoryLabel'),
   };
 }
 

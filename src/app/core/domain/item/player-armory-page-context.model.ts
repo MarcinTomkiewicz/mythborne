@@ -60,7 +60,16 @@ export interface PlayerArmoryPageCopyConfirmations {
   cancelLabel: string;
   confirmLabel: string;
   sellItemTitle: string;
-  sellItemMessage: string;
+  sellItemMessageParts: PlayerArmorySellItemMessageParts;
+  sellItemHighlightFields: string[];
+}
+
+export interface PlayerArmorySellItemMessageParts {
+  prefix: string;
+  itemNameToken: string;
+  middle: string;
+  drachmaValueToken: string;
+  suffix: string;
 }
 
 export interface PlayerArmoryPageCopyFilters {
