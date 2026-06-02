@@ -58,8 +58,8 @@
     </div>
   }
 
-  <div class="flex-col gap-sm">
-    @for (shelf of visibleShelves(); track shelf.position) {
+  <div class="flex-col gap-sm" [formGroup]="shelfNameForm">
+    @for (shelf of shelfRows(); track shelf.position) {
       <section class="mg-card p-md flex-col gap-md w-100">
         <div class="flex-row-between-start flex-col-sm gap-md border-bottom pb-sm w-100">
           <div class="flex-row-start-center gap-md min-w-0">
@@ -71,13 +71,28 @@
             </div>
           </div>
 
-          <span
-            class="tag-badge"
-            [class.tag-badge--info]="shelf.visibleItems.length > 0"
-            [class.tag-badge--muted]="shelf.visibleItems.length === 0"
-          >
-            {{ shelf.visibleItems.length }}
-          </span>
+          <div class="flex-row-start-center flex-wrap gap-xs flex-none">
+            @let shelfNameControl = shelfNameForm.controls[shelf.controlName];
+            @if (shelf.canRename && shelfNameControl) {
+              <app-inline-text-edit
+                [control]="shelfNameControl"
+                [originalValue]="shelf.displayName"
+                [displayLabel]="renameStorageSlotLabel()"
+                [submitAriaLabel]="renameStorageSlotLabel()"
+                [cancelAriaLabel]="cancelLabel()"
+                [disabled]="actionDisabled()"
+                (submitted)="submitShelfRename(shelf, $event)"
+              />
+            }
+
+            <span
+              class="tag-badge"
+              [class.tag-badge--info]="shelf.visibleItems.length > 0"
+              [class.tag-badge--muted]="shelf.visibleItems.length === 0"
+            >
+              {{ shelf.visibleItems.length }}
+            </span>
+          </div>
         </div>
 
         @if (shelf.visibleItems.length) {

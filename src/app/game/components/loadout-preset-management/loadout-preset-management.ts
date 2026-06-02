@@ -1,8 +1,6 @@
 import { Component, computed, effect, inject, input } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { InplaceModule } from 'primeng/inplace';
-import { InputTextModule } from 'primeng/inputtext';
 import {
   PlayerArmoryLoadoutPresetReadModel,
   PlayerArmoryPageCopyActions,
@@ -11,6 +9,7 @@ import {
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
+import { InlineTextEdit } from '../../../shared/inline-text-edit/inline-text-edit';
 
 @Component({
   selector: 'app-loadout-preset-management',
@@ -18,8 +17,7 @@ import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loado
   imports: [
     ReactiveFormsModule,
     ButtonModule,
-    InplaceModule,
-    InputTextModule,
+    InlineTextEdit,
   ],
   templateUrl: './loadout-preset-management.html',
   host: { class: 'd-block w-100' },
@@ -49,10 +47,7 @@ export class LoadoutPresetManagement {
     this.syncLoadoutPresetForms(this.presets()),
   );
 
-  renamePreset(preset: PlayerArmoryLoadoutPresetReadModel): void {
-    const controlName = presetControlName(preset.presetNumber);
-    const name = this.presetNameForm.controls[controlName]?.value.trim() ?? '';
-
+  renamePreset(preset: PlayerArmoryLoadoutPresetReadModel, name: string): void {
     this.presetsState.renamePreset({
       presetNumber: preset.presetNumber,
       name,
@@ -83,59 +78,6 @@ export class LoadoutPresetManagement {
 
   isPresetSaved(preset: PlayerArmoryLoadoutPresetReadModel): boolean {
     return preset.savedAt !== null;
-  }
-
-  renamePresetActionIsCancel(
-    preset: PlayerArmoryLoadoutPresetReadModel,
-    control: FormControl<string>,
-  ): boolean {
-    const value = control.value.trim();
-
-    return control.pristine || value.length === 0 || value === preset.name;
-  }
-
-  renamePresetActionIcon(
-    preset: PlayerArmoryLoadoutPresetReadModel,
-    control: FormControl<string>,
-  ): string {
-    return this.renamePresetActionIsCancel(preset, control)
-      ? 'pi pi-interdiction'
-      : 'pi pi-scroll-quill';
-  }
-
-  renamePresetActionSeverity(
-    preset: PlayerArmoryLoadoutPresetReadModel,
-    control: FormControl<string>,
-  ): 'danger' | 'secondary' {
-    return this.renamePresetActionIsCancel(preset, control)
-      ? 'danger'
-      : 'secondary';
-  }
-
-  renamePresetActionLabel(
-    preset: PlayerArmoryLoadoutPresetReadModel,
-    control: FormControl<string>,
-  ): string {
-    return this.renamePresetActionIsCancel(preset, control)
-      ? this.cancelLabel()
-      : this.actionsCopy().renamePreset;
-  }
-
-  handleRenamePresetInplaceAction(
-    preset: PlayerArmoryLoadoutPresetReadModel,
-    control: FormControl<string>,
-    closeCallback: (event?: Event) => void,
-    event: Event,
-  ): void {
-    if (this.renamePresetActionIsCancel(preset, control)) {
-      this.resetPresetNameControl(preset, control);
-      closeCallback(event);
-      return;
-    }
-
-    this.renamePreset(preset);
-    control.markAsPristine();
-    closeCallback(event);
   }
 
   private syncLoadoutPresetForms(
@@ -174,13 +116,6 @@ export class LoadoutPresetManagement {
     );
   }
 
-  private resetPresetNameControl(
-    preset: PlayerArmoryLoadoutPresetReadModel,
-    control: FormControl<string>,
-  ): void {
-    control.setValue(preset.name, { emitEvent: false });
-    control.markAsPristine();
-  }
 }
 
 function presetControlName(presetNumber: number): string {

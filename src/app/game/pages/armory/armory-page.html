@@ -10,38 +10,13 @@
 @if (page.context(); as context) {
   @let copy = context.copyJson;
   @let readModel = context.readModel;
-  @let visibility = readModel.visibility;
 
   <div class="flex-col gap-lg min-w-0">
-    <section class="mg-card p-lg w-100">
-      <div class="grid-2-1 gap-lg grid-items-center">
-        <div class="flex-col gap-xs min-w-0">
-          <p class="small-caps color-muted text-xs mb-0">{{ copy.sections.inventory }}</p>
-          <h2 class="mg-section__title mg-section__title--sm mb-0">
-            {{ copy.page.title }}
-          </h2>
-        </div>
-
-        <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
-          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.capacity }}</span>
-            <strong class="color-heading text-md">{{ visibility.visibilityLimit }}</strong>
-          </div>
-          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.allItems }}</span>
-            <strong class="color-heading text-md">{{ visibility.totalOwnedItemCount }}</strong>
-          </div>
-          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.equippedItems }}</span>
-            <strong class="color-heading text-md">{{ equippedItemCount() }}</strong>
-          </div>
-          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.savedSets }}</span>
-            <strong class="color-heading text-md">{{ savedLoadoutCount() }}</strong>
-          </div>
-        </aside>
-      </div>
-    </section>
+    <app-game-page-header
+      [eyebrowLabel]="copy.sections.inventory"
+      [title]="copy.page.title"
+      [summaryRows]="summaryRows()"
+    />
 
     <div class="grid-1-2-balanced gap-lg w-100">
       <section class="flex-col gap-md min-w-0">
@@ -84,9 +59,12 @@
         [inventoryCopy]="copy.inventory"
         [equipItemLabel]="copy.actions.equipItem"
         [sellItemLabel]="copy.actions.sellItem"
+        [renameStorageSlotLabel]="copy.actions.renameStorageSlot"
+        [cancelLabel]="copy.confirmations.cancelLabel"
         [actionDisabled]="inventoryActionDisabled()"
         (equipItem)="equipInventoryItem($event)"
         (sellItem)="confirmSellInventoryItem($event)"
+        (renameShelf)="renameInventoryShelf($event)"
       />
     </div>
   </div>

@@ -1,6 +1,6 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, effect, input, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
@@ -21,6 +21,7 @@ import {
   filterArmoryShelves,
 } from '../../../core/utils/armory-inventory-filter';
 import { normalizeSearchText } from '../../../core/utils/normalize-text';
+import { InlineTextEdit } from '../../../shared/inline-text-edit/inline-text-edit';
 
 @Component({
   selector: 'app-armory-inventory-section',
@@ -28,6 +29,7 @@ import { normalizeSearchText } from '../../../core/utils/normalize-text';
   imports: [
     ReactiveFormsModule,
     ButtonModule,
+    InlineTextEdit,
     InputTextModule,
     SelectModule,
   ],
@@ -41,9 +43,13 @@ export class ArmoryInventorySection {
   readonly inventoryCopy = input.required<PlayerArmoryPageCopyInventory>();
   readonly equipItemLabel = input.required<string>();
   readonly sellItemLabel = input.required<string>();
+  readonly renameStorageSlotLabel = input.required<string>();
+  readonly cancelLabel = input.required<string>();
   readonly actionDisabled = input(false);
   readonly equipItem = output<PlayerArmoryItemReadModel>();
   readonly sellItem = output<PlayerArmoryItemReadModel>();
+  readonly renameShelf = output<{ shelfPosition: number; name: string }>();
+  readonly shelfNameForm = new FormRecord<FormControl<string>>({});
   readonly searchControl = new FormControl<string>('', { nonNullable: true });
   readonly slotFilterControl = new FormControl<string>(ARMORY_INVENTORY_ALL_FILTER_VALUE, {
     nonNullable: true,
@@ -98,10 +104,20 @@ export class ArmoryInventorySection {
         })
       : this.shelves(),
   );
+  readonly shelfRows = computed(() =>
+    this.visibleShelves().map((shelf) => ({
+      ...shelf,
+      controlName: shelfControlName(shelf.position),
+      canRename: shelf.isPersisted && !shelf.isUnsortedDropArea,
+    })),
+  );
   private readonly searchTerm = computed(() =>
     normalizeSearchText(this.searchValue()),
   );
   readonly itemMetadata = armoryItemMetadata;
+  private readonly syncShelfForms = effect(() =>
+    this.syncShelfNameForms(this.shelves()),
+  );
 
   shelfTitle(shelf: PlayerArmoryStorageSlotReadModel): string {
     return armoryStorageSlotLabel(shelf);
@@ -115,10 +131,64 @@ export class ArmoryInventorySection {
     return item.lifecycleStatusKey === 'active';
   }
 
+  submitShelfRename(
+    shelf: PlayerArmoryStorageSlotReadModel,
+    name: string,
+  ): void {
+    this.renameShelf.emit({
+      shelfPosition: shelf.position,
+      name,
+    });
+  }
+
   clearFilters(): void {
     this.searchControl.setValue('');
     this.slotFilterControl.setValue(ARMORY_INVENTORY_ALL_FILTER_VALUE);
     this.availabilityFilterControl.setValue(ARMORY_INVENTORY_ALL_FILTER_VALUE);
     this.storageSlotFilterControl.setValue(ARMORY_INVENTORY_ALL_FILTER_VALUE);
   }
+
+  private syncShelfNameForms(
+    shelves: readonly PlayerArmoryStorageSlotReadModel[],
+  ): void {
+    const editableShelves = shelves.filter((shelf) =>
+      shelf.isPersisted && !shelf.isUnsortedDropArea,
+    );
+    const controlNames = new Set(
+      editableShelves.map((shelf) => shelfControlName(shelf.position)),
+    );
+
+    for (const shelf of editableShelves) {
+      this.ensureShelfNameControl(shelf);
+    }
+
+    for (const controlName of Object.keys(this.shelfNameForm.controls)) {
+      if (!controlNames.has(controlName)) {
+        this.shelfNameForm.removeControl(controlName, { emitEvent: false });
+      }
+    }
+  }
+
+  private ensureShelfNameControl(shelf: PlayerArmoryStorageSlotReadModel): void {
+    const controlName = shelfControlName(shelf.position);
+    const currentControl = this.shelfNameForm.controls[controlName];
+
+    if (currentControl) {
+      if (!currentControl.dirty && currentControl.value !== shelf.displayName) {
+        currentControl.setValue(shelf.displayName, { emitEvent: false });
+      }
+      return;
+    }
+
+    this.shelfNameForm.addControl(
+      controlName,
+      new FormControl<string>(shelf.displayName, { nonNullable: true }),
+      { emitEvent: false },
+    );
+  }
+
+}
+
+function shelfControlName(position: number): string {
+  return `shelf_${position}`;
 }

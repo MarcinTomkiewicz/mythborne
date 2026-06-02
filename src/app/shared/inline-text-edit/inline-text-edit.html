@@ -1,0 +1,25 @@
+<p-inplace class="mg-form flex-none">
+  <ng-template #display>
+    <span class="color-muted text-xs">{{ displayLabel() }}</span>
+  </ng-template>
+  <ng-template #content let-closeCallback="closeCallback">
+    <div class="flex-row-start-center flex-col-sm gap-xs min-w-0">
+      <input
+        pInputText
+        class="w-100"
+        type="text"
+        [formControl]="control()"
+        [attr.aria-label]="displayLabel()"
+      />
+      <p-button
+        type="button"
+        [severity]="actionSeverity()"
+        size="small"
+        [icon]="actionIcon()"
+        [ariaLabel]="actionAriaLabel()"
+        [disabled]="disabled()"
+        (onClick)="handleAction(closeCallback, $event)"
+      />
+    </div>
+  </ng-template>
+</p-inplace>

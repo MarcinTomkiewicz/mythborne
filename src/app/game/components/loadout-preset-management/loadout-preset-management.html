@@ -11,31 +11,15 @@
             <strong class="color-text text-sm truncate-1 min-w-0">{{ preset.name }}</strong>
 
             @if (presetNameForm.controls[preset.controlName]; as presetNameControl) {
-              <p-inplace class="mg-form flex-none">
-                <ng-template #display>
-                  <span class="color-muted text-xs">{{ copy().renameLabel }}</span>
-                </ng-template>
-                <ng-template #content let-closeCallback="closeCallback">
-                  <div class="flex-row-start-center flex-col-sm gap-xs min-w-0">
-                    <input
-                      pInputText
-                      class="w-100"
-                      type="text"
-                      [formControlName]="preset.controlName"
-                      [attr.aria-label]="copy().renameLabel"
-                    />
-                    <p-button
-                      type="button"
-                      [severity]="renamePresetActionSeverity(preset, presetNameControl)"
-                      size="small"
-                      [icon]="renamePresetActionIcon(preset, presetNameControl)"
-                      [ariaLabel]="renamePresetActionLabel(preset, presetNameControl)"
-                      [disabled]="isMutating()"
-                      (onClick)="handleRenamePresetInplaceAction(preset, presetNameControl, closeCallback, $event)"
-                    />
-                  </div>
-                </ng-template>
-              </p-inplace>
+              <app-inline-text-edit
+                [control]="presetNameControl"
+                [originalValue]="preset.name"
+                [displayLabel]="copy().renameLabel"
+                [submitAriaLabel]="actionsCopy().renamePreset"
+                [cancelAriaLabel]="cancelLabel()"
+                [disabled]="isMutating()"
+                (submitted)="renamePreset(preset, $event)"
+              />
             }
           </div>
 

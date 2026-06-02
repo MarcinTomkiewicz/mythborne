@@ -50,6 +50,7 @@ export interface PlayerArmoryPageCopySummary {
 export interface PlayerArmoryPageCopyActions {
   equipItem: string;
   sellItem: string;
+  renameStorageSlot: string;
   savePreset: string;
   renamePreset: string;
   unequipSelected: string;

@@ -135,6 +135,10 @@ function mapCopyActions(actions: JsonRecord): PlayerArmoryPageCopyReadModel['act
   return {
     equipItem: requiredText(read(actions, 'equipItem'), 'copyJson.actions.equipItem'),
     sellItem: requiredText(read(actions, 'sellItem'), 'copyJson.actions.sellItem'),
+    renameStorageSlot: requiredText(
+      read(actions, 'renameStorageSlot'),
+      'copyJson.actions.renameStorageSlot',
+    ),
     savePreset: requiredText(read(actions, 'savePreset'), 'copyJson.actions.savePreset'),
     renamePreset: requiredText(read(actions, 'renamePreset'), 'copyJson.actions.renamePreset'),
     unequipSelected: requiredText(read(actions, 'unequipSelected'), 'copyJson.actions.unequipSelected'),
