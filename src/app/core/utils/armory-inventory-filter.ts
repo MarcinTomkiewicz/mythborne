@@ -25,12 +25,15 @@ export function armorySlotFilterOptions(
   const seenValues = new Set<string>([ARMORY_INVENTORY_ALL_FILTER_VALUE]);
 
   for (const item of shelves.flatMap((shelf) => shelf.visibleItems)) {
-    const value = item.primarySlotKey?.trim() || item.primarySlotLabel?.trim();
-    const label = item.primarySlotLabel?.trim();
+    const label = item.allowedSlotLabel?.trim();
 
-    if (value && label && !seenValues.has(value)) {
-      seenValues.add(value);
-      options.push({ label, value });
+    for (const slotKey of item.allowedSlotKeys) {
+      const value = slotKey.trim();
+
+      if (value && label && !seenValues.has(value)) {
+        seenValues.add(value);
+        options.push({ label, value });
+      }
     }
   }
 
@@ -106,12 +109,12 @@ export function armoryStorageSlotLabel(
 export function armoryItemMetadata(item: {
   qualityLabel?: string | null;
   baseTypeLabel?: string | null;
-  primarySlotLabel?: string | null;
+  allowedSlotLabel?: string | null;
 }): string {
   return uniqueDisplayParts([
     item.qualityLabel ?? null,
     item.baseTypeLabel ?? null,
-    item.primarySlotLabel ?? null,
+    item.allowedSlotLabel ?? null,
   ]).join(' · ');
 }
 
@@ -132,7 +135,7 @@ function matchesSlot(
     return true;
   }
 
-  return item.primarySlotKey === slotKey || item.primarySlotLabel === slotKey;
+  return item.allowedSlotKeys.includes(slotKey);
 }
 
 function matchesAvailability(
@@ -151,7 +154,7 @@ function itemSearchTokens(item: PlayerArmoryItemReadModel): string[] {
     item.name,
     item.qualityLabel,
     item.baseTypeLabel,
-    item.primarySlotLabel,
+    item.allowedSlotLabel,
     item.valueDisplay?.displayValue ?? null,
   ]);
 }

@@ -58,10 +58,14 @@ export function mapPlayerArmoryPageContext(
       shelves,
       items,
     ),
-    equipmentSlots: requiredArray(read(root, 'equipmentSlots'), 'equipmentSlots')
-      .map(mapEquipmentSlot),
-    loadoutPresets: requiredArray(read(root, 'loadoutPresets'), 'loadoutPresets')
-      .map(mapLoadoutPreset),
+    equipmentSlots: requiredArray(
+      read(root, 'equipmentSlots'),
+      'equipmentSlots',
+    ).map(mapEquipmentSlot),
+    loadoutPresets: requiredArray(
+      read(root, 'loadoutPresets'),
+      'loadoutPresets',
+    ).map(mapLoadoutPreset),
     runtimeDerivedStats: read(root, 'runtimeDerivedStats') ?? null,
   };
 }
@@ -69,7 +73,10 @@ export function mapPlayerArmoryPageContext(
 function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
   const copyJson = requiredRecord(value, 'copyJson');
   const page = requiredRecord(read(copyJson, 'page'), 'copyJson.page');
-  const sections = requiredRecord(read(copyJson, 'sections'), 'copyJson.sections');
+  const sections = requiredRecord(
+    read(copyJson, 'sections'),
+    'copyJson.sections',
+  );
   const summary = requiredRecord(read(copyJson, 'summary'), 'copyJson.summary');
   const actions = requiredRecord(read(copyJson, 'actions'), 'copyJson.actions');
   const confirmations = requiredRecord(
@@ -78,7 +85,10 @@ function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
   );
   const filters = requiredRecord(read(copyJson, 'filters'), 'copyJson.filters');
   const search = requiredRecord(read(copyJson, 'search'), 'copyJson.search');
-  const inventory = requiredRecord(read(copyJson, 'inventory'), 'copyJson.inventory');
+  const inventory = requiredRecord(
+    read(copyJson, 'inventory'),
+    'copyJson.inventory',
+  );
   const loadoutPresets = requiredRecord(
     read(copyJson, 'loadoutPresets'),
     'copyJson.loadoutPresets',
@@ -91,11 +101,20 @@ function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
   return {
     page: {
       title: requiredText(read(page, 'title'), 'copyJson.page.title'),
-      loadingLabel: requiredText(read(page, 'loadingLabel'), 'copyJson.page.loadingLabel'),
-      errorTitle: requiredText(read(page, 'errorTitle'), 'copyJson.page.errorTitle'),
+      loadingLabel: requiredText(
+        read(page, 'loadingLabel'),
+        'copyJson.page.loadingLabel',
+      ),
+      errorTitle: requiredText(
+        read(page, 'errorTitle'),
+        'copyJson.page.errorTitle',
+      ),
     },
     sections: {
-      inventory: requiredText(read(sections, 'inventory'), 'copyJson.sections.inventory'),
+      inventory: requiredText(
+        read(sections, 'inventory'),
+        'copyJson.sections.inventory',
+      ),
       equipmentPreview: requiredText(
         read(sections, 'equipmentPreview'),
         'copyJson.sections.equipmentPreview',
@@ -106,26 +125,50 @@ function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
       ),
     },
     summary: {
-      capacity: requiredText(read(summary, 'capacity'), 'copyJson.summary.capacity'),
-      allItems: requiredText(read(summary, 'allItems'), 'copyJson.summary.allItems'),
+      capacity: requiredText(
+        read(summary, 'capacity'),
+        'copyJson.summary.capacity',
+      ),
+      allItems: requiredText(
+        read(summary, 'allItems'),
+        'copyJson.summary.allItems',
+      ),
       equippedItems: requiredText(
         read(summary, 'equippedItems'),
         'copyJson.summary.equippedItems',
       ),
-      savedSets: requiredText(read(summary, 'savedSets'), 'copyJson.summary.savedSets'),
+      savedSets: requiredText(
+        read(summary, 'savedSets'),
+        'copyJson.summary.savedSets',
+      ),
     },
     empty: requiredRecord(read(copyJson, 'empty'), 'copyJson.empty'),
     storage: requiredRecord(read(copyJson, 'storage'), 'copyJson.storage'),
     actions: {
-      equipItem: requiredText(read(actions, 'equipItem'), 'copyJson.actions.equipItem'),
-      sellItem: requiredText(read(actions, 'sellItem'), 'copyJson.actions.sellItem'),
-      savePreset: requiredText(read(actions, 'savePreset'), 'copyJson.actions.savePreset'),
-      renamePreset: requiredText(read(actions, 'renamePreset'), 'copyJson.actions.renamePreset'),
+      equipItem: requiredText(
+        read(actions, 'equipItem'),
+        'copyJson.actions.equipItem',
+      ),
+      sellItem: requiredText(
+        read(actions, 'sellItem'),
+        'copyJson.actions.sellItem',
+      ),
+      savePreset: requiredText(
+        read(actions, 'savePreset'),
+        'copyJson.actions.savePreset',
+      ),
+      renamePreset: requiredText(
+        read(actions, 'renamePreset'),
+        'copyJson.actions.renamePreset',
+      ),
       unequipSelected: requiredText(
         read(actions, 'unequipSelected'),
         'copyJson.actions.unequipSelected',
       ),
-      unequipAll: requiredText(read(actions, 'unequipAll'), 'copyJson.actions.unequipAll'),
+      unequipAll: requiredText(
+        read(actions, 'unequipAll'),
+        'copyJson.actions.unequipAll',
+      ),
     },
     confirmations: {
       cancelLabel: requiredText(
@@ -146,7 +189,10 @@ function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
       ),
     },
     filters: {
-      allSlots: requiredText(read(filters, 'allSlots'), 'copyJson.filters.allSlots'),
+      allSlots: requiredText(
+        read(filters, 'allSlots'),
+        'copyJson.filters.allSlots',
+      ),
       allAvailability: requiredText(
         read(filters, 'allAvailability'),
         'copyJson.filters.allAvailability',
@@ -167,7 +213,10 @@ function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
       ),
     },
     search: {
-      placeholder: requiredText(read(search, 'placeholder'), 'copyJson.search.placeholder'),
+      placeholder: requiredText(
+        read(search, 'placeholder'),
+        'copyJson.search.placeholder',
+      ),
     },
     inventory: {
       clearFiltersLabel: requiredText(
@@ -201,9 +250,15 @@ function mapCopyJson(value: Json | undefined): PlayerArmoryPageCopyReadModel {
         'copyJson.loadoutPresets.emptyLabel',
       ),
     },
-    itemDetail: requiredRecord(read(copyJson, 'itemDetail'), 'copyJson.itemDetail'),
+    itemDetail: requiredRecord(
+      read(copyJson, 'itemDetail'),
+      'copyJson.itemDetail',
+    ),
     equipmentPreview: {
-      title: requiredText(read(equipmentPreview, 'title'), 'copyJson.equipmentPreview.title'),
+      title: requiredText(
+        read(equipmentPreview, 'title'),
+        'copyJson.equipmentPreview.title',
+      ),
       emptyLabel: requiredText(
         read(equipmentPreview, 'emptyLabel'),
         'copyJson.equipmentPreview.emptyLabel',
@@ -236,8 +291,14 @@ function mapAvailabilityOptions(
   rows: readonly JsonRecord[],
 ): PlayerArmoryPageCopyAvailabilityOption[] {
   return rows.map((row) => ({
-    key: requiredText(read(row, 'key'), 'copyJson.filters.availabilityOptions.key'),
-    label: requiredText(read(row, 'label'), 'copyJson.filters.availabilityOptions.label'),
+    key: requiredText(
+      read(row, 'key'),
+      'copyJson.filters.availabilityOptions.key',
+    ),
+    label: requiredText(
+      read(row, 'label'),
+      'copyJson.filters.availabilityOptions.label',
+    ),
     sortOrder: requiredNonNegativeInteger(
       read(row, 'sortOrder'),
       'copyJson.filters.availabilityOptions.sortOrder',
@@ -291,8 +352,7 @@ function mapStorageSlots(
   heroId: string,
   rows: readonly JsonRecord[],
 ): PlayerArmoryStorageSlotReadModel[] {
-  return rows
-    .map((row) => mapStorageSlot(heroId, row, 'storageSlots', false));
+  return rows.map((row) => mapStorageSlot(heroId, row, 'storageSlots', false));
 }
 
 function mapUnsortedStorageSlot(
@@ -328,7 +388,10 @@ function mapStorageSlot(
       : optionalText(read(row, 'storageSlotId')),
     storageSlotKey: isUnsortedDropArea
       ? optionalText(read(row, 'storageSlotKey'))
-      : requiredText(read(row, 'storageSlotKey'), `${fieldPath}.storageSlotKey`),
+      : requiredText(
+          read(row, 'storageSlotKey'),
+          `${fieldPath}.storageSlotKey`,
+        ),
     heroId,
     position: requiredNonNegativeInteger(
       read(row, 'storagePosition'),
@@ -336,7 +399,10 @@ function mapStorageSlot(
     ),
     name: displayName,
     displayName,
-    displayLabel: requiredText(read(row, 'displayLabel'), `${fieldPath}.displayLabel`),
+    displayLabel: requiredText(
+      read(row, 'displayLabel'),
+      `${fieldPath}.displayLabel`,
+    ),
     displayValue: isUnsortedDropArea
       ? optionalText(read(row, 'displayValue'))
       : requiredText(read(row, 'displayValue'), `${fieldPath}.displayValue`),
@@ -344,8 +410,14 @@ function mapStorageSlot(
       read(row, 'visibleItemCount'),
       `${fieldPath}.visibleItemCount`,
     ),
-    itemCount: requiredNonNegativeInteger(read(row, 'itemCount'), `${fieldPath}.itemCount`),
-    sortOrder: requiredNonNegativeInteger(read(row, 'sortOrder'), `${fieldPath}.sortOrder`),
+    itemCount: requiredNonNegativeInteger(
+      read(row, 'itemCount'),
+      `${fieldPath}.itemCount`,
+    ),
+    sortOrder: requiredNonNegativeInteger(
+      read(row, 'sortOrder'),
+      `${fieldPath}.sortOrder`,
+    ),
     isPersisted: isUnsortedDropArea
       ? false
       : requiredBoolean(read(row, 'existsInDb'), `${fieldPath}.existsInDb`),
@@ -371,9 +443,10 @@ function mapArmoryPageItemRow(
     'items.armory_shelf_position',
   );
   const isUnsorted = optionalBoolean(read(row, 'is_unsorted')) ?? false;
-  const shelf = shelves.find((entry) =>
-    entry.position === shelfPosition
-    && entry.isUnsortedDropArea === isUnsorted,
+  const shelf = shelves.find(
+    (entry) =>
+      entry.position === shelfPosition &&
+      entry.isUnsortedDropArea === isUnsorted,
   );
 
   if (!shelf) {
@@ -412,11 +485,28 @@ function mapArmoryPageItemRow(
     qualityLabel: optionalText(read(row, 'qualityLabel')),
     primarySlotKey: optionalText(read(row, 'primary_slot_key')),
     primarySlotLabel: optionalText(read(row, 'primarySlotLabel')),
+    allowedSlotKeys: requiredTextArray(
+      read(row, 'allowedSlotKeys'),
+      'items.allowedSlotKeys',
+    ),
+    allowedSlotLabel: optionalText(read(row, 'allowedSlotLabel')),
     valueDisplay: mapValueDisplay(read(row, 'valueDisplay')),
   };
 }
 
-function mapValueDisplay(value: Json | undefined): PlayerArmoryItemValueDisplay | null {
+function requiredTextArray(value: Json | undefined, fieldPath: string): string[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`${fieldPath} must be an array.`);
+  }
+
+  return value.map((entry, index) =>
+    requiredText(entry, `${fieldPath}[${index}]`),
+  );
+}
+
+function mapValueDisplay(
+  value: Json | undefined,
+): PlayerArmoryItemValueDisplay | null {
   if (value === null || value === undefined) {
     return null;
   }
@@ -436,7 +526,10 @@ function mapValueDisplay(value: Json | undefined): PlayerArmoryItemValueDisplay 
 }
 
 function mapEquipmentSlot(row: JsonRecord): PlayerArmoryEquipmentSlotReadModel {
-  const hasItem = requiredBoolean(read(row, 'hasItem'), 'equipmentSlots.hasItem');
+  const hasItem = requiredBoolean(
+    read(row, 'hasItem'),
+    'equipmentSlots.hasItem',
+  );
 
   return {
     slotKey: requiredText(read(row, 'slotKey'), 'equipmentSlots.slotKey'),
@@ -481,6 +574,9 @@ function mapLoadoutPreset(row: JsonRecord): PlayerArmoryLoadoutPresetReadModel {
     savedAt: optionalText(read(row, 'saved_at')),
     clearedAt: optionalText(read(row, 'cleared_at')),
     createdAt: optionalText(read(row, 'created_at')),
-    updatedAt: requiredText(read(row, 'updated_at'), 'loadoutPresets.updated_at'),
+    updatedAt: requiredText(
+      read(row, 'updated_at'),
+      'loadoutPresets.updated_at',
+    ),
   };
 }

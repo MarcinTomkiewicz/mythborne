@@ -155,6 +155,8 @@ export interface PlayerArmoryItemReadModel {
   qualityLabel: string | null;
   primarySlotKey: string | null;
   primarySlotLabel: string | null;
+  allowedSlotKeys: string[];
+  allowedSlotLabel: string | null;
   valueDisplay: PlayerArmoryItemValueDisplay | null;
 }
 
