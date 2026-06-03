@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
-import { SelectOption } from '../../../core/types/select-option.types';
+import { ArmoryBulkActionsToolbarState } from '../../../core/interfaces/item/armory-bulk-actions-toolbar-state.interface';
 
 @Component({
   selector: 'app-armory-bulk-actions-toolbar',
@@ -12,20 +12,7 @@ import { SelectOption } from '../../../core/types/select-option.types';
   templateUrl: './armory-bulk-actions-toolbar.html',
 })
 export class ArmoryBulkActionsToolbar {
-  readonly selectedCount = input(0);
-  readonly drachmaValue = input(0);
-  readonly selectedCountLabel = input.required<string>();
-  readonly selectedValueLabel = input.required<string>();
-  readonly actionBusyLabel = input.required<string>();
-  readonly equipLabel = input.required<string>();
-  readonly sellLabel = input.required<string>();
-  readonly moveTargetPlaceholder = input.required<string>();
-  readonly moveSelectedLabel = input.required<string>();
-  readonly canEquip = input(false);
-  readonly canSell = input(false);
-  readonly canMove = input(false);
-  readonly moveDestinationOptions = input<readonly SelectOption<number>[]>([]);
-  readonly isActionBusy = input(false);
+  readonly state = input.required<ArmoryBulkActionsToolbarState>();
   readonly equipSelected = output<void>();
   readonly sellSelected = output<void>();
   readonly moveSelected = output<number>();
@@ -33,20 +20,29 @@ export class ArmoryBulkActionsToolbar {
   private readonly moveTargetValue = toSignal(this.moveTargetControl.valueChanges, {
     initialValue: this.moveTargetControl.value,
   });
-  readonly moveSelectOptions = computed(() => [...this.moveDestinationOptions()]);
+  readonly moveSelectOptions = computed(() => [
+    ...this.state().moveDestinationOptions,
+  ]);
   readonly equipDisabled = computed(() =>
-    this.isActionBusy() || !this.canEquip(),
+    this.state().isActionBusy || !this.state().canEquip,
   );
   readonly sellDisabled = computed(() =>
-    this.isActionBusy() || !this.canSell(),
+    this.state().isActionBusy || !this.state().canSell,
   );
   readonly moveSelectDisabled = computed(() =>
-    this.isActionBusy()
-    || !this.canMove()
-    || this.moveDestinationOptions().length === 0,
+    this.state().isActionBusy
+    || !this.state().canMove
+    || this.state().moveDestinationOptions.length === 0,
   );
+  readonly hasSelectedMoveTarget = computed(() => {
+    const targetShelfPosition = this.moveTargetValue();
+
+    return targetShelfPosition !== null
+      && this.state().moveDestinationOptions
+        .some((option) => option.value === targetShelfPosition);
+  });
   readonly moveDisabled = computed(() =>
-    this.moveSelectDisabled() || this.moveTargetValue() === null,
+    this.moveSelectDisabled() || !this.hasSelectedMoveTarget(),
   );
 
   emitMoveSelected(): void {
@@ -55,8 +51,6 @@ export class ArmoryBulkActionsToolbar {
     if (
       targetShelfPosition === null
       || this.moveDisabled()
-      || !this.moveDestinationOptions()
-        .some((option) => option.value === targetShelfPosition)
     ) {
       return;
     }

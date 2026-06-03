@@ -11,6 +11,7 @@ import {
   PlayerArmoryItemReadModel,
   PlayerArmoryStorageSlotReadModel,
 } from '../../../core/domain/item/player-armory-page-context.model';
+import { ArmoryBulkActionsToolbarState } from '../../../core/interfaces/item/armory-bulk-actions-toolbar-state.interface';
 import {
   ARMORY_INVENTORY_ALL_FILTER_VALUE,
   armoryAvailabilityFilterOptions,
@@ -186,6 +187,26 @@ export class ArmoryInventorySection {
     this.selectedVisibleItemIds().length > 0
     && this.moveDestinationOptions().length > 0,
   );
+  readonly bulkToolbarState = computed<ArmoryBulkActionsToolbarState>(() => {
+    const inventoryCopy = this.inventoryCopy();
+
+    return {
+      selectedCount: this.selectedVisibleItems().length,
+      drachmaValue: this.selectedVisibleDrachmaValue(),
+      selectedCountLabel: inventoryCopy.selectedCountLabel,
+      selectedValueLabel: inventoryCopy.selectedValueLabel,
+      actionBusyLabel: inventoryCopy.actionBusyLabel,
+      equipLabel: this.bulkEquipItemLabel(),
+      sellLabel: this.bulkSellItemLabel(),
+      moveTargetPlaceholder: inventoryCopy.moveTargetPlaceholder,
+      moveSelectedLabel: inventoryCopy.moveSelectedLabel,
+      canEquip: this.canBulkEquipSelected(),
+      canSell: this.canBulkSellSelected(),
+      canMove: this.canBulkMoveSelected(),
+      moveDestinationOptions: this.moveDestinationOptions(),
+      isActionBusy: this.actionDisabled(),
+    };
+  });
   private readonly searchTerm = computed(() =>
     normalizeSearchText(this.searchValue()),
   );

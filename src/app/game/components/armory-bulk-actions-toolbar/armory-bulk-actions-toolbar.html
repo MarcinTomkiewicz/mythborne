@@ -1,12 +1,14 @@
 <div class="mg-card p-md flex-row-between-center flex-col-sm gap-md">
+  @let toolbar = state();
+
   <div class="flex-row-start-center flex-wrap gap-sm min-w-0">
-    <span class="color-muted text-xs">{{ selectedCountLabel() }}</span>
-    <strong class="color-heading text-xs">{{ selectedCount() }}</strong>
+    <span class="color-muted text-xs">{{ toolbar.selectedCountLabel }}</span>
+    <strong class="color-heading text-xs">{{ toolbar.selectedCount }}</strong>
     <span class="color-muted text-xs">&middot;</span>
-    <span class="color-muted text-xs">{{ selectedValueLabel() }}</span>
-    <strong class="color-heading text-xs">{{ drachmaValue() }}</strong>
-    @if (isActionBusy()) {
-      <span class="tag-badge tag-badge--warn">{{ actionBusyLabel() }}</span>
+    <span class="color-muted text-xs">{{ toolbar.selectedValueLabel }}</span>
+    <strong class="color-heading text-xs">{{ toolbar.drachmaValue }}</strong>
+    @if (toolbar.isActionBusy) {
+      <span class="tag-badge tag-badge--warn">{{ toolbar.actionBusyLabel }}</span>
     }
   </div>
 
@@ -16,7 +18,7 @@
       severity="secondary"
       size="small"
       icon="pi pi-equip"
-      [label]="equipLabel()"
+      [label]="toolbar.equipLabel"
       [disabled]="equipDisabled()"
       (onClick)="equipSelected.emit()"
     />
@@ -25,11 +27,11 @@
       severity="secondary"
       size="small"
       icon="pi pi-sold"
-      [label]="sellLabel()"
+      [label]="toolbar.sellLabel"
       [disabled]="sellDisabled()"
       (onClick)="sellSelected.emit()"
     />
-    @if (moveDestinationOptions().length > 0) {
+    @if (toolbar.moveDestinationOptions.length > 0) {
       <div class="flex-row-start-center flex-wrap gap-xs">
         <p-select
           class="min-w-160"
@@ -37,8 +39,8 @@
           [options]="moveSelectOptions()"
           optionLabel="label"
           optionValue="value"
-          [placeholder]="moveTargetPlaceholder()"
-          [ariaLabel]="moveTargetPlaceholder()"
+          [placeholder]="toolbar.moveTargetPlaceholder"
+          [ariaLabel]="toolbar.moveTargetPlaceholder"
           [disabled]="moveSelectDisabled()"
         />
         <p-button
@@ -46,7 +48,7 @@
           severity="secondary"
           size="small"
           icon="pi pi-arrow-right-arrow-left"
-          [label]="moveSelectedLabel()"
+          [label]="toolbar.moveSelectedLabel"
           [disabled]="moveDisabled()"
           (onClick)="emitMoveSelected()"
         />

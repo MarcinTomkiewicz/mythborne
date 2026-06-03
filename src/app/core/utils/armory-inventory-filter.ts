@@ -107,12 +107,10 @@ export function armoryStorageSlotLabel(
 }
 
 export function armoryItemMetadata(item: {
-  qualityLabel?: string | null;
   baseTypeLabel?: string | null;
   allowedSlotLabel?: string | null;
 }): string {
-  return uniqueDisplayParts([
-    item.qualityLabel ?? null,
+  return displayParts([
     item.baseTypeLabel ?? null,
     item.allowedSlotLabel ?? null,
   ]).join(' · ');
@@ -157,6 +155,12 @@ function itemSearchTokens(item: PlayerArmoryItemReadModel): string[] {
     item.allowedSlotLabel,
     item.valueDisplay?.displayValue ?? null,
   ]);
+}
+
+function displayParts(parts: readonly (string | null)[]): string[] {
+  return parts
+    .map((part) => part?.trim() ?? '')
+    .filter((part) => part.length > 0);
 }
 
 function uniqueDisplayParts(parts: readonly (string | null)[]): string[] {

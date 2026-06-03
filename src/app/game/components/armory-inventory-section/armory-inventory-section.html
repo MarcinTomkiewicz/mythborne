@@ -59,20 +59,7 @@
   }
 
   <app-armory-bulk-actions-toolbar
-    [selectedCount]="selectedVisibleItems().length"
-    [drachmaValue]="selectedVisibleDrachmaValue()"
-    [selectedCountLabel]="inventoryCopy().selectedCountLabel"
-    [selectedValueLabel]="inventoryCopy().selectedValueLabel"
-    [actionBusyLabel]="inventoryCopy().actionBusyLabel"
-    [equipLabel]="bulkEquipItemLabel()"
-    [sellLabel]="bulkSellItemLabel()"
-    [moveTargetPlaceholder]="inventoryCopy().moveTargetPlaceholder"
-    [moveSelectedLabel]="inventoryCopy().moveSelectedLabel"
-    [canEquip]="canBulkEquipSelected()"
-    [canSell]="canBulkSellSelected()"
-    [canMove]="canBulkMoveSelected()"
-    [moveDestinationOptions]="moveDestinationOptions()"
-    [isActionBusy]="actionDisabled()"
+    [state]="bulkToolbarState()"
     (equipSelected)="equipSelectedItems()"
     (sellSelected)="sellSelectedItems()"
     (moveSelected)="moveSelectedItems($event)"
@@ -119,7 +106,7 @@
           <div class="mg-grid-auto-fill-compact gap-sm w-100">
             @for (item of shelf.visibleItems; track item.itemId) {
               <article
-                class="mg-card p-sm flex-col gap-xs w-100 min-w-0"
+                class="mg-card p-sm flex-col gap-xs h-100 w-100 min-w-0 cursor-pointer"
                 [class.mg-card--selected]="isItemSelected(item)"
                 role="button"
                 tabindex="0"
@@ -132,20 +119,26 @@
                   <span class="mg-card p-sm flex-row-center-center flex-none">
                     <i class="pi pi-box color-text text-xl" aria-hidden="true"></i>
                   </span>
-                  <div class="flex-col gap-xs min-w-0">
+                  <div class="flex-col-center-start min-h-lines-2 min-w-0">
                     <strong class="color-text text-sm truncate-1">{{ item.name }}</strong>
-                    @if (itemMetadata(item); as metadata) {
-                      <span class="color-muted text-xs truncate-1">{{ metadata }}</span>
-                    }
-                    @if (item.lifecycleStatusKey !== 'active') {
-                      <span class="tag-badge tag-badge--muted">{{ item.lifecycleStatusLabel }}</span>
-                    }
                   </div>
                 </div>
 
+                @if (itemMetadata(item); as metadata) {
+                  <span class="color-muted text-xs truncate-1 w-100">{{ metadata }}</span>
+                }
+
+                @if (item.lifecycleStatusKey !== 'active') {
+                  <span class="tag-badge tag-badge--muted">{{ item.lifecycleStatusLabel }}</span>
+                }
+
+                <div class="flex-1"></div>
+
                 @if (item.valueDisplay; as valueDisplay) {
-                  <div class="flex-row-between-end gap-sm border-top pt-xs">
-                    <span class="color-muted text-xs">{{ valueDisplay.displayLabel }}</span>
+                  <div class="border-top pt-xs w-100">
+                    <span class="color-muted text-xs">
+                      {{ valueDisplay.displayLabel }}:
+                    </span>
                     <strong class="color-heading text-xs">{{ valueDisplay.displayValue }}</strong>
                   </div>
                 }
@@ -156,6 +149,8 @@
                     (click)="$event.stopPropagation()"
                     (mousedown)="$event.stopPropagation()"
                     (touchstart)="$event.stopPropagation()"
+                    (keydown.enter)="$event.stopPropagation()"
+                    (keydown.space)="$event.stopPropagation()"
                   >
                     @if (canEquipItem(item)) {
                       <p-button
@@ -194,20 +189,7 @@
   </div>
 
   <app-armory-bulk-actions-toolbar
-    [selectedCount]="selectedVisibleItems().length"
-    [drachmaValue]="selectedVisibleDrachmaValue()"
-    [selectedCountLabel]="inventoryCopy().selectedCountLabel"
-    [selectedValueLabel]="inventoryCopy().selectedValueLabel"
-    [actionBusyLabel]="inventoryCopy().actionBusyLabel"
-    [equipLabel]="bulkEquipItemLabel()"
-    [sellLabel]="bulkSellItemLabel()"
-    [moveTargetPlaceholder]="inventoryCopy().moveTargetPlaceholder"
-    [moveSelectedLabel]="inventoryCopy().moveSelectedLabel"
-    [canEquip]="canBulkEquipSelected()"
-    [canSell]="canBulkSellSelected()"
-    [canMove]="canBulkMoveSelected()"
-    [moveDestinationOptions]="moveDestinationOptions()"
-    [isActionBusy]="actionDisabled()"
+    [state]="bulkToolbarState()"
     (equipSelected)="equipSelectedItems()"
     (sellSelected)="sellSelectedItems()"
     (moveSelected)="moveSelectedItems($event)"
