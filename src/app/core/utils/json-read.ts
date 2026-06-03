@@ -82,6 +82,10 @@ export function jsonValue(value: Json | undefined): Json {
   return value === undefined ? {} : value;
 }
 
+export function optionalJson(value: Json | undefined): Json | null {
+  return value === undefined ? null : value;
+}
+
 export function requiredRecord(value: Json | undefined, field: string): JsonRecord {
   const record = jsonRecord(value);
 

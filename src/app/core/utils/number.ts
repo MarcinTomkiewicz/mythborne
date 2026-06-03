@@ -1,4 +1,5 @@
 import type { PolishCountLabelTemplates } from '../types/polish-count-label.types';
+import { replaceTemplateTokens } from './token-template';
 
 export function roundedNumber(value: unknown, fallback = 0): number {
   const numeric = Number(value);
@@ -77,5 +78,5 @@ export function polishCountTemplateLabel(
         ? templates.fewTemplate
         : templates.manyTemplate;
 
-  return template.replace(/\{count\}/g, String(count));
+  return replaceTemplateTokens(template, { count });
 }
