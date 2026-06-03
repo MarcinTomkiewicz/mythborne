@@ -49,7 +49,9 @@ export interface PlayerArmoryPageCopySummary {
 
 export interface PlayerArmoryPageCopyActions {
   equipItem: string;
+  equipSelected: string;
   sellItem: string;
+  sellSelected: string;
   renameStorageSlot: string;
   savePreset: string;
   renamePreset: string;
@@ -63,10 +65,28 @@ export interface PlayerArmoryPageCopyConfirmations {
   sellItemTitle: string;
   sellItemMessageParts: PlayerArmorySellItemMessageParts;
   sellItemHighlightFields: string[];
+  sellSelectedMessageParts: PlayerArmorySellSelectedMessageParts;
+  sellSelectedHighlightFields: string[];
 }
 
 export interface PlayerArmorySellItemMessageParts {
   prefix: string;
+  itemNameToken: string;
+  middle: string;
+  drachmaValueToken: string;
+  suffix: string;
+}
+
+export interface PlayerArmorySellSelectedMessageParts {
+  intro: string;
+  itemsIntro: string;
+  itemLineParts: PlayerArmorySellSelectedItemLineParts;
+  totalPrefix: string;
+  totalValueToken: string;
+  totalSuffix: string;
+}
+
+export interface PlayerArmorySellSelectedItemLineParts {
   itemNameToken: string;
   middle: string;
   drachmaValueToken: string;
@@ -92,8 +112,13 @@ export interface PlayerArmoryPageCopySearch {
 }
 
 export interface PlayerArmoryPageCopyInventory {
+  actionBusyLabel: string;
   clearFiltersLabel: string;
+  moveSelectedLabel: string;
+  moveTargetPlaceholder: string;
   noFilterResultsLabel: string;
+  selectedCountLabel: string;
+  selectedValueLabel: string;
 }
 
 export interface PlayerArmoryPageCopyLoadoutPresets {

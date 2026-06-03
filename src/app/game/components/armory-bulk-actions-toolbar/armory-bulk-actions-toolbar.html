@@ -1,0 +1,56 @@
+<div class="mg-card p-md flex-row-between-center flex-col-sm gap-md">
+  <div class="flex-row-start-center flex-wrap gap-sm min-w-0">
+    <span class="color-muted text-xs">{{ selectedCountLabel() }}</span>
+    <strong class="color-heading text-xs">{{ selectedCount() }}</strong>
+    <span class="color-muted text-xs">&middot;</span>
+    <span class="color-muted text-xs">{{ selectedValueLabel() }}</span>
+    <strong class="color-heading text-xs">{{ drachmaValue() }}</strong>
+    @if (isActionBusy()) {
+      <span class="tag-badge tag-badge--warn">{{ actionBusyLabel() }}</span>
+    }
+  </div>
+
+  <div class="flex-row-start-center flex-wrap gap-sm">
+    <p-button
+      type="button"
+      severity="secondary"
+      size="small"
+      icon="pi pi-equip"
+      [label]="equipLabel()"
+      [disabled]="equipDisabled()"
+      (onClick)="equipSelected.emit()"
+    />
+    <p-button
+      type="button"
+      severity="secondary"
+      size="small"
+      icon="pi pi-sold"
+      [label]="sellLabel()"
+      [disabled]="sellDisabled()"
+      (onClick)="sellSelected.emit()"
+    />
+    @if (moveDestinationOptions().length > 0) {
+      <div class="flex-row-start-center flex-wrap gap-xs">
+        <p-select
+          class="min-w-160"
+          [formControl]="moveTargetControl"
+          [options]="moveSelectOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [placeholder]="moveTargetPlaceholder()"
+          [ariaLabel]="moveTargetPlaceholder()"
+          [disabled]="moveSelectDisabled()"
+        />
+        <p-button
+          type="button"
+          severity="secondary"
+          size="small"
+          icon="pi pi-arrow-right-arrow-left"
+          [label]="moveSelectedLabel()"
+          [disabled]="moveDisabled()"
+          (onClick)="emitMoveSelected()"
+        />
+      </div>
+    }
+  </div>
+</div>

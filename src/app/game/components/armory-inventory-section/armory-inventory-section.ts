@@ -22,12 +22,15 @@ import {
 } from '../../../core/utils/armory-inventory-filter';
 import { normalizeSearchText } from '../../../core/utils/normalize-text';
 import { InlineTextEdit } from '../../../shared/inline-text-edit/inline-text-edit';
+import { SelectOption } from '../../../core/types/select-option.types';
+import { ArmoryBulkActionsToolbar } from '../armory-bulk-actions-toolbar/armory-bulk-actions-toolbar';
 
 @Component({
   selector: 'app-armory-inventory-section',
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    ArmoryBulkActionsToolbar,
     ButtonModule,
     InlineTextEdit,
     InputTextModule,
@@ -42,12 +45,22 @@ export class ArmoryInventorySection {
   readonly filtersCopy = input.required<PlayerArmoryPageCopyFilters>();
   readonly inventoryCopy = input.required<PlayerArmoryPageCopyInventory>();
   readonly equipItemLabel = input.required<string>();
+  readonly bulkEquipItemLabel = input.required<string>();
+  readonly bulkSellItemLabel = input.required<string>();
   readonly sellItemLabel = input.required<string>();
   readonly renameStorageSlotLabel = input.required<string>();
   readonly cancelLabel = input.required<string>();
   readonly actionDisabled = input(false);
+  readonly selectedItemIds = input<readonly string[]>([]);
   readonly equipItem = output<PlayerArmoryItemReadModel>();
   readonly sellItem = output<PlayerArmoryItemReadModel>();
+  readonly bulkEquipItems = output<readonly string[]>();
+  readonly bulkSellItems = output<readonly string[]>();
+  readonly bulkMoveItems = output<{
+    itemIds: readonly string[];
+    targetShelfPosition: number;
+  }>();
+  readonly selectedItemIdsChange = output<readonly string[]>();
   readonly renameShelf = output<{ shelfPosition: number; name: string }>();
   readonly shelfNameForm = new FormRecord<FormControl<string>>({});
   readonly searchControl = new FormControl<string>('', { nonNullable: true });
@@ -111,6 +124,68 @@ export class ArmoryInventorySection {
       canRename: shelf.isPersisted && !shelf.isUnsortedDropArea,
     })),
   );
+  readonly visibleItems = computed(() =>
+    this.visibleShelves().flatMap((shelf) => shelf.visibleItems),
+  );
+  readonly selectedVisibleItems = computed(() => {
+    const visibleItemsById = new Map(
+      this.visibleItems().map((item) => [item.itemId, item]),
+    );
+
+    return this.selectedItemIds()
+      .map((itemId) => visibleItemsById.get(itemId) ?? null)
+      .filter((item): item is PlayerArmoryItemReadModel => item !== null);
+  });
+  readonly selectedVisibleItemIds = computed(() =>
+    this.selectedVisibleItems().map((item) => item.itemId),
+  );
+  readonly selectedVisibleEquippableItemIds = computed(() =>
+    this.selectedVisibleItems()
+      .filter((item) => this.canEquipItem(item))
+      .map((item) => item.itemId),
+  );
+  readonly selectedVisibleSellableItemIds = computed(() =>
+    this.selectedVisibleItems()
+      .filter((item) => this.canSellItem(item))
+      .map((item) => item.itemId),
+  );
+  readonly selectedVisibleDrachmaValue = computed(() =>
+    this.selectedVisibleItems().reduce(
+      (total, item) => total + (item.drachmaValue ?? 0),
+      0,
+    ),
+  );
+  readonly moveDestinationOptions = computed<Array<SelectOption<number>>>(() => {
+    const selectedItems = this.selectedVisibleItems();
+    const selectedPositions = new Set(
+      selectedItems.map((item) => item.shelfPosition),
+    );
+
+    return this.shelves()
+      .filter((shelf) =>
+        shelf.isPersisted
+        && !shelf.isUnsortedDropArea
+        && (
+          selectedItems.length === 0
+          || selectedPositions.size !== 1
+          || !selectedPositions.has(shelf.position)
+        ),
+      )
+      .map((shelf) => ({
+        label: armoryStorageSlotLabel(shelf),
+        value: shelf.position,
+      }));
+  });
+  readonly canBulkEquipSelected = computed(() =>
+    this.selectedVisibleEquippableItemIds().length > 0,
+  );
+  readonly canBulkSellSelected = computed(() =>
+    this.selectedVisibleSellableItemIds().length > 0,
+  );
+  readonly canBulkMoveSelected = computed(() =>
+    this.selectedVisibleItemIds().length > 0
+    && this.moveDestinationOptions().length > 0,
+  );
   private readonly searchTerm = computed(() =>
     normalizeSearchText(this.searchValue()),
   );
@@ -129,6 +204,47 @@ export class ArmoryInventorySection {
 
   canSellItem(item: PlayerArmoryItemReadModel): boolean {
     return item.lifecycleStatusKey === 'active';
+  }
+
+  isItemSelected(item: PlayerArmoryItemReadModel): boolean {
+    return this.selectedItemIds().includes(item.itemId);
+  }
+
+  toggleItemSelection(item: PlayerArmoryItemReadModel): void {
+    const selectedIds = this.selectedItemIds();
+
+    this.selectedItemIdsChange.emit(
+      selectedIds.includes(item.itemId)
+        ? selectedIds.filter((itemId) => itemId !== item.itemId)
+        : [...selectedIds, item.itemId],
+    );
+  }
+
+  equipSelectedItems(): void {
+    if (!this.canBulkEquipSelected()) {
+      return;
+    }
+
+    this.bulkEquipItems.emit(this.selectedVisibleEquippableItemIds());
+  }
+
+  sellSelectedItems(): void {
+    if (!this.canBulkSellSelected()) {
+      return;
+    }
+
+    this.bulkSellItems.emit(this.selectedVisibleSellableItemIds());
+  }
+
+  moveSelectedItems(targetShelfPosition: number): void {
+    if (!this.canBulkMoveSelected()) {
+      return;
+    }
+
+    this.bulkMoveItems.emit({
+      itemIds: this.selectedVisibleItemIds(),
+      targetShelfPosition,
+    });
   }
 
   submitShelfRename(

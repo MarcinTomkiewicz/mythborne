@@ -11,6 +11,7 @@ import {
   PlayerArmoryItemReadModel,
   PlayerArmoryPageContextReadModel,
   PlayerArmorySellItemMessageParts,
+  PlayerArmorySellSelectedMessageParts,
 } from '../../../core/domain/item/player-armory-page-context.model';
 import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-row.interface';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
@@ -52,6 +53,7 @@ export class ArmoryPage implements OnInit {
   readonly page = inject(ArmoryPageFacade);
   readonly equipment = inject(CurrentEquipmentState);
   readonly selectedEquippedItemIds = signal<readonly string[]>([]);
+  readonly selectedInventoryItemIds = signal<readonly string[]>([]);
   readonly isInventoryMutating = signal(false);
   readonly sellItemConfirmationSegments =
     signal<readonly StructuredConfirmDialogSegment[]>([]);
@@ -152,6 +154,160 @@ export class ArmoryPage implements OnInit {
     );
   }
 
+  bulkEquipInventoryItems(itemIds: readonly string[]): void {
+    const context = this.page.context();
+
+    if (this.inventoryActionDisabled() || !context || !itemIds.length) {
+      return;
+    }
+
+    const selectedItems = visibleArmoryItemsById(context, itemIds);
+
+    if (
+      selectedItems.length !== itemIds.length
+      || selectedItems.some((item) => item.lifecycleStatusKey === 'scrapped')
+    ) {
+      return;
+    }
+
+    this.equipment.bulkEquipItems({
+      items: selectedItems.map((item) => ({ itemId: item.itemId })),
+    }, () => this.refreshAfterInventoryMutation());
+  }
+
+  bulkSellInventoryItems(itemIds: readonly string[]): void {
+    const context = this.page.context();
+    const copy = context?.copyJson;
+
+    if (this.inventoryActionDisabled() || !context || !copy || !itemIds.length) {
+      return;
+    }
+
+    const selectedItems = visibleArmoryItemsById(context, itemIds);
+
+    if (
+      selectedItems.length !== itemIds.length
+      || selectedItems.some((item) => item.lifecycleStatusKey !== 'active')
+      || selectedItems.some((item) => !item.valueDisplay)
+    ) {
+      return;
+    }
+
+    const messageSegments = buildSellSelectedConfirmationSegments(
+      copy.confirmations.sellSelectedMessageParts,
+      copy.confirmations.sellSelectedHighlightFields,
+      selectedItems,
+    );
+
+    this.sellItemConfirmationSegments.set(messageSegments);
+    this.confirmationService.confirm({
+      key: ARMORY_SELL_ITEM_CONFIRMATION_KEY,
+      header: copy.confirmations.sellItemTitle,
+      message: plainStructuredConfirmMessage(messageSegments),
+      acceptLabel: copy.confirmations.confirmLabel,
+      rejectLabel: copy.confirmations.cancelLabel,
+      acceptIcon: 'pi pi-check',
+      rejectIcon: 'pi pi-times',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-secondary',
+      accept: () => this.sellInventoryItems(selectedItems),
+      reject: () => this.clearSellItemConfirmationMessage(),
+    });
+  }
+
+  private sellInventoryItems(
+    items: readonly PlayerArmoryItemReadModel[],
+  ): void {
+    const context = this.page.context();
+
+    if (this.inventoryActionDisabled() || !context || !items.length) {
+      return;
+    }
+
+    const selectedItems = visibleArmoryItemsById(
+      context,
+      items.map((item) => item.itemId),
+    );
+
+    if (
+      selectedItems.length !== items.length
+      || selectedItems.some((item) => item.lifecycleStatusKey !== 'active')
+      || selectedItems.some((item) => !item.valueDisplay)
+    ) {
+      return;
+    }
+
+    const token = ++this.inventoryActionToken;
+    const contextKey = `${context.serverId}:${context.heroId}`;
+
+    this.isInventoryMutating.set(true);
+    this.lifecycle.bulkVendorScrapHeroItems({
+      actorHeroId: context.heroId,
+      items: selectedItems.map((item) => ({ itemId: item.itemId })),
+    }).subscribe({
+      next: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        this.refreshAfterInventoryMutation();
+      },
+      error: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        this.isInventoryMutating.set(false);
+      },
+    });
+  }
+
+  bulkMoveInventoryItems(input: {
+    itemIds: readonly string[];
+    targetShelfPosition: number;
+  }): void {
+    const context = this.page.context();
+
+    if (this.inventoryActionDisabled() || !context || !input.itemIds.length) {
+      return;
+    }
+
+    const selectedItems = visibleArmoryItemsById(context, input.itemIds);
+    const targetShelf = context.readModel.shelves.find((shelf) =>
+      shelf.position === input.targetShelfPosition
+      && shelf.isPersisted
+      && !shelf.isUnsortedDropArea,
+    );
+
+    if (selectedItems.length !== input.itemIds.length || !targetShelf) {
+      return;
+    }
+
+    const token = ++this.inventoryActionToken;
+    const contextKey = `${context.serverId}:${context.heroId}`;
+
+    this.isInventoryMutating.set(true);
+    this.armory.bulkMoveItemsToShelf({
+      items: selectedItems.map((item) => ({ itemId: item.itemId })),
+      targetShelfPosition: input.targetShelfPosition,
+    }).subscribe({
+      next: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        this.refreshAfterInventoryMutation();
+      },
+      error: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        this.isInventoryMutating.set(false);
+      },
+    });
+  }
+
   confirmSellInventoryItem(item: PlayerArmoryItemReadModel): void {
     const copy = this.page.context()?.copyJson;
     const valueDisplay = item.valueDisplay?.displayValue;
@@ -231,6 +387,7 @@ export class ArmoryPage implements OnInit {
 
   private refreshAfterInventoryMutation(): void {
     this.selectedEquippedItemIds.set([]);
+    this.selectedInventoryItemIds.set([]);
     this.isInventoryMutating.set(false);
     this.page.loadData();
   }
@@ -303,16 +460,84 @@ function buildSellItemConfirmationSegments(
   ];
 }
 
+function buildSellSelectedConfirmationSegments(
+  parts: PlayerArmorySellSelectedMessageParts,
+  highlightFields: readonly string[],
+  items: readonly PlayerArmoryItemReadModel[],
+): StructuredConfirmDialogSegment[] {
+  const totalDrachmaValue = items.reduce(
+    (total, item) => total + (item.drachmaValue ?? 0),
+    0,
+  );
+
+  return [
+    { text: parts.intro, highlighted: false, lineBreakAfter: true },
+    { text: parts.itemsIntro, highlighted: false, lineBreakAfter: true },
+    ...items.flatMap((item) => buildSellSelectedItemLineSegments(
+      parts,
+      highlightFields,
+      item,
+    )),
+    { text: parts.totalPrefix, highlighted: false },
+    {
+      text: String(totalDrachmaValue),
+      highlighted: highlightFields.includes(parts.totalValueToken),
+    },
+    { text: parts.totalSuffix, highlighted: false },
+  ];
+}
+
+function buildSellSelectedItemLineSegments(
+  parts: PlayerArmorySellSelectedMessageParts,
+  highlightFields: readonly string[],
+  item: PlayerArmoryItemReadModel,
+): StructuredConfirmDialogSegment[] {
+  const itemLineParts = parts.itemLineParts;
+  const valueDisplay = item.valueDisplay?.displayValue;
+
+  if (!valueDisplay) {
+    return [];
+  }
+
+  return [
+    {
+      text: item.name,
+      highlighted: highlightFields.includes(itemLineParts.itemNameToken),
+    },
+    { text: itemLineParts.middle, highlighted: false },
+    {
+      text: valueDisplay,
+      highlighted: highlightFields.includes(itemLineParts.drachmaValueToken),
+    },
+    { text: itemLineParts.suffix, highlighted: false, lineBreakAfter: true },
+  ];
+}
+
 function plainStructuredConfirmMessage(
   segments: readonly StructuredConfirmDialogSegment[],
 ): string {
-  return segments.map((segment) => segment.text).join('');
+  return segments
+    .map((segment) => `${segment.text}${segment.lineBreakAfter ? '\n' : ''}`)
+    .join('');
 }
 
 function contextKeyFor(
   context: Pick<PlayerArmoryPageContextReadModel, 'heroId' | 'serverId'> | null,
 ): string | null {
   return context ? `${context.serverId}:${context.heroId}` : null;
+}
+
+function visibleArmoryItemsById(
+  context: PlayerArmoryPageContextReadModel,
+  itemIds: readonly string[],
+): PlayerArmoryItemReadModel[] {
+  const visibleItemsById = new Map(
+    context.readModel.visibleItems.map((item) => [item.itemId, item]),
+  );
+
+  return itemIds
+    .map((itemId) => visibleItemsById.get(itemId) ?? null)
+    .filter((item): item is PlayerArmoryItemReadModel => item !== null);
 }
 
 function mapArmoryPageEquipmentPreviewRows(

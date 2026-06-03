@@ -4,6 +4,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 export interface StructuredConfirmDialogSegment {
   text: string;
   highlighted: boolean;
+  lineBreakAfter?: boolean;
 }
 
 @Component({

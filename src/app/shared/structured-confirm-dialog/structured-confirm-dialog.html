@@ -11,6 +11,9 @@
         } @else {
           <span>{{ segment.text }}</span>
         }
+        @if (segment.lineBreakAfter) {
+          <br />
+        }
       }
     </p>
   </ng-template>

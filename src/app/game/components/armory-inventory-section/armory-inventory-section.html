@@ -58,6 +58,26 @@
     </div>
   }
 
+  <app-armory-bulk-actions-toolbar
+    [selectedCount]="selectedVisibleItems().length"
+    [drachmaValue]="selectedVisibleDrachmaValue()"
+    [selectedCountLabel]="inventoryCopy().selectedCountLabel"
+    [selectedValueLabel]="inventoryCopy().selectedValueLabel"
+    [actionBusyLabel]="inventoryCopy().actionBusyLabel"
+    [equipLabel]="bulkEquipItemLabel()"
+    [sellLabel]="bulkSellItemLabel()"
+    [moveTargetPlaceholder]="inventoryCopy().moveTargetPlaceholder"
+    [moveSelectedLabel]="inventoryCopy().moveSelectedLabel"
+    [canEquip]="canBulkEquipSelected()"
+    [canSell]="canBulkSellSelected()"
+    [canMove]="canBulkMoveSelected()"
+    [moveDestinationOptions]="moveDestinationOptions()"
+    [isActionBusy]="actionDisabled()"
+    (equipSelected)="equipSelectedItems()"
+    (sellSelected)="sellSelectedItems()"
+    (moveSelected)="moveSelectedItems($event)"
+  />
+
   <div class="flex-col gap-sm" [formGroup]="shelfNameForm">
     @for (shelf of shelfRows(); track shelf.position) {
       <section class="mg-card p-md flex-col gap-md w-100">
@@ -98,7 +118,16 @@
         @if (shelf.visibleItems.length) {
           <div class="mg-grid-auto-fill-compact gap-sm w-100">
             @for (item of shelf.visibleItems; track item.itemId) {
-              <article class="mg-card p-sm flex-col gap-xs w-100 min-w-0">
+              <article
+                class="mg-card p-sm flex-col gap-xs w-100 min-w-0"
+                [class.mg-card--selected]="isItemSelected(item)"
+                role="button"
+                tabindex="0"
+                [attr.aria-pressed]="isItemSelected(item)"
+                (click)="toggleItemSelection(item)"
+                (keydown.enter)="toggleItemSelection(item)"
+                (keydown.space)="toggleItemSelection(item); $event.preventDefault()"
+              >
                 <div class="flex-row-start-center gap-sm min-w-0">
                   <span class="mg-card p-sm flex-row-center-center flex-none">
                     <i class="pi pi-box color-text text-xl" aria-hidden="true"></i>
@@ -122,7 +151,12 @@
                 }
 
                 @if (canEquipItem(item) || canSellItem(item)) {
-                  <div class="flex-row-start-center flex-wrap gap-xs border-top pt-xs">
+                  <div
+                    class="flex-row-start-center flex-wrap gap-xs border-top pt-xs"
+                    (click)="$event.stopPropagation()"
+                    (mousedown)="$event.stopPropagation()"
+                    (touchstart)="$event.stopPropagation()"
+                  >
                     @if (canEquipItem(item)) {
                       <p-button
                         type="button"
@@ -158,4 +192,24 @@
       </section>
     }
   </div>
+
+  <app-armory-bulk-actions-toolbar
+    [selectedCount]="selectedVisibleItems().length"
+    [drachmaValue]="selectedVisibleDrachmaValue()"
+    [selectedCountLabel]="inventoryCopy().selectedCountLabel"
+    [selectedValueLabel]="inventoryCopy().selectedValueLabel"
+    [actionBusyLabel]="inventoryCopy().actionBusyLabel"
+    [equipLabel]="bulkEquipItemLabel()"
+    [sellLabel]="bulkSellItemLabel()"
+    [moveTargetPlaceholder]="inventoryCopy().moveTargetPlaceholder"
+    [moveSelectedLabel]="inventoryCopy().moveSelectedLabel"
+    [canEquip]="canBulkEquipSelected()"
+    [canSell]="canBulkSellSelected()"
+    [canMove]="canBulkMoveSelected()"
+    [moveDestinationOptions]="moveDestinationOptions()"
+    [isActionBusy]="actionDisabled()"
+    (equipSelected)="equipSelectedItems()"
+    (sellSelected)="sellSelectedItems()"
+    (moveSelected)="moveSelectedItems($event)"
+  />
 </section>

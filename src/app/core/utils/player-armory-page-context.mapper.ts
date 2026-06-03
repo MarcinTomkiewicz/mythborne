@@ -8,6 +8,8 @@ import {
   PlayerArmoryPageContextReadModel,
   PlayerArmoryReadModel,
   PlayerArmorySellItemMessageParts,
+  PlayerArmorySellSelectedItemLineParts,
+  PlayerArmorySellSelectedMessageParts,
   PlayerArmoryStorageSlotReadModel,
 } from '../domain/item/player-armory-page-context.model';
 import { Json } from '../types/database.types';
@@ -134,7 +136,15 @@ function mapCopySummary(summary: JsonRecord): PlayerArmoryPageCopyReadModel['sum
 function mapCopyActions(actions: JsonRecord): PlayerArmoryPageCopyReadModel['actions'] {
   return {
     equipItem: requiredText(read(actions, 'equipItem'), 'copyJson.actions.equipItem'),
+    equipSelected: requiredText(
+      read(actions, 'equipSelected'),
+      'copyJson.actions.equipSelected',
+    ),
     sellItem: requiredText(read(actions, 'sellItem'), 'copyJson.actions.sellItem'),
+    sellSelected: requiredText(
+      read(actions, 'sellSelected'),
+      'copyJson.actions.sellSelected',
+    ),
     renameStorageSlot: requiredText(
       read(actions, 'renameStorageSlot'),
       'copyJson.actions.renameStorageSlot',
@@ -162,6 +172,16 @@ function mapCopyConfirmations(
     sellItemHighlightFields: requiredTextArray(
       read(confirmations, 'sellItemHighlightFields'),
       'copyJson.confirmations.sellItemHighlightFields',
+    ),
+    sellSelectedMessageParts: mapSellSelectedMessageParts(
+      requiredRecord(
+        read(confirmations, 'sellSelectedMessageParts'),
+        'copyJson.confirmations.sellSelectedMessageParts',
+      ),
+    ),
+    sellSelectedHighlightFields: requiredTextArray(
+      read(confirmations, 'sellSelectedHighlightFields'),
+      'copyJson.confirmations.sellSelectedHighlightFields',
     ),
   };
 }
@@ -225,13 +245,89 @@ function mapCopySearch(search: JsonRecord): PlayerArmoryPageCopyReadModel['searc
 
 function mapCopyInventory(inventory: JsonRecord): PlayerArmoryPageCopyReadModel['inventory'] {
   return {
+    actionBusyLabel: requiredText(
+      read(inventory, 'actionBusyLabel'),
+      'copyJson.inventory.actionBusyLabel',
+    ),
     clearFiltersLabel: requiredText(
       read(inventory, 'clearFiltersLabel'),
       'copyJson.inventory.clearFiltersLabel',
     ),
+    moveSelectedLabel: requiredText(
+      read(inventory, 'moveSelectedLabel'),
+      'copyJson.inventory.moveSelectedLabel',
+    ),
+    moveTargetPlaceholder: requiredText(
+      read(inventory, 'moveTargetPlaceholder'),
+      'copyJson.inventory.moveTargetPlaceholder',
+    ),
     noFilterResultsLabel: requiredText(
       read(inventory, 'noFilterResultsLabel'),
       'copyJson.inventory.noFilterResultsLabel',
+    ),
+    selectedCountLabel: requiredText(
+      read(inventory, 'selectedCountLabel'),
+      'copyJson.inventory.selectedCountLabel',
+    ),
+    selectedValueLabel: requiredText(
+      read(inventory, 'selectedValueLabel'),
+      'copyJson.inventory.selectedValueLabel',
+    ),
+  };
+}
+
+function mapSellSelectedMessageParts(
+  parts: JsonRecord,
+): PlayerArmorySellSelectedMessageParts {
+  return {
+    intro: requiredText(
+      read(parts, 'intro'),
+      'copyJson.confirmations.sellSelectedMessageParts.intro',
+    ),
+    itemsIntro: requiredText(
+      read(parts, 'itemsIntro'),
+      'copyJson.confirmations.sellSelectedMessageParts.itemsIntro',
+    ),
+    itemLineParts: mapSellSelectedItemLineParts(
+      requiredRecord(
+        read(parts, 'itemLineParts'),
+        'copyJson.confirmations.sellSelectedMessageParts.itemLineParts',
+      ),
+    ),
+    totalPrefix: requiredText(
+      read(parts, 'totalPrefix'),
+      'copyJson.confirmations.sellSelectedMessageParts.totalPrefix',
+    ),
+    totalValueToken: requiredText(
+      read(parts, 'totalValueToken'),
+      'copyJson.confirmations.sellSelectedMessageParts.totalValueToken',
+    ),
+    totalSuffix: requiredText(
+      read(parts, 'totalSuffix'),
+      'copyJson.confirmations.sellSelectedMessageParts.totalSuffix',
+    ),
+  };
+}
+
+function mapSellSelectedItemLineParts(
+  parts: JsonRecord,
+): PlayerArmorySellSelectedItemLineParts {
+  return {
+    itemNameToken: requiredText(
+      read(parts, 'itemNameToken'),
+      'copyJson.confirmations.sellSelectedMessageParts.itemLineParts.itemNameToken',
+    ),
+    middle: requiredText(
+      read(parts, 'middle'),
+      'copyJson.confirmations.sellSelectedMessageParts.itemLineParts.middle',
+    ),
+    drachmaValueToken: requiredText(
+      read(parts, 'drachmaValueToken'),
+      'copyJson.confirmations.sellSelectedMessageParts.itemLineParts.drachmaValueToken',
+    ),
+    suffix: requiredText(
+      read(parts, 'suffix'),
+      'copyJson.confirmations.sellSelectedMessageParts.itemLineParts.suffix',
     ),
   };
 }
