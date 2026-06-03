@@ -80,9 +80,7 @@ export interface ItemDetailPopoverViewModel {
   name: string;
   description: string | null;
   statusLabel: string | null;
-  qualityLabel: string | null;
-  kindLabel: string | null;
-  slotLabel: string | null;
+  headerMetaLabels: string[];
   iconClass: string;
   valueDisplay: PlayerItemDisplayCoreValueDisplay | null;
   itemStats: ItemDetailPopoverValueRow[];

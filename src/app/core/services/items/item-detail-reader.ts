@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { map, Observable, switchMap, tap } from 'rxjs';
+import { map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import { ItemDetailPopoverDetailReadModel } from '../../domain/item/item-detail-popover-detail.model';
 import { Database } from '../../types/database.types';
@@ -33,12 +33,6 @@ export class ItemDetailReader {
           RPC.get_player_item_popover_detail,
           args,
         );
-      }),
-      tap((detail) => {
-        console.log('[ItemDetailReader] get_player_item_popover_detail raw', {
-          itemId: normalizedItemId,
-          detail,
-        });
       }),
       map((detail) => mapItemDetailPopoverDetail(detail)),
     );

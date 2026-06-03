@@ -42,17 +42,11 @@
       <div class="flex-col gap-xs min-w-0">
         <strong class="heading-color text-lg">{{ detail.name }}</strong>
         <div class="flex-row-start-center flex-wrap gap-xs color-muted text-xs">
-          @if (detail.qualityLabel) {
-            <span class="tag-badge tag-badge--info">{{ detail.qualityLabel }}</span>
-          }
-          @if (detail.kindLabel) {
-            <span>{{ detail.kindLabel }}</span>
-          }
-          @if (detail.kindLabel && detail.slotLabel) {
-            <span aria-hidden="true">&middot;</span>
-          }
-          @if (detail.slotLabel) {
-            <span>{{ detail.slotLabel }}</span>
+          @for (label of detail.headerMetaLabels; track label; let first = $first) {
+            @if (!first) {
+              <span aria-hidden="true">&middot;</span>
+            }
+            <span>{{ label }}</span>
           }
         </div>
         @if (detail.valueDisplay) {

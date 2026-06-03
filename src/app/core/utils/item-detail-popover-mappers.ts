@@ -20,9 +20,11 @@ export function itemDetailPopoverViewModel(
     name: displayMeta.itemName,
     description: null,
     statusLabel: null,
-    qualityLabel: displayMeta.qualityLabel,
-    kindLabel: displayMeta.baseTypeLabel,
-    slotLabel: displayMeta.allowedSlotLabel,
+    headerMetaLabels: [
+      displayMeta.qualityLabel,
+      displayMeta.baseTypeLabel,
+      displayMeta.allowedSlotLabel,
+    ].filter((label): label is string => Boolean(label)),
     iconClass: `pi pi-${displayMeta.displayIconKey}`,
     valueDisplay: displayMeta.valueDisplay,
     itemStats: detail.itemStats.map((row, index) => ({
@@ -45,11 +47,13 @@ export function itemDetailPopoverViewModel(
     })),
     requirementRows: detail.requirements.map((row, index) => ({
       key: `requirement-${index}`,
-      label: row.displayText,
-      requiredValue: row.requiredDisplayText,
-      currentValue: row.currentDisplayText,
+      label: row.compactDisplay?.label ?? row.displayLabel,
+      requiredValue: row.compactDisplay?.requiredValue ?? row.requiredDisplayValue,
+      currentValue: row.isMet === false
+        ? row.compactDisplay?.currentValue ?? row.currentDisplayValue
+        : null,
       isMet: row.isMet,
-      failureReason: row.failureDisplayText ?? row.failureReasonLabel,
+      failureReason: null,
     })),
     requirementState: requirementState(detail),
     context,
@@ -69,9 +73,9 @@ function requirementState(
   detail: ItemDetailPopoverDetailReadModel,
 ): ItemDetailPopoverRequirementState {
   const status = detail.requirementStatus;
-  const count = status.requirementCount ?? detail.requirementCount;
-  const unmetCount = status.unmetCount ?? detail.unmetCount;
-  const meetsRequirements = status.meetsRequirements ?? detail.meetsRequirements;
+  const count = status.requirementCount;
+  const unmetCount = status.unmetCount;
+  const meetsRequirements = status.meetsRequirements;
 
   if (count === 0) {
     return { kind: 'met', label: null, details: null };

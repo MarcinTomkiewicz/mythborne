@@ -9,6 +9,7 @@ import {
 import { ItemDetailPopoverDetailReadModel } from '../../core/domain/item/item-detail-popover-detail.model';
 import { ItemDetailReader } from '../../core/services/items/item-detail-reader';
 import { itemDetailPopoverViewModel } from '../../core/utils/item-detail-popover-mappers';
+import { replaceTemplateTokens } from '../../core/utils/token-template';
 
 @Component({
   selector: 'app-item-detail-popover',
@@ -51,9 +52,7 @@ export class ItemDetailPopover {
       name: this.fallbackName() ?? '',
       description: null,
       statusLabel: null,
-      qualityLabel: null,
-      kindLabel: null,
-      slotLabel: null,
+      headerMetaLabels: [],
       iconClass: 'pi pi-box',
       valueDisplay: null,
       itemStats: [],
@@ -98,14 +97,13 @@ export class ItemDetailPopover {
   }
 
   rowCode(label: string): string {
-    return label
-      .split(/[\s_-]+/)
-      .filter(Boolean)
+    const code = Array.from(label)
+      .filter((character) => character.trim().length > 0)
       .slice(0, 2)
-      .map((part) => part[0])
       .join('')
-      .toUpperCase()
-      .slice(0, 3) || 'IT';
+      .toUpperCase();
+
+    return code || 'IT';
   }
 
   private loadDetail(): void {
@@ -151,12 +149,11 @@ export class ItemDetailPopover {
           this.status.set('loaded');
           this.loadingItemId = null;
         },
-        error: (error: unknown) => {
+        error: () => {
           if (requestId !== this.requestId || itemId !== this.itemId()) {
             return;
           }
 
-          this.reportLoadFailure(itemId, error);
           this.loadedDetail.set(null);
           this.status.set('error');
           this.error.set(this.copy().unavailableLabel);
@@ -170,7 +167,9 @@ export class ItemDetailPopover {
   }
 
   triggerAriaLabel(name: string): string {
-    return itemDetailCopyTemplate(this.copy().triggerAriaLabelTemplate, name);
+    return replaceTemplateTokens(this.copy().triggerAriaLabelTemplate, {
+      itemName: name,
+    });
   }
 
   private playerSafeError(): string | null {
@@ -194,13 +193,6 @@ export class ItemDetailPopover {
     ));
   }
 
-  private reportLoadFailure(itemId: string, error: unknown): void {
-    console.log('[ItemDetailPopover] full item detail load failed', {
-      itemId,
-      error,
-    });
-  }
-
   private context() {
     return {
       kind: 'current' as const,
@@ -209,8 +201,4 @@ export class ItemDetailPopover {
       sourceLabel: this.contextSourceLabel(),
     };
   }
-}
-
-function itemDetailCopyTemplate(template: string, itemName: string): string {
-  return template.replace(/\{itemName\}/g, itemName);
 }

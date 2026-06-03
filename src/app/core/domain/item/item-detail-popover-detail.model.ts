@@ -8,101 +8,183 @@ export type ItemDetailPopoverDisplayTone = 'positive' | 'negative' | 'neutral';
 // Trade, Auction, Report or other visible items; it is not owned-player-item specific.
 export interface ItemDetailPopoverDetailReadModel {
   contractVersion: ItemDetailPopoverDetailContractVersion;
-  source: string | null;
+  source: string;
   itemId: string;
-  heroId: string | null;
+  heroId: string;
   displayMeta: ItemDetailPopoverDisplayMeta;
-  valueDisplay: PlayerItemDisplayCoreValueDisplay | null;
+  valueDisplay: PlayerItemDisplayCoreValueDisplay;
   itemStats: ItemDetailPopoverStatRow[];
   modifierRows: ItemDetailPopoverModifierRow[];
   bonuses: ItemDetailPopoverModifierRow[];
   bonusRows: ItemDetailPopoverModifierRow[];
   displayBonusRows: ItemDetailPopoverModifierRow[];
   requirements: ItemDetailPopoverRequirementRow[];
+  requirementsJson: ItemDetailPopoverRequirementRow[];
   requirementStatus: ItemDetailPopoverRequirementStatus;
-  meetsRequirements: boolean | null;
-  requirementCount: number | null;
-  unmetCount: number | null;
+  meetsRequirements: boolean;
+  requirementCount: number;
+  unmetCount: number;
   failuresJson: Json;
   metadata: Json;
 }
 
 export interface ItemDetailPopoverDisplayMeta {
   itemId: string;
-  heroId: string | null;
-  serverId: string | null;
   itemName: string;
-  lifecycleStatusKey: string | null;
-  lifecycleStatusLabel: string | null;
-  generationQualityKey: string | null;
+  lifecycleStatusKey: string;
+  lifecycleStatusLabel: string;
+  generationQualityKey: string;
   displayIconKey: string;
-  qualityLabel: string | null;
-  baseKey: string | null;
-  baseName: string | null;
-  baseTypeKey: string | null;
-  baseTypeLabel: string | null;
-  drachmaValue: string | null;
+  qualityLabel: string;
+  baseKey: string;
+  baseName: string;
+  baseTypeKey: string;
+  baseTypeLabel: string;
+  drachmaValue: string;
   allowedSlotLabel: string | null;
-  valueDisplay: PlayerItemDisplayCoreValueDisplay | null;
+  valueDisplay: PlayerItemDisplayCoreValueDisplay;
   equipmentArea: string | null;
   handUsageKey: string | null;
   handUsageLabel: string | null;
   primarySlotKey: string | null;
   primarySlotLabel: string | null;
-  equipmentSlotKey: string | null;
-  equipmentSlotLabel: string | null;
   allowedSlotKeys: string[];
-  equipTarget: Json | null;
-  metadata: Json;
 }
 
 export interface ItemDetailPopoverStatRow {
-  key: string | null;
+  displaySection: 'item_stats';
+  isPrimaryItemStat: true;
   label: string;
   displayValue: string;
   displayTone: ItemDetailPopoverDisplayTone;
-  targetKey: string | null;
-  sourceKey: string | null;
-  sourceLabel: string | null;
-  sortOrder: number | null;
-  metadata: Json;
-  sourceRows: Json;
+  statKey: string;
+  source: string | null;
+  contract: string | null;
+  isMeaningful: boolean | null;
+  value: number | null;
+  minDamage: number | null;
+  maxDamage: number | null;
+  rawValue: number | null;
+  baseValue: number | null;
+  rawBaseValue: number | null;
+  modifierValue: number | null;
+  rawMinDamage: number | null;
+  rawMaxDamage: number | null;
+  baseMinDamage: number | null;
+  baseMaxDamage: number | null;
+  rawBaseMinDamage: number | null;
+  rawBaseMaxDamage: number | null;
+  modifierMinDamage: number | null;
+  modifierMaxDamage: number | null;
+  modifierDamageTotal: number | null;
+  baseDisplayValue: string | null;
+  modifierDisplayValue: string | null;
+  damageRangeClamped: boolean | null;
+  baseDamageRangeClamped: boolean | null;
 }
 
 export interface ItemDetailPopoverModifierRow {
-  key: string | null;
+  displaySection: 'bonuses';
+  isPrimaryItemStat: false;
+  rowKind: string;
+  aggregated: boolean;
   label: string;
+  targetLabel: string | null;
+  targetKey: string;
   displayValue: string;
   displayTone: ItemDetailPopoverDisplayTone;
-  targetKey: string | null;
+  typeKey: string | null;
+  scopeKey: string | null;
+  valueKind: string | null;
+  rawValue: number | null;
+  effectiveValue: number | null;
+  sortOrder: number | null;
+  sourceCount: number | null;
+  sourceRows: ItemDetailPopoverModifierSourceRow[];
+  metadata: Json;
+}
+
+export interface ItemDetailPopoverModifierSourceRow {
+  itemId: string | null;
+  label: string;
+  targetLabel: string | null;
+  targetKey: string;
+  displayValue: string;
+  displayTone: ItemDetailPopoverDisplayTone;
+  typeKey: string | null;
+  valueKind: string | null;
+  rawValue: number | null;
+  effectiveValue: number | null;
   sourceKey: string | null;
   sourceLabel: string | null;
+  sourceLayer: string | null;
+  entityBonusId: string | null;
+  sourceEntityId: string | null;
+  sourceEntityType: string | null;
+  bonusTemplateId: string | null;
+  bonusTemplateKey: string | null;
+  bonusTemplateLabel: string | null;
+  qualityMultiplier: number | null;
+  qualityScalesValue: boolean | null;
   sortOrder: number | null;
+  displayBonusSourceJsonKey: string | null;
   metadata: Json;
-  sourceRows: Json;
 }
 
 export interface ItemDetailPopoverRequirementRow {
-  key: string | null;
-  requirementDefinitionKey: string | null;
-  requiredStatKey: string | null;
+  displaySection: 'requirements';
+  displayTone: ItemDetailPopoverDisplayTone;
+  isMet: boolean;
+  displayLabel: string;
+  requiredDisplayValue: string;
+  currentDisplayValue: string | null;
+  missingDisplayValue: string | null;
+  failureCompactText: string | null;
+  compactDisplay: ItemDetailPopoverRequirementCompactDisplay | null;
+  source: string | null;
+  authority: string | null;
   displayText: string;
+  shortDisplayText: string | null;
   requiredDisplayText: string | null;
   currentDisplayText: string | null;
+  currentValueLabel: string | null;
+  currentValueRaw: string | null;
+  requiredValueLabel: string | null;
+  requiredValueRaw: string | null;
+  missingValueLabel: string | null;
+  missingValueRaw: string | null;
+  missingDisplayText: string | null;
   failureDisplayText: string | null;
+  failureReasonKey: string | null;
   failureReasonLabel: string | null;
-  isMet: boolean | null;
+  requirementDefinitionKey: string;
+  requirementLabel: string | null;
+  requiredStatKey: string | null;
+  requiredStatLabel: string | null;
+  requiredBuildingKey: string | null;
+  requiredDistrictCode: string | null;
+  requiredResourceType: string | null;
+  requiredResourceLabel: string | null;
   requiredValue: number | null;
   currentValue: number | null;
   missingValue: number | null;
-  metadata: Json;
-  rawRequirement: Json;
+  failureRow: Json | null;
+  effectiveRequirementRow: Json | null;
+}
+
+export interface ItemDetailPopoverRequirementCompactDisplay {
+  label: string;
+  requiredValue: string;
+  currentValue: string | null;
+  missingValue: string | null;
+  failureText: string | null;
+  tone: ItemDetailPopoverDisplayTone;
 }
 
 export interface ItemDetailPopoverRequirementStatus {
-  meetsRequirements: boolean | null;
-  requirementCount: number | null;
-  unmetCount: number | null;
+  meetsRequirements: boolean;
+  requirementCount: number;
+  unmetCount: number;
   failuresJson: Json;
   checkJson: Json | null;
 }
