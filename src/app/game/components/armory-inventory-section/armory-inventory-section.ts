@@ -1,4 +1,10 @@
 import { Component, computed, effect, input, output } from '@angular/core';
+import { DragDropModule } from '@angular/cdk/drag-drop';
+import type {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDropList,
+} from '@angular/cdk/drag-drop';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -29,17 +35,20 @@ import { SelectOption } from '../../../core/types/select-option.types';
 import { ArmoryInventoryFilterBar } from '../armory-inventory-filter-bar/armory-inventory-filter-bar';
 import { ArmoryBulkActionsToolbar } from '../armory-bulk-actions-toolbar/armory-bulk-actions-toolbar';
 import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
+import { ArmoryItemDragPreview } from '../armory-item-drag-preview/armory-item-drag-preview';
 
 @Component({
   selector: 'app-armory-inventory-section',
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    DragDropModule,
     ArmoryBulkActionsToolbar,
     ArmoryInventoryFilterBar,
     ButtonModule,
     InlineTextEdit,
     ItemDetailPopover,
+    ArmoryItemDragPreview,
   ],
   templateUrl: './armory-inventory-section.html',
 })
@@ -123,7 +132,7 @@ export class ArmoryInventorySection {
         })
       : this.shelves(),
   );
-  readonly shelfRows = computed(() =>
+  readonly shelfRows = computed<ArmoryInventoryShelfRow[]>(() =>
     this.visibleShelves().map((shelf) => {
       const visibleItemCount = shelf.visibleItems.length;
 
@@ -224,6 +233,10 @@ export class ArmoryInventorySection {
     normalizeSearchText(this.searchValue()),
   );
   readonly itemMetadata = armoryItemMetadata;
+  readonly canEnterShelfDropList = (
+    _drag: CdkDrag<ArmoryInventoryDragData>,
+    drop: CdkDropList<ArmoryInventoryShelfRow>,
+  ): boolean => !this.actionDisabled() && this.canReceiveDroppedItem(drop.data);
   private readonly syncShelfForms = effect(() =>
     this.syncShelfNameForms(this.shelves()),
   );
@@ -278,6 +291,43 @@ export class ArmoryInventorySection {
     this.bulkMoveItems.emit({
       itemIds: this.selectedVisibleItemIds(),
       targetShelfPosition,
+    });
+  }
+
+  dragData(item: PlayerArmoryItemReadModel): ArmoryInventoryDragData {
+    return { item };
+  }
+
+  draggedItems(item: PlayerArmoryItemReadModel): PlayerArmoryItemReadModel[] {
+    return this.movedItemsForDraggedItem(item);
+  }
+
+  canReceiveDroppedItem(shelf: PlayerArmoryStorageSlotReadModel): boolean {
+    return shelf.isPersisted && !shelf.isUnsortedDropArea;
+  }
+
+  dropInventoryItem(
+    event: CdkDragDrop<
+      ArmoryInventoryShelfRow,
+      ArmoryInventoryShelfRow,
+      ArmoryInventoryDragData
+    >,
+  ): void {
+    const targetShelf = event.container.data;
+    const item = event.item.data.item;
+    const movedItems = this.movedItemsForDraggedItem(item);
+
+    if (
+      this.actionDisabled()
+      || !this.canReceiveDroppedItem(targetShelf)
+      || movedItems.every((movedItem) => movedItem.shelfPosition === targetShelf.position)
+    ) {
+      return;
+    }
+
+    this.bulkMoveItems.emit({
+      itemIds: movedItems.map((movedItem) => movedItem.itemId),
+      targetShelfPosition: targetShelf.position,
     });
   }
 
@@ -337,8 +387,29 @@ export class ArmoryInventorySection {
     );
   }
 
+  private movedItemsForDraggedItem(
+    item: PlayerArmoryItemReadModel,
+  ): PlayerArmoryItemReadModel[] {
+    const selectedItems = this.selectedVisibleItems();
+
+    return selectedItems.length > 1
+      && selectedItems.some((selectedItem) => selectedItem.itemId === item.itemId)
+        ? selectedItems
+        : [item];
+  }
+
 }
 
 function shelfControlName(position: number): string {
   return `shelf_${position}`;
+}
+
+interface ArmoryInventoryDragData {
+  item: PlayerArmoryItemReadModel;
+}
+
+interface ArmoryInventoryShelfRow extends PlayerArmoryStorageSlotReadModel {
+  controlName: string;
+  canRename: boolean;
+  shelfCountLabel: string;
 }

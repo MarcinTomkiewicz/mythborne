@@ -7,19 +7,19 @@
       <div class="flex-row-start-center gap-sm min-w-0">
         <span class="mg-card p-sm flex-row-center-center flex-none">
           <i
-            class="color-heading text-xl {{ armoryItemIconClass(item()) }}"
+            class="pi pi-{{ item().displayCore.displayIconKey || 'box' }} color-heading text-xl"
             aria-hidden="true"
           ></i>
         </span>
         <div class="flex-col gap-xs min-w-0">
-          <strong class="color-text text-sm">{{ item().name }}</strong>
+          <strong class="color-text text-sm">{{ item().displayCore.itemName }}</strong>
         </div>
       </div>
-      @if (subtitle(); as itemSubtitle) {
-        <span class="color-muted text-xs">{{ itemSubtitle }}</span>
+      @if (itemMetadata(item().displayCore); as metadata) {
+        <span class="color-muted text-xs">{{ metadata }}</span>
       }
-      @if (item().drachmaValue !== null) {
-        <strong class="color-heading text-xs">{{ item().drachmaValue }} drachma</strong>
+      @if (item().displayCore.valueDisplay; as valueDisplay) {
+        <strong class="color-heading text-xs">{{ valueDisplay.displayValue }}</strong>
       }
     </div>
   </article>
@@ -35,21 +35,21 @@
           [style.--mg-drag-stack-index]="index"
         >
           @if (index === 0) {
-            <span class="color-heading text-xs font-bold">{{ title() }}</span>
+            <span class="tag-badge flex-none">{{ count() }}</span>
           }
           <div class="flex-row-start-center gap-sm min-w-0">
             <span class="mg-card p-sm flex-row-center-center flex-none">
               <i
-                class="color-heading text-lg {{ armoryItemIconClass(stackItem) }}"
+                class="pi pi-{{ stackItem.displayCore.displayIconKey || 'box' }} color-heading text-lg"
                 aria-hidden="true"
               ></i>
             </span>
             <div class="flex-col gap-xs min-w-0">
-              <strong class="color-text text-sm text-truncate">{{ stackItem.name }}</strong>
+              <strong class="color-text text-sm text-truncate">{{ stackItem.displayCore.itemName }}</strong>
             </div>
           </div>
-          @if (stackItem.drachmaValue !== null) {
-            <strong class="color-heading text-xs">{{ stackItem.drachmaValue }} drachma</strong>
+          @if (stackItem.displayCore.valueDisplay; as valueDisplay) {
+            <strong class="color-heading text-xs">{{ valueDisplay.displayValue }}</strong>
           }
         </div>
       }
@@ -65,20 +65,20 @@
         <span class="mg-card p-sm flex-row-center-center flex-none">
           <i class="pi pi-chest color-heading text-xl" aria-hidden="true"></i>
         </span>
-        <strong class="color-text text-sm">{{ title() }}</strong>
+        <span class="tag-badge flex-none">{{ count() }}</span>
       </div>
 
       <div class="mg-drag-stack-preview__items flex-col gap-xs border-top pt-xs">
         @for (stackItem of visibleStackItems(); track stackItem.itemId) {
           <div class="mg-drag-stack-preview__item mg-card p-xs flex-row-start-center gap-xs min-w-0">
             <i
-              class="color-muted text-sm {{ armoryItemIconClass(stackItem) }}"
+              class="pi pi-{{ stackItem.displayCore.displayIconKey || 'box' }} color-muted text-sm"
               aria-hidden="true"
             ></i>
-            <span class="color-muted text-xs text-truncate">{{ stackItem.name }}</span>
+            <span class="color-muted text-xs text-truncate">{{ stackItem.displayCore.itemName }}</span>
           </div>
         }
-        <span class="color-muted text-xs">+{{ overflowCount() }} more</span>
+        <span class="color-muted text-xs">+{{ overflowCount() }}</span>
       </div>
     </div>
   </article>

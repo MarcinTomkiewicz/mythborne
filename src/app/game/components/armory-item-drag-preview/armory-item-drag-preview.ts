@@ -1,6 +1,6 @@
 import { Component, computed, input } from '@angular/core';
-import { armoryItemIconClass } from '../../../core/domain/equipment/equipment-preview.mapper';
-import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.model';
+import { PlayerArmoryItemReadModel } from '../../../core/domain/item/player-armory-page-context.model';
+import { armoryItemMetadata } from '../../../core/utils/armory-inventory-filter';
 
 @Component({
   selector: 'app-armory-item-drag-preview',
@@ -9,10 +9,10 @@ import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.mode
   host: { class: 'd-block w-px-300 max-w-300' },
 })
 export class ArmoryItemDragPreview {
-  readonly item = input.required<ArmoryItemSummary>();
-  readonly items = input<readonly ArmoryItemSummary[]>([]);
+  readonly item = input.required<PlayerArmoryItemReadModel>();
+  readonly items = input<readonly PlayerArmoryItemReadModel[]>([]);
   readonly placeholder = input(false);
-  readonly armoryItemIconClass = armoryItemIconClass;
+  readonly itemMetadata = armoryItemMetadata;
 
   readonly previewItems = computed(() => {
     const items = this.items();
@@ -22,15 +22,8 @@ export class ArmoryItemDragPreview {
   readonly visibleStackItems = computed(() => this.previewItems().slice(0, 5));
   readonly isGroup = computed(() => this.previewItems().length > 1);
   readonly isSummary = computed(() => this.previewItems().length > 5);
-  readonly title = computed(() => {
-    const count = this.previewItems().length;
-
-    return this.isGroup()
-      ? `Moving ${count} item${count === 1 ? '' : 's'}`
-      : this.item().name;
-  });
+  readonly count = computed(() => this.previewItems().length);
   readonly overflowCount = computed(() =>
     Math.max(this.previewItems().length - this.visibleStackItems().length, 0),
   );
-  readonly subtitle = computed(() => '');
 }
