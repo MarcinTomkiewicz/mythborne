@@ -1,5 +1,6 @@
 import { Json } from '../../types/database.types';
 import { JsonRecord } from '../../utils/json-read';
+import type { PlayerItemDisplayCore } from './player-item-display-core.model';
 
 export interface PlayerArmoryPageContextReadModel {
   heroId: string;
@@ -184,29 +185,12 @@ export interface PlayerArmoryItemReadModel {
   serverId: string;
   name: string;
   lifecycleStatusKey: string;
-  lifecycleStatusLabel: string;
-  generationBaseId: string | null;
-  generationQualityKey: string | null;
-  prefixAffixId: string | null;
-  suffixAffixId: string | null;
   armoryShelfPosition: number;
   drachmaValue: number | null;
   shelfPosition: number;
   shelfName: string | null;
-  baseName: string | null;
-  baseTypeLabel: string | null;
-  qualityLabel: string | null;
-  primarySlotKey: string | null;
-  primarySlotLabel: string | null;
   allowedSlotKeys: string[];
-  allowedSlotLabel: string | null;
-  displayIconKey: string | null;
-  valueDisplay: PlayerArmoryItemValueDisplay | null;
-}
-
-export interface PlayerArmoryItemValueDisplay {
-  displayLabel: string;
-  displayValue: string;
+  displayCore: PlayerItemDisplayCore;
 }
 
 export interface PlayerArmoryEquipmentSlotReadModel {

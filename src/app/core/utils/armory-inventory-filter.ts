@@ -25,7 +25,7 @@ export function armorySlotFilterOptions(
   const seenValues = new Set<string>([ARMORY_INVENTORY_ALL_FILTER_VALUE]);
 
   for (const item of shelves.flatMap((shelf) => shelf.visibleItems)) {
-    const label = item.allowedSlotLabel?.trim();
+    const label = item.displayCore.allowedSlotLabel?.trim();
 
     for (const slotKey of item.allowedSlotKeys) {
       const value = slotKey.trim();
@@ -149,11 +149,11 @@ function matchesAvailability(
 
 function itemSearchTokens(item: PlayerArmoryItemReadModel): string[] {
   return uniqueDisplayParts([
-    item.name,
-    item.qualityLabel,
-    item.baseTypeLabel,
-    item.allowedSlotLabel,
-    item.valueDisplay?.displayValue ?? null,
+    item.displayCore.itemName,
+    item.displayCore.qualityLabel,
+    item.displayCore.baseTypeLabel,
+    item.displayCore.allowedSlotLabel,
+    item.displayCore.valueDisplay?.displayValue ?? null,
   ]);
 }
 

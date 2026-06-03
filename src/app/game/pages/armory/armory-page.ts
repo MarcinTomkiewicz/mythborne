@@ -188,7 +188,7 @@ export class ArmoryPage implements OnInit {
     if (
       selectedItems.length !== itemIds.length
       || selectedItems.some((item) => item.lifecycleStatusKey !== 'active')
-      || selectedItems.some((item) => !item.valueDisplay)
+      || selectedItems.some((item) => !item.displayCore.valueDisplay)
     ) {
       return;
     }
@@ -232,7 +232,7 @@ export class ArmoryPage implements OnInit {
     if (
       selectedItems.length !== items.length
       || selectedItems.some((item) => item.lifecycleStatusKey !== 'active')
-      || selectedItems.some((item) => !item.valueDisplay)
+      || selectedItems.some((item) => !item.displayCore.valueDisplay)
     ) {
       return;
     }
@@ -310,7 +310,7 @@ export class ArmoryPage implements OnInit {
 
   confirmSellInventoryItem(item: PlayerArmoryItemReadModel): void {
     const copy = this.page.context()?.copyJson;
-    const valueDisplay = item.valueDisplay?.displayValue;
+    const valueDisplay = item.displayCore.valueDisplay?.displayValue;
 
     if (
       this.inventoryActionDisabled()
@@ -324,7 +324,7 @@ export class ArmoryPage implements OnInit {
     const messageSegments = buildSellItemConfirmationSegments(
       copy.confirmations.sellItemMessageParts,
       copy.confirmations.sellItemHighlightFields,
-      item.name,
+      item.displayCore.itemName,
       valueDisplay,
     );
 
@@ -493,7 +493,7 @@ function buildSellSelectedItemLineSegments(
   item: PlayerArmoryItemReadModel,
 ): StructuredConfirmDialogSegment[] {
   const itemLineParts = parts.itemLineParts;
-  const valueDisplay = item.valueDisplay?.displayValue;
+  const valueDisplay = item.displayCore.valueDisplay?.displayValue;
 
   if (!valueDisplay) {
     return [];
@@ -501,7 +501,7 @@ function buildSellSelectedItemLineSegments(
 
   return [
     {
-      text: item.name,
+      text: item.displayCore.itemName,
       highlighted: highlightFields.includes(itemLineParts.itemNameToken),
     },
     { text: itemLineParts.middle, highlighted: false },
