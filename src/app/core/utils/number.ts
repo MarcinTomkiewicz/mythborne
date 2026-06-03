@@ -1,3 +1,5 @@
+import type { PolishCountLabelTemplates } from '../types/polish-count-label.types';
+
 export function roundedNumber(value: unknown, fallback = 0): number {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? Math.round(numeric) : fallback;
@@ -55,4 +57,25 @@ export function clampPercent(value: unknown): number {
 
 export function signedNumberLabel(value: number): string {
   return value > 0 ? `+${value}` : `${value}`;
+}
+
+export function polishCountTemplateLabel(
+  count: number,
+  templates: PolishCountLabelTemplates,
+): string {
+  if (count === 0) {
+    return templates.emptyLabel;
+  }
+
+  const lastDigit = count % 10;
+  const lastTwoDigits = count % 100;
+  const template = count === 1
+    ? templates.oneTemplate
+    : lastDigit >= 2
+      && lastDigit <= 4
+      && (lastTwoDigits < 12 || lastTwoDigits > 14)
+        ? templates.fewTemplate
+        : templates.manyTemplate;
+
+  return template.replace(/\{count\}/g, String(count));
 }

@@ -6,7 +6,6 @@ import {
   PlayerArmoryPageCopyFilters,
   PlayerArmoryPageCopyInventory,
   PlayerArmoryPageCopySearch,
-  PlayerArmoryPageCopyShelfCount,
   PlayerArmoryItemReadModel,
   PlayerArmoryStorageSlotReadModel,
 } from '../../../core/domain/item/player-armory-page-context.model';
@@ -21,6 +20,7 @@ import {
   filterArmoryShelves,
 } from '../../../core/utils/armory-inventory-filter';
 import { normalizeSearchText } from '../../../core/utils/normalize-text';
+import { polishCountTemplateLabel } from '../../../core/utils/number';
 import { InlineTextEdit } from '../../../shared/inline-text-edit/inline-text-edit';
 import { SelectOption } from '../../../core/types/select-option.types';
 import { ArmoryInventoryFilterBar } from '../armory-inventory-filter-bar/armory-inventory-filter-bar';
@@ -125,7 +125,7 @@ export class ArmoryInventorySection {
         ...shelf,
         controlName: shelfControlName(shelf.position),
         canRename: shelf.isPersisted && !shelf.isUnsortedDropArea,
-        shelfCountLabel: formatShelfCountLabel(
+        shelfCountLabel: polishCountTemplateLabel(
           visibleItemCount,
           this.inventoryCopy().shelfCount,
         ),
@@ -335,25 +335,4 @@ export class ArmoryInventorySection {
 
 function shelfControlName(position: number): string {
   return `shelf_${position}`;
-}
-
-function formatShelfCountLabel(
-  count: number,
-  copy: PlayerArmoryPageCopyShelfCount,
-): string {
-  if (count === 0) {
-    return copy.emptyLabel;
-  }
-
-  const lastDigit = count % 10;
-  const lastTwoDigits = count % 100;
-  const template = count === 1
-    ? copy.oneTemplate
-    : lastDigit >= 2
-      && lastDigit <= 4
-      && (lastTwoDigits < 12 || lastTwoDigits > 14)
-        ? copy.fewTemplate
-        : copy.manyTemplate;
-
-  return template.replace(/\{count\}/g, String(count));
 }
