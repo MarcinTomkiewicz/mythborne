@@ -62,26 +62,7 @@
                 }@if (!$last || reward.items.length) {, }
               }
               @for (item of reward.items; track item.id) {
-                <app-item-detail-popover
-                  [itemId]="item.id"
-                  [fallbackName]="item.displayCore.itemName"
-                  [statusLabel]="item.displayCore.lifecycleStatusLabel"
-                  [qualityLabel]="item.displayCore.qualityLabel"
-                  [kindLabel]="item.displayCore.baseTypeLabel"
-                  [slotLabel]="item.displayCore.allowedSlotLabel"
-                  [iconClass]="rewardState.itemIconClass(item)"
-                  [valueDisplay]="item.displayCore.valueDisplay"
-                  [detailLines]="rewardState.itemDetails(item)"
-                  contextKind="reward_item"
-                  contextLabel="Przedmiot z nagrody"
-                  contextSourceLabel="Nagroda eksploracji"
-                  detailMode="partial"
-                  [preserveDisplayLabels]="true"
-                  triggerLabel="Szczegóły"
-                  [buttonTrigger]="false"
-                >
-                  <strong class="color-heading">{{ rewardState.itemLabel(item) }}</strong>
-                </app-item-detail-popover>@if (!$last) {, }
+                <strong class="color-heading">{{ rewardState.itemLabel(item) }}</strong>@if (!$last) {, }
               }
               .
             </p>

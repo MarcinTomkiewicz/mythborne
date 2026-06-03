@@ -13,6 +13,7 @@ import {
   requiredNonNegativeInteger,
   requiredRecord,
   requiredText,
+  requiredTextArray,
 } from './json-read';
 import { mapPlayerItemDisplayCore } from './player-item-display-core.mapper';
 
@@ -127,14 +128,4 @@ function mapValueDisplay(value: Json | undefined) {
       'items.valueDisplay.displayValue',
     ),
   };
-}
-
-function requiredTextArray(value: Json | undefined, fieldPath: string): string[] {
-  if (!Array.isArray(value)) {
-    throw new Error(`${fieldPath} must be an array.`);
-  }
-
-  return value.map((entry, index) =>
-    requiredText(entry, `${fieldPath}[${index}]`),
-  );
 }

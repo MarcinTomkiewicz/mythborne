@@ -115,6 +115,7 @@ export const RPC = {
   get_hero_armory_visibility_state: 'get_hero_armory_visibility_state',
   get_hero_armory_items: 'get_hero_armory_items',
   get_hero_armory_item_detail: 'get_hero_armory_item_detail',
+  get_player_item_popover_detail: 'get_player_item_popover_detail',
   get_hero_item_requirement_status: 'get_hero_item_requirement_status',
   get_item_effective_requirements: 'get_item_effective_requirements',
   get_item_requirement_component_rows: 'get_item_requirement_component_rows',

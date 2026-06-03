@@ -1,5 +1,6 @@
 import { Json } from '../../types/database.types';
 import { Row } from '../../types/supabase.types';
+import type { PlayerItemDisplayCore } from './player-item-display-core.model';
 
 export type ItemLifecycleStatus = Row<'items'>['status'];
 export type ItemRequirementValueType = Row<'requirement_definitions'>['value_type'];
@@ -301,6 +302,7 @@ export interface ArmoryItemDetailReadModel {
   itemId: string;
   heroId: string;
   serverId: string;
+  displayCore: PlayerItemDisplayCore;
   name: string;
   lifecycleStatus: ItemLifecycleStatus | null;
   qualityLabel: string | null;

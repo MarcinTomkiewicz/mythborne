@@ -5,7 +5,6 @@ import { ButtonModule } from 'primeng/button';
 import { GameReports } from '../../../core/services/reports/game-reports';
 import { ToastService } from '../../../core/services/ui/toast';
 import { RequestToken } from '../../../core/utils/request-token';
-import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
 import { OutcomeReportLayout } from '../../../shared/outcome-report-layout/outcome-report-layout';
 import { ExplorationOverviewState } from '../../pages/exploration/exploration-overview.state';
 import { ExplorationRewardState } from '../../pages/exploration/exploration-reward.state';
@@ -26,7 +25,6 @@ import {
     RouterLink,
     ButtonModule,
     OutcomeReportLayout,
-    ItemDetailPopover,
   ],
   templateUrl: './exploration-step-handoff-card.html',
   host: { class: 'd-block w-100' },

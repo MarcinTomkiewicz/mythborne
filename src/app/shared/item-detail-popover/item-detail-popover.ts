@@ -2,18 +2,13 @@ import { Component, DestroyRef, computed, inject, input, signal } from '@angular
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { Popover } from 'primeng/popover';
-import { ArmoryItemDetailReadModel } from '../../core/domain/item/item-equipment.model';
 import {
-  ItemDetailPopoverSnapshotKind,
-  ItemDetailPopoverValueRow,
+  ItemDetailPopoverCopy,
   ItemDetailPopoverViewModel,
 } from '../../core/domain/item/item-detail-popover.model';
-import type { PlayerItemDisplayCoreValueDisplay } from '../../core/domain/item/player-item-display-core.model';
+import { ItemDetailPopoverDetailReadModel } from '../../core/domain/item/item-detail-popover-detail.model';
 import { ItemDetailReader } from '../../core/services/items/item-detail-reader';
-import {
-  armoryDetailPopover,
-  partialItemPopover,
-} from '../../core/utils/item-detail-popover-mappers';
+import { itemDetailPopoverViewModel } from '../../core/utils/item-detail-popover-mappers';
 
 @Component({
   selector: 'app-item-detail-popover',
@@ -28,57 +23,47 @@ export class ItemDetailPopover {
   private hideTimeout: ReturnType<typeof setTimeout> | null = null;
   private loadingItemId: string | null = null;
 
+  readonly copy = input.required<ItemDetailPopoverCopy>();
   readonly itemId = input<string | null>(null);
-  readonly fallbackName = input('Item');
-  readonly description = input<string | null>(null);
-  readonly statusLabel = input<string | null>(null);
-  readonly qualityLabel = input<string | null>(null);
-  readonly kindLabel = input<string | null>(null);
-  readonly slotLabel = input<string | null>(null);
-  readonly iconClass = input<string>('pi pi-chest');
-  readonly drachmaValue = input<number | null>(null);
-  readonly valueDisplay = input<PlayerItemDisplayCoreValueDisplay | null>(null);
-  readonly detailLines = input<readonly string[]>([]);
-  readonly preserveDisplayLabels = input(false);
-  readonly contextKind = input<ItemDetailPopoverSnapshotKind>('current');
-  readonly contextLabel = input('Current item');
+  readonly fallbackName = input<string | null>(null);
   readonly contextSourceLabel = input<string | null>(null);
   readonly capturedAt = input<string | null>(null);
-  readonly detailMode = input<'auto' | 'full' | 'partial'>('auto');
-  readonly triggerLabel = input('Details');
+  readonly triggerLabel = input<string | null>(null);
   readonly triggerIcon = input<string | null>(null);
   readonly triggerSeverity = input<'secondary' | 'info' | 'success' | 'warn' | 'danger'>('secondary');
   readonly triggerOutlined = input(false);
   readonly buttonTrigger = input(true);
   readonly triggerFullWidth = input(false);
+  readonly triggerTabIndex = input<number | null>(0);
   readonly status = signal<'idle' | 'loading' | 'loaded' | 'error'>('idle');
   readonly error = signal<string | null>(null);
-  readonly loadedDetail = signal<ArmoryItemDetailReadModel | null>(null);
+  readonly loadedDetail = signal<ItemDetailPopoverDetailReadModel | null>(null);
   readonly item = computed<ItemDetailPopoverViewModel>(() => {
     const detail = this.loadedDetail();
     const itemId = this.itemId();
 
-    if (this.shouldReadFullDetail() && detail && detail.itemId === itemId) {
-      return armoryDetailPopover(detail, this.context());
+    if (detail && detail.itemId === itemId) {
+      return itemDetailPopoverViewModel(detail, this.context());
     }
 
-    return partialItemPopover({
+    return {
       itemId,
-      name: this.fallbackName(),
-      description: this.description(),
-      statusLabel: this.statusLabel(),
-      qualityLabel: this.qualityLabel(),
-      kindLabel: this.kindLabel(),
-      slotLabel: this.slotLabel(),
-      iconClass: this.iconClass(),
-      drachmaValue: this.drachmaValue(),
-      valueDisplay: this.valueDisplay(),
-      detailRows: this.partialRows(),
-      preserveDisplayLabels: this.preserveDisplayLabels(),
+      name: this.fallbackName() ?? '',
+      description: null,
+      statusLabel: null,
+      qualityLabel: null,
+      kindLabel: null,
+      slotLabel: null,
+      iconClass: 'pi pi-box',
+      valueDisplay: null,
+      itemStats: [],
+      modifierRows: [],
+      requirementRows: [],
+      requirementState: null,
       context: this.context(),
-      isLoading: this.shouldReadFullDetail() && this.status() === 'loading',
+      isLoading: this.status() === 'loading',
       error: this.playerSafeError(),
-    });
+    };
   });
 
   openFromPointer(event: Event, popover: Popover): void {
@@ -108,9 +93,7 @@ export class ItemDetailPopover {
 
   private open(event: Event, popover: Popover): void {
     this.keepOpen();
-    if (this.shouldReadFullDetail()) {
-      this.loadDetail();
-    }
+    this.loadDetail();
     popover.show(event);
   }
 
@@ -145,7 +128,7 @@ export class ItemDetailPopover {
     if (!itemId?.trim()) {
       this.loadedDetail.set(null);
       this.status.set('error');
-      this.error.set('Full item detail unavailable.');
+      this.error.set(this.copy().unavailableLabel);
       this.loadingItemId = null;
       return;
     }
@@ -168,43 +151,26 @@ export class ItemDetailPopover {
           this.status.set('loaded');
           this.loadingItemId = null;
         },
-        error: () => {
+        error: (error: unknown) => {
           if (requestId !== this.requestId || itemId !== this.itemId()) {
             return;
           }
 
+          this.reportLoadFailure(itemId, error);
           this.loadedDetail.set(null);
           this.status.set('error');
-          this.error.set('Full item detail unavailable.');
+          this.error.set(this.copy().unavailableLabel);
           this.loadingItemId = null;
         },
       });
   }
 
-  private shouldReadFullDetail(): boolean {
-    const mode = this.detailMode();
-
-    if (mode === 'full') {
-      return true;
-    }
-
-    if (mode === 'partial') {
-      return false;
-    }
-
-    return this.contextKind() === 'current' || this.contextKind() === 'reward_item';
+  triggerText(): string {
+    return this.triggerLabel() ?? this.copy().triggerLabel;
   }
 
-  private partialRows(): ItemDetailPopoverValueRow[] {
-    return this.detailLines().map((line, index) => ({
-      key: `detail-${index}`,
-      label: line,
-      displayValue: '',
-      valueParts: [],
-      sourceLabel: null,
-      isBoosted: false,
-      valueTone: 'neutral',
-    }));
+  triggerAriaLabel(name: string): string {
+    return itemDetailCopyTemplate(this.copy().triggerAriaLabelTemplate, name);
   }
 
   private playerSafeError(): string | null {
@@ -212,7 +178,7 @@ export class ItemDetailPopover {
       return null;
     }
 
-    return this.error() ?? 'Full item detail unavailable.';
+    return this.error() ?? this.copy().unavailableLabel;
   }
 
   private clearHideTimeout(): void {
@@ -228,12 +194,23 @@ export class ItemDetailPopover {
     ));
   }
 
+  private reportLoadFailure(itemId: string, error: unknown): void {
+    console.log('[ItemDetailPopover] full item detail load failed', {
+      itemId,
+      error,
+    });
+  }
+
   private context() {
     return {
-      kind: this.contextKind(),
-      label: this.contextLabel(),
+      kind: 'current' as const,
+      label: null,
       capturedAt: this.capturedAt(),
       sourceLabel: this.contextSourceLabel(),
     };
   }
+}
+
+function itemDetailCopyTemplate(template: string, itemName: string): string {
+  return template.replace(/\{itemName\}/g, itemName);
 }

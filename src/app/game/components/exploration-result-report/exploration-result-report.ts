@@ -15,7 +15,6 @@ import {
   mapExplorationRewardText,
 } from '../../../core/utils/exploration-result-display.mapper';
 import { RequestToken } from '../../../core/utils/request-token';
-import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
 import { ExplorationMinigameHandoffState } from '../../pages/exploration/exploration-minigame-handoff.state';
 import { ExplorationRewardState } from '../../pages/exploration/exploration-reward.state';
 import { OutcomeReportLayout } from '../../../shared/outcome-report-layout/outcome-report-layout';
@@ -29,7 +28,6 @@ import { ReportHandoffActions } from '../report-handoff-actions/report-handoff-a
   imports: [
     CombatStage,
     OutcomeReportLayout,
-    ItemDetailPopover,
     ReportHandoffActions,
   ],
   templateUrl: './exploration-result-report.html',

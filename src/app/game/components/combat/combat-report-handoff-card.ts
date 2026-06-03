@@ -17,7 +17,6 @@ import {
   mapExplorationReportActions,
 } from '../../../core/utils/exploration-result-display.mapper';
 import { RequestToken } from '../../../core/utils/request-token';
-import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
 import { CombatStage } from '../combat/combat-stage';
 import { OutcomeReportLayout } from '../../../shared/outcome-report-layout/outcome-report-layout';
 import { MinigameCompletionEvent } from '../minigame-host/minigame-host.model';
@@ -29,7 +28,6 @@ import { ReportHandoffActions } from '../report-handoff-actions/report-handoff-a
   imports: [
     CombatStage,
     OutcomeReportLayout,
-    ItemDetailPopover,
     ReportHandoffActions,
   ],
   template: `
@@ -98,20 +96,7 @@ import { ReportHandoffActions } from '../report-handoff-actions/report-handoff-a
             <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
               @for (item of itemReferences(); track itemReferenceTrackKey($index, item)) {
                 <div class="mg-card flex-col gap-xs p-md">
-                  <app-item-detail-popover
-                    [itemId]="item.sourceItemId"
-                    [fallbackName]="item.displayName"
-                    [qualityLabel]="item.qualityKey"
-                    [detailLines]="item.displayDetails"
-                    contextKind="report_reference"
-                    contextLabel="Przedmiot z raportu"
-                    contextSourceLabel="Zdobycze"
-                    detailMode="partial"
-                    triggerLabel="Szczegóły"
-                    [buttonTrigger]="false"
-                  >
-                    <strong class="color-heading">{{ item.displayName }}</strong>
-                  </app-item-detail-popover>
+                  <strong class="color-heading">{{ item.displayName }}</strong>
                   @if (item.displayDetails.length) {
                     <div class="flex-row-start-center flex-wrap gap-sm">
                       @for (detail of item.displayDetails; track detail) {

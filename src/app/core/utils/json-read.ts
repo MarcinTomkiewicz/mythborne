@@ -110,6 +110,16 @@ export function requiredText(value: Json | undefined, field: string): string {
   return textValue;
 }
 
+export function requiredTextArray(value: Json | undefined, field: string): string[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`${field} must be an array.`);
+  }
+
+  return value.map((entry, index) =>
+    requiredText(entry, `${field}[${index}]`),
+  );
+}
+
 export function requiredBoolean(value: Json | undefined, field: string): boolean {
   const booleanValue = optionalBoolean(value);
 

@@ -76,23 +76,26 @@
           <div class="flex-col gap-sm {{ group.zoneClass }}">
             @for (slot of group.rows; track slot.slotKey) {
               @if (slot.item; as item) {
-                <app-item-detail-popover
-                  class="equipment-preview__slot-popover"
-                  [itemId]="item.itemId"
-                  [fallbackName]="item.name"
-                  [statusLabel]="item.statusLabel"
-                  [qualityLabel]="item.qualityLabel"
-                  [kindLabel]="item.kindLabel"
-                  [slotLabel]="item.slotLabel"
-                  [iconClass]="slot.iconClass"
-                  [buttonTrigger]="false"
-                  [triggerFullWidth]="true"
-                >
+                @if (itemDetailCopy(); as copy) {
+                  <app-item-detail-popover
+                    class="equipment-preview__slot-popover"
+                    [copy]="copy"
+                    [itemId]="item.itemId"
+                    [fallbackName]="item.name"
+                    [buttonTrigger]="false"
+                    [triggerFullWidth]="true"
+                  >
+                    <ng-container
+                      [ngTemplateOutlet]="slotCard"
+                      [ngTemplateOutletContext]="{ slot: slot, item: item, stretch: false }"
+                    />
+                  </app-item-detail-popover>
+                } @else {
                   <ng-container
                     [ngTemplateOutlet]="slotCard"
                     [ngTemplateOutletContext]="{ slot: slot, item: item, stretch: false }"
                   />
-                </app-item-detail-popover>
+                }
               } @else {
                 <ng-container
                   [ngTemplateOutlet]="slotCard"
@@ -118,23 +121,26 @@
         <div class="flex-col gap-sm p-sm">
           @for (slot of otherRows(); track slot.slotKey) {
             @if (slot.item; as item) {
-              <app-item-detail-popover
-                class="equipment-preview__slot-popover"
-                [itemId]="item.itemId"
-                [fallbackName]="item.name"
-                [statusLabel]="item.statusLabel"
-                [qualityLabel]="item.qualityLabel"
-                [kindLabel]="item.kindLabel"
-                [slotLabel]="item.slotLabel"
-                [iconClass]="slot.iconClass"
-                [buttonTrigger]="false"
-                [triggerFullWidth]="true"
-              >
+              @if (itemDetailCopy(); as copy) {
+                <app-item-detail-popover
+                  class="equipment-preview__slot-popover"
+                  [copy]="copy"
+                  [itemId]="item.itemId"
+                  [fallbackName]="item.name"
+                  [buttonTrigger]="false"
+                  [triggerFullWidth]="true"
+                >
+                  <ng-container
+                    [ngTemplateOutlet]="slotCard"
+                    [ngTemplateOutletContext]="{ slot: slot, item: item, stretch: true }"
+                  />
+                </app-item-detail-popover>
+              } @else {
                 <ng-container
                   [ngTemplateOutlet]="slotCard"
                   [ngTemplateOutletContext]="{ slot: slot, item: item, stretch: true }"
                 />
-              </app-item-detail-popover>
+              }
             } @else {
               <ng-container
                 [ngTemplateOutlet]="slotCard"

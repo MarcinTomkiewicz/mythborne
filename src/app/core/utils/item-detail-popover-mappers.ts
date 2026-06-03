@@ -5,206 +5,97 @@ import {
   ItemDetailPopoverViewModel,
 } from '../domain/item/item-detail-popover.model';
 import {
-  classifyItemDisplay,
-} from '../domain/equipment/equipment-preview.mapper';
-import { ArmoryItemDetailReadModel } from '../domain/item/item-equipment.model';
-import { PartialItemDetailPopoverInput } from '../types/item-detail-popover.types';
-import { normalizeBonusTargetKey } from './bonus';
-import { humanizeKey, trimText } from './normalize-text';
+  ItemDetailPopoverDetailReadModel,
+  ItemDetailPopoverDisplayTone,
+} from '../domain/item/item-detail-popover-detail.model';
 
-export function armoryDetailPopover(
-  detail: ArmoryItemDetailReadModel,
-  context: ItemDetailPopoverContext = currentContext('Current item'),
+export function itemDetailPopoverViewModel(
+  detail: ItemDetailPopoverDetailReadModel,
+  context: ItemDetailPopoverContext = currentContext(),
 ): ItemDetailPopoverViewModel {
-  const requirementPreview = detail.requirementPreview;
-  const failedRequirementKeys = new Set(requirementPreview?.failedRequirementKeys ?? []);
-  const itemDisplay = classifyItemDisplay({ baseTypeKey: detail.baseTypeKey });
-  const requirementRows = requirementPreview?.effectiveRequirements.map((requirement) => ({
-    key: `${requirement.requirementDefinitionKey}-${requirement.requiredStatKey ?? 'any'}`,
-    label: requirement.displayLabel,
-    requiredValue: requirement.displayValue,
-    currentValue: requirement.currentValueLabel ?? null,
-    isMet: requirement.isMet ?? requirementIsMet(
-      failedRequirementKeys,
-      requirement.requirementDefinitionKey,
-      requirement.requiredStatKey,
-    ),
-    failureReason: requirement.failureReasonLabel ?? null,
-  })) ?? [];
+  const displayMeta = detail.displayMeta;
 
   return {
     itemId: detail.itemId,
-    name: detail.name,
+    name: displayMeta.itemName,
     description: null,
-    statusLabel: detail.lifecycleStatus ? humanizeKey(detail.lifecycleStatus) : null,
-    qualityLabel: displayLabel(detail.qualityLabel),
-    kindLabel: itemDisplay.kindLabel
-      ?? displayLabel(detail.baseTypeKey)
-      ?? displayLabel(detail.baseLabel),
-    slotLabel: itemDisplay.slotLabel,
-    iconClass: itemDisplay.iconClass,
-    drachmaValue: detail.drachmaValue,
-    valueDisplay: null,
-    nativeStats: detail.itemStats.map((stat, index) => ({
-      key: `stat-${index}-${stat.label}`,
-      label: stat.label,
-      displayValue: stat.displayValue,
-      valueParts: statValueParts(stat.statKey, stat.displayValue, detail.bonuses),
+    statusLabel: null,
+    qualityLabel: displayMeta.qualityLabel,
+    kindLabel: displayMeta.baseTypeLabel,
+    slotLabel: displayMeta.allowedSlotLabel,
+    iconClass: `pi pi-${displayMeta.displayIconKey}`,
+    valueDisplay: displayMeta.valueDisplay,
+    itemStats: detail.itemStats.map((row, index) => ({
+      key: `stat-${index}`,
+      label: row.label,
+      displayValue: row.displayValue,
+      valueParts: valueParts(row.displayValue, row.displayTone),
       sourceLabel: null,
-      isBoosted: (stat.numericValue ?? null) !== null && (stat.numericValue ?? 0) > 0,
-      valueTone: valueTone(stat.numericValue ?? null),
+      isBoosted: row.displayTone === 'positive',
+      valueTone: row.displayTone,
     })),
-    bonusRows: detail.bonuses.map((bonus, index) => ({
-      key: `${bonus.sourceKey ?? 'bonus'}-${index}-${bonus.label}`,
-      label: bonus.label,
-      displayValue: bonus.displayValue,
-      valueParts: [{
-        text: bonus.displayValue,
-        tone: valueTone(bonus.numericValue),
-      }],
+    modifierRows: detail.modifierRows.map((row, index) => ({
+      key: `modifier-${index}`,
+      label: row.label,
+      displayValue: row.displayValue,
+      valueParts: valueParts(row.displayValue, row.displayTone),
       sourceLabel: null,
-      isBoosted: bonus.numericValue !== null && bonus.numericValue > 0,
-      valueTone: valueTone(bonus.numericValue),
+      isBoosted: row.displayTone === 'positive',
+      valueTone: row.displayTone,
     })),
-    requirementRows,
-    requirementState: requirementState(requirementPreview, requirementRows.length),
+    requirementRows: detail.requirements.map((row, index) => ({
+      key: `requirement-${index}`,
+      label: row.displayText,
+      requiredValue: row.requiredDisplayText,
+      currentValue: row.currentDisplayText,
+      isMet: row.isMet,
+      failureReason: row.failureDisplayText ?? row.failureReasonLabel,
+    })),
+    requirementState: requirementState(detail),
     context,
     isLoading: false,
     error: null,
   };
 }
 
-function requirementIsMet(
-  failedRequirementKeys: ReadonlySet<string>,
-  requirementDefinitionKey: string,
-  requiredStatKey: string | null,
-): boolean | null {
-  const key = `${requirementDefinitionKey}:${requiredStatKey ?? ''}`;
-
-  if (failedRequirementKeys.has(key)) {
-    return false;
-  }
-
-  return null;
-}
-
-export function partialItemPopover(
-  input: PartialItemDetailPopoverInput,
-): ItemDetailPopoverViewModel {
-  return {
-    itemId: input.itemId,
-    name: input.name,
-    description: input.description,
-    statusLabel: partialDisplayLabel(input.statusLabel, input.preserveDisplayLabels),
-    qualityLabel: partialDisplayLabel(input.qualityLabel, input.preserveDisplayLabels),
-    kindLabel: partialDisplayLabel(input.kindLabel, input.preserveDisplayLabels),
-    slotLabel: partialDisplayLabel(input.slotLabel, input.preserveDisplayLabels),
-    iconClass: input.iconClass,
-    drachmaValue: input.drachmaValue,
-    valueDisplay: input.valueDisplay,
-    nativeStats: [...input.detailRows],
-    bonusRows: [],
-    requirementRows: [],
-    requirementState: {
-      kind: 'unknown',
-      label: 'Requirements unavailable.',
-      details: null,
-    },
-    context: input.context,
-    isLoading: input.isLoading,
-    error: input.error,
-  };
-}
-
-function displayLabel(value: string | null): string | null {
-  return value?.trim() ? humanizeKey(value) : null;
-}
-
-function partialDisplayLabel(
-  value: string | null,
-  preserveDisplayLabel: boolean,
-): string | null {
-  if (!preserveDisplayLabel) {
-    return displayLabel(value);
-  }
-
-  const label = trimText(value);
-
-  return label || null;
-}
-
-function statValueParts(
-  statKey: string | null,
+function valueParts(
   displayValue: string,
-  bonuses: readonly ArmoryItemDetailReadModel['bonuses'][number][],
+  tone: ItemDetailPopoverDisplayTone,
 ): ItemDetailPopoverValueRow['valueParts'] {
-  if (normalizeBonusTargetKey(statKey) !== 'damage') {
-    return [{ text: displayValue, tone: 'neutral' }];
-  }
-
-  const separatorIndex = displayValue.indexOf('-');
-  if (separatorIndex < 0) {
-    return [{ text: displayValue, tone: 'neutral' }];
-  }
-
-  const min = displayValue.slice(0, separatorIndex).trim();
-  const separator = displayValue.slice(separatorIndex, separatorIndex + 1);
-  const max = displayValue.slice(separatorIndex + 1).trim();
-
-  return [
-    { text: min, tone: targetTone(bonuses, 'min_damage') },
-    { text: separator, tone: 'neutral' as const },
-    { text: max, tone: targetTone(bonuses, 'max_damage') },
-  ].filter((part) => part.text.length > 0);
-}
-
-function targetTone(
-  bonuses: readonly ArmoryItemDetailReadModel['bonuses'][number][],
-  targetKey: string,
-): ItemDetailPopoverValueRow['valueTone'] {
-  const normalizedTarget = normalizeBonusTargetKey(targetKey);
-  const total = bonuses
-    .filter((bonus) => normalizeBonusTargetKey(bonus.targetKey) === normalizedTarget)
-    .reduce((sum, bonus) => sum + (bonus.numericValue ?? 0), 0);
-
-  return valueTone(total || null);
-}
-
-function valueTone(value: number | null): ItemDetailPopoverValueRow['valueTone'] {
-  if (value === null || value === 0) {
-    return 'neutral';
-  }
-
-  return value > 0 ? 'positive' : 'negative';
+  return [{ text: displayValue, tone }];
 }
 
 function requirementState(
-  preview: ArmoryItemDetailReadModel['requirementPreview'],
-  renderedRequirementCount: number,
+  detail: ItemDetailPopoverDetailReadModel,
 ): ItemDetailPopoverRequirementState {
-  if (!preview) {
-    return { kind: 'unknown', label: 'Unchecked', details: null };
+  const status = detail.requirementStatus;
+  const count = status.requirementCount ?? detail.requirementCount;
+  const unmetCount = status.unmetCount ?? detail.unmetCount;
+  const meetsRequirements = status.meetsRequirements ?? detail.meetsRequirements;
+
+  if (count === 0) {
+    return { kind: 'met', label: null, details: null };
   }
 
-  if (preview.meetsRequirements === true) {
-    if (preview.requirementCount === 0 || renderedRequirementCount > 0) {
-      return { kind: 'met', label: 'Met', details: null };
-    }
-
-    return { kind: 'unknown', label: 'Unchecked', details: null };
+  if (meetsRequirements === true) {
+    return { kind: 'met', label: null, details: null };
   }
 
-  if (preview.meetsRequirements === false) {
-    return { kind: 'not_met', label: 'Not met', details: null };
+  if (meetsRequirements === false || (unmetCount ?? 0) > 0) {
+    return { kind: 'not_met', label: null, details: null };
   }
 
-  return { kind: 'unknown', label: 'Unchecked', details: null };
+  return {
+    kind: 'unknown',
+    label: null,
+    details: null,
+  };
 }
 
-function currentContext(label: string): ItemDetailPopoverContext {
+function currentContext(): ItemDetailPopoverContext {
   return {
     kind: 'current',
-    label,
+    label: null,
     capturedAt: null,
     sourceLabel: null,
   };

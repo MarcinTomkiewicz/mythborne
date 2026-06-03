@@ -99,17 +99,7 @@
             }
           </div>
         }
-        <app-item-detail-popover
-          [itemId]="itemReferenceId(item)"
-          [fallbackName]="item.displayName"
-          [qualityLabel]="item.qualityKey"
-          [detailLines]="item.displayDetails"
-          contextKind="report_reference"
-          contextLabel="Report item reference"
-          [contextSourceLabel]="toItemSourceKindLabel(item.sourceKind)"
-          detailMode="partial"
-          triggerLabel="Details"
-        />
+        <strong class="color-heading">{{ item.displayName }}</strong>
       </div>
     } @empty {
       <p class="mb-0 muted-text">No item references.</p>

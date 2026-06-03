@@ -90,16 +90,9 @@
           </div>
         }
         <div class="mt-sm">
-          <app-item-detail-popover
-            [itemId]="listing.item.itemId"
-            [fallbackName]="listing.item.itemName ?? listing.item.itemId"
-            [statusLabel]="listing.item.itemStatus"
-            [drachmaValue]="listing.item.drachmaValue"
-            contextKind="current"
-            contextLabel="Active auction item"
-            contextSourceLabel="Auction listing"
-            triggerLabel="Item details"
-          />
+          <span class="tag-badge tag-badge--muted">
+            {{ listing.item.itemName ?? listing.item.itemId }}
+          </span>
         </div>
       </article>
     } @empty {
@@ -138,23 +131,6 @@
                     - bucket {{ item.valueBucket }}
                   }
                 </span>
-                <app-item-detail-popover
-                  [itemId]="item.itemId"
-                  [fallbackName]="item.itemName ?? item.generationBaseName ?? item.itemId ?? 'Auction item'"
-                  [qualityLabel]="item.generationQualityLabel ?? item.generationQualityKey"
-                  [kindLabel]="item.generationBaseName ?? item.generationBaseKey"
-                  [slotLabel]="item.generationBaseTypeKey"
-                  [drachmaValue]="item.itemDrachmaValue"
-                  [detailLines]="transactionItemDetails(item)"
-                  contextKind="auction_snapshot"
-                  contextLabel="Auction item snapshot"
-                  contextSourceLabel="Historical item snapshot"
-                  [capturedAt]="item.createdAt"
-                  detailMode="partial"
-                  triggerLabel="Details"
-                  triggerIcon="pi pi-search"
-                  [triggerOutlined]="true"
-                />
               </div>
             }
           </div>

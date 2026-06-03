@@ -53,18 +53,6 @@
                 <span class="tag-badge tag-badge--muted">
                   {{ item.itemName ?? item.itemId }} - {{ item.side }}
                 </span>
-                <app-item-detail-popover
-                  [itemId]="item.itemId"
-                  [fallbackName]="item.itemName ?? item.itemId"
-                  [statusLabel]="item.itemStatus"
-                  [drachmaValue]="item.itemDrachmaValue"
-                  contextKind="current"
-                  contextLabel="Active trade item"
-                  contextSourceLabel="Direct trade offer"
-                  triggerLabel="Details"
-                  triggerIcon="pi pi-search"
-                  [triggerOutlined]="true"
-                />
               </div>
             }
           </div>

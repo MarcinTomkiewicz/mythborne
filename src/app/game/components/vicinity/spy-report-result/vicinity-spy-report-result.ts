@@ -5,7 +5,6 @@ import {
   GameReportItemReference,
   PrivateGameReportDetail,
 } from '../../../../core/domain/reports/game-report.model';
-import { ItemDetailPopover } from '../../../../shared/item-detail-popover/item-detail-popover';
 import { OutcomeReportLayout } from '../../../../shared/outcome-report-layout/outcome-report-layout';
 import { ReportHandoffActions } from '../../report-handoff-actions/report-handoff-actions';
 
@@ -14,7 +13,6 @@ import { ReportHandoffActions } from '../../report-handoff-actions/report-handof
   standalone: true,
   imports: [
     OutcomeReportLayout,
-    ItemDetailPopover,
     ReportHandoffActions,
   ],
   templateUrl: './vicinity-spy-report-result.html',

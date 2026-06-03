@@ -8,6 +8,7 @@ import {
   read,
   requiredRecord,
   requiredText,
+  requiredTextArray,
 } from './json-read';
 
 export function mapPlayerItemDisplayCore(
@@ -62,14 +63,4 @@ function mapPlayerItemDisplayCoreValueDisplay(
     displayLabel: requiredText(read(row, 'displayLabel'), `${field}.displayLabel`),
     displayValue: requiredText(read(row, 'displayValue'), `${field}.displayValue`),
   };
-}
-
-function requiredTextArray(value: Json | undefined, field: string): string[] {
-  if (!Array.isArray(value)) {
-    throw new Error(`${field} must be an array.`);
-  }
-
-  return value.map((entry, index) =>
-    requiredText(entry, `${field}[${index}]`),
-  );
 }

@@ -3,6 +3,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import {
+  ItemDetailPopoverCopy,
+} from '../../../core/domain/item/item-detail-popover.model';
+import {
   PlayerArmoryPageCopyFilters,
   PlayerArmoryPageCopyInventory,
   PlayerArmoryPageCopySearch,
@@ -25,6 +28,7 @@ import { InlineTextEdit } from '../../../shared/inline-text-edit/inline-text-edi
 import { SelectOption } from '../../../core/types/select-option.types';
 import { ArmoryInventoryFilterBar } from '../armory-inventory-filter-bar/armory-inventory-filter-bar';
 import { ArmoryBulkActionsToolbar } from '../armory-bulk-actions-toolbar/armory-bulk-actions-toolbar';
+import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
 
 @Component({
   selector: 'app-armory-inventory-section',
@@ -35,6 +39,7 @@ import { ArmoryBulkActionsToolbar } from '../armory-bulk-actions-toolbar/armory-
     ArmoryInventoryFilterBar,
     ButtonModule,
     InlineTextEdit,
+    ItemDetailPopover,
   ],
   templateUrl: './armory-inventory-section.html',
 })
@@ -44,6 +49,7 @@ export class ArmoryInventorySection {
   readonly searchCopy = input.required<PlayerArmoryPageCopySearch>();
   readonly filtersCopy = input.required<PlayerArmoryPageCopyFilters>();
   readonly inventoryCopy = input.required<PlayerArmoryPageCopyInventory>();
+  readonly itemDetailCopy = input.required<ItemDetailPopoverCopy>();
   readonly equipItemLabel = input.required<string>();
   readonly bulkEquipItemLabel = input.required<string>();
   readonly bulkSellItemLabel = input.required<string>();

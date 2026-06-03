@@ -15265,6 +15265,14 @@ export type Database = {
             }
             Returns: Json
           }
+      build_player_item_display_core_json: {
+        Args: { p_item_json: Json }
+        Returns: Json
+      }
+      build_player_item_popover_detail_json: {
+        Args: { p_hero_id: string; p_item_id: string }
+        Returns: Json
+      }
       build_polish_prefix_display_forms: {
         Args: { p_prefix_name: string }
         Returns: Json
@@ -17479,6 +17487,10 @@ export type Database = {
         Args: { p_base_type_key: string; p_bonuses_json: Json }
         Returns: Json
       }
+      filter_player_facing_item_stats_json: {
+        Args: { p_rows_json: Json }
+        Returns: Json
+      }
       finalize_combat_source_result: {
         Args: {
           p_request_id?: string
@@ -17758,8 +17770,46 @@ export type Database = {
         Args: { p_target_label: string; p_type_key: string; p_value: number }
         Returns: string
       }
+      format_player_facing_bonus_display_scoped: {
+        Args: {
+          p_scope_key?: string
+          p_target_key: string
+          p_target_label: string
+          p_type_key: string
+          p_value: number
+        }
+        Returns: string
+      }
+      format_player_facing_requirement_display: {
+        Args: {
+          p_required_building_key?: string
+          p_required_district_code?: string
+          p_required_resource_type?: string
+          p_required_stat_key?: string
+          p_required_value?: number
+          p_required_value_text?: string
+          p_requirement_definition_key: string
+        }
+        Returns: string
+      }
+      format_player_facing_requirement_display_parts: {
+        Args: {
+          p_required_building_key?: string
+          p_required_district_code?: string
+          p_required_resource_type?: string
+          p_required_stat_key?: string
+          p_required_value?: number
+          p_required_value_text?: string
+          p_requirement_definition_key: string
+        }
+        Returns: Json
+      }
       format_start_flow_bonus_value: {
         Args: { p_target_label: string; p_type_key: string; p_value: number }
+        Returns: string
+      }
+      format_vicinity_address: {
+        Args: { p_address_number: number; p_district_code: string }
         Returns: string
       }
       formula_clamp:
@@ -17771,6 +17821,16 @@ export type Database = {
             Args: { p_max: number; p_min: number; p_value: number }
             Returns: number
           }
+      formula_exploration_auto_resolve_model_b3: {
+        Args: {
+          p_auto_resolve_penalty: number
+          p_cap_percent: number
+          p_difficulty_multiplier: number
+          p_stat_cap: number
+          p_trial_power: number
+        }
+        Returns: number
+      }
       formula_random:
         | { Args: never; Returns: number }
         | { Args: { p_max: number; p_min: number }; Returns: number }
@@ -17780,6 +17840,16 @@ export type Database = {
       }
       formula_round_up: {
         Args: { p_step?: number; p_value: number }
+        Returns: number
+      }
+      formula_trial_manifestation_model_k: {
+        Args: {
+          p_cap_percent: number
+          p_difficulty_multiplier: number
+          p_spirituality_over_cap: number
+          p_stat_cap: number
+          p_trial_power: number
+        }
         Returns: number
       }
       generate_game_report_public_token: { Args: never; Returns: string }
@@ -18462,6 +18532,14 @@ export type Database = {
           reward_assignment_count: number
         }[]
       }
+      get_estate_building_effective_bonus_scope_key: {
+        Args: {
+          p_building_key: string
+          p_target_key: string
+          p_template_scope_key: string
+        }
+        Returns: string
+      }
       get_exploration_challenge_reward_read_model: {
         Args: { p_challenge_attempt_id: string }
         Returns: {
@@ -18882,7 +18960,15 @@ export type Database = {
           visible_statuses: string[]
         }[]
       }
+      get_hero_attribute_allocation_model: {
+        Args: { p_hero_id: string; p_stat_values_json?: Json }
+        Returns: Json
+      }
       get_hero_attribute_allocation_preview_manifest: {
+        Args: { p_hero_id: string }
+        Returns: Json
+      }
+      get_hero_attribute_derived_preview_manifest: {
         Args: { p_hero_id: string }
         Returns: Json
       }
@@ -19085,6 +19171,28 @@ export type Database = {
           hero_id: string
           recent_jobs_json: Json
           resources_json: Json
+          server_id: string
+          settled_as_of: string
+          settled_completed_count: number
+          siege_protection_active: boolean
+          siege_protection_expires_at: string
+          siege_protection_source: string
+        }[]
+      }
+      get_hero_estate_summary_state: {
+        Args: { p_hero_id: string }
+        Returns: {
+          active_job_json: Json
+          address: string
+          address_number: number
+          attack_protection_active: boolean
+          attack_protection_expires_at: string
+          attack_protection_source_entity_id: string
+          attack_protection_source_entity_type: string
+          district_code: string
+          estate_id: string
+          estate_rank: number
+          hero_id: string
           server_id: string
           settled_as_of: string
           settled_completed_count: number
@@ -19765,6 +19873,19 @@ export type Database = {
           target_key: string
         }[]
       }
+      get_hero_stat_allocation_cap: {
+        Args: { p_hero_id: string; p_stat_key: string }
+        Returns: number
+      }
+      get_hero_stat_upgrade_cost: {
+        Args: {
+          p_current_value: number
+          p_hero_id: string
+          p_next_value: number
+          p_stat_key: string
+        }
+        Returns: number
+      }
       get_hero_trade_slot_limit: {
         Args: { p_hero_id: string }
         Returns: number
@@ -20334,6 +20455,11 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_player_armory_availability_options_json: {
+        Args: never
+        Returns: Json
+      }
+      get_player_armory_copy_json: { Args: never; Returns: Json }
       get_player_armory_page_context: {
         Args: { p_hero_id: string }
         Returns: Json
@@ -20346,12 +20472,28 @@ export type Database = {
         Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
         Returns: Json
       }
+      get_player_dashboard_copy_json: { Args: never; Returns: Json }
       get_player_dashboard_page_context: {
         Args: { p_hero_id: string }
         Returns: Json
       }
+      get_player_equipment_preview_copy_json: { Args: never; Returns: Json }
+      get_player_estate_building_progression_preview_context: {
+        Args: {
+          p_building_id: string
+          p_from_level?: number
+          p_hero_id: string
+          p_to_level?: number
+        }
+        Returns: Json
+      }
+      get_player_estate_copy_json: { Args: never; Returns: Json }
       get_player_estate_page_context: {
         Args: { p_hero_id: string }
+        Returns: Json
+      }
+      get_player_item_popover_detail: {
+        Args: { p_hero_id: string; p_item_id: string }
         Returns: Json
       }
       get_player_page_hero_guard: {
@@ -20383,6 +20525,7 @@ export type Database = {
         Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
         Returns: Json
       }
+      get_player_vicinity_copy_json: { Args: never; Returns: Json }
       get_player_vicinity_page_context: {
         Args: { p_hero_id: string }
         Returns: Json
@@ -21296,6 +21439,10 @@ export type Database = {
         Args: { p_max_key?: string; p_min_key?: string; p_pair: Json }
         Returns: Json
       }
+      normalize_hero_attack_plan_dashboard_source_rows: {
+        Args: { p_payload: Json }
+        Returns: Json
+      }
       normalize_locale_key: { Args: { p_locale_key: string }; Returns: string }
       parse_estate_address_number: {
         Args: { p_address: string; p_district_code: string }
@@ -21470,6 +21617,64 @@ export type Database = {
         }
         Returns: string
       }
+      player_armory_allowed_slot_label_pl: {
+        Args: { p_allowed_slot_keys_json: Json }
+        Returns: string
+      }
+      player_armory_allowed_slot_labels_json: {
+        Args: { p_allowed_slot_keys_json: Json }
+        Returns: Json
+      }
+      player_armory_hand_usage_label_pl: {
+        Args: { p_hand_usage_key: string }
+        Returns: string
+      }
+      player_armory_item_lifecycle_label_pl: {
+        Args: { p_status_key: string }
+        Returns: string
+      }
+      player_armory_item_type_label_pl: {
+        Args: { p_base_type_key: string }
+        Returns: string
+      }
+      player_armory_quality_label_pl: {
+        Args: { p_quality_key: string }
+        Returns: string
+      }
+      player_armory_slot_compatibility_label_pl: {
+        Args: { p_allowed_slot_keys_json: Json }
+        Returns: string
+      }
+      player_armory_slot_label_pl: {
+        Args: { p_slot_key: string }
+        Returns: string
+      }
+      player_armory_text_pl: {
+        Args: { p_field_key?: string; p_value: string }
+        Returns: string
+      }
+      player_derived_stat_label: {
+        Args: {
+          p_fallback_label?: string
+          p_locale_key?: string
+          p_stat_key: string
+        }
+        Returns: string
+      }
+      player_item_display_icon_key: {
+        Args: {
+          p_base_key: string
+          p_base_type_key: string
+          p_equipment_area: string
+          p_hand_usage_key: string
+          p_primary_slot_key: string
+        }
+        Returns: string
+      }
+      prestige_rank_label_pl: {
+        Args: { p_rank_number: number }
+        Returns: string
+      }
       preview_challenge_auto_resolve_success_chance: {
         Args: {
           p_difficulty_key?: string
@@ -21504,6 +21709,37 @@ export type Database = {
           p_district_code?: string
           p_luck_value?: number
           p_spirituality_value?: number
+          p_tested_stat_key?: string
+          p_tested_stat_value?: number
+        }
+        Returns: {
+          auto_resolve_penalty: number
+          cap_percent: number
+          difficulty_key: string
+          difficulty_label: string
+          difficulty_multiplier: number
+          explanation: string
+          final_auto_resolve_success_chance: number
+          formula_expression: string
+          formula_key: string
+          luck_influence: number
+          luck_value: number
+          manual_chance_reference: number
+          raw_auto_resolve_success_chance: number
+          spirituality_value: number
+          tested_stat_key: string
+          tested_stat_value: number
+          trial_power: number
+        }[]
+      }
+      preview_challenge_auto_resolve_success_chance_for_district_with: {
+        Args: {
+          p_difficulty_key?: string
+          p_district_code?: string
+          p_hero_level?: number
+          p_luck_value?: number
+          p_spirituality_value?: number
+          p_stat_cap?: number
           p_tested_stat_key?: string
           p_tested_stat_value?: number
         }
@@ -22022,6 +22258,39 @@ export type Database = {
           trial_power: number
         }[]
       }
+      preview_trial_manifestation_chance_with_stat_context: {
+        Args: {
+          p_difficulty_key?: string
+          p_district_code?: string
+          p_hero_level?: number
+          p_luck_value?: number
+          p_spirituality_value?: number
+          p_stat_cap?: number
+          p_tested_stat_value?: number
+          p_trial_definition_id?: string
+        }
+        Returns: {
+          difficulty_key: string
+          difficulty_multiplier: number
+          district_code: string
+          district_modifier: number
+          explanation: string
+          final_manifestation_chance: number
+          formula_expression: string
+          formula_key: string
+          luck_influence: number
+          luck_value: number
+          max_manifestation_chance_percent: number
+          raw_manifestation_chance: number
+          spirituality_value: number
+          tested_stat_key: string
+          tested_stat_value: number
+          trial_definition_id: string
+          trial_key: string
+          trial_label: string
+          trial_power: number
+        }[]
+      }
       preview_trial_opportunity_curve: {
         Args: {
           p_difficulty_key?: string
@@ -22441,6 +22710,10 @@ export type Database = {
         Args: { p_report_id: string }
         Returns: string
       }
+      resolve_hero_attribute_formula_target_key: {
+        Args: { p_formula_kind: string }
+        Returns: string
+      }
       resolve_hero_building_bonus_preview_value: {
         Args: {
           p_building_id: string
@@ -22737,6 +23010,70 @@ export type Database = {
           status: string
           success_count: number
         }[]
+      }
+      sanitize_player_armory_equipment_slot_json: {
+        Args: { p_slot_json: Json }
+        Returns: Json
+      }
+      sanitize_player_armory_item_detail_bonuses_json: {
+        Args: { p_bonuses_json: Json; p_drachma_value?: number }
+        Returns: Json
+      }
+      sanitize_player_armory_item_row_json: {
+        Args: { p_item_json: Json }
+        Returns: Json
+      }
+      sanitize_player_armory_jsonb_labels: {
+        Args: { p_json: Json }
+        Returns: Json
+      }
+      sanitize_player_armory_visibility_state_json: {
+        Args: { p_visibility_state: Json }
+        Returns: Json
+      }
+      sanitize_player_attribute_manifest_derived_array_json: {
+        Args: { p_entries_json: Json }
+        Returns: Json
+      }
+      sanitize_player_attribute_manifest_derived_entry_json: {
+        Args: { p_entry_json: Json }
+        Returns: Json
+      }
+      sanitize_player_attribute_manifest_json: {
+        Args: { p_manifest_json: Json }
+        Returns: Json
+      }
+      sanitize_player_estate_bonus_json: {
+        Args: { p_bonus_json: Json }
+        Returns: Json
+      }
+      sanitize_player_estate_bonus_rows_json: {
+        Args: { p_bonuses_json: Json }
+        Returns: Json
+      }
+      sanitize_player_estate_building_json: {
+        Args: { p_building_json: Json }
+        Returns: Json
+      }
+      sanitize_player_estate_buildings_json: {
+        Args: { p_buildings_json: Json }
+        Returns: Json
+      }
+      sanitize_player_estate_resource_json: {
+        Args: { p_resource_json: Json }
+        Returns: Json
+      }
+      sanitize_player_estate_resources_json: {
+        Args: { p_resources_json: Json }
+        Returns: Json
+      }
+      sanitize_player_estate_runtime_state_json: {
+        Args: { p_runtime_state: Json }
+        Returns: Json
+      }
+      sanitize_player_estate_upgrade_preview_json: {
+        Args: { p_preview_json: Json }
+        Returns: Json
       }
       save_current_hero_loadout_preset: {
         Args: {

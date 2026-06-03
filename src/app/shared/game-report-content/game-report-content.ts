@@ -9,12 +9,10 @@ import {
 } from '../../core/domain/reports/game-report.model';
 import { GameReportContentReadModel } from '../../core/interfaces/reports/game-report-content.interface';
 import { humanizeKey } from '../../core/utils/normalize-text';
-import { ItemDetailPopover } from '../item-detail-popover/item-detail-popover';
 
 @Component({
   selector: 'app-game-report-content',
   standalone: true,
-  imports: [ItemDetailPopover],
   templateUrl: './game-report-content.html',
 })
 export class GameReportContent {
@@ -51,12 +49,6 @@ export class GameReportContent {
 
   toItemSourceKindLabel(value: string): string {
     return value === 'reward_drop' ? 'Reward drop' : humanizeKey(value, value);
-  }
-
-  itemReferenceId(
-    item: GameReportItemReference | PublicGameReportItemReference,
-  ): string | null {
-    return 'sourceItemId' in item ? item.sourceItemId : null;
   }
 
   contextualReadiness(): GameReportContextualReadiness | null {

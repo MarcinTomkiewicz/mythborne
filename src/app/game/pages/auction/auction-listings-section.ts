@@ -3,9 +3,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
-import { DirectTradeTransactionItemReadModel } from '../../../core/domain/trade/direct-trade.model';
 import { PlayerAuctionTransactionReadModel } from '../../../core/domain/trade/player-auction.model';
-import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
 import { AuctionListingActionsState } from './auction-listing-actions.state';
 import { auctionSellerLabel } from './auction-labels';
 import { AuctionOverviewState } from './auction-overview.state';
@@ -18,7 +16,6 @@ import { AuctionOverviewState } from './auction-overview.state';
     ButtonModule,
     InputNumberModule,
     InputTextModule,
-    ItemDetailPopover,
   ],
   templateUrl: './auction-listings-section.html',
 })
@@ -35,13 +32,4 @@ export class AuctionListingsSection {
     }`;
   }
 
-  transactionItemDetails(item: DirectTradeTransactionItemReadModel): string[] {
-    return [
-      item.generationBaseName ? `Base: ${item.generationBaseName}` : null,
-      item.generationQualityLabel ? `Quality: ${item.generationQualityLabel}` : null,
-      item.prefixAffixName ? `Prefix: ${item.prefixAffixName}` : null,
-      item.suffixAffixName ? `Suffix: ${item.suffixAffixName}` : null,
-      item.valueBucket !== null ? `Value bucket: ${item.valueBucket}` : null,
-    ].filter((entry): entry is string => entry !== null);
-  }
 }

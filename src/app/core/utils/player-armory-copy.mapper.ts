@@ -13,7 +13,9 @@ import {
   requiredNonNegativeInteger,
   requiredRecord,
   requiredText,
+  requiredTextArray,
 } from './json-read';
+import { mapItemDetailPopoverCopy } from './item-detail-popover-copy.mapper';
 
 export function mapArmoryCopyJson(
   value: Json | undefined,
@@ -36,7 +38,7 @@ export function mapArmoryCopyJson(
     loadoutPresets: mapCopyLoadoutPresets(
       requiredRecord(read(copyJson, 'loadoutPresets'), 'copyJson.loadoutPresets'),
     ),
-    itemDetail: requiredRecord(read(copyJson, 'itemDetail'), 'copyJson.itemDetail'),
+    itemDetail: mapItemDetailPopoverCopy(read(copyJson, 'itemDetail'), 'copyJson.itemDetail'),
     equipmentPreview: mapCopyEquipmentPreview(
       requiredRecord(read(copyJson, 'equipmentPreview'), 'copyJson.equipmentPreview'),
     ),
@@ -354,14 +356,4 @@ function mapAvailabilityOptions(
       'copyJson.filters.availabilityOptions.sortOrder',
     ),
   }));
-}
-
-function requiredTextArray(value: Json | undefined, fieldPath: string): string[] {
-  if (!Array.isArray(value)) {
-    throw new Error(`${fieldPath} must be an array.`);
-  }
-
-  return value.map((entry, index) =>
-    requiredText(entry, `${fieldPath}[${index}]`),
-  );
 }
